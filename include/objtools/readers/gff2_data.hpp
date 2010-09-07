@@ -56,13 +56,6 @@ public:
     bool AssignFromGff(
         const string& );
 
-    bool MakeExon(
-        const CGff2Record&,
-        const CSeq_interval& );
-
-    bool MergeRecord(
-        const CGff2Record& );
-
     //
     // Accessors:
     //        
@@ -117,6 +110,12 @@ protected:
         const CFeat_id& id );
 
     virtual bool x_AssignAttributesFromGff(
+        const string& );
+
+    virtual string x_NormalizedAttributeKey(
+        const string& );
+
+    virtual string x_NormalizedAttributeValue(
         const string& );
 
 	bool x_SplitGffAttributes(

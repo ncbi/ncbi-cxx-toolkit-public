@@ -143,20 +143,6 @@ CRef< CSeq_id > s_RecordIdToSeqId(
     return pId;
 }
         
-//  ============================================================================
-class CGtfReadRecord
-//  ============================================================================
-    : public CGff2Record
-{
-public:
-    CGtfReadRecord(): CGff2Record() {};
-    ~CGtfReadRecord() {};
-
-protected:
-    bool x_AssignAttributesFromGff(
-        const string& );
-};
-
 //  ----------------------------------------------------------------------------
 bool CGtfReadRecord::x_AssignAttributesFromGff(
     const string& strRawAttributes )
@@ -173,8 +159,8 @@ bool CGtfReadRecord::x_AssignAttributesFromGff(
                 return false;
             }
         }
-        NStr::TruncateSpacesInPlace( strKey );
-        NStr::TruncateSpacesInPlace( strValue );
+        strKey = x_NormalizedAttributeKey( strKey );
+        strValue = x_NormalizedAttributeValue( strValue );
 		if ( strKey.empty() && strValue.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such
             // things. 
@@ -224,9 +210,12 @@ string s_FeatureKey(
 }
 
 //  ----------------------------------------------------------------------------
-CGtfReader::CGtfReader():
+CGtfReader::CGtfReader( 
+    unsigned int uFlags,
+    const string& strAnnotName,
+    const string& strAnnotTitle ):
 //  ----------------------------------------------------------------------------
-    CGff2Reader( fNewCode )
+    CGff2Reader( uFlags, strAnnotName, strAnnotTitle )
 {
 }
 
@@ -307,60 +296,6 @@ CGtfReader::x_GetLine(
     return false;
 }
  
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_ParseFeatureGff(
-    const string& strLine,
-    TAnnots& annots )
-//  ----------------------------------------------------------------------------
-{
-    //
-    //  Parse the record and determine which ID the given feature will pertain 
-    //  to:
-    //
-    CGtfReadRecord record;
-    if ( ! record.AssignFromGff( strLine ) ) {
-        return false;
-    }
-
-    //
-    //  Search annots for a pre-existing annot pertaining to the same ID:
-    //
-    TAnnotIt it = annots.begin();
-    for ( /*NOOP*/; it != annots.end(); ++it ) {
-        string strAnnotId;
-        if ( ! s_AnnotId( **it, strAnnotId ) ) {
-            return false;
-        }
-        if ( record.Id() == strAnnotId ) {
-            break;
-        }
-    }
-
-    //
-    //  If a preexisting annot was found, update it with the new feature
-    //  information:
-    //
-    if ( it != annots.end() ) {
-        if ( ! x_UpdateAnnot( record, *it ) ) {
-            return false;
-        }
-    }
-
-    //
-    //  Otherwise, create a new annot pertaining to the new ID and initialize it
-    //  with the given feature information:
-    //
-    else {
-        CRef< CSeq_annot > pAnnot( new CSeq_annot );
-        if ( ! x_InitAnnot( record, pAnnot ) ) {
-            return false;
-        }
-        annots.push_back( pAnnot );      
-    }
- 
-    return true; 
-};
-
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnot(
     const CGff2Record& gff,
@@ -1145,6 +1080,40 @@ bool CGtfReader::x_CdsIsPartial(
     }
     return ( mRna->IsSetPartial() && mRna->GetPartial() );
 }
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_ProcessQualifierSpecialCase(
+    CGff2Record::TAttrCit it,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
+        pFeature->SetComment( it->second );
+        return true;
+    }
+    if ( 0 == NStr::CompareNocase( it->first, "dbxref" ) || 
+        0 == NStr::CompareNocase( it->first, "db_xref" ) ) 
+    {
+        vector< string > tags;
+        NStr::Tokenize( it->second, ";", tags );
+        for ( vector<string>::iterator it = tags.begin(); 
+            it != tags.end(); ++it ) {
+            pFeature->SetDbxref().push_back( x_ParseDbtag( *it ) );
+        }
+        return true;
+    }
+
+    if ( 0 == NStr::CompareNocase( it->first, "pseudo" ) ) {
+        pFeature->SetPseudo( true );
+        return true;
+    }
+    if ( 0 == NStr::CompareNocase( it->first, "partial" ) ) {
+        pFeature->SetPartial( true );
+        return true;
+    }
+
+    return false;
+}  
 
 
 END_objects_SCOPE

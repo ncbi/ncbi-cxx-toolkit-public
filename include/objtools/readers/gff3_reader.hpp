@@ -47,8 +47,22 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CGFFReader;
-class CGff3Record;
+class CGff3ReadRecord;
 class SRecord;
+
+//  ============================================================================
+class CGff3ReadRecord
+//  ============================================================================
+    : public CGff2Record
+{
+public:
+    CGff3ReadRecord() {};
+    ~CGff3ReadRecord() {};
+
+protected:
+    string x_NormalizedAttributeKey(
+        const string& );
+};
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff3Reader
@@ -61,16 +75,22 @@ public:
     //
 public:
     CGff3Reader(
-        unsigned int = 0 );
-
-    CGff3Reader(
         unsigned int uFlags,
-        const string& name,
-        const string& title );
+        const string& name = "",
+        const string& title = "" );
 
     virtual ~CGff3Reader();
 
-public:
+protected:
+    virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
+
+    virtual bool x_UpdateAnnot(
+        const CGff2Record&,
+        CRef< CSeq_annot > );
+
+//    virtual bool x_ProcessQualifierSpecialCase(
+//        CGff2Record::TAttrCit,
+//        CRef< CSeq_feat > );
 };
 
 END_SCOPE(objects)

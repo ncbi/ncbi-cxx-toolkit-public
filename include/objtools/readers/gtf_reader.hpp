@@ -40,13 +40,27 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
+//  ============================================================================
+class CGtfReadRecord
+//  ============================================================================
+    : public CGff2Record
+{
+public:
+    CGtfReadRecord(): CGff2Record() {};
+    ~CGtfReadRecord() {};
+
+protected:
+    bool x_AssignAttributesFromGff(
+        const string& );
+};
+
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGtfReader
 //  ----------------------------------------------------------------------------
     : public CGff2Reader
 {
 public:
-    CGtfReader();
+    CGtfReader( unsigned int =0, const string& = "", const string& = "" );
 
     virtual ~CGtfReader();
     
@@ -63,15 +77,12 @@ public:
         IErrorContainer* =0 );
 
 protected:
-    bool
-    x_GetLine(
+    virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
+
+    bool x_GetLine(
         ILineReader&,
         string&,
         int& );
-
-    bool x_ParseFeatureGff(
-        const string& strLine,
-        TAnnots& annots );
 
     virtual bool x_UpdateAnnot(
         const CGff2Record&,
@@ -182,6 +193,10 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat >& );
 
+    virtual bool x_ProcessQualifierSpecialCase(
+        CGff2Record::TAttrCit,
+        CRef< CSeq_feat > );
+  
     bool x_CdsIsPartial(
         const CGff2Record& );
 

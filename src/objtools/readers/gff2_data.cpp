@@ -143,21 +143,27 @@ bool CGff2Record::GetAttribute(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::MergeRecord(
-    const CGff2Record& other )
+string CGff2Record::x_NormalizedAttributeKey(
+    const string& strRawKey )
 //  ----------------------------------------------------------------------------
 {
-    const TAttributes& newAttrs = other.Attributes(); 
-    for ( TAttrCit cit  = newAttrs.begin(); cit != newAttrs.end(); ++cit ) {
-        if ( cit->first == "gff_score" ) {
-            delete m_pdScore;
-            m_pdScore = new double( NStr::StringToDouble( cit->second ) );
-            continue;
-        }
-        m_Attributes[ cit->first ] = cit->second;
-    }
+    string strKey = NStr::TruncateSpaces( strRawKey );
+    return strKey;
+}
 
-    return true;
+//  ----------------------------------------------------------------------------
+string CGff2Record::x_NormalizedAttributeValue(
+    const string& strRawValue )
+//  ----------------------------------------------------------------------------
+{
+    string strValue = NStr::TruncateSpaces( strRawValue );
+    if ( NStr::StartsWith( strValue, "\"" ) ) {
+        strValue = strValue.substr( 1, string::npos );
+    }
+    if ( NStr::EndsWith( strValue, "\"" ) ) {
+        strValue = strValue.substr( 0, strValue.length() - 1 );
+    }
+    return strValue;
 }
 
 //  ----------------------------------------------------------------------------
@@ -166,7 +172,6 @@ bool CGff2Record::x_AssignAttributesFromGff(
 //  ----------------------------------------------------------------------------
 {
     vector< string > attributes;
-    //NStr::Tokenize( strRawAttributes, ";", attributes, NStr::eMergeDelims );
     x_SplitGffAttributes(strRawAttributes, attributes);
 	for ( size_t u=0; u < attributes.size(); ++u ) {
         string strKey;
@@ -176,53 +181,13 @@ bool CGff2Record::x_AssignAttributesFromGff(
                 return false;
             }
         }
-        NStr::TruncateSpacesInPlace( strKey );
-        NStr::TruncateSpacesInPlace( strValue );
+        strKey = x_NormalizedAttributeKey( strKey );
+        strValue = x_NormalizedAttributeValue( strValue );
+
 		if ( strKey.empty() && strValue.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such
             // things. 
             continue;
-        }
-        if ( NStr::StartsWith( strValue, "\"" ) ) {
-            strValue = strValue.substr( 1, string::npos );
-        }
-        if ( NStr::EndsWith( strValue, "\"" ) ) {
-            strValue = strValue.substr( 0, strValue.length() - 1 );
-        }
-
-        //
-        //  Fix the worst of capitalization attrocities:
-        //
-        if ( 0 == NStr::CompareNocase( strKey, "ID" ) ) {
-            strKey = "ID";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Name" ) ) {
-            strKey = "Name";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Alias" ) ) {
-            strKey = "Alias";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Parent" ) ) {
-            strKey = "Parent";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Target" ) ) {
-            strKey = "Target";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Gap" ) ) {
-            strKey = "Gap";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Derives_from" ) ) {
-            strKey = "Derives_from";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Note" ) ) {
-            strKey = "Note";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Dbxref" )  ||
-            0 == NStr::CompareNocase( strKey, "Db_xref" ) ) {
-            strKey = "Dbxref";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Ontology_term" ) ) {
-            strKey = "Ontology_term";
         }
 
         if ( strKey == "Dbxref" ) {
@@ -272,34 +237,6 @@ bool CGff2Record::x_SplitGffAttributes(
 		attributes.push_back(strCurrAttrib);
 
 	return true;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGff2Record::MakeExon(
-    const CGff2Record& parent,
-    const CSeq_interval& loc )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! loc.CanGetFrom() || ! loc.CanGetTo() ) {
-        return false;
-    }
-    m_strId = parent.Id();
-    m_strSource = parent.Source();
-    m_strType = "exon";
-    m_uSeqStart = loc.GetFrom();
-    m_uSeqStop = loc.GetTo();
-    if ( parent.IsSetScore() ) {
-        m_pdScore = new double( parent.Score() );
-    }
-    if ( parent.IsSetStrand() ) {
-        m_peStrand = new ENa_strand( parent.Strand() );
-    }
-    string strParentId;
-    if ( parent.GetAttribute( "ID", strParentId ) ) {
-        m_Attributes[ "Parent" ] = strParentId;
-    }
-    return true;
 }
 
 //  ----------------------------------------------------------------------------

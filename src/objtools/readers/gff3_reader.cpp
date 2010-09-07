@@ -101,11 +101,43 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CGff3Reader::CGff3Reader(
-    unsigned int uFlags ):
-//  ----------------------------------------------------------------------------
-    CGff2Reader( uFlags )
+string CGff3ReadRecord::x_NormalizedAttributeKey(
+    const string& strRawKey )
+//  ---------------------------------------------------------------------------
 {
+    string strKey = CGff2Record::x_NormalizedAttributeKey( strRawKey );
+    if ( 0 == NStr::CompareNocase( strRawKey, "ID" ) ) {
+        return "ID";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Name" ) ) {
+        return "Name";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Alias" ) ) {
+        return "Alias";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Parent" ) ) {
+        return "Parent";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Target" ) ) {
+        return "Target";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Gap" ) ) {
+        return "Gap";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Derives_from" ) ) {
+        return "Derives_from";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Note" ) ) {
+        return "Note";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Dbxref" )  ||
+        0 == NStr::CompareNocase( strKey, "Db_xref" ) ) {
+        return "Dbxref";
+    }
+    if ( 0 == NStr::CompareNocase( strKey, "Ontology_term" ) ) {
+        return "Ontology_term";
+    }
+    return strKey;
 }
 
 //  ----------------------------------------------------------------------------
@@ -122,6 +154,41 @@ CGff3Reader::CGff3Reader(
 CGff3Reader::~CGff3Reader()
 //  ----------------------------------------------------------------------------
 {
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_UpdateAnnot(
+    const CGff2Record& gff,
+    CRef< CSeq_annot > pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_feat > pFeature( new CSeq_feat );
+
+    if ( ! x_FeatureSetId( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetXref( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetLocation( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetData( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetGffInfo( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
+        return false;
+    }
+    
+    string strId;
+    if ( gff.GetAttribute( "ID", strId ) ) {
+        m_MapIdToFeature[ strId ] = pFeature;
+    }
+
+    return x_AddFeatureToAnnot( pFeature, pAnnot );
 }
 
 END_objects_SCOPE

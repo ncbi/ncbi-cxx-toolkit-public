@@ -36,6 +36,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistl.hpp>
 #include <util/format_guess.hpp>
+#include <util/line_reader.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
@@ -56,6 +57,7 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
+#include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gtf_reader.hpp>
 
@@ -180,7 +182,7 @@ void CMultiReaderApp::Init(void)
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
-            "bed", "microarray", "bed15", "wig", "wiggle", "gtf", "gff3", "guess") );
+            "bed", "microarray", "bed15", "wig", "wiggle", "gtf", "gff3", "gff2", "guess") );
 
     arg_desc->AddDefaultKey(
         "flags",
@@ -394,7 +396,7 @@ void CMultiReaderApp::SetFormat(
         m_uFormat = CFormatGuess::eBed15;
     }
     if ( NStr::StartsWith( strProgramName, "gtf" ) || 
-        format == "gtf" || format == "gff3" ) {
+        format == "gtf" || format == "gff3" || format == "gff2" ) {
         m_uFormat = CFormatGuess::eGtf;
     }
     if ( m_uFormat == CFormatGuess::eUnknown ) {
@@ -468,13 +470,41 @@ void CMultiReaderApp::ReadObject(
     CRef<CSerialObject>& object )
 //  ============================================================================
 {
-    CReaderBase* pReader = CReaderBase::GetReader( m_uFormat, m_iFlags );
-    if ( !pReader ) {
-        NCBI_THROW2( CObjReaderParseException, eFormat,
-            "File format not supported", 0 );
+    switch ( m_uFormat ) {
+    
+        default: {
+            CReaderBase* pReader = CReaderBase::GetReader( m_uFormat, m_iFlags );
+            if ( !pReader ) {
+                NCBI_THROW2( CObjReaderParseException, eFormat,
+                    "File format not supported", 0 );
+            }
+            object = pReader->ReadObject( *m_pInput, m_pErrors );
+            delete pReader;
+            break;
+        }
+
+        case CFormatGuess::eGtf: {
+            CStreamLineReader lr( *m_pInput );
+            if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
+                CGtfReader reader( 
+                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
+                reader.ReadObject( lr, m_pErrors );
+                break;
+            }
+            if ( GetArgs()[ "format" ].AsString() == "gff2" ) {
+                CGff2Reader reader( 
+                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
+                reader.ReadObject( lr, m_pErrors );
+                break;
+            }
+            else {
+                CGff3Reader reader( 
+                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
+                reader.ReadObject( lr, m_pErrors );
+                break;
+            }
+        }
     }
-    object = pReader->ReadObject( *m_pInput, m_pErrors );
-    delete pReader;
 }
 
 //  ============================================================================
@@ -494,12 +524,20 @@ void CMultiReaderApp::ReadAnnots(
         }    
         case CFormatGuess::eGtf: {
             if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
-                CGtfReader reader;
+                CGtfReader reader( 
+                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
+                reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+                break;
+            }
+            if ( GetArgs()[ "format" ].AsString() == "gff2" ) {
+                CGff2Reader reader( 
+                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
                 break;
             }
             else {
-                CGff3Reader reader( (unsigned int)m_iFlags );
+                CGff3Reader reader( 
+                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
                 break;
             }

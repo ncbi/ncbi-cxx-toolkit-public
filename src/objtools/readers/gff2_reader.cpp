@@ -121,15 +121,6 @@ bool CGff2Reader::s_GetAnnotId(
 
 //  ----------------------------------------------------------------------------
 CGff2Reader::CGff2Reader(
-    unsigned int uFlags ):
-//  ----------------------------------------------------------------------------
-    m_uFlags( TFlags( uFlags ) ),
-    m_pErrors( 0 )
-{
-}
-
-//  ----------------------------------------------------------------------------
-CGff2Reader::CGff2Reader(
     unsigned int uFlags,
     const string& name,
     const string& title ):
@@ -467,8 +458,8 @@ bool CGff2Reader::x_ParseFeatureGff(
     //  Parse the record and determine which ID the given feature will pertain 
     //  to:
     //
-    CGff2Record record;
-    if ( ! record.AssignFromGff( strLine ) ) {
+    CGff2Record* pRecord = x_CreateRecord();
+    if ( ! pRecord->AssignFromGff( strLine ) ) {
         return false;
     }
 
@@ -481,7 +472,7 @@ bool CGff2Reader::x_ParseFeatureGff(
         if ( ! s_GetAnnotId( **it, strAnnotId ) ) {
             return false;
         }
-        if ( record.Id() == strAnnotId ) {
+        if ( pRecord->Id() == strAnnotId ) {
             break;
         }
     }
@@ -491,7 +482,7 @@ bool CGff2Reader::x_ParseFeatureGff(
     //  information:
     //
     if ( it != annots.end() ) {
-        if ( ! x_UpdateAnnot( record, *it ) ) {
+        if ( ! x_UpdateAnnot( *pRecord, *it ) ) {
             return false;
         }
     }
@@ -502,12 +493,13 @@ bool CGff2Reader::x_ParseFeatureGff(
     //
     else {
         CRef< CSeq_annot > pAnnot( new CSeq_annot );
-        if ( ! x_InitAnnot( record, pAnnot ) ) {
+        if ( ! x_InitAnnot( *pRecord, pAnnot ) ) {
             return false;
         }
         annots.push_back( pAnnot );      
     }
  
+    delete pRecord;
     return true; 
 };
 
@@ -641,9 +633,6 @@ bool CGff2Reader::x_UpdateAnnot(
     if ( ! x_FeatureSetId( gff, pFeature ) ) {
         return false;
     }
-    if ( ! x_FeatureSetXref( gff, pFeature ) ) {
-        return false;
-    }
     if ( ! x_FeatureSetLocation( gff, pFeature ) ) {
         return false;
     }
@@ -737,6 +726,15 @@ bool CGff2Reader::x_FeatureSetLocation(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff2Reader::x_ProcessQualifierSpecialCase(
+    CGff2Record::TAttrCit it,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    return false;
+}  
+
+//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_FeatureSetQualifiers(
     const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
@@ -766,33 +764,8 @@ bool CGff2Reader::x_FeatureSetQualifiers(
     CGff2Record::TAttrCit it = attrs.begin();
     for ( /*NOOP*/; it != attrs.end(); ++it ) {
 
-        if ( x_SkipAttribute( record, it->first ) ) {
-            continue;
-        }
-
         // special case some well-known attributes
-        if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
-            pFeature->SetComment( it->second );
-            continue;
-        }
-        if ( 0 == NStr::CompareNocase( it->first, "dbxref" ) || 
-            0 == NStr::CompareNocase( it->first, "db_xref" ) ) 
-        {
-            vector< string > tags;
-            NStr::Tokenize( it->second, ";", tags );
-            for ( vector<string>::iterator it = tags.begin(); 
-                it != tags.end(); ++it ) {
-                pFeature->SetDbxref().push_back( x_ParseDbtag( *it ) );
-            }
-            continue;
-        }
-
-        if ( 0 == NStr::CompareNocase( it->first, "pseudo" ) ) {
-            pFeature->SetPseudo( true );
-            continue;
-        }
-        if ( 0 == NStr::CompareNocase( it->first, "partial" ) ) {
-            pFeature->SetPartial( true );
+        if ( x_ProcessQualifierSpecialCase( it, pFeature ) ) {
             continue;
         }
 

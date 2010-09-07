@@ -71,12 +71,9 @@ public:
     //
 public:
     CGff2Reader(
-        unsigned int = 0 );
-
-    CGff2Reader(
         unsigned int uFlags,
-        const string& name,
-        const string& title );
+        const string& name = "",
+        const string& title = "" );
 
     virtual ~CGff2Reader();
     
@@ -161,7 +158,11 @@ public:
     bool x_FeatureSetQualifiers(
         const CGff2Record&,
         CRef< CSeq_feat > );
-    
+
+    virtual bool x_ProcessQualifierSpecialCase(
+        CGff2Record::TAttrCit,
+        CRef< CSeq_feat > );
+  
     bool x_FeatureSetLocation(
         const CGff2Record&,
         CRef< CSeq_feat > );
@@ -226,6 +227,8 @@ public:
     //  helpers:
     //
 protected:
+    virtual CGff2Record* x_CreateRecord() { return new CGff2Record(); };
+
     virtual void x_SetTrackDataToSeqEntry(
         CRef<CSeq_entry>&,
         CRef<CUser_object>&,
@@ -254,10 +257,6 @@ protected:
     void x_PlaceFeature(
         CSeq_feat& feat, 
         const SRecord& );
-
-    virtual bool x_SkipAttribute(
-        const CGff2Record&,
-        const string& ) const { return false; };
 
     static bool s_GetAnnotId(
         const CSeq_annot&,
