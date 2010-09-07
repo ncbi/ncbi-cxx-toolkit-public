@@ -5460,6 +5460,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoTaxonID)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
                               "BioSource is missing taxon ID"));
+    options |= CValidator::eVal_need_taxid;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -5590,8 +5591,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingLineage)
     // back to error if no taxon but refseq
     SetTaxon (entry, 0);
     expected_errors[0]->SetSeverity(eDiag_Error);
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "NoTaxonID",
-                              "BioSource is missing taxon ID"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6432,8 +6431,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
-                              "BioSource is missing taxon ID"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
                               "Taxonomy lookup failed with message 'Organism not found'"));
 
@@ -6441,12 +6438,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
     CheckErrors (*eval, expected_errors);
 
     SetTaxname(entry, "Poeciliinae");
-    expected_errors[1]->SetErrMsg("Taxonomy lookup reports is_species_level FALSE");
+    expected_errors[0]->SetErrMsg("Taxonomy lookup reports is_species_level FALSE");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     SetTaxname(entry, "Anabaena circinalis");
-    expected_errors[1]->SetErrMsg("Taxonomy lookup reports taxonomy consultation needed");
+    expected_errors[0]->SetErrMsg("Taxonomy lookup reports taxonomy consultation needed");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6456,8 +6453,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
     SetGenome(entry, CBioSource::eGenome_nucleomorph);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrganelle",
                               "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
-                              "BioSource is missing taxon ID"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
                               "Taxonomy lookup does not have expected nucleomorph flag"));
     eval = validator.Validate(seh, options);
