@@ -1958,6 +1958,13 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
                     result = eTiId;
                     break;
                 }
+
+                if (NStr::CompareNocase(dbt.GetDb(), "GNOMON") == 0) {
+                    str_id = bestid.AsFastaString();
+                    str_id = NStr::ToLower(str_id);
+                    result = eStringId;
+                    break;
+                }
             }
             
             if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {

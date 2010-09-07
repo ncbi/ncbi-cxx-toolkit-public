@@ -3917,6 +3917,40 @@ BOOST_AUTO_TEST_CASE(ExtractBlastDefline)
     BOOST_REQUIRE(deflines.Empty());
 }
 
+BOOST_AUTO_TEST_CASE(FindGnomonIds)
+{
+    vector<string> gnomon_ids;
+    gnomon_ids.push_back("gnl|GNOMON|334.p");
+    gnomon_ids.push_back("gnl|GNOMON|2334.p");
+    gnomon_ids.push_back("gnl|GNOMON|4334.p");
+    gnomon_ids.push_back("gnl|GNOMON|6334.p");
+    gnomon_ids.push_back("gnl|GNOMON|8334.p");
+
+    CSeqDB db("data/mini-gnomon", CSeqDB::eProtein);
+    for (size_t i = 0; i < gnomon_ids.size(); i++) {
+        {{
+            vector<int> oids;
+            db.AccessionToOids(gnomon_ids[i], oids);
+            BOOST_REQUIRE( !oids.empty() );
+            BOOST_REQUIRE_EQUAL(i, oids.front());
+        }}
+        {{
+            vector<int> oids;
+            CSeq_id id(gnomon_ids[i]);
+            db.SeqidToOids(id, oids);
+            BOOST_REQUIRE( !oids.empty() );
+            BOOST_REQUIRE_EQUAL(i, oids.front());
+        }}
+        {{
+            int oid = -1;
+            CSeq_id id(gnomon_ids[i]);
+            bool found = db.SeqidToOid(id, oid);
+            BOOST_REQUIRE(found);
+            BOOST_REQUIRE_EQUAL(i, oid);
+        }}
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
