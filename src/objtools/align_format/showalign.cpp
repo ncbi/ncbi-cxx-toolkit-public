@@ -34,7 +34,10 @@
 static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
+
 #include <ncbi_pch.hpp>
+
+#include <math.h> // For use of ceil
 
 #include <objtools/align_format/showalign.hpp>
 
@@ -295,6 +298,23 @@ string CDisplaySeqalign::x_FormatIdentityInfo(string alignInfo, SAlnInfo* aln_ve
     return alignParams;
 }
 
+/// Returns percent match for an alignment.
+/// Normally we round up the value, unless that means that an 
+/// alignment with mismatches would be 100%.  In that case
+/// it becomes 99%.
+///@param numerator: numerator in percent identity calculation.
+///@param denominator: denominator in percent identity calculation.
+static int s_GetPercentMatch(int numerator, int denominator)
+{
+     if (numerator == denominator)
+        return 100;
+     else {
+       int retval = ceil((100.0*(double)numerator)/((double)denominator));
+       retval = min(99, retval);
+       return retval;
+     }
+}
+
 
 ///show blast identity, positive etc.
 ///@param out: output stream
@@ -318,7 +338,7 @@ static void s_DisplayIdentityInfo(CNcbiOstream& out, int aln_stop,
     out<<" Identities = "<<match<<"/"<<(aln_stop+1)<<" ("<<identity<<"%"<<")";
     if(aln_is_prot){
         out<<", Positives = "<<(positive + match)<<"/"<<(aln_stop+1)
-           <<" ("<<(((positive + match)*100)/(aln_stop+1))<<"%"<<")";
+           <<" ("<< s_GetPercentMatch(positive + match, aln_stop+1) <<"%"<<")";
     }
     out<<", Gaps = "<<gap<<"/"<<(aln_stop+1)
        <<" ("<<((gap*100)/(aln_stop+1))<<"%"<<")"<<"\n";
@@ -1484,7 +1504,7 @@ void CDisplaySeqalign::x_PrepareIdentityInfo(SAlnInfo* aln_vec_info)
                        aln_vec_info->positive, 
                        aln_vec_info->alnRowInfo->middleLine);
     if(m_AlignOption & eShowBlastInfo){
-        aln_vec_info->identity = (aln_vec_info->match*100)/((int)aln_stop+1);
+        aln_vec_info->identity = s_GetPercentMatch(aln_vec_info->match, (int)aln_stop+1);
         if(aln_vec_info->identity >= k_ColorMismatchIdentity && aln_vec_info->identity <100 &&
                (m_AlignOption & eColorDifferentBases)){
             aln_vec_info->alnRowInfo->colorMismatch = true;
