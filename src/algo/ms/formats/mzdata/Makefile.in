@@ -1,3 +1,0 @@
-DTD_PROJ = mzData
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
