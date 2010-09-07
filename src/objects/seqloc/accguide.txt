@@ -302,8 +302,8 @@ version  1 # of file format
 2+6  HE  embl_dirsub
 2+6  HF  embl_dirsub
 2+6  HG  embl_dirsub
-2+6  HH  embl_dirsub
-2+6  HI  embl_dirsub
+2+6  HH  embl_patent
+2+6  HI  embl_patent
 2+6  HJ  gb_patent
 2+6  HK  gb_patent
 2+6  HL  gb_patent
