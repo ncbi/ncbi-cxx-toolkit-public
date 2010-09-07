@@ -49,7 +49,7 @@ enum ETildeStyle {
     eTilde_space,   // '~' -> ' ', except before /[ (]?\d/
     eTilde_newline, // '~' -> '\n' but "~~" -> "~"
     eTilde_comment,  // '~' -> '\n' always
-    eTilde_note     // '~' -> ';\n' but "~~" -> "~"
+    eTilde_note     // '~' -> ';\n' but "~~" -> "~", Except: after space or semi-colon, it just becomes "\n"
 };
 void ExpandTildes(string& s, ETildeStyle style);
 

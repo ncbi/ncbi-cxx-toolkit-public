@@ -172,7 +172,15 @@ void ExpandTildes(string& s, ETildeStyle style)
                 result += '~';
                 start = tilde + 2;
             } else {
-                result += ";\n";
+                // plain "~" expands to ";\n", unless it's after a space or semi-colon, in
+                // which case it becomes a plain "\n"
+                char prevChar = ( tilde - 1 >= 0 ? s[tilde - 1] : '\0' );
+
+                if( ' ' == prevChar || ';' == prevChar ) {
+                    result += '\n';
+                } else {
+                    result += ";\n";
+                }
                 start = tilde + 1;
             }
             break;

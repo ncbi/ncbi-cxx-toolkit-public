@@ -3378,7 +3378,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         x_FormatNoteQual(eFQ_go_process, "GO_process", qvec);
         s_QualVectorToNote(qvec, false, notestr, suffix, add_period);
     }
-    s_NoteFinalize(add_period, notestr, ff);
+    s_NoteFinalize(add_period, notestr, ff, eTilde_tilde);
 }
 
 
