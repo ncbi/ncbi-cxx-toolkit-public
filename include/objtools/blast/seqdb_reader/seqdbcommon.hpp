@@ -1534,6 +1534,13 @@ SeqDB_SimplifyAccession(const string & acc,
 NCBI_XOBJREAD_EXPORT const string
 SeqDB_SimplifyAccession(const string &acc);
 
+/// Retrieves a list of all supported file extensions for BLAST databases
+/// @param db_is_protein set to true if the database is protein else false [in]
+/// @param extensions where the return value will be stored [in|out]
+NCBI_XOBJREAD_EXPORT 
+void SeqDB_GetFileExtensions(bool db_is_protein,
+                             vector<string>& extensions);
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_BLAST_SEQDB_READER___SEQDBCOMMON__HPP

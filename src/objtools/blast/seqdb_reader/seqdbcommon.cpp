@@ -1959,6 +1959,7 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
                     break;
                 }
 
+
                 if (NStr::CompareNocase(dbt.GetDb(), "GNOMON") == 0) {
                     str_id = bestid.AsFastaString();
                     str_id = NStr::ToLower(str_id);
@@ -2203,6 +2204,30 @@ ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
 const string SeqDB_SimplifyAccession(const string &acc)
 {
     Int8 num_id;
+void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
+{
+    extn.clear();
+
+    const string kExtnMol(1, db_is_protein ? 'p' : 'n');
+
+    extn.push_back(kExtnMol + "al");   // alias file
+    extn.push_back(kExtnMol + "in");   // index file
+    extn.push_back(kExtnMol + "hr");   // header file
+    extn.push_back(kExtnMol + "sq");   // sequence file
+    extn.push_back(kExtnMol + "ni");   // ISAM numeric index file
+    extn.push_back(kExtnMol + "nd");   // ISAM numeric data file
+    extn.push_back(kExtnMol + "si");   // ISAM string index file
+    extn.push_back(kExtnMol + "sd");   // ISAM string data file
+    extn.push_back(kExtnMol + "pi");   // ISAM PIG index file
+    extn.push_back(kExtnMol + "pd");   // ISAM PIG data file
+
+    // Contain masking information
+    extn.push_back(kExtnMol + "aa");   // ISAM mask index file
+    extn.push_back(kExtnMol + "ab");   // ISAM mask data file (big-endian)
+    extn.push_back(kExtnMol + "ac");   // ISAM mask data file (little-endian)
+    extn.push_back(kExtnMol + "og");   // OID to GI file
+}
+
     string str_id;
     bool simpler(false);
     ESeqDBIdType result = SeqDB_SimplifyAccession(acc, num_id, str_id, simpler);

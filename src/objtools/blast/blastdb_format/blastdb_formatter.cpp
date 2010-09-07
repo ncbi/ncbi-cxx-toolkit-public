@@ -99,6 +99,10 @@ public:
         // FIXME: should this use CSeqDB::GetTotals?
         return NStr::UInt8ToString(m_BlastDb->GetTotalLength());
     }
+    string GetDiskUsage() {
+        x_InitBlastDb();
+        return NStr::UInt8ToString((Uint8)m_BlastDb->GetDiskUsage());
+    }
 
 private:
     /// Information to initialize the BLAST DB handle
@@ -140,6 +144,9 @@ CBlastDbFormatter::Write(const SSeqDBInitInfo& db_init_info)
             break;
         case 'd':   // date of last update
             data2write.push_back(dbmeta.GetDate());
+            break;
+        case 'U':   // Disk usage
+            data2write.push_back(dbmeta.GetDiskUsage());
             break;
         default:
             CNcbiOstrstream os;

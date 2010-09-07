@@ -1211,5 +1211,34 @@ FindBlastDBs(const string& path, const string& dbtype, bool recurse,
     return dbfinder.m_DBs;
 }
 
+Int8 CSeqDB::GetDiskUsage() const
+{
+    vector<string> paths;
+    FindVolumePaths(paths);
+    _ASSERT( !paths.empty() );
+
+    Int8 retval = 0;
+
+    vector<string> extn;
+    const bool is_protein(GetSequenceType() == CSeqDB::eProtein);
+    SeqDB_GetFileExtensions(is_protein, extn);
+
+    ITERATE(vector<string>, path, paths) {
+        ITERATE(vector<string>, ext, extn) {
+            CFile file(*path + "." + *ext);
+            if (file.Exists()) {
+                Int8 length = file.GetLength();
+                if (length != -1) {
+                    retval += length;
+                } else {
+                    ERR_POST(Error << "Error retrieving file size for " 
+                                   << file.GetPath());
+                }
+            }
+        }
+    }
+    return retval;
+}
+
 END_NCBI_SCOPE
 

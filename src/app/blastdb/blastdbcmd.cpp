@@ -505,6 +505,7 @@ void CBlastDBCmdApp::Init()
             "\t\t%d means the date of last update of the BLAST database\n"
             "\t\t%l means the number of bases/residues in the BLAST database\n"
             "\t\t%n means the number of sequences in the BLAST database\n"
+            "\t\t%U means the number of bytes used by the BLAST database\n"
             "\tFor every format each line of output will "
             "correspond to a BLAST database.\n",
             CArgDescriptions::eString, "%f %p");

@@ -1339,6 +1339,8 @@ public:
     /// @param num_threads   Number of threads
     void SetNumberOfThreads(int num_threads);
 
+    /// Retrieve the disk usage in bytes for this BLAST database
+    Int8 GetDiskUsage() const;
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;

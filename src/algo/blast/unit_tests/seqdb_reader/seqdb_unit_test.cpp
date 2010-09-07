@@ -3917,6 +3917,13 @@ BOOST_AUTO_TEST_CASE(ExtractBlastDefline)
     BOOST_REQUIRE(deflines.Empty());
 }
 
+BOOST_AUTO_TEST_CASE(TestDiskUsage)
+{
+    CSeqDB db("data/mini-gnomon", CSeqDB::eProtein);
+    const Int8 kExpectedSize = 1420;
+    BOOST_REQUIRE_EQUAL(kExpectedSize, db.GetDiskUsage());
+}
+
 BOOST_AUTO_TEST_CASE(FindGnomonIds)
 {
     vector<string> gnomon_ids;
