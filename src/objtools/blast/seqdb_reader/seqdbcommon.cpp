@@ -2204,6 +2204,13 @@ ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
 const string SeqDB_SimplifyAccession(const string &acc)
 {
     Int8 num_id;
+    string str_id;
+    bool simpler(false);
+    ESeqDBIdType result = SeqDB_SimplifyAccession(acc, num_id, str_id, simpler);
+    if (result == eStringId) return str_id;
+    else return "";
+}
+
 void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
 {
     extn.clear();
@@ -2226,13 +2233,6 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
     extn.push_back(kExtnMol + "ab");   // ISAM mask data file (big-endian)
     extn.push_back(kExtnMol + "ac");   // ISAM mask data file (little-endian)
     extn.push_back(kExtnMol + "og");   // OID to GI file
-}
-
-    string str_id;
-    bool simpler(false);
-    ESeqDBIdType result = SeqDB_SimplifyAccession(acc, num_id, str_id, simpler);
-    if (result == eStringId) return str_id;
-    else return "";
 }
 
 END_NCBI_SCOPE
