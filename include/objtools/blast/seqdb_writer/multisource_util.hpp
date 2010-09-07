@@ -57,7 +57,9 @@ public:
     /// Errors are classified into several types.
     enum EErrCode {
         /// Argument validation failed.
-        eArg
+        eArg,
+        /// Failed to create the output file(s)/directory
+        eOutputFileError   
     };
     
     /// Get a message describing the exception.

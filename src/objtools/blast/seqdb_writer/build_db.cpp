@@ -925,6 +925,28 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
     return rv;
 }
 
+static void s_CreateDirectories(const string& dbname)
+{
+    CDirEntry dir_entry(dbname);
+    string dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Empty);
+    if (dir_name.empty()) {
+        return;
+    }
+
+    CDir d(dir_name);
+    if ( !d.Exists() ) {
+        if ( !d.CreatePath() ) {
+            string msg("Failed to create directory '" + d.GetName() + "'");
+            NCBI_THROW(CMultisourceException, eOutputFileError, msg);
+        }
+    }
+    if (!d.CheckAccess(CDirEntry::fWrite)) {
+        string msg("You do not have write permissions on '" + 
+                   d.GetName() + "'");
+        NCBI_THROW(CMultisourceException, eOutputFileError, msg);
+    }
+}
+
 CBuildDatabase::CBuildDatabase(const string         & dbname,
                                const string         & title,
                                bool                   is_protein,
@@ -942,6 +964,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_ParseIDs     (((indexing & CWriteDB::eFullIndex) != 0 ? true : false)),
       m_FoundMatchingMasks(false)
 {
+    s_CreateDirectories(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
     
@@ -983,6 +1006,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_ParseIDs     (parse_seqids),
       m_FoundMatchingMasks(false)
 {
+    s_CreateDirectories(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
     

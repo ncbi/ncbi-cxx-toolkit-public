@@ -44,6 +44,7 @@
 
 #include <corelib/test_boost.hpp>
 #include <boost/current_function.hpp>
+#include <objtools/blast/seqdb_writer/build_db.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
@@ -2352,6 +2353,97 @@ BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_NoGisInBlastDB)
 
     BOOST_REQUIRE(!CFile(kAliasFileName).Exists());
 }
+
+BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathWindows)
+{
+    CTmpFile tmpfile;
+    CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    const string kOutput("Y:\\DUMMY");
+    CRef<CBuildDatabase> bd;
+    BOOST_REQUIRE_THROW(
+        bd.Reset(new CBuildDatabase(kOutput, "foo", true, 
+                                    CWriteDB::eDefault, false, &log)),
+        CMultisourceException);
+    BOOST_REQUIRE(bd.Empty());
+    CFile f1(kOutput + ".pal"), f2(kOutput + ".pin");
+    BOOST_REQUIRE(f1.Exists() == false);
+    BOOST_REQUIRE(f2.Exists() == false);
+}
+
+BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathUnix)
+{
+    CTmpFile tmpfile;
+    CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    const string kOutput("/dev/null");
+    CRef<CBuildDatabase> bd;
+    BOOST_REQUIRE_THROW(
+        bd.Reset(new CBuildDatabase(kOutput, "foo", true, 
+                                    CWriteDB::eDefault, false, &log)),
+        CMultisourceException);
+    BOOST_REQUIRE(bd.Empty());
+    CFile f1(kOutput + ".pal"), f2(kOutput + ".pin");
+    BOOST_REQUIRE(f1.Exists() == false);
+    BOOST_REQUIRE(f2.Exists() == false);
+}
+
+BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
+{
+    CTmpFile tmpfile;
+    CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    const string kOutput("a/b/c/d");
+    CFileDeleteAtExit::Add("a/b/c");
+    CFileDeleteAtExit::Add("a/b");
+    CFileDeleteAtExit::Add("a");
+
+    CRef<CBuildDatabase> bd;
+    bd.Reset(new CBuildDatabase(kOutput, "foo", true, 
+                                CWriteDB::eNoIndex, false, &log));
+                                //CWriteDB::eDefault, false, &cerr));
+    CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
+    bd->SetTaxids(*tid);
+    bd->StartBuild();
+    bd->SetSourceDb("nr");
+    //bd->SetVerbosity(true);
+    bd->SetUseRemote(true);
+    vector<string> ids(1, "129295");
+    bd->AddIds(ids);
+    bd->EndBuild();
+    CFile f1(kOutput + ".pin");
+    BOOST_REQUIRE(f1.Exists() == true);
+
+    bd->EndBuild(true);
+    BOOST_REQUIRE(f1.Exists() == false);
+}
+
+BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
+{
+    CTmpFile tmpfile;
+    CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    const string kOutput("x");
+    CFileDeleteAtExit::Add("x.pin");
+    CFileDeleteAtExit::Add("x.phr");
+    CFileDeleteAtExit::Add("x.psq");
+
+    CRef<CBuildDatabase> bd;
+    bd.Reset(new CBuildDatabase(kOutput, "foo", true, 
+                                CWriteDB::eNoIndex, false, &log));
+                                //CWriteDB::eDefault, false, &cerr));
+    CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
+    bd->SetTaxids(*tid);
+    bd->StartBuild();
+    bd->SetSourceDb("nr");
+    //bd->SetVerbosity(true);
+    bd->SetUseRemote(true);
+    vector<string> ids(1, "129295");
+    bd->AddIds(ids);
+    bd->EndBuild();
+    CFile f1(kOutput + ".pin");
+    BOOST_REQUIRE(f1.Exists() == true);
+
+    bd->EndBuild(true);
+    BOOST_REQUIRE(f1.Exists() == false);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

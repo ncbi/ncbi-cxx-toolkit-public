@@ -724,14 +724,13 @@ void CMakeBlastDBApp::x_BuildDatabase()
     NStr::Tokenize(dbname, kInputSeparators, input_files);
     if (dbname == "-" || input_files.size() > 1) {
         NCBI_THROW(CInvalidDataException, eInvalidInput, 
-            "Please provide a database name using " + kOutput);
+            "Please provide a database name using -" + kOutput);
     }
 
     if (args[kInput].AsString() == dbname) {
         m_IsModifyMode = true;
     }
 
-    _ASSERT(NStr::Find(dbname, kInputSeparators) == NPOS);
     // N.B.: Source database(s) in the current working directory will
     // be overwritten (as in formatdb)
     
