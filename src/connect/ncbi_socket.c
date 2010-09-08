@@ -935,6 +935,9 @@ static EIO_Status s_InitAPI(int secure)
 
 extern EIO_Status SOCK_ShutdownAPI(void)
 {
+    if (s_Initialized < 0)
+        return eIO_Success;
+
     CORE_TRACE("[SOCK::ShutdownAPI]  Begin");
 
     CORE_LOCK_WRITE;
