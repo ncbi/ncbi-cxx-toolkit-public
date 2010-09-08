@@ -294,8 +294,11 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
             ITERATE(CSeq_align::C_Segs::TStd, seg, GetSegs().GetStd()) {
                 if ( (*seg)->IsSetLoc()  &&
                      (size_t)row < (*seg)->GetLoc().size() ) {
-                    CSeq_loc_CI loc_iter(*(*seg)->GetLoc()[row]);
-                    return loc_iter.GetSeq_id();
+                    const CSeq_loc& loc = *(*seg)->GetLoc()[row];
+                    CConstRef<CSeq_id> id(loc.GetId());
+                    if (id) {
+                        return *id;
+                    }
                 }
             }
         }}
