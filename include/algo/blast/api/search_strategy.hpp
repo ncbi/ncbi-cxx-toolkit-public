@@ -84,9 +84,6 @@ public:
     /// Constructor, imports the CBlast4_request
     CImportStrategy(CRef<objects::CBlast4_request> request);
 
-    /// Destructor
-    ~CImportStrategy();
-
     /// Builds and returns the OptionsHandle
     CRef<blast::CBlastOptionsHandle> GetOptionsHandle() const;
 
@@ -126,11 +123,16 @@ private:
 
     void FetchData() const; /// Fills in CImportStrategyData;
 
-    CImportStrategyData* m_Data;
+    auto_ptr<CImportStrategyData> m_Data;
 
     CRef<objects::CBlast4_request> m_Request;
 
     string m_Service;
+
+    /// Prohibit copy constructor
+    CImportStrategy(const CImportStrategy& rhs);
+    /// Prohibit assignment operator
+    CImportStrategy& operator=(const CImportStrategy& rhs);
 };
 
 

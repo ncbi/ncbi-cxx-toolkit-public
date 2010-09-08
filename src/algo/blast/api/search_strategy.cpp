@@ -64,15 +64,10 @@ CImportStrategy::CImportStrategy(CRef<objects::CBlast4_request> request)
     if (m_Request->CanGetBody() && !m_Request->GetBody().IsQueue_search() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, "No body in CBlast4_request");
     }
-    m_Data = new(CImportStrategyData);
+    m_Data.reset(new CImportStrategyData);
     m_Data->valid = false;
 }
 
-
-CImportStrategy::~CImportStrategy()
-{
-    free(m_Data);
-}
 
 void 
 CImportStrategy::FetchData() const
