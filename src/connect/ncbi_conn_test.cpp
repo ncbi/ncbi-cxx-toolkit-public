@@ -409,9 +409,9 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         "In order to configure that correctly, please have your network"
         " administrator read the following (if they have not yet done so): "
         NCBI_FW_URL "\n"
-        "There are also fallback connection ports 22 and 443 at "
-        "130.14.29.112. They will be tried if connections to the ports in "
-        "the described above range failed"
+        "There are also fallback connection ports 22 and 443 at"
+        " 130.14.29.112. They will be tried if connections to the ports in"
+        " the range described above failed"
     };
     string temp = m_Firewall ? "FIREWALL" : "RELAY (legacy)";
     temp += " connection mode has been detected for stateful services\n";
@@ -447,14 +447,14 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
 
     PostCheck(eFirewallConnPoints, 1/*sub*/, m_FwdStatus, temp);
 
-    bool firewall = false;
+    bool firewall = true;
     if (m_FwdStatus == eIO_Success) {
         PreCheck(eFirewallConnPoints, 2/*sub*/,
                  "Verifying configuration for consistency");
 
         ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_Fwd) {
-            if (CONN_FWD_PORT_MIN <= cp->port && cp->port <= CONN_FWD_PORT_MAX)
-                firewall = true;
+            if (cp->port < CONN_FWD_PORT_MIN  ||  CONN_FWD_PORT_MAX < cp->port)
+                firewall = false;
             if (!cp->okay) {
                 temp  = CSocketAPI::HostPortToString(cp->host, cp->port);
                 temp += " is not operational, please contact " NCBI_HELP_DESK;
@@ -464,7 +464,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         }
         if (m_FwdStatus == eIO_Success) {
             if (m_Firewall != firewall) {
-                temp = "Configuration mismatch: firewall ";
+                temp  = "Configuration mismatch: firewall ";
                 temp += firewall ? "wrongly" : "not";
                 temp += " acknowledged, please contact " NCBI_HELP_DESK;
                 m_FwdStatus = eIO_NotSupported;
@@ -539,8 +539,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     if (*val)
         m_FWProxy = true;
 
-    if (m_FwdStatus == eIO_Success)
-    {
+    if (m_FwdStatus == eIO_Success) {
         PreCheck(eFirewallConnections, 0/*main*/,
                  "Checking individual connection points\n"
                  "NOTE that even though that not the entire port range can"
