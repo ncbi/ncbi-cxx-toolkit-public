@@ -292,7 +292,11 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
             // If segments have different number of rows, this will try
             // to find the segment with enough rows to get the id.
             ITERATE(CSeq_align::C_Segs::TStd, seg, GetSegs().GetStd()) {
-                if ( (*seg)->IsSetLoc()  &&
+                if ( (*seg)->IsSetIds()  &&
+                     (size_t)row < (*seg)->GetIds().size()) {
+                    return *((*seg)->GetIds()[row]);
+                }
+                else if ( (*seg)->IsSetLoc()  &&
                      (size_t)row < (*seg)->GetLoc().size() ) {
                     const CSeq_loc& loc = *(*seg)->GetLoc()[row];
                     CConstRef<CSeq_id> id(loc.GetId());
