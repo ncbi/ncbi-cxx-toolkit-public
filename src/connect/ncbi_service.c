@@ -559,7 +559,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
                 continue;
             memcpy(t, b, len);
             if (t[len - 1] == '\r')
-                t[len - 1] = '\0';
+                t[len - 1] =  '\0';
             else
                 t[len] = '\0';
             p = t;
