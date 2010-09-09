@@ -251,20 +251,22 @@ void StripSpaces(string& str)
 
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 {
-    /**
+    
     // NB: this is likely a better solution; however, the C toolkit differs...
     //string::size_type pos = str.find_last_not_of(".,;:() ");
     string::size_type pos = str.find_last_not_of(".,;: ");
     string::size_type pos2 = str.find("...", pos);
+    string::size_type pos3 = str.find_first_of(".", pos);
     if (pos < str.size() - 1) {
         str.erase(pos + 1);
         if (keep_ellipsis  &&  pos2 != string::npos) {
             str += "...";
         }
     }
-    **/
+    return ( pos3 != string::npos );
+    
 
-    string::size_type pos2 = str.find_last_not_of(";,.");
+    /* string::size_type pos2 = str.find_last_not_of(";,.");
     string::size_type pos3 = str.find_last_not_of(" ", pos2);
     if (pos3 < pos2) {
         str.erase(pos3 + 1);
@@ -293,7 +295,7 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
             str.erase(pos + 1);
             return true;
         }
-    }
+    } */
 
     /**
     static const string kEllipsis = "...";
@@ -305,7 +307,7 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
         }
     }
     **/
-    return false;
+    // return false;
 }
 
 
@@ -346,6 +348,8 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 
     size_t strlen = str.length();
     size_t begin = 0;
+
+    // trim unprintable characters (and space) off the beginning
     while (begin != strlen) {
         unsigned char ch = str[begin];
         if (ch > ' ') {
@@ -354,11 +358,14 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
             ++begin;
         }
     }
+
+    // we're done if we trimmed the string to nothing
     if (begin == strlen) {
         str.erase();
         return;
     }
 
+    // trim junk off the end (while we're at it, record whether we're chopping off a period)
     size_t end = strlen - 1;
     bool has_period = false;
     while (end > begin) {
@@ -371,11 +378,18 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
         }
     }
 
-    str = str.substr( begin, end + 1 );
-    if ( allow_ellipsis && (NPOS != NStr::Find(str, "...", end)) ) {
-        str += "...";
+    // check whether we're about to chop off an ellipsis, so we remember to add it back
+    // TODO: There's got to be a more efficient way of doing this
+    const bool weChoppedOffAnEllipsis = ( NPOS != NStr::Find(str, "...", end) );
 
+    // do the actual chopping here
+    str = str.substr( begin, end + 1 );
+
+    // restore chopped off ellipsis or period, if any
+    if ( allow_ellipsis && weChoppedOffAnEllipsis ) {
+        str += "...";
     } else if (has_period) {
+        // re-add any periods if we had one before
         str += '.';
     }
 }

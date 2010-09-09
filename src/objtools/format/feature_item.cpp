@@ -1225,9 +1225,6 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     s_feat.Reset();
     g_ref = NULL;
 
-    // this will point to the gene xref inside the feature, if any
-    const CGene_ref *xref_g_ref = NULL;
-
     // guard against suppressed gene xrefs
     // and also grab the Gene_ref xref, if it exists
     if (m_Feat.IsSetXref()) {
@@ -1237,12 +1234,14 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                 if( xref.GetData().GetGene().IsSuppressed()) {
                     return;
                 }
-                xref_g_ref = &( xref.GetData().GetGene() );
             }
         }
     }
 
-    if (m_Feat) {
+    const CGene_ref *xref_g_ref = m_Feat.GetGeneXref(); // this will point to the gene xref inside the feature, if any
+    const bool thereIsXrefToGene = xref_g_ref && ! xref_g_ref->GetLocus().empty();
+
+    if ( m_Feat && ! thereIsXrefToGene ) {
         CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
                                              sequence::eGetId_Canonical);
         CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
@@ -1298,11 +1297,13 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         if (s_feat) {
             g_ref = &( s_feat->GetData().GetGene() );
         }
+    }
 
-        // if we used an xref to a gene, but the new gene doesn't equal the xref, then 
-        // override it (example accession where this issue crops up: AF231993.1 )
-        if( xref_g_ref && g_ref && ! xref_g_ref->GetLocus().empty() && 
-                xref_g_ref->GetLocus() != g_ref->GetLocus() ) {
+    // if we used an xref to a gene, but the new gene doesn't equal the xref, then 
+    // override it (example accession where this issue crops up: AF231993.1 )
+    if( thereIsXrefToGene ) {
+        const bool gRefInvalidOrMismatchedWithXref = NULL == g_ref || (g_ref && xref_g_ref->GetLocus() != g_ref->GetLocus());
+        if( gRefInvalidOrMismatchedWithXref ) {
             s_feat.ReleaseOrNull();
             g_ref = xref_g_ref;
         }
@@ -1443,12 +1444,34 @@ void CFeatureItem::x_AddQuals(
 //    }
 //  <</**fl**/
 
+    // check if this is some kind of Genbank record (some of the logic may be a little different in that case)
+    bool is_not_genbank = false;
+    {{
+        ITERATE( CBioseq::TId, id_iter, ctx.GetBioseqIds() ) {
+            const CSeq_id& id = **id_iter;
+
+            switch ( id.Which() ) {
+                case CSeq_id_Base::e_Embl:
+                case CSeq_id_Base::e_Ddbj:
+                case CSeq_id_Base::e_Tpe:
+                case CSeq_id_Base::e_Tpd:
+                    is_not_genbank = true;
+                    break;
+                default:
+                    // do nothing
+                    break;
+            }
+        }
+    }}
+    
+
     const CGene_ref* gene_ref = 0;
     CConstRef<CSeq_feat> gene_feat;
 
     if ( type != CSeqFeatData::e_Gene &&
          subtype != CSeqFeatData::eSubtype_operon &&
-         subtype != CSeqFeatData::eSubtype_gap ) 
+         subtype != CSeqFeatData::eSubtype_gap && 
+         ( subtype != CSeqFeatData::eSubtype_repeat_region || is_not_genbank ) ) 
     {
         x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
     }
