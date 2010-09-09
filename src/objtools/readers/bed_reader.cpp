@@ -48,7 +48,7 @@
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
+#include <objects/general/User_field.hpp> 
 #include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -322,31 +322,31 @@ void CBedReader::x_SetFeatureDisplayData(
                NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow) );
         }
     }
-    if ( m_columncount >= 6 ) {
-        display_data->AddField( 
-            "thickStart",
-            NStr::StringToInt(fields[5], NStr::fConvErr_NoThrow) );
-    }
     if ( m_columncount >= 7 ) {
         display_data->AddField( 
-            "thickEnd",
-            NStr::StringToInt(fields[6], NStr::fConvErr_NoThrow) - 1 );
+            "thickStart",
+            NStr::StringToInt(fields[6], NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 8 ) {
         display_data->AddField( 
-            "itemRGB",
-            NStr::StringToInt(fields[7], NStr::fConvErr_NoThrow) );
+            "thickEnd",
+            NStr::StringToInt(fields[7], NStr::fConvErr_NoThrow) - 1 );
     }
     if ( m_columncount >= 9 ) {
         display_data->AddField( 
-            "blockCount",
+            "itemRGB",
             NStr::StringToInt(fields[8], NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 10 ) {
-        display_data->AddField( "blockSizes", fields[9] );
+        display_data->AddField( 
+            "blockCount",
+            NStr::StringToInt(fields[9], NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 11 ) {
-        display_data->AddField( "blockStarts", fields[10] );
+        display_data->AddField( "blockSizes", fields[10] );
+    }
+    if ( m_columncount >= 12 ) {
+        display_data->AddField( "blockStarts", fields[11] );
     }
     feature->SetData().SetUser( *display_data );
 }
