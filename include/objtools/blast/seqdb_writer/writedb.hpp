@@ -599,6 +599,7 @@ void CWriteDB_CreateAliasFile(const string& file_name,
  * @param file_name alias file name to create, it will overwrite any existing
  * files of that name [in]
  * @param db_names database names to aggregate [in]
+ * @param gi_file_name name of the file containing gis [in]
  * @param seq_type type of sequences stored in the database [in]
  * @param title title to use in this alias file [in]
  */
@@ -606,6 +607,7 @@ NCBI_XOBJWRITE_EXPORT
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const vector <string> & db_names,
                               CWriteDB::ESeqType seq_type,
+                              const string& gi_file_name,
                               const string& title = string());
 
 /** 

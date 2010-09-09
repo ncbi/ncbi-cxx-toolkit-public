@@ -2160,7 +2160,7 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListAggregateBlastDbs)
     dbs2aggregate.push_back("est_mouse");
 
     CWriteDB_CreateAliasFile(kMyAliasDb, dbs2aggregate, CWriteDB::eNucleotide,
-                             kTitle);
+                             kEmptyStr, kTitle);
 
     BOOST_REQUIRE(CFile(kAliasFileName).Exists());
     ifstream alias_file(kAliasFileName.c_str());
@@ -2301,6 +2301,7 @@ BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_NonExistentDbAggregation)
 
     BOOST_REQUIRE_THROW( CWriteDB_CreateAliasFile(kMyAliasDb, dbs2aggregate,
                                                   CWriteDB::eProtein,
+                                                  kEmptyStr,
                                                   kTitle),
                          CSeqDBException);
 

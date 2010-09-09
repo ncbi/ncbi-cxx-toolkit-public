@@ -309,7 +309,7 @@ s_PrintAliasFileCreationLog(const string& dbname,
                             const string& gi_file_name = kEmptyStr,
                             int num_seqs_in_gifile = 0)
 {
-    if (gi_file_name != kEmptyStr) {
+    if ( !gi_file_name.empty() ) {
         LOG_POST("Created " << (is_protein ? "protein " : "nucleotide ") <<
             dbname << " BLAST (alias) database with " << num_seqs_found 
             << " sequences (out of " << num_seqs_in_gifile << " in " 
@@ -348,7 +348,9 @@ void CWriteDB_CreateAliasFile(const string& file_name,
         out << "TITLE " << title << "\n";
     }
     out << "DBLIST " << db_name << "\n";
-    out << "GILIST " << gi_file_name << "\n";
+    if ( !gi_file_name.empty() ){
+        out << "GILIST " << gi_file_name << "\n";
+    }
     out << "NSEQ " << num_seqs << "\n";
     out << "LENGTH " << dbsize << "\n";
     out.close();
@@ -359,6 +361,7 @@ void CWriteDB_CreateAliasFile(const string& file_name,
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const vector<string>& databases,
                               CWriteDB::ESeqType seq_type,
+                              const string& gi_file_name,
                               const string& title)
 {
     string concatenated_blastdb_name;
@@ -370,8 +373,10 @@ void CWriteDB_CreateAliasFile(const string& file_name,
 
     Uint8 dbsize = 0;
     int num_seqs = 0;
+    int num_gis = 0;
     s_ComputeNumSequencesAndDbLength(concatenated_blastdb_name, is_prot,
-                                     &dbsize, &num_seqs);
+                                     &dbsize, &num_seqs, 
+                                     gi_file_name, &num_gis);
     CNcbiOstrstream fname;
     fname << file_name << (is_prot ? ".pal" : ".nal");
 
@@ -388,10 +393,14 @@ void CWriteDB_CreateAliasFile(const string& file_name,
         out << "\"" << *iter << "\" ";
     }
     out << "\n";
+    if ( !gi_file_name.empty() ) {
+        out << "GILIST " << gi_file_name << "\n";
+    }
     out << "NSEQ " << num_seqs << "\n";
     out << "LENGTH " << dbsize << "\n";
     out.close();
-    s_PrintAliasFileCreationLog(file_name, is_prot, num_seqs);
+    s_PrintAliasFileCreationLog(file_name, is_prot, num_seqs, gi_file_name,
+                                num_gis);
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,

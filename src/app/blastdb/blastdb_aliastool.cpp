@@ -72,7 +72,9 @@ private:
     /// @param output Output stream where converted binary gi list will be
     /// written [out]
     /// @return 0 on success
-    int ConvertGiFile(CNcbiIstream& input, CNcbiOstream& output) const;
+    int ConvertGiFile(CNcbiIstream& input, CNcbiOstream& output,
+                      const string* input_fname = NULL,
+                      const string* output_fname = NULL) const;
     /// Invokes function to create an alias file with the arguments provided on
     /// the command line
     void CreateAliasFile() const;
@@ -175,7 +177,6 @@ void CBlastDBAliasApp::Init()
                              "If text format is provided, it will be converted "
                              "to binary",
                              CArgDescriptions::eInputFile);
-    arg_desc->SetDependency("gilist", CArgDescriptions::eRequires, "db");
     arg_desc->SetDependency("gilist", CArgDescriptions::eRequires, kOutput);
 
     arg_desc->AddOptionalKey(kOutput, "database_name",
@@ -188,7 +189,6 @@ void CBlastDBAliasApp::Init()
                              CArgDescriptions::eString);
     arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "db");
     arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "num_volumes");
-    arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "gilist");
     arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, kOutput);
     arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, "dbtype");
     arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, "title");
@@ -201,8 +201,8 @@ void CBlastDBAliasApp::Init()
                              CNcbiOstrstreamToString(msg),
                              CArgDescriptions::eInteger);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "db");
-    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "dblist");
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "gilist");
+    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "dblist");
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kOutput);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, "dbtype");
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, "title");
@@ -211,8 +211,11 @@ void CBlastDBAliasApp::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
-int CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
-                                    CNcbiOstream& output) const
+int 
+CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
+                                CNcbiOstream& output,
+                                const string* input_fname /* = NULL */,
+                                const string* output_fname /* = NULL */) const
 {
     CBinaryListBuilder builder(CBinaryListBuilder::eGi);
 
@@ -232,7 +235,12 @@ int CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
     }
 
     builder.Write(output);
-    LOG_POST("Converted " << builder.Size() << " GIs into binary GI file");
+    if (input_fname && output_fname) {
+        LOG_POST("Converted " << builder.Size() << " GIs from " << *input_fname
+                 << " to binary format in " << *output_fname);
+    } else {
+        LOG_POST("Converted " << builder.Size() << " GIs into binary GI file");
+    }
     return 0;
 }
 
@@ -253,19 +261,8 @@ CBlastDBAliasApp::CreateAliasFile() const
         ? CWriteDB::eProtein
         : CWriteDB::eNucleotide;
 
-    if (args["dblist"].HasValue()) {
-        const string dblist = args["dblist"].AsString();
-        vector<string> dbs2aggregate;
-        NStr::Tokenize(dblist, " ", dbs2aggregate);
-        CWriteDB_CreateAliasFile(args[kOutput].AsString(), dbs2aggregate,
-                                 seq_type, title);
-    } else if (args["num_volumes"].HasValue()) {
-        const unsigned int num_vols = 
-            static_cast<unsigned int>(args["num_volumes"].AsInteger());
-        CWriteDB_CreateAliasFile(args[kOutput].AsString(), num_vols, seq_type,
-                                 title);
-    } else {
-        string gilist = args["gilist"].AsString();
+    string gilist = args["gilist"] ? args["gilist"].AsString() : kEmptyStr;
+    if ( !gilist.empty() ) {
         if ( !CFile(gilist).Exists() ) {
             NCBI_THROW(CSeqDBException, eFileErr, gilist + " not found");
         }
@@ -275,10 +272,25 @@ CBlastDBAliasApp::CreateAliasFile() const
             CNcbiOstrstream oss;
             oss << args[kOutput].AsString() << "." << mol_type << ".gil";
             gilist.assign(CNcbiOstrstreamToString(oss));
-            ifstream input(args["gilist"].AsString().c_str());
+            const string& ifname = args["gilist"].AsString();
+            ifstream input(ifname.c_str());
             ofstream output(gilist.c_str());
-            ConvertGiFile(input, output);
+            ConvertGiFile(input, output, &ifname, &gilist);
         }
+    }
+
+    if (args["dblist"].HasValue()) {
+        const string dblist = args["dblist"].AsString();
+        vector<string> dbs2aggregate;
+        NStr::Tokenize(dblist, " ", dbs2aggregate);
+        CWriteDB_CreateAliasFile(args[kOutput].AsString(), dbs2aggregate,
+                                 seq_type, gilist, title);
+    } else if (args["num_volumes"].HasValue()) {
+        const unsigned int num_vols = 
+            static_cast<unsigned int>(args["num_volumes"].AsInteger());
+        CWriteDB_CreateAliasFile(args[kOutput].AsString(), num_vols, seq_type,
+                                 title);
+    } else {
         CWriteDB_CreateAliasFile(args[kOutput].AsString(),
                                  args["db"].AsString(),
                                  seq_type, gilist,
