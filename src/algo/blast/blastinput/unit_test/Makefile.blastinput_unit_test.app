@@ -11,8 +11,7 @@ LIB_ = test_boost $(ENTREZ_LIBS) $(BLAST_INPUT_LIBS) \
     ncbi_xloader_blastdb_rmt $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) \
-        $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects Boost.Test.Included

@@ -28,8 +28,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I$(srcdir)/../../api \
 LIB = test_boost $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb_rmt \
     $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS:ncbi_x%=ncbi_x%$(DLL))
 
-LIBS = $(NETWORK_LIBS) \
-        $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # De-universalize Mac builds to work around a PPC toolchain limitation
 CXXFLAGS = $(ORIG_CXXFLAGS:ppc=i386)
