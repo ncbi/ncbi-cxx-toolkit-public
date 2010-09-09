@@ -71,7 +71,7 @@ END_SCOPE(blast)
 
 
 
-class CBlastArgs
+class NCBI_XNGALIGN_EXPORT CBlastArgs
 {
 public:
     static void s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc);
@@ -82,7 +82,7 @@ private:
 };
 
 
-class CBlastAligner : public IAlignmentFactory
+class NCBI_XNGALIGN_EXPORT CBlastAligner : public IAlignmentFactory
 {
 public:
     CBlastAligner(blast::CBlastOptionsHandle& Options, int Threshold)

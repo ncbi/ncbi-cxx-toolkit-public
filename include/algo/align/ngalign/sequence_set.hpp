@@ -73,7 +73,7 @@ BEGIN_SCOPE(blast)
 END_SCOPE(blast)
 
 
-class CBlastDbSet : public ISequenceSet
+class NCBI_XNGALIGN_EXPORT CBlastDbSet : public ISequenceSet
 {
 public:
     CBlastDbSet(const string& BlastDb);
@@ -107,7 +107,7 @@ protected:
 
 
 
-class CSeqIdListSet : public ISequenceSet
+class NCBI_XNGALIGN_EXPORT CSeqIdListSet : public ISequenceSet
 {
 public:
     CSeqIdListSet();
@@ -133,7 +133,7 @@ protected:
 
 
 
-class CFastaFileSet : public ISequenceSet
+class NCBI_XNGALIGN_EXPORT CFastaFileSet : public ISequenceSet
 {
 public:
     CFastaFileSet(CNcbiIstream* FastaStream);

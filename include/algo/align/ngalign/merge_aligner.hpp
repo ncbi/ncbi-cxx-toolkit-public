@@ -62,7 +62,7 @@ END_SCOPE(objects)
 
 
 
-class CMergeAligner : public IAlignmentFactory
+class NCBI_XNGALIGN_EXPORT CMergeAligner : public IAlignmentFactory
 {
 public:
     CMergeAligner(int Threshold) : m_Threshold(Threshold) { ; }

@@ -60,7 +60,7 @@ END_SCOPE(blast)
 
 
 
-class CQueryFilter : public IAlignmentFilter
+class NCBI_XNGALIGN_EXPORT CQueryFilter : public IAlignmentFilter
 {
 public:
     CQueryFilter(int Rank, const string& Query);

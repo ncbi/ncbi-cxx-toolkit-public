@@ -63,7 +63,7 @@ END_SCOPE(objects)
 
 
 
-class CInversionMergeAligner : public IAlignmentFactory
+class NCBI_XNGALIGN_EXPORT CInversionMergeAligner : public IAlignmentFactory
 {
 public:
 

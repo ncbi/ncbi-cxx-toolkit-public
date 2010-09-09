@@ -63,7 +63,7 @@ END_SCOPE(objects)
 
 
 
-class CInstance : public CObject {
+class NCBI_XNGALIGN_EXPORT CInstance : public CObject {
 public:
 
     CInstance(const CRef<objects::CSeq_align> Align);
@@ -83,7 +83,7 @@ public:
 };
 
 
-class CInstancedAligner : public IAlignmentFactory
+class NCBI_XNGALIGN_EXPORT CInstancedAligner : public IAlignmentFactory
 {
 public:
 

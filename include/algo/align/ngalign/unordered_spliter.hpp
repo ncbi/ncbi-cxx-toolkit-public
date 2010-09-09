@@ -67,7 +67,7 @@ END_SCOPE(objects)
 
 
 
-class CUnorderedSplitter
+class NCBI_XNGALIGN_EXPORT CUnorderedSplitter
 {
 public:
 
@@ -123,7 +123,7 @@ private:
 
 
 // For sequences that need to be split up, like Phase 1 clones.
-class CSplitSeqIdListSet : public ISequenceSet
+class NCBI_XNGALIGN_EXPORT CSplitSeqIdListSet : public ISequenceSet
 {
 public:
     CSplitSeqIdListSet(CUnorderedSplitter* Splitter);
@@ -147,7 +147,7 @@ protected:
 
 
 
-class CSplitSeqAlignMerger : public IAlignmentFactory
+class NCBI_XNGALIGN_EXPORT CSplitSeqAlignMerger : public IAlignmentFactory
 {
 public:
 
