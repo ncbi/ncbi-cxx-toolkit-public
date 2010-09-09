@@ -74,6 +74,9 @@
 #include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
+#include <objtools/writers/bed_track_record.hpp>
+#include <objtools/writers/bed_feature_record.hpp>
+#include <objtools/writers/bed_writer.hpp>
 
 #include <time.h>
 
@@ -96,10 +99,6 @@ private:
         const CSeq_annot& annot,
         CNcbiOstream& );
 
-    bool WriteGff(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
     bool WriteGff2(
         const CSeq_annot& annot,
         CNcbiOstream& );
@@ -113,6 +112,10 @@ private:
         CNcbiOstream& );
 
     bool WriteWiggle(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
+    bool WriteBed(
         const CSeq_annot& annot,
         CNcbiOstream& );
 
@@ -147,7 +150,11 @@ void CAnnotWriterApp::Init()
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
-            "gff", "gff2", "gff3", "gtf", "wiggle" ) );
+            "gff", "gff2", 
+            "gff3", 
+            "gtf", 
+            "wig", "wiggle",
+            "bed" ) );
     }}
 
     // output
@@ -258,33 +265,25 @@ bool CAnnotWriterApp::Write(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    if ( GetArgs()[ "format" ].AsString() == "gff" ) { 
-        return WriteGff( annot, os );
-    }
-    if ( GetArgs()[ "format" ].AsString() == "gff2" ) { 
+    const string strFormat = GetArgs()[ "format" ].AsString();
+
+    if ( strFormat == "gff"  ||  strFormat == "gff2" ) { 
         return WriteGff2( annot, os );
     }
-    if ( GetArgs()[ "format" ].AsString() == "gff3" ) { 
+    if ( strFormat == "gff3" ) { 
         return WriteGff3( annot, os );
     }
-    if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
+    if ( strFormat == "gtf" ) {
         return WriteGtf( annot, os );
     }
-    if ( GetArgs()[ "format" ].AsString() == "wiggle" ) {
+    if ( strFormat == "wiggle"  ||  strFormat == "wig" ) {
         return WriteWiggle( annot, os );
+    }
+    if ( strFormat == "bed" ) {
+        return WriteBed( annot, os );
     }
     cerr << "Unexpected!" << endl;
     return false;    
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteGff( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    //default: gff2
-    return WriteGff2( annot, os );
 }
 
 //  -----------------------------------------------------------------------------
@@ -339,6 +338,21 @@ bool CAnnotWriterApp::WriteWiggle(
 //  -----------------------------------------------------------------------------
 {
     CWiggleWriter writer( os, GetArgs()["tracksize"].AsInteger() );
+    return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteBed( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CBedWriter writer( *pScope, os );
     return writer.WriteAnnot( annot );
 }
 
