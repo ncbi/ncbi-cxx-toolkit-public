@@ -349,11 +349,13 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::x_GetLocFromSplicedE
     
 }
 
-CRef<CSeq_feat> CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
-                                                             objects::CSeq_annot& annot,
-                                                             objects::CBioseq_set& seqs,
-                                                             int gene_id,
-                                                             const objects::CSeq_feat* cdregion)
+CRef<CSeq_feat>
+CFeatureGenerator::
+SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
+                                     objects::CSeq_annot& annot,
+                                     objects::CBioseq_set& seqs,
+                                     int gene_id,
+                                     const objects::CSeq_feat* cdregion)
 {
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (m_flags & fDensegAsExon) {
@@ -377,7 +379,9 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const ob
     static CAtomicCounter counter;
     size_t model_num = counter.Add(1);
 
-    CRef<CSeq_feat> mrna_feat = x_CreateMrnaFeature(align, loc, time, model_num, seqs, rna_id, cdregion);
+    CRef<CSeq_feat> mrna_feat =
+        x_CreateMrnaFeature(align, loc, time, model_num,
+                            seqs, rna_id, cdregion);
 
     CRef<CSeq_feat> gene_feat;
 
@@ -387,7 +391,8 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const ob
     if (gene_id) {
         TGeneMap::iterator gene = genes.find(gene_id);
         if (gene == genes.end()) {
-            gene_feat = x_CreateGeneFeature(handle, mapper, mrna_feat, loc, genomic_id, gene_id);
+            gene_feat = x_CreateGeneFeature(handle, mapper, mrna_feat, loc,
+                                            genomic_id, gene_id);
             if (gene_feat) {
                 _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
                 annot.SetData().SetFtable().push_back(gene_feat);
@@ -395,7 +400,10 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const ob
             gene = genes.insert(make_pair(gene_id,gene_feat)).first;
         } else {
             gene_feat = gene->second;
-            gene_feat->SetLocation(*gene_feat->GetLocation().Add(mrna_feat->GetLocation(), CSeq_loc::fMerge_SingleRange, NULL));
+            gene_feat->SetLocation
+                (*gene_feat->GetLocation().Add(mrna_feat->GetLocation(),
+                                               CSeq_loc::fMerge_SingleRange,
+                                               NULL));
         }
 
         CRef< CSeqFeatXref > genexref( new CSeqFeatXref() );
@@ -868,7 +876,16 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateGeneFeature(const CB
     return gene_feat;
 }
 
-CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle, const CSeq_align& align, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, CSeq_loc_Mapper::TMapOptions opts, CRef<CSeq_feat> gene_feat)
+CRef<CSeq_feat>
+CFeatureGenerator::
+SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
+                                    const CSeq_align& align,
+                                    CRef<CSeq_loc> loc,
+                                    const CTime& time,
+                                    size_t model_num,
+                                    CBioseq_set& seqs,
+                                    CSeq_loc_Mapper::TMapOptions opts,
+                                    CRef<CSeq_feat> gene_feat)
 {
     CRef<CSeq_feat> cds_feat;
     if (m_flags & fCreateCdregion) {
@@ -877,9 +894,6 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateCdsFeature(const CBi
         //
         CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
         if (feat_iter  &&  feat_iter.GetSize()) {
-            cds_feat.Reset(new CSeq_feat());
-            cds_feat->Assign(feat_iter->GetOriginalFeature());
-
             // from this point on, we will get complex locations back
             SMapper mapper(align, *m_scope, 0, opts);
             mapper.IncludeSourceLocs();
@@ -907,7 +921,6 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateCdsFeature(const CBi
                      equiv->IsEmpty() ) {
                     continue;
                 }
-
 
                 /// we are using a special variety that will tell us what
                 /// portion really mapped
@@ -967,6 +980,9 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateCdsFeature(const CBi
                 cds_loc->ChangeToPackedInt();
             }
             if (cds_loc  && cds_loc->Which() != CSeq_loc::e_not_set) {
+                cds_feat.Reset(new CSeq_feat());
+                cds_feat->Assign(feat_iter->GetOriginalFeature());
+
                 CConstRef<CSeq_id> prot_id(new CSeq_id);
                 if (cds_feat->CanGetProduct()) {
                     prot_id.Reset(cds_feat->GetProduct().GetId());
