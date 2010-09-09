@@ -136,7 +136,7 @@ enum EFollowLinks {
 /// On UNIX some functions can be interrupted by a signal and EINTR errno
 /// value. We can restart or cancel its execution.
 enum EInterruptOnSignal {
-    eInterruptOnSignal, ///< Cancel operation if interrapted by a signal
+    eInterruptOnSignal, ///< Cancel operation if interrupted by a signal
     eRestartOnSignal    ///< Restart operation if interrupted by a signal
 };
 
@@ -146,8 +146,8 @@ enum EInterruptOnSignal {
 /////////////////////////////////////////////////////////////////////////////
 
 
-/// Macro to hide all oprators with bool argument which may be used
-/// unintentially when second argument is of class having operator bool().
+/// Macro to hide all operators with bool argument which may be used
+/// unintentionally when second argument is of class having operator bool().
 /// All methods are simply declared private without body definition.
 #define HIDE_SAFE_BOOL_OPERATORS()                      \
     private:                                            \
@@ -374,7 +374,7 @@ struct Creater
     { return new X; }
 };
 
-/// Functor tempate for deleting object.
+/// Functor template for deleting object.
 template<class X>
 struct Deleter
 {
