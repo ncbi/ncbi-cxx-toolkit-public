@@ -358,7 +358,8 @@ void CFastaReader::ParseDefLine(const TStr& s)
             }
             title_start = pos + 1;
             // trim leading whitespace from title (is this appropriate?)
-            while (isspace((unsigned char) s[title_start])) {
+            while (title_start < len
+                   &&  isspace((unsigned char) s[title_start])) {
                 ++title_start;
             }
         }
@@ -372,8 +373,8 @@ void CFastaReader::ParseDefLine(const TStr& s)
             // (done now rather than earlier to avoid rescanning)
             title_start = start;
         }
-        if (pos <= len  ||  !has_id) {
-            ParseTitle(TStr(s.data() + title_start, pos - title_start));
+        if (title_start < min(pos, len)) {
+            ParseTitle(s.substr(title_start, pos - title_start));
         }
         start = pos + 1;
     } while (TestFlag(fAllSeqIds)  &&  start < len  &&  s[start - 1] == '\1'
