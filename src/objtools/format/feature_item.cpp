@@ -26,7 +26,7 @@
 * Author:  Aaron Ucko, NCBI
 *          Mati Shomrat
 * Maintainer: Frank Ludwig
-*						
+*                        
 * File Description:
 *   new (early 2003) flat-file generator -- representation of features
 *   (mainly of interest to implementors)
@@ -757,7 +757,7 @@ bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
     if ( ! feat->IsSetQual() ) {
         return false;
     }
-	const CSeq_feat_Base::TQual & qual = feat->GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+    const CSeq_feat_Base::TQual & qual = feat->GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
     ITERATE( CSeq_feat::TQual, it, qual ) {
         if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) {
             continue;
@@ -2669,8 +2669,7 @@ void CFeatureItem::x_AddQualsGene(
     }
 
     //  gene map:
-	// Commented this out since it didn't seem useful. Need to test if that's so. --mk
-	if (!from_overlap  &&  gene_ref->IsSetMaploc() && subtype == CSeqFeatData::eSubtype_gene) {
+    if (!from_overlap  &&  gene_ref->IsSetMaploc() && subtype == CSeqFeatData::eSubtype_gene) {
         x_AddQual(eFQ_gene_map, new CFlatStringQVal(gene_ref->GetMaploc()));
     }
 }
@@ -2972,7 +2971,7 @@ void CFeatureItem::x_ImportQuals(
     bool is_operon = (m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_operon);
 
     vector<string> replace_quals;
-	const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+    const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
     ITERATE( CSeq_feat::TQual, it, qual ) {
         if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) {
             continue;
@@ -3823,7 +3822,7 @@ void CFeatureItem::x_AddFTableQuals(
     } else if ( m_Feat.IsSetExcept()  &&  m_Feat.GetExcept() ) {
         x_AddFTableQual("exception");
     }
-	const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+    const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
     ITERATE( CSeq_feat::TQual, it, qual ) {
         const CGb_qual& qual = **it;
         const string& key = qual.IsSetQual() ? qual.GetQual() : kEmptyStr;
