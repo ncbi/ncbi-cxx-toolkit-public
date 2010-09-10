@@ -1076,7 +1076,7 @@ void CHistComment::x_GatherInfo(CBioseqContext& ctx)
     case eReplaced_by:
         x_SetComment(s_CreateHistCommentString(
             "[WARNING] On",
-            "this sequence was replaced by ",
+            "this sequence was replaced by",
             m_Hist->GetReplaced_by(),
             ctx.Config().DoHTML()));
         break;

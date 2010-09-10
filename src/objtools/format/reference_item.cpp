@@ -275,6 +275,19 @@ static void s_MergeDuplicates
                 remove = true;
             }
         }
+
+		// check for duplicate references
+		if( curr != refs.begin() ) {
+			const CReferenceItem& prev_ref = **(curr-1);
+
+			// use less-than operator to check for equality
+			LessThan lessThan(false, ctx.IsRefSeq());
+			if( ! lessThan( *(curr-1), *curr ) && ! lessThan( *curr, *(curr-1) ) ) {
+				// they're equal (i.e., duplicates)
+				remove = true;
+			}
+		}
+
         if (remove) {
             curr = refs.erase(curr);
         } else {

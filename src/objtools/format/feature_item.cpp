@@ -2669,7 +2669,8 @@ void CFeatureItem::x_AddQualsGene(
     }
 
     //  gene map:
-    if (!from_overlap  &&  gene_ref->IsSetMaploc()) {
+	// Commented this out since it didn't seem useful. Need to test if that's so. --mk
+	if (!from_overlap  &&  gene_ref->IsSetMaploc() && subtype == CSeqFeatData::eSubtype_gene) {
         x_AddQual(eFQ_gene_map, new CFlatStringQVal(gene_ref->GetMaploc()));
     }
 }
