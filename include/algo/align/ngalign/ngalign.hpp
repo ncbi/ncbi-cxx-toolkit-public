@@ -57,7 +57,7 @@ END_SCOPE(objects)
 
 
 
-class NCBI_XNGALIGN_EXPORT CNgAligner
+class CNgAligner
 {
 public:
 

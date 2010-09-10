@@ -197,7 +197,6 @@
 #  define NCBI_XALGODUSTMASK_EXPORTS
 #  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORTS
 #  define NCBI_XBLASTFORMAT_EXPORTS
-#  define NCBI_XNGALIGN_EXPORTS
 #endif
 
 
@@ -954,14 +953,6 @@
 #  define NCBI_XBLASTFORMAT_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_XBLASTFORMAT_EXPORT NCBI_DLL_IMPORT
-#endif
-
-/* Export specifier for library xngalign
- */
-#ifdef NCBI_XNGALIGN_EXPORTS
-#  define NCBI_XNGALIGN_EXPORT NCBI_DLL_EXPORT
-#else
-#  define NCBI_XNGALIGN_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library align_format

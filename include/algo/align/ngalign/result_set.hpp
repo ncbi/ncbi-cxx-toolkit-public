@@ -62,7 +62,7 @@ class CSplitSeqAlignMerger;
 
 
 // Stores one querys worth of alignments
-class NCBI_XNGALIGN_EXPORT CQuerySet : public CObject
+class CQuerySet : public CObject
 {
 public:
     typedef map<string, CRef<objects::CSeq_align_set> > TSubjectToAlignSet;
@@ -102,7 +102,7 @@ private:
 };
 
 
-class NCBI_XNGALIGN_EXPORT CAlignResultsSet : public CObject
+class CAlignResultsSet : public CObject
 {
 public:
     typedef map<string, CRef<CQuerySet> > TQueryToSubjectSet;

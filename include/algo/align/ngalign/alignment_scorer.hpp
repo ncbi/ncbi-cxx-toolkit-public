@@ -59,7 +59,7 @@ END_SCOPE(objects)
 
 
 
-class NCBI_XNGALIGN_EXPORT CBlastScorer : public IAlignmentScorer
+class CBlastScorer : public IAlignmentScorer
 {
 public:
     CBlastScorer() { ; }
@@ -68,7 +68,7 @@ public:
 };
 
 
-class NCBI_XNGALIGN_EXPORT CPctIdentScorer : public IAlignmentScorer
+class CPctIdentScorer : public IAlignmentScorer
 {
 public:
     CPctIdentScorer() { ; }
@@ -77,7 +77,7 @@ public:
 };
 
 
-class NCBI_XNGALIGN_EXPORT CPctCoverageScorer : public IAlignmentScorer
+class CPctCoverageScorer : public IAlignmentScorer
 {
 public:
     CPctCoverageScorer() { ; }
@@ -86,7 +86,7 @@ public:
 };
 
 
-class NCBI_XNGALIGN_EXPORT CExpansionScorer : public IAlignmentScorer
+class CExpansionScorer : public IAlignmentScorer
 {
 public:
     CExpansionScorer() { ; }
@@ -95,7 +95,7 @@ public:
 };
 
 
-class NCBI_XNGALIGN_EXPORT COverlapScorer : public IAlignmentScorer
+class COverlapScorer : public IAlignmentScorer
 {
 public:
     COverlapScorer(TSeqPos Slop=10) : m_Slop(Slop) { ; }
@@ -107,7 +107,7 @@ private:
 };
 
 
-class NCBI_XNGALIGN_EXPORT CCommonComponentScorer : public IAlignmentScorer
+class CCommonComponentScorer : public IAlignmentScorer
 {
 public:
     CCommonComponentScorer() { ; }

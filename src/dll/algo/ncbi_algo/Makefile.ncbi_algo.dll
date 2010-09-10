@@ -24,9 +24,7 @@ HOSTED_LIBS    = \
                  phytree_format         \
                  xalgoblastdbindex      \
                  xblastformat           \
-                 xblast					\
-				 \
-				 xngalign
+                 xblast
 
 DEPENDENCIES   = \
                  ncbi_core ncbi_general ncbi_misc \
