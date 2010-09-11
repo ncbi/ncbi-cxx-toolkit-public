@@ -2364,6 +2364,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ICRC	s	Insect Control and Research",
 "ICRG	s	Institute of Entomology",
 "ICRI	s	Zhonghan (Sun Yat-Sen) University, Research Institute of Entomology",
+"ICS-CC<ZAF>	c	Infection Control Services , National Health Laboratory Service 3.",
 "ICST	s	Imperial College of Science, Technology & Medicine, Department of Biological Sciences",
 "ICUI	s	University of Iowa",
 "ICVI	s	The Volcani Center",
