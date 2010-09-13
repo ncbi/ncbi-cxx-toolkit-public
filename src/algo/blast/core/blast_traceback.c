@@ -501,13 +501,11 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                                   hsp->subject.gapped_start == 0) ||
                  !BLAST_CheckStartForGappedAlignment(hsp, query, 
                                                      subject, sbp)))) {
-            Int4 max_offset = 
-               BlastGetStartForGappedAlignment(query, subject, sbp,
-                  hsp->query.offset, hsp->query.end - hsp->query.offset,
-                  hsp->subject.offset, hsp->subject.end - hsp->subject.offset);
-            q_start = max_offset;
-            s_start = 
-               (hsp->subject.offset - hsp->query.offset) + max_offset;
+            Boolean retval = 
+               BlastGetOffsetsForGappedAlignment(query, subject, sbp,
+                   hsp, &q_start, &s_start);
+            if (!retval)
+               return -1;
             hsp->query.gapped_start = q_start;
             hsp->subject.gapped_start = s_start;
          } else {

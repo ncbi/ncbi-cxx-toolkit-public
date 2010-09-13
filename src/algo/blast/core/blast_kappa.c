@@ -1466,17 +1466,15 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     } else {
         /* We must recompute the start for the gapped alignment, as the
            one in the HSP was unacceptable.*/
-        q_start =
-            BlastGetStartForGappedAlignment(query_data->data,
+        Boolean retval =
+            BlastGetOffsetsForGappedAlignment(query_data->data,
                                             subject_data->data, sbp,
-                                            hsp->query.offset,
-                                            hsp->query.end -
-                                            hsp->query.offset,
-                                            hsp->subject.offset,
-                                            hsp->subject.end -
-                                            hsp->subject.offset);
-        s_start =
-            (hsp->subject.offset - hsp->query.offset) + q_start;
+                                            hsp,
+                                            &q_start, 
+                                            &s_start);
+        /* ASSERT(retval == TRUE); */
+        if (retval == FALSE)
+           return NULL;
     }
     /* Undo the shift so there is no side effect on the incoming HSP
        list. */

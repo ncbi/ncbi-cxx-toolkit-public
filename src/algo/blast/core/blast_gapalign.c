@@ -2973,6 +2973,81 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
     return best_score;
 }
 
+Boolean
+BlastGetOffsetsForGappedAlignment (const Uint1* query, const Uint1* subject,
+   const BlastScoreBlk* sbp, BlastHSP* hsp, Int4* q_retval, Int4* s_retval)
+{
+    Int4 index1, max_offset, score, max_score, hsp_end;
+    const Uint1* query_var,* subject_var;
+    Boolean positionBased = (sbp->psi_matrix != NULL);
+    Int4 q_length = hsp->query.end - hsp->query.offset;
+    Int4 s_length = hsp->subject.end - hsp->subject.offset;
+    int q_start = hsp->query.offset;
+    int s_start = hsp->subject.offset;
+    
+    if (q_length <= HSP_MAX_WINDOW) {
+        *q_retval = q_start + q_length/2;
+        *s_retval = s_start + q_length/2;
+        return TRUE;
+    }
+
+    hsp_end = q_start + HSP_MAX_WINDOW;
+    query_var = query + q_start;
+    subject_var = subject + s_start;
+    score=0;
+    for (index1=q_start; index1<hsp_end; index1++) {
+        if (!(positionBased))
+            score += sbp->matrix->data[*query_var][*subject_var];
+        else
+            score += sbp->psi_matrix->pssm->data[index1][*subject_var];
+        query_var++; subject_var++;
+    }
+    max_score = score;
+    max_offset = hsp_end - 1;
+    hsp_end = q_start + MIN(q_length, s_length);
+    for (index1=q_start + HSP_MAX_WINDOW; index1<hsp_end; index1++) {
+        if (!(positionBased)) {
+            score -= sbp->matrix->data[*(query_var-HSP_MAX_WINDOW)][*(subject_var-HSP_MAX_WINDOW)];
+            score += sbp->matrix->data[*query_var][*subject_var];
+        } else {
+            score -= sbp->psi_matrix->pssm->data[index1-HSP_MAX_WINDOW][*(subject_var-HSP_MAX_WINDOW)];
+            score += sbp->psi_matrix->pssm->data[index1][*subject_var];
+        }
+        if (score > max_score) {
+            max_score = score;
+            max_offset = index1;
+        }
+        query_var++; subject_var++;
+    }
+
+    if (max_score > 0)
+    {
+        *q_retval = max_offset;
+        *s_retval = (max_offset - q_start) + s_start;
+        return TRUE;
+    }
+    else  /* Test the window around the ends of the HSP. */
+    {
+        score=0;
+        query_var = query + q_start + q_length - HSP_MAX_WINDOW;
+        subject_var = subject + s_start + s_length - HSP_MAX_WINDOW;
+        for (index1=hsp->query.end-HSP_MAX_WINDOW; index1<hsp->query.end; index1++) {
+            if (!(positionBased))
+                score += sbp->matrix->data[*query_var][*subject_var];
+            else
+                score += sbp->psi_matrix->pssm->data[index1][*subject_var];
+            query_var++; subject_var++;
+        }
+        if (score > 0)
+        {
+            *q_retval = hsp->query.end - HSP_MAX_WINDOW/2;
+            *s_retval = hsp->subject.end - HSP_MAX_WINDOW/2;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 Int4 
 BlastGetStartForGappedAlignment (const Uint1* query, const Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 

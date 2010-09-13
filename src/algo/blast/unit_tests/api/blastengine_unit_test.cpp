@@ -61,6 +61,7 @@
 
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_engine.h>
+#include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/blast_setup.h>
@@ -467,5 +468,74 @@ BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch)
                              hsp->subject.end - hsp->subject.offset);
     }
 }
+
+BOOST_AUTO_TEST_CASE(testGappedOffsets)
+{
+    const unsigned char query[] = {'\016', '\007', '\014', '\024', '\004', '\015', '\011', 
+                    '\022', '\012', '\016', '\001', '\010', '\007', '\005', '\014', '\023',
+                    '\021', '\003', '\016', '\005', '\013', '\006', '\020', '\011', '\006', 
+                    '\015', '\016', '\004', '\017'};
+
+    const unsigned char subject[] = {'\000', '\000', '\000', 
+                    '\004', '\015', '\011', '\022', '\012', '\016', '\001', '\010', '\007', 
+                    '\005', '\014', '\023', '\021', '\003', '\016', '\005', '\013', '\006', 
+                    '\020', '\011', '\006', '\015', '\016', '\004', '\017'};
+
+     bool retval = false;
+     BlastScoreBlk *sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
+         // generate score options
+     BlastScoringOptions *score_options;
+     BlastScoringOptionsNew(eBlastTypeBlastp, &score_options);
+     BLAST_FillScoringOptions(score_options,
+                             eBlastTypeBlastp,
+                             FALSE,
+                             0,
+                             0,
+                             NULL,
+                             BLAST_GAP_OPEN_PROT,
+                             BLAST_GAP_EXTN_PROT);
+     Blast_ScoreBlkMatrixInit(eBlastTypeBlastp, score_options, sbp, NULL);
+     BlastScoringOptionsFree(score_options);
+
+     Int4 q_offset, s_offset;
+
+     // This one has a mismatch at the beginning of the HSPs.
+     BlastHSP* hsp = Blast_HSPNew();
+     hsp->query.offset = 0;
+     hsp->query.end = 27;
+     hsp->subject.offset = 0;
+     hsp->subject.end = 26;
+     hsp->score = 45;
+
+     retval = BlastGetOffsetsForGappedAlignment(query, subject, sbp, hsp, &q_offset, &s_offset);
+
+     BOOST_REQUIRE_EQUAL(q_offset, 22);
+     BOOST_REQUIRE_EQUAL(s_offset, 21);
+     BOOST_REQUIRE_EQUAL(retval, true);
+
+     // This one should be OK
+     hsp->query.offset = 4;
+     hsp->query.end = 27;
+     hsp->subject.offset = 3;
+     hsp->subject.end = 26;
+     hsp->score = 45;
+
+     retval = BlastGetOffsetsForGappedAlignment(query, subject, sbp, hsp, &q_offset, &s_offset);
+
+     BOOST_REQUIRE_EQUAL(q_offset, 18);
+     BOOST_REQUIRE_EQUAL(s_offset, 17);
+     BOOST_REQUIRE_EQUAL(retval, true);
+
+     // This should have no solution.
+     hsp->query.offset = 5;
+     hsp->query.end = 20;
+     hsp->subject.offset = 11;
+     hsp->subject.end = 26;
+     hsp->score = 45;
+
+     retval = BlastGetOffsetsForGappedAlignment(query, subject, sbp, hsp, &q_offset, &s_offset);
+     BOOST_REQUIRE_EQUAL(retval, false);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 

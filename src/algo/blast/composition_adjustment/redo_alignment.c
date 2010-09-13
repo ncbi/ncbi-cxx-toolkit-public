@@ -1081,7 +1081,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                                            &subject, &window->subject_range,
                                            matchingSeq->length,
                                            gapping_params);
-                    if (newAlign->score >= params->cutoff_s) {
+                    if (newAlign && newAlign->score >= params->cutoff_s) {
                         s_WithDistinctEnds(&newAlign, &alignments[query_index],
                                            callbacks->free_align_traceback);
                     } else {
