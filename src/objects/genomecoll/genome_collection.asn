@@ -125,6 +125,9 @@ GC-AssemblySet ::= SEQUENCE {
     -- we contain hierarchically a set of assemblies
     primary-assembly GC-Assembly,
     more-assemblies SET OF GC-Assembly OPTIONAL,
+    -- statistics
+    -- "stats" field holds stats for all chromosomes combined:
+    stats GC-SequenceStats OPTIONAL
 
     release-type INTEGER {
         major(0),
@@ -337,10 +340,10 @@ GC-Sequence ::= SEQUENCE {
     --            From: <start-position of region>
     --            To : <end-position of region>
     --      Data: locs (set of seq-loc):
-    --         List of int (seq-interval): 
+    --         List of int (seq-interval):
     --            Id: GI of scaffold
     --              From/to: position on scaffold that belongs to this PAR region.
-    --                  <and repeat this for additional scaffolds on same PAR region>   
+    --                  <and repeat this for additional scaffolds on same PAR region>
     --
     -- in alt-loci units - contain alignment of this sequence to the primary
     -- unit
@@ -370,7 +373,10 @@ GC-Sequence ::= SEQUENCE {
 GC-SequenceStats ::= SEQUENCE {
     all-scaf        SET OF GC-Scaf-stats,
     ordered-scaf    SET OF GC-Scaf-stats,
-    unordered-scaf  SET OF GC-Scaf-stats
+    unordered-scaf  SET OF GC-Scaf-stats, --
+    unplaced-scaf   SET OF GC-Scaf-stats OPTIONAL, -- unplaced at full assembly level
+    aligned-scaf    SET OF GC-Scaf-stats OPTIONAL, -- aligned at full assembly level
+    unaligned-scaf  SET OF GC-Scaf-stats OPTIONAL -- unaligned at full assembly level
 }
 
 GC-Scaf-stats ::= SEQUENCE {
@@ -432,6 +438,7 @@ GC-Scaf-stats ::= SEQUENCE {
         count-uniq-components (87), --INTEGER OPTIONAL ,
         count-uniq-component-diff-from-last-release (88), --INTEGER OPTIONAL,
         count-dropped-components (91), -- dropped component due to foreign screen
+        count-non-chromosome-replicon (92), -- number of non-Chromosome replicons
         other (255) -- catch all
     },
     value INTEGER
