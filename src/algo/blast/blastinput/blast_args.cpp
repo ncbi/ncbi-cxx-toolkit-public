@@ -1544,6 +1544,9 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgNumThreads,
                            CArgDescriptions::eExcludes,
                            kArgRemote);
+    arg_desc.SetDependency(kArgNumThreads,
+                           CArgDescriptions::eExcludes,
+                           kArgSubject);
     arg_desc.SetCurrentGroup("");
 }
 
