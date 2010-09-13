@@ -307,10 +307,15 @@ public:
         ///
 
         /// first, generate a gene model
+        CFeatureGenerator generator(*scope);
+        generator.SetFlags(CFeatureGenerator::fDefaults |
+                           CFeatureGenerator::fGenerateLocalIds);
+        generator.SetAllowedUnaligned(10);
+
+        CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
         CSeq_annot annot;
         CBioseq_set bset;
-        CFeatureGenerator gen(*scope);
-        gen.ConvertAlignToAnnot(align, annot, bset);
+        generator.ConvertAlignToAnnot(*clean_align, annot, bset);
 
         /// extract the CDS and translate it
         CRef<CSeq_feat> cds;
@@ -424,7 +429,7 @@ CAlignFilter::CAlignFilter(const string& query)
 
 void CAlignFilter::SetFilter(const string& filter)
 {
-    static const char *sc_Functions[] = { "MUL", "ADD", NULL };
+    static const char *sc_Functions[] = { "MUL", "ADD", "IS_SEG_TYPE", NULL };
 
     m_Query = filter;
     m_ParseTree.reset(new CQueryParseTree);
@@ -659,7 +664,7 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
         this_val = val1 * val2;
 
     }
-    if (NStr::EqualNocase(function, "ADD")) {
+    else if (NStr::EqualNocase(function, "ADD")) {
         CQueryParseTree::TNode::TNodeList_CI iter =
             node.SubNodeBegin();
         CQueryParseTree::TNode::TNodeList_CI end =
@@ -682,7 +687,54 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
         double val2 = x_TermValue(node2, align);
 
         this_val = val1 + val2;
+    }
+    else if (NStr::EqualNocase(function, "IS_SEG_TYPE")) {
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        const CQueryParseTree::TNode& node1 = **iter;
+        ++iter;
+        if (iter != end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: expected 1, got more than 1");
+        }
 
+        /// this is a bit different - we expect a string type here
+        if (node1.GetValue().GetType() != CQueryParseNode::eString) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid seg type - expected string");
+        }
+        const string& s = node1.GetValue().GetStrValue();
+        if (NStr::EqualNocase(s, "denseg")) {
+            this_val = align.GetSegs().IsDenseg();
+        }
+        else if (NStr::EqualNocase(s, "spliced")) {
+            this_val = align.GetSegs().IsSpliced();
+        }
+        else if (NStr::EqualNocase(s, "disc")) {
+            this_val = align.GetSegs().IsDisc();
+        }
+        else if (NStr::EqualNocase(s, "std")) {
+            this_val = align.GetSegs().IsStd();
+        }
+        else if (NStr::EqualNocase(s, "sparse")) {
+            this_val = align.GetSegs().IsSparse();
+        }
+        else if (NStr::EqualNocase(s, "dendiag")) {
+            this_val = align.GetSegs().IsDendiag();
+        }
+        else if (NStr::EqualNocase(s, "packed")) {
+            this_val = align.GetSegs().IsPacked();
+        }
+        else {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid seg type: " + s);
+        }
+    }
+    else {
+        NCBI_THROW(CException, eUnknown,
+                   "function not understood: " + function);
     }
 
     return this_val;
