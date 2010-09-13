@@ -1308,7 +1308,7 @@ static CONNECTOR s_CreateConnector
         return 0;
     }
     if (xxx->scheme == eURL_Unspec)
-        xxx->scheme = eURL_Http;
+        xxx->scheme =  eURL_Http;
 
     if (!(ccc = (SConnector    *) malloc(sizeof(SConnector    )))  ||
         !(uuu = (SHttpConnector*) malloc(sizeof(SHttpConnector)))) {
