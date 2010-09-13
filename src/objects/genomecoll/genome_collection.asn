@@ -124,7 +124,15 @@ GC-AssemblySet ::= SEQUENCE {
 
     -- we contain hierarchically a set of assemblies
     primary-assembly GC-Assembly,
-    more-assemblies SET OF GC-Assembly OPTIONAL
+    more-assemblies SET OF GC-Assembly OPTIONAL,
+
+    release-type INTEGER {
+        major(0),
+        patch(1),
+
+        -- stopper
+        other(255)
+    } DEFAULT major
 }
 
 -- GC-TaggedSequences: set of sequences in a specific role
@@ -346,7 +354,14 @@ GC-Sequence ::= SEQUENCE {
     structure Delta-ext OPTIONAL,
 
     -- statistics
-    stats GC-SequenceStats OPTIONAL
+    stats GC-SequenceStats OPTIONAL,
+
+    patch-type INTEGER {
+        novel(0),
+        fix(1),
+        -- stopper
+        other(255)
+    } OPTIONAL
 }
 
 
