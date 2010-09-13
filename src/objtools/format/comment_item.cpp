@@ -456,7 +456,7 @@ string CCommentItem::GetStringForRefTrack
     }
 
     if ( !identical_to.empty() ) {
-        oss << "   The reference sequence is identical to "
+        oss << " The reference sequence is identical to "
             << identical_to << ".";
     }
 
@@ -976,7 +976,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 
     CNcbiOstrstream text;
 
-    text << "GENOME ANNOTATION " << *refseq << ":  ";
+    text << "GENOME ANNOTATION " << *refseq << ": ";
     if ( !m_GenomeBuildNumber.empty() ) {
          text << "Features on this sequence have been produced for build "
               << m_GenomeBuildNumber << " of the NCBI's genome annotation"

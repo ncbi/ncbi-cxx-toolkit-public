@@ -383,7 +383,8 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
             const CObject_id& tag = (*it)->GetTag();
             string id = (tag.IsStr() ? tag.GetStr()
                                      : NStr::IntToString(tag.GetId()));
-            if ((*it)->GetDb() == "MIM") {
+            string db = (*it)->GetDb();
+            if ( db == "MIM") {
                 if (ctx.Config().DoHTML()) {
                     xrefs.push_back
                         ("MIM <a href=\""
@@ -393,7 +394,13 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
                     xrefs.push_back("MIM:" + id);
                 }
             } else {
-                xrefs.push_back((*it)->GetDb() + ':' + id); // no space(!)
+                // For exmaple, HGNC has HGNC as part of its identifier, so we may need to eliminate 
+                // such redundancies (example accession: Q02094.1)
+                if( id.substr(0, db.length() + 1) == (db + ":") ) {
+                    xrefs.push_back(id); // in this case, id already has db at beginning
+                } else {
+                    xrefs.push_back(db + ':' + id); // no space(!)
+                }
             }
         }
         m_DBSource.push_back
@@ -448,7 +455,7 @@ void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
     const CPDB_block& pdb = dsc->GetPdb();
     {{
         string s("deposition: ");
-        DateToString(pdb.GetDeposition(), s);
+        s_FormatDate(pdb.GetDeposition(), s);
         m_DBSource.push_back(s);
     }}
     m_DBSource.push_back("class: " + pdb.GetClass());
@@ -502,16 +509,16 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
             string s("pdb: "), sep;
             if ( !pdb.GetMol().Get().empty() ) {
                 s += "molecule " + pdb.GetMol().Get();
-                sep = ",";
+                sep = ", ";
             }
             if (pdb.GetChain() > 0) {
                 s += sep + "chain " + NStr::IntToString(pdb.GetChain());
-                sep = ",";
+                sep = ", ";
             }
             if (pdb.CanGetRel()) {
                 s += sep + "release ";
-                DateToString(pdb.GetRel(), s);
-                sep = ",";
+                s_FormatDate(pdb.GetRel(), s);
+                sep = ", ";
             }
             return s;
         }}

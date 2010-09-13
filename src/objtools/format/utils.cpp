@@ -592,7 +592,6 @@ void DateToString(const CDate& date, string& str,  bool is_cit_sub)
     str.append(date_str);
 }
 
-
 void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
 {
     if ( !seq.IsSetInst()                                ||

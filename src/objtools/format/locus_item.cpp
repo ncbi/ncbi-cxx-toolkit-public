@@ -238,7 +238,8 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
 bool CLocusItem::x_NameHasBadChars(const string& name) const
 {
     ITERATE(string, iter, name) {
-        if ( !isalnum((unsigned char)(*iter)) ) {
+        unsigned char current_char = (unsigned char)(*iter);
+        if ( !isalnum(current_char) && current_char != '_' ) {
             return true;
         }
     }
@@ -432,9 +433,9 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     case CMolInfo::eTech_htc:
         m_Division = "HTC";
         break;
-	case CMolInfo::eTech_tsa:
-		m_Division = "TSA";
-		break;
+    case CMolInfo::eTech_tsa:
+        m_Division = "TSA";
+        break;
     default:
         break;
     }

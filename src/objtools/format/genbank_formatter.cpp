@@ -254,7 +254,7 @@ void CGenbankFormatter::FormatGenomeProject(
     }
     list<string> l;
     CNcbiOstrstream project_line;
-    project_line << "Project:" << gp.GetProjectNumber();
+    project_line << "Project: " << gp.GetProjectNumber();
     Wrap(l, GetWidth(), "DBLINK", CNcbiOstrstreamToString(project_line));
     text_os.AddParagraph(l, gp.GetObject());
 }
@@ -628,7 +628,7 @@ void CGenbankFormatter::FormatFeature
  IFlatTextOStream& text_os)
 { 
     CConstRef<CFlatFeature> feat = f.Format();
-	const vector<CRef<CFormatQual> > & quals = feat->GetQuals();
+    const vector<CRef<CFormatQual> > & quals = feat->GetQuals();
     list<string>        l, l_new;
     Wrap(l, feat->GetKey(), feat->GetLoc().GetString(), eFeat);
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
@@ -872,9 +872,15 @@ void CGenbankFormatter::FormatContig
     list<string> l;
     string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
         CFlatSeqLoc::eType_assembly).GetString();
+
+    // must have our info inside "join" in all cases
     if (assembly.empty()) {
         assembly = "join()";
     }
+    if( assembly.substr( 0, 5 ) != "join(" ) {
+        assembly = "join(" + assembly + ")";  // example where needed: accession NG_005477.4
+    }
+
     Wrap(l, "CONTIG", assembly);
     text_os.AddParagraph(l, contig.GetObject());
 }
@@ -914,29 +920,29 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
 {
     list<string> l;
 
-	TSeqPos gapStart = gap.GetFrom();
-	TSeqPos gapEnd   = gap.GetTo();
+    TSeqPos gapStart = gap.GetFrom();
+    TSeqPos gapEnd   = gap.GetTo();
 
-	const bool isGapOfLengthZero = ( gapStart > gapEnd );
+    const bool isGapOfLengthZero = ( gapStart > gapEnd );
 
-	// size zero gaps require an adjustment to print right
-	if( isGapOfLengthZero ) {
-		gapStart--;
-		gapEnd++;
-	}
+    // size zero gaps require an adjustment to print right
+    if( isGapOfLengthZero ) {
+        gapStart--;
+        gapEnd++;
+    }
 
-	    // format location
+        // format location
     string loc = NStr::UIntToString(gapStart);
     loc += "..";
     loc += NStr::UIntToString(gapEnd);
 
     Wrap(l, "gap", loc, eFeat);
 
-	// size zero gaps indicate non-consecutive residues
-	if( isGapOfLengthZero ) {
-		NStr::Wrap("\"Non-consecutive residues\"", GetWidth(), l, SetWrapFlags(),
-			GetFeatIndent(), GetFeatIndent() + "/note=");
-	}
+    // size zero gaps indicate non-consecutive residues
+    if( isGapOfLengthZero ) {
+        NStr::Wrap("\"Non-consecutive residues\"", GetWidth(), l, SetWrapFlags(),
+            GetFeatIndent(), GetFeatIndent() + "/note=");
+    }
 
     // format mandtory /estimated_length qualifier
     string estimated_length;
