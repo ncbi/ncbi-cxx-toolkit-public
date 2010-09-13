@@ -59,6 +59,22 @@ GC-GenomicPart ::= CHOICE {
 }
 
 
+
+--
+-- A GC-Assemblies is a mere set of assemblies.
+-- used for returning list of assemblies from a search
+--
+
+GC-Query ::= SEQUENCE {
+        param   VisibleString,
+        value   VisibleString 
+}
+
+GC-Assemblies ::= SEQUENCE {
+    query SET OF GC-Query OPTIONAL, 
+    assemblies SET OF GC-Assembly
+}
+
 --
 -- A GC-Assembly is either a single assembly unit or it is a set of assemblies
 --
