@@ -127,7 +127,7 @@ GC-AssemblySet ::= SEQUENCE {
     more-assemblies SET OF GC-Assembly OPTIONAL,
     -- statistics
     -- "stats" field holds stats for all chromosomes combined:
-    stats GC-SequenceStats OPTIONAL
+    stats GC-SequenceStats OPTIONAL,
 
     release-type INTEGER {
         major(0),
