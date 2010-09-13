@@ -2330,7 +2330,7 @@ BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
     
     // all elements of a5 have to be in the intersect list
     // unless they are also found in a3
-    for(int i = 0; i < a5.size(); i++) {
+    for(int i = 0; i < (int)a5.size(); i++) {
         if (gi3.FindGi(a5[i])) {
             BOOST_REQUIRE(false == both.FindGi(a5[i]));
         } else {
@@ -3939,23 +3939,66 @@ BOOST_AUTO_TEST_CASE(FindGnomonIds)
             vector<int> oids;
             db.AccessionToOids(gnomon_ids[i], oids);
             BOOST_REQUIRE( !oids.empty() );
-            BOOST_REQUIRE_EQUAL(i, oids.front());
+            BOOST_REQUIRE_EQUAL(i, (size_t)oids.front());
         }}
         {{
             vector<int> oids;
             CSeq_id id(gnomon_ids[i]);
             db.SeqidToOids(id, oids);
             BOOST_REQUIRE( !oids.empty() );
-            BOOST_REQUIRE_EQUAL(i, oids.front());
+            BOOST_REQUIRE_EQUAL(i, (size_t)oids.front());
         }}
         {{
             int oid = -1;
             CSeq_id id(gnomon_ids[i]);
             bool found = db.SeqidToOid(id, oid);
             BOOST_REQUIRE(found);
-            BOOST_REQUIRE_EQUAL(i, oid);
+            BOOST_REQUIRE_EQUAL(i, (size_t)oid);
         }}
     }
+}
+
+BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
+{
+    CTmpFile gilist_tmpfile;
+    CTmpFile alias_file_tmpfile;
+    string blastdb_name = alias_file_tmpfile.GetFileName() + ".pal";
+    CFileDeleteAtExit::Add(blastdb_name);
+    const int kGiIncluded = 129295;
+
+    {{
+        CNcbiOstream& stream =
+            gilist_tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+        stream << kGiIncluded << endl;
+    }}
+    {{
+        ofstream stream(blastdb_name.c_str());
+        stream << "TITLE test for 129295 JIRA SB-646" << endl;
+        stream << "DBLIST nr" << endl;
+        stream << "GILIST " << gilist_tmpfile.GetFileName() << endl;
+        stream.close();
+    }}
+
+    CRef<CSeqDB> db(new CSeqDB(alias_file_tmpfile.GetFileName(), 
+                               CSeqDB::eProtein));
+    vector<int> oids;
+    db->AccessionToOids(NStr::IntToString(kGiIncluded), oids);
+    BOOST_REQUIRE_EQUAL(1U, oids.size());
+
+    int gi2search = 129;    // shouldn't be found
+    oids.clear();
+    db->AccessionToOids(NStr::IntToString(gi2search), oids);
+    BOOST_CHECK_EQUAL(0U, oids.size());
+
+    int oid = -1;
+    bool found = false;
+    found = db->GiToOid(kGiIncluded, oid);
+    BOOST_REQUIRE_EQUAL(true, found);
+
+    found = false;
+    oid = -1;
+    found = db->GiToOid(gi2search, oid);
+    BOOST_CHECK_EQUAL(false, found);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

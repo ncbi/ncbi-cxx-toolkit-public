@@ -78,6 +78,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_defline) {
                        "Entry not found in BLAST database");
         }
     }
+    _ASSERT(m_Bioseq.NotEmpty());
 }
 
 string CBlastDBExtractor::ExtractOid() {
@@ -333,12 +334,14 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     }
 
     CRef<CBioseq> bioseq(m_BlastDb.GetBioseq(m_Oid, target_gi)); 
+    _ASSERT(bioseq.NotEmpty());
 
     if (m_UseCtrlA) {
         s_ReplaceCtrlAsInTitle(bioseq);
     }
 
     CRef<CSeq_id> seqid = FindBestChoice(bioseq->GetId(), CSeq_id::BestRank);
+    _ASSERT(seqid.NotEmpty());
 
     // Handle the case when a sequence range is provided
     CRef<CSeq_loc> range;
