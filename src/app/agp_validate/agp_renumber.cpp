@@ -51,6 +51,7 @@ const char* usage=
 " - Recalculate the object begin and end coordinates from\n"
 "   the length of the component span or gap length.\n"
 " - Renumber the part numbers for each object.\n"
+" - Lowercase gap type and linkage.\n"
 " - Reformat white space to conform to the AGP format specification:\n"
 "   - add missing tabs at the ends of gap lines;\n"
 "   - drop blank lines;\n"
@@ -216,12 +217,15 @@ int ProcessStream(istream &in, ostream& out)
   bool had_space    =false;
   bool had_extra_tab=false;
   bool no_eol_at_eof=false;
+  bool bad_case_gap =false;
 
   while( NcbiGetline(in, s, "\r\n") ) {
     // get rid of spaces except in or in front of EOL #comments
     char prev_ch=0;
     int tab_count=0;
     bool at_beg=true;
+
+    char component_type=0;
     for(SIZE_TYPE i=0; i<s.size(); i++) {
       char ch=s[i];
       switch(ch) {
@@ -253,6 +257,16 @@ int ProcessStream(istream &in, ostream& out)
           *buf << s.substr(i);
           goto EndFor;
         default:
+          // 2010/09/14 lowercase gap type and linkage
+          if(prev_ch=='\t' && tab_count==4) {
+            component_type=ch;
+          }
+          if( (component_type=='N' || component_type=='U') &&
+              (tab_count==6 || tab_count==7) && tolower(ch)!=ch
+          ) {
+            ch=tolower(ch); bad_case_gap=true;
+          }
+
           if(tab_count>8) {
             // A fatal error - let CAgpRow catch it and complain
             *buf << '\t' << s.substr(i);
@@ -296,6 +310,7 @@ int ProcessStream(istream &in, ostream& out)
   if(renum.had_empty_line) cerr << "Empty line(s) removed.\n";
   if(renum.custom_err.had_missing_tab) cerr << "Missing tabs added at the ends of gap lines.\n";
   if(no_eol_at_eof       ) cerr << "Line break added at the end of file.\n";
+  if(bad_case_gap        ) cerr << "Gap type/linkage converted to lower case.\n";
   if(renum.renum_objs    ) cerr << renum.renum_objs << " object(s) renumbered.\n";
   if(renum.no_renum_objs ) {
     if(renum.renum_objs)
