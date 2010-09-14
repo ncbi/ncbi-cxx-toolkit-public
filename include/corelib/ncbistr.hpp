@@ -1945,10 +1945,11 @@ typedef Uint4 TUnicodeSymbol;
 #  define __NO_EXPORT_STRINGUTF8__ 1
 #endif
 #if defined(__NO_EXPORT_STRINGUTF8__)
-class CStringUTF8 : public string
+#  define NCBI_STRINGUTF8_EXPORTS
 #else
-class NCBI_XNCBI_EXPORT CStringUTF8 : public string
+#  define NCBI_STRINGUTF8_EXPORT NCBI_XNCBI_EXPORT
 #endif
+class NCBI_STRINGUTF8_EXPORT CStringUTF8 : public string
 {
 public:
 
