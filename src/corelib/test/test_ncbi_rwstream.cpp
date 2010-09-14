@@ -80,7 +80,7 @@ public:
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t*     bytes_written = 0);
     
-    virtual ERW_Result Flush(void) { return m_Err ? eRW_Success : eRW_Error; }
+    virtual ERW_Result Flush(void) { return m_Err ? eRW_Error : eRW_Success; }
 
     size_t GetPosition(void) const { return m_Pos;  }
     size_t GetSize(void)     const { return m_Size; }
@@ -176,7 +176,6 @@ ERW_Result CMyWriter::Write(const void* buf, size_t count,
             result = eRW_Error;
         } else
             result = eRW_Success;
-        n_written = x_written;
     } else {
         n_written = 0;
         m_Err  = true;
@@ -222,11 +221,11 @@ int main(int argc, char* argv[])
 
     ERR_POST(Info << "Generating data: " << kHugeBufsize << " random bytes");
 
-    for (size_t n = 0;  n < kHugeBufsize;  n++) {
-        hugedata[n]                = rand() & 0xFF;
-    }
-    for (size_t n = 0;  n < kHugeBufsize;  n++) {
-        hugedata[n + kHugeBufsize] = 0xED;
+    for (size_t n = 0;  n < kHugeBufsize;  n += 2) {
+        hugedata[n]                    = rand() & 0xFF;
+        hugedata[n + 1]                = rand() & 0xFF;
+        hugedata[n + kHugeBufsize]     = 0xDE;
+        hugedata[n + kHugeBufsize + 1] = 0xAD;
     }
 
     ERR_POST(Info << "Pumping data from with random I/O");
