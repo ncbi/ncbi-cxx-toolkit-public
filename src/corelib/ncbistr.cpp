@@ -3560,13 +3560,23 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CStringUTF8
+//  CStringUTF8_Helper
+#if !defined(__NO_EXPORT_STRINGUTF8__)
+#  define CStringUTF8_Helper  CStringUTF8
+#endif
 
-SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
+#if defined(__NO_EXPORT_STRINGUTF8__)
+SIZE_TYPE CStringUTF8_Helper::GetSymbolCount( const CStringUTF8& self)
+#else
+SIZE_TYPE CStringUTF8::GetSymbolCount( void) const
+#endif
 {
+#if !defined(__NO_EXPORT_STRINGUTF8__)
+    const CStringUTF8& self(*this);
+#endif
     SIZE_TYPE count = 0;
-    const_iterator src = begin();
-    const_iterator to = end();
+    CStringUTF8::const_iterator src = self.begin();
+    CStringUTF8::const_iterator to = self.end();
     for (; src != to; ++src, ++count) {
         SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
@@ -3576,14 +3586,14 @@ SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
         if ( !good ) {
             NCBI_THROW2(CStringException, eFormat,
                         "String is not in UTF8 format",
-                        (src - begin()));
+                        (src - self.begin()));
         }
     }
     return count;
 }
 
 
-SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8_Helper::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0, cur_size=0;
     CTempString::const_iterator i = src.begin();
@@ -3602,7 +3612,7 @@ SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf
 }
 
 
-SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8_Helper::GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0;
     SIZE_TYPE cur_size = 0;
@@ -3626,15 +3636,25 @@ SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_
 }
 
 
-string CStringUTF8::AsSingleByteString(EEncoding encoding,
-    const char* substitute_on_error) const
+#if defined(__NO_EXPORT_STRINGUTF8__)
+string CStringUTF8_Helper::AsSingleByteString(
+    const CStringUTF8& self,EEncoding encoding, const char* substitute_on_error)
+#else
+string CStringUTF8::AsSingleByteString(
+    EEncoding encoding, const char* substitute_on_error) const
+#endif
 {
     string result;
+#if defined(__NO_EXPORT_STRINGUTF8__)
+    result.reserve( GetSymbolCount(self)+1 );
+#else
     result.reserve( GetSymbolCount()+1 );
-    const_iterator src = begin();
-    const_iterator to = end();
+    const CStringUTF8& self(*this);
+#endif
+    CStringUTF8::const_iterator src = self.begin();
+    CStringUTF8::const_iterator to = self.end();
     for ( ; src != to; ++src ) {
-        TUnicodeSymbol sym = Decode( src );
+        TUnicodeSymbol sym = CStringUTF8::Decode( src );
         if (substitute_on_error) {
             try {
                 result.append(1, SymbolToChar( sym, encoding));
@@ -3650,7 +3670,7 @@ string CStringUTF8::AsSingleByteString(EEncoding encoding,
 }
 
 
-EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
+EEncoding CStringUTF8_Helper::GuessEncoding( const CTempString& src)
 {
     SIZE_TYPE more = 0;
     CTempString::const_iterator i = src.begin();
@@ -3699,7 +3719,7 @@ EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
 }
 
 
-bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
+bool CStringUTF8_Helper::MatchEncoding( const CTempString& src, EEncoding encoding)
 {
     bool matches = false;
     EEncoding enc_src = GuessEncoding(src);
@@ -3732,7 +3752,7 @@ static const TUnicodeSymbol s_cp1252_table[] = {
 };
 
 
-TUnicodeSymbol CStringUTF8::CharToSymbol(char c, EEncoding encoding)
+TUnicodeSymbol CStringUTF8_Helper::CharToSymbol(char c, EEncoding encoding)
 {
     Uint1 ch = c;
     switch (encoding)
@@ -3757,7 +3777,7 @@ TUnicodeSymbol CStringUTF8::CharToSymbol(char c, EEncoding encoding)
 }
 
 
-char CStringUTF8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
+char CStringUTF8_Helper::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
 {
     if( encoding == eEncoding_UTF8 || encoding == eEncoding_Unknown) {
         NCBI_THROW2(CStringException, eBadArgs,
@@ -3781,40 +3801,63 @@ char CStringUTF8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
 }
 
 
+#if defined(__NO_EXPORT_STRINGUTF8__)
+void CStringUTF8_Helper::x_Validate(const CStringUTF8& self)
+#else
 void CStringUTF8::x_Validate(void) const
+#endif
 {
-    if (!IsValid()) {
+#if !defined(__NO_EXPORT_STRINGUTF8__)
+    const CStringUTF8& self(*this);
+#endif
+    if (!self.IsValid()) {
         NCBI_THROW2(CStringException, eBadArgs,
             "Source string is not in UTF8 format", 0);
     }
 }
 
 
-void CStringUTF8::x_AppendChar(TUnicodeSymbol c)
+#if defined(__NO_EXPORT_STRINGUTF8__)
+void CStringUTF8_Helper::x_AppendChar( CStringUTF8& self, TUnicodeSymbol c)
+#else
+void CStringUTF8::x_AppendChar( TUnicodeSymbol c)
+#endif
 {
+#if !defined(__NO_EXPORT_STRINGUTF8__)
+    CStringUTF8& self(*this);
+#endif
     Uint4 ch = c;
     if (ch < 0x80) {
-        append(1, Uint1(ch));
+        self.append(1, Uint1(ch));
     }
     else if (ch < 0x800) {
-        append(1, Uint1( (ch >>  6)         | 0xC0));
-        append(1, Uint1( (ch        & 0x3F) | 0x80));
+        self.append(1, Uint1( (ch >>  6)         | 0xC0));
+        self.append(1, Uint1( (ch        & 0x3F) | 0x80));
     } else if (ch < 0x10000) {
-        append(1, Uint1( (ch >> 12)         | 0xE0));
-        append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
-        append(1, Uint1(( ch        & 0x3F) | 0x80));
+        self.append(1, Uint1( (ch >> 12)         | 0xE0));
+        self.append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
+        self.append(1, Uint1(( ch        & 0x3F) | 0x80));
     } else {
-        append(1, Uint1( (ch >> 18)         | 0xF0));
-        append(1, Uint1(((ch >> 12) & 0x3F) | 0x80));
-        append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
-        append(1, Uint1( (ch        & 0x3F) | 0x80));
+        self.append(1, Uint1( (ch >> 18)         | 0xF0));
+        self.append(1, Uint1(((ch >> 12) & 0x3F) | 0x80));
+        self.append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
+        self.append(1, Uint1( (ch        & 0x3F) | 0x80));
     }
 }
 
 
-void CStringUTF8::x_Append(const CTempString& src,
-                           EEncoding encoding, EValidate validate)
+#if defined(__NO_EXPORT_STRINGUTF8__)
+void CStringUTF8_Helper::x_Append(
+    CStringUTF8& self,
+    const CTempString& src, EEncoding encoding, EValidate validate)
+#else
+void CStringUTF8::x_Append(
+    const CTempString& src, EEncoding encoding, EValidate validate)
+#endif
 {
+#if !defined(__NO_EXPORT_STRINGUTF8__)
+    CStringUTF8& self(*this);
+#endif
     if (encoding == eEncoding_Unknown) {
         encoding = GuessEncoding(src);
         if (encoding == eEncoding_Unknown) {
@@ -3828,7 +3871,7 @@ void CStringUTF8::x_Append(const CTempString& src,
         }
     }
     if (encoding == eEncoding_UTF8 || encoding == eEncoding_Ascii) {
-        append(src);
+        self.append(src);
         return;
     }
 
@@ -3841,14 +3884,17 @@ void CStringUTF8::x_Append(const CTempString& src,
     if ( !needed ) {
         return;
     }
-    reserve(max(capacity(),length()+needed+1));
+    self.reserve(max(self.capacity(),self.length()+needed+1));
     for (i = src.begin(); i != end; ++i) {
-        x_AppendChar( CharToSymbol( *i, encoding ) );
+#if defined(__NO_EXPORT_STRINGUTF8__)
+        x_AppendChar( self, CharToSymbol( *i, encoding ) );
+#else
+        x_AppendChar(       CharToSymbol( *i, encoding ) );
+#endif
     }
 }
 
-
-SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol c)
+SIZE_TYPE CStringUTF8_Helper::x_BytesNeeded(TUnicodeSymbol c)
 {
     Uint4 ch = c;
     if (ch < 0x80) {
@@ -3862,7 +3908,7 @@ SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol c)
 }
 
 
-bool CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
+bool CStringUTF8_Helper::x_EvalFirst(char ch, SIZE_TYPE& more)
 {
     more = 0;
     if ((ch & 0x80) != 0) {
@@ -3888,12 +3934,12 @@ bool CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
 }
 
 
-bool CStringUTF8::x_EvalNext(char ch)
+bool CStringUTF8_Helper::x_EvalNext(char ch)
 {
     return (ch & 0xC0) == 0x80;
 }
 
-TUnicodeSymbol CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
+TUnicodeSymbol CStringUTF8_Helper::DecodeFirst(char ch, SIZE_TYPE& more)
 {
     TUnicodeSymbol chRes = 0;
     more = 0;
@@ -3916,7 +3962,7 @@ TUnicodeSymbol CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
 }
 
 
-TUnicodeSymbol CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
+TUnicodeSymbol CStringUTF8_Helper::DecodeNext(TUnicodeSymbol chU, char ch)
 {
     if ((ch & 0xC0) == 0x80) {
         return (chU << 6) | (ch & 0x3F);

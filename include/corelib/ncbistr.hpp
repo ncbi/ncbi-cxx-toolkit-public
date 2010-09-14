@@ -1939,14 +1939,23 @@ enum EEncoding {
 };
 typedef Uint4 TUnicodeSymbol;
 
+// On MSVC2010, we cannot export CStringUTF8
+// So, all its methods must be inline
+#if defined(NCBI_COMPILER_MSVC) && (_MSC_VER >= 1600)
+#  define __NO_EXPORT_STRINGUTF8__ 1
+#endif
+#if defined(__NO_EXPORT_STRINGUTF8__)
+class CStringUTF8 : public string
+#else
 class NCBI_XNCBI_EXPORT CStringUTF8 : public string
+#endif
 {
 public:
 
     /// How to verify the character encoding of the source data
     enum EValidate {
-        eNoValidate,
-        eValidate
+        eNoValidate =0,
+        eValidate   =1
     };
 
     /// How to interpret zeros in the source character buffer -
@@ -2401,6 +2410,7 @@ private:
     }
 
     void   x_Validate(void) const;
+
     /// Convert Unicode code point into UTF8 and append
     void   x_AppendChar(TUnicodeSymbol ch);
     /// Convert coded character sequence into UTF8 and append
@@ -2429,7 +2439,117 @@ private:
     static bool   x_EvalNext(char ch);
 };
 
+#if defined(__NO_EXPORT_STRINGUTF8__)
+class NCBI_XNCBI_EXPORT CStringUTF8_Helper
+{
+friend class CStringUTF8;
+public:
+    enum EValidate {
+        eNoValidate =0,
+        eValidate   =1
+    };
+    static SIZE_TYPE GetSymbolCount(const CStringUTF8& self);
+    static SIZE_TYPE GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size);
+    static string AsSingleByteString(const CStringUTF8& self, EEncoding encoding, const char* substitute_on_error);
+    static EEncoding GuessEncoding( const CTempString& src);
+    static bool MatchEncoding( const CTempString& src, EEncoding encoding);
+    static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
+    static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
+    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
+    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
+private:
+    static void   x_Validate(const CStringUTF8& self);
+    static void   x_AppendChar(CStringUTF8& self, TUnicodeSymbol ch);
+    static void   x_Append(CStringUTF8& self, const CTempString& src,EEncoding encoding, EValidate validate);
+    static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
+    static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
+    static bool   x_EvalNext(char ch);
+};
 
+inline
+SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
+{
+    return CStringUTF8_Helper::GetSymbolCount(*this);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
+{
+    return CStringUTF8_Helper::GetValidSymbolCount(src, buf_size);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size)
+{
+    return CStringUTF8_Helper::GetValidBytesCount(src,buf_size);
+}
+inline
+string CStringUTF8::AsSingleByteString(EEncoding encoding,
+    const char* substitute_on_error) const
+{
+    return CStringUTF8_Helper::AsSingleByteString(*this,encoding,substitute_on_error);
+}
+inline
+EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
+{
+    return CStringUTF8_Helper::GuessEncoding(src);
+}
+inline
+bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
+{
+    return CStringUTF8_Helper::MatchEncoding(src,encoding);
+}
+inline
+TUnicodeSymbol CStringUTF8::CharToSymbol(char ch, EEncoding encoding)
+{
+    return CStringUTF8_Helper::CharToSymbol(ch,encoding);
+}
+inline
+char CStringUTF8::SymbolToChar(TUnicodeSymbol sym, EEncoding encoding)
+{
+    return CStringUTF8_Helper::SymbolToChar(sym,encoding);
+}
+inline
+TUnicodeSymbol  CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
+{
+    return CStringUTF8_Helper::DecodeFirst(ch,more);
+}
+inline
+TUnicodeSymbol  CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
+{
+    return CStringUTF8_Helper::DecodeNext(chU,ch);
+}
+inline
+void   CStringUTF8::x_Validate(void) const
+{
+    CStringUTF8_Helper::x_Validate(*this);
+}
+inline
+void   CStringUTF8::x_AppendChar(TUnicodeSymbol ch)
+{
+    CStringUTF8_Helper::x_AppendChar(*this, ch);
+}
+inline
+void   CStringUTF8::x_Append(const CTempString& src,
+                EEncoding encoding, EValidate validate)
+{
+    CStringUTF8_Helper::x_Append(*this, src, encoding, (CStringUTF8_Helper::EValidate)validate);
+}
+inline
+SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol ch)
+{
+    return CStringUTF8_Helper::x_BytesNeeded(ch);
+}
+inline
+bool   CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
+{
+    return CStringUTF8_Helper::x_EvalFirst(ch, more);
+}
+inline
+bool   CStringUTF8::x_EvalNext(char ch)
+{
+    return CStringUTF8_Helper::x_EvalNext(ch);
+}
+#endif // __NO_EXPORT_STRINGUTF8__
 
 /////////////////////////////////////////////////////////////////////////////
 ///
