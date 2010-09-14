@@ -604,18 +604,23 @@ void CFeatureGenerator::SImplementation::x_CreateMrnaBioseq(const CSeq_align& al
     entry->SetSeq().SetDescr().Set().push_back(mdes);
     mdes->SetMolinfo().SetBiomol(cdregion==NULL ? CMolInfo::eBiomol_ncRNA : CMolInfo::eBiomol_mRNA);
 
-    mdes->SetMolinfo().SetCompleteness
-        (IsContinuous(*loc) ?
-         (cdregion == NULL  ? CMolInfo::eCompleteness_unknown :
-          (!cdregion->GetLocation().IsPartialStart(eExtreme_Biological)?
-           (!cdregion->GetLocation().IsPartialStop(eExtreme_Biological)?
-            CMolInfo::eCompleteness_unknown:
-            CMolInfo::eCompleteness_no_right):
-           (!cdregion->GetLocation().IsPartialStop(eExtreme_Biological)?
-            CMolInfo::eCompleteness_no_left:
-            CMolInfo::eCompleteness_no_ends))):
-         CMolInfo::eCompleteness_partial
-        );
+    CMolInfo::ECompleteness completeness;
+    if (!IsContinuous(*loc)) {
+        completeness = CMolInfo::eCompleteness_partial;
+    } else if (cdregion==NULL) {
+        completeness = CMolInfo::eCompleteness_unknown;
+    } else if (cdregion->GetLocation().IsPartialStart(eExtreme_Biological) &&
+               cdregion->GetLocation().IsPartialStop(eExtreme_Biological)
+               ) {
+        completeness = CMolInfo::eCompleteness_no_ends;
+    } else if (cdregion->GetLocation().IsPartialStart(eExtreme_Biological)) {
+        completeness = CMolInfo::eCompleteness_no_left;
+    } else if (cdregion->GetLocation().IsPartialStop(eExtreme_Biological)) {
+        completeness = CMolInfo::eCompleteness_no_right;
+    } else {
+        completeness = CMolInfo::eCompleteness_unknown;
+    }
+    mdes->SetMolinfo().SetCompleteness(completeness);
 
     x_CollectMrnaSequence(bioseq.SetInst(), align, *loc);
 
@@ -657,17 +662,23 @@ void CFeatureGenerator::SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc
 
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-    desc->SetMolinfo().SetCompleteness(
-	IsContinuous(*cds_loc)?
-	    (!cds_loc->IsPartialStart(eExtreme_Biological)?
-		(!cds_loc->IsPartialStop(eExtreme_Biological)?
-		    CMolInfo::eCompleteness_complete:
-                    CMolInfo::eCompleteness_has_left):
-                (!cds_loc->IsPartialStop(eExtreme_Biological)?
-                    CMolInfo::eCompleteness_has_right:
-                    CMolInfo::eCompleteness_no_ends)):
-	    CMolInfo::eCompleteness_partial
-	);
+
+    CMolInfo::ECompleteness completeness;
+    if (!IsContinuous(*cds_loc)) {
+        completeness = CMolInfo::eCompleteness_partial;
+    } else if (cds_loc->IsPartialStart(eExtreme_Biological) &&
+               cds_loc->IsPartialStop(eExtreme_Biological)
+               ) {
+        completeness = CMolInfo::eCompleteness_no_ends;
+    } else if (cds_loc->IsPartialStart(eExtreme_Biological)) {
+        completeness = CMolInfo::eCompleteness_has_left;
+    } else if (cds_loc->IsPartialStop(eExtreme_Biological)) {
+        completeness = CMolInfo::eCompleteness_has_right;
+    } else {
+        completeness = CMolInfo::eCompleteness_complete;
+    }
+    desc->SetMolinfo().SetCompleteness(completeness);
+
     bioseq.SetDescr().Set().push_back(desc);
 
     // set up the inst
