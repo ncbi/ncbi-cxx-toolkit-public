@@ -167,7 +167,6 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
     TDbxrefPair("ECOCYC", CDbtag::eDbtagType_ECOCYC),
     TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
-    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
     TDbxrefPair("HPRD", CDbtag::eDbtagType_HPRD),
     TDbxrefPair("LRG", CDbtag::eDbtagType_LRG),
     TDbxrefPair("NASONIABASE", CDbtag::eDbtagType_NASONIABASE),
