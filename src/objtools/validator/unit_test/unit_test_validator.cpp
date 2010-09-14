@@ -12352,7 +12352,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     refseq_strings.push_back ("TAIR");
     refseq_strings.push_back ("VBRC");
     refseq_strings.push_back ("EMBL");
-    refseq_strings.push_back ("GenBank");
     refseq_strings.push_back ("DDBJ");
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref", 
