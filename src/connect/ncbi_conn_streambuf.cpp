@@ -101,7 +101,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, streamsize buf_size,
     m_ReadBuf  = buf_size ? m_WriteBuf + m_BufSize           : &x_Buf;
 
     setp(m_WriteBuf, m_WriteBuf + buf_size);   // Put area (if any)
-    if (ptr)
+    if ( ptr )
         setg(ptr, ptr, ptr + size);            // Initial get area
     else
         setg(m_ReadBuf, m_ReadBuf, m_ReadBuf); // Empty get area
@@ -116,7 +116,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, streamsize buf_size,
 
 void CConn_Streambuf::x_Close(bool close)
 {
-    if (!m_Conn)
+    if ( !m_Conn )
         return;
 
     // Flush only if data pending
@@ -129,11 +129,11 @@ void CConn_Streambuf::x_Close(bool close)
     CONN c = m_Conn;
     m_Conn = 0;  // NB: no re-entry
 
-    if (close) {
-        if (m_CbValid)
+    if ( close ) {
+        if ( m_CbValid )
             CONN_SetCallback(c, eCONN_OnClose, &m_Cb, 0);
 
-        if (m_Close) {
+        if ( m_Close ) {
             // Close only if not called from close callback
             if ((m_Status = CONN_Close(c)) != eIO_Success)
                 _TRACE(x_Message("x_Cleanup(): CONN_Close() failed"));
@@ -173,18 +173,18 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
     if ( pbase() ) {
         // send buffer
-        size_t n_write = pptr() - pbase();
-        if ( n_write ) {
+        size_t n_towrite = pptr() - pbase();
+        if ( n_towrite ) {
             size_t n_written;
             m_Status = CONN_Write(m_Conn, pbase(),
-                                  n_write, &n_written, eIO_WritePlain);
+                                  n_towrite, &n_written, eIO_WritePlain);
             if ( !n_written ) {
                 _ASSERT(m_Status != eIO_Success);
                 ERR_POST_X(4, x_Message("overflow(): CONN_Write() failed"));
                 return CT_EOF;
             }
             // update buffer content (get rid of the data just sent)
-            memmove(pbase(), pbase() + n_written, n_write - n_written);
+            memmove(pbase(), pbase() + n_written, n_towrite - n_written);
             x_PPos += (CT_OFF_TYPE) n_written;
             pbump(-int(n_written));
         }
@@ -230,26 +230,33 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         size_t x_written;
 
         if ( pbase() ) {
-            if (pptr() + n < epptr()) {
-                // Entirely fits into the buffer not causing an overflow
-                memcpy(pptr(), buf, n);
-                pbump(int(n));
-                return (streamsize)(n_written + n);
+            if (pbase() + n < epptr()) {
+                // Would entirely fit into the buffer not causing an overflow
+                x_written = (size_t)(epptr() - pptr());
+                if (x_written > n)
+                    x_written = n;
+                if ( x_written ) {
+                    memcpy(pptr(), buf, x_written);
+                    pbump(int(x_written));
+                    n_written += x_written;
+                    n         -= x_written;
+                    if (!n)
+                        return n_written;
+                    buf       += x_written;
+                }
             }
             if (m_Status != eIO_Success)
                 break;
 
-            size_t x_write = (size_t)(pptr() - pbase());
-            if (x_write) {
+            size_t x_towrite = (size_t)(pptr() - pbase());
+            if ( x_towrite ) {
                 m_Status = CONN_Write(m_Conn, pbase(),
-                                      x_write, &x_written, eIO_WritePlain);
-                if (m_Status != eIO_Success) {
-                    ERR_POST_X(6, x_Message("xsputn(): "
-                                            "CONN_Write(Plain) failed"));
-                }
-                if (!x_written)
+                                      x_towrite, &x_written, eIO_WritePlain);
+                if (m_Status != eIO_Success)
+                    ERR_POST_X(6, x_Message("xsputn(): CONN_Write() failed"));
+                if ( !x_written )
                     break;
-                memmove(pbase(), pbase() + x_written, x_write - x_written);
+                memmove(pbase(), pbase() + x_written, x_towrite - x_written);
                 x_PPos += (CT_OFF_TYPE) x_written;
                 pbump(-int(x_written));
                 continue;
@@ -257,13 +264,12 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         }
 
         _ASSERT(n  &&  m_Status == eIO_Success);
-        m_Status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WritePersist);
-        if (m_Status != eIO_Success) {
-            ERR_POST_X(7, x_Message("xsputn(): "
-                                    "CONN_Write(Persist) failed"));
-        }
-        if (!x_written) {
-            if (!pbase())
+        m_Status = CONN_Write(m_Conn, buf, n, &x_written,
+                              pbase() ? eIO_WritePlain : eIO_WritePersist);
+        if (m_Status != eIO_Success)
+            ERR_POST_X(7, x_Message("xsputn(): CONN_Write() failed"));
+        if ( !x_written ) {
+            if ( !pbase() )
                 return (streamsize) n_written;
             break;
         }
@@ -309,10 +315,10 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 #endif /*NCBI_COMPILER_MIPSPRO*/
 
     // read from connection
-    size_t     n_read;
+    size_t n_read;
     m_Status = CONN_Read(m_Conn, m_ReadBuf,
                          m_BufSize, &n_read, eIO_ReadPlain);
-    if (!n_read) {
+    if ( !n_read ) {
         _ASSERT(m_Status != eIO_Success);
         if (m_Status != eIO_Closed)
             ERR_POST_X(8, x_Message("underflow(): CONN_Read() failed"));
@@ -355,7 +361,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         m_Status = CONN_Read(m_Conn, x_buf,
                              x_read, &x_read, eIO_ReadPlain);
-        if (!x_read) {
+        if ( !x_read ) {
             _ASSERT(m_Status != eIO_Success);
             if (m_Status != eIO_Closed)
                 ERR_POST_X(10, x_Message("xsgetn(): CONN_Read() failed"));
@@ -409,11 +415,11 @@ streamsize CConn_Streambuf::showmanyc(void)
 
     size_t x_read;
     if (m_BufSize > 1) {
-        if (!tmo)
+        if ( !tmo )
             _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, &kZeroTmo)==eIO_Success);
         m_Status = CONN_Read(m_Conn, m_ReadBuf + 1, m_BufSize - 1,
                              &x_read, eIO_ReadPlain);
-        if (!tmo)
+        if ( !tmo )
             _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, timeout)  ==eIO_Success);
         _ASSERT(x_read > 0  ||  m_Status != eIO_Success);
     } else {
@@ -421,7 +427,7 @@ streamsize CConn_Streambuf::showmanyc(void)
         m_Status = CONN_Wait(m_Conn, eIO_Read, tmo ? tmo : &kZeroTmo);
     }
 
-    if (!x_read) {
+    if ( !x_read ) {
         switch (m_Status) {
         case eIO_Success:
             _ASSERT(m_BufSize <= 1);
@@ -439,7 +445,7 @@ streamsize CConn_Streambuf::showmanyc(void)
     }
 
     _ASSERT(m_BufSize > 1);
-    if (gptr())
+    if ( gptr() )
         m_ReadBuf[0] = gptr()[-1];
     setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1 + x_read);
     x_GPos += x_read;
