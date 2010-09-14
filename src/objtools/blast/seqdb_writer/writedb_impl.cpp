@@ -322,10 +322,11 @@ void CWriteDB_Impl::Close()
 
         if (m_VolumeList.size() == 1) {
             m_Volume->RenameSingle();
-        } else if (m_Indices != CWriteDB::eNoIndex) {
+        } 
 
-            // check for duplicate ids across volumes
-
+        // disable the check for duplicate ids across volumes
+        /* 
+        else if (m_Indices != CWriteDB::eNoIndex) {
             set<CWriteDB_IsamKey<string> *, CWriteDB_IsamKey_Compare<string> > sids;
             ITERATE(vector< CRef<CWriteDB_Volume> >, iter, m_VolumeList) {
                 string fn = (*iter)->GetVolumeName() + (m_Protein ? ".psd" : ".nsd");
@@ -343,7 +344,7 @@ void CWriteDB_Impl::Close()
                 }
             }
             s_CheckDuplicateIds(nids);
-        }
+        } */
 
         if (m_VolumeList.size() > 1 || m_UseGiMask) {
             x_MakeAlias();
