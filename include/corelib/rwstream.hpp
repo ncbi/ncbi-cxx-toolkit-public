@@ -51,6 +51,38 @@ BEGIN_NCBI_SCOPE
  */
 
 
+/// Note about the "buf_size" parameter for the streams in this API.
+///
+/// CRWStream implementation is targeted at minimizing in-memory data
+/// copy operations assosiated with I/O for intermediate buffering.
+/// For that, the following policies apply:
+///
+/// 1.  No read operation from the output device shall be requested less than
+///     the specified stream buffer size.  In cases when the user code requests
+///     more than the internal stream buffer size, the request may be passed
+///     through to the input device to read directly into the user provided
+///     buffer.  In that case, the read request can only be larger than the
+///     the size of the internal stream buffer.
+///
+/// 2.  Write operations from an input device are done in full buffers, unless:
+///  a. An incoming user write request is larger than the internal buffer,
+///     then the contents of the internal buffer gets flushed first
+///     (which may comprise of fewer than the buffer size bytes) followed
+///     by the direct write request of the user's block (larger than the
+///     internal stream buffer);
+///  b. Flushing of an internal buffer (including 2a above) resulted in a
+///     short write on the device (fewer bytes actually written), then the
+///     successive write attempt may contain fewer bytes than the size of
+///     the internal stream buffer (namely, the remainder of what has been
+///     left behind by the preceding write attempt).
+///
+/// However, any portable implementation should *not* rely on how data chunks
+/// are being flushed or requested by the stream implementations.  If further
+/// factoring into blocks (e.g. specifically-sized) is necessary for an I/O
+/// device to operate properly, that should be implemented at the level of
+/// respective IReader/IWriter API explicitly.
+
+
 /// Reader-based stream; @sa IReader
 ///
 /// @param buf_size
