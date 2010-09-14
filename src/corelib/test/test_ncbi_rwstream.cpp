@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
         seed = atoi(argv[1]);
         ERR_POST(Info << "Reusing SEED " << seed);
     } else {
-        seed = ((int) CProcess::GetCurrentPid ^
+        seed = ((int) CProcess::GetCurrentPid() ^
                 (int) CTime(CTime::eCurrent).GetTimeT());
         ERR_POST(Info << "Using SEED "   << seed);
     }
