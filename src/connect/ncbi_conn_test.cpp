@@ -213,7 +213,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 " HTTP proxy server, please contact your network administrator"
                 " and set [CONN]HTTP_PROXY_{HOST|PORT} accordingly";
         }
-        temp += " and if your proxy server requires authorization, please"
+        temp += "; and if your proxy server requires authorization, please"
             " check that appropriate [CONN]HTTP_PROXY_{USER|PASS} are used\n";
         if (net_info  &&  (*net_info->user  ||  *net_info->pass)) {
             temp += "Make sure there are no stray [CONN]{USER|PASS}"
