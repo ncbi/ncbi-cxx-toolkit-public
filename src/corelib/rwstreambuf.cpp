@@ -180,19 +180,19 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
 
     delete[] m_pBuf;
 
-    if (!n) {
+    if ( !n ) {
         _ASSERT(kDefaultBufSize > 1);
         n = kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
     }
 
-    if (!s) {
+    if ( !s ) {
         if (n != 1)
             s = m_pBuf = new CT_CHAR_TYPE[n];
         else
             s = &x_Buf;
     }
 
-    if (m_Reader) {
+    if ( m_Reader ) {
         m_BufSize  = n == 1 ? 1 : n >> (m_Reader  &&  m_Writer ? 1 : 0);
         m_ReadBuf  = s;
     } else {
@@ -201,7 +201,7 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     }
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
 
-    if (m_Writer) {
+    if ( m_Writer ) {
         m_WriteBuf = n == 1 ? 0 : s + m_BufSize;
     } else {
         m_WriteBuf = 0;
@@ -297,20 +297,29 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         size_t x_written;
 
         if ( pbase() ) {
-            if (pptr() + n < epptr()) {
-                // Entirely fits into the buffer not causing an overflow
-                memcpy(pptr(), buf, n);
-                pbump(int(n));
-                x_Err = false;
-                return (streamsize)(n_written + n);
+            if (pbase() + n < epptr()) {
+                // Would entirely fit into the buffer not causing an overflow
+                x_written = (size_t)(epptr() - pptr());
+                if (x_written > n)
+                    x_written = n;
+                if ( x_written ) {
+                    memcpy(pptr(), buf, x_written);
+                    pbump(int(x_written));
+                    n_written += x_written;
+                    n         -= x_written;
+                    x_Err      = false;
+                    if (!n)
+                        return n_written;
+                    buf       += x_written;
+                }
             }
             if (result != eRW_Success)
                 break;
 
-            size_t x_write = (size_t)(pptr() - pbase());
-            if ( x_write ) {
+            size_t x_towrite = (size_t)(pptr() - pbase());
+            if ( x_towrite ) {
                 RWSTREAMBUF_HANDLE_EXCEPTIONS(
-                    result = m_Writer->Write(pbase(), x_write, &x_written),
+                    result = m_Writer->Write(pbase(), x_towrite, &x_written),
                     8, "CRWStreambuf::xsputn(): IWriter::Write()",
                     x_written = 0);
                 if ( !x_written ) {
@@ -318,8 +327,8 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                     x_ErrPos = x_GetPPos();
                     break;
                 }
-                _ASSERT(x_written <= x_write);
-                memmove(pbase(), pbase() + x_written, x_write - x_written);
+                _ASSERT(x_written <= x_towrite);
+                memmove(pbase(), pbase() + x_written, x_towrite - x_written);
                 x_PPos += (CT_OFF_TYPE) x_written;
                 pbump(-int(x_written));
                 x_Err   = false;
@@ -335,7 +344,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         if ( !x_written ) {
             x_Err    = true;
             x_ErrPos = x_GetPPos();
-            if (!pbase())
+            if ( !pbase() )
                 return (streamsize) n_written;
             break;
         }
