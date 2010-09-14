@@ -69,12 +69,15 @@ const char* g_RW_ResultToString(ERW_Result res);
 class IReader
 {
 public:
-    /// Read as many as "count" bytes into a buffer pointed
-    /// to by "buf" argument.  Store the number of bytes actually read,
-    /// or 0 on EOF or error, via the pointer "bytes_read", if provided.
+    /// Read as many as "count" bytes into a buffer pointed to by the "buf"
+    /// argument.  Store the number of bytes actually read (0 if read none)
+    /// via the pointer "bytes_read", if provided.
+    /// Return non-eRW_Success code if EOF / error condition encountered
+    /// during the operation (some data may have been read, nevertheless).
     /// Special case:  if "count" passed as 0, then the value of
-    /// "buf" is ignored, and the return value is always eRW_Success,
-    /// but no change should be actually made to the state of input device.
+    /// "buf" is ignored, and no change should be made to the state
+    /// of input device (but may return non-eRW_Success to indicate
+    /// that the input device has already been in an error condition).
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0) = 0;
@@ -99,16 +102,18 @@ public:
 class IWriter
 {
 public:
-    /// Write up to "count" bytes from the buffer pointed to by
-    /// "buf" argument onto output device.  Store the number
-    /// of bytes actually written, or 0 if "count" has been passed as 0
+    /// Write up to "count" bytes from the buffer pointed to by the "buf"
+    /// argument onto an output device.  Store the number of bytes
+    /// actually written, or 0 if "count" has been passed as 0
     /// ("buf" is ignored in this case), via the "bytes_written" pointer,
-    /// if provided non-NULL.
+    /// if provided non-NULL.  Note that the method can return non-eRW_Success
+    /// in case of an I/O error along with indicating (some) data delivered
+    /// to the output device.
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0) = 0;
 
-    /// Flush pending data (if any) down to output device.
+    /// Flush pending data (if any) down to the output device.
     virtual ERW_Result Flush(void) = 0;
 
     virtual ~IWriter() {}
