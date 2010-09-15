@@ -335,18 +335,9 @@ public:
     EType GetType(void) const;
     TMagic GetMagic(void) const;
 
-    void ProcessStream(CReaderRequestResult& result,
-                       const TBlobId& blob_id,
-                       TChunkId chunk_id,
-                       CNcbiIstream& stream) const;
-    
     static void LoadBlob(CReaderRequestResult& result,
                          const TBlobId& blob_id,
                          const CBlob_Info& blob_info);
-    
-    void Process(CReaderRequestResult& result,
-                 const TBlobId& blob_id,
-                 TChunkId chunk_id) const;
 };
 
 

@@ -73,7 +73,8 @@ public:
         eType_ID2_Split,           // ID2 reply data with Split-info
         eType_ID2_Chunk,           // ID2 reply data with Chunk
         eType_ID2_SNP,             // ID2 reply data with SNP Seq-entry
-        eType_ExtAnnot             // Special kind of external annotations
+        eType_ExtAnnot,            // Special kind of external annotations
+        eType_AnnotInfo            // Special kind of named annotations
     };
     typedef unsigned TMagic;
 

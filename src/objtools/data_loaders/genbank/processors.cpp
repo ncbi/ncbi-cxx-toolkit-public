@@ -1990,6 +1990,30 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
 }
 
 
+CProcessor_AnnotInfo::CProcessor_AnnotInfo(CReadDispatcher& dispatcher)
+    : CProcessor(dispatcher)
+{
+}
+
+
+CProcessor_AnnotInfo::~CProcessor_AnnotInfo(void)
+{
+}
+
+
+CProcessor_AnnotInfo::EType CProcessor_AnnotInfo::GetType(void) const
+{
+    return eType_AnnotInfo;
+}
+
+
+CProcessor_AnnotInfo::TMagic CProcessor_AnnotInfo::GetMagic(void) const
+{
+    static TMagic kMagic = s_GetMagic("NANT");
+    return kMagic;
+}
+
+
 void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
                                     const TBlobId& blob_id,
                                     const CBlob_Info& info)
