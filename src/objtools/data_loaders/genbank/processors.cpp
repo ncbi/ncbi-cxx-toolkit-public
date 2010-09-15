@@ -48,6 +48,7 @@
 #include <objects/id1/id1__.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
 // for read hooks setup
 #include <objects/general/Dbtag.hpp>
@@ -1407,7 +1408,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
     }
     case CID2_Reply_Data::eData_type_id2s_split_info:
     {
-        if ( chunk_id != kMain_ChunkId ) {
+        if ( chunk_id != kMain_ChunkId && chunk_id != kDelayedMain_ChunkId ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "CProcessor_ID2: "
                        "plain ID2S-Split-Info in non-main reply");
@@ -1964,6 +1965,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     chunk->x_AddBioseqPlace(0);
     chunk->x_AddBioseqId(seh);
     blob->GetSplitInfo().AddChunk(*chunk);
+    _ASSERT(blob->x_NeedsDelayedMainChunk());
 
     SetLoaded(result, blob_id, chunk_id, blob);
 
@@ -1985,6 +1987,65 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
             }
         }
     }
+}
+
+
+void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
+                                    const TBlobId& blob_id,
+                                    const CBlob_Info& info)
+{
+    _ASSERT(info.IsSetAnnotInfo());
+    const CID2S_Seq_annot_Info& annot_info = info.GetAnnotInfo();
+    CLoadLockBlob blob(result, blob_id);
+    if ( IsLoaded(blob_id, kMain_ChunkId, blob) ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_AnnotInfo: "
+                       "double load of "<<blob_id);
+    }
+    
+    // create special external annotations blob
+    CAnnotName name(annot_info.GetName());
+    blob->SetName(name);
+
+    vector<SAnnotTypeSelector> types;
+    if ( annot_info.IsSetAlign() ) {
+        types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Align));
+    }
+    if ( annot_info.IsSetGraph() ) {
+        types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph));
+    }
+    if ( annot_info.IsSetFeat() ) {
+        ITERATE ( CID2S_Seq_annot_Info::TFeat, it, annot_info.GetFeat() ) {
+            const CID2S_Feat_type_Info& finfo = **it;
+            int feat_type = finfo.GetType();
+            if ( feat_type == 0 ) {
+                types.push_back(SAnnotTypeSelector
+                                (CSeq_annot::C_Data::e_Seq_table));
+            }
+            else if ( !finfo.IsSetSubtypes() ) {
+                types.push_back(SAnnotTypeSelector
+                                (CSeqFeatData::E_Choice(feat_type)));
+            }
+            else {
+                ITERATE ( CID2S_Feat_type_Info::TSubtypes, it2, finfo.GetSubtypes() ) {
+                    types.push_back(SAnnotTypeSelector
+                                    (CSeqFeatData::ESubtype(*it2)));
+                }
+            }
+        }
+    }
+
+    CTSE_Chunk_Info::TLocationSet loc;
+    CSplitParser::x_ParseLocation(loc, annot_info.GetSeq_loc());
+
+    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
+    ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
+        chunk->x_AddAnnotType(name, *it, loc);
+    }
+    blob->GetSplitInfo().AddChunk(*chunk);
+    _ASSERT(blob->x_NeedsDelayedMainChunk());
+
+    SetLoaded(result, blob_id, kMain_ChunkId, blob);
 }
 
 

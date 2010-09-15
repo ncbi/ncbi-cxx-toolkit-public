@@ -850,9 +850,11 @@ namespace {
     public:
         typedef CBlob_id TKey;
         CCommandLoadBlob(CReaderRequestResult& result,
-                         const TKey& key)
+                         const TKey& key,
+                         const CBlob_Info* blob_info = 0)
             : CReadDispatcherCommand(result),
-              m_Key(key)
+              m_Key(key),
+              m_BlobInfo(blob_info)
             {
             }
 
@@ -862,7 +864,12 @@ namespace {
             }
         bool Execute(CReader& reader)
             {
-                return reader.LoadBlob(GetResult(), m_Key);
+                if ( m_BlobInfo ) {
+                    return reader.LoadBlob(GetResult(), m_Key, *m_BlobInfo);
+                }
+                else {
+                    return reader.LoadBlob(GetResult(), m_Key);
+                }
             }
         string GetErrMsg(void) const
             {
@@ -880,6 +887,7 @@ namespace {
         
     private:
         TKey m_Key;
+        const CBlob_Info* m_BlobInfo;
     };
 
     class CCommandLoadChunk : public CReadDispatcherCommand
@@ -1271,6 +1279,15 @@ void CReadDispatcher::LoadBlob(CReaderRequestResult& result,
                                const CBlob_id& blob_id)
 {
     CCommandLoadBlob command(result, blob_id);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadBlob(CReaderRequestResult& result,
+                               const CBlob_id& blob_id,
+                               const CBlob_Info& blob_info)
+{
+    CCommandLoadBlob command(result, blob_id, &blob_info);
     Process(command);
 }
 

@@ -120,6 +120,9 @@ public:
                            const SAnnotSelector* sel);
     virtual bool LoadBlob(CReaderRequestResult& result,
                           const CBlob_id& blob_id) = 0;
+    virtual bool LoadBlob(CReaderRequestResult& result,
+                          const CBlob_id& blob_id,
+                          const CBlob_Info& blob_info);
     virtual bool LoadChunk(CReaderRequestResult& result,
                            const TBlobId& blob_id, TChunkId chunk_id);
     virtual bool LoadChunks(CReaderRequestResult& result,

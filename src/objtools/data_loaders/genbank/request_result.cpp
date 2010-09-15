@@ -385,6 +385,13 @@ CBlob_Info::~CBlob_Info(void)
 }
 
 
+void CBlob_Info::SetAnnotInfo(const CID2S_Seq_annot_Info& info)
+{
+    _ASSERT(!m_AnnotInfo);
+    m_AnnotInfo = &info;
+}
+
+
 bool CBlob_Info::Matches(const CBlob_id& blob_id,
                          TContentsMask mask,
                          const SAnnotSelector* sel) const

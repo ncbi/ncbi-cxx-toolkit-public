@@ -633,18 +633,51 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
 {
     int loaded_count = 0;
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
+        const CBlob_id& blob_id = *it->first;
         const CBlob_Info& info = it->second;
-        if ( info.Matches(*it->first, mask, sel) ) {
-            if ( result.IsBlobLoaded(*it->first) ) {
+        if ( info.Matches(blob_id, mask, sel) ) {
+            if ( result.IsBlobLoaded(blob_id) ) {
                 continue;
             }
-            m_Dispatcher->LoadBlob(result, *it->first);
-            if ( result.IsBlobLoaded(*it->first) ) {
+            
+            if ( info.IsSetAnnotInfo() ) {
+                CLoadLockBlob blob(result, blob_id);
+                if ( !blob.IsLoaded() ) {
+                    CProcessor_AnnotInfo::LoadBlob(result, blob_id, info);
+                }
+                _ASSERT(blob.IsLoaded());
+                ++loaded_count;
+                continue;
+            }
+
+            m_Dispatcher->LoadBlob(result, blob_id);
+            if ( result.IsBlobLoaded(blob_id) ) {
                 ++loaded_count;
             }
         }
     }
     return loaded_count > 0;
+}
+
+
+bool CReader::LoadBlob(CReaderRequestResult& result,
+                       const CBlob_id& blob_id,
+                       const CBlob_Info& blob_info)
+{
+    if ( result.IsBlobLoaded(blob_id) ) {
+        return true;
+    }
+    
+    if ( blob_info.IsSetAnnotInfo() ) {
+        CLoadLockBlob blob(result, blob_id);
+        if ( !blob.IsLoaded() ) {
+            CProcessor_AnnotInfo::LoadBlob(result, blob_id, blob_info);
+        }
+        _ASSERT(blob.IsLoaded());
+        return true;
+    }
+
+    return LoadBlob(result, blob_id);
 }
 
 

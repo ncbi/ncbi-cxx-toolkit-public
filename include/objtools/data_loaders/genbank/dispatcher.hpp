@@ -121,6 +121,9 @@ public:
                    const SAnnotSelector* sel);
     void LoadBlob(CReaderRequestResult& result,
                   const CBlob_id& blob_id);
+    void LoadBlob(CReaderRequestResult& result,
+                  const CBlob_id& blob_id,
+                  const CBlob_Info& blob_info);
     void LoadChunk(CReaderRequestResult& result,
                    const TBlobId& blob_id, TChunkId chunk_id);
     void LoadChunks(CReaderRequestResult& result,

@@ -47,6 +47,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CID1server_back;
 class CLoadLockBlob;
+class CBlob_Info;
 
 class NCBI_XREADER_EXPORT CProcessor_ID1 : public CProcessor
 {
@@ -319,6 +320,30 @@ public:
     static bool IsExtAnnot(const TBlobId& blob_id, TChunkId chunk_id);
     static bool IsExtAnnot(const TBlobId& blob_id, CLoadLockBlob& blob);
 
+    void Process(CReaderRequestResult& result,
+                 const TBlobId& blob_id,
+                 TChunkId chunk_id) const;
+};
+
+
+class NCBI_XREADER_EXPORT CProcessor_AnnotInfo : public CProcessor
+{
+public:
+    CProcessor_AnnotInfo(CReadDispatcher& dispatcher);
+    ~CProcessor_AnnotInfo(void);
+
+    EType GetType(void) const;
+    TMagic GetMagic(void) const;
+
+    void ProcessStream(CReaderRequestResult& result,
+                       const TBlobId& blob_id,
+                       TChunkId chunk_id,
+                       CNcbiIstream& stream) const;
+    
+    static void LoadBlob(CReaderRequestResult& result,
+                         const TBlobId& blob_id,
+                         const CBlob_Info& blob_info);
+    
     void Process(CReaderRequestResult& result,
                  const TBlobId& blob_id,
                  TChunkId chunk_id) const;

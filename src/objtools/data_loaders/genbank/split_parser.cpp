@@ -56,9 +56,10 @@ void CSplitParser::Attach(CTSE_Info& tse, const CID2S_Split_Info& split)
             tse.SetSeq_entry(const_cast<CSeq_entry&>(split.GetSkeleton()));
         }
     }
+    CTSE_Split_Info& sinfo = tse.GetSplitInfo();
     ITERATE ( CID2S_Split_Info::TChunks, it, split.GetChunks() ) {
         CRef<CTSE_Chunk_Info> chunk = Parse(**it);
-        tse.GetSplitInfo().AddChunk(*chunk);
+        sinfo.AddChunk(*chunk);
     }
 }
 

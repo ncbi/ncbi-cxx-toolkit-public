@@ -54,6 +54,7 @@ BEGIN_SCOPE(objects)
 class CSeq_id;
 class CSeq_id_Handle;
 class CID2_Blob_Id;
+class CID2S_Seq_annot_Info;
 class CBlob_id;
 class CTSE_Info;
 class CTimer;
@@ -199,6 +200,15 @@ public:
         {
             m_NamedAnnotNames.insert(name);
         }
+    void SetAnnotInfo(const CID2S_Seq_annot_Info& info);
+    bool IsSetAnnotInfo(void) const
+        {
+            return m_AnnotInfo;
+        }
+    const CID2S_Seq_annot_Info& GetAnnotInfo(void) const
+        {
+            return *m_AnnotInfo;
+        }
 
     bool Matches(const CBlob_id& blob_id,
                  TContentsMask mask,
@@ -207,6 +217,7 @@ public:
 private:
     TContentsMask   m_Contents;
     TNamedAnnotNames m_NamedAnnotNames;
+    CConstRef<CID2S_Seq_annot_Info> m_AnnotInfo;
 };
 
 
