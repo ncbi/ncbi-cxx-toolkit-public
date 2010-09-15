@@ -166,6 +166,10 @@ bool CMsvcSite::IsProvided(const string& thing, bool deep) const
         return true;
     }
     if (!deep) {
+        if (GetApp().m_CustomConfiguration.DoesValueContain(
+                "__EnabledUserRequests", thing, false)) {
+            return true;
+        }
         return false;
     }
 

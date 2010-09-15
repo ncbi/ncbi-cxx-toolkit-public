@@ -213,6 +213,9 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
                             << ": " << define << " not provided, disabled");
             return false;
         }
+        if (site.IsProvided( component, false)) {
+            continue;
+        }
         SLibInfo lib_info;
         site.GetLibInfo(component, config, &lib_info);
         if ( !site.IsLibOk(lib_info) ) {

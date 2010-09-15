@@ -399,7 +399,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,0,1) );
+    SetVersion( CVersionInfo(3,1,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1743,6 +1743,12 @@ void CProjBulderApp::ParseArguments(void)
             m_TweakVTuneD = NStr::StringToBool(v);
         }
     }
+    tmp = GetConfig().Get("Configure", "UserRequests");
+    if (!tmp.empty()) {
+        m_CustomConfiguration.AddDefinition("__UserRequests", tmp);
+    } else {
+        m_CustomConfiguration.RemoveDefinition("__UserRequests");
+    }
 }
 
 void CProjBulderApp::VerifyArguments(void)
@@ -2064,7 +2070,8 @@ bool CProjBulderApp::IsAllowedProjectTag(
     list<string>::const_iterator i;
     for (i = tags.begin(); i != tags.end(); ++i) {
         if (m_RegisteredProjectTags.find(*i) == m_RegisteredProjectTags.end()) {
-            NCBI_THROW(CProjBulderAppException, eUnknownProjectTag, *i);
+            NCBI_THROW(CProjBulderAppException, eUnknownProjectTag,
+                "Unregistered project tag: " + *i);
             return false;
         }
     }
