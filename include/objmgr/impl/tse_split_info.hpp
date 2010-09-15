@@ -107,6 +107,9 @@ public:
     void LoadChunk(TChunkId id) const;
     void LoadChunks(const TChunkIds& ids) const;
 
+    bool x_HasDelayedMainChunk(void) const;
+    bool x_NeedsDelayedMainChunk(void) const;
+
     // split information
     void x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id);
     void x_AddAnnotPlace(const TPlace& place, TChunkId chunk_id);

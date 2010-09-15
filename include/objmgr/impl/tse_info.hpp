@@ -348,6 +348,7 @@ public:
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
     CTSE_Split_Info& GetSplitInfo(void);
+    bool x_NeedsDelayedMainChunk(void) const;
 
     const CSeq_id_Handle& GetRequestedId(void) const;
     void SetRequestedId(const CSeq_id_Handle& requested_id) const;

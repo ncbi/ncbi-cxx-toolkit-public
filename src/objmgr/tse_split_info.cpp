@@ -160,12 +160,31 @@ CDataLoader& CTSE_Split_Info::GetDataLoader(void) const
 }
 
 
+bool CTSE_Split_Info::x_HasDelayedMainChunk(void) const
+{
+    TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
+    return iter != begin && (--iter)->first == kMax_Int;
+}
+
+
+bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
+{
+    TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
+    return iter != begin && (--iter)->first == kMax_Int && iter == begin;
+}
+
+
 // chunk attach
 void CTSE_Split_Info::AddChunk(CTSE_Chunk_Info& chunk_info)
 {
     _ASSERT(m_Chunks.find(chunk_info.GetChunkId()) == m_Chunks.end());
+    _ASSERT(m_Chunks.empty() || chunk_info.GetChunkId() != kMax_Int);
+    bool need_update = x_HasDelayedMainChunk();
     m_Chunks[chunk_info.GetChunkId()].Reset(&chunk_info);
     chunk_info.x_SplitAttach(*this);
+    if ( need_update ) {
+        chunk_info.x_EnableAnnotIndex();
+    }
 }
 
 
@@ -263,9 +282,8 @@ void CTSE_Split_Info::x_AddSeq_data(const TLocationSet& location,
 void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
                                        TChunkId chunk_id)
 {
-    _ASSERT(!m_SeqIdToChunksSorted);
-    m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
     m_SeqIdToChunksSorted = false;
+    m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
 }
 
 

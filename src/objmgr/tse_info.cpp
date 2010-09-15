@@ -1243,12 +1243,18 @@ CBioseq_Info& CTSE_Info::x_GetBioseq(const CSeq_id_Handle& id)
 
 CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
 {
-   if ( !m_Split ) {
+    if ( !m_Split ) {
         m_Split = new CTSE_Split_Info(GetBlobId(), GetBlobVersion());
         CRef<ITSE_Assigner> listener(new CTSE_Default_Assigner);
         m_Split->x_TSEAttach(*this, listener); 
     }
     return *m_Split;
+}
+
+
+bool CTSE_Info::x_NeedsDelayedMainChunk(void) const
+{
+    return m_Split && m_Split->x_NeedsDelayedMainChunk();
 }
 
 
