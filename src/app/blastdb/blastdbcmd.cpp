@@ -115,7 +115,7 @@ private:
     /// Add an OID for processing
     /// @param retval the return value where the queries will be added [in|out]
     /// @param entry the user's query [in]
-    void x_AddOid(CBlastDBCmdApp::TQueries& retval, const int oid) const;
+    void x_AddOid(CBlastDBCmdApp::TQueries& retval, const int oid, bool check=false) const;
 };
 
 void
@@ -127,7 +127,7 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
         vector<int> oids;
         m_BlastDb->AccessionToOids(entry, oids);
         ITERATE(vector<int>, oid, oids) {
-            x_AddOid(retval, *oid);
+            x_AddOid(retval, *oid, true);
         }
         return;
     } 
@@ -147,14 +147,23 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
     vector<int> oids;
     m_BlastDb->AccessionToOids(entry, oids);
     if (!oids.empty()) {
-        x_AddOid(retval, oids[0]);
+        x_AddOid(retval, oids[0], true);
     }
 }
 
 void 
 CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
-                         const int oid) const
+                         const int oid,
+                         bool check) const
 {
+    // check to see if this oid has been excluded
+    if (check) {
+        list< CRef<CSeq_id> > filtered_ids = m_BlastDb->GetSeqIDs(oid);
+        if (filtered_ids.empty()) {
+            return;
+        } 
+    } 
+
     // FASTA output just need one id
     if (m_FASTA) {
         CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId());
@@ -230,8 +239,8 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
     }
 
     if (retval.empty()) {
-        NCBI_THROW(CInputException, eInvalidInput, 
-                   "No valid entries to search");
+        NCBI_THROW(CInputException, eInvalidInput,
+                   "Entry not found in BLAST database");
     }
 }
 
