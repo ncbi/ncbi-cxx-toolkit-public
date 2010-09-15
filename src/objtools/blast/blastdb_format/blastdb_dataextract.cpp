@@ -78,7 +78,10 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_defline) {
                        "Entry not found in BLAST database");
         }
     }
-    _ASSERT(m_Bioseq.NotEmpty());
+    if (m_Bioseq.Empty()) {
+        NCBI_THROW(CSeqDBException, eArgErr, 
+                   "The requested entry is filtered out.");
+    }
 }
 
 string CBlastDBExtractor::ExtractOid() {
@@ -334,7 +337,10 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     }
 
     CRef<CBioseq> bioseq(m_BlastDb.GetBioseq(m_Oid, target_gi)); 
-    _ASSERT(bioseq.NotEmpty());
+    if (bioseq.Empty()) {
+        NCBI_THROW(CSeqDBException, eArgErr, 
+                       "The requested entry is filtered out.");
+    }
 
     if (m_UseCtrlA) {
         s_ReplaceCtrlAsInTitle(bioseq);
