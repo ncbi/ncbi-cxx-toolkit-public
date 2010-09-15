@@ -816,11 +816,14 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
 
     if ( frame ) {
         // Shift start according to the frame.
+        const int shift = frame - 1;
         if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos) {
-            src_start += frame - 1;
+            src_start += shift;
+            src_len -= shift;
         }
         if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos) {
-            dst_start += frame - 1;
+            dst_start += shift;
+            dst_len -= shift;
         }
     }
     // Iterate source and destination ranges.
