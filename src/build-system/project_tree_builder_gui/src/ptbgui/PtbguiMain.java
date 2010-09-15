@@ -79,6 +79,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         initCheckList(jListLibs);
         initCheckList(jListOther);
         initCheckList(jListTags);
+        initCheckList(jListUserReq);
     }
     private void resetState() {
         jTabbedPane.setSelectedIndex(0);
@@ -443,7 +444,10 @@ public class PtbguiMain extends javax.swing.JFrame {
         jCheckBoxVTuneD.setVisible(false);
         jCheckBoxVTune.setSelected(false);
         jCheckBoxVTune.setEnabled(false);
+        jPanelUserReq.setVisible(false);
         boolean vtune = false;
+        String[] userRequests = new String[0];
+        String[] enabledRequests = new String[0];
 
         try {
             String line;
@@ -459,6 +463,16 @@ public class PtbguiMain extends javax.swing.JFrame {
                             jCheckBoxVTuneD.isSelected());
                         jCheckBoxVTuneD.setVisible(jCheckBoxVTune.isSelected());
                         jCheckBoxVTuneR.setVisible(jCheckBoxVTune.isSelected());
+                    }
+                    if (userRequests.length > 0) {
+                        jPanelUserReq.setVisible(true);
+                        for (int r=0; r < userRequests.length; ++r) {
+                            boolean sel = false;
+                            for (int e=0; !sel && e < enabledRequests.length; ++e) {
+                                sel = userRequests[r].equals( enabledRequests[e] );
+                            }
+                            addProject(jListUserReq, userRequests[r], sel);
+                        }
                     }
                     return;
                 }
@@ -485,6 +499,12 @@ public class PtbguiMain extends javax.swing.JFrame {
                     else if (k.equals("__TweakVTuneD")) {
                         vtune = true;
                         jCheckBoxVTuneD.setSelected(v.equals("yes"));
+                    }
+                    else if (k.equals("__UserRequests")) {
+                        userRequests = v.split(" ");
+                    }
+                    else if (k.equals("__EnabledUserRequests")) {
+                        enabledRequests = v.split(" ");
                     }
                 }
             }
@@ -517,6 +537,18 @@ public class PtbguiMain extends javax.swing.JFrame {
                       jCheckBoxVTuneD.isSelected()) ? "yes" : "no";
                 if (jCheckBoxVTuneD.isEnabled()) {
                     s = "__TweakVTuneD"+" = "+ yn +"\n";
+                    m_PtbIn.write(s.getBytes());
+                }
+                if (jPanelUserReq.isVisible()) {
+                    s = "__EnabledUserRequests =";
+                    DefaultListModel model = (DefaultListModel)jListUserReq.getModel();
+                    for (int i =0; i< model.getSize(); ++i) {
+                        JCheckBox b = (JCheckBox)model.getElementAt(i);
+                        if (b.isSelected()) {
+                            s += " " + b.getText();
+                        }
+                    }
+                    s += "\n";
                     m_PtbIn.write(s.getBytes());
                 }
                 s = "*PTBGUI}* custom" + "\n";
@@ -911,6 +943,10 @@ public class PtbguiMain extends javax.swing.JFrame {
         jCheckBoxVTuneR = new javax.swing.JCheckBox();
         jCheckBoxVTuneD = new javax.swing.JCheckBox();
         jCheckBoxVTune = new javax.swing.JCheckBox();
+        jPanelUserReq = new javax.swing.JPanel();
+        jLabelUserReq = new javax.swing.JLabel();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        jListUserReq = new javax.swing.JList();
         jPanelPrj = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
@@ -1236,27 +1272,56 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
+        jLabelUserReq.setText("Additional requests");
+
+        jListUserReq.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jScrollPane5.setViewportView(jListUserReq);
+
+        org.jdesktop.layout.GroupLayout jPanelUserReqLayout = new org.jdesktop.layout.GroupLayout(jPanelUserReq);
+        jPanelUserReq.setLayout(jPanelUserReqLayout);
+        jPanelUserReqLayout.setHorizontalGroup(
+            jPanelUserReqLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanelUserReqLayout.createSequentialGroup()
+                .addContainerGap()
+                .add(jPanelUserReqLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jScrollPane5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 122, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabelUserReq, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 122, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jPanelUserReqLayout.setVerticalGroup(
+            jPanelUserReqLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanelUserReqLayout.createSequentialGroup()
+                .addContainerGap()
+                .add(jLabelUserReq)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jScrollPane5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 144, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
         org.jdesktop.layout.GroupLayout jPanelAddLayout = new org.jdesktop.layout.GroupLayout(jPanelAdd);
         jPanelAdd.setLayout(jPanelAddLayout);
         jPanelAddLayout.setHorizontalGroup(
             jPanelAddLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanelAddLayout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanelAddLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(jCheckBoxVTune, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jLabel9, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jLabel8, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE))
                 .add(jPanelAddLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jPanelUserReq, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jPanelAddLayout.createSequentialGroup()
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                        .add(jPanelAddLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                            .add(jCheckBoxVTune, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(jLabel9, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(jLabel8, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE))
                         .add(jPanelAddLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jTextFieldCpath, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)
-                            .add(jTextField3root, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)))
-                    .add(jPanelAddLayout.createSequentialGroup()
-                        .add(72, 72, 72)
-                        .add(jCheckBoxVTuneR)
-                        .add(18, 18, 18)
-                        .add(jCheckBoxVTuneD)))
+                            .add(jPanelAddLayout.createSequentialGroup()
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                                .add(jPanelAddLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(jTextFieldCpath, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)
+                                    .add(jTextField3root, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)))
+                            .add(jPanelAddLayout.createSequentialGroup()
+                                .add(72, 72, 72)
+                                .add(jCheckBoxVTuneR)
+                                .add(18, 18, 18)
+                                .add(jCheckBoxVTuneD)))))
                 .addContainerGap())
         );
         jPanelAddLayout.setVerticalGroup(
@@ -1275,10 +1340,12 @@ public class PtbguiMain extends javax.swing.JFrame {
                     .add(jCheckBoxVTuneR)
                     .add(jCheckBoxVTuneD)
                     .add(jCheckBoxVTune))
-                .addContainerGap(204, Short.MAX_VALUE))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(jPanelUserReq, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
-        jTabbedPane.addTab("3rd party libraries", jPanelAdd);
+        jTabbedPane.addTab("Libraries and Tools", jPanelAdd);
 
         jPanelPrj.setLayout(new java.awt.GridLayout(1, 0));
 
@@ -1548,7 +1615,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 1.0");
+        jLabel13.setText("  version 1.1");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
@@ -1785,10 +1852,12 @@ public class PtbguiMain extends javax.swing.JFrame {
     private javax.swing.JLabel jLabelOther;
     private javax.swing.JLabel jLabelSln;
     private javax.swing.JLabel jLabelTags;
+    private javax.swing.JLabel jLabelUserReq;
     private javax.swing.JList jListApps;
     private javax.swing.JList jListLibs;
     private javax.swing.JList jListOther;
     private javax.swing.JList jListTags;
+    private javax.swing.JList jListUserReq;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
@@ -1799,12 +1868,14 @@ public class PtbguiMain extends javax.swing.JFrame {
     private javax.swing.JPanel jPanelCmnd;
     private javax.swing.JPanel jPanelDone;
     private javax.swing.JPanel jPanelPrj;
+    private javax.swing.JPanel jPanelUserReq;
     private javax.swing.JRadioButton jRadioButtonDLL;
     private javax.swing.JRadioButton jRadioButtonStatic;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JSeparator jSeparator2;
     private javax.swing.JTabbedPane jTabbedPane;
     private javax.swing.JTextField jTextField3root;
