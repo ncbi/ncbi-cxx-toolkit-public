@@ -222,7 +222,7 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
             // don't show PRIMARY line if network access unavailable (and hence can't translate gi)
             CSeq_id_Handle idh = GetId(*other_id, ctx.GetScope(), eGetId_Best);
             if( ! idh ) {
-                continue;
+                return;
             }
 
             other_id = idh.GetSeqId();

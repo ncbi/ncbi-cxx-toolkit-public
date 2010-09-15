@@ -220,6 +220,7 @@ protected:
     void x_AddQualsSite( CBioseqContext& );
     void x_AddQualsRegion( CBioseqContext& );
     void x_AddQualsProt( CBioseqContext&, bool );
+    void x_AddQualsPsecStr( CBioseqContext& );
 
     void x_AddQuals( CBioseqContext& ctx );
     void x_AddQuals(const CProt_ref& prot);
@@ -337,9 +338,9 @@ inline void CFeatureItem::x_AddQualExt()
     }
 }
 
-//	=============================================================================
+//    =============================================================================
 class CFeatureItemGff: public CFeatureItem
-//	=============================================================================
+//    =============================================================================
 {
 public:
     CFeatureItemGff(

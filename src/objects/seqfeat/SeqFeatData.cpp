@@ -153,7 +153,7 @@ static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(User, user, "User", "misc_feature"),
     FEAT_INFO_PAIR(Txinit, txinit, "TxInit", "promoter"),
     FEAT_INFO_PAIR(Num, num, "Num", "misc_feature"),
-    FEAT_INFO_PAIR(Psec_str, psec_str, "SecStr", "misc_feature"),
+    FEAT_INFO_PAIR(Psec_str, psec_str, "SecStr", "SecStr"),
     FEAT_INFO_PAIR(Non_std_residue, non_std_residue, "NonStdRes", "misc_feature"),
     FEAT_INFO_PAIR(Het, het, "Het", "misc_binding"),
     FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source"),
@@ -544,6 +544,7 @@ END_SUBTYPE
 
 START_SUBTYPE(prot)
     ADD_QUAL(EC_number);
+    ADD_QUAL(UniProtKB_evidence);
     ADD_QUAL(allele);
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
@@ -2199,7 +2200,7 @@ END_SUBTYPE
 //START_SUBTYPE(num)
 //END_SUBTYPE
 
-START_SUBTYPE(psec_str)  //  same as misc_feature
+START_SUBTYPE(psec_str)  //  same as misc_feature???
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
@@ -2217,6 +2218,7 @@ START_SUBTYPE(psec_str)  //  same as misc_feature
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(sec_str_type);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE

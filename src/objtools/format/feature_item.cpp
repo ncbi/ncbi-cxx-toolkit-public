@@ -1500,6 +1500,9 @@ void CFeatureItem::x_AddQuals(
     case CSeqFeatData::e_Bond:
         x_AddQualsBond( ctx );
         break;    
+    case CSeqFeatData::e_Psec_str:
+        x_AddQualsPsecStr( ctx );
+        break;
     default:
         break;
     }
@@ -2386,6 +2389,20 @@ void CFeatureItem::x_AddQualsBond(
     }
 }
 
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsPsecStr(
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT( m_Feat.GetData().IsPsec_str() );
+
+    const CSeqFeatData& data = m_Feat.GetData();
+
+    CSeqFeatData_Base::TPsec_str sec_str_type = data.GetPsec_str();
+
+    string sec_str_as_str = CSeqFeatData_Base::GetTypeInfo_enum_EPsec_str()->FindName( sec_str_type, true );
+    x_AddQual( eFQ_sec_str_type, new CFlatStringQVal( sec_str_as_str ) );
+}
 
 static const string& s_GetSiteName(CSeqFeatData::TSite site)
 {
@@ -2818,7 +2835,19 @@ void CFeatureItem::x_AddQualsProt(
          }}
 
         if (comp == CMolInfo::eCompleteness_complete  ||  ctx.IsRefSeq()) {
-            if (!has_mat_peptide  ||  !has_signal_peptide) {
+
+            bool proteinIsAtLeastMature;
+            switch( pref.GetProcessed() ) {
+                case CProt_ref::eProcessed_not_set:
+                case CProt_ref::eProcessed_preprotein:
+                    proteinIsAtLeastMature = false;
+                    break;
+                default:
+                    proteinIsAtLeastMature = true;
+                    break;
+            }
+
+            if ( (!has_mat_peptide  ||  !has_signal_peptide) && (proteinIsAtLeastMature || ctx.IsRefSeq()) ) {
                 try {
                     //wt = GetProteinWeight(ctx.GetHandle(), loc);
                     wt = GetProteinWeight(m_Feat.GetOriginalFeature(),
@@ -2961,6 +2990,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(standard_name),
         DO_IMPORT(tag_peptide),
         DO_IMPORT(trans_splicing),
+        DO_IMPORT(UniProtKB_evidence),
         DO_IMPORT(usedin)
 #undef DO_IMPORT
     };
@@ -3697,7 +3727,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_rpt_unit_seq, CSeqFeatData::eQual_rpt_unit_seq),
     TQualPair(eFQ_rrna_its, CSeqFeatData::eQual_note),
     TQualPair(eFQ_satellite, CSeqFeatData::eQual_satellite),
-    TQualPair(eFQ_sec_str_type, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_sec_str_type, CSeqFeatData::eQual_sec_str_type),
 //    TQualPair(eFQ_selenocysteine, CSeqFeatData::eQual_note),
 //    TQualPair(eFQ_selenocysteine_note, CSeqFeatData::eQual_note),
     TQualPair(eFQ_seqfeat_note, CSeqFeatData::eQual_note),
@@ -3714,6 +3744,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_translation, CSeqFeatData::eQual_translation),
     TQualPair(eFQ_trna_aa, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_trna_codons, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_UniProtKB_evidence, CSeqFeatData::eQual_UniProtKB_evidence),
     TQualPair(eFQ_usedin, CSeqFeatData::eQual_usedin),
     TQualPair(eFQ_xtra_prod_quals, CSeqFeatData::eQual_note)
 };

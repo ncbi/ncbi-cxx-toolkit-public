@@ -315,6 +315,7 @@ public:
         eQual_rpt_unit_range,
         eQual_rpt_unit_seq,
         eQual_satellite,
+        eQual_sec_str_type,
         eQual_segment,
         eQual_sequenced_mol,
         eQual_serotype,
