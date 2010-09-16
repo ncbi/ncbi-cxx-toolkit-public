@@ -51,7 +51,7 @@ const size_t kMaxIOSize    = 7000;
 
 class CMyReader : public IReader {
 public:
-    CMyReader(const char* base, size_t size)
+    CMyReader(const unsigned char* base, size_t size)
         : m_Base(base), m_Size(size), m_Pos(0), m_Eof(false) { }
 
     virtual ERW_Result Read(void* buf, size_t count,
@@ -65,16 +65,16 @@ public:
     virtual ~CMyReader() { /*noop*/ }
 
 private:
-    const char* m_Base;
-    size_t      m_Size;
-    size_t      m_Pos;
-    bool        m_Eof;
+    const unsigned char* m_Base;
+    size_t               m_Size;
+    size_t               m_Pos;
+    bool                 m_Eof;
 };
 
 
 class CMyWriter : public IWriter {
 public:
-    CMyWriter(char* base, size_t size)
+    CMyWriter(unsigned char* base, size_t size)
         : m_Base(base), m_Size(size), m_Pos(0), m_Err(false) { }
 
     virtual ERW_Result Write(const void* buf, size_t count,
@@ -88,10 +88,10 @@ public:
     virtual ~CMyWriter() { /*noop*/ }
 
 private:
-    char*  m_Base;
-    size_t m_Size;
-    size_t m_Pos;
-    bool   m_Err;
+    unsigned char* m_Base;
+    size_t         m_Size;
+    size_t         m_Pos;
+    bool           m_Err;
 };
 
 
@@ -211,21 +211,21 @@ int main(int argc, char* argv[])
         seed = atoi(argv[1]);
         ERR_POST(Info << "Reusing SEED " << seed);
     } else {
-        seed = ((int) CProcess::GetCurrentPid() ^
-                (int) CTime(CTime::eCurrent).GetTimeT());
+        seed = (int(CProcess::GetCurrentPid()) ^
+                int(CTime(CTime::eCurrent).GetTimeT()));
         ERR_POST(Info << "Using SEED "   << seed);
     }
     srand(seed);
 
-    char* hugedata = new char[kHugeBufsize * 2];
+    unsigned char* hugedata = new unsigned char[kHugeBufsize * 2];
 
     ERR_POST(Info << "Generating data: " << kHugeBufsize << " random bytes");
 
     for (size_t n = 0;  n < kHugeBufsize;  n += 2) {
-        hugedata[n]                    = rand() & 0xFF;
-        hugedata[n + 1]                = rand() & 0xFF;
-        hugedata[n + kHugeBufsize]     = 0xDE;
-        hugedata[n + kHugeBufsize + 1] = 0xAD;
+        hugedata[n]                    = (unsigned char)(rand() & 0xFF);
+        hugedata[n + 1]                = (unsigned char)(rand() & 0xFF);
+        hugedata[n + kHugeBufsize]     = (unsigned char) 0xDE;
+        hugedata[n + kHugeBufsize + 1] = (unsigned char) 0xAD;
     }
 
     ERR_POST(Info << "Pumping data from with random I/O");
