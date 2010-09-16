@@ -239,13 +239,17 @@ if "%PTB_RESULT%"=="1" (
   echo ******************************************************************************
 )
 
-echo ******************************************************************************
-echo ******************************************************************************
-echo ==============  Generating objects source code.                 ==============
-echo ==============  DO NOT RELOAD THE SOLUTION NOW!                 ============== 
-echo ******************************************************************************
-echo %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project "_generate_all_objects.dataspec"
-%DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project "_generate_all_objects.dataspec"
+set ALLOBJ="_generate_all_objects.dataspec"
+type "%SLN_PATH%" | find /C %ALLOBJ% >NUL 2>&1
+if not errorlevel 1 (
+  echo ******************************************************************************
+  echo ******************************************************************************
+  echo ==============  Generating objects source code.                 ==============
+  echo ==============  DO NOT RELOAD THE SOLUTION NOW!                 ============== 
+  echo ******************************************************************************
+  echo %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project %ALLOBJ%
+  %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project %ALLOBJ%
+)
 echo -
 echo -
 echo ******************************************************************************
