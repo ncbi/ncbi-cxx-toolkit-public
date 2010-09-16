@@ -163,6 +163,12 @@ CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm, int mask_ty
 }
 
 void 
+CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id)
+{
+    SetFilteringAlgorithm(filt_algorithm_id, DB_MASK_SOFT);
+}
+
+void 
 CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id, int mask_type)
 {
     m_FilteringAlgorithmId = filt_algorithm_id;

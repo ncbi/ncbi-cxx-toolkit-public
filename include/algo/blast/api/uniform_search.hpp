@@ -163,6 +163,9 @@ public:
     /// Accessor for the negative gi list
     const CRef<CSeqDBGiList>& GetNegativeGiList() const;
     const TGiList GetNegativeGiListLimitation() const;
+
+    /// Temporary fix for backwards compatibility with other 6.0 SCs
+    NCBI_DEPRECATED void SetFilteringAlgorithm(int filt_algorithm_id);
     
     /// Mutator for the filtering algorithm
     /// @param filt_algorithm_id filtering algorithm ID [in]
