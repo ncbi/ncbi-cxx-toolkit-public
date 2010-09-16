@@ -16,6 +16,7 @@ data.reals._type   = vector
 data.oss._type     = vector
 data.fields._type  = vector
 data.objects._type = vector
+data._pointer      = false
 
 [User-object]
 data._type      = vector
