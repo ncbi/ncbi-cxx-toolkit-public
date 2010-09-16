@@ -75,7 +75,7 @@ public:
 
     
     /// Defines a pair of LinkoutTypes and its string representation
-    typedef pair<LinkoutTypes, string> TLinkoutTypeString;
+    typedef pair<objects::LinkoutTypes, string> TLinkoutTypeString;
 
     /// Return the available linkout types in a human readable format
     /// @param return_value a list of available linkouts and their string
