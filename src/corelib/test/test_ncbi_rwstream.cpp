@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
         hugedata[n + kHugeBufsize + 1] = (unsigned char) 0xAD;
     }
 
-    ERR_POST(Info << "Pumping data from with random I/O");
+    ERR_POST(Info << "Pumping data with random I/O");
 
     CMyReader* rd = new CMyReader(hugedata,                kHugeBufsize);
     CMyWriter* wr = new CMyWriter(hugedata + kHugeBufsize, kHugeBufsize); 
@@ -261,10 +261,10 @@ int main(int argc, char* argv[])
 
     ERR_POST(Info
              << "Read:  " << setw(8) << n_in  << '/' << kHugeBufsize
-             << "; position: " << rd->GetPosition() << '/' << rd->GetSize());
+             << ";  position: " << rd->GetPosition() << '/' << rd->GetSize());
     ERR_POST(Info
              << "Write: " << setw(8) << n_out << '/' << kHugeBufsize
-             << "; position: " << wr->GetPosition() << '/' << wr->GetSize());
+             << ";  position: " << wr->GetPosition() << '/' << wr->GetSize());
 
     _ASSERT(kHugeBufsize == n_in           &&
             kHugeBufsize == rd->GetSize()  &&
