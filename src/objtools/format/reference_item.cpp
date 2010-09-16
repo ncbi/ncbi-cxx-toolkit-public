@@ -728,7 +728,9 @@ void CReferenceItem::x_Init(const CCit_proc& proc, CBioseqContext& ctx)
 
 void CReferenceItem::x_Init(const CCit_jour& jour, CBioseqContext& ctx)
 {
-    m_Journal.Reset(&jour);
+    if( m_Journal.IsNull() ) {
+        m_Journal.Reset(&jour);
+    }
 
     if (jour.IsSetImp()) {
         x_AddImprint(jour.GetImp(), ctx);
