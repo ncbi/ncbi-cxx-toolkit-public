@@ -213,6 +213,8 @@ public:
                 objects::CSeq_annot&       aligns_out);
 
 private:
+    void x_Init();
+
     bool x_Match(const CQueryParseTree::TNode& node,
                  const objects::CSeq_align& align);
 

@@ -228,7 +228,11 @@ public:
     {
         TSeqRange r0 = align.GetSeqRange(0);
         TSeqRange r1 = align.GetSeqRange(1);
-        return double(r1.GetLength()) / double(r0.GetLength());
+        double r = 0;
+        if (r0.GetLength()) {
+            r = double(r1.GetLength()) / double(r0.GetLength());
+        }
+        return r;
     }
 };
 
@@ -347,6 +351,20 @@ public:
 CAlignFilter::CAlignFilter()
     : m_RemoveDuplicates(false)
 {
+    x_Init();
+}
+
+
+CAlignFilter::CAlignFilter(const string& query)
+    : m_RemoveDuplicates(false)
+{
+    x_Init();
+    SetFilter(query);
+}
+
+
+void CAlignFilter::x_Init()
+{
     m_Scores.insert
         (TScoreDictionary::value_type
          ("align_length",
@@ -417,13 +435,6 @@ CAlignFilter::CAlignFilter()
                CIRef<IScore>(new CScore_SequenceLength(1))));
 
      }}
-}
-
-
-CAlignFilter::CAlignFilter(const string& query)
-    : m_RemoveDuplicates(false)
-{
-    SetFilter(query);
 }
 
 
