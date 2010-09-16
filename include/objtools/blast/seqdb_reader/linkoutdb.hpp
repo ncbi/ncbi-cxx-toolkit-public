@@ -37,6 +37,7 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -71,6 +72,16 @@ public:
     /// @param id Sequence identifier of interest [in]
     /// @return integer encoding linkout bits or 0 if not found
     int GetLinkout(const objects::CSeq_id& id);
+
+    
+    /// Defines a pair of LinkoutTypes and its string representation
+    typedef pair<LinkoutTypes, string> TLinkoutTypeString;
+
+    /// Return the available linkout types in a human readable format
+    /// @param return_value a list of available linkouts and their string
+    /// representation
+    static void 
+    GetLinkoutTypes(vector<CLinkoutDB::TLinkoutTypeString>& return_value);
 
 private:
     /// The actual implementation of this class

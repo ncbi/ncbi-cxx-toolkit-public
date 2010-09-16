@@ -41,8 +41,11 @@ BEGIN_objects_SCOPE
 static const string kAsnDeflineObjLabel = "ASN1_BlastDefLine";
 static const string kTaxDataObjLabel    = "TaxNamesData";
 
-/* Bit field for the "links" element of Blast-def-line. 
-See ASN.1 spec. in src/objects/blastdb/blastdb.asn. */
+/** Bit field for the "links" element of Blast-def-line. 
+See ASN.1 spec. in src/objects/blastdb/blastdb.asn. 
+@note These link bits in the Blast-def-line will be moved to LinkoutDB (@see
+CLinkoutDB) . Please keep these in sync (@see GetLinkoutTypes)
+ */
 enum LinkoutTypes {
   eLocuslink              = (1<<0),  // Defunct, LocusLink link-out
   eUnigene                = (1<<1),  // Add Linkout for UniGene
@@ -56,12 +59,6 @@ enum LinkoutTypes {
                                      // and transcript sequences separately.
   eBioAssay               = (1<<8)   // Add Linkout for BioAssay (structure group resource)
 };
-
-typedef pair<LinkoutTypes, string> TLinkoutTypeString;
-
-NCBI_BLASTDB_EXPORT 
-void 
-GetLinkoutTypes(vector<TLinkoutTypeString>& return_value);
 
 /// Structure describing filtered regions created using a particular sequence
 /// filtering algorithm

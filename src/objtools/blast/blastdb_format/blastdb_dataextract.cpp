@@ -168,7 +168,7 @@ string CBlastDBExtractor::ExtractLinkoutTokens()
     vector<string> linkouts;
     if (m_UseLinkoutDB) {
         int linkout = m_LinkoutDB->GetLinkout(m_Gi);
-        ITERATE(vector<TLinkoutTypeString>, lt, m_LinkoutTypes) {
+        ITERATE(vector<CLinkoutDB::TLinkoutTypeString>, lt, m_LinkoutTypes) {
             if (linkout & lt->first) {
                 linkouts.push_back(lt->second);
             }
@@ -182,7 +182,8 @@ string CBlastDBExtractor::ExtractLinkoutTokens()
 
         if (seqid->IsGi() && (seqid->GetGi() == m_Gi) && (*itr)->IsSetLinks()) {
             ITERATE(CBlast_def_line::TLinks, linkout_int, (*itr)->GetLinks()) {
-                ITERATE(vector<TLinkoutTypeString>, lt, m_LinkoutTypes) {
+                ITERATE(vector<CLinkoutDB::TLinkoutTypeString>, lt, 
+                        m_LinkoutTypes) {
                     if (*linkout_int & lt->first) {
                         linkouts.push_back(lt->second);
                     }

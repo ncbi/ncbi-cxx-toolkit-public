@@ -189,21 +189,6 @@ CBlast_def_line_set::PutTargetGiFirst(int gi)
     }
 }
 
-void 
-GetLinkoutTypes(vector<TLinkoutTypeString>& rv)
-{
-    rv.clear();
-    rv.push_back(make_pair(eLocuslink, string("eLocuslink")));
-    rv.push_back(make_pair(eUnigene, string("eUnigene")));
-    rv.push_back(make_pair(eStructure, string("eStructure")));
-    rv.push_back(make_pair(eGeo, string("eGeo")));
-    rv.push_back(make_pair(eGene, string("eGene")));
-    rv.push_back(make_pair(eHitInMapviewer, string("eHitInMapviewer")));
-    rv.push_back(make_pair(eAnnotatedInMapviewer, string("eAnnotatedInMapviewer")));
-    rv.push_back(make_pair(eGenomicSeq, string("eGenomicSeq")));
-    rv.push_back(make_pair(eBioAssay, string("eBioAssay")));
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

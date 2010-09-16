@@ -126,7 +126,7 @@ protected:
     /// Cache the defline
     CRef<CBlast_def_line_set> m_Defline; 
     /// Convenience for printing strings of linkout types
-    vector<TLinkoutTypeString> m_LinkoutTypes;
+    vector<CLinkoutDB::TLinkoutTypeString> m_LinkoutTypes;
 
     /// This replaces having to read and cache the defline (once all linkout
     /// bits have been ported to LinkoutDB, turned off for now but can be
@@ -142,7 +142,7 @@ private:
     /// Initialize the data structures required to print the linkout information
     void x_InitLinkoutData() {
         if (m_LinkoutTypes.empty()) {
-            GetLinkoutTypes(m_LinkoutTypes);
+            CLinkoutDB::GetLinkoutTypes(m_LinkoutTypes);
         }
         if (m_UseLinkoutDB && m_LinkoutDB.Empty()) {
             m_LinkoutDB.Reset(new CLinkoutDB());

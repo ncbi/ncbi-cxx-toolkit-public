@@ -138,5 +138,19 @@ int CLinkoutDB_Impl::GetLinkout(const CSeq_id& id)
     return retval; 
 }
 
+void CLinkoutDB::GetLinkoutTypes(vector<CLinkoutDB::TLinkoutTypeString>& rv)
+{
+    rv.clear();
+    rv.push_back(make_pair(eLocuslink, string("eLocuslink")));
+    rv.push_back(make_pair(eUnigene, string("eUnigene")));
+    rv.push_back(make_pair(eStructure, string("eStructure")));
+    rv.push_back(make_pair(eGeo, string("eGeo")));
+    rv.push_back(make_pair(eGene, string("eGene")));
+    rv.push_back(make_pair(eHitInMapviewer, string("eHitInMapviewer")));
+    rv.push_back(make_pair(eAnnotatedInMapviewer, string("eAnnotatedInMapviewer")));
+    rv.push_back(make_pair(eGenomicSeq, string("eGenomicSeq")));
+    rv.push_back(make_pair(eBioAssay, string("eBioAssay")));
+}
+
 END_NCBI_SCOPE
 
