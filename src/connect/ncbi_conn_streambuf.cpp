@@ -252,8 +252,10 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             if ( x_towrite ) {
                 m_Status = CONN_Write(m_Conn, pbase(),
                                       x_towrite, &x_written, eIO_WritePlain);
-                if (m_Status != eIO_Success)
-                    ERR_POST_X(6, x_Message("xsputn(): CONN_Write() failed"));
+                if (m_Status != eIO_Success) {
+                    ERR_POST_X(6, x_Message("xsputn():"
+                                            " CONN_Write(Plain) failed"));
+                }
                 if ( !x_written )
                     break;
                 memmove(pbase(), pbase() + x_written, x_towrite - x_written);
@@ -264,10 +266,11 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         }
 
         _ASSERT(n  &&  m_Status == eIO_Success);
-        m_Status = CONN_Write(m_Conn, buf, n, &x_written,
-                              pbase() ? eIO_WritePlain : eIO_WritePersist);
-        if (m_Status != eIO_Success)
-            ERR_POST_X(7, x_Message("xsputn(): CONN_Write() failed"));
+        m_Status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WritePersist);
+        if (m_Status != eIO_Success) {
+            ERR_POST_X(7, x_Message("xsputn():"
+                                    " CONN_Write(Persist) failed"));
+        }
         if ( !x_written ) {
             if ( !pbase() )
                 return (streamsize) n_written;
