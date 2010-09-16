@@ -73,6 +73,12 @@ CSeq_align::TDim CSeq_align::CheckNumRows(void) const
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().CheckNumRows();
 
+        //case C_Segs::e_Packed:
+        //return GetSegs().GetPacked().CheckNumRows();
+
+    case C_Segs::e_Sparse:
+        return GetSegs().GetSparse().CheckNumRows();
+
     case C_Segs::e_Spliced:
         {{
             // spliced seg always has two rows: genomic and protein/transcript
@@ -1408,5 +1414,3 @@ TSeqPos CSeq_align::GetAlignLength(bool include_gaps) const
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 64, chars: 1885, CRC32: 4e5d1825 */

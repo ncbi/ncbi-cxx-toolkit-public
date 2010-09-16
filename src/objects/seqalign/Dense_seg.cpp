@@ -72,6 +72,18 @@ void CDense_seg::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 }
 
 
+CDense_seg::TDim CDense_seg::CheckNumRows() const
+{
+    const size_t& dim = GetDim();
+    if (dim != GetIds().size()) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumRows()"
+                   " ids.size is inconsistent with dim");
+    }
+    return dim;
+}
+
+
 CDense_seg::TNumseg CDense_seg::CheckNumSegs() const
 {
     const CDense_seg::TStarts&  starts  = GetStarts();
@@ -1463,5 +1475,3 @@ void CDenseSegReserveStrandsHook::SetGlobalHook(void)
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 64, chars: 1885, CRC32: 4483973b */

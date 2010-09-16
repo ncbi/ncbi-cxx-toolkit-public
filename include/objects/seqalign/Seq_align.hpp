@@ -318,4 +318,3 @@ END_objects_SCOPE /// namespace ncbi::objects::
 END_NCBI_SCOPE
 
 #endif /// OBJECTS_SEQALIGN_SEQ_ALIGN_HPP
-/* Original file checksum: lines: 93, chars: 2426, CRC32: 6ba198f0 */

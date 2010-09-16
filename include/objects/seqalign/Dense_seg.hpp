@@ -216,19 +216,6 @@ CRange<TSeqPos> CDense_seg::GetSeqRange(TDim row) const
 }
 
 
-inline
-CDense_seg::TDim CDense_seg::CheckNumRows() const
-{
-    const size_t& dim = GetDim();
-    if (dim != GetIds().size()) {
-        NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                   "CDense_seg::CheckNumRows()"
-                   " ids.size is inconsistent with dim");
-    }
-    return dim;
-}
-
-
 /////////////////// end of CDense_seg inline methods
 
 
@@ -284,4 +271,3 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 #endif // OBJECTS_SEQALIGN_DENSE_SEG_HPP
-/* Original file checksum: lines: 93, chars: 2426, CRC32: 48766ca1 */
