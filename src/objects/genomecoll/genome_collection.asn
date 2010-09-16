@@ -145,7 +145,7 @@ GC-AssemblySet ::= SEQUENCE {
     more-assemblies SET OF GC-Assembly OPTIONAL,
     -- statistics
     -- "stats" field holds stats for all chromosomes combined:
-    stats GC-SequenceStats OPTIONAL,
+    stats GC-SequenceStats OPTIONAL
 
 }
 
@@ -228,6 +228,7 @@ GC-AssemblyDesc ::= SEQUENCE {
     filesafe-name VisibleString OPTIONAL,
     wgs-acc-prefix VisibleString OPTIONAL,
     wgs-acc-number INTEGER OPTIONAL,
+
     -- release type: RefSeq / GenBank.
     release-type INTEGER {
         genbank (1),
@@ -240,14 +241,6 @@ GC-AssemblyDesc ::= SEQUENCE {
         gpipe(5),
         public(10)
     } OPTIONAL,
-
-    -- release level: Most of releases are major
-    release-level INTEGER {
-        major(0),
-        patch(1),
-        -- stopper
-        other(255)
-    } DEFAULT major
 
     -- in alt-loci units - contain alignment of this sequence to the primary
     -- unit
@@ -269,7 +262,15 @@ GC-AssemblyDesc ::= SEQUENCE {
 
     -- level of coverage for this assembly
     -- **NOTE: not set = not known!!
-    coverage REAL OPTIONAL
+    coverage REAL OPTIONAL,
+
+    -- release level: Most of releases are major
+    release-level INTEGER {
+        major(0),
+        patch(1),
+        -- stopper
+        other(255)
+    } DEFAULT major
 }
 
 GC-Replicon ::= SEQUENCE
