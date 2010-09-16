@@ -685,6 +685,10 @@ else
           compiler="WorkShop510"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.10" ;;
+        *Sun*C*5\.11* )
+          compiler="WorkShop511"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.11" ;;
       esac
       NCBI_FEATURE(WorkShop)
       ;;
