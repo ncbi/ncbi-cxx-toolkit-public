@@ -360,6 +360,45 @@ void CProjectItemsTree::VerifyExternalDepends(void)
     }
 }
 
+void CProjectItemsTree::VerifyDataspecProj(void)
+{
+    CProjKey proj_key(CProjKey::eDataSpec, GetApp().GetDataspecProjId());
+    CProjectItemsTree::TProjects::iterator z = m_Projects.find(proj_key);
+    if (z == m_Projects.end()) {
+        return;
+    }
+    CProjItem& dataspec_prj(z->second);
+    list<CDataToolGeneratedSrc>::iterator s;
+    for (s = dataspec_prj.m_DatatoolSources.begin();
+        s != dataspec_prj.m_DatatoolSources.end(); ) {
+        bool found = false;
+        TProjects::const_iterator p;
+        for(p = m_Projects.begin(); !found && p != m_Projects.end(); ++p) {
+            if (p->first.Type() != CProjKey::eDataSpec) {
+                const CProjItem& project = p->second;
+                list<CDataToolGeneratedSrc>::const_iterator n;
+                for (n = project.m_DatatoolSources.begin();
+                    !found && n != project.m_DatatoolSources.end(); ++n) {
+                    found = (*n == *s);
+                }
+            }
+        }
+        list<CDataToolGeneratedSrc>::iterator prev = s;
+        ++s;
+        if (!found) {
+            dataspec_prj.m_DatatoolSources.erase(prev);
+        }
+    }
+/*
+    maybe, it is better to keep even an empty one
+    for consistency..
+    if (dataspec_prj.m_DatatoolSources.empty()) {
+        m_Projects.erase(z);
+    }
+*/
+}
+
+
 //-----------------------------------------------------------------------------
 void CCyclicDepends::FindCyclesNew(const TProjects& tree,
                         TDependsCycles*  cycles)

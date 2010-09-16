@@ -333,7 +333,8 @@ struct PIsExcludedByTag
     {
         const CProjItem& project = item.second;
         string unmet;
-        if ( !GetApp().IsAllowedProjectTag(project.m_ProjTags, unmet) ) {
+        if ( project.m_ProjType != CProjKey::eDataSpec && 
+            !GetApp().IsAllowedProjectTag(project.m_ProjTags, unmet) ) {
             PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
                            "Excluded due to proj_tag: " << unmet);
             return true;
@@ -661,6 +662,7 @@ int CProjBulderApp::Run(void)
         // Erase obsolete external projects
         EraseIf(prj_tree.m_Projects, PIsExcludedByDisuse());
     }}
+    prj_tree.VerifyDataspecProj();
 
     PTB_INFO("Checking project inter-dependencies...");
     CCyclicDepends::TDependsCycles cycles;

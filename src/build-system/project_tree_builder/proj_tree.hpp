@@ -76,6 +76,7 @@ public:
     void GetExternalDepends(list<CProjKey>* externalDepends) const;
     
     void VerifyExternalDepends(void);
+    void VerifyDataspecProj(void);
 
     // for navigation through the tree use class CProjectTreeFolders below.
 
