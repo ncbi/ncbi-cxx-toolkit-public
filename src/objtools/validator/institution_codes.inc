@@ -3570,6 +3570,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNHP	s	Princeton University",
 "MNHS	s	Manchester Natural History Society",
 "MNK	s	Museo de Historia Natural \"Noel Kempff Mercado\"",
+"MNK:R	s	Museo de Historia Natural \"Noel Kempff Mercado\", Reptile Collection",
 "MNKS	s	Milton Keynes Development Corporation",
 "MNMB	s	Magyar Nenzeti Museum",
 "MNMS	s	Museo Nacional de Ciencias Naturales",
