@@ -557,7 +557,7 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
     int first_digit = 0;
     column = 0;
     first_digit = m_MasterRange ? m_MasterRange->GetFrom() : 0;
-    first_digit_str = NStr::IntToString(first_digit);
+    first_digit_str = NStr::IntToString(first_digit + 1);
 
     image = new CHTML_img(m_ImagePath + kGifWhite, 
                           kScoreMargin - 
