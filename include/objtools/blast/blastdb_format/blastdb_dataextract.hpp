@@ -38,7 +38,6 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <corelib/ncbiapp.hpp>  // temporarily needed for CNcbiApplication
 #include <sstream>
 
 // Note: move this to corelib and define properly (see blastformat equivalent)
@@ -69,11 +68,7 @@ public:
               m_TargetOnly(target_only),
               m_UseCtrlA(ctrl_a) 
     {
-        m_UseLinkoutDB = false;
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app && !app->GetEnvironment().Get("LINKOUTDB").empty()) {
-            m_UseLinkoutDB = true;
-        }
+        m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
     }
 
     /// Setting seqid

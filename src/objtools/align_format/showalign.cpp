@@ -91,7 +91,7 @@ static char const rcsid[] = "$Id$";
 
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
-#include <objects/blastdb/defline_extra.hpp>
+#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 
 #include <stdio.h>
 #include <util/tables/raw_scoremat.h>
@@ -202,6 +202,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_SlaveGeneticCode = 1;
     m_AlignTemplates = NULL;
     m_Ctx = NULL;
+    m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
 
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
@@ -1334,12 +1335,15 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
 
+                        int linkout = m_UseLinkoutDB
+                            ? CLinkoutDB::GetInstance().GetLinkout(m_AV->GetSeqId(row))
+                            : CAlignFormatUtil::GetLinkout(m_AV->GetBioseqHandle(row),m_AV->GetSeqId(row));
                         CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                                  m_QueryNumber,
                                                  gi,
 						                         alnRoInfo->seqidArray[row], 
-                                                 CAlignFormatUtil::GetLinkout(m_AV->GetBioseqHandle(row),m_AV->GetSeqId(row)),
                                                  m_cur_align,
+                                                 linkout,
                                                  true,
                                                  (m_AlignOption & eNewTargetWindow) ? true : false,
                                                  alnRoInfo->taxid[row],
@@ -1907,11 +1911,14 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 				taxid = bdl->GetTaxid();
 			}
            
+            int linkout = m_UseLinkoutDB
+                ? CLinkoutDB::GetInstance().GetLinkout(gi) 
+                : CAlignFormatUtil::GetLinkout(*bdl);
 			CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                                  m_QueryNumber,
                                                  gi_in_use_this_gi, 
 						                         alnDispParams->label,
-                                                 CAlignFormatUtil::GetLinkout(*bdl),
+                                                 linkout,
                                                  m_cur_align,
                                                  true,
                                                  (m_AlignOption & eNewTargetWindow) ? true : false,
@@ -1923,7 +1930,9 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		
 		if(m_AlignOption&eLinkout){
 		
-			int linkout = CAlignFormatUtil::GetLinkout((*bdl));
+			int linkout = m_UseLinkoutDB
+                ? CLinkoutDB::GetInstance().GetLinkout(gi)
+                : CAlignFormatUtil::GetLinkout((*bdl));
 			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
 			list<string> linkout_url =  CAlignFormatUtil::
                                 GetLinkoutUrl(linkout, ids,
@@ -2880,13 +2889,13 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 
         const CRef<CBlast_def_line_set> bdlRef 
             =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
-        const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+        const CBlast_def_line_set::Tdata& bdl = bdlRef->Get();
 
-        for(list< CRef< CBlast_def_line > >::const_iterator 
-                iter = bdl.begin(); iter != bdl.end(); iter++)
+        ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
         {
-            int linkout = CAlignFormatUtil::
-                GetLinkout((**iter));
+            int linkout = m_UseLinkoutDB
+                ? CLinkoutDB::GetInstance().GetLinkout(*(*iter)->GetSeqid().front())
+                : CAlignFormatUtil::GetLinkout((**iter));
             if (linkout & eGene)
             {
                 return true;

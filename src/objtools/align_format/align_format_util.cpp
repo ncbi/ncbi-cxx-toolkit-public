@@ -77,6 +77,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seq/seqport_util.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 
 #include <stdio.h>
 #include <sstream>
@@ -99,7 +100,6 @@ CNcbiRegistry *CAlignFormatUtil::m_Reg = NULL;
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
-///@param score: place to extract the raw score to
 ///@param bits: place to extract the bit score to
 ///@param evalue: place to extract the e value to
 ///@param sum_n: place to extract the sum_n to
@@ -1407,16 +1407,23 @@ bool CAlignFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& inf
     id1 = &(info1->Get().front()->GetSeq_id(1));
     id2 = &(info2->Get().front()->GetSeq_id(1));
 
-    const CBioseq_Handle& handle1 = kScope->GetBioseqHandle(*id1);
-    const CBioseq_Handle& handle2 = kScope->GetBioseqHandle(*id2);
+    int linkout1 = 0, linkout2 = 0;
+    if (CLinkoutDB::UseLinkoutDB()) {
+        CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
+        linkout1 = linkoutdb.GetLinkout(*id1);
+        linkout2 = linkoutdb.GetLinkout(*id2);
+    } else {
+        const CBioseq_Handle& handle1 = kScope->GetBioseqHandle(*id1);
+        const CBioseq_Handle& handle2 = kScope->GetBioseqHandle(*id2);
 
-    const CRef<CBlast_def_line_set> bdl_ref1 = 
-        CAlignFormatUtil::GetBlastDefline(handle1);
-    const CRef<CBlast_def_line_set> bdl_ref2 = 
-        CAlignFormatUtil::GetBlastDefline(handle2);
+        const CRef<CBlast_def_line_set> bdl_ref1 = 
+            CAlignFormatUtil::GetBlastDefline(handle1);
+        const CRef<CBlast_def_line_set> bdl_ref2 = 
+            CAlignFormatUtil::GetBlastDefline(handle2);
 
-    int linkout1 = GetLinkout(*(bdl_ref1->Get().front()));
-    int linkout2 = GetLinkout(*(bdl_ref2->Get().front()));
+        linkout1 = GetLinkout(*(bdl_ref1->Get().front()));
+        linkout2 = GetLinkout(*(bdl_ref2->Get().front()));
+    }
 
     return (linkout1 & eGenomicSeq) <= (linkout2 & eGenomicSeq);
 }
@@ -1428,6 +1435,10 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
                              const CSeq_align_set& source,
                              CScope& scope)
 {
+    CLinkoutDB* linkoutdb = NULL;
+    if (CLinkoutDB::UseLinkoutDB()) {
+        linkoutdb = &CLinkoutDB::GetInstance();
+    }
     
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         
@@ -1435,7 +1446,12 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
         try {
             const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
             if (handle) {
-                int linkout = GetLinkout(handle, id);
+                int linkout = 0;
+                if (linkoutdb) {
+                    linkout = linkoutdb->GetLinkout(id);
+                } else {
+                    linkout = GetLinkout(handle, id);
+                }
                         
                 if (linkout & eGenomicSeq) {
                     if (sort_method == 1) {
@@ -1822,15 +1838,24 @@ bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset,
     bool is_first = true;
     int prev_database = 0;
 
+    CLinkoutDB* linkoutdb = NULL;
+    if (CLinkoutDB::UseLinkoutDB()) {
+        linkoutdb = &CLinkoutDB::GetInstance();
+    }
+
     ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) { 
        
         const CSeq_id& id = (*iter)->GetSeq_id(1);
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
         int linkout = 0;
-        try {
-          linkout = GetLinkout(handle, id);
-        } catch (CException&) {
-              continue; // linkout information not found, need to skip rest of loop.
+        if (linkoutdb) {
+            linkout = linkoutdb->GetLinkout(id);
+        } else {
+            try {
+              linkout = GetLinkout(handle, id);
+            } catch (CException&) {
+                  continue; // linkout information not found, need to skip rest of loop.
+            }
         }
         int cur_database = (linkout & eGenomicSeq);
         if (!is_first && cur_database != prev_database) {

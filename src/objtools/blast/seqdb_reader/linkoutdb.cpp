@@ -42,6 +42,23 @@ static char const rcsid[] = "$Id$";
 
 BEGIN_NCBI_SCOPE
 
+bool CLinkoutDB::UseLinkoutDB()
+{
+    bool retval = false;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app && !app->GetEnvironment().Get("LINKOUTDB").empty()) {
+        retval = true;
+    }
+#ifdef NCBI_OS_UNIX
+    if (app == NULL) {
+        if (getenv("LINKOUTDB") != 0) {
+            retval = true;
+        }
+    }
+#endif
+    return retval;
+}
+
 static const string kDefaultLinkoutDBName("linkouts");
 
 map<string, CLinkoutDB*> CLinkoutDB::sm_LinkoutDBs;

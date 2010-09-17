@@ -68,7 +68,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
-#include <objects/blastdb/defline_extra.hpp>
+#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 
 #include <objtools/align_format/showdefline.hpp>
 
@@ -285,7 +285,6 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            SDeflineInfo* sdl,
                                            int blast_rank)
 {
-
     const CRef<CBlast_def_line_set> bdlRef = CAlignFormatUtil::GetBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
@@ -369,7 +368,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             int cur_gi =  FindGi(cur_id);            
             if(use_this_gi.empty()){
                 if(sdl->gi == cur_gi){                 
-					sdl->linkout = CAlignFormatUtil::GetLinkout((**iter));
+					sdl->linkout = m_UseLinkoutDB
+                        ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
+                        : CAlignFormatUtil::GetLinkout((**iter));
                     sdl->linkout_list =
                         CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
@@ -383,7 +384,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             } else {
                 ITERATE(list<int>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){                     
-                        sdl->linkout = CAlignFormatUtil::GetLinkout((**iter));
+                        sdl->linkout = m_UseLinkoutDB
+                            ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
+                            : CAlignFormatUtil::GetLinkout((**iter));
                         sdl->linkout_list = 
                            CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
@@ -498,6 +501,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
         }
     }
     m_DeflineTemplates = NULL;
+    m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
 }
 
 CShowBlastDefline::~CShowBlastDefline()
