@@ -7,6 +7,13 @@
 # Copyright (C) 2003 Free Software Foundation, Inc.
 # This configure script is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
+# Support unset when possible.
+if ( (MAIL=60; unset MAIL) || exit) >/dev/null 2>&1; then
+  as_unset=unset
+else
+  as_unset=false
+fi
+
 ## --------------------- ##
 ## M4sh Initialization.  ##
 ## --------------------- ##
@@ -1005,6 +1012,8 @@ Optional Packages:
  --without-tiff          do not use libtiff
  --with-xpm=DIR          use libXpm installation in DIR
  --without-xpm           do not use libXpm
+ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
+ --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
  --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt
  --without-connext       do not build non-public CONNECT library extensions
@@ -1157,6 +1166,311 @@ gives unlimited permission to copy, distribute and modify it.
 _ACEOF
   exit 0
 fi
+
+
+# Check --with-3psw=.../--without-3psw early because a lot hinges on it
+orig_NCBI=$NCBI
+case "$with_3psw" in
+   '' | yes | [\$/][Nn]*:[SsLl]* | [Nn]*:[SsLl]* )
+      ncbi_favor_std_packages=no
+      ;;
+   [SsLl]*:* )
+      ncbi_favor_std_packages=yes
+      ;;
+   [SsLl]* )
+      $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
+      ;;
+   no )
+      if test "${with_ncbi_c-no}" != "no"; then
+         { echo "$as_me: error: incompatible options: --with-ncbi-c but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+      else
+         with_ncbi_c=no
+      fi
+      if test "${with_sss-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sss but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sss=no
+         fi
+        if test "${with_sssutils-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sssutils but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sssutils=no
+         fi
+        if test "${with_sssdb-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sssdb but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sssdb=no
+         fi
+        if test "${with_z-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-z but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_z=no
+         fi
+        if test "${with_bz2-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-bz2 but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_bz2=no
+         fi
+        if test "${with_lzo-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-lzo but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_lzo=no
+         fi
+        if test "${with_pcre-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-pcre but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_pcre=no
+         fi
+        if test "${with_gnutls-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-gnutls but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_gnutls=no
+         fi
+        if test "${with_openssl-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-openssl but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_openssl=no
+         fi
+        if test "${with_sybase-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sybase but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sybase=no
+         fi
+        if test "${with_ftds-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-ftds but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_ftds=no
+         fi
+        if test "${with_mysql-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-mysql but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_mysql=no
+         fi
+        if test "${with_fltk-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-fltk but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_fltk=no
+         fi
+        if test "${with_opengl-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-opengl but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_opengl=no
+         fi
+        if test "${with_mesa-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-mesa but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_mesa=no
+         fi
+        if test "${with_glut-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-glut but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_glut=no
+         fi
+        if test "${with_wxwin-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-wxwin but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_wxwin=no
+         fi
+        if test "${with_wxwidgets-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-wxwidgets but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_wxwidgets=no
+         fi
+        if test "${with_freetype-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-freetype but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_freetype=no
+         fi
+        if test "${with_fastcgi-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-fastcgi but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_fastcgi=no
+         fi
+        if test "${with_bdb-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-bdb but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_bdb=no
+         fi
+        if test "${with_sp-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sp but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sp=no
+         fi
+        if test "${with_orbacus-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-orbacus but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_orbacus=no
+         fi
+        if test "${with_odbc-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-odbc but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_odbc=no
+         fi
+        if test "${with_python-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-python but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_python=no
+         fi
+        if test "${with_jni-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-jni but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_jni=no
+         fi
+        if test "${with_cppunit-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-cppunit but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_cppunit=no
+         fi
+        if test "${with_boost-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-boost but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_boost=no
+         fi
+        if test "${with_sqlite-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sqlite but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sqlite=no
+         fi
+        if test "${with_sqlite3-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sqlite3 but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sqlite3=no
+         fi
+        if test "${with_icu-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-icu but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_icu=no
+         fi
+        if test "${with_expat-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-expat but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_expat=no
+         fi
+        if test "${with_sablot-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sablot but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sablot=no
+         fi
+        if test "${with_libxml-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-libxml but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_libxml=no
+         fi
+        if test "${with_libxslt-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-libxslt but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_libxslt=no
+         fi
+        if test "${with_xerces-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-xerces but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_xerces=no
+         fi
+        if test "${with_xalan-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-xalan but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_xalan=no
+         fi
+        if test "${with_oechem-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-oechem but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_oechem=no
+         fi
+        if test "${with_sge-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sge but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sge=no
+         fi
+        if test "${with_muparser-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-muparser but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_muparser=no
+         fi
+        if test "${with_hdf5-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-hdf5 but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_hdf5=no
+         fi
+        if test "${with_gif-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-gif but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_gif=no
+         fi
+        if test "${with_jpeg-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-jpeg but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_jpeg=no
+         fi
+        if test "${with_png-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-png but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_png=no
+         fi
+        if test "${with_tiff-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-tiff but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_tiff=no
+         fi
+        if test "${with_xpm-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-xpm but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_xpm=no
+         fi
+
+      $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
+      ;;
+   * )
+      { echo "$as_me: error: Unsupported option --with-3psw=$with_3psw" >&2
+   { (exit 1); exit 1; }; }
+      ;;
+esac
 
 if $srcdir/scripts/common/impl/get_lock.sh configure $$; then
     ac_clean_files=configure.lock
@@ -2360,6 +2674,18 @@ if test "${with_xpm2+set}" = set; then
 
 fi;
 
+# Check whether --with-3psw or --without-3psw was given.
+if test "${with_3psw+set}" = set; then
+  withval="$with_3psw"
+
+fi;
+
+# Check whether --with-3psw2 or --without-3psw2 was given.
+if test "${with_3psw2+set}" = set; then
+  withval="$with_3psw2"
+
+fi;
+
 ## Optional projects
 
 # Check whether --with-local-lbsm or --without-local-lbsm was given.
@@ -2462,7 +2788,7 @@ z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
-gif jpeg tiff png xpm \
+gif jpeg tiff png xpm 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -2515,7 +2841,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
       | --with-muparser=* | --with-hdf5=* | --with-jni=* \
-      | --x-includes=* | --x-libraries=* \
+      | --x-includes=* | --x-libraries=* | --with-3psw=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -4738,9 +5064,9 @@ echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
    case "$CPPFLAGS $LIBS" in
       *sw/*) ;;
       *)
-         if test -d "$NCBI/safe-sw"; then
-             CPPFLAGS="-I$NCBI/safe-sw/include $CPPFLAGS"
-             LDFLAGS="-L$NCBI/safe-sw/lib $LDFLAGS"
+         if test -d "$orig_NCBI/safe-sw"; then
+             CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
+             LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
          fi
          ;;
    esac
@@ -5909,8 +6235,8 @@ esac
 # When using ccache and distcc together, ccache needs to be primary,
 # so look for distcc(.sh) first.
 
-if test -x $NCBI/bin/distcc.sh ; then
-   : ${DISTCC=$NCBI/bin/distcc.sh}
+if test -x $orig_NCBI/bin/distcc.sh ; then
+   : ${DISTCC=$orig_NCBI/bin/distcc.sh}
    : ${with_distcc=yes}
 fi
 
@@ -18119,7 +18445,8 @@ fi
 
 echo "$as_me:$LINENO: checking whether in-house NCBI resources are available" >&5
 echo $ECHO_N "checking whether in-house NCBI resources are available... $ECHO_C" >&6
-if test -n "$NCBI" -a -f "$NCBI/.ncbirc" -a -d /am/coremake_builds/test_data; \
+if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
+    -a -d /am/coremake_builds/test_data; \
 then
              WithFeatures="$WithFeatures${WithFeaturesSep}in-house-resources"; WithFeaturesSep=" "
    echo "$as_me:$LINENO: result: yes" >&5
@@ -20171,8 +20498,8 @@ fi
 
 ### Third-party libraries
 
-if test "$OSTYPE" = linux  -a  -d "$NCBI"; then
-   ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/$NCBI_PLATFORM_BITS/\\1:&,"
+if test "$OSTYPE" = linux  -a  -d "$orig_NCBI"; then
+   ncbi_rpath_sed="s,$orig_NCBI/\\(.*\\),/opt/ncbi/$NCBI_PLATFORM_BITS/\\1:&,"
 else
    ncbi_rpath_sed=
 fi
@@ -22325,7 +22652,7 @@ fi
 case "$with_odbc" in
    # yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"}       ;;
    yes | ""   ) : ${ODBC_PATH:=dbapi/driver/odbc/unix_odbc} ;;
-   internal   ) ODBC_PATH=dbapi/driver/odbc/unix_odbc       ;;
+   internal | no ) ODBC_PATH=dbapi/driver/odbc/unix_odbc       ;;
    *          ) ODBC_PATH=$with_odbc                        ;;
 esac
 
@@ -28801,7 +29128,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$LIBXSLT_PATH/bin:`dirname $LIBXML_LIBPATH_`/bin:$PATH"
+as_dummy="$LIBXSLT_PATH/bin:`dirname $LIBXML_LIBPATH_ 2>/dev/null`/bin:$PATH"
 for as_dir in $as_dummy
 do
   IFS=$as_save_IFS

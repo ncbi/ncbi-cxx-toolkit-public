@@ -40,10 +40,49 @@
 
 AC_PREREQ(2.59)
 
-dnl Set up lock.  The diversion magic lets this occur before AC_INIT, which
-dnl already interferes with other configure processes.
+dnl Early setup, most crucially for locking.  The diversion magic lets
+dnl this occur before AC_INIT, which already interferes with other
+dnl configure processes.
 
 AC_DIVERT_PUSH(INIT_PREPARE)
+
+# Check --with-3psw=.../--without-3psw early because a lot hinges on it
+orig_NCBI=$NCBI
+case "$with_3psw" in
+   '' | yes | [[\$/][Nn]*:[SsLl]*] | [[Nn]*:[SsLl]*] )
+      ncbi_favor_std_packages=no
+      ;;
+   [[SsLl]]*:* )
+      ncbi_favor_std_packages=yes
+      ;;
+   [[SsLl]]* )
+      AS_UNSET(NCBI)
+      ;;
+   no )
+      if test "${with_ncbi_c-no}" != "no"; then
+         AC_MSG_ERROR([incompatible options: --with-ncbi-c but --without-3psw])
+      else
+         with_ncbi_c=no
+      fi
+      m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre, gnutls, openssl,
+                     sybase, ftds, mysql, fltk, opengl, mesa, glut, wxwin,
+                     wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
+                     python, jni, cppunit, boost, sqlite, sqlite3, icu, expat,
+                     sablot, libxml, libxslt, xerces, xalan, oechem, sge,
+                     muparser, hdf5, gif, jpeg, png, tiff, xpm],
+        [if test "${[with_]X-no}" != "no"; then
+            AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
+         else
+            [with_]X=no
+         fi
+        ])
+      AS_UNSET(NCBI)
+      ;;
+   * )
+      AC_MSG_ERROR([Unsupported option --with-3psw=$with_3psw])
+      ;;
+esac
+
 if $srcdir/scripts/common/impl/get_lock.sh configure $$; then
     ac_clean_files=configure.lock
 else
@@ -360,6 +399,10 @@ AC_ARG_WITH(xpm,
    [ --with-xpm=DIR          use libXpm installation in DIR])
 AC_ARG_WITH(xpm2,
    [ --without-xpm           do not use libXpm])
+AC_ARG_WITH(3psw,
+   [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
+AC_ARG_WITH(3psw2,
+   [ --without-3psw          do not use any of the above packages])
 
 ## Optional projects
 AC_ARG_WITH(local-lbsm,
@@ -407,7 +450,7 @@ z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
-gif jpeg tiff png xpm \
+gif jpeg tiff png xpm 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -460,7 +503,7 @@ for x_arg in "$@" ; do
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
       | --with-muparser=* | --with-hdf5=* | --with-jni=* \
-      | --x-includes=* | --x-libraries=* \
+      | --x-includes=* | --x-libraries=* | --with-3psw=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -1036,9 +1079,9 @@ case "$host_os:$compiler" in
    case "$CPPFLAGS $LIBS" in
       *sw/*) ;;
       *)
-         if test -d "$NCBI/safe-sw"; then
-             CPPFLAGS="-I$NCBI/safe-sw/include $CPPFLAGS"
-             LDFLAGS="-L$NCBI/safe-sw/lib $LDFLAGS"
+         if test -d "$orig_NCBI/safe-sw"; then
+             CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
+             LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
          fi
          ;;
    esac
@@ -1734,8 +1777,8 @@ esac
 # When using ccache and distcc together, ccache needs to be primary,
 # so look for distcc(.sh) first.
 
-if test -x $NCBI/bin/distcc.sh ; then
-   : ${DISTCC=$NCBI/bin/distcc.sh}
+if test -x $orig_NCBI/bin/distcc.sh ; then
+   : ${DISTCC=$orig_NCBI/bin/distcc.sh}
    : ${with_distcc=yes}
 fi
 
@@ -3247,7 +3290,8 @@ fi
 
 
 AC_MSG_CHECKING([whether in-house NCBI resources are available])
-if test -n "$NCBI" -a -f "$NCBI/.ncbirc" -a -d /am/coremake_builds/test_data; \
+if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
+    -a -d /am/coremake_builds/test_data; \
 then
    NCBI_FEATURE(in-house-resources)
    AC_MSG_RESULT(yes)
@@ -3410,8 +3454,8 @@ fi
 
 ### Third-party libraries
 
-if test "$OSTYPE" = linux  -a  -d "$NCBI"; then
-   ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/$NCBI_PLATFORM_BITS/\\1:&,"
+if test "$OSTYPE" = linux  -a  -d "$orig_NCBI"; then
+   ncbi_rpath_sed="s,$orig_NCBI/\\(.*\\),/opt/ncbi/$NCBI_PLATFORM_BITS/\\1:&,"
 else
    ncbi_rpath_sed=
 fi
@@ -4054,7 +4098,7 @@ fi
 case "$with_odbc" in
    # yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"}       ;;
    yes | ""   ) : ${ODBC_PATH:=dbapi/driver/odbc/unix_odbc} ;;
-   internal   ) ODBC_PATH=dbapi/driver/odbc/unix_odbc       ;;
+   internal | no ) ODBC_PATH=dbapi/driver/odbc/unix_odbc       ;;
    *          ) ODBC_PATH=$with_odbc                        ;;
 esac
 
@@ -5448,7 +5492,7 @@ else
 fi
 
 AC_PATH_PROG(XSLTPROC, xsltproc, :,
-   [$LIBXSLT_PATH/bin:`dirname $LIBXML_LIBPATH_`/bin:$PATH])
+   [$LIBXSLT_PATH/bin:`dirname $LIBXML_LIBPATH_ 2>/dev/null`/bin:$PATH])
 
 : ${XERCES_PATH=$NCBI/xerces}
 if test "$with_xerces" != no; then

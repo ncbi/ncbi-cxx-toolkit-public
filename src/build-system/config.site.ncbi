@@ -7,6 +7,34 @@
 . `dirname $0`/../../scripts/common/common.sh
 ncbi_platform=`COMMON_DetectPlatform`
 
+if test "$ncbi_favor_std_packages" = yes; then
+    # /sw (Mac)? /usr/sfw (Solaris)?
+    for d in /usr/local /usr/X11 /usr/openwin /usr; do
+        test -d "$d"  ||  continue
+        test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
+        test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
+        test -x "$d/bin/cppunit-config"    &&  : ${CPPUNIT_PATH=$d}
+        test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
+        test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
+        test -x "$d/bin/fltk-config"       &&  : ${FLTK_PATH=$d}
+        test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
+        test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
+        test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
+        test -x "$d/bin/xml2-config"       &&  : ${LIBXML_PATH=$d}
+        test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
+        test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
+        test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
+        test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
+        test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
+        test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
+        test -f "$d/include/sqlite.h"      &&  : ${SQLITE_PATH=$d}
+        test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
+        test -x "$d/bin/wx-config"         &&  : ${WXWIDGETS_PATH=$d}
+        test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
+        test -d "$d/include/xercesc"       &&  : ${XERCES_PATH=$d}
+    done
+fi
+
 case "$ncbi_platform" in
     FreeBSD32  )
         case "`uname -r`" in
