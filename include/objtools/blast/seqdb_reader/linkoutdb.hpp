@@ -41,8 +41,21 @@
 
 BEGIN_NCBI_SCOPE
 
-// forward declaration
+// forward declarations
 class CLinkoutDB_Impl;
+class CLinkoutDB;
+
+/// Cleans up the resources acquired by the LinkoutDB singleton
+class CLinkoutDBDestroyer {
+public:
+    CLinkoutDBDestroyer() {}
+    ~CLinkoutDBDestroyer();
+    /// Adds LinkoutDB to this class, effectively transferring ownership
+    void AddLinkoutDBSingleton(CLinkoutDB* doomed) { m_Instances.insert(doomed); }
+private:
+    /// Holds all the LinkoutDB instances
+    set<CLinkoutDB*> m_Instances;
+};
 
 /// Interface to the linkout DB, which encode the mapping between sequence IDs
 /// (GIs/accessions) to linkout bits (as defined in defline_extra.hpp).
@@ -50,18 +63,11 @@ class CLinkoutDB_Impl;
 /// deflines in the BLAST DBs header files to the linkout DB.
 class NCBI_XOBJREAD_EXPORT CLinkoutDB : public CObject {
 public:
-    /// Default construtor, uses the 'linkouts' as the base name of the indices
-    /// to perform its linkout lookups
-    /// @throw CSeqDBException if the indices are not found
-    CLinkoutDB();
-
-    /// Parametrized constructor, uses its argument to initialized the linkout 
-    /// indices
-    /// @throw CSeqDBException if the indices are not found
-    CLinkoutDB(const string& dbname);
-
-    /// Destructor
-    ~CLinkoutDB();
+    /// Get a reference to a LinkoutDB instance.
+    /// @param dbname LinkoutDB name, if the default value is used, the default
+    /// implementation is returned [in]
+    /// @throw CSeqDBException if the requested LinkoutDB is not found
+    static CLinkoutDB& GetInstance(const string& dbname = kEmptyStr);
     
     /// Obtain the linkout bits for a given gi
     /// @param gi GI of interest [in]
@@ -84,12 +90,32 @@ public:
     GetLinkoutTypes(vector<CLinkoutDB::TLinkoutTypeString>& return_value);
 
 private:
+    static map<string, CLinkoutDB*> sm_LinkoutDBs;
+    static CLinkoutDBDestroyer sm_LinkoutDBDestroyer;
+
     /// The actual implementation of this class
     CLinkoutDB_Impl* m_Impl;
     /// Prohibit copy constructor
     CLinkoutDB(const CLinkoutDB& rhs);
     /// Prohibit assignment operator
     CLinkoutDB operator=(const CLinkoutDB& rhs);
+
+protected:
+    friend class CLinkoutDBDestroyer;
+
+    /// Default construtor, uses the 'linkouts' as the base name of the indices
+    /// to perform its linkout lookups
+    /// @throw CSeqDBException if the indices are not found
+    CLinkoutDB();
+
+    /// Parametrized constructor, uses its argument to initialized the linkout 
+    /// indices
+    /// @throw CSeqDBException if the indices are not found
+    CLinkoutDB(const string& dbname);
+
+    /// Destructor
+    virtual ~CLinkoutDB();
+    
 };
 
 END_NCBI_SCOPE

@@ -44,6 +44,34 @@ BEGIN_NCBI_SCOPE
 
 static const string kDefaultLinkoutDBName("linkouts");
 
+map<string, CLinkoutDB*> CLinkoutDB::sm_LinkoutDBs;
+CLinkoutDBDestroyer CLinkoutDB::sm_LinkoutDBDestroyer;
+
+CLinkoutDBDestroyer::~CLinkoutDBDestroyer()
+{
+    ITERATE(set<CLinkoutDB*>, itr, m_Instances) {
+        delete *itr;
+    }
+    m_Instances.clear();
+}
+
+CLinkoutDB& CLinkoutDB::GetInstance(const string& dbname /* = kEmptyStr */)
+{
+    CLinkoutDB* retval = NULL;
+    map<string, CLinkoutDB*>::iterator pos = sm_LinkoutDBs.find(dbname);
+    if (pos == sm_LinkoutDBs.end()) {
+        retval = (dbname == kEmptyStr 
+                        ? new CLinkoutDB()
+                        : new CLinkoutDB(dbname));
+        sm_LinkoutDBDestroyer.AddLinkoutDBSingleton(retval);
+        sm_LinkoutDBs[dbname] = retval;
+    } else {
+        retval = pos->second;
+    }
+    _ASSERT(retval != NULL);
+    return *retval;
+}
+
 CLinkoutDB::CLinkoutDB()
 {
     const string dbname(SeqDB_ResolveDbPathForLinkoutDB(kDefaultLinkoutDBName));

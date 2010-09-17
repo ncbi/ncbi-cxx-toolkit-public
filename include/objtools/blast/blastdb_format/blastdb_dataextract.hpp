@@ -132,7 +132,6 @@ protected:
     /// bits have been ported to LinkoutDB, turned off for now but can be
     /// enabled via the LINKOUTDB environment variable
     bool m_UseLinkoutDB;
-    CRef<CLinkoutDB> m_LinkoutDB;
 
     /**** END: Support for printing linkouts */
 private:
@@ -143,9 +142,6 @@ private:
     void x_InitLinkoutData() {
         if (m_LinkoutTypes.empty()) {
             CLinkoutDB::GetLinkoutTypes(m_LinkoutTypes);
-        }
-        if (m_UseLinkoutDB && m_LinkoutDB.Empty()) {
-            m_LinkoutDB.Reset(new CLinkoutDB());
         }
     }
 

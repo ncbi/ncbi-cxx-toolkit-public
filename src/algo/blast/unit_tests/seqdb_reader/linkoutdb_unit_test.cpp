@@ -45,12 +45,13 @@ BOOST_AUTO_TEST_SUITE(linkoutdb)
 
 BOOST_AUTO_TEST_CASE(NonExistantLinkoutDB)
 {
-    BOOST_REQUIRE_THROW(CLinkoutDB foo("bar"), CSeqDBException);
+    BOOST_REQUIRE_THROW(CLinkoutDB& foo = CLinkoutDB::GetInstance("bar"), 
+                        CSeqDBException);
 }
 
 BOOST_AUTO_TEST_CASE(TestSeqIds)
 {
-    CLinkoutDB linkoutdb("data/linkouts1");
+    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance("data/linkouts1");
     typedef vector< CRef<CSeq_id> > TSeqIdVector;
     TSeqIdVector ids;
     ids.reserve(10);
@@ -73,7 +74,7 @@ BOOST_AUTO_TEST_CASE(TestSeqIds)
 
 BOOST_AUTO_TEST_CASE(TestGIs)
 {
-    CLinkoutDB linkoutdb("data/linkouts2");
+    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance("data/linkouts2");
     typedef vector< pair<int, int> > TGiLinkoutVector;
     TGiLinkoutVector reference_data;
     //1

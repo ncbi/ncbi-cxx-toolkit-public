@@ -110,7 +110,7 @@ string CBlastDBExtractor::ExtractLinkoutInteger()
     }
 
     if (m_UseLinkoutDB) {
-        return NStr::IntToString(m_LinkoutDB->GetLinkout(m_Gi));
+        return NStr::IntToString(CLinkoutDB::GetInstance().GetLinkout(m_Gi));
     }
 
     ITERATE(CBlast_def_line_set::Tdata, itr, m_Defline->Get()) {
@@ -167,7 +167,7 @@ string CBlastDBExtractor::ExtractLinkoutTokens()
 
     vector<string> linkouts;
     if (m_UseLinkoutDB) {
-        int linkout = m_LinkoutDB->GetLinkout(m_Gi);
+        int linkout = CLinkoutDB::GetInstance().GetLinkout(m_Gi);
         ITERATE(vector<CLinkoutDB::TLinkoutTypeString>, lt, m_LinkoutTypes) {
             if (linkout & lt->first) {
                 linkouts.push_back(lt->second);
