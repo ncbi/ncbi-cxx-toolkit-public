@@ -449,6 +449,7 @@ static const string kFBan = "http://www.fruitfly.org/cgi-bin/annot/fban?";
 static const string kHInvDbHIT = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR=";
 static const string kHInvDbHIX = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";
 static const string kDictyPrim = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";
+static const string kMiRBaseMat = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc=";
 
 // mapping of DB to its URL; please sort these by tag name (mostly in
 // case-sensitive ASCII-betical order as above)
@@ -652,6 +653,13 @@ string CDbtag::GetUrl(void) const
         case CDbtag::eDbtagType_dictyBase:
             if (NStr::Find(tag, "_") != NPOS) {
                 prefix = &kDictyPrim;
+            }
+            break;
+
+
+        case CDbtag::eDbtagType_miRBase:
+            if (NStr::Find(tag, "MIMAT") != NPOS) {
+                prefix = &kMiRBaseMat;
             }
             break;
 
