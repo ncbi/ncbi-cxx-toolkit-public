@@ -1163,9 +1163,9 @@ if $srcdir/scripts/common/impl/get_lock.sh configure $$; then
 else
     exit 1
 fi
-cache_file=config.cache
 # reconfigure.sh expects config.cache to exist; unconditionally clobber
 # any command-line setting.
+cache_file=config.cache
 if test -z "$CONFIG_SITE" -a -r $srcdir/src/build-system/config.site; then
     CONFIG_SITE=$srcdir/src/build-system/config.site
 fi
@@ -2514,7 +2514,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
-      | --with-muparser=* | --with-hdf5=* | --with-jni-* \
+      | --with-muparser=* | --with-hdf5=* | --with-jni=* \
       | --x-includes=* | --x-libraries=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
