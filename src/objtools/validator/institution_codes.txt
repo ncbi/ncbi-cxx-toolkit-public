@@ -5647,7 +5647,7 @@ UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection
 UAM<USA-AR>	s	University of Arkansas at Monticello
 UAM<VEN>	s	Universidad de los Andes, Facultad de Ciencias
-UAMH	c	University of Alberta Microfungus Collection and Herbarium
+UAMH	scb	University of Alberta Microfungus Collection and Herbarium
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia
 UAMM	s	Universidad de los Andes
