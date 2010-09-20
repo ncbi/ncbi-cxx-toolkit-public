@@ -67,7 +67,7 @@
 
 USING_NCBI_SCOPE;
 
-const string kElapsedTime = "ctg_time";
+static const string kSinceTime = "ctg_time";
 
 
 /** @addtogroup NetScheduleClient
@@ -105,6 +105,7 @@ public:
 
     // Save this entry as a cookie add it to serf url
     void PullUpPersistentEntry(const string& entry_name);
+    void PullUpPersistentEntry(const string& entry_name, string& value);
     void DefinePersistentEntry(const string& entry_name, const string& value);
 
     void LoadQueryStringTags();
@@ -125,7 +126,6 @@ public:
     // Remove all persistent entries from cookie and self url.
     void Clear();
 
-    void SetJobKey(const string& job_key);
     void SetJobProgressMessage(const string& msg)
         { m_ProgressMsg = msg; }
     void SetJobInput(const string& input) { m_JobInput = input; }
@@ -197,11 +197,6 @@ string CGridCgiContext::GetHiddenFields() const
     return ret;
 }
 
-void CGridCgiContext::SetJobKey(const string& job_key)
-{
-    DefinePersistentEntry("job_key", job_key);
-}
-
 const string& CGridCgiContext::GetPersistentEntryValue(
     const string& entry_name) const
 {
@@ -239,9 +234,16 @@ void CGridCgiContext::GetRequestEntryValue(const string& entry_name,
 void CGridCgiContext::PullUpPersistentEntry(const string& entry_name)
 {
     string value = kEmptyStr;
+    PullUpPersistentEntry(entry_name, value);
+}
+
+void CGridCgiContext::PullUpPersistentEntry(
+    const string& entry_name, string& value)
+{
     GetQueryStringEntryValue(entry_name, value);
     if (value.empty())
         GetRequestEntryValue(entry_name, value);
+    NStr::TruncateSpacesInPlace(value);
     DefinePersistentEntry(entry_name, value);
 }
 
@@ -592,17 +594,19 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     m_CustomHTTPHeader.reset(new CHTMLPage);
     m_CustomHTTPHeader->SetTemplateString("<@CUSTOM_HTTP_HEADER@>");
     CGridCgiContext grid_ctx(*m_Page, *m_CustomHTTPHeader, ctx);
-    grid_ctx.PullUpPersistentEntry("job_key");
+
+    string job_key(kEmptyStr);
+    grid_ctx.PullUpPersistentEntry("job_key", job_key);
     grid_ctx.PullUpPersistentEntry("Cancel");
+
     grid_ctx.LoadQueryStringTags();
-    string job_key = grid_ctx.GetPersistentEntryValue("job_key");
     try {
         EJobPhase phase = eTerminated;
         CGridJobStatus* job_status = NULL;
 
-        try {
-            grid_ctx.PullUpPersistentEntry(kElapsedTime);
+        grid_ctx.PullUpPersistentEntry(kSinceTime);
 
+        try {
             if (!job_key.empty()) {
                 phase = x_CheckJobStatus(grid_ctx, job_status);
 
@@ -650,7 +654,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     if (!saved_content.empty())
                         os.write(saved_content.data(), saved_content.length());
                     job_key = submitter.Submit();
-                    grid_ctx.SetJobKey(job_key);
+                    grid_ctx.DefinePersistentEntry("job_key", job_key);
 
                     unsigned long wait_time = m_FirstDelay*1000;
                     unsigned long sleep_time = 6;
@@ -660,7 +664,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                             // The job has just been submitted.
                             // Render a report page
                             CTime time(GetFastLocalTime());
-                            grid_ctx.DefinePersistentEntry(kElapsedTime,
+                            grid_ctx.DefinePersistentEntry(kSinceTime,
                                 NStr::IntToString((long) time.GetTimeT()));
                             grid_ctx.SelectView("JOB_SUBMITTED");
                             DefineRefreshTags(grid_ctx.GetSelfURL(),
@@ -708,11 +712,12 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         CTime now(GetFastLocalTime());
         m_Page->AddTagMap("DATE",
             new CHTMLText(now.AsString(m_DateFormat)));
-        string st = grid_ctx.GetPersistentEntryValue(kElapsedTime);
-        if (!st.empty()) {
-            m_Page->AddTagMap("SINCE_TIME", new CHTMLText(st));
-            m_CustomHTTPHeader->AddTagMap("SINCE_TIME", new CHTMLText(st));
-            time_t tt = NStr::StringToInt(st);
+        string since_time = grid_ctx.GetPersistentEntryValue(kSinceTime);
+        if (!since_time.empty()) {
+            m_Page->AddTagMap("SINCE_TIME", new CHTMLText(since_time));
+            m_CustomHTTPHeader->AddTagMap("SINCE_TIME",
+                new CHTMLText(since_time));
+            time_t tt = NStr::StringToInt(since_time);
             CTime start;
             start.SetTimeT(tt);
             m_Page->AddTagMap("SINCE",
@@ -835,7 +840,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
 
     case CNetScheduleAPI::eCanceled:
         // The job has been canceled
-        grid_ctx.DefinePersistentEntry(kElapsedTime, kEmptyStr);
+        grid_ctx.DefinePersistentEntry(kSinceTime, kEmptyStr);
         // Render a job cancellation page
         grid_ctx.SelectView("JOB_CANCELED");
 
@@ -875,7 +880,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
 void CCgi2RCgiApp::OnJobFailed(const string& msg,
                                   CGridCgiContext& ctx)
 {
-    ctx.DefinePersistentEntry(kElapsedTime, kEmptyStr);
+    ctx.DefinePersistentEntry(kSinceTime, kEmptyStr);
     // Render a error page
     ctx.SelectView("JOB_FAILED");
 
