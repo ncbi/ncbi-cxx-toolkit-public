@@ -57,7 +57,7 @@ static int  s_Throttler = 0;
 
 #ifdef NCBI_OS_UNIX
 extern "C" {
-static void s_Interrupt(int signo)
+static void s_Interrupt(int /*signo*/)
 {
     s_Signaled = 1;
 }
@@ -88,8 +88,8 @@ private:
 extern "C" {
 static void s_FtpCallback(CONN conn, ECONN_Callback type, void* data)
 {
-    // Reinstate the callback right away
     if (type != eCONN_OnClose  &&  !s_Signaled) {
+        // Reinstate the callback right away
         SCONN_Callback cb = { s_FtpCallback, data };
         CONN_SetCallback(conn, type, &cb, 0);
     }
