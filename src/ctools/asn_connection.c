@@ -74,7 +74,6 @@ static void s_CloseAsnConn(CONN conn, ECONN_Callback type, void* data)
     struct SAsnConn_Cbdata* cbdata = (struct SAsnConn_Cbdata*) data;
 
     assert(type == eCONN_OnClose && cbdata && cbdata->aip);
-    CONN_SetCallback(conn, type, &cbdata->cb, 0);
     AsnIoFree(cbdata->aip, FALSE/*not a file - don't close*/);
     if ( cbdata->cb.func )
         (*cbdata->cb.func)(conn, type, cbdata->cb.data);
