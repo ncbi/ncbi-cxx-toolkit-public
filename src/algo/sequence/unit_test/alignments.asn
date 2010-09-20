@@ -9967,3 +9967,1806 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      id str "matches",
+      value int 4545
+    },
+    {
+      id str "identity",
+      value real { 922842639593909, 10, -15 }
+    },
+    {
+      id str "splices",
+      value int 98
+    },
+    {
+      id str "consensus_splices",
+      value int 98
+    },
+    {
+      id str "product_coverage",
+      value real { 968921389396709, 10, -15 }
+    },
+    {
+      id str "exon_identity",
+      value real { 952430846605197, 10, -15 }
+    },
+    {
+      id str "pct_identity",
+      value real { 952830188679245, 10, -13 }
+    },
+    {
+      id str "num_ident",
+      value int 4545
+    },
+    {
+      id str "num_mismatch",
+      value int 225
+    },
+    {
+      id str "gap_count",
+      value int 1
+    },
+    {
+      id str "pct_coverage",
+      value real { 968921389396709, 10, -13 }
+    },
+    {
+      id str "weighted_identity",
+      value real { 952830188679245, 10, -15 }
+    },
+    {
+      id str "rank",
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 55742775,
+    genomic-id gi 295788403,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 104,
+        genomic-start 1291838,
+        genomic-end 1291942,
+        parts {
+          match 29,
+          mismatch 1,
+          match 55,
+          mismatch 1,
+          match 19
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 100977996826172, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 980952380952381, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "  "
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 105,
+        product-end nucpos 311,
+        genomic-start 1287594,
+        genomic-end 1287800,
+        parts {
+          match 73,
+          mismatch 1,
+          match 98,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 30
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 200966995239258, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 985507246376812, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 312,
+        product-end nucpos 328,
+        genomic-start 1286181,
+        genomic-end 1286197,
+        parts {
+          match 17
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 17, 10, 0 }
+          },
+          {
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 329,
+        product-end nucpos 361,
+        genomic-start 1285941,
+        genomic-end 1285973,
+        parts {
+          match 23,
+          mismatch 1,
+          match 9
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 309890003204346, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 96969696969697, 10, -14 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 362,
+        product-end nucpos 394,
+        genomic-start 1285803,
+        genomic-end 1285835,
+        parts {
+          match 2,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 21
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 289780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 939393939393939, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 395,
+        product-end nucpos 448,
+        genomic-start 1285651,
+        genomic-end 1285704,
+        parts {
+          match 8,
+          mismatch 1,
+          match 23,
+          mismatch 1,
+          match 20,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 479669990539551, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 944444444444444, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 449,
+        product-end nucpos 550,
+        genomic-start 1285384,
+        genomic-end 1285485,
+        parts {
+          match 2,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 45
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 959670028686523, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 970588235294118, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 551,
+        product-end nucpos 628,
+        genomic-start 1284302,
+        genomic-end 1284379,
+        parts {
+          match 59,
+          mismatch 1,
+          match 18
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 759889984130859, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 987179487179487, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 629,
+        product-end nucpos 673,
+        genomic-start 1283627,
+        genomic-end 1283671,
+        parts {
+          match 35,
+          mismatch 1,
+          match 8,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 409780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 955555555555556, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 674,
+        product-end nucpos 727,
+        genomic-start 1283474,
+        genomic-end 1283527,
+        parts {
+          match 29,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 15
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 499780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 962962962962963, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 728,
+        product-end nucpos 781,
+        genomic-start 1283012,
+        genomic-end 1283065,
+        parts {
+          match 54
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 54, 10, 0 }
+          },
+          {
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 782,
+        product-end nucpos 835,
+        genomic-start 1282218,
+        genomic-end 1282271,
+        parts {
+          match 20,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 12
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 479669990539551, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 944444444444444, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 989,
+        product-end nucpos 1042,
+        genomic-start 1280725,
+        genomic-end 1280778,
+        parts {
+          match 20,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 13,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 419339981079102, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 888888888888889, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1043,
+        product-end nucpos 1087,
+        genomic-start 1277671,
+        genomic-end 1277715,
+        parts {
+          match 2,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 9
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 369560012817383, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 911111111111111, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1088,
+        product-end nucpos 1141,
+        genomic-start 1277201,
+        genomic-end 1277254,
+        parts {
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 38,
+          mismatch 1,
+          match 6
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 479669990539551, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 944444444444444, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1142,
+        product-end nucpos 1240,
+        genomic-start 1275871,
+        genomic-end 1275969,
+        parts {
+          match 2,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 17,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 788899993896484, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 898989898989899, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1241,
+        product-end nucpos 1285,
+        genomic-start 1275532,
+        genomic-end 1275576,
+        parts {
+          match 12,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 12
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 369560012817383, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 911111111111111, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1286,
+        product-end nucpos 1384,
+        genomic-start 1275340,
+        genomic-end 1275438,
+        parts {
+          match 2,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 32,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 24
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 869339981079102, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 939393939393939, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1385,
+        product-end nucpos 1438,
+        genomic-start 1275109,
+        genomic-end 1275162,
+        parts {
+          match 5,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 419339981079102, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 888888888888889, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1439,
+        product-end nucpos 1546,
+        genomic-start 1274630,
+        genomic-end 1274737,
+        parts {
+          match 11,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 23,
+          mismatch 2,
+          match 25,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 2,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 939229965209961, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 935185185185185, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1547,
+        product-end nucpos 1600,
+        genomic-start 1274198,
+        genomic-end 1274251,
+        parts {
+          match 2,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 36
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 499780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 962962962962963, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1601,
+        product-end nucpos 1699,
+        genomic-start 1274018,
+        genomic-end 1274116,
+        parts {
+          match 8,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 27
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 849229965209961, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 929292929292929, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1700,
+        product-end nucpos 1753,
+        genomic-start 1273818,
+        genomic-end 1273871,
+        parts {
+          match 20,
+          mismatch 1,
+          match 23,
+          mismatch 1,
+          match 9
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 499780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 962962962962963, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1754,
+        product-end nucpos 1852,
+        genomic-start 1273279,
+        genomic-end 1273377,
+        parts {
+          match 5,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 53,
+          mismatch 1,
+          match 15
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 889449996948242, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 94949494949495, 10, -14 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1853,
+        product-end nucpos 1906,
+        genomic-start 1272841,
+        genomic-end 1272894,
+        parts {
+          match 32,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 15
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 499780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 962962962962963, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1907,
+        product-end nucpos 1960,
+        genomic-start 1272428,
+        genomic-end 1272481,
+        parts {
+          match 8,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 23,
+          mismatch 1,
+          match 2,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 439449996948242, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 907407407407407, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 1961,
+        product-end nucpos 2014,
+        genomic-start 1272035,
+        genomic-end 1272088,
+        parts {
+          match 8,
+          mismatch 1,
+          match 45
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 519889984130859, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 981481481481482, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2015,
+        product-end nucpos 2068,
+        genomic-start 1271791,
+        genomic-end 1271844,
+        parts {
+          match 17,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 24
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 499780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 962962962962963, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2069,
+        product-end nucpos 2113,
+        genomic-start 1271519,
+        genomic-end 1271563,
+        parts {
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 27
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 389669990539551, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 933333333333333, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2114,
+        product-end nucpos 2212,
+        genomic-start 1271263,
+        genomic-end 1271361,
+        parts {
+          match 2,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 5,
+          mismatch 2,
+          match 13,
+          mismatch 1,
+          match 27
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 829120025634766, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 919191919191919, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2213,
+        product-end nucpos 2320,
+        genomic-start 1270933,
+        genomic-end 1271040,
+        parts {
+          match 14,
+          mismatch 1,
+          match 38,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 9
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 939229965209961, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 935185185185185, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2321,
+        product-end nucpos 2374,
+        genomic-start 1270592,
+        genomic-end 1270645,
+        parts {
+          match 2,
+          mismatch 1,
+          match 41,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 6
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 479669990539551, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 944444444444444, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2375,
+        product-end nucpos 2428,
+        genomic-start 1270263,
+        genomic-end 1270316,
+        parts {
+          match 3,
+          mismatch 1,
+          match 13,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 15
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 459560012817383, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 925925925925926, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2429,
+        product-end nucpos 2482,
+        genomic-start 1269860,
+        genomic-end 1269913,
+        parts {
+          match 17,
+          mismatch 1,
+          match 12,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 21
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 479669990539551, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 944444444444444, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2483,
+        product-end nucpos 2536,
+        genomic-start 1269491,
+        genomic-end 1269544,
+        parts {
+          match 8,
+          mismatch 1,
+          match 45
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 519889984130859, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 981481481481482, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2537,
+        product-end nucpos 2644,
+        genomic-start 1269075,
+        genomic-end 1269182,
+        parts {
+          match 8,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 9
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 919120025634766, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 925925925925926, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2645,
+        product-end nucpos 2698,
+        genomic-start 1268420,
+        genomic-end 1268473,
+        parts {
+          match 54
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 54, 10, 0 }
+          },
+          {
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2699,
+        product-end nucpos 2752,
+        genomic-start 1267924,
+        genomic-end 1267977,
+        parts {
+          match 54
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 54, 10, 0 }
+          },
+          {
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2753,
+        product-end nucpos 2914,
+        genomic-start 1267020,
+        genomic-end 1267181,
+        parts {
+          match 11,
+          mismatch 1,
+          match 50,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 45
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 151945007324219, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 969135802469136, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 2915,
+        product-end nucpos 3022,
+        genomic-start 1266719,
+        genomic-end 1266826,
+        parts {
+          match 26,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 45
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 979449996948242, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 953703703703704, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3023,
+        product-end nucpos 3130,
+        genomic-start 1266387,
+        genomic-end 1266494,
+        parts {
+          match 8,
+          mismatch 1,
+          match 38,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 20,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 15
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 939229965209961, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 935185185185185, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3131,
+        product-end nucpos 3184,
+        genomic-start 1266015,
+        genomic-end 1266068,
+        parts {
+          match 2,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 12
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 359010009765625, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 833333333333333, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3185,
+        product-end nucpos 3292,
+        genomic-start 1265732,
+        genomic-end 1265839,
+        parts {
+          match 5,
+          mismatch 1,
+          match 9,
+          mismatch 1,
+          match 4,
+          mismatch 2,
+          match 1,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 22,
+          mismatch 1,
+          match 36
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 878899993896484, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 907407407407407, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3293,
+        product-end nucpos 3346,
+        genomic-start 1265453,
+        genomic-end 1265506,
+        parts {
+          match 11,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 21
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 479669990539551, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 944444444444444, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3347,
+        product-end nucpos 3454,
+        genomic-start 1265189,
+        genomic-end 1265296,
+        parts {
+          match 17,
+          mismatch 1,
+          match 35,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 14,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 979449996948242, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 953703703703704, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3455,
+        product-end nucpos 3508,
+        genomic-start 1264884,
+        genomic-end 1264937,
+        parts {
+          match 14,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 24
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 499780006408691, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 962962962962963, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3509,
+        product-end nucpos 3616,
+        genomic-start 1264376,
+        genomic-end 1264483,
+        parts {
+          match 26,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 35,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 1
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 939229965209961, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 935185185185185, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3617,
+        product-end nucpos 3905,
+        genomic-start 1263730,
+        genomic-end 1264018,
+        parts {
+          match 8,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 20,
+          mismatch 1,
+          match 41,
+          mismatch 1,
+          match 20,
+          mismatch 1,
+          match 32,
+          mismatch 1,
+          match 41,
+          mismatch 1,
+          match 30,
+          mismatch 1,
+          match 37,
+          mismatch 1,
+          match 29,
+          mismatch 1,
+          match 13
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 268890014648438, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 965397923875433, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 3906,
+        product-end nucpos 4093,
+        genomic-start 1263084,
+        genomic-end 1263271,
+        parts {
+          match 7,
+          mismatch 1,
+          match 32,
+          mismatch 1,
+          match 29,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 22,
+          mismatch 1,
+          match 32,
+          mismatch 1,
+          match 52
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 175934005737305, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 968085106382979, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 4094,
+        product-end nucpos 4336,
+        genomic-start 1262635,
+        genomic-end 1262877,
+        parts {
+          match 3,
+          mismatch 1,
+          match 55,
+          mismatch 1,
+          match 23,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 44,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 20,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 9
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 216856994628906, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 946502057613169, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 4337,
+        product-end nucpos 4922,
+        genomic-start 1261547,
+        genomic-end 1262134,
+        parts {
+          match 27,
+          mismatch 1,
+          match 55,
+          mismatch 1,
+          match 41,
+          mismatch 1,
+          match 26,
+          mismatch 1,
+          match 30,
+          mismatch 1,
+          match 70,
+          mismatch 1,
+          match 16,
+          mismatch 1,
+          match 28,
+          genomic-ins 2,
+          match 77,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 72,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 27,
+          mismatch 1,
+          match 96
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 55947998046875, 10, -11 }
+          },
+          {
+            id str "idty",
+            value real { 976190476190476, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "AT"
+        }
+      }
+    },
+    product-length 4923
+  },
+  bounds {
+    int {
+      from 1261547,
+      to 1291942,
+      strand minus,
+      id gi 295788403
+    }
+  },
+  id {
+    str "f598a214-c49f-49fc-8da4-6c30fb3fe9a7",
+    id 1190
+  },
+  ext {
+    {
+      type str "origin",
+      data {
+        {
+          label str "algo",
+          data str "Splign:1.39.8"
+        }
+      }
+    }
+  }
+}

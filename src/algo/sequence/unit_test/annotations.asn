@@ -5715,3 +5715,662 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Canis lupus familiaris collagen, type II, alpha 1 (COL2A1), mRNA"
+      },
+      partial TRUE,
+      location int {
+        from 1261547,
+        to 1291942,
+        strand minus,
+        id gi 295788403
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Canis lupus familiaris collagen, type II, alpha 1 (COL2A1),
+ mRNA"
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 55742775,
+      location packed-int {
+        {
+          from 1291838,
+          to 1291942,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1287594,
+          to 1287800,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1286181,
+          to 1286197,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285941,
+          to 1285973,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285803,
+          to 1285835,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285651,
+          to 1285704,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285384,
+          to 1285485,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1284302,
+          to 1284379,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1283627,
+          to 1283671,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1283474,
+          to 1283527,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1283012,
+          to 1283065,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1282218,
+          to 1282271,
+          strand minus,
+          id gi 295788403,
+          fuzz-from lim lt
+        },
+        {
+          from 1280725,
+          to 1280778,
+          strand minus,
+          id gi 295788403,
+          fuzz-to lim gt
+        },
+        {
+          from 1277671,
+          to 1277715,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1277201,
+          to 1277254,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275871,
+          to 1275969,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275532,
+          to 1275576,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275340,
+          to 1275438,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275109,
+          to 1275162,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1274630,
+          to 1274737,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1274198,
+          to 1274251,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1274018,
+          to 1274116,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1273818,
+          to 1273871,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1273279,
+          to 1273377,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1272841,
+          to 1272894,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1272428,
+          to 1272481,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1272035,
+          to 1272088,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1271791,
+          to 1271844,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1271519,
+          to 1271563,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1271263,
+          to 1271361,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1270933,
+          to 1271040,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1270592,
+          to 1270645,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1270263,
+          to 1270316,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1269860,
+          to 1269913,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1269491,
+          to 1269544,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1269075,
+          to 1269182,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1268420,
+          to 1268473,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1267924,
+          to 1267977,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1267020,
+          to 1267181,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1266719,
+          to 1266826,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1266387,
+          to 1266494,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1266015,
+          to 1266068,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1265732,
+          to 1265839,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1265453,
+          to 1265506,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1265189,
+          to 1265296,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1264884,
+          to 1264937,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1264376,
+          to 1264483,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1263730,
+          to 1264018,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1263084,
+          to 1263271,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1262635,
+          to 1262877,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1261547,
+          to 1262134,
+          strand minus,
+          id gi 295788403
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 55742776,
+      location packed-int {
+        {
+          from 1291838,
+          to 1291922,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1287594,
+          to 1287800,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1286181,
+          to 1286197,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285941,
+          to 1285973,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285803,
+          to 1285835,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285651,
+          to 1285704,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1285384,
+          to 1285485,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1284302,
+          to 1284379,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1283627,
+          to 1283671,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1283474,
+          to 1283527,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1283012,
+          to 1283065,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1282218,
+          to 1282271,
+          strand minus,
+          id gi 295788403,
+          fuzz-from lim lt
+        },
+        {
+          from 1280725,
+          to 1280778,
+          strand minus,
+          id gi 295788403,
+          fuzz-to lim gt
+        },
+        {
+          from 1277671,
+          to 1277715,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1277201,
+          to 1277254,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275871,
+          to 1275969,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275532,
+          to 1275576,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275340,
+          to 1275438,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1275109,
+          to 1275162,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1274630,
+          to 1274737,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1274198,
+          to 1274251,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1274018,
+          to 1274116,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1273818,
+          to 1273871,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1273279,
+          to 1273377,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1272841,
+          to 1272894,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1272428,
+          to 1272481,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1272035,
+          to 1272088,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1271791,
+          to 1271844,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1271519,
+          to 1271563,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1271263,
+          to 1271361,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1270933,
+          to 1271040,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1270592,
+          to 1270645,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1270263,
+          to 1270316,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1269860,
+          to 1269913,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1269491,
+          to 1269544,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1269075,
+          to 1269182,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1268420,
+          to 1268473,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1267924,
+          to 1267977,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1267020,
+          to 1267181,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1266719,
+          to 1266826,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1266387,
+          to 1266494,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1266015,
+          to 1266068,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1265732,
+          to 1265839,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1265453,
+          to 1265506,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1265189,
+          to 1265296,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1264884,
+          to 1264937,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1264376,
+          to 1264483,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1263730,
+          to 1264018,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1263084,
+          to 1263271,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1262635,
+          to 1262877,
+          strand minus,
+          id gi 295788403
+        },
+        {
+          from 1261988,
+          to 1262134,
+          strand minus,
+          id gi 295788403
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
