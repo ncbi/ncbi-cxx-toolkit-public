@@ -44,7 +44,7 @@
 ///  multivolume / incremental archives, etc, but just regular files,
 ///  devices (character or block), FIFOs, directories, and limited links:
 ///  can extract both hard- and symlinks, but can store symlinks only.
-///  This version is only minimally PAX (Partable Archive Interchange) aware
+///  This version is minimally PAX (Partable Archive Interchange) aware
 ///  for file extractions (but cannot use PAX extensions to store files).
 ///
 
@@ -529,6 +529,21 @@ public:
                             TFlags flags = fSkipUnsupported);
 
 protected:
+    //------------------------------------------------------------------------
+    // User-redefinable callback
+    //------------------------------------------------------------------------
+
+    /// Return false to skip the current entry when reading;
+    /// return code gets completely ignored when writing.
+    ///
+    /// Note that this callback can prescreen multiple copies of the same
+    /// entry in case the archive has been updated (so only the last copy is
+    /// the actual file when extracted).
+    virtual bool Checkpoint(const CTarEntryInfo& /*current*/,
+                            bool /*ifwrite: write==true, read==false*/) const
+    { return true; }
+
+private:
     /// Archive action
     enum EOpenMode {
         eNone = 0,
@@ -616,7 +631,7 @@ protected:
     // Append a regular file (current entry) to the archive.
     void x_AppendFile(const string& file);
 
-protected:
+private:
     string         m_FileName;     ///< Tar archive file name.
     CNcbiFstream*  m_FileStream;   ///< File stream of the archive.
     EOpenMode      m_OpenMode;     ///< What was it opened for.

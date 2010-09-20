@@ -37,7 +37,7 @@
  *   multivolume / incremental archives, etc, but just regular files,
  *   devices (character or block), FIFOs, directories, and limited links:
  *   can extract both hard- and symlinks, but can store symlinks only.
- *   This version is only minimally PAX (Partable Archive Interchange) aware
+ *   This version is minimally PAX (Partable Archive Interchange) aware
  *   for file extractions (but cannot use PAX extensions to store files).
  *
  */
@@ -2050,8 +2050,8 @@ void CTar::x_WriteEntryInfo(const string& name)
     }
 
     // Size
-    ok = s_EncodeUint8(type == CTarEntryInfo::eFile ? m_Current.GetSize() : 0,
-                       h->size, sizeof(h->size) - 1);
+    _ASSERT(type == CTarEntryInfo::eFile  ||  m_Current.GetSize() == 0);
+    ok = s_EncodeUint8(m_Current.GetSize(), h->size, sizeof(h->size) - 1);
     if (!ok) {
         TAR_THROW(this, eMemory,
                   "Cannot store file size");
@@ -2143,7 +2143,7 @@ void CTar::x_WriteEntryInfo(const string& name)
         memcpy(block.buffer + sizeof(block) - 4, "NCBI", 4);
     }
 
-    // Final step:  check summing
+    // Final step: checksumming
     if (!s_TarChecksum(&block, fmt == eTar_OldGNU ? true : false)) {
         TAR_THROW(this, eMemory,
                   "Cannot store checksum");
@@ -2151,6 +2151,9 @@ void CTar::x_WriteEntryInfo(const string& name)
 
     // Write header
     x_WriteArchive(sizeof(block.buffer), block.buffer);
+    m_Current.m_HeaderSize = (streamsize)(m_StreamPos - m_Current.m_Pos);
+
+    Checkpoint(m_Current, true/*write*/);
 }
 
 
@@ -2405,6 +2408,9 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         }
         xinfo.m_Type = CTarEntryInfo::eUnknown;
         _ASSERT(status == eFailure  ||  status == eSuccess);
+
+        if (!Checkpoint(m_Current, false/*read*/))
+            status = eFailure;
 
         // Match file name with the set of masks
         bool match = (status == eFailure ? false :
@@ -3084,11 +3090,9 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         _ASSERT(update);
         /*FALLTHRU*/
     case CDirEntry::eDir:
-        // NB: x_WriteEntryInfo() takes care of setting size(0) for non-files
         if (update) {
+            m_Current.m_Stat.st_size = 0;
             x_WriteEntryInfo(path);
-            m_Current.m_HeaderSize =
-                (streamsize)(m_StreamPos - m_Current.m_Pos);
             entries->push_back(m_Current);
         }
         if (type == CDirEntry::eDir) {
@@ -3145,7 +3149,6 @@ void CTar::x_AppendFile(const string& file)
 
     // Write file header
     x_WriteEntryInfo(file);
-    m_Current.m_HeaderSize = (streamsize)(m_StreamPos - m_Current.m_Pos);
 
     Uint8 size = m_Current.GetSize();
     while (size) {
@@ -3176,24 +3179,21 @@ void CTar::x_AppendFile(const string& file)
 
 class CTarReader : public IReader
 {
-    friend class CTar;
-
-protected:
+public:
     CTarReader(CTar* tar, EOwnership own = eNoOwnership)
         : m_Read(0), m_Eof(false), m_Bad(false), m_Own(own), m_Tar(tar)
     { }
     ~CTarReader();
 
-public:
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
     virtual ERW_Result PendingCount(size_t* count);
 
-protected:
-    Uint8       m_Read;
-    bool        m_Eof;
-    bool        m_Bad;
-    EOwnership  m_Own;
-    CTar*       m_Tar;
+private:
+    Uint8      m_Read;
+    bool       m_Eof;
+    bool       m_Bad;
+    EOwnership m_Own;
+    CTar*      m_Tar;
 };
 
 
