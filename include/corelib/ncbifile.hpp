@@ -539,6 +539,19 @@ public:
     ///   ERenameFlags, Copy
     bool Rename(const string& new_path, TRenameFlags flags = fRF_Default);
 
+    /// Move the entry to a specified directory.
+    ///
+    /// The target entry name will be "dir/entry".
+    /// @param dir
+    ///   Directory name to move into.
+    /// @param flags
+    ///   Flags specifying how to move the entry.
+    /// @return
+    ///   TRUE if the operation was completed successfully; FALSE, otherwise.
+    /// @sa
+    ///   CopyToDir, Rename, Copy
+    bool MoveToDir(const string& dir, TCopyFlags flags = fRF_Default);
+
     /// Get backup suffix.
     ///
     /// @sa
@@ -3338,6 +3351,13 @@ bool CDirEntry::CopyToDir(const string& dir, TCopyFlags flags,
 {
     string path = MakePath(dir, GetName());
     return Copy(path, flags, buf_size);
+}
+
+inline 
+bool CDirEntry::MoveToDir(const string& dir, TRenameFlags flags)
+{
+    string path = MakePath(dir, GetName());
+    return Rename(path, flags);
 }
 
 inline
