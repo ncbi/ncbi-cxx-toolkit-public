@@ -308,13 +308,13 @@ void SNetICacheClientImpl::RegisterUnregisterSession(string cmd, unsigned pid)
 
 void CNetICacheClient::RegisterSession(unsigned pid)
 {
-    m_Impl->RegisterUnregisterSession("SMR ", pid);
+    NCBI_THROW(CNetCacheException, eNotImplemented, "SMR is not implemented");
 }
 
 
 void CNetICacheClient::UnRegisterSession(unsigned pid)
 {
-    m_Impl->RegisterUnregisterSession("SMU ", pid);
+    NCBI_THROW(CNetCacheException, eNotImplemented, "SMU is not implemented");
 }
 
 
@@ -334,17 +334,13 @@ ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
 
 int CNetICacheClient::GetTimeout() const
 {
-    string cmd(m_Impl->m_ICacheCmdPrefix + "GTOU");
-    m_Impl->AppendClientIPSessionIDPassword(&cmd);
-    return NStr::StringToUInt(m_Impl->StickToServerAndExec(cmd).response);
+    NCBI_THROW(CNetCacheException, eNotImplemented, "GTOU is not implemented");
 }
 
 
 bool CNetICacheClient::IsOpen() const
 {
-    string cmd(m_Impl->m_ICacheCmdPrefix + "ISOP");
-    m_Impl->AppendClientIPSessionIDPassword(&cmd);
-    return NStr::StringToUInt(m_Impl->StickToServerAndExec(cmd).response) != 0;
+    NCBI_THROW(CNetCacheException, eNotImplemented, "ISOP is not implemented");
 }
 
 
@@ -356,7 +352,7 @@ void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
 
 ICache::EKeepVersions CNetICacheClient::GetVersionRetention() const
 {
-    NCBI_THROW(CNetCacheException, eNotImplemented, "ISOP is not implemented");
+    NCBI_THROW(CNetCacheException, eNotImplemented, "GVRP is not implemented");
 }
 
 
@@ -391,7 +387,8 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
                                     const string&  subkey,
                                     string*        owner)
 {
-    *owner = m_Impl->ExecStdCmd("GBLW", key, version, subkey);
+    ERR_POST("NetCache command 'GBLW' has been phased out");
+    *owner = kEmptyStr;
 }
 
 IReader* SNetICacheClientImpl::GetReadStream(
@@ -500,8 +497,7 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
                                        int            version,
                                        const string&  subkey)
 {
-    return NStr::StringToInt(
-        m_Impl->ExecStdCmd("GACT", key, version, subkey));
+    NCBI_THROW(CNetCacheException, eNotImplemented, "GACT is not implemented");
 }
 
 
