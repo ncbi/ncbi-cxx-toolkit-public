@@ -49,7 +49,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    Linux*     ) : ${BOOST_PATH=$NCBI/boost-1.41.0} ;;
+    Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.41.0} ;;
     *          ) : ${BOOST_PATH=$NCBI/boost-1.35.0} ;;
 esac
 
