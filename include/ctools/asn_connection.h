@@ -80,15 +80,15 @@ AsnIoPtr CreateAsnConn
 /* Create service connection using the service name,
  * type and connection parameters, info (use default connection
  * parameters if info is passed NULL).
- * Create two ASN streams based on the connection -- one stream is for
- * input and one is for output. Return pointers to the streams 
- * via 'input' and 'output' arguments.
+ * Create two ASN.1 streams based on the created connection: one stream is for
+ * input and one is for output.  Return the pointers to the streams 
+ * via the 'input' and 'output' parameters, respectively.
  * No corresponding stream is created if either pointer is passed NULL.
  * On success, return created CONN handle; otherwise, return 0.
- * NOTE: Returned ASN stream pointers are valid as long as connection
- *       handle exists, that is after the connection handle is passed to
- *       CONN_Close(), both pointers become invalid, and should not be used.
- *       Don't destroy the ASN streams explicitly using AsnIoFree or AsnIoFree!
+ * NOTE: Returned ASN stream pointers are valid as long as the connection
+ *       handle CONN exists; that is, after the connection handle is passed to
+ *       CONN_Close(), both pointers become invalid, and must not be used.
+ *       Don't destroy the ASN streams explicitly using AsnIoClose / AsnIoFree!
  */
 CONN CreateAsnConn_ServiceEx
 (const char*           service,
