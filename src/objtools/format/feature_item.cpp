@@ -1239,7 +1239,12 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     }
 
     const CGene_ref *xref_g_ref = m_Feat.GetGeneXref(); // this will point to the gene xref inside the feature, if any
-    const bool thereIsXrefToGene = xref_g_ref && ! xref_g_ref->GetLocus().empty();
+    string xref_label;
+    if( xref_g_ref ) {
+        xref_g_ref->GetLabel(&xref_label);
+    }
+
+    const bool thereIsXrefToGene = ( ! xref_label.empty() );
 
     if ( m_Feat && ! thereIsXrefToGene ) {
         CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
@@ -1302,10 +1307,22 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     // if we used an xref to a gene, but the new gene doesn't equal the xref, then 
     // override it (example accession where this issue crops up: AF231993.1 )
     if( thereIsXrefToGene ) {
-        const bool gRefInvalidOrMismatchedWithXref = NULL == g_ref || (g_ref && xref_g_ref->GetLocus() != g_ref->GetLocus());
-        if( gRefInvalidOrMismatchedWithXref ) {
-            s_feat.ReleaseOrNull();
-            g_ref = xref_g_ref;
+
+        // we iterate through all the genes to find a match.  There's got to be a better way...
+        SAnnotSelector sel = ctx.SetAnnotSelector();
+        sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+            .IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+        CFeat_CI feat_it(ctx.GetHandle(), sel );
+        for( ; feat_it; ++feat_it ) {
+            const CMappedFeat &feat = (*feat_it);
+            const CGene_ref& other_ref = feat.GetData().GetGene();
+            string other_label;
+            other_ref.GetLabel( &other_label );
+
+            if( xref_label == other_label ) {
+                s_feat.Reset(&feat.GetOriginalFeature());
+                g_ref = &other_ref;
+            }
         }
     }
 }
@@ -1790,7 +1807,18 @@ void CFeatureItem::x_AddQualTranslation(
         CSeq_data::E_Choice coding = cfg.IupacaaOnly() ?
             CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
         seqv.SetCoding( coding );
-        seqv.GetSeqData( 0, seqv.size(), translation );
+
+        // occasionally submitters give us data where the length is incorrect, but in that case 
+        // we should at least try our best (but emit a warning)
+        const size_t real_length = seqv.GetSeqMap().FindSegment(0, &scope).GetRefData().GetNcbieaa().Get().length();
+        const size_t seqv_size = seqv.size();
+        if( real_length != seqv_size ) {
+            // TODO: print a warning here.  This is not done yet because we will crash in this case anyway until
+            // the objmgr code is modified to be a bit more flexible.
+        }
+        const size_t length_to_use = min( real_length, seqv_size );
+
+        seqv.GetSeqData( 0, length_to_use, translation );
     }
 
     if (!NStr::IsBlank(translation)) {
@@ -3207,10 +3235,34 @@ void CFeatureItem::x_AddRptTypeQual(
     
     string value( rpt_type );
     NStr::TruncateSpacesInPlace( value );
-    if ( check_qual_syntax && ! s_IsValidRptType( value ) ) {
-        return;
+
+    string::size_type start_of_next_rpt_type = 0;
+
+    // value might consist of multiple rpt_type's in parens separated by commas
+    // in which case we just trim the parens off
+    if( value[0] == '(' && value[value.length() - 1] == ')' ) {
+        value.resize( value.length() - 1 ); // chop off final paren. We don't chop off initial paren because of the computational cost
+        start_of_next_rpt_type = 1; // place "next iter" past the initial paren
     }
-    x_AddQual( eFQ_rpt_type, new CFlatStringQVal( value, CFormatQual::eUnquoted ) );
+
+    // iterate through the rpt_types
+    const string::size_type value_length = value.length();
+    while( start_of_next_rpt_type < value_length ) {
+        // find next comma (or end)
+        string::size_type next_comma = value.find( ',', start_of_next_rpt_type );
+        if (next_comma == string::npos ) {
+            next_comma = value_length;
+        }
+
+        // extract the next rpt_type from the big value string
+        const string next_rpt_type = value.substr( start_of_next_rpt_type, next_comma - start_of_next_rpt_type );
+
+        if ( ! check_qual_syntax || s_IsValidRptType( next_rpt_type ) ) {
+            x_AddQual( eFQ_rpt_type, new CFlatStringQVal( next_rpt_type, CFormatQual::eUnquoted ) );
+        }
+
+        start_of_next_rpt_type = next_comma + 1;
+    }
 }
 
 
