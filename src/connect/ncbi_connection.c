@@ -140,7 +140,7 @@ typedef struct SConnectionTag {
     size_t                 rdpos;      /* read and ...                       */
     size_t                 wrpos;      /*          ... write positions       */
 
-    SCONN_Callback         cbs[CONN_N_CALLBACKS];
+    SCONN_Callback         cb[CONN_N_CALLBACKS];
 
     unsigned int           magic;      /* magic number for integrity checks  */
 } SConnection;
@@ -153,17 +153,17 @@ static void x_Callback(CONN conn, ECONN_Callback type)
 
     assert(conn  &&  (int) type >= 0  &&  (int) type < CONN_N_CALLBACKS);
     if (conn->state != eCONN_Unusable) {
-        func = conn->cbs[type].func;
-        data = conn->cbs[type].data;
+        func = conn->cb[type].func;
+        data = conn->cb[type].data;
     } else {
         func = 0;
         data = 0;
     }
     /* allow a CB only once */
-    memset(&conn->cbs[type], 0, sizeof(conn->cbs[type]));
+    memset(&conn->cb[type], 0, sizeof(conn->cb[type]));
     /* call it! */
     if (func)
-        func(conn, type, data);
+        (*func)(conn, type, data);
 }
 
 
@@ -177,7 +177,6 @@ static EIO_Status x_ReInit
 
     assert(conn->meta.list  ||  conn->state == eCONN_Unusable);
 
-    /* reset and close current connector(s), if any */
     if (conn->meta.list) {
         if (conn->state == eCONN_Open) {
             /* call current connector's "FLUSH" method */
@@ -195,21 +194,20 @@ static EIO_Status x_ReInit
             /* Reinit with the same and the only connector - allowed */
             if (!x_conn->next  &&  x_conn == conn->meta.list)
                 break;
-            status = eIO_Unknown;
+            status = eIO_NotSupported;
             CONN_LOG(4, ReInit, eLOG_Error, "Partial re-init not allowed");
-            return eIO_NotSupported;
+            return status;
         }
-    }
-
-    if (!x_conn) {
-        /* NB: Re-initing with same connector does not cause the callback;   */
-        /* NB: Newly created connection can't have a callback set just as yet*/
-        x_Callback(conn, eCONN_OnClose);
     }
 
     if (conn->meta.list) {
         /* erase unread data */
         BUF_Erase(conn->buf);
+
+        if (!x_conn) {
+            /* NB: Re-init with same connector does not cause the callback */
+            x_Callback(conn, eCONN_OnClose);
+        }
 
         if (conn->state & eCONN_Open) {
             /* call current connector's "CLOSE" method */
@@ -330,18 +328,14 @@ extern EIO_Status CONN_ReInit
 (CONN      conn,
  CONNECTOR connector)
 {
-    const STimeout* timeout = 0/*dummy*/;
-    EIO_Status status;
-
     CONN_NOT_NULL(1, ReInit);
 
-    /* check arg */
     if (!connector  &&  !conn->meta.list) {
+        static const STimeout* timeout = 0/*dummy*/;
         assert(conn->state == eCONN_Unusable);
-        status = eIO_InvalidArg;
-        CONN_LOG(2, ReInit, eLOG_Error,
-                 "Cannot re-init empty connection with NULL");
-        return status;
+        CONN_LOG_EX(2, ReInit, eLOG_Error,
+                    "Cannot re-init empty CONN with NULL", eIO_InvalidArg);
+        return eIO_InvalidArg;
     }
 
     return x_ReInit(conn, connector);
@@ -432,17 +426,18 @@ extern size_t CONN_GetPosition(CONN conn, EIO_Event event)
     case eIO_Open:
         conn->rdpos = 0;
         conn->wrpos = 0;
-        return 0;
+        break;
     case eIO_Read:
         return conn->rdpos;
     case eIO_Write:
         return conn->wrpos;
     default:
         sprintf(errbuf, "Unknown direction #%d", (int) event);
-        CONN_LOG_EX(31, GetPosition, eLOG_Error, errbuf, eIO_InvalidArg);
+        CONN_LOG_EX(31, GetPosition, eLOG_Error, errbuf, 0);
         break;
     }
-    return eIO_InvalidArg;
+
+    return 0;
 }
 
 
@@ -645,7 +640,7 @@ extern EIO_Status CONN_Write
     default:
         break;
     }
-    return eIO_Unknown;
+    return eIO_NotSupported;
 }
 
 
@@ -839,7 +834,7 @@ extern EIO_Status CONN_Read
     default:
         break;
     }
-    return eIO_Unknown;
+    return eIO_NotSupported;
 }
 
 
@@ -903,7 +898,7 @@ extern EIO_Status CONN_ReadLine
         if (i < x_read) {
             assert(done  ||  len >= size);
             if (!BUF_PushBack(&conn->buf, x_buf + i, x_read - i)) {
-                const STimeout* timeout = 0/*dummy*/;
+                static const STimeout* timeout = 0/*dummy*/;
                 CONN_LOG_EX(15, ReadLine, eLOG_Error,
                             "Cannot pushback extra data", 0);
                 status = eIO_Unknown;
@@ -980,8 +975,8 @@ extern EIO_Status CONN_Cancel(CONN conn)
 extern EIO_Status CONN_SetCallback
 (CONN                  conn,
  ECONN_Callback        type,
- const SCONN_Callback* new_cb,
- SCONN_Callback*       old_cb)
+ const SCONN_Callback* newcb,
+ SCONN_Callback*       oldcb)
 {
     int i;
 
@@ -995,9 +990,13 @@ extern EIO_Status CONN_SetCallback
         return eIO_InvalidArg;
     }
 
-    if (old_cb)
-        *old_cb = conn->cbs[i];
-    if (new_cb)
-        conn->cbs[i] = *new_cb;
+    /* NB: oldcb and newcb may point to the same address */
+    if (newcb  ||  oldcb) {
+        SCONN_Callback cb = conn->cb[i];
+        if (newcb)
+            conn->cb[i] = *newcb;
+        if (oldcb)
+            *oldcb = cb;
+    }
     return eIO_Success;
 }
