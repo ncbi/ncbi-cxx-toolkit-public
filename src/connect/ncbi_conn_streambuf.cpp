@@ -100,11 +100,11 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, streamsize buf_size,
     m_WriteBuf = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : 0;
     m_ReadBuf  = buf_size ? m_WriteBuf + m_BufSize           : &x_Buf;
 
-    setp(m_WriteBuf, m_WriteBuf + buf_size);   // Put area (if any)
+    setp(m_WriteBuf,    m_WriteBuf + buf_size);  // Put area (if any)
     if ( ptr )
-        setg(ptr, ptr, ptr + size);            // Initial get area
+        setg(ptr,       ptr,       ptr + size);  // Initial get area
     else
-        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf); // Empty get area
+        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);   // Empty get area
 
     SCONN_Callback cb;
     cb.func = x_OnClose; /* NCBI_FAKE_WARNING: WorkShop */
@@ -130,14 +130,16 @@ void CConn_Streambuf::x_Close(bool close)
     m_Conn = 0;  // NB: no re-entry
 
     if ( close ) {
-        if ( m_CbValid )
-            CONN_SetCallback(c, eCONN_OnClose, &m_Cb, 0);
-
-        if ( m_Close ) {
-            // Close only if not called from close callback
-            if ((m_Status = CONN_Close(c)) != eIO_Success)
-                _TRACE(x_Message("x_Cleanup(): CONN_Close() failed"));
+        // here: not called from close callback
+        if ( m_CbValid ) {
+            SCONN_Callback cb;
+            CONN_SetCallback(c, eCONN_OnClose, &m_Cb, &cb);
+            if ((void*) cb.func != (void*) x_OnClose  ||  cb.data != this)
+                CONN_SetCallback(c, eCONN_OnClose, &cb, 0);
         }
+
+        if (m_Close  &&  (m_Status = CONN_Close(c)) != eIO_Success)
+            _TRACE(x_Message("x_Close(): CONN_Close() failed"));
     } else if (m_CbValid  &&  m_Cb.func)
         m_Cb.func(c, eCONN_OnClose, m_Cb.data);
 }
@@ -157,10 +159,19 @@ void CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
 
 string CConn_Streambuf::x_Message(const char* msg)
 {
+    const char* type = m_Conn ? CONN_GetType(m_Conn)     : 0;
+    char* descr      = m_Conn ? CONN_Description(m_Conn) : 0;
     string result("CConn_Streambuf::");
     result += msg;
     result += " (";
     result += IO_StatusStr(m_Status);
+    result += " @ ";
+    result += type ? type : "UNKNOWN";
+    if (descr) {
+        result += "; ";
+        result += descr;
+        free(descr);
+    }
     result += ')';
     return result;
 }
@@ -207,7 +218,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
     if ((m_Status = CONN_Flush(m_Conn)) != eIO_Success) {
-        ERR_POST_X(9, "overflow(): CONN_Flush() failed");
+        ERR_POST_X(9, x_Message("overflow(): CONN_Flush() failed"));
         return CT_EOF;
     }
     return CT_NOT_EOF(CT_EOF);
