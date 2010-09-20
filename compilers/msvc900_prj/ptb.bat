@@ -240,7 +240,7 @@ if "%PTB_RESULT%"=="1" (
 )
 
 set ALLOBJ="_generate_all_objects.dataspec"
-type "%SLN_PATH%" | find /C %ALLOBJ% >NUL 2>&1
+type "%SLN_PATH%" | %SystemRoot%\system32\find /C %ALLOBJ% >NUL 2>&1
 if not errorlevel 1 (
   echo ******************************************************************************
   echo ******************************************************************************
