@@ -3488,10 +3488,6 @@ static void s_CheckIdLookup(CSeqDB & db, const string & acc, size_t exp_oids, si
     string all_fasta = fasta.str();
     string msg = string("Error for accession: ") + acc;
     
-    if (oids.size() != exp_oids) {
-        cout << "\nacc: " << acc << ": #oids " << oids.size() << endl;
-    }
-    
     BOOST_REQUIRE_MESSAGE(all_fasta.size() == exp_size, msg);
     BOOST_REQUIRE_MESSAGE(exp_oids == oids.size(), msg);
 }
@@ -3988,7 +3984,9 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
     int gi2search = 129;    // shouldn't be found
     oids.clear();
     db->AccessionToOids(NStr::IntToString(gi2search), oids);
-    BOOST_CHECK_EQUAL(0U, oids.size());
+    BOOST_CHECK_EQUAL(1U, oids.size());
+    list< CRef< CSeq_id> > filtered_ids = db->GetSeqIDs(oids[0]);
+    BOOST_CHECK_EQUAL(0U, filtered_ids.size());
 
     int oid = -1;
     bool found = false;
@@ -3998,7 +3996,9 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
     found = false;
     oid = -1;
     found = db->GiToOid(gi2search, oid);
-    BOOST_CHECK_EQUAL(false, found);
+    BOOST_CHECK_EQUAL(true, found);
+    list< CRef< CSeq_id> > filtered_gis = db->GetSeqIDs(oid);
+    BOOST_CHECK_EQUAL(0U, filtered_gis.size());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
