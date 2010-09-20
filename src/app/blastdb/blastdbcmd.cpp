@@ -105,12 +105,14 @@ private:
     /// Extract the queries for the BLAST database from the command line
     /// options
     /// @param queries queries to retrieve [in|out]
-    void x_GetQueries(TQueries& queries) const;
+    /// @return 0 on sucess; 1 if some queries were not processed
+    int x_GetQueries(TQueries& queries) const;
 
     /// Add a query ID for processing
     /// @param retval the return value where the queries will be added [in|out]
     /// @param entry the user's query [in]
-    void x_AddSeqId(CBlastDBCmdApp::TQueries& retval, const string& entry) const;
+    /// @return 0 on sucess; 1 if some seqid is not translated
+    int x_AddSeqId(CBlastDBCmdApp::TQueries& retval, const string& entry) const;
 
     /// Add an OID for processing
     /// @param retval the return value where the queries will be added [in|out]
@@ -118,7 +120,7 @@ private:
     void x_AddOid(CBlastDBCmdApp::TQueries& retval, const int oid, bool check=false) const;
 };
 
-void
+int
 CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval, 
                            const string& entry) const
 {
@@ -129,7 +131,7 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
         ITERATE(vector<int>, oid, oids) {
             x_AddOid(retval, *oid, true);
         }
-        return;
+        return 0;
     } 
 
     // FASTA / target_only just need one id
@@ -140,7 +142,7 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
                 "target_only must be used with gi entry.");
         }
         retval.push_back(CRef<CBlastDBSeqId>(new CBlastDBSeqId(entry)));
-        return;
+        return 0;
     } 
 
     // Default: find oid first and add all pertinent
@@ -148,7 +150,11 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
     m_BlastDb->AccessionToOids(entry, oids);
     if (!oids.empty()) {
         x_AddOid(retval, oids[0], true);
-    }
+        return 0;
+    } 
+
+    ERR_POST(Error << entry << ": OID not found");
+    return 1;
 }
 
 void 
@@ -189,9 +195,10 @@ CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
     }
 }
 
-void
+int
 CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 {
+    int err_found = 0;
     const CArgs& args = GetArgs();
 
     retval.clear();
@@ -212,14 +219,14 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
             vector<string> tokens;
             NStr::Tokenize(entry, kDelim, tokens);
             ITERATE(vector<string>, itr, tokens) {
-                x_AddSeqId(retval, *itr);
+                err_found += x_AddSeqId(retval, *itr);
             }
         } else if (entry == "all") {
             for (int i = 0; m_BlastDb->CheckOrFindOID(i); i++) {
                 x_AddOid(retval, i);
             }
         } else {
-            x_AddSeqId(retval, entry);
+            err_found += x_AddSeqId(retval, entry);
         }
 
     } else if (args["entry_batch"].HasValue()) {
@@ -230,7 +237,7 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
             string line;
             NcbiGetlineEOL(input, line);
             if ( !line.empty() ) {
-                x_AddSeqId(retval, line);
+                err_found += x_AddSeqId(retval, line);
             }
         }
 
@@ -242,6 +249,8 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
         NCBI_THROW(CInputException, eInvalidInput,
                    "Entry not found in BLAST database");
     }
+
+    return (err_found) ? 1 : 0;
 }
 
 void
@@ -357,7 +366,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     CSeqFormatter seq_fmt(outfmt, *m_BlastDb, out, conf);
 
     TQueries queries;
-    x_GetQueries(queries);
+    errors_found = x_GetQueries(queries);
     _ASSERT( !queries.empty() );
 
     NON_CONST_ITERATE(TQueries, itr, queries) {
