@@ -106,6 +106,11 @@ const streamsize kConn_DefaultBufSize = 4096;
 /// the stream and underlying connector (which in turn may do
 /// further buffering, if needed).
 ///
+/// Note: CConn_IOStream implementation utilizes the eCONN_OnClose callback
+///       on the underlying CONN object.  Care must be taken when intercepting
+///       the callback later using the native CONN API.
+/// @sa
+///    CONN_SetCallback, eCONN_OnClose
 
 class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConnIniter,
                                             public CNcbiIostream

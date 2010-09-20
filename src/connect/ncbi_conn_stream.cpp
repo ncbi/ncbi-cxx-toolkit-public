@@ -100,8 +100,9 @@ EIO_Status CConn_IOStream::Status(void) const
 
 void CConn_IOStream::Close(void)
 {
-    if (m_CSb)
+    if (m_CSb) {
         m_CSb->Close();
+    }
 }
 
 
@@ -109,8 +110,9 @@ void CConn_IOStream::x_Cleanup(void)
 {
     streambuf* sb = rdbuf();
     delete sb;
-    if (sb != m_CSb)
+    if (sb != m_CSb) {
         delete m_CSb;
+    }
     m_CSb = 0;
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
