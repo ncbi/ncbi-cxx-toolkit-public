@@ -134,7 +134,7 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                       void*         buf,
                       size_t        buf_size);
 
-    virtual IReader* GetReadStream(
+    IReader* GetReadStream(
         const string& key,
         int version,
         const string& subkey,
