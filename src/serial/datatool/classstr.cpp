@@ -826,7 +826,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         CClassTypeStrings* typeStr = resolved->GetTypeStr();
                         if (typeStr) {
                             ITERATE ( TMembers, ir, typeStr->m_Members ) {
-                                if (ir->simple) {
+                                if (ir->simple && ir->type->CanBeCopied()) {
                                     string ircType(ir->type->GetCType(
                                                        code.GetNamespace()));
                                     if (CClassCode::GetDoxygenComments()) {
@@ -1379,7 +1379,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "public:\n";
     DeclareConstructor(out, GetClassNameDT());
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple && !x_IsNullType(i)) {
+        if (i->simple && !x_IsNullType(i) && i->type->CanBeCopied()) {
             out <<
                 "    " << GetClassNameDT() <<"(const "<<
                 i->type->GetCType(GetNamespace()) << "& value);" <<
@@ -1401,7 +1401,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "\n";
     }
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple && !x_IsNullType(i)) {
+        if (i->simple && !x_IsNullType(i) && i->type->CanBeCopied()) {
             out <<
             "    /// Conversion operator to \'"
             << i->type->GetCType(GetNamespace()) << "\' type.\n"
@@ -1437,7 +1437,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "}\n"
         "\n";
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple && !x_IsNullType(i)) {
+        if (i->simple && !x_IsNullType(i) && i->type->CanBeCopied()) {
             out <<
             "inline\n" <<
             GetClassNameDT()<<"::"<<GetClassNameDT()<<"(const "<<
@@ -1468,7 +1468,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "\n";
     }
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple && !x_IsNullType(i)) {
+        if (i->simple && !x_IsNullType(i) && i->type->CanBeCopied()) {
             out <<
             "inline\n"<<
             GetClassNameDT() << "::"
