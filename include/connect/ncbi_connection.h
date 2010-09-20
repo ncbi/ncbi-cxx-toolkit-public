@@ -104,6 +104,20 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
  );
 
 
+/* Get read (event == eIO_Read) or write (event == eIO_Write)
+ * position within the connection.
+ * Positions are advanced from 0 on, and only consider the I/O that
+ * is involved with calling connector's methods (i.e. pushbacks are
+ * never considered, and peeks -- not always).
+ * Special case: eIO_Open as "event" clears both positions with 0,
+ * and always returns 0.
+ */
+extern size_t CONN_GetPosition
+(CONN      conn,
+ EIO_Event event
+ );
+
+
 /* Return human-readable description of the connection as a character
  * 0-terminated string. The string is not guaranteed to have any
  * particular format and is intended solely for something like
@@ -249,6 +263,18 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
  );
 
 
+/* Cancel the connection's I/O ability.
+ * This is *not* connection closure, but any data extraction or
+ * insertion (Read/Write) will be effectively rejected after this call
+ * (and eIO_Interrupt will result, same for CONN_Status()).
+ * CONN_Close() is still required to release internal connection
+ * structures.
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Cancel
+(CONN conn  /* [in] connection handle */
+ );
+
+
 /* Close the connection, destroy relevant internal data.
  * NOTE:  whatever error code is returned, the connection handle "conn"
  *        will become invalid (so, you should not use it anymore).
@@ -259,30 +285,37 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
 
 
 /* Set user callback function to be called upon an event specified by the
- * callback type. Note that the callback function is always called prior to
- * the event to happen, e.g. the eCONN_OnClose callback is called when
- * the connection is about to close, but not closed yet.
+ * callback type.  Note that the callback function is always called prior
+ * to the event to happen, e.g. the eCONN_OnClose callback is called when
+ * the connection is about to close, but have not yet been closed.
  * The callback function is supplied with 3 arguments: connection handle,
- * type of event, and user data (specified when the callback was set).
- * CONN_SetCallback stores previous callback in "old_cb" (if it is not NULL).
+ * type of event, and the user data (specified when the callback was set).
+ * CONN_SetCallback() stores previous callback in "old_cb" (if it is not NULL).
+ * The callbacks are called only once (they get reset each time prior to
+ * been actually called), so the code that wants to get callbacks repeatedly
+ * must reinstate them as necessary with CONN_SetCallback() calls
+ * (e.g. from inside the callbacks themselves).
  */
 typedef enum {
-    eCONN_OnClose = 0
+    eCONN_OnClose  = 0,  /* NB: connection has been flushed prior to the call*/
+    eCONN_OnRead   = 1,  /* Read from connector is about to occur            */
+    eCONN_OnWrite  = 2,  /* Write to connector is about to occur             */
+    eCONN_OnCancel = 3   /* CONN_Cancel() is about to take effect            */
 } ECONN_Callback;
-#define CONN_N_CALLBACKS 1
+#define CONN_N_CALLBACKS 4
 
 typedef void (*FConnCallback)(CONN conn, ECONN_Callback type, void* data);
 
 typedef struct {
-    FConnCallback func;  /* Function to call on event                */
-    void*         data;  /* Data to pass to the callback as last arg */
+    FConnCallback func;  /* Function to call on the event                */
+    void*         data;  /* Data to pass to the callback as its last arg */
 } SCONN_Callback;
 
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetCallback
-(CONN                  conn,    /* [in]  connection to set callback for     */
- ECONN_Callback        type,    /* [in]  callback type                      */
- const SCONN_Callback* new_cb,  /* [in]  callback to set (may be 0)         */
- SCONN_Callback*       old_cb   /* [out] to save old callback at (may be 0) */
+(CONN                  conn,    /* [in]  connection to set callback for      */
+ ECONN_Callback        type,    /* [in]  callback type                       */
+ const SCONN_Callback* new_cb,  /* [in]  callback to set (may be 0 to reset) */
+ SCONN_Callback*       old_cb   /* [out] to save old callback at (may be 0)  */
 );
 
 
