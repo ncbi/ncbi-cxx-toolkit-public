@@ -83,11 +83,12 @@ typedef struct {
     unsigned char/*bool*/ sync;  /* true when last cmd acked (cntl synced) */
     TFTP_Features         feat;  /* FTP server features as discovered      */
     TFCDC_Flags           flag;  /* connector flags per constructor        */
-    SOCK                  cntl;  /* control connection */
-    SOCK                  data;  /* data    connection */
-    BUF                   rbuf;  /* read  buffer       */
-    BUF                   wbuf;  /* write buffer       */
-    size_t                size;  /* uploaded data size */
+    SOCK                  cntl;  /* control connection  */
+    SOCK                  data;  /* data    connection  */
+    const char*           what;  /* goes to description */
+    BUF                   rbuf;  /* read  buffer        */
+    BUF                   wbuf;  /* write buffer        */
+    size_t                size;  /* uploaded data size  */
     EIO_Status        r_status;
     EIO_Status        w_status;
 } SFTPConnector;
@@ -925,6 +926,10 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
     char*      s;
 
     BUF_Erase(xxx->rbuf);
+    if (xxx->what) {
+        free((void*) xxx->what);
+        xxx->what = 0;
+    }
     status = s_FTPAbort(xxx, timeout, 0/*!quit*/);
     assert(!xxx->data);
     if (status != eIO_Success)
@@ -981,6 +986,8 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
                 status = eIO_NotSupported;
         } else
             status = eIO_NotSupported;
+        xxx->what = s;
+        s = 0;
     } else
         status = eIO_Unknown;
     if (s)
@@ -999,6 +1006,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
 extern "C" {
 #endif /* __cplusplus */
     static const char* s_VT_GetType (CONNECTOR       connector);
+    static char*       s_VT_Descr   (CONNECTOR       connector);
     static EIO_Status  s_VT_Open    (CONNECTOR       connector,
                                      const STimeout* timeout);
     static EIO_Status  s_VT_Wait    (CONNECTOR       connector,
@@ -1033,6 +1041,14 @@ static const char* s_VT_GetType
 (CONNECTOR connector)
 {
     return "FTP";
+}
+
+
+static char* s_VT_Descr
+(CONNECTOR connector)
+{
+    SFTPConnector* xxx = (SFTPConnector*) connector->handle;
+    return xxx->what ? strdup(xxx->what) : 0;
 }
 
 
@@ -1235,6 +1251,10 @@ static EIO_Status s_VT_Close
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
     EIO_Status status;
 
+    if (xxx->what) {
+        free((void*) xxx->what);
+        xxx->what = 0;
+    }
     status = s_FTPAbort(xxx, timeout, 1/*quit*/);
     assert(!xxx->data);
     if (xxx->cntl  &&  status == eIO_Success) {
@@ -1266,6 +1286,7 @@ static void s_Setup
 {
     /* initialize virtual table */
     CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
     CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
     CONN_SET_METHOD(meta, wait,     s_VT_Wait,    connector);
     CONN_SET_METHOD(meta, write,    s_VT_Write,   connector);
@@ -1303,6 +1324,10 @@ static void s_Destroy
     xxx->rbuf = 0;
     BUF_Destroy(xxx->wbuf);
     xxx->wbuf = 0;
+    if (xxx->what) {
+        free((void*) xxx->what);
+        xxx->what = 0;
+    }
     free(xxx);
     free(connector);
 }
@@ -1326,6 +1351,7 @@ extern CONNECTOR FTP_CreateConnector(const char*    host,
     xxx->cntl     = 0;
     xxx->rbuf     = 0;
     xxx->wbuf     = 0;
+    xxx->what     = 0;
     xxx->host     = strdup(host);
     xxx->port     = port ? port : 21;
     xxx->user     = strdup(user ? user : "ftp");
