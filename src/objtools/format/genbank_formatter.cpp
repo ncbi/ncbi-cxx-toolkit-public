@@ -537,9 +537,21 @@ void CGenbankFormatter::x_Pubmed
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
-    if ( ref.GetPMID() != 0 ) {
-        Wrap(l, " PUBMED", NStr::IntToString(ref.GetPMID()), eSubp);
+    
+    if ( ref.GetPMID() == 0 ) {
+        return;
     }
+    string strPubmed = NStr::IntToString( ref.GetPMID() );
+    if ( ctx.Config().DoHTML() ) {
+        string strRaw = strPubmed;
+        strPubmed = "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/";
+        strPubmed += strRaw;
+        strPubmed += "\">";
+        strPubmed += strRaw;
+        strPubmed += "</a>";
+    }
+
+    Wrap(l, " PUBMED", strPubmed, eSubp);
 }
 
 
