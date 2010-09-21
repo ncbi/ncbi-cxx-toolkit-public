@@ -1729,8 +1729,15 @@ void CFeatureItem::x_AddQualsRna(
                     new CFlatStringQVal( ext.GetGen().GetProduct() ) );
             }
             if ( ext.GetGen().IsSetClass() ) {
-                x_AddQual( eFQ_ncRNA_class, 
-                    new CFlatStringQVal( ext.GetGen().GetClass() ) );
+                if (ext.GetGen().IsLegalClass()) {
+                    x_AddQual( eFQ_ncRNA_class, 
+                               new CFlatStringQVal( ext.GetGen().GetClass() ) );
+                } else {
+                    x_AddQual( eFQ_ncRNA_class, 
+                               new CFlatStringQVal( "other" ));
+                    x_AddQual( eFQ_seqfeat_note, 
+                               new CFlatStringQVal( ext.GetGen().GetClass() ) );
+                }
             }
             break;
         }
