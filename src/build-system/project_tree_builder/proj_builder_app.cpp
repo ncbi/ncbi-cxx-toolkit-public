@@ -580,6 +580,7 @@ int CProjBulderApp::Run(void)
 
 	SetDiagPostLevel(eDiag_Info);
     LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
+    LOG_POST(Info << "Project tree builder version " + GetVersion().Print());
 
     CStopWatch sw;
     sw.Start();
@@ -1930,6 +1931,9 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     // Subtree to build - projects filter
     string subtree = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree);
     LOG_POST(Info << "Project list or subtree: " << subtree);
+    if (!CDirEntry(subtree).Exists()) {
+        LOG_POST(Info << "WARNING: " << subtree << " does not exist");
+    }
     m_ProjectTreeInfo->m_IProjectFilter.reset(
         new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src, subtree));
 
