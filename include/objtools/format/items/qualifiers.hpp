@@ -303,7 +303,7 @@ public:
     typedef list<string>    TValue;
 
     CFlatStringListQVal(const list<string>& value,
-        TStyle style = CFormatQual::eQuoted)
+                        TStyle style = CFormatQual::eQuoted)
         :   m_Value(value), m_Style(style) { }
     CFlatStringListQVal(const list<string>::const_iterator& begin,
                         const list<string>::const_iterator& end,
