@@ -73,7 +73,7 @@ public:
 
     /// Setting seqid
     /// @param id sequence identifier [in]
-    void SetSeqId(const CBlastDBSeqId &seq_id, bool get_defline=true);
+    void SetSeqId(const CBlastDBSeqId &seq_id, bool get_data = false);
     string ExtractOid();
     string ExtractPig();
     string ExtractGi();

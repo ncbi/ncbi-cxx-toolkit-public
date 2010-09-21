@@ -48,28 +48,49 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_defline) {
+void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     m_Defline.Reset();
     m_Gi = 0;
+    m_Oid = -1;
+    CRef<CSeq_id> seq_id;
+
+    int target_gi = 0;
+    CSeq_id *target_seq_id = NULL;
+
     if (id.IsOID()) {
         m_Oid = id.GetOID();
     } else if (id.IsGi()) {
-        m_BlastDb.GiToOid(id.GetGi(), m_Oid);
+        m_Gi = id.GetGi();
+        m_BlastDb.GiToOid(m_Gi, m_Oid);
+        if (m_TargetOnly || ! get_data) target_gi = m_Gi;
     } else if (id.IsPig()) {
         m_BlastDb.PigToOid(id.GetPig(), m_Oid);
     } else if (id.IsStringId()) {
-        const CSeq_id sid(id.GetStringId());
-        m_BlastDb.SeqidToOid(sid, m_Oid);
+        string acc(id.GetStringId());
+        NStr::ToUpper(acc);
+        vector<int> oids;
+        m_BlastDb.AccessionToOids(acc, oids);
+        if (!oids.empty()) {
+            m_Oid = oids[0];
+            if (m_TargetOnly || ! get_data) {
+                // TODO check if id is complete
+                seq_id.Reset(new CSeq_id(acc));
+                target_seq_id = &(*seq_id);
+            }
+        }
     }
+
     if (m_Oid < 0) {
         NCBI_THROW(CSeqDBException, eArgErr, 
                    "Entry not found in BLAST database");
     }
 
-    if (!get_defline) return;
     try {
-        m_Gi = (id.IsGi()) ? id.GetGi() : 0;
-        m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, m_Gi)); 
+        if (get_data) {
+            m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, target_gi, target_seq_id)); 
+        } else {
+            m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, target_gi, target_seq_id)); 
+        }
     } catch (const CSeqDBException& e) {
         // this happens when CSeqDB detects a GI that doesn't belong to a
         // filtered database (e.g.: swissprot as a subset of nr)
@@ -326,20 +347,13 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     fasta.SetWidth(m_LineWidth);
     fasta.SetAllFlags(CFastaOstream::fKeepGTSigns);
 
-    SetSeqId(id, false);
-    int target_gi = 0;
-
-    if (m_TargetOnly && id.IsGi()) {
-        target_gi = id.GetGi();
-    }
-
-    CRef<CBioseq> bioseq(m_BlastDb.GetBioseq(m_Oid, target_gi)); 
+    SetSeqId(id, true);
 
     if (m_UseCtrlA) {
-        s_ReplaceCtrlAsInTitle(bioseq);
+        s_ReplaceCtrlAsInTitle(m_Bioseq);
     }
 
-    CRef<CSeq_id> seqid = FindBestChoice(bioseq->GetId(), CSeq_id::BestRank);
+    CRef<CSeq_id> seqid = FindBestChoice(m_Bioseq->GetId(), CSeq_id::BestRank);
 
     // Handle the case when a sequence range is provided
     CRef<CSeq_loc> range;
@@ -349,7 +363,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
                                      m_SeqRange.GetTo(), m_Strand));
             fasta.ResetFlag(CFastaOstream::fSuppressRange);
         } else {
-            TSeqPos length = bioseq->GetLength();
+            TSeqPos length = m_Bioseq->GetLength();
             range.Reset(new CSeq_loc(*seqid, 0, length-1, m_Strand));
             fasta.SetFlag(CFastaOstream::fSuppressRange);
         }
@@ -368,7 +382,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
         fasta.SetMask(kMaskType, masks);
     }
 
-    try { fasta.Write(*bioseq, range); }
+    try { fasta.Write(*m_Bioseq, range); }
     catch (const CObjmgrUtilException& e) {
         if (e.GetErrCode() == CObjmgrUtilException::eBadLocation) {
             NCBI_THROW(CInvalidDataException, eInvalidRange, 

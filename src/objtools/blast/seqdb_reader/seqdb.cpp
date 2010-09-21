@@ -354,26 +354,6 @@ CSeqDB::ESeqType CSeqDB::GetSequenceType() const
                "Internal sequence type is not valid.");
 }
 
-CRef<CBioseq>
-CSeqDB::GetBioseq(int oid) const
-{
-    m_Impl->Verify();
-    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, 0, true);
-    m_Impl->Verify();
-    
-    return rv;
-}
-
-CRef<CBioseq>
-CSeqDB::GetBioseqNoData(int oid, int target_gi) const
-{
-    m_Impl->Verify();
-    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, false);
-    m_Impl->Verify();
-    
-    return rv;
-}
-
 void CSeqDB::GetTaxIDs(int             oid,
                        map<int, int> & gi_to_taxid,
                        bool            persist) const
@@ -393,10 +373,20 @@ void CSeqDB::GetTaxIDs(int           oid,
 }
 
 CRef<CBioseq>
-CSeqDB::GetBioseq(int oid, int target_gi) const
+CSeqDB::GetBioseq(int oid, int target_gi, const CSeq_id * target_id) const
 {
     m_Impl->Verify();
-    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, true);
+    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, true);
+    m_Impl->Verify();
+    
+    return rv;
+}
+
+CRef<CBioseq>
+CSeqDB::GetBioseqNoData(int oid, int target_gi, const CSeq_id * target_id) const
+{
+    m_Impl->Verify();
+    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, false);
     m_Impl->Verify();
     
     return rv;
@@ -808,7 +798,7 @@ CSeqDB::GiToBioseq(int gi) const
     int oid(0);
     
     if (m_Impl->GiToOid(gi, oid)) {
-        bs = m_Impl->GetBioseq(oid, gi, true);
+        bs = m_Impl->GetBioseq(oid, gi, NULL, true);
     }
     
     m_Impl->Verify();
@@ -825,7 +815,7 @@ CSeqDB::PigToBioseq(int pig) const
     CRef<CBioseq> bs;
     
     if (m_Impl->PigToOid(pig, oid)) {
-        bs = m_Impl->GetBioseq(oid, 0, true);
+        bs = m_Impl->GetBioseq(oid, 0, NULL, true);
     }
     
     m_Impl->Verify();
@@ -844,7 +834,7 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
     m_Impl->SeqidToOids(seqid, oids, false);
     
     if (! oids.empty()) {
-        bs = m_Impl->GetBioseq(oids[0], 0, true);
+        bs = m_Impl->GetBioseq(oids[0], 0, &seqid, true);
     }
     
     m_Impl->Verify();

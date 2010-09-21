@@ -316,6 +316,8 @@ public:
     ///   The OID of the sequence. [in]
     /// @param pref_gi
     ///   If specified, only return deflines containing this GI. [in]
+    /// @param pref_seq_id
+    ///   If specified, only return deflines containing this Seq_id. [in]
     /// @param tax_info
     ///   The taxonomy database object. [in]
     /// @param seqdata
@@ -327,6 +329,7 @@ public:
     CRef<CBioseq>
     GetBioseq(int                    oid,
               int                    pref_gi,
+              const CSeq_id        * pref_seq_id,
               CRef<CSeqDBTaxInfo>    tax_info,
               bool                   seqdata,
               CSeqDBLockHold       & locked);

@@ -505,7 +505,7 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
 }
 
 CRef<CBioseq>
-CSeqDBImpl::GetBioseq(int oid, int target_gi, bool seqdata)
+CSeqDBImpl::GetBioseq(int oid, int target_gi, const CSeq_id * target_seq_id, bool seqdata)
 {
     CHECK_MARKER();
     
@@ -522,6 +522,7 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi, bool seqdata)
     if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetBioseq(vol_oid,
                               target_gi,
+                              target_seq_id,
                               m_TaxInfo,
                               seqdata,
                               locked);

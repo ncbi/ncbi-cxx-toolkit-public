@@ -498,13 +498,22 @@ public:
     /// Get a CBioseq for a sequence.
     ///
     /// This builds and returns the header and sequence data
-    /// corresponding to the indicated sequence as a CBioseq.
+    /// corresponding to the indicated sequence as a CBioseq.  If
+    /// target_gi is non-zero or target_seq_id is non-null, the header 
+    /// information will be filtered to only include the defline associated 
+    /// with that gi/seq_id.
     /// 
     /// @param oid
     ///   The ordinal id of the sequence.
+    /// @param target_gi
+    ///   If nonzero, the target gi to filter the header information by.
+    /// @param target_seq_id
+    ///   The target seq_id to filter the header information by.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(int oid) const;
+    CRef<CBioseq> GetBioseq(int             oid, 
+                            int             target_gi = 0, 
+                            const CSeq_id * target_seq_id = NULL) const;
     
     /// Get a CBioseq for a sequence without sequence data.
     /// 
@@ -517,30 +526,19 @@ public:
     ///   The ordinal id of the sequence.
     /// @param target_gi
     ///   If nonzero, the target gi to filter the header information by.
+    /// @param target_seq_id
+    ///   The target seq_id to filter the header information by.
     /// @return
     ///   A CBioseq object corresponding to the sequence, but without
     ///   sequence data.
-    CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0) const;
+    CRef<CBioseq> GetBioseqNoData(int             oid, 
+                                  int             target_gi = 0,
+                                  const CSeq_id * target_seq_id = NULL) const;
 
     /// Extract a Blast-def-line-set object from a Bioseq retrieved by CSeqDB
     /// @param bioseq Bioseq retrieved from CSeqDB [in]
     static CRef<CBlast_def_line_set> 
     ExtractBlastDefline(const CBioseq & bioseq);
-    
-    /// Get a CBioseq for a sequence.
-    ///
-    /// This builds and returns the header and sequence data
-    /// corresponding to the indicated sequence as a CBioseq.  If
-    /// target_gi is non-zero, the header information will be filtered
-    /// to only include the defline associated with that gi.
-    /// 
-    /// @param oid
-    ///   The ordinal id of the sequence.
-    /// @param target_gi
-    ///   The target gi to filter the header information by.
-    /// @return
-    ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(int oid, int target_gi) const;
     
     /// Get a pointer to raw sequence data.
     ///

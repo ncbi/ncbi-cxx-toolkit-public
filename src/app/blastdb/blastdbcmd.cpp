@@ -136,11 +136,6 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
 
     // FASTA / target_only just need one id
     if (m_TargetOnly) {
-        if (!NStr::StringToInt(entry, NStr::fConvErr_NoThrow)
-         || !CSeq_id(entry).IsGi()) {
-            NCBI_THROW(CInputException, eInvalidInput, 
-                "target_only must be used with gi entry.");
-        }
         retval.push_back(CRef<CBlastDBSeqId>(new CBlastDBSeqId(entry)));
         return 0;
     } 
@@ -484,7 +479,7 @@ void CBlastDBCmdApp::Init()
     //                        "Definition line should contain target gi only",
     //                        CArgDescriptions::eBoolean, "false");
     arg_desc->AddFlag("target_only", 
-                      "Definition line should contain target GI only", true);
+                      "Definition line should contain target entry only", true);
     
     //arg_desc->AddDefaultKey("get_dups", "value",
     //                        "Retrieve duplicate accessions",

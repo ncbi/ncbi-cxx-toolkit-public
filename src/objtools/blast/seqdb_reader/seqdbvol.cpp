@@ -1171,6 +1171,7 @@ CSeqDBVol::x_GetAsnDefline(int                    oid,
 CRef<CBioseq>
 CSeqDBVol::GetBioseq(int                    oid,
                      int                    target_gi,
+                     const CSeq_id        * target_seq_id,
                      CRef<CSeqDBTaxInfo>    tax_info,
                      bool                   seqdata,
                      CSeqDBLockHold       & locked)
@@ -1189,17 +1190,20 @@ CSeqDBVol::GetBioseq(int                    oid,
     
     CRef<CBlast_def_line_set> defline_set;
     
-    if (target_gi == 0) {
-        defline_set = orig_deflines;
-    } else {
+    if (target_gi || target_seq_id ) {
         defline_set.Reset(new CBlast_def_line_set);
         
-        CSeq_id seqid(CSeq_id::e_Gi, target_gi);
+        CRef<const CSeq_id > seqid;
+        if (target_gi) {
+            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, target_gi));
+        } else {
+            seqid.Reset(target_seq_id);
+        }
         
         CRef<CBlast_def_line> filt_dl;
         
         ITERATE(TDeflines, iter, orig_deflines->Get()) {
-            if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
+            if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), *seqid)) {
                 filt_dl = *iter;
                 break;
             }
@@ -1207,11 +1211,13 @@ CSeqDBVol::GetBioseq(int                    oid,
         
         if (filt_dl.Empty()) {
             NCBI_THROW(CSeqDBException, eArgErr,
-                       "Error: oid headers do not contain target gi.");
+                       "Error: oid headers do not contain target gi/seq_id.");
         } else {
             defline_set->Set().push_back(filt_dl);
         }
-    }
+    } else {
+        defline_set = orig_deflines;
+    } 
     
     if (defline_set.Empty() ||
         (! defline_set->CanGet()) ||

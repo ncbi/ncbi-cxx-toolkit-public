@@ -325,11 +325,16 @@ public:
     ///   The ordinal id of the sequence.
     /// @param target_gi
     ///   The target gi to filter the header information by.
+    /// @param target_seq_id
+    ///   The target seq_id to filter the header information by.
     /// @param seqdata
     ///   If true, sequence data will be provided.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(int oid, int target_gi, bool seqdata);
+    CRef<CBioseq> GetBioseq(int oid, 
+                            int target_gi, 
+                            const CSeq_id * target_seq_id,
+                            bool seqdata);
     
     /// Get the sequence data for a sequence.
     ///
