@@ -99,6 +99,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         ((DefaultListModel)jListLibs.getModel()).clear();
         ((DefaultListModel)jListOther.getModel()).clear();
         ((DefaultListModel)jListTags.getModel()).clear();
+        ((DefaultListModel)jListUserReq.getModel()).clear();
         showMoreAdvanced(false);
     }
     private void showMoreAdvanced(boolean show) {
