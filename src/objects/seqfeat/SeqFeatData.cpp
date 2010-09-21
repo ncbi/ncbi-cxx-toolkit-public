@@ -2527,8 +2527,8 @@ static CFeatListItem sc_ConfigItemInit[] = {
     CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snRNA,  "snRNA", "snRNA" ),
     CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_scRNA,  "scRNA", "scRNA" ),
     CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snoRNA,  "sno_RNA", "sno_RNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_scRNA,  "ncRNA", "ncRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_scRNA,  "tmRNA", "tmRNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_ncRNA,  "ncRNA", "ncRNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_tmRNA,  "tmRNA", "tmRNA" ),
     CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_otherRNA,  "misc_RNA",  "misc_RNA" ),
 
     CFeatListItem( CSeqFeatData::e_Pub,     CSeqFeatData::eSubtype_pub,   "Pub", "Pub" ),
