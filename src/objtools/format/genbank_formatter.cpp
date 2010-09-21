@@ -172,7 +172,7 @@ void CGenbankFormatter::FormatLocus
     Wrap(l, GetWidth(), "LOCUS", CNcbiOstrstreamToString(locus_line));
     if ( GetContext().GetConfig().DoHTML() ) {
         string& strFirstLine = *l.begin();
-        strFirstLine = "<pre class=\"genbank\"> + strFirstLine";
+        strFirstLine = "<pre>" + strFirstLine;
     }
     
     text_os.AddParagraph(l, locus.GetObject());
