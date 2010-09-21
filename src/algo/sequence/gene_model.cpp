@@ -1218,11 +1218,13 @@ SImplementation::x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat,
         /// location partial to match the partialness in the CDS
         CSeq_loc& mrna_loc = mrna_feat->SetLocation();
         CSeq_loc& gene_loc = gene_feat->SetLocation();
-        if (mrna_loc.IsPartialStart(eExtreme_Biological)) {
-            gene_loc.SetPartialStart(true, eExtreme_Biological);
+        if (mrna_loc.GetTotalRange().GetFrom()==gene_loc.GetTotalRange().GetFrom() &&
+            mrna_loc.IsPartialStart(eExtreme_Positional)) {
+            gene_loc.SetPartialStart(true, eExtreme_Positional);
         }
-        if (mrna_loc.IsPartialStop(eExtreme_Biological)) {
-            gene_loc.SetPartialStop(true, eExtreme_Biological);
+        if (mrna_loc.GetTotalRange().GetTo()==gene_loc.GetTotalRange().GetTo() &&
+            mrna_loc.IsPartialStop(eExtreme_Positional)) {
+            gene_loc.SetPartialStop(true, eExtreme_Positional);
         }
     }
 }
