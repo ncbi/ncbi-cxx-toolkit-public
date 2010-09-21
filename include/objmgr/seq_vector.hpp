@@ -324,13 +324,6 @@ bool CSeqVector::IsNucleotide(void) const
 
 
 inline
-bool CSeqVector::CanGetRange(TSeqPos start, TSeqPos stop) const
-{
-    return x_GetIterator(start).CanGetRange(start, stop);
-}
-
-
-inline
 bool CSeqVector::CanGetRange(const const_iterator& start,
                              const const_iterator& stop) const
 {

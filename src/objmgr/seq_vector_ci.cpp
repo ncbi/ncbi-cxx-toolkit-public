@@ -230,24 +230,29 @@ static const TSeqPos kMaxPreloadBases = 10*1000*1000;
 
 bool CSeqVector_CI::CanGetRange(TSeqPos start, TSeqPos stop)
 {
-    if ( stop < start ) {
+    try {
+        if ( stop < start ) {
+            return false;
+        }
+        SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
+        sel.SetStrand(m_Strand).SetRange(start, stop-start);
+        sel.SetLinkUsedTSE(m_TSE).SetLinkUsedTSE(m_UsedTSEs);
+        if ( !m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
+            return false;
+        }
+        if ( start > m_ScannedEnd || stop < m_ScannedStart ) {
+            m_ScannedStart = start;
+            m_ScannedEnd = stop;
+        }
+        else {
+            m_ScannedStart = min(m_ScannedStart, start);
+            m_ScannedEnd = max(m_ScannedEnd, stop);
+        }
+        return true;
+    }
+    catch ( CException& /*ignored*/ ) {
         return false;
     }
-    SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
-    sel.SetStrand(m_Strand).SetRange(start, stop-start);
-    sel.SetLinkUsedTSE(m_TSE).SetLinkUsedTSE(m_UsedTSEs);
-    if ( !m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
-        return false;
-    }
-    if ( start > m_ScannedEnd || stop < m_ScannedStart ) {
-        m_ScannedStart = start;
-        m_ScannedEnd = stop;
-    }
-    else {
-        m_ScannedStart = min(m_ScannedStart, start);
-        m_ScannedEnd = max(m_ScannedEnd, stop);
-    }
-    return true;
 }
 
 
