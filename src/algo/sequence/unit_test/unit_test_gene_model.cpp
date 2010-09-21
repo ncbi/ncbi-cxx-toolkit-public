@@ -154,6 +154,21 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             if ( !f1.GetLocation().Equals(f2.GetLocation()) ) {
                 display = true;
             }
+
+            BOOST_CHECK_EQUAL(f1.IsSetPartial()  &&  f1.GetPartial(),
+                              f2.IsSetPartial()  &&  f2.GetPartial());
+            if ( (f1.IsSetPartial()  &&  f1.GetPartial()) !=
+                 (f2.IsSetPartial()  &&  f2.GetPartial()) ) {
+                display = true;
+            }
+
+            BOOST_CHECK_EQUAL(f1.IsSetPseudo()  &&  f1.GetPseudo(),
+                              f2.IsSetPseudo()  &&  f2.GetPseudo());
+            if ( (f1.IsSetPseudo()  &&  f1.GetPseudo()) !=
+                 (f2.IsSetPseudo()  &&  f2.GetPseudo()) ) {
+                display = true;
+            }
+
             BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
             if (f1.IsSetProduct()) {
                 BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));

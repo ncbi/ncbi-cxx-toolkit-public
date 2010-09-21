@@ -416,7 +416,8 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
         mrna_feat->SetXref().push_back(genexref);
         
     } else {
-        gene_feat = x_CreateGeneFeature(handle, mapper, mrna_feat, loc, genomic_id);
+        gene_feat = x_CreateGeneFeature(handle, mapper,
+                                        mrna_feat, loc, genomic_id);
         if (gene_feat) {
             _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
             annot.SetData().SetFtable().push_back(gene_feat);
@@ -431,7 +432,9 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
         annot.SetData().SetFtable().push_back(mrna_feat);
     }
 
-    CRef<CSeq_feat> cds_feat = x_CreateCdsFeature(handle, align, loc, time, model_num, seqs, opts, gene_feat);
+    CRef<CSeq_feat> cds_feat =
+        x_CreateCdsFeature(handle, align, loc,
+                           time, model_num, seqs, opts, gene_feat);
 
     if (cds_feat) {
         _ASSERT(cds_feat->GetData().Which() != CSeqFeatData::e_not_set);
@@ -764,7 +767,15 @@ string ExtractGnomonModelNum(const CSeq_id& seq_id)
     return model_num;
 }
 
-CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateMrnaFeature(const CSeq_align& align, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, const CSeq_id& rna_id, const CSeq_feat* cdregion)
+CRef<CSeq_feat>
+CFeatureGenerator::
+SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
+                                     CRef<CSeq_loc> loc,
+                                     const CTime& time,
+                                     size_t model_num,
+                                     CBioseq_set& seqs,
+                                     const CSeq_id& rna_id,
+                                     const CSeq_feat* cdregion)
 {
     CRef<CSeq_feat> mrna_feat;
     if (m_flags & fCreateMrna) {
@@ -773,7 +784,8 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateMrnaFeature(const CS
         string name;    
         if (m_flags & fForceTranscribeMrna) {
             /// create a new bioseq for this mRNA
-            x_CreateMrnaBioseq(align, loc, time, model_num, seqs, rna_id, cdregion);
+            x_CreateMrnaBioseq(align, loc, time, model_num,
+                               seqs, rna_id, cdregion);
         }
 
         string gnomon_model_num = ExtractGnomonModelNum(rna_id);
@@ -820,22 +832,30 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateMrnaFeature(const CS
             }
         }
 
-
         mrna_feat->SetData().SetRna().SetType(type);
         name = sequence::GetTitle(handle);
         if (!name.empty())
             mrna_feat->SetData().SetRna().SetExt().SetName(name);
 
         mrna_feat->SetLocation(*loc);
-        if (loc->IsPartialStart(eExtreme_Positional)  ||
-            loc->IsPartialStop(eExtreme_Positional)) {
-            mrna_feat->SetPartial(true);
+
+        for (CSeq_loc_CI loc_it(*loc);  loc_it;  ++loc_it) {
+            if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
+                mrna_feat->SetPartial(true);
+                break;
+            }
         }
     }
     return mrna_feat;
 }
 
-CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle, SMapper& mapper, CRef<CSeq_feat> mrna_feat, CRef<CSeq_loc> loc, const CSeq_id& genomic_id, int gene_id)
+CRef<CSeq_feat>
+CFeatureGenerator::
+SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
+                                     SMapper& mapper,
+                                     CRef<CSeq_feat> mrna_feat,
+                                     CRef<CSeq_loc> loc,
+                                     const CSeq_id& genomic_id, int gene_id)
 {
     CRef<CSeq_feat> gene_feat;
     if (m_flags & fCreateGene) {
@@ -881,7 +901,16 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateGeneFeature(const CB
                 gene_feat->SetIds().push_back(feat_id);
                 gene_feat->SetData().SetGene().SetDesc(gene_id_str);
             }
-            gene_feat->SetLocation(*loc->Merge(CSeq_loc::fMerge_SingleRange, NULL));
+            gene_feat->SetLocation(*loc->Merge(CSeq_loc::fMerge_SingleRange,
+                                               NULL));
+        }
+        if (mrna_feat->GetLocation().IsPartialStart(eExtreme_Biological)) {
+            gene_feat->SetLocation().SetPartialStart
+                (true, eExtreme_Biological);
+        }
+        if (mrna_feat->GetLocation().IsPartialStop(eExtreme_Biological)) {
+            gene_feat->SetLocation().SetPartialStop
+                (true, eExtreme_Biological);
         }
     }
     return gene_feat;
@@ -1008,7 +1037,8 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
                         feat_id->SetLocal(*obj_id);
                         cds_feat->SetIds().push_back(feat_id);
                     }
-                    x_CreateProteinBioseq(cds_loc, *cds_feat, time,  model_num, seqs, *prot_id);
+                    x_CreateProteinBioseq(cds_loc, *cds_feat, time,
+                                          model_num, seqs, *prot_id);
                 }
 
                 bool is_partial_5prime =
@@ -1022,8 +1052,11 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
                 }
                 cds_feat->SetLocation(*cds_loc);
 
-                if (is_partial_5prime  ||  is_partial_3prime) {
-                    cds_feat->SetPartial(true);
+                for (CSeq_loc_CI loc_it(*cds_loc);  loc_it;  ++loc_it) {
+                    if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
+                        cds_feat->SetPartial(true);
+                        break;
+                    }
                 }
 
                 /// make sure we set the CDS frame correctly
@@ -1152,7 +1185,10 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
     return cds_feat;
 }
 
-void CFeatureGenerator::SImplementation::x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat, CRef<CSeq_feat> cds_feat, CRef<CSeq_feat> gene_feat)
+void CFeatureGenerator::
+SImplementation::x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat,
+                                         CRef<CSeq_feat> cds_feat,
+                                         CRef<CSeq_feat> gene_feat)
 {
     ///
     /// partial flags may require a global analysis - we may need to mark some
@@ -1177,6 +1213,17 @@ void CFeatureGenerator::SImplementation::x_SetPartialWhereNeeded(CRef<CSeq_feat>
     if (gene_feat  &&  mrna_feat  &&
         mrna_feat->IsSetPartial()  &&  mrna_feat->GetPartial()) {
         gene_feat->SetPartial(true);
+
+        /// in addition to marking the gene feature partial, we must mark the
+        /// location partial to match the partialness in the CDS
+        CSeq_loc& mrna_loc = mrna_feat->SetLocation();
+        CSeq_loc& gene_loc = gene_feat->SetLocation();
+        if (mrna_loc.IsPartialStart(eExtreme_Biological)) {
+            gene_loc.SetPartialStart(true, eExtreme_Biological);
+        }
+        if (mrna_loc.IsPartialStop(eExtreme_Biological)) {
+            gene_loc.SetPartialStop(true, eExtreme_Biological);
+        }
     }
 }
 

@@ -2629,6 +2629,7 @@ Seq-annot ::= {
         locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
       },
+      partial TRUE,
       location int {
         from 1197549,
         to 1283086,
@@ -2645,6 +2646,7 @@ Seq-annot ::= {
         ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
       },
+      partial TRUE,
       except TRUE,
       product whole other {
         accession "NM_003715",
@@ -2880,6 +2882,7 @@ Seq-annot ::= {
           id 1
         }
       },
+      partial TRUE,
       except TRUE,
       product whole gi 4505541,
       location packed-int {
@@ -3114,6 +3117,7 @@ Seq-annot ::= {
         locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
       },
+      partial TRUE,
       location int {
         from 1197549,
         to 1283086,
@@ -3130,6 +3134,7 @@ Seq-annot ::= {
         ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
       },
+      partial TRUE,
       except TRUE,
       product whole other {
         accession "NM_003715",
@@ -3365,6 +3370,7 @@ Seq-annot ::= {
           id 1
         }
       },
+      partial TRUE,
       except TRUE,
       product whole gi 4505541,
       location packed-int {
@@ -3599,6 +3605,7 @@ Seq-annot ::= {
         locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
       },
+      partial TRUE,
       location int {
         from 1197549,
         to 1283086,
@@ -3615,6 +3622,7 @@ Seq-annot ::= {
         ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
       },
+      partial TRUE,
       except TRUE,
       product whole other {
         accession "NM_003715",
@@ -3830,6 +3838,7 @@ Seq-annot ::= {
           id 1
         }
       },
+      partial TRUE,
       except TRUE,
       product whole gi 4505541,
       location packed-int {
@@ -4518,6 +4527,7 @@ Seq-annot ::= {
         locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
  mRNA"
       },
+      partial TRUE,
       location int {
         from 68178921,
         to 68386440,
@@ -4534,6 +4544,7 @@ Seq-annot ::= {
         ext name "Homo sapiens coatomer protein complex, subunit gamma 2
  (COPG2), mRNA"
       },
+      partial TRUE,
       except TRUE,
       product whole other {
         accession "NM_012133",
@@ -4740,6 +4751,7 @@ Seq-annot ::= {
           id 1
         }
       },
+      partial TRUE,
       except TRUE,
       product whole gi 109134349,
       location packed-int {
@@ -4946,6 +4958,7 @@ Seq-annot ::= {
         locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
  mRNA"
       },
+      partial TRUE,
       location int {
         from 68178921,
         to 68386440,
@@ -4962,6 +4975,7 @@ Seq-annot ::= {
         ext name "Homo sapiens coatomer protein complex, subunit gamma 2
  (COPG2), mRNA"
       },
+      partial TRUE,
       except TRUE,
       product whole other {
         accession "NM_012133",
@@ -5168,6 +5182,7 @@ Seq-annot ::= {
           id 1
         }
       },
+      partial TRUE,
       except TRUE,
       product whole gi 109134349,
       location packed-int {
@@ -5374,6 +5389,7 @@ Seq-annot ::= {
         locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
  mRNA"
       },
+      partial TRUE,
       location int {
         from 68178921,
         to 68386440,
@@ -5390,6 +5406,7 @@ Seq-annot ::= {
         ext name "Homo sapiens coatomer protein complex, subunit gamma 2
  (COPG2), mRNA"
       },
+      partial TRUE,
       except TRUE,
       product whole other {
         accession "NM_012133",
@@ -5526,6 +5543,7 @@ Seq-annot ::= {
           id 1
         }
       },
+      partial TRUE,
       except TRUE,
       product whole gi 109134349,
       location packed-int {
