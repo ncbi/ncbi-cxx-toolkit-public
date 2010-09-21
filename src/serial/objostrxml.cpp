@@ -650,6 +650,8 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
         return;
     }
     bool was_open = true, was_close=true;
+    bool is_tag = false;
+    char attr_close ='\0';
     for (const char* is = value.c_str(); *is; ++is) {
         if (*is == '/' && *(is+1) == '>') {
             m_Output.DecIndentLevel();
@@ -661,16 +663,16 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
                 if (!was_open && was_close) {
                     m_Output.PutEol();
                 }
-                was_open = false;
+                is_tag = was_open = false;
             } else {
                 if (was_close) {
                     m_Output.PutEol();
                 }
                 m_Output.IncIndentLevel();
-                was_open = true;
+                is_tag = was_open = true;
             }
         }
-        if (*is != '>' && *is != '<') {
+        if (*is != '>' && *is != '<' && *is != attr_close) {
             WriteEncodedChar(is);
         } else {
             m_Output.PutChar(*is);
@@ -684,7 +686,16 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
                 m_Output.PutChar(':');
             }
         }
-        was_close = (*is == '>');
+        if (*is == '>') {
+            was_close = true;
+            is_tag = false;
+            attr_close = '\0';
+        } else {
+            was_close = false;
+        }
+        if (is_tag && *is == '=' && (*(is+1) == '\"' || *(is+1) == '\'')) {
+            attr_close = *(is+1);
+        }
     }
 
 // close tag
