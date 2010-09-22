@@ -459,8 +459,10 @@ CInstancedAligner::x_RunCleanup(const objects::CSeq_align_set& AlignSet,
 void CInstancedAligner::x_GetCleanupInstances(CQuerySet& QueryAligns, CScope& Scope,
                                        vector<CRef<CInstance> >& Instances)
 {
-    NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter,
-                      QueryAligns.Get()) {
+    
+	ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryAligns.Get()) {
+	ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {	
+	//ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
 
         CRef<CSeq_align_set> Set = SubjectIter->second;
         CRef<CSeq_align_set> Out;
@@ -494,6 +496,7 @@ void CInstancedAligner::x_GetCleanupInstances(CQuerySet& QueryAligns, CScope& Sc
             }
         }
     }
+	}
 
 }
 
@@ -605,7 +608,11 @@ void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& S
     typedef map<string, double> TSubjectCoverage;
     TSubjectCoverage BestCoverage;
     double MaxCoverage = 0;
-    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
+   	
+	ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryAligns.Get()) {
+	ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {	
+	//ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+
         CRef<CSeq_align_set> Set = SubjectIter->second;
         string IdStr = Set->Get().front()->GetSeq_id(1).AsFastaString();
         double SubjCoverage = 0;
@@ -617,9 +624,12 @@ void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& S
         BestCoverage[IdStr] = SubjCoverage;
         MaxCoverage = max(SubjCoverage, MaxCoverage);
     }
+	}
 
     typedef vector<CRef<CInstance> > TInstVector;
-    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
+    ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryAligns.Get()) {
+	ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {	
+	//ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
 
         TInstVector SubjInstances;
 
@@ -714,6 +724,7 @@ void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& S
         copy(CleanedInstances.begin(), CleanedInstances.end(),
             insert_iterator<TInstVector>(Instances, Instances.end()));
     }
+	}
 
 }
 
@@ -746,6 +757,18 @@ void CInstancedAligner::x_FilterInstances(vector<CRef<CInstance> >& Instances, d
             ++Curr;
     }
 
+    vector<CRef<CInstance> >::iterator Outer, Inner;
+    for(Outer = Instances.begin(); Outer != Instances.end(); ++Outer) {
+        for(Inner = Outer+1; Inner != Instances.end(); ) {
+            if( (*Outer)->Query.Equals((*Inner)->Query) &&
+                (*Outer)->Subject.Equals((*Inner)->Subject) ) {
+                Inner = Instances.erase(Inner);
+            } else {
+                ++Inner;
+            }
+        }
+    }
+
 }
 
 
@@ -753,7 +776,10 @@ bool CInstancedAligner::x_MinCoverageCheck(const CQuerySet& QueryAligns)
 {
     double BestPctCoverage = -1.0;
 
-    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
+   	ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryAligns.Get()) {
+	ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {	
+	//ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+
         CRef<CSeq_align_set> Set = SubjectIter->second;
 
         ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
@@ -762,6 +788,7 @@ bool CInstancedAligner::x_MinCoverageCheck(const CQuerySet& QueryAligns)
             BestPctCoverage = max(BestPctCoverage, PctCoverage);
         }
     }
+	}
 
 
     return (BestPctCoverage >= m_MinPctCoverage || BestPctCoverage == -1.0);

@@ -53,6 +53,8 @@
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
 
+#include <algo/blast/api/remote_blast.hpp>
+
 #include <algo/align/ngalign/sequence_set.hpp>
 
 BEGIN_SCOPE(ncbi)
@@ -72,6 +74,8 @@ void CBlastArgs::s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc)
     blast::CHspFilteringArgs cull_args;
     blast::CBlastDatabaseArgs blastdb_args;
     blast::CWindowSizeArg window_args;
+	blast::CFormattingArgs format_args;
+	blast::CRemoteArgs remote_args;
 
     search_args.SetArgumentDescriptions(ArgDesc);
     filter_args.SetArgumentDescriptions(ArgDesc);
@@ -80,6 +84,8 @@ void CBlastArgs::s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc)
     cull_args.SetArgumentDescriptions(ArgDesc);
     blastdb_args.SetArgumentDescriptions(ArgDesc);
     window_args.SetArgumentDescriptions(ArgDesc);
+    format_args.SetArgumentDescriptions(ArgDesc);
+    remote_args.SetArgumentDescriptions(ArgDesc);
 }
 
 
@@ -95,8 +101,14 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_ExtractBlastArgs(CArgs& Args)
     blast::CHspFilteringArgs cull_args;
     blast::CBlastDatabaseArgs blastdb_args;
     blast::CWindowSizeArg window_args;
+	blast::CFormattingArgs format_args;
+	blast::CRemoteArgs remote_args;
 
-    CRef<CBlastNucleotideOptionsHandle> NucOptions(new CBlastNucleotideOptionsHandle);
+    CRef<CBlastNucleotideOptionsHandle> NucOptions;
+	if(Args["remote"].HasValue()) 
+		NucOptions.Reset(new CBlastNucleotideOptionsHandle(CBlastOptions::eRemote));
+	else
+		NucOptions.Reset(new CBlastNucleotideOptionsHandle);
     CRef<CBlastOptionsHandle> Options(&*NucOptions);
 
     //string task_type = args["task"].AsString();
@@ -117,6 +129,9 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_ExtractBlastArgs(CArgs& Args)
     gapped_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
     cull_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
     window_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
+    format_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
+    remote_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
+
 
     //cout << "GetEvalueThreshold: " << Options->GetEvalueThreshold() << endl;
     //cout << "GetEffectiveSearchSpace: " << Options->GetEffectiveSearchSpace() << endl;
@@ -212,6 +227,16 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         BlastSubjectSet->SetSoftFiltering(m_Filter);
     }
 
+
+    if (dynamic_cast<CSeqIdListSet*>(QuerySet) &&
+        dynamic_cast<CBlastDbSet*>(SubjectSet) ) {
+        CSeqIdListSet* SeqIdListQuerySet = dynamic_cast<CSeqIdListSet*>(QuerySet);
+        CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
+        vector<int> GiList;
+        SeqIdListQuerySet->GetGiList(GiList, Scope, *AccumResults, m_Threshold);
+        BlastSubjectSet->SetNegativeGiList(GiList);
+    }
+
     Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions, *AccumResults, m_Threshold);
     Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
 
@@ -220,11 +245,11 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         return Results;
     }
 
-    ERR_POST(Info << "Running Blast");
-    CLocalBlast Blast(Querys, m_BlastOptions, Subjects);
+    ERR_POST(Info << "Running Blast" << " Filter: " << m_Filter);
 
     CRef<CSearchResultSet> BlastResults;
     try {
+        CLocalBlast Blast(Querys, m_BlastOptions, Subjects);
         BlastResults = Blast.Run();
     } catch(CException& e) {
         ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());
@@ -292,6 +317,116 @@ CBlastAligner::CreateBlastAligners(const list<string>& Params, int Threshold)
     }
 
     return CBlastAligner::CreateBlastAligners(BlastOptions, Threshold);
+}
+
+
+
+TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
+                                                   ISequenceSet* QuerySet,
+                                                   ISequenceSet* SubjectSet,
+                                                   TAlignResultsRef AccumResults)
+{
+    TAlignResultsRef Results(new CAlignResultsSet);
+
+    CRef<IQueryFactory> Querys;
+    CRef<CLocalDbAdapter> Subjects;
+/*
+    if(dynamic_cast<CBlastDbSet*>(SubjectSet)) {
+        CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
+        BlastSubjectSet->SetSoftFiltering(m_Filter);
+    }
+
+
+    if (dynamic_cast<CSeqIdListSet*>(QuerySet) &&
+        dynamic_cast<CBlastDbSet*>(SubjectSet) ) {
+        CSeqIdListSet* SeqIdListQuerySet = dynamic_cast<CSeqIdListSet*>(QuerySet);
+        CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
+        vector<int> GiList;
+        SeqIdListQuerySet->GetGiList(GiList, Scope, *AccumResults, m_Threshold);
+        BlastSubjectSet->SetNegativeGiList(GiList);
+    }
+*/
+    Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions, *AccumResults, m_Threshold);
+    Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
+
+    if(Querys.IsNull()) {
+        ERR_POST(Info << "Remote Blast Warning: Empty Query Set");
+        return Results;
+    }
+
+    ERR_POST(Info << "Running Remote Blast" << " Filter: " << m_Filter);
+
+    CRef<CSearchResultSet> BlastResults;
+    try {
+ 		CSearchDatabase RemoteDb("nr", CSearchDatabase::eBlastDbIsNucleotide);
+ 		CRemoteBlast Blast(Querys, m_BlastOptions, RemoteDb);
+        BlastResults = Blast.GetResultSet();
+    } catch(CException& e) {
+        ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());
+        return Results;
+    }
+
+    ITERATE(CSearchResultSet, SetIter, *BlastResults) {
+        const CSearchResults& Results = **SetIter;
+        TQueryMessages Errors = Results.GetErrors(eBlastSevInfo);
+        //ITERATE(TQueryMessages, ErrIter, Errors) {
+        //    cerr << "BlastMsg: " << (*ErrIter)->GetMessage() << endl;
+        //}
+        if(Results.HasErrors()) {
+            ERR_POST(Error << "BLAST: " << Results.GetErrorStrings());
+        }
+        if(Results.HasWarnings()) {
+            //ERR_POST(Warning << "BLAST: " << Results.GetWarningStrings());
+        }
+    }
+
+    TSeqPos AlignCount = 0;
+    NON_CONST_ITERATE(CSearchResultSet, SetIter, *BlastResults) {
+        CSearchResults& Results = **SetIter;
+        CConstRef<CSeq_align_set> AlignSet = Results.GetSeqAlign();
+        if(!AlignSet->IsEmpty()) {
+            ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet->Get()) {
+                CRef<CSeq_align> Align = *AlignIter;
+                Align->SetNamedScore(GetName(), 1);
+                AlignCount++;
+            }
+        }
+    }
+
+    if(AlignCount == 0) {
+        ERR_POST(Warning << "CRemoteBlastAligner found no hits this run.");
+    }
+
+    Results->Insert(*BlastResults);
+
+    return Results;
+}
+
+
+list<CRemoteBlastAligner::TBlastAlignerRef>
+CRemoteBlastAligner::CreateBlastAligners(list<TBlastOptionsRef>& Options, int Threshold)
+{
+    list<TBlastAlignerRef> Aligners;
+    NON_CONST_ITERATE(list<TBlastOptionsRef>, OptionsIter, Options) {
+        TBlastAlignerRef CurrAligner;
+        CurrAligner.Reset(new CRemoteBlastAligner(**OptionsIter, Threshold));
+        Aligners.push_back(CurrAligner);
+    }
+    return Aligners;
+}
+
+
+list<CRemoteBlastAligner::TBlastAlignerRef>
+CRemoteBlastAligner::CreateBlastAligners(const list<string>& Params, int Threshold)
+{
+    list<TBlastOptionsRef> BlastOptions;
+    ITERATE(list<string>, ParamsIter, Params) {
+        TBlastOptionsRef CurrOptions;
+        CurrOptions = CBlastArgs::s_CreateBlastOptions(*ParamsIter);
+        BlastOptions.push_back(CurrOptions);
+    }
+
+    return CRemoteBlastAligner::CreateBlastAligners(BlastOptions, Threshold);
 }
 
 

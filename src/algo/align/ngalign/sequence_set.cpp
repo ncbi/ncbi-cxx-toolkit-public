@@ -36,6 +36,8 @@
 
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -229,6 +231,62 @@ CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
     return MaskLoc;
 }
 
+
+CRef<CSeq_loc> s_GetClipLoc(const CSeq_id& Id,
+							CScope& Scope)
+{
+	CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
+
+	// Extract the Seq-annot.locs, for the clip region.
+	CRef<CSeq_loc> ClipLoc;
+
+	SAnnotSelector Sel(CSeqFeatData::e_Region);
+ 	CAnnot_CI AnnotIter(Handle, Sel);
+
+	while(AnnotIter) {
+		if (AnnotIter->IsFtable() && 
+			AnnotIter->GetName() == "NCBI_GPIPE") {
+			CConstRef<CSeq_annot> Annot = AnnotIter->GetCompleteSeq_annot();
+			
+			ITERATE(CSeq_annot::C_Data::TFtable, FeatIter,
+					Annot->GetData().GetFtable()) {
+				CConstRef<CSeq_feat> Feat = *FeatIter;
+				if (Feat->CanGetLocation() &&
+					Feat->CanGetData() && 
+					Feat->GetData().IsRegion() &&
+					(Feat->GetData().GetRegion() == "high_quality" ||
+					 Feat->GetData().GetRegion() == "hight_quality") ) {
+					
+					ClipLoc.Reset(new CSeq_loc);
+					ClipLoc->Assign(Feat->GetLocation());
+				}
+			}
+		}
+		++AnnotIter;
+	}
+
+
+	if(ClipLoc.IsNull() && Handle.HasAnnots() ) {
+		CConstRef<CBioseq> Bioseq = Handle.GetCompleteBioseq();
+		ITERATE(CBioseq::TAnnot, AnnotIter, Bioseq->GetAnnot()) {
+			if( (*AnnotIter)->GetData().IsLocs() ) {
+				ITERATE(CSeq_annot::C_Data::TLocs, 
+						LocIter, (*AnnotIter)->GetData().GetLocs()) {
+					if( (*LocIter)->IsInt() && 
+						(*LocIter)->GetInt().GetId().Equals(Id) ) {
+						ClipLoc.Reset(new CSeq_loc);
+						ClipLoc->Assign(**LocIter);
+					}
+				}
+			}
+		}
+	}
+	
+
+	return ClipLoc;
+}
+
+
 CRef<IQueryFactory>
 CSeqIdListSet::CreateQueryFactory(CScope& Scope,
                                   const CBlastOptionsHandle& BlastOpts)
@@ -242,15 +300,18 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
     TSeqLocVector FastaLocVec;
     ITERATE(list<CRef<CSeq_id> >, IdIter, m_SeqIdList) {
 
-        if(m_SeqMasker == NULL || !BlastOpts.GetMaskAtHash()) {
-            CRef<CSeq_loc> WholeLoc(new CSeq_loc);
-            WholeLoc->SetWhole().Assign(**IdIter);
-            SSeqLoc WholeSLoc(*WholeLoc, Scope);
-            FastaLocVec.push_back(WholeSLoc);
-        } else {
-            CRef<CSeq_loc> WholeLoc(new CSeq_loc), MaskLoc;
-            WholeLoc->SetWhole().Assign(**IdIter);
+        CRef<CSeq_loc> WholeLoc;
+		WholeLoc = s_GetClipLoc(**IdIter, Scope);
+		if(WholeLoc.IsNull()) {
+			WholeLoc.Reset(new CSeq_loc);
+        	WholeLoc->SetWhole().Assign(**IdIter);
+       	}
 
+		if(m_SeqMasker == NULL || !BlastOpts.GetMaskAtHash()) {
+           	SSeqLoc WholeSLoc(*WholeLoc, Scope);
+           	FastaLocVec.push_back(WholeSLoc);
+        } else {
+            CRef<CSeq_loc> MaskLoc;
             MaskLoc = s_GetMaskLoc(**IdIter, m_SeqMasker, Scope);
 
             if(MaskLoc.IsNull() /* || Vec.size() < 100*/ ) {
@@ -291,17 +352,21 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
                 continue;
             }
         }
-
+	
+		ERR_POST(Info << "Blast Including ID: " << (*IdIter)->GetSeqIdString(true));
+        
+		CRef<CSeq_loc> WholeLoc;
+		WholeLoc = s_GetClipLoc(**IdIter, Scope);
+		if(WholeLoc.IsNull()) {
+			WholeLoc.Reset(new CSeq_loc);
+        	WholeLoc->SetWhole().Assign(**IdIter);
+       	}
+     
         if(m_SeqMasker == NULL) {
-            CRef<CSeq_loc> WholeLoc(new CSeq_loc);
-            WholeLoc->SetWhole().Assign(**IdIter);
-            SSeqLoc WholeSLoc(*WholeLoc, Scope);
+        	SSeqLoc WholeSLoc(*WholeLoc, Scope);
             FastaLocVec.push_back(WholeSLoc);
         } else {
-
-            CRef<CSeq_loc> WholeLoc(new CSeq_loc), MaskLoc;
-            WholeLoc->SetWhole().Assign(**IdIter);
-
+            CRef<CSeq_loc> MaskLoc;
             MaskLoc = s_GetMaskLoc(**IdIter, m_SeqMasker, Scope);
 
             if(MaskLoc.IsNull()) {
@@ -401,8 +466,12 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
     m_FastaStream->clear();
     m_FastaStream->seekg(0, std::ios::beg);
     CFastaReader FastaReader(*m_FastaStream);
-    Scope.AddTopLevelSeqEntry(*(FastaReader.ReadSet()));
-
+	CRef<CSeq_entry> Entry = FastaReader.ReadSet();
+	try {
+		Scope.AddTopLevelSeqEntry(*Entry);
+	} catch(...) {
+		ERR_POST(Info << "Eating the Scope Fasta Dup Insert Exception");
+	}
     SDataLoaderConfig LoaderConfig(false);
     CBlastInputSourceConfig InputConfig(LoaderConfig);
     InputConfig.SetLowercaseMask(m_LowerCaseMasking);
@@ -431,6 +500,9 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
 
     m_FastaStream->clear();
     m_FastaStream->seekg(0, std::ios::beg);
+
+	if(FastaLocVec.empty()) 
+		return CRef<IQueryFactory>();
 
     CRef<IQueryFactory> Result(new CObjMgr_QueryFactory(FastaLocVec));
     return Result;

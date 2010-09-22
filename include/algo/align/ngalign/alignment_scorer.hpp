@@ -107,6 +107,15 @@ private:
 };
 
 
+class CClippedScorer : public IAlignmentScorer
+{
+public:
+    CClippedScorer() { ; }
+
+    void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
+};
+
+
 class CCommonComponentScorer : public IAlignmentScorer
 {
 public:

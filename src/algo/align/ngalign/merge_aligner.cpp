@@ -95,8 +95,9 @@ CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
     CAlignCleanup Cleaner(Scope);
     Cleaner.FillUnaligned(true);
 
-    NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter,
-                      QueryAligns.Get()) {
+    NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryAligns.Get()) {
+	NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {	
+	//NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
 
         CRef<CSeq_align_set> Set = SubjectIter->second;
 
@@ -130,6 +131,7 @@ CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
             Merged->Set().push_back(*AlignIter);
         }
     }
+	}
 
     return Merged;
 }

@@ -115,6 +115,41 @@ private:
 };
 
 
+
+
+class CRemoteBlastAligner : public IAlignmentFactory
+{
+public:
+    CRemoteBlastAligner(blast::CBlastOptionsHandle& Options, int Threshold)
+        : m_BlastOptions(&Options), m_Threshold(Threshold), m_Filter(0) { ; }
+
+    CRemoteBlastAligner(const string& Params, int Threshold)
+        : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params))
+        , m_Threshold(Threshold), m_Filter(0) { ; }
+
+    string GetName() const { return "remote_blast_aligner"; }
+
+    TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
+                                        ISequenceSet* QuerySet,
+                                        ISequenceSet* SubjectSet,
+                                        TAlignResultsRef AccumResults);
+
+
+    typedef CRef<blast::CBlastOptionsHandle> TBlastOptionsRef;
+    typedef CRef<CRemoteBlastAligner> TBlastAlignerRef;
+
+    static list<TBlastAlignerRef> CreateBlastAligners(list<TBlastOptionsRef>& Options, int Threshold);
+    static list<TBlastAlignerRef> CreateBlastAligners(const list<string>& Params, int Threshold);
+
+private:
+
+    CRef<blast::CBlastOptionsHandle> m_BlastOptions;
+    int m_Threshold;
+    int m_Filter;
+};
+
+
+
 END_NCBI_SCOPE
 
 #endif

@@ -49,6 +49,9 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#include <objects/genomecoll/genome_collection__.hpp>
+
+
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
 
@@ -58,8 +61,8 @@ USING_SCOPE(objects);
 USING_SCOPE(blast);
 
 
-CNgAligner::CNgAligner(objects::CScope& Scope)
-    : m_Scope(&Scope)
+CNgAligner::CNgAligner(objects::CScope& Scope, CRef<CGC_Assembly> GenColl, bool AllowDupes)
+    : m_Scope(&Scope), m_GenColl(GenColl), m_AllowDupes(AllowDupes)
 {
 }
 
@@ -111,7 +114,7 @@ TAlignSetRef CNgAligner::x_Align_Impl()
 {
 
     TAlignResultsRef FilterResults(new CAlignResultsSet),
-                     AccumResults(new CAlignResultsSet);
+                     AccumResults(new CAlignResultsSet(m_GenColl, m_AllowDupes));
 
     NON_CONST_ITERATE(TFactories, AlignIter, m_Aligners) {
         TAlignResultsRef CurrResults;
@@ -132,15 +135,17 @@ TAlignSetRef CNgAligner::x_Align_Impl()
 
     TAlignSetRef Results;
     Results = AccumResults->ToBestSeqAlignSet();
+    //Results = AccumResults->ToSeqAlignSet();
 
-    if(!Results.IsNull())
-    ITERATE(CSeq_align_set::Tdata, AlignIter, Results->Get()) {
-        const CSeq_align& Align = **AlignIter;
-        string FastaId = Align.GetSeq_id(0).AsFastaString();
-        ITERATE(TFactories, FactoryIter, m_Aligners) {
-            int Value;
-            if(Align.GetNamedScore((*FactoryIter)->GetName(), Value)) {
-                GetDiagContext().Extra().Print((*FactoryIter)->GetName(), FastaId);
+    if(!Results.IsNull()) {
+        ITERATE(CSeq_align_set::Tdata, AlignIter, Results->Get()) {
+            const CSeq_align& Align = **AlignIter;
+            string FastaId = Align.GetSeq_id(0).AsFastaString();
+            ITERATE(TFactories, FactoryIter, m_Aligners) {
+                int Value;
+                if(Align.GetNamedScore((*FactoryIter)->GetName(), Value)) {
+                    GetDiagContext().Extra().Print((*FactoryIter)->GetName(), FastaId);
+                }
             }
         }
     }

@@ -4,11 +4,12 @@ ASN_DEP = xnetblast
 
 SRC = result_set  sequence_set   \
       alignment_filterer  alignment_scorer  \
-      blast_aligner  banded_aligner  merge_aligner  inversion_merge_aligner  \
+      blast_aligner  banded_aligner  merge_aligner  inversion_merge_aligner   \
       ngalign  \
-	  unordered_spliter
+	  unordered_spliter  
+#	  overlap_aligner equiv_range new_merge_aligner
 
 LIB = xngalign
 
-CXXFLAGS = $(FAST_CXXFLAGS) -I./.
+CXXFLAGS = $(FAST_CXXFLAGS) -I./. 
 LDFLAGS  = $(FAST_LDFLAGS)

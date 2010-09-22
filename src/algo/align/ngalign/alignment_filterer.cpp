@@ -52,7 +52,8 @@ USING_SCOPE(blast);
 CQueryFilter::CQueryFilter(int Rank, const string& Query)
         : m_Rank(Rank), m_Query(Query), m_Filter(new CAlignFilter(Query))
 {
-    ;
+    m_Filter.Reset(new CAlignFilter);
+    m_Filter->SetFilter(m_Query);
 }
 
 
@@ -62,8 +63,12 @@ void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
     m_Filter->SetRemoveDuplicates(true);
 
     NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, In->Get()) {
-        NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+        
+		NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
 
+		NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
+		//NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+	
             TAlignSetRef Filtered(new CSeq_align_set);
             m_Filter->Filter(*SubjectIter->second, *Filtered);
 
@@ -88,6 +93,8 @@ void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
 
             Out->Insert(FilteredResults);
         }
+
+		}
     }
 }
 
