@@ -1012,6 +1012,8 @@ void CGenbankFormatter::FormatOrigin
 (const COriginItem& origin,
  IFlatTextOStream& text_os)
 {
+    bool bHtml = this->GetContext().GetConfig().DoHTML();
+
     list<string> l;
     string strOrigin = origin.GetOrigin();
     if ( strOrigin == "." ) {
@@ -1023,6 +1025,9 @@ void CGenbankFormatter::FormatOrigin
     } else {
         if ( ! NStr::EndsWith( strOrigin, "." ) ) {
             strOrigin += ".";
+        }
+        if ( bHtml ) {
+            strOrigin = NStr::XmlEncode( strOrigin );
         }
         Wrap( l, "ORIGIN", strOrigin );
     }
