@@ -32,7 +32,7 @@ Linux64-Suse    : plain-ICC  : ICC.sh           --without-debug --without-mt --w
 Linux64-Suse    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 FreeBSD32      : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-FreeBSD32-v80  : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+# FreeBSD32-v80  : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 SunOSx86   : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
@@ -43,17 +43,21 @@ SunOSSparc : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-s
 SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 Linux64-Centos    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32-Ubuntu    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+# Linux32-Ubuntu    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 # --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
 # work similar to the configurations where it is mentioned explicitly
 IntelMAC   : GCC-universal : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath
 IntelMAC   : GCC           : GCC.sh           --without-debug --without-mt --with-static --without-runpath
 
-Win32      : 800-static-32 : msvc800_prj  static  32  ReleaseDLL
-Win64      : 800-static-64 : msvc800_prj  static  64  ReleaseDLL
-Win32_9    : 900-static-32 : msvc900_prj  static  32  ReleaseDLL
-Win64_9    : 900-static-64 : msvc900_prj  static  64  ReleaseDLL
+#Win64      : 800-static-64 : msvc800_prj  static  64  ReleaseDLL
+
+#Win64_9    : 900-static-64 : msvc900_prj  static  64  ReleaseDLL
+#Win32      : 800-static-32 : msvc800_prj  static  32  ReleaseDLL
+#Win32_9    : 900-static-32 : msvc900_prj  static  32  ReleaseDLL
+Win64_9    : 900-static-64 : static  64  ReleaseDLL
+Win32      : 800-static-32 : static  32  ReleaseDLL
+Win32_9    : 900-static-32 : static  32  ReleaseDLL
 
 XCode      : plain      : Xcode.sh 30
 
