@@ -113,6 +113,9 @@ private:
     void x_Medline(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Pubmed(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Remark(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+
+    // processing data
+    unsigned int m_uFeatureCount;
 };
 
 
