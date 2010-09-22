@@ -169,6 +169,11 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                 display = true;
             }
 
+            BOOST_CHECK_EQUAL(f1.IsSetDbxref(), f2.IsSetDbxref());
+            if ( f1.IsSetDbxref() != f2.IsSetDbxref() ) {
+                display = true;
+            }
+
             BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
             if (f1.IsSetProduct()) {
                 BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));

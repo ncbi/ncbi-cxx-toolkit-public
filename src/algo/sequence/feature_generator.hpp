@@ -124,16 +124,54 @@ private:
         TSeqPos m_allowed_unaligned;
     };
 
-    void x_CollectMrnaSequence(CSeq_inst& inst, const CSeq_align& align, const CSeq_loc& loc,
-                               bool* has_gap = NULL, bool* has_indel = NULL);
-    void x_CreateMrnaBioseq(const CSeq_align& align, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, const CSeq_id& rna_id, const CSeq_feat* cdregion);
-    void x_CreateProteinBioseq(CSeq_loc* cds_loc, CSeq_feat& cds_on_mrna, const CTime& time, size_t model_num, CBioseq_set& seqs, const CSeq_id& prot_id);
-    CRef<CSeq_feat> x_CreateMrnaFeature(const CSeq_align& align, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, const CSeq_id& rna_id, const CSeq_feat* cdregion);
-    CRef<CSeq_feat> x_CreateGeneFeature(const CBioseq_Handle& handle, SMapper& mapper, CRef<CSeq_feat> mrna_feat, CRef<CSeq_loc> loc, const CSeq_id& genomic_id, int gene_id = 0);
-    CRef<CSeq_feat> x_CreateCdsFeature(const CBioseq_Handle& handle, const CSeq_align& align, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, CSeq_loc_Mapper::TMapOptions opts, CRef<CSeq_feat> gene_feat);
-    void x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat, CRef<CSeq_feat> cds_feat, CRef<CSeq_feat> gene_feat);
-    void x_CopyAdditionalFeatures(const CBioseq_Handle& handle, SMapper& mapper, CSeq_annot& annot);
-    void x_HandleCdsExceptions(CSeq_feat& feat, CScope& scope, const CSeq_align* align);
+    void x_CollectMrnaSequence(CSeq_inst& inst,
+                               const CSeq_align& align,
+                               const CSeq_loc& loc,
+                               bool* has_gap = NULL,
+                               bool* has_indel = NULL);
+    void x_CreateMrnaBioseq(const CSeq_align& align,
+                            CRef<CSeq_loc> loc,
+                            const CTime& time,
+                            size_t model_num,
+                            CBioseq_set& seqs,
+                            const CSeq_id& rna_id,
+                            const CSeq_feat* cdregion);
+    void x_CreateProteinBioseq(CSeq_loc* cds_loc,
+                               CSeq_feat& cds_on_mrna,
+                               const CTime& time,
+                               size_t model_num,
+                               CBioseq_set& seqs,
+                               const CSeq_id& prot_id);
+    CRef<CSeq_feat> x_CreateMrnaFeature(const CSeq_align& align,
+                                        CRef<CSeq_loc> loc,
+                                        const CTime& time,
+                                        size_t model_num,
+                                        CBioseq_set& seqs,
+                                        const CSeq_id& rna_id,
+                                        const CSeq_feat* cdregion);
+    CRef<CSeq_feat> x_CreateGeneFeature(const CBioseq_Handle& handle,
+                                        SMapper& mapper,
+                                        CRef<CSeq_feat> mrna_feat,
+                                        CRef<CSeq_loc> loc,
+                                        const CSeq_id& genomic_id,
+                                        int gene_id = 0);
+    CRef<CSeq_feat> x_CreateCdsFeature(const CBioseq_Handle& handle,
+                                       const CSeq_align& align,
+                                       CRef<CSeq_loc> loc,
+                                       const CTime& time,
+                                       size_t model_num,
+                                       CBioseq_set& seqs,
+                                       CSeq_loc_Mapper::TMapOptions opts,
+                                       CRef<CSeq_feat> gene_feat);
+    void x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat,
+                                 CRef<CSeq_feat> cds_feat,
+                                 CRef<CSeq_feat> gene_feat);
+    void x_CopyAdditionalFeatures(const CBioseq_Handle& handle,
+                                  SMapper& mapper,
+                                  CSeq_annot& annot);
+    void x_HandleCdsExceptions(CSeq_feat& feat,
+                               CScope& scope,
+                               const CSeq_align* align);
 };
 
 END_NCBI_SCOPE

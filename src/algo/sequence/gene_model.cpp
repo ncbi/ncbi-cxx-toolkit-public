@@ -839,6 +839,7 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
 
         mrna_feat->SetLocation(*loc);
 
+        /// set the partial flag as needed
         for (CSeq_loc_CI loc_it(*loc);  loc_it;  ++loc_it) {
             if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
                 mrna_feat->SetPartial(true);
@@ -859,11 +860,12 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
 {
     CRef<CSeq_feat> gene_feat;
     if (m_flags & fCreateGene) {
+        CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
+
         if (m_flags & fPropagateOnly) {
             //
             // only create a gene feature if one exists on the mRNA feature
             //
-            CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
             if (feat_iter  &&  feat_iter.GetSize()) {
                 gene_feat.Reset(new CSeq_feat());
                 gene_feat->Assign(feat_iter->GetOriginalFeature());
@@ -871,17 +873,6 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
                     mapper.Map(feat_iter->GetLocation());
                 new_loc->Merge(CSeq_loc::fMerge_SingleRange, NULL);
                 gene_feat->SetLocation(*new_loc);
-
-                if (mrna_feat  &&
-                    !mrna_feat->IsSetDbxref()  &&
-                    gene_feat->IsSetDbxref()) {
-                    ITERATE (CSeq_feat::TDbxref, xref_it,
-                             gene_feat->GetDbxref()) {
-                        CRef<CDbtag> tag(new CDbtag);
-                        tag->Assign(**xref_it);
-                        mrna_feat->SetDbxref().push_back(tag);
-                    }
-                }
             }
         } else {
             //
@@ -904,13 +895,41 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
             gene_feat->SetLocation(*loc->Merge(CSeq_loc::fMerge_SingleRange,
                                                NULL));
         }
-        if (mrna_feat->GetLocation().IsPartialStart(eExtreme_Biological)) {
-            gene_feat->SetLocation().SetPartialStart
-                (true, eExtreme_Biological);
+
+        /// set dbxrefs
+        if (feat_iter.GetSize() == 1  &&
+            feat_iter->IsSetDbxref()) {
+            ITERATE (CSeq_feat::TDbxref, xref_it,
+                     feat_iter->GetDbxref()) {
+                CRef<CDbtag> tag(new CDbtag);
+                tag->Assign(**xref_it);
+                gene_feat->SetDbxref().push_back(tag);
+            }
         }
-        if (mrna_feat->GetLocation().IsPartialStop(eExtreme_Biological)) {
-            gene_feat->SetLocation().SetPartialStop
-                (true, eExtreme_Biological);
+
+        if (mrna_feat) {
+            /// set dbxrefs
+            if (!mrna_feat->IsSetDbxref()  &&
+                feat_iter.GetSize() == 1  &&
+                feat_iter->IsSetDbxref()) {
+                ITERATE (CSeq_feat::TDbxref, xref_it,
+                         feat_iter->GetDbxref()) {
+                    CRef<CDbtag> tag(new CDbtag);
+                    tag->Assign(**xref_it);
+                    mrna_feat->SetDbxref().push_back(tag);
+                }
+            }
+
+            ///
+            /// set geen partialness if mRNA is partial
+            if (mrna_feat->GetLocation().IsPartialStart(eExtreme_Biological)) {
+                gene_feat->SetLocation().SetPartialStart
+                    (true, eExtreme_Biological);
+            }
+            if (mrna_feat->GetLocation().IsPartialStop(eExtreme_Biological)) {
+                gene_feat->SetLocation().SetPartialStop
+                    (true, eExtreme_Biological);
+            }
         }
     }
     return gene_feat;
@@ -1140,7 +1159,7 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
                 }
 
                 /// copy any existing dbxrefs
-                if (gnomon_model_num.empty() && cds_feat  &&  gene_feat  &&
+                if (gnomon_model_num.empty()  &&  cds_feat  &&  gene_feat  &&
                     !cds_feat->IsSetDbxref()  &&  gene_feat->IsSetDbxref()) {
                     ITERATE (CSeq_feat::TDbxref, xref_it,
                              gene_feat->GetDbxref()) {
@@ -1184,6 +1203,7 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
     }
     return cds_feat;
 }
+
 
 void CFeatureGenerator::
 SImplementation::x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat,

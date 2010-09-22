@@ -15,6 +15,24 @@ Seq-annot ::= {
           version 12
         },
         fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 54020
+        },
+        {
+          db "HGNC",
+          tag id 11024
+        },
+        {
+          db "HPRD",
+          tag id 10479
+        },
+        {
+          db "MIM",
+          tag id 608094
+        }
       }
     },
     {
@@ -215,6 +233,24 @@ Seq-annot ::= {
             version 12
           },
           fuzz-to lim gt
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 54020
+        },
+        {
+          db "HGNC",
+          tag id 11024
+        },
+        {
+          db "HPRD",
+          tag id 10479
+        },
+        {
+          db "MIM",
+          tag id 608094
         }
       }
     },
@@ -419,6 +455,24 @@ Seq-annot ::= {
         to 3928074,
         strand plus,
         id gi 224514634
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag id 2195
+        },
+        {
+          db "HPRD",
+          tag str "00382"
+        },
+        {
+          db "MIM",
+          tag id 120328
+        }
       }
     },
     {
@@ -681,6 +735,24 @@ Seq-annot ::= {
           to 3928074,
           strand plus,
           id gi 224514634
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag id 2195
+        },
+        {
+          db "HPRD",
+          tag str "00382"
+        },
+        {
+          db "MIM",
+          tag id 120328
         }
       },
       except-text "unclassified transcription discrepancy"
@@ -951,6 +1023,24 @@ Seq-annot ::= {
           id gi 224514634
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag id 2195
+        },
+        {
+          db "HPRD",
+          tag str "00382"
+        },
+        {
+          db "MIM",
+          tag id 120328
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
@@ -968,6 +1058,12 @@ Seq-annot ::= {
         strand plus,
         id gi 269932227,
         fuzz-from lim lt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 505061
+        }
       }
     },
     {
@@ -1081,6 +1177,12 @@ Seq-annot ::= {
           to 113905,
           strand plus,
           id gi 269932227
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 505061
         }
       },
       except-text "unclassified transcription discrepancy"
@@ -1199,6 +1301,12 @@ Seq-annot ::= {
           id gi 269932227
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 505061
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
@@ -1216,6 +1324,16 @@ Seq-annot ::= {
         strand plus,
         id gi 258435077,
         fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 393840
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-040426-1850"
+        }
       }
     },
     {
@@ -1317,6 +1435,16 @@ Seq-annot ::= {
           strand plus,
           id gi 258435077,
           fuzz-to lim gt
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 393840
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-040426-1850"
         }
       },
       except-text "unclassified transcription discrepancy"
@@ -1424,6 +1552,16 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 393840
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-040426-1850"
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
@@ -1439,6 +1577,12 @@ Seq-annot ::= {
         to 3146442,
         strand minus,
         id gi 260082811
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 506973
+        }
       }
     },
     {
@@ -1477,6 +1621,12 @@ Seq-annot ::= {
           to 3143460,
           strand minus,
           id gi 260082811
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 506973
         }
       }
     },
@@ -1528,6 +1678,12 @@ Seq-annot ::= {
           id gi 260082811
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 506973
+        }
+      },
       except-text "ribosomal slippage"
     }
   }
@@ -1544,6 +1700,20 @@ Seq-annot ::= {
         to 32331849,
         strand plus,
         id gi 224514692
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 23089
+        },
+        {
+          db "HGNC",
+          tag id 14005
+        },
+        {
+          db "MIM",
+          tag id 609810
+        }
       }
     },
     {
@@ -1565,6 +1735,20 @@ Seq-annot ::= {
           to 32331849,
           strand plus,
           id gi 224514692
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 23089
+        },
+        {
+          db "HGNC",
+          tag id 14005
+        },
+        {
+          db "MIM",
+          tag id 609810
         }
       }
     },
@@ -1592,6 +1776,20 @@ Seq-annot ::= {
           id gi 224514692
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 23089
+        },
+        {
+          db "HGNC",
+          tag id 14005
+        },
+        {
+          db "MIM",
+          tag id 609810
+        }
+      },
       except-text "ribosomal slippage"
     }
   }
@@ -1609,6 +1807,16 @@ Seq-annot ::= {
         strand plus,
         id gi 258443136,
         fuzz-from lim lt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 406525
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-040426-2371"
+        }
       }
     },
     {
@@ -1634,6 +1842,16 @@ Seq-annot ::= {
           strand plus,
           id gi 258443136,
           fuzz-from lim lt
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 406525
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-040426-2371"
         }
       },
       except-text "unclassified transcription discrepancy"
@@ -1721,6 +1939,24 @@ Seq-annot ::= {
         strand plus,
         id gi 224514634,
         fuzz-from lim lt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag id 2195
+        },
+        {
+          db "HPRD",
+          tag str "00382"
+        },
+        {
+          db "MIM",
+          tag id 120328
+        }
       }
     },
     {
@@ -1985,6 +2221,24 @@ Seq-annot ::= {
           to 3928074,
           strand plus,
           id gi 224514634
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag id 2195
+        },
+        {
+          db "HPRD",
+          tag str "00382"
+        },
+        {
+          db "MIM",
+          tag id 120328
         }
       },
       except-text "unclassified transcription discrepancy"
@@ -2258,6 +2512,24 @@ Seq-annot ::= {
           id gi 224514634
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag id 2195
+        },
+        {
+          db "HPRD",
+          tag str "00382"
+        },
+        {
+          db "MIM",
+          tag id 120328
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
@@ -2274,6 +2546,16 @@ Seq-annot ::= {
         to 2439559,
         strand minus,
         id gi 258442493
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 556456
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-060429-1"
+        }
       }
     },
     {
@@ -2448,6 +2730,16 @@ Seq-annot ::= {
           id gi 258442493
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 556456
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-060429-1"
+        }
+      },
       except-text "unclassified transcription discrepancy"
     },
     {
@@ -2618,6 +2910,16 @@ Seq-annot ::= {
           id gi 258442493
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 556456
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-060429-1"
+        }
+      },
       except-text "mismatches in translation"
     }
   }
@@ -2638,493 +2940,23 @@ Seq-annot ::= {
           accession "NT_016354",
           version 19
         }
-      }
-    },
-    {
-      data rna {
-        type mRNA,
-        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
       },
-      partial TRUE,
-      except TRUE,
-      product whole other {
-        accession "NM_003715",
-        version 2
-      },
-      location packed-int {
+      dbxref {
         {
-          from 1197549,
-          to 1197789,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
+          db "GeneID",
+          tag id 8615
         },
         {
-          from 1205211,
-          to 1205219,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
+          db "HGNC",
+          tag id 30904
         },
         {
-          from 1224337,
-          to 1224355,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          },
-          fuzz-from lim lt
+          db "HPRD",
+          tag str "09135"
         },
         {
-          from 1226369,
-          to 1226446,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1239312,
-          to 1239412,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1239695,
-          to 1239797,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1239955,
-          to 1240010,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1243549,
-          to 1243669,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1251553,
-          to 1251731,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1255935,
-          to 1256075,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1259023,
-          to 1259111,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1259516,
-          to 1259670,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1262563,
-          to 1262774,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1268495,
-          to 1268605,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1269224,
-          to 1269342,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1269491,
-          to 1269672,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1269952,
-          to 1270073,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1273007,
-          to 1273145,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1274013,
-          to 1274176,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1275359,
-          to 1275445,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1277826,
-          to 1277924,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1279305,
-          to 1279412,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1281033,
-          to 1281248,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1282079,
-          to 1283086,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        }
-      },
-      except-text "unclassified transcription discrepancy"
-    },
-    {
-      data cdregion {
-        code {
-          id 1,
-          id 1
-        }
-      },
-      partial TRUE,
-      except TRUE,
-      product whole gi 4505541,
-      location packed-int {
-        {
-          from 1197724,
-          to 1197789,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1205211,
-          to 1205219,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 1224337,
-          to 1224355,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          },
-          fuzz-from lim lt
-        },
-        {
-          from 1226369,
-          to 1226446,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1239312,
-          to 1239412,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1239695,
-          to 1239797,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1239955,
-          to 1240010,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1243549,
-          to 1243669,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1251553,
-          to 1251731,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1255935,
-          to 1256075,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1259023,
-          to 1259111,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1259516,
-          to 1259670,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1262563,
-          to 1262774,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1268495,
-          to 1268605,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1269224,
-          to 1269342,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1269491,
-          to 1269672,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1269952,
-          to 1270073,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1273007,
-          to 1273145,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1274013,
-          to 1274176,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1275359,
-          to 1275445,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1277826,
-          to 1277924,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1279305,
-          to 1279412,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1281033,
-          to 1281248,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        },
-        {
-          from 1282079,
-          to 1282168,
-          strand plus,
-          id other {
-            accession "NT_016354",
-            version 19
-          }
-        }
-      },
-      except-text "unclassified translation discrepancy"
-    }
-  }
-}
-Seq-annot ::= {
-  data ftable {
-    {
-      data gene {
-        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
-      },
-      partial TRUE,
-      location int {
-        from 1197549,
-        to 1283086,
-        strand plus,
-        id other {
-          accession "NT_016354",
-          version 19
+          db "MIM",
+          tag id 603344
         }
       }
     },
@@ -3361,6 +3193,24 @@ Seq-annot ::= {
           }
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
+        }
+      },
       except-text "unclassified transcription discrepancy"
     },
     {
@@ -3594,6 +3444,24 @@ Seq-annot ::= {
           }
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
@@ -3613,6 +3481,566 @@ Seq-annot ::= {
         id other {
           accession "NT_016354",
           version 19
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      partial TRUE,
+      except TRUE,
+      product whole other {
+        accession "NM_003715",
+        version 2
+      },
+      location packed-int {
+        {
+          from 1197549,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1205211,
+          to 1205219,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 1224337,
+          to 1224355,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 1226369,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1283086,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 1,
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 4505541,
+      location packed-int {
+        {
+          from 1197724,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1205211,
+          to 1205219,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 1224337,
+          to 1224355,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 1226369,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1282168,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      partial TRUE,
+      location int {
+        from 1197549,
+        to 1283086,
+        strand plus,
+        id other {
+          accession "NT_016354",
+          version 19
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
         }
       }
     },
@@ -3829,6 +4257,24 @@ Seq-annot ::= {
           }
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
+        }
+      },
       except-text "unclassified transcription discrepancy"
     },
     {
@@ -4040,6 +4486,24 @@ Seq-annot ::= {
             accession "NT_016354",
             version 19
           }
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 8615
+        },
+        {
+          db "HGNC",
+          tag id 30904
+        },
+        {
+          db "HPRD",
+          tag str "09135"
+        },
+        {
+          db "MIM",
+          tag id 603344
         }
       },
       except-text "unclassified translation discrepancy"
@@ -4060,6 +4524,24 @@ Seq-annot ::= {
         id other {
           accession "NW_923640",
           version 1
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
         }
       }
     },
@@ -4290,6 +4772,24 @@ Seq-annot ::= {
             version 1
           }
         }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
       }
     },
     {
@@ -4516,6 +5016,24 @@ Seq-annot ::= {
             version 1
           }
         }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
       }
     }
   }
@@ -4536,436 +5054,23 @@ Seq-annot ::= {
           accession "NT_007933",
           version 15
         }
-      }
-    },
-    {
-      data rna {
-        type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
       },
-      partial TRUE,
-      except TRUE,
-      product whole other {
-        accession "NM_012133",
-        version 4
-      },
-      location packed-int {
+      dbxref {
         {
-          from 68386314,
-          to 68386440,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
+          db "GeneID",
+          tag id 26958
         },
         {
-          from 68385164,
-          to 68385216,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
+          db "HGNC",
+          tag id 2237
         },
         {
-          from 68384531,
-          to 68384611,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
+          db "HPRD",
+          tag str "05074"
         },
         {
-          from 68380649,
-          to 68380720,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68370551,
-          to 68370630,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68334703,
-          to 68334778,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68331257,
-          to 68331349,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68329865,
-          to 68329951,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68328668,
-          to 68328823,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt
-        },
-        {
-          from 68320191,
-          to 68320199,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68309996,
-          to 68310008,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68306565,
-          to 68306573,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68302047,
-          to 68302055,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68288030,
-          to 68288038,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68186540,
-          to 68186560,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68185146,
-          to 68185170,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt
-        },
-        {
-          from 68181245,
-          to 68181362,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68180368,
-          to 68180506,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68179957,
-          to 68180055,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68178921,
-          to 68179489,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        }
-      },
-      except-text "unclassified transcription discrepancy"
-    },
-    {
-      data cdregion {
-        code {
-          id 1
-        }
-      },
-      partial TRUE,
-      except TRUE,
-      product whole gi 109134349,
-      location packed-int {
-        {
-          from 68386314,
-          to 68386350,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68385164,
-          to 68385216,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68384531,
-          to 68384611,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68380649,
-          to 68380720,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68370551,
-          to 68370630,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68334703,
-          to 68334778,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68331257,
-          to 68331349,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68329865,
-          to 68329951,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68328668,
-          to 68328823,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt
-        },
-        {
-          from 68320191,
-          to 68320199,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68309996,
-          to 68310008,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68306565,
-          to 68306573,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68302047,
-          to 68302055,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68288030,
-          to 68288038,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68186540,
-          to 68186560,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68185146,
-          to 68185170,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt
-        },
-        {
-          from 68181245,
-          to 68181362,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68180368,
-          to 68180506,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68179957,
-          to 68180055,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68179359,
-          to 68179489,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        }
-      },
-      except-text "unclassified translation discrepancy"
-    }
-  }
-}
-Seq-annot ::= {
-  data ftable {
-    {
-      data gene {
-        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
- mRNA"
-      },
-      partial TRUE,
-      location int {
-        from 68178921,
-        to 68386440,
-        strand minus,
-        id other {
-          accession "NT_007933",
-          version 15
+          db "MIM",
+          tag id 604355
         }
       }
     },
@@ -5174,6 +5279,24 @@ Seq-annot ::= {
           }
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      },
       except-text "unclassified transcription discrepancy"
     },
     {
@@ -5378,6 +5501,24 @@ Seq-annot ::= {
           }
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
@@ -5397,6 +5538,509 @@ Seq-annot ::= {
         id other {
           accession "NT_007933",
           version 15
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
+ (COPG2), mRNA"
+      },
+      partial TRUE,
+      except TRUE,
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
+ mRNA"
+      },
+      partial TRUE,
+      location int {
+        from 68178921,
+        to 68386440,
+        strand minus,
+        id other {
+          accession "NT_007933",
+          version 15
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
         }
       }
     },
@@ -5535,6 +6179,24 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      },
       except-text "unclassified transcription discrepancy"
     },
     {
@@ -5666,6 +6328,24 @@ Seq-annot ::= {
             accession "NT_007933",
             version 15
           }
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "HPRD",
+          tag str "05074"
+        },
+        {
+          db "MIM",
+          tag id 604355
         }
       },
       except-text "unclassified translation discrepancy"
@@ -5685,6 +6365,12 @@ Seq-annot ::= {
         id other {
           accession "NW_001508749",
           version 2
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 404089
         }
       }
     },
@@ -5709,6 +6395,12 @@ Seq-annot ::= {
           }
         }
       },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 404089
+        }
+      },
       except-text "unclassified transcription discrepancy"
     },
     {
@@ -5729,6 +6421,12 @@ Seq-annot ::= {
             version 2
           }
         }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 404089
+        }
       }
     }
   }
@@ -5745,6 +6443,12 @@ Seq-annot ::= {
         to 1291942,
         strand minus,
         id gi 295788403
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 403826
+        }
       }
     },
     {
@@ -6064,6 +6768,12 @@ Seq-annot ::= {
           to 1262134,
           strand minus,
           id gi 295788403
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 403826
         }
       },
       except-text "unclassified transcription discrepancy"
@@ -6386,6 +7096,12 @@ Seq-annot ::= {
           to 1262134,
           strand minus,
           id gi 295788403
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 403826
         }
       },
       except-text "unclassified translation discrepancy"
