@@ -60,10 +60,10 @@ END_SCOPE(objects)
 ///  - Queries can use standard boolean operators (AND / OR / NOT; operators
 ///    are not case sensitive)
 ///  - Queries consist of tokens expressing a conditional phrase, of the forms:
-///      a = b
-///      a != b
-///      a < b
-///      a > b
+///      -# a = b
+///      -# a != b
+///      -# a < b
+///      -# a > b
 ///  - Tokens may be a numeric or a text string.  Text strings are evaluated in
 ///    a dictionary against a list of known computable values.  If a text
 ///    string is not found in the computed dictionary, the text string is
@@ -71,9 +71,9 @@ END_SCOPE(objects)
 ///  - CAlignFilter supports a set of functions as well.  Functions express
 ///    additional parameters or mathematical operations.  The current list of
 ///    functions is:
-///     * MUL(a, b) = a * b; a and b are tokens as defined above
-///     * ADD(a, b) = a + b; a and b are tokens as defined above
-///     * IS_SEG_TYPE(a) = 1 if the Seq-align is of segment type a (where a is
+///     -# MUL(a, b) = a * b; a and b are tokens as defined above
+///     -# ADD(a, b) = a + b; a and b are tokens as defined above
+///     -# IS_SEG_TYPE(a) = 1 if the Seq-align is of segment type a (where a is
 ///       one of 'disc', 'denseg', 'std', 'spliced', 'packed', 'dendiag')
 ///
 /// Current Accepted Tokens
@@ -82,20 +82,21 @@ END_SCOPE(objects)
 /// - Any named score.  CSeq_align enforces through the use of enums specific
 ///   score names; some standard score names are described in CSeq_align and
 ///   include:
-///     * score
-///     * bit_score
-///     * e_value
-///     * align_length
-///     * num_ident
-///     * num_positives
-///     * num_negatives
-///     * num_mismatch
-///     * pct_identity_gap
-///     * pct_identity_ungap
-///     * pct_identity_gapopen_only
-///     * pct_coverage
-///     * sum_e
-///     * comp_adjustment_method
+///     -# align_length
+///     -# bit_score
+///     -# comp_adjustment_method
+///     -# e_value
+///     -# longest_gap
+///     -# num_ident
+///     -# num_mismatch
+///     -# num_negatives
+///     -# num_positives
+///     -# pct_coverage
+///     -# pct_identity_gap
+///     -# pct_identity_gapopen_only
+///     -# pct_identity_ungap
+///     -# score
+///     -# sum_e
 ///   NOTE: There is no requirement that an alignment contain any of the above
 ///   scores.
 ///
@@ -103,26 +104,26 @@ END_SCOPE(objects)
 ///
 /// - One of a fixed set of computable characteristics locally defined in
 ///   CAlignFilter.  These include:
-///     * 3prime_unaligned - Length of 3' unaligned sequence
-///     * 5prime_unaligned - Length of 5' unaligned sequence (same as
+///     -# 3prime_unaligned - Length of 3' unaligned sequence
+///     -# 5prime_unaligned - Length of 5' unaligned sequence (same as
 ///       query_start)
-///     * align_length - Length of aligned query span
-///     * align_length_ratio - Length of aligned subject span / length of
+///     -# align_length - Length of aligned query span
+///     -# align_length_ratio - Length of aligned subject span / length of
 ///       aligned query span
-///     * align_length_ungap - Sum of lengths of aligned query segments
-///     * cds_internal_stops - For Spliced-segs, returns the count of the
+///     -# align_length_ungap - Sum of lengths of aligned query segments
+///     -# cds_internal_stops - For Spliced-segs, returns the count of the
 ///       number of internal stops present in the mapped CDS (mapped =
 ///       CGeneModel::CreateGeneModel() mapped)
-///     * internal_unaligned - Length of unaligned sequence between 5'-most and
+///     -# internal_unaligned - Length of unaligned sequence between 5'-most and
 ///       3'-most ends
-///     * min_exon_len - Length of shortest exon
-///     * product_length - Same as query_length
-///     * query_end - End pos (0-based) of query sequence
-///     * query_length - Length of query sequence
-///     * query_start - Start pos (0-based) of query sequence
-///     * subject_end - Ending pos (0-based) of subject span
-///     * subject_length - Length of subject length
-///     * subject_start - Starting pos (0-based) of subject span
+///     -# min_exon_len - Length of shortest exon
+///     -# product_length - Same as query_length
+///     -# query_end - End pos (0-based) of query sequence
+///     -# query_length - Length of query sequence
+///     -# query_start - Start pos (0-based) of query sequence
+///     -# subject_end - Ending pos (0-based) of subject span
+///     -# subject_length - Length of subject length
+///     -# subject_start - Starting pos (0-based) of subject span
 ///
 /// - A specific sequence identifier.  The special tokens 'query' and 'subject'
 ///   can be used to specify individual sequences using any of the sequence's
@@ -132,17 +133,17 @@ END_SCOPE(objects)
 /// Example queries:
 /// ----------------
 ///
-/// * pct_coverage > 99.5
+/// - pct_coverage > 99.5
 ///     - finds alignments with the score pct_coverage > 99.5
 ///
-/// * (pct_identity_gap > 99.9 AND pct_coverage > 98) OR (pct_identity_gap > 99.0 AND pct_coverage > 99.5)
+/// - (pct_identity_gap > 99.9 AND pct_coverage > 98) OR (pct_identity_gap > 99.0 AND pct_coverage > 99.5)
 ///     - Evaluates two simultaneous logical conditions, returning the
 ///       inclusive OR set
 ///
-/// * query = NM_012345.1
+/// - query = NM_012345.1
 ///     - returns all alignments for the query sequence
 ///
-/// * MUL(align_length, 0.8) > num_positives
+/// - MUL(align_length, 0.8) > num_positives
 ///     - evaluates for all alignments for which num_positives covers 80% of
 ///      the aligned length
 ///

@@ -37,8 +37,10 @@
 
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/general/Object_id.hpp>
@@ -109,6 +111,89 @@ public:
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         return align.GetAlignLength(m_Gaps);
+    }
+
+private:
+    bool m_Gaps;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class CScore_LongestGapLength : public CAlignFilter::IScore
+{
+public:
+    CScore_LongestGapLength()
+    {
+    }
+
+    virtual double Get(const CSeq_align& align, CScope* s) const
+    {
+        double longest_gap = 0;
+        switch (align.GetSegs().Which()) {
+        case CSeq_align::TSegs::e_Denseg:
+            {{
+                 const CDense_seg& ds = align.GetSegs().GetDenseg();
+                 for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                     bool is_gapped = false;
+                     for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
+                         if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
+                             is_gapped = true;
+                             break;
+                         }
+                     }
+                     if (is_gapped) {
+                         longest_gap = max<double>(longest_gap,
+                                                   ds.GetLens()[i]);
+                     }
+                 }
+             }}
+            break;
+
+        case CSeq_align::TSegs::e_Disc:
+            {{
+                 ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
+                         align.GetSegs().GetDisc().Get()) {
+                     double d = Get(**iter, s);
+                     longest_gap = max<double>(longest_gap, d);
+                 }
+             }}
+            break;
+
+        case CSeq_align::TSegs::e_Spliced:
+            {{
+                 ITERATE (CSpliced_seg::TExons, iter,
+                          align.GetSegs().GetSpliced().GetExons()) {
+                     const CSpliced_exon& exon = **iter;
+                     if (exon.IsSetParts()) {
+                         ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                             const CSpliced_exon_chunk& chunk = **it;
+                             switch (chunk.Which()) {
+                             case CSpliced_exon_chunk::e_Product_ins:
+                                 longest_gap = max<double>
+                                     (longest_gap, chunk.GetProduct_ins());
+                                 break;
+
+                             case CSpliced_exon_chunk::e_Genomic_ins:
+                                 longest_gap = max<double>
+                                     (longest_gap, chunk.GetGenomic_ins());
+                                 break;
+
+                             default:
+                                 break;
+                             }
+                         }
+                     }
+                 }
+             }}
+            break;
+
+        default:
+            NCBI_THROW(CSeqalignException, eUnsupported,
+                       "CScore_LongestGapLength currently does not handle "
+                       "this type of alignment.");
+        }
+
+        return longest_gap;
     }
 
 private:
@@ -404,6 +489,11 @@ void CAlignFilter::x_Init()
 
     m_Scores.insert
         (TScoreDictionary::value_type
+         ("longest_gap",
+          CIRef<IScore>(new CScore_LongestGapLength)));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
          ("cds_internal_stops",
           CIRef<IScore>(new CScore_CdsInternalStops)));
 
@@ -433,7 +523,6 @@ void CAlignFilter::x_Init()
              (TScoreDictionary::value_type
               ("subject_length",
                CIRef<IScore>(new CScore_SequenceLength(1))));
-
      }}
 }
 
