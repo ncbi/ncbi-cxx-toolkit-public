@@ -406,6 +406,16 @@ string s_GetLinkCambiaPatentLens( const CReferenceItem& ref, bool bHtml )
     return strPatString;
 }
 
+//  ============================================================================
+string s_GetLinkFeature( 
+    const CReferenceItem& ref, 
+    bool bHtml )
+//  ============================================================================
+{
+    string strFeatureLink;
+    return strFeatureLink;
+}
+
 void CGenbankFormatter::FormatReference
 (const CReferenceItem& ref,
  IFlatTextOStream& text_os)
@@ -635,14 +645,88 @@ void CGenbankFormatter::FormatFeatHeader
     text_os.AddParagraph(l, NULL);
 }
 
+//  ============================================================================
+string s_GetLinkFeatureKey( 
+    const CFeatureItemBase& item )
+//  ============================================================================
+{
+    const string strLinkbaseNuc( "http://www.ncbi.nlm.nih.gov/nuccore/" );
+    const string strLinkbaseProt( "http://www.ncbi.nlm.nih.gov/protein/" );
+
+    CConstRef<CFlatFeature> feat = item.Format();
+    string strRawKey = feat->GetKey();
+    if ( strRawKey == "source" || strRawKey == "gap" ) {
+        return strRawKey;
+    }
+
+    CBioseq_Handle bsh = item.GetContext()->GetHandle();
+    string strId = "0";
+    if ( bsh.CanGetId() ) {
+        vector< CSeq_id_Handle > ids = bsh.GetId();
+        ITERATE( vector< CSeq_id_Handle >, it, bsh.GetId() ) {
+            if ( it->IsGi() ) {
+                strId = NStr::IntToString( it->GetGi() );
+                break;
+            }
+        }
+    }
+
+    const CSeq_loc& loc = item.GetLoc();
+    unsigned int iFrom = 0;
+    unsigned int iTo = 0;
+    if ( loc.IsInt() && loc.GetInt().IsSetFrom() && loc.GetInt().IsSetTo() ) {
+        iFrom = loc.GetInt().GetFrom() + 1;
+        iTo = loc.GetInt().GetTo() + 1;
+    } 
+
+    string strReport( "&amp;report=gbwithparts" );
+    if ( bsh.IsAa() ) {
+        strReport = "&amp;report=gpwithparts";
+    }
+
+    string strLink = "<a href=\"";
+    if ( bsh.IsAa() ) {    
+        strLink += strLinkbaseProt;
+    }
+    else {
+        strLink += strLinkbaseNuc;
+    }
+    strLink += strId;
+    if ( iFrom > 0 && iTo > 0 ) {
+        strLink += "?from=";
+        strLink += NStr::UIntToString( iFrom );
+        strLink += "&amp;to=";
+        strLink += NStr::UIntToString( iTo );
+    }
+    strLink += strReport;
+    strLink += "\">";
+    strLink += strRawKey;
+    strLink += "</a>";
+    return strLink;
+}
+
+//  ============================================================================
 void CGenbankFormatter::FormatFeature
 (const CFeatureItemBase& f,
  IFlatTextOStream& text_os)
+//  ============================================================================
 { 
     CConstRef<CFlatFeature> feat = f.Format();
     const vector<CRef<CFormatQual> > & quals = feat->GetQuals();
     list<string>        l, l_new;
-    Wrap(l, feat->GetKey(), feat->GetLoc().GetString(), eFeat);
+
+    bool bHtml = f.GetContext()->Config().DoHTML();
+
+    const string strDummy( "[FEATKEY]" );
+    string strKey = bHtml ? strDummy : feat->GetKey();
+    Wrap(l, strKey, feat->GetLoc().GetString(), eFeat );
+    if ( bHtml ) {
+        string strFeatKey = s_GetLinkFeatureKey( f );
+        NON_CONST_ITERATE( list<string>, it, l ) {
+            NStr::ReplaceInPlace( *it, strDummy, strFeatKey );
+        }
+    }
+
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
         TrimSpacesAndJunkFromEnds( value, true );

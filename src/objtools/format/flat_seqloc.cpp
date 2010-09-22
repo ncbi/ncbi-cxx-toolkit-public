@@ -390,10 +390,10 @@ bool CFlatSeqLoc::x_Add
             {
                 switch ( fuzz->GetLim() ) {
                 case CInt_fuzz::eLim_gt:
-                    oss << (html ? "&gt" : ">") << pnt;
+                    oss << (html ? "&gt;" : ">") << pnt;
                     break;
                 case CInt_fuzz::eLim_lt:
-                    oss << (html ? "&lt" : "<") << pnt;
+                    oss << (html ? "&lt;" : "<") << pnt;
                     break;
                 case CInt_fuzz::eLim_tr:
                     oss << pnt << '^' << pnt + 1;
