@@ -8,5 +8,7 @@ EXPENDABLE_SUB_PROJ = test
 
 REQUIRES = objects
 
+WATCHERS = boukn
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
