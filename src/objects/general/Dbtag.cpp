@@ -472,6 +472,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid="),
     TDbtUrl(CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog="),
     TDbtUrl(CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object="),
+    TDbtUrl(CDbtag::eDbtagType_ENSEMBL, "http://www.ensembl.org/id/"),
     TDbtUrl(CDbtag::eDbtagType_ERIC, "http://www.ericbrc.org/genbank/dbxref/"),
     TDbtUrl(CDbtag::eDbtagType_EcoGene, "http://ecogene.org/geneInfo.php?eg_id="),
     TDbtUrl(CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid="),
