@@ -112,7 +112,7 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
  * Special case: eIO_Open as "event" clears both positions with 0,
  * and always returns 0.
  */
-extern size_t CONN_GetPosition
+extern NCBI_XCONNECT_EXPORT size_t CONN_GetPosition
 (CONN      conn,
  EIO_Event event
  );
