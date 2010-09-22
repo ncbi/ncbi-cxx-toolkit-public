@@ -323,7 +323,7 @@ CFlatItemFormatter::End(
     IFlatTextOStream& Out )
 {
     const string strHtmlTail(
-        "</pre></div><hr />\n"
+        "</div><hr />\n"
         "</body>\n"
         "</html>\n" );
 

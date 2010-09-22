@@ -90,8 +90,14 @@ void CGenbankFormatter::EndSection
 (const CEndSectionItem&,
  IFlatTextOStream& text_os)
 {
+    bool bHtml = GetContext().GetConfig().DoHTML();
     list<string> l;
-    l.push_back("//");
+    if ( bHtml ) {
+        l.push_back( "//</pre>" );
+    }
+    else {
+        l.push_back("//");
+    }
     text_os.AddParagraph(l, NULL);
 }
 
