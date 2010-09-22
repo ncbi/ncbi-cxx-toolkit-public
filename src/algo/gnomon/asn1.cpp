@@ -54,6 +54,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 USING_SCOPE(ncbi::objects);
 
+
+/// Uncomment this to provide extended evidence output
+//#define _EVIDENCE_WANTED
+
 // defined in gnomon_model.cpp
 typedef map<string,string> TAttributes;
 void CollectAttributes(const CAlignModel& a, TAttributes& attributes);
