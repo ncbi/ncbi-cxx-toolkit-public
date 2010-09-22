@@ -62,7 +62,7 @@ class CNgAligner
 {
 public:
 
-    CNgAligner(objects::CScope& Scope, CRef<objects::CGC_Assembly> GenColl = NULL, bool AllowDupes=false);
+    CNgAligner(objects::CScope& Scope, CRef<objects::CGC_Assembly> GenColl = null, bool AllowDupes=false);
     virtual ~CNgAligner();
 
     void SetQuery(ISequenceSet* Set);
