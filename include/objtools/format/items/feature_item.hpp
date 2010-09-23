@@ -391,6 +391,7 @@ private:
     void x_AddQuals(CBioseqContext& ctx);
     void x_AddQuals(const CBioSource& src, CBioseqContext& ctx) const;
     void x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) const;
+    void x_AddPcrPrimersQuals(const CBioSource& src, CBioseqContext& ctx) const;
 
     // XXX - massage slot as necessary and perhaps sanity-check value's type
     void x_AddQual (ESourceQualifier slot, const IFlatQVal* value) const {

@@ -216,7 +216,7 @@ enum ESourceQualifier {
     eSQ_organelle,
     eSQ_orgmod_note,
     eSQ_pathovar,
-    eSQ_pcr_primer,
+    eSQ_PCR_primers,
     eSQ_pcr_primer_note,
     eSQ_plasmid_name,
     eSQ_plastid_name,

@@ -465,10 +465,12 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         if ( cds ) {
             CBioseq_Handle nuc = 
                 bsh.GetScope().GetBioseqHandle(cds->GetLocation());
-            ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
-                if (*iter  &&  iter->GetSeqId()->IsPatent()) {
-                    m_Division = "PAT";
-                    break;
+            if( nuc ) {
+                ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
+                    if (*iter  &&  iter->GetSeqId()->IsPatent()) {
+                        m_Division = "PAT";
+                        break;
+                    }
                 }
             }
         }

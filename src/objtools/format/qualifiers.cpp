@@ -520,10 +520,10 @@ CFlatInferenceQVal::CFlatInferenceQVal( const string& gbValue ) :
     //  legal replacement for "non-experimental ...", and leave it alone 
     //  otherwise.
     //
-	string prefix = "";
-	string remainder = "";
+    string prefix = "";
+    string remainder = "";
     CInferencePrefixList::GetPrefixAndRemainder (gbValue, prefix, remainder);
-	if (!NStr::IsBlank(prefix)) {
+    if (!NStr::IsBlank(prefix)) {
         m_str = gbValue;
     }
 }
@@ -1213,26 +1213,31 @@ void CFlatSubSourcePrimer::Format(
         NStr::ReplaceInPlace( rev_seq, ")", "" );
         NStr::Tokenize( rev_seq, ",", rev_seqs );
     }
-    if ( rev_seqs.size() != fwd_seqs.size() ) {
-        return;
-    }
 
     for ( size_t i=0; i < fwd_seqs.size(); ++i ) {
 
         string value;
+        string sep = "";
         if ( i < fwd_names.size() ) {
-            value += "fwd_name: ";
+            value += sep + "fwd_name: ";
             value += fwd_names[i];
-            value += ", ";
+            sep = ", ";
         }
-        value += "fwd_seq: ";
-        value += fwd_seqs[i];
+        if( i < fwd_seqs.size() ) {
+            value += sep + "fwd_seq: ";
+            value += fwd_seqs[i];
+            sep = ", ";
+        }
         if ( i < rev_names.size() ) {
-            value += ", rev_name: ";
+            value += sep + "rev_name: ";
             value += rev_names[i];
+            sep = ", ";
         }
-        value += ", rev_seq: ";
-        value += rev_seqs[i];
+        if( i < rev_seqs.size() ) {
+            value += sep + "rev_seq: ";
+            value += rev_seqs[i];
+            sep = ", ";
+        }
         x_AddFQ( q, "PCR_primers", value );
     }
 }

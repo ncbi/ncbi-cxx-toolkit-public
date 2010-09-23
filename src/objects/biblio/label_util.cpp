@@ -138,7 +138,7 @@ void GetLabelContent(string*            label,
 
     if (volume) {
         if (part_sup) {
-            *label += *volume + *part_sup;
+            *label += *volume + *part_sup + ":";
         }
         else {
             *label += *volume + ":";

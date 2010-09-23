@@ -54,6 +54,10 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/PCRPrimerSet.hpp>
+#include <objects/seqfeat/PCRPrimer.hpp>
+#include <objects/seqfeat/PCRReaction.hpp>
+#include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -114,6 +118,18 @@ static bool s_ValidId(const CSeq_id& id)
            id.IsGpipe();
 }
 
+// returns how many times ch appears in str
+static int s_CountChar( const string &str, const char ch ) {
+    int total = 0;
+
+    ITERATE( string, it, str ) {
+        if( *it == ch ) {
+            ++total;
+        }
+    }
+
+    return total;
+}
 
 static bool s_QualifiersMeetPrimerReqs( 
     const string& fwd_name, 
@@ -127,9 +143,17 @@ static bool s_QualifiersMeetPrimerReqs(
     if ( rev_seq.empty() ) {
         return false;
     }
+
+    // we make sure number of commas is the same in both, to cover the case of 
+    // compound sequences.
+    if( s_CountChar(fwd_seq, ',') != s_CountChar(rev_seq, ',') ) {
+        return false;
+    }
+
     // watch out, there are probably more, related to compound values in each of the
     // constituents. Test cases?
     //
+
     return true;
 }
 
@@ -143,6 +167,8 @@ static string s_MakePcrPrimerNote(
     if ( fwd_name.empty() && fwd_seq.empty() && rev_name.empty() && rev_seq.empty() ) {
         return "";
     }
+
+    // split if necessary to handle the paren syntax (e.g. fwd_name of "(P6,P8)" )
 
     string note( "PCR_primers=" );
     size_t init_length = note.length();
@@ -715,6 +741,50 @@ static bool s_LocIsFuzz(const CMappedFeat& feat, const CSeq_loc& loc)
     }
 
     return false;
+}
+
+static void s_AddPcrPrimersQualsAppend( string &output, const string &name, const string &str )
+{
+    if( ! str.empty() ) {
+        if( ! output.empty() ) {
+            output += ", ";
+        }
+        output += name + str;
+    }
+}
+
+// This splits a string that's comma-separated with parens at start and end
+// (or, string might just contain a single string, so no splitting is needed,
+// in which case the output_vec will be of size 1)
+static void s_SplitCommaSeparatedStringInParens( vector<string> &output_vec, const string &string_to_split )
+{
+    // nothing to do since no input
+    if( string_to_split.empty() ) {
+        return;
+    }
+
+    // no splitting required
+    if( string_to_split[0] != '(' ) {
+        output_vec.push_back( string_to_split );
+        return;
+    }
+
+    // if endsWithParen is false, it's probably a parse error, actually, but we do the best we can and
+    // expect the Sequin validator to catch the error sometime in the future
+    const bool endsWithParen = ( string_to_split[string_to_split.length() - 1] == ')' );
+
+    const string::size_type string_to_split_len = string_to_split.length() - ( endsWithParen ? 1 : 0); // the "-1" is so we ignore the final ')' if it's there
+    string::size_type next_token = 1; // skip the initial '('
+
+    // add the comma-separated substrings into the output_vec
+    while( next_token < string_to_split_len ) {
+        string::size_type next_comma = string_to_split.find( ',', next_token );
+        if( next_comma == string::npos ) {
+            next_comma = string_to_split_len;
+        }
+        output_vec.push_back( string_to_split.substr( next_token, next_comma - next_token ) );
+        next_token = next_comma + 1;
+    }
 }
 
 static const string sc_ValidExceptionText[] = {
@@ -1436,8 +1506,8 @@ void CFeatureItem::x_AddQuals(
 //    if ( GetLoc().IsInt() ) {
 //        size_t uFrom = GetLoc().GetInt().GetFrom();
 //        size_t uTo = GetLoc().GetInt().GetTo();
-//        if ( uFrom == 25887 ) {
-//            cerr << "Break" << endl;
+//        if ( uFrom == 18269 ) {
+//            cerr << "";
 //        }
 //    }
 //  <</**fl**/
@@ -1490,7 +1560,11 @@ void CFeatureItem::x_AddQuals(
          subtype != CSeqFeatData::eSubtype_gap && 
          ( subtype != CSeqFeatData::eSubtype_repeat_region || is_not_genbank ) ) 
     {
-        x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
+        try {
+            x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
+        } catch(const CObjMgrException &e) {
+            // maybe put a warning here?  We end up here in, e.g., accession AAY81715.1
+        }
     }
     bool pseudo = x_GetPseudo(gene_ref, gene_feat );
 
@@ -1817,7 +1891,10 @@ void CFeatureItem::x_AddQualTranslation(
 
         // occasionally submitters give us data where the length is incorrect, but in that case 
         // we should at least try our best (but emit a warning)
-        const size_t real_length = seqv.GetSeqMap().FindSegment(0, &scope).GetRefData().GetNcbieaa().Get().length();
+        const CSeq_data & seq_data = seqv.GetSeqMap().FindSegment(0, &scope).GetRefData();
+        const size_t real_length = ( seq_data.IsNcbieaa() ? 
+            seq_data.GetNcbieaa().Get().length() : 
+            ( seq_data.IsIupacaa() ? seq_data.GetIupacaa().Get().length() : seqv.size() ) ); // the seqv.size() part is incorrect, but we fall back on that since we can't seem to get the translation string.
         const size_t seqv_size = seqv.size();
         if( real_length != seqv_size ) {
             // TODO: print a warning here.  This is not done yet because we will crash in this case anyway until
@@ -4525,6 +4602,48 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
     }
 }
 
+void CSourceFeatureItem::x_AddPcrPrimersQuals(const CBioSource& src, CBioseqContext& ctx) const
+{
+    if( ! src.IsSetPcr_primers() ) {
+        return;
+    }
+
+    const CBioSource_Base::TPcr_primers & primers = src.GetPcr_primers();
+    if( primers.CanGet() ) {
+        ITERATE( CBioSource_Base::TPcr_primers::Tdata, it, primers.Get() ) {
+            string primer_value;
+
+            if( (*it)->IsSetForward() ) {
+                const CPCRReaction_Base::TForward &forward = (*it)->GetForward();
+                if( forward.CanGet() ) {
+                    ITERATE( CPCRReaction_Base::TForward::Tdata, it2, forward.Get() ) {
+                        string fwd_name = (*it2)->GetName();
+                        s_AddPcrPrimersQualsAppend( primer_value, "fwd_name: ", fwd_name);
+                        string fwd_seq = (*it2)->GetSeq();
+                        NStr::ToLower( fwd_seq );
+                        s_AddPcrPrimersQualsAppend( primer_value, "fwd_seq: ", fwd_seq);
+                    }
+                }
+            }
+            if( (*it)->IsSetReverse() ) {
+                const CPCRReaction_Base::TReverse &reverse = (*it)->GetReverse();
+                if( reverse.CanGet() ) {
+                    ITERATE( CPCRReaction_Base::TReverse::Tdata, it2, reverse.Get() ) {
+                        string rev_name = (*it2)->GetName();
+                        s_AddPcrPrimersQualsAppend( primer_value, "rev_name: ", rev_name);
+                        string rev_seq = (*it2)->GetSeq();
+                        NStr::ToLower( rev_seq );
+                        s_AddPcrPrimersQualsAppend( primer_value, "rev_seq: ", rev_seq);
+                    }
+                }
+            }
+
+            if( ! primer_value.empty() ) {
+                x_AddQual( eSQ_PCR_primers, new CFlatStringQVal( primer_value ) );
+            }
+        }
+    }
+}
 
 static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
 {
@@ -4655,7 +4774,7 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
     if ( s_QualifiersMeetPrimerReqs( 
         primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) ) 
     {
-        x_AddQual( eSQ_pcr_primer, new CFlatSubSourcePrimer( 
+        x_AddQual( eSQ_PCR_primers, new CFlatSubSourcePrimer( 
             primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) );
     } 
     else 
@@ -4673,13 +4792,40 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
         //  The following combines any of /fwd_primer_name, /fwd_primer_seq,
         //  /rev/primer_name, /rev_primer_seq into a /pcr_primer_note qualifier.
         //
-        string primer_value = s_MakePcrPrimerNote( 
-            primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq );
-        if ( !primer_value.empty() ) {
-            x_AddQual( eSQ_pcr_primer_note, new CFlatStringQVal( primer_value ) );
+        //  We also handle the paren syntax (e.g. EF559246.1) that requires us
+        //  to split into multiple /pcr_primer_note qualifiers.
+        vector<string> primer_fwd_name_vec;
+        s_SplitCommaSeparatedStringInParens( primer_fwd_name_vec, primer_fwd_name );
+        vector<string> primer_fwd_seq_vec;
+        s_SplitCommaSeparatedStringInParens( primer_fwd_seq_vec, primer_fwd_seq );
+        vector<string> primer_rev_name_vec;
+        s_SplitCommaSeparatedStringInParens( primer_rev_name_vec, primer_rev_name );
+        vector<string> primer_rev_seq_vec;
+        s_SplitCommaSeparatedStringInParens( primer_rev_seq_vec, primer_rev_seq );
+
+        // if one is shorter than the others, expand them all to be the same length as the maximum
+        // one, filling with empty strings if necessary
+        const size_t longest_vec = max( primer_fwd_name_vec.size(), 
+            max( primer_fwd_seq_vec.size(), 
+            max( primer_rev_name_vec.size(), primer_rev_seq_vec.size() ) ) );
+        primer_fwd_name_vec.resize( longest_vec );
+        primer_fwd_seq_vec.resize( longest_vec );
+        primer_rev_name_vec.resize( longest_vec );
+        primer_rev_seq_vec.resize( longest_vec );
+
+        for( size_t idx = 0; idx < primer_fwd_name_vec.size(); ++idx ) {
+            string primer_value = s_MakePcrPrimerNote( 
+                primer_fwd_name_vec[idx], primer_fwd_seq_vec[idx], 
+                primer_rev_name_vec[idx], primer_rev_seq_vec[idx]);
+            if ( !primer_value.empty() ) {
+                x_AddQual( eSQ_pcr_primer_note, new CFlatStringQVal( primer_value ) );
+            }
         }
      }
     //< end of special PCR_primer handling
+
+    // Gets direct "pcr-primers" tag from file and adds the quals from that
+    x_AddPcrPrimersQuals(src, ctx);
 
     // some qualifiers are flags in genome and names in subsource,
     // print once with name
@@ -4766,7 +4912,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(collection_date);
     DO_QUAL(collected_by);
     DO_QUAL(identified_by);
-    DO_QUAL(pcr_primer);
+    DO_QUAL(PCR_primers);
 
     if ( !GetContext()->Config().SrcQualsToNote() ) {
         // some note qualifiers appear as regular quals in GBench or Dump mode
@@ -4907,7 +5053,7 @@ CSourceFeatureItem::CSourceFeatureItem
  TRange range,
  CBioseqContext& ctx)
     : CFeatureItemBase(CMappedFeat(), ctx),
-      m_WasDesc(true)
+      m_WasDesc(true), m_IsFocus(false), m_IsSynthetic(false)
 {
     if (!src.IsSetOrg()) {
         m_Feat = CMappedFeat();

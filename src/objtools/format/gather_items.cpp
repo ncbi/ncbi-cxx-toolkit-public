@@ -134,8 +134,8 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
     case CFlatFileConfig::eFormat_FTable:
         return new CFtableGatherer;
 
-	case CFlatFileConfig::eFormat_FeaturesOnly:
-		return new CFeatureGatherer;
+    case CFlatFileConfig::eFormat_FeaturesOnly:
+        return new CFeatureGatherer;
 
     case CFlatFileConfig::eFormat_DDBJ:
     default:
@@ -1132,8 +1132,7 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
 
     // if the descriptor has a focus (by now sorted to be first),
     // subtract out all other source locations.
-//    if (srcs.front()->IsFocus()  &&  !srcs.front()->IsSynthetic()) {
-    if (srcs.front()->IsFocus()) {
+    if (srcs.front()->IsFocus()  &&  !srcs.front()->IsSynthetic()) {
         x_SubtractFromFocus(srcs);
 
         // if features completely subtracted descriptor intervals,
@@ -1445,8 +1444,8 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
 
-	// Gaps of length zero are only shown for SwissProt Genpept records
-	const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
+    // Gaps of length zero are only shown for SwissProt Genpept records
+    const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
 
     CSeq_feat_Handle prev_feat;
     CConstRef<IFlatItem> item;
@@ -1523,13 +1522,13 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             TSeqPos feat_start = feat_loc->GetStart(eExtreme_Positional);
             while (gap_it) {
                 // if feature after gap first output the gap 
-				if ( feat_start >= gap_it.GetPosition() ) {
-					// but don't output gaps of size zero (except: see showGapsOfSizeZero)
-					if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
-						item.Reset( s_NewGapItem(gap_it, ctx) );
-						out << item;
-					}
-					++gap_it;
+                if ( feat_start >= gap_it.GetPosition() ) {
+                    // but don't output gaps of size zero (except: see showGapsOfSizeZero)
+                    if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
+                        item.Reset( s_NewGapItem(gap_it, ctx) );
+                        out << item;
+                    }
+                    ++gap_it;
                 } else {
                     break;
                 }
@@ -1570,11 +1569,11 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     // when all features are done, output remaining gaps
     while (gap_it) {
-		// we don't output gaps of size zero (except: see showGapsOfSizeZero)
-		if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
-			item.Reset( s_NewGapItem(gap_it, ctx) );
-			out << item;
-		}
+        // we don't output gaps of size zero (except: see showGapsOfSizeZero)
+        if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
+            item.Reset( s_NewGapItem(gap_it, ctx) );
+            out << item;
+        }
         ++gap_it;
     }
 }
