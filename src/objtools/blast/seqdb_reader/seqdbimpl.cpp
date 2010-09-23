@@ -620,11 +620,13 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
         SSeqRes res;
         const char * seq;
         res.length = vol->GetSequence(vol_oid++, &seq, locked);
+        Uint8 tot_length = m_Atlas.GetSliceSize();
 
-        while (res.length >= 0) {
+        while (res.length >= 0 && tot_length >= res.length) {
+            tot_length -= res.length;
             res.address = seq;
             buffer->results.push_back(res);
-            res.length = vol->GetSequence(vol_oid++, &seq, locked, true);
+            res.length = vol->GetSequence(vol_oid++, &seq, locked);
         } 
         //cout << CThread::GetSelf()-1 << ": " << buffer->results.size() << " | " << oid << endl;
         return;
