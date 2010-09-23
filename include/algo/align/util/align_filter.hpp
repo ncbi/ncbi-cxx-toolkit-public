@@ -75,6 +75,11 @@ END_SCOPE(objects)
 ///     -# ADD(a, b) = a + b; a and b are tokens as defined above
 ///     -# IS_SEG_TYPE(a) = 1 if the Seq-align is of segment type a (where a is
 ///       one of 'disc', 'denseg', 'std', 'spliced', 'packed', 'dendiag')
+///     -# COALESCE(a,b,...) = first of (a, b, ...) that evaluates to a
+///       supported value.  In order to avoid problems when querying against a
+///       missing value, COALESCE() allows the specification of alternate score
+///       names or of alternate values.  Thus, COALESCE(score, 0) will return 0
+///       if 'score' is not present.
 ///
 /// Current Accepted Tokens
 /// -----------------------
@@ -222,7 +227,8 @@ private:
     bool x_IsUnique(const objects::CSeq_align& align);
 
     double x_GetAlignmentScore(const string& score_name,
-                               const objects::CSeq_align& align);
+                               const objects::CSeq_align& align,
+                               bool throw_if_not_found = false);
 
     bool x_Query_Op(const CQueryParseTree::TNode& key_node,
                     CQueryParseNode::EType type,
@@ -233,7 +239,8 @@ private:
     double x_FuncCall(const CQueryParseTree::TNode& func_node,
                       const objects::CSeq_align& align);
     double x_TermValue(const CQueryParseTree::TNode& term_node,
-                       const objects::CSeq_align& align);
+                       const objects::CSeq_align& align,
+                       bool throw_if_not_found = false);
 
     bool x_Query_Range(const CQueryParseTree::TNode& key_node,
                        bool is_not,

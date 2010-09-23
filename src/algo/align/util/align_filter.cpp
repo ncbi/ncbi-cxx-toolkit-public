@@ -529,7 +529,13 @@ void CAlignFilter::x_Init()
 
 void CAlignFilter::SetFilter(const string& filter)
 {
-    static const char *sc_Functions[] = { "MUL", "ADD", "IS_SEG_TYPE", NULL };
+    static const char *sc_Functions[] = {
+        "MUL",
+        "ADD",
+        "IS_SEG_TYPE",
+        "COALESCE",
+        NULL
+    };
 
     m_Query = filter;
     m_ParseTree.reset(new CQueryParseTree);
@@ -702,7 +708,8 @@ bool CAlignFilter::x_IsUnique(const CSeq_align& align)
 }
 
 double CAlignFilter::x_GetAlignmentScore(const string& score_name,
-                                         const objects::CSeq_align& align)
+                                         const objects::CSeq_align& align,
+                                         bool throw_if_not_found)
 {
     ///
     /// see if we have this score
@@ -712,24 +719,33 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
     TScoreDictionary::const_iterator it = m_Scores.find(score_name);
     if (it != m_Scores.end()) {
         return it->second->Get(align, m_Scope);
-    } else if (align.IsSetScore()) {
-        ITERATE (CSeq_align::TScore, iter, align.GetScore()) {
-            const CScore& score = **iter;
-            if ( !score.IsSetId()  ||
-                 !score.GetId().IsStr() ) {
-                continue;
-            }
+    }
+    else {
+        bool found = false;
+        if (align.IsSetScore()) {
+            ITERATE (CSeq_align::TScore, iter, align.GetScore()) {
+                const CScore& score = **iter;
+                if ( !score.IsSetId()  ||
+                     !score.GetId().IsStr() ) {
+                    continue;
+                }
 
-            if (score.GetId().GetStr() != score_name) {
-                continue;
-            }
+                if (score.GetId().GetStr() != score_name) {
+                    continue;
+                }
 
-            if (score.GetValue().IsInt()) {
-                score_value = score.GetValue().GetInt();
-            } else {
-                score_value = score.GetValue().GetReal();
+                if (score.GetValue().IsInt()) {
+                    score_value = score.GetValue().GetInt();
+                } else {
+                    score_value = score.GetValue().GetReal();
+                }
+                found = true;
+                break;
             }
-            break;
+        }
+        if ( !found  &&  throw_if_not_found ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to find score: " + score_name);
         }
     }
     return score_value;
@@ -787,6 +803,24 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
         double val2 = x_TermValue(node2, align);
 
         this_val = val1 + val2;
+    }
+    else if (NStr::EqualNocase(function, "COALESCE")) {
+        ///
+        /// standard SQL coalesce-if-null
+        ///
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        for ( ;  iter != end;  ++iter) {
+            try {
+                this_val = x_TermValue(**iter, align, true);
+                break;
+            }
+            catch (CException&) {
+                /// ignoring - not found term
+            }
+        }
     }
     else if (NStr::EqualNocase(function, "IS_SEG_TYPE")) {
         CQueryParseTree::TNode::TNodeList_CI iter =
@@ -856,7 +890,8 @@ bool s_IsDouble(const string& str)
 }
 
 double CAlignFilter::x_TermValue(const CQueryParseTree::TNode& term_node,
-                                 const CSeq_align& align)
+                                 const CSeq_align& align,
+                                 bool throw_if_not_found)
 {
     CQueryParseNode::EType type = term_node.GetValue().GetType();
     switch (type) {
@@ -873,10 +908,10 @@ double CAlignFilter::x_TermValue(const CQueryParseTree::TNode& term_node,
 			         val = NStr::StringToDouble(str);
                  }
                  catch (CException&) {
-                     val = x_GetAlignmentScore(str, align);
+                     val = x_GetAlignmentScore(str, align, throw_if_not_found);
 				 }
 		     } else {
-                 val = x_GetAlignmentScore(str, align);
+                 val = x_GetAlignmentScore(str, align, throw_if_not_found);
 			 }
              return val;
          }}
