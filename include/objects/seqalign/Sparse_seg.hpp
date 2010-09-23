@@ -68,12 +68,19 @@ public:
 
     /// Validators
     void Validate    (bool full_test = false) const;
-    TDim CheckNumRows(void)                   const {
-        size_t dim = GetRows().size();
-        _SEQALIGN_ASSERT(IsSetRow_scores() ? GetRow_scores().size() == dim : true);
-        return dim;
-    }
+    TDim CheckNumRows(void)                   const;
 
+
+    // GetSeqRange
+    CRange<TSeqPos> GetSeqRange(TDim row) const;
+    TSeqPos         GetSeqStart(TDim row) const;
+    TSeqPos         GetSeqStop(TDim row) const;
+
+    // Get Seq_id (the first one if segments have different strands).
+    const CSeq_id& GetSeq_id(TDim row) const;
+
+    // Get strand (the first one if segments have different strands).
+    ENa_strand      GetSeqStrand(TDim row) const;
 
 private:
     // Prohibit copy constructor and assignment operator

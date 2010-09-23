@@ -119,6 +119,17 @@ CDense_seg::TNumseg CDense_seg::CheckNumSegs() const
 }
 
 
+const CSeq_id& CDense_seg::GetSeq_id(TDim row) const
+{
+    if ( IsSetIds()  && (size_t)row < GetIds().size()) {
+        return *GetIds()[row];
+    }
+    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+               "CDense_seg::GetSeq_id(): "
+               "can not get seq-id for the row requested.");
+}
+
+
 TSeqPos CDense_seg::GetSeqStart(TDim row) const
 {
     const TDim&    dim    = GetDim();

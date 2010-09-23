@@ -135,6 +135,9 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqRange(row);
 
+    case C_Segs::e_Sparse:
+        return GetSegs().GetSparse().GetSeqRange(row);
+
     case C_Segs::e_Dendiag:
         {
             CRange<TSeqPos> rng;
@@ -216,6 +219,8 @@ TSeqPos CSeq_align::GetSeqStart(TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqStart(row);
+    case C_Segs::e_Sparse:
+        return GetSegs().GetSparse().GetSeqStart(row);
     case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
     case C_Segs::e_Spliced:
@@ -234,6 +239,8 @@ TSeqPos CSeq_align::GetSeqStop (TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqStop(row);
+    case C_Segs::e_Sparse:
+        return GetSegs().GetSparse().GetSeqStop(row);
     case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
     case C_Segs::e_Spliced:
@@ -252,6 +259,8 @@ ENa_strand CSeq_align::GetSeqStrand(TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqStrand(row);
+    case C_Segs::e_Sparse:
+        return GetSegs().GetSparse().GetSeqStrand(row);
     case C_Segs::e_Spliced:
         return GetSegs().GetSpliced().GetSeqStrand(row);
     case C_Segs::e_Disc:
@@ -272,13 +281,10 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
 {
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
-        {{
-            if ( GetSegs().GetDenseg().IsSetIds()  &&
-                 (size_t)row < GetSegs().GetDenseg().GetIds().size()) {
-                return *GetSegs().GetDenseg().GetIds()[row];
-            }
-        }}
-        break;
+        return GetSegs().GetDenseg().GetSeq_id(row);
+
+    case C_Segs::e_Sparse:
+        return GetSegs().GetSparse().GetSeq_id(row);
 
     case C_Segs::e_Dendiag:
         {{
@@ -344,7 +350,6 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
         }}
         break;
 
-    case C_Segs::e_Sparse:
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeq_id() currently does not handle "

@@ -60,8 +60,196 @@ void CSparse_seg::Validate(bool full_test) const
 }
 
 
+CSparse_seg::TDim CSparse_seg::CheckNumRows(void) const
+{
+    size_t dim = GetRows().size();
+    _SEQALIGN_ASSERT(IsSetRow_scores() ? GetRow_scores().size() == dim : true);
+    return dim+1; // extra 1 is for the consensus sequence (first-id)
+}
+
+
+const CSeq_id& CSparse_seg::GetSeq_id(TDim row) const
+{
+    if ( row == 0 ) {
+        // consensus sequence - first-id
+        if ( !GetRows().empty() ) {
+            const CSparse_align& align = *GetRows()[0];
+            return align.GetFirst_id();
+        }
+    }
+    else {
+        if ( size_t(row) <= GetRows().size() ) {
+            const CSparse_align& align = *GetRows()[row-1];
+            return align.GetSecond_id();
+        }
+    }
+    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+               "CSparse_seg::GetSeq_id(): "
+               "can not get seq-id for the row requested.");
+}
+
+
+ENa_strand CSparse_seg::GetSeqStrand(TDim row) const
+{
+    if ( row == 0 ) {
+        // consensus sequence - always plus
+        return eNa_strand_plus;
+    }
+    else {
+        if ( size_t(row) <= GetRows().size() ) {
+            const CSparse_align& align = *GetRows()[row-1];
+            if ( align.IsSetSecond_strands() ) {
+                // return strand for the first 
+                return align.GetSecond_strands()[0];
+            }
+            else {
+                // unset strand - plus
+                return eNa_strand_plus;
+            }
+        }
+    }
+    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+               "CSparse_seg::GetSeqStrand(): "
+               "can not get strand for the row requested.");
+}
+
+
+TSeqPos CSparse_seg::GetSeqStart(TDim row) const
+{
+    if ( row == 0 ) {
+        // consensus sequence
+        bool first_row = true;
+        TSeqPos total_start = 0;
+        ITERATE ( TRows, it, GetRows() ) {
+            const CSparse_align& align = **it;
+            TSeqPos start = align.GetFirst_starts().front();
+            if ( first_row ) {
+                first_row = false;
+                total_start = start;
+            }
+            else if ( start < total_start ) {
+                total_start = start;
+            }
+        }
+        return total_start;
+    }
+    else {
+        if ( size_t(row) <= GetRows().size() ) {
+            const CSparse_align& align = *GetRows()[row-1];
+            if ( !align.IsSetSecond_strands() ||
+                 IsForward(align.GetSecond_strands()[0]) ) {
+                // plus strand - first segment
+                return align.GetSecond_starts().front();
+            }
+            else {
+                // minus strand - last segment
+                return align.GetSecond_starts().back();
+            }
+        }
+    }
+    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+               "CSparse_seg::GetSeqStart(): "
+               "can not get seq start for the row requested.");
+}
+
+
+TSeqPos CSparse_seg::GetSeqStop(TDim row) const
+{
+    if ( row == 0 ) {
+        // consensus sequence
+        bool first_row = true;
+        TSeqPos total_stop = 0;
+        ITERATE ( TRows, it, GetRows() ) {
+            const CSparse_align& align = **it;
+            TSeqPos stop = align.GetFirst_starts().back();
+            stop += align.GetLens().back() - 1;
+            if ( first_row ) {
+                first_row = false;
+                total_stop = stop;
+            }
+            else if ( stop > total_stop ) {
+                total_stop = stop;
+            }
+        }
+        return total_stop;
+    }
+    else {
+        if ( size_t(row) <= GetRows().size() ) {
+            const CSparse_align& align = *GetRows()[row-1];
+            if ( !align.IsSetSecond_strands() ||
+                 IsForward(align.GetSecond_strands()[0]) ) {
+                // plus strand - last segment
+                TSeqPos stop = align.GetSecond_starts().back();
+                stop += align.GetLens().back() - 1;
+                return stop;
+            }
+            else {
+                // minus strand - first segment
+                TSeqPos stop = align.GetSecond_starts().front();
+                stop += align.GetLens().front() - 1;
+                return stop;
+            }
+        }
+    }
+    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+               "CSparse_seg::GetSeqStop(): "
+               "can not get seq stop for the row requested.");
+}
+
+
+CRange<TSeqPos> CSparse_seg::GetSeqRange(TDim row) const
+{
+    if ( row == 0 ) {
+        // consensus sequence
+        bool first_row = true;
+        TSeqPos total_start = 0, total_stop = 0;
+        ITERATE ( TRows, it, GetRows() ) {
+            const CSparse_align& align = **it;
+            TSeqPos start = align.GetFirst_starts().front();
+            TSeqPos stop = align.GetFirst_starts().back();
+            stop += align.GetLens().back() - 1;
+            if ( first_row ) {
+                first_row = false;
+                total_start = start;
+                total_stop = stop;
+            }
+            else {
+                if ( start < total_start ) {
+                    total_start = start;
+                }
+                if ( stop > total_stop ) {
+                    total_stop = stop;
+                }
+            }
+        }
+        return CRange<TSeqPos>(total_start, total_stop);
+    }
+    else {
+        if ( size_t(row) <= GetRows().size() ) {
+            const CSparse_align& align = *GetRows()[row-1];
+            if ( !align.IsSetSecond_strands() ||
+                 IsForward(align.GetSecond_strands()[0]) ) {
+                // plus strand - (first,last) segments
+                TSeqPos start = align.GetSecond_starts().front();
+                TSeqPos stop = align.GetSecond_starts().back();
+                stop += align.GetLens().back() - 1;
+                return CRange<TSeqPos>(start, stop);
+            }
+            else {
+                // minus strand - (last,first) segments
+                TSeqPos start = align.GetSecond_starts().back();
+                TSeqPos stop = align.GetSecond_starts().front();
+                stop += align.GetLens().front() - 1;
+                return CRange<TSeqPos>(start, stop);
+            }
+        }
+    }
+    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+               "CSparse_seg::GetSeqRange(): "
+               "can not get seq range for the row requested.");
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 57, chars: 1729, CRC32: c9d5df39 */

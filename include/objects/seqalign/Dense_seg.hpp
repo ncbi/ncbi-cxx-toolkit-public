@@ -88,6 +88,9 @@ public:
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop(TDim row) const;
 
+    // Get Seq_id (the first one if segments have different strands).
+    const CSeq_id& GetSeq_id(TDim row) const;
+
     // Get strand (the first one if segments have different strands).
     ENa_strand      GetSeqStrand(TDim row) const;
 
