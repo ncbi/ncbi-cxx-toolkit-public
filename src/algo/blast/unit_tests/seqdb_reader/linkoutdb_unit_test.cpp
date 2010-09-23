@@ -45,8 +45,10 @@ BOOST_AUTO_TEST_SUITE(linkoutdb)
 
 BOOST_AUTO_TEST_CASE(NonExistantLinkoutDB)
 {
-    BOOST_REQUIRE_THROW(CLinkoutDB& foo = CLinkoutDB::GetInstance("bar"), 
+    CLinkoutDB* foo = NULL;
+    BOOST_REQUIRE_THROW(foo = &CLinkoutDB::GetInstance("bar"), 
                         CSeqDBException);
+    BOOST_REQUIRE(NULL == foo);
 }
 
 BOOST_AUTO_TEST_CASE(TestSeqIds)
