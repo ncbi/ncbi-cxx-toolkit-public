@@ -29,17 +29,17 @@ APP: gumbelparams
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
 Linux32-Suse     : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile --without-dll LDFLAGS=-static-libcxa
-Linux64-Suse     : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile 
+Linux64-Suse     : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
 #Linux64-Suse     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-flat-makefile
 
 DEFAULT_CONFIGURATIONS: Linux32-Suse:icc Linux64-Suse:icc
 
-Win32       : plain : msvc800_prj   static  32  ReleaseMT
-Win64       : plain : msvc800_prj   static  64  ReleaseMT
+Win32_8     : plain : static  32  ReleaseMT
+Win64_9     : plain : static  64  ReleaseMT
 
 SunOSx86    : plain : WorkShop59.sh 64  --without-debug --without-pcre --with-mt --with-flat-makefile
 SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --without-pcre --with-mt --with-flat-makefile
 
 IntelMAC    : universal : GCC.sh        --without-debug --without-pcre --with-mt --with-flat-makefile --with-universal --with-ncbi-public
 
-# USE_COMPONENTS 
+# USE_COMPONENTS

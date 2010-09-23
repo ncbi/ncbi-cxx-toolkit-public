@@ -12,10 +12,10 @@
 
 USE_COMPONENTS
 
-Win32      : MSVC8 : msvc800_prj  static  32  ReleaseDLL
+Win32_8    : MSVC8 : static  32  ReleaseDLL
 #Win64      : MSVC8 : msvc800_prj  dll     64  DebugDLL
-Win64_9    : MSVC9-32 : msvc900_prj  dll     32  DebugDLL
-Win64_9    : MSVC9-64 : msvc900_prj  static  64  ReleaseDLL
+Win64_9    : MSVC9-32 : dll     32  DebugDLL
+Win64_9    : MSVC9-64 : static  64  ReleaseDLL
 
 Linux32-Suse : GCC304  : GCC.sh 3.0.4 --with-dll --with-mt --with-distcc
 Linux32-Suse : GCC342  : GCC.sh 3.4.2 --without-flat-makefile --with-distcc

@@ -45,8 +45,8 @@ Linux64-Suse     : icc : ICC.sh            --with-strip --without-debug --withou
 
 DEFAULT_CONFIGURATIONS: Linux32-Suse:icc Linux64-Suse:icc
 
-Win32       : plain : msvc800_prj   static  32  ReleaseMT
-Win64       : plain : msvc900_prj   static  64  ReleaseMT
+Win32_8     : plain : static  32  ReleaseMT
+Win64_9     : plain : static  64  ReleaseMT
 
 SunOSx86    : plain : WorkShop59.sh 64  --without-debug --without-pcre --with-mt --with-flat-makefile
 SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --without-pcre --with-mt --with-flat-makefile

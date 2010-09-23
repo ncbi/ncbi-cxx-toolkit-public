@@ -37,7 +37,7 @@ SunOSSparc : plain  : GCC.sh           --without-debug --without-mt --with-stati
 #PowerMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-Win32      : plain  : msvc800_prj  static  32  ReleaseMT
+Win32_8    : plain  : static  32  ReleaseMT
 
 XCode      : plain  : Xcode.sh 30 --with-universal
 

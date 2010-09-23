@@ -39,4 +39,4 @@ SunOSSparc : plain : WorkShop.sh 32   --without-debug --without-mt --with-static
 
 IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile --with-universal
 
-Win64      : plain : msvc800_prj  static  32  ReleaseDLL
+Win32_9    : plain : static  32  ReleaseDLL
