@@ -633,12 +633,12 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
     int packet_start = 0;
     
     for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
         if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid ) {
             locks.clear();
             return CReader::LoadTaxIds(result, ids, loaded, ret);
-        }
-        if ( loaded[i] ) {
-            continue;
         }
         locks[i].reset(new CLoadLockSeq_ids(result, ids[i]));
         if ( (*locks[i])->IsLoadedTaxId() ) {
