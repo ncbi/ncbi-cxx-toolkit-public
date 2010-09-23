@@ -56,6 +56,8 @@
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/error_codes.hpp>
 
+#include <util/range_coll.hpp>
+
 #include <algorithm>
 
 
@@ -97,6 +99,133 @@ TSeqPos GetLength(const CSeq_loc& loc, CScope* scope)
         return GetLength(loc.GetMix(), scope);
     case CSeq_loc::e_Packed_pnt:   // just a bunch of points
         return loc.GetPacked_pnt().GetPoints().size();
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Bond:         //can't calculate length
+    case CSeq_loc::e_Feat:
+    case CSeq_loc::e_Equiv:        // unless actually the same length...
+    default:
+        NCBI_THROW(CObjmgrUtilException, eUnknownLength,
+            "Unable to determine length");
+    }
+}
+
+
+namespace {
+    struct SCoverageCollector {
+        SCoverageCollector(const CSeq_loc& loc, CScope* scope)
+            {
+                Add(loc, scope);
+            }
+        void Add(const CSeq_loc& loc, CScope* scope)
+            {
+                switch (loc.Which()) {
+                case CSeq_loc::e_Pnt:
+                    Add(loc.GetPnt());
+                    return;
+                case CSeq_loc::e_Int:
+                    Add(loc.GetInt());
+                    return;
+                case CSeq_loc::e_Null:
+                case CSeq_loc::e_Empty:
+                    return;
+                case CSeq_loc::e_Whole:
+                    AddWhole(loc.GetWhole(), scope);
+                    return;
+                case CSeq_loc::e_Mix:
+                    Add(loc.GetMix(), scope);
+                    return;
+                case CSeq_loc::e_Packed_int:
+                    Add(loc.GetPacked_int());
+                    return;
+                case CSeq_loc::e_Packed_pnt:
+                    Add(loc.GetPacked_pnt());
+                    return;
+                case CSeq_loc::e_not_set:
+                case CSeq_loc::e_Bond:  //can't calculate coverage
+                case CSeq_loc::e_Feat:
+                case CSeq_loc::e_Equiv: // unless actually the same length...
+                default:
+                    NCBI_THROW(CObjmgrUtilException, eUnknownLength,
+                               "Unable to determine coverage");
+                }
+            }
+        void Add(const CSeq_id_Handle& idh, TSeqPos from, TSeqPos to)
+            {
+                m_Intervals[idh] += TRange(from, to);
+            }
+        void Add(const CSeq_id& id, TSeqPos from, TSeqPos to)
+            {
+                Add(CSeq_id_Handle::GetHandle(id), from, to);
+            }
+        void AddWhole(const CSeq_id& id, CScope* scope)
+            {
+                Add(id, 0, GetLength(id, scope)-1);
+            }
+        void Add(const CSeq_point& seq_pnt)
+            {
+                Add(seq_pnt.GetId(), seq_pnt.GetPoint(), seq_pnt.GetPoint());
+            }
+        void Add(const CSeq_interval& seq_int)
+            {
+                Add(seq_int.GetId(), seq_int.GetFrom(), seq_int.GetTo());
+            }
+        void Add(const CPacked_seqint& packed_int)
+            {
+                ITERATE ( CPacked_seqint::Tdata, it, packed_int.Get() ) {
+                    Add(**it);
+                }
+            }
+        void Add(const CPacked_seqpnt& packed_pnt)
+            {
+                CSeq_id_Handle idh =
+                    CSeq_id_Handle::GetHandle(packed_pnt.GetId());
+                ITERATE(CPacked_seqpnt::TPoints, it, packed_pnt.GetPoints()) {
+                    Add(idh, *it, *it);
+                }
+            }
+        void Add(const CSeq_loc_mix& mix, CScope* scope)
+            {
+                ITERATE ( CSeq_loc_mix::Tdata, it, mix.Get() ) {
+                    Add(**it, scope);
+                }
+            }
+
+        TSeqPos GetCoverage(void) const
+            {
+                TSeqPos coverage = 0;
+                ITERATE ( TIntervals, it, m_Intervals ) {
+                    ITERATE ( TRanges, it2, it->second ) {
+                        coverage += it2->GetLength();
+                    }
+                }
+                return coverage;
+            }
+
+    private:
+        typedef CRange<TSeqPos> TRange;
+        typedef CRangeCollection<TSeqPos> TRanges;
+        typedef map<CSeq_id_Handle, TRanges> TIntervals;
+        TIntervals m_Intervals;
+    };
+}
+
+
+TSeqPos GetCoverage(const CSeq_loc& loc, CScope* scope)
+{
+    switch (loc.Which()) {
+    case CSeq_loc::e_Pnt:
+        return 1;
+    case CSeq_loc::e_Int:
+        return loc.GetInt().GetLength();
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+        return 0;
+    case CSeq_loc::e_Whole:
+        return GetLength(loc.GetWhole(), scope);
+    case CSeq_loc::e_Packed_int:
+    case CSeq_loc::e_Mix:
+    case CSeq_loc::e_Packed_pnt:
+        return SCoverageCollector(loc, scope).GetCoverage();
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Bond:         //can't calculate length
     case CSeq_loc::e_Feat:
@@ -2494,8 +2623,8 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
             if ( Compare(*ploc1, *ploc2, scope) != eContains ) {
                 return -1;
             }
-            return Int8(GetLength(*ploc1, scope)) -
-                Int8(GetLength(*ploc2, scope));
+            return Int8(GetCoverage(*ploc1, scope)) -
+                Int8(GetCoverage(*ploc2, scope));
         }
     case eOverlap_CheckIntRev:
         swap(ploc1, ploc2);

@@ -70,6 +70,10 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 TSeqPos GetLength(const CSeq_loc& loc, CScope* scope);
 
+/// Get number of unique bases in the location
+NCBI_XOBJUTIL_EXPORT
+TSeqPos GetCoverage(const CSeq_loc& loc, CScope* scope);
+
 /// Get length of CSeq_loc_mix == sum (length of embedded CSeq_locs)
 NCBI_XOBJUTIL_EXPORT
 TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope);
