@@ -295,7 +295,7 @@ static void s_CheckExecArg(const char* arg)
         NCBI_THROW(CExecException, eSpawn, "CExec::" #func "() failed"); \
     } \
     CResult result; \
-    if ((mode & eWait) == eWait) { \
+    if ((mode & fModeMask) == eWait) { \
         result.m_Flags = CResult::fExitCode; \
         result.m_Result.exitcode = (TExitCode)status; \
     } else { \
@@ -596,8 +596,8 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
     status = s_SpawnUnix(eV, mode, cmdname, args);
-
 #endif
+
     RETURN_RESULT(RunSilent);
 }
 

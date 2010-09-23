@@ -95,13 +95,13 @@ public:
         /// The same as eNoWait, but on UNIX platforms new process group
         /// will be created and calling process become the leader of the new
         /// process group.
-        eNoWaitGroup = eNoWait | fNewGroup, 
+        eNoWaitGroup = eNoWait | fNewGroup,
         /// Continues to execute calling process; new process is run in
         /// background with no access to console or keyboard.
         /// On UNIX new created process become the leader of the new session,
         /// the process group leader of the new process group.
         /// Calls to Wait() against new process will fail on MS Windows,
-        /// but work on UNIX platforms. This is an asynchronous spawn.                      
+        /// but work on UNIX platforms. This is an asynchronous spawn.
         eDetach      = 3
     };
    
@@ -533,7 +533,7 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL()
+    ///   SpawnL(), TMode
     static CResult
     RunSilent(EMode mode, const char *cmdname,
               const char *argv, ... /*, NULL */);
