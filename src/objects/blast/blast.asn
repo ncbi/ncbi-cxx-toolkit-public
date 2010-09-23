@@ -205,7 +205,11 @@ Blast4-get-sequences-request ::= SEQUENCE {
     seq-ids                 SEQUENCE OF Seq-id,
     -- Determines whether the returned Bioseqs should contain the sequence data
     -- or not
-    skip-seq-data           BOOLEAN DEFAULT FALSE
+    skip-seq-data           BOOLEAN DEFAULT FALSE,
+    -- Determines whether or not the defline of the returned Bioseqs should 
+    -- contain only the requested seq id.  This optional field only applies
+    -- to non-redundant BLAST database
+    target-only             BOOLEAN OPTIONAL
 }
 
 -- Fetch parts of sequences from a BLAST database
