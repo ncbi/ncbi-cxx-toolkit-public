@@ -221,8 +221,7 @@ class NCBI_FORMAT_EXPORT CFlatIntQVal : public IFlatQVal
 {
 public:
     CFlatIntQVal(int value) : m_Value(value) { }
-    void Format(TFlatQuals& q, const string& n, CBioseqContext&, TFlags) const
-        { x_AddFQ(q, n, NStr::IntToString(m_Value), CFormatQual::eUnquoted); }
+    void Format(TFlatQuals& q, const string& n, CBioseqContext&, TFlags) const;
 private:
     int m_Value;
 };

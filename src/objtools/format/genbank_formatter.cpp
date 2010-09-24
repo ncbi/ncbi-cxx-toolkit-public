@@ -72,6 +72,17 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+//  ============================================================================
+//  Link locations:
+//  ============================================================================
+const string strLinkbaseNuc( 
+    "http://www.ncbi.nlm.nih.gov/nuccore/" );
+const string strLinkbaseProt( 
+    "http://www.ncbi.nlm.nih.gov/protein/" );
+const string strLinkBaseTaxonomy( 
+    "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
+const string strLinkBaseTransTable(
+    "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
 
 CGenbankFormatter::CGenbankFormatter(void) :
     m_uFeatureCount( 0 )
@@ -338,11 +349,11 @@ static string s_GetHtmlTaxname(const CSourceItem& source)
     
     if (!NStr::EqualNocase(source.GetTaxname(), "Unknown")) {
         if (source.GetTaxid() != CSourceItem::kInvalidTaxid) {
-            link << "<a href=" << "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" << "id=" << source.GetTaxid() << ">";
+            link << "<a href=" << strLinkBaseTaxonomy << "id=" << source.GetTaxid() << ">";
         } else {
             string taxname = source.GetTaxname();
             replace(taxname.begin(), taxname.end(), ' ', '+');
-            link << "<a href=" << "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" << "name=" << taxname << ">";
+            link << "<a href=" << strLinkBaseTaxonomy << "name=" << taxname << ">";
         }
         link << source.GetTaxname() << "</a>";
     } else {
@@ -730,6 +741,8 @@ void CGenbankFormatter::FormatFeature
  IFlatTextOStream& text_os)
 //  ============================================================================
 { 
+    bool bHtml = f.GetContext()->Config().DoHTML();
+
     CConstRef<CFlatFeature> feat = f.Format();
     const vector<CRef<CFormatQual> > & quals = feat->GetQuals();
     list<string>        l, l_new;
@@ -737,7 +750,6 @@ void CGenbankFormatter::FormatFeature
     if ( feat->GetKey() != "source" ) {
         ++ m_uFeatureCount;
     }
-    bool bHtml = f.GetContext()->Config().DoHTML();
 
     const string strDummy( "[FEATKEY]" );
     string strKey = bHtml ? strDummy : feat->GetKey();

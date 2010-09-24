@@ -64,6 +64,17 @@ const string IFlatQVal::kComma     = ",";
 const string IFlatQVal::kEOL       = "\n";
 
 
+//  ============================================================================
+//  Link locations:
+//  ============================================================================
+const string strLinkbaseNuc( "http://www.ncbi.nlm.nih.gov/nuccore/" );
+const string strLinkbaseProt( "http://www.ncbi.nlm.nih.gov/protein/" );
+const string strLinkBaseTaxonomy( 
+    "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
+const string strLinkBaseTransTable(
+    "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
+
+
 static void s_StripTags( string& str )
 {
     // Purpose: Strip HTML like tags from the given string
@@ -1144,11 +1155,30 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
     }
 }
 
+void CFlatIntQVal::Format(TFlatQuals& q, const string& name, 
+                          CBioseqContext& ctx, TFlags) const
+{ 
+    bool bHtml = ctx.Config().DoHTML();
+
+    string value = NStr::IntToString(m_Value);
+    if ( bHtml && name == "transl_table" ) {
+        string link = "<a href=\"";
+        link += strLinkBaseTransTable;
+        link += value;
+        link += "\">";
+        link += value;
+        link += "</a>";
+        value = link;
+    }
+    x_AddFQ( q, name, value, CFormatQual::eUnquoted); 
+}
+
 
 void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
-                          CBioseqContext& ctx, IFlatQVal::TFlags) const
+                            CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
-    // XXX - add link in HTML mode
+    bool bHtml = ctx.Config().DoHTML();
+
     string id_str;
     if ( m_Value->IsGi() ) {
         if ( m_GiPrefix ) {
@@ -1157,6 +1187,26 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
         m_Value->GetLabel(&id_str, CSeq_id::eContent);
     } else {
         id_str = m_Value->GetSeqIdString(true);
+    }
+
+    if ( bHtml && name == "protein_id" ) {
+        string raw_id_str = id_str;
+        string raw_link_str = id_str;
+        CBioseq_Handle bsh = ctx.GetScope().GetBioseqHandle( *m_Value );
+        vector< CSeq_id_Handle > ids = bsh.GetId();
+        ITERATE( vector< CSeq_id_Handle >, it, ids ) {
+            CSeq_id_Handle hid = *it;
+            if ( hid.IsGi() ) {
+                raw_link_str = NStr::UIntToString( hid.GetGi() );
+                break;
+            }
+        }
+        id_str = "<a href=\"";
+        id_str += strLinkbaseProt;
+        id_str += raw_link_str;
+        id_str += "\">";
+        id_str += raw_id_str;
+        id_str += "</a>";
     }
     x_AddFQ(q, name, id_str);
 }
