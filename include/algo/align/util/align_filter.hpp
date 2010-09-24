@@ -153,7 +153,7 @@ END_SCOPE(objects)
 ///      the aligned length
 ///
 
-class CAlignFilter : public CObject
+class NCBI_XALGOALIGN_EXPORT CAlignFilter : public CObject
 {
 public:
     class IScore : public CObject
