@@ -3904,8 +3904,7 @@ void CDisplaySeqalign::x_CalcUrlLinksParams(const CSeq_align& align, string idSt
     //make alnvector	
     CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(align);    
 	
-	bool first = m_AlnLinksParams.count(idString) == 0;
-    int count = m_AlnLinksParams.count(idString);
+	bool first = m_AlnLinksParams.count(idString) == 0;    
     struct SAlnLinksParams *alnLinksParam = first ? new SAlnLinksParams : &m_AlnLinksParams[idString];
 	
 

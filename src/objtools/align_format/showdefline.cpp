@@ -421,8 +421,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         //add more report types like mapview, etc
 		sdl->urlReportType = (!user_url.empty() && user_url.find("report=graph") != string::npos && sdl->gi > 0)? "Nucleotide Graphics" : "";
 
-        CRange<TSeqPos> seqRange = (m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
-        bool flip = (m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;		
+        CRange<TSeqPos> seqRange = ((int)m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
+        bool flip = ((int)m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;		
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
                                                  m_QueryNumber,sdl->gi, accession, sdl->linkout,
                                                  blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,flip); 
