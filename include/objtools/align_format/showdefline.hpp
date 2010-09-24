@@ -312,6 +312,7 @@ protected:
         int blast_rank;                // "Rank" of defline.
         int hspNum;                    //hsp number
         CRange<TSeqPos> subjRange;     //subject sequence range
+        bool flip;                     //indicates opposite strands in the first seq align	
     };
 
     ///Seqalign 
@@ -333,7 +334,7 @@ protected:
     int m_Option;
 
     ///List containing score info for all seqalign
-    list<SScoreInfo*> m_ScoreList;      
+    vector<SScoreInfo*> m_ScoreList;      
 
     ///Blast type
     string m_BlastType;
