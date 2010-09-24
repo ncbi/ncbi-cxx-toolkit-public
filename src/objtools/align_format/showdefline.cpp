@@ -285,6 +285,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            SDeflineInfo* sdl,
                                            int blast_rank)
 {
+
     const CRef<CBlast_def_line_set> bdlRef = CAlignFormatUtil::GetBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
@@ -417,10 +418,14 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         sdl->score_url += !useTemplates ? ">" : "";
 
 		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;
+        //add more report types like mapview, etc
+		sdl->urlReportType = (!user_url.empty() && user_url.find("report=graph") != string::npos && sdl->gi > 0)? "Nucleotide Graphics" : "";
 
+        CRange<TSeqPos> seqRange = (m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
+        bool flip = (m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;		
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
                                                  m_QueryNumber,sdl->gi, accession, sdl->linkout,
-                                                 blast_rank,false,(m_Option & eNewTargetWindow) ? true : false); 
+                                                 blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,flip); 
         sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef,useTemplates);
     }
 
@@ -506,7 +511,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
 
 CShowBlastDefline::~CShowBlastDefline()
 {   
-    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
+    ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         delete *iter;
     }
 }
@@ -557,7 +562,7 @@ bool CShowBlastDefline::x_CheckForStructureLink()
       int count = 0;
       const int k_CountMax = 200; // Max sequences to check.
 
-      ITERATE(list<SScoreInfo*>, iter, m_ScoreList) {
+      ITERATE(vector<SScoreInfo*>, iter, m_ScoreList) {
           const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*(*iter)->id);
           const CRef<CBlast_def_line_set> bdlRef = CAlignFormatUtil::GetBlastDefline(handle);
           const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
@@ -713,7 +718,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
     }
     
     bool first_new =true;
-    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
+    ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         size_t line_length = 0;
         string line_component;
@@ -1082,7 +1087,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
                                                  parameters_to_change,
                                                  query_buf);
     }
-    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
+    ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         size_t line_length = 0;
         string line_component;
@@ -1338,7 +1343,8 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     score_info->evalue_string = evalue_buf;
     score_info->id = &(aln.GetSeq_id(1));
     score_info->blast_rank = blast_rank+1;
-
+    score_info->subjRange = CRange<TSeqPos>(0,0);	
+	score_info->flip = false;
     return score_info.release();
 }
 
@@ -1364,8 +1370,8 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     int highest_length = 1;
     int highest_ident = 0;
     int highest_identity = 0;
-    list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.
-    score_info->master_covered_length =  CAlignFormatUtil::GetMasterCoverage(aln);
+    list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.    
+    score_info->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&score_info->master_covered_length,&score_info->flip);
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
         int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, 
                                                         m_TranslatedNucAlignment);
@@ -1443,8 +1449,9 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
             string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
             string accession;
             sdl->id->GetLabel(&accession, CSeq_id::eContent);
+            CRange<TSeqPos> seqRange(0,0);
             CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,0);
+                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,false,0);
             sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,*m_ScopeRef);
 
             sdl->score_url = NcbiEmptyString;
@@ -1464,7 +1471,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     // Mixed db is genomic + transcript and this does not apply to proteins.    
     bool is_mixed_database = (m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef) : false;
     
-    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
+    ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         cur_database_type = (sdl->linkout & eGenomicSeq);
         string subHeader;        
@@ -1519,6 +1526,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqInfo);        
         defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_gi",dflGi);    
         defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_seqid",seqid);        
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"report_type",sdl->urlReportType);
     }
     else {        
         defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",dflGi + seqid);        
