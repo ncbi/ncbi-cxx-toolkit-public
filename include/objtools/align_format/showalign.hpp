@@ -434,6 +434,18 @@ private:
 		string title;                   ///< sequnce title
 	};
 
+    ///Info used to contstruct seq url obtained from processing the whole seq align
+    ///for particular subject sequnce
+    struct SAlnLinksParams {
+		string segs;                    ///< seq align segments in the format seg1start-seg1end,seg2start-seg2end,
+		int  hspNumber;                 ///< hsp number  
+		CRange<TSeqPos> *subjRange;     ///< subject sequnce range
+		bool flip;                      ///< opposite starnds indicator
+
+		/// Constructor        
+		SAlnLinksParams(){hspNumber = 1;subjRange = NULL;flip = false;}
+	};
+
     /// store alnvec and score info
     struct SAlnInfo : public CObject {               
         CRef < objects::CAlnVec > alnvec;
@@ -497,8 +509,8 @@ private:
     CNcbiIfstream *m_ConfigFile;
     CNcbiRegistry *m_Reg;
     objects::CGetFeature* m_DynamicFeature;
-    map < string, string > m_Segs;
-    map < string, int > m_HspNumber;
+    
+    map < string, struct SAlnLinksParams > m_AlnLinksParams;
        
     CRef < objects::CObjectManager > m_FeatObj;  // used for fetching feature
     CRef < objects::CScope > m_featScope;        // used for fetching feature
@@ -528,8 +540,8 @@ private:
     ///@param use_this_gi: display this gi instead    
     ///@return: string containig defline(s)
     ///
-    string x_PrintDefLine(const objects::CBioseq_Handle& bsp_handle, 
-                        list<int>& use_this_gi, string& id_label);
+    string x_PrintDefLine(const objects::CBioseq_Handle& bsp_handle, SAlnInfo* aln_vec_info);
+                        
 
     /// display sequence for one row
     ///@param sequence: the sequence for that row
@@ -779,22 +791,21 @@ private:
                                      int toRange,
                                      string featText);
     ///Sets m_Segs,m_HspNumber
-    void x_PreProcessSeqAlign(objects::CSeq_align_set &actual_aln_list,string toolUrl);
+    void x_PreProcessSeqAlign(objects::CSeq_align_set &actual_aln_list);
+    void x_CalcUrlLinksParams(const objects::CSeq_align& align, string idString,string toolUrl);
     void x_DisplayAlnvecInfoHead(CNcbiOstream& out, 
                                  SAlnInfo* aln_vec_info);
 
     ///Setup scope for feature fetching and m_DynamicFeature
     ///
-    void x_FeatSetup(objects::CSeq_align_set &actual_aln_list);
-    void x_CalcSegs(const objects::CSeq_align& align, string idString);
-    void x_CalcHSPNum(string idString);
+    void x_FeatSetup(objects::CSeq_align_set &actual_aln_list);    
     SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
 								   list<int>& use_this_gi,
 								   int firstGi,
 								   bool isNa,
-								  int seqLength);
+								  int seqLength);                                  
     SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);    
-    string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle, list<int>& use_this_gi);
+    string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle, SAlnInfo* aln_vec_info);
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);                                     
     void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
 	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
