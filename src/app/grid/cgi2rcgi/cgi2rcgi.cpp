@@ -103,10 +103,13 @@ public:
         string& value) const;
     void GetRequestEntryValue(const string& entry_name, string& value) const;
 
-    // Save this entry as a cookie add it to serf url
+    typedef map<string,string>    TPersistentEntries;
+
     void PullUpPersistentEntry(const string& entry_name);
     void PullUpPersistentEntry(const string& entry_name, string& value);
     void DefinePersistentEntry(const string& entry_name, const string& value);
+    const TPersistentEntries& GetPersistentEntries() const
+        { return m_PersistentEntries; }
 
     void LoadQueryStringTags();
 
@@ -116,8 +119,6 @@ public:
     void SelectView(const string& view_name);
     void SetCompleteResponse(CNcbiIstream& is);
     bool NeedRenderPage() const { return m_NeedRenderPage; }
-
-    string GetHiddenFields() const;
 
     const string& GetJobInput() const { return m_JobInput; }
     const string& GetJobOutput() const { return m_JobOutput; }
@@ -132,8 +133,6 @@ public:
     void SetJobOutput(const string& output) { m_JobOutput = output; }
 
 private:
-    typedef map<string,string>    TPersistentEntries;
-
     CHTMLPage&                    m_Page;
     CHTMLPage&                    m_CustomHTTPHeader;
     CCgiContext&                  m_CgiContext;
@@ -181,20 +180,6 @@ string CGridCgiContext::GetSelfURL() const
         }
     }
     return url;
-}
-
-string CGridCgiContext::GetHiddenFields() const
-{
-    string ret;
-    TPersistentEntries::const_iterator it;
-    for (it = m_PersistentEntries.begin();
-         it != m_PersistentEntries.end(); ++it) {
-        const string& name = it->first;
-        const string& value = it->second;
-        ret += "<INPUT TYPE=\"HIDDEN\" NAME=\"" + name
-             + "\" VALUE=\"" + value + "\">\n";
-    }
-    return ret;
 }
 
 const string& CGridCgiContext::GetPersistentEntryValue(
@@ -368,6 +353,9 @@ private:
 
     string m_AffinityName;
     int m_AffinitySource;
+
+    string m_ContentType;
+    bool m_UseHTML;
 };
 
 void CCgi2RCgiApp::Init()
@@ -438,6 +426,10 @@ void CCgi2RCgiApp::Init()
 
     // Read configuration parameters
     string cgi2rcgi_section("cgi2rcgi");
+
+    m_ContentType = config.GetString(cgi2rcgi_section,
+        "content_type", kEmptyStr);
+    m_UseHTML = m_ContentType.empty() || m_ContentType == "text/html";
 
     m_Title = config.GetString(cgi2rcgi_section, "cgi_title",
                                     "Remote CGI Status Checker");
@@ -545,6 +537,8 @@ static const string kGridCgiForm =
     "<@HIDDEN_FIELDS@>\n<@STAT_VIEW@>\n"
     "</FORM>";
 
+static const string kPlainTextView = "<@STAT_VIEW@>";
+
 class CRegexpTemplateFilter : public CHTMLPage::TTemplateLibFilter
 {
 public:
@@ -581,10 +575,14 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     CCgiResponse& response = ctx.GetResponse();
     m_Response = &response;
 
+    if (!m_UseHTML)
+        response.SetContentType(m_ContentType);
+
     // Create an HTML page (using the template HTML file)
     try {
         m_Page.reset(new CHTMLPage(m_Title, m_HtmlTemplate));
-        CHTMLText* stat_view = new CHTMLText(kGridCgiForm);
+        CHTMLText* stat_view = new CHTMLText(m_UseHTML ?
+            kGridCgiForm : kPlainTextView);
         m_Page->AddTagMap("VIEW", stat_view);
     }
     catch (exception& e) {
@@ -705,9 +703,18 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             new CHTMLPlainText(grid_ctx.GetSelfURL(), true);
         m_Page->AddTagMap("SELF_URL", self_url);
         m_CustomHTTPHeader->AddTagMap("SELF_URL", self_url);
-        CHTMLPlainText* hidden_fields =
-            new CHTMLPlainText(grid_ctx.GetHiddenFields(), true);
-        m_Page->AddTagMap("HIDDEN_FIELDS", hidden_fields);
+
+        if (m_UseHTML) {
+            // Preserve persistent entries as hidden fields
+            string hidden_fields;
+            for (CGridCgiContext::TPersistentEntries::const_iterator it =
+                        grid_ctx.GetPersistentEntries().begin();
+                    it != grid_ctx.GetPersistentEntries().end(); ++it)
+                hidden_fields += "<INPUT TYPE=\"HIDDEN\" NAME=\"" + it->first
+                     + "\" VALUE=\"" + it->second + "\">\n";
+            m_Page->AddTagMap("HIDDEN_FIELDS",
+                new CHTMLPlainText(hidden_fields, true));
+        }
 
         CTime now(GetFastLocalTime());
         m_Page->AddTagMap("DATE",
@@ -780,7 +787,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
 void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
 {
-    if (idelay >= 0) {
+    if (m_UseHTML && idelay >= 0) {
         CHTMLText* redirect = new CHTMLText(
                     "<META HTTP-EQUIV=Refresh "
                     "CONTENT=\"<@REDIRECT_DELAY@>; URL=<@REDIRECT_URL@>\">");
@@ -823,11 +830,12 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         {
             CNcbiIstream& is = job_status->GetIStream();
 
-            if (job_status->GetBlobSize() > 0) {
+            if (job_status->GetBlobSize() > 0)
                 grid_ctx.SetCompleteResponse(is);
-            } else {
-                m_StrPage = "<html><head><title>Empty Result</title>"
-                            "</head><body>Empty Result</body></html>";
+            else {
+                m_StrPage = m_UseHTML ?
+                    "<html><head><title>Empty Result</title>"
+                    "</head><body>Empty Result</body></html>" : kEmptyStr;
                 grid_ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
             }
         }
