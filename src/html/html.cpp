@@ -269,23 +269,28 @@ CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 
 // plain text node
 
+CHTMLPlainText::CHTMLPlainText(EEncodeMode encode_mode, const string& text) :
+        CNCBINode(s_GenerateNodeInternalName("plaintext", text)),
+    m_Text(text), m_EncodeMode(encode_mode)
+{
+}
+
 CHTMLPlainText::CHTMLPlainText(const char* text, bool noEncode)
     : CNCBINode(s_GenerateNodeInternalName("plaintext", text)),
-      m_NoEncode(noEncode), m_Text(text)
+        m_Text(text)
 {
-    return;
+    SetNoEncode(noEncode);
 }
 
 CHTMLPlainText::CHTMLPlainText(const string& text, bool noEncode)
     : CNCBINode(s_GenerateNodeInternalName("plaintext", text)),
-      m_NoEncode(noEncode), m_Text(text)
+        m_Text(text)
 {
-    return;
+    SetNoEncode(noEncode);
 }
 
 CHTMLPlainText::~CHTMLPlainText(void)
 {
-    return;
 }
 
 
@@ -294,10 +299,17 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
     string str(GetText());
     switch (mode) {
         case ePlainText:
+            if (m_EncodeMode == eJSONEncode)
+                str = NStr::JsonEncode(str);
             break;
         case eHTML:
         case eXHTML:
-            if ( !NoEncode() ) {
+            switch (m_EncodeMode) {
+            case eJSONEncode:
+                str = NStr::JsonEncode(str);
+            case eNoEncode:
+                break;
+            case eHTMLEncode:
                 str = CHTMLHelper::HTMLEncode(str);
             }
             break;
@@ -360,6 +372,9 @@ CNcbiOstream& CHTMLText::PrintString(CNcbiOstream& out, TMode mode,
             break;
         case fStrip | fEncode:
             str = CHTMLHelper::HTMLEncode(CHTMLHelper::StripHTML(s));
+            break;
+        case fJsonEncode:
+            str = NStr::JsonEncode(s);
             break;
         default:
             pstr = &s;

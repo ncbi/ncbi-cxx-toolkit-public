@@ -111,7 +111,7 @@ public:
     const TPersistentEntries& GetPersistentEntries() const
         { return m_PersistentEntries; }
 
-    void LoadQueryStringTags();
+    void LoadQueryStringTags(bool use_html);
 
     // Get CGI Context
     CCgiContext& GetCGIContext() { return m_CgiContext; }
@@ -245,13 +245,17 @@ void CGridCgiContext::DefinePersistentEntry(const string& entry_name,
     }
 }
 
-void CGridCgiContext::LoadQueryStringTags()
+void CGridCgiContext::LoadQueryStringTags(bool use_html)
 {
     ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
         string tag("QUERY_STRING:" + eit->first);
-        m_Page.AddTagMap(tag, new CHTMLPlainText(eit->second.c_str()));
+        m_Page.AddTagMap(tag, new CHTMLPlainText(use_html ?
+            CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode,
+                eit->second));
         m_CustomHTTPHeader.AddTagMap(tag,
-            new CHTMLPlainText(eit->second.c_str()));
+            new CHTMLPlainText(use_html ?
+                CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode,
+                    eit->second));
     }
 }
 
@@ -597,7 +601,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     grid_ctx.PullUpPersistentEntry("job_key", job_key);
     grid_ctx.PullUpPersistentEntry("Cancel");
 
-    grid_ctx.LoadQueryStringTags();
+    grid_ctx.LoadQueryStringTags(m_UseHTML);
     try {
         EJobPhase phase = eTerminated;
         CGridJobStatus* job_status = NULL;
@@ -739,10 +743,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         m_CustomHTTPHeader->AddTagMap("JOB_ID", new CHTMLText(job_key));
         if (phase == eRunning) {
             grid_ctx.SetJobProgressMessage(job_status->GetProgressMessage());
-            CHTMLText* err = new CHTMLText(grid_ctx.GetJobProgressMessage());
+            CHTMLPlainText* err = new CHTMLPlainText(m_UseHTML ?
+                CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode,
+                    grid_ctx.GetJobProgressMessage());
             grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG", err);
-            err = new CHTMLText(grid_ctx.GetJobProgressMessage());
-            grid_ctx.GetHTMLPage().AddTagMap("PROGRESS_MSG", err);
         }
     } //try
     catch (exception& e) {
@@ -896,7 +900,8 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
         ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl;
     DefineRefreshTags(fall_back_url, m_FallBackDelay);
 
-    CHTMLPlainText* err = new CHTMLPlainText(msg);
+    CHTMLPlainText* err = new CHTMLPlainText(m_UseHTML ?
+        CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode, msg);
     ctx.GetHTMLPage().AddTagMap("MSG", err);
 }
 

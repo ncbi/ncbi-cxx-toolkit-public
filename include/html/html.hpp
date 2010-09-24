@@ -280,27 +280,42 @@ class NCBI_XHTML_EXPORT CHTMLPlainText : public CNCBINode
 {
     typedef CNCBINode CParent;
 public:
+    enum EEncodeMode {
+        eNoEncode         = 0,        ///< Do not encode prior to printing
+        eHTMLEncode       = 1 << 0,   ///< Encode for HTML output
+        eJSONEncode       = 1 << 1,   ///< Encode for JSON output
+    };
+
+    CHTMLPlainText(EEncodeMode encode_mode, const string& text);
     CHTMLPlainText(const char* text, bool noEncode = false);
     CHTMLPlainText(const string& text, bool noEncode = false);
     ~CHTMLPlainText(void);
-    
+
     const string& GetText(void) const;
     void SetText(const string& text);
 
     bool NoEncode(void) const
     {
-        return m_NoEncode;
+        return m_EncodeMode == eHTMLEncode;
     }
     void SetNoEncode(bool noEncode = true)
     {
-        m_NoEncode = noEncode;
+        m_EncodeMode = noEncode ? eNoEncode : eHTMLEncode;
+    }
+    void SetEncodeMode(EEncodeMode encode_mode)
+    {
+        m_EncodeMode = encode_mode;
+    }
+    EEncodeMode GetEncodeMode() const
+    {
+        return m_EncodeMode;
     }
 
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 
 private:
-    bool   m_NoEncode;
     string m_Text;
+    EEncodeMode m_EncodeMode;
 };
 
 
@@ -310,15 +325,14 @@ class NCBI_XHTML_EXPORT CHTMLText : public CNCBINode
     typedef CNCBINode CParent;
 
 public:
-    /// Which conversions make before printout a stored text
+    /// Conversions to make before printing out the stored text.
     ///
     /// NOTE: fDisableBuffering flag can slightly improve output speed,
-    /// but it disable some functionality. In this mode tag mapping
-    /// don't works in ePlainText mode, also tag stripping works incorrect
-    /// if other HTML/XML or similar tags presents inside HTML tags.
-    /// By default this flag is temporary enabled for compatibility with
-    /// old code using CHTMLText class. In the future it will be disabled
-    /// by default.
+    /// but it disables some functionality. In particular, tag mapping
+    /// doesn't work in ePlainText mode, and tag stripping works incorrectly
+    /// if other HTML/XML or similar tags present inside HTML tags.
+    /// By default, this flag is enabled for compatibility with old code
+    /// that uses the CHTMLText class.
     enum EFlags {
         fStripHtmlMode    = 1 << 1,   ///< Strip text in html mode
         fStripTextMode    = 1 << 2,   ///< Strip text in plain text mode
@@ -330,6 +344,7 @@ public:
         fNoEncode         = 0,
         fEnableBuffering  = 0,        ///< Enable printout buffering
         fDisableBuffering = 1 << 5,   ///< Disable printout buffering
+        fJsonEncode       = 1 << 6,   ///< Encode for JSON output
 
         // Presets
         fCode             = fStripTextMode  | fNoEncode,
