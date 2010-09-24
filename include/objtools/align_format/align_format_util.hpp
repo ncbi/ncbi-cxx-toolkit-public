@@ -305,15 +305,17 @@ public:
         int blast_rank;         ///< index of the current alignment
         bool isAlignLink;       ///< bool indicating if link is in alignment section
         bool new_win;           ///< bool indicating if click of the url will open a new window
+        CRange<TSeqPos> seqRange;///sequence range
+        bool flip;              ///flip sequence in case of opposite strands
         int taxid;              ///< taxid
         bool addCssInfo;        ///< bool indicating that css info should be added
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, int txid = -1,bool addCssInf = false) 
+                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false,int txid = -1,bool addCssInf = false) 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
                     queryNumber(qn), gi(gi), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
-                    new_win(nw),taxid (txid),addCssInfo(addCssInf){}
+                    new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf){}
 
     };
     
@@ -761,6 +763,13 @@ public:
                                int hit_order,
                                int hsp_order);
 
+    /// function for calculating  percent match for an alignment.	
+	///@param numerator
+	/// int numerator in percent identity calculation.
+	///@param denominator
+	/// int denominator in percent identity calculation.
+	static int GetPercentMatch(int numerator, int denominator);
+
     ///function for Filtering seqalign by expect value
     ///@param source_aln
     /// CSeq_align_set original seqalign
@@ -773,6 +782,38 @@ public:
     static CRef<objects::CSeq_align_set> FilterSeqalignByEval(objects::CSeq_align_set& source_aln,                                      
                                      double evalueLow,
                                      double evalueHigh);
+
+    ///function for Filtering seqalign by percent identity
+    ///@param source_aln
+    /// CSeq_align_set original seqalign
+    ///@param percentIdentLow
+    /// double min percent identity
+    ///@param percentIdentHigh 
+    /// double max percent identity
+    ///@return
+    /// CRef<CSeq_align_set> - filtered seq align
+	static CRef<objects::CSeq_align_set> FilterSeqalignByPercentIdent(objects::CSeq_align_set& source_aln,
+                                                                      double percentIdentLow,
+                                                                      double percentIdentHigh);
+
+	///function for Filtering seqalign by expect value and percent identity
+    ///@param source_aln
+    /// CSeq_align_set original seqalign
+	///@param evalueLow 
+    /// double min expect value
+    ///@param evalueHigh 
+    /// double max expect value
+    ///@param percentIdentLow
+    /// double min percent identity
+    ///@param percentIdentHigh 
+    /// double max percent identity
+    ///@return
+    /// CRef<CSeq_align_set> - filtered seq align
+	static CRef<objects::CSeq_align_set> FilterSeqalignByScoreParams(objects::CSeq_align_set& source_aln,
+	                                                                 double evalueLow,
+	                                                                 double evalueHigh,
+	                                                                 double percentIdentLow,
+	                                                                 double percentIdentHigh);
 
     ///function for Limitting seqalign by hsps number
     ///(by default results are not cut off within the query)
@@ -818,6 +859,8 @@ public:
                                       bool for_alignment, int cur_align);
 
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
+
+    static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
 
     ///retrieve URL from .ncbirc file combining host/port and format strings values.
     ///consult blastfmtutil.hpp
