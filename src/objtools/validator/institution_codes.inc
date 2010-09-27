@@ -2271,6 +2271,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HYD	s	Heywood and District Botanical Society",
 "HYO	s	Museum of Nature and Human Activities",
 "Hyogo	s	Museum of Nature and Human Activities",
+"HZI<DEU>	c	Helmholtz Zentrum fur Infektionsforschung (Helmholtz Centre for Infection Research)",
 "HZM	s	Museum of Natural History (Hrvatski Zooloski Muzej)",
 "HZMZ	s	Hrvatski Narodni Zooloski Muzej",
 "HZTC	s	Hanzhong Teachers College, Biology Department",
