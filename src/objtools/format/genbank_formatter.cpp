@@ -647,19 +647,56 @@ void s_OrphanFixup( list< string >& wrapped, size_t uMaxSize = 0 )
     }
 }
 
+void s_GenerateWeblinks( const string& strProtocol, string& strText )
+{
+    const string strDummyProt( "<!PROT!>" );
+
+    size_t uLinkStart = NStr::FindNoCase( strText, strProtocol + "://" );
+    while ( uLinkStart != NPOS ) {
+        size_t uLinkStop = strText.find_first_of( " \t\n", uLinkStart );
+    
+        string strLink = strText.substr( uLinkStart, uLinkStop - uLinkStart );
+        if ( NStr::EndsWith( strText, "." ) ) {
+            strLink = strLink.substr( 0, strLink.size() - 1 );
+        }
+
+        string strDummyLink = NStr::Replace( strLink, strProtocol, strDummyProt );
+        string strReplace( "<a href=\"" );
+        strReplace += strDummyLink;
+        strReplace += "\">";
+        strReplace += strDummyLink;
+        strReplace += "</a>";
+
+        NStr::ReplaceInPlace( strText, strLink, strReplace );        
+        uLinkStart = NStr::FindNoCase( strText, strProtocol + "://" );
+    }
+    NStr::ReplaceInPlace( strText, strDummyProt, strProtocol );
+}
+
+//void s_FixLineBrokenWeblinks( list<string>& l )
+//{
+//}
+
 void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
  IFlatTextOStream& text_os)
 {
-    list<string> l;
-
-    if (!comment.IsFirst()) {
-        Wrap(l, kEmptyStr, comment.GetComment(), eSubp);
-    } else {
-        Wrap(l, "COMMENT", comment.GetComment());
+    string strComment( comment.GetComment() ); 
+    bool bHtml = GetContext().GetConfig().DoHTML();
+    if ( bHtml ) {
+        s_GenerateWeblinks( "http", strComment );
     }
 
-    // s_OrphanFixup( l, 1 ); // removed this because it was actually causing issues
+    list<string> l;
+    if (!comment.IsFirst()) {
+        Wrap(l, kEmptyStr, strComment, eSubp, bHtml);
+    } else {
+        Wrap(l, "COMMENT", strComment, ePara, bHtml );
+    }
+
+//    if ( bHtml ) {
+//        s_FixLineBrokenWeblinks( l );
+//    }
     text_os.AddParagraph(l, comment.GetObject());
 }
 

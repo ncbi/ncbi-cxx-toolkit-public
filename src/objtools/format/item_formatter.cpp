@@ -251,12 +251,17 @@ list<string>& CFlatItemFormatter::Wrap
  SIZE_TYPE width,
  const string& tag,
  const string& body,
- EPadContext where) const
+ EPadContext where,
+ bool htmlaware) const
 {
     string tag2;
     Pad(tag, tag2, where);
     const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
-    NStr::Wrap(body, width, l, m_WrapFlags, indent, tag2);
+    int flags = m_WrapFlags;
+    if ( htmlaware ) {
+        flags |= NStr::fWrap_HTMLPre;
+    }
+    NStr::Wrap(body, width, l, flags, indent, tag2);
     NON_CONST_ITERATE (list<string>, it, l) {
         TrimSpaces(*it, indent.length());
     }
@@ -268,7 +273,8 @@ list<string>& CFlatItemFormatter::Wrap
 (list<string>& l,
  const string& tag,
  const string& body,
- EPadContext where) const
+ EPadContext where,
+ bool htmlaware) const
 {
     string tag2;
     Pad(tag, tag2, where);
@@ -279,10 +285,14 @@ list<string>& CFlatItemFormatter::Wrap
         indent = &m_BarcodeIndent;
     }
 
+    int flags = m_WrapFlags;
+    if ( htmlaware ) {
+        flags |= NStr::fWrap_HTMLPre;
+    }
     if (body.empty()) {
         l.push_back(tag2);
     } else {
-        NStr::Wrap(body, GetWidth(), l, m_WrapFlags, *indent, tag2);
+        NStr::Wrap(body, GetWidth(), l, flags, *indent, tag2);
     }
     NON_CONST_ITERATE (list<string>, it, l) {
         TrimSpaces(*it, indent->length());
@@ -328,10 +338,6 @@ CFlatItemFormatter::End(
         "</html>\n" );
 
     if ( m_Ctx->GetConfig().DoHTML() ) {
-//        Out.AddLine( "</pre>" );
-//        Out.AddLine( "</hr>" );
-//        Out.AddLine( "</BODY>" );
-//        Out.AddLine( "</HTML>" );
         Out.AddLine( strHtmlTail );
     }
 };
