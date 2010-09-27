@@ -283,6 +283,9 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         }
     }
 
+    GetDiagContext().Extra().Print("blast_alignments",
+                                   NStr::IntToString(AlignCount));
+
     if(AlignCount == 0) {
         ERR_POST(Warning << "CBlastAligner found no hits this run.");
     }

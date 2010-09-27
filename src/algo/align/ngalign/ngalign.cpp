@@ -61,8 +61,10 @@ USING_SCOPE(objects);
 USING_SCOPE(blast);
 
 
-CNgAligner::CNgAligner(objects::CScope& Scope, CRef<CGC_Assembly> GenColl, bool AllowDupes)
-    : m_Scope(&Scope), m_GenColl(GenColl), m_AllowDupes(AllowDupes)
+CNgAligner::CNgAligner(objects::CScope& Scope,
+                       CGC_Assembly* GenColl,
+                       bool AllowDupes)
+    : m_Scope(&Scope), m_AllowDupes(AllowDupes), m_GenColl(GenColl)
 {
 }
 
