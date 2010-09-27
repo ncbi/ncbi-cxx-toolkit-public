@@ -941,6 +941,10 @@ void CReferenceItem::FormatAuthors(const CAuth_list& alp, string& auth)
     }
 
     auth = CNcbiOstrstreamToString(auth_line);
+
+    if( auth.empty() ) {
+        auth = ".";
+    }
 }
 
 
