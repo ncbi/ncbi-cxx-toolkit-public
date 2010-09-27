@@ -114,8 +114,8 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
 
 
     ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryAligns.Get()) {
-	ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {	
-	//ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {    
+    //ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
 
         CRef<CSeq_align_set> SubjectSet = SubjectIter->second;
 
@@ -187,7 +187,7 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
                 break;
         }
     } // end Subject Set Loop
-	}
+    }
 
     if(!ResultSet->Get().empty()) {
         Results->Insert(CRef<CQuerySet>(new CQuerySet(*ResultSet)));

@@ -91,15 +91,15 @@ private:
     typedef map<string, CRef<objects::CSeq_interval> >  TSplitIntervalsMap;
     TSplitIntervalsMap  m_PartsMap;
 
-	typedef list< CRef<objects::CSeq_interval> > TIntervalList;
-	typedef map<string, TIntervalList > TSplitIntMap;
-	TSplitIntMap m_SplitsMap;
+    typedef list< CRef<objects::CSeq_interval> > TIntervalList;
+    typedef map<string, TIntervalList > TSplitIntMap;
+    TSplitIntMap m_SplitsMap;
 
     void x_SplitDeltaExt(const objects::CSeq_id& Id,
                          objects::CBioseq_Handle OrigHandle,
                          TSeqIdList& SplitIds);
-	
-	void x_SplitSeqData(const objects::CSeq_id& Id,
+    
+    void x_SplitSeqData(const objects::CSeq_id& Id,
                         objects::CBioseq_Handle OrigHandle,
                         TSeqIdList& SplitIds);
 

@@ -74,8 +74,8 @@ void CBlastArgs::s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc)
     blast::CHspFilteringArgs cull_args;
     blast::CBlastDatabaseArgs blastdb_args;
     blast::CWindowSizeArg window_args;
-	blast::CFormattingArgs format_args;
-	blast::CRemoteArgs remote_args;
+    blast::CFormattingArgs format_args;
+    blast::CRemoteArgs remote_args;
 
     search_args.SetArgumentDescriptions(ArgDesc);
     filter_args.SetArgumentDescriptions(ArgDesc);
@@ -101,14 +101,14 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_ExtractBlastArgs(CArgs& Args)
     blast::CHspFilteringArgs cull_args;
     blast::CBlastDatabaseArgs blastdb_args;
     blast::CWindowSizeArg window_args;
-	blast::CFormattingArgs format_args;
-	blast::CRemoteArgs remote_args;
+    blast::CFormattingArgs format_args;
+    blast::CRemoteArgs remote_args;
 
     CRef<CBlastNucleotideOptionsHandle> NucOptions;
-	if(Args["remote"].HasValue()) 
-		NucOptions.Reset(new CBlastNucleotideOptionsHandle(CBlastOptions::eRemote));
-	else
-		NucOptions.Reset(new CBlastNucleotideOptionsHandle);
+    if(Args["remote"].HasValue()) 
+        NucOptions.Reset(new CBlastNucleotideOptionsHandle(CBlastOptions::eRemote));
+    else
+        NucOptions.Reset(new CBlastNucleotideOptionsHandle);
     CRef<CBlastOptionsHandle> Options(&*NucOptions);
 
     //string task_type = args["task"].AsString();
@@ -358,8 +358,8 @@ TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
 
     CRef<CSearchResultSet> BlastResults;
     try {
- 		CSearchDatabase RemoteDb("nr", CSearchDatabase::eBlastDbIsNucleotide);
- 		CRemoteBlast Blast(Querys, m_BlastOptions, RemoteDb);
+        CSearchDatabase RemoteDb("nr", CSearchDatabase::eBlastDbIsNucleotide);
+        CRemoteBlast Blast(Querys, m_BlastOptions, RemoteDb);
         BlastResults = Blast.GetResultSet();
     } catch(CException& e) {
         ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());

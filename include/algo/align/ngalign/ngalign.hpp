@@ -53,7 +53,7 @@ BEGIN_SCOPE(objects)
     class CSeq_align_set;
     class CSeq_id;
     class CDense_seg;
-	class CGC_Assembly;
+    class CGC_Assembly;
 END_SCOPE(objects)
 
 
@@ -82,8 +82,8 @@ protected:
 private:
 
     CRef<objects::CScope> m_Scope;
-	bool m_AllowDupes;
-	CRef<objects::CGC_Assembly> m_GenColl;
+    bool m_AllowDupes;
+    CRef<objects::CGC_Assembly> m_GenColl;
 
     CIRef<ISequenceSet> m_Query;
     CIRef<ISequenceSet> m_Subject;

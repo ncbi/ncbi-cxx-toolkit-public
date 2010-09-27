@@ -99,7 +99,7 @@ void s_CalcDevs(const list<T>& Values, T Mean, double StdDev, list<double>& Devs
 
 void CUnorderedSplitter::SplitId(const CSeq_id& Id, TSeqIdList& SplitIds)
 {
-    CBioseq_Handle 	OrigHandle;
+    CBioseq_Handle  OrigHandle;
     OrigHandle = m_Scope->GetBioseqHandle(Id);
 
     if(!OrigHandle.CanGetInst())
@@ -110,8 +110,8 @@ void CUnorderedSplitter::SplitId(const CSeq_id& Id, TSeqIdList& SplitIds)
     if(OrigInst.CanGetExt() && OrigInst.GetExt().IsDelta()) {
         x_SplitDeltaExt(Id, OrigHandle, SplitIds);
     } else if(OrigInst.CanGetSeq_data()) {
-		x_SplitSeqData(Id, OrigHandle, SplitIds);
-	}
+        x_SplitSeqData(Id, OrigHandle, SplitIds);
+    }
 
     // Split Other Inst types?
 
@@ -277,27 +277,27 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
 
 
 void CUnorderedSplitter::x_SplitSeqData(const objects::CSeq_id& Id,
-										CBioseq_Handle OrigHandle,
-										TSeqIdList& SplitIds)
+                                        CBioseq_Handle OrigHandle,
+                                        TSeqIdList& SplitIds)
 {
 
-	CSeqVector Vec = OrigHandle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-	string IupacStr;
-	Vec.GetSeqData(0, Vec.size(), IupacStr);
-	string Ns(100, 'n');
+    CSeqVector Vec = OrigHandle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    string IupacStr;
+    Vec.GetSeqData(0, Vec.size(), IupacStr);
+    string Ns(100, 'n');
 
-	string OrigIdStr = Id.GetSeqIdString(true);
+    string OrigIdStr = Id.GetSeqIdString(true);
     NStr::ReplaceInPlace(OrigIdStr, ".", "_");
 
-	const CBioseq::TInst& OrigInst = OrigHandle.GetInst();
+    const CBioseq::TInst& OrigInst = OrigHandle.GetInst();
        
-	size_t Start = 0, Found = 0;
-	do {
-		Found = IupacStr.find(Ns, Start);
+    size_t Start = 0, Found = 0;
+    do {
+        Found = IupacStr.find(Ns, Start);
 
-		if(Found != string::npos) {
-		
-			CRef<CSeq_interval> CurrInterval(new CSeq_interval);
+        if(Found != string::npos) {
+        
+            CRef<CSeq_interval> CurrInterval(new CSeq_interval);
             CurrInterval->SetId().Assign(Id);
             CurrInterval->SetFrom() = Start;
             CurrInterval->SetTo() = Found-1;
@@ -312,58 +312,58 @@ void CUnorderedSplitter::x_SplitSeqData(const objects::CSeq_id& Id,
 
             m_PartsMap[CurrId->AsFastaString()] = CurrInterval;
 
-		    SplitIds.push_back(CurrId);
-			CRef<CDelta_seq> DeltaSeq(new CDelta_seq);
-			DeltaSeq->SetLoc().SetInt().Assign(*CurrInterval);
-   			
-			CRef<CBioseq> CurrBioseq(new CBioseq);
-			CurrBioseq->SetInst().SetLength() = CurrInterval->GetLength();
-			CurrBioseq->SetInst().SetRepr() = OrigInst.GetRepr();
-			CurrBioseq->SetInst().SetMol() = OrigInst.GetMol();
-			CurrBioseq->SetInst().SetExt().SetDelta().Set();
-	
-			CurrBioseq->SetInst().SetExt().SetDelta().Set().push_back(DeltaSeq);
-			CurrBioseq->SetId().push_back(CurrId);
+            SplitIds.push_back(CurrId);
+            CRef<CDelta_seq> DeltaSeq(new CDelta_seq);
+            DeltaSeq->SetLoc().SetInt().Assign(*CurrInterval);
+            
+            CRef<CBioseq> CurrBioseq(new CBioseq);
+            CurrBioseq->SetInst().SetLength() = CurrInterval->GetLength();
+            CurrBioseq->SetInst().SetRepr() = OrigInst.GetRepr();
+            CurrBioseq->SetInst().SetMol() = OrigInst.GetMol();
+            CurrBioseq->SetInst().SetExt().SetDelta().Set();
+    
+            CurrBioseq->SetInst().SetExt().SetDelta().Set().push_back(DeltaSeq);
+            CurrBioseq->SetId().push_back(CurrId);
 //cerr << MSerial_AsnText << *CurrBioseq;
             m_Scope->AddBioseq(*CurrBioseq);
             
-			Start = Found+Ns.size();
-		}
-	
-	} while(Found != string::npos);
-		
-	if(Start <= Vec.size()) {
+            Start = Found+Ns.size();
+        }
+    
+    } while(Found != string::npos);
+        
+    if(Start <= Vec.size()) {
 
-		CRef<CSeq_interval> CurrInterval(new CSeq_interval);
-		CurrInterval->SetId().Assign(Id);
-		CurrInterval->SetFrom() = Start;
-		CurrInterval->SetTo() = Vec.size()-1;
-		CurrInterval->SetStrand(eNa_strand_plus);
+        CRef<CSeq_interval> CurrInterval(new CSeq_interval);
+        CurrInterval->SetId().Assign(Id);
+        CurrInterval->SetFrom() = Start;
+        CurrInterval->SetTo() = Vec.size()-1;
+        CurrInterval->SetStrand(eNa_strand_plus);
 
-		CRef<CSeq_id> CurrId(new CSeq_id);
-		CurrId->SetLocal().SetStr() = OrigIdStr;
-		CurrId->SetLocal().SetStr() += "__";
-		CurrId->SetLocal().SetStr() += NStr::UInt8ToString(CurrInterval->GetFrom());
-		CurrId->SetLocal().SetStr() += "_";
-		CurrId->SetLocal().SetStr() += NStr::UInt8ToString(CurrInterval->GetTo());
+        CRef<CSeq_id> CurrId(new CSeq_id);
+        CurrId->SetLocal().SetStr() = OrigIdStr;
+        CurrId->SetLocal().SetStr() += "__";
+        CurrId->SetLocal().SetStr() += NStr::UInt8ToString(CurrInterval->GetFrom());
+        CurrId->SetLocal().SetStr() += "_";
+        CurrId->SetLocal().SetStr() += NStr::UInt8ToString(CurrInterval->GetTo());
 
-		m_PartsMap[CurrId->AsFastaString()] = CurrInterval;
+        m_PartsMap[CurrId->AsFastaString()] = CurrInterval;
 
-		SplitIds.push_back(CurrId);
-		CRef<CDelta_seq> DeltaSeq(new CDelta_seq);
-		DeltaSeq->SetLoc().SetInt().Assign(*CurrInterval);
-		
-		CRef<CBioseq> CurrBioseq(new CBioseq);
-		CurrBioseq->SetInst().SetLength() = CurrInterval->GetLength();
-		CurrBioseq->SetInst().SetRepr() = OrigInst.GetRepr();
-		CurrBioseq->SetInst().SetMol() = OrigInst.GetMol();
-		CurrBioseq->SetInst().SetExt().SetDelta().Set();
+        SplitIds.push_back(CurrId);
+        CRef<CDelta_seq> DeltaSeq(new CDelta_seq);
+        DeltaSeq->SetLoc().SetInt().Assign(*CurrInterval);
+        
+        CRef<CBioseq> CurrBioseq(new CBioseq);
+        CurrBioseq->SetInst().SetLength() = CurrInterval->GetLength();
+        CurrBioseq->SetInst().SetRepr() = OrigInst.GetRepr();
+        CurrBioseq->SetInst().SetMol() = OrigInst.GetMol();
+        CurrBioseq->SetInst().SetExt().SetDelta().Set();
 
-		CurrBioseq->SetInst().SetExt().SetDelta().Set().push_back(DeltaSeq);
-		CurrBioseq->SetId().push_back(CurrId);
+        CurrBioseq->SetInst().SetExt().SetDelta().Set().push_back(DeltaSeq);
+        CurrBioseq->SetId().push_back(CurrId);
 //cerr << MSerial_AsnText << *CurrBioseq;
-		m_Scope->AddBioseq(*CurrBioseq);
-	}
+        m_Scope->AddBioseq(*CurrBioseq);
+    }
 
 }
 

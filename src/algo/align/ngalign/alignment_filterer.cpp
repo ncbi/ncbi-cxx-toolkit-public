@@ -64,11 +64,11 @@ void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
 
     NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, In->Get()) {
         
-		NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
+        NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
 
-		NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
-		//NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
-	
+        NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
+        //NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+    
             TAlignSetRef Filtered(new CSeq_align_set);
             m_Filter->Filter(*SubjectIter->second, *Filtered);
 
@@ -94,7 +94,7 @@ void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
             Out->Insert(FilteredResults);
         }
 
-		}
+        }
     }
 }
 

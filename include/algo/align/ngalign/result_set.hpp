@@ -51,7 +51,7 @@ BEGIN_SCOPE(objects)
     class CSeq_align;
     class CSeq_align_set;
     class CSeq_id;
-	class CGC_Assembly;
+    class CGC_Assembly;
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
@@ -67,8 +67,8 @@ class CQuerySet : public CObject
 {
 public:
     
-	typedef map<string, CRef<objects::CSeq_align_set> > TSubjectToAlignSet;
-	typedef map<string, TSubjectToAlignSet> TAssemblyToSubjectSet;
+    typedef map<string, CRef<objects::CSeq_align_set> > TSubjectToAlignSet;
+    typedef map<string, TSubjectToAlignSet> TAssemblyToSubjectSet;
 
 
     CQuerySet(const blast::CSearchResults& Results);
@@ -76,7 +76,7 @@ public:
     CQuerySet(CRef<objects::CSeq_align> Alignment);
 
 
-	TAssemblyToSubjectSet& Get() { return m_AssemblyMap; }
+    TAssemblyToSubjectSet& Get() { return m_AssemblyMap; }
     const TAssemblyToSubjectSet& Get() const { return m_AssemblyMap; }
 
     //TSubjectToAlignSet& Get() { return m_SubjectMap; }
@@ -99,7 +99,7 @@ private:
     TSubjectToAlignSet m_SubjectMap;
     CRef<objects::CSeq_id> m_QueryId;
 
-	TAssemblyToSubjectSet m_AssemblyMap;
+    TAssemblyToSubjectSet m_AssemblyMap;
 
     bool x_AlreadyContains(const objects::CSeq_align_set& Set,
                            const objects::CSeq_align& New) const;
@@ -117,9 +117,9 @@ class CAlignResultsSet : public CObject
 public:
     typedef map<string, CRef<CQuerySet> > TQueryToSubjectSet;
 
-	CAlignResultsSet(bool AllowDupes = false);
+    CAlignResultsSet(bool AllowDupes = false);
     CAlignResultsSet(CRef<objects::CGC_Assembly> Gencoll,
-					 bool AllowDupes = false);
+                     bool AllowDupes = false);
     CAlignResultsSet(const blast::CSearchResultSet& BlastResults);
 
     TQueryToSubjectSet& Get() { return m_QueryMap; }
@@ -146,11 +146,11 @@ public:
 
 private:
 
-	bool m_AllowDupes;
+    bool m_AllowDupes;
 
     TQueryToSubjectSet m_QueryMap;
 
-	CRef<objects::CGC_Assembly> m_GenColl;
+    CRef<objects::CGC_Assembly> m_GenColl;
 
     // the one priveledged case that gets to use DropQuery()
 

@@ -85,21 +85,21 @@ CRef<CSeq_align_set> CQuerySet::ToSeqAlignSet() const
 {
     CRef<CSeq_align_set> Out(new CSeq_align_set);
    
-   	ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
-		ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
-			ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
-				Out->Set().push_back( *AlignIter );
-			}
-		}
-	}
+    ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
+        ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
+            ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
+                Out->Set().push_back( *AlignIter );
+            }
+        }
+    }
 
-	/*
-	ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, m_SubjectMap) {
+    /*
+    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, m_SubjectMap) {
         ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
             Out->Set().push_back( *AlignIter );
         }
     }
-	*/
+    */
     return Out;
 }
 
@@ -108,32 +108,32 @@ CRef<CSeq_align_set> CQuerySet::ToBestSeqAlignSet() const
 {
     CRef<CSeq_align_set> Out(new CSeq_align_set);
    
-   	ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
-		int BestRank = GetBestRank( AssemIter->first );
-		ERR_POST(Info << "Best Rank: " << BestRank 
-					<< " in " << AssemIter->first 
-					<< " for " << m_QueryId->GetSeqIdString(true)
-					<< " of " << AssemIter->second.size());
-		if(BestRank == -1) {
-			continue;
-		}
-		ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
-			ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
-				int CurrRank;
-				if((*AlignIter)->GetNamedScore(IAlignmentFilter::KFILTER_SCORE, CurrRank)) {
-					if(CurrRank == BestRank) {
-						Out->Set().push_back(*AlignIter);
-					}
-				}
-			}
-		}
-	}
+    ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
+        int BestRank = GetBestRank( AssemIter->first );
+        ERR_POST(Info << "Best Rank: " << BestRank 
+                    << " in " << AssemIter->first 
+                    << " for " << m_QueryId->GetSeqIdString(true)
+                    << " of " << AssemIter->second.size());
+        if(BestRank == -1) {
+            continue;
+        }
+        ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
+            ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
+                int CurrRank;
+                if((*AlignIter)->GetNamedScore(IAlignmentFilter::KFILTER_SCORE, CurrRank)) {
+                    if(CurrRank == BestRank) {
+                        Out->Set().push_back(*AlignIter);
+                    }
+                }
+            }
+        }
+    }
 
-	if(!Out->IsSet() || Out->Get().empty())
-		return CRef<CSeq_align_set>();
+    if(!Out->IsSet() || Out->Get().empty())
+        return CRef<CSeq_align_set>();
 
-	/*
-	int BestRank = GetBestRank();
+    /*
+    int BestRank = GetBestRank();
     ERR_POST(Info << "Best Rank: " << BestRank << " for " << m_QueryId->GetSeqIdString(true));
     if(BestRank == -1) {
         return CRef<CSeq_align_set>();
@@ -148,7 +148,7 @@ CRef<CSeq_align_set> CQuerySet::ToBestSeqAlignSet() const
             }
         }
     }
-	*/
+    */
 
     x_FilterStrictSubAligns(*Out);
 
@@ -159,11 +159,11 @@ CRef<CSeq_align_set> CQuerySet::ToBestSeqAlignSet() const
 void CQuerySet::Insert(CRef<CQuerySet> QuerySet)
 {
     ITERATE(TAssemblyToSubjectSet, AssemIter, QuerySet->Get()) {
-		ITERATE(TSubjectToAlignSet, SubjectIter, AssemIter->second) {
-        	Insert(*SubjectIter->second);
-    	}	
-	}
-	/*ITERATE(TSubjectToAlignSet, SubjectIter, QuerySet->Get()) {
+        ITERATE(TSubjectToAlignSet, SubjectIter, AssemIter->second) {
+            Insert(*SubjectIter->second);
+        }   
+    }
+    /*ITERATE(TSubjectToAlignSet, SubjectIter, QuerySet->Get()) {
         Insert(*SubjectIter->second);
     }*/
 }
@@ -193,34 +193,34 @@ void CQuerySet::Insert(const CRef<CSeq_align> Alignment)
     //}
 
 
-	CSeq_id_Handle IdHandle = CSeq_id_Handle::GetHandle(Alignment->GetSeq_id(1));
-	string AssemblyAcc;
-	if(s_GenColl) {
-		CConstRef<CGC_Sequence> Seq; 	
-		Seq = s_GenColl->Find(IdHandle);
-		if(Seq) {
-			CConstRef<CGC_AssemblyUnit> Unit;
-			Unit = Seq->GetAssemblyUnit();
-			if(Unit) {
-				AssemblyAcc = Unit->GetAccession();
-			}
-		}
-	}
+    CSeq_id_Handle IdHandle = CSeq_id_Handle::GetHandle(Alignment->GetSeq_id(1));
+    string AssemblyAcc;
+    if(s_GenColl) {
+        CConstRef<CGC_Sequence> Seq;    
+        Seq = s_GenColl->Find(IdHandle);
+        if(Seq) {
+            CConstRef<CGC_AssemblyUnit> Unit;
+            Unit = Seq->GetAssemblyUnit();
+            if(Unit) {
+                AssemblyAcc = Unit->GetAccession();
+            }
+        }
+    }
 
     string IdString = Alignment->GetSeq_id(1).AsFastaString();
-	TSubjectToAlignSet& CurrSubjectSet = m_AssemblyMap[AssemblyAcc];
-	
-	if(CurrSubjectSet.find(IdString) == CurrSubjectSet.end()) {
+    TSubjectToAlignSet& CurrSubjectSet = m_AssemblyMap[AssemblyAcc];
+    
+    if(CurrSubjectSet.find(IdString) == CurrSubjectSet.end()) {
         CRef<CSeq_align_set> AlignSet(new CSeq_align_set);
         CurrSubjectSet[IdString] = AlignSet;
     }
     if(!x_AlreadyContains(*CurrSubjectSet[IdString], *Alignment)) {
         CurrSubjectSet[IdString]->Set().push_back(Alignment);
     } else {
-		//ERR_POST(Info << "Dupe Inserted");
-	}
+        //ERR_POST(Info << "Dupe Inserted");
+    }
 
-	/*
+    /*
     if(m_SubjectMap.find(IdString) == m_SubjectMap.end()) {
         CRef<CSeq_align_set> AlignSet(new CSeq_align_set);
         m_SubjectMap[IdString] = AlignSet;
@@ -228,9 +228,9 @@ void CQuerySet::Insert(const CRef<CSeq_align> Alignment)
     if(!x_AlreadyContains(*m_SubjectMap[IdString], *Alignment)) {
         m_SubjectMap[IdString]->Set().push_back(Alignment);
     } else {
-		//ERR_POST(Info << "Dupe Inserted");
-	}
-	*/
+        //ERR_POST(Info << "Dupe Inserted");
+    }
+    */
 }
 
 
@@ -240,24 +240,24 @@ int CQuerySet::GetBestRank(const string AssemblyAcc) const
     bool NeverRanked = true;
 
 
-	ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
+    ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
 
-		if(!AssemblyAcc.empty() && AssemIter->first != AssemblyAcc) {
-			continue;
-		}
+        if(!AssemblyAcc.empty() && AssemIter->first != AssemblyAcc) {
+            continue;
+        }
 
-		ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
-			ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
-				int CurrRank;
-				if((*AlignIter)->GetNamedScore(IAlignmentFilter::KFILTER_SCORE, CurrRank)) {
-					BestRank = min(BestRank, CurrRank);
-					NeverRanked = false;
-				}
-			}
-		}
-	}
+        ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
+            ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
+                int CurrRank;
+                if((*AlignIter)->GetNamedScore(IAlignmentFilter::KFILTER_SCORE, CurrRank)) {
+                    BestRank = min(BestRank, CurrRank);
+                    NeverRanked = false;
+                }
+            }
+        }
+    }
 
-	/*
+    /*
     ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, m_SubjectMap) {
         ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
             int CurrRank;
@@ -267,7 +267,7 @@ int CQuerySet::GetBestRank(const string AssemblyAcc) const
             }
         }
     }
-	*/
+    */
 
     if(NeverRanked)
         return -1;
@@ -278,10 +278,10 @@ int CQuerySet::GetBestRank(const string AssemblyAcc) const
 
 bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& New) const
 {
-	if(s_AllowDupes)
-		return false;
+    if(s_AllowDupes)
+        return false;
     
-	ITERATE(CSeq_align_set::Tdata, AlignIter, Set.Get()) {
+    ITERATE(CSeq_align_set::Tdata, AlignIter, Set.Get()) {
         if( (*AlignIter)->GetSeqStart(0) == New.GetSeqStart(0) &&
             (*AlignIter)->GetSeqStop(0) == New.GetSeqStop(0) &&
             (*AlignIter)->GetSeqStart(1) == New.GetSeqStart(1) &&
@@ -300,8 +300,8 @@ bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& N
 
 void CQuerySet::x_FilterStrictSubAligns(CSeq_align_set& Source) const
 {
-	if(s_AllowDupes)
-		return;
+    if(s_AllowDupes)
+        return;
 
 //  Later alignments are likely to contain earlier alignments. But the iterators
 //  and erase() function only want to work one way. So we reverse the list
@@ -322,8 +322,8 @@ void CQuerySet::x_FilterStrictSubAligns(CSeq_align_set& Source) const
 
             bool IsInnerContained = x_ContainsAlignment(**Outer, **Inner);
             if(IsInnerContained) {
-            	ERR_POST(Info << "Filtering Strict Sub Alignment");
-				Inner = Source.Set().erase(Inner);
+                ERR_POST(Info << "Filtering Strict Sub Alignment");
+                Inner = Source.Set().erase(Inner);
             }
             else
                 ++Inner;
@@ -335,10 +335,10 @@ void CQuerySet::x_FilterStrictSubAligns(CSeq_align_set& Source) const
 bool CQuerySet::x_ContainsAlignment(const CSeq_align& Outer,
                                     const CSeq_align& Inner) const
 {
-	if(s_AllowDupes)
-		return false;
+    if(s_AllowDupes)
+        return false;
 
-	// Recurse over any Disc alignments
+    // Recurse over any Disc alignments
     if(Outer.GetSegs().IsDisc()) {
         bool AccumResults = false;
         ITERATE(CSeq_align_set::Tdata, AlignIter, Outer.GetSegs().GetDisc().Get()) {
@@ -420,25 +420,25 @@ bool CQuerySet::x_ContainsAlignment(const CSeq_align& Outer,
 
 CAlignResultsSet::CAlignResultsSet(bool AllowDupes) 
 {
-	m_AllowDupes = AllowDupes;
-	s_AllowDupes = AllowDupes;
+    m_AllowDupes = AllowDupes;
+    s_AllowDupes = AllowDupes;
 }
 
 
 CAlignResultsSet::CAlignResultsSet(CRef<CGC_Assembly> Gencoll, bool AllowDupes) 
 {
-	m_GenColl = Gencoll;
-	s_GenColl = Gencoll;
+    m_GenColl = Gencoll;
+    s_GenColl = Gencoll;
 
-	m_AllowDupes = AllowDupes;
-	s_AllowDupes = AllowDupes;
+    m_AllowDupes = AllowDupes;
+    s_AllowDupes = AllowDupes;
 }
 
 CAlignResultsSet::CAlignResultsSet(const blast::CSearchResultSet& BlastResults)
 {
-	//m_AllowDupes = false;
+    //m_AllowDupes = false;
     //s_AllowDupes = m_AllowDupes;
-	Insert(BlastResults);
+    Insert(BlastResults);
 }
 
 
@@ -484,19 +484,19 @@ CRef<CSeq_align_set> CAlignResultsSet::ToSeqAlignSet() const
     CRef<CSeq_align_set> Out(new CSeq_align_set);
     ITERATE(TQueryToSubjectSet, QueryIter, m_QueryMap) {
         
-		ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
-			ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
-            	ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
-                	Out->Set().push_back( *AlignIter );
-            	}
-        	}
-		}
+        ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
+            ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {
+                ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
+                    Out->Set().push_back( *AlignIter );
+                }
+            }
+        }
 
-		/*ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+        /*ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
             ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
                 Out->Set().push_back( *AlignIter );
             }
-        }*/	
+        }*/ 
     }
     return Out;
 }
@@ -527,8 +527,8 @@ void CAlignResultsSet::Insert(CRef<CQuerySet> QuerySet)
     if(m_QueryMap.find(IdString) != m_QueryMap.end()) {
         m_QueryMap[IdString]->Insert(QuerySet);
     } else {
-		// this might only work by magic
-		m_QueryMap[IdString] = QuerySet;
+        // this might only work by magic
+        m_QueryMap[IdString] = QuerySet;
     }
 }
 
