@@ -507,6 +507,7 @@ static void TestDiag(void)
 static void TestDiag_ErrCodeInfo(void)
 {
     CNcbiDiag diag;
+    SetDiagStream(&NcbiCout);
 
     CDiagErrCodeInfo        info;
     SDiagErrCodeDescription desc;
