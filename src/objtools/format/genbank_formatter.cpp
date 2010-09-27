@@ -83,6 +83,8 @@ const string strLinkBaseTaxonomy(
     "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
 const string strLinkBaseTransTable(
     "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
+const string strLinkBasePubmed(
+    "http://www.ncbi.nlm.nih.gov/pubmed/" );
 
 CGenbankFormatter::CGenbankFormatter(void) :
     m_uFeatureCount( 0 )
@@ -554,8 +556,24 @@ void CGenbankFormatter::x_Medline
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
+    bool bHtml = ctx.Config().DoHTML();
+
+    string strDummy( "[PUBMED-ID]" );
     if ( ref.GetMUID() != 0 ) {
-        Wrap(l, GetWidth(), "MEDLINE", NStr::IntToString(ref.GetMUID()), eSubp);
+        Wrap(l, GetWidth(), "MEDLINE", strDummy, eSubp);
+    }
+    string strPubmed( NStr::IntToString( ref.GetMUID() ) );
+    if ( bHtml ) {
+        string strLink = "<a href=\"";
+        strLink += strLinkBasePubmed;
+        strLink += strPubmed;
+        strLink += "\">";
+        strLink += strPubmed;
+        strLink += "</a>";
+        strPubmed = strLink;
+    }   
+    NON_CONST_ITERATE( list<string>, it, l ) {
+        NStr::ReplaceInPlace( *it, strDummy, strPubmed );
     }
 }
 
