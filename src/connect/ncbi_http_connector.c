@@ -213,11 +213,12 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
     assert(!uuu->sock  &&  uuu->can_connect != eCC_None);
 
     if (retry  &&  retry->mode  &&  ++uuu->minor_fault < 3) {
-        int fail;
+        char* url = ConnNetInfo_URL(uuu->net_info);
+        int   fail;
         /* adjust info before yet another connection attempt */
         switch (retry->mode) {
         case eRetry_Redirect:
-            if (retry->data  &&  retry->data[0] != '?') {
+            if (retry->data  &&  *retry->data  &&  *retry->data != '?') {
                 if (uuu->net_info->req_method == eReqMethod_Get
                     ||  (uuu->flags & fHCC_InsecureRedirect)
                     ||  !uuu->w_len) {
@@ -235,14 +236,22 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                 fail = 1;
             if (fail) {
                 CORE_LOGF_X(2, eLOG_Error,
-                            ("[HTTP]  %s redirect to %s%s%s",
+                            ("[HTTP%s%s]  %s redirect to %s%s%s",
+                             url  &&  *url ? "; " : "",
+                             url           ? url  : "",
                              fail < 0 ? "Prohibited" : "Cannot",
                              retry->data ? "\""        : "<",
                              retry->data ? retry->data : "NULL",
                              retry->data ? "\""        : ">"));
                 status = eIO_Closed;
-            } else
+            } else {
+                CORE_LOGF_X(17, eLOG_Trace,
+                            ("[HTTP%s%s]  Redirecting to \"%s\"",
+                             url  &&  *url ? "; " : "",
+                             url           ? url  : "",
+                             retry->data));
                 status = eIO_Success;
+            }
             break;
         case eRetry_Authenticate:
         case eRetry_ProxyAuthenticate:
@@ -253,8 +262,11 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             } else
                 fail = -1;
             if (fail) {
+                char* url = ConnNetInfo_URL(uuu->net_info);
                 CORE_LOGF_X(3, eLOG_Error,
-                            ("[HTTP]  %s %s %c%s%c",
+                            ("[HTTP%s%s]  %s %s %c%s%c",
+                             url  &&  *url ? "; " : "",
+                             url           ? url  : "",
                              retry->mode == eRetry_Authenticate
                              ? "Authorization" : "Proxy authorization",
                              fail < 0 ? "not yet implemented" :
@@ -262,15 +274,31 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                              "(<"[!retry->data],
                              retry->data ? retry->data : "NULL",
                              ")>"[!retry->data]));
+                if (url)
+                    free(url);
                 status = fail < 0 ? eIO_NotSupported : eIO_Closed;
-            } else
+            } else {
+                CORE_LOGF_X(18, eLOG_Trace,
+                            ("HTTP%s%s]  Authorizing%s",
+                             url  &&  *url ? "; " : "",
+                             url           ? url  : "",
+                             retry->mode == eRetry_Authenticate
+                             ? "" : " proxy"));
                 status = eIO_Success;
+            }
             break;
         default:
+            CORE_LOGF_X(4, eLOG_Critical,
+                        ("[HTTP%s%s]  Unknown retry mode #%d",
+                         url  &&  *url ? "; " : "",
+                         url           ? url  : "",
+                         (int) retry->mode));
             status = eIO_Unknown;
             assert(0);
             break;
         }
+        if (url)
+            free(url);
         if (status != eIO_Success) {
             uuu->can_connect = eCC_None;
             return status;
@@ -281,19 +309,25 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         /* we're here because something is going wrong */
         if (++uuu->major_fault >= uuu->net_info->max_try) {
             msg = read_mode != eRM_DropUnread  &&  uuu->major_fault > 1
-                ? "[HTTP]  Too many failed attempts (%d), giving up" : "";
+                ? "[HTTP%s%s]  Too many failed attempts (%d), giving up" : "";
         } else if (!uuu->adjust_net_info
                    ||  uuu->adjust_net_info(uuu->net_info,
                                             uuu->adjust_data,
                                             uuu->major_fault) == 0) {
             msg = read_mode != eRM_DropUnread  &&  uuu->major_fault > 1
-                ? "[HTTP]  Retry attempts (%d) exhausted, giving up" : "";
+                ? "[HTTP%s%s]  Retry attempts (%d) exhausted, giving up" : "";
         } else
             msg = 0;
         if (msg) {
             if (*msg) {
+                char* url = ConnNetInfo_URL(uuu->net_info);
                 CORE_LOGF_X(1, eLOG_Error,
-                            (msg, uuu->major_fault));
+                            (msg,
+                             url  &&  *url ? "; " : "",
+                             url           ? url  : "",
+                             uuu->major_fault));
+                if (url)
+                    free(url);
             }
             uuu->can_connect = eCC_None;
             return eIO_Closed;
@@ -331,8 +365,15 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
     assert(!uuu->sock);
     if (uuu->can_connect == eCC_None) {
-        if (read_mode == eRM_Regular)
-            CORE_LOG_X(5, eLOG_Error, "[HTTP]  Connector no longer usable");
+        if (read_mode == eRM_Regular) {
+            char* url = ConnNetInfo_URL(uuu->net_info);
+            CORE_LOGF_X(5, eLOG_Error,
+                        ("[HTTP%s%s]  Connector is no longer usable",
+                         url  &&  *url ? "; " : "",
+                         url           ? url  : ""));
+            if (url)
+                free(url);
+        }
         return eIO_Closed;
     }
 
@@ -404,6 +445,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
     for (;;) {
         size_t body_size;
         char   buf[4096];
+        char*  url;
 
         if (!uuu->sock) {
             if ((status = s_Connect(uuu, read_mode)) != eIO_Success)
@@ -455,13 +497,20 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                       &&  !(uuu->w_timeout->sec | uuu->w_timeout->usec)))) {
             break;
         }
-        if ((body_size = BUF_Size(uuu->w_buf))) {
+        if ((body_size = BUF_Size(uuu->w_buf)) != 0) {
             sprintf(buf, "writing request body at offset %lu",
                     (unsigned long)(body_size - uuu->w_len));
         } else
             strcpy(buf, "flushing request header");
+
+        url = ConnNetInfo_URL(uuu->net_info);
         CORE_LOGF_X(6, eLOG_Error,
-                    ("[HTTP]  Error %s (%s)", buf, IO_StatusStr(status)));
+                    ("[HTTP%s%s]  Error %s (%s)",
+                     url  &&  *url ? "; " : "",
+                     url           ? url  : "",
+                     buf, IO_StatusStr(status)));
+        if (url)
+            free(url);
 
         /* write failed; close and try to use another server */
         s_DropConnection(uuu, 0/*no wait*/);
@@ -546,9 +595,14 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         /* do we have full header yet? */
         size = BUF_Size(uuu->http);
         if (!(header = (char*) malloc(size + 1))) {
+            char* url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(7, eLOG_Error,
-                        ("[HTTP]  Cannot allocate header, %lu bytes",
-                         (unsigned long) size));
+                        ("[HTTP%s%s]  Cannot allocate header, %lu byte%s",
+                         url  &&  *url ? "; " : "",
+                         url           ? url  : "",
+                         (unsigned long) size, &"s"[size == 1]));
+            if (url)
+                free(url);
             return eIO_Unknown;
         }
         verify(BUF_Peek(uuu->http, header, size) == size);
@@ -559,6 +613,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
         status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
         if (status != eIO_Success) {
+            char* url;
             ELOG_Level level;
             if (status == eIO_Timeout) {
                 const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
@@ -572,8 +627,14 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     level = eLOG_Trace;
             } else
                 level = eLOG_Error;
-            CORE_LOGF_X(8, level, ("[HTTP]  Error reading header (%s)",
-                                   IO_StatusStr(status)));
+            url = ConnNetInfo_URL(uuu->net_info);
+            CORE_LOGF_X(8, level,
+                        ("[HTTP%s%s]  Error reading header (%s)",
+                         url  &&  *url ? "; " : "",
+                         url           ? url  : "",
+                         IO_StatusStr(status)));
+            if (url)
+                free(url);
             return status;
         }
     }
@@ -652,7 +713,13 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     if (uuu->flags & fHCC_KeepHeader) {
         if (!BUF_Write(&uuu->r_buf, header, size)) {
-            CORE_LOG_X(11, eLOG_Error, "[HTTP]  Cannot keep HTTP header");
+            char* url = ConnNetInfo_URL(uuu->net_info);
+            CORE_LOGF_X(11, eLOG_Error,
+                        ("[HTTP%s%s]  Cannot keep HTTP header",
+                         url  &&  *url ? "; " : "",
+                         url           ? url  : ""));
+            if (url)
+                free(url);
             status = eIO_Unknown;
         }
         free(header);
@@ -760,6 +827,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     /* skip & printout the content, if server error was flagged */
     if (server_error && uuu->net_info->debug_printout == eDebugPrintout_Some) {
+        char* url = ConnNetInfo_URL(uuu->net_info);
         BUF   buf = 0;
         char* body;
 
@@ -767,24 +835,38 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         /* read until EOF */
         SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
         if (!(size = BUF_Size(buf))) {
-            CORE_LOG_X(12, eLOG_Trace,
-                       "[HTTP]  No HTTP body received with this error");
+            CORE_LOGF_X(12, eLOG_Trace,
+                        ("[HTTP%s%s]  No HTTP body received with server error",
+                         url  &&  *url ? "; " : "",
+                         url           ? url  : ""));
         } else if ((body = (char*) malloc(size)) != 0) {
             size_t n = BUF_Read(buf, body, size);
             if (n != size) {
                 CORE_LOGF_X(13, eLOG_Error,
-                            ("[HTTP]  Cannot read server error "
-                             "body from buffer (%lu out of %lu)",
+                            ("[HTTP%s%s]  Cannot read server error"
+                             " body from buffer (%lu out of %lu)",
+                             url  &&  *url ? "; " : "",
+                             url           ?  url : "",
                              (unsigned long) n, (unsigned long) size));
             }
-            CORE_DATA_X(20, body, n, "Server error body");
+            if (n) {
+                CORE_DATAF_X(20, body, n,
+                             ("[HTTP%s%s] Server error body",
+                              url  &&  *url ? "; " : "",
+                              url           ?  url : ""));
+            }
             free(body);
         } else {
             CORE_LOGF_X(14, eLOG_Error,
-                        ("[HTTP]  Cannot allocate server error "
-                         "body, %lu bytes", (unsigned long) size));
+                        ("[HTTP%s%s]  Cannot allocate server error body,"
+                         " %lu byte%s",
+                         url  &&  *url ? "; " : "",
+                         url           ?  url : "",
+                         (unsigned long) size, &"s"[size == 1]));
         }
         BUF_Destroy(buf);
+        if (url)
+            free(url);
     }
 
     return server_error ? eIO_Unknown : status;
@@ -889,8 +971,15 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             } else
                 status = eIO_Unknown;
 
-            if (status != eIO_Success)
-                CORE_LOG_X(16, eLOG_Error, "[HTTP]  Cannot URL-decode data");
+            if (status != eIO_Success) {
+                char* url = ConnNetInfo_URL(uuu->net_info);
+                CORE_LOGF_X(16, eLOG_Error,
+                            ("[HTTP%s%s]  Cannot URL-decode data",
+                             url  &&  *url ? "; " : "",
+                             url           ?  url : ""));
+                if (url)
+                    free(url);
+            }
         }
         free(peek_buf);
     } else {
