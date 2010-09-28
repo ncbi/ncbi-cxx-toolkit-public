@@ -438,6 +438,10 @@ Seq-annot ::= {
         {
           db "CCDS",
           tag str "CCDS13689.1"
+        },
+        {
+          db "GeneID",
+          tag id 54020
         }
       }
     }
@@ -1873,6 +1877,12 @@ Seq-annot ::= {
         id gi 258441149,
         fuzz-from lim lt,
         fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100302521
+        }
       }
     },
     {
@@ -1891,6 +1901,12 @@ Seq-annot ::= {
           id gi 258441149,
           fuzz-from lim lt,
           fuzz-to lim gt
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100302521
         }
       }
     },
@@ -1921,6 +1937,12 @@ Seq-annot ::= {
         }
       },
       exp-ev not-experimental,
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100302521
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
