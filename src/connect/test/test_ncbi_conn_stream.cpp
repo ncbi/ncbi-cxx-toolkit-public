@@ -313,12 +313,13 @@ int main(int argc, const char* argv[])
                      size << " bytes uploaded via FTP" <<
                      (val == filesize ? " and verified" : "") <<
                      speedstr << '\n');
-        } else {
-            ERR_POST(Fatal << "Test 3 failed: " <<
-                     val << " out of " << size << " byte(s) uploaded");
         }
         upload.clear();
         upload << "DELE " << filename << NcbiEndl;
+        if (!size  ||  size != (unsigned long) size) {
+            ERR_POST(Fatal << "Test 3 failed: " <<
+                     val << " out of " << size << " byte(s) uploaded");
+        }
     } else
         LOG_POST("Test 3 skipped\n");
 
