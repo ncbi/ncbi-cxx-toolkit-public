@@ -51,7 +51,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
 
-// TODO: Implement binary k-mer counts vector
+
+// TO DO: Redesign K-mer counts classes
 
 /// Kmer counts for alignment free sequence similarity computation
 /// implemented as a sparse vector
@@ -244,6 +245,158 @@ protected:
     static TCount* sm_Buffer;
     static bool sm_ForceSmallerMem;
     static const unsigned int kLengthBitsThreshold = 32;
+};
+
+
+/// K-mer counts implemented as bit vectors
+///
+class NCBI_COBALT_EXPORT CBinaryKmerCounts
+{
+public:
+
+    /// Constructor
+    ///
+    CBinaryKmerCounts(void) : m_SeqLength(0), m_NumCounts(0) {}
+    
+
+    /// Constructor
+    /// @param seq Sequence [in]
+    /// @param scop Scope [in]
+    ///
+    CBinaryKmerCounts(const objects::CSeq_loc& seq,
+                      objects::CScope& scope);
+
+    /// Compute counts
+    /// @param seq Sequence [in]
+    /// @param scope Scope [in]
+    ///
+    void Reset(const objects::CSeq_loc& seq, objects::CScope& scope);
+
+    /// Get sequence length
+    /// @return Sequence length
+    ///
+    unsigned int GetSeqLength(void) const {return m_SeqLength;}
+
+    /// Get number of k-mers
+    /// @return Number of k-mers
+    ///
+    unsigned int GetNumCounts(void) const {return m_NumCounts;}
+
+    /// Get k-mer length
+    /// @retuen K-mer length
+    ///
+    static unsigned int GetKmerLength(void) 
+    {return CBinaryKmerCounts::sm_KmerLength;}
+
+    /// Get alphabet size
+    /// @return Alphabet size
+    ///
+    static unsigned int GetAlphabetSize(void) {return sm_AlphabetSize;}
+
+    /// Set default k-mer length
+    /// @param len Default k-mer length [in]
+    ///
+    static void SetKmerLength(unsigned len)
+    {sm_KmerLength = len;}
+
+    /// Set Default alphabet size
+    /// @param size Default alphabet size [in]
+    ///
+    static void SetAlphabetSize(unsigned size)
+    {sm_AlphabetSize = size;}
+
+    /// Set default compressed alphabet letter translation table
+    /// @return Reference to translation table [in|out]
+    ///
+    static vector<Uint1>& SetTransTable(void) {return sm_TransTable;}
+
+    /// Set default option for using compressed alphabet
+    /// @param use_comp Will compressed alphabet be used [in]
+    ///
+    static void SetUseCompressed(bool use_comp) {sm_UseCompressed = use_comp;}
+
+    /// Compute 1 - local fraction of common k-mers between two count vectors
+    /// normalized by length of shorter sequence
+    /// @param vect1 K-mer counts vector [in]
+    /// @param vect2 K-mer counts vector [in]
+    /// @return Local fraction of common k-mer as distance
+    ///
+    /// Computes 1 - F(v1, v2), where 
+    /// F(x, y) = \sum_{t} \min \{n_x(t), n_y(t)\} / (\min \{L_x, L_y\} 
+    /// - k + 1), where
+    /// t - k-mer, n_x(t) - number of k-mer t in x, L_x - length of x 
+    ///  excluding Xaa, k - k-mer length
+    /// F(x, y) is described in RC Edgar, BMC Bioinformatics 5:113, 2004
+    static double FractionCommonKmersDist(const CBinaryKmerCounts& vect1, 
+                      const CBinaryKmerCounts& vect2);
+
+    /// Compute 1 - global fraction of common k-mers between two count vectors
+    /// normalized by length of longer sequence
+    /// @param vect1 K-mer counts vector [in]
+    /// @param vect2 K-mer counts vector [in]
+    /// @return Global fraction of common k-mers as distance
+    ///
+    /// Computes 1 - F(v1, v2), where 
+    /// F(x, y) = \sum_{t} \min \{n_x(t), n_y(t)\} / (\max \{L_x, L_y\} 
+    /// - k + 1), where
+    /// t - k-mer, n_x(t) - number of k-mer t in x, L_x - length of x
+    /// excluding Xaa, k - k-mer length
+    /// F(x, y) is modified version of measure presented 
+    /// RC Edgar, BMC Bioinformatics 5:113, 2004
+    static double FractionCommonKmersGlobalDist(const CBinaryKmerCounts& v1,
+                        const CBinaryKmerCounts& v2);
+
+    /// Copmute number of common kmers between two count vectors
+    /// @param v1 K-mer counts vector [in]
+    /// @param v2 K-mer counts vecotr [in]
+    /// @param repetitions Should multiple copies of the same k-mer be counted
+    /// @return Number of k-mers that are present in both counts vectors
+    ///
+    static unsigned int CountCommonKmers(const CBinaryKmerCounts& v1, 
+                                         const CBinaryKmerCounts& v2);
+
+
+    /// Perform preparations before k-mer counting common to all sequences.
+    ///
+    static void PreCount(void) {}
+
+    /// Perform post-kmer counting tasks.
+    ///
+    static void PostCount(void) {}
+
+
+protected:
+    static Uint4 GetAALetter(Uint1 letter)
+    {
+        _ASSERT(!sm_UseCompressed || letter < sm_TransTable.size());
+        return (Uint4)(sm_UseCompressed ? sm_TransTable[(int)letter] : letter);
+    }
+
+    /// Get number of set bits (adapted
+    /// from http://graphics.stanford.edu/~seander/bithacks.html)
+    /// @param v Bit vector [in]
+    /// @return Number of set bits
+    ///
+    static Uint4 x_Popcount(Uint4 v)
+    {
+        if (v==0) return 0; // early bailout for sparse vectors
+        v = v - ((v >> 1) & 0x55555555);
+        v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+        v = (v + (v >> 4) & 0xF0F0F0F);
+        v = v*0x1010101;
+
+        return v >> 24; // count
+    }
+
+
+protected:
+    vector<Uint4> m_Counts;
+    Uint4 m_SeqLength;
+    Uint4 m_NumCounts;
+    static unsigned int sm_KmerLength;
+    static unsigned int sm_AlphabetSize;
+    static vector<Uint1> sm_TransTable;
+    static bool sm_UseCompressed;
 };
 
 

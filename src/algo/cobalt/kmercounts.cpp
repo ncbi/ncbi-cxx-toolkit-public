@@ -58,6 +58,11 @@ bool CSparseKmerCounts::sm_UseCompressed = false;
 CSparseKmerCounts::TCount* CSparseKmerCounts::sm_Buffer = NULL;
 bool CSparseKmerCounts::sm_ForceSmallerMem = false;
 
+unsigned int CBinaryKmerCounts::sm_KmerLength = 3;
+unsigned int CBinaryKmerCounts::sm_AlphabetSize = kAlphabetSize;
+vector<Uint1> CBinaryKmerCounts::sm_TransTable;
+bool CBinaryKmerCounts::sm_UseCompressed = false;
+
 static const Uint1 kXaa = 21;
 
 
@@ -304,7 +309,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
             // Kmers that contain unspecified amino acid X are not considered
             if (sv[i + kmer_len - 1] == kXaa) {
-                i += kmer_len;
+                i += kmer_len - 1;
                 continue;
             }
 
@@ -480,4 +485,187 @@ CNcbiOstream& CSparseKmerCounts::Print(CNcbiOstream& ostr) const
     ostr << NcbiEndl;
 
     return ostr;
+}
+
+
+CBinaryKmerCounts::CBinaryKmerCounts(const objects::CSeq_loc& seq,
+                                     objects::CScope& scope)
+{
+    Reset(seq, scope);
+}
+
+
+void CBinaryKmerCounts::Reset(const objects::CSeq_loc& seq,
+                              objects::CScope& scope)
+{
+    unsigned int kmer_len = sm_KmerLength;
+    unsigned int alphabet_size = sm_AlphabetSize;
+
+    _ASSERT(kmer_len > 0 && alphabet_size > 0);
+
+    if (sm_UseCompressed && sm_TransTable.empty()) {
+        NCBI_THROW(CKmerCountsException, eInvalidOptions,
+                   "Compressed alphabet selected, but translation table not"
+                   " specified");
+    }
+
+    if (!seq.IsWhole() && !seq.IsInt()) {
+        NCBI_THROW(CKmerCountsException, eUnsupportedSeqLoc, 
+                   "Unsupported SeqLoc encountered");
+    }
+
+    objects::CSeqVector sv = scope.GetBioseqHandle(seq).GetSeqVector();
+
+    unsigned int num_elements;
+    unsigned int seq_len = sv.size();
+
+    m_SeqLength = sv.size();
+    m_Counts.clear();
+    m_NumCounts = 0;
+
+    if (m_SeqLength < kmer_len) {
+        NCBI_THROW(CKmerCountsException, eBadSequence,
+                   "Sequence shorter than desired k-mer length");
+    }
+
+    const int kBitChunk = sizeof(Uint4) * 8;
+
+    // Vecotr of counts is first computed using regular vector that is later
+    // converted to the sparse vector (list of position-value pairs).
+    // Positions are calculated as binary representations of k-mers, if they
+    // fit in 32 bits. Otherwise as numbers in system with base alphabet size.
+
+    _ASSERT(pow((double)alphabet_size, (double)kmer_len) 
+            < numeric_limits<Uint4>::max());
+
+    AutoArray<double> base(kmer_len);
+    for (Uint4 i=0;i < kmer_len;i++) {
+        base[i] = pow((double)alphabet_size, (double)i);
+    }
+   
+    num_elements = (Uint4)pow((double)alphabet_size, (double)kmer_len);
+
+    m_Counts.resize(num_elements / 32 + 1, (Uint4)0);
+
+    Uint4 pos;
+    unsigned i = 0;
+
+    // find the first k-mer that does not contain Xaa
+    bool is_xaa;
+    do {
+        is_xaa = false;
+        for (unsigned j=0;j < kmer_len && i < seq_len - kmer_len + 1;j++) {
+
+            if (sv[i + j] == kXaa) {
+                i += kmer_len;
+                is_xaa = true;
+                break;
+            }
+        }
+    } while (i < seq_len - kmer_len + 1 && is_xaa);
+    // if sequences contains only Xaa's then exit
+    if (i >= seq_len - kmer_len + 1) {
+        return;
+    }
+
+    // for each subsequence of kmer_len residues
+    for (;i < seq_len - kmer_len + 1;i++) {
+
+        // k-mers that contain unspecified amino acid X are not considered
+        if (sv[i + kmer_len - 1] == kXaa) {
+
+            // move k-mer window past Xaa
+            i += kmer_len;
+
+            // find first k-mer that does not contain Xaa
+            do {
+                is_xaa = false;
+                for (unsigned j=0;j < kmer_len && i < seq_len - kmer_len + 1;
+                     j++) {
+
+                    if (sv[i + j] == kXaa) {
+                        i += kmer_len;
+                        is_xaa = true;
+                        break;
+                    }
+                }
+            } while (i < seq_len - kmer_len + 1 && is_xaa);
+
+            // if Xaa are found till the end of sequence exit
+            if (i >= seq_len - kmer_len + 1) {
+                return;
+            }
+        }
+
+        pos = GetAALetter(sv[i]) - 1;
+        _ASSERT(pos >= 0);
+        _ASSERT(GetAALetter(sv[i]) <= alphabet_size);
+        for (Uint4 j=1;j < kmer_len;j++) {
+            pos += (Uint4)(((double)GetAALetter(sv[i + j]) - 1) * base[j]);
+            _ASSERT(pos >= 0);
+            _ASSERT(GetAALetter(sv[i + j]) <= alphabet_size);
+        }
+        MarkUsed(pos, m_Counts, kBitChunk);
+    }
+
+    m_NumCounts = 0;
+    for (size_t i=0;i < m_Counts.size();i++) {
+        m_NumCounts += x_Popcount(m_Counts[i]);
+    }
+}
+
+
+double CBinaryKmerCounts::FractionCommonKmersDist(const CBinaryKmerCounts& v1,
+                                                  const CBinaryKmerCounts& v2)
+{
+    _ASSERT(GetKmerLength() > 0);
+
+    unsigned int num_common = CountCommonKmers(v1, v2);
+    
+    unsigned int num_counts1 = v1.GetNumCounts();
+    unsigned int num_counts2 = v2.GetNumCounts();
+    unsigned int fewer_counts
+        =  num_counts1 < num_counts2 ? num_counts1 : num_counts2;
+
+    // In RC Edgar, BMC Bioinformatics 5:113, 2004 the denominator is
+    // SeqLen - k + 1 that is equal to number of counts only if sequence
+    // does not contain Xaa.
+    return 1.0 - (double)num_common / (double)fewer_counts;
+}
+
+
+double CBinaryKmerCounts::FractionCommonKmersGlobalDist(
+                                                  const CBinaryKmerCounts& v1,
+                                                  const CBinaryKmerCounts& v2)
+{
+    _ASSERT(GetKmerLength() > 0);
+
+    unsigned int num_common = CountCommonKmers(v1, v2);
+    
+    unsigned int num_counts1 = v1.GetNumCounts();
+    unsigned int num_counts2 = v2.GetNumCounts();
+    unsigned int more_counts
+        = num_counts1 > num_counts2 ? num_counts1 : num_counts2;
+
+    // In RC Edgar, BMC Bioinformatics 5:113, 2004 the denominator is
+    // SeqLen - k + 1 that is equal to number of counts only if sequence
+    // does not contain Xaa.
+    return 1.0 - (double)num_common / (double)more_counts;
+}
+
+
+unsigned int CBinaryKmerCounts::CountCommonKmers(
+                                              const CBinaryKmerCounts& vect1, 
+                                              const CBinaryKmerCounts& vect2)
+{
+    unsigned int result = 0;
+    const Uint4* counts1 = &vect1.m_Counts[0];
+    const Uint4* counts2 = &vect2.m_Counts[0];
+    int size = vect1.m_Counts.size();
+
+    for (int i=0;i < size;i++) {
+        result += x_Popcount(counts1[i] & counts2[i]);
+    }
+
+    return result;
 }

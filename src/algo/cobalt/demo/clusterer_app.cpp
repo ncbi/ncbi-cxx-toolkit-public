@@ -64,8 +64,8 @@ private:
 
     CRef<CObjectManager> m_ObjMgr;
 
-    typedef CSparseKmerCounts TKmerCounts;
-    typedef TKmerMethods<TKmerCounts> TKMethods;
+    int x_RunBinary(const CArgs& args);
+    int x_RunSparse(const CArgs& args);
 };
 
 
@@ -90,7 +90,7 @@ void CClustererApplication::Init(void)
                      CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey("k", "num", "K-mer length",
-                            CArgDescriptions::eInteger, "4");
+                            CArgDescriptions::eInteger, "3");
 
     arg_desc->AddDefaultKey("alph", "alphabet", "Compressed alphabet",
                             CArgDescriptions::eString, "regular");
@@ -114,6 +114,12 @@ void CClustererApplication::Init(void)
     arg_desc->SetConstraint("clust_method", &(*new CArgAllow_Strings, "dist",
                                               "clique"));
 
+    arg_desc->AddDefaultKey("impl", "method", "K-mer implementation method",
+                            CArgDescriptions::eString, "bin");
+
+    arg_desc->SetConstraint("impl", &(*new CArgAllow_Strings, "bin", "int"));
+
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -123,11 +129,10 @@ void CClustererApplication::Init(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
 
-
-int CClustererApplication::Run(void)
+int CClustererApplication::x_RunBinary(const CArgs& args)
 {
-    // Get arguments
-    const CArgs& args = GetArgs();
+    typedef CBinaryKmerCounts TKmerCounts;
+    typedef TKmerMethods<TKmerCounts> TKMethods;
 
     m_ObjMgr = CObjectManager::GetInstance();
     CRef<CScope> scope;
@@ -183,6 +188,7 @@ int CClustererApplication::Run(void)
     // compute distances between sequences
     CRef<CLinks> links = TKMethods::ComputeDistLinks(kmer_counts, dist_method,
                                                      max_diameter);
+
     // compute clusters
     CClusterer clusterer;
     clusterer.SetLinks(links);
@@ -204,6 +210,104 @@ int CClustererApplication::Run(void)
 
     return 0;
 }
+
+
+int CClustererApplication::x_RunSparse(const CArgs& args)
+{
+    typedef CSparseKmerCounts TKmerCounts;
+    typedef TKmerMethods<TKmerCounts> TKMethods;
+
+    m_ObjMgr = CObjectManager::GetInstance();
+    CRef<CScope> scope;
+    vector< CRef<CSeq_loc> > queries;
+    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope,
+                        CFastaReader::fAssumeProt | 
+                        CFastaReader::fForceType);
+
+    vector<TKmerCounts> kmer_counts;
+    unsigned int kmer_len = (unsigned int)args["k"].AsInteger();
+
+    TKMethods::ECompressedAlphabet alph = TKMethods::eRegular;
+    if (args["alph"].AsString() == "regular") {
+        alph = TKMethods::eRegular;
+    }
+    else if (args["alph"].AsString() == "se-v10") {
+        alph = TKMethods::eSE_V10;
+    }
+    else if (args["alph"].AsString() == "se-b15") {
+        alph = TKMethods::eSE_B15;
+    }
+    else {
+        NcbiCerr << (string)"Error: unrecognised alphabet: "
+            + args["alph"].AsString();
+
+        Exit();
+    }
+    TKMethods::SetParams(kmer_len, alph);
+
+    // compute k-mer counts
+    TKMethods::ComputeCounts(queries, *scope, kmer_counts);
+
+    TKMethods::EDistMeasures dist_method = TKMethods::eFractionCommonKmersLocal;
+    if (args["dist_method"].AsString() == "local") {
+        dist_method = TKMethods::eFractionCommonKmersLocal;
+    }
+    else if (args["dist_method"].AsString() == "global") {
+        dist_method = TKMethods::eFractionCommonKmersGlobal;
+    }
+    else {
+        NcbiCerr << (string)"Error: unrecognised distance measure: "
+            + args["dist_method"].AsString();
+
+        Exit();
+    }
+
+    double max_diameter = args["max_dist"].AsDouble();
+    CClusterer::EClustMethod clust_method = CClusterer::eDist;
+    if (args["clust_method"].AsString() == "clique") {
+        clust_method = CClusterer::eClique;
+    }
+
+    // compute distances between sequences
+    CRef<CLinks> links = TKMethods::ComputeDistLinks(kmer_counts, dist_method,
+                                                     max_diameter);
+
+    // compute clusters
+    CClusterer clusterer;
+    clusterer.SetLinks(links);
+    clusterer.SetClustMethod(clust_method);
+    clusterer.Run();
+
+    // print output: sequence id  cluster id
+    for (int i=0;i < (int)queries.size();i++) {
+
+        CBioseq_Handle bhandle = scope->GetBioseqHandle(queries[i]->GetWhole(),
+                                                        CScope::eGetBioseq_All);
+
+        list< CRef<CSeq_id> > id;
+        CShowBlastDefline::GetSeqIdList(bhandle, id);
+        string id_str = CShowBlastDefline::GetSeqIdListString(id, true);
+        NcbiCout << id_str << "\t" << "Cluster_" 
+                 << clusterer.GetClusterId(i) << NcbiEndl;
+    }
+
+    return 0;
+}
+
+
+int CClustererApplication::Run(void)
+{
+    // Get arguments
+    const CArgs& args = GetArgs();
+
+    if (args["impl"].AsString() == "bin") {
+        return x_RunBinary(args);
+    }
+    else {
+        return x_RunSparse(args);
+    }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
