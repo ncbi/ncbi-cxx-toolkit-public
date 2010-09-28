@@ -1,3 +1,8 @@
+September 30, 2010
+* 2.2.24 bug fix release
+* Improved makeblastdb performance
+* Fixed problem with MacOSX binaries on MacOSX 10.5
+
 August 2, 2010
 * 2.2.24 release
 * Added support for BLAST Archive format (see BLAST+ user manual)
