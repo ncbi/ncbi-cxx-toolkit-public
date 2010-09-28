@@ -73,6 +73,8 @@ const string strLinkBaseTaxonomy(
     "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
 const string strLinkBaseTransTable(
     "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
+const string strLinkBaseExpasy(
+    "http://www.expasy.org/enzyme/" );
 
 
 static void s_StripTags( string& str )
@@ -309,6 +311,17 @@ CFlatStringQVal::CFlatStringQVal
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
+    bool bHtml = ctx.Config().DoHTML();
+    if ( bHtml && name == "EC_number" ) {
+        string strLink = "<a href=\"";
+        strLink += strLinkBaseExpasy;
+        strLink += m_Value;
+        strLink += "\">";
+        strLink += m_Value;
+        strLink += "</a>";
+        x_AddFQ(q, name, strLink, m_Style);
+        return;
+    }
     flags |= m_AddPeriod;
 
     ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_note : eTilde_space);
