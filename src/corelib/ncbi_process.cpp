@@ -279,7 +279,7 @@ TPid CProcess::Fork(void)
     return pid;
 #else
     NCBI_THROW(CCoreException, eCore,
-               "Fork() not implemented on this platform");
+               "CProcess::Fork() not implemented on this platform");
 #endif
 }
 
@@ -369,10 +369,10 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             pid = Fork();
             if (pid == (pid_t)(-1)) {
                 const char* error = strerror(errno);
-                ERR_POST_X(2,
-                           string("[Daemonize]  Second fork() failed to"
-                                  " immune from TTY accruals (") + error +
-                           string("), continue anyways"));
+                if (!error  ||  !*error)
+                    error = "Unknown error";
+                ERR_POST_X(2, "[Daemonize]  Failed to immune from TTY accruals"
+                           " (" + string(error) + "), continue anyways");
             } else if (pid) {
                 ::_exit(0);
             }
@@ -382,8 +382,8 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
     catch (const char* what) {
         int x_errno = errno;
         const char* error = x_errno ? strerror(x_errno) : 0;
-        ERR_POST_X(1, string("[Daemonize]  ") + what +
-                   (error  &&  *error ? string(": ") + error : kEmptyStr));
+        ERR_POST_X(1, string("[Daemonize]  ") + what
+                   + (error  &&  *error ? string(": ") + error : kEmptyStr));
         ::close(fdin);
         ::close(fdout);
         ::close(fderr);
@@ -391,7 +391,7 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
     }
 #else
     NCBI_THROW(CCoreException, eCore,
-               "Daemonize() not implemented on this platform");
+               "CProcess::Daemonize() not implemented on this platform");
 #endif
     return false/*failure*/;
 }
@@ -585,7 +585,7 @@ bool CProcess::Kill(unsigned long timeout) const
     if ( safe  &&  enable_sync ) {
         // (kernel32.dll loaded at same address in each process)
         FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
-                                        "ExitProcess");
+                                          "ExitProcess");
         if ( exitproc ) {
             hThread = CreateRemoteThread(hProcess, NULL, 0,
                                         (LPTHREAD_START_ROUTINE)exitproc,
