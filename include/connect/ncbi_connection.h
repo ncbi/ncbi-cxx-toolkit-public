@@ -106,15 +106,15 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
 
 /* Get read (event == eIO_Read) or write (event == eIO_Write)
  * position within the connection.
- * Positions are advanced from 0 on, and only consider the I/O that
- * is involved with calling connector's methods (i.e. pushbacks are
- * never considered, and peeks -- not always).
- * Special case: eIO_Open as "event" clears both positions with 0,
+ * Positions are advanced from 0 on, and only concerning I/O that has
+ * caused calling to the actual connector's "read" method (i.e. pushbacks
+ * are never considered, and peeks -- not always).
+ * Special case:  eIO_Open as "event" clears both positions with 0,
  * and always returns 0.
  */
 extern NCBI_XCONNECT_EXPORT size_t CONN_GetPosition
-(CONN      conn,
- EIO_Event event
+(CONN      conn,  /* [in]  connection handle */ 
+ EIO_Event event  /* [in]  see description   */
  );
 
 
