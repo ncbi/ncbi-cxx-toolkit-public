@@ -454,7 +454,6 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
         annot.SetData().SetFtable().push_back(cds_feat);
     }
 
-    x_SetGeneDbxref(align, mrna_feat, cds_feat, gene_feat);
     x_SetPartialWhereNeeded(mrna_feat, cds_feat, gene_feat);
     x_CopyAdditionalFeatures(handle, mapper, annot);
 
@@ -898,8 +897,9 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
             //
             gene_feat.Reset(new CSeq_feat());
             string title = sequence::GetTitle(handle);
-            if (!title.empty())
+            if (!title.empty()) {
                 gene_feat->SetData().SetGene().SetLocus(title);
+            }
             if (gene_id) {
                 string gene_id_str = "gene." + NStr::IntToString(gene_id);
 
@@ -914,14 +914,25 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
                                                NULL));
         }
 
-        /// set dbxrefs
-        if (feat_iter.GetSize() == 1  &&
-            feat_iter->IsSetDbxref()) {
-            ITERATE (CSeq_feat::TDbxref, xref_it,
-                     feat_iter->GetDbxref()) {
-                CRef<CDbtag> tag(new CDbtag);
-                tag->Assign(**xref_it);
-                gene_feat->SetDbxref().push_back(tag);
+        ///
+        /// copy qualifiers from the mRNA's gene
+        ///
+        if (feat_iter.GetSize() == 1) {
+
+            /// set dbxrefs
+            if (feat_iter->IsSetDbxref()) {
+                ITERATE (CSeq_feat::TDbxref, xref_it,
+                         feat_iter->GetDbxref()) {
+                    CRef<CDbtag> tag(new CDbtag);
+                    tag->Assign(**xref_it);
+                    gene_feat->SetDbxref().push_back(tag);
+                }
+            }
+
+            /// set the locus
+            if (feat_iter->GetData().GetGene().IsSetLocus()) {
+                gene_feat->SetData().SetGene().SetLocus
+                    (feat_iter->GetData().GetGene().GetLocus());
             }
         }
 
@@ -1233,55 +1244,6 @@ static void s_SetGeneId(CSeq_feat& feat, int gene_id)
     }
     if ( !added ) {
         feat.AddDbxref("GeneID", gene_id);
-    }
-}
-
-
-void CFeatureGenerator::
-SImplementation::x_SetGeneDbxref(const CSeq_align& align,
-                                 CRef<CSeq_feat> mrna_feat,
-                                 CRef<CSeq_feat> cds_feat,
-                                 CRef<CSeq_feat> gene_feat)
-{
-    int gene_id = 0;
-    if (align.IsSetExt()) {
-        ITERATE (CSeq_align::TExt, it, align.GetExt()) {
-            const CUser_object& obj = **it;
-            if (obj.GetType().IsStr()  &&
-                obj.GetType().GetStr() == "lxr_data") {
-                CConstRef<CUser_field> uf = obj.GetFieldRef("locus_id");
-                if (uf) {
-                    gene_id = uf->GetData().GetInt();
-                    break;
-                }
-            }
-        }
-    }
-
-    if ( !gene_id ) {
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(align.GetSeq_id(0));
-        if (bsh) {
-            CFeat_CI feat_iter(bsh, CSeqFeatData::eSubtype_gene);
-            if (feat_iter.GetSize() == 1) {
-                CConstRef<CDbtag> dbt =
-                    feat_iter->GetOriginalFeature().GetNamedDbxref("GeneID");
-                if (dbt) {
-                    gene_id = dbt->GetTag().GetId();
-                }
-            }
-        }
-    }
-
-    if (gene_id) {
-        if (gene_feat) {
-            s_SetGeneId(*gene_feat, gene_id);
-        }
-        if (mrna_feat) {
-            s_SetGeneId(*mrna_feat, gene_id);
-        }
-        if (cds_feat) {
-            s_SetGeneId(*cds_feat, gene_id);
-        }
     }
 }
 

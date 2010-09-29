@@ -166,10 +166,6 @@ private:
     void x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat,
                                  CRef<CSeq_feat> cds_feat,
                                  CRef<CSeq_feat> gene_feat);
-    void x_SetGeneDbxref(const CSeq_align& align,
-                         CRef<CSeq_feat> mrna_feat,
-                         CRef<CSeq_feat> cds_feat,
-                         CRef<CSeq_feat> gene_feat);
     void x_CopyAdditionalFeatures(const CBioseq_Handle& handle,
                                   SMapper& mapper,
                                   CSeq_annot& annot);

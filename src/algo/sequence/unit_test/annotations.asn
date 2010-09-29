@@ -2,8 +2,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens solute carrier family 37 (glycerol-3-phosphate
- transporter), member 1 (SLC37A1), mRNA"
+        locus "SLC37A1"
       },
       partial TRUE,
       location int {
@@ -438,10 +437,6 @@ Seq-annot ::= {
         {
           db "CCDS",
           tag str "CCDS13689.1"
-        },
-        {
-          db "GeneID",
-          tag id 54020
         }
       }
     }
@@ -451,8 +446,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
- transcript variant 2, mRNA"
+        locus "COL18A1"
       },
       location int {
         from 3819537,
@@ -1053,7 +1047,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Bos taurus Werner syndrome (WRN), mRNA"
+        locus "WRN"
       },
       partial TRUE,
       location int {
@@ -1319,7 +1313,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
+        locus "ctnnbl1"
       },
       partial TRUE,
       location int {
@@ -1574,7 +1568,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
+        locus "OAZ1"
       },
       location int {
         from 3142906,
@@ -1696,8 +1690,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens paternally expressed 10 (PEG10), transcript
- variant 1, mRNA"
+        locus "PEG10"
       },
       location int {
         from 32318479,
@@ -1802,7 +1795,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Danio rerio dynamin2-like (dnm2l), mRNA"
+        locus "dnm2l"
       },
       partial TRUE,
       location int {
@@ -1866,8 +1859,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Danio rerio partial mRNA for SMG6 homolog nonsense mediated
- mRNA decay factor (C. elegans)cds (smg6 gene)"
+        locus "smg6"
       },
       partial TRUE,
       location int {
@@ -1877,12 +1869,6 @@ Seq-annot ::= {
         id gi 258441149,
         fuzz-from lim lt,
         fuzz-to lim gt
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 100302521
-        }
       }
     },
     {
@@ -1901,12 +1887,6 @@ Seq-annot ::= {
           id gi 258441149,
           fuzz-from lim lt,
           fuzz-to lim gt
-        }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 100302521
         }
       }
     },
@@ -1937,12 +1917,6 @@ Seq-annot ::= {
         }
       },
       exp-ev not-experimental,
-      dbxref {
-        {
-          db "GeneID",
-          tag id 100302521
-        }
-      },
       except-text "unclassified translation discrepancy"
     }
   }
@@ -1951,8 +1925,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
- transcript variant 2, mRNA"
+        locus "COL18A1"
       },
       partial TRUE,
       location int {
@@ -2560,8 +2533,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Danio rerio polymerase (DNA directed), delta 1, catalytic
- subunit (pold1), mRNA"
+        locus "pold1"
       },
       location int {
         from 2407605,
@@ -2950,8 +2922,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
+        locus "USO1"
       },
       partial TRUE,
       location int {
@@ -3492,8 +3463,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
+        locus "USO1"
       },
       partial TRUE,
       location int {
@@ -4034,8 +4004,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
+        locus "USO1"
       },
       partial TRUE,
       location int {
@@ -4536,8 +4505,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
- mRNA"
+        locus "COPG2"
       },
       location int {
         from 27700604,
@@ -5064,8 +5032,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
- mRNA"
+        locus "COPG2"
       },
       partial TRUE,
       location int {
@@ -5549,8 +5516,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
- mRNA"
+        locus "COPG2"
       },
       partial TRUE,
       location int {
@@ -6034,8 +6000,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
- mRNA"
+        locus "COPG2"
       },
       partial TRUE,
       location int {
@@ -6378,7 +6343,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Bos taurus claudin 2 (CLDN2), mRNA"
+        locus "CLDN2"
       },
       location int {
         from 131748,
@@ -6457,7 +6422,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Canis lupus familiaris collagen, type II, alpha 1 (COL2A1), mRNA"
+        locus "COL2A1"
       },
       partial TRUE,
       location int {
