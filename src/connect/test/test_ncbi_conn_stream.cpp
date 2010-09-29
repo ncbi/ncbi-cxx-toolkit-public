@@ -78,7 +78,7 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
     CNcbiRegistry* reg;
-    TFCDC_Flags flags = 0;
+    TFTP_Flags flag = 0;
     SConnNetInfo* net_info;
     size_t i, j, k, l, m, n, size;
 
@@ -221,19 +221,19 @@ int main(int argc, const char* argv[])
     if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
-        flags |= fFCDC_LogControl;
+        flag |= fFTP_LogControl;
     else {
         char val[32];
         ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
                              DEF_CONN_DEBUG_PRINTOUT);
-        flags |= strcasecmp(val, "all") == 0 ? fFCDC_LogAll : fFCDC_LogData;
+        flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
                                 "Misc/test_ncbi_conn_stream.FTP.data",
                                 "ftp"/*default*/, "-none"/*default*/,
                                 "/toolbox/ncbi_tools++/DATA",
-                                0/*port = default*/, flags,
-                                0/*offset*/, net_info->timeout);
+                                0/*port = default*/, flag,
+                                0/*offset*/, 0/*cmcb*/, net_info->timeout);
 
     for (size = 0;  ftp.good();  size += ftp.gcount()) {
         char buf[512];
@@ -271,10 +271,10 @@ int main(int argc, const char* argv[])
         filename += '-' + start.AsString("YMDhms");
         filename += ".tmp";
         // to use advanced xfer modes if available
-        flags    |= fFCDC_UseFeatures;
+        flag     |= fFTP_UseFeatures;
         CConn_FTPUploadStream upload("ftp-private.ncbi.nlm.nih.gov",
                                      user, pass, filename, "test_upload",
-                                     0/*port = default*/, flags,
+                                     0/*port = default*/, flag,
                                      0/*offset*/, net_info->timeout);
         size = 0;
         while (size < (10<<20)  &&  upload.good()) {

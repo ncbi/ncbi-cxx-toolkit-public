@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
     static const char kChdir[] = "CWD /toolbox/ncbi_tools\n";
     static const char kFile[] = "RETR CURRENT/ncbi.tar.gz";
     int/*bool*/   aborting = 0, first;
-    TFCDC_Flags   flag = 0;
+    TFTP_Flags    flag = 0;
     SConnNetInfo* net_info;
     char          buf[1024];
     CONNECTOR     connector;
@@ -88,14 +88,14 @@ int main(int argc, char* argv[])
 
     assert((net_info = ConnNetInfo_Create(0)) != 0);
     if (net_info->debug_printout == eDebugPrintout_Some)
-        flag |= fFCDC_LogControl;
+        flag |= fFTP_LogControl;
     else if (net_info->debug_printout == eDebugPrintout_Data) {
         char val[32];
         ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
                              DEF_CONN_DEBUG_PRINTOUT);
-        flag |= strcasecmp(val, "all") == 0 ? fFCDC_LogAll : fFCDC_LogData;
+        flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
-    flag |= fFCDC_UseFeatures;
+    flag |= fFTP_UseFeatures;
 
     if (TEST_PORT) {
         sprintf(buf, ":%hu", TEST_PORT);
