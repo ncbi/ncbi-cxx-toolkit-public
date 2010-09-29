@@ -526,7 +526,7 @@ class NCBI_XCONNECT_EXPORT CConn_NamedPipeStream : public CConn_IOStream
 public:
     CConn_NamedPipeStream
     (const string&   pipename,
-     size_t          pipebufsize = 0 /* default buffer size */,
+     size_t          pipebufsize = 0/*default*/,
      const STimeout* timeout     = kDefaultTimeout,
      streamsize      buf_size    = kConn_DefaultBufSize
      );
@@ -548,14 +548,15 @@ class NCBI_XCONNECT_EXPORT CConn_FtpStream : public CConn_IOStream
 {
 public:
     CConn_FtpStream
-    (const string&   host,
-     const string&   user,
-     const string&   pass,
-     const string&   path     = kEmptyStr,
-     unsigned short  port     = 0,
-     TFCDC_Flags     flags    = 0,
-     const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize
+    (const string&        host,
+     const string&        user,
+     const string&        pass,
+     const string&        path     = kEmptyStr,
+     unsigned short       port     = 0,
+     TFTP_Flags           flag     = 0,
+     const SFTP_Callback* cmcb     = 0,
+     const STimeout*      timeout  = kDefaultTimeout,
+     streamsize           buf_size = kConn_DefaultBufSize
      );
 
 private:
@@ -565,20 +566,22 @@ private:
 };
 
 
+/* Note the oder of parameters vs generic CConn_FtpStream ctor above */
 class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 {
 public:
     CConn_FTPDownloadStream
-    (const string&   host,
-     const string&   file     = kEmptyStr,
-     const string&   user     = "ftp",
-     const string&   pass     = "-none",  // "-" often helps make login quieter
-     const string&   path     = kEmptyStr,
-     unsigned short  port     = 0,
-     TFCDC_Flags     flags    = 0,
-     streamsize      offset   = 0,
-     const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize
+    (const string&        host,
+     const string&        file     = kEmptyStr,
+     const string&        user     = "ftp",
+     const string&        pass     = "-none",  // "-" helps make login quieter
+     const string&        path     = kEmptyStr,
+     unsigned short       port     = 0,
+     TFTP_Flags           flag     = 0,
+     const SFTP_Callback* cmcb     = 0,
+     streamsize           offset   = 0,
+     const STimeout*      timeout  = kDefaultTimeout,
+     streamsize           buf_size = kConn_DefaultBufSize
      );
 
 private:
@@ -598,7 +601,7 @@ public:
      const string&   file     = kEmptyStr,
      const string&   path     = kEmptyStr,
      unsigned short  port     = 0,
-     TFCDC_Flags     flags    = 0,
+     TFTP_Flags      flag     = 0,
      streamsize      offset   = 0,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize

@@ -532,34 +532,37 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
 }
 
 
-CConn_FtpStream::CConn_FtpStream(const string&   host,
-                                 const string&   user,
-                                 const string&   pass,
-                                 const string&   path,
-                                 unsigned short  port,
-                                 TFCDC_Flags     flags,
-                                 const STimeout* timeout,
-                                 streamsize      buf_size)
-    : CConn_IOStream(FTP_CreateConnector(host.c_str(), port,
-                                         user.c_str(), pass.c_str(),
-                                         path.c_str(), flags),
+CConn_FtpStream::CConn_FtpStream(const string&        host,
+                                 const string&        user,
+                                 const string&        pass,
+                                 const string&        path,
+                                 unsigned short       port,
+                                 TFTP_Flags           flag,
+                                 const SFTP_Callback* cmcb,
+                                 const STimeout*      timeout,
+                                 streamsize           buf_size)
+    : CConn_IOStream(FTP_CreateConnectorEx(host.c_str(), port,
+                                           user.c_str(), pass.c_str(),
+                                           path.c_str(), flag, cmcb),
                      timeout, buf_size)
 {
     return;
 }
 
 
-CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
-                                                 const string&   file,
-                                                 const string&   user,
-                                                 const string&   pass,
-                                                 const string&   path,
-                                                 unsigned short  port,
-                                                 TFCDC_Flags     flags,
-                                                 streamsize      offset,
-                                                 const STimeout* timeout,
-                                                 streamsize      buf_size)
-    : CConn_FtpStream(host, user, pass, path, port, flags, timeout, buf_size)
+CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
+                                                 const string&        file,
+                                                 const string&        user,
+                                                 const string&        pass,
+                                                 const string&        path,
+                                                 unsigned short       port,
+                                                 TFTP_Flags           flag,
+                                                 const SFTP_Callback* cmcb,
+                                                 streamsize           offset,
+                                                 const STimeout*      timeout,
+                                                 streamsize           buf_size)
+    : CConn_FtpStream(host, user, pass, path, port, flag, cmcb,
+                      timeout, buf_size)
 {
     if (file != kEmptyStr) {
         if (offset != 0) {
@@ -578,11 +581,12 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
                                              const string&   file,
                                              const string&   path,
                                              unsigned short  port,
-                                             TFCDC_Flags     flags,
+                                             TFTP_Flags      flag,
                                              streamsize      offset,
                                              const STimeout* timeout,
                                              streamsize      buf_size)
-    : CConn_FtpStream(host, user, pass, path, port, flags, timeout, buf_size)
+    : CConn_FtpStream(host, user, pass, path, port, flag, 0/*cmcb*/,
+                      timeout, buf_size)
 {
     if (file != kEmptyStr) {
         if (offset != 0) {
@@ -598,13 +602,13 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
 const char* CIO_Exception::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eTimeout:      return "eIO_Timeout";
-    case eClosed:       return "eIO_Closed";
-    case eInterrupt:    return "eIO_Interrupt";
-    case eInvalidArg:   return "eIO_InvalidArg";
-    case eNotSupported: return "eIO_NotSupported";
-    case eUnknown:      return "eIO_Unknown";
-    default:            return  CException::GetErrCodeString();
+    case eTimeout:       return "eIO_Timeout";
+    case eClosed:        return "eIO_Closed";
+    case eInterrupt:     return "eIO_Interrupt";
+    case eInvalidArg:    return "eIO_InvalidArg";
+    case eNotSupported:  return "eIO_NotSupported";
+    case eUnknown:       return "eIO_Unknown";
+    default:             return  CException::GetErrCodeString();
     }
 }
 

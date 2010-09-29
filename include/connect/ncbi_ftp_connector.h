@@ -39,6 +39,12 @@
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connector.h>
 
+#ifndef NCBI_DEPRECATED
+#  define NCBI_FTP_CONNECTOR_DEPRECATED
+#else
+#  define NCBI_FTP_CONNECTOR_DEPRECATED NCBI_DEPRECATED
+#endif
+
 
 /** @addtogroup Connectors
  *
@@ -52,45 +58,78 @@ extern "C" {
 
 
 typedef enum {
-    fFCDC_LogControl  = 1,
-    fFCDC_LogData     = 2,
-    fFCDC_LogAll      = fFCDC_LogControl | fFCDC_LogData,
-    fFCDC_UseFeatures = 8
+    fFTP_LogControl   = 1,
+    fFTP_LogData      = 2,
+    fFTP_LogAll       = fFTP_LogControl | fFTP_LogData,
+    fFTP_NotifySize   = 4,  /* use CB to communicate file size to user */
+    fFTP_UseFeatures  = 8
+} EFTP_Flags;
+typedef unsigned int TFTP_Flags;
+
+NCBI_FTP_CONNECTOR_DEPRECATED
+typedef enum { /* DEPRECATED -- DON'T USE! */
+    fFCDC_LogControl  = fFTP_LogControl,
+    fFCDC_LogData     = fFTP_LogData,
+    fFCDC_LogAll      = fFTP_LogAll,
+    fFCDC_NotifySize  = fFTP_NotifySize,
+    fFCDC_UseFeatures = fFTP_UseFeatures
 } EFCDC_Flags;
 typedef unsigned int TFCDC_Flags;
 
-typedef enum { /* DEPRECATED -- DON'T USE! */
-    eFCDC_LogControl = fFCDC_LogControl,
-    eFCDC_LogData    = fFCDC_LogData,
-    eFCDC_LogAll     = fFCDC_LogAll
-} EFCDC_OldFlags;
+
+/* Even though many FTP server implementations provide SIZE command
+ * these days, some FTPDs still lack this feature and can post the file size
+ * only when the actual download starts.  For them, and for connections that
+ * do not want to get the size inserted into the data stream
+ * (which is the default behavior upon a successful SIZE command),
+ * the following callback is provided as an alternative solution.
+ * The callback gets activated when downloads start, and also upon
+ * successful SIZE commands (without causing the file size to appear
+ * within the connection data as usual) but only if fFTP_NotifySize
+ * has been set in the "flag" parameter of FTP_CreateConnectorEx().
+ * Each time the size gets passed in as a '\0'-terminated character string.
+ * The callback remains effective for the entire lifetime span
+ * of the connector.
+ */
+typedef EIO_Status (*FFTP_Callback)(void* data,
+                                    const char* cmd, const char* arg);
+typedef struct {
+    FFTP_Callback     func;   /* to call upon certain FTP commands           */
+    void*             data;   /* to supply as a first callback parameter     */
+} SFTP_Callback;
 
 
 /* Create new CONNECTOR structure to handle ftp transfers,
  * both download and upload.
  * Return NULL on error.
  */
-extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnector
-(const char*    host,     /* hostname, required                             */
- unsigned short port,     /* port #, 21 [standard] if 0 passed here         */
- const char*    user,     /* username, "ftp" [==anonymous] by default       */
- const char*    pass,     /* password, "none" by default                    */
- const char*    path,     /* initial directory to chdir to on open          */
- TFCDC_Flags    flag      /* mostly for logging socket data [optional]      */
+extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnectorEx
+(const char*          host,   /* hostname, required                          */
+ unsigned short       port,   /* port #, 21 [standard] if 0 passed here      */
+ const char*          user,   /* username, "ftp" [==anonymous] by default    */
+ const char*          pass,   /* password, "none" by default                 */
+ const char*          path,   /* initial directory to "chdir" to on server   */
+ TFTP_Flags           flag,   /* mostly for logging socket data [optional]   */
+ const SFTP_Callback* cmcb    /* command callback [optional]                 */
 );
 
 
-#ifndef NCBI_DEPRECATED
-#  define NCBI_FTP_CONNECTOR_DEPRECATED
-#else
-#  define NCBI_FTP_CONNECTOR_DEPRECATED NCBI_DEPRECATED
-#endif
+/* Same as FTP_CreateConnectorEx(,,,,,NULL) for backward compatibility */
+extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnector
+(const char*          host,   /* hostname, required                          */
+ unsigned short       port,   /* port #, 21 [standard] if 0 passed here      */
+ const char*          user,   /* username, "ftp" [==anonymous] by default    */
+ const char*          pass,   /* password, "none" by default                 */
+ const char*          path,   /* initial directory to "chdir" to on server   */
+ TFTP_Flags           flag    /* mostly for logging socket data [optional]   */
+);
+
 
 /* Same as above:  do not use for the obsolete naming */
 NCBI_FTP_CONNECTOR_DEPRECATED
 extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
 (const char* host, unsigned short port, const char* user,
- const char* pass, const char*    path, TFCDC_Flags flag);
+ const char* pass, const char*    path, TFTP_Flags  flag);
 
 
 #ifdef __cplusplus
