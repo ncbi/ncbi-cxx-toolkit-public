@@ -846,14 +846,14 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                             ("[HTTP%s%s]  Cannot read server error"
                              " body from buffer (%lu out of %lu)",
                              url  &&  *url ? "; " : "",
-                             url           ?  url : "",
+                             url           ? url  : "",
                              (unsigned long) n, (unsigned long) size));
             }
             if (n) {
                 CORE_DATAF_X(20, body, n,
                              ("[HTTP%s%s] Server error body",
                               url  &&  *url ? "; " : "",
-                              url           ?  url : ""));
+                              url           ? url  : ""));
             }
             free(body);
         } else {
@@ -861,7 +861,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                         ("[HTTP%s%s]  Cannot allocate server error body,"
                          " %lu byte%s",
                          url  &&  *url ? "; " : "",
-                         url           ?  url : "",
+                         url           ? url  : "",
                          (unsigned long) size, &"s"[size == 1]));
         }
         BUF_Destroy(buf);
@@ -976,7 +976,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
                 CORE_LOGF_X(16, eLOG_Error,
                             ("[HTTP%s%s]  Cannot URL-decode data",
                              url  &&  *url ? "; " : "",
-                             url           ?  url : ""));
+                             url           ? url  : ""));
                 if (url)
                     free(url);
             }
