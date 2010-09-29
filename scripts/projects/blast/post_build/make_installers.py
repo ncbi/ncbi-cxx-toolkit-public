@@ -31,22 +31,14 @@ def main(): #IGNORE:R0911
         print "Platform:", platform
         print "Installation directory:", installdir
 
-    if platform == "Win32":
+    if platform.startswith("Win"):
         return launch_win_installer_build(installdir, blast_version)                
-    if platform == "Win64":
-        return launch_win_installer_build(installdir, blast_version)
-    if platform == "Linux32-Suse":
+    if platform.startswith("Linux"):
         return launch_rpm_build(installdir, blast_version)
-    if platform == "Linux64-Suse":
-        return launch_rpm_build(installdir, blast_version)
-    if platform == "FreeBSD32":
+    if platform == "FreeBSD32" or platform.startswith("SunOS"):
         return do_nothing(platform)
     if platform == "IntelMAC":
         return mac_post_build(installdir, blast_version)
-    if platform == "SunOSSparc":
-        return do_nothing(platform)
-    if platform == "SunOSx86":
-        return do_nothing(platform)
     
     print >> sys.stderr, "Unknown OS identifier: " + platform
     print >> sys.stderr, "Exiting post build script."
