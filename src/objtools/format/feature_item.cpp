@@ -146,7 +146,9 @@ static bool s_QualifiersMeetPrimerReqs(
 
     // we make sure number of commas is the same in both, to cover the case of 
     // compound sequences.
-    if( s_CountChar(fwd_seq, ',') != s_CountChar(rev_seq, ',') ) {
+    const int num_fwd_seqs = s_CountChar(fwd_seq, ',');
+    const int num_rev_seqs = s_CountChar(rev_seq, ',');
+    if( num_fwd_seqs != num_rev_seqs ) {
         return false;
     }
 
@@ -769,22 +771,15 @@ static void s_SplitCommaSeparatedStringInParens( vector<string> &output_vec, con
         return;
     }
 
-    // if endsWithParen is false, it's probably a parse error, actually, but we do the best we can and
-    // expect the Sequin validator to catch the error sometime in the future
-    const bool endsWithParen = ( string_to_split[string_to_split.length() - 1] == ')' );
-
-    const string::size_type string_to_split_len = string_to_split.length() - ( endsWithParen ? 1 : 0); // the "-1" is so we ignore the final ')' if it's there
-    string::size_type next_token = 1; // skip the initial '('
-
-    // add the comma-separated substrings into the output_vec
-    while( next_token < string_to_split_len ) {
-        string::size_type next_comma = string_to_split.find( ',', next_token );
-        if( next_comma == string::npos ) {
-            next_comma = string_to_split_len;
-        }
-        output_vec.push_back( string_to_split.substr( next_token, next_comma - next_token ) );
-        next_token = next_comma + 1;
+    // if ends with closing paren, chop that off.  
+    // ( It's actually a data error if we DON'T end with a ')', but we continue anyway, since
+    // we want to do the best we can with the data we get. )
+    size_t amount_to_chop_off_end = 0;
+    if( string_to_split[string_to_split.length() - 1] == ')' ) {
+        amount_to_chop_off_end = 1;
     }
+    
+    NStr::Tokenize( string_to_split.substr( 1, string_to_split.length() - amount_to_chop_off_end - 1), ",", output_vec );
 }
 
 static const string sc_ValidExceptionText[] = {
@@ -1199,7 +1194,8 @@ void CFeatureItem::x_AddQualExceptions(
     string raw_exception;
     const CFlatFileConfig& cfg = ctx.Config();
 
-    if ( m_Feat.IsSetExcept_text()  &&  !m_Feat.GetExcept_text().empty() ) {
+    if ( ( m_Feat.IsSetExcept() && m_Feat.GetExcept() ) && 
+        (m_Feat.IsSetExcept_text()  &&  !m_Feat.GetExcept_text().empty()) ) {
         raw_exception = m_Feat.GetExcept_text();
     }
     if ( raw_exception == "" ) {
@@ -1750,7 +1746,8 @@ void CFeatureItem::x_AddQualsRna(
                 int aa = 0;
                 if ( trna.IsSetAa()  &&  trna.GetAa().IsNcbieaa() ) {
                     aa = trna.GetAa().GetNcbieaa();
-                }                 if ( cfg.IupacaaOnly() ) {
+                }                 
+                if ( cfg.IupacaaOnly() ) {
                     aa = s_ToIupacaa(aa);
                 }
                 const string& aa_str = s_AaName(aa);
@@ -1889,20 +1886,15 @@ void CFeatureItem::x_AddQualTranslation(
             CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
         seqv.SetCoding( coding );
 
-        // occasionally submitters give us data where the length is incorrect, but in that case 
-        // we should at least try our best (but emit a warning)
-        const CSeq_data & seq_data = seqv.GetSeqMap().FindSegment(0, &scope).GetRefData();
-        const size_t real_length = ( seq_data.IsNcbieaa() ? 
-            seq_data.GetNcbieaa().Get().length() : 
-            ( seq_data.IsIupacaa() ? seq_data.GetIupacaa().Get().length() : seqv.size() ) ); // the seqv.size() part is incorrect, but we fall back on that since we can't seem to get the translation string.
-        const size_t seqv_size = seqv.size();
-        if( real_length != seqv_size ) {
-            // TODO: print a warning here.  This is not done yet because we will crash in this case anyway until
-            // the objmgr code is modified to be a bit more flexible.
+        try {
+            // an exception can occur here if the specified length doesn't match the actual length.
+            // Although I don't know of any released .asn files with this problem, it can occur
+            // in submissions.
+            seqv.GetSeqData( 0, seqv.size(), translation );
+        } catch( const CException &e ) {
+            // we're unable to do the translation
+            translation.clear();
         }
-        const size_t length_to_use = min( real_length, seqv_size );
-
-        seqv.GetSeqData( 0, length_to_use, translation );
     }
 
     if (!NStr::IsBlank(translation)) {
@@ -3320,32 +3312,13 @@ void CFeatureItem::x_AddRptTypeQual(
     string value( rpt_type );
     NStr::TruncateSpacesInPlace( value );
 
-    string::size_type start_of_next_rpt_type = 0;
+    vector<string> pieces;
+    s_SplitCommaSeparatedStringInParens( pieces, value );
 
-    // value might consist of multiple rpt_type's in parens separated by commas
-    // in which case we just trim the parens off
-    if( value[0] == '(' && value[value.length() - 1] == ')' ) {
-        value.resize( value.length() - 1 ); // chop off final paren. We don't chop off initial paren because of the computational cost
-        start_of_next_rpt_type = 1; // place "next iter" past the initial paren
-    }
-
-    // iterate through the rpt_types
-    const string::size_type value_length = value.length();
-    while( start_of_next_rpt_type < value_length ) {
-        // find next comma (or end)
-        string::size_type next_comma = value.find( ',', start_of_next_rpt_type );
-        if (next_comma == string::npos ) {
-            next_comma = value_length;
+    ITERATE( vector<string>, it, pieces ) {
+        if ( ! check_qual_syntax || s_IsValidRptType( *it ) ) {
+            x_AddQual( eFQ_rpt_type, new CFlatStringQVal( *it, CFormatQual::eUnquoted ) );
         }
-
-        // extract the next rpt_type from the big value string
-        const string next_rpt_type = value.substr( start_of_next_rpt_type, next_comma - start_of_next_rpt_type );
-
-        if ( ! check_qual_syntax || s_IsValidRptType( next_rpt_type ) ) {
-            x_AddQual( eFQ_rpt_type, new CFlatStringQVal( next_rpt_type, CFormatQual::eUnquoted ) );
-        }
-
-        start_of_next_rpt_type = next_comma + 1;
     }
 }
 

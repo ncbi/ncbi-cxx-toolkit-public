@@ -185,9 +185,16 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
 
         if (feat != NULL) {
             const CSeq_loc& loc = feat->GetLocation();
-            if (s_HasLocalBioseq(loc, seq.GetTopLevelEntry())) {
+            CSeq_entry_Handle topLevelEntry = seq.GetTopLevelEntry();
+            if (s_HasLocalBioseq(loc, topLevelEntry)) {
                 for (CSeq_loc_CI li(loc); li; ++li) {
                     s_AddToUniqueIdList(li.GetSeq_id_Handle(), unique_ids);
+                }
+            } else {
+                const CSeq_id *cds_seq_id = loc.GetId();
+                if( NULL != cds_seq_id && cds_seq_id->IsGi() ) {
+                    CSeq_id_Base::TGi cds_gi = cds_seq_id->GetGi();
+                    s_AddToUniqueIdList( CSeq_id_Handle::GetHandle(cds_gi), unique_ids);
                 }
             }
         }
@@ -202,6 +209,10 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
                     m_DBSource.push_back(str);
                 }
             }
+        }
+
+        if( m_DBSource.empty() && ! unique_ids.empty() ) {
+            m_DBSource.push_back( x_FormatDBSourceID( unique_ids.front() ) );
         }
 
         if (m_DBSource.empty()) {

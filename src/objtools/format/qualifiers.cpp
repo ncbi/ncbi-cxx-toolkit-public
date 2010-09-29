@@ -260,6 +260,47 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
     return size;
 }
 
+// makes sure str is of the pattern "[number]..[number]" (e.g. "34..405" )
+bool s_RangeStringIsPlainNumber( const string & str ) {
+    string::const_iterator str_iter = str.begin();
+
+    // detect first number
+    if( str_iter == str.end() || ! isdigit( *str_iter ) ) {
+        return false;
+    }
+    ++str_iter;
+    for( ; str_iter != str.end() && isdigit( *str_iter ) ; ++str_iter ) {
+    }
+
+    // detect the first dot
+    if( str_iter == str.end() || *str_iter != '.' ) {
+        return false;
+    }
+    ++str_iter;
+
+    // detect the second dot
+    if( str_iter == str.end() || *str_iter != '.' ) {
+        return false;
+    }
+    ++str_iter;
+
+    // detect the final number
+    if( str_iter == str.end() || ! isdigit( *str_iter ) ) {
+        return false;
+    }
+    ++str_iter;
+    for( ; str_iter != str.end() && isdigit( *str_iter ) ; ++str_iter ) {
+    }
+
+    // after digits, there must be nothing else
+    if( str_iter != str.end() ) {
+        return false;
+    }
+
+    // all tests passed
+    return true;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CFormatQual - low-level formatted qualifier
@@ -1604,13 +1645,21 @@ void CFlatAnticodonQVal::Format
         return;
     }
 
+    // anticodons with complement, join, etc. ( e.g. L15362 ) are not supported in release mode, until collab approval
+    const string locationString = CFlatSeqLoc(*m_Anticodon, ctx).GetString();
+    if( ctx.Config().IsModeRelease() ) {
+        if( ! s_RangeStringIsPlainNumber(locationString) ) {
+            return;
+        }
+    }
+
     CNcbiOstrstream text;
     text << "(pos:" ;
     if (ctx.Config().IsModeRelease()) {
         CSeq_loc::TRange range = m_Anticodon->GetTotalRange();
         text << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
     } else {
-        text << CFlatSeqLoc(*m_Anticodon, ctx).GetString();
+        text << locationString;
     }
     text << ",aa:" << m_Aa << ')';
 

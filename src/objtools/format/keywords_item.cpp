@@ -206,10 +206,6 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     case CMolInfo::eTech_wgs:
         x_AddKeyword("WGS");
         break;
-        
-    case CMolInfo::eTech_barcode:
-        x_AddKeyword("BARCODE");
-        break;
 
     case CMolInfo::eTech_tsa:
         x_AddKeyword("TSA");

@@ -1067,18 +1067,32 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
 }
 
 
-void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs) const
+// assumes focus is first one in srcs
+void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs ) const
 {
     if ( srcs.size() < 2 ) {
+        // nothing to do
         return;
     }
 
-    CRef<CSourceFeatureItem> focus;
+    CRef<CSourceFeatureItem> focus = srcs.front();
+    const CSeq_loc & focus_seq_loc = focus->GetLoc();
+
+    // check if focus is completely contained inside any other source.
+    // In that case, we don't do the location subtraction from focus.
+    ITERATE( TSourceFeatSet, it, srcs ) {
+        if (it != srcs.begin()) {
+            const sequence::ECompare comparison =
+                sequence::Compare( focus_seq_loc, (*it)->GetLoc(), &m_Current->GetScope() );
+            if( comparison == sequence::eContained || comparison == sequence::eSame ) {
+                return;
+            }
+        }
+    }
+
+    // subtract non-focus locations from the original focus
     NON_CONST_ITERATE(TSourceFeatSet, it, srcs) {
-        if (it == srcs.begin()) {
-            focus = *it;
-        } else {
-            _ASSERT(focus);
+        if (it != srcs.begin()) {
             focus->Subtract(**it, m_Current->GetScope());
         }
     }
@@ -1130,7 +1144,7 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
     // sort by type (descriptor / feature) and location
     sort(srcs.begin(), srcs.end(), SSortSourceByLoc());
 
-    // if the descriptor has a focus (by now sorted to be first),
+    // if the descriptor has a non-synthetic focus (by now sorted to be first),
     // subtract out all other source locations.
     if (srcs.front()->IsFocus()  &&  !srcs.front()->IsSynthetic()) {
         x_SubtractFromFocus(srcs);
