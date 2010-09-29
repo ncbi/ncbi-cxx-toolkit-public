@@ -638,74 +638,35 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     // "pdb|102l| "
     
     CTempString mol;
-    
     if (pdb.CanGetMol()) {
         mol = pdb.GetMol().Get();
     }
-    
     if (! mol.size()) {
         NCBI_THROW(CWriteDBException,
                    eArgErr,
                    "Empty molecule string in pdb Seq-id.");
     }
-    
-    string f1, f2;
-    bool chain2 = false;
-    
-    f1 = seqid.AsFastaString();
-    
-    _ASSERT(f1.size() > 4);
-    
-    // Some extra bytes to make reallocation unlikely; fixed size
-    // local buffers might make even more sense, expecially if given
-    // string like semantics.
-    
-    string sf1, sf2;
-    sf1.reserve(f1.size()+5);
-    sf2.reserve(f1.size()+5);
-    
-    sf1.assign(f1, 4, f1.size()-4);
-    sf2.assign(sf1.data(), sf1.size());
-    
-    if (sf2[sf2.size()-2] == '|') {
-        sf2[sf2.size()-2] = ' ';
-    } else {
-        _ASSERT(sf2[sf2.size()-3] == '|');
-        chain2 = true;
-        sf2[sf2.size()-3] = ' ';
-    }
-    
-    bool pedantic = true;
-    
-    if (pedantic) {
-        if (chain2) {
-            // pdb|abc|xy
-            const char * ep = sf1.data() + sf1.size();
-            CTempString ext(ep-2, 2);
-            bool is_vb = (ext == "VB");
-            
-            int offset = (int) sf1.size() - 2;
-            
-            sf1.resize(offset + 1);
-            sf2.resize(offset + 1);
-            
-            if (is_vb) {
-                sf1[offset] = sf2[offset] = '|';
-            }
-        } else if (pdb.CanGetChain() && (pdb.GetChain() == 0)) {
-            if (sf1[sf1.size()-1] == '|') {
-                sf1[sf1.size()-1] = ' ';
-            }
-        }
-    }
-    
     x_AddStringData(oid, mol);
-    x_AddStdString(oid, sf1);
-    x_AddStdString(oid, sf2);
-    
+
+    string full_id = seqid.AsFastaString();
+    _ASSERT(full_id.size() > 4);
     if (! m_Sparse) {
-        x_AddStdString(oid, f1);
+        x_AddStdString(oid, full_id);
     }
+    
+    string short_id(full_id, 4);
+    x_AddStdString(oid, short_id);
+   
+    int len = short_id.size();
+    if (short_id[len-2] == '|') {
+        short_id[len-2] = ' ';
+    } else { 
+        // This is lower case chain encoding, i.e., xxxx|a -> xxxx|AA
+        _ASSERT(short_id[len-1] == short_id[len-2]);
+        _ASSERT(short_id[len-3] == '|');
+        short_id[len-3] = ' ';
+    } 
+    x_AddStdString(oid, short_id);
 }
 
 /// Compare two strings, ignoring case.
