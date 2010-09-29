@@ -451,7 +451,19 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_LogEx
 
 
 /* Reconstruct text URL out of SConnNetInfo components
- * (username:password excluded for security reasons).
+ * (username:password is included only if "auth" passed non-zero).
+ * Returned string must be free()'d when no longer necessary.
+ * Return NULL on error.
+ */
+extern NCBI_XCONNECT_EXPORT char* ConnNetInfo_URLEx
+(const SConnNetInfo* info,
+ int/*bool*/         auth
+ );
+
+
+/* Reconstruct text URL out of SConnNetInfo components
+ * (username:password excluded for security reasons):
+ * same as ConnNetInfo_URLEx(info, 0).
  * Returned string must be free()'d when no longer necessary.
  * Return NULL on error.
  */

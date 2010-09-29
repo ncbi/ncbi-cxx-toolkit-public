@@ -287,6 +287,8 @@ static void TEST_ConnNetInfo(void)
     assert(strcmp(net_info->path, "/path3")           == 0);
     assert(strcmp(net_info->args, "arg3#frag3")       == 0);
 
+    strcpy(net_info->user, "user");
+    strcpy(net_info->pass, "pass");
     url = ConnNetInfo_URL(net_info);
     assert(url);
     assert(strcmp(url, "https://www/path3?arg3#frag3") == 0);

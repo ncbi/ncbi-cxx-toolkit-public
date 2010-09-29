@@ -1202,7 +1202,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 }
 
 
-extern char* ConnNetInfo_URL(const SConnNetInfo* info)
+extern char* ConnNetInfo_URLEx(const SConnNetInfo* info, int/*bool*/ auth)
 {
     const char* scheme;
     size_t      len;
@@ -1214,7 +1214,9 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     }
 
     len = strlen(scheme) + 3/*"://"*/ + strlen(info->host)
-        + (*info->user ? strlen(info->user) + strlen(info->pass) + 2 : 0)
+        + (auth  &&  *info->user
+           ? strlen(info->user) + strlen(info->pass) + 2
+           : 0)
         + (info->port ? 6/*:port*/ : 0)
         + (info->http_proxy_adjusted ? 2 : 0)
         + strlen(info->path)
@@ -1224,7 +1226,7 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     if (url) {
         len = (size_t) sprintf(url, "%s://%s", scheme,
                                *info->user ? info->user : info->host);
-        if (*info->user)
+        if (auth  &&  *info->user)
             len += sprintf(url + len, ":%s@%s", info->pass, info->host);
         if (info->port)
             len += sprintf(url + len, ":%hu", info->port);
@@ -1234,6 +1236,12 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
                 ")" + !info->http_proxy_adjusted);
     }
     return url;
+}
+
+
+extern char* ConnNetInfo_URL(const SConnNetInfo* info)
+{
+    return ConnNetInfo_URLEx(info, 0/*auth*/);
 }
 
 
