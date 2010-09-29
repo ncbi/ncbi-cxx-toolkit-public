@@ -1213,10 +1213,10 @@ extern char* ConnNetInfo_URLEx(const SConnNetInfo* info, int/*bool*/ auth)
         return 0;
     }
 
+    if (!*info->user)
+        auth = 0/*false*/;
     len = strlen(scheme) + 3/*"://"*/ + strlen(info->host)
-        + (auth  &&  *info->user
-           ? strlen(info->user) + strlen(info->pass) + 2
-           : 0)
+        + (auth ? strlen(info->user) + strlen(info->pass) + 2 : 0)
         + (info->port ? 6/*:port*/ : 0)
         + (info->http_proxy_adjusted ? 2 : 0)
         + strlen(info->path)
@@ -1225,8 +1225,8 @@ extern char* ConnNetInfo_URLEx(const SConnNetInfo* info, int/*bool*/ auth)
 
     if (url) {
         len = (size_t) sprintf(url, "%s://%s", scheme,
-                               *info->user ? info->user : info->host);
-        if (auth  &&  *info->user)
+                               auth ? info->user : info->host);
+        if (auth)
             len += sprintf(url + len, ":%s@%s", info->pass, info->host);
         if (info->port)
             len += sprintf(url + len, ":%hu", info->port);
