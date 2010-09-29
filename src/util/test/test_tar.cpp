@@ -383,9 +383,9 @@ int CTarTest::Run(void)
             const string& prefix = action == eUpdate ? "u "        : "a ";
             LOG_POST(what << name);
             if (action == eUpdate) {
-                entries.reset(tar->Update(name).release());
+                entries = tar->Update(name);
             } else {
-                entries.reset(tar->Append(name).release());
+                entries = tar->Append(name);
             }
             if (m_Flags & fVerbose) {
                 ITERATE(CTar::TEntries, it, *entries.get()) {
@@ -440,12 +440,12 @@ int CTarTest::Run(void)
                     NcbiStreamCopy(NcbiCout, rs);
                 }
             } else if (action == eList) {
-                entries.reset(tar->List().release());
+                entries = tar->List();
                 ITERATE(CTar::TEntries, it, *entries.get()) {
                     LOG_POST(*it << x_Pos(*it));
                 }
             } else {
-                entries.reset(tar->Extract().release());
+                entries = tar->Extract();
                 if (m_Flags & fVerbose) {
                     ITERATE(CTar::TEntries, it, *entries.get()) {
                         LOG_POST("x " << it->GetName() + x_Pos(*it));
