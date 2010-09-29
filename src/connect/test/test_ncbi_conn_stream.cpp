@@ -65,7 +65,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "5.0");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "10.0");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
     return reg;
 }
@@ -328,7 +328,7 @@ int main(int argc, const char* argv[])
 
     {{
         // Silent test for timeouts and memory leaks in an unused stream
-        STimeout tmo = {8, 0};
+        static const STimeout tmo = {5, 0};
         CConn_IOStream* s  =
             new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo);
         delete s;
