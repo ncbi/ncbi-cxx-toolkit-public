@@ -124,3 +124,11 @@ Added support of MSVC 2010
 September 02, 2010
 version 3.0.1
 Fixed bug in list of generated files
+
+September 29, 2010
+version 3.1.0
+Fixed to mark implied projects as expendable if everything that depends on them is.
+Added support of optional user requests (macro definitions).
+Corrected project that generates C++ code to remove unneeded specifications.
+
+
