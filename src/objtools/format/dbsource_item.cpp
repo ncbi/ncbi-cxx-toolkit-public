@@ -227,6 +227,11 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
 
 void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
 {
+    // In this function, the newlines seem weird because the C toolkit 
+    // outputs this way.  Hopefully in the future we can do something 
+    // more consistent.
+
+
     CSeqdesc_CI dsc(ctx.GetHandle(), CSeqdesc::e_Pir);
     if ( !dsc ) {
         return;
@@ -234,35 +239,38 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
 
     x_SetObject(*dsc);
 
+    bool containsHostLine = false; // another hack to try to match C's whitespace
+
     const CPIR_block& pir = dsc->GetPir();
     if (pir.CanGetHost()) {
-        m_DBSource.push_back("host: " + pir.GetHost());
+        m_DBSource.push_back("host:" + pir.GetHost() + "\n");
+        containsHostLine = true;
     }
     if (pir.CanGetSource()) {
-        m_DBSource.push_back("source: " + pir.GetSource());
+        m_DBSource.push_back("source: " + pir.GetSource() + "\n");
     }
     if (pir.CanGetSummary()) {
-        m_DBSource.push_back("summary: " + pir.GetSummary());
+        m_DBSource.push_back("summary: " + pir.GetSummary() + "\n");
     }
     if (pir.CanGetGenetic()) {
-        m_DBSource.push_back("genetic: " + pir.GetGenetic());
+        m_DBSource.push_back("genetic: " + pir.GetGenetic() + "\n");
     }
     if (pir.CanGetIncludes()) {
-        m_DBSource.push_back("includes: " + pir.GetIncludes());
+        m_DBSource.push_back("includes: " + pir.GetIncludes() + "\n");
     }
     if (pir.CanGetPlacement()) {
-        m_DBSource.push_back("placement: " + pir.GetPlacement());
+        m_DBSource.push_back("placement: " + pir.GetPlacement() + "\n");
     }
     if (pir.CanGetSuperfamily()) {
-        m_DBSource.push_back("superfamily: " + pir.GetSuperfamily());
+        m_DBSource.push_back("superfamily: " + pir.GetSuperfamily() + "\n");
     }
     if (pir.CanGetCross_reference()) {
-        m_DBSource.push_back("xref: " + pir.GetCross_reference());
+        m_DBSource.push_back("xref: " + pir.GetCross_reference() + "\n");
     }
     if (pir.CanGetDate()) {
-        m_DBSource.push_back("PIR dates: " + pir.GetDate());
+        m_DBSource.push_back("PIR dates: " + pir.GetDate() + "\n");
     }
-    if (pir.GetHad_punct()) {
+    if (pir.CanGetHad_punct() && pir.GetHad_punct() ) {
         m_DBSource.push_back("punctuation in sequence");
     }
     if (pir.CanGetSeqref()) {
@@ -287,9 +295,28 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
             m_DBSource.push_back("xrefs: " + NStr::Join(xrefs, ", "));
         }
     }
+
     NON_CONST_ITERATE (list<string>, it, m_DBSource) {
-        // The C version puts newlines before these for some reason
-        *it += (&*it == &m_DBSource.back() ? '.' : ';');
+        if( &*it == &m_DBSource.front() ) {
+            // first one has newline AFTER the semicolon
+            *it += ";\n";
+            // another hack to match C toolkit
+            /* if( (it + 1) != m_DBSource.end() && ! NStr::StartsWith(*(it + 1), "host")  ) {
+                *it += ";\n";
+            } */
+        } else if( &*it == &m_DBSource.back() ) {
+            // last one ends in period
+            *it += ".";
+        } else {
+            // The C version puts newlines before some of these for some reason
+            *it += ";\n";
+        }
+        // *it += (&*it == &m_DBSource.back() ? "." : "\n;");
+    }
+
+    // hack to match C's whitespace
+    if( ! containsHostLine ) {
+        m_DBSource.front() += "\n";
     }
 }
 
@@ -433,7 +460,7 @@ void CDBSourceItem::x_AddPRFBlock(CBioseqContext& ctx)
     if (prf.CanGetExtra_src()) {
         const CPRF_ExtraSrc& es = prf.GetExtra_src();
         if (es.CanGetHost()) {
-            m_DBSource.push_back("host: " + es.GetHost());
+            m_DBSource.push_back("host:" + es.GetHost());
         }
         if (es.CanGetPart()) {
             m_DBSource.push_back("part: " + es.GetPart());
@@ -544,7 +571,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
             case CSeq_id::e_Embl:       s = "embl ";        comma = ",";  break;
             case CSeq_id::e_Other:      s = "REFSEQ: ";                   break;
             case CSeq_id::e_Swissprot:  s = "UniProtKB: ";  comma = ",";  break;
-            case CSeq_id::e_Pir:        s = "pir: ";                      break;
+            case CSeq_id::e_Pir:        s = "UniProtKB: ";                break;
             case CSeq_id::e_Prf:        s = "prf: ";                      break;
             default:                    break;
             }

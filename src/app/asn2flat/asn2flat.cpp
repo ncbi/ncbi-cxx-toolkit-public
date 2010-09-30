@@ -155,7 +155,7 @@ void CAsn2FlatApp::Init(void)
          // compression
          arg_desc->AddFlag("c", "Compressed file");
          // propogate top descriptors
-         arg_desc->AddFlag("p", "Propogate top descriptors");
+         arg_desc->AddFlag("p", "Propagate top descriptors");
      }}
 
     // report
@@ -264,8 +264,8 @@ void CAsn2FlatApp::Init(void)
 
 int CAsn2FlatApp::Run(void)
 {
-	// initialize conn library
-	CONNECT_Init(&GetConfig());
+    // initialize conn library
+    CONNECT_Init(&GetConfig());
 
     const CArgs&   args = GetArgs();
 
@@ -352,7 +352,7 @@ int CAsn2FlatApp::Run(void)
         }
         HandleSeqEntry(seh);
     }
-    else if ( asn_type == "bioseq" ) {				
+    else if ( asn_type == "bioseq" ) {                
         //
         //  Read object as a bioseq, wrap it into a seq_entry, then process
         //  the wrapped bioseq as a seq_entry:
