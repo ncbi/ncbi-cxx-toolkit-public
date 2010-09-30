@@ -1,3 +1,14 @@
+2010-09-28 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* cgi2rcgi.cgi: Support for JSON output.
+	* ncfetch.cgi: New CGI parameter "filename".
+
+	* netcache_control: New command -remove.
+	* cgi2rcgi.cgi: job_key parameter can contain spaces now.
+
+	* cgi2rcgi.cgi: User-visible errors are also logged now.
+	* ncfetch.cgi: No-password error is correctly reported now.
+
 2010-08-16 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* ncfetch.cgi: Now can use password-protected NetCache API.
