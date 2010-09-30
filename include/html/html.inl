@@ -245,7 +245,7 @@ inline
 CHTML_tc* CHTML_table::NextRowCell(ECellType type)
 {
     m_CurrentRow++;
-    m_CurrentCol = 0;
+    m_CurrentCol = TIndex(-1);
     return NextCell(type);
 }
 
