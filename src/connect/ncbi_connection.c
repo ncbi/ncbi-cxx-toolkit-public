@@ -406,7 +406,7 @@ extern EIO_Status CONN_SetTimeout
             conn->c_timeout  = timeout;
         break;
     default:
-        sprintf(errbuf, "Unknown event #%d", (int) event);
+        sprintf(errbuf, "Unknown event #%u", (unsigned int) event);
         CONN_LOG_EX(9, SetTimeout, eLOG_Error, errbuf, eIO_InvalidArg);
         return eIO_InvalidArg;
     }
@@ -432,7 +432,7 @@ extern size_t CONN_GetPosition(CONN conn, EIO_Event event)
     case eIO_Write:
         return conn->wrpos;
     default:
-        sprintf(errbuf, "Unknown direction #%d", (int) event);
+        sprintf(errbuf, "Unknown direction #%u", (unsigned int) event);
         CONN_LOG_EX(31, GetPosition, eLOG_Error, errbuf, 0);
         break;
     }
@@ -470,7 +470,7 @@ extern const STimeout* CONN_GetTimeout
         break;
     default:
         timeout = 0;
-        sprintf(errbuf, "Unknown event #%d", (int) event);
+        sprintf(errbuf, "Unknown event #%u", (unsigned int) event);
         CONN_LOG_EX(12, GetTimeout, eLOG_Error, errbuf, 0);
         assert(0);
         break;
@@ -985,7 +985,7 @@ extern EIO_Status CONN_SetCallback
     if ((i = (int) type) >= CONN_N_CALLBACKS) {
         static const STimeout* timeout = 0/*dummy*/;
         char errbuf[80];
-        sprintf(errbuf, "Unknown callback type #%d", (int) i);
+        sprintf(errbuf, "Unknown callback type #%u", (unsigned int) i);
         CONN_LOG_EX(29, SetCallback, eLOG_Error, errbuf, eIO_InvalidArg);
         return eIO_InvalidArg;
     }
