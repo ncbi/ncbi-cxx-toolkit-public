@@ -235,8 +235,12 @@ bool CVariation_ref::IsInsertion() const
 void CVariation_ref::SetInsertion()
 {
     CVariation_inst& inst = SetData().SetInstance();
-    inst.SetDelta().clear();
     inst.SetType(CVariation_inst::eType_ins);
+
+    CRef<CDelta_item> item(new CDelta_item);
+    item->SetAction(CDelta_item::eAction_ins_before);
+    inst.SetDelta().clear();
+    inst.SetDelta().push_back(item);
 }
 
 
@@ -514,6 +518,33 @@ void CVariation_ref::SetComplex()
 bool CVariation_ref::IsComplex() const
 {
     return GetData().IsComplex();
+}
+
+
+void CVariation_ref::SetUnknown()
+{
+    SetData().SetUnknown();
+}
+
+bool CVariation_ref::IsUnknown() const
+{
+    return GetData().IsUnknown();
+}
+
+
+void CVariation_ref::SetOther()
+{
+    SetData().SetSet().SetType
+        (CVariation_ref::TData::TSet::eData_set_type_other);
+    SetData().SetSet().SetVariations();
+
+}
+
+bool CVariation_ref::IsOther() const
+{
+    return GetData().IsSet()  &&
+        GetData().GetSet().GetType() ==
+        CVariation_ref::TData::TSet::eData_set_type_other;
 }
 
 

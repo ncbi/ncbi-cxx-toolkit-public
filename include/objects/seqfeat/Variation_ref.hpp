@@ -149,6 +149,14 @@ public:
     void SetComplex();
     bool IsComplex() const;
 
+    /// Create a variant of unknown type
+    void SetUnknown();
+    bool IsUnknown() const;
+
+    /// Create a variant of type 'other'
+    void SetOther();
+    bool IsOther() const;
+
     /// Validate that all semantic fields are correct
     void Validate();
 
