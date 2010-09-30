@@ -171,11 +171,11 @@ CBedReader::ReadSeqAnnots(
     IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_annot > annot( new CSeq_annot );
+//    CRef< CSeq_annot > annot( new CSeq_annot );
 //    CRef< CAnnot_descr > desc( new CAnnot_descr );
 //    annot->SetDesc( *desc );
 //    annots.push_back( annot );
-//    CRef< CSeq_annot > annot = x_AppendAnnot( annots );
+    CRef< CSeq_annot > annot = x_AppendAnnot( annots );
 
     string line;
     int linecount = 0;
