@@ -130,6 +130,8 @@ extern int/*bool*/ BUF_AppendEx(BUF* pBuf, void* data,
     SBufChunk* pChunk;
     if ( !size )
         return 1/*true*/;
+    if ( !data )
+        return 0/*false*/;
 
     /* init the buffer internals, if not init'd yet */
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
@@ -166,6 +168,8 @@ extern int/*bool*/ BUF_PrependEx(BUF* pBuf, void* data,
     SBufChunk* pChunk;
     if ( !size )
         return 1/*true*/;
+    if ( !data )
+        return 0/*false*/;
     
     /* init the buffer internals, if not init'd yet */
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
@@ -197,6 +201,8 @@ extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
     SBufChunk* pChunk, *pTail;
     if ( !size )
         return 1/*true*/;
+    if ( !data )
+        return 0/*false*/;
 
     /* init the buffer internals, if not init'd yet */
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
@@ -241,6 +247,8 @@ extern int/*bool*/ BUF_PushBack(BUF* pBuf, const void* data, size_t size)
     SBufChunk* pChunk;
     if ( !size )
         return 1/*true*/;
+    if ( !data )
+        return 0/*false*/;
 
     /* init the buffer internals, if not init'd yet */
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0) )
@@ -321,7 +329,7 @@ extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size)
 extern size_t BUF_PeekAtCB(BUF buf,
                            size_t pos,
                            void (*callback)(void*, void*, size_t),
-                           void* data,
+                           void* cbdata,
                            size_t size)
 {
     size_t     n_todo;
@@ -355,7 +363,7 @@ extern size_t BUF_PeekAtCB(BUF buf,
         if (n_copy > n_todo)
             n_copy = n_todo;
 
-        callback(data, (char*) pChunk->data + n_skip, n_copy);
+        callback(cbdata, (char*) pChunk->data + n_skip, n_copy);
         n_todo -= n_copy;
     }
 
@@ -374,7 +382,7 @@ extern size_t BUF_Read(BUF buf, void* data, size_t size)
     else if (!buf ||  !buf->list)
         return 0;
 
-    if (!size)
+    if ( !size )
         return 0;
 
     /* remove the read data from the buffer */ 
@@ -419,7 +427,7 @@ extern void BUF_Erase(BUF buf)
 
 extern void BUF_Destroy(BUF buf)
 {
-    if (buf) {
+    if ( buf ) {
         BUF_Erase(buf);
         free(buf);
     }
