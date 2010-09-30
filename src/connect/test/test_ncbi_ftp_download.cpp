@@ -105,8 +105,8 @@ void CDownloadCallbackData::Append(const CTarEntryInfo* current)
 extern "C" {
 static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
 {
-    if (strncasecmp(cmd, "SIZE", 4) != 0  &&
-        strncasecmp(cmd, "RETR", 4) != 0) {
+    if (NStr::strncasecmp(cmd, "SIZE", 4) != 0  &&
+        NStr::strncasecmp(cmd, "RETR", 4) != 0) {
         return eIO_Success;
     }
 
