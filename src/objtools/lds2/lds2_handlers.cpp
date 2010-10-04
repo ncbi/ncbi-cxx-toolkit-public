@@ -202,24 +202,7 @@ CLDS2_UrlHandler_GZipFile::OpenStream(const SLDS2_File& file_info,
         *in.release(),
         new CZipStreamDecompressor(CZipCompression::fGZip),
         CCompressionStream::fOwnAll));
-    if (stream_pos > 0) {
-        // Now we have to unzip all data up to the requested position.
-        const Int8 buf_size = 4096;
-        char buf[buf_size];
-        Int8 to_read = buf_size;
-        while (stream_pos > 0) {
-            if (stream_pos < buf_size) {
-                to_read = stream_pos;
-            }
-            zin->read(buf, NcbiInt8ToStreampos(to_read));
-            Int8 rd = NcbiStreamposToInt8(zin->gcount());
-            if (rd < to_read) {
-                // Not enough data in the stream?
-                return NULL;
-            }
-            stream_pos -= rd;
-        }
-    }
+    zin->ignore(stream_pos);
     return zin.release();
 }
 
