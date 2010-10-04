@@ -28,20 +28,41 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <objtools/data_loaders/genbank/reader_service.hpp>
 #include <objtools/data_loaders/genbank/reader_service_params.h>
+#include <objtools/data_loaders/genbank/reader_id2_base.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbithr.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <cmath>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CReader;
 
 #define DEFAULT_TIMEOUT  20
 #define DEFAULT_OPEN_TIMEOUT  5
 #define DEFAULT_OPEN_TIMEOUT_MAX  30
 #define DEFAULT_OPEN_TIMEOUT_MULTIPLIER  1.5
 #define DEFAULT_OPEN_TIMEOUT_INCREMENT  0
+
+
+typedef CId2ReaderBase::CDebugPrinter CDebugPrinter;
+
+
+NCBI_PARAM_DECL(int, GENBANK, CONN_DEBUG);
+NCBI_PARAM_DEF_EX(int, GENBANK, CONN_DEBUG, 0,
+                  eParam_NoThread, GENBANK_CONN_DEBUG);
+
+static int s_GetDebugLevel(void)
+{
+    static NCBI_PARAM_TYPE(GENBANK, CONN_DEBUG) s_Value;
+    return s_Value.Get();
+}
+
 
 struct ConnInfoDeleter2
 {
@@ -134,13 +155,28 @@ CReaderServiceConnector::Connect(int error_count)
     SServerScanInfo* scan_info = 0;
 
     if ( NStr::StartsWith(m_ServiceName, "http://") ) {
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "Opening HTTP connection to " << m_ServiceName;
+        }
         info.m_Stream.reset(new CConn_HttpStream(m_ServiceName));
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "Opened HTTP connection to "<<m_ServiceName;
+        }
     }
     else {
         AutoPtr<SConnNetInfo, ConnNetInfoDeleter> net_info
             (ConnNetInfo_Create(m_ServiceName.c_str()));
         net_info->max_try = 1;
         
+        if ( !m_SkipServers.empty() && s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "skip:";
+            ITERATE ( TSkipServers, it, m_SkipServers ) {
+                s << " " << CSocketAPI::ntoa(it->get()->host);
+            }
+        }
         AutoPtr<SServerScanInfo> scan_ptr(new SServerScanInfo(m_SkipServers));
         SSERVICE_Extra params;
         memset(&params, 0, sizeof(params));
@@ -150,22 +186,49 @@ CReaderServiceConnector::Connect(int error_count)
         params.get_next_info = s_ScanInfoGetNextInfo;
         params.flags = fHCC_NoAutoRetry;
         
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "Opening service connection to " << m_ServiceName;
+        }
         info.m_Stream.reset(new CConn_ServiceStream(m_ServiceName, fSERV_Any,
                                                     net_info.get(),
                                                     &params,
                                                     &tmout));
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "Opened service connection to " << m_ServiceName;
+        }
         scan_info = scan_ptr.release();
     }
 
     CConn_IOStream& stream = *info.m_Stream;
     // need to call CONN_Wait to force connection to open
     if ( !stream.bad() ) {
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "Waiting for connector...";
+        }
         CONN_Wait(stream.GetCONN(), eIO_Write, &tmout);
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "Got connector.";
+        }
         if ( scan_info ) {
             info.m_ServerInfo = scan_info->m_CurrentServer;
         }
     }
-    if ( scan_info && scan_info->m_TotalCount == scan_info->m_SkippedCount ) {
+    if ( scan_info && s_GetDebugLevel() > 0 ) {
+        CDebugPrinter s("CReaderConnector");
+        s << "servers:";
+        s << " total: "<<scan_info->m_TotalCount;
+        s << " skipped: "<<scan_info->m_SkippedCount;
+    }
+    if ( scan_info && !m_SkipServers.empty() &&
+         scan_info->m_TotalCount == scan_info->m_SkippedCount ) {
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "Clearing skip servers.";
+        }
         // all servers are skipped, reset skip-list
         m_SkipServers.clear();
     }
@@ -241,6 +304,11 @@ void CReaderServiceConnector::RememberIfBad(SConnInfo& conn_info)
     if ( conn_info.m_ServerInfo ) {
         // server failed without any reply, remember to skip it next time
         m_SkipServers.push_back(SERV_CopyInfo(conn_info.m_ServerInfo));
+        if ( s_GetDebugLevel() > 0 ) {
+            CDebugPrinter s("CReaderConnector");
+            s << "added skip: "<<
+                CSocketAPI::ntoa(m_SkipServers.back().get()->host);
+        }
         conn_info.m_ServerInfo = 0;
     }
 }

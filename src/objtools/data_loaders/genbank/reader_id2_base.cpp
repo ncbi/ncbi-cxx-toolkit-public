@@ -99,10 +99,25 @@ int CId2ReaderBase::GetDebugLevel(void)
 CId2ReaderBase::CDebugPrinter::CDebugPrinter(CReader::TConn conn,
                                              const char* name)
 {
-    flush() << name << '(' << conn << "): ";
+    *this << name << '(' << conn << ')';
+    PrintHeader();
+}
+
+
+CId2ReaderBase::CDebugPrinter::CDebugPrinter(const char* name)
+{
+    *this << name;
+    PrintHeader();
+}
+
+
+void CId2ReaderBase::CDebugPrinter::PrintHeader(void)
+{
+    *this << ": ";
 #ifdef NCBI_THREADS
-    flush() << "T" << CThread::GetSelf() << ' ';
+    *this << "T" << CThread::GetSelf() << ' ';
 #endif
+    *this << CTime(CTime::eCurrent) << ": ";
 }
 
 
