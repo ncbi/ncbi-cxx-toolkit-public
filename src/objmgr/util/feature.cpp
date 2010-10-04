@@ -832,6 +832,35 @@ bool CFeatComparatorByLabel::Less(const CSeq_feat& f1,
     if ( f1.IsSetId() != f2.IsSetId() ) {
         return f1.IsSetId();
     }
+    if ( f1.IsSetId() ) {
+        const CFeat_id& id1 = f1.GetId();
+        const CFeat_id& id2 = f2.GetId();
+        if ( id1.Which() != id2.Which() ) {
+            return id1.Which() < id2.Which();
+        }
+        if ( id1.IsLocal() ) {
+            const CObject_id& oid1 = id1.GetLocal();
+            const CObject_id& oid2 = id2.GetLocal();
+            if ( oid1.Which() != oid2.Which() ) {
+                return oid1.Which() < oid2.Which();
+            }
+            if ( oid1.IsId() ) {
+                int oid1int = oid1.GetId();
+                int oid2int = oid2.GetId();
+                if ( oid1int != oid2int ) {
+                    return oid1int < oid2int;
+                }
+            }
+            else if ( oid1.IsStr() ) {
+                const string& oid1str = oid1.GetStr();
+                const string& oid2str = oid2.GetStr();
+                int diff = NStr::CompareNocase(oid1str, oid2str);
+                if ( diff != 0 ) {
+                    return diff < 0;
+                }
+            }
+        }
+    }
 
     if ( f1.GetData().IsGene() && f2.GetData().IsGene() ) {
         const CGene_ref& g1 = f1.GetData().GetGene();
@@ -911,7 +940,7 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
 
 struct STypeLink
 {
-    STypeLink(CSeqFeatData::ESubtype subtype,
+    STypeLink(CSeqFeatData::ESubtype subtype = CSeqFeatData::eSubtype_imp,
               CSeqFeatData::ESubtype start = CSeqFeatData::eSubtype_bad);
         
     bool IsValid(void) const {
@@ -929,6 +958,8 @@ struct STypeLink
         Next();
         return *this;
     }
+
+    bool CanHaveGeneParent(void) const;
 
     CSeqFeatData::ESubtype m_StartType;
     CSeqFeatData::ESubtype m_CurrentType;
@@ -974,6 +1005,12 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
         m_ParentType = CSeqFeatData::eSubtype_gene;
         break;
     }
+}
+
+
+bool STypeLink::CanHaveGeneParent(void) const
+{
+    return *this && m_CurrentType != CSeqFeatData::eSubtype_gene;
 }
 
 
@@ -1079,6 +1116,32 @@ namespace {
     }
 
 
+    static
+    const CGb_qual* sx_GetTranscriptId(const CMappedFeat& feat)
+    {
+        if ( feat.IsSetQual() &&
+             sx_CanHaveTranscriptId(feat.GetFeatSubtype()) ) {
+            CConstRef<CSeq_feat> f = feat.GetSeq_feat();
+            const CSeq_feat::TQual& qual = f->GetQual();
+            ITERATE ( CSeq_feat::TQual, it, qual ) {
+                if ( (*it)->GetQual() == "transcript_id" &&
+                     (*it)->IsSetVal() ) {
+                    return *it;
+                }
+            }
+        }
+        return 0;
+    }
+
+
+    static inline
+    bool sx_GetTranscriptIdMatch(const CGb_qual* id1,
+                                 const CGb_qual* id2)
+    {
+        return id1 && id2 && id1->GetVal() == id2->GetVal();
+    }
+
+
     static inline
     EOverlapType sx_GetOverlapType(const STypeLink& link,
                                    const CSeq_loc& loc)
@@ -1125,7 +1188,7 @@ namespace {
         return false;
     }
 
-
+    
     static const int kSameTypeParentQuality = 1000;
     static const int kWorseTypeParentQuality = 500;
 
@@ -1255,6 +1318,7 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
 
 CFeatTree::CFeatTree(void)
     : m_AssignedParents(0),
+      m_AssignedGenes(0),
       m_FeatIdMode(eFeatId_by_type)
 {
 }
@@ -1262,6 +1326,7 @@ CFeatTree::CFeatTree(void)
 
 CFeatTree::CFeatTree(CFeat_CI it)
     : m_AssignedParents(0),
+      m_AssignedGenes(0),
       m_FeatIdMode(eFeatId_by_type)
 {
     AddFeatures(it);
@@ -1291,16 +1356,7 @@ void CFeatTree::AddFeature(const CMappedFeat& feat)
 {
     CFeatInfo& info = m_InfoMap[feat.GetSeq_feat_Handle()];
     info.m_Feat = feat;
-    if ( feat.IsSetQual() && sx_CanHaveTranscriptId(feat.GetFeatSubtype()) ) {
-        CConstRef<CSeq_feat> f = feat.GetSeq_feat();
-        const CSeq_feat::TQual& qual = f->GetQual();
-        ITERATE ( CSeq_feat::TQual, it, qual ) {
-            if ( (*it)->GetQual() == "transcript_id" && (*it)->IsSetVal() ) {
-                info.m_TranscriptId = *it;
-                break;
-            }
-        }
-    }
+    info.m_TranscriptId = sx_GetTranscriptId(feat);
 }
 
 
@@ -1332,16 +1388,47 @@ CFeatTree::CFeatInfo* CFeatTree::x_FindInfo(const CSeq_feat_Handle& feat)
 
 
 namespace {
+    struct SBestInfo {
+        typedef CFeatTree::CFeatInfo CFeatInfo;
+        SBestInfo(void)
+            : m_Quality(0),
+              m_Overlap(kMax_I8),
+              m_Info(0)
+            {
+            }
+
+        void CheckBest(Uint1 quality, Int8 overlap, CFeatInfo* info)
+            {
+                if ( overlap >= 0 && overlap < kMax_I8 &&
+                     (quality > m_Quality ||
+                      (quality == m_Quality && overlap < m_Overlap)) ) {
+                    m_Quality = quality;
+                    m_Overlap = overlap;
+                    m_Info = info;
+                }
+            }
+
+        Uint1 m_Quality;
+        Int8 m_Overlap;
+        CFeatInfo* m_Info;
+    };
     struct SFeatRangeInfo {
+        typedef CFeatTree::CFeatInfo CFeatInfo;
+
         CSeq_id_Handle m_Id;
         CRange<TSeqPos> m_Range;
-        CFeatTree::CFeatInfo* m_Info;
-        
+        CFeatInfo* m_Info;
+
         // min start coordinate for all entries after this
         TSeqPos m_MinFrom;
 
-        SFeatRangeInfo(CFeatTree::CFeatInfo& info, bool by_product = false)
-            : m_Info(&info)
+        // results
+        SBestInfo* m_Best;
+        
+        SFeatRangeInfo(CFeatInfo& info, SBestInfo* best,
+                       bool by_product = false)
+            : m_Info(&info),
+              m_Best(best)
             {
                 if ( by_product ) {
                     m_Id = info.m_Feat.GetProductId();
@@ -1356,11 +1443,12 @@ namespace {
                     }
                 }
             }
-        SFeatRangeInfo(CFeatTree::CFeatInfo& info,
+        SFeatRangeInfo(CFeatInfo& info, SBestInfo* best,
                        CHandleRangeMap::const_iterator it)
             : m_Id(it->first),
               m_Range(it->second.GetOverlappingRange()),
-              m_Info(&info)
+              m_Info(&info),
+              m_Best(best)
             {
             }
     };
@@ -1385,14 +1473,25 @@ namespace {
 
     void s_AddRanges(vector<SFeatRangeInfo>& rr,
                      CFeatTree::CFeatInfo& info,
+                     SBestInfo* best,
                      const CSeq_loc& loc)
     {
         CHandleRangeMap hrmap;
         hrmap.AddLocation(loc);
         ITERATE ( CHandleRangeMap, it, hrmap ) {
-            SFeatRangeInfo range_info(info, it);
+            SFeatRangeInfo range_info(info, best, it);
             rr.push_back(range_info);
         }
+    }
+
+    typedef vector<SBestInfo> TBestArray;
+
+    inline
+    Uint1 s_GetParentQuality(const CFeatTree::CFeatInfo& feat,
+                             const CFeatTree::CFeatInfo& parent)
+    {
+        return sx_GetTranscriptIdMatch(feat.m_TranscriptId,
+                                       parent.m_TranscriptId);
     }
 }
 
@@ -1530,29 +1629,29 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
 }
 
 
-void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
-                                         const STypeLink& link,
-                                         TFeatArray& parents)
+static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
+                                  TBestArray& bests,
+                                  const STypeLink& link,
+                                  CFeatTree::TFeatArray& parents)
 {
-    if ( features.empty() || parents.empty() ) {
-        return;
-    }
+    _ASSERT(!features.empty());
+    _ASSERT(!parents.empty());
     
     typedef vector<SFeatRangeInfo> TRangeArray;
     TRangeArray pp, cc;
-
+    
     // collect parents parameters
-    ITERATE ( TFeatArray, it, parents ) {
-        CFeatInfo& feat_info = **it;
+    ITERATE ( CFeatTree::TFeatArray, it, parents ) {
+        CFeatTree::CFeatInfo& feat_info = **it;
         if ( link.m_ByProduct && !feat_info.m_Feat.IsSetProduct() ) {
             continue;
         }
-        SFeatRangeInfo range_info(feat_info, link.m_ByProduct);
+        SFeatRangeInfo range_info(feat_info, 0, link.m_ByProduct);
         if ( range_info.m_Id ) {
             pp.push_back(range_info);
         }
         else {
-            s_AddRanges(pp, feat_info,
+            s_AddRanges(pp, feat_info, 0,
                         link.m_ByProduct?
                         feat_info.m_Feat.GetProduct():
                         feat_info.m_Feat.GetLocation());
@@ -1561,14 +1660,17 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
     sort(pp.begin(), pp.end(), PLessByEnd());
 
     // collect children parameters
-    ITERATE ( TFeatArray, it, features ) {
-        CFeatInfo& feat_info = **it;
-        SFeatRangeInfo range_info(feat_info);
+    size_t cnt = features.size();
+    bests.resize(cnt);
+    for ( size_t i = 0; i < cnt; ++i ) {
+        CFeatTree::CFeatInfo& feat_info = *features[i];
+        SBestInfo* best = &bests[i];
+        SFeatRangeInfo range_info(feat_info, best);
         if ( range_info.m_Id ) {
             cc.push_back(range_info);
         }
         else {
-            s_AddRanges(cc, feat_info, feat_info.m_Feat.GetLocation());
+            s_AddRanges(cc, feat_info, best, feat_info.m_Feat.GetLocation());
         }
     }
     sort(cc.begin(), cc.end(), PLessByStart());
@@ -1614,7 +1716,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
             // scan all Seq-id children
             for ( ; ci != cc.end() && pi != pe && ci->m_Id == cur_id; ++ci ) {
                 // child parameters
-                CFeatInfo& info = *ci->m_Info;
+                CFeatTree::CFeatInfo& info = *ci->m_Info;
                 const CSeq_loc& c_loc = info.m_Feat.GetLocation();
                 EOverlapType overlap_type = sx_GetOverlapType(link, c_loc);
 
@@ -1636,26 +1738,13 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                         link.m_ByProduct?
                         p_feat.GetProduct():
                         p_feat.GetLocation();
-                    Uint1 quality = 0;
-                    if ( info.m_TranscriptId && pc->m_Info->m_TranscriptId &&
-                         info.m_TranscriptId->GetVal() == pc->m_Info->m_TranscriptId->GetVal() ){
-                        quality = 1;
-                    }
+                    Uint1 quality = s_GetParentQuality(info, *pc->m_Info);
                     Int8 overlap = TestForOverlap64(p_loc,
                                                     c_loc,
                                                     overlap_type,
                                                     kInvalidSeqPos,
                                                     &p_feat.GetScope());
-                    if ( overlap < 0 ) {
-                        continue;
-                    }
-                    if ( quality > info.m_ParentQuality ||
-                         (quality == info.m_ParentQuality &&
-                          overlap < info.m_ParentOverlap) ) {
-                        info.m_ParentQuality = quality;
-                        info.m_ParentOverlap = overlap;
-                        info.m_Parent = pc->m_Info;
-                    }
+                    ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
                 }
             }
             // skip remaining Seq-id children
@@ -1663,16 +1752,30 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
             }
         }
     }}
+}
+
+
+void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
+                                         const STypeLink& link,
+                                         TFeatArray& parents)
+{
+    if ( features.empty() || parents.empty() ) {
+        return;
+    }
+    TBestArray bests;
+    s_CollectBestOverlaps(features, bests, link, parents);
+    size_t cnt = features.size();
+    _ASSERT(bests.size() == cnt);
+
     // assign found parents
     TFeatArray::iterator dst = features.begin();
-    ITERATE ( TFeatArray, it, features ) {
-        CFeatInfo& info = **it;
+    for ( size_t i = 0; i < cnt; ++i ) {
+        CFeatInfo& info = *features[i];
         if ( !info.IsSetParent() ) {
-            if ( info.m_Parent && info.m_ParentOverlap < kMax_I8 ) {
+            CFeatInfo* best = bests[i].m_Info;
+            if ( best ) {
                 // assign best parent
-                CFeatInfo* p_info = info.m_Parent;
-                info.m_Parent = 0;
-                x_SetParent(info, *p_info);
+                x_SetParent(info, *best);
             }
             else {
                 // store for future processing
@@ -1680,8 +1783,81 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
             }
         }
     }
-    // remove all features with assigned parents
     features.erase(dst, features.end());
+}
+
+
+void CFeatTree::x_AssignGenesByOverlap(TFeatArray& features,
+                                       TFeatArray& genes)
+{
+    if ( features.empty() || genes.empty() ) {
+        return;
+    }
+    TBestArray bests;
+    s_CollectBestOverlaps(features, bests, STypeLink(), genes);
+    size_t cnt = features.size();
+    _ASSERT(bests.size() == cnt);
+
+    // assign found genes
+    for ( size_t i = 0; i < cnt; ++i ) {
+        CFeatInfo& info = *features[i];
+        if ( !info.m_Gene ) {
+            CFeatInfo* best = bests[i].m_Info;
+            if ( best ) {
+                // assign best gene
+                info.m_Gene = best;
+            }
+        }
+    }
+}
+
+
+void CFeatTree::x_AssignGeneToChildren(CFeatInfo& parent_feat,
+                                       CFeatInfo& gene_feat)
+{
+    ITERATE ( CFeatInfo::TChildren, it, parent_feat.m_Children ) {
+        CFeatInfo* child_feat = *it;
+        child_feat->m_Gene = &gene_feat;
+        x_AssignGeneToChildren(*child_feat, gene_feat);
+    }
+}
+
+
+void CFeatTree::x_AssignGenes(void)
+{
+    if ( m_AssignedGenes >= m_InfoMap.size() ) {
+        return;
+    }
+
+    TFeatArray genes;
+    // collect all genes and assign them to their children
+    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
+        CFeatInfo& info = it->second;
+        if ( info.m_Feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene ) {
+            x_AssignGeneToChildren(info, info);
+            genes.push_back(&info);
+        }
+    }
+    if ( genes.empty() ) {
+        return;
+    }
+    TFeatArray feats;
+    // collect all features without assigned parent
+    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
+        CFeatInfo& info = it->second;
+        CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
+        if ( feat_type != CSeqFeatData::eSubtype_gene &&
+             !info.m_Gene &&
+             STypeLink(feat_type) ) {
+            feats.push_back(&info);
+        }
+    }
+    if ( feats.empty() ) {
+        return;
+    }
+    x_AssignGenesByOverlap(feats, genes);
+
+    m_AssignedGenes = m_InfoMap.size();
 }
 
 
@@ -1759,6 +1935,7 @@ void CFeatTree::x_AssignParents(void)
             x_VerifyLinkedToRoot(it->second);
         }
     }
+
     m_AssignedParents = m_InfoMap.size();
 }
 
@@ -1882,13 +2059,27 @@ void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
 }
 
 
+CMappedFeat CFeatTree::GetBestGene(const CMappedFeat& feat,
+                                   EBestGeneType lookup_type)
+{
+    CMappedFeat ret = GetParent(feat, CSeqFeatData::eSubtype_gene);
+    if ( !ret && lookup_type == eBestGene_AllowOverlapped ) {
+        x_AssignGenes();
+        CFeatInfo* gene = x_GetInfo(feat).m_Gene;
+        if ( gene ) {
+            ret = gene->m_Feat;
+        }
+    }
+    return ret;
+}
+
+
 CFeatTree::CFeatInfo::CFeatInfo(void)
     : m_IsSetParent(false),
       m_IsSetChildren(false),
       m_IsLinkedToRoot(eIsLinkedToRoot_unknown),
-      m_ParentQuality(0),
       m_Parent(0),
-      m_ParentOverlap(kMax_I8)
+      m_Gene(0)
 {
 }
 
@@ -2030,7 +2221,8 @@ void CFeatTree::AddGenesForFeat(const CMappedFeat& feat,
 CMappedFeat
 GetBestGeneForMrna(const CMappedFeat& mrna_feat,
                    CFeatTree* feat_tree,
-                   const SAnnotSelector* base_sel)
+                   const SAnnotSelector* base_sel,
+                   CFeatTree::EBestGeneType lookup_type)
 {
     if ( !mrna_feat ||
          mrna_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA ) {
@@ -2040,16 +2232,17 @@ GetBestGeneForMrna(const CMappedFeat& mrna_feat,
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddGenesForMrna(mrna_feat, base_sel);
-        return tree.GetParent(mrna_feat, CSeqFeatData::eSubtype_gene);
+        return tree.GetBestGene(mrna_feat, lookup_type);
     }
-    return feat_tree->GetParent(mrna_feat, CSeqFeatData::eSubtype_gene);
+    return feat_tree->GetBestGene(mrna_feat, lookup_type);
 }
 
 
 CMappedFeat
 GetBestGeneForCds(const CMappedFeat& cds_feat,
                   CFeatTree* feat_tree,
-                  const SAnnotSelector* base_sel)
+                  const SAnnotSelector* base_sel,
+                  CFeatTree::EBestGeneType lookup_type)
 {
     if ( !cds_feat ||
          cds_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
@@ -2059,9 +2252,9 @@ GetBestGeneForCds(const CMappedFeat& cds_feat,
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddGenesForCds(cds_feat, base_sel);
-        return tree.GetParent(cds_feat, CSeqFeatData::eSubtype_gene);
+        return tree.GetBestGene(cds_feat, lookup_type);
     }
-    return feat_tree->GetParent(cds_feat, CSeqFeatData::eSubtype_gene);
+    return feat_tree->GetBestGene(cds_feat, lookup_type);
 }
 
 
@@ -2170,7 +2363,8 @@ void GetCdssForGene(const CMappedFeat& gene_feat,
 CMappedFeat
 GetBestGeneForFeat(const CMappedFeat& feat,
                    CFeatTree* feat_tree,
-                   const SAnnotSelector* base_sel)
+                   const SAnnotSelector* base_sel,
+                   CFeatTree::EBestGeneType lookup_type)
 {
     if ( !feat ) {
         NCBI_THROW(CObjmgrUtilException, eBadFeature,
@@ -2179,9 +2373,9 @@ GetBestGeneForFeat(const CMappedFeat& feat,
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddGenesForFeat(feat, base_sel);
-        return tree.GetParent(feat, CSeqFeatData::eSubtype_gene);
+        return tree.GetBestGene(feat, lookup_type);
     }
-    return feat_tree->GetParent(feat, CSeqFeatData::eSubtype_gene);
+    return feat_tree->GetBestGene(feat, lookup_type);
 }
 
 

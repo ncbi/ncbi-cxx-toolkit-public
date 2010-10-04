@@ -259,6 +259,15 @@ public:
     /// are returned.
     void GetChildrenTo(const CMappedFeat& feat, vector<CMappedFeat>& children);
 
+    enum EBestGeneType {
+        eBestGene_TreeOnly,
+        eBestGene_AllowOverlapped
+    };
+
+    /// Return parent gene if exists or best overlapping gene
+    CMappedFeat GetBestGene(const CMappedFeat& feat,
+                            EBestGeneType lookup_type = eBestGene_TreeOnly);
+
 public:
     class CFeatInfo {
     public:
@@ -282,9 +291,8 @@ public:
             eIsLinkedToRoot_linking
         };
         Int1 m_IsLinkedToRoot;
-        Uint1 m_ParentQuality;
         CFeatInfo* m_Parent;
-        Int8 m_ParentOverlap;
+        CFeatInfo* m_Gene;
         TChildren m_Children;
     };
     typedef vector<CFeatInfo*> TFeatArray;
@@ -316,6 +324,12 @@ protected:
                                   TFeatArray& parents);
     bool x_AssignParentByRef(CFeatInfo& info);
 
+    void x_AssignGeneToChildren(CFeatInfo& parent_feat,
+                                CFeatInfo& gene_feat);
+    void x_AssignGenesByOverlap(TFeatArray& features,
+                                TFeatArray& parents);
+    void x_AssignGenes(void);
+
     pair<int, CFeatInfo*>
     x_LookupParentByRef(CFeatInfo& info,
                         CSeqFeatData::ESubtype parent_type);
@@ -329,7 +343,7 @@ protected:
 
     typedef map<CSeq_feat_Handle, CFeatInfo> TInfoMap;
 
-    size_t m_AssignedParents;
+    size_t m_AssignedParents, m_AssignedGenes;
     TInfoMap m_InfoMap;
     CFeatInfo m_RootInfo;
     EFeatIdMode m_FeatIdMode;
@@ -346,14 +360,16 @@ NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestGeneForMrna(const CMappedFeat& mrna_feat,
                    CFeatTree* feat_tree = 0,
-                   const SAnnotSelector* base_sel = 0);
+                   const SAnnotSelector* base_sel = 0,
+                   CFeatTree::EBestGeneType lookup_type = CFeatTree::eBestGene_TreeOnly);
 
 
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestGeneForCds(const CMappedFeat& cds_feat,
                   CFeatTree* feat_tree = 0,
-                  const SAnnotSelector* base_sel = 0);
+                  const SAnnotSelector* base_sel = 0,
+                  CFeatTree::EBestGeneType lookup_type = CFeatTree::eBestGene_TreeOnly);
 
 
 NCBI_XOBJUTIL_EXPORT
@@ -388,7 +404,8 @@ NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestGeneForFeat(const CMappedFeat& feat,
                    CFeatTree* feat_tree = 0,
-                   const SAnnotSelector* base_sel = 0);
+                   const SAnnotSelector* base_sel = 0,
+                   CFeatTree::EBestGeneType lookup_type = CFeatTree::eBestGene_TreeOnly);
 
 
 NCBI_XOBJUTIL_EXPORT
