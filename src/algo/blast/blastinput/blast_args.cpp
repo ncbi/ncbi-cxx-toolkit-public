@@ -1544,9 +1544,6 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgNumThreads,
                            CArgDescriptions::eExcludes,
                            kArgRemote);
-    arg_desc.SetDependency(kArgNumThreads,
-                           CArgDescriptions::eExcludes,
-                           kArgSubject);
     arg_desc.SetCurrentGroup("");
 }
 
@@ -1556,6 +1553,13 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
     if (args.Exist(kArgNumThreads) &&
         args[kArgNumThreads].HasValue()) {  // could be cancelled by the exclusion in CRemoteArgs
         m_NumThreads = args[kArgNumThreads].AsInteger();
+
+        // This is temporarily ignored (per SB-635)
+        if (args.Exist(kArgSubject) && args[kArgSubject].HasValue()) {
+            m_NumThreads = CThreadable::kMinNumThreads;
+            LOG_POST(Warning << "'" << kArgNumThreads << "' is currently "
+                     << "ignored when '" << kArgSubject << "' is specified.");
+        }
     }
 }
 
