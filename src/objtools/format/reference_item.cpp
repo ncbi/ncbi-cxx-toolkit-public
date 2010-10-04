@@ -254,6 +254,52 @@ static void s_MergeDuplicates
         return;
     }
 
+    // see if merging is allowed (set sourcePubFuse)
+    bool sourcePubFuse = false;
+    {{
+        if( ctx.GetHandle().CanGetId() ) {
+            ITERATE( CBioseq_Handle::TId, it, ctx.GetHandle().GetId() ) {
+                CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
+                if( ! seqId.IsNull() ) {
+                    switch( seqId->Which() ) {
+                        case CSeq_id_Base::e_Gibbsq:
+                        case CSeq_id_Base::e_Gibbmt:
+                        case CSeq_id_Base::e_Embl:
+                        case CSeq_id_Base::e_Pir:
+                        case CSeq_id_Base::e_Swissprot:
+                        case CSeq_id_Base::e_Patent:        
+                        case CSeq_id_Base::e_Ddbj:
+                        case CSeq_id_Base::e_Prf:
+                        case CSeq_id_Base::e_Pdb:
+                        case CSeq_id_Base::e_Tpe:
+                        case CSeq_id_Base::e_Tpd:
+                        case CSeq_id_Base::e_Gpipe:
+                            // with some types, it's okay to merge
+                            sourcePubFuse = true;
+                            break;                        
+                        case CSeq_id_Base::e_Genbank:
+                        case CSeq_id_Base::e_Tpg:
+                            // Genbank allows merging only if it's the old-style 1 + 5 accessions
+                            if( NULL != seqId->GetTextseq_Id() &&
+                                seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
+                                    sourcePubFuse = true;
+                            }
+                            break;
+                        case CSeq_id_Base::e_not_set:
+                        case CSeq_id_Base::e_Local:
+                        case CSeq_id_Base::e_Other:
+                        case CSeq_id_Base::e_General:
+                        case CSeq_id_Base::e_Giim:                        
+                        case CSeq_id_Base::e_Gi:
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+    }}                        
+
     CReferenceItem::TReferences::iterator curr = refs.begin();
 
     while ( curr != refs.end() ) {
@@ -276,8 +322,8 @@ static void s_MergeDuplicates
             }
         }
 
-        // check for duplicate references
-        if( curr != refs.begin() ) {
+        // check for duplicate references (if merging is allowed)
+        if( sourcePubFuse && curr != refs.begin() ) {
             const CReferenceItem& prev_ref = **(curr-1);
 
             // use less-than operator to check for equality

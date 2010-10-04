@@ -1531,14 +1531,27 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                     continue;
                 }
             }
+
+            
         
             // handle gaps
-            TSeqPos feat_start = feat_loc->GetStart(eExtreme_Positional);
+            const TSeqPos feat_start = feat_loc->GetStart(eExtreme_Positional);
+            const TSeqPos feat_end   = feat_loc->GetStop (eExtreme_Positional);
+            const bool featIsGap = ( feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap );
             while (gap_it) {
+                const TSeqPos gap_start = gap_it.GetPosition();
+                const TSeqPos gap_end   = (gap_it.GetEndPosition() - 1);
+
+                // make sure this gap doesn't overlap with the feature, if the feature is a gap
+                if( featIsGap && (feat_start == gap_start) && (feat_end == gap_end) ) {
+                    ++gap_it;
+                    continue;
+                }
+
                 // if feature after gap first output the gap 
-                if ( feat_start >= gap_it.GetPosition() ) {
-                    // but don't output gaps of size zero (except: see showGapsOfSizeZero)
-                    if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
+                if ( feat_start >= gap_start ) {
+                    // but don't output gaps of size zero (except: see showGapsOfSizeZero's definition)
+                    if( showGapsOfSizeZero || (gap_start <= gap_end) ) {
                         item.Reset( s_NewGapItem(gap_it, ctx) );
                         out << item;
                     }

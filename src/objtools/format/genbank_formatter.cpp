@@ -682,6 +682,7 @@ void CGenbankFormatter::FormatComment
  IFlatTextOStream& text_os)
 {
     string strComment( comment.GetComment() ); 
+    replace( strComment.begin(), strComment.end(), '\"', '\'' );
     bool bHtml = GetContext().GetConfig().DoHTML();
     if ( bHtml ) {
         s_GenerateWeblinks( "http", strComment );

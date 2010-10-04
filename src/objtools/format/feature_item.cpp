@@ -1140,7 +1140,10 @@ void CFeatureItem::x_AddQualSeqfeatNote()
             bool bAddPeriod = RemovePeriodFromEnd( comment, true );
             ConvertQuotes(comment);
             CRef<CFlatStringQVal> seqfeat_note( new CFlatStringQVal( comment ) );
-            if ( bAddPeriod &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
+//            if ( bAddPeriod &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
+            // careful! Period must be removed if we have a valid eFQ_prot_desc
+            // Examples to test some cases: AB001488, M96268
+            if ( bAddPeriod ) { 
                 seqfeat_note->SetAddPeriod();
             }
             x_AddQual( eFQ_seqfeat_note, seqfeat_note );
@@ -3743,9 +3746,12 @@ void CFeatureItem::x_CleanQuals(
         }
     }
 
-
-    if (prot_desc == NULL) {
-//        had_prot_desc = false;
+    // if there is a prot_desc, then we don't add a period to seqfeat_note
+    // (Obviously, this part must come after the part that cleans up
+    // the prot_descs, otherwise we may think we have a prot_desc, when the
+    // prot_desc is actually to be removed )
+    if( note != NULL && x_GetStringQual(eFQ_prot_desc ) ) {
+        const_cast<CFlatStringQVal*>(note)->SetAddPeriod( false );
     }
 }
 

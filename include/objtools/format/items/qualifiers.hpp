@@ -242,7 +242,7 @@ public:
                 TFlags flags) const;
 
     const string& GetValue(void) const { return m_Value; }
-    void SetAddPeriod(void) { m_AddPeriod = IFlatQVal::fAddPeriod; }
+    void SetAddPeriod( bool addPeriod = true ) { m_AddPeriod = ( addPeriod ? IFlatQVal::fAddPeriod : 0 ); }
 
 protected:
     mutable string    m_Value;

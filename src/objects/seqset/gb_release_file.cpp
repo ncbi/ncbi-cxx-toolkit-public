@@ -56,7 +56,7 @@ public:
     typedef CGBReleaseFile::ISeqEntryHandler*   THandler;
 
     CGBReleaseFileImpl(const string& file_name);
-	CGBReleaseFileImpl(CObjectIStream& in);
+    CGBReleaseFileImpl(CObjectIStream& in);
 
     void Read(void);
     void RegisterHandler(THandler handler);
