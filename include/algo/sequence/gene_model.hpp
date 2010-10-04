@@ -52,11 +52,8 @@ public:
         fCreateGene          = 0x01,
         fCreateMrna          = 0x02,
         fCreateCdregion      = 0x04,
-        fPromoteAllFeatures  = 0x08,
-        fPropagateOnly       = 0x10,
-        fForceTranslateCds   = 0x20,
-        fForceTranscribeMrna = 0x40,
-        fDensegAsExon        = 0x80,
+        fForceTranslateCds   = 0x08,
+        fForceTranscribeMrna = 0x10,
 
         fDefaults = fCreateGene | fCreateMrna | fCreateCdregion
     };
