@@ -54,6 +54,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // forward declarations
 class CSeq_loc;
+class CSeq_interval;
+
 
 class NCBI_SEQALIGN_EXPORT CDense_seg : public CDense_seg_Base
 {
@@ -147,6 +149,8 @@ public:
 
     static void SetReserveHooks(CObjectIStream& in);
     static void SetGlobalReserveHooks(void);
+
+    CRef<CSeq_interval> CreateRowSeq_interval(TDim row) const;
 
 protected:
     TNumseg x_FindSegment(TDim row, TSignedSeqPos pos) const;

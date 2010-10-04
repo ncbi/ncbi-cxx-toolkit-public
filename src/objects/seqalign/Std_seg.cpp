@@ -287,6 +287,19 @@ void CStd_seg::RemapToLoc(TDim row,
 }
 
 
+CRef<CSeq_loc> CStd_seg::CreateRowSeq_loc(TDim row) const
+{
+    if (GetDim() <= row) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+            "Invalid row number in CreateRowSeq_interval(): " +
+            NStr::IntToString(row));
+    }
+    CRef<CSeq_loc> ret(new CSeq_loc);
+    ret->Assign(*GetLoc()[row]);
+    return ret;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

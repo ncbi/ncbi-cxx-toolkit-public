@@ -271,6 +271,8 @@ public:
                                     const CSeq_loc& dst_loc,
                                     bool ignore_strand = false);
 
+    CRef<CSeq_loc> CreateRowSeq_loc(TDim row) const;
+
 protected:
     /// retrieve a named score object
     CConstRef<CScore> x_GetNamedScore(const string& name) const;

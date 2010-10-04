@@ -52,6 +52,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_interval;
+
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SEQALIGN_EXPORT CDense_diag : public CDense_diag_Base
 {
@@ -74,6 +76,8 @@ public:
 
     /// Offset row's coords
     void OffsetRow(TDim row, TSignedSeqPos offset);
+
+    CRef<CSeq_interval> CreateRowSeq_interval(TDim row) const;
 
 private:
     // Prohibit copy constructor and assignment operator

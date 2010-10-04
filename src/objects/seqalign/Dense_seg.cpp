@@ -1372,6 +1372,63 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
 }
 
 
+CRef<CSeq_interval> CDense_seg::CreateRowSeq_interval(TDim row) const
+{
+    if (GetDim() <= row) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+            "Invalid row number in CreateRowSeq_interval(): " +
+            NStr::IntToString(row));
+    }
+    CRef<CSeq_interval> ret(new CSeq_interval);
+    TSeqPos from = kInvalidSeqPos;
+    TSeqPos to = 0;
+    TSeqPos plus_len = 0;
+    TSeqPos minus_len = 0;
+    ret->SetId().Assign(*GetIds()[row]);
+    for (int seg = 0; seg < GetNumseg(); seg++) {
+        int idx = seg*GetDim() + row;
+        int start = GetStarts()[idx];
+        if (start < 0) {
+            continue;
+        }
+        if (TSeqPos(start) < from) {
+            from = TSeqPos(start);
+        }
+        TSeqPos len = GetLens()[seg];
+        if (start + len > to) {
+            to = start + len;
+        }
+        if ( !IsSetStrands()  ||  !IsReverse(GetStrands()[idx]) ) {
+            plus_len += len;
+        }
+        else {
+            minus_len += len;
+        }
+    }
+    if (from == kInvalidSeqPos  ||  to == 0) {
+        NCBI_THROW(CSeqalignException, eOutOfRange,
+            "Can not convert row to seq-interval - invalid from/to value");
+    }
+    ret->SetFrom(from);
+    ret->SetTo(to - 1);
+    if ( IsSetStrands() ) {
+        // If more than 2/3 of the segment is on plus, use plus strand
+        if (plus_len >= minus_len*2) {
+            ret->SetStrand(eNa_strand_plus);
+        }
+        // If more than 2/3 is on minus, use minus strand
+        else if (plus_len*2 < minus_len) {
+            ret->SetStrand(eNa_strand_minus);
+        }
+        // Otherwise set strand to 'both'
+        else {
+            ret->SetStrand(eNa_strand_both);
+        }
+    }
+    return ret;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Read hooks to reserve memory of Dense-seg vector<> to estimated size.
 /////////////////////////////////////////////////////////////////////////////

@@ -48,6 +48,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_interval;
+
 class NCBI_SEQALIGN_EXPORT CStd_seg : public CStd_seg_Base
 {
     typedef CStd_seg_Base Tparent;
@@ -78,6 +80,7 @@ public:
                                     const CSeq_loc& dst_loc,
                                     bool ignore_strand = false);
 
+    CRef<CSeq_loc> CreateRowSeq_loc(TDim row) const;
 
 private:
     // Prohibit copy constructor and assignment operator

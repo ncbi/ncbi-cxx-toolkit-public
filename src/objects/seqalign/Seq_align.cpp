@@ -1416,6 +1416,68 @@ TSeqPos CSeq_align::GetAlignLength(bool include_gaps) const
 }
 
 
+CRef<CSeq_loc> CSeq_align::CreateRowSeq_loc(TDim row) const
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    switch (GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Dendiag:
+        {
+            ITERATE(TSegs::TDendiag, it, GetSegs().GetDendiag()) {
+                loc->SetPacked_int().Set().push_back(
+                    (*it)->CreateRowSeq_interval(row));
+            }
+            break;
+        }
+    case CSeq_align::TSegs::e_Denseg:
+        {
+            loc->SetInt(*GetSegs().GetDenseg().CreateRowSeq_interval(row));
+            break;
+        }
+    case CSeq_align::TSegs::e_Std:
+        {
+            ITERATE(TSegs::TStd, it, GetSegs().GetStd()) {
+                // Std-seg may contain empty locations, so
+                // we have to use mix rather than packed-int.
+                loc->SetMix().Set().push_back(
+                    (*it)->CreateRowSeq_loc(row));
+            }
+            break;
+        }
+    case CSeq_align::TSegs::e_Disc:
+        {
+            ITERATE(TSegs::TDisc::Tdata, it, GetSegs().GetDisc().Get()) {
+                loc->SetMix().Set().push_back((*it)->CreateRowSeq_loc(row));
+            }
+            break;
+        }
+    case CSeq_align::TSegs::e_Spliced:
+        {
+            if (row > 1) {
+                NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                           "CSeq_align::CreateRowSeq_loc() - row number must "
+                           "be 0 or 1 for spliced-segs.");
+            }
+            const CSpliced_seg& spl = GetSegs().GetSpliced();
+            ITERATE(TSegs::TSpliced::TExons, ex, spl.GetExons()) {
+                // Spliced-seg may be required to get seq-id if
+                // it's not set in the exon.
+                loc->SetPacked_int().Set().push_back(
+                    (*ex)->CreateRowSeq_interval(row, spl));
+            }
+            break;
+        }
+    case CSeq_align::TSegs::e_Packed:
+    case CSeq_align::TSegs::e_Sparse:
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::CreateRowSeq_loc() currently does not handle "
+                   "this type of alignment.");
+        break;
+    }
+    return loc;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

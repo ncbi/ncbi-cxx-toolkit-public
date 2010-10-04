@@ -42,12 +42,16 @@
 
 // generated includes
 #include <objects/seqalign/Spliced_exon_.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+class CSeq_interval;
+class CSpliced_seg;
 
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SEQALIGN_EXPORT CSpliced_exon : public CSpliced_exon_Base
@@ -58,6 +62,9 @@ public:
     CSpliced_exon(void);
     // destructor
     ~CSpliced_exon(void);
+
+    CRef<CSeq_interval> CreateRowSeq_interval(CSeq_align::TDim    row,
+                                              const CSpliced_seg& seg) const;
 
 private:
     // Prohibit copy constructor and assignment operator

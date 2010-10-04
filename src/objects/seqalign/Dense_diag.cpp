@@ -40,6 +40,9 @@
 // generated includes
 #include <objects/seqalign/Dense_diag.hpp>
 
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -105,6 +108,23 @@ ENa_strand CDense_diag::GetSeqStrand(TDim row) const
     return GetStrands()[row];
 }
 
+
+CRef<CSeq_interval> CDense_diag::CreateRowSeq_interval(TDim row) const
+{
+    if (GetDim() <= row) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+            "Invalid row number in CreateRowSeq_interval(): " +
+            NStr::IntToString(row));
+    }
+    CRef<CSeq_interval> ret(new CSeq_interval);
+    ret->SetId().Assign(*GetIds()[row]);
+    ret->SetFrom(GetStarts()[row]);
+    ret->SetTo(GetStarts()[row] + GetLen());
+    if ( IsSetStrands() ) {
+        ret->SetStrand(GetStrands()[row]);
+    }
+    return ret;
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
