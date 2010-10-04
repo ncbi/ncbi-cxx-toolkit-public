@@ -628,7 +628,9 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
             buffer->results.push_back(res);
             res.length = vol->GetSequence(vol_oid++, &seq, locked);
         } 
-        //cout << CThread::GetSelf()-1 << ": " << buffer->results.size() << " | " << oid << endl;
+        if (res.length >= 0) {
+            m_Atlas.RetRegion(seq);
+        }
         return;
     } 
 
