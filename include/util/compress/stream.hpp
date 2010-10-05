@@ -169,6 +169,8 @@ protected:
     /// Return number of output bytes.
     unsigned long x_GetOutputSize(CCompressionStream::EDirection dir);
 
+    DECLARE_OPERATOR_BOOL((void *)*this != 0);
+
 protected:
     CNcbiIos*                    m_Stream;    ///< Underlying stream.
     CCompressionStreambuf*       m_StreamBuf; ///< Stream buffer.
@@ -278,6 +280,8 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eRead);
     };
+    /// Test if no stream operation has failed
+    DECLARE_OPERATOR_BOOL((void *)*this != 0);
 
 protected:
     /// Default constructor.
@@ -337,6 +341,8 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
+    /// Test if no stream operation has failed
+    DECLARE_OPERATOR_BOOL((void *)*this != 0);
 
 protected:
     /// Default constructor.
@@ -393,6 +399,8 @@ public:
     unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
     };
+    /// Test if no stream operation has failed
+    DECLARE_OPERATOR_BOOL((void *)*this != 0);
 
 protected:
     /// Default constructor.
