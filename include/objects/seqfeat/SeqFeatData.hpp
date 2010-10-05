@@ -268,6 +268,7 @@ public:
         eQual_germline,
         eQual_haplogroup,
         eQual_haplotype,
+        eQual_heterogen,
         eQual_host,
         eQual_identified_by,
         eQual_inference,

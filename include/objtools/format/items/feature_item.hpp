@@ -221,6 +221,7 @@ protected:
     void x_AddQualsRegion( CBioseqContext& );
     void x_AddQualsProt( CBioseqContext&, bool );
     void x_AddQualsPsecStr( CBioseqContext& );
+    void x_AddQualsHet( CBioseqContext& ctx );
 
     void x_AddQuals( CBioseqContext& ctx );
     void x_AddQuals(const CProt_ref& prot);

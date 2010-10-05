@@ -155,7 +155,7 @@ static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(Num, num, "Num", "misc_feature"),
     FEAT_INFO_PAIR(Psec_str, psec_str, "SecStr", "SecStr"),
     FEAT_INFO_PAIR(Non_std_residue, non_std_residue, "NonStdRes", "misc_feature"),
-    FEAT_INFO_PAIR(Het, het, "Het", "misc_binding"),
+    FEAT_INFO_PAIR(Het, het, "Het", "Het"),
     FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source"),
     FEAT_INFO_PAIR(Clone, clone, "CloneRef", "misc_feature"),
     FEAT_INFO_PAIR(Variation, variation_ref, "Variation", "misc_feature")
@@ -627,6 +627,7 @@ START_SUBTYPE(sig_peptide_aa)
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(name);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
@@ -2234,6 +2235,7 @@ START_SUBTYPE(het)  //  same as misc_feature
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
+    ADD_QUAL(heterogen);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);

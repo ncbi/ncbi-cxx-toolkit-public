@@ -223,6 +223,11 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
     default:
         m_DBSource.push_back("UNKNOWN");
     }
+
+    // turn double-quotes to single-quotes in all m_DBSources
+    NON_CONST_ITERATE( list<string>, it, m_DBSource ) {
+        replace( it->begin(), it->end(), '\"', '\'' );
+    }
 }
 
 void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)

@@ -1593,6 +1593,9 @@ void CFeatureItem::x_AddQuals(
     case CSeqFeatData::e_Psec_str:
         x_AddQualsPsecStr( ctx );
         break;
+    case CSeqFeatData::e_Het:
+        x_AddQualsHet( ctx );
+        break;
     default:
         break;
     }
@@ -2509,6 +2512,20 @@ void CFeatureItem::x_AddQualsPsecStr(
 
     string sec_str_as_str = CSeqFeatData_Base::GetTypeInfo_enum_EPsec_str()->FindName( sec_str_type, true );
     x_AddQual( eFQ_sec_str_type, new CFlatStringQVal( sec_str_as_str ) );
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsHet(
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT( m_Feat.GetData().IsHet() );
+
+    const CSeqFeatData& data = m_Feat.GetData();
+
+    CSeqFeatData_Base::THet het = data.GetHet();
+
+    x_AddQual( eFQ_heterogen, new CFlatStringQVal( het.Get() ) );
 }
 
 static const string& s_GetSiteName(CSeqFeatData::TSite site)
@@ -3797,7 +3814,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_go_component, CSeqFeatData::eQual_note),
     TQualPair(eFQ_go_function, CSeqFeatData::eQual_note),
     TQualPair(eFQ_go_process, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_heterogen, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_heterogen, CSeqFeatData::eQual_heterogen),
     TQualPair(eFQ_illegal_qual, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_inference, CSeqFeatData::eQual_inference),
     TQualPair(eFQ_label, CSeqFeatData::eQual_label),

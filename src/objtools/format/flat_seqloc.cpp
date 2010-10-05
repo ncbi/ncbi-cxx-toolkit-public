@@ -137,6 +137,9 @@ bool CFlatSeqLoc::x_Add
         }
     }
 
+    // some later logic needs to know we're inside an "order"
+    const bool is_flat_order = ( NStr::EqualCase( prefix, "order(" ) );
+
     // handle each location component
     switch ( loc.Which() ) {
     case CSeq_loc::e_Null:
@@ -179,6 +182,8 @@ bool CFlatSeqLoc::x_Add
     }}
     case CSeq_loc::e_Packed_int:
     {{
+        // Note: At some point, we should add the "join inside order" logic here (like for the e_Mix case), but since I didn't immediately find a 
+        // test case in the repository, I'm taking the conservative approach and leaving it alone for now.
         oss << prefix;
         const char* delim = "";
         ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
@@ -224,10 +229,7 @@ bool CFlatSeqLoc::x_Add
     {{
          /// odd corner case:
          /// a mix with one interval should not have a prefix
-         CSeq_loc_CI::EEmptyFlag empty =
-             ((type == eType_location) ?
-              CSeq_loc_CI::eEmpty_Skip : CSeq_loc_CI::eEmpty_Allow);
-         CSeq_loc_CI it(loc, empty);
+         CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Allow);
          ++it;
          bool has_one = !it;
          it.Rewind();
@@ -236,13 +238,49 @@ bool CFlatSeqLoc::x_Add
          if ( !has_one ) {
              oss << prefix;
          }
-         for ( CSeq_loc_CI it(loc, empty); it; ++it ) {
+         bool join_inside_order = false; // true when we're inside a join() inside an order()
+         bool first_loop_iteration = true; // certain special things are done the first time through the loop
+         bool next_is_virtual = ( !it || it.GetSeq_loc().IsNull() || s_IsVirtualLocation( it.GetSeq_loc(), seq ) );
+         for (  ; it; ++it ) {
              oss << delim;
-             if (!x_Add(it.GetSeq_loc(), oss, ctx, type, show_comp)) {
+
+             const CSeq_loc& this_loc = it.GetSeq_loc();
+
+             // save some work by using what was done on the last loop iteration
+             // (this is set before the loop on the first iteration)
+             const bool this_is_virtual = next_is_virtual; 
+
+             // get iterator to next one
+             CSeq_loc_CI next = it;
+             ++next;
+             // add or end a "join" part inside an "order"
+             next_is_virtual = ( ! next || next.GetSeq_loc().IsNull() || s_IsVirtualLocation( next.GetSeq_loc(), seq ) );
+             if( is_flat_order ) {
+                 if( join_inside_order && this_is_virtual ) {
+                     oss << ')';
+                     join_inside_order = false;
+                 } else if( this_loc.IsInt() && ! join_inside_order && ! next_is_virtual ) {
+                     oss << "join(";
+                     join_inside_order = true;
+                 }
+             }
+
+             // skip gaps, etc.
+             if( this_is_virtual ) {
                  delim = "";
              } else {
-                 delim = ", \b";
+                 // add the actual location
+                 if (!x_Add(this_loc, oss, ctx, type, show_comp)) {
+                     delim = "";
+                 } else {
+                     delim = ", \b";
+                 }
              }
+
+             first_loop_iteration = false;
+         }
+         if( join_inside_order ) {
+             oss << ')';
          }
          if ( !has_one ) {
              oss << ')';
@@ -277,6 +315,7 @@ bool CFlatSeqLoc::x_Add
             x_Add(bond.GetB(), oss, ctx, type, show_comp);
         }
         oss << ")";
+        break;
     }}
     case CSeq_loc::e_Feat:
     default:
