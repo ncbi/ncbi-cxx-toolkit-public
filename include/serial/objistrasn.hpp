@@ -77,8 +77,21 @@ public:
     ///   when the reader is deleted
     /// @param how
     ///   Defines how to fix unprintable characters in ASN VisiableString
-    CObjectIStreamAsn(CNcbiIstream& in,
+    NCBI_DEPRECATED_CTOR(CObjectIStreamAsn(CNcbiIstream& in,
                       bool deleteIn,
+                      EFixNonPrint how = eFNP_Default));
+
+    /// Constructor.
+    ///
+    /// @param in
+    ///   input stream    
+    /// @param deleteIn
+    ///   When eTakeOwnership, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
+    CObjectIStreamAsn(CNcbiIstream& in,
+                      EOwnership deleteIn,
                       EFixNonPrint how = eFNP_Default);
 
     /// Constructor.

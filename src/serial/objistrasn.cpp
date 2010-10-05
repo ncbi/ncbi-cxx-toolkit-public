@@ -70,6 +70,14 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      EFixNonPrint how)
     : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
 {
+    Open(in, deleteIn ? eTakeOwnership : eNoOwnership);
+}
+
+CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
+                                     EOwnership deleteIn,
+                                     EFixNonPrint how)
+    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
+{
     Open(in, deleteIn);
 }
 

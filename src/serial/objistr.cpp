@@ -446,6 +446,12 @@ void CObjectIStream::Open(CNcbiIstream& inStream, bool deleteInStream)
     Open(*src);
 }
 
+void CObjectIStream::Open(CNcbiIstream& inStream, EOwnership deleteInStream)
+{
+    CRef<CByteSource> src = GetSource(inStream, deleteInStream == eTakeOwnership);
+    Open(*src);
+}
+
 void CObjectIStream::ResetLocalHooks(void)
 {
     CMutexGuard guard(GetTypeInfoMutex());

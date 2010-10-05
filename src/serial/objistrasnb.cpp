@@ -93,6 +93,21 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
+    Open(in, deleteIn ? eTakeOwnership : eNoOwnership);
+}
+
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
+                                                 EOwnership deleteIn,
+                                                 EFixNonPrint how)
+    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+{
+#if CHECK_INSTREAM_STATE
+    m_CurrentTagState = eTagStart;
+#endif
+#if CHECK_INSTREAM_LIMITS
+    m_CurrentTagLimit = 0;
+#endif
+    m_CurrentTagLength = 0;
     Open(in, deleteIn);
 }
 

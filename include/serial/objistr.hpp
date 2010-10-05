@@ -231,7 +231,16 @@ public:
     /// @param deleteInStream
     ///   When TRUE, the input stream will be deleted automatically
     ///   when the reader is deleted
-    void Open(CNcbiIstream& inStream, bool deleteInStream = false);
+    void NCBI_DEPRECATED Open(CNcbiIstream& inStream, bool deleteInStream);
+
+    /// Attach reader to an input stream
+    ///
+    /// @param inStream
+    ///   Input stream
+    /// @param deleteInStream
+    ///   When eTakeOwnership, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    void Open(CNcbiIstream& inStream, EOwnership deleteInStream = eNoOwnership);
 
     /// Attach reader to a data source
     ///
