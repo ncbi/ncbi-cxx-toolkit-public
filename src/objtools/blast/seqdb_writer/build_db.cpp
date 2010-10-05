@@ -1236,7 +1236,6 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
         }
         catch (...) {
             EndBuild(true);
-            // stop the upper layer from going further...
             throw;
         }
     }
@@ -1246,12 +1245,14 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
 bool CBuildDatabase::EndBuild(bool erase)
 {
     bool success = false;
+    bool can_not_close = false;
     
-    if (! erase) {
-        try {
-            m_OutputDb->Close();
-        } catch (...) {
+    try {
+        m_OutputDb->Close();
+    } catch (...) {
+        if (!erase) {
             erase = true;    
+            can_not_close = true;
         }
     }
 
@@ -1285,6 +1286,11 @@ bool CBuildDatabase::EndBuild(bool erase)
     }
     
     m_LogFile << endl;
+
+    if (can_not_close) {
+        NCBI_THROW(CWriteDBException, eArgErr,
+                   "Can not close files.");
+    }
     
     return success;
 }
