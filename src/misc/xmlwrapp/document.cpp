@@ -235,8 +235,22 @@ bool xml::document::has_internal_subset (void) const {
     return pimpl_->doc_->intSubset != 0;
 }
 //####################################################################
+const xml::dtd& xml::document::get_internal_subset (void) const {
+    if (!has_internal_subset())
+        throw xml::exception("The document does not have internal subset.");
+    pimpl_->internal_subset_.set_dtd_data(pimpl_->doc_->intSubset);
+    return pimpl_->internal_subset_;
+}
+//####################################################################
 bool xml::document::has_external_subset (void) const {
     return pimpl_->doc_->extSubset != 0;
+}
+//####################################################################
+const xml::dtd& xml::document::get_external_subset (void) const {
+    if (!has_external_subset())
+        throw xml::exception("The document does not have external subset.");
+    pimpl_->external_subset_.set_dtd_data(pimpl_->doc_->extSubset);
+    return pimpl_->external_subset_;
 }
 //####################################################################
 bool xml::document::validate (void) {
@@ -325,9 +339,9 @@ void xml::document::save_to_string (std::string &s) const {
     int xml_string_length;
 
     if (pimpl_->xslt_result_ != 0) {
-	pimpl_->xslt_result_->save_to_string(s);
+        pimpl_->xslt_result_->save_to_string(s);
 
-	return;
+        return;
     }
 
     const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
@@ -388,3 +402,4 @@ std::ostream& xml::operator<< (std::ostream &stream, const xml::document &doc) {
     return stream;
 }
 //####################################################################
+

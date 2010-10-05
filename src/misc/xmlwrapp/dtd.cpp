@@ -62,9 +62,10 @@ namespace {
 }
 
 struct xml::impl::dtd_impl {
-    dtd_impl (void) : dtd_(NULL) {}
+    dtd_impl () : dtd_(NULL), owned_(true) {}
 
     xmlDtdPtr       dtd_;
+    bool            owned_;
     error_messages  dtd_parser_messages_;
     error_messages  dtd_validation_messages_;
 };
@@ -106,9 +107,14 @@ dtd::dtd (const char* filename,
 }
 
 dtd::~dtd() {
-    if (pimpl_->dtd_)
+    if (pimpl_->owned_ && pimpl_->dtd_)
         xmlFreeDtd(pimpl_->dtd_);
     delete pimpl_;
+}
+
+void dtd::set_dtd_data (void *data) {
+    pimpl_->owned_ = false;
+    pimpl_->dtd_ = static_cast<xmlDtdPtr>(data);
 }
 
 bool dtd::validate (document& doc, warnings_as_errors_type how) {
@@ -161,6 +167,17 @@ const error_messages& dtd::get_validation_messages(void) const {
     return pimpl_->dtd_validation_messages_;
 }
 
+const char* dtd::get_public_id (void) const {
+    return reinterpret_cast<const char*>(pimpl_->dtd_->ExternalID);
+}
+
+const char* dtd::get_system_id (void) const {
+    return reinterpret_cast<const char*>(pimpl_->dtd_->SystemID);
+}
+
+const char* dtd::get_name (void) const {
+    return reinterpret_cast<const char*>(pimpl_->dtd_->name);
+}
 
 namespace {
     void register_error_helper (error_message::message_type mt,

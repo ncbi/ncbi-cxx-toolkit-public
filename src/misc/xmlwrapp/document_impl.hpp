@@ -44,6 +44,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/dtd.hpp>
 #include "node_manip.hpp"
 
 // standard includes
@@ -73,6 +74,8 @@ struct doc_impl {
     node root_;
     std::string version_;
     mutable std::string encoding_;
+    xml::dtd internal_subset_;
+    xml::dtd external_subset_;
 };
 
 } // namespace impl

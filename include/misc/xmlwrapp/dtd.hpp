@@ -126,14 +126,41 @@ public:
      * @return XML dtd validating error messages.
      * @author Sergey Satskiy, NCBI
     **/
-    const error_messages& get_validation_messages(void) const;
+    const error_messages& get_validation_messages (void) const;
+
+    /**
+     * Get the public ID.
+     *
+     * @return Public ID or NULL if not available
+     * @author Sergey Satskiy, NCBI
+    **/
+    const char* get_public_id (void) const;
+
+    /**
+     * Get the system ID.
+     *
+     * @return System ID or NULL if not available
+     * @author Sergey Satskiy, NCBI
+    **/
+    const char* get_system_id (void) const;
+
+    /**
+     * Get the name.
+     *
+     * @return Name or NULL if not available
+     * @author Sergey Satskiy, NCBI
+    **/
+    const char* get_name (void) const;
 
 private:
     impl::dtd_impl *pimpl_;
+    void set_dtd_data (void *data);
 
     // prohibited
     dtd (const dtd&);
     dtd& operator= (const dtd&);
+
+    friend class document;
 };
 
 } // xml namespace
