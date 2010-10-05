@@ -720,62 +720,70 @@ void CGenbankFormatter::FormatFeatHeader
 }
 
 //  ============================================================================
+bool s_GetFeatureKeyLinkLocation(
+    CMappedFeat feat,
+    unsigned int& iGi,
+    unsigned int& iFrom,                    // one based
+    unsigned int& iTo )                     // one based
+//  ============================================================================
+{
+    iGi = iFrom = iTo = 0;
+
+    CSeqFeatData::E_Choice type = feat.GetFeatType();
+    const CSeq_loc& loc = feat.GetLocation();
+    const CSeq_id* pId = loc.GetId();
+    
+    if ( ! iGi ) {
+        CSeq_id_Handle idh = feat.GetLocationId();
+        if ( idh && idh.IsGi() ) {
+            iGi = idh.GetGi();
+        }
+    }
+    iFrom = loc.GetStart( eExtreme_Positional ) + 1;
+    iTo = loc.GetStop( eExtreme_Positional ) + 1;
+    return true;
+}
+    
+//  ============================================================================
 string s_GetLinkFeatureKey( 
     const CFeatureItemBase& item,
     unsigned int uItemNumber = 0 )
 //  ============================================================================
 {
-    const string strLinkbaseNuc( "http://www.ncbi.nlm.nih.gov/nuccore/" );
-    const string strLinkbaseProt( "http://www.ncbi.nlm.nih.gov/protein/" );
-
     CConstRef<CFlatFeature> feat = item.Format();
     string strRawKey = feat->GetKey();
     if ( strRawKey == "source" || strRawKey == "gap" ) {
         return strRawKey;
     }
 
-    CBioseq_Handle bsh = item.GetContext()->GetHandle();
+    unsigned int iGi = 0, iFrom = 0, iTo = 0;
+    s_GetFeatureKeyLinkLocation( item.GetFeat(), iGi, iFrom, iTo );
+    CSeqFeatData::E_Choice type = item.GetFeat().GetFeatType();
+    if ( iFrom == 0 || iFrom == iTo ) {
+        return strRawKey;
+    }
 
-    // link base location:
+    // link base
     string strLinkbase;
-    if ( bsh.IsAa() ) {    
+    if ( CSeqFeatData::e_Prot == type ) {    
         strLinkbase += strLinkbaseProt;
     }
     else {
         strLinkbase += strLinkbaseNuc;
     }
 
-    // sequence id:
-    string strId = "0";
-    if ( bsh.CanGetId() ) {
-        vector< CSeq_id_Handle > ids = bsh.GetId();
-        ITERATE( vector< CSeq_id_Handle >, it, bsh.GetId() ) {
-            if ( it->IsGi() ) {
-                strId = NStr::IntToString( it->GetGi() );
-                break;
-            }
-        }
-    }
+    // id
+    string strId = NStr::IntToString( iGi );
 
-    // location on sequence:
-    string strLocation = "";
-    if ( strLocation .empty() ) {
-        const CSeq_loc& loc = item.GetLoc();
-        if ( loc.IsInt() && loc.GetInt().IsSetFrom() && loc.GetInt().IsSetTo() ) {
-            strLocation = "?from=";
-            strLocation += NStr::UIntToString( loc.GetInt().GetFrom() + 1 );
-            strLocation += "&amp;to=";
-            strLocation += NStr::UIntToString( loc.GetInt().GetTo() + 1 );
-        } 
-    }
-    if ( strLocation.empty() ) {
-        strLocation = "?itemid=";
-        strLocation += NStr::UIntToString( uItemNumber );
-    }
+    // location
+    string strLocation = "?from=";
+    strLocation += NStr::IntToString( iFrom );
+    strLocation += "&amp;to=";
+    strLocation += NStr::IntToString( iTo );
 
     // report style:
     string strReport( "&amp;report=gbwithparts" );
-    if ( bsh.IsAa() ) {
+    if ( CSeqFeatData::e_Prot == type ) {
         strReport = "&amp;report=gpwithparts";
     }
 
