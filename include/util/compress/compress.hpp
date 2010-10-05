@@ -296,7 +296,7 @@ public:
         eStatus_Overflow,
         /// Special value. Just need to repeat last action.
         eStatus_Repeat,
-        /// Special value, status is undefined.
+        /// Special value. Status is undefined.
         eStatus_Unknown
     };
 

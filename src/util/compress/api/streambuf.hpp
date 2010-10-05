@@ -94,6 +94,13 @@ protected:
     // Get stream processor's status
     bool IsStreamProcessorOkay(CCompressionStream::EDirection dir) const;
 
+    // Check that compression/stream processor for specified I/O direction
+    // already started to process or have data to process.
+    // Check that you have some data to process, before calling 
+    // any compression/decompression methods, or we can get 
+    // a garbage on the output.
+    bool IsStreamProcessorHaveData(CCompressionStream::EDirection dir) const;
+
     // Sync I/O buffers for the specified direction.
     // Return 0 if no error; otherwise, returns -1 (EOF).
     int Sync(CCompressionStream::EDirection dir);
@@ -176,6 +183,24 @@ inline bool CCompressionStreambuf::IsStreamProcessorOkay(
     return IsOkay()  &&  sp  &&   sp->m_Processor  &&
            sp->m_Processor->IsBusy()  &&
            sp->m_State != CCompressionStreamProcessor::eDone;
+}
+
+
+inline bool CCompressionStreambuf::IsStreamProcessorHaveData(
+            CCompressionStream::EDirection dir) const
+{
+    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    if (sp->m_State == CCompressionStreamProcessor::eInit) {
+        if (dir == CCompressionStream::eRead) {
+            return false;
+        } else { // eWrite
+            // No data in the buffer
+            if ((pptr() - pbase()) == 0) {
+                return false;
+            } 
+        }
+    }
+    return true;
 }
 
 

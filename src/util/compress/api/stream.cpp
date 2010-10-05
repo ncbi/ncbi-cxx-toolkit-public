@@ -70,20 +70,21 @@ CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
 
 void CCompressionStreamProcessor::Init(void)
 {
+    CCompressionProcessor::EStatus init_status = CCompressionProcessor::eStatus_Success;
     if ( m_Processor ) {
         if ( m_State == eDone ) {
-            m_Processor->Init();
+            init_status = m_Processor->Init();
         } else if (m_InBuf != 0) { // reinitializing
             m_Processor->End();    // avoid leaking memory
-            m_Processor->Init();
+            init_status = m_Processor->Init();
         }
     }
     m_InBuf         = 0;
     m_OutBuf        = 0;
     m_Begin         = 0;
     m_End           = 0;
-    m_LastStatus    = CCompressionProcessor::eStatus_Unknown;
-    m_State         = eActive;
+    m_LastStatus    = init_status;
+    m_State         = eInit;
 }
 
 

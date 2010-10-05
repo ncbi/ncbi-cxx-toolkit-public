@@ -197,6 +197,7 @@ public:
 
     /// Stream processor state.
     enum EState {
+        eInit,              ///< Init() is done, but no data to process.
         eActive,            ///< Processor ready to read/write.
         eFinalize,          ///< Finalize() already done, but End() not yet.
         eDone               ///< End() done, processor cannot process data.
@@ -277,8 +278,6 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eRead);
     };
-    /// Test if no stream operation has failed
-    DECLARE_OPERATOR_BOOL((void *)this != 0);
 
 protected:
     /// Default constructor.
@@ -338,8 +337,6 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
-    /// Test if no stream operation has failed
-    DECLARE_OPERATOR_BOOL((void *)this != 0);
 
 protected:
     /// Default constructor.
@@ -396,8 +393,6 @@ public:
     unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
     };
-    /// Test if no stream operation has failed
-    DECLARE_OPERATOR_BOOL((void *)this != 0);
 
 protected:
     /// Default constructor.

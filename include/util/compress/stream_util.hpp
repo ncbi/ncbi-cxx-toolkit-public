@@ -106,9 +106,6 @@ public:
     ///   but they can be overridden by using this parameter.
     CCompressIStream(CNcbiIstream& stream, EMethod method, 
                      ICompression::TFlags flags = fDefault);
-
-    /// Test if no stream operation has failed
-    DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
 
 
@@ -142,9 +139,6 @@ public:
     ///   but they can be overridden by using this parameter.
     CCompressOStream(CNcbiOstream& stream, EMethod method, 
                      ICompression::TFlags flags = fDefault);
-
-    /// Test if no stream operation has failed
-    DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
 
 
@@ -175,9 +169,6 @@ public:
     ///   but they can be overridden by using this parameter.
     CDecompressIStream(CNcbiIstream& stream, EMethod method, 
                        ICompression::TFlags flags = fDefault);
-
-    /// Test if no stream operation has failed
-    DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
 
 
@@ -211,9 +202,6 @@ public:
     ///   but they can be overridden by using this parameter.
     CDecompressOStream(CNcbiOstream& stream, EMethod method, 
                        ICompression::TFlags flags = fDefault);
-
-    /// Test if no stream operation has failed
-    DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
 
 
