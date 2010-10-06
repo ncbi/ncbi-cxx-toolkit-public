@@ -165,15 +165,14 @@ string CConn_Streambuf::x_Message(const char* msg)
     string result("CConn_Streambuf::");
     result += msg;
     result += " (";
-    result += IO_StatusStr(m_Status);
-    result += " @ ";
     result += type ? type : "UNKNOWN";
     if (descr) {
         result += "; ";
         result += descr;
         free(descr);
     }
-    result += ')';
+    result += "): ";
+    result += IO_StatusStr(m_Status);
     return result;
 }
 
