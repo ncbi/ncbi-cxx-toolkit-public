@@ -45,9 +45,12 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#define BUMP( x, y ) if ( x < (y) ) x = (y)
+
 //  ----------------------------------------------------------------------------
 CBedFeatureRecord::CBedFeatureRecord():
 //  ----------------------------------------------------------------------------
+    m_uColumnCount( 0 ),
     m_strChrom( "." ),
     m_strChromStart( "." ),
     m_strChromEnd( "." ),
@@ -175,36 +178,42 @@ bool CBedFeatureRecord::AssignDisplayData(
         }
         string strLabel = (*it)->GetLabel().GetStr();
         if ( strLabel == "name" ) {
+            BUMP( m_uColumnCount, 4 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsStr() ) {
                 m_strName = (*it)->GetData().GetStr();
             }
             continue;
         }
         if ( strLabel == "score" && ! bUseScore ) {
+            BUMP( m_uColumnCount, 5 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
                 m_strScore = NStr::UIntToString( (*it)->GetData().GetInt() );
             }
             continue;
         }
         if ( strLabel == "greylevel" && bUseScore ) {
+            BUMP( m_uColumnCount, 5 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
                 m_strScore = NStr::UIntToString( (*it)->GetData().GetInt() );
             }
             continue;
         }
         if ( strLabel == "thickStart" ) {
+            BUMP( m_uColumnCount, 7 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
                 m_strThickStart = NStr::UIntToString( (*it)->GetData().GetInt() + 1 );
             }
             continue;
         }
         if ( strLabel == "thickEnd" ) {
+            BUMP( m_uColumnCount, 8 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
                 m_strThickEnd = NStr::UIntToString( (*it)->GetData().GetInt() + 1 );
             }
             continue;
         }
         if ( strLabel == "itemRGB" ) {
+            BUMP( m_uColumnCount, 9 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
                 m_strItemRgb = NStr::UIntToString( (*it)->GetData().GetInt() );
                 continue;
@@ -216,18 +225,21 @@ bool CBedFeatureRecord::AssignDisplayData(
             continue;
         }
         if ( strLabel == "blockCount" ) {
+            BUMP( m_uColumnCount, 10 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
                 m_strBlockCount = NStr::UIntToString( (*it)->GetData().GetInt() );
             }
             continue;
         }
         if ( strLabel == "blockSizes" ) {
+            BUMP( m_uColumnCount, 11 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsStr() ) {
                 m_strBlockSizes = (*it)->GetData().GetStr();
             }
             continue;
         }
         if ( strLabel == "blockStarts" ) {
+            BUMP( m_uColumnCount, 12 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsStr() ) {
                 m_strBlockStarts = (*it)->GetData().GetStr();
             }
@@ -235,6 +247,7 @@ bool CBedFeatureRecord::AssignDisplayData(
         }
     }
     return true;
+
 }
 
 //  ----------------------------------------------------------------------------
@@ -251,6 +264,7 @@ bool CBedFeatureRecord::AssignLocation(
     if ( interval.IsSetTo() ) {
         m_strChromEnd = NStr::UIntToString( interval.GetTo() + 1 );
     }
+    BUMP( m_uColumnCount, 3 );
     if ( interval.IsSetStrand() ) {
         switch ( interval.GetStrand() ) {
         default:
@@ -262,6 +276,7 @@ bool CBedFeatureRecord::AssignLocation(
             m_strStrand = "-";
             break;
         }
+        BUMP( m_uColumnCount, 6 );
     }
     return true;
 }

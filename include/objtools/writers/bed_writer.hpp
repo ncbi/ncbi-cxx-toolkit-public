@@ -63,7 +63,8 @@ protected:
         const CBedTrackRecord& );
 
     virtual bool x_WriteRecord( 
-        const CBedFeatureRecord& );
+        const CBedFeatureRecord&,
+        size_t = 12 );
 
     virtual SAnnotSelector x_GetAnnotSelector();
 

@@ -75,7 +75,10 @@ public:
 
     string BlockStarts() const;   
 
+    size_t ColumnCount() const { return m_uColumnCount; };
+
 protected:
+    size_t m_uColumnCount;
     string m_strChrom;
     string m_strChromStart;
     string m_strChromEnd; 

@@ -92,6 +92,7 @@ bool CBedWriter::x_WriteAnnotFTable(
     SAnnotSelector sel = x_GetAnnotSelector();
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
     CBedFeatureRecord record;
+    size_t uColumnCount = 0;
     for ( CFeat_CI pMf( sah, sel ); pMf; ++pMf ) {
         if ( ! record.AssignDisplayData( *pMf, track.UseScore() ) ) {
             continue;
@@ -107,7 +108,11 @@ bool CBedWriter::x_WriteAnnotFTable(
             list< CRef< CSeq_interval > >::const_iterator it;
             for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
                 if ( record.AssignLocation( **it ) ) {
-                    x_WriteRecord( record );
+                    if ( 0 == uColumnCount ) {
+                        uColumnCount = record.ColumnCount();
+                        // per spec, same number of columns for each record
+                    }
+                    x_WriteRecord( record, uColumnCount );
                 }
             }
         }
@@ -154,21 +159,41 @@ bool CBedWriter::x_WriteRecord(
 
 //  ----------------------------------------------------------------------------
 bool CBedWriter::x_WriteRecord( 
-    const CBedFeatureRecord& record )
+    const CBedFeatureRecord& record,
+    size_t uColumnCount )
 //  ----------------------------------------------------------------------------
 {
-    m_Os << record.Chrom() << "\t";
-    m_Os << record.ChromStart() << "\t";
-    m_Os << record.ChromEnd() << "\t";
-    m_Os << record.Name() << "\t";
-    m_Os << record.Score() << "\t";
-    m_Os << record.Strand() << "\t";
-    m_Os << record.ThickStart() << "\t";
-    m_Os << record.ThickEnd() << "\t";
-    m_Os << record.ItemRgb() << "\t";
-    m_Os << record.BlockCount() << "\t";
-    m_Os << record.BlockSizes() << "\t";
-    m_Os << record.BlockStarts() << endl;
+    m_Os << record.Chrom();
+    m_Os << "\t" << record.ChromStart();
+    m_Os << "\t" << record.ChromEnd();
+    if ( uColumnCount >= 4 ) {
+        m_Os << "\t" << record.Name();
+    }
+    if ( uColumnCount >= 5 ) {
+        m_Os << "\t" << record.Score();
+    }
+    if ( uColumnCount >= 6 ) {
+        m_Os << "\t" << record.Strand();
+    }
+    if ( uColumnCount >= 7 ) {
+        m_Os << "\t" << record.ThickStart();
+    }
+    if ( uColumnCount >= 8 ) {
+        m_Os << "\t" << record.ThickEnd();
+    }
+    if ( uColumnCount >= 9 ) {
+        m_Os << "\t" << record.ItemRgb();
+    }
+    if ( uColumnCount >= 10 ) {
+        m_Os << "\t" << record.BlockCount();
+    }
+    if ( uColumnCount >= 11 ) {
+        m_Os << record.BlockSizes();
+    }
+    if ( uColumnCount >= 12 ) {
+        m_Os << "\t" << record.BlockStarts();
+    }
+    m_Os << endl;
     return true;
 }
 
