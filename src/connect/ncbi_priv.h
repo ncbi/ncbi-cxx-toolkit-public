@@ -242,17 +242,17 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 /* Here are only error codes used in C sources. For error codes used in
  * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
  */
-NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  32);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_MetaConn,   302,   2);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,  14);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,      304,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,   4);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,    306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,       307,  20);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,       307,  18);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LB,         308,   0);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail,   309,  31);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,    310,   8);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,     311, 147);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,     311, 149);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,      312,   6);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet,   313,  11);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,      319,  16);
