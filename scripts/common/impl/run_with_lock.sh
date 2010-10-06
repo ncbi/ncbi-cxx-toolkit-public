@@ -46,7 +46,7 @@ if "$get_lock" "$base" $$; then
             mv "$logfile.new" "$logfile"
         fi
         if [ -s "$status_file" ]; then
-            status=`cat "$status_file"`
+            status=`tr -d '\n\r' < "$status_file"`
         else
             status=1
         fi
