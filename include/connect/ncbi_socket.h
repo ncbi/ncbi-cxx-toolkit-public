@@ -1313,7 +1313,7 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
  * @param handle_size
  *  [in]  the exact(!) size of the expected OS handle
  * @sa
- *   SOCK_OSHandleSize
+ *  SOCK_OSHandleSize
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
 (SOCK   sock,
