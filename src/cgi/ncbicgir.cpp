@@ -372,9 +372,16 @@ void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
                                      const string& domain, const string& path,
                                      const CTime& exp_time)
 {
-    m_TrackingCookie.reset(new CCgiCookie(name,value,domain,path));
-    if (!exp_time.IsEmpty())
+    m_TrackingCookie.reset(new CCgiCookie(name, value, domain, path));
+    if ( !exp_time.IsEmpty() ) {
         m_TrackingCookie->SetExpTime(exp_time);
+    }
+    else {
+        // Set the cookie for one year by default.
+        CTime def_exp(CTime::eCurrent);
+        def_exp.AddYear(1);
+        m_TrackingCookie->SetExpTime(def_exp);
+    }
 }
 
 

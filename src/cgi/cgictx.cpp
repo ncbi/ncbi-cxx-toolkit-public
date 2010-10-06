@@ -389,12 +389,21 @@ static inline bool s_CheckRequestEntryForTID(const CCgiRequest* request,
 
 string CCgiContext::RetrieveTrackingId() const
 {
-    if(TCGI_DisableTrackingCookie::GetDefault()) 
+    if ( TCGI_DisableTrackingCookie::GetDefault() )
         return "";
     if ( !m_TrackingId.empty() ) {
         // Use cached value
         return m_TrackingId;
     }
+
+    static const string cookie_or_entry_name_1("WebCubbyUser");
+    static const string cookie_or_entry_name_2("WebEnv");
+
+    // The order of checking SID is:
+    // - Check entries (GET and POST) for ncbi_sid.
+    // - Check cookies for WebCubbyUser, ncbi_sid and WebEnv.
+    // - Check entries for WebCubbyUser and WebEnv.
+    // - Generate a new SID.
 
     bool is_found = false;
     const CCgiEntry* entry =
@@ -404,21 +413,16 @@ string CCgiContext::RetrieveTrackingId() const
     }
 
     const CCgiCookies& cookies = m_Request->GetCookies();
-
-    static const string cookie_or_entry_name_1("WebCubbyUser");
-    static const string cookie_or_entry_name_2("WebEnv");
-
     string tid;
+
     if (s_CheckCookieForTID(cookies, cookie_or_entry_name_1, tid))
         return tid;
-    if (s_CheckCookieForTID(cookies, cookie_or_entry_name_2, tid))
-        return tid;
-
     const CCgiCookie* cookie = cookies.Find(
         TCGI_TrackingCookieName::GetDefault(), kEmptyStr, kEmptyStr);
-
     if (cookie)
         return cookie->GetValue();
+    if (s_CheckCookieForTID(cookies, cookie_or_entry_name_2, tid))
+        return tid;
 
     if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_1, tid))
         return tid;
