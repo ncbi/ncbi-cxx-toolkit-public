@@ -77,6 +77,8 @@ public:
     ///   when the reader is deleted
     /// @param how
     ///   Defines how to fix unprintable characters in ASN VisiableString
+    /// @deprecated
+    ///   Use one with EOwnership enum instead
     NCBI_DEPRECATED_CTOR(CObjectIStreamAsn(CNcbiIstream& in,
                       bool deleteIn,
                       EFixNonPrint how = eFNP_Default));

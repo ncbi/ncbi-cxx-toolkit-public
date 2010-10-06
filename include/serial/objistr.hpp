@@ -113,6 +113,8 @@ public:
     ///   when the reader is deleted
     /// @return
     ///   Reader (created on heap)
+    /// @deprecated
+    ///   Use one with EOwnership enum instead
     static NCBI_DEPRECATED CObjectIStream* Open(ESerialDataFormat format,
                                 CNcbiIstream& inStream,
                                 bool deleteInStream);
@@ -231,6 +233,8 @@ public:
     /// @param deleteInStream
     ///   When TRUE, the input stream will be deleted automatically
     ///   when the reader is deleted
+    /// @deprecated
+    ///   Use one with EOwnership enum instead
     void NCBI_DEPRECATED Open(CNcbiIstream& inStream, bool deleteInStream);
 
     /// Attach reader to an input stream

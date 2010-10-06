@@ -103,6 +103,8 @@ public:
     ///   when the writer is deleted
     /// @return
     ///   Writer (created on heap)
+    /// @deprecated
+    ///   Use one with EOwnership enum instead
     static NCBI_DEPRECATED CObjectOStream* Open(ESerialDataFormat format,
                                 CNcbiOstream& outStream,
                                 bool deleteOutStream);
