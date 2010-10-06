@@ -35,7 +35,6 @@
  *       ConnNetInfo_Boolean
  *       SConnNetInfo
  *       ConnNetInfo_Create()
- *       ConnNetInfo_AdjustForHttpProxy()
  *       ConnNetInfo_Clone()
  *       ConnNetInfo_Print()
  *       ConnNetInfo_Destroy()
@@ -96,16 +95,17 @@ extern "C" {
 typedef enum {
     eURL_Unspec = 0,
     eURL_Https,
-    eURL_Http,
     eURL_File,
+    eURL_Http,
     eURL_Ftp
 } EURLScheme;
 
 
 typedef enum {
     eReqMethod_Any = 0,
+    eReqMethod_Get,
     eReqMethod_Post,
-    eReqMethod_Get
+    eReqMethod_Connect
 } EReqMethod;
 
 
@@ -152,7 +152,6 @@ typedef struct {
     const char*    http_referer;     /* default referrer (when not spec'd)   */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
-    int/*bool*/    http_proxy_adjusted;
     STimeout       tmo;              /* default storage for finite timeout   */
     const char*    service;          /* service for which this info created  */
 } SConnNetInfo;
@@ -161,9 +160,6 @@ typedef struct {
 /* Defaults and the registry entry names for "SConnNetInfo" fields
  */
 #define DEF_CONN_REG_SECTION      "CONN"
-
-#define REG_CONN_SCHEME           "SCHEME"
-#define DEF_CONN_SCHEME           0
 
 #define REG_CONN_USER             "USER"
 #define DEF_CONN_USER             ""
@@ -268,12 +264,14 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  max_try           MAX_TRY  
  *  http_proxy_host   HTTP_PROXY_HOST   no HTTP proxy if empty/NULL
  *  http_proxy_port   HTTP_PROXY_PORT
+ *  http_proxy_user   HTTP_PROXY_USER
+ *  http_proxy_pass   HTTP_PROXY_PASS
  *  proxy_host        PROXY_HOST
  *  debug_printout    DEBUG_PRINTOUT
  *  stateless         STATELESS
  *  firewall          FIREWALL
  *  lb_disable        LB_DISABLE
- *  http_user_header  HTTP_USER_HEADER  "\r\n" if missing is appended
+ *  http_user_header  HTTP_USER_HEADER  "\r\n" (if missing) is auto-appended
  *  http_referer      HTTP_REFERER      may be assigned automatically
  *
  * A value of the field NAME is first looked up in the environment variable
@@ -287,18 +285,6 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  */
 extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Create
 (const char* service
- );
-
-
-/* Adjust the "host:port" to "proxy_host:proxy_port", and
- * "path" to "http://host:port/path" to connect through an HTTP proxy.
- * Return FALSE if cannot adjust (e.g. if "host" + "path" are too long).
- * NOTE:  it does nothing if applied more than once to the same "info"
- *        (or its clone), or when "http_proxy_host" is empty, but
- *        returns TRUE.
- */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AdjustForHttpProxy
-(SConnNetInfo* info
  );
 
 
@@ -450,20 +436,8 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_LogEx
 #define ConnNetInfo_Log(i, l) ConnNetInfo_LogEx((i), eLOG_Trace, (l))
 
 
-/* Reconstruct text URL out of SConnNetInfo components
- * (username:password is included only if "auth" passed non-zero).
- * Returned string must be free()'d when no longer necessary.
- * Return NULL on error.
- */
-extern NCBI_XCONNECT_EXPORT char* ConnNetInfo_URLEx
-(const SConnNetInfo* info,
- int/*bool*/         auth
- );
-
-
-/* Reconstruct text URL out of SConnNetInfo components
- * (username:password excluded for security reasons):
- * same as ConnNetInfo_URLEx(info, 0).
+/* Reconstruct text URL out of the SConnNetInfo's components
+ * (excluding username:password for security reasons).
  * Returned string must be free()'d when no longer necessary.
  * Return NULL on error.
  */
@@ -482,42 +456,52 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * request (argument substitution enclosed in angle brackets, with
  * optional parts in square brackets):
  *
- *    {POST|GET} <path>[?<args>] HTTP/1.0\r\n
- *    Host: <host>[:port]
+ *    {CONNECT|POST|GET} <path>[?<args>] HTTP/1.0\r\n
+ *    [Content-Length: <content_length>\r\n]
  *    [<user_header>]
- *    Content-Length: <content_length>\r\n
  *
- * Request method eReqMethod_Any selects appropriate method depending on
- * the passed value of "content_length":  GET when no content is expected
+ * Request method "eReqMethod_Any" selects an appropriate method depending
+ * on the value of "content_length":  GET when no content is expected
  * (content_length==0), and POST when "content_length" provided non-zero. 
  *
  * If "port" is not specified (0) it will be assigned automatically
- * to a well-known value depending on the setting of fSOCK_Secure in
- * the passed "flags" parameter.
+ * to a well-known standard value depending on the "fSOCK_Secure" bit
+ * in the "flags" parameter.
  *
- * The "content_length" is mandatory, and it specifies an exact(!) amount of
- * data that you are planning to send to the resultant socket (0 if none).
+ * The "content_length" must specify an exact(!) amount of data that
+ * is going to POST (or is been sent with CONNECT) to HTTPD (0 if none).
+ * "Content-Length" header gets always added in all POST requests,
+ * yet it is always omitted in all other requests.
  *
  * If string "user_header" is not NULL/empty, then it *must* be terminated
- * by a single '\r\n'.
+ * by a single(!) '\r\n'.
  *
- * If "encode_args" is TRUE then URL-encode the "args".
- * "args" can be NULL/empty -- then the '?' symbol does not get added.
+ * If the actual request is going to be either GET or POST, "encode_args"
+ * set to TRUE will cause "args" to be URL-encoded (ignored otherwise).
  *
- * On success, return eIO_Success and non-NULL handle of a socket via last
+ * If the request method is "eReqMethod_Connect", then the connection is
+ * assumed to be tunneled via a proxy, so "path" must specify a "host:port"
+ * pair to connect to;  "content_length" can provide initial size of the data
+ * been tunneled, in which case "args" must be a pointer to such data, but the
+ * "Content-Length" header does not get added, and "encode_args" is ignored.
+ *
+ * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
  * ATTENTION:  due to the very essence of the HTTP connection, you may
- *             perform only one { WRITE, ..., WRITE, READ, ..., READ } cycle.
- * Returned socket must be closed exipicitly by "ncbi_socket.h:SOCK_Close()"
- * when no longer needed.
- * On error, return specific code (last parameter may not be updated),
- * no socket gets created.
+ *             perform only one { WRITE, ..., WRITE, READ, ..., READ } cycle,
+ *             if doing a GET or a POST.
+ * The returned socket must be exipicitly closed by "SOCK_Close()" when
+ * no longer needed.
+ * On error, return a specific code (last parameter may not be updated),
+ * and no socket gets created.
  *
- * NOTE: Returned socket may not be immediately readable/writeable if open
+ * NOTE: The returned socket may not be immediately readable/writeable if open
  *       and/or read/write timeouts were passed as {0,0}, meaning that both
  *       connection and HTTP header write operation may still be pending in
- *       the resultant socket. It is responsibility of the application to
+ *       the resultant socket.  It is responsibility of the application to
  *       analyze the actual socket state in this case (see "ncbi_socket.h").
+ * @sa
+ *  SOCK_Wait, SOCK_Close, SOCK_Abort
  */
 
 extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
