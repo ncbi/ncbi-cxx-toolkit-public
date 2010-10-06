@@ -351,13 +351,13 @@ int main(int argc, const char* argv[])
     buf1[kBufferSize] = '\0';
 
     if (!(ios << buf1)) {
-        ERR_POST("Error sending data");
+        ERR_POST("Cannot send data");
         return 1;
     }
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(kBufferSize)));
 
     if (!ios.flush()) {
-        ERR_POST("Error flushing data");
+        ERR_POST("Cannot flush data");
         return 1;
     }
 
@@ -365,7 +365,7 @@ int main(int argc, const char* argv[])
     streamsize buflen = ios.gcount();
 
     if (!ios.good() && !ios.eof()) {
-        ERR_POST("Error receiving data");
+        ERR_POST("Cannot receive data");
         return 2;
     }
 
@@ -392,7 +392,7 @@ int main(int argc, const char* argv[])
     LOG_POST("Test 5 of 7: Random bounce");
 
     if (!(ios << buf1)) {
-        ERR_POST("Error sending data");
+        ERR_POST("Cannot send data");
         return 1;
     }
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(2*kBufferSize)));
@@ -407,7 +407,7 @@ int main(int argc, const char* argv[])
         ios.read(&buf2[i], k);
         j = ios.gcount();
         if (!ios.good() && !ios.eof()) {
-            ERR_POST("Error receiving data");
+            ERR_POST("Cannot receive data");
             return 2;
         }
         if (j != k)
@@ -447,7 +447,7 @@ int main(int argc, const char* argv[])
     ios.write(buf1, kBufferSize);
 
     if (!ios.good()) {
-        ERR_POST("Error sending data");
+        ERR_POST("Cannot send data");
         return 1;
     }
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(3*kBufferSize)));
@@ -456,7 +456,7 @@ int main(int argc, const char* argv[])
     buflen = ios.gcount();
 
     if (!ios.good() && !ios.eof()) {
-        ERR_POST("Error receiving data");
+        ERR_POST("Cannot receive data");
         return 2;
     }
 

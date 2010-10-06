@@ -49,9 +49,9 @@
 #define MX_MAGIC_NUMBER 0xBA8ADEDA
 #define MX_CRLF         "\r\n"
 
-#define SMTP_READERR    -1      /* Error reading from socket            */
+#define SMTP_READERR    -1      /* Read error from socket               */
 #define SMTP_READTMO    -2      /* Read timed out                       */
-#define SMTP_RESPERR    -3      /* Error reading response prefix        */
+#define SMTP_RESPERR    -3      /* Cannot read response prefix          */
 #define SMTP_NOCODE     -4      /* No response code detected (letters?) */
 #define SMTP_BADCODE    -5      /* Response code doesn't match in lines */
 #define SMTP_BADRESP    -6      /* Malformed response                   */
@@ -150,13 +150,13 @@ static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
             message = "Read timed out";
             break;
         case SMTP_RESPERR:
-            message = "Error reading response prefix";
+            message = "Cannot read response prefix";
             break;
         case SMTP_NOCODE:
             message = "No response code detected";
             break;
         case SMTP_BADCODE:
-            message = "Response code doesn't match in lines";
+            message = "Response code mismatch";
             break;
         case SMTP_BADRESP:
             message = "Malformed response";

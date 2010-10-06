@@ -87,7 +87,7 @@ static int s_Server(int x_port)
     char           minibuf[255];
 
     if (x_port <= 0) {
-        CORE_LOG(eLOG_Error, "[Server]  Port wrongly specified");
+        CORE_LOGF(eLOG_Error, ("[Server]  Port malformed (%d)", x_port));
         return 1;
     }
 
@@ -95,20 +95,20 @@ static int s_Server(int x_port)
     CORE_LOGF(eLOG_Note, ("[Server]  Opening DSOCK on port %hu", port));
 
     if ((status = DSOCK_Create(&server)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Server]  Error creating DSOCK: %s",
+        CORE_LOGF(eLOG_Error, ("[Server]  Cannot create DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
 
     if ((status = DSOCK_Bind(server, port)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Server]  Error binding DSOCK to port %hu: %s",
+        CORE_LOGF(eLOG_Error, ("[Server]  Cannot bind DSOCK to port %hu: %s",
                                port, IO_StatusStr(status)));
         return 1;
     }
 
     for (;;) {
         if ((status = DSOCK_WaitMsg(server, 0/*infinite*/)) != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Server]  Error waiting on DSOCK: %s",
+            CORE_LOGF(eLOG_Error, ("[Server]  Failed waiting on DSOCK: %s",
                                    IO_StatusStr(status)));
             break;
         }
@@ -117,7 +117,7 @@ static int s_Server(int x_port)
         timeout.usec = 0;
         if ((status = SOCK_SetTimeout(server, eIO_Read, &timeout))
             != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Server]  Error setting zero read tmo: %s",
+            CORE_LOGF(eLOG_Error, ("[Server] Cannot set zero read timeout: %s",
                                    IO_StatusStr(status)));
             break;
         }
@@ -125,7 +125,7 @@ static int s_Server(int x_port)
         len = (size_t)(((double) rand()/(double) RAND_MAX)*sizeof(minibuf));
         if ((status = DSOCK_RecvMsg(server, minibuf, len, 0, &msglen,
                                     &peeraddr, &peerport)) != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Server]  Error reading from DSOCK: %s",
+            CORE_LOGF(eLOG_Error, ("[Server]  Cannot read from DSOCK: %s",
                                    IO_StatusStr(status)));
             continue;
         }
@@ -140,7 +140,8 @@ static int s_Server(int x_port)
                               addr, peerport, (unsigned long) msglen));
 
         if (!(buf = (char*) malloc(msglen < 10 ? 10 : msglen))) {
-            CORE_LOG_ERRNO(eLOG_Error, errno,"[Server]  Cannot alloc msg buf");
+            CORE_LOG_ERRNO(eLOG_Error, errno,
+                           "[Server]  Cannot allocate message buffer");
             break;
         }
         if (len)
@@ -150,7 +151,7 @@ static int s_Server(int x_port)
             n = (size_t)(((double)rand()/(double)RAND_MAX)*(msglen-len) + 0.5);
             if ((status = SOCK_Read(server, buf + len, n, &n, eIO_ReadPlain))
                 != eIO_Success) {
-                CORE_LOGF(eLOG_Error,("[Server]  Error reading msg @ byte %lu:"
+                CORE_LOGF(eLOG_Error,("[Server]  Cannot read msg @ byte %lu:"
                                       " %s", (unsigned long) len,
                                       IO_StatusStr(status)));
                 free(buf);
@@ -167,7 +168,7 @@ static int s_Server(int x_port)
         timeout.usec = 0;
         if ((status = SOCK_SetTimeout(server, eIO_Write, &timeout))
             != eIO_Success){
-            CORE_LOGF(eLOG_Error, ("[Server]  Error setting write tmo: %s",
+            CORE_LOGF(eLOG_Error, ("[Server]  Cannot set write timeout: %s",
                                    IO_StatusStr(status)));
             break;
         }
@@ -177,7 +178,7 @@ static int s_Server(int x_port)
             n = (size_t)(((double)rand()/(double)RAND_MAX)*(msglen-len) + 0.5);
             if ((status = SOCK_Write(server, buf + len, n, &n, eIO_WritePlain))
                 != eIO_Success) {
-                CORE_LOGF(eLOG_Error,("[Server]  Error writing msg @ byte %lu:"
+                CORE_LOGF(eLOG_Error,("[Server]  Cannot write msg @ byte %lu:"
                                       " %s", (unsigned long) len,
                                       IO_StatusStr(status)));
                 break;
@@ -188,7 +189,7 @@ static int s_Server(int x_port)
 
         if ((status = DSOCK_SendMsg(server, addr, peerport, "--Reply--", 10))
             != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Server]  Error sending to DSOCK: %s",
+            CORE_LOGF(eLOG_Error, ("[Server]  Cannot send to DSOCK: %s",
                                    IO_StatusStr(status)));
             /*continue*/;
         }
@@ -196,7 +197,7 @@ static int s_Server(int x_port)
 
     /* On errors control reaches here */
     if ((status = SOCK_Close(server)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Server]  Error closing DSOCK: %s",
+        CORE_LOGF(eLOG_Error, ("[Server]  Cannot close DSOCK: %s",
                                IO_StatusStr(status)));
     }
     return 1;
@@ -215,7 +216,7 @@ static int s_Client(int x_port, unsigned int max_try)
     unsigned int   m;
 
     if (x_port <= 0) {
-        CORE_LOG(eLOG_Error, "[Client]  Port wrongly specified");
+        CORE_LOGF(eLOG_Error, ("[Client]  Port malformed (%d)", x_port));
         return 1;
     }
  
@@ -223,7 +224,7 @@ static int s_Client(int x_port, unsigned int max_try)
     CORE_LOGF(eLOG_Note, ("[Client]  Opening DSOCK on port %hu", port));
 
     if ((status = DSOCK_Create(&client)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Error creating DSOCK: %s",
+        CORE_LOGF(eLOG_Error, ("[Client]  Cannot create DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
@@ -238,7 +239,8 @@ static int s_Client(int x_port, unsigned int max_try)
                           (unsigned long) msglen));
 
     if (!(buf = (char*) malloc(2 * msglen))) {
-        CORE_LOG_ERRNO(eLOG_Error, errno, "[Client]  Cannot alloc msg buf");
+        CORE_LOG_ERRNO(eLOG_Error, errno,
+                       "[Client]  Cannot allocate message buffer");
         return 1;
     }
 
@@ -259,7 +261,7 @@ static int s_Client(int x_port, unsigned int max_try)
 
         if ((status = DSOCK_SendMsg(client, "127.0.0.1", port, buf, msglen))
             != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Client]  Error sending to DSOCK: %s",
+            CORE_LOGF(eLOG_Error, ("[Client]  Cannot send to DSOCK: %s",
                                    IO_StatusStr(status)));
             return 1;
         }
@@ -268,7 +270,7 @@ static int s_Client(int x_port, unsigned int max_try)
         timeout.usec = 0;
         if ((status = SOCK_SetTimeout(client, eIO_Read, &timeout))
             != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Client]  Error setting read timeout: %s",
+            CORE_LOGF(eLOG_Error, ("[Client]  Cannot set read timeout: %s",
                                    IO_StatusStr(status)));
             return 1;
         }
@@ -276,7 +278,7 @@ static int s_Client(int x_port, unsigned int max_try)
     again:
         if ((status = DSOCK_RecvMsg(client, buf + msglen, msglen, 0, &n, 0, 0))
             != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Client]  Error reading from DSOCK: %s",
+            CORE_LOGF(eLOG_Error, ("[Client]  Cannot read from DSOCK: %s",
                                    IO_StatusStr(status)));
             continue;
         }
@@ -326,7 +328,7 @@ static int s_Client(int x_port, unsigned int max_try)
     free(buf);
 
     if ((status = SOCK_Close(client)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Error closing DSOCK: %s",
+        CORE_LOGF(eLOG_Error, ("[Client]   Cannot close DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }

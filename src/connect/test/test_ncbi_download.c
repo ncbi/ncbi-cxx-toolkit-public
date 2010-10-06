@@ -78,7 +78,7 @@ int main(int argc, const char* argv[])
     if ((status = CONN_Wait(conn, eIO_Read, net_info->timeout))
         != eIO_Success) {
         CONN_Close(conn);
-        CORE_LOGF(eLOG_Fatal, ("Error waiting for read from \"%s\": %s",
+        CORE_LOGF(eLOG_Fatal, ("Failed waiting for read from \"%s\": %s",
                                service, IO_StatusStr(status)));
     }
 

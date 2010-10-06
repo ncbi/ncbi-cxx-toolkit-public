@@ -79,7 +79,7 @@ int main(int argc, const char* argv[])
         if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
             != eIO_Success) {
             CONN_Close(conn);
-            CORE_LOG(eLOG_Fatal, "Error writing to connection");
+            CORE_LOG(eLOG_Fatal, "Cannot write to connection");
         }
         assert(n == strlen(obuf));
     } else {
@@ -94,7 +94,7 @@ int main(int argc, const char* argv[])
                 != eIO_Success) {
                 if (!n) {
                     CONN_Close(conn);
-                    CORE_LOG(eLOG_Fatal, "Error writing to connection");
+                    CORE_LOG(eLOG_Fatal, "Cannot write to connection");
                 } else
                     break;
             }
@@ -105,7 +105,7 @@ int main(int argc, const char* argv[])
     for (;;) {
        if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_Success) {
             CONN_Close(conn);
-            CORE_LOG(eLOG_Fatal, "Error waiting for reading");
+            CORE_LOG(eLOG_Fatal, "Failed to wait for reading");
         }
 
         status = CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPersist);
@@ -145,13 +145,13 @@ int main(int argc, const char* argv[])
     if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00", 7, &n, eIO_WritePersist)
         != eIO_Success) {
         CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error writing to service ID1");
+        CORE_LOG(eLOG_Fatal, "Cannot write to service ID1");
     }
     assert(n == 7);
 
     if (CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPlain) != eIO_Success){
         CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error reading from service ID1");
+        CORE_LOG(eLOG_Fatal, "Cannot read from service ID1");
     }
 
     CORE_LOGF(eLOG_Note, ("%d bytes read from service ID1", n));
