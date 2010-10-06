@@ -64,8 +64,9 @@ static void s_REG_Get(void* user_data,
     try {
         string result(static_cast<IRegistry*> (user_data)->Get(section, name));
 
-        if (!result.empty())
+        if (!result.empty()) {
             strncpy0(value, result.c_str(), value_size - 1);
+        }
     }
     NCBI_CATCH_ALL_X(1, "s_REG_Get() failed");
 }
@@ -268,11 +269,13 @@ static enum EConnectInit {
 } s_ConnectInit = eConnectInit_Intact;
 
 
+/* NB: gets called under a lock */
 static void s_Init(IRWRegistry*      reg = 0,
                    CRWLock*          lock = 0,
                    FConnectInitFlags flags = 0,
                    EConnectInit      how = eConnectInit_Weak)
 {
+    _ASSERT(how != eConnectInit_Intact);
     if (g_NCBI_ConnectRandomSeed == 0) {
         g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
@@ -281,10 +284,10 @@ static void s_Init(IRWRegistry*      reg = 0,
                                flags & eConnectInit_OwnLock ? true : false));
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(reg, flags & eConnectInit_OwnRegistry));
-    s_ConnectInit = how;
-    if (how == eConnectInit_Weak) {
+    if (s_ConnectInit == eConnectInit_Intact) {
         atexit(s_Fini);
     }
+    s_ConnectInit = how;
 }
 
 
@@ -320,8 +323,9 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 
 CConnIniter::CConnIniter()
 {
-    if (s_ConnectInit == eConnectInit_Intact)
+    if (s_ConnectInit == eConnectInit_Intact) {
         s_InitInternal();
+    }
 }
 
 
