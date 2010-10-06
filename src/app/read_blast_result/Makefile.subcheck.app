@@ -6,7 +6,9 @@ SRC = read_blast_result tbl read_blast_result_lib read_tag_map \
       overlaps missing copy_loc problems locations \
       analyze fit_blast match shortcuts short_proteins
 
-LIB  = submit seqset $(SEQ_LIBS) pub medline biblio general xobjutil xobjmgr xser xutil xncbi
+# Aaron Ucko suggested
+LIB  = xobjutil submit $(SOBJMGR_LIBS)
+# LIB  = submit seqset $(SEQ_LIBS) pub medline biblio general xobjutil xobjmgr xser xutil xncbi
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
