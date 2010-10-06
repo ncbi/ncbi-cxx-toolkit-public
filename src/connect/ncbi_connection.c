@@ -218,7 +218,7 @@ static EIO_Status x_ReInit
                                           : conn->c_timeout);
                 if (status != eIO_Success  &&  status != eIO_Closed) {
                     CONN_LOG(3, ReInit, connector ? eLOG_Error : eLOG_Warning,
-                             "Error closing connection");
+                             "Cannot close connection");
                     if (connector) {
                         conn->state = eCONN_Bad;
                         return status;
