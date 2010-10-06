@@ -125,13 +125,14 @@
  *  SOCK_GetLoopbackAddress
  *  SOCK_StringToHostPort
  *  SOCK_HostPortToString
+ *  SOCK_OSHandleSize
  *
  * Utility:
  *
  *  SOCK_SetSelectInternalRestartTimeout
  *  SOCK_SetIOWaitSysAPI
  *
- *  Secure:
+ * Secure:
  *
  *  SOCK_SetupSSL
  *
@@ -179,6 +180,9 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle                     */
 
 struct TRIGGER_tag;
 typedef struct TRIGGER_tag* TRIGGER;
+
+
+extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
 
 
 /******************************************************************************
@@ -610,12 +614,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Close(LSOCK lsock);
  * @param handle_size
  *  The exact(!) size of the expected OS handle
  * @sa
- *  SOCK_GetOSHandle
+ *  SOCK_OSHandleSize, SOCK_GetOSHandle
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 (LSOCK  lsock,
  void*  handle_buf, 
- size_t  
+ size_t handle_size
  );
 
 
@@ -1308,6 +1312,8 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
  *  [out] pointer to a memory area to put the OS handle at
  * @param handle_size
  *  [in]  the exact(!) size of the expected OS handle
+ * @sa
+ *   SOCK_OSHandleSize
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
 (SOCK   sock,

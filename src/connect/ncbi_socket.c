@@ -815,7 +815,7 @@ extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
     ESOCK_IOWaitSysAPI retval = s_IOWaitSysAPI;
 #if !defined(NCBI_OS_UNIX)  ||  !defined(HAVE_POLL_H)
     if (api == eSOCK_IOWaitSysAPIPoll) {
-        CORE_LOG_X(2, eLOG_Critical, "[SOCK::SetIOWaitSysAPI] "
+        CORE_LOG_X(149, eLOG_Critical, "[SOCK::SetIOWaitSysAPI] "
                    " Poll API requested but not supported on this platform");
     } else
 #endif /*!NCBI_OS_UNIX || !HAVE_POLL_H*/
@@ -3596,6 +3596,11 @@ extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
 }
 
 
+extern size_t SOCK_OSHandleSize(void)
+{
+    return sizeof(TSOCK_Handle);
+}
+
 
 /******************************************************************************
  *  TRIGGER
@@ -4653,8 +4658,15 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 #ifdef HAVE_SIN_LEN
     peer.sa.sa_len = peerlen;
 #endif /*HAVE_SIN_LEN*/
-    if (getpeername(fd, &peer.sa, &peerlen) < 0)
+    if (getpeername(fd, &peer.sa, &peerlen) < 0) {
+        x_error = SOCK_ERRNO;
+        CORE_LOGF_ERRNO_EXX(148, eLOG_Error,
+                            x_error, s_StrError(0, x_error),
+                            ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
+                             " Invalid OS socket handle (%ld)",
+                             x_id, (unsigned int) fd, (long) fd));
         return eIO_Closed;
+    }
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
 #  if defined(NCBI_OS_BSD)     ||  \
