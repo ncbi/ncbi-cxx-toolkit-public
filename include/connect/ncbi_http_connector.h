@@ -51,7 +51,7 @@ extern "C" {
 
 
 /* Create new CONNECTOR structure to hit the specified URL using HTTP
- * with either POST or GET method.
+ * with either POST / GET or CONNECT method.
  * Use the configuration values recorded in "net_info". If "net_info" is NULL,
  * then use the default info (created by "ConnNetInfo_Create(0)").
  *
@@ -61,9 +61,9 @@ extern "C" {
  * with CONN_Write():  the presense of pending data will cause POST request
  * (with Content-Length tag provided automatically and reflecting the total
  * pending data size), and GET request method will result in the absence
- * of data.  An explicit value for the request method will cause the
- * specified request to be used regardless of pending data, and causing
- * an error logged if any data will have to be sent with GET (per the RFC).
+ * of any data.  An explicit value for the request method will cause the
+ * specified request to be used regardless of pending data, and flagging
+ * an error if any data will have to be sent with GET (per the RFC).
  *
  * In order to workaround some HTTP communication features, this code does:
  *  1) Accumulate all output data in an internal memory buffer until the
@@ -82,8 +82,8 @@ extern "C" {
  *       - it must be terminated by a single '\r\n';
  *       - it gets inserted to the HTTP header "as is", without any
  *         automatic checking or encoding;
- *       - "user_header" specified in the arguments overrides any user
- *         header that can be provided in the "net_info" argument, see
+ *       - the "user_header" specified in the arguments overrides any user
+ *         header that can be provided via the "net_info" argument, see
  *         ConnNetInfo_OverrideUserHeader() from <connect/ncbi_connutil.h>.
  *     NOTE:
  *       Data may depart to server side earlier if Flush()'ed in
@@ -96,13 +96,12 @@ extern "C" {
  *     again are stored in the buffer until next "Read" etc, see item 1).
  *
  *  *) If "fHCC_AutoReconnect" is set in "flags", then the connector makes
- *     an automatic reconnect to the same URL with just the same parameters,
- *     and micro-session steps (1,2,3) are repeated (with another instance
- *     of the CGI program).
+ *     an automatic reconnect to the same URL with just the same parameters
+ *     for each micro-session steps (1,2,3) repeated.
  *
- *     If "fHCC_AutoReconnect" is not set then only one
+ *     If "fHCC_AutoReconnect" is not set then only a single
  *     "Write ... Write Read ... Read" micro-session is allowed, any
- *     following "Write" attempt fails with error status "eIO_Closed".
+ *     following "Write" attempt fails with an error "eIO_Closed".
  *
  *  Other flags:
  *
@@ -118,28 +117,28 @@ extern "C" {
  *       NOTE:  this flag disables the "fHCC_KeepHeader" flag
  *  fHCC_DropUnread --
  *       do not collect incoming data in "Read" mode before switching into
- *       "Write" mode for storing output data in buffer; by default all
+ *       "Write" mode for storing output data in buffer;  by default all
  *       data sent by the CGI program are stored even if not all requested
  *       before "Write" following "Read" was issued (stream emulation)
  *  fHCC_NoUpread --
- *       do not do internal reading into temporary buffer while sending
- *       data to CGI program; by default any send operation tries to
+ *       do *not* do internal reading into temporary buffer while sending
+ *       data to HTTP server; by default any send operation tries to
  *       extract data(if any) coming back from the CGI program in order to
- *       prevent connection blocking
+ *       prevent connection blocking (due to data clogging)
  *  fHCC_Flushable --
- *       usually all data written to the connection are kept until
+ *       by default all data written to the connection are kept until
  *       read begins (even though Flush() might have been called in between
- *       the writes).  With this flag set, Flush() will result the data
+ *       the writes);  with this flag set, Flush() will result the data
  *       to be actually sent to server side, so the following write will form
- *       new request, and not get added to the previous one.
+ *       new request, and not get added to the previous one
  *  fHCC_InsecureRedirect --
  *       for security reasons the following redirects comprise security risk
  *       and, thus, are prohibited:  switching from https to http, and
- *       re-posting data (regardless of the transport, either http or https).
- *       This flag allows such redirects (if needed) to be honored.
+ *       re-posting data (regardless of the transport, either http or https);
+ *       this flag allows such redirects (if needed) to be honored
  *  fHCC_NoAutoRetry --
  *       do not attempt any auto-retries in case of failing connections
- *       (this flag effectively means having SConnNetInfo::max_try set to 1).
+ *       (this flag effectively means having SConnNetInfo::max_try set to 1)
  *
  * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and
  *       "net_info->args") is performed by URL_Encode() and URL_Decode()
@@ -161,7 +160,8 @@ typedef enum {
     fHCC_NoUpread         = 0x80, /* do not use SOCK_SetReadOnWrite() at all */
     fHCC_Flushable        = 0x100,/* connector will really flush on Flush()  */
     fHCC_InsecureRedirect = 0x200,/* any redirect will be honored            */
-    fHCC_NoAutoRetry      = 0x400 /* no auto-retries allowed                 */
+    fHCC_NoAutoRetry      = 0x400,/* no auto-retries allowed                 */
+    fHCC_DetachableTunnel = 0x800 /* SOCK_Close() won't close the OS handle  */
 } EHCC_Flags;
 typedef unsigned int THCC_Flags;  /* bitwise OR of "EHCC_Flags"              */
 
@@ -208,7 +208,24 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  FHttpAdjustNetInfo   adjust_net_info,/* may be NULL, then no adjustments    */
  void*                adjust_data,    /* for "adjust_info" & "adjust_cleanup"*/
  FHttpAdjustCleanup   adjust_cleanup  /* may be NULL                         */
-);
+ );
+
+
+extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnelEx
+(const SConnNetInfo* net_info,
+ THCC_Flags          flags,
+ const void*         init_data,
+ size_t              init_size,
+ SOCK*               sock
+ );
+
+
+/* Same as HTTP_CreateTunnelEx(net_info, flags, 0, 0, sock) */
+extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnel
+(const SConnNetInfo* net_info,
+ THCC_Flags          flags,
+ SOCK*               sock
+ );
 
 
 /* Set message hook procedure for messages originating from NCBI via HTTP.
