@@ -169,7 +169,7 @@ public:
         { return kInvalidSeqPos; }
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
                                  TSynonyms&            synonyms)
-        { synonyms.push_back(id); }
+        { synonyms.insert(id); }
 };
 
 
@@ -1223,7 +1223,11 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
                 0, 0);
             // Since the lengths are always the same, both source and
             // destination ranges must be used in one iteration.
-            _ASSERT(!src_len  &&  !dst_len);
+            if (src_len != 0  ||  dst_len != 0) {
+                NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                    "Different lengths of source and destination rows "
+                    "in dense-seg.");
+            }
         } else {
             // Normal mode - use all segments instead of the total range.
             for (size_t seg = 0; seg < numseg; ++seg) {
@@ -2932,6 +2936,12 @@ x_RangeToSeq_loc(const CSeq_id_Handle& idh,
         else if ( rg_fuzz.second ) {
             loc->SetPnt().SetFuzz(*rg_fuzz.second);
         }
+    }
+    // Note: at this moment for whole locations 'to' is equal to GetWholeTo()
+    // not GetWholeToOpen().
+    else if (from == 0  &&  to == TRange::GetWholeTo()) {
+        loc->SetWhole().Assign(*idh.GetSeqId());
+        // Ignore strand for whole locations
     }
     else {
         // interval

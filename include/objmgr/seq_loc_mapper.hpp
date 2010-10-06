@@ -60,6 +60,8 @@ class CBioseq_Handle;
 class CSeqMap;
 class CSeqMap_CI;
 struct SSeqMapSelector;
+class CGC_Assembly;
+class CGC_Sequence;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -191,6 +193,25 @@ public:
                     const CSeq_id*   top_level_id = 0,
                     CScope*          scope = 0);
 
+    /// Destination of seq-id mapping through a GC-Assembly.
+    enum EGCAssemblyAlias {
+        eGCA_Genbank, ///< Map to GenBank alias
+        eGCA_Refseq,  ///< Map to RefSeq alias
+        eGCA_UCSC,    ///< Map to UCSC alias
+        eGCA_Other    ///< Map to 'private' seq-id
+    };
+
+    /// Initialize the mapper to map through a GC-Assembly
+    /// to the selected alias type.
+    CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
+                    EGCAssemblyAlias    to_alias,
+                    CScope*             scope = 0);
+    /// Initialize the mapper to map through deltas from a GC-Assembly.
+    CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
+                    ESeqMapDirection    direction,
+                    SSeqMapSelector     selector,
+                    CScope*             scope = 0);
+
     ~CSeq_loc_Mapper(void);
 
 protected:
@@ -219,6 +240,22 @@ private:
                             size_t                depth,
                             const CSeq_id*        top_id,
                             ESeqMapDirection      direction);
+
+    // Parse GC-Assembly, collect mappings for each seq-id to the
+    // selected alias type.
+    void x_InitGCAssembly(const CGC_Assembly& gc_assembly,
+                          EGCAssemblyAlias    to_alias);
+    void x_InitGCAssembly(const CGC_Assembly& gc_assembly,
+                          ESeqMapDirection    direction,
+                          SSeqMapSelector     selector);
+    // Parse GC-Sequence, collect mappings for each seq-id to the
+    // selected alias type.
+    void x_InitGCSequence(const CGC_Sequence& gc_seq,
+                          EGCAssemblyAlias    to_alias);
+    void x_InitGCSequence(const CGC_Sequence& gc_seq,
+                          ESeqMapDirection    direction,
+                          SSeqMapSelector     selector,
+                          const CGC_Sequence* parent_seq);
 
 private:
     CHeapScope        m_Scope;

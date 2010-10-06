@@ -728,7 +728,7 @@ public:
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
                                  TSynonyms&            synonyms)
         {
-            synonyms.push_back(id);
+            synonyms.insert(id);
         }
 
     void AddSeq(int gi, TSeqType seqtype, TSeqPos len)

@@ -398,7 +398,7 @@ public:
     /// to the target).
     bool             LastIsPartial(void);
 
-    typedef vector<CSeq_id_Handle>        TSynonyms;
+    typedef set<CSeq_id_Handle>        TSynonyms;
 
     // Collect synonyms for the given seq-id and put them in the container.
     // The default implementation just adds the id to the list of synonyms.
@@ -476,6 +476,18 @@ protected:
                             ENa_strand       dst_strand,
                             const CInt_fuzz* fuzz_from = 0,
                             const CInt_fuzz* fuzz_to = 0);
+
+    // Add new CMappingRange. This includes collecting all synonyms for the id,
+    // creating a new mapping for each of them and updating the destination
+    // ranges.
+    void x_AddConversion(const CSeq_id& src_id,
+                         TSeqPos        src_start,
+                         ENa_strand     src_strand,
+                         const CSeq_id& dst_id,
+                         TSeqPos        dst_start,
+                         ENa_strand     dst_strand,
+                         TSeqPos        length,
+                         bool           ext_right);
 
     // Parse and map the seq-loc.
     void x_MapSeq_loc(const CSeq_loc& src_loc);
@@ -572,18 +584,6 @@ private:
     // Get sequence length, try to get the real length for
     // reverse strand, do not use "whole".
     TSeqPos x_GetRangeLength(const CSeq_loc_CI& it);
-
-    // Add new CMappingRange. This includes collecting all synonyms for the id,
-    // creating a new mapping for each of them and updating the destination
-    // ranges.
-    void x_AddConversion(const CSeq_id& src_id,
-                         TSeqPos        src_start,
-                         ENa_strand     src_strand,
-                         const CSeq_id& dst_id,
-                         TSeqPos        dst_start,
-                         ENa_strand     dst_strand,
-                         TSeqPos        length,
-                         bool           ext_right);
 
     // Initialize the mapper from different alignment types.
     void x_InitAlign(const CDense_diag& diag, size_t to_row);

@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
@@ -45,6 +46,12 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objects/genomecoll/genome_collection__.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <algorithm>
 
 
@@ -85,13 +92,13 @@ CollectSynonyms(const CSeq_id_Handle& id,
                 TSynonyms&            synonyms)
 {
     if ( m_Scope.IsNull() ) {
-        synonyms.push_back(id);
+        synonyms.insert(id);
     }
     else {
         CConstRef<CSynonymsSet> syns =
             m_Scope.GetScope().GetSynonyms(id);
         ITERATE(CSynonymsSet, syn_it, *syns) {
-            synonyms.push_back(CSynonymsSet::GetSeq_id_Handle(syn_it));
+            synonyms.insert(CSynonymsSet::GetSeq_id_Handle(syn_it));
         }
     }
 }
@@ -275,7 +282,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
             top_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
         }
     }
-    selector.SetFlags(CSeqMap::fFindRef).SetLinkUsedTSE();
+    selector.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved)
+        .SetLinkUsedTSE();
     x_InitializeSeqMap(CSeqMap_CI(target_seq, selector), top_id, direction);
     if (direction == eSeqMap_Up) {
         // Ignore seq-map destination ranges, map whole sequence to itself,
@@ -297,7 +305,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
-    selector.SetFlags(CSeqMap::fFindRef).SetLinkUsedTSE();
+    selector.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved)
+        .SetLinkUsedTSE();
     x_InitializeSeqMap(CSeqMap_CI(ConstRef(&seq_map),
                        m_Scope.GetScopeOrNull(), selector),
                        top_level_id,
@@ -353,6 +362,32 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
 }
 
 
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
+                                 EGCAssemblyAlias    to_alias,
+                                 CScope*             scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
+{
+    x_InitGCAssembly(gc_assembly, to_alias);
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
+                                 ESeqMapDirection    direction,
+                                 SSeqMapSelector     selector,
+                                 CScope*             scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
+{
+    // In case of GC-Assembly we need a scope to store virtual bioseqs
+    // and build seq-maps.
+    if ( !m_Scope ) {
+        m_Scope.Set(new CScope(*CObjectManager::GetInstance()));
+    }
+    x_InitGCAssembly(gc_assembly, direction, selector);
+}
+
+
 CSeq_loc_Mapper::~CSeq_loc_Mapper(void)
 {
     return;
@@ -380,7 +415,7 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(const CSeqMap&   seq_map,
                                          const CSeq_id*   top_id,
                                          ESeqMapDirection direction)
 {
-    SSeqMapSelector sel(CSeqMap::fFindRef, depth);
+    SSeqMapSelector sel(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved, depth);
     sel.SetLinkUsedTSE();
     x_InitializeSeqMap(CSeqMap_CI(ConstRef(&seq_map),
                        m_Scope.GetScopeOrNull(), sel),
@@ -394,10 +429,10 @@ void CSeq_loc_Mapper::x_InitializeBioseq(const CBioseq_Handle& bioseq,
                                          const CSeq_id*        top_id,
                                          ESeqMapDirection      direction)
 {
-    x_InitializeSeqMap(CSeqMap_CI(bioseq,
-                                  SSeqMapSelector(CSeqMap::fFindRef, depth)),
-                       top_id,
-                       direction);
+    x_InitializeSeqMap(CSeqMap_CI(bioseq, SSeqMapSelector(
+        CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved, depth)),
+        top_id,
+        direction);
 }
 
 
@@ -410,12 +445,21 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
     TSeqPos dst_seg_start = kInvalidSeqPos;
     CConstRef<CSeq_id> dst_id;
 
-    for ( ; seg_it; ++seg_it) {
-        _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
-        if (seg_it.GetPosition() > top_stop  ||  !dst_id) {
+    do {
+        if ( !seg_it ) break;
+        CSeqMap_CI prev_it = seg_it;
+        ++seg_it;
+
+        // When mapping down ignore non-leaf references.
+        bool prev_is_leaf = !seg_it  ||
+            seg_it.GetDepth() <= prev_it.GetDepth();
+        if (direction == eSeqMap_Down  &&  !prev_is_leaf) continue;
+
+        _ASSERT(prev_it.GetType() == CSeqMap::eSeqRef);
+        if (prev_it.GetPosition() > top_stop  ||  !dst_id) {
             // New top-level segment
-            top_start = seg_it.GetPosition();
-            top_stop = seg_it.GetEndPosition() - 1;
+            top_start = prev_it.GetPosition();
+            top_stop = prev_it.GetEndPosition() - 1;
             if (top_id) {
                 // Top level is a bioseq
                 dst_id.Reset(top_id);
@@ -424,20 +468,20 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
             else {
                 // Top level is a seq-loc, positions are
                 // on the first-level references
-                dst_id = seg_it.GetRefSeqid().GetSeqId();
-                dst_seg_start = seg_it.GetRefPosition();
+                dst_id = prev_it.GetRefSeqid().GetSeqId();
+                dst_seg_start = prev_it.GetRefPosition();
                 continue;
             }
         }
         // when top_id is set, destination position = GetPosition(),
         // else it needs to be calculated from top_start/stop and dst_start/stop.
-        TSeqPos dst_from = dst_seg_start + seg_it.GetPosition() - top_start;
+        TSeqPos dst_from = dst_seg_start + prev_it.GetPosition() - top_start;
         _ASSERT(dst_from >= dst_seg_start);
-        TSeqPos dst_len = seg_it.GetLength();
-        CConstRef<CSeq_id> src_id(seg_it.GetRefSeqid().GetSeqId());
-        TSeqPos src_from = seg_it.GetRefPosition();
+        TSeqPos dst_len = prev_it.GetLength();
+        CConstRef<CSeq_id> src_id(prev_it.GetRefSeqid().GetSeqId());
+        TSeqPos src_from = prev_it.GetRefPosition();
         TSeqPos src_len = dst_len;
-        ENa_strand src_strand = seg_it.GetRefMinusStrand() ?
+        ENa_strand src_strand = prev_it.GetRefMinusStrand() ?
             eNa_strand_minus : eNa_strand_unknown;
         switch (direction) {
         case eSeqMap_Up:
@@ -450,6 +494,342 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
             break;
         }
         _ASSERT(src_len == 0  &&  dst_len == 0);
+    } while (seg_it);
+}
+
+
+// Special sequence info for managing GC-Sequence synonyms.
+class CGCSeq_Mapper_Sequence_Info : public IMapper_Sequence_Info
+{
+public:
+    CGCSeq_Mapper_Sequence_Info(IMapper_Sequence_Info& prev_info)
+        : m_PrevInfo(&prev_info) {}
+
+    virtual TSeqType GetSequenceType(const CSeq_id_Handle& idh)
+        { return m_PrevInfo->GetSequenceType(idh); }
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh)
+        { return m_PrevInfo->GetSequenceLength(idh); }
+    virtual void CollectSynonyms(const CSeq_id_Handle& id,
+                                 TSynonyms&            synonyms)
+        {
+            m_PrevInfo->CollectSynonyms(id, synonyms);
+            ITERATE(TSynonymsSet, it, m_Synonyms) {
+                synonyms.insert(*it);
+            }
+        }
+
+    void AddSynonym(const CSeq_id& synonym)
+        {
+            m_Synonyms.insert(CSeq_id_Handle::GetHandle(synonym));
+        }
+
+private:
+    typedef set<CSeq_id_Handle> TSynonymsSet;
+
+    CRef<IMapper_Sequence_Info> m_PrevInfo;
+    TSynonymsSet                m_Synonyms;
+};
+
+
+void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
+                                       EGCAssemblyAlias    to_alias)
+{
+    if ( gc_assembly.IsUnit() ) {
+        const CGC_AssemblyUnit& unit = gc_assembly.GetUnit();
+        if ( unit.IsSetMols() ) {
+            ITERATE(CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
+                const CGC_Replicon::TSequence& seq = (*it)->GetSequence();
+                if ( seq.IsSingle() ) {
+                    x_InitGCSequence(seq.GetSingle(), to_alias);
+                }
+                else {
+                    ITERATE(CGC_Replicon::TSequence::TSet, it, seq.GetSet()) {
+                        x_InitGCSequence(**it, to_alias);
+                    }
+                }
+            }
+        }
+        if ( unit.IsSetOther_sequences() ) {
+            ITERATE(CGC_Sequence::TSequences, seq, unit.GetOther_sequences()) {
+                ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
+                    x_InitGCSequence(**tseq, to_alias);
+                }
+            }
+        }
+    }
+    else if ( gc_assembly.IsAssembly_set() ) {
+        const CGC_AssemblySet& aset = gc_assembly.GetAssembly_set();
+        x_InitGCAssembly(aset.GetPrimary_assembly(), to_alias);
+        if ( aset.IsSetMore_assemblies() ) {
+            ITERATE(CGC_AssemblySet::TMore_assemblies, assm, aset.GetMore_assemblies()) {
+                x_InitGCAssembly(**assm, to_alias);
+            }
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
+                                       EGCAssemblyAlias    to_alias)
+{
+    if ( gc_seq.IsSetSeq_id_synonyms() ) {
+        CConstRef<CSeq_id> dst_id;
+        ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
+            const CGC_TypedSeqId& id = **it;
+            switch ( id.Which() ) {
+            case CGC_TypedSeqId::e_Genbank:
+                if (to_alias == eGCA_Genbank) {
+                    // Use GI rather than accession from 'public' member.
+                    dst_id.Reset(&id.GetGenbank().GetGi());
+                }
+                break;
+            case CGC_TypedSeqId::e_Refseq:
+                if (to_alias == eGCA_Refseq) {
+                    dst_id.Reset(&id.GetRefseq().GetGi());
+                }
+                break;
+            case CGC_TypedSeqId::e_External:
+                if (to_alias == eGCA_UCSC  &&
+                    id.GetExternal().GetExternal() == "UCSC") {
+                    dst_id.Reset(&id.GetExternal().GetId());
+                }
+                break;
+            case CGC_TypedSeqId::e_Private:
+                if (to_alias == eGCA_Other) {
+                    dst_id.Reset(&id.GetPrivate());
+                }
+                break;
+            default:
+                break;
+            }
+            if ( dst_id ) break; // Use the first matching alias
+        }
+        // Fisrt, setup a new sequence info which will handle synonyms.
+        CRef<IMapper_Sequence_Info> saved_seq_info(m_SeqInfo);
+        CRef<CGCSeq_Mapper_Sequence_Info> seq_info(
+            new CGCSeq_Mapper_Sequence_Info(*m_SeqInfo));
+        m_SeqInfo = seq_info;
+        if ( dst_id ) {
+            seq_info->AddSynonym(gc_seq.GetSeq_id());
+            ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
+                // Add conversion for each synonym which can be used
+                // as a source id.
+                const CGC_TypedSeqId& id = **it;
+                switch ( id.Which() ) {
+                case CGC_TypedSeqId::e_Genbank:
+                    if (to_alias != eGCA_Genbank) {
+                        seq_info->AddSynonym(id.GetGenbank().GetPublic());
+                        seq_info->AddSynonym(id.GetGenbank().GetGi());
+                        if ( id.GetGenbank().IsSetGpipe() ) {
+                            seq_info->AddSynonym(id.GetGenbank().GetGpipe());
+                        }
+                    }
+                    break;
+                case CGC_TypedSeqId::e_Refseq:
+                    if (to_alias != eGCA_Refseq) {
+                        seq_info->AddSynonym(id.GetRefseq().GetPublic());
+                        seq_info->AddSynonym(id.GetRefseq().GetGi());
+                        if ( id.GetRefseq().IsSetGpipe() ) {
+                            seq_info->AddSynonym(id.GetRefseq().GetGpipe());
+                        }
+                    }
+                    break;
+                case CGC_TypedSeqId::e_Private:
+                    if (dst_id != &id.GetPrivate()) {
+                        seq_info->AddSynonym(id.GetPrivate());
+                    }
+                    break;
+                case CGC_TypedSeqId::e_External:
+                    if (dst_id != &id.GetExternal().GetId()) {
+                        seq_info->AddSynonym(id.GetExternal().GetId());
+                    }
+                    break;
+                default:
+                    NCBI_THROW(CAnnotMapperException, eOtherError,
+                               "Unsupported alias type in GC-Sequence synonyms");
+                    break;
+                }
+            }
+            x_AddConversion(gc_seq.GetSeq_id(), 0, eNa_strand_unknown,
+                *dst_id, 0, eNa_strand_unknown, TRange::GetWholeLength(),
+                false);
+        }
+        else if (to_alias == eGCA_UCSC  ||  to_alias == eGCA_Refseq) {
+            // The requested alias type not found,
+            // check for UCSC random chromosomes.
+            const CSeq_id& id = gc_seq.GetSeq_id();
+            if (gc_seq.IsSetStructure()  &&
+                id.IsLocal()  &&  id.GetLocal().IsStr()  &&
+                id.GetLocal().GetStr().find("_random") != string::npos) {
+
+                string lcl_str = id.GetLocal().GetStr();
+                CSeq_id lcl;
+                lcl.SetLocal().SetStr(lcl_str);
+                seq_info->AddSynonym(lcl);
+                if ( !NStr::StartsWith(lcl_str, "chr") ) {
+                    lcl.SetLocal().SetStr("chr" + lcl_str);
+                    seq_info->AddSynonym(lcl);
+                }
+                // Ignore other synonyms - they will probably never be set. (?)
+
+                // When mapping up to chrX, its synonyms are not required.
+                if (to_alias == eGCA_UCSC) {
+                    m_SeqInfo = saved_seq_info;
+                }
+
+                // Use structure (delta-seq) to initialize the mapper.
+                // Here we use just one level of the delta and parse it
+                // directly rather than use CSeqMap.
+                TSeqPos chr_pos = 0;
+                TSeqPos chr_len = kInvalidSeqPos;
+                ITERATE(CDelta_ext::Tdata, it, gc_seq.GetStructure().Get()) {
+                    // Do not create mappings for literals/gaps.
+                    if ( (*it)->IsLiteral() ) {
+                        chr_pos += (*it)->GetLiteral().GetLength();
+                    }
+                    if ( !(*it)->IsLoc() ) {
+                        continue;
+                    }
+                    CSeq_loc_CI loc_it((*it)->GetLoc());
+                    for (; loc_it; ++loc_it) {
+                        if ( loc_it.IsEmpty() ) continue;
+                        TSeqPos seg_pos = loc_it.GetRange().GetFrom();
+                        TSeqPos seg_len = loc_it.GetRange().GetLength();
+                        ENa_strand seg_str = loc_it.IsSetStrand() ?
+                            loc_it.GetStrand() : eNa_strand_unknown;
+                        switch ( to_alias ) {
+                        case eGCA_UCSC:
+                            // Map up to the chr
+                            x_NextMappingRange(loc_it.GetSeq_id(),
+                                seg_pos, seg_len, seg_str,
+                                id, chr_pos, chr_len,
+                                eNa_strand_unknown);
+                            break;
+                        case eGCA_Refseq:
+                            // Map down to delta parts
+                            x_NextMappingRange(id, chr_pos, chr_len,
+                                eNa_strand_unknown,
+                                loc_it.GetSeq_id(), seg_pos, seg_len,
+                                seg_str);
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // Restore previous seq-info if any.
+        m_SeqInfo = saved_seq_info;
+    }
+    if ( gc_seq.IsSetSequences() ) {
+        ITERATE(CGC_Sequence::TSequences, seq, gc_seq.GetSequences()) {
+            ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
+                x_InitGCSequence(**tseq, to_alias);
+            }
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
+                                       ESeqMapDirection    direction,
+                                       SSeqMapSelector     selector)
+{
+    if ( gc_assembly.IsUnit() ) {
+        const CGC_AssemblyUnit& unit = gc_assembly.GetUnit();
+        if ( unit.IsSetMols() ) {
+            ITERATE(CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
+                const CGC_Replicon::TSequence& seq = (*it)->GetSequence();
+                if ( seq.IsSingle() ) {
+                    x_InitGCSequence(seq.GetSingle(),
+                        direction, selector, NULL);
+                }
+                else {
+                    ITERATE(CGC_Replicon::TSequence::TSet, it, seq.GetSet()) {
+                        x_InitGCSequence(**it,
+                            direction, selector, NULL);
+                    }
+                }
+            }
+        }
+        if ( unit.IsSetOther_sequences() ) {
+            ITERATE(CGC_Sequence::TSequences, seq, unit.GetOther_sequences()) {
+                ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
+                    x_InitGCSequence(**tseq, direction, selector, NULL);
+                }
+            }
+        }
+    }
+    else if ( gc_assembly.IsAssembly_set() ) {
+        const CGC_AssemblySet& aset = gc_assembly.GetAssembly_set();
+        x_InitGCAssembly(aset.GetPrimary_assembly(), direction, selector);
+        if ( aset.IsSetMore_assemblies() ) {
+            ITERATE(CGC_AssemblySet::TMore_assemblies, assm,
+                aset.GetMore_assemblies()) {
+                x_InitGCAssembly(**assm, direction, selector);
+            }
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
+                                       ESeqMapDirection    direction,
+                                       SSeqMapSelector     selector,
+                                       const CGC_Sequence* parent_seq)
+{
+    CBioseq_Handle bh;
+    CRef<CSeq_id> id;
+    if ( gc_seq.IsSetStructure() ) {
+        // Create virtual bioseq and use it to initialize the mapper
+        CRef<CBioseq> bioseq(new CBioseq);
+
+        id.Reset(new CSeq_id);
+        id->Assign(gc_seq.GetSeq_id());
+        bioseq->SetId().push_back(id);
+        //### Also add synonyms if any
+
+        bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
+        bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+        // const_cast should be safe here - we are not going to modify data
+        bioseq->SetInst().SetExt().SetDelta(
+            const_cast<CDelta_ext&>(gc_seq.GetStructure()));
+        bh = m_Scope.GetScope().AddBioseq(*bioseq);
+    }
+
+    if ( gc_seq.IsSetSequences() ) {
+        ITERATE(CGC_Sequence::TSequences, seq, gc_seq.GetSequences()) {
+            ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
+                // To create a sub-level of the existing seq-map we need
+                // both structure at the current level and 'placed' state
+                // on the child sequences. If this is not true, iterate
+                // sub-sequences but treat them as top-level sequences rather
+                // than segments.
+                const CGC_Sequence* parent = 0;
+                if (gc_seq.IsSetStructure()  &&
+                    (*seq)->GetState() == CGC_TaggedSequences::eState_placed) {
+                    parent = &gc_seq;
+                }
+                x_InitGCSequence(**tseq, direction, selector, parent);
+            }
+        }
+    }
+    if (gc_seq.IsSetStructure()  &&  !parent_seq) {
+        // This is a top-level sequence, create CSeqMap.
+        SSeqMapSelector sel = selector;
+        sel.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved).
+            SetLinkUsedTSE();
+        x_InitializeSeqMap(CSeqMap_CI(bh, sel), id, direction);
+        if (direction == eSeqMap_Up) {
+            // Ignore seq-map destination ranges, map whole sequence to itself,
+            // use unknown strand only.
+            m_DstRanges.resize(1);
+            m_DstRanges[0].clear();
+            m_DstRanges[0][CSeq_id_Handle::GetHandle(*id)]
+                .push_back(TRange::GetWhole());
+        }
+        x_PreserveDestinationLocs();
     }
 }
 

@@ -586,15 +586,15 @@ GENBANK_READER_GICACHE_LIBS = ncbi_xreader_gicache \
 
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
 SEQ_LIBS = seq seqcode sequtil
-SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub medline biblio general \
-    xser xutil xncbi
+SOBJMGR_LDEP = genome_collection seqset seqedit $(SEQ_LIBS) pub medline \
+    biblio general xser xutil xncbi
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
-QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 seqset $(SEQ_LIBS) pub medline biblio \
-    general xcompress $(CMPRS_LIB)
+QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 genome_collection seqset \
+    $(SEQ_LIBS) pub medline biblio general xcompress $(CMPRS_LIB)
 QOBJMGR_LIBS = $(QOBJMGR_ONLY_LIBS) qall
 QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
 
