@@ -33,6 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <util/unicode.hpp>
 #include <util/util_exception.hpp>
+#include <util/error_codes.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+
+#define NCBI_USE_ERRCODE_X   Util_Unicode
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(utf8)
@@ -91,12 +96,202 @@ static TUnicodeTable g_DefaultUnicodeTable =
     0, 0, 0, &s_Plan_FBh, 0, 0, &s_Plan_FEh, 0   // Plan F8 - FF
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// Declare the parameter to get UnicodeToAscii translation table.
+// Registry file:
+//     [NCBI]
+//     UnicodeToAscii = ...
+// Environment variable:
+//     NCBI_CONFIG__NCBI__UNICODETOASCII
+//
+NCBI_PARAM_DECL(string, NCBI, UnicodeToAscii); 
+NCBI_PARAM_DEF (string, NCBI, UnicodeToAscii, kEmptyStr);
 
+/////////////////////////////////////////////////////////////////////////////
+// CUnicodeToAsciiTranslation helper class
+
+class CUnicodeToAsciiTranslation : public CObject
+{
+public:
+    CUnicodeToAsciiTranslation(void);
+    virtual ~CUnicodeToAsciiTranslation(void);
+    bool IsInitialized(void) const
+    {
+        return m_initialized;
+    }
+    const SUnicodeTranslation* GetTranslation( TUnicode symbol) const;
+private:
+    void x_Initialize(const string& name);
+    static int  x_ParseLine(string& line, TUnicode& symbol, string& translation);
+    bool m_initialized;
+    char *m_pool;
+    map<TUnicode, SUnicodeTranslation> m_SymbolToTranslation;
+    
+};
+
+CUnicodeToAsciiTranslation::CUnicodeToAsciiTranslation(void)
+    : m_initialized(false), m_pool(0)
+{
+    string name( NCBI_PARAM_TYPE(NCBI, UnicodeToAscii)::GetDefault() );
+    if (!name.empty()) {
+        x_Initialize(name);
+    }
+}
+CUnicodeToAsciiTranslation::~CUnicodeToAsciiTranslation(void)
+{
+    if (m_pool) {
+        free(m_pool);
+    }
+}
+
+void CUnicodeToAsciiTranslation::x_Initialize(const string& name)
+{
+// clear existing data
+    if (m_pool) {
+        free(m_pool);
+        m_pool = 0;
+        m_SymbolToTranslation.clear();
+    }
+    m_initialized = false;
+
+// find file
+    CNcbiIfstream ifs(name.c_str(), IOS_BASE::in);
+    if (!ifs.is_open()) {
+        ERR_POST_X(1, "UnicodeToAscii table not found: " << name);
+        return;
+    }
+    LOG_POST_X(2, "Loading UnicodeToAscii table at: " << name);
+
+// estimate memory pool size
+    size_t filelen = (size_t)CFile(name).GetLength();
+    size_t poolsize = filelen/2;
+    m_pool = (char*)malloc(poolsize);
+    if (!m_pool) {
+        ERR_POST_X(3, "UnicodeToAscii table failed to load: not enough memory");
+        return;
+    }
+    size_t poolpos=0;
+
+// parse file
+    TUnicode symbol;
+    string translation;
+    string line;
+    line.reserve(16);
+    map<TUnicode, size_t> symbolToOffset;
+    while ( NcbiGetlineEOL(ifs, line) ) {
+        if (x_ParseLine(line, symbol, translation) > 1) {
+
+            if (poolpos + translation.size() + 1 > poolsize) {
+                m_pool = (char*)realloc( m_pool, poolsize += filelen/4);
+                if (!m_pool) {
+                    ERR_POST_X(3, "UnicodeToAscii table failed to load: not enough memory");
+                    return;
+                }
+            }
+            
+            symbolToOffset[symbol] = poolpos;
+            memcpy(m_pool+poolpos, translation.data(), translation.size());
+            poolpos += translation.size();
+            *(m_pool+poolpos) = '\0';
+            ++poolpos;
+        }
+    }
+    m_pool = (char*)realloc( m_pool, poolpos);
+    
+// create translation table
+    map<TUnicode, size_t>::const_iterator symend = symbolToOffset.end();
+    for( map<TUnicode, size_t>::const_iterator sym = symbolToOffset.begin();
+                                               sym != symend; ++sym) {
+        SUnicodeTranslation tr;
+        tr.Type = eString;
+        tr.Subst = m_pool + sym->second;
+        m_SymbolToTranslation[sym->first] = tr;
+    }
+
+    m_initialized = true;
+}
+
+int CUnicodeToAsciiTranslation::x_ParseLine(
+    string& line, TUnicode& symbol, string& translation)
+{
+    int res = 0;
+    symbol = 0;
+    translation.clear();
+
+    string::size_type begin=0, end = 0;
+// symbol
+    begin = line.find_first_not_of(" \t", begin=0);
+    if (begin == string::npos) {
+        return res;
+    }
+    end = line.find_first_of(" \t,#",begin);
+    if (end == begin) {
+        return res;
+    }
+    if (end == string::npos) {
+        end = line.size();
+    }
+    if (NStr::StartsWith(CTempString( line.data()+begin, end-begin), "0x")) {
+        begin += 2;
+    }
+    symbol = NStr::StringToUInt( CTempString( line.data()+begin, end-begin), 0, 16);
+    ++res;
+    if ( end == line.size() || line[end] == '#') {
+        return res;
+    }
+// translation
+    end = line.find(',',end);
+    if (end == string::npos) {
+        return res;
+    }
+    begin = line.find_first_not_of(" \t", ++end);
+    if (begin == string::npos) {
+        return res;
+    }
+    if (*(line.data()+begin) != '\"') {
+        return res;
+    }
+    const char* data = line.data()+begin;
+    const char* dataend = line.data()+line.size();
+    for (++data; data < dataend; ++data) {
+        if (*data == '"') {
+            break;
+        }
+        if (*data == '\\') {
+            ++data;
+            if (data == dataend) {
+                break;
+            }
+        }
+        translation.append(1,*data);
+    }
+    ++res;
+    return res;
+}
+
+const SUnicodeTranslation*
+CUnicodeToAsciiTranslation::GetTranslation( TUnicode symbol) const
+{
+    map<TUnicode, SUnicodeTranslation>::const_iterator i =
+        m_SymbolToTranslation.find(symbol);
+    if (i == m_SymbolToTranslation.end()) {
+        return NULL;
+    }
+    return &(i->second);
+}
+
+CSafeStaticRef<CUnicodeToAsciiTranslation> g_UnicodeTranslation;
+
+/////////////////////////////////////////////////////////////////////////////
 const SUnicodeTranslation*
 UnicodeToAscii(TUnicode character, const TUnicodeTable* table,
                const SUnicodeTranslation* default_translation)
 {
     if (!table) {
+        const CUnicodeToAsciiTranslation& t = g_UnicodeTranslation.Get();
+        if (t.IsInitialized()) {
+            return t.GetTranslation(character);
+        }
         table = &g_DefaultUnicodeTable;
     }
     const SUnicodeTranslation* translation=NULL;
