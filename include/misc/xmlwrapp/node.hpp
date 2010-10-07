@@ -49,6 +49,7 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
 #include <misc/xmlwrapp/namespace.hpp>
+#include <misc/xmlwrapp/attributes.hpp>
 
 // hidden stuff
 #include <misc/xmlwrapp/impl/_cbfo.hpp>
@@ -63,7 +64,6 @@ namespace xml {
 
 // forward declarations
 class document;
-class attributes;
 class xpath_expression;
 class node_set;
 
@@ -384,6 +384,34 @@ public:
     **/
     //####################################################################
     const xml::attributes& get_attributes (void) const;
+
+    //####################################################################
+    /**
+     * Search for a node attribute.
+     *
+     * @param name Name of the attribute to search. Cannot be NULL.
+     * @param nspace Namespace of the attribute to search. If NULL then
+     *               namespaces are not compared.
+     * @return iterator to the found attribute
+     * @exception xml::exception in case of problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    attributes::iterator find_attribute (const char* name,
+                                         const ns* nspace = NULL);
+
+    //####################################################################
+    /**
+     * Search for a node attribute.
+     *
+     * @param name Name of the attribute to search. Cannot be NULL.
+     * @param nspace Namespace of the attribute to search. If NULL then
+     *               namespaces are not compared.
+     * @return const iterator to the found attribute
+     * @exception xml::exception in case of problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    attributes::const_iterator find_attribute (const char* name,
+                                               const ns* nspace = NULL) const;
 
     //####################################################################
     /**
