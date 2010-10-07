@@ -295,9 +295,14 @@ public:
     /// Get editable Biosec-set handle by regular one
     CBioseq_set_EditHandle GetEditHandle(const CBioseq_set_Handle& seqset);
 
+    enum EActionIfLocked {
+        eKeepIfLocked,
+        eThrowIfLocked,
+        eRemoveIfLocked
+    };
     /// Clean all unused TSEs from the scope's cache and release the memory.
     /// TSEs referenced by any handles are not removed.
-    void ResetHistory(void);
+    void ResetHistory(EActionIfLocked action = eKeepIfLocked);
     /// Clear all information in the scope except added data loaders.
     void ResetDataAndHistory(void);
     /// Clear all information in the scope including data loaders.
@@ -319,7 +324,8 @@ public:
 
     /// Revoke data loader from the scope. Throw exception if the
     /// operation fails (e.g. data source is in use or not found).
-    void RemoveDataLoader(const string& loader_name);
+    void RemoveDataLoader(const string& loader_name,
+                          EActionIfLocked action = eThrowIfLocked);
     /// Revoke TSE previously added using AddTopLevelSeqEntry() or
     /// AddBioseq(). Throw exception if the TSE is still in use or
     /// not found in the scope.

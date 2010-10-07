@@ -281,21 +281,16 @@ public:
     // Get bioseq handle by seqloc
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc, int get_flag);
 
-    enum EActionIfLocked {
-        eKeepIfLocked,
-        eThrowIfLocked,
-        eRemoveIfLocked
-    };
     // History cleanup methods
     void ResetScope(void); // reset scope in initial state (no data)
-    void ResetHistory(EActionIfLocked action = eKeepIfLocked);
+    void ResetHistory(int action); // CScope::EActionIfLocked
     void ResetDataAndHistory(void);
     void RemoveFromHistory(CTSE_Handle tse);
 
     // Revoke data sources from the scope. Throw exception if the
     // operation fails (e.g. data source is in use or not found).
     void RemoveDataLoader(const string& loader_name,
-                          EActionIfLocked action = eThrowIfLocked);
+                          int action); // CScope::EActionIfLocked
     // Remove TSE previously added using AddTopLevelSeqEntry() or
     // AddBioseq().
     void RemoveTopLevelSeqEntry(CTSE_Handle entry);
@@ -382,7 +377,7 @@ private:
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
     void x_RemoveFromHistory(CRef<CTSE_ScopeInfo> tse_info,
-                             EActionIfLocked action);
+                             int action); // CScope::EActionIfLocked
 
     // clean some cache entries when new data source is added
     void x_ReportNewDataConflict(const CSeq_id_Handle* conflict_id = 0);

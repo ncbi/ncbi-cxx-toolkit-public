@@ -367,7 +367,7 @@ void CDataSource_ScopeInfo::ResetDS(void)
 
 void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
 {
-    if ( action_if_locked == CScope_Impl::eRemoveIfLocked ) {
+    if ( action_if_locked == CScope::eRemoveIfLocked ) {
         // no checks -> fast reset
         ResetDS();
         return;
@@ -1024,9 +1024,9 @@ void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked)
 {
     if ( IsLocked() ) {
         switch ( action_if_locked ) {
-        case CScope_Impl::eKeepIfLocked:
+        case CScope::eKeepIfLocked:
             return;
-        case CScope_Impl::eThrowIfLocked:
+        case CScope::eThrowIfLocked:
             NCBI_THROW(CObjMgrException, eLockedData,
                        "Cannot remove TSE from scope's history "
                        "because it's locked");

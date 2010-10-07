@@ -294,9 +294,9 @@ CBioseq_set_EditHandle CScope::GetEditHandle(const CBioseq_set_Handle& seqset)
 }
 
 
-void CScope::ResetHistory(void)
+void CScope::ResetHistory(EActionIfLocked action)
 {
-    m_Impl->ResetHistory();
+    m_Impl->ResetHistory(action);
 }
 
 
@@ -324,9 +324,10 @@ void CScope::RemoveFromHistory(const CTSE_Handle& tse)
 }
 
 
-void CScope::RemoveDataLoader(const string& loader_name)
+void CScope::RemoveDataLoader(const string& loader_name,
+                              EActionIfLocked action)
 {
-    m_Impl->RemoveDataLoader(loader_name);
+    m_Impl->RemoveDataLoader(loader_name, action);
 }
 
 

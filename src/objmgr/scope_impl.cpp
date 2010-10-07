@@ -344,7 +344,7 @@ CSeq_annot_Handle CScope_Impl::AddSharedSeq_annot(const CSeq_annot& annot,
 
 
 void CScope_Impl::RemoveDataLoader(const string& name,
-                                   EActionIfLocked action)
+                                   int action)
 {
     CRef<CDataSource> ds(m_ObjMgr->AcquireDataLoader(name));
     TConfWriteLockGuard guard(m_ConfLock);
@@ -362,7 +362,7 @@ void CScope_Impl::RemoveDataLoader(const string& name,
         x_ClearCacheOnRemoveData();
         throw;
     }
-    if ( action != eRemoveIfLocked ) {
+    if ( action != CScope::eRemoveIfLocked ) {
         // we need to process each TSE individually checking if it's unlocked
         CDataSource_ScopeInfo::TTSE_InfoMap tse_map;
         {{
@@ -372,7 +372,7 @@ void CScope_Impl::RemoveDataLoader(const string& name,
         }}
         ITERATE( CDataSource_ScopeInfo::TTSE_InfoMap, tse_it, tse_map ) {
             try {
-                tse_it->second.GetNCObject().RemoveFromHistory(eThrowIfLocked);
+                tse_it->second.GetNCObject().RemoveFromHistory(CScope::eThrowIfLocked);
             }
             catch ( ... ) {
                 x_ClearCacheOnRemoveData();
@@ -412,7 +412,7 @@ void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle tse)
     }
     x_ClearCacheOnRemoveData(&*tse_lock);
     tse_lock.Reset();
-    tse_info->RemoveFromHistory(eRemoveIfLocked);
+    tse_info->RemoveFromHistory(CScope::eRemoveIfLocked);
     _ASSERT(!tse_info->IsAttached());
     _ASSERT(!tse);
     if ( !ds_info->CanBeEdited() ) { // shared -> remove whole DS
@@ -2222,13 +2222,13 @@ namespace {
 void CScope_Impl::RemoveFromHistory(CTSE_Handle tse)
 {
     TConfWriteLockGuard guard(m_ConfLock);
-    x_RemoveFromHistory(Ref(&tse.x_GetScopeInfo()), eRemoveIfLocked);
+    x_RemoveFromHistory(Ref(&tse.x_GetScopeInfo()), CScope::eRemoveIfLocked);
     _ASSERT(!tse);
 }
 
 
 void CScope_Impl::x_RemoveFromHistory(CRef<CTSE_ScopeInfo> tse_info,
-                                      EActionIfLocked action)
+                                      int action)
 {
     _ASSERT(tse_info->IsAttached());
     tse_info->RemoveFromHistory(action);
@@ -2239,7 +2239,7 @@ void CScope_Impl::x_RemoveFromHistory(CRef<CTSE_ScopeInfo> tse_info,
 }
 
 
-void CScope_Impl::ResetHistory(EActionIfLocked action)
+void CScope_Impl::ResetHistory(int action)
 {
     TConfWriteLockGuard guard(m_ConfLock);
     NON_CONST_ITERATE ( TDSMap, it, m_DSMap ) {
@@ -2254,7 +2254,7 @@ void CScope_Impl::ResetDataAndHistory(void)
 {
     TConfWriteLockGuard guard(m_ConfLock);
     NON_CONST_ITERATE ( TDSMap, it, m_DSMap ) {
-        it->second->ResetHistory(eRemoveIfLocked);
+        it->second->ResetHistory(CScope::eRemoveIfLocked);
     }
     x_ClearCacheOnRemoveData();
     m_Seq_idMap.clear();
