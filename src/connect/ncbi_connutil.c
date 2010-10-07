@@ -1749,7 +1749,7 @@ extern void URL_Encode
  size_t      dst_size,
  size_t*     dst_written)
 {
-    return URL_EncodeEx
+    URL_EncodeEx
         (src_buf, src_size, src_read, dst_buf, dst_size, dst_written, 0);
 }
 
