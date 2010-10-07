@@ -110,6 +110,43 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
+class CSubtypeEquals {
+public:
+    bool operator()( const CRef< CSubSource > & obj1, const CRef< CSubSource > & obj2 ) {
+        if( obj1.IsNull() != obj2.IsNull() ) {
+            return false;
+        }
+        if( ! obj1.IsNull() ) {
+            CSubSource_Base::TSubtype subtypevalue1 = ( obj1->CanGetSubtype() ? obj1->GetSubtype() : 0 );
+            CSubSource_Base::TSubtype subtypevalue2 = ( obj2->CanGetSubtype() ? obj2->GetSubtype() : 0 );
+            if( subtypevalue1 != subtypevalue2 ) {
+                return false;
+            }
+
+            const CSubSource_Base::TName &name1 = ( obj1->CanGetName() ? obj1->GetName() : kEmptyStr );
+            const CSubSource_Base::TName &name2 = ( obj2->CanGetName() ? obj2->GetName() : kEmptyStr );
+            if( name1 != name2 ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+};
+
+class CDbEquals {
+public:
+    bool operator()( const CRef< CDbtag > & obj1, const CRef< CDbtag > & obj2 ) {
+        if( obj1.IsNull() != obj2.IsNull() ) {
+            return false;
+        }
+        if( ! obj1.IsNull() ) {
+            return obj1->Match( *obj2 );
+        }
+        return true;
+    }
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1171,33 +1208,77 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
         return;
     }
 
+    // see if merging is allowed (set sourcePubFuse)
+    //
+    // (this code is basically copied and pasted from elsewhere.  Maybe they should all be put
+    // in a shared function?)
+    bool sourcePubFuse = false;
+    {{
+        if( m_Current->GetHandle().CanGetId() ) {
+            ITERATE( CBioseq_Handle::TId, it, m_Current->GetHandle().GetId() ) {
+                CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
+                if( ! seqId.IsNull() ) {
+                    switch( seqId->Which() ) {
+                        case CSeq_id_Base::e_Gibbsq:
+                        case CSeq_id_Base::e_Gibbmt:
+                        case CSeq_id_Base::e_Embl:
+                        case CSeq_id_Base::e_Pir:
+                        case CSeq_id_Base::e_Swissprot:
+                        case CSeq_id_Base::e_Patent:        
+                        case CSeq_id_Base::e_Ddbj:
+                        case CSeq_id_Base::e_Prf:
+                        case CSeq_id_Base::e_Pdb:
+                        case CSeq_id_Base::e_Tpe:
+                        case CSeq_id_Base::e_Tpd:
+                        case CSeq_id_Base::e_Gpipe:
+                            // with some types, it's okay to merge
+                            sourcePubFuse = true;
+                            break;                        
+                        case CSeq_id_Base::e_Genbank:
+                        case CSeq_id_Base::e_Tpg:
+                            // Genbank allows merging only if it's the old-style 1 + 5 accessions
+                            if( NULL != seqId->GetTextseq_Id() &&
+                                seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
+                                    sourcePubFuse = true;
+                            }
+                            break;
+                        case CSeq_id_Base::e_not_set:
+                        case CSeq_id_Base::e_Local:
+                        case CSeq_id_Base::e_Other:
+                        case CSeq_id_Base::e_General:
+                        case CSeq_id_Base::e_Giim:                        
+                        case CSeq_id_Base::e_Gi:
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+    }}                        
+
+    if( ! sourcePubFuse ) {
+        return;
+    }
+
+    // the following is slow ( quick eyeballing says at *least* O(n^2) ). If records
+    // with lots of biosources are possible, we should consider improving it.
+    // sorting, uniquing, and sorting back again would be a possible way to get O(n log(n) )
+    // but you'd have to convert x_BiosourcesEqualForMergingPurposes into a "less-than" function
+
     // merge equal sources
     TSourceFeatSet::iterator it = srcs.begin();
     while (it != srcs.end()) {
         TSourceFeatSet::iterator it2 = it++;
-        CMappedFeat   f2 = (*it2)->GetFeat();
-        const string& c2 = f2.IsSetComment() ? f2.GetComment() : kEmptyStr;
         while (it != srcs.end()) {
-            CMappedFeat   f = (*it)->GetFeat();
-            const string& c = f.IsSetComment() ? f.GetComment() : kEmptyStr;
-            if (NStr::EqualNocase(c2, c)  &&
-                (*it2)->GetSource().Equals((*it)->GetSource())) 
-            {
-                if ( s_LocationsOverlap( (*it)->GetLoc(), (*it2)->GetLoc() ) ||
-                    s_LocationsTouch(  (*it)->GetLoc(), (*it2)->GetLoc() ) )
-                {
-                    CRef<CSeq_loc> merged_loc = 
-                        Seq_loc_Add((*it2)->GetLoc(),(*it)->GetLoc(),
-                                    CSeq_loc::fSort | CSeq_loc::fMerge_All,
-                                    &m_Current->GetScope());
-                    (*it2)->SetLoc(*merged_loc);
-                    it = srcs.erase(it);
-                    x_MergeEqualBioSources( srcs );
-                    return;
-//                    srcs.erase(it);
-//                    it = ++it2;
-                    continue;
-                }
+            if( x_BiosourcesEqualForMergingPurposes( **it, **it2 ) ) {
+                CRef<CSeq_loc> merged_loc = 
+                    Seq_loc_Add((*it2)->GetLoc(),(*it)->GetLoc(),
+                    CSeq_loc::fSort | CSeq_loc::fMerge_All,
+                    &m_Current->GetScope());
+                (*it2)->SetLoc(*merged_loc);
+                x_MergeEqualBioSources( srcs );
+                return;
             }
             ++it;
         }
@@ -1205,6 +1286,98 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
     }
 }
 
+// "the same" means something different for merging purposes than it does
+// for true equality (e.g. locations might not be the same)
+// That's why we have this function.
+bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes( 
+    const CSourceFeatureItem &src1, const CSourceFeatureItem &src2 ) const
+{
+    // some variables which we'll need later
+    const CBioSource &biosrc1 = src1.GetSource();
+    const CBioSource &biosrc2 = src2.GetSource();
+    const CMappedFeat &feat1 = src1.GetFeat();
+    const CMappedFeat &feat2 = src2.GetFeat();
+
+    // same focus
+    if( src1.IsFocus() != src2.IsFocus() ) {
+        return false;
+    }
+
+    // same taxname
+    const string &taxname1 = (biosrc1.IsSetTaxname() ? biosrc1.GetTaxname() : kEmptyStr);
+    const string &taxname2 = (biosrc2.IsSetTaxname() ? biosrc2.GetTaxname() : kEmptyStr);
+    if( taxname1 != taxname2 ) {
+        return false;
+    }
+
+    // make sure comments are the same
+    const string comment1 = ( feat1.IsSetComment() ? feat1.GetComment() : kEmptyStr );
+    const string comment2 = ( feat2.IsSetComment() ? feat2.GetComment() : kEmptyStr );
+    if( comment1 != comment2 ) {
+        return false;
+    }
+
+    // make sure org mods and dbs are the same
+    if( biosrc1.CanGetOrg() != biosrc2.CanGetOrg() ) {
+        return false;
+    }
+    if( biosrc1.CanGetOrg() ) {
+        const CBioSource_Base::TOrg& org1 = biosrc1.GetOrg();
+        const CBioSource_Base::TOrg& org2 = biosrc2.GetOrg();
+
+        // check org mod
+        if( org1.CanGetMod() != org2.CanGetMod() ) {
+            return false;
+        }
+        if( biosrc1.IsSetOrgMod() ) {
+            const COrg_ref_Base::TMod& orgmod1 = org1.GetMod();
+            const COrg_ref_Base::TMod& orgmod2 = org2.GetMod();
+
+            if( ! equal( orgmod1.begin(), orgmod1.end(), orgmod2.begin() ) ) {
+                return false;
+            }
+        }
+
+        // check dbs
+        if( org1.CanGetDb() != org2.CanGetDb() ) {
+            return false;
+        }
+        if( org1.CanGetDb() ) {
+            const COrg_ref_Base::TDb& db1 = org1.GetDb();
+            const COrg_ref_Base::TDb& db2 = org2.GetDb();
+
+            if( ! equal( db1.begin(), db1.end(), 
+                db2.begin(), CDbEquals() ) ) {
+                return false;
+            }
+        }
+    }
+
+    // make sure SubSources are equal
+    if( biosrc1.IsSetSubtype() != biosrc2.IsSetSubtype() ) {
+        return false;
+    }
+    if( biosrc1.IsSetSubtype() ) { // other known to be set, too
+        const CBioSource_Base::TSubtype & subtype1 = biosrc1.GetSubtype();
+        const CBioSource_Base::TSubtype & subtype2 = biosrc2.GetSubtype();
+
+        if( ! equal( subtype1.begin(), subtype1.end(), 
+            subtype2.begin(), CSubtypeEquals() ) ) {
+                return false;
+        }
+    }
+
+    // make sure locations overlap or are adjacent
+    const bool locations_overlap_or_touch = 
+        ( s_LocationsOverlap( src1.GetLoc(), src2.GetLoc() ) ||
+        s_LocationsTouch(  src1.GetLoc(), src2.GetLoc() ) );
+    if( ! locations_overlap_or_touch ) {
+        return false;
+    }
+
+    // no differences, so they're the same (for merging purposes)
+    return true;
+}
 
 void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
 {

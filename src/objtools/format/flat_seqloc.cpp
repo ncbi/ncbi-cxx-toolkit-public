@@ -229,6 +229,7 @@ bool CFlatSeqLoc::x_Add
     {{
          /// odd corner case:
          /// a mix with one interval should not have a prefix
+        const bool print_virtual = ( type != eType_location );
          CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Allow);
          ++it;
          bool has_one = !it;
@@ -239,7 +240,6 @@ bool CFlatSeqLoc::x_Add
              oss << prefix;
          }
          bool join_inside_order = false; // true when we're inside a join() inside an order()
-         bool first_loop_iteration = true; // certain special things are done the first time through the loop
          bool next_is_virtual = ( !it || it.GetSeq_loc().IsNull() || s_IsVirtualLocation( it.GetSeq_loc(), seq ) );
          for (  ; it; ++it ) {
              oss << delim;
@@ -253,20 +253,18 @@ bool CFlatSeqLoc::x_Add
              // get iterator to next one
              CSeq_loc_CI next = it;
              ++next;
-             // add or end a "join" part inside an "order"
+
+             // begin join in order, if necessary
              next_is_virtual = ( ! next || next.GetSeq_loc().IsNull() || s_IsVirtualLocation( next.GetSeq_loc(), seq ) );
              if( is_flat_order ) {
-                 if( join_inside_order && this_is_virtual ) {
-                     oss << ')';
-                     join_inside_order = false;
-                 } else if( this_loc.IsInt() && ! join_inside_order && ! next_is_virtual ) {
+                 if( this_loc.IsInt() && ! join_inside_order && ! this_is_virtual && ! next_is_virtual ) {
                      oss << "join(";
                      join_inside_order = true;
                  }
              }
 
              // skip gaps, etc.
-             if( this_is_virtual ) {
+             if( this_is_virtual && ! print_virtual ) {
                  delim = "";
              } else {
                  // add the actual location
@@ -277,7 +275,13 @@ bool CFlatSeqLoc::x_Add
                  }
              }
 
-             first_loop_iteration = false;
+             // end join in order, if necessary
+             if( is_flat_order ) {
+                 if( join_inside_order && next_is_virtual ) {
+                     oss << ')';
+                     join_inside_order = false;
+                 }
+             }
          }
          if( join_inside_order ) {
              oss << ')';

@@ -111,6 +111,7 @@ protected:
         const TRange& range, CBioseqContext& ctx,
         TSourceFeatSet& srcs) const;
     void x_MergeEqualBioSources(TSourceFeatSet& srcs) const;
+    bool x_BiosourcesEqualForMergingPurposes( const CSourceFeatureItem &src1, const CSourceFeatureItem &src2 ) const;
     void x_SubtractFromFocus(TSourceFeatSet& srcs) const;
 
     // alignments

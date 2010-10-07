@@ -91,6 +91,7 @@ enum EFeatureQualifier {
     eFQ_map,
     eFQ_maploc,
     eFQ_mobile_element,
+    eFQ_mobile_element_type,
     eFQ_mod_base,
     eFQ_modelev,
     eFQ_mol_wt,

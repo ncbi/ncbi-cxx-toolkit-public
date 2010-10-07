@@ -103,6 +103,7 @@ static const SImportEntry kImportTable[] = {
     { "misc_recomb",         CSeqFeatData::eSubtype_misc_recomb },
     { "misc_signal",         CSeqFeatData::eSubtype_misc_signal },
     { "misc_structure",      CSeqFeatData::eSubtype_misc_structure },
+    { "mobile_element",      CSeqFeatData::eSubtype_mobile_element },
     { "modified_base",       CSeqFeatData::eSubtype_modified_base },
     { "mutation",            CSeqFeatData::eSubtype_mutation },
     { "old_sequence",        CSeqFeatData::eSubtype_old_sequence },
@@ -2247,6 +2248,35 @@ START_SUBTYPE(het)  //  same as misc_feature
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
+
+START_SUBTYPE(mobile_element)
+    // TODO: need to check this
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
+    ADD_QUAL(insertion_seq);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(mobile_element_type);
+    ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(rpt_family);
+    ADD_QUAL(rpt_type);
+    ADD_QUAL(rpt_unit);
+    ADD_QUAL(rpt_unit_range);
+    ADD_QUAL(rpt_unit_seq);
+    ADD_QUAL(satellite);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(transposon);
     ADD_QUAL(usedin);
 END_SUBTYPE
 

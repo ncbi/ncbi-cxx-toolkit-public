@@ -3094,6 +3094,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(label),
         DO_IMPORT(map),
         DO_IMPORT(mobile_element),
+        DO_IMPORT(mobile_element_type),
         DO_IMPORT(mod_base),
         DO_IMPORT(ncRNA_class),
         DO_IMPORT(number),
@@ -3443,6 +3444,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(rpt_unit_seq);
     DO_QUAL(satellite);
     DO_QUAL(mobile_element);
+    DO_QUAL(mobile_element_type);
     DO_QUAL(usedin);
 
     // extra imports, actually...
@@ -3466,6 +3468,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(translation);
     DO_QUAL(transcription);
     DO_QUAL(peptide);
+
 #undef DO_QUAL
 }
 
@@ -3822,6 +3825,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_map, CSeqFeatData::eQual_map),
     TQualPair(eFQ_maploc, CSeqFeatData::eQual_note),
     TQualPair(eFQ_mobile_element, CSeqFeatData::eQual_mobile_element),
+    TQualPair(eFQ_mobile_element_type, CSeqFeatData::eQual_mobile_element_type),
     TQualPair(eFQ_mod_base, CSeqFeatData::eQual_mod_base),
     TQualPair(eFQ_modelev, CSeqFeatData::eQual_note),
     TQualPair(eFQ_mol_wt, CSeqFeatData::eQual_calculated_mol_wt),
@@ -4613,11 +4617,15 @@ void CSourceFeatureItem::x_AddPcrPrimersQuals(const CBioSource& src, CBioseqCont
                 const CPCRReaction_Base::TForward &forward = (*it)->GetForward();
                 if( forward.CanGet() ) {
                     ITERATE( CPCRReaction_Base::TForward::Tdata, it2, forward.Get() ) {
-                        string fwd_name = (*it2)->GetName();
-                        s_AddPcrPrimersQualsAppend( primer_value, "fwd_name: ", fwd_name);
-                        string fwd_seq = (*it2)->GetSeq();
-                        NStr::ToLower( fwd_seq );
-                        s_AddPcrPrimersQualsAppend( primer_value, "fwd_seq: ", fwd_seq);
+                        const string &fwd_name = ( (*it2)->CanGetName() ? (*it2)->GetName().Get() : kEmptyStr );
+                        if( ! fwd_name.empty() ) {
+                            s_AddPcrPrimersQualsAppend( primer_value, "fwd_name: ", fwd_name);
+                        }
+                        const string &fwd_seq = ( (*it2)->CanGetSeq() ? (*it2)->GetSeq().Get() : kEmptyStr );
+                        // NStr::ToLower( fwd_seq );
+                        if( ! fwd_seq.empty() ) {
+                            s_AddPcrPrimersQualsAppend( primer_value, "fwd_seq: ", fwd_seq);
+                        }
                     }
                 }
             }
@@ -4625,11 +4633,15 @@ void CSourceFeatureItem::x_AddPcrPrimersQuals(const CBioSource& src, CBioseqCont
                 const CPCRReaction_Base::TReverse &reverse = (*it)->GetReverse();
                 if( reverse.CanGet() ) {
                     ITERATE( CPCRReaction_Base::TReverse::Tdata, it2, reverse.Get() ) {
-                        string rev_name = (*it2)->GetName();
-                        s_AddPcrPrimersQualsAppend( primer_value, "rev_name: ", rev_name);
-                        string rev_seq = (*it2)->GetSeq();
-                        NStr::ToLower( rev_seq );
-                        s_AddPcrPrimersQualsAppend( primer_value, "rev_seq: ", rev_seq);
+                        const string &rev_name = ((*it2)->CanGetName() ? (*it2)->GetName().Get() : kEmptyStr );
+                        if( ! rev_name.empty() ) {
+                            s_AddPcrPrimersQualsAppend( primer_value, "rev_name: ", rev_name);
+                        }
+                        const string &rev_seq = ( (*it2)->CanGetSeq() ? (*it2)->GetSeq().Get() : kEmptyStr );
+                        // NStr::ToLower( rev_seq ); // do we need this? 
+                        if( ! rev_seq.empty() ) {
+                            s_AddPcrPrimersQualsAppend( primer_value, "rev_seq: ", rev_seq);
+                        }
                     }
                 }
             }

@@ -198,7 +198,7 @@ CReferenceItem::CReferenceItem
         m_Loc.Reset(&(feat.GetLocation()));
     }
     // cleanup location
-    m_Loc = Seq_loc_Merge(*m_Loc, CSeq_loc::fMerge_All, &ctx.GetScope());
+    m_Loc = Seq_loc_Merge(*m_Loc, CSeq_loc::fSortAndMerge_All, &ctx.GetScope());
 
     x_GatherInfo(ctx);
 }
