@@ -373,6 +373,7 @@ public:
         W_CompIsWgsTypeIsNot,   // -- agp_validate --
 
         W_CompIsNotWgsTypeIs,   // -- agp_validate --
+        W_ObjEqCompId,          // -- agp_validate --
 
         W_Last, W_First = 21,
 
@@ -420,10 +421,7 @@ public:
         CODE_Last=CODE_Extended+20
     };
 
-    // Not needed if you use CAgpReader: it already dioes not report a 2-line error after a bad line.
-    //enum EAppliesToEx{ fAtSkipAfterBad=2}; // Suppress this error if the previous line was invalid
-
-    static const char* GetMsgEx(int code);
+    //static const char* GetMsgEx(int code);
     static string GetPrintableCode(int code); // Returns a string like e01 w12
     static void PrintAllMessages(CNcbiOstream& out);
 

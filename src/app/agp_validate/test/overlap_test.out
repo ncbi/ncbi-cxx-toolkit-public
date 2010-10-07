@@ -6,10 +6,10 @@
 	WARNING: the span overlaps a previous span for this component: 128760..171535 at line 2
 
 No errors, 5 warnings; 3 not printed.
-  count  description
-      1  gap at the beginning of object 
-      1  the span overlaps a previous span for this component
-      3  gap line missing column 9 (null)
+  Count Code  Description
+      1  w22  gap at the beginning of object 
+      1  w25  the span overlaps a previous span for this component
+      3  w31  gap line missing column 9 (null)
 
 
 Objects                : 1

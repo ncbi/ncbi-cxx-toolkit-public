@@ -81,13 +81,13 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "gap line missing column 9 (null)",
     "missing line separator at the end of file",
     "extra text in the column 9 of the gap line",
-    "object_id-s appear sorted, but not in a numerical order",
+    "object names appear sorted, but not in a numerical order",
     "component_id looks like a WGS accession, component_type is not W",
 
     "component_id looks like a non-WGS accession, yet component_type is W",
     // ? "component_id looks like a protein accession"
+    "object name (column 1) is the same as component_id (column 6)",
     kEmptyCStr, // W_Last
-    kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
 
@@ -989,9 +989,9 @@ string CAgpErrEx::SkipMsg(const string& str, bool skip_other)
         bool matchesCode = ( str==GetPrintableCode(i) );
         if( matchesCode || NStr::Find(GetMsg(i), str) != NPOS) {
             m_MustSkip[i] = !skip_other;
-            res += "  (";
+            res += "  ";
             res += GetPrintableCode(i);
-            res += ") ";
+            res += "  ";
             res += GetMsg(i);
             res += "\n";
             if(matchesCode) break;
@@ -1031,17 +1031,17 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
             ostr << "Internal error in CAgpErrEx::PrintMessageCounts().";
         }
     }
-    if(from<to) ostr<< setw(7) << "count" << "  description\n"; // code?
+    if(from<to) ostr<< setw(7) << "Count" << " Code  Description\n"; // code?
     for(int i=from; i<to; i++) {
         if( m_MsgCount[i] ) {
             ostr<< setw(7) << m_MsgCount[i] << "  "
-                    // << "(" << GetPrintableCode(i) << ") "
+                    << GetPrintableCode(i) << "  "
                     << GetMsg(i) << "\n";
         }
     }
     if(m_lines_skipped && report_lines_skipped) {
       ostr << "\nNOTE: " << m_lines_skipped <<
-        " invalid lines were skipped (not included in most counts, not subjected to all the checks).\n";
+        " invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).\n";
     }
 }
 

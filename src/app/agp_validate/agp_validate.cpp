@@ -529,8 +529,8 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
   return;
 
 LengthRedefinedFa:
-  cerr<< "ERROR - component length redefined from " << prev_len << " to " << len << "\n"
-      << "  component_id: " << acc_long << "\n"
+  cerr<< "ERROR - sequence length redefined from " << prev_len << " to " << len << "\n"
+      << "  sequence id: " << acc_long << "\n"
       << "  File: " << filename << "\n"
       << "  Lines: "<< header_line_num << ".." << line_num << "\n\n";
   exit(1);

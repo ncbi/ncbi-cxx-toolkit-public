@@ -198,6 +198,9 @@ void CAgpValidateReader::OnGapOrComponent()
       spans.AddSpan(comp);
     }
 
+    //// check the component name [and its end vs its length]
+    if(m_this_row->GetComponentId()==m_this_row->GetObject()) agpErr.Msg(CAgpErrEx::W_ObjEqCompId);
+
     CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( m_this_row->GetComponentId() );
     int div = acc_inf & CSeq_id::eAcc_division_mask;
     if(m_CheckCompNames) {
@@ -373,7 +376,7 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
     cout << "\n";
     agpErr.PrintTotals(cout, e_count, w_count, agpErr.m_msg_skipped);
     if(agpErr.m_MaxRepeatTopped) {
-      cout << " (to print all: -limit 0)";
+      cout << " (to print all: -limit 0; to skip some: -skip CODE)";
     }
     cout << ".";
     if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
@@ -515,17 +518,36 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
   }
 
   if(m_CompId2Spans.size()) {
+    CAccPatternCounter compNamePatterns;
+    for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
+      it != m_CompId2Spans.end(); ++it)
     {
-      CAccPatternCounter compNamePatterns;
-      for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
-        it != m_CompId2Spans.end(); ++it)
-      {
-        compNamePatterns.AddName(it->first);
+      compNamePatterns.AddName(it->first);
+    }
+    bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names");
+    if(!m_CheckCompNames && hasSuspicious ) {
+      cout<< "Use -g or -a to print lines with suspicious accessions.\n";
+    }
+
+    const int MAX_objname_eq_comp=3;
+    int cnt_objname_eq_comp=0;
+    string str_objname_eq_comp;
+    for(TObjSet::iterator it = m_ObjIdSet.begin();  it != m_ObjIdSet.end(); ++it) {
+      if(m_CompId2Spans.find(*it)!=m_CompId2Spans.end()) {
+        cnt_objname_eq_comp++;
+        if(cnt_objname_eq_comp<=MAX_objname_eq_comp) {
+          if(cnt_objname_eq_comp>1) str_objname_eq_comp+=", ";
+          str_objname_eq_comp+=*it;
+        }
       }
-      bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names");
-      if(!m_CheckCompNames && hasSuspicious ) {
-        cout<< "Use -g or -a to print lines with suspicious accessions.\n";
-      }
+    }
+    if(cnt_objname_eq_comp) {
+      cout<< "\n" << cnt_objname_eq_comp << " name"
+          << (cnt_objname_eq_comp==1?" is":"s are")
+          << " used both as object and as component_id:\n";
+      cout<< "  " << str_objname_eq_comp;
+      if(cnt_objname_eq_comp>MAX_objname_eq_comp) cout << ", ...";
+      cout << "\n";
     }
   }
 }

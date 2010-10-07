@@ -18,10 +18,10 @@
 	WARNING: gap at the end of object LACBIscaffold_1
 
 5 errors, 1 warning.
-  count  description
-      1  gap at the end of object 
-      4  invalid component_id
-      1  component_end greater than sequence length
+  Count Code  Description
+      1  w21  gap at the end of object 
+      4  g41  invalid component_id
+      1  g44  component_end greater than sequence length
 
 
 Objects                : 1

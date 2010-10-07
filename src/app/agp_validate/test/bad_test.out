@@ -187,34 +187,34 @@
 	ERROR, line skipped: empty line
 
 48 errors, 17 warnings; 2 not printed.
-  count  description
-      2  expecting 9 tab-separated columns
-      8  column X is empty
-      1  empty line
-     11  invalid value for X
-      5  invalid linkage "yes" for gap_type 
-      6  X must be a positive integer not exceeding 2e+9
-      1  object_end is less than object_beg
-      1  component_end is less than component_beg
-      1  object range length not equal to the gap length
-      1  object range length not equal to component range length
-      2  duplicate object 
-      1  first line of an object must have object_beg=1
-      1  first line of an object must have part_number=1
-      1  part number (column 4) != previous part number + 1
-      1  0 or na component orientation may only be used in a singleton scaffold
-      5  object_beg != previous object_end + 1
-      1  gap at the end of object 
-      2  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
-      1  no components in object
-      4  the span overlaps a previous span for this component
-      2  component span appears out of order
-      4  duplicate component with non-draft type
-      1  extra <TAB> character at the end of line
-      2  component_id looks like a WGS accession, component_type is not W
+  Count Code  Description
+      2  e01  expecting 9 tab-separated columns
+      8  e02  column X is empty
+      1  e03  empty line
+     11  e04  invalid value for X
+      5  e05  invalid linkage "yes" for gap_type 
+      6  e06  X must be a positive integer not exceeding 2e+9
+      1  e07  object_end is less than object_beg
+      1  e08  component_end is less than component_beg
+      1  e09  object range length not equal to the gap length
+      1  e10  object range length not equal to component range length
+      2  e11  duplicate object 
+      1  e12  first line of an object must have object_beg=1
+      1  e13  first line of an object must have part_number=1
+      1  e14  part number (column 4) != previous part number + 1
+      1  e15  0 or na component orientation may only be used in a singleton scaffold
+      5  e16  object_beg != previous object_end + 1
+      1  w21  gap at the end of object 
+      2  w23  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+      1  w24  no components in object
+      4  w25  the span overlaps a previous span for this component
+      2  w26  component span appears out of order
+      4  w27  duplicate component with non-draft type
+      1  w30  extra <TAB> character at the end of line
+      2  w35  component_id looks like a WGS accession, component_type is not W
          (Use -g to print lines with WGS component_id/component_type mismatch.)
 
-NOTE: 37 invalid lines were skipped (not included in most counts, not subjected to all the checks).
+NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
 
 Objects                :  8

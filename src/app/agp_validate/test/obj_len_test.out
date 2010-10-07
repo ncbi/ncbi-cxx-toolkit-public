@@ -9,10 +9,10 @@
 	ERROR: object >MICPUCscaffold_21 not found in FASTA file(s)
 
 3 errors, 2 warnings; 2 not printed.
-  count  description
-      2  gap line missing column 9 (null)
-      1  object X not found in FASTA file(s)
-      2  final object_end (column 3) not equal to object length in FASTA file(s)
+  Count Code  Description
+      2  w31  gap line missing column 9 (null)
+      1  g47  object X not found in FASTA file(s)
+      2  g48  final object_end (column 3) not equal to object length in FASTA file(s)
 
 
 Objects                : 3

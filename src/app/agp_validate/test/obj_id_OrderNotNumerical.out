@@ -1,11 +1,11 @@
 
 10:MICPUCscaffold_20	1	6218	1	W	ACCP01000495.1	1	6218	+
-	WARNING: object_id-s appear sorted, but not in a numerical order (MICPUCscaffold_111 before MICPUCscaffold_20)
+	WARNING: object names appear sorted, but not in a numerical order (MICPUCscaffold_111 before MICPUCscaffold_20)
 
 No errors, 5 warnings; 4 not printed.
-  count  description
-      4  gap line missing column 9 (null)
-      1  object_id-s appear sorted, but not in a numerical order
+  Count Code  Description
+      4  w31  gap line missing column 9 (null)
+      1  w34  object names appear sorted, but not in a numerical order
 
 
 Objects                : 5

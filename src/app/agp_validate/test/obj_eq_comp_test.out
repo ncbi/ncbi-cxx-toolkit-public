@@ -1,0 +1,53 @@
+
+1:ps1010rel4_chr1	1	1889	1	W	ps1010rel4_chr1	1	1889	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+2:ps1010rel4_chr100000	1	433	1	W	ps1010rel4_chr100000	1	433	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+3:ps1010rel4_chr100002	1	138	1	W	ps1010rel4_chr100002	1	138	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+4:ps1010rel4_chr100003	1	146	1	W	ps1010rel4_chr100003	1	146	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+5:ps1010rel4_chr100004	1	248	1	W	ps1010rel4_chr100004	1	248	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+6:ps1010rel4_chr100014	1	158	1	W	ps1010rel4_chr100014	1	158	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+No errors, 6 warnings.
+  Count Code  Description
+      6  w37  object name (column 1) is the same as component_id (column 6)
+
+
+Objects                :  9
+- with single component:  6
+
+Scaffolds              :  9
+- with single component:  6
+
+Components             : 14 (W)
+	orientation +  : 14
+	orientation -  :  0
+	orientation 0  :  0
+	orientation na :  0
+
+Gaps                   :  5 (N)
+- do not break scaffold:  5
+  clone   , linkage yes:  0
+  fragment, linkage yes:  5
+  fragment, linkage no :  0
+  repeat  , linkage yes:  0
+- break it, linkage no :  0
+
+Object names               :  9
+  ps1010rel4_chr[1..100022]:  9
+
+Component names                        : 14
+  ps1010rel4_chr[100016..100022]_[1..4]:  8
+  ps1010rel4_chr[1..100014]            :  6
+
+6 names are used both as object and as component_id:
+  ps1010rel4_chr1, ps1010rel4_chr100000, ps1010rel4_chr100002, ...
