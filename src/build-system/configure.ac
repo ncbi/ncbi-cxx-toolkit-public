@@ -1974,6 +1974,7 @@ AC_GNU_SOURCE
 AC_TYPE_SIZE_T
 if test "${with_universal-no}" = "no"; then
    AC_CHECK_SIZEOF(size_t)
+   ac_cv_sizeof_size_t=`echo "$ac_cv_sizeof_size_t" | tr -d '\r'`
    NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
    AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
                       [Define to the architecture size.])

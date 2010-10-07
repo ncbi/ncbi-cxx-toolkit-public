@@ -7563,6 +7563,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+   ac_cv_sizeof_size_t=`echo "$ac_cv_sizeof_size_t" | tr -d '\r'`
    NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
 
 cat >>confdefs.h <<_ACEOF
