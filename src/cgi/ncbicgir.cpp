@@ -378,7 +378,7 @@ void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
     }
     else {
         // Set the cookie for one year by default.
-        CTime def_exp(CTime::eCurrent);
+        CTime def_exp(CTime::eCurrent, CTime::eGmt);
         def_exp.AddYear(1);
         m_TrackingCookie->SetExpTime(def_exp);
     }
