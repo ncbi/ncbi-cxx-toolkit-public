@@ -411,7 +411,7 @@ static char* s_WinStrerror(DWORD error)
  */
 
 
-static unsigned short x_GetLocalPort(TSOCK_Handle fd)
+static unsigned short s_GetLocalPort(TSOCK_Handle fd)
 {
     struct sockaddr_in sin;
     SOCK_socklen_t sinlen = (SOCK_socklen_t) sizeof(sin);
@@ -427,7 +427,7 @@ static unsigned short x_GetLocalPort(TSOCK_Handle fd)
 }
 
 
-static const char* x_CP(unsigned int host, unsigned short port,
+static const char* s_CP(unsigned int host, unsigned short port,
                         const char* path, char* buf, size_t bufsize)
 {
     if (path[0])
@@ -452,7 +452,7 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
         sname = "TRIGGER";
         break;
     case eSocket:
-        cp = x_CP(sock->host, sock->port,
+        cp = s_CP(sock->host, sock->port,
 #ifdef NCBI_OS_UNIX
                   sock->path,
 #else
@@ -541,7 +541,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
 #ifdef NCBI_OS_UNIX
                 if (!sock->path[0])
 #endif /*NCBI_OS_UNIX*/
-                    port = x_GetLocalPort(sock->sock);
+                    port = s_GetLocalPort(sock->sock);
             }
             if (port) {
                 sprintf(tail, " @:%hu", port);
@@ -973,6 +973,278 @@ extern EIO_Status SOCK_ShutdownAPI(void)
 
     CORE_TRACE("[SOCK::ShutdownAPI]  End");
     return eIO_Success;
+}
+
+
+
+/******************************************************************************
+ *  gethost... wrappers
+ */
+
+
+static int s_gethostname(char* name, size_t namelen, ESwitch log)
+{
+    int/*bool*/ error;
+
+    /* initialize internals */
+    if (s_InitAPI(0) != eIO_Success)
+        return eIO_NotSupported;
+
+    CORE_TRACEF(("[SOCK::gethostname]  Begin"));
+
+    assert(name  &&  namelen > 0);
+    name[0] = name[namelen - 1] = '\0';
+    if (gethostname(name, (int) namelen) != 0) {
+        if (log) {
+            int x_error = SOCK_ERRNO;
+            CORE_LOG_ERRNO_EXX(103, eLOG_Error,
+                               x_error, SOCK_STRERROR(x_error),
+                               "[SOCK_gethostname] "
+                               " Failed gethostname()");
+        }
+        error = 1/*true*/;
+    } else if (name[namelen - 1]) {
+        if (log) {
+            CORE_LOG_X(104, eLOG_Error,
+                       "[SOCK_gethostname] "
+                       " Buffer too small");
+        }
+        error = 1/*true*/;
+    } else
+        error = 0/*false*/;
+
+    CORE_TRACEF(("[SOCK::gethostname]  End: \"%.*s\"%s",
+                 namelen, name, error ? " (error)" : ""));
+    if (error)
+        *name = '\0';
+    return *name ? 0/*success*/ : -1/*failure*/;
+}
+
+
+static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
+{
+    unsigned int host;
+    char buf[256];
+
+    /* initialize internals */
+    if (s_InitAPI(0) != eIO_Success)
+        return 0;
+
+    if (!hostname  ||  !*hostname) {
+        if (s_gethostname(buf, sizeof(buf), log) != 0)
+            return 0;
+        hostname = buf;
+    }
+
+    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
+
+    if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
+        int x_error;
+#if defined(HAVE_GETADDRINFO)
+        struct addrinfo hints, *out = 0;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
+        if ((x_error = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
+            struct sockaddr_in* sin = (struct sockaddr_in *) out->ai_addr;
+            assert(sin->sin_family == AF_INET);
+            host = sin->sin_addr.s_addr;
+        } else {
+            if (log) {
+                if (x_error == EAI_SYSTEM)
+                    x_error =  SOCK_ERRNO;
+                else
+                    x_error += EAI_BASE;
+                CORE_LOGF_ERRNO_EXX(105, eLOG_Warning,
+                                    x_error, SOCK_STRERROR(x_error),
+                                    ("[SOCK_gethostbyname] "
+                                     " Failed getaddrinfo(\"%.64s\")",
+                                     hostname));
+            }
+            host = 0;
+        }
+        if (out)
+            freeaddrinfo(out);
+#else /* use some variant of gethostbyname */
+        struct hostent* he;
+#  ifdef HAVE_GETHOSTBYNAME_R
+        static const char suffix[] = "_r";
+        struct hostent  x_he;
+        char            x_buf[1024];
+
+        x_error = 0;
+#    if (HAVE_GETHOSTBYNAME_R == 5)
+        he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &x_error);
+#    elif (HAVE_GETHOSTBYNAME_R == 6)
+        if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
+                            &he, &x_error) != 0) {
+            assert(he == 0);
+            he = 0;
+        }
+#    else
+#      error "Unknown HAVE_GETHOSTBYNAME_R value"
+#    endif /*HAVE_GETHOSTNBYNAME_R == N*/
+#  else
+        static const char suffix[] = "";
+
+        CORE_LOCK_WRITE;
+        he = gethostbyname(hostname);
+        x_error = h_errno + DNS_BASE;
+#  endif /*HAVE_GETHOSTBYNAME_R*/
+
+        if (he && he->h_addrtype == AF_INET && he->h_length == sizeof(host)) {
+            memcpy(&host, he->h_addr, sizeof(host));
+        } else {
+            host = 0;
+            if (he)
+                x_error = EINVAL;
+        }
+
+#  ifndef HAVE_GETHOSTBYNAME_R
+        CORE_UNLOCK;
+#  endif /*HAVE_GETHOSTBYNAME_R*/
+
+        if (!host  &&  log) {
+#  ifdef NETDB_INTERNAL
+            if (x_error == NETDB_INTERNAL + DNS_BASE)
+                x_error =  SOCK_ERRNO;
+#  endif /*NETDB_INTERNAL*/
+            CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("[SOCK_gethostbyname] "
+                                 " Failed gethostbyname%s(\"%.64s\")",
+                                 suffix, hostname));
+        }
+
+#endif /*HAVE_GETADDR_INFO*/
+    }
+
+    return host;
+}
+
+
+static char* s_gethostbyaddr(unsigned int host, char* name,
+                             size_t namelen, ESwitch log)
+{
+    assert(name  &&  namelen > 0);
+
+    /* initialize internals */
+    if (s_InitAPI(0) != eIO_Success) {
+        name[0] = '\0';
+        return 0;
+    }
+
+    if (!host)
+        host = SOCK_GetLocalHostAddress(eDefault);
+
+    CORE_TRACEF(("[SOCK::gethostbyaddr]  0x%08X", (unsigned int) ntohl(host)));
+
+    if (host) {
+        int x_error;
+#if defined(HAVE_GETNAMEINFO) && defined(EAI_SYSTEM)
+        struct sockaddr_in sin;
+
+        memset(&sin, 0, sizeof(sin));
+#  ifdef HAVE_SIN_LEN
+        sin.sin_len = (SOCK_socklen_t) sizeof(sin);
+#  endif /*HAVE_SIN_LEN*/
+        sin.sin_family      = AF_INET; /* we only handle IPv4 currently */
+        sin.sin_addr.s_addr = host;
+        if ((x_error = getnameinfo((struct sockaddr*) &sin, sizeof(sin),
+                                   name, namelen, 0, 0, 0)) != 0  ||  !*name) {
+            if (SOCK_ntoa(host, name, namelen) != 0) {
+                if (!x_error) {
+#ifdef ENOSPC
+                    x_error = ENOSPC;
+#else
+                    x_error = ERANGE;
+#endif /*ENOSPC*/
+                }
+                name[0] = '\0';
+                name = 0;
+            }
+            if (!name  &&  log) {
+                char addr[16];
+                SOCK_ntoa(host, addr, sizeof(addr));
+                if (x_error == EAI_SYSTEM)
+                    x_error = SOCK_ERRNO;
+                else
+                    x_error += EAI_BASE;
+                CORE_LOGF_ERRNO_EXX(107, eLOG_Warning,
+                                    x_error, SOCK_STRERROR(x_error),
+                                    ("[SOCK_gethostbyaddr] "
+                                     " Failed getnameinfo(%s)",
+                                     addr));
+            }
+        }
+        return name;
+
+#else /* use some variant of gethostbyaddr */
+        struct hostent* he;
+#  if defined(HAVE_GETHOSTBYADDR_R)
+        static const char suffix[] = "_r";
+        struct hostent  x_he;
+        char            x_buf[1024];
+
+        x_error = 0;
+#    if (HAVE_GETHOSTBYADDR_R == 7)
+        he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
+                             x_buf, sizeof(x_buf), &x_error);
+#    elif (HAVE_GETHOSTBYADDR_R == 8)
+        if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
+                            x_buf, sizeof(x_buf), &he, &x_error) != 0) {
+            assert(he == 0);
+            he = 0;
+        }
+#    else
+#      error "Unknown HAVE_GETHOSTBYADDR_R value"
+#    endif /*HAVE_GETHOSTBYADDR_R == N*/
+#  else /*HAVE_GETHOSTBYADDR_R*/
+        static const char suffix[] = "";
+
+        CORE_LOCK_WRITE;
+        he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
+        x_error = h_errno + DNS_BASE;
+#  endif /*HAVE_GETHOSTBYADDR_R*/
+
+        if (!he  ||  strlen(he->h_name) >= namelen) {
+            if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
+#ifdef ENOSPC
+                x_error = ENOSPC;
+#else
+                x_error = ERANGE;
+#endif /*ENOSPC*/
+                name[0] = '\0';
+                name = 0;
+            }
+        } else {
+            strcpy(name, he->h_name);
+        }
+
+#  ifndef HAVE_GETHOSTBYADDR_R
+        CORE_UNLOCK;
+#  endif /*HAVE_GETHOSTBYADDR_R*/
+
+        if (!name  &&  log) {
+            char addr[16];
+#  ifdef NETDB_INTERNAL
+            if (x_error == NETDB_INTERNAL + DNS_BASE)
+                x_error = SOCK_ERRNO;
+#  endif /*NETDB_INTERNAL*/
+            SOCK_ntoa(host, addr, sizeof(addr));
+            CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("[SOCK_gethostbyaddr] "
+                                 " Failed gethostbyaddr%s(%s)",
+                                 suffix, addr));
+        }
+
+        return name;
+
+#endif /*HAVE_GETNAMEINFO*/
+    }
+
+    name[0] = '\0';
+    return 0;
 }
 
 
@@ -3325,7 +3597,8 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif /*NCBI_OS_UNIX*/
     {
         /* get address of the remote host (assume the same host if NULL) */
-        if (host  &&  *host  &&  !(sock->host = SOCK_gethostbyname(host))) {
+        if (host  &&  *host  &&  !(sock->host = s_gethostbyname(host,
+                                                                sock->log))) {
             CORE_LOGF_X(22, eLOG_Error,
                         ("%s[SOCK::Connect] "
                          " Failed SOCK_gethostbyname(\"%.64s\")",
@@ -4300,7 +4573,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                             ("SOCK#%u[%u]@%s: [LSOCK::Accept] "
                              " Failed to create IO event",
                              x_id, (unsigned int) x_sock,
-                             x_CP(host, port, path, _id, sizeof(_id))));
+                             s_CP(host, port, path, _id, sizeof(_id))));
         if (strerr)
             LocalFree(strerr);
         SOCK_ABORT(x_sock);
@@ -4313,7 +4586,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                             ("SOCK#%u[%u]@%s: [LSOCK::Accept] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_sock,
-                             x_CP(host, port, path, _id, sizeof(_id))));
+                             s_CP(host, port, path, _id, sizeof(_id))));
         CloseHandle(event);
         SOCK_ABORT(x_sock);
         return eIO_Unknown;
@@ -4328,7 +4601,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                             ("SOCK#%u[%u]@%s: [LSOCK::Accept] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_sock,
-                             x_CP(host, port, path, _id, sizeof(_id))));
+                             s_CP(host, port, path, _id, sizeof(_id))));
         SOCK_ABORT(x_sock);
         return eIO_Unknown;
     }
@@ -5528,7 +5801,7 @@ extern unsigned short SOCK_GetLocalPortEx(SOCK          sock,
 #endif /*NCBI_OS_UNIX*/
 
     if (trueport  ||  !sock->myport) {
-        port = x_GetLocalPort(sock->sock);
+        port = s_GetLocalPort(sock->sock);
         if (!trueport)
             sock->myport = port;
     } else
@@ -5922,17 +6195,15 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     s_WipeWBuf(sock);
     sock->id++;
 
-    if (hostname  &&  *hostname) {
-        host = SOCK_gethostbyname(hostname);
-        if (!host) {
-            CORE_LOGF_X(83, eLOG_Error,
-                        ("%s[DSOCK::Connect] "
-                         " Failed SOCK_gethostbyname(\"%.64s\")",
-                         s_ID(sock, _id), hostname));
-            return eIO_Unknown;
-        }
-    } else
+    if (!hostname  ||  !*hostname)
         host = 0;
+    else if (!(host = s_gethostbyname(hostname, sock->log))) {
+        CORE_LOGF_X(83, eLOG_Error,
+                    ("%s[DSOCK::Connect] "
+                     " Failed SOCK_gethostbyname(\"%.64s\")",
+                     s_ID(sock, _id), hostname));
+        return eIO_Unknown;
+    }
 
     if (!host != !port) {
         SOCK_HostPortToString(host, port, addr, sizeof(addr));
@@ -6019,16 +6290,15 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
     sock->eof = 1/*true - finalized message*/;
 
     x_port = port ? port : sock->port;
-    if (host  &&  *host) {
-        if (!(x_host = SOCK_gethostbyname(host))) {
-            CORE_LOGF_X(88, eLOG_Error,
-                        ("%s[DSOCK::SendMsg] "
-                         " Failed SOCK_gethostbyname(\"%.64s\")",
-                         s_ID(sock, w), host));
-            return eIO_Unknown;
-        }
-    } else
+    if (!host  ||  !*host)
         x_host = sock->host;
+    else if (!(x_host = s_gethostbyname(host, sock->log))) {
+        CORE_LOGF_X(88, eLOG_Error,
+                    ("%s[DSOCK::SendMsg] "
+                     " Failed SOCK_gethostbyname(\"%.64s\")",
+                     s_ID(sock, w), host));
+        return eIO_Unknown;
+    }
 
     if (!x_host  ||  !x_port) {
         SOCK_HostPortToString(x_host, x_port, w, sizeof(w)/2);
@@ -6433,39 +6703,9 @@ extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 }
 
 
-extern int SOCK_gethostname(char*  name,
-                            size_t namelen)
+extern int SOCK_gethostname(char* name, size_t namelen)
 {
-    int/*bool*/ error;
-
-    /* initialize internals */
-    if (s_InitAPI(0) != eIO_Success)
-        return eIO_NotSupported;
-
-    CORE_TRACEF(("[SOCK::gethostname]  Begin"));
-
-    error = 0/*false*/;
-    assert(name  &&  namelen > 0);
-    name[0] = name[namelen - 1] = '\0';
-    if (gethostname(name, (int) namelen) != 0) {
-        int x_error = SOCK_ERRNO;
-        CORE_LOG_ERRNO_EXX(103, eLOG_Error,
-                           x_error, SOCK_STRERROR(x_error),
-                           "[SOCK_gethostname] "
-                           " Failed gethostname()");
-        error = 1/*true*/;
-    } else if (name[namelen - 1]) {
-        CORE_LOG_X(104, eLOG_Error,
-                   "[SOCK_gethostname] "
-                   " Buffer too small");
-        error = 1/*true*/;
-    }
-    if (error)
-        name[0] = '\0';
-
-    CORE_TRACEF(("[SOCK::gethostname]  End: \"%s\"", name));
-
-    return error ? -1/*failed*/ : 0/*success*/;
+    return s_gethostname(name, namelen, s_Log);
 }
 
 
@@ -6552,103 +6792,7 @@ extern unsigned short SOCK_htons(unsigned short value)
 
 extern unsigned int SOCK_gethostbyname(const char* hostname)
 {
-    unsigned int host;
-    char buf[256];
-
-    /* initialize internals */
-    if (s_InitAPI(0) != eIO_Success)
-        return 0;
-
-    if (!hostname  ||  !*hostname) {
-        if (SOCK_gethostname(buf, sizeof(buf)) != 0)
-            return 0;
-        hostname = buf;
-    }
-
-    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
-
-    host = inet_addr(hostname);
-    if (host == htonl(INADDR_NONE)) {
-        int x_error;
-#if defined(HAVE_GETADDRINFO)
-        struct addrinfo hints, *out = 0;
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
-        if ((x_error = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
-            struct sockaddr_in* sin = (struct sockaddr_in *) out->ai_addr;
-            assert(sin->sin_family == AF_INET);
-            host = sin->sin_addr.s_addr;
-        } else {
-            if (s_Log == eOn) {
-                if (x_error == EAI_SYSTEM)
-                    x_error = SOCK_ERRNO;
-                else
-                    x_error += EAI_BASE;
-                CORE_LOGF_ERRNO_EXX(105, eLOG_Warning,
-                                    x_error, SOCK_STRERROR(x_error),
-                                    ("[SOCK_gethostbyname] "
-                                     " Failed getaddrinfo(\"%.64s\")",
-                                     hostname));
-            }
-            host = 0;
-        }
-        if (out)
-            freeaddrinfo(out);
-#else /* use some variant of gethostbyname */
-        struct hostent* he;
-#  ifdef HAVE_GETHOSTBYNAME_R
-        static const char suffix[] = "_r";
-        struct hostent  x_he;
-        char            x_buf[1024];
-
-        x_error = 0;
-#    if (HAVE_GETHOSTBYNAME_R == 5)
-        he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &x_error);
-#    elif (HAVE_GETHOSTBYNAME_R == 6)
-        if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
-                            &he, &x_error) != 0) {
-            assert(he == 0);
-            he = 0;
-        }
-#    else
-#      error "Unknown HAVE_GETHOSTBYNAME_R value"
-#    endif /*HAVE_GETHOSTNBYNAME_R == N*/
-#  else
-        static const char suffix[] = "";
-
-        CORE_LOCK_WRITE;
-        he = gethostbyname(hostname);
-        x_error = h_errno + DNS_BASE;
-#  endif /*HAVE_GETHOSTBYNAME_R*/
-
-        if (he && he->h_addrtype == AF_INET && he->h_length == sizeof(host)) {
-            memcpy(&host, he->h_addr, sizeof(host));
-        } else {
-            host = 0;
-            if (he)
-                x_error = EINVAL;
-        }
-
-#  ifndef HAVE_GETHOSTBYNAME_R
-        CORE_UNLOCK;
-#  endif /*HAVE_GETHOSTBYNAME_R*/
-
-        if (!host  &&  s_Log == eOn) {
-#  ifdef NETDB_INTERNAL
-            if (x_error == NETDB_INTERNAL + DNS_BASE)
-                x_error = SOCK_ERRNO;
-#  endif /*NETDB_INTERNAL*/
-            CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
-                                x_error, SOCK_STRERROR(x_error),
-                                ("[SOCK_gethostbyname] "
-                                 " Failed gethostbyname%s(\"%.64s\")",
-                                 suffix, hostname));
-        }
-
-#endif /*HAVE_GETADDR_INFO*/
-    }
-
-    return host;
+    return s_gethostbyname(hostname, s_Log);
 }
 
 
@@ -6656,126 +6800,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
                                 char*        name,
                                 size_t       namelen)
 {
-    assert(name  &&  namelen > 0);
-
-    /* initialize internals */
-    if (s_InitAPI(0) != eIO_Success) {
-        name[0] = '\0';
-        return 0;
-    }
-
-    if (!host)
-        host = SOCK_GetLocalHostAddress(eDefault);
-
-    CORE_TRACEF(("[SOCK::gethostbyaddr]  0x%08X", (unsigned int) ntohl(host)));
-
-    if (host) {
-        int x_error;
-#if defined(HAVE_GETNAMEINFO) && defined(EAI_SYSTEM)
-        struct sockaddr_in sin;
-
-        memset(&sin, 0, sizeof(sin));
-#  ifdef HAVE_SIN_LEN
-        sin.sin_len = (SOCK_socklen_t) sizeof(sin);
-#  endif /*HAVE_SIN_LEN*/
-        sin.sin_family      = AF_INET; /* we only handle IPv4 currently */
-        sin.sin_addr.s_addr = host;
-        if ((x_error = getnameinfo((struct sockaddr*) &sin, sizeof(sin),
-                                   name, namelen, 0, 0, 0)) != 0  ||  !*name) {
-            if (SOCK_ntoa(host, name, namelen) != 0) {
-                if (!x_error) {
-#ifdef ENOSPC
-                    x_error = ENOSPC;
-#else
-                    x_error = ERANGE;
-#endif /*ENOSPC*/
-                }
-                name[0] = '\0';
-                name = 0;
-            }
-            if (!name  &&  s_Log == eOn) {
-                char addr[16];
-                SOCK_ntoa(host, addr, sizeof(addr));
-                if (x_error == EAI_SYSTEM)
-                    x_error = SOCK_ERRNO;
-                else
-                    x_error += EAI_BASE;
-                CORE_LOGF_ERRNO_EXX(107, eLOG_Warning,
-                                    x_error, SOCK_STRERROR(x_error),
-                                    ("[SOCK_gethostbyaddr] "
-                                     " Failed getnameinfo(%s)",
-                                     addr));
-            }
-        }
-        return name;
-
-#else /* use some variant of gethostbyaddr */
-        struct hostent* he;
-#  if defined(HAVE_GETHOSTBYADDR_R)
-        static const char suffix[] = "_r";
-        struct hostent  x_he;
-        char            x_buf[1024];
-
-        x_error = 0;
-#    if (HAVE_GETHOSTBYADDR_R == 7)
-        he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
-                             x_buf, sizeof(x_buf), &x_error);
-#    elif (HAVE_GETHOSTBYADDR_R == 8)
-        if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
-                            x_buf, sizeof(x_buf), &he, &x_error) != 0) {
-            assert(he == 0);
-            he = 0;
-        }
-#    else
-#      error "Unknown HAVE_GETHOSTBYADDR_R value"
-#    endif /*HAVE_GETHOSTBYADDR_R == N*/
-#  else /*HAVE_GETHOSTBYADDR_R*/
-        static const char suffix[] = "";
-
-        CORE_LOCK_WRITE;
-        he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-        x_error = h_errno + DNS_BASE;
-#  endif /*HAVE_GETHOSTBYADDR_R*/
-
-        if (!he  ||  strlen(he->h_name) >= namelen) {
-            if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
-#ifdef ENOSPC
-                x_error = ENOSPC;
-#else
-                x_error = ERANGE;
-#endif /*ENOSPC*/
-                name[0] = '\0';
-                name = 0;
-            }
-        } else {
-            strcpy(name, he->h_name);
-        }
-
-#  ifndef HAVE_GETHOSTBYADDR_R
-        CORE_UNLOCK;
-#  endif /*HAVE_GETHOSTBYADDR_R*/
-
-        if (!name  &&  s_Log == eOn) {
-            char addr[16];
-#  ifdef NETDB_INTERNAL
-            if (x_error == NETDB_INTERNAL + DNS_BASE)
-                x_error = SOCK_ERRNO;
-#  endif /*NETDB_INTERNAL*/
-            SOCK_ntoa(host, addr, sizeof(addr));
-            CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
-                                x_error, SOCK_STRERROR(x_error),
-                                ("[SOCK_gethostbyaddr] "
-                                 " Failed gethostbyaddr%s(%s)",
-                                 suffix, addr));
-        }
-
-        return name;
-
-#endif /*HAVE_GETNAMEINFO*/
-    }
-
-    name[0] = '\0';
-    return 0;
+    return s_gethostbyaddr(host, name, namelen, s_Log);
 }
 
 
