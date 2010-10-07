@@ -2679,11 +2679,12 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 }
 
 
-CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& ids,
-                                          bool force_load)
+void CScope_Impl::GetAccVers(TIds& ret,
+                             const TIds& ids,
+                             bool force_load)
 {
     int count = ids.size(), remaining = count;
-    TIds ret(count);
+    ret.assign(count, CSeq_id_Handle());
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
@@ -2735,15 +2736,15 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& ids,
 #endif
         }
     }
-    return ret;
 }
 
 
-CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& ids,
-                                      bool force_load)
+void CScope_Impl::GetGis(TGIs& ret,
+                         const TIds& ids,
+                         bool force_load)
 {
     int count = ids.size(), remaining = count;
-    TGIs ret(count, -1);
+    ret.assign(count, -1);
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
@@ -2791,15 +2792,15 @@ CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& ids,
 #endif
         }
     }
-    return ret;
 }
 
 
-CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& ids,
-                                            bool force_load)
+void CScope_Impl::GetLabels(TLabels& ret,
+                            const TIds& ids,
+                            bool force_load)
 {
     int count = ids.size(), remaining = count;
-    TLabels ret(count);
+    ret.assign(count, string());
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
@@ -2847,15 +2848,15 @@ CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& ids,
 #endif
         }
     }
-    return ret;
 }
 
 
-CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TIds& ids,
-                                            bool force_load)
+void CScope_Impl::GetTaxIds(TTaxIds& ret,
+                            const TIds& ids,
+                            bool force_load)
 {
     int count = ids.size(), remaining = count;
-    TTaxIds ret(count);
+    ret.assign(count, 0);
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
@@ -2908,7 +2909,6 @@ CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TIds& ids,
 #endif
         }
     }
-    return ret;
 }
                                   
 

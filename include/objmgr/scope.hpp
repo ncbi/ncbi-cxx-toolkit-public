@@ -378,15 +378,27 @@ public:
     typedef vector<CSeq_id_Handle> TSeq_id_Handles;
     TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
                                EForceLoad force_load = eNoForceLoad);
+    void GetAccVers(TSeq_id_Handles* results,
+                    const TSeq_id_Handles& idhs,
+                    EForceLoad force_load = eNoForceLoad);
     typedef vector<int> TGIs;
     TGIs GetGis(const TSeq_id_Handles& idhs,
+                EForceLoad force_load = eNoForceLoad);
+    void GetGis(TGIs* results,
+                const TSeq_id_Handles& idhs,
                 EForceLoad force_load = eNoForceLoad);
     typedef vector<string> TLabels;
     TLabels GetLabels(const TSeq_id_Handles& idhs,
                       EForceLoad force_load = eNoForceLoad);
+    void GetLabels(TLabels* results,
+                   const TSeq_id_Handles& idhs,
+                   EForceLoad force_load = eNoForceLoad);
     typedef vector<int> TTaxIds;
     TTaxIds GetTaxIds(const TSeq_id_Handles& idhs,
                       EForceLoad force_load = eNoForceLoad);
+    void GetTaxIds(TTaxIds* results,
+                   const TSeq_id_Handles& idhs,
+                   EForceLoad force_load = eNoForceLoad);
 
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);

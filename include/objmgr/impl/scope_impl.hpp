@@ -324,19 +324,19 @@ public:
     TBioseqHandles GetBioseqHandles(const TIds& ids);
 
     // Get a set of accession/version pairs
-    TIds GetAccVers(const TIds& idhs, bool force_load);
+    void GetAccVers(TIds& ret, const TIds& idhs, bool force_load);
 
     // Get a set of gis
     typedef vector<int> TGIs;
-    TGIs GetGis(const TIds& idhs, bool force_load);
+    void GetGis(TGIs& ret, const TIds& idhs, bool force_load);
 
     // Get a set of label strings
     typedef vector<string> TLabels;
-    TLabels GetLabels(const TIds& idhs, bool force_load);
+    void GetLabels(TLabels& ret, const TIds& idhs, bool force_load);
 
     // Get a set of taxids
     typedef vector<int> TTaxIds;
-    TTaxIds GetTaxIds(const TIds& idhs, bool force_load);
+    void GetTaxIds(TTaxIds& ret, const TIds& idhs, bool force_load);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,

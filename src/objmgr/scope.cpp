@@ -588,28 +588,84 @@ void CScope::UpdateAnnotIndex(void)
 CScope::TSeq_id_Handles CScope::GetAccVers(const TSeq_id_Handles& idhs,
                                            EForceLoad force_load)
 {
-    return m_Impl->GetAccVers(idhs, force_load == eForceLoad);
+    TSeq_id_Handles results;
+    GetAccVers(&results, idhs, force_load);
+    return results;
+}
+
+
+void CScope::GetAccVers(TSeq_id_Handles* results,
+                        const TSeq_id_Handles& idhs,
+                        EForceLoad force_load)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetAccVers: null results pointer");
+    }
+    return m_Impl->GetAccVers(*results, idhs, force_load == eForceLoad);
 }
 
 
 CScope::TGIs CScope::GetGis(const TSeq_id_Handles& idhs,
                             EForceLoad force_load)
 {
-    return m_Impl->GetGis(idhs, force_load == eForceLoad);
+    TGIs results;
+    GetGis(&results, idhs, force_load);
+    return results;
+}
+
+
+void CScope::GetGis(TGIs* results,
+                    const TSeq_id_Handles& idhs,
+                    EForceLoad force_load)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetGis: null results pointer");
+    }
+    return m_Impl->GetGis(*results, idhs, force_load == eForceLoad);
 }
 
 
 CScope::TLabels CScope::GetLabels(const TSeq_id_Handles& idhs,
                                   EForceLoad force_load)
 {
-    return m_Impl->GetLabels(idhs, force_load == eForceLoad);
+    TLabels results;
+    GetLabels(&results, idhs, force_load);
+    return results;
+}
+
+
+void CScope::GetLabels(TLabels* results,
+                       const TSeq_id_Handles& idhs,
+                       EForceLoad force_load)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetLabels: null results pointer");
+    }
+    return m_Impl->GetLabels(*results, idhs, force_load == eForceLoad);
 }
 
 
 CScope::TTaxIds CScope::GetTaxIds(const TSeq_id_Handles& idhs,
                                   EForceLoad force_load)
 {
-    return m_Impl->GetTaxIds(idhs, force_load == eForceLoad);
+    TTaxIds results;
+    GetTaxIds(&results, idhs, force_load);
+    return results;
+}
+
+
+void CScope::GetTaxIds(TTaxIds* results,
+                       const TSeq_id_Handles& idhs,
+                       EForceLoad force_load)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetTaxIds: null results pointer");
+    }
+    return m_Impl->GetTaxIds(*results, idhs, force_load == eForceLoad);
 }
 
 
