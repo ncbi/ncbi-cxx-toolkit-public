@@ -392,7 +392,9 @@ public:
      * @param name Name of the attribute to search. Cannot be NULL.
      * @param nspace Namespace of the attribute to search. If NULL then
      *               namespaces are not compared.
-     * @return iterator to the found attribute
+     * @return iterator to the found attribute. If there is no such an
+     *         attribute then the provided iterator equals to
+     *         attributes::end().
      * @exception xml::exception in case of problems.
      * @author Sergey Satskiy, NCBI
     **/
@@ -406,7 +408,9 @@ public:
      * @param name Name of the attribute to search. Cannot be NULL.
      * @param nspace Namespace of the attribute to search. If NULL then
      *               namespaces are not compared.
-     * @return const iterator to the found attribute
+     * @return const iterator to the found attribute. If there is no such an
+     *         attribute then the provided iterator equals to
+     *         attributes::end().
      * @exception xml::exception in case of problems.
      * @author Sergey Satskiy, NCBI
     **/
