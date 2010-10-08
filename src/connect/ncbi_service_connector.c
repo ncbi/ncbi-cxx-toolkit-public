@@ -839,7 +839,7 @@ static void s_Destroy(CONNECTOR connector)
 
     if (uuu->params.cleanup)
         uuu->params.cleanup(uuu->params.data);
-    s_CloseDispatcher(iter);
+    s_CloseDispatcher(uuu);
     ConnNetInfo_Destroy(uuu->net_info);
     assert(!uuu->name);
     assert(!uuu->descr);
