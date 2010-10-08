@@ -916,7 +916,7 @@ void CGenbankFormatter::FormatSequence
     TSeqPos total = to - from + 1;
     TSeqPos vec_pos = from-1;
     TSeqPos vec_size = vec.size();
-    TSeqPos vec_remaining = vec_pos < vec_size? vec_size - vec_pos: 0;
+    TSeqPos vec_remaining = vec_pos < to ? to - vec_pos : 0;
     if ( vec_remaining < total ) {
         total = vec_remaining;
     }
@@ -934,7 +934,7 @@ void CGenbankFormatter::FormatSequence
     // prefill the line buffer with spaces
     fill(line, line+kLineBufferSize, ' ');
 
-    CSeqVector_CI iter(vec, vec_pos, CSeqVector_CI::eCaseConversion_lower);
+    CSeqVector_CI iter(vec, 0, CSeqVector_CI::eCaseConversion_lower);
     while ( total >= kFullLineSize ) {
         char* linep = line + kSeqPosWidth;
         s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);

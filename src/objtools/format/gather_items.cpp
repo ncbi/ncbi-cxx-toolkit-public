@@ -953,13 +953,15 @@ void CFlatGatherer::x_GatherSequence(void) const
 { 
     static const TSeqPos kChunkSize = 4800;
     
-    bool first = true;
-    TSeqPos size = GetLength(m_Current->GetLocation(), &m_Current->GetScope());
+    TSeqPos size = GetLength( m_Current->GetLocation(), &m_Current->GetScope() );
+    TSeqPos from = GetStart( m_Current->GetLocation(), &m_Current->GetScope() ) + 1;
+    TSeqPos to = GetStop( m_Current->GetLocation(), &m_Current->GetScope() ) + 1;
 
+    bool first = true;
     CConstRef<IFlatItem> item;
-    for ( TSeqPos start = 1; start <= size; start += kChunkSize ) {
-        TSeqPos end = min(start + kChunkSize - 1, size);
-        item.Reset( new CSequenceItem(start, end, first, *m_Current) );
+    for ( TSeqPos pos = from; pos <= to; pos += kChunkSize ) {
+        TSeqPos end = min( pos + kChunkSize - 1, to );
+        item.Reset( new CSequenceItem( pos, end, first, *m_Current ) );
         *m_ItemOS << item;
         first = false;
     }
