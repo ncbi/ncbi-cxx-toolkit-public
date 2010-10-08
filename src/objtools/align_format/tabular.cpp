@@ -101,6 +101,7 @@ void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
 
 void CBlastTabularInfo::x_ResetFields()
 {
+    m_QueryLength = m_SubjectLength = 0U;
     m_Score = m_AlignLength = m_NumGaps = m_NumGapOpens = m_NumIdent =
         m_NumPositives = m_QueryStart = m_QueryEnd = m_SubjectStart = 
         m_SubjectEnd = 0; 
@@ -350,6 +351,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
                 scope.GetBioseqHandle(align.GetSeq_id(0));
             SetQueryId(query_bh);
             query_is_na = query_bh.IsNa();
+            m_QueryLength = query_bh.GetBioseqLength();
         } catch (const CException&) {
             list<CRef<CSeq_id> > query_ids;
             CRef<CSeq_id> id(new CSeq_id());
@@ -373,6 +375,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
                 scope.GetBioseqHandle(align.GetSeq_id(1));
             SetSubjectId(subject_bh);
             subject_is_na = subject_bh.IsNa();
+            m_SubjectLength = subject_bh.GetBioseqLength();
         } catch (const CException&) {
             list<CRef<CSeq_id> > subject_ids;
             CRef<CSeq_id> id(new CSeq_id());
@@ -388,6 +391,21 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // fields.
     if (!bioseqs_found)
         return -1;
+
+    if (x_IsFieldRequested(eQueryLength) && m_QueryLength == 0) {
+        //_ASSERT(!m_QueryId.empty());
+        //_ASSERT(m_QueryId.front().NotEmpty());
+        //m_QueryLength = sequence::GetLength(*m_QueryId.front(), &scope);
+        m_QueryLength = sequence::GetLength(align.GetSeq_id(0), &scope);
+    }
+    if (x_IsFieldRequested(eSubjectLength) && m_SubjectLength == 0) {
+        //_ASSERT(!m_SubjectIds.empty());
+        //_ASSERT(!m_SubjectIds.front().empty());
+        //_ASSERT(!m_SubjectIds.front().front().NotEmpty());
+        //m_SubjectLength = sequence::GetLength(*m_SubjectIds.front().front(),
+        //                                      &scope);
+        m_SubjectLength = sequence::GetLength(align.GetSeq_id(1), &scope);
+    }
 
     if (x_IsFieldRequested(eQueryStart) || x_IsFieldRequested(eQueryEnd) ||
         x_IsFieldRequested(eSubjectStart) || x_IsFieldRequested(eSubjectEnd) ||
@@ -596,6 +614,8 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "query acc."; break;
         case eQueryAccessionVersion:
             m_Ostream << "query acc.ver"; break;
+        case eQueryLength:
+            m_Ostream << "query length"; break;
         case eSubjectSeqId:
             m_Ostream << "subject id"; break;
         case eSubjectAllSeqIds:
@@ -610,6 +630,8 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "subject acc.ver"; break;
         case eSubjectAllAccessions:
             m_Ostream << "subject accs."; break;
+        case eSubjectLength:
+            m_Ostream << "subject length"; break;
         case eQueryStart:
             m_Ostream << "q. start"; break;
         case eQueryEnd:
@@ -653,6 +675,7 @@ void CBlastTabularInfo::x_PrintFieldNames()
         case eBTOP:
             m_Ostream << "BTOP"; break;        
         default:
+            _ASSERT(false);
             break;
         }
     }
@@ -804,6 +827,8 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintQueryAccession(); break;
     case eQueryAccessionVersion:
         x_PrintQueryAccessionVersion(); break;
+    case eQueryLength:
+        x_PrintQueryLength(); break;
     case eSubjectSeqId:
         x_PrintSubjectSeqId(); break;
     case eSubjectAllSeqIds:
@@ -818,6 +843,8 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintSubjectAccessionVersion(); break;
     case eSubjectAllAccessions:
         x_PrintSubjectAllAccessions(); break;
+    case eSubjectLength:
+        x_PrintSubjectLength(); break;
     case eQueryStart:
         x_PrintQueryStart(); break;
     case eQueryEnd:

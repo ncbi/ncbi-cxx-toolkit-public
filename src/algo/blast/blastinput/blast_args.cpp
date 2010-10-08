@@ -1555,7 +1555,8 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
         m_NumThreads = args[kArgNumThreads].AsInteger();
 
         // This is temporarily ignored (per SB-635)
-        if (args.Exist(kArgSubject) && args[kArgSubject].HasValue()) {
+        if (args.Exist(kArgSubject) && args[kArgSubject].HasValue() &&
+            m_NumThreads != CThreadable::kMinNumThreads) {
             m_NumThreads = CThreadable::kMinNumThreads;
             LOG_POST(Warning << "'" << kArgNumThreads << "' is currently "
                      << "ignored when '" << kArgSubject << "' is specified.");

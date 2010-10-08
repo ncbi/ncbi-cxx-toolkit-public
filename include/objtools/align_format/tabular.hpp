@@ -242,6 +242,10 @@ protected:
     void x_PrintQueryFrame();
     void x_PrintSubjectFrame();
     void x_PrintBTOP();
+    /// Print the query sequence length
+    void x_PrintQueryLength();
+    /// Print the subject sequence length
+    void x_PrintSubjectLength();
 
     CNcbiOstream& m_Ostream; ///< Stream to write output to
     char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
@@ -256,6 +260,8 @@ private:
     list<CRef<objects::CSeq_id> > m_QueryId;  ///< List of query ids for this HSP
     /// All subject sequence ids for this HSP
     vector<list<CRef<objects::CSeq_id> > > m_SubjectIds;
+    TSeqPos m_QueryLength;   ///< Length of query sequence
+    TSeqPos m_SubjectLength; ///< Length of subject sequence
     int m_Score;             ///< Raw score of this HSP
     string m_BitScore;       ///< Bit score of this HSP, in appropriate format
     string m_Evalue;         ///< E-value of this HSP, in appropriate format
@@ -391,6 +397,15 @@ inline void CBlastTabularInfo::x_PrintGapOpenings(void)
 inline void CBlastTabularInfo::x_PrintGaps(void)
 {
     m_Ostream << m_NumGaps;
+}
+inline void CBlastTabularInfo::x_PrintQueryLength(void)
+{
+    m_Ostream << m_QueryLength;
+}
+
+inline void CBlastTabularInfo::x_PrintSubjectLength(void)
+{
+    m_Ostream << m_SubjectLength;
 }
 
 /// Class containing information needed for tabular formatting of BLAST 
