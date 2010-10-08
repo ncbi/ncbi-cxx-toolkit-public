@@ -361,6 +361,14 @@ float Overlap(iterator1 iter1, iterator1 end1,
         }
     }
 
+    for ( ;  iter1 != end1;  ++iter1) {
+        sum_a += iter1->second;
+    }
+
+    for ( ;  iter2 != end2;  ++iter2) {
+        sum_b += iter2->second;
+    }
+
     return dot / min(sum_a, sum_b);
 }
 
