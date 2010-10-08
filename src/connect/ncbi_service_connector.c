@@ -438,7 +438,7 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
                                          size_t              init_size)
 {
     if (*net_info->http_proxy_host) {
-        SOCK sock;
+        SOCK sock = 0;
         EIO_Status status = HTTP_CreateTunnelEx(net_info, fHCC_NoAutoRetry,
                                                 init_data, init_size, &sock);
         if (status == eIO_Success) {
@@ -839,8 +839,8 @@ static void s_Destroy(CONNECTOR connector)
 
     if (uuu->params.cleanup)
         uuu->params.cleanup(uuu->params.data);
+    s_CloseDispatcher(iter);
     ConnNetInfo_Destroy(uuu->net_info);
-    assert(!uuu->iter);
     assert(!uuu->name);
     assert(!uuu->descr);
     free(uuu);
@@ -897,7 +897,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         s_Destroy(ccc);
         return 0;
     }
-    assert(xxx->iter != 0);
+    assert(xxx->iter);
 
     /* finally, store all callback parameters */
     if (params)
