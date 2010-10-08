@@ -2733,6 +2733,7 @@ KAW	s	Kawanda Research Station, Department of Agriculture
 KAZ	s	Kazan State University
 KB	s	National Biological Resources Center, Department of Biological Sciences
 KBAI	s	Kuban Agricultural State University, Department of Biology and Ecology
+KBG<JPN>	b	Kyoto Botanical Garden
 KBHG	s	H. M. Berbekov Kabardian-Balkarian State University, Department of Botany
 KBRYO	s	Centre College of Kentucky
 KBSMS	s	Kellogg Biological Station, Michigan State University
@@ -2892,7 +2893,7 @@ KWP:Ento	s	Kenelm W. Philip Collection, University of Alaska Museum of the North
 KY	s	University of Kentucky
 KYM	s	University of Helsinki, Kymenlaakso Society of Naturalists
 KYO	s	Kyoto University, Botany Department
-L	s	Nationaal Herbarium Nederland, Leiden University branch
+L	sb	Nationaal Herbarium Nederland, Leiden University branch
 LA	s	University of California
 LABCC	c	Lactic acid bacteria culture collection
 LAC	s	Xian Institute of Lacquer
@@ -5407,6 +5408,7 @@ TAU<GRC>	s	Aristotle University of Thessaloniki, Biology Department
 TAU<ISR>	s	Tel-Aviv University
 TAUF	s	Aristotle University of Thessaloniki, Department of Forestry and Natural Environment
 TB	s	Tbilisi State University, Botany Department
+TBG<JPN>	b	Tsukuba Botanical Garden
 TBGT	s	Tropical Botanic Garden and Research Institute
 TBI	s	Georgian Academy of Sciences
 TBIP	s	Research Institute of Plant Protection
