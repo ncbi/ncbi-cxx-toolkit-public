@@ -344,7 +344,6 @@ public:
         fNoEncode         = 0,
         fEnableBuffering  = 0,        ///< Enable printout buffering
         fDisableBuffering = 1 << 5,   ///< Disable printout buffering
-        fJsonEncode       = 1 << 6,   ///< Encode for JSON output
 
         // Presets
         fCode             = fStripTextMode  | fNoEncode,

@@ -373,9 +373,6 @@ CNcbiOstream& CHTMLText::PrintString(CNcbiOstream& out, TMode mode,
         case fStrip | fEncode:
             str = CHTMLHelper::HTMLEncode(CHTMLHelper::StripHTML(s));
             break;
-        case fJsonEncode:
-            str = NStr::JsonEncode(s);
-            break;
         default:
             pstr = &s;
     }
