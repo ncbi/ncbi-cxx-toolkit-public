@@ -1,3 +1,4 @@
+1 component_id and length loaded from FASTA.
 
 1:LACBIscaffold_1	1	1103	1	W	LACBIscaffold_1_Cont1	1	1103	+
 	ERROR: component_end greater than sequence length: 1103 > LACBIscaffold_1_Cont1 length = 630 bp

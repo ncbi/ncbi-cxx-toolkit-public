@@ -75,6 +75,7 @@ private:
 
   void x_ValidateUsingFiles(const CArgs& args);
   void x_ValidateFile(CNcbiIstream& istr);
+  void x_ReportFastaSeqCount();
 
 public:
   CAgpValidateApplication() : m_reader(agpErr, m_comp2len)
@@ -321,6 +322,15 @@ int CAgpValidateApplication::Run(void)
   return 0;
 }
 
+void CAgpValidateApplication::x_ReportFastaSeqCount()
+{
+  string s;
+  if(m_comp2len.size()!=1) s="s";
+  cout<< m_comp2len.size() << " "
+      << (m_reader.m_CheckObjLen?"object name":"component_id")
+      << s <<" and length" << s << " loaded from FASTA." << endl;
+}
+
 void CAgpValidateApplication::x_ValidateUsingFiles(
   const CArgs& args)
 {
@@ -351,6 +361,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
         num_fasta_files++;
       }
       else {
+        if(allowFasta && num_fasta_files) x_ReportFastaSeqCount();
         if( args.GetNExtra()-num_fasta_files>1 ) agpErr.StartFile(m_CurrentFileName);
         x_ValidateFile(istr);
         allowFasta=false;
@@ -360,6 +371,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
     }
     if(num_fasta_files==args.GetNExtra()) {
       //cerr << "No AGP files."; exit (1);
+      if(allowFasta && num_fasta_files) x_ReportFastaSeqCount();
       x_ValidateFile(cin);
     }
   }
