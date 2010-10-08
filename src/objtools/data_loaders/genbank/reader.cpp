@@ -376,9 +376,14 @@ void CReader::x_AbortConnection(TConn conn, bool failed)
 
 void CReader::x_DisconnectAtSlot(TConn conn, bool failed)
 {
-    LOG_POST_X(5, Warning << "CReader("<<conn<<"): "
-               " GenBank connection "<<(failed? "failed": "too old")<<
-               ": reconnecting...");
+    if ( failed ) {
+        LOG_POST_X(5, Warning << "CReader("<<conn<<"): "
+                   " GenBank connection failed: reconnecting...");
+    }
+    else {
+        LOG_POST_X(5, Info << "CReader("<<conn<<"): "
+                   " GenBank connection too old: reconnecting...");
+    }
     x_RemoveConnectionSlot(conn);
     x_AddConnectionSlot(conn);
 }
