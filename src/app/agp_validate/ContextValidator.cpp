@@ -47,6 +47,7 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len)
   : CAgpReader(&agpErr), m_comp2len(comp2len)
 {
   m_CheckCompNames=false; // checkCompNames;
+  m_CheckObjLen=false;
 
   m_CommentLineCount=m_EolComments=0;
   m_componentsInLastScaffold=m_componentsInLastObject=0;
@@ -222,15 +223,12 @@ void CAgpValidateReader::OnGapOrComponent()
       }
     }
 
-    if( m_comp2len.size() ) {
+    if( m_comp2len.size() && !m_CheckObjLen ) {
       TMapStrInt::iterator it = m_comp2len.find( m_this_row->GetComponentId() );
       if( it==m_comp2len.end() ) {
-        if( m_expected_obj_len==0 ) {
-          if(m_obj_name_matches==0 || m_comp_name_matches>0) {
-            agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+m_this_row->GetComponentId());
-          }
-        }
-        // else: the length was given for the object id - avoid reporting missing component ids
+        //if( m_expected_obj_len==0 )
+        //if(m_obj_name_matches==0 || m_comp_name_matches>0)
+        agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+m_this_row->GetComponentId());
       }
       else {
         m_comp_name_matches++;
@@ -287,10 +285,9 @@ void CAgpValidateReader::OnObjectChange()
         agpErr.Msg(CAgpErr::G_BadObjLen, details, CAgpErr::fAtPrevLine);
       }
     }
-    else if(m_comp2len.size()) {
-      if(m_obj_name_matches>0 || m_comp_name_matches==0) {
-        agpErr.Msg(CAgpErrEx::G_InvalidObjId, m_prev_row->GetObject(), CAgpErr::fAtPrevLine);
-      }
+    else if(m_comp2len.size() && m_CheckObjLen) {
+      // if(m_obj_name_matches>0 || m_comp_name_matches==0)
+      agpErr.Msg(CAgpErrEx::G_InvalidObjId, m_prev_row->GetObject(), CAgpErr::fAtPrevLine);
     }
 
     // if(m_prev_row->IsGap() && m_componentsInLastScaffold==0) m_ScaffoldCount--; (???)
@@ -345,7 +342,7 @@ void CAgpValidateReader::OnObjectChange()
       }
     }
 
-    if( m_comp2len.size() ) {
+    if( m_comp2len.size() && m_CheckObjLen ) {
       // save expected object length (and the fact that we do expect it) for the future checks
       TMapStrInt::iterator it_obj = m_comp2len.find( m_this_row->GetObject() );
       if( it_obj!=m_comp2len.end() ) {

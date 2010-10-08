@@ -132,6 +132,7 @@ public:
   //virtual ~CAgpValidateReader();
   void PrintTotals();
   bool m_CheckCompNames;
+  bool m_CheckObjLen; // false: check compoment lengths
 
 protected:
   void x_PrintTotals(); // without comment counts

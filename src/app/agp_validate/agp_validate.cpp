@@ -65,6 +65,7 @@ private:
   } m_ValidationType;
 
   CMapCompLen m_comp2len;
+
   //void x_LoadLen  (CNcbiIstream& istr, const string& filename);
   void x_LoadLenFa(CNcbiIstream& istr, const string& filename);
 
@@ -99,7 +100,7 @@ public:
     "If component FASTA files are given in front of AGP files, also check that:\n"
     "- component_id from AGP is present in FASTA;\n"
     "- component_end does not exceed sequence length.\n"
-    "If FASTA files for objects are given, check that:\n"
+    "If FASTA files for objects are given (after -obj), check that:\n"
     "- object_id from AGP is present in FASTA;\n"
     "- object lengths in FASTA and in AGP match.\n"
     "\n"
@@ -112,6 +113,7 @@ public:
     "  The above options require that the components are available in GenBank.\n"
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
+    "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
     /*
     "\n"
     "  -fa  FILE (fasta)\n"
@@ -145,6 +147,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("alt", "");
 
   arg_desc->AddFlag("g" , "");
+  arg_desc->AddFlag("obj", "");
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
@@ -225,8 +228,14 @@ int CAgpValidateApplication::Run(void)
   }
   */
 
-  if( args["alt"].HasValue() || args["species"].HasValue() )
+  m_reader.m_CheckObjLen=args["obj"].HasValue();
+  if( args["alt"].HasValue() || args["species"].HasValue() ) {
+    if(m_reader.m_CheckObjLen) {
+      cerr << "Error -- cannot specify -obj with -alt/-species.\n";
+      exit(1);
+    }
     m_ValidationType = VT_AccLenTaxid;
+  }
   else {
     m_ValidationType = VT_Context;
     bool checkCompNames=args["g"].HasValue();
@@ -258,7 +267,7 @@ int CAgpValidateApplication::Run(void)
   string action;
   if( args["skip"].HasValue() ) {
      if( onlyNotSkip ) {
-       cerr << "FATAL ERROR: cannot specify both -only and -skip.\n";
+       cerr << "Error -- cannot specify both -only and -skip.\n";
        exit(1);
      }
      err_warn = &( args["skip"].GetStringList() );

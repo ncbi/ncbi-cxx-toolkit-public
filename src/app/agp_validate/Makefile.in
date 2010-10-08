@@ -35,7 +35,7 @@ fa_test : agp_validate
 	diff ${DOPT} -u $(srcdir)/test/fa_test.out fa_test.out
 
 obj_len_test : agp_validate
-	sh -c "./agp_validate $(srcdir)/test/obj_len_test.fa $(srcdir)/test/obj_len_test.agp >obj_len_test.out 2>&1"
+	sh -c "./agp_validate -obj $(srcdir)/test/obj_len_test.fa $(srcdir)/test/obj_len_test.agp >obj_len_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/obj_len_test.out obj_len_test.out
 
 order_test: agp_validate
