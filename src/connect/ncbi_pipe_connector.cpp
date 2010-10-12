@@ -205,13 +205,11 @@ static void s_Destroy(CONNECTOR connector)
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     connector->handle = 0;
 
-    if (xxx) {
-        if (xxx->is_own_pipe) {
-            delete xxx->pipe;
-        }
-        xxx->pipe = 0;
-        delete xxx;
+    if (xxx->is_own_pipe) {
+        delete xxx->pipe;
     }
+    xxx->pipe = 0;
+    delete xxx;
     free(connector);
 }
 

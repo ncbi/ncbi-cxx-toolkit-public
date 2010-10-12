@@ -190,11 +190,9 @@ static void s_Destroy
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     connector->handle = 0;
 
-    if (xxx) {
-        delete xxx->pipe;
-        xxx->pipe = 0;
-        delete xxx;
-    }
+    delete xxx->pipe;
+    xxx->pipe = 0;
+    delete xxx;
     free(connector);
 }
 
