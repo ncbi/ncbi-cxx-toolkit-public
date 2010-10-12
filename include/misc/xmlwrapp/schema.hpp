@@ -98,7 +98,7 @@ public:
      *
      * @author Sergey Satskiy, NCBI
     **/
-    ~schema();
+    virtual ~schema();
 
     /**
      * Get the XML schema parsing error messages.

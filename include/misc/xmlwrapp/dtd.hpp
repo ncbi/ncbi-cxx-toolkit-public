@@ -87,7 +87,7 @@ public:
      *
      * @author Sergey Satskiy, NCBI
     **/
-    ~dtd();
+    virtual ~dtd();
 
     /**
      * Get the XML dtd parsing error messages.

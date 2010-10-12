@@ -86,7 +86,7 @@ public:
      *
      * @author Sergey Satskiy, NCBI
     **/
-    ~node_set ();
+    virtual ~node_set ();
 
     /**
      * Creates a copy of the xml::node_set object.

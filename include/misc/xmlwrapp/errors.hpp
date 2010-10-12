@@ -207,7 +207,7 @@ public:
      *
      * @author Sergey Satskiy, NCBI
     **/
-    ~parser_exception() throw () {}
+    virtual ~parser_exception() throw () {}
 
 private:
     error_messages          messages_;

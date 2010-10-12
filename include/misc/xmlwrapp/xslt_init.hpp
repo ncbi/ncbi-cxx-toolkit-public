@@ -66,7 +66,7 @@ namespace xslt {
 class init : public xml::init {
 public:
     init (void);
-    ~init (void);
+    virtual ~init (void);
 
     //####################################################################
     /** 

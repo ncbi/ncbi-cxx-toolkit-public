@@ -64,7 +64,7 @@ namespace xml {
 class init {
 public:
     init (void);
-    ~init (void);
+    virtual ~init (void);
 
     //####################################################################
     /** 

@@ -123,7 +123,7 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
-    ~attributes (void);
+    virtual ~attributes (void);
 
     // forward declarations
     class const_iterator;

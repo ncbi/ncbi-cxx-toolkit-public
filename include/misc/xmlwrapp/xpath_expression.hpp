@@ -144,7 +144,7 @@ public:
      *
      * @author Sergey Satskiy, NCBI
     **/
-    ~xpath_expression ();
+    virtual ~xpath_expression ();
 
     /**
      * Precompile the expression.

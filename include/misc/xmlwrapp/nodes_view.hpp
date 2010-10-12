@@ -86,7 +86,7 @@ class nodes_view
 public:
     nodes_view() : data_begin_(0), advance_func_(0) {}
     nodes_view(const nodes_view& other);
-    ~nodes_view();
+    virtual ~nodes_view();
 
     nodes_view& operator=(const nodes_view& other);
 
@@ -250,7 +250,7 @@ public:
     const_nodes_view() : data_begin_(0), advance_func_(0) {}
     const_nodes_view(const const_nodes_view& other);
     const_nodes_view(const nodes_view& other);
-    ~const_nodes_view();
+    virtual ~const_nodes_view();
 
     const_nodes_view& operator=(const const_nodes_view& other);
     const_nodes_view& operator=(const nodes_view& other);
