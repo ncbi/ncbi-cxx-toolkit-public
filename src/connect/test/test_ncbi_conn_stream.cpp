@@ -71,6 +71,12 @@ static CNcbiRegistry* s_CreateRegistry(void)
 }
 
 
+static inline unsigned long udiff(unsigned long a, unsigned long b)
+{
+    return a > b ? a - b : b - a;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -241,8 +247,8 @@ int main(int argc, const char* argv[])
     }
     ftp.Close();
     if (size) {
-        LOG_POST("Test 2 passed: "
-                 << size << " bytes downloaded via FTP\n");
+        LOG_POST("Test 2 passed: " <<
+                 size << " bytes downloaded via FTP\n");
     } else
         ERR_POST(Fatal << "Test 2 failed: no file downloaded");
 
@@ -271,7 +277,10 @@ int main(int argc, const char* argv[])
         filename += '-' + start.AsString("YMDhms");
         filename += ".tmp";
         // to use advanced xfer modes if available
-        flag     |= fFTP_UseFeatures;
+        if (rand() & 1)
+            flag |= fFTP_UseFeatures;
+        if (rand() & 1)
+            flag |= fFTP_UseActive;
         CConn_FTPUploadStream upload("ftp-private.ncbi.nlm.nih.gov",
                                      user, pass, filename, "test_upload",
                                      0/*port = default*/, flag,
@@ -290,6 +299,7 @@ int main(int argc, const char* argv[])
         if (upload) {
             upload >> val;
         }
+        time_t delta = 0;
         if (size  &&  val == (unsigned long) size) {
             string speedstr;
             string filetime;
@@ -299,26 +309,37 @@ int main(int argc, const char* argv[])
             upload.clear();
             upload << "MDTM " << filename << NcbiEndl;
             upload >> filetime;
+            speedstr = (NStr::UInt8ToString(Uint8(size))
+                        + " bytes uploaded via FTP");
+            if (val == filesize)
+                speedstr += " and verified";
             if (!filetime.empty()) {
                 time_t stop = (time_t) NStr::StringToUInt(filetime);
-                time_t time = stop - start.GetTimeT();
+                time_t time = udiff(stop, start.GetTimeT());
                 double rate = (val / 1024.0) / (time ? time : 1);
-                speedstr = (" in "
-                            + NStr::UIntToString(time)
-                            + " sec @ "
-                            + NStr::DoubleToString(rate, 2, NStr::fDoubleFixed)
-                            + " KB/s");
+                speedstr += (" in "
+                             + NStr::UIntToString(time)
+                             + " sec @ "
+                             + NStr::DoubleToString(rate,2, NStr::fDoubleFixed)
+                             + " KB/s");
+                delta = udiff(stop, CTime(CTime::eCurrent).GetTimeT());
             }
-            LOG_POST("Test 3 passed: " <<
-                     size << " bytes uploaded via FTP" <<
-                     (val == filesize ? " and verified" : "") <<
-                     speedstr << '\n');
+            if (delta < 1800) {
+                LOG_POST("Test 3 passed: " <<
+                         speedstr << '\n');
+            } else
+                LOG_POST(speedstr);
         }
         upload.clear();
         upload << "DELE " << filename << NcbiEndl;
         if (!size  ||  size != (unsigned long) size) {
             ERR_POST(Fatal << "Test 3 failed: " <<
                      val << " out of " << size << " byte(s) uploaded");
+        } else if (delta >= 1800) {
+            ERR_POST(Fatal << "Test 3 failed: " <<
+                     "file timezone miscalculated by " <<
+                     NStr::UIntToString((unsigned int) delta) <<
+                     " seconds");
         }
     } else
         LOG_POST("Test 3 skipped\n");
