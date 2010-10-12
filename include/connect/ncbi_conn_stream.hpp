@@ -56,8 +56,8 @@
  *      In-memory stream of data (analogous to strstream).
  *
  *   CConn_PipeStream
- *      I/O stream based on PIPE connector, which is  able to exchange data
- *      to/from another child process.
+ *      I/O stream based on PIPE connector, which is able to exchange data
+ *      with a child process.
  *
  *   CConn_NamedPipeStream
  *      I/O stream based on NAMEDPIPE connector, which is able to exchange
@@ -183,8 +183,10 @@ public:
     ///   CONN, ncbi_connection.h, EIO_Status
     EIO_Status Status(void) const;
 
-    /// Close CONNection free all internal buffers and underlying structures,
-    /// render stream unusable for further I/O.
+    /// Close CONNection, free all internal buffers and underlying structures,
+    /// and render stream unusable for further I/O.
+    /// Can be used at places where reaching end-of-scope for the stream
+    /// would be impractical.
     void Close(void);
 
 protected:
@@ -282,19 +284,8 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
-    /// Defunct ctor -- DANGEROUS, DO NOT USE!  Buggy and obscure:
-    /// 1.  It implicitly assumes SOCK ownership by the stream;
-    /// 2.  It silently ignores the "max_try" parameter (even though
-    ///     it should not have allowed to pass a "0" value in there).
-    NCBI_DEPRECATED
-    CConn_SocketStream
-    (SOCK            sock         /* "sock" is always owned by the stream! */,
-     unsigned int    max_try  = 3 /* the value gets always ignored!        */,
-     const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize);
-
     /// This variant uses existing CSocket to build the stream upon it.
-    /// NOTE:  it revokes all ownership of the sockets internals
+    /// NOTE:  it revokes all ownership of the "socket"'s internals
     /// (effectively leaving the CSocket empty);  CIO_Exception(eInvalidArg)
     /// is thrown if the internal SOCK is not owned by the passed CSocket.
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().

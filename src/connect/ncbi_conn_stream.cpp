@@ -159,18 +159,6 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 }
 
 
-/* FIXME:  To remove! */
-CConn_SocketStream::CConn_SocketStream(SOCK            sock,
-                                       unsigned int    /*max_try*/,
-                                       const STimeout* timeout,
-                                       streamsize      buf_size)
-    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, 1/*own*/),
-                     timeout, buf_size)
-{
-    return;
-}
-
-
 static SOCK s_GrabSOCK(CSocket& socket)
 {
     SOCK sock = socket.GetSOCK();
@@ -435,9 +423,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
 CConn_MemoryStream::~CConn_MemoryStream()
 {
     x_Cleanup();
-#ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
-#endif // AUTOMATIC_STREAMBUF_DESTRUCTION
     BUF_Destroy(m_Buf);
     delete[] (char*) m_Ptr;
 }
@@ -515,9 +501,7 @@ CConn_PipeStream::~CConn_PipeStream()
 {
     // Explicitly call Cleanup() to avoid using dead m_Pipe otherwise.
     x_Cleanup();
-#ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
-#endif // AUTOMATIC_STREAMBUF_DESTRUCTION
 }
 
 
