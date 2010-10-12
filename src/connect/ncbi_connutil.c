@@ -1187,7 +1187,8 @@ extern EIO_Status URL_ConnectEx
 {
     static const char X_REQ_Q[]  = "?";
     static const char X_REQ_E[]  = " HTTP/1.0\r\n";
- 
+
+    SOCK        s;
     BUF         buf;
     char*       hdr;
     const char* temp;
@@ -1202,10 +1203,13 @@ extern EIO_Status URL_ConnectEx
     /* sanity check first */
     if (!sock  ||  !host  ||  !*host  ||  !path  ||  !*path
         ||  (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')){
-        CORE_LOG_X(2, eLOG_Error, "[URL_Connect]  Bad arguments");
-        assert(0);
+        CORE_LOG_X(2, eLOG_Error, "[URL_Connect]  Bad argument(s)");
+        if (sock)
+            *sock = 0;
         return eIO_InvalidArg;
     }
+    s = *sock;
+    *sock = 0;
 
     /* select request method and its verbal representation */
     if (req_method == eReqMethod_Any)
@@ -1315,15 +1319,16 @@ extern EIO_Status URL_ConnectEx
     BUF_Destroy(buf);
 
     /* connect to HTTPD */
-    if (*sock) {
+    if (s) {
         size_t    handle_size = SOCK_OSHandleSize();
         unsigned char* handle = (unsigned char*) malloc(handle_size);
-        verify(SOCK_GetOSHandle(*sock, handle, handle_size) == eIO_Success);
-        verify(SOCK_Close(*sock) == eIO_Success);
+        verify(SOCK_GetOSHandle(s, handle, handle_size) == eIO_Success);
         status = SOCK_CreateOnTopEx(handle, handle_size, sock,
                                     hdr, hdr_len, flags);
         if (handle)
             free(handle);
+        if (status == eIO_Success)
+            verify(SOCK_Close(s) == eIO_Success);
     } else {
         status = SOCK_CreateEx(host, port, o_timeout, sock,
                                hdr, hdr_len, flags);
