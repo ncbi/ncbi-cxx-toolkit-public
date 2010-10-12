@@ -507,19 +507,10 @@ typedef unsigned int TSOCK_Flags;  /** Bitwise "OR" of ESOCK_Flags */
  *  LISTENING SOCKET [SERVER-side]
  */
 
-typedef enum { /* DEPRECATED -- DON'T USE! */
-    fLSCE_LogOff      = fSOCK_LogOff,
-    fLSCE_LogOn       = fSOCK_LogOn,
-    fLSCE_LogDefault  = fSOCK_LogDefault,
-    fLSCE_BindAny     = fSOCK_BindAny,
-    fLSCE_BindLocal   = fSOCK_BindLocal,
-    fLSCE_CloseOnExec = fSOCK_CloseOnExec
-} ELSCE_Flags;
-
 /** [SERVER-side]  Create and initialize the server-side(listening) socket
  * (socket() + bind() + listen())
  * @param port
- *  [in]  the port to listen at
+ *  [in]  the port to listen at (0 to select first available)
  * @param backlog
  *  [in]  maximal # of pending connections
  *  <b>NOTE:</b> on some systems, "backlog" can be silently limited
@@ -529,7 +520,7 @@ typedef enum { /* DEPRECATED -- DON'T USE! */
  * @param flags
  *  [in]  special modifiers
  * @sa
- *  LSOCK_Create, LSOCK_Close
+ *  LSOCK_Create, LSOCK_Close, LSOCK_GetPort
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
 (unsigned short port,    
@@ -623,6 +614,24 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
  );
 
 
+/** Get socket port number, which it listens on.
+ * The returned port is either one specified when the socket was created,
+ * or an automatically assigned number if LSOCK_Create provided the port as 0.
+ * @param lsock
+ *  [in]  socket handle 
+ * @param byte_order
+ *  [in]  byte order for port on return
+ * @return
+ *  Listening port number in requested byte order, or 0 in case of an error.
+ * @sa
+ *  LSOCK_Create
+ */
+extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
+(LSOCK         lsock,
+ ENH_ByteOrder byte_order
+ );
+
+
 
 /******************************************************************************
  *  SOCKET
@@ -682,15 +691,6 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  SOCK*           sock     
  );
 
-
-/** SOCK_Close behavior for SOCKs created on top of OS handles.
- * @sa
- *  SOCK_Close, SOCK_CreateOnTop, SOCK_CreateOnTopEx
- */
-typedef enum { /* DEPRECATED -- DON'T USE */
-    eSCOT_KeepOnClose  = fSOCK_KeepOnClose,
-    eSCOT_CloseOnClose = fSOCK_CloseOnClose
-} ESCOT_OnClose;
 
 /** [SERVER-side]  Create a socket on top of OS-dependent "handle"
  * (file descriptor on Unix, SOCKET on MS-Windows).  Returned socket
@@ -1213,10 +1213,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
  * @param trueport
  *  [in] non-zero causes to refetch / no-cache port from the network layer
  * @param byte_order
- *  [in] port byte order
+ *  [in] byte order for port on return
  * @return
- *  If "network_byte_order" is true(non-zero) then return the port in the
- *  network byte order; otherwise return it in the local host byte order.
+ *  The port number in requested byte order, or 0 in case of an error.
  * @sa
  *  SOCK_GetLocalPort
  */
@@ -1234,10 +1233,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
  * @param sock
  *  [in] socket handle
  * @param byte_order
- *  [in] port byte order
+ *  [in] byte order for port on return
  * @return
- *  If "network_byte_order" is true(non-zero) then return the port in the
- *  network byte order; otherwise return it in the local host byte order.
+ *  Local port number in requested byte order, or 0 in case of an error.
  * @sa
  *  SOCK_GetLocalPortEx
  */
@@ -1247,24 +1245,43 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPort
  );
 
 
-/** Get host and port of the socket's peer.
+/** Get host and port of the socket's peer (remote end).
  * @param sock
  *  [in]  socket handle
  * @param host
- *  [out] the peer's host (can be NULL)
+ *  [out] the peer's host (can be NULL, then not filled in)
  * @param port
- *  [out] the peer's port (can be NULL)
+ *  [out] the peer's port (can be NULL, then not filled in)
  * @param byte_order
- *  [in] host/port byte order
+ *  [in]  byte order for either host or port, or both, on return
  * @return
- *  If "network_byte_order" is true(non-zero) then return the host/port in the
- *  network byte order; otherwise return them in the local host byte order.
+ *  Host/port addresses in requested byte order, or 0 in case of an error.
+ * @sa
+ *  SOCK_GetLocalPort
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
 (SOCK            sock,
  unsigned int*   host,               
  unsigned short* port,                
  ENH_ByteOrder   byte_order          
+ );
+
+
+/** Get remote port of the socket (the port it is connected to).
+ * The call is provided as a counterpart for SOCK_GetLocalPort(), and is
+ * equivalent to calling SOCK_GetPeerAddress(sock, 0, &port, byte_order).
+ * @param sock
+ *  [in]  socket handle
+ * @param byte_order
+ *  [in]  byte order for port on return
+ * @return
+ *  Remote port number in requested byte order, or 0 in case of an error.
+ * @sa
+ *  SOCK_GetPeerAddress, SOCK_GetLocalPort
+ */
+extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
+(SOCK            sock,
+ ENH_ByteOrder   byte_order
  );
 
 

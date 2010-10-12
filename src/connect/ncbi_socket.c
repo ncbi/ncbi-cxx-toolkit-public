@@ -1014,7 +1014,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
         error = 0/*false*/;
 
     CORE_TRACEF(("[SOCK::gethostname]  End: \"%.*s\"%s",
-                 namelen, name, error ? " (error)" : ""));
+                 (int) namelen, name, error ? " (error)" : ""));
     if (error)
         *name = '\0';
     return *name ? 0/*success*/ : -1/*failure*/;
@@ -3597,8 +3597,8 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif /*NCBI_OS_UNIX*/
     {
         /* get address of the remote host (assume the same host if NULL) */
-        if (host  &&  *host  &&  !(sock->host = s_gethostbyname(host,
-                                                                sock->log))) {
+        if (host  &&  *host
+            &&  !(sock->host = s_gethostbyname(host, (ESwitch) sock->log))) {
             CORE_LOGF_X(22, eLOG_Error,
                         ("%s[SOCK::Connect] "
                          " Failed SOCK_gethostbyname(\"%.64s\")",
@@ -4173,11 +4173,11 @@ static EIO_Status s_CreateListening(const char*    path,
 
     *lsock = 0;
 
+    assert(!path  ||  *path);
+
     /* initialize internals */
     if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
         return eIO_NotSupported;
-
-    assert(!path ^ !port);
 
     if (flags & fSOCK_Secure) {
         /*FIXME:  Add secure server support later*/
@@ -4206,8 +4206,11 @@ static EIO_Status s_CreateListening(const char*    path,
     /* create new(listening) socket */
     if ((x_lsock = socket(addr.sa.sa_family, SOCK_STREAM, 0)) == SOCK_INVALID){
         x_error = SOCK_ERRNO;
-        if (port) {
-            sprintf(_id, ":%hu", port);
+        if (!path) {
+            if (port)
+                sprintf(_id, ":%hu", port);
+            else
+                strcpy (_id, ":?");
             cp = _id;
         } else
             cp = path;
@@ -4218,7 +4221,7 @@ static EIO_Status s_CreateListening(const char*    path,
         return eIO_Unknown;
     }
 
-    if (port) {
+    if (!path) {
         /*
          * It was confirmed(?) that at least on Solaris 2.5 this precaution:
          * 1) makes the address released immediately upon the process
@@ -4228,11 +4231,15 @@ static EIO_Status s_CreateListening(const char*    path,
          */
         if (!s_SetReuseAddress(x_lsock, 1/*true*/)) {
             x_error = SOCK_ERRNO;
+            if (port)
+                sprintf(_id, "%hu", port);
+            else
+                strcpy (_id, "?");
             CORE_LOGF_ERRNO_EXX(35, eLOG_Error,
                                 x_error, SOCK_STRERROR(x_error),
-                                ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
+                                ("LSOCK#%u[%u]@:%s: [LSOCK::Create] "
                                  " Failed setsockopt(REUSEADDR)",
-                                 x_id, (unsigned int) x_lsock, port));
+                                 x_id, (unsigned int) x_lsock, _id));
             SOCK_CLOSE(x_lsock);
             return eIO_Unknown;
         }
@@ -4265,15 +4272,20 @@ static EIO_Status s_CreateListening(const char*    path,
         u = 0/*dummy*/;
 #endif /*NCBI_OS_UNIX*/
     }
-    x_error = bind(x_lsock, &addr.sa, addrlen) != 0 ? SOCK_ERRNO : 0;
+    x_error = bind(x_lsock, &addr.sa, addrlen) < 0 ? SOCK_ERRNO : 0;
 #ifdef NCBI_OS_UNIX
     if (path)
         umask(u);
 #endif /*NCBI_OS_UNIX*/
     if (x_error) {
-        if (port) {
-            SOCK_HostPortToString(addr.in.sin_addr.s_addr, port,
-                                  _id, sizeof(_id));
+        if (!path) {
+            if (!port) {
+                SOCK_ntoa(addr.in.sin_addr.s_addr, _id, sizeof(_id));
+                strcat(_id + strlen(_id), ":?");
+            } else {
+                SOCK_HostPortToString(addr.in.sin_addr.s_addr, port,
+                                      _id, sizeof(_id));
+            }
             cp = _id;
         } else
             cp = path;
@@ -4287,23 +4299,36 @@ static EIO_Status s_CreateListening(const char*    path,
         return x_error == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
 #ifdef NCBI_OS_IRIX
-    fchmod(path, S_IRWXU | S_IRWXG | S_IRWXO);
+    if (path)
+        (void) fchmod(x_lsock, S_IRWXU | S_IRWXG | S_IRWXO);
 #endif /*NCBI_OS_IRIX*/
+    if (!port) {
+        assert(addr.in.sin_family == AF_INET);
+        x_error = getsockname(x_lsock, &addr.sa, &addrlen) < 0? SOCK_ERRNO : 0;
+        if (x_error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
+            CORE_LOGF_ERRNO_EXX(150, eLOG_Error,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("LSOCK#%u[%u]@:?: [LSOCK::Create] "
+                                 " Cannot obtain free socket port",
+                                 x_id, (unsigned int) x_lsock));
+            SOCK_CLOSE(x_lsock);
+            return eIO_Closed;
+        }
+        port = ntohs(addr.in.sin_port);
+    }
+    assert((path  &&  !port)  ||
+           (port  &&  !path));
 
 #ifdef NCBI_OS_MSWIN
 	if (!(event = CreateEvent(NULL, TRUE, FALSE, NULL))) {
         DWORD err = GetLastError();
         char* strerr = s_WinStrerror(err);
-        if (port) {
-            sprintf(_id, ":%hu", port);
-            cp = _id;
-        } else
-            cp = path;
+        assert(!path);
         CORE_LOGF_ERRNO_EXX(118, eLOG_Error,
                             err, strerr ? strerr : "",
-                            ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
+                            ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
                              " Failed to create IO event",
-                             x_id, (unsigned int) x_lsock, cp));
+                             x_id, (unsigned int) x_lsock, port));
         if (strerr)
             LocalFree(strerr);
         SOCK_CLOSE(x_lsock);
@@ -4312,16 +4337,12 @@ static EIO_Status s_CreateListening(const char*    path,
     /* NB: WSAEventSelect() sets non-blocking automatically */
     if (WSAEventSelect(x_lsock, event, FD_CLOSE/*X*/ | FD_ACCEPT/*A*/) != 0) {
         x_error = SOCK_ERRNO;
-        if (port) {
-            sprintf(_id, ":%hu", port);
-            cp = _id;
-        } else
-            cp = path;
+        assert(!path);
         CORE_LOGF_ERRNO_EXX(119, eLOG_Error,
                             x_error, SOCK_STRERROR(x_error),
-                            ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
+                            ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
                              " Failed to bind IO event",
-                             x_id, (unsigned int) x_lsock, cp));
+                             x_id, (unsigned int) x_lsock, port));
         SOCK_CLOSE(x_lsock);
         CloseHandle(event);
         return eIO_Unknown;
@@ -4330,7 +4351,7 @@ static EIO_Status s_CreateListening(const char*    path,
     /* set non-blocking mode */
     if (!s_SetNonblock(x_lsock, 1/*true*/)) {
         x_error = SOCK_ERRNO;
-        if (port) {
+        if (!path) {
             sprintf(_id, ":%hu", port);
             cp = _id;
         } else
@@ -4355,7 +4376,7 @@ static EIO_Status s_CreateListening(const char*    path,
         x_error = errno;
         errstr = SOCK_STRERROR(x_error);
 #endif /*NCBI_OS_MSWIN*/
-        if (port) {
+        if (!path) {
             sprintf(_id, ":%hu", port);
             cp = _id;
         } else
@@ -4374,7 +4395,7 @@ static EIO_Status s_CreateListening(const char*    path,
     /* listen */
     if (listen(x_lsock, backlog) != 0) {
         x_error = SOCK_ERRNO;
-        if (port) {
+        if (!path) {
             sprintf(_id, ":%hu", port);
             cp = _id;
         } else
@@ -4446,7 +4467,18 @@ extern EIO_Status LSOCK_CreateUNIX(const char*    path,
                                    LSOCK*         lsock,
                                    TSOCK_Flags    flags)
 {
+    if (!path  ||  !*path)
+        return eIO_InvalidArg;
     return s_CreateListening(path, 0, backlog, lsock, flags);
+}
+
+
+extern unsigned short LSOCK_GetPort(LSOCK         lsock,
+                                    ENH_ByteOrder byte_order)
+{
+    unsigned short port;
+    port = lsock  &&  lsock->sock != SOCK_INVALID ? lsock->port : 0;
+    return byte_order == eNH_HostByteOrder ? port : htons(port);
 }
 
 
@@ -4531,6 +4563,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
+        assert(!lsock->port);
     } else
 #endif /*NCBI_OS_UNIX*/
     {
@@ -4538,6 +4571,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #ifdef HAVE_SIN_LEN
         addr.in.sin_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
+        assert(lsock->port);
     }
     if ((x_sock = accept(lsock->sock, &addr.sa, &addrlen)) == SOCK_INVALID) {
         x_error = SOCK_ERRNO;
@@ -4550,18 +4584,20 @@ static EIO_Status s_Accept(LSOCK           lsock,
     }
     lsock->n_accept++;
 
-#ifndef NCBI_OS_UNIX
-    path = "";
-#else
-    path = lsock->path;
-    if (path[0]) {
+#ifdef NCBI_OS_UNIX
+    if (lsock->path[0]) {
+        assert(addr.un.sun_family == AF_UNIX);
+        path = lsock->path;
         host = 0;
         port = 0;
     } else
-#endif /*!NCBI_OS_UNIX*/
+#endif /*NCBI_OS_UNIX*/
     {
+        assert(addr.in.sin_family == AF_INET);
         host =       addr.in.sin_addr.s_addr;
         port = ntohs(addr.in.sin_port);
+        assert(port);
+        path = "";
     }
 
 #ifdef NCBI_OS_MSWIN
@@ -4608,27 +4644,24 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #endif /*NCBI_OS_MSWIN*/
 
     /* create new SOCK structure */
-#ifdef NCBI_OS_UNIX
-    if (lsock->path[0])
-        addrlen = (SOCK_socklen_t) strlen(lsock->path);
-    else
-#endif /*NCBI_OS_UNIX*/
-        addrlen = 0;
+    addrlen = *path ? (SOCK_socklen_t) strlen(path) : 0;
     if (!(*sock = (SOCK) calloc(1, sizeof(**sock) + addrlen))) {
-		SOCK_ABORT(x_sock);
+        SOCK_ABORT(x_sock);
 #ifdef NCBI_OS_MSWIN
-		CloseHandle(event);
+        CloseHandle(event);
 #endif /*NCBI_OS_MSWIN*/
         return eIO_Unknown;
     }
 
     /* success */
 #ifdef NCBI_OS_UNIX
-    if (path[0]) {
+    if (!port) {
+        assert(!lsock->port  &&  path[0]);
         strcpy((*sock)->path, path);
     } else
 #endif /*NCBI_OS_UNIX*/
     {
+        assert(!path[0]);
         (*sock)->host = host;
         (*sock)->port = port;
     }
@@ -4652,14 +4685,8 @@ static EIO_Status s_Accept(LSOCK           lsock,
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     /* w_buf is unused for accepted sockets */
-    if ((*sock)->log == eDefault)
-        (*sock)->log = lsock->log;
 
-    if (s_ReuseAddress == eOn
-#ifdef NCBI_OS_UNIX
-        &&  !path[0]
-#endif /*NCBI_OS_UNIX*/
-        &&  !s_SetReuseAddress(x_sock, 1/*true*/)) {
+    if (port  &&  s_ReuseAddress == eOn  &&  !s_SetReuseAddress(x_sock, 1)) {
         x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(42, eLOG_Warning,
                             x_error, SOCK_STRERROR(x_error),
@@ -4669,11 +4696,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     }
 
 #ifdef SO_OOBINLINE
-    if (
-#  ifdef NCBI_OS_UNIX
-        !path[0]  &&
-#  endif /*NCBI_OS_UNIX*/
-        !s_SetOobInline(x_sock, 1/*true*/)) {
+    if (port  &&  !s_SetOobInline(x_sock, 1/*true*/)) {
         x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(137, eLOG_Warning,
                             x_error, SOCK_STRERROR(x_error),
@@ -4733,7 +4756,6 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 {
     int        x_error;
     EIO_Status status;
-    char       buf[80];
 
     if (lsock->sock == SOCK_INVALID) {
         CORE_LOGF_X(43, eLOG_Error,
@@ -4759,14 +4781,16 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
+        char buf[16];
         const char* c;
 #ifdef NCBI_OS_UNIX
-        if (lsock->path[0])
+        if (lsock->path[0]) {
+            assert(!lsock->port);
             c = lsock->path;
-        else
+        } else
 #endif /*NCBI_OS_UNIX*/ 
         {
-            SOCK_HostPortToString(0, lsock->port, buf, sizeof(buf));
+            sprintf(buf, ":%hu", lsock->port);
             c = buf;
         }
         CORE_LOGF_X(114, eLOG_Trace,
@@ -4803,8 +4827,10 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     /* cleanup & return */
     lsock->sock = SOCK_INVALID;
 #if   defined(NCBI_OS_UNIX)
-    if (!lsock->keep  &&  lsock->path[0])
+    if (!lsock->keep  &&  lsock->path[0]) {
+        assert(!lsock->port);
         remove(lsock->path);
+    }
 #elif defined(NCBI_OS_MSWIN)
 	CloseHandle(lsock->event);
 #endif /*NCBI_OS*/
@@ -4818,6 +4844,8 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
                                     void*  handle,
                                     size_t handle_size)
 {
+    if (!lsock)
+        return eIO_InvalidArg;
     if (!handle  ||  handle_size != sizeof(lsock->sock)) {
         CORE_LOGF_X(46, eLOG_Error,
                     ("LSOCK#%u[%u]: [LSOCK::GetOSHandle] "
@@ -4828,7 +4856,6 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
         assert(0);
         return eIO_InvalidArg;
     }
-
     memcpy(handle, &lsock->sock, handle_size);
     return (s_Initialized <= 0  ||  lsock->sock == SOCK_INVALID
             ? eIO_Closed : eIO_Success);
@@ -4947,11 +4974,10 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
       defined(NCBI_OS_IRIX)
         if (peer.sa.sa_family != AF_UNSPEC/*0*/)
 #  endif /*NCBI_OS_???*/
-            return eIO_InvalidArg;
 #else
     if (peer.sa.sa_family != AF_INET)
-        return eIO_InvalidArg;
 #endif /*NCBI_OS_UNIX*/
+        return eIO_NotSupported;
 
 #ifdef NCBI_OS_UNIX
     if (
@@ -5010,6 +5036,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     {
         x_sock->host  =       peer.in.sin_addr.s_addr;
         x_sock->port  = ntohs(peer.in.sin_port);
+        assert(x_sock->port);
     }
     x_sock->type      = eSocket;
     x_sock->log       = flags;
@@ -5063,11 +5090,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     }
 
 #ifdef SO_OOBINLINE
-    if (
-#  ifdef NCBI_OS_UNIX
-        !x_sock->path[0]  &&
-#  endif /*NCBI_OS_UNIX*/
-        !s_SetOobInline(fd, 1/*true*/)) {
+    if (x_sock->port  &&  !s_SetOobInline(fd, 1/*true*/)) {
         x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(138, eLOG_Warning,
                             x_error, SOCK_STRERROR(x_error),
@@ -5806,7 +5829,7 @@ extern unsigned short SOCK_GetLocalPortEx(SOCK          sock,
             sock->myport = port;
     } else
         port = sock->myport;
-    return byte_order != eNH_HostByteOrder ? htons(port) : port;
+    return byte_order == eNH_HostByteOrder ? port : htons(port);
 }
 
 
@@ -5817,19 +5840,33 @@ extern unsigned short SOCK_GetLocalPort(SOCK          sock,
 }
 
 
+extern unsigned short SOCK_GetRemotePort(SOCK          sock,
+                                         ENH_ByteOrder byte_order)
+{
+    unsigned short port;
+    SOCK_GetPeerAddress(sock, 0, &port, byte_order);
+    return port;
+}
+
+
 extern void SOCK_GetPeerAddress(SOCK            sock,
                                 unsigned int*   host,
                                 unsigned short* port,
                                 ENH_ByteOrder   byte_order)
 {
-    if (host) {
-        *host = (unsigned int)
-            (byte_order != eNH_HostByteOrder ? sock->host : ntohl(sock->host));
+    unsigned int   x_host;
+    unsigned short x_port;
+    if (sock  &&  sock->sock != SOCK_INVALID) {
+        x_host = sock->host;
+        x_port = sock->port;
+    } else {
+        x_host = 0;
+        x_port = 0;
     }
-    if (port) {
-        *port = (unsigned short)
-            (byte_order == eNH_HostByteOrder ? sock->port : ntohs(sock->port));
-    }
+    if (host)
+        *host = byte_order == eNH_HostByteOrder ? ntohl(x_host) : x_host;
+    if (port)
+        *port = byte_order == eNH_HostByteOrder ? x_port : ntohs(x_port);
 }
 
 
@@ -5888,6 +5925,8 @@ extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
                                    void*  handle,
                                    size_t handle_size)
 {
+    if (!sock)
+        return eIO_InvalidArg;
     if (!handle  ||  handle_size != sizeof(sock->sock)) {
         char _id[MAXIDLEN];
         CORE_LOGF_X(73, eLOG_Error,
@@ -5899,7 +5938,6 @@ extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
         assert(0);
         return eIO_InvalidArg;
     }
-
     memcpy(handle, &sock->sock, handle_size);
     return (s_Initialized <= 0  ||  sock->sock == SOCK_INVALID
             ? eIO_Closed : eIO_Success);
@@ -6197,7 +6235,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 
     if (!hostname  ||  !*hostname)
         host = 0;
-    else if (!(host = s_gethostbyname(hostname, sock->log))) {
+    else if (!(host = s_gethostbyname(hostname, (ESwitch) sock->log))) {
         CORE_LOGF_X(83, eLOG_Error,
                     ("%s[DSOCK::Connect] "
                      " Failed SOCK_gethostbyname(\"%.64s\")",
@@ -6292,7 +6330,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
     x_port = port ? port : sock->port;
     if (!host  ||  !*host)
         x_host = sock->host;
-    else if (!(x_host = s_gethostbyname(host, sock->log))) {
+    else if (!(x_host = s_gethostbyname(host, (ESwitch) sock->log))) {
         CORE_LOGF_X(88, eLOG_Error,
                     ("%s[DSOCK::SendMsg] "
                      " Failed SOCK_gethostbyname(\"%.64s\")",
