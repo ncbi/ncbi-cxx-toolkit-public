@@ -2659,7 +2659,9 @@ bool CTar::x_ExtractEntry(Uint8& size,
             }
 
             if (type == CTarEntryInfo::eFile) {
-                // Create file
+                // Create the file
+                // FIXME:  Switch to CFileIO eventually to bypass
+                // ofstream obscurity w.r.t. errors, extra buffering etc.
                 ofstream ofs(dst->GetPath().c_str(),
                              IOS_BASE::out    |
                              IOS_BASE::binary |
@@ -3135,6 +3137,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 // Regular files only!
 void CTar::x_AppendFile(const string& file)
 {
+    // FIXME:  Switch to CFileIO eventually to avoid ifstream
+    // obscurity w.r.t. errors, an extra layer of buffering etc.
     CNcbiIfstream ifs;
 
     _ASSERT(m_Current.GetType() == CTarEntryInfo::eFile);
