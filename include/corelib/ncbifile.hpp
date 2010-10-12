@@ -3050,7 +3050,7 @@ public:
     /// Specified handle should have read/write access rights.
     CFileWriter(TFileHandle handle);
 
-    /// Return a new IReader object corresponding to the given
+    /// Return a new IWriter object corresponding to the given
     /// filename, taking "-" (but not "./-") to write to the standard output.
     static IWriter* New(const string& filename,
                         EOpenMode  open_mode  = eCreate,
