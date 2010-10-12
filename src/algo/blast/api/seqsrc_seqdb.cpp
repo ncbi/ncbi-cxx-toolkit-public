@@ -311,10 +311,12 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /* If masks have not been consumed (scanning phase), pass on to engine */
-    if (BlastSeqBlkSetSeqRanges(args->seq, 
+    if (datap->mask_type) {
+        if (BlastSeqBlkSetSeqRanges(args->seq, 
                                 (SSeqRange*) datap->seq_ranges.get_data(),
                                 datap->seq_ranges.size() + 1, false, datap->mask_type) != 0) {
-        return BLAST_SEQSRC_ERROR;
+            return BLAST_SEQSRC_ERROR;
+        }
     }
 #endif
     
