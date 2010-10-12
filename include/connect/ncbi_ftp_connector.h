@@ -58,23 +58,15 @@ extern "C" {
 
 
 typedef enum {
-    fFTP_LogControl   = 1,
-    fFTP_LogData      = 2,
+    fFTP_LogControl   = 0x01,
+    fFTP_LogData      = 0x02,
     fFTP_LogAll       = fFTP_LogControl | fFTP_LogData,
-    fFTP_NotifySize   = 4,  /* use CB to communicate file size to user */
-    fFTP_UseFeatures  = 8
+    fFTP_NotifySize   = 0x04,  /* use CB to communicate file size to user   */
+    fFTP_UseFeatures  = 0x08,
+    fFTP_UsePassive   = 0x10,  /* use only passive mode for data            */
+    fFTP_UseActive    = 0x20   /* use only active  mode for data            */
 } EFTP_Flags;
 typedef unsigned int TFTP_Flags;
-
-NCBI_FTP_CONNECTOR_DEPRECATED
-typedef enum { /* DEPRECATED -- DON'T USE! */
-    fFCDC_LogControl  = fFTP_LogControl,
-    fFCDC_LogData     = fFTP_LogData,
-    fFCDC_LogAll      = fFTP_LogAll,
-    fFCDC_NotifySize  = fFTP_NotifySize,
-    fFCDC_UseFeatures = fFTP_UseFeatures
-} EFCDC_Flags;
-typedef unsigned int TFCDC_Flags;
 
 
 /* Even though many FTP server implementations provide SIZE command

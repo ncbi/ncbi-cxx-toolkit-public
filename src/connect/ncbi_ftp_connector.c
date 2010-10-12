@@ -58,15 +58,16 @@
  ***********************************************************************/
 
 typedef enum {
-    fFtpFeature_NOOP = 0x01, /* all implementations MUST support */
+    fFtpFeature_NOOP = 0x01,     /* all implementations MUST support       */
     fFtpFeature_SYST = 0x02,
     fFtpFeature_SITE = 0x04,
     fFtpFeature_FEAT = 0x08,
     fFtpFeature_MDTM = 0x10,
     fFtpFeature_REST = 0x20,
     fFtpFeature_SIZE = 0x40,
-    fFtpFeature_EPSV = 0x80,
-    fFtpFeature_APSV = 0x100 /* EPSV ALL -- a la "APSV" from RFC 1579 */
+    fFtpFeature_EPRT = 0x80,
+    fFtpFeature_EPSV = 0x1000,
+    fFtpFeature_APSV = 0x2000    /* EPSV ALL -- a la "APSV" from RFC 1579  */
 } EFTP_Feature;
 typedef unsigned int TFTP_Features; /* bitwise OR of EFtpFeature's */
 
@@ -310,6 +311,12 @@ static EIO_Status x_FTPParseHelp(SFTPConnector* xxx, int code,
             else
                 xxx->feat &= ~fFtpFeature_SIZE;
         }
+        if ((s = x_4Word(line, "EPRT")) != 0) {  /* RFC 2428 */
+            if (s[4 + strspn(s + 4, " \t")] != '*')
+                xxx->feat |=  fFtpFeature_EPRT;
+            else
+                xxx->feat &= ~fFtpFeature_EPRT;
+        }
         if ((s = x_4Word(line, "EPSV")) != 0) {  /* RFC 2428 (cf 1579) */
             if (s[4 + strspn(s + 4, " \t")] != '*')
                 xxx->feat |=  fFtpFeature_EPSV;
@@ -378,6 +385,7 @@ static EIO_Status s_FTPFeat(SFTPConnector* xxx)
 }
 
 
+/* all implementations MUST support NOOP */
 static EIO_Status s_FTPNoop(SFTPConnector* xxx)
 {
     int code;
@@ -491,6 +499,7 @@ static EIO_Status s_FTPDir(SFTPConnector* xxx,
 }
 
 
+/* all implementations MUST support TYPE I */
 static EIO_Status s_FTPBinary(SFTPConnector* xxx)
 {
     int code;
@@ -821,7 +830,7 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
     }
     if (n  ||  status == eIO_Timeout) {
         CORE_LOG_X(1, eLOG_Warning,
-                   "[FTP]  Timed out in data connection abort");
+                   "[FTP]  Timed out while aborting data connection");
     }
     return status;
 }
@@ -871,17 +880,192 @@ static EIO_Status s_FTPPassive(SFTPConnector*  xxx,
                            xxx->flag & fFTP_LogControl
                            ? fSOCK_LogOn : fSOCK_LogDefault);
     if (status != eIO_Success) {
+        assert(!xxx->data);
         CORE_LOGF_X(2, eLOG_Error,
                     ("[FTP; %s]  Cannot open data connection to %s:%hu (%s)",
                      xxx->what, buf, port, IO_StatusStr(status)));
-        s_FTPAbort(xxx, timeout, 0/*!quit*/);
-        assert(!xxx->data);
-        return eIO_Unknown;
+        return status;
     }
     assert(xxx->data);
     if (!(xxx->flag & fFTP_LogData))
         SOCK_SetDataLogging(xxx->data, eDefault);
     return eIO_Success;
+}
+
+
+/* all implementations MUST support PORT */
+static EIO_Status s_FTPPort(SFTPConnector* xxx,
+                            unsigned int   host,
+                            unsigned short port)
+{
+    unsigned char octet[sizeof(unsigned int) + sizeof(unsigned short)];
+    EIO_Status    status;
+    char          buf[80];
+    int           code;
+
+    port = SOCK_HostToNetShort(port);
+    memcpy(octet,     &host, sizeof(host));
+    memcpy(octet + 4, &port, sizeof(port));
+    sprintf(buf, "%u,%u,%u,%u,%u,%u",
+            octet[0], octet[1], octet[2], octet[3], octet[4], octet[5]);
+    status = s_FTPCommand(xxx, "PORT", buf);
+    if (status != eIO_Success)
+        return status;
+    status = s_FTPReply(xxx, &code, buf, sizeof(buf) - 1, 0);
+    if (status != eIO_Success)
+        return status;
+    return code == 200 ? eIO_Success : eIO_Unknown;
+}
+
+
+static EIO_Status s_FTPEprt(SFTPConnector* xxx,
+                            unsigned int   host,
+                            unsigned short port)
+{
+    EIO_Status status;
+    char       buf[80];
+    int        code;
+
+    memcpy(buf, "|1|", 3);
+    SOCK_ntoa(host, buf + 3, sizeof(buf) - 3);
+    sprintf(buf + 3 + strlen(buf + 3), "|%hu|", port);
+    status = s_FTPCommand(xxx, "EPRT", buf);
+    if (status != eIO_Success)
+        return status;
+    status = s_FTPReply(xxx, &code, buf, sizeof(buf) - 1, 0);
+    if (status != eIO_Success)
+        return status;
+    if (code == 500  ||  code == 501)
+        return xxx->feat & fFtpFeature_EPRT ? eIO_Unknown : eIO_NotSupported;
+    if (code == 522) {
+        xxx->feat &= ~fFtpFeature_EPRT;
+        return eIO_NotSupported;
+    }
+    return code == 200 ? eIO_Success : eIO_Unknown;
+}
+
+
+static EIO_Status s_FTPActive(SFTPConnector*  xxx,
+                              LSOCK*          lsock,
+                              const STimeout* timeout)
+{
+    EIO_Status status;
+    /* NB: Apache FTP proxy re-uses SOCK_LocalPort(xxx->cntl);
+     * other implementations don't do that leaving OS to decide */
+    status = LSOCK_CreateEx(0, 1, lsock, xxx->flag & fFTP_LogControl
+                            ? fSOCK_LogOn : fSOCK_LogDefault);
+    if (status == eIO_Success) {
+        unsigned int   host;
+        unsigned short port;
+        if (!(host = SOCK_GetLocalHostAddress(eDefault))  ||
+            !(port = LSOCK_GetPort(*lsock, eNH_HostByteOrder))) {
+            return eIO_Unknown;
+        }
+        if (xxx->feat  &&  (xxx->feat & fFtpFeature_EPRT))
+            status  = s_FTPEprt(xxx, host, port);
+        else
+            status  = eIO_NotSupported;
+        if (status == eIO_NotSupported)
+            status  = s_FTPPort(xxx, host, port);
+    }
+    return status;
+}
+
+
+static EIO_Status s_FTPOpenData(SFTPConnector*  xxx,
+                                LSOCK*          lsock,
+                                const STimeout* timeout)
+{
+    EIO_Status status;
+
+    *lsock = 0;
+    if ((xxx->flag & fFTP_UsePassive)  ||  !(xxx->flag & fFTP_UseActive)) {
+        status = s_FTPPassive(xxx, timeout);
+        if (status == eIO_Success  ||  (xxx->flag & fFTP_UsePassive))
+            return status;
+    }
+    if ((xxx->feat & (fFtpFeature_EPSV | fFtpFeature_APSV))
+        == fFtpFeature_APSV) {
+        /* seems like the impossible case; still, better safe than sorry */
+        return eIO_Closed;
+    }
+    status = s_FTPActive(xxx, lsock, timeout);
+    if (status != eIO_Success) {
+        if (*lsock) {
+            LSOCK_Close(*lsock);
+            *lsock = 0;
+        }
+    } else
+        assert(*lsock);
+    return status;
+}
+
+
+static EIO_Status s_FTPXfer(SFTPConnector*  xxx,
+                            const char*     cmd,
+                            const STimeout* timeout,
+                            int/*bool*/     out,
+                            FFTPReplyParser parser)
+{
+    int code;
+    LSOCK lsock;
+    EIO_Status status = s_FTPOpenData(xxx, &lsock, timeout);
+    if (status != eIO_Success) {
+        assert(!lsock  &&  !xxx->data);
+        return status;
+    }
+    status = s_FTPCommand(xxx, cmd, 0);
+    if (status == eIO_Success) {
+        status  = s_FTPReply(xxx, &code, 0, 0, parser);
+        if (status == eIO_Success) {
+            if (lsock) {
+                assert(!xxx->data);
+                unsigned short port = LSOCK_GetPort(lsock, eNH_HostByteOrder);
+                status = LSOCK_AcceptEx(lsock, timeout, &xxx->data,
+                                        xxx->flag & fFTP_LogControl
+                                        ? fSOCK_LogOn : fSOCK_LogDefault);
+                LSOCK_Close(lsock);
+                lsock = 0;
+                if (status != eIO_Success) {
+                    CORE_LOGF_X(5, eLOG_Error,
+                                ("[FTP; %s] "
+                                 " Cannot accept data connection at :%hu (%s)",
+                                 xxx->what, port, IO_StatusStr(status)));
+                    return status;
+                }
+                if (!(xxx->flag & fFTP_LogData))
+                    SOCK_SetDataLogging(xxx->data, eDefault);
+            }
+            assert(xxx->data);
+            if (code == 125  ||  code == 150) {
+                if (out) {
+                    xxx->send = 1/*true*/;
+                    xxx->size = 0;
+                }
+                return eIO_Success;
+            }
+            if (!out  &&
+                /* w/o data connection open, user gets eIO_Closed on read */
+                code == 450  &&  (*cmd != 'N'/*NLST*/ || *cmd != 'L'/*LIST*/)){
+                s_FTPCloseData(xxx, 1/*abort*/);
+            }
+            status = eIO_Unknown;
+        }
+    }
+    s_FTPAbort(xxx, timeout, 0/*!quit*/);
+    if (lsock)
+        LSOCK_Close(lsock);
+    assert(!xxx->data);
+    return status;
+}
+
+
+/* all implementations MUST support STOR */
+static EIO_Status s_FTPStore(SFTPConnector*  xxx,
+                             const char*     cmd,
+                             const STimeout* timeout)
+{
+    return s_FTPXfer(xxx, cmd, timeout, 1/*out*/, 0);
 }
 
 
@@ -915,53 +1099,7 @@ static EIO_Status s_FTPRetrieve(SFTPConnector*  xxx,
                                 const char*     cmd,
                                 const STimeout* timeout)
 {
-    int code;
-    EIO_Status status = s_FTPPassive(xxx, timeout);
-    if (status != eIO_Success)
-        return status;
-    status = s_FTPCommand(xxx, cmd, 0);
-    if (status == eIO_Success) {
-        status  = s_FTPReply(xxx, &code, 0, 0, xxx->cmcb.func ? x_FTPSzcb : 0);
-        if (status == eIO_Success) {
-            assert(xxx->data);
-            if (code == 125  ||  code == 150)
-                return eIO_Success;
-            /* w/o data connection open, user gets eIO_Closed on read */
-            if (code == 450  &&  (*cmd != 'N'/*NLST*/ || *cmd != 'L'/*LIST*/))
-                s_FTPCloseData(xxx, 1/*abort*/);
-            status = eIO_Unknown;
-        }
-    }
-    s_FTPAbort(xxx, timeout, 0/*!quit*/);
-    assert(!xxx->data);
-    return status;
-}
-
-
-/* all implementations MUST support STOR */
-static EIO_Status s_FTPStore(SFTPConnector*  xxx,
-                             const char*     cmd,
-                             const STimeout* timeout)
-{
-    int code;
-    EIO_Status status = s_FTPPassive(xxx, timeout);
-    if (status != eIO_Success)
-        return status;
-    status = s_FTPCommand(xxx, cmd, 0);
-    if (status == eIO_Success) {
-        status  = s_FTPReply(xxx, &code, 0, 0, 0);
-        if (status == eIO_Success) {
-            if (code == 125  ||  code == 150) {
-                xxx->send = 1/*true*/;
-                xxx->size = 0;
-                return eIO_Success;
-            }
-            status = eIO_Unknown;
-        }
-    }
-    s_FTPAbort(xxx, timeout, 0/*!quit*/);
-    assert(!xxx->data);
-    return status;
+    return s_FTPXfer(xxx, cmd, timeout, 0/*in*/, xxx->cmcb.func? x_FTPSzcb :0);
 }
 
 
@@ -1012,23 +1150,23 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
                                        strncasecmp(s, "MKD",  3) == 0  ||
                                        strncasecmp(s, "RMD",  3) == 0)) {
                 status = s_FTPDir (xxx, s);
-            } else if (size == 4  &&   strncasecmp(s, "CDUP", 4) == 0) {
-                status = s_FTPDir (xxx, s);
-            } else if (size == 4  &&   strncasecmp(s, "DELE", 4) == 0) {
-                status = s_FTPDele(xxx, s);
-            } else if (size == 4  &&  (strncasecmp(s, "LIST", 4) == 0  ||
-                                       strncasecmp(s, "NLST", 4) == 0  ||
-                                       strncasecmp(s, "RETR", 4) == 0)) {
-                status = s_FTPRetrieve(xxx, s, timeout);
+            } else if (size == 4  &&   strncasecmp(s, "SIZE", 4) == 0) {
+                status = s_FTPSize(xxx, s);
             } else if (size == 4  &&   strncasecmp(s, "MDTM", 4) == 0) {
                 status = s_FTPMdtm(xxx, s);
             } else if (size == 4  &&   strncasecmp(s, "REST", 4) == 0) {
                 status = s_FTPRest(xxx, s);
-            } else if (size == 4  &&   strncasecmp(s, "SIZE", 4) == 0) {
-                status = s_FTPSize(xxx, s);
+            } else if (size == 4  &&  (strncasecmp(s, "LIST", 4) == 0  ||
+                                       strncasecmp(s, "NLST", 4) == 0  ||
+                                       strncasecmp(s, "RETR", 4) == 0)) {
+                status = s_FTPRetrieve(xxx, s, timeout);
             } else if (size == 4  &&  (strncasecmp(s, "STOR", 4) == 0  ||
                                        strncasecmp(s, "APPE", 4) == 0)) {
                 status = s_FTPStore(xxx, s, timeout);
+            } else if (size == 4  &&   strncasecmp(s, "DELE", 4) == 0) {
+                status = s_FTPDele(xxx, s);
+            } else if (size == 4  &&   strncasecmp(s, "CDUP", 4) == 0) {
+                status = s_FTPDir (xxx, s);
             } else
                 status = eIO_NotSupported;
         } else
@@ -1145,7 +1283,7 @@ static EIO_Status s_VT_Wait
 
     if (xxx->send  &&  xxx->data) {
         if (event & eIO_Read)
-            return eIO_Closed;
+            return eIO_Success;
         return SOCK_Wait(xxx->data, eIO_Write, timeout);
     }
     if (event & eIO_Write)
