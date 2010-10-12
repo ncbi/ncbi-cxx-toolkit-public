@@ -1019,8 +1019,9 @@ static EIO_Status s_FTPXfer(SFTPConnector*  xxx,
         status  = s_FTPReply(xxx, &code, 0, 0, parser);
         if (status == eIO_Success) {
             if (lsock) {
+                unsigned short port;
                 assert(!xxx->data);
-                unsigned short port = LSOCK_GetPort(lsock, eNH_HostByteOrder);
+                port = LSOCK_GetPort(lsock, eNH_HostByteOrder);
                 status = LSOCK_AcceptEx(lsock, timeout, &xxx->data,
                                         xxx->flag & fFTP_LogControl
                                         ? fSOCK_LogOn : fSOCK_LogDefault);
