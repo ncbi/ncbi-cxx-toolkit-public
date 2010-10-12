@@ -4298,11 +4298,12 @@ static EIO_Status s_CreateListening(const char*    path,
         SOCK_CLOSE(x_lsock);
         return x_error == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
-#ifdef NCBI_OS_IRIX
     if (path)
-        (void) fchmod(x_lsock, S_IRWXU | S_IRWXG | S_IRWXO);
+#ifdef NCBI_OS_IRIX
+        (void) fchmod(x_lsock, S_IRWXU | S_IRWXG | S_IRWXO)
 #endif /*NCBI_OS_IRIX*/
-    if (!port) {
+            ;
+    else if (!port) {
         assert(addr.in.sin_family == AF_INET);
         x_error = getsockname(x_lsock, &addr.sa, &addrlen) < 0? SOCK_ERRNO : 0;
         if (x_error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
