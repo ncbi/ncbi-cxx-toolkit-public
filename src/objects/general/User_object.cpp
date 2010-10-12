@@ -94,12 +94,16 @@ CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
     }}
 
     ITERATE(TData, field_iter, GetData()) {
+        bool found = false;
         const CUser_field& field = **field_iter;
         if (field.IsSetLabel()  &&  field.GetLabel().IsStr()) {
             const string& this_label = field.GetLabel().GetStr();
-            if (this_label != first) {
-                continue;
+            if (this_label == first) {
+                found = true;
             }
+        }
+        if ( !found ) {
+            continue;
         }
 
         if ( !sub.empty() ) {
