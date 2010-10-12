@@ -151,7 +151,6 @@ public:
         eSubtype_misc_RNA,
         eSubtype_misc_signal,
         eSubtype_misc_structure,
-        eSubtype_mobile_element,
         eSubtype_modified_base,
         eSubtype_mutation,
         eSubtype_N_region,
@@ -207,6 +206,7 @@ public:
         eSubtype_tmRNA,
         eSubtype_clone,
         eSubtype_variation_ref, //< new variation subtype (Seq-feat.data.variant)
+        eSubtype_mobile_element,
         eSubtype_max,
         eSubtype_any = 255
     };
