@@ -5205,7 +5205,7 @@ void CFileIO::CreateTemporary(const string& dir,
     }
     if (m_Handle == INVALID_HANDLE_VALUE) {
         NCBI_THROW(CFileErrnoException, eFileIO,
-            "Unable to create a temporary file");
+            "Unable to create temporary file");
     }
 
 #  endif
@@ -5272,13 +5272,13 @@ size_t CFileIO::Write(const void* buf, size_t count) const
     if (count == 0) {
         return 0;
     }
+    const char* ptr = (const char*) buf;
     size_t n = count;
     do {
-        char* ptr = (char*)(buf);
 #if defined(NCBI_OS_MSWIN)
-        DWORD n_write   = (n > ULONG_MAX) ? ULONG_MAX : (DWORD)n;
+        DWORD n_write   = n > ULONG_MAX ? ULONG_MAX : (DWORD) n;
         DWORD n_written = 0;
-        if ( ::WriteFile(m_Handle, buf, n_write, &n_written, NULL) == 0 ) {
+        if ( ::WriteFile(m_Handle, ptr, n_write, &n_written, NULL) == 0 ) {
             NCBI_THROW(CFileErrnoException, eFileIO, "WriteFile() failed");
         }
 #elif defined(NCBI_OS_UNIX)
@@ -5504,7 +5504,6 @@ CFileReader::CFileReader(const string& filename, EShareMode share_mode)
 CFileReader::CFileReader(TFileHandle handle)
 {
     m_File.SetFileHandle(handle);
-    return;
 }
 
 
@@ -5514,13 +5513,15 @@ IReader* CFileReader::New(const string& filename, EShareMode share_mode)
 #if defined(NCBI_OS_MSWIN)
         TFileHandle handle = GetStdHandle(STD_INPUT_HANDLE);
 #elif defined(NCBI_OS_UNIX)
+#  ifdef STDIN_FILENO
+        TFileHandle handle = STDIN_FILENO;
+#  else
         TFileHandle handle = 0;
+#  endif //STDIN_FILENO
 #endif
         return new CFileReader(handle);
     }
-    else {
-        return new CFileReader(filename, share_mode);
-    }
+    return new CFileReader(filename, share_mode);
 }
 
 
@@ -5576,6 +5577,18 @@ IWriter* CFileWriter::New(const string& filename,
                           EOpenMode  open_mode,
                           EShareMode share_mode)
 {
+    if ( filename == "-" ) {
+#if defined(NCBI_OS_MSWIN)
+        TFileHandle handle = GetStdHandle(STD_OUTPUT_HANDLE);
+#elif defined(NCBI_OS_UNIX)
+#  ifdef STDOUT_FILENO
+        TFileHandle handle = STDOUT_FILENO;
+#  else
+        TFileHandle handle = 1;
+#  endif //STDIN_FILENO
+#endif
+        return new CFileWriter(handle);
+    }
     return new CFileWriter(filename, open_mode, share_mode);
 }
 
@@ -5605,6 +5618,12 @@ ERW_Result CFileWriter::Write(const void* buf,
 
 ERW_Result CFileWriter::Flush(void)
 {
+    try {
+        m_File.Flush();
+    }
+    catch (CFileErrnoException&) {
+        return eRW_Error;
+    }
     return eRW_Success;
 }
 

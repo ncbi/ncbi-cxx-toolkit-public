@@ -2806,16 +2806,16 @@ class NCBI_XNCBI_EXPORT CFileIO_Base
 public:
     /// File open mode.
     enum EOpenMode {
-        ///< Create new file, or truncate existent.
+        ///< Create a new file, or truncate an existing one.
         eCreate,
-        ///< Create new file, fails if the file already exists.
+        ///< Create a new file, or fail if the file already exists.
         eCreateNew,
-        ///< Open existent file, fails if the file does not exists.
+        ///< Open an existing file, or fail if the file does not exist.
         eOpen,
-        ///< Open existent file, or create new if the file does not exists.
+        ///< Open an existing file, or create a new one.
         eOpenAlways,
-        /// Open existent file, and truncate its size to 0.
-        /// Fails if the file does not exists.
+        /// Open an existing file and truncate its size to 0.
+        /// Fail if the file does not exist.
         eTruncate
     };
 
@@ -2829,7 +2829,7 @@ public:
     /// Sharing mode for opened file.
     /// @note
     ///   If OS does not support sharing mode for files, that it will be
-    ///   ignored. But you can use CFileLock to lock a file or its part.
+    ///   ignored.  But you can use CFileLock to lock a file or its part.
     /// @sa CFileLock
     enum EShareMode {
         /// Enables subsequent open operations on the file that request read
@@ -2845,10 +2845,10 @@ public:
         eExclusive
     };
 
-    /// Which starting point use to the file pointer move.
+    /// Which starting point to use for the moves of the file pointer.
     enum EPositionMoveMethod {
         eBegin,       ///< Absolute position from beginning of the file.
-        eCurrent,     ///< Relative from current position.
+        eCurrent,     ///< Relative to current position.
         eEnd          ///< The starting point is the current EOF position.
     };
 };
@@ -3021,7 +3021,7 @@ public:
     CFileReader(TFileHandle handle);
 
     /// Return a new IReader object corresponding to the given
-    /// filename, taking "-" (but not "./-") to mean standard input.
+    /// filename, taking "-" (but not "./-") to read from the standard input.
     static IReader* New(const string& filename, 
                         EShareMode share_mode = eShareRead);
 
@@ -3050,8 +3050,8 @@ public:
     /// Specified handle should have read/write access rights.
     CFileWriter(TFileHandle handle);
 
-    /// Return a new IWriter object corresponding to the given
-    /// filename.
+    /// Return a new IReader object corresponding to the given
+    /// filename, taking "-" (but not "./-") to write to the standard output.
     static IWriter* New(const string& filename,
                         EOpenMode  open_mode  = eCreate,
                         EShareMode share_mode = eShareRead);
