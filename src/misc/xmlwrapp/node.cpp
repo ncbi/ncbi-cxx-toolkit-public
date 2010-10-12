@@ -857,6 +857,7 @@ void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const 
             throw xml::exception(message);
         }
     }
+    xpath_context->node = pimpl_->xmlnode_;
     return xpath_context;
 }
 //####################################################################
