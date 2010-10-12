@@ -455,6 +455,9 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     for (int sub = eSubtype_imp; sub <= eSubtype_site_ref; ++sub) {
         table[ESubtype(sub)] = e_Imp;
     }
+    for ( const SImportEntry* p = kImportTable; p != kImportTableEnd; ++p ) {
+        table[p->m_Subtype] = e_Imp;
+    }
 
     sx_SubtypesTable = ptr;
 }
