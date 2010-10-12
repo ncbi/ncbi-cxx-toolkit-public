@@ -5585,7 +5585,7 @@ IWriter* CFileWriter::New(const string& filename,
         TFileHandle handle = STDOUT_FILENO;
 #  else
         TFileHandle handle = 1;
-#  endif //STDIN_FILENO
+#  endif //STDOUT_FILENO
 #endif
         return new CFileWriter(handle);
     }
