@@ -211,50 +211,56 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
         }
     }
 
+    scratch_entry.actual_name = x_FindRegistry(name, style);
+    scratch_entry.flags       = flags;
+    scratch_entry.reg_flags   = reg_flags;
+    scratch_entry.registry.Reset(reg);
+    if (scratch_entry.actual_name.empty()
+        ||  !scratch_entry.Reload(flags | fAlwaysReload | fKeepContents) ) {
+        scratch_entry.registry.Reset();
+        return scratch_entry;
+    } else if (flags & fPrivate) {
+        return scratch_entry;
+    } else {
+        m_Contents.push_back(scratch_entry);
+        m_Index[SKey(name0, style0, flags, reg_flags)]
+            = m_Contents.size() - 1;
+        return m_Contents.back();
+    }
+}
+
+
+string CMetaRegistry::x_FindRegistry(const string& name, ENameStyle style)
+{
+    _TRACE("CMetaRegistry::FindRegistry: looking for " << name);
+
     string dir;
     CDirEntry::SplitPath(name, &dir, 0, 0);
     if ( dir.empty() ) {
         ITERATE (TSearchPath, it, m_SearchPath) {
-            const SEntry& result = x_Load(CDirEntry::MakePath(*it, name),
-                                          style, flags, reg_flags, reg,
-                                          name0, style0, scratch_entry);
-            if ( result.registry ) {
+            const string& result
+                = x_FindRegistry(CDirEntry::MakePath(*it, name), style);
+            if ( !result.empty() ) {
                 return result;
             }
         }
     } else {
         switch (style) {
-        case eName_AsIs: {
-            string abs_name;
-            if ( CDirEntry::IsAbsolutePath(name) ) {
-                abs_name = name;
-            } else {
-                abs_name = CDirEntry::ConcatPath(CDir::GetCwd(), name);
+        case eName_AsIs:
+            if (CFile(name).Exists()) {
+                string abs_name;
+                if ( CDirEntry::IsAbsolutePath(name) ) {
+                    abs_name = name;
+                } else {
+                    abs_name = CDirEntry::ConcatPath(CDir::GetCwd(), name);
+                }
+                return CDirEntry::NormalizePath(abs_name);
             }
-            scratch_entry.actual_name = CDirEntry::NormalizePath(abs_name);
-            scratch_entry.flags       = flags;
-            scratch_entry.reg_flags   = reg_flags;
-            scratch_entry.registry.Reset(reg);
-            if ( !scratch_entry.Reload(flags | fAlwaysReload
-                                       | fKeepContents) ) {
-                scratch_entry.registry.Reset();
-                return scratch_entry;
-            } else if (flags & fPrivate) {
-                return scratch_entry;
-            } else {
-                m_Contents.push_back(scratch_entry);
-                m_Index[SKey(name0, style0, flags, reg_flags)]
-                    = m_Contents.size() - 1;
-                return m_Contents.back();
-            }
-        }
-        case eName_Ini: {
-            string name2(name);
-            for (;;) {
-                const SEntry& result = x_Load(name2 + ".ini", eName_AsIs,
-                                              flags, reg_flags, reg, name0,
-                                              style0, scratch_entry);
-                if (result.registry) {
+            break;
+        case eName_Ini:
+            for (string name2(name); ; ) {
+                string result = x_FindRegistry(name2 + ".ini", eName_AsIs);
+                if ( !result.empty() ) {
                     return result;
                 }
 
@@ -266,22 +272,15 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                 name2 = CDirEntry::MakePath(dir, base);
             }
             break;
-        }
         case eName_DotRc: {
             string base, ext;
             CDirEntry::SplitPath(name, 0, &base, &ext);
-            return x_Load(CDirEntry::MakePath(dir, '.' + base, ext) + "rc",
-                          eName_AsIs, flags, reg_flags, reg, name0, style0,
-                          scratch_entry);
+            return x_FindRegistry(CDirEntry::MakePath(dir, '.' + base, ext)
+                                  + "rc", eName_AsIs);
         }
         }  // switch (style)
     }
-
-    // not found
-    scratch_entry.flags     = flags;
-    scratch_entry.reg_flags = reg_flags;
-    scratch_entry.registry.Reset();
-    return scratch_entry;
+    return kEmptyStr;
 }
 
 

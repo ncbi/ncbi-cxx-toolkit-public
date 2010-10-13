@@ -159,6 +159,11 @@ public:
     /// NCBI_DONT_USE_LOCAL_CONFIG is set.
     static void GetDefaultSearchPath(TSearchPath& path);
 
+    /// Yield the path to a registry with the given name if available,
+    /// or the empty string otherwise.
+    static string FindRegistry(const string& name,
+                               ENameStyle style = eName_AsIs);
+
 private:
     /// Private functions, mostly non-static implementations of the
     /// public interface.
@@ -178,6 +183,8 @@ private:
     const TSearchPath& x_GetSearchPath(void) const { return m_SearchPath; }
     TSearchPath&       x_SetSearchPath(void)
         { CMutexGuard GUARD(m_Mutex); m_Index.clear(); return m_SearchPath; }
+
+    string x_FindRegistry(const string& name, ENameStyle style);
 
     /// Members
     struct SKey {
@@ -229,6 +236,13 @@ inline
 CMetaRegistry::TSearchPath& CMetaRegistry::SetSearchPath(void)
 {
     return Instance().x_SetSearchPath();
+}
+
+
+inline
+string CMetaRegistry::FindRegistry(const string& name, ENameStyle style)
+{
+    return Instance().x_FindRegistry(name, style);
 }
 
 
