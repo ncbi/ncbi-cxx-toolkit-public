@@ -393,14 +393,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             inlineMethods <<
                 "inline\n"<<
                 methodPrefix<<code.GetClassNameDT()<<"(const "<<info.tName<<"& value)\n"
-                "    : "<<info.mName<<"(value)\n"
                 "{\n"
+                "    Set(value);\n"
                 "}\n"
                 "\n"
                 "inline\n"
                 "void "<<methodPrefix<<"operator=(const "<<info.tName<<"& value)\n"
                 "{\n"
-                "    "<<info.mName<<" = value;\n"
+                "    Set(value);\n"
                 "}\n"
                 "\n";
         }
