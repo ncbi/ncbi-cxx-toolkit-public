@@ -47,23 +47,27 @@ public:
     static const int kTaxIdNotSet = 0;
 
     CTaxIdSet(int global_taxid = kTaxIdNotSet)
-        : m_GlobalTaxId(global_taxid) {}
+        : m_GlobalTaxId(global_taxid),
+          m_Matched(true) {}
     
     void SetMappingFromFile(CNcbiIstream & f);
     
     /// Check that each defline has the specified taxid; if not,
     /// replace the defline and set the taxid.
     /// @param deflines Deflines to fix taxIDs [in|out]
-    void FixTaxId(CRef<objects::CBlast_def_line_set> deflines) const;
+    void FixTaxId(CRef<objects::CBlast_def_line_set> deflines);
+
+    bool HasEverFixedId() const { return m_Matched; };
     
 private:
     int                m_GlobalTaxId;
     map< string, int > m_TaxIdMap;
+    bool               m_Matched;
 
     /// Selects the most suitable tax id for the input passed in, checking the
     /// global taxid first, then the mapping provided by an input file, and
     /// finally what's found in the defline argument
-    int x_SelectBestTaxid(const objects::CBlast_def_line & defline) const;
+    int x_SelectBestTaxid(const objects::CBlast_def_line & defline);
     
 };
 

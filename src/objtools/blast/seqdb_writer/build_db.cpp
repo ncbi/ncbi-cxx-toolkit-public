@@ -725,8 +725,6 @@ CConstRef<CBioseq> CFastaBioseqSource::GetNext()
 
 bool CBuildDatabase::AddSequences(IBioseqSource & src)
 {
-    StartBuild();
-    
     bool found = false;
     
     CStopWatch sw(CStopWatch::eStart);
@@ -779,8 +777,6 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src)
 
 bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
 {
-    StartBuild();
-
     CStopWatch sw(CStopWatch::eStart);
     
     bool done = false;
@@ -956,6 +952,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
+      m_Taxids       (new CTaxIdSet()),
       m_LogFile      (*logfile),
       m_UseRemote    (true),
       m_DeflineCount (0),
@@ -998,6 +995,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
+      m_Taxids       (new CTaxIdSet()),
       m_LogFile      (*logfile),
       m_UseRemote    (true),
       m_DeflineCount (0),
@@ -1041,11 +1039,13 @@ CBuildDatabase::~CBuildDatabase()
                        << "Please ensure that the -parse_seqids option is used "
                        << "in the\nfiltering program as well as makeblastdb.");
     }
+    if (!m_Taxids->HasEverFixedId()) {
+        ERR_POST(Error << "No sequences matched any of the taxids provided.");
+    }
 }
 
 void CBuildDatabase::SetTaxids(CTaxIdSet & taxids)
 {
-    _ASSERT(m_Taxids.Empty());
     m_Taxids.Reset(& taxids);
 }
 
@@ -1136,14 +1136,10 @@ CBuildDatabase::Build(const vector<string> & ids,
 
 void CBuildDatabase::StartBuild()
 {
-    if (m_Taxids.Empty()) {
-        m_Taxids.Reset(new CTaxIdSet);
-    }
 }
 
 bool CBuildDatabase::AddIds(const vector<string> & ids)
 {
-    StartBuild();
     
     bool success = true;
     
@@ -1221,8 +1217,6 @@ bool CBuildDatabase::AddIds(const vector<string> & ids)
 
 bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
 {
-    StartBuild();
-    
     // Add any fasta sequences as well.
     bool success = true;
     

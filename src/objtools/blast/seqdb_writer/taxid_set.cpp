@@ -79,9 +79,10 @@ void CTaxIdSet::SetMappingFromFile(CNcbiIstream & f)
             m_TaxIdMap[key] = taxid;
         }
     }
+    m_Matched = (m_GlobalTaxId != kTaxIdNotSet) || m_TaxIdMap.empty();
 }
 
-int CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline) const
+int CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline) 
 {
     int retval = m_GlobalTaxId;
 
@@ -101,6 +102,7 @@ int CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline) const
             
             if (item != m_TaxIdMap.end()) {
                 retval = item->second;
+                m_Matched = true;
                 break;
             }
         }
@@ -112,7 +114,7 @@ int CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline) const
 }
 
 void
-CTaxIdSet::FixTaxId(CRef<objects::CBlast_def_line_set> deflines) const
+CTaxIdSet::FixTaxId(CRef<objects::CBlast_def_line_set> deflines) 
 {
     NON_CONST_ITERATE(CBlast_def_line_set::Tdata, itr, deflines->Set()) {
         (*itr)->SetTaxid(x_SelectBestTaxid(**itr));
