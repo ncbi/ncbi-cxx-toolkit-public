@@ -1067,6 +1067,7 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         string str;
         if (tsid->IsSetAccession()) {
             str = tsid->GetAccession();
+            NStr::ToUpper(str);
         } else if (tsid->IsSetName()) {
             str = tsid->GetName();
         }

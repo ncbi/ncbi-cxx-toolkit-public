@@ -236,6 +236,7 @@ string GetLabel(const CSeq_id& id)
     if ( text_id ) {
         if ( text_id->IsSetAccession() ) {
             ret = text_id->GetAccession();
+            NStr::ToUpper(ret);
         }
         else if ( text_id->IsSetName() ) {
             ret = text_id->GetName();
