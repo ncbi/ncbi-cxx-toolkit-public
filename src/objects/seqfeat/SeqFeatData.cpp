@@ -413,6 +413,124 @@ const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(ESubtype s
 }
 
 
+#ifdef _DEBUG
+struct SSubtypeInfo {
+    CSeqFeatData::E_Choice m_Type;
+    CSeqFeatData::ESubtype m_Subtype;
+    int m_Value;
+    const char* m_Name;
+};
+#define SUBTYPE_INFO(type, subtype, value)  \
+    { CSeqFeatData::type, CSeqFeatData::subtype, value, #subtype }
+static const SSubtypeInfo s_subtype_info[] = {
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_bad,   0),
+    SUBTYPE_INFO(              e_Gene,                  eSubtype_gene,   1),
+    SUBTYPE_INFO(               e_Org,                   eSubtype_org,   2),
+    SUBTYPE_INFO(          e_Cdregion,              eSubtype_cdregion,   3),
+    SUBTYPE_INFO(              e_Prot,                  eSubtype_prot,   4),
+    SUBTYPE_INFO(              e_Prot,            eSubtype_preprotein,   5),
+    SUBTYPE_INFO(              e_Prot,        eSubtype_mat_peptide_aa,   6),
+    SUBTYPE_INFO(              e_Prot,        eSubtype_sig_peptide_aa,   7),
+    SUBTYPE_INFO(              e_Prot,    eSubtype_transit_peptide_aa,   8),
+    SUBTYPE_INFO(               e_Rna,                eSubtype_preRNA,   9),
+    SUBTYPE_INFO(               e_Rna,                  eSubtype_mRNA,  10),
+    SUBTYPE_INFO(               e_Rna,                  eSubtype_tRNA,  11),
+    SUBTYPE_INFO(               e_Rna,                  eSubtype_rRNA,  12),
+    SUBTYPE_INFO(               e_Rna,                 eSubtype_snRNA,  13),
+    SUBTYPE_INFO(               e_Rna,                 eSubtype_scRNA,  14),
+    SUBTYPE_INFO(               e_Rna,                eSubtype_snoRNA,  15),
+    SUBTYPE_INFO(               e_Rna,              eSubtype_otherRNA,  16),
+    SUBTYPE_INFO(               e_Pub,                   eSubtype_pub,  17),
+    SUBTYPE_INFO(               e_Seq,                   eSubtype_seq,  18),
+    SUBTYPE_INFO(               e_Imp,                   eSubtype_imp,  19),
+    SUBTYPE_INFO(               e_Imp,                eSubtype_allele,  20),
+    SUBTYPE_INFO(               e_Imp,            eSubtype_attenuator,  21),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_C_region,  22),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_CAAT_signal,  23),
+    SUBTYPE_INFO(               e_Imp,               eSubtype_Imp_CDS,  24),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_conflict,  25),
+    SUBTYPE_INFO(               e_Imp,                eSubtype_D_loop,  26),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_D_segment,  27),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_enhancer,  28),
+    SUBTYPE_INFO(               e_Imp,                  eSubtype_exon,  29),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_EC_number,  30),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_GC_signal,  31),
+    SUBTYPE_INFO(               e_Imp,                  eSubtype_iDNA,  32),
+    SUBTYPE_INFO(               e_Imp,                eSubtype_intron,  33),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_J_segment,  34),
+    SUBTYPE_INFO(               e_Imp,                   eSubtype_LTR,  35),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_mat_peptide,  36),
+    SUBTYPE_INFO(               e_Imp,          eSubtype_misc_binding,  37),
+    SUBTYPE_INFO(               e_Imp,       eSubtype_misc_difference,  38),
+    SUBTYPE_INFO(               e_Imp,          eSubtype_misc_feature,  39),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_misc_recomb,  40),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_misc_RNA,  41),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_misc_signal,  42),
+    SUBTYPE_INFO(               e_Imp,        eSubtype_misc_structure,  43),
+    SUBTYPE_INFO(               e_Imp,         eSubtype_modified_base,  44),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_mutation,  45),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_N_region,  46),
+    SUBTYPE_INFO(               e_Imp,          eSubtype_old_sequence,  47),
+    SUBTYPE_INFO(               e_Imp,          eSubtype_polyA_signal,  48),
+    SUBTYPE_INFO(               e_Imp,            eSubtype_polyA_site,  49),
+    SUBTYPE_INFO(               e_Imp,         eSubtype_precursor_RNA,  50),
+    SUBTYPE_INFO(               e_Imp,       eSubtype_prim_transcript,  51),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_primer_bind,  52),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_promoter,  53),
+    SUBTYPE_INFO(               e_Imp,          eSubtype_protein_bind,  54),
+    SUBTYPE_INFO(               e_Imp,                   eSubtype_RBS,  55),
+    SUBTYPE_INFO(               e_Imp,         eSubtype_repeat_region,  56),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_repeat_unit,  57),
+    SUBTYPE_INFO(               e_Imp,            eSubtype_rep_origin,  58),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_S_region,  59),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_satellite,  60),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_sig_peptide,  61),
+    SUBTYPE_INFO(               e_Imp,                eSubtype_source,  62),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_stem_loop,  63),
+    SUBTYPE_INFO(               e_Imp,                   eSubtype_STS,  64),
+    SUBTYPE_INFO(               e_Imp,           eSubtype_TATA_signal,  65),
+    SUBTYPE_INFO(               e_Imp,            eSubtype_terminator,  66),
+    SUBTYPE_INFO(               e_Imp,       eSubtype_transit_peptide,  67),
+    SUBTYPE_INFO(               e_Imp,                eSubtype_unsure,  68),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_V_region,  69),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_V_segment,  70),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_variation,  71),
+    SUBTYPE_INFO(               e_Imp,                eSubtype_virion,  72),
+    SUBTYPE_INFO(               e_Imp,                 eSubtype_3clip,  73),
+    SUBTYPE_INFO(               e_Imp,                  eSubtype_3UTR,  74),
+    SUBTYPE_INFO(               e_Imp,                 eSubtype_5clip,  75),
+    SUBTYPE_INFO(               e_Imp,                  eSubtype_5UTR,  76),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_10_signal,  77),
+    SUBTYPE_INFO(               e_Imp,             eSubtype_35_signal,  78),
+    SUBTYPE_INFO(               e_Imp,                   eSubtype_gap,  79),
+    SUBTYPE_INFO(               e_Imp,                eSubtype_operon,  80),
+    SUBTYPE_INFO(               e_Imp,                  eSubtype_oriT,  81),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_site_ref,  82),
+    SUBTYPE_INFO(            e_Region,                eSubtype_region,  83),
+    SUBTYPE_INFO(           e_Comment,               eSubtype_comment,  84),
+    SUBTYPE_INFO(              e_Bond,                  eSubtype_bond,  85),
+    SUBTYPE_INFO(              e_Site,                  eSubtype_site,  86),
+    SUBTYPE_INFO(             e_Rsite,                 eSubtype_rsite,  87),
+    SUBTYPE_INFO(              e_User,                  eSubtype_user,  88),
+    SUBTYPE_INFO(            e_Txinit,                eSubtype_txinit,  89),
+    SUBTYPE_INFO(               e_Num,                   eSubtype_num,  90),
+    SUBTYPE_INFO(          e_Psec_str,              eSubtype_psec_str,  91),
+    SUBTYPE_INFO(   e_Non_std_residue,       eSubtype_non_std_residue,  92),
+    SUBTYPE_INFO(               e_Het,                   eSubtype_het,  93),
+    SUBTYPE_INFO(            e_Biosrc,                eSubtype_biosrc,  94),
+    SUBTYPE_INFO(               e_Rna,                 eSubtype_ncRNA,  95),
+    SUBTYPE_INFO(               e_Rna,                 eSubtype_tmRNA,  96),
+    SUBTYPE_INFO(             e_Clone,                 eSubtype_clone,  97),
+    SUBTYPE_INFO(         e_Variation,         eSubtype_variation_ref,  98),
+    SUBTYPE_INFO(               e_Imp,        eSubtype_mobile_element,  99),
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 100),
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_any, 255)
+};
+static const size_t s_subtype_count =
+    sizeof(s_subtype_info)/sizeof(s_subtype_info[0]);
+#endif
+
+
 void CSeqFeatData::s_InitSubtypesTable(void)
 {
     if ( sx_SubtypesTable ) {
@@ -460,6 +578,37 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     }
 
     sx_SubtypesTable = ptr;
+
+#ifdef _DEBUG
+    if ( false ) { // print new definition of s_subtype_info[]
+        NcbiCout << "static const SSubtypeInfo s_subtype_info[] = {\n";
+        for ( size_t i = 0; i < s_subtype_count; ++i ) {
+            const SSubtypeInfo& info = s_subtype_info[i];
+            string type = SelectionName(GetTypeFromSubtype(info.m_Subtype));
+            if ( type == "not set" ) {
+                type = "not_set";
+            }
+            else {
+                type[0] = toupper(type[0]);
+                NStr::ReplaceInPlace(type, "-", "_");
+            }
+            type = "e_"+type;
+            NcbiCout << "    SUBTYPE_INFO("
+                     << setw(20) << type << ", "
+                     << setw(30) << info.m_Name << ", "
+                     << setw(3) << info.m_Subtype << ")";
+            if ( i != s_subtype_count-1 ) NcbiCout << ",";
+            NcbiCout << "\n";
+        }
+        NcbiCout << "};" << NcbiEndl;
+    }
+    // check if type/subtype values didn't change
+    for ( size_t i = 0; i < s_subtype_count; ++i ) {
+        const SSubtypeInfo& info = s_subtype_info[i];
+        _ASSERT(info.m_Subtype == info.m_Value);
+        _ASSERT(info.m_Type == GetTypeFromSubtype(info.m_Subtype));
+    }
+#endif    
 }
 
 
