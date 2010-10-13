@@ -320,7 +320,7 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
 {
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
     if ( id == 0 ) {
-        return new TEnumValueType(dynamic_cast<const CIntDataValue&>(value).GetValue());
+        return new TEnumValueType((TEnumValueType)dynamic_cast<const CIntDataValue&>(value).GetValue());
     }
     ITERATE ( TValues, i, m_Values ) {
         if ( i->GetName() == id->GetValue() )
@@ -339,7 +339,7 @@ string CEnumDataType::GetDefaultString(const CDataValue& value) const
     else {
         const CIntDataValue* intValue =
             dynamic_cast<const CIntDataValue*>(&value);
-        return NStr::IntToString(intValue->GetValue());
+        return NStr::Int8ToString(intValue->GetValue());
     }
 }
 

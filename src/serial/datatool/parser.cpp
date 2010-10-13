@@ -464,7 +464,7 @@ Int4 ASNParser::Number(void)
 
 double ASNParser::Double(void)
 {
-    return NStr::StringToDouble(ValueOf(T_DOUBLE, "double"));
+    return NStr::StringToDouble(ValueOf(T_DOUBLE, "double"), NStr::fDecimalPosix);
 }
 
 const string& ASNParser::String(void)

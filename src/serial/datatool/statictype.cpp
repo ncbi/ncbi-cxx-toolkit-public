@@ -394,11 +394,13 @@ string CRealDataType::GetDefaultString(const CDataValue& value) const
 {
     const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
     if (dbl) {
-        return NStr::DoubleToString(dbl->GetValue());
+        return NStr::DoubleToString(dbl->GetValue(),
+            DBL_DIG, NStr::fDoubleGeneral | NStr::fDoublePosix);
     } else {
         const CIntDataValue* i = dynamic_cast<const CIntDataValue*>(&value);
         if (i) {
-            return NStr::DoubleToString((double)(i->GetValue()));
+            return NStr::DoubleToString((double)(i->GetValue()),
+                DBL_DIG, NStr::fDoubleGeneral | NStr::fDoublePosix);
         }
     }
     value.Warning("REAL value expected", 17);
@@ -728,12 +730,12 @@ bool CIntDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CIntDataType::CreateDefault(const CDataValue& value) const
 {
-    return new Int4(dynamic_cast<const CIntDataValue&>(value).GetValue());
+    return new Int4((Int4)dynamic_cast<const CIntDataValue&>(value).GetValue());
 }
 
 string CIntDataType::GetDefaultString(const CDataValue& value) const
 {
-    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
+    return NStr::Int8ToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
 }
 
 CTypeRef CIntDataType::GetTypeInfo(void)
@@ -781,7 +783,7 @@ TObjectPtr CBigIntDataType::CreateDefault(const CDataValue& value) const
 
 string CBigIntDataType::GetDefaultString(const CDataValue& value) const
 {
-    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
+    return NStr::Int8ToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
 }
 
 CTypeRef CBigIntDataType::GetTypeInfo(void)

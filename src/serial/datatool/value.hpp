@@ -105,7 +105,7 @@ private:
 };
 
 typedef CDataValueTmpl<bool> CBoolDataValue;
-typedef CDataValueTmpl<Int4> CIntDataValue;
+typedef CDataValueTmpl<Int8> CIntDataValue;
 typedef CDataValueTmpl<double> CDoubleDataValue;
 typedef CDataValueTmpl<string> CStringDataValue;
 
@@ -208,12 +208,12 @@ string CDataValueTmpl<bool>::GetXmlString(void) const
 
 
 EMPTY_TEMPLATE inline
-void CDataValueTmpl<Int4>::PrintASN(CNcbiOstream& out, int ) const
+void CDataValueTmpl<Int8>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }
 EMPTY_TEMPLATE inline
-string CDataValueTmpl<Int4>::GetXmlString(void) const
+string CDataValueTmpl<Int8>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;
     PrintASN( buffer, 0);

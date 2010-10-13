@@ -1102,9 +1102,11 @@ AutoPtr<CDataValue> DTDParser::x_Value(const DTDElement& node)
         }
     case DTDElement::eInteger:
     case DTDElement::eBigInt:
-        return AutoPtr<CDataValue>(new CIntDataValue(NStr::StringToInt(node.GetDefault())));
+        return AutoPtr<CDataValue>(new CIntDataValue(
+            NStr::StringToInt8(node.GetDefault())));
     case DTDElement::eDouble:
-        return AutoPtr<CDataValue>(new CDoubleDataValue(NStr::StringToDouble(node.GetDefault())));
+        return AutoPtr<CDataValue>(new CDoubleDataValue(
+            NStr::StringToDouble(node.GetDefault(), NStr::fDecimalPosix)));
     }
     ParseError("value");
     return AutoPtr<CDataValue>(0);
@@ -1355,10 +1357,11 @@ CDataValue* DTDParser::x_AttribValue(const DTDAttribute& att,
     case DTDAttribute::eIntEnum:
     case DTDAttribute::eInteger:
     case DTDAttribute::eBigInt:
-        value = new CIntDataValue(NStr::StringToInt(defvalue));
+        value = new CIntDataValue(NStr::StringToInt8(defvalue));
         break;
     case DTDAttribute::eDouble:
-        value = new CDoubleDataValue(NStr::StringToDouble(defvalue));
+        value = new CDoubleDataValue(
+            NStr::StringToDouble(defvalue, NStr::fDecimalPosix));
         break;
     }
     return value;
