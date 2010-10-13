@@ -282,6 +282,8 @@ public:
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)*this != 0);
+    /// Disable operator<<(bool)
+    void operator<<(bool) const;
 
 protected:
     /// Default constructor.
@@ -343,6 +345,8 @@ public:
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)*this != 0);
+    /// Disable operator>>(bool)
+    void operator>>(bool) const;
 
 protected:
     /// Default constructor.
