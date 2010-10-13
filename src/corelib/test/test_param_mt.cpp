@@ -113,8 +113,23 @@ typedef NCBI_PARAM_TYPE(ParamTest, StaticStr) TParam_StaticStr;
 
 static TParam_StaticStr s_StrParam;
 
+string InitIntParam(void);
+
+NCBI_PARAM_DECL(int, ParamTest, InitFuncParam);
+NCBI_PARAM_DEF_WITH_INIT(int, ParamTest, InitFuncParam, 123, InitIntParam);
+typedef NCBI_PARAM_TYPE(ParamTest, InitFuncParam) TParam_InitFunc;
+
+string InitIntParam(void)
+{
+    return "456";
+}
+
+
 bool CTestParamApp::Thread_Run(int idx)
 {
+    // Check params initialized by a function
+    _ASSERT(TParam_InitFunc::GetDefault() == 456);
+
     // Set thread default value
     TParam_ThreadIdx::SetThreadDefault(idx);
     string str_idx = NStr::IntToString(idx);
@@ -176,6 +191,7 @@ bool CTestParamApp::Thread_Run(int idx)
     _ASSERT(TParam_ThreadIdx::GetThreadDefault() == idx);
     return true;
 }
+
 
 bool CTestParamApp::TestApp_Init(void)
 {

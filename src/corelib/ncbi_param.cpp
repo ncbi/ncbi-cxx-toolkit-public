@@ -341,7 +341,8 @@ const char* CParamException::GetErrCodeString(void) const
     case eParserError:   return "eParserError";
     case eBadValue:      return "eBadValue";
     case eNoThreadValue: return "eNoThreadValue";
-    default:            return CException::GetErrCodeString();
+    case eRecursion:     return "eRecursion";
+    default:             return CException::GetErrCodeString();
     }
 }
 

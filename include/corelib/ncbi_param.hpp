@@ -259,7 +259,19 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 #define NCBI_PARAM_DEF(type, section, name, default_value)                  \
     SParamDescription< type >                                               \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
-        { #section, #name, 0, default_value, eParam_Default };              \
+        { #section, #name, 0, default_value, NULL, eParam_Default };        \
+    X_NCBI_PARAM_STATIC_DEF(type,                                           \
+        X_NCBI_PARAM_DECLNAME(section, name),                               \
+        default_value)
+
+
+/// Parameter definition. The same as NCBI_PARAM_DEF, but with a callback
+/// used to initialize the default value.
+/// @sa NCBI_PARAM_DEF
+#define NCBI_PARAM_DEF_WITH_INIT(type, section, name, default_value, init)  \
+    SParamDescription< type >                                               \
+    X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
+        { #section, #name, 0, default_value, init, eParam_Default };        \
     X_NCBI_PARAM_STATIC_DEF(type,                                           \
         X_NCBI_PARAM_DECLNAME(section, name),                               \
         default_value)
@@ -271,10 +283,23 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 #define NCBI_PARAM_DEF_EX(type, section, name, default_value, flags, env)   \
     SParamDescription< type >                                               \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
-        { #section, #name, #env, default_value, flags };                    \
+        { #section, #name, #env, default_value, NULL, flags };              \
     X_NCBI_PARAM_STATIC_DEF(type,                                           \
         X_NCBI_PARAM_DECLNAME(section, name),                               \
         default_value)
+
+
+/// Definition of a parameter with additional flags and initialization
+/// callback.
+/// @sa NCBI_PARAM_DEF_WITH_INIT
+/// @sa ENcbiParamFlags
+#define NCBI_PARAM_DEF_EX_WITH_INIT(type, section, name, def_value, init, flags, env) \
+    SParamDescription< type >                                               \
+    X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
+        { #section, #name, #env, def_value, init, flags };                  \
+    X_NCBI_PARAM_STATIC_DEF(type,                                           \
+        X_NCBI_PARAM_DECLNAME(section, name),                               \
+        def_value)
 
 
 /// Similar to NCBI_PARAM_DEF except it adds "scope" (class name or 
@@ -283,7 +308,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 #define NCBI_PARAM_DEF_IN_SCOPE(type, section, name, default_value, scope)   \
     SParamDescription< type >                                                \
     X_NCBI_PARAM_DECLNAME_SCOPE(scope, section, name)::sm_ParamDescription = \
-        { #section, #name, 0, default_value, eParam_Default };               \
+        { #section, #name, 0, default_value, NULL, eParam_Default };         \
     X_NCBI_PARAM_STATIC_DEF(type,                                            \
         X_NCBI_PARAM_DECLNAME_SCOPE(scope, section, name),                   \
         default_value)
@@ -299,7 +324,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 #define NCBI_PARAM_ENUM_DEF(type, section, name, default_value)             \
     SParamEnumDescription< type >                                           \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
-        { #section, #name, 0, default_value, eParam_Default,                \
+        { #section, #name, 0, default_value, NULL, eParam_Default,          \
           X_NCBI_PARAM_ENUMNAME(section, name),                             \
           ArraySize(X_NCBI_PARAM_ENUMNAME(section, name)) };                \
     X_NCBI_PARAM_STATIC_DEF(type,                                           \
@@ -314,7 +339,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                default_value, flags, env)                   \
     SParamEnumDescription< type >                                           \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
-        { #section, #name, #env, default_value, flags,                      \
+        { #section, #name, #env, default_value, NULL, flags,                \
           X_NCBI_PARAM_ENUMNAME(section, name),                             \
           ArraySize(X_NCBI_PARAM_ENUMNAME(section, name)) };                \
     X_NCBI_PARAM_STATIC_DEF(type,                                           \
@@ -334,7 +359,8 @@ public:
     enum EErrCode {
         eParserError,      ///< Can not convert string to value
         eBadValue,         ///< Unexpected parameter value
-        eNoThreadValue     ///< Per-thread value is prohibited by flags
+        eNoThreadValue,    ///< Per-thread value is prohibited by flags
+        eRecursion         ///< Recursion while initializing param
     };
 
     /// Translate from the error code value to its string representation.
@@ -389,9 +415,11 @@ public:
     /// It just shows the stage of parameter loading process.
     enum EParamState {
         eState_NotSet = 0, ///< The param's value has not been set yet
-        eState_EnvVar = 1, ///< The environment variable has been checked
-        eState_Config = 2, ///< The app. config file has been checked
-        eState_User   = 3  ///< Value has been set by user
+        eState_InFunc = 1, ///< The initialization function is being executed
+        eState_Func   = 2, ///< Initialized using FParamInit function
+        eState_EnvVar = 3, ///< The environment variable has been checked
+        eState_Config = 4, ///< The app. config file has been checked
+        eState_User   = 5  ///< Value has been set by user
     };
 
 protected:

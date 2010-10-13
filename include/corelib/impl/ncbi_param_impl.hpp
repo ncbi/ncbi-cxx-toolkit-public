@@ -46,11 +46,15 @@ template<class TValue>
 struct SParamDescription
 {
     typedef TValue TValueType;
+    // Initialization function. The string returned is converted to
+    // the TValue type the same way as when loading from other sources.
+    typedef string (*FInitFunc)(void);
 
     const char*           section;
     const char*           name;
     const char*           env_var_name;
     TValue                default_value;
+    FInitFunc             init_func;
     TNcbiParamFlags       flags;
 };
 
@@ -69,11 +73,13 @@ template<class TValue>
 struct SParamEnumDescription
 {
     typedef TValue TValueType;
+    typedef string (*FInitFunc)(void);
 
     const char*           section;
     const char*           name;
     const char*           env_var_name;
     TValue                default_value;
+    FInitFunc             init_func;
     TNcbiParamFlags       flags;
 
     // List of enum values if any
@@ -288,6 +294,23 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
     if ( force_reset ) {
         def = TDescription::sm_ParamDescription.default_value;
         sx_GetState() = eState_NotSet;
+    }
+
+    if (sx_GetState() < eState_Func) {
+        _ASSERT(sx_GetState() != eState_InFunc);
+        if (sx_GetState() == eState_InFunc) {
+            // Recursive initialization detected (in release only)
+            NCBI_THROW(CParamException, eRecursion,
+                "Recursion detected during CParam initialization.");
+        }
+        if ( TDescription::sm_ParamDescription.init_func ) {
+            // Run the initialization function
+            sx_GetState() = eState_InFunc;
+            def = TParamParser::StringToValue(
+                TDescription::sm_ParamDescription.init_func(),
+                TDescription::sm_ParamDescription);
+        }
+        sx_GetState() = eState_Func;
     }
 
     if ( sx_GetState() < eState_Config  &&  !sx_IsSetFlag(eParam_NoLoad) ) {
