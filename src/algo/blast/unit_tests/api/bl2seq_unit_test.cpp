@@ -380,8 +380,8 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         BOOST_CHECK_EQUAL(157, (int)ungapped_stats->lookup_hits);
         BOOST_CHECK_EQUAL(3, ungapped_stats->init_extends);
         BOOST_CHECK_EQUAL(3, ungapped_stats->good_init_extends);
-        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
-        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        BOOST_CHECK_EQUAL(3, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(3, gapped_stats->good_extensions);
         break;
     case eMegablast_555_555:
         BOOST_CHECK_EQUAL(30, (int)ungapped_stats->lookup_hits);
@@ -457,8 +457,8 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         BOOST_CHECK_EQUAL(963, (int)ungapped_stats->lookup_hits);
         BOOST_CHECK_EQUAL(13, ungapped_stats->init_extends);
         BOOST_CHECK_EQUAL(13, ungapped_stats->good_init_extends);
-        BOOST_CHECK_EQUAL(5, gapped_stats->extensions);
-        BOOST_CHECK_EQUAL(5, gapped_stats->good_extensions);
+        BOOST_CHECK_EQUAL(11, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(11, gapped_stats->good_extensions);
         break;
     case eBlastp_multi_q_s:
 #if 0
