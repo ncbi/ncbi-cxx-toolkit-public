@@ -954,6 +954,14 @@ public:
     void EndDelayBuffer(CDelayBuffer& buffer,
                         const CItemInfo* itemInfo, TObjectPtr objectPtr);
 
+    void SetMemberDefault( TConstObjectPtr def)
+    {
+        m_MemberDefault = def;
+    }
+    TConstObjectPtr GetMemberDefault( void) const
+    {
+        return m_MemberDefault;
+    }
 protected:
     CObjectIStream(ESerialDataFormat format);
     CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
@@ -1016,6 +1024,8 @@ private:
 
     TTypeInfo m_MonitorType;
     vector<TTypeInfo> m_ReqMonitorType;
+    
+    TConstObjectPtr m_MemberDefault;
 
 public:
     // read hooks

@@ -403,7 +403,8 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
       m_SkipUnknownVariants(eSerialSkipUnknown_Default),
       m_Fail(fNotOpen),
       m_Flags(fFlagNone),
-      m_MonitorType(0)
+      m_MonitorType(0),
+      m_MemberDefault(0)
 {
 }
 

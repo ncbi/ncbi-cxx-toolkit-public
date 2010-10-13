@@ -252,6 +252,7 @@ private:
     char BeginOpeningTag(void);
     char BeginClosingTag(void);
     void BeginData(void);
+    bool UseDefaultData(void);
 
     int ReadEscapedChar(char endingChar, bool* encoded=0);
     int ReadEncodedChar(char endingChar, EStringType type = eStringTypeVisible, bool* encoded=0);

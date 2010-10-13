@@ -704,11 +704,16 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
     memberInfo->UpdateSetFlagYes(classPtr);
+    if (memberInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
+        in.SetMemberDefault(memberInfo->GetDefault());
+    }
     try {
         in.ReadObject(memberInfo->GetItemPtr(classPtr),
                       memberInfo->GetTypeInfo());
+        in.SetMemberDefault(0);
     }
     catch (CSerialException& e) {
+        in.SetMemberDefault(0);
         if (e.GetErrCode() == CSerialException::eMissingValue) {
             if ( memberInfo->Optional() && memberInfo->HaveSetFlag() ) {
                 in.SetFailFlags(CObjectIStream::fNoError);

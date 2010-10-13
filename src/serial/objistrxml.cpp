@@ -318,6 +318,13 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
     return false;
 }
 
+bool CObjectIStreamXml::UseDefaultData(void)
+{
+    return !m_Attlist && GetMemberDefault() &&
+        (EndOpeningTagSelfClosed() ||
+            (m_Input.PeekChar(0) == '<' && m_Input.PeekChar(1) == '/'));
+}
+
 char CObjectIStreamXml::BeginOpeningTag(void)
 {
     BeginData();
@@ -806,6 +813,9 @@ bool CObjectIStreamXml::ReadBool(void)
     if (m_Attlist || checktag) {
         ReadAttributeValue(sValue);
     } else {
+        if (UseDefaultData()) {
+            return CTypeConverter<bool>::Get(GetMemberDefault());
+        }
         ReadTagData(sValue);
     }
     NStr::TruncateSpacesInPlace(sValue);
@@ -837,30 +847,45 @@ char CObjectIStreamXml::ReadChar(void)
 
 Int4 CObjectIStreamXml::ReadInt4(void)
 {
+    if (UseDefaultData()) {
+        return CTypeConverter<Int4>::Get(GetMemberDefault());
+    }
     BeginData();
     return m_Input.GetInt4();
 }
 
 Uint4 CObjectIStreamXml::ReadUint4(void)
 {
+    if (UseDefaultData()) {
+        return CTypeConverter<Uint4>::Get(GetMemberDefault());
+    }
     BeginData();
     return m_Input.GetUint4();
 }
 
 Int8 CObjectIStreamXml::ReadInt8(void)
 {
+    if (UseDefaultData()) {
+        return CTypeConverter<Int8>::Get(GetMemberDefault());
+    }
     BeginData();
     return m_Input.GetInt8();
 }
 
 Uint8 CObjectIStreamXml::ReadUint8(void)
 {
+    if (UseDefaultData()) {
+        return CTypeConverter<Uint8>::Get(GetMemberDefault());
+    }
     BeginData();
     return m_Input.GetUint8();
 }
 
 double CObjectIStreamXml::ReadDouble(void)
 {
+    if (UseDefaultData()) {
+        return CTypeConverter<double>::Get(GetMemberDefault());
+    }
     string s;
     ReadTagData(s);
     char* endptr;
@@ -1058,9 +1083,17 @@ void CObjectIStreamXml::SkipBitString(void)
 void CObjectIStreamXml::ReadString(string& str, EStringType type)
 {
     str.erase();
-    if ( !EndOpeningTagSelfClosed() ) {
-        ReadTagData(str, type);
+    if (UseDefaultData()) {
+        EEncoding enc_in(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
+        CStringUTF8 u( CTypeConverter<string>::Get(GetMemberDefault()),enc_in);
+        if (type == eStringTypeUTF8 || m_StringEncoding == eEncoding_Unknown) {
+            str = u;
+        } else {
+            str = u.AsSingleByteString(m_StringEncoding);
+        }
+        return;
     }
+    ReadTagData(str, type);
 }
 
 char* CObjectIStreamXml::ReadCString(void)
