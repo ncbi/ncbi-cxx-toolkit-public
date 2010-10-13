@@ -394,9 +394,15 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
 
 int CBlastDBExtractor::x_ExtractTaxId() 
 {
-    map <int, int> gi2taxid;
-    m_BlastDb.GetTaxIDs(m_Oid, gi2taxid);
-    return gi2taxid[m_Gi];
+    if (m_Gi) {
+        map <int, int> gi2taxid;
+        m_BlastDb.GetTaxIDs(m_Oid, gi2taxid);
+        return gi2taxid[m_Gi];
+    }
+    // for database without Gi:
+    vector <int> taxid;
+    m_BlastDb.GetTaxIDs(m_Oid, taxid);
+    return taxid[0];
 }
 
 void 
