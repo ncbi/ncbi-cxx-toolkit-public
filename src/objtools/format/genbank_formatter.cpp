@@ -934,7 +934,7 @@ void CGenbankFormatter::FormatSequence
     // prefill the line buffer with spaces
     fill(line, line+kLineBufferSize, ' ');
 
-    CSeqVector_CI iter(vec, 0, CSeqVector_CI::eCaseConversion_lower);
+    CSeqVector_CI iter(vec, vec_pos, CSeqVector_CI::eCaseConversion_lower);
     while ( total >= kFullLineSize ) {
         char* linep = line + kSeqPosWidth;
         s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);

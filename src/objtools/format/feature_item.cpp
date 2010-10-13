@@ -1253,6 +1253,14 @@ void CFeatureItem::x_AddQualExceptions(
                 }
                 continue;
             }
+            if( cur == "artificial location" ) {
+                x_AddQual( eFQ_artificial_location, new CFlatBoolQVal( true ) );
+                continue;
+            }
+            if( cur == "heterogeneous population sequenced" || cur == "low-quality sequence region" ) {
+                x_AddQual( eFQ_artificial_location, new CFlatStringQVal( cur ) );
+                continue;
+            }
             if ( s_IsValidExceptionText( cur ) ) {
                 output_exceptions.push_back( cur );
             }
@@ -1323,7 +1331,8 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 
         CMappedFeat feat;
         if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
-            feat = GetBestGeneForFeat(m_Feat, &ctx.GetFeatTree());
+            feat = GetBestGeneForFeat(m_Feat, &ctx.GetFeatTree(), 
+                NULL, feature::CFeatTree::eBestGene_AllowOverlapped );
             if ( !feat ) {
                 feat = feature::GetBestOverlappingFeat
                     (m_Feat, CSeqFeatData::eSubtype_gene,
@@ -1377,7 +1386,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     // override it (example accession where this issue crops up: AF231993.1 )
     if( thereIsXrefToGene ) {
 
-        // we iterate through all the genes to find a match.  There's got to be a better way...
+        // we iterate through all the genes to find a match.  Is this efficient?
         SAnnotSelector sel = ctx.SetAnnotSelector();
         sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
             .IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
@@ -1392,6 +1401,11 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                 s_feat.Reset(&feat.GetOriginalFeature());
                 g_ref = &other_ref;
             }
+        }
+
+        // we found no match for the gene, but we can fall back on the xref itself (e.g. K03223.1)
+        if( NULL == g_ref ) {
+            g_ref = xref_g_ref;
         }
     }
 }
@@ -4613,6 +4627,9 @@ void CSourceFeatureItem::x_AddPcrPrimersQuals(const CBioSource& src, CBioseqCont
         ITERATE( CBioSource_Base::TPcr_primers::Tdata, it, primers.Get() ) {
             string primer_value;
 
+            bool has_fwd_seq = false;
+            bool has_rev_seq = false;
+
             if( (*it)->IsSetForward() ) {
                 const CPCRReaction_Base::TForward &forward = (*it)->GetForward();
                 if( forward.CanGet() ) {
@@ -4625,6 +4642,7 @@ void CSourceFeatureItem::x_AddPcrPrimersQuals(const CBioSource& src, CBioseqCont
                         // NStr::ToLower( fwd_seq );
                         if( ! fwd_seq.empty() ) {
                             s_AddPcrPrimersQualsAppend( primer_value, "fwd_seq: ", fwd_seq);
+                            has_fwd_seq = true;
                         }
                     }
                 }
@@ -4641,13 +4659,19 @@ void CSourceFeatureItem::x_AddPcrPrimersQuals(const CBioSource& src, CBioseqCont
                         // NStr::ToLower( rev_seq ); // do we need this? 
                         if( ! rev_seq.empty() ) {
                             s_AddPcrPrimersQualsAppend( primer_value, "rev_seq: ", rev_seq);
+                            has_rev_seq = true;
                         }
                     }
                 }
             }
 
             if( ! primer_value.empty() ) {
-                x_AddQual( eSQ_PCR_primers, new CFlatStringQVal( primer_value ) );
+                const bool is_in_note = ( ! has_fwd_seq || ! has_rev_seq );
+                if( is_in_note ) {
+                    primer_value = "PCR_primers=" + primer_value;
+                }
+                const ESourceQualifier srcQual = ( is_in_note ? eSQ_pcr_primer_note : eSQ_PCR_primers );
+                x_AddQual( srcQual, new CFlatStringQVal( primer_value ) );
             }
         }
     }
@@ -4779,7 +4803,7 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
     //  qualifier, and the existing *_name and *_seq are instead appended to
     //  the feature /note.
     //  ------------------------------------------------------------------------
-    if ( s_QualifiersMeetPrimerReqs( 
+    /* if ( s_QualifiersMeetPrimerReqs( 
         primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) ) 
     {
         x_AddQual( eSQ_PCR_primers, new CFlatSubSourcePrimer( 
@@ -4829,7 +4853,7 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
                 x_AddQual( eSQ_pcr_primer_note, new CFlatStringQVal( primer_value ) );
             }
         }
-     }
+     } */
     //< end of special PCR_primer handling
 
     // Gets direct "pcr-primers" tag from file and adds the quals from that

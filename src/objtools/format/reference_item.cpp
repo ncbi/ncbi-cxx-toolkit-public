@@ -1016,6 +1016,9 @@ void CReferenceItem::x_CleanData(void)
     StripSpaces(m_Title);   // internal spaces
     ConvertQuotes(m_Title);
     s_RemovePeriod(m_Title);
+    if( ! m_Title.empty() ) {
+        m_Title[0] = toupper( m_Title[0] ); // capitalize the title
+    }
     // remark
     ConvertQuotes(m_Remark);
     ExpandTildes(m_Remark, eTilde_newline);
@@ -1148,6 +1151,37 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                 break;
                             }
                         }
+                    }
+                }
+
+                if( (*it)->GetArticle().CanGetIds() ) {
+                    const CCit_art_Base::TIds & ids = (*it)->GetArticle().GetIds();
+                    if( ids.CanGet() ) {
+
+                        // no DOIs pritned if there's a pmid or muid
+                        bool hasPmidOrMuid = false;
+                        ITERATE( CArticleIdSet_Base::Tdata, it, ids.Get() ) {
+                            if( (*it)->IsPubmed() && (*it)->GetPubmed().Get() != 0 ) {
+                                hasPmidOrMuid = true;
+                                break;
+                            } else if(  (*it)->IsMedline() && (*it)->GetMedline().Get() != 0 ) {
+                                hasPmidOrMuid = true;
+                                break;
+                            }
+                        }
+
+                        if( ! hasPmidOrMuid ) {
+                            ITERATE( CArticleIdSet_Base::Tdata, it, ids.Get() ) {
+                                if( (*it)->Which() == CArticleId_Base::e_Doi) {
+                                    const string & doi = (*it)->GetDoi().Get();
+                                    if( NStr::StartsWith( doi, "10." ) ) {
+                                        l.push_back( "DOI: " + doi );
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
                     }
                 }
             } else if ( (*it)->IsSub() ) {

@@ -389,7 +389,7 @@ static size_t s_NumAuthors(const CCit_book::TAuthors& authors)
 
 static void s_FormatYear(const CDate& date, string& year)
 {
-    if (date.IsStr()) {
+    if (date.IsStr() && ! date.GetStr().empty() ) {
         year += '(';
         year += date.GetStr();
         year += ')';

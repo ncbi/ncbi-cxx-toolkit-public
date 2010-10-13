@@ -190,13 +190,13 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
                 for (CSeq_loc_CI li(loc); li; ++li) {
                     s_AddToUniqueIdList(li.GetSeq_id_Handle(), unique_ids);
                 }
-            } else {
+            } /* else {
                 const CSeq_id *cds_seq_id = loc.GetId();
                 if( NULL != cds_seq_id && cds_seq_id->IsGi() ) {
                     CSeq_id_Base::TGi cds_gi = cds_seq_id->GetGi();
                     s_AddToUniqueIdList( CSeq_id_Handle::GetHandle(cds_gi), unique_ids);
-                }
-            }
+                } 
+            } */
         }
 
         string str;
@@ -208,11 +208,19 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
                 if (!NStr::IsBlank(str)) {
                     m_DBSource.push_back(str);
                 }
+            } else {
+                m_DBSource.push_back( x_FormatDBSourceID( *it ) );
             }
         }
 
-        if( m_DBSource.empty() && ! unique_ids.empty() ) {
-            m_DBSource.push_back( x_FormatDBSourceID( unique_ids.front() ) );
+        if( m_DBSource.empty() ) {
+            const CSeq_loc& loc = feat->GetLocation();
+            const CSeq_id *cds_seq_id = loc.GetId();
+            if( NULL != cds_seq_id && cds_seq_id->IsGi() ) {
+                CSeq_id_Base::TGi cds_gi = cds_seq_id->GetGi();
+                // s_AddToUniqueIdList( CSeq_id_Handle::GetHandle(cds_gi), unique_ids);
+                m_DBSource.push_back( x_FormatDBSourceID( CSeq_id_Handle::GetHandle(cds_gi) ) );
+            } 
         }
 
         if (m_DBSource.empty()) {

@@ -957,6 +957,9 @@ void CFlatGatherer::x_GatherSequence(void) const
     TSeqPos from = GetStart( m_Current->GetLocation(), &m_Current->GetScope() ) + 1;
     TSeqPos to = GetStop( m_Current->GetLocation(), &m_Current->GetScope() ) + 1;
 
+    from = ( from >= 1 ? from : 1 );
+    to = ( to <= size ? to : size );
+
     bool first = true;
     CConstRef<IFlatItem> item;
     for ( TSeqPos pos = from; pos <= to; pos += kChunkSize ) {
@@ -1268,24 +1271,45 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
     // sorting, uniquing, and sorting back again would be a possible way to get O(n log(n) )
     // but you'd have to convert x_BiosourcesEqualForMergingPurposes into a "less-than" function
 
-    // merge equal sources
-    TSourceFeatSet::iterator it = srcs.begin();
-    while (it != srcs.end()) {
-        TSourceFeatSet::iterator it2 = it++;
-        while (it != srcs.end()) {
-            if( x_BiosourcesEqualForMergingPurposes( **it, **it2 ) ) {
-                CRef<CSeq_loc> merged_loc = 
-                    Seq_loc_Add((*it2)->GetLoc(),(*it)->GetLoc(),
-                    CSeq_loc::fSort | CSeq_loc::fMerge_All,
-                    &m_Current->GetScope());
-                (*it2)->SetLoc(*merged_loc);
-                x_MergeEqualBioSources( srcs );
-                return;
-            }
-            ++it;
+    // merge equal sources ( erase the later one on equality )
+    // ( because deque's erase function invalidates all iterators )
+    // First, release the pointers of all the items we plan to remove.
+    TSourceFeatSet::iterator item_outer = srcs.begin();
+    for( ; item_outer != srcs.end(); ++item_outer  ) {
+        if( item_outer->IsNull() ) {
+            continue;
         }
-        it = ++it2;
+        TSourceFeatSet::iterator item_inner = item_outer;
+        ++item_inner;
+        while ( item_inner != srcs.end() ) {
+            if( item_inner->IsNull() ) {
+                ++item_inner;
+                continue;
+            }
+            if( x_BiosourcesEqualForMergingPurposes( **item_outer, **item_inner ) ) {
+                CRef<CSeq_loc> merged_loc = 
+                    Seq_loc_Add((*item_outer)->GetLoc(), (*item_inner)->GetLoc(),
+                    CSeq_loc::fSortAndMerge_All,
+                    &m_Current->GetScope());
+                (*item_outer)->SetLoc(*merged_loc);
+                // srcs.erase(item_inner);
+                item_inner->Release(); // marked for later removal
+                continue; // don't increment, since the "erase" already implicitly incremented us
+            }
+            ++item_inner;
+        }
     }
+
+    // now remove all the TSFItems that are null by copying the non-null ones to a new TSourceFeatSet
+    // and swapping the deques
+    TSourceFeatSet newSrcs;
+    TSourceFeatSet::iterator copy_iter = srcs.begin();
+    for( ; copy_iter != srcs.end(); ++copy_iter ) {
+        if( ! copy_iter->IsNull() ) {
+            newSrcs.push_back( *copy_iter );
+        }
+    }
+    srcs.swap( newSrcs );
 }
 
 // "the same" means something different for merging purposes than it does
@@ -1300,26 +1324,26 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
     const CMappedFeat &feat1 = src1.GetFeat();
     const CMappedFeat &feat2 = src2.GetFeat();
 
-    // same focus
+    // focus
     if( src1.IsFocus() != src2.IsFocus() ) {
         return false;
     }
 
-    // same taxname
+    // taxname
     const string &taxname1 = (biosrc1.IsSetTaxname() ? biosrc1.GetTaxname() : kEmptyStr);
     const string &taxname2 = (biosrc2.IsSetTaxname() ? biosrc2.GetTaxname() : kEmptyStr);
     if( taxname1 != taxname2 ) {
         return false;
     }
 
-    // make sure comments are the same
+    // comments
     const string comment1 = ( feat1.IsSetComment() ? feat1.GetComment() : kEmptyStr );
     const string comment2 = ( feat2.IsSetComment() ? feat2.GetComment() : kEmptyStr );
     if( comment1 != comment2 ) {
         return false;
     }
 
-    // make sure org mods and dbs are the same
+    // org mods and dbs
     if( biosrc1.CanGetOrg() != biosrc2.CanGetOrg() ) {
         return false;
     }
@@ -1335,6 +1359,10 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
             const COrg_ref_Base::TMod& orgmod1 = org1.GetMod();
             const COrg_ref_Base::TMod& orgmod2 = org2.GetMod();
 
+            if( orgmod1.size() != orgmod2.size() ) {
+                return false;
+            }
+
             if( ! equal( orgmod1.begin(), orgmod1.end(), orgmod2.begin() ) ) {
                 return false;
             }
@@ -1348,6 +1376,10 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
             const COrg_ref_Base::TDb& db1 = org1.GetDb();
             const COrg_ref_Base::TDb& db2 = org2.GetDb();
 
+            if( db1.size() != db2.size() ) {
+                return false;
+            }
+
             if( ! equal( db1.begin(), db1.end(), 
                 db2.begin(), CDbEquals() ) ) {
                 return false;
@@ -1355,7 +1387,7 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
         }
     }
 
-    // make sure SubSources are equal
+    // SubSources
     if( biosrc1.IsSetSubtype() != biosrc2.IsSetSubtype() ) {
         return false;
     }
@@ -1363,13 +1395,18 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
         const CBioSource_Base::TSubtype & subtype1 = biosrc1.GetSubtype();
         const CBioSource_Base::TSubtype & subtype2 = biosrc2.GetSubtype();
 
+        if( subtype1.size() != subtype2.size() ) {
+            return false;
+        }
+
         if( ! equal( subtype1.begin(), subtype1.end(), 
             subtype2.begin(), CSubtypeEquals() ) ) {
                 return false;
         }
     }
 
-    // make sure locations overlap or are adjacent
+    // for equality, make sure locations overlap or are adjacent
+    // if not, they should definitely not be equal.
     const bool locations_overlap_or_touch = 
         ( s_LocationsOverlap( src1.GetLoc(), src2.GetLoc() ) ||
         s_LocationsTouch(  src1.GetLoc(), src2.GetLoc() ) );

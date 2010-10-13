@@ -129,6 +129,7 @@ bool IsPartOfUrl(
 
 void ExpandTildes(string& s, ETildeStyle style)
 {
+
     if ( style == eTilde_tilde ) {
         return;
     }
@@ -224,7 +225,9 @@ string ConvertQuotes(const string& str)
     return retval;
 }
 
-
+// Strips all spaces in string in following manner. If the function
+// meet several spaces (spaces and tabs) in succession it replaces them
+// with one space. Strips all spaces after '(' and before ( ')' or ',' ).
 void StripSpaces(string& str)
 {
     if (str.empty()) {
@@ -239,7 +242,9 @@ void StripSpaces(string& str)
         if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
             for (++it; *it == ' ' || *it == '\t'; ++it) continue;
             if (*it == ')' || *it == ',') {
-                --new_str;
+                if( *(new_str - 1) != '(' ) { // this if protects against the case "(...bunch of spaces and tabs...)".  Otherwise, the first '(' is erased
+                    --new_str;
+                }
             }
         } else {
             ++it;
