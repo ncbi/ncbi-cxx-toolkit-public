@@ -3,7 +3,7 @@
 # Build library "xobjmgr"
 #################################
 
-ASN_DEP  = seq general biblio seqset seqedit
+ASN_DEP = genome_collection seqedit
 
 SRC = seq_table_setters seq_table_info seq_annot_info table_field \
       seq_map_switch snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
