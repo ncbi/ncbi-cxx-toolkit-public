@@ -538,10 +538,10 @@ extern EIO_Status CONN_Wait
 
 
 static EIO_Status s_CONN_Write
-(CONN        conn,
- const void* buf,
- size_t      size,
- size_t*     n_written)
+(CONN         conn,
+ const void*  buf,
+ const size_t size,
+ size_t*      n_written)
 {
     const STimeout* timeout;
     EIO_Status status;
@@ -590,10 +590,10 @@ static EIO_Status s_CONN_Write
 
 
 static EIO_Status s_CONN_WritePersist
-(CONN        conn,
- const void* buf,
- size_t      size,
- size_t*     n_written)
+(CONN         conn,
+ const void*  buf,
+ const size_t size,
+ size_t*      n_written)
 {
     EIO_Status status;
 
@@ -604,7 +604,9 @@ static EIO_Status s_CONN_WritePersist
         status = s_CONN_Write(conn, (char*) buf + *n_written,
                               size - *n_written, &x_written);
         *n_written += x_written;
-    } while (*n_written != size  &&  status == eIO_Success);
+        if (*n_written == size)
+            return eIO_Success;
+    } while (status == eIO_Success);
 
     return status;
 }
@@ -634,13 +636,14 @@ extern EIO_Status CONN_Write
 
     switch (how) {
     case eIO_WritePlain:
-        return s_CONN_Write(conn, buf, size, n_written);
+        status = s_CONN_Write(conn, buf, size, n_written);
+        break;
     case eIO_WritePersist:
         return s_CONN_WritePersist(conn, buf, size, n_written);
     default:
-        break;
+        return eIO_NotSupported;
     }
-    return eIO_NotSupported;
+    return *n_written ? eIO_Success : status;
 }
 
 
@@ -691,11 +694,11 @@ extern EIO_Status CONN_Flush
 /* Read or peek data from the input queue, see CONN_Read()
  */
 static EIO_Status s_CONN_Read
-(CONN        conn,
- void*       buf,
- size_t      size,
- size_t*     n_read,
- int/*bool*/ peek)
+(CONN         conn,
+ void*        buf,
+ const size_t size,
+ size_t*      n_read,
+ int/*bool*/  peek)
 {
     const STimeout* timeout;
     EIO_Status status;
@@ -720,8 +723,7 @@ static EIO_Status s_CONN_Read
                    : BUF_Read(conn->buf, buf, size));
         if (*n_read == size)
             return eIO_Success;
-        buf   = (char*) buf + *n_read;
-        size -=               *n_read;
+        buf = (char*) buf + *n_read;
     }
 
     x_Callback(conn, eCONN_OnRead);
@@ -732,7 +734,7 @@ static EIO_Status s_CONN_Read
         timeout = (conn->r_timeout == kDefaultTimeout
                    ? conn->meta.default_timeout
                    : conn->r_timeout);
-        status = conn->meta.read(conn->meta.c_read, buf, size,
+        status = conn->meta.read(conn->meta.c_read, buf, size - *n_read,
                                  &x_read, timeout);
         *n_read += x_read;
 
@@ -765,30 +767,33 @@ static EIO_Status s_CONN_Read
 /* Persistently read data from the input queue, see CONN_Read()
  */
 static EIO_Status s_CONN_ReadPersist
-(CONN    conn,
- void*   buf,
- size_t  size,
- size_t* n_read)
+(CONN         conn,
+ void*        buf,
+ const size_t size,
+ size_t*      n_read)
 {
     EIO_Status status;
 
     assert(*n_read == 0);
 
-    do {
+    for (;;) {
         size_t x_read = 0;
         status = s_CONN_Read(conn, (char*) buf + *n_read,
                              size - *n_read, &x_read, 0/*no peek*/);
         *n_read += x_read;
-        if (*n_read == size  ||  status != eIO_Success)
+        if (*n_read == size)
+            return eIO_Success;
+        if (status != eIO_Success)
             break;
+
         /* keep flushing unwritten output data (if any) */
         if (conn->meta.flush) {
-            status = conn->meta.flush(conn->meta.c_flush,
-                                      conn->r_timeout == kDefaultTimeout
-                                      ? conn->meta.default_timeout
-                                      : conn->r_timeout);
+            conn->meta.flush(conn->meta.c_flush,
+                             conn->r_timeout == kDefaultTimeout
+                             ? conn->meta.default_timeout
+                             : conn->r_timeout);
         }
-    } while (status == eIO_Success);
+    }
 
     return status;
 }
@@ -827,15 +832,17 @@ extern EIO_Status CONN_Read
     /* now do read */
     switch (how) {
     case eIO_ReadPlain:
-        return s_CONN_Read(conn, buf, size, n_read, 0/*no peek*/);
+        status = s_CONN_Read(conn, buf, size, n_read, 0/*no peek*/);
+        break;
     case eIO_ReadPeek:
-        return s_CONN_Read(conn, buf, size, n_read, 1/*peek*/);
+        status = s_CONN_Read(conn, buf, size, n_read, 1/*peek*/);
+        break;
     case eIO_ReadPersist:
         return s_CONN_ReadPersist(conn, buf, size, n_read);
     default:
-        break;
+        return eIO_NotSupported;
     }
-    return eIO_NotSupported;
+    return *n_read ? eIO_Success : status;
 }
 
 
