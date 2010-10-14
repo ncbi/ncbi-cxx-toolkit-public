@@ -112,6 +112,9 @@ typedef struct {
 } SHttpConnector;
 
 
+static const char kHttpHostTag[] = "Host: ";
+
+
 /* NCBI messaging support */
 static int                   s_MessageIssued = 0;
 static FHTTP_NcbiMessageHook s_MessageHook   = 0;
@@ -362,6 +365,29 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 }
 
 
+static int/*bool*/ s_MakeHostTag(SConnNetInfo* net_info)
+{
+    char*  temp, port[10];
+    int    retval;
+    size_t len;
+
+    len = strlen(net_info->host);
+    if (!(temp = (char*) malloc(sizeof(kHttpHostTag) + sizeof(port) + len)))
+        return 0/*failure*/;
+    if (net_info->port)
+        sprintf(port, ":%hu", net_info->port);
+    else
+        *port = '\0';
+    memcpy(temp, kHttpHostTag, sizeof(kHttpHostTag)-1);
+    memcpy(temp + sizeof(kHttpHostTag) - 1, net_info->host, len);
+    len += sizeof(kHttpHostTag)-1;
+    strcpy(temp + len, port);
+    retval = ConnNetInfo_OverrideUserHeader(net_info, temp);
+    free(temp);
+    return retval;
+}
+
+
 /* Connect to the HTTP server, specified by uuu->net_info's "port:host".
  * Return eIO_Success only if socket connection has succeeded and uuu->sock
  * is non-zero. If unsuccessful, try to adjust uuu->net_info by s_Adjust(),
@@ -370,8 +396,8 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 static EIO_Status s_Connect(SHttpConnector* uuu,
                             EReadMode       read_mode)
 {
-    static const char kHostTag[] = "Host: ";
     EIO_Status status;
+    SOCK sock;
 
     assert(!uuu->sock);
     if (uuu->can_connect == eCC_None) {
@@ -389,25 +415,9 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
     /* the re-try loop... */
     for (;;) {
-        int/*bool*/ reset_user_header = 0;
-        char*       http_user_header = 0;
         TSOCK_Flags flags;
-        SOCK        sock;
 
-        uuu->w_len = BUF_Size(uuu->w_buf);
-        if (uuu->net_info->http_user_header)
-            http_user_header = strdup(uuu->net_info->http_user_header);
-        if (!uuu->net_info->http_user_header == !http_user_header) {
-            ConnNetInfo_ExtendUserHeader
-                (uuu->net_info, "User-Agent: NCBIHttpConnector"
-#ifdef NCBI_CXX_TOOLKIT
-                 " (C++ Toolkit)"
-#else
-                 " (C Toolkit)"
-#endif
-                 "\r\n");
-            reset_user_header = 1;
-        }
+        sock = uuu->sock;
         flags = (uuu->net_info->debug_printout == eDebugPrintout_Data
                  ? fSOCK_LogOn : fSOCK_LogDefault);
         if (*uuu->net_info->http_proxy_host
@@ -419,15 +429,15 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 break;
             }
             net_info->scheme = eURL_Http;
-            *net_info->user = '\0';
-            *net_info->pass = '\0';
+            net_info->user[0] = '\0';
+            net_info->pass[0] = '\0';
             if (!net_info->port)
                 net_info->port = 443/*HTTPS*/;
-            ConnNetInfo_DeleteUserHeader(net_info, kHostTag);
+            ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
             status = HTTP_CreateTunnel(net_info,
                                        fHCC_NoUpread |
                                        fHCC_DetachableTunnel, &sock);
-            assert(status == eIO_Success  ||  !sock);
+            assert((status == eIO_Success) ^ !sock);
             ConnNetInfo_Destroy(net_info);
             flags |= fSOCK_Secure;
         } else {
@@ -440,102 +450,135 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 flags |= fSOCK_Secure;
             }
             status = eIO_Success;
-            sock = 0;
         }
+
         if (status == eIO_Success) {
+            int/*bool*/    reset_user_header;
+            char*          http_user_header;
             const char*    host;
             unsigned short port;
             const char*    path;
             const char*    args;
-            char*          temp;
+            size_t         len;
+            SOCK           s;
 
-            if (uuu->net_info->debug_printout)
-                ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
+            len = BUF_Size(uuu->w_buf);
             if (uuu->net_info->req_method == eReqMethod_Connect
-                ||  (!sock  &&  *uuu->net_info->http_proxy_host)) {
+                ||  (sock == uuu->sock  &&  *uuu->net_info->http_proxy_host)) {
                 host = uuu->net_info->http_proxy_host;
                 port = uuu->net_info->http_proxy_port;
                 path = ConnNetInfo_URL(uuu->net_info);
+                char* temp;
                 if (uuu->net_info->req_method == eReqMethod_Connect) {
                     if (uuu->flags & fHCC_DetachableTunnel)
                         flags |= fSOCK_KeepOnClose;
-                    if (!uuu->w_len)
-                        temp = 0;
-                    else if ((temp = (char*) malloc(uuu->w_len)) != 0  &&
-                             BUF_Peek(uuu->w_buf, temp, uuu->w_len)
-                             != uuu->w_len) {
-                        free(temp);
-                        temp = 0;
-                    }
-                    args = temp;
+                    if (!len)
+                        args = 0;
+                    else if (!(temp = (char*) malloc(len))
+                             ||  BUF_Peek(uuu->w_buf, temp, len) != len) {
+                        if (temp)
+                            free(temp);
+                        status = eIO_Unknown;
+                        break;
+                    } else
+                        args = temp;
                 } else {
-                    char port[10];
-                    size_t len = strlen(uuu->net_info->host);
-                    if (!(temp = (char*) malloc(sizeof(kHostTag)
-                                                + sizeof(port) + len))) {
+                    if (!s_MakeHostTag(uuu->net_info)) {
+                        assert(sock == uuu->sock);
                         status = eIO_Unknown;
                         break;
                     }
-                    if (uuu->net_info->port)
-                        sprintf(port, ":%hu", uuu->net_info->port);
-                    else
-                        *port = '\0';
-                    memcpy(temp, kHostTag, sizeof(kHostTag)-1);
-                    memcpy(temp + sizeof(kHostTag)-1, uuu->net_info->host,len);
-                    len += sizeof(kHostTag)-1;
-                    strcpy(temp + len, port);
-                    if (!ConnNetInfo_OverrideUserHeader(uuu->net_info, temp)) {
-                        status = eIO_Unknown;
-                        free(temp);
-                        break;
-                    }
-                    free(temp);
-                    if (path  &&  (temp = strchr(path, '?')) != 0)
-                        *temp = '\0';
-                    args = uuu->net_info->args;
+                    if (uuu->flags & fHCC_UrlEncodeArgs) {
+                        if (path  &&  (temp = strchr(path, '?')) != 0)
+                            *temp = '\0';
+                        args = uuu->net_info->args;
+                    } else
+                        args = 0;
                 }
             } else {
+                if (!s_MakeHostTag(uuu->net_info)) {
+                    status = eIO_Unknown;
+                    break;
+                }
                 host = uuu->net_info->host;
                 port = uuu->net_info->port;
                 path = uuu->net_info->path;
                 args = uuu->net_info->args;
-                temp = 0;
             }
             if (!(uuu->flags & fHCC_NoUpread))
                 flags |= fSOCK_ReadOnWrite;
 
             /* connect & send HTTP header */
+            http_user_header = (uuu->net_info->http_user_header
+                                ? strdup(uuu->net_info->http_user_header)
+                                : 0);
+            if (!uuu->net_info->http_user_header == !http_user_header) {
+                ConnNetInfo_ExtendUserHeader
+                    (uuu->net_info, "User-Agent: NCBIHttpConnector"
+#ifdef NCBI_CXX_TOOLKIT
+                     " (C++ Toolkit)"
+#else
+                     " (C Toolkit)"
+#endif
+                     "\r\n");
+                reset_user_header = 1;
+            } else
+                reset_user_header = 0;
+
+            if (uuu->net_info->debug_printout)
+                ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
+
+            s = sock;
             status = URL_ConnectEx(host, port, path, args,
-                                   uuu->net_info->req_method, uuu->w_len,
+                                   uuu->net_info->req_method, len,
                                    uuu->o_timeout, uuu->w_timeout,
                                    uuu->net_info->http_user_header,
                                    uuu->flags & fHCC_UrlEncodeArgs, flags, 
-                                   &sock);
-            if (sock) {
-                assert(status == eIO_Success);
-                uuu->sock = sock;
-            } else
-                assert(status != eIO_Success);
+                                   &s);
+
+            if (reset_user_header) {
+                ConnNetInfo_SetUserHeader(uuu->net_info, 0);
+                uuu->net_info->http_user_header = http_user_header;
+            }
+
             if (path  &&  path != uuu->net_info->path)
                 free((void*) path);
             if (args  &&  args != uuu->net_info->args)
                 free((void*) args);
-        }
-        if (uuu->net_info->req_method == eReqMethod_Connect)
-            uuu->w_len = 0;
-        if (reset_user_header) {
-            ConnNetInfo_SetUserHeader(uuu->net_info, 0);
-            uuu->net_info->http_user_header = http_user_header;
-        }
-        if (uuu->sock)
-            break/*success*/;
 
-        /* connection failed, no socket was created */
+            if (s) {
+                assert(status == eIO_Success);
+                uuu->w_len = (uuu->net_info->req_method != eReqMethod_Connect
+                              ? len : 0);
+                sock = s;
+                break;
+            }
+            assert(status != eIO_Success);
+            if (sock != uuu->sock) {
+                /*HTTPS tunnel*/
+                assert(sock);
+                SOCK_Abort(sock);
+                SOCK_Close(sock);
+                sock = 0;
+            }
+        } else
+            assert(!sock);
+
+        /* connection failed */
         if (s_Adjust(uuu, 0, read_mode) != eIO_Success)
             break;
     }
-
-    return status;
+    if (status != eIO_Success) {
+        if (sock  &&  sock != uuu->sock) {
+            SOCK_Abort(sock);
+            SOCK_Close(sock);
+        }
+        uuu->sock = 0;
+        return status;
+    }
+    assert(sock);
+    uuu->sock = sock;
+    return eIO_Success;
 }
 
 
@@ -819,6 +862,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     }}
 
     if (uuu->flags & fHCC_KeepHeader) {
+        retry->mode = eRetry_None;
         if (!BUF_Write(&uuu->r_buf, header, size)) {
             char* url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(11, eLOG_Error,
@@ -864,7 +908,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 break;
             }
         }
-    } else if (retry->mode != eRetry_None) {
+    } else if (retry->mode) {
         /* parsing "Authenticate" tags */
         static const char kAuthenticateTag[] = "-Authenticate: ";
         char* s;
@@ -1031,7 +1075,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
 
         /* HTTP header read error; disconnect and try to use another server */
         s_DropConnection(uuu, 0/*no wait*/);
-        adjust_status = s_Adjust(uuu, retry.mode ? &retry : 0, read_mode);
+        adjust_status = s_Adjust(uuu, &retry, read_mode);
         if (retry.data)
             free((void*) retry.data);
         if (adjust_status != eIO_Success) {
@@ -1054,9 +1098,9 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     assert(uuu->sock);
     if (uuu->flags & fHCC_UrlDecodeInput) {
         /* read and URL-decode */
-        size_t     n_peeked, n_decoded;
-        size_t     peek_size = 3 * size;
-        void*      peek_buf  = malloc(peek_size);
+        size_t n_peeked, n_decoded;
+        size_t peek_size = 3 * size;
+        void*  peek_buf  = malloc(peek_size);
 
         /* peek the data */
         status= SOCK_Read(uuu->sock,peek_buf,peek_size,&n_peeked,eIO_ReadPeek);
@@ -1064,7 +1108,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             assert(!n_peeked);
             *n_read = 0;
         } else {
-            if (URL_Decode(peek_buf,n_peeked,&n_decoded,buf,size,n_read)) {
+            if (URL_DecodeEx(peek_buf,n_peeked,&n_decoded,buf,size,n_read,"")){
                 /* decode, then discard successfully decoded data from input */
                 if (n_decoded) {
                     SOCK_Read(uuu->sock,0,n_decoded,&n_peeked,eIO_ReadPersist);
@@ -1371,14 +1415,14 @@ static EIO_Status s_VT_Read
 
     *n_read = x_read;
     if (x_read < size) {
-        if (status != eIO_Success)
-            return status;
-        status = s_Read(uuu, (char*) buf + x_read, size - x_read, n_read);
-        *n_read += x_read;
+        if (status == eIO_Success) {
+            status = s_Read(uuu, (char*) buf + x_read, size - x_read, n_read);
+            *n_read += x_read;
+        }
     } else
         status = eIO_Success;
 
-    return *n_read ? eIO_Success : status;
+    return status;
 }
 
 
@@ -1514,7 +1558,7 @@ static EIO_Status s_CreateHttpConnector
             free((void*) xxx->http_referer);
             xxx->http_referer = 0;
         }
-        ConnNetInfo_DeleteUserHeader(xxx, "Referer");
+        ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
     } else if ((fff = strchr(xxx->args, '#')) != 0)
         *fff = '\0';
     s_AddRefererStripCAF(xxx);
