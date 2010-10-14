@@ -24,3 +24,5 @@ LIB = \
 	xser \
 	xutil \
 	xncbi
+	
+ WATCHERS = thiessen

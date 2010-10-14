@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = camacho
+
 REQUIRES = algo
 
 ASN_DEP = seq
