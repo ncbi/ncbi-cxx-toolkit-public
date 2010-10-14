@@ -172,17 +172,18 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  );
 
 
-/* An extended version of HTTP_CreateConnector() to change the URL of the
- * server CGI "on-the-fly":
- *  -- "parse_http_hdr()" is called each time the HTTP header received
- *      from HTTP server and only if fHCC_KeepHeader is NOT set; false return
- *      value is equivalent of having an error from the HTTP server itself.
- *  -- "adjust_net_info()" is invoked each time before starting a
- *      new "HTTP micro-session" making a hit if the prior hit has failed;
- *      it is passed "net_info" stored in the connector, and the number of
- *      previously unsuccessful attempts since the connection was opened;
- *      false return value terminates retry attempts.
- *  -- "adjust_cleanup()" is called when the connector is being destroyed.
+/* An extended version of HTTP_CreateConnector() is able to change the URL
+ * of the server "on-the-fly":
+ *  - "parse_http_hdr()" is called each time a new HTTP response header is
+ *     received from the server, and only if fHCC_KeepHeader is NOT set;
+ *     a zero (false) return value is equivalent of having an error from
+ *     the HTTP server itself.
+ *  - "adjust_net_info()" is invoked each time before starting a
+ *     new "HTTP micro-session" making a hit when a prior hit has failed;
+ *     it is passed "net_info" stored in the connector, and the number of
+ *     previously unsuccessful attempts since the connection was opened;
+ *     a zero (false) return value ends the retry attempts.
+ *  - "adjust_cleanup()" is called when the connector is about to be destroyed.
  */
 
 typedef int/*bool*/ (*FHttpParseHTTPHeader)
@@ -211,6 +212,17 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  );
 
 
+/* Create a tunnel to "net_info->host:net_info->port" via an HTTP proxy
+ * server located at "net_info->http_proxy_host:net_info->http_proxy_port".
+ * Return the tunnel as a socket via the last parameter.  For compatibility
+ * with future API extensions, please make sure *sock == NULL when the call
+ * is made.
+ * @return
+ *  eIO_Success if the tunnel has been successfully created;
+ *  otherwise, return an error code and set *sock to NULL upon return.
+ * @sa
+ *  ESOCK_Flags, SOCK_CreateEx, SOCK_Close
+ */
 extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnelEx
 (const SConnNetInfo* net_info,
  THCC_Flags          flags,
