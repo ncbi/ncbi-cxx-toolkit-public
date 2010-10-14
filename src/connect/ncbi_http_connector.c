@@ -465,10 +465,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             len = BUF_Size(uuu->w_buf);
             if (uuu->net_info->req_method == eReqMethod_Connect
                 ||  (sock == uuu->sock  &&  *uuu->net_info->http_proxy_host)) {
+                char* temp;
                 host = uuu->net_info->http_proxy_host;
                 port = uuu->net_info->http_proxy_port;
                 path = ConnNetInfo_URL(uuu->net_info);
-                char* temp;
                 if (uuu->net_info->req_method == eReqMethod_Connect) {
                     if (uuu->flags & fHCC_DetachableTunnel)
                         flags |= fSOCK_KeepOnClose;
