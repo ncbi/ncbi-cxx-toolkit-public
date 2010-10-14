@@ -258,10 +258,11 @@ typedef struct SOCK_tag {
 
     unsigned       crossexec:1; /* =1 if close-on-exec must NOT be set       */
     unsigned       connected:1; /* =1 if remote end-point is fully connected */
+    unsigned       keepalive:1; /* =1 if needs to be kept alive (if OS supp.)*/
 #ifndef NCBI_OS_MSWIN
-    unsigned        reserved:6; /* MBZ                                       */
+    unsigned        reserved:5; /* MBZ                                       */
 #else
-    unsigned        reserved:3; /* MBZ                                       */
+    unsigned        reserved:2; /* MBZ                                       */
     unsigned        readable:1; /* =1 if known to be readable                */
     unsigned        writable:1; /* =1 if known to be writeable               */
     unsigned         closing:1; /* =1 if FD_CLOSE posted                     */
