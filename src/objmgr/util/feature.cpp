@@ -1045,7 +1045,8 @@ void STypeLink::Next(void)
 namespace {
     // Checks if the location has mixed strands or wrong order of intervals
     static
-    bool sx_IsIrregularLocation(const CSeq_loc& loc)
+    bool sx_IsIrregularLocation(const CSeq_loc& loc,
+                                TSeqPos circular_length)
     {
         try {
             // simple locations are regular
@@ -1071,8 +1072,12 @@ namespace {
             const CSeq_loc_mix& mix = loc.GetMix();
             ITERATE ( CSeq_loc_mix::Tdata, it, mix.Get() ) {
                 const CSeq_loc& loc1 = **it;
-                if ( sx_IsIrregularLocation(loc1) ) {
+                if ( sx_IsIrregularLocation(loc1, circular_length) ) {
                     return true;
+                }
+                if ( circular_length != kInvalidSeqPos ) {
+                    // cannot check interval order on circular sequences
+                    continue;
                 }
                 CRange<TSeqPos> range = loc1.GetTotalRange();
                 if ( range.Empty() ) {
@@ -1104,6 +1109,48 @@ namespace {
             // something's wrong -> irregular
             return true;
         }
+    }
+
+
+    static
+    TSeqPos sx_GetCircularLength(CScope& scope,
+                                 const CSeq_loc& loc)
+    {
+        try {
+            const CSeq_id* single_id = 0;
+            loc.CheckId(single_id);
+            if ( !single_id ) {
+                return kInvalidSeqPos;
+            }
+            
+            CBioseq_Handle bh = scope.GetBioseqHandle(*single_id);
+            if ( bh && bh.IsSetInst_Topology() &&
+                 bh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                return bh.GetBioseqLength();
+            }
+        }
+        catch ( CException& /*ignored*/ ) {
+            return kInvalidSeqPos;
+        }
+        return kInvalidSeqPos;
+    }
+
+
+    static
+    TSeqPos sx_GetCircularLength(CScope& scope,
+                                 const CSeq_id_Handle& id)
+    {
+        try {
+            CBioseq_Handle bh = scope.GetBioseqHandle(id);
+            if ( bh && bh.IsSetInst_Topology() &&
+                 bh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                return bh.GetBioseqLength();
+            }
+        }
+        catch ( CException& /*ignored*/ ) {
+            return kInvalidSeqPos;
+        }
+        return kInvalidSeqPos;
     }
 
 
@@ -1144,7 +1191,8 @@ namespace {
 
     static inline
     EOverlapType sx_GetOverlapType(const STypeLink& link,
-                                   const CSeq_loc& loc)
+                                   const CSeq_loc& loc,
+                                   TSeqPos circular_length)
     {
         EOverlapType overlap_type = eOverlap_Contained;
         if ( link.m_StartType == CSeqFeatData::eSubtype_cdregion &&
@@ -1153,7 +1201,7 @@ namespace {
             overlap_type = eOverlap_CheckIntervals;
         }
         if ( link.m_ParentType == CSeqFeatData::eSubtype_gene &&
-             sx_IsIrregularLocation(loc) ) {
+             sx_IsIrregularLocation(loc, circular_length) ) {
             // LOCATION_SUBSET if bad order or mixed strand
             // otherwise CONTAINED_WITHIN
             overlap_type = eOverlap_Subset;
@@ -1246,14 +1294,16 @@ namespace {
 
     static
     CMappedFeat sx_GetParentByOverlap(const CMappedFeat& feat,
-                                      const STypeLink& link)
+                                      const STypeLink& link,
+                                      TSeqPos circular_length)
     {
         CMappedFeat best_parent;
 
         const CSeq_loc& c_loc = feat.GetLocation();
 
         // find best suitable parent by overlap score
-        EOverlapType overlap_type = sx_GetOverlapType(link, c_loc);
+        EOverlapType overlap_type =
+            sx_GetOverlapType(link, c_loc, circular_length);
     
         Int8 best_overlap = kMax_I8;
         SAnnotSelector sel(link.m_ParentType);
@@ -1262,7 +1312,7 @@ namespace {
             Int8 overlap = TestForOverlap64(it->GetLocation(),
                                             c_loc,
                                             overlap_type,
-                                            kInvalidSeqPos,
+                                            circular_length,
                                             &feat.GetScope());
             if ( overlap >= 0 && overlap < best_overlap ) {
                 best_parent = *it;
@@ -1298,7 +1348,8 @@ NCBI_XOBJUTIL_EXPORT
 CMappedFeat GetParentFeature(const CMappedFeat& feat)
 {
     CMappedFeat best_parent;
-
+    TSeqPos circular_length =
+        sx_GetCircularLength(feat.GetScope(), feat.GetLocation());
     for( STypeLink link(feat.GetFeatSubtype()); link; ++link ) {
         best_parent = sx_GetParentByRef(feat, link);
         if ( best_parent ) {
@@ -1306,7 +1357,7 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
             break;
         }
 
-        best_parent = sx_GetParentByOverlap(feat, link);
+        best_parent = sx_GetParentByOverlap(feat, link, circular_length);
         if ( best_parent ) {
             // parent is found by overlap
             break;
@@ -1702,6 +1753,9 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                 ++pe;
             }
 
+            TSeqPos circular_length =
+                sx_GetCircularLength(pi->m_Info->m_Feat.GetScope(), cur_id);
+            
             {{
                 // update parents' m_MinFrom on the Seq-id
                 TRangeArray::iterator i = pe;
@@ -1718,7 +1772,8 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                 // child parameters
                 CFeatTree::CFeatInfo& info = *ci->m_Info;
                 const CSeq_loc& c_loc = info.m_Feat.GetLocation();
-                EOverlapType overlap_type = sx_GetOverlapType(link, c_loc);
+                EOverlapType overlap_type =
+                    sx_GetOverlapType(link, c_loc, circular_length);
 
                 // skip non-overlapping parents
                 while ( pi != pe &&
@@ -1742,7 +1797,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     Int8 overlap = TestForOverlap64(p_loc,
                                                     c_loc,
                                                     overlap_type,
-                                                    kInvalidSeqPos,
+                                                    circular_length,
                                                     &p_feat.GetScope());
                     ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
                 }
