@@ -1331,6 +1331,20 @@ static int/*bool*/ s_SetReuseAddress(TSOCK_Handle x_sock, int/*bool*/ on_off)
 }
 
 
+#ifdef SO_KEEPALIVE
+static int/*bool*/ s_SetKeepAlive(TSOCK_Handle x_sock, int/*bool*/ on_off)
+{
+#  ifdef NCBI_OS_MSWIN
+    BOOL oobinline = on_off ? TRUE      : FALSE;
+#  else
+    int  oobinline = on_off ? 1/*true*/ : 0/*false*/;
+#  endif /*NCBI_OS_MSWIN*/
+    return setsockopt(x_sock, SOL_SOCKET, SO_KEEPALIVE,
+                      (char*) &oobinline, sizeof(oobinline)) == 0;
+}
+#endif /*SO_KEEPALIVE*/
+
+
 #ifdef SO_OOBINLINE
 static int/*bool*/ s_SetOobInline(TSOCK_Handle x_sock, int/*bool*/ on_off)
 {
@@ -2421,7 +2435,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 #endif /*_DEBUG && !NDEBUG*/
         if (s_ReuseAddress == eOn
 #ifdef NCBI_OS_UNIX
-            &&  !*sock->path
+            &&  !sock->path[0]
 #endif /*NCBI_OS_UNIX*/
             &&  !s_SetReuseAddress(sock->sock, 1/*true*/)) {
             int x_error = SOCK_ERRNO;
@@ -3579,7 +3593,7 @@ static EIO_Status s_Connect(SOCK            sock,
 #ifdef NCBI_OS_UNIX
     if (sock->path[0]) {
         size_t pathlen = strlen(sock->path);
-        if (sizeof(addr.un.sun_path) <= pathlen++/*account for end '\0'*/) {
+        if (sizeof(addr.un.sun_path) <= pathlen++/*account for '\0'*/) {
             CORE_LOGF_X(142, eLOG_Error,
                         ("%s[SOCK::Connect] "
                          " Path too long (%lu vs %lu bytes allowed)",
@@ -3593,6 +3607,7 @@ static EIO_Status s_Connect(SOCK            sock,
 #  endif /*HASE_SIN_LEN*/
         addr.un.sun_family = AF_UNIX;
         memcpy(addr.un.sun_path, sock->path, pathlen);
+        assert(!sock->port);
     } else
 #endif /*NCBI_OS_UNIX*/
     {
@@ -3605,9 +3620,11 @@ static EIO_Status s_Connect(SOCK            sock,
                          s_ID(sock, _id), host));
             return eIO_Unknown;
         }
-        /* set the port to connect to (same port if "port" is zero) */
+        /* set the port to connect to (same port if zero) */
         if (port)
             sock->port = port;
+        else
+            assert(sock->port);
         addrlen = (SOCK_socklen_t) sizeof(addr.in);
 #ifdef HAVE_SIN_LEN
         addr.in.sin_len         = addrlen;
@@ -3615,6 +3632,9 @@ static EIO_Status s_Connect(SOCK            sock,
         addr.in.sin_family      = AF_INET;
         addr.in.sin_addr.s_addr =       sock->host;
         addr.in.sin_port        = htons(sock->port);
+#ifdef NCBI_OS_UNIX
+        assert(!sock->path[0]);
+#endif /*NCBI_OS_UNIX*/
     }
 
     /* create the new socket */
@@ -3673,20 +3693,29 @@ static EIO_Status s_Connect(SOCK            sock,
     }
 #endif
 
+    if (sock->port) {
+#ifdef SO_KEEPALIVE
+        if (sock->keepalive  &&  !s_SetKeepAlive(x_sock, 1/*true*/)) {
+            x_error = SOCK_ERRNO;
+            CORE_LOGF_ERRNO_EXX(151, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[SOCK::Connect] "
+                                 " Failed setsockopt(KEEPALIVE)",
+                                 s_ID(sock, _id)));
+        }
+#endif /*SO_KEEPALIVE*/
+
 #ifdef SO_OOBINLINE
-    if (
-#  ifdef NCBI_OS_UNIX
-        !sock->path[0]  &&
-#  endif /*NCBI_OS_UNIX*/
-        !s_SetOobInline(x_sock, 1/*true*/)) {
-        x_error = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EXX(135, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
-                            ("%s[SOCK::Connect] "
-                             " Failed setsockopt(OOBINLINE)",
-                             s_ID(sock, _id)));
-    }
+        if (!s_SetOobInline(x_sock, 1/*true*/)) {
+            x_error = SOCK_ERRNO;
+            CORE_LOGF_ERRNO_EXX(135, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[SOCK::Connect] "
+                                 " Failed setsockopt(OOBINLINE)",
+                                 s_ID(sock, _id)));
+        }
 #endif /*SO_OOBINLINE*/
+    }
 
     /* establish connection to the peer */
     sock->connected = 0/*false*/;
@@ -3765,8 +3794,7 @@ static EIO_Status s_Connect(SOCK            sock,
         }
     }
 
-    if ((!sock->crossexec  ||  sock->session)
-        &&  !s_SetCloexec(x_sock, 1/*true*/)) {
+    if ((!sock->crossexec  ||  sock->session)  &&  !s_SetCloexec(x_sock, 1)) {
         const char* errstr;
 #ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
@@ -3821,7 +3849,8 @@ static EIO_Status s_Create(const char*     hostpath,
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
     x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
-    x_sock->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
+    x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
+    x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
 #ifdef NCBI_OS_UNIX
     if (!port)
         strcpy(x_sock->path, hostpath);
@@ -4682,30 +4711,44 @@ static EIO_Status s_Accept(LSOCK           lsock,
     (*sock)->writable  = 1/*true*/;
 	(*sock)->event     = event;
 #endif /*NCBI_OS_MSWIN*/
-    (*sock)->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
+    (*sock)->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/ : 0/*false*/;
+    (*sock)->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/ : 0/*false*/;
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     /* w_buf is unused for accepted sockets */
 
-    if (port  &&  s_ReuseAddress == eOn  &&  !s_SetReuseAddress(x_sock, 1)) {
-        x_error = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EXX(42, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
-                            ("%s[LSOCK::Accept] "
-                             " Failed setsockopt(REUSEADDR)",
-                             s_ID(*sock, _id)));
-    }
+    if (port) {
+        if (s_ReuseAddress == eOn  &&  !s_SetReuseAddress(x_sock, 1)) {
+            x_error = SOCK_ERRNO;
+            CORE_LOGF_ERRNO_EXX(42, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[LSOCK::Accept] "
+                                 " Failed setsockopt(REUSEADDR)",
+                                 s_ID(*sock, _id)));
+        }
+
+#ifdef SO_KEEPALIVE
+        if ((*sock)->keepalive  &&  !s_SetKeepAlive(x_sock, 1)) {
+            x_error = SOCK_ERRNO;
+            CORE_LOGF_ERRNO_EXX(152, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[LSOCK::Accept] "
+                                 " Failed setsockopt(KEEPALIVE)",
+                                 s_ID(*sock, _id)));
+        }
+#endif /*SO_KEEPALIVE*/
 
 #ifdef SO_OOBINLINE
-    if (port  &&  !s_SetOobInline(x_sock, 1/*true*/)) {
-        x_error = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EXX(137, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
-                            ("%s[LSOCK::Accept] "
-                             " Failed setsockopt(OOBINLINE)",
-                             s_ID(*sock, _id)));
-    }
+        if (!s_SetOobInline(x_sock, 1/*true*/)) {
+            x_error = SOCK_ERRNO;
+            CORE_LOGF_ERRNO_EXX(137, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[LSOCK::Accept] "
+                                 " Failed setsockopt(OOBINLINE)",
+                                 s_ID(*sock, _id)));
+        }
 #endif /*SO_OOBINLINE*/
+    }
 
     if (!(*sock)->crossexec  &&  !s_SetCloexec(x_sock, 1/*true*/)) {
         const char* errstr;
@@ -5049,7 +5092,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->r_status  = eIO_Success;
     x_sock->w_status  = eIO_Success;
     x_sock->pending   = 1/*have to check at the nearest I/O*/;
-    x_sock->crossexec = flags * fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
+    x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
+    x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_buf     = w_buf;
@@ -5090,16 +5134,29 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         return eIO_Unknown;
     }
 
+    if (x_sock->port) {
+#ifdef SO_KEEPALIVE
+        if (!s_SetKeepAlive(fd, x_sock->keepalive)) {
+            x_error = SOCK_ERRNO;
+            CORE_LOGF_ERRNO_EXX(153, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[SOCK::CreateOnTop] "
+                                 " Failed setsockopt(KEEPALIVE)",
+                                 s_ID(x_sock, _id)));
+        }
+#endif /*SO_KEEPALIVE*/
+
 #ifdef SO_OOBINLINE
-    if (x_sock->port  &&  !s_SetOobInline(fd, 1/*true*/)) {
-        x_error = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EXX(138, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
-                            ("%s[SOCK::CreateOnTop] "
-                             " Failed setsockopt(OOBINLINE)",
-                             s_ID(x_sock, _id)));
-    }
+        if (!s_SetOobInline(fd, 1/*true*/)) {
+            x_error = SOCK_ERRNO;
+            CORE_LOGF_ERRNO_EXX(138, eLOG_Warning,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[SOCK::CreateOnTop] "
+                                 " Failed setsockopt(OOBINLINE)",
+                                 s_ID(x_sock, _id)));
+        }
 #endif /*SO_OOBINLINE*/
+    }
 
     if (!s_SetCloexec(fd, !x_sock->crossexec  ||  x_sock->session)) {
         const char* errstr;
@@ -6121,7 +6178,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     (*sock)->event     = event;
     (*sock)->writable  = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
-    (*sock)->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
+    (*sock)->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/ : 0/*false*/;
     /* all timeouts cleared - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     BUF_SetChunkSize(&(*sock)->w_buf, SOCK_BUF_CHUNK_SIZE);
