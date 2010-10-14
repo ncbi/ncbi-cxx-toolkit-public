@@ -542,10 +542,10 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
                                       EUserHeaderOp op)
 {
     int/*bool*/ retval;
-    char*  new_header;
     size_t newlinelen;
     size_t newhdrlen;
     char*  newline;
+    char*  newhdr;
     size_t hdrlen;
     char*  hdr;
 
@@ -561,56 +561,66 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
     }
 
     /* NB: "user_header" can be part of "info->user_header",
-     * so create a copy of it even for delete operation! */
-    if (!(new_header = (char*) malloc(newhdrlen + 1)))
+     * so create a copy of it even for delete operations! */
+    if (!(newhdr = (char*) malloc(newhdrlen + 1)))
         return 0/*failure*/;
-    memcpy(new_header, user_header, newhdrlen + 1);
+    memcpy(newhdr, user_header, newhdrlen + 1);
 
     retval = 1/*assume best: success*/;
-    for (newline = new_header; *newline; newline += newlinelen) {
+    for (newline = newhdr; *newline; newline += newlinelen) {
         char*  eol = strchr(newline, '\n');
         char*  eot = strchr(newline,  ':');
-        int/*bool*/ used = 0;
         size_t newtaglen;
         char*  newtagval;
         size_t linelen;
+        size_t newlen;
         char*  line;
-        size_t len;
-        size_t l;
+        size_t off;
 
+        /* line & taglen */
         newlinelen = (size_t)
-            (eol ? eol - newline + 1 : new_header + newhdrlen - newline);
-        if (!eot || eot >= newline + newlinelen ||
-            !(newtaglen = (size_t)(eot - newline))) {
-            continue;
-        }
+            (eol ? eol - newline + 1 : newhdr + newhdrlen - newline);
+        if (!eot || eot >= newline + newlinelen)
+            goto ignore;
+        if (!(newtaglen = (size_t)(eot - newline)))
+            goto ignore;
 
-        newtagval = newline + newtaglen + 1;
-        while (newtagval < newline + newlinelen) {
-            if (isspace((unsigned char)(*newtagval)))
-                newtagval++;
-            else
+        /* tag value */
+        newtagval = newline + newtaglen;
+        while (++newtagval < newline + newlinelen) {
+            if (!isspace((unsigned char)(*newtagval)))
                 break;
         }
         switch (op) {
+        case eUserHeaderOp_Override:
+            newlen = newtagval < newline + newlinelen ? newlinelen : 0;
+            break;
         case eUserHeaderOp_Delete:
-            len = 0;
+            newlen = 0;
             break;
         case eUserHeaderOp_Extend:
-            len = newlinelen - (size_t)(newtagval - newline);
-            break;
-        case eUserHeaderOp_Override:
-            len = newtagval < newline + newlinelen ? newlinelen : 0;
+            /* NB: how much additional space is required */
+            if (!(newlen = newlinelen - (size_t)(newtagval - newline)))
+                goto ignore;
             break;
         default:
             assert(0);
             retval = 0/*failure*/;
-            len = 0;
+            newlen = 0;
             break;
+        }
+        if (newlen  &&  eol) {
+            if (eol[-1] == '\r')
+                newlen -= 2;
+            else
+                newlen--;
+            assert(newlen);
         }
 
         for (line = hdr; *line; line += linelen) {
             size_t taglen;
+            char*  temp;
+            size_t len;
 
             eol = strchr(line, '\n');
             eot = strchr(line,  ':');
@@ -622,65 +632,84 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
             taglen = (size_t)(eot - line);
             if (newtaglen != taglen || strncasecmp(newline, line, taglen) != 0)
                 continue;
+            assert(0 < taglen  &&  taglen <= linelen);
 
-            if (op == eUserHeaderOp_Extend) {
-                if (linelen - taglen >= len
-                    &&  strncasecmp(line + linelen - len, newtagval, len) == 0
-                    &&  (linelen - taglen == len  ||
-                         isspace((unsigned char) line[linelen - len - 1]))) {
-                    len = 0;
-                }
-                l = linelen + len;
-                if (len && linelen > 1 && line[linelen - 2] == '\r')
-                    --l;
-            } else
-                l = len;
-            if (l != linelen) {
-                size_t off = (size_t)(line - hdr);
-                if (l > linelen) {
-                    char* temp = (char*)realloc(hdr, hdrlen + l - linelen + 1);
-                    if (!temp) {
-                        retval = 0/*failure*/;
-                        continue;
+            if (newlen) {
+                assert(op != eUserHeaderOp_Delete);
+                off = !eol ? 0 : eol[-1] != '\r' ? 1 : 2;
+                if (op == eUserHeaderOp_Extend) {
+                    while (++taglen < linelen) {
+                        if (!isspace((unsigned char) line[taglen]))
+                            break;
                     }
-                    hdr  = temp;
-                    line = temp + off;
+                    len = linelen-off - taglen;
+                    line   += linelen-off;
+                    linelen = off;
+                    if (len >= newlen
+                        &&  strncasecmp(line - newlen, newtagval, newlen) == 0
+                        &&  (len == newlen  ||
+                             isspace((unsigned char)((line - newlen)[-1])))) {
+                        /* if the tagvalue is the only(or last) added - skip */
+                        goto ignore;
+                    }
+                    newlen++/*count in one space separator*/;
+                    len = 0;
+                } else
+                    len = linelen-off;
+            } else
+                len = 0/*==newlen*/;
+
+            off  = (size_t)(line - hdr);
+            if (len < newlen) {
+                len = newlen - len;
+                if (!(temp = (char*) realloc(hdr, hdrlen + len + 1))) {
+                    retval = 0/*failure*/;
+                    goto ignore;
                 }
-                hdrlen -= linelen;
-                memmove(line + l, line + linelen, hdrlen - off + 1);
-                hdrlen += l;
+                hdr  = temp;
+                line = temp + off;
+                memmove(line + len, line, hdrlen - off + 1);
+                hdrlen  += len;
+                linelen += len;
+                if (op == eUserHeaderOp_Extend) {
+                    memcpy(line + 1, newtagval, newlen - 1);
+                    *line = ' ';
+                    newlen = 0;
+                    break;
+                }
+            } else if (len > newlen) {
+                assert(op == eUserHeaderOp_Override);
+                hdrlen -= len;
+                memmove(line + newlen, line + len, hdrlen - off + 1);
+                hdrlen += newlen;
+            }
+            if (newlen) {
+                assert(op == eUserHeaderOp_Override);
+                memcpy(line, newline, newlen);
+                newlen = 0;
+                continue;
             }
 
-            if (len) {
-                if (op == eUserHeaderOp_Extend) {
-                    char* s = &line[l - len - 1];
-                    *s++ = ' ';
-                    memcpy(s, newtagval, len);
-                } else
-                    memcpy(line, newline, len);
-                linelen = l;
-                used = 1;
-            } else if (op == eUserHeaderOp_Extend)
-                used = 1;
+            hdrlen -= linelen;
+            memmove(line, line + linelen, hdrlen - off + 1);
+            linelen = 0;
         }
 
-        if (op == eUserHeaderOp_Delete)
-            continue;
-
-        if (used || !len) {
-            memmove(newline, newline + newlinelen,
-                    newhdrlen - (size_t)(newline-new_header) - newlinelen + 1);
+        if (!newlen) {
+        ignore:
+            if (op == eUserHeaderOp_Delete)
+                continue;
+            off = (size_t)(newline - newhdr);
             newhdrlen -= newlinelen;
+            memmove(newline, newline + newlinelen, newhdrlen - off + 1);
             newlinelen = 0;
         }
     }
 
     info->http_user_header = hdr;
-    if (op != eUserHeaderOp_Delete
-        && !ConnNetInfo_AppendUserHeader(info, new_header)) {
-        retval = 0/*failure*/;
-    }
-    free(new_header);
+    if (retval  &&  op != eUserHeaderOp_Delete)
+        retval = ConnNetInfo_AppendUserHeader(info, newhdr);
+    free(newhdr);
 
     return retval;
 }
@@ -1660,30 +1689,30 @@ extern int/*bool*/ URL_DecodeEx
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
           (*src_read)++, (*dst_written)++, src++, dst++) {
         switch ( *src ) {
-        case '%': {
-            int i1, i2;
-            if (*src_read + 2 > src_size)
-                return 1/*true*/;
-            if ((i1 = s_HexChar(*(++src))) == -1)
-                return *dst_written ? 1/*true*/ : 0/*false*/;
-            if (*src_read + 3 > src_size)
-                return 1/*true*/;
-            if ((i2 = s_HexChar(*(++src))) == -1)
-                return *dst_written ? 1/*true*/ : 0/*false*/;
-
-            *dst = (unsigned char)((i1 << 4) + i2);
-            *src_read += 2;
-            break;
-        }
         case '+': {
             *dst = ' ';
             break;
         }
+        case '%': {
+            int i1, i2;
+            if (*src_read + 2 < src_size
+                &&  (i1 = s_HexChar(src[1])) != -1
+                &&  (i2 = s_HexChar(src[2])) != -1) {
+                *dst = (unsigned char)((i1 << 4) + i2);
+                *src_read += 2;
+                src       += 2;
+                break;
+            }
+            if (!allow_symbols  ||  *allow_symbols)
+                return *dst_written ? 1/*true*/ : 0/*false*/;
+            /*FALLTHRU*/
+        }
         default: {
-            if (VALID_URL_SYMBOL(*src)  ||
-                (allow_symbols  &&  strchr(allow_symbols, *src)))
+            if (VALID_URL_SYMBOL(*src)
+                ||  (allow_symbols  &&  (!*allow_symbols
+                                         ||  strchr(allow_symbols, *src)))) {
                 *dst = *src;
-            else
+            } else
                 return *dst_written ? 1/*true*/ : 0/*false*/;
         }
         }/*switch*/
