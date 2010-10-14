@@ -2,6 +2,8 @@
 # $Id$
 #################################
 
+WATCHERS = camacho madden
+
 APP = vsrun_sample
 SRC = vsrun_sample
 

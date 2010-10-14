@@ -5,6 +5,8 @@
 # NOTE:  see in "Makefile.fasthello.app" for how to build it as Fast-CGI
 #################################
 
+WATCHERS = grichenk
+
 APP = hello
 SRC = helloapp hellores hellocmd
 LIB = xhtml xcgi xutil xncbi

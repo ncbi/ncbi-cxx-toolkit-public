@@ -8,6 +8,8 @@
 #           CGI, and behave appropriately.
 #################################
 
+WATCHERS = grichenk
+
 APP = fasthello
 SRC = helloapp hellores hellocmd
 LIB = xhtml xfcgi xutil xncbi

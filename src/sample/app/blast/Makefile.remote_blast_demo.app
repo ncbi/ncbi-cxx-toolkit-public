@@ -2,6 +2,8 @@
 # $Id$
 #################################
 
+WATCHERS = camacho madden
+
 APP = remote_blast_demo
 SRC = remote_blast_demo
 
