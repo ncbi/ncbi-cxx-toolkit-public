@@ -1926,6 +1926,16 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
         TMemberIndex ind = classType->GetMembers().Find(tagName);
         if ( ind != kInvalidMember ) {
             if (x_IsStdXml()) {
+                const CMemberInfo *mem_info = classType->GetMemberInfo(ind);
+                ETypeFamily type = GetRealTypeFamily(mem_info->GetTypeInfo());
+                bool needUndo = false;
+                if (!GetEnforcedStdXml()) {
+                    needUndo = (type != eTypeFamilyPrimitive);
+                }
+                if (needUndo) {
+                    TopFrame().SetNotag();
+                    UndoClassMember();
+                }
                 return ind;
             }
         }
