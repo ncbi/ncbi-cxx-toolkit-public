@@ -427,8 +427,6 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
         strcpy(net_info->host, uuu->net_info->host);
         net_info->port = uuu->net_info->port;
     }
-
-    ConnNetInfo_DeleteUserHeader(net_info, "Host");
     return 1/*true - adjusted*/;
 }
 
