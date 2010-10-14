@@ -80,13 +80,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
  );
 
 
-/* Reinit, using "connector".
+/* Reinit using new "connector".
  * If "conn" is already opened then close the current connection at first,
  * even if "connector" is just the same as the current connector.
- * If "connector" is NULL then close and destroy current connector, and leave
- * connection empty (effective way to destroy connector(s)).
+ * If "connector" is NULL then close and destroy the incumbent,
+ * and leave connection empty (effective way to destroy connector(s)).
  * NOTE:  Although it closes the previous connection immediately, however it
- *        does not open the new connection right away -- see notes to "Create".
+ *        does not open the new connection right away:  see notes on "Create".
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
 (CONN      conn,      /* [in] connection handle */
@@ -96,7 +96,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
 
 /* Get verbal representation of connection type as a character string.
  * Note that the returned value is only valid until the next
- * I/O operation in the connection. Return value NULL denotes
+ * I/O operation in the connection.  Return value NULL denotes
  * unknown connection type.
  */
 extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
@@ -107,10 +107,10 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
 /* Get read (event == eIO_Read) or write (event == eIO_Write)
  * position within the connection.
  * Positions are advanced from 0 on, and only concerning I/O that has
- * caused calling to the actual connector's "read" method (i.e. pushbacks
- * are never considered, and peeks -- not always).
- * Special case:  eIO_Open as "event" clears both positions with 0,
- * and always returns 0.
+ * caused calling to the actual connector's "read" (i.e. pushbacks
+ * never considered, and peeks -- not always) and "write" methods.
+ * Special case:  eIO_Open as "event" causes to clear both positions
+ * with 0, and to return 0.
  */
 extern NCBI_XCONNECT_EXPORT size_t CONN_GetPosition
 (CONN      conn,  /* [in]  connection handle */ 
@@ -119,23 +119,22 @@ extern NCBI_XCONNECT_EXPORT size_t CONN_GetPosition
 
 
 /* Return human-readable description of the connection as a character
- * 0-terminated string. The string is not guaranteed to have any
+ * '\0'-terminated string.  The string is not guaranteed to have any
  * particular format and is intended solely for something like
- * logging and debugging. Return NULL if the connection cannot
+ * logging and debugging.  Return NULL if the connection cannot
  * provide any description information (or if it is in a bad state).
- * Application program is responsible to deallocate the space occupied
- * by the returned string calling free() when the description is no longer
- * needed.
+ * Application program must call free() to deallocate space occupied
+ * by the returned string when the description is no longer needed.
  */
 extern NCBI_XCONNECT_EXPORT char* CONN_Description
 (CONN conn  /* [in]  connection handle */
  );
 
 
-/* Specify timeout for the connection I/O (including "Connect" (aka "Open")
- * and "Close"). May be called at any time during the connection lifetime.
+/* Specify timeout for the connection I/O, including "Connect" (aka "Open")
+ * and "Close".  May be called at any time during the connection lifetime.
  * NOTE1:  if "new_timeout" is NULL then set the timeout to be infinite.
- * NOTE2:  if "new_timeout" is CONN_DEFAULT_TIMEOUT then underlying
+ * NOTE2:  if "new_timeout" is CONN_DEFAULT_TIMEOUT then an underlying,
  *         connector-specific value is used (this is the default).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
@@ -146,8 +145,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
 
 
 /* Retrieve current timeout (return NULL if it is infinite).
- * The returned pointer is guaranteed to point to the valid timeout structure
- * (or be either NULL or CONN_DEFAULT_TIMEOUT) until the next "SetTimeout"
+ * The returned pointer is guaranteed to point to a valid timeout structure,
+ * or to be either NULL or CONN_DEFAULT_TIMEOUT until next "SetTimeout"
  * or "Close" method's call.
  */
 extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
@@ -157,7 +156,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
 
 
 /* Block on the connection until it becomes available for either read or
- * write (dep. on "event"), or until the timeout expires, or until any error.
+ * write (dep. on "event"), until timeout expires, or until any error.
  * NOTE:  "timeout" can also be one of two special values:
  *         NULL (means infinite), CONN_DEFAULT_TIMEOUT (connector-defined).
  */
@@ -168,14 +167,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
  );
 
 
-/* Write "size" bytes from the mem.buffer "buf" to the connection.
- * In "*n_written", return the number of successfully written bytes.
- * Parameter "how" modifies behavior of CONN_Write():
- * eIO_WritePlain   -- return eIO_Success if some data were written and
- *                     yet write timeout had not occurred, error otherwise;
- * eIO_WritePersist -- return eIO_Success only if all data were written and
- *                     yet write timeout had not occurred, error otherwise.
- * NOTE:  See CONN_SetTimeout() hoe to set write timeout.
+/* Write up to "size" bytes from the buffer "buf" to the connection.
+ * Return the number of actually written bytes in "*n_written".
+ * It may not return "eIO_Success" if no data at all can be written before
+ * write timeout expired or an error occurred.
+ * Parameter "how" modifies the write behavior:
+ * eIO_WritePlain   -- return immediately after having written as many
+ *                     as 1 byte of data, or if an error has occurred;
+ * eIO_WritePersist -- return only after having written all of the data
+ *                     from "buf", or if an error has occurred.
+ * NOTE:  See CONN_SetTimeout() how to set write timeout.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
 (CONN            conn,      /* [in]  connection handle                     */ 
@@ -186,11 +187,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
  );
 
 
-/* Push back "size" bytes from the mem.buffer "buf" into connection.
- * Return eIO_Success on success, other code on an error.
- * NOTE1:  Data pushed back are not necessarily those taken from the
- *         connection before.
- * NOTE2:  Upon successive read operation, the pushed back data are
+/* Push back "size" bytes from the buffer "buf" into connection.
+ * Return eIO_Success on success, other code on error.
+ * NOTE1:  Data pushed back may not necessarily be the same as obtained
+ *         from the connection before.
+ * NOTE2:  Upon following read operation, the pushed back data are
  *         taken out first.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
@@ -200,28 +201,28 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
  );
 
 
-/* Explicitly flush to the connection all data written by "CONN_Write()".
+/* Explicitly flush connection from any pending data written by "CONN_Write()".
  * NOTE1:  CONN_Flush() effectively opens connection (if it wasn't open yet).
  * NOTE2:  Connection considered open if underlying connector's "Open" method
  *         has successfully executed; actual data link may not yet exist.
- * NOTE3:  CONN_Read() always calls CONN_Flush() before proceeding.
- *         So does CONN_Close() but only if connection is was open before.
+ * NOTE3:  CONN_Read() always calls CONN_Flush() before proceeding;
+ *         so does CONN_Close() but only if connection is was open before.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
 (CONN        conn   /* [in] connection handle                      */
  );
 
 
-/* Read up to "size" bytes from a connection to the buffer to pointed by "buf".
- * In "*n_read", return the number of successfully read bytes.
- * If there is absolutely no data available to read and the timeout (see
- * CONN_SetTimeout()) is expired then return eIO_Timeout (and "*n_read" := 0).
- * The arg "how" means:
- *   eIO_ReadPlain   -- read presently available data only and return
- *   eIO_ReadPeek    -- eIO_ReadPlain but dont discard read data from inp.queue
- *   eIO_ReadPersist -- try to read exactly "n" bytes;  return eIO_Timeout if
- *                      could not read the requested # of bytes, and read
- *                      timeout has expired.
+/* Read up to "size" bytes from connection to the buffer pointed to by "buf".
+ * Return the number of actually read bytes in "*n_read".
+ * May not return eIO_Success if no data at all can be read before
+ * read timeout expired or an error occurred.
+ * Parameter "how" modifies the read behavior:
+ *   eIO_ReadPlain   -- return immediately after having read as many as
+ *                      1 byte from connection, or if an error has occurred;
+ *   eIO_ReadPeek    -- eIO_ReadPlain but don't discard read data from CONN;
+ *   eIO_ReadPersist -- return only after having filled full "buf" with data
+ *                      (exactly "size" bytes), or if an error has occurred.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
 (CONN           conn,   /* [in]  connection handle                  */
@@ -232,14 +233,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  );
 
 
-/* Read up to "size" bytes from a connection into the string buffer pointed
+/* Read up to "size" bytes from connection into the string buffer pointed
  * to by "line".  Stop reading if either '\n' or an error is encountered.
  * Replace '\n' with '\0'.  Upon return "*n_read" contains the number
  * of characters written to "line", not including the terminating '\0'.
  * If not enough space provided in "line" to accomodate the '\0'-terminated
  * line, then all "size" bytes are used and "*n_read" equals "size" on return.
  * This is the only case when "line" will not be '\0'-terminated.
- * Return code advises the caller whether another line read can be attempted:
+ * Return code advises the caller whether another read can be attempted:
  *   eIO_Success -- read completed successfully, keep reading;
  *   other code  -- an error occurred, and further attempt may fail.
  *
