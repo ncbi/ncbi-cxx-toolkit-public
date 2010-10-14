@@ -815,7 +815,7 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
     SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
     if (/* Send TELNET IP (Interrupt Process) command */
         (status = SOCK_Write(xxx->cntl, "\377\364", 2, &n, eIO_WritePersist))
-        != eIO_Success  ||  n != 2  ||
+        != eIO_Success  ||
         /* Send TELNET DM (Data Mark) command to complete SYNCH, RFC 854 */
         (status = SOCK_Write(xxx->cntl, "\377\362", 2, &n, eIO_WriteOutOfBand))
         != eIO_Success  ||  n != 2  ||
