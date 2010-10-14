@@ -573,7 +573,7 @@ static EIO_Status s_CONN_Write
     if (status != eIO_Success) {
         if (*n_written) {
             CONN_TRACE(Write, "Write error");
-            status = eIO_Success;
+            /*status = eIO_Success;*/
         } else if (size) {
             ELOG_Level level;
             if (status != eIO_Timeout  ||  conn->w_timeout == kDefaultTimeout)
@@ -720,7 +720,8 @@ static EIO_Status s_CONN_Read
                    : BUF_Read(conn->buf, buf, size));
         if (*n_read == size)
             return eIO_Success;
-        buf = (char*) buf + *n_read;
+        buf   = (char*) buf + *n_read;
+        size -=               *n_read;
     }
 
     x_Callback(conn, eCONN_OnRead);
@@ -731,7 +732,7 @@ static EIO_Status s_CONN_Read
         timeout = (conn->r_timeout == kDefaultTimeout
                    ? conn->meta.default_timeout
                    : conn->r_timeout);
-        status = conn->meta.read(conn->meta.c_read, buf, size - *n_read,
+        status = conn->meta.read(conn->meta.c_read, buf, size,
                                  &x_read, timeout);
         *n_read += x_read;
 
@@ -745,7 +746,7 @@ static EIO_Status s_CONN_Read
     if (status != eIO_Success) {
         if (*n_read) {
             CONN_TRACE(Read, "Read error");
-            status = eIO_Success;
+            /*status = eIO_Success;*/
         } else if (size  &&  status != eIO_Closed) {
             ELOG_Level level;
             if (status != eIO_Timeout  ||  conn->r_timeout == kDefaultTimeout)
@@ -773,7 +774,7 @@ static EIO_Status s_CONN_ReadPersist
 
     assert(*n_read == 0);
 
-    for (;;) {
+    do {
         size_t x_read = 0;
         status = s_CONN_Read(conn, (char*) buf + *n_read,
                              size - *n_read, &x_read, 0/*no peek*/);
@@ -782,12 +783,12 @@ static EIO_Status s_CONN_ReadPersist
             break;
         /* keep flushing unwritten output data (if any) */
         if (conn->meta.flush) {
-            conn->meta.flush(conn->meta.c_flush,
-                             conn->r_timeout == kDefaultTimeout
-                             ? conn->meta.default_timeout
-                             : conn->r_timeout);
+            status = conn->meta.flush(conn->meta.c_flush,
+                                      conn->r_timeout == kDefaultTimeout
+                                      ? conn->meta.default_timeout
+                                      : conn->r_timeout);
         }
-    }
+    } while (status == eIO_Success);
 
     return status;
 }
