@@ -153,6 +153,7 @@ public:
     /// @param errors   A null-separated list of errors.
     /// @param warnings A null-separated list of warnings.
     /// @param verbose  Produce verbose output. [in]
+    /// @param target_only Filter the defline to include only the requested id. [in]
     /// @todo FIXME: Add retry logic in case of transient errors
     static void
     GetSequencesInfo(TSeqIdVector& seqids,      // in
@@ -161,7 +162,8 @@ public:
                      TBioseqVector& bioseqs,    // out
                      string& errors,            // out
                      string& warnings,          // out
-                     bool verbose = false);     // in
+                     bool verbose = false,      // in
+                     bool target_only = false); // in
 
     /// Get a set of Bioseqs given an input set of Seq-ids. 
     ///
@@ -186,6 +188,7 @@ public:
     /// @param errors   A null-separated list of errors.
     /// @param warnings A null-separated list of warnings.
     /// @param verbose  Produce verbose output. [in]
+    /// @param target_only Filter the defline to include only the requested id. [in]
     /// @todo FIXME: Add retry logic in case of transient errors
     static void
     GetSequences(TSeqIdVector& seqids,      // in
@@ -194,7 +197,8 @@ public:
                  TBioseqVector& bioseqs,    // out
                  string& errors,            // out
                  string& warnings,          // out
-                 bool verbose = false);     // in
+                 bool verbose = false,      // in
+                 bool target_only = false); // in
     /// Defines a std::vector of CRef<CSeq_interval>
     typedef vector< CRef<objects::CSeq_interval> > TSeqIntervalVector;
     /// Defines a std::vector of CRef<CSeq_data>

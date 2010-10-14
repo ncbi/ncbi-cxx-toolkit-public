@@ -172,6 +172,8 @@ s_SeqTypeToResidue(char p, string & errors)
 ///     Returned string containing any errors encountered.
 /// @param skip_seq_data
 ///     If true, the sequence data will NOT be fetched
+/// @param target_only
+///     If true, only requested seq_id will be returned
 /// @return
 ///     The blast4 sequence fetching request object.
 static CRef<objects::CBlast4_request>
@@ -179,7 +181,8 @@ s_BuildGetSeqRequest(CBlastServices::TSeqIdVector& seqids,   // in
                      const string& database, // in
                      char          seqtype,  // 'p' or 'n'
                      bool    skip_seq_data,  // in
-                     string&       errors)  // out
+                     bool    target_only,    // in
+                     string&       errors)   // out
 {
     // This will be returned in an Empty() state if an error occurs.
     CRef<CBlast4_request> request;
@@ -206,6 +209,7 @@ s_BuildGetSeqRequest(CBlastServices::TSeqIdVector& seqids,   // in
     request->SetBody(*body);
     body->SetGet_sequences().SetDatabase(*db);
     body->SetGet_sequences().SetSkip_seq_data(skip_seq_data);
+    body->SetGet_sequences().SetTarget_only(target_only);
 
     // Fill in db values
 
@@ -247,6 +251,7 @@ s_GetSequences(CBlastServices::TSeqIdVector & seqids,
                              const string & database,
                              char           seqtype,
                              bool           skip_seq_data,
+                             bool           target_only,
                              CBlastServices::TBioseqVector& bioseqs,
                              string       & errors,
                              string       & warnings,
@@ -255,7 +260,7 @@ s_GetSequences(CBlastServices::TSeqIdVector & seqids,
     // Build the request
 
     CRef<CBlast4_request> request =
-        s_BuildGetSeqRequest(seqids, database, seqtype, skip_seq_data, errors);
+        s_BuildGetSeqRequest(seqids, database, seqtype, skip_seq_data, target_only, errors);
 
     if (request.Empty()) {
         return;
@@ -465,10 +470,11 @@ CBlastServices::GetSequencesInfo(TSeqIdVector & seqids,   // in
                                TBioseqVector& bioseqs,  // out
                                string       & errors,   // out
                                string       & warnings, // out
-                               bool           verbose)  // in
+                               bool           verbose,  // in
+                               bool           target_only)  // in
 {
-    s_GetSequences(seqids, database, seqtype, true, bioseqs, errors, warnings,
-                   verbose);
+    s_GetSequences(seqids, database, seqtype, true, target_only, bioseqs, 
+                   errors, warnings, verbose);
 }
 
 void                      
@@ -478,10 +484,11 @@ CBlastServices::GetSequences(TSeqIdVector & seqids,   // in
                            TBioseqVector& bioseqs,  // out
                            string       & errors,   // out
                            string       & warnings, // out
-                           bool           verbose)  // in
+                           bool           verbose,  // in
+                           bool           target_only)  // in
 {
-    s_GetSequences(seqids, database, seqtype, false, bioseqs, errors, warnings,
-                   verbose);
+    s_GetSequences(seqids, database, seqtype, false, target_only, bioseqs, 
+                   errors, warnings, verbose);
 }   
 
 
