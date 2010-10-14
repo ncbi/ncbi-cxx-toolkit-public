@@ -1271,8 +1271,9 @@ static EIO_Status s_VT_Open
     assert(!xxx->data  &&  !xxx->cntl);
 
     status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->cntl, 0, 0,
-                           xxx->flag & fFTP_LogControl
-                           ? fSOCK_LogOn : fSOCK_LogDefault);
+                           fSOCK_KeepAlive |
+                           (xxx->flag & fFTP_LogControl
+                            ? fSOCK_LogOn : fSOCK_LogDefault));
     if (status == eIO_Success) {
         SOCK_DisableOSSendDelay(xxx->cntl, 1/*yes,disable*/);
         SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
