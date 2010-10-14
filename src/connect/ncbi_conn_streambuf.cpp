@@ -263,12 +263,12 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             if ( x_towrite ) {
                 m_Status = CONN_Write(m_Conn, pbase(),
                                       x_towrite, &x_written, eIO_WritePlain);
-                if (m_Status != eIO_Success) {
+                if ( !x_written ) {
+                    _ASSERT(m_Status != eIO_Success);
                     ERR_POST_X(6, x_Message("xsputn():"
                                             " CONN_Write(Plain) failed"));
-                }
-                if ( !x_written )
                     break;
+                }
                 memmove(pbase(), pbase() + x_written, x_towrite - x_written);
                 x_PPos += (CT_OFF_TYPE) x_written;
                 pbump(-int(x_written));
@@ -278,11 +278,10 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
         _ASSERT(n  &&  m_Status == eIO_Success);
         m_Status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WritePersist);
-        if (m_Status != eIO_Success) {
+        if ( !x_written ) {
+            _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(7, x_Message("xsputn():"
                                     " CONN_Write(Persist) failed"));
-        }
-        if ( !x_written ) {
             if ( !pbase() )
                 return (streamsize) n_written;
             break;
@@ -373,8 +372,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         // next, read from the connection
         size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
-        m_Status = CONN_Read(m_Conn, x_buf,
-                             x_read, &x_read, eIO_ReadPlain);
+        m_Status = CONN_Read(m_Conn, x_buf, x_read, &x_read, eIO_ReadPlain);
         if ( !x_read ) {
             _ASSERT(m_Status != eIO_Success);
             if (m_Status != eIO_Closed)
