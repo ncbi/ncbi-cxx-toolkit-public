@@ -107,9 +107,8 @@ typedef EIO_Status (*FConnectorWait)
 
 
 /* The passed "n_written" is always non-NULL, and "*n_written" is always zero.
- * It returns "eIO_Success" if at least some data have been successfully
- * written; other error code if no data at all have been written.
- * It returns the # of successfully written data (in bytes) in "*n_written".
+ * The number of bytes actually written gets returned in "*n_written".
+ * It may not return "eIO_Success" if no data at all have been written.
  * NOTE:  FConnectorWrite is guaranteed to be called after FConnectorOpen,
  *        and only if the latter succeeded (returned "eIO_Success").
  */
@@ -133,9 +132,8 @@ typedef EIO_Status (*FConnectorFlush)
 
 
 /* The passed "n_read" is always non-NULL, and "*n_read" is always zero.
- * It returns "eIO_Success" if at least some data have been successfully
- * read; other error code if no data at all have been read.
- * The number of successfully read bytes returned in "*n_read".
+ * The number of bytes actually read bytes gets returned in "*n_read".
+ * It may not return "eIO_Success" if no data at all have been read.
  * NOTE:  FConnectorRead is guaranteed to be called after FConnectorOpen,
  *        and only if the latter succeeded (returned "eIO_Success").
  */
