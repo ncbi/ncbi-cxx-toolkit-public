@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = kapustin
+
 APP = hfilter
 SRC = hitfilter_app
 

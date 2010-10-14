@@ -3,6 +3,8 @@
 
 # Generic pairwise global alignment utility
 
+WATCHERS = kapustin
+
 APP = nw_aligner
 SRC = nwa
 

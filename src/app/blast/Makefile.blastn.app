@@ -1,3 +1,5 @@
+WATCHERS = camacho madden maning
+
 APP = blastn
 SRC = blastn_app blast_app_util
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)

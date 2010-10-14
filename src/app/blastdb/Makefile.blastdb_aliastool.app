@@ -1,3 +1,5 @@
+WATCHERS = camacho maning 
+
 APP = blastdb_aliastool
 SRC = blastdb_aliastool
 

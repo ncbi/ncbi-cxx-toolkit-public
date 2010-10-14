@@ -1,3 +1,5 @@
+WATCHERS = camacho maning 
+
 APP = blastdbcmd
 SRC = blastdbcmd blastdb_aux
 LIB_ = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)

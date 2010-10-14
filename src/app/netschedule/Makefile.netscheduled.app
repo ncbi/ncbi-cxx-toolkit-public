@@ -2,6 +2,8 @@
 # $Id$
 #################################
 
+WATCHERS = kazimird
+
 APP = netscheduled
 SRC = netscheduled queue_coll job_status queue_clean_thread \
       notif_thread ns_affinity ns_queue access_list ns_util ns_format \

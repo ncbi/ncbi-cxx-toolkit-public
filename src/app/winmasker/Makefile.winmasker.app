@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = morgulis camacho
+
 REQUIRES = objects algo
 
 ASN_DEP = seq

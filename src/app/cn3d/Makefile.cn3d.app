@@ -4,6 +4,8 @@
 # Build application "cn3d"
 #################################
 
+WATCHERS = thiessen lanczyck
+
 REQUIRES = objects wxWidgets OpenGL PNG
 
 APP = cn3d

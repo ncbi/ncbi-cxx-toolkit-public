@@ -1,3 +1,5 @@
+WATCHERS = camacho boratyng
+
 APP = hit_matrix.cgi
 SRC = blast_hitmatrix cgi_hit_matrix
 

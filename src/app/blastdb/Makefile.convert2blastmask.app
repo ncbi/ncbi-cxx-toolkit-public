@@ -1,3 +1,5 @@
+WATCHERS = camacho maning 
+
 REQUIRES = objects
 
 APP = convert2blastmask

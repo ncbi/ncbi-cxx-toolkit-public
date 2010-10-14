@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = camacho maning 
+
 APP = blastdbcheck
 SRC = blastdbcheck blastdb_aux
 

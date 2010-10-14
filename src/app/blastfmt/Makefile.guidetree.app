@@ -1,3 +1,5 @@
+WATCHERS = camacho boratyng
+
 APP = guidetree
 SRC = guide_tree_app
 

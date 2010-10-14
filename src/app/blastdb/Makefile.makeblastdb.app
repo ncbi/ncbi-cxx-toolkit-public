@@ -1,3 +1,5 @@
+WATCHERS = camacho maning 
+
 APP = makeblastdb
 SRC = makeblastdb masked_range_set
 LIB_ = $(BLAST_INPUT_LIBS) writedb $(BLAST_LIBS) $(OBJMGR_LIBS)

@@ -2,6 +2,8 @@
 # $Id$
 #################################
 
+WATCHERS = kapustin
+
 APP = splign
 SRC = splign_app
 
