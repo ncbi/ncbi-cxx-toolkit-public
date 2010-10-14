@@ -240,7 +240,8 @@ static void TEST_MIME(void)
 static void TEST_ConnNetInfo(void)
 {
     size_t n;
-    char* url;
+    char* str;
+    char buf[80];
     SConnNetInfo* net_info;
 
     CORE_LOG(eLOG_Note, "ConnNetInfo test started");
@@ -289,46 +290,83 @@ static void TEST_ConnNetInfo(void)
 
     strcpy(net_info->user, "user");
     strcpy(net_info->pass, "pass");
-    url = ConnNetInfo_URL(net_info);
-    assert(url);
-    assert(strcmp(url, "https://www/path3?arg3#frag3") == 0);
-    free(url);
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "https://www/path3?arg3#frag3") == 0);
+    free(str);
 
-    printf("HTTP User Header:\n\"%s\"\n",
-           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+    ConnNetInfo_SetUserHeader(net_info, "");
+    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    printf("HTTP User Header after set:\n%s%s%s\n",
+           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+    assert(!net_info->http_user_header  &&  !str);
+
     ConnNetInfo_AppendUserHeader(net_info,
-                                 "My-Tag1:Value1\r\n"
-                                 "My-Tag2: Value2\r\n"
-                                 "My-Tag3: Value3\r\n");
-    printf("HTTP User Header after append:\n\"%s\"\n",
-           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+                                 "T0: V0\n"
+                                 "T1:V1\r\n"
+                                 "T2: V2\r\n"
+                                 "T3: V3\n"
+                                 "T4: V4\n"
+                                 "T1: V6");
+    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    if (str)
+        *str = '\0';
+    printf("HTTP User Header after append:\n%s%s%s\n",
+           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+    assert(strcmp(net_info->http_user_header,
+                  "T0: V0\n"
+                  "T1:V1\r\n"
+                  "T2: V2\r\n"
+                  "T3: V3\n"
+                  "T4: V4\n"
+                  "T1: V6\r\n") == 0);
+
     ConnNetInfo_OverrideUserHeader(net_info,
-                                   "My-TAG1:    \t  \r\n"
-                                   "My-TaG2: Value 2.1\r\n"
-                                   "My-Tag4: Value 4\r\n");
-    printf("HTTP User Header after override:\n\"%s\"\n",
-           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+                                   "T0\r\n"
+                                   "T5: V5\n"
+                                   "T1:    \t  \r\n"
+                                   "T2:V2.1\r\n"
+                                   "T3:V3\r\n"
+                                   "T4: W4");
+    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    if (str)
+        *str = '\0';
+    printf("HTTP User Header after override:\n%s%s%s\n",
+           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+    assert(strcmp(net_info->http_user_header,
+                  "T0: V0\n"
+                  "T2:V2.1\r\n"
+                  "T3:V3\n"
+                  "T4: W4\r\n"
+                  "T5: V5\r\n") == 0);
+
     ConnNetInfo_ExtendUserHeader(net_info,
-                                 "My-Tag3: \t \r\n"
-                                 "My-Tag4: Value 4.1\r\n"
-                                 "My-Tag5: \t \r\n"
-                                 "My-Tag6: Value 6\r\n");
-    ConnNetInfo_ExtendUserHeader(net_info,
-                                 "My-Tag4: Value 4.1\r\n"
-                                 "My-Tag6: Value 6\r\n");
-    ConnNetInfo_ExtendUserHeader(net_info,
-                                 "My-Tag4:Value 4\r\n"
-                                 "My-Tag6:Value 6\r\n");
-    printf("HTTP User Header after extend:\n\"%s\"\n",
-           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+                                 "T0: V0\n"
+                                 "T1:V1\r\n"
+                                 "T2:V2\n"
+                                 "T3: T3:V3\n"
+                                 "T4:\n"
+                                 "T5");
+    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    if (str)
+        *str = '\0';
+    printf("HTTP User Header after extend:\n%s%s%s\n",
+           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+    assert(strcmp(net_info->http_user_header,
+                  "T0: V0\n"
+                  "T2:V2.1 V2\r\n"
+                  "T3:V3 T3:V3\n"
+                  "T4: W4\r\n"
+                  "T5: V5\r\n"
+                  "T1:V1\r\n") == 0);
+
     ConnNetInfo_SetUserHeader(net_info, 0);
-    printf("HTTP User Header after set:\n\"%s\"\n",
-           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
-    ConnNetInfo_ExtendUserHeader(net_info,
-                                 "My-Tag7: Value7\r\n"
-                                 "My-Tag8: \t \r\n");
-    printf("HTTP User Header after second extend:\n\"%s\"\n",
-           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    if (str)
+        *str = '\0';
+    printf("HTTP User Header after reset:\n%s%s%s\n",
+           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+    assert(!net_info->http_user_header);
 
     for (n = 0; n < sizeof(net_info->args); n++)
         net_info->args[n] = "0123456789"[rand() % 10];
