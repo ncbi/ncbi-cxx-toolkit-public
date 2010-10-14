@@ -490,6 +490,7 @@ typedef enum {
     fSOCK_LogOff       = eOff,   /** logging is inherited in Accept()ed SOCKs*/
     fSOCK_LogOn        = eOn,
     fSOCK_LogDefault   = eDefault,
+    fSOCK_KeepAlive    = 8,      /** keep socket alive (if supported by OS)  */
     fSOCK_BindAny      = 0,      /** bind to 0.0.0.0 (i.e. any), default     */
     fSOCK_BindLocal    = 0x10,   /** bind to 127.0.0.1 only                  */
     fSOCK_KeepOnExec   = 0x20,   /** can be applied to all sockets           */
