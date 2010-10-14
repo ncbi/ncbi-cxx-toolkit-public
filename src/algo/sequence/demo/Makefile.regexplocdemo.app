@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = clausen
+
 SRC = regexplocdemo
 APP = regexplocdemo
 

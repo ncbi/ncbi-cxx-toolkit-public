@@ -1,5 +1,8 @@
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+
+WATCHERS = slottad
+
 APP = update_omssamod
 SRC = update_omssamod
 #OBJ = unimod

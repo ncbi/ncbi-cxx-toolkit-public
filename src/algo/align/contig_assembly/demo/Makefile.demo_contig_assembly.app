@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = jcherry
+
 ASN_DEP = seq
 
 APP = demo_contig_assembly

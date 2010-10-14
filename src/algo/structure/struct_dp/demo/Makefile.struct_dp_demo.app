@@ -4,6 +4,8 @@
 # Build application "struct_dp_demo"
 #################################
 
+WATCHERS = thiessen
+
 APP = struct_dp_demo
 
 SRC = \

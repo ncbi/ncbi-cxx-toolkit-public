@@ -3,7 +3,7 @@
 # Author:  Anatoliy Kuznetsov
 #################################
 
-
+WATCHERS = kuznets
 
 APP = test_vmerge
 SRC = test_vmerge

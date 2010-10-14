@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = dicuccio
+
 ASN_DEP = seq
 
 APP = winmasker

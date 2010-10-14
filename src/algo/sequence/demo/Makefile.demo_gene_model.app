@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = dicuccio
+
 SRC = demo_gene_model
 APP = demo_gene_model
 

@@ -4,6 +4,8 @@
 # Build application "struct_util_demo"
 #################################
 
+WATCHERS = thiessen 
+
 REQUIRES = objects
 
 APP = struct_util_demo

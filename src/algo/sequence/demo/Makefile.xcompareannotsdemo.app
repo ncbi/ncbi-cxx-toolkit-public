@@ -1,5 +1,7 @@
 #
 
+WATCHERS = astashya
+
 APP = xcompareannotsdemo
 SRC = xcompareannotsdemo
 

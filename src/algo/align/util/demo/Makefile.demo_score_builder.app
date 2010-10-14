@@ -5,6 +5,8 @@
 # Mon Mar  1 12:58:23 EST 2010
 #
 
+WATCHERS = dicuccio
+
 ###  BASIC PROJECT SETTINGS
 APP = demo_score_builder
 SRC = demo_score_builder

@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = kskatz
+
 SRC = cpgdemo
 APP = cpgdemo
 

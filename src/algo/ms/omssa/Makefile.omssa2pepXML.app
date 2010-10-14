@@ -1,6 +1,8 @@
 #
 # Makefile:  /Users/slotta/NCBI/omssa2pepXML/Makefile.omssa2pepXML_app
 
+WATCHERS = lewisg gorelenk
+
 APP = omssa2pepXML
 SRC = omssa2pepXML
 

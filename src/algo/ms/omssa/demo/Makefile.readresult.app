@@ -4,6 +4,8 @@
 # Build application "omssacl"
 #################################
 
+WATCHERS = lewisg gorelenk
+
 APP = readresult
 
 SRC = readresult

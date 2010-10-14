@@ -4,6 +4,8 @@
 # Build application "omssacl"
 #################################
 
+WATCHERS = lewisg gorelenk
+
 CXXFLAGS = $(FAST_CXXFLAGS) $(CMPRS_INCLUDE) $(STATIC_CXXFLAGS)
 
 LDFLAGS  = $(FAST_LDFLAGS) $(STATIC_LDFLAGS) $(RUNPATH_ORIGIN)

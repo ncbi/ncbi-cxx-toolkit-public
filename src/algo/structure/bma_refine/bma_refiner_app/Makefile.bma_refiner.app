@@ -1,6 +1,8 @@
 # $Id$
 #################################
 
+WATCHERS = lanczyck
+
 APP = bma_refiner
 
 SRC = bma_refiner
