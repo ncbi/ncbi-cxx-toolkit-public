@@ -259,7 +259,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->timeout->usec = (unsigned int)
             ((dbl - info->timeout->sec) * 1000000.0);
     } else
-        info->timeout = kInfiniteTimeout;
+        info->timeout = 0/*kInfiniteTimeout*/;
 
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
