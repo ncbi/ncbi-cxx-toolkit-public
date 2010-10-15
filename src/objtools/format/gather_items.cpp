@@ -1120,9 +1120,12 @@ void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs ) const
     CRef<CSourceFeatureItem> focus = srcs.front();
     const CSeq_loc & focus_seq_loc = focus->GetLoc();
 
+    auto_ptr<CSeq_loc> copyOfOriginalSeqLocOfFocus( new CSeq_loc() );
+    copyOfOriginalSeqLocOfFocus->Assign( focus_seq_loc );
+
     // check if focus is completely contained inside any other source.
     // In that case, we don't do the location subtraction from focus.
-    ITERATE( TSourceFeatSet, it, srcs ) {
+    /* ITERATE( TSourceFeatSet, it, srcs ) {
         if (it != srcs.begin()) {
             const sequence::ECompare comparison =
                 sequence::Compare( focus_seq_loc, (*it)->GetLoc(), &m_Current->GetScope() );
@@ -1130,13 +1133,19 @@ void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs ) const
                 return;
             }
         }
-    }
+    } */
 
     // subtract non-focus locations from the original focus
     NON_CONST_ITERATE(TSourceFeatSet, it, srcs) {
         if (it != srcs.begin()) {
             focus->Subtract(**it, m_Current->GetScope());
         }
+    }
+
+    // if we subtract into nothing, restore the original
+    if( focus->GetLoc().GetTotalRange().GetLength() == 0 ) {
+        focus->SetLoc( *copyOfOriginalSeqLocOfFocus );
+        copyOfOriginalSeqLocOfFocus.release();
     }
 }
 

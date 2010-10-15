@@ -1016,12 +1016,38 @@ void CReferenceItem::x_CleanData(void)
     StripSpaces(m_Title);   // internal spaces
     ConvertQuotes(m_Title);
     s_RemovePeriod(m_Title);
-    if( ! m_Title.empty() ) {
-        m_Title[0] = toupper( m_Title[0] ); // capitalize the title
-    }
+    x_CapitalizeTitleIfNecessary();
     // remark
     ConvertQuotes(m_Remark);
     ExpandTildes(m_Remark, eTilde_newline);
+}
+
+void CReferenceItem::x_CapitalizeTitleIfNecessary()
+{
+    if( ! GetPubdesc().CanGetPub() ) {
+        return;
+    }
+
+    if( ! GetPubdesc().GetPub().CanGet() ) {
+        return;
+    }
+
+    ITERATE ( CPubdesc::TPub::Tdata, it, GetPubdesc().GetPub().Get() ) {
+        const CPub& pub = **it;
+
+        switch( pub.Which() ) {
+            case CPub::e_Proc:
+            case CPub::e_Man:
+                if(  ! m_Title.empty() ) {
+                    m_Title[0] = toupper( m_Title[0] ); // capitalize the title
+                    return;
+                }
+                break;
+            default:
+                // do nothing
+                break;
+        }
+    }
 }
 
 

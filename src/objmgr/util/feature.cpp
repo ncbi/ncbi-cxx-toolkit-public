@@ -282,8 +282,8 @@ static void s_GetRnaRefLabel
         if (feat.CanGetQual()  &&
             (tmp_label == "ncRNA"  ||  tmp_label == "tmRNA"
              ||  tmp_label == "misc_RNA")) {
-			const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-			ITERATE( CSeq_feat::TQual, q, qual ) {
+            const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+            ITERATE( CSeq_feat::TQual, q, qual ) {
                 if ((*q)->GetQual() == "product") {
                     tmp_label = (*q)->GetVal();
                     break;
@@ -419,7 +419,7 @@ static bool s_GetImpLabel
             if (feat.IsSetQual()) {
                 // Loop thru the feature qualifiers
                 const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-				ITERATE( CSeq_feat::TQual, it, qual ) {
+                ITERATE( CSeq_feat::TQual, it, qual ) {
                     // If qualifier qual is rpt_family append qualifier val
                     if (NStr::EqualNocase((*it)->GetQual(),"rpt_family")) { 
                         *tlabel += (*it)->GetVal();
@@ -436,8 +436,8 @@ static bool s_GetImpLabel
         // else if the key is STS
         } else if (NStr::EqualNocase(key, "STS")) {
             if (feat.IsSetQual()) {
-				const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-				ITERATE( CSeq_feat::TQual, it, qual ) {
+                const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+                ITERATE( CSeq_feat::TQual, it, qual ) {
                     if (NStr::EqualNocase((*it)->GetQual(),"standard_name"))
                     { 
                            *tlabel = (*it)->GetVal();
@@ -467,28 +467,28 @@ static bool s_GetImpLabel
                 // "standard_name", "function", "number", any and
                 // append to tlabel and return if found
                 const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-				ITERATE( CSeq_feat::TQual, it, qual ) {
+                ITERATE( CSeq_feat::TQual, it, qual ) {
                     if (NStr::EqualNocase((*it)->GetQual(),"standard_name")) {
                         *tlabel += (*it)->GetVal();
                         return false;
                     }
                 }
-				const CSeq_feat_Base::TQual & qual2 = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-				ITERATE( CSeq_feat::TQual, it, qual2 ) {
+                const CSeq_feat_Base::TQual & qual2 = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+                ITERATE( CSeq_feat::TQual, it, qual2 ) {
                     if (NStr::EqualNocase((*it)->GetQual(), "function")) {
                         *tlabel += (*it)->GetVal();
                         return false;
                     }
                 }
                 const CSeq_feat_Base::TQual & qual3 = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-				ITERATE( CSeq_feat::TQual, it, qual3 ) {
+                ITERATE( CSeq_feat::TQual, it, qual3 ) {
                     if (NStr::EqualNocase((*it)->GetQual(), "number")) {
                         *tlabel += (*it)->GetVal();
                         return false;
                     }
                 }
                 const CSeq_feat_Base::TQual & qual4 = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-				ITERATE( CSeq_feat::TQual, it, qual4 ) {
+                ITERATE( CSeq_feat::TQual, it, qual4 ) {
                     *tlabel += (*it)->GetVal();
                     return false;
                 }
@@ -635,7 +635,7 @@ void s_GetContentLabel
     if (feat.IsSetQual()) {
         string prefix("/");
         const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-		ITERATE( CSeq_feat::TQual, it, qual ) {
+        ITERATE( CSeq_feat::TQual, it, qual ) {
             tlabel += prefix + (**it).GetQual();
             prefix = " ";
             if (!(**it).GetVal().empty()) {

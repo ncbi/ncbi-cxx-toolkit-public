@@ -79,7 +79,8 @@ public:
                   CSeq_id_Handle    dst_id,
                   TSeqPos           dst_from,
                   ENa_strand        dst_strand,
-                  bool              ext_to = false);
+                  bool              ext_to = false,
+                  int               frame = 0);
 
     /// Check if the id is on the source sequence.
     bool GoodSrcId(const CSeq_id& id) const;
@@ -138,6 +139,8 @@ private:
     // partial 'to' set through the fuzz and the mapped range is
     // just 1 or 2 bases shorter than the mapping destination.
     bool                m_ExtTo;
+    // Holds the frame shift (0 if none) of the underlying CDS (if any).
+    int                 m_Frame;
     // Group of mapping ranges - used with alignments, e.g. to group
     // mapped ranges by exon.
     int                 m_Group;
@@ -187,7 +190,8 @@ public:
                                       CSeq_id_Handle    dst_id,
                                       TSeqPos           dst_from,
                                       ENa_strand        dst_strand,
-                                      bool              ext_to = false);
+                                      bool              ext_to = false,
+                                      int               frame = 0 );
 
     /// Get mapping ranges iterator for the given seq-id and range.
     TRangeIterator BeginMappingRanges(CSeq_id_Handle id,
@@ -475,7 +479,8 @@ protected:
                             TSeqPos&         dst_len,
                             ENa_strand       dst_strand,
                             const CInt_fuzz* fuzz_from = 0,
-                            const CInt_fuzz* fuzz_to = 0);
+                            const CInt_fuzz* fuzz_to = 0,
+                            int              frame = 0);
 
     // Add new CMappingRange. This includes collecting all synonyms for the id,
     // creating a new mapping for each of them and updating the destination
@@ -487,7 +492,8 @@ protected:
                          TSeqPos        dst_start,
                          ENa_strand     dst_strand,
                          TSeqPos        length,
-                         bool           ext_right);
+                         bool           ext_right,
+                         int            frame );
 
     // Parse and map the seq-loc.
     void x_MapSeq_loc(const CSeq_loc& src_loc);

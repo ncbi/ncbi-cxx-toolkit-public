@@ -188,7 +188,8 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
                              CSeq_id_Handle     dst_id,
                              TSeqPos            dst_from,
                              ENa_strand         dst_strand,
-                             bool               ext_to)
+                             bool               ext_to,
+                             int                frame )
     : m_Src_id_Handle(src_id),
       m_Src_from(src_from),
       m_Src_to(src_from + src_length - 1),
@@ -198,6 +199,7 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
       m_Dst_strand(dst_strand),
       m_Reverse(!SameOrientation(src_strand, dst_strand)),
       m_ExtTo(ext_to),
+      m_Frame(frame),
       m_Group(0)
 {
     return;
@@ -243,6 +245,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
     // - destination interval has partial "to" (m_ExtTo)
     // - interval to be mapped has partial "to"
     // - destination range is 1 or 2 bases beyond the end of the source range
+    const int frame_shift = ( (m_Frame > 1) ? (m_Frame - 1) : 0 );
     if ( m_ExtTo ) {
         bool partial_to = false;
         if (!m_Reverse) {
@@ -253,17 +256,41 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
             partial_to = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
                 fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
         }
-        if (to < m_Src_to  &&  m_Src_to - to < 3) {
+        // !!! TODO: what about the minus strand?
+        if ( partial_to && (to < m_Src_to) &&  (m_Src_to + frame_shift - to < 3) ) {
             to = m_Src_to;
         }
     }
+
+    // If we're partial on the left and we're not at the beginning only because of 
+    // frame shift, we shift back to the beginning when mapping.
+    // example accession: AJ237662.1
+    bool partial_from = false; // Are we fuzzy at the beginning?
     if (!m_Reverse) {
-        return TRange(Map_Pos(max(from, m_Src_from)),
-            Map_Pos(min(to, m_Src_to)));
+        partial_from = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
+            fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
+    } else {
+        partial_from = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
+            fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
+    }
+
+    from = max(from, m_Src_from);
+    to = min(to, m_Src_to);
+
+    if (!m_Reverse) {
+        TRange ret(Map_Pos(from), Map_Pos(to));
+        // extend to beginning if necessary
+        // example accession that triggers this if: AJ237662.1
+        if( (frame_shift > 0) && (from == 0) && (m_Src_from == 0) && (m_Dst_from == frame_shift) ) {
+            ret.SetFrom( 0 );
+        }
+        return ret;
     }
     else {
-        return TRange(Map_Pos(min(to, m_Src_to)),
-            Map_Pos(max(from, m_Src_from)));
+        TRange ret(Map_Pos(to), Map_Pos(from));
+        // extend to beginning if necessary
+        // !!! TODO need to test this case with the left extension
+        return ret;
     }
 }
 
@@ -413,12 +440,13 @@ CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
                               CSeq_id_Handle    dst_id,
                               TSeqPos           dst_from,
                               ENa_strand        dst_strand,
-                              bool              ext_to)
+                              bool              ext_to,
+                              int               frame)
 {
     CRef<CMappingRange> cvt(new CMappingRange(
         src_id, src_from, src_length, src_strand,
         dst_id, dst_from, dst_strand,
-        ext_to));
+        ext_to, frame));
     AddConversion(cvt);
     return cvt;
 }
@@ -839,7 +867,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         x_NextMappingRange(
             src_it.GetSeq_id(), src_start, src_len, src_it.GetStrand(),
             dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand(),
-            dst_it.GetFuzzFrom(), dst_it.GetFuzzTo());
+            dst_it.GetFuzzFrom(), dst_it.GetFuzzTo(), frame );
         // If the whole source or destination range was used, increment the
         // iterator.
         // This part may not work correctly if whole locations are
@@ -1953,7 +1981,8 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
                                               TSeqPos&         dst_len,
                                               ENa_strand       dst_strand,
                                               const CInt_fuzz* fuzz_from,
-                                              const CInt_fuzz* fuzz_to)
+                                              const CInt_fuzz* fuzz_to,
+                                              int              frame)
 {
     TSeqPos cvt_src_start = src_start;
     TSeqPos cvt_dst_start = dst_start;
@@ -2041,7 +2070,7 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
     }
     // Ready to add the conversion.
     x_AddConversion(src_id, cvt_src_start, src_strand,
-        dst_id, cvt_dst_start, dst_strand, cvt_length, ext_to);
+        dst_id, cvt_dst_start, dst_strand, cvt_length, ext_to, frame );
 }
 
 
@@ -2052,7 +2081,8 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
                                            TSeqPos        dst_start,
                                            ENa_strand     dst_strand,
                                            TSeqPos        length,
-                                           bool           ext_right)
+                                           bool           ext_right,
+                                           int            frame)
 {
     // Make sure the destination ranges for the strand do exist.
     if (m_DstRanges.size() <= size_t(dst_strand)) {
@@ -2066,7 +2096,7 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
         CRef<CMappingRange> rg = m_Mappings->AddConversion(
             *syn_it, src_start, length, src_strand,
             CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
-            ext_right);
+            ext_right, frame );
         if ( m_CurrentGroup ) {
             rg->SetGroup(m_CurrentGroup);
         }

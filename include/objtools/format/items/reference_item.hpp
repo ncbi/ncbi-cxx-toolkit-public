@@ -187,6 +187,7 @@ private:
     void x_CreateUniqueStr(void) const;
     void x_CleanData(void);
     bool x_Matches(const CPub& pub) const;
+    void x_CapitalizeTitleIfNecessary(void);
 
     // data
     TPubType              m_PubType;
