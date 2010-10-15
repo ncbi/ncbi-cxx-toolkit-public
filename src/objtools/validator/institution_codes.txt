@@ -5589,6 +5589,11 @@ TTY	s	Westonbirt School
 TU<DEU>	s	Institut fur Geologie und Palaontologie
 TU<EST>	s	University of Tartu
 TU<USA-LA>	s	Tulane University, Museum of Natural History
+TU<USA-LA>:Birds	s	Tulane University, Museum of Natural History, Ornithological Collection
+TU<USA-LA>:Fish	s	Tulane University, Museum of Natural History, Fish Collection
+TU<USA-LA>:Herptiles	s	Tulane University, Museum of Natural History, Amphibian And Reptile Collection
+TU<USA-LA>:Invertebrates	s	Tulane University, Museum of Natural History, Invertebrate Collection
+TU<USA-LA>:Mammals	s	Tulane University, Museum of Natural History, Mammal Collection
 TUAT	s	Tokyo University of Agriculture
 TUB	s	Eberhard-Karls-Universitaet Tuebingen, Institut fuer Biologie I
 TUBSB	b	Tohoku University Brassica Seed Bank
