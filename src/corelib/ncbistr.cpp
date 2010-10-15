@@ -2775,6 +2775,77 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 }
 
 
+list<string>& NStr::Justify(const string& str,
+                            SIZE_TYPE     width,
+                            list<string>& par,
+                            const string* pfx,
+                            const string* pfx1)
+{
+    if (!pfx)
+        pfx = &kEmptyStr;
+    const string* p = pfx1 ? pfx1 : pfx ;
+
+    SIZE_TYPE pos = 0;
+    for (SIZE_TYPE len = p->size();  pos < str.size();  len = p->size()) {
+        list<CTempString> words;
+        unsigned int nw = 0;  // How many words are there in the line
+        bool stop = false;
+        bool big = false;
+        do {
+            while (pos < str.size()) {
+                if (!isspace((unsigned char) str[pos]))
+                    break;
+                ++pos;
+            }
+            SIZE_TYPE start = pos;
+            while (pos < str.size()) {
+                if ( isspace((unsigned char) str[pos]))
+                    break;
+                ++pos;
+            }
+            SIZE_TYPE wlen = pos - start;
+            if (!wlen)
+                break;
+            if (len + wlen + nw >= width) {
+                if (p->size() + wlen > width)
+                    big = true;  // Long line with a long lonely word :-/
+                if (nw) {
+                    pos = start; // Will have to rescan this word again
+                    break;
+                }
+                stop = true;
+            }
+            words.push_back(CTempString(str, start, wlen));
+            len += wlen;
+            ++nw;
+        } while (!stop);
+        if (!nw)
+            break;
+        SIZE_TYPE space;
+        if (nw > 1) {
+            if (pos < str.size()  &&  len < width  &&  !big) {
+                space = (width - len) / (nw - 1);
+                nw    = (width - len) % (nw - 1);
+            } else {
+                space = 1;
+                nw    = 0;
+            }
+        } else
+            space = 0;
+        par.push_back(*p);
+        unsigned int n = 0;
+        ITERATE(list<CTempString>, w, words) {
+            if (n)
+                par.back().append(space + (n <= nw ? 1 : 0) , ' ');
+            par.back().append(w->data(), w->size());
+            ++n;
+        }
+        p = pfx;
+    }
+    return par;
+}
+
+
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str)
 {

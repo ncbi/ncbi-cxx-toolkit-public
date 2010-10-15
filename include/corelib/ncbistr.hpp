@@ -1829,6 +1829,34 @@ public:
                                   const string& prefix,
                                   const string& prefix1);
 
+
+    /// Justify the specified string into a series of lines of the same width.
+    ///
+    /// Split string "str" into a series of lines, all of which are to
+    //  be "width" characters wide (by adding extra inner spaces between
+    /// words), and store the resulting lines in the list "par".  Normally,
+    /// all lines in "par" will begin with "pfx" (counted against "width"),
+    /// but the first line will instead begin with "pfx1" if provided.
+    ///
+    static list<string>& Justify(const string& str,
+                                 SIZE_TYPE     width,
+                                 list<string>& par,
+                                 const string* pfx  = 0,
+                                 const string* pfx1 = 0);
+
+    static list<string>& Justify(const string& str,
+                                 SIZE_TYPE     width,
+                                 list<string>& par,
+                                 const string& pfx,
+                                 const string* pfx1 = 0);
+
+    static list<string>& Justify(const string& str,
+                                 SIZE_TYPE     width,
+                                 list<string>& par,
+                                 const string& pfx,
+                                 const string& pfx1);
+
+
     /// Search for a field
     ///
     /// @param str
@@ -3307,7 +3335,6 @@ size_t NStr::strftime(char* s, size_t maxsize, const char* format,
     return ::strftime(s, maxsize, x_format.c_str(), timeptr);
 }
 
-
 inline
 int NStr::CompareCase(const char* s1, const char* s2)
 {
@@ -3533,13 +3560,11 @@ const string* NStr::FindNoCase(const vector <string>& vec, const CTempString& va
     return Find(vec, val, eNocase);
 }
 
-
 inline
 string NStr::CEncode(const CTempString& str)
 {
     return PrintableString(str);
 }
-
 
 inline
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
@@ -3549,7 +3574,6 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
     return Wrap(str, width, arr, flags, &prefix, prefix1);
 }
 
-
 inline
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
                          NStr::TWrapFlags flags, const string& prefix,
@@ -3557,7 +3581,6 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
 {
     return Wrap(str, width, arr, flags, &prefix, &prefix1);
 }
-
 
 inline
 list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
@@ -3568,7 +3591,6 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
     return WrapList(l, width, delim, arr, flags, &prefix, prefix1);
 }
 
-
 inline
 list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                              const string& delim, list<string>& arr,
@@ -3576,6 +3598,22 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                              const string& prefix1)
 {
     return WrapList(l, width, delim, arr, flags, &prefix, &prefix1);
+}
+
+inline
+list<string>& NStr::Justify(const string& str, SIZE_TYPE width,
+                            list<string>& par, const string& pfx,
+                            const string* pfx1)
+{
+    return Justify(str, width, par, &pfx, pfx1);
+}
+
+inline
+list<string>& NStr::Justify(const string& str, SIZE_TYPE width,
+                            list<string>& par, const string& pfx,
+                            const string& pfx1)
+{
+    return Justify(str, width, par, &pfx, &pfx1);
 }
 
 
@@ -3621,7 +3659,6 @@ basic_string<TChar> CStringUTF8::AsBasicString(
     }
     return result;
 }
-
 
 template <typename TChar>
 inline
