@@ -420,40 +420,14 @@ xml::attributes::iterator xml::node::find_attribute (const char* name,
                                                      const ns* nspace) {
     if (!name)
         throw xml::exception("Bad attribute name");
-    xml::attributes& attrs = get_attributes();
-    xml::attributes::iterator k = attrs.begin();
-    xml::attributes::iterator end = attrs.end();
-    for ( ; k != end; ++k ) {
-        if (strcmp(k->get_name(), name) == 0) {
-            if (nspace) {
-                if (k->get_namespace() == *nspace)
-                    return k;
-                continue;
-            }
-            return k;
-        }
-    }
-    return k;
+    return get_attributes().find(name, nspace);
 }
 //####################################################################
 xml::attributes::const_iterator xml::node::find_attribute (const char* name,
                                                            const ns* nspace) const {
     if (!name)
         throw xml::exception("Bad attribute name");
-    const xml::attributes& attrs = get_attributes();
-    xml::attributes::const_iterator k = attrs.begin();
-    xml::attributes::const_iterator end = attrs.end();
-    for ( ; k != end; ++k ) {
-        if (strcmp(k->get_name(), name) == 0) {
-            if (nspace) {
-                if (k->get_namespace() == *nspace)
-                    return k;
-                continue;
-            }
-            return k;
-        }
-    }
-    return k;
+    return get_attributes().find(name, nspace);
 }
 //####################################################################
 xml::ns xml::node::get_namespace (xml::ns::ns_safety_type type) const {
