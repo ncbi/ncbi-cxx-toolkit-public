@@ -1,3 +1,5 @@
+WATCHERS = lavr
+
 ASN_DEP = entrez2
 
 LIB = entrez2cli

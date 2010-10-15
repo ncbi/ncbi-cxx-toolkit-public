@@ -1,3 +1,5 @@
+WATCHERS = jcherry
+
 ASN_DEP = remap
 
 LIB = remapcli
