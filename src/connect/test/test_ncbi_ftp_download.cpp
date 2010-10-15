@@ -26,7 +26,8 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Special FTP download test
+ *   Special FTP download test for demonstration of streaming
+ *   and callback capabilities of various Toolkit classes.
  *
  */
 
@@ -67,38 +68,231 @@ static void s_Interrupt(int /*signo*/)
 
 class CDownloadCallbackData {
 public:
-    CDownloadCallbackData(size_t size = 0)
-        : m_Sw(CStopWatch::eStart), m_Size(size)
-    { memset(&m_Cb, 0, sizeof(m_Cb)); }
+    CDownloadCallbackData(const char* filename, Uint8 size = 0)
+        : m_Sw(CStopWatch::eStart), m_Size(size), m_Filename(filename)
+    {
+        memset(&m_Cb, 0, sizeof(m_Cb));
+        m_Current = pair<string,Uint8>(kEmptyStr, 0);
+    }
 
-    // Connection callback support
-    SCONN_Callback*       CB(void)        { return &m_Cb;          }
-    size_t           GetSize(void) const  { return m_Size;         }
-    void             SetSize(size_t size) { m_Size = size;         }
-    double        GetElapsed(void) const  { return m_Sw.Elapsed(); }
+    SCONN_Callback *       CB(void)        { return &m_Cb;          }
+    size_t            GetSize(void) const  { return m_Size;         }
+    void              SetSize(size_t size) { m_Size = size;         }
+    double         GetElapsed(void) const  { return m_Sw.Elapsed(); }
+    const string& GetFilename(void) const  { return m_Filename;     }
 
-    // Tar callback support
-    void                  Append(const CTarEntryInfo* current = 0);
-    const CTar::TEntries& Filelist(void) const { return m_Filelist; }
+    void                  Append(const CTar::TFile* current = 0);
+    const CTar::TFiles& Filelist(void) const { return m_Filelist; }
 
 private:
     CStopWatch     m_Sw;
     SCONN_Callback m_Cb;
-    size_t         m_Size;
-    CTarEntryInfo  m_Current;
-    CTar::TEntries m_Filelist;
+    Uint8          m_Size;
+    CTar::TFile    m_Current;
+    const string   m_Filename;
+    CTar::TFiles   m_Filelist;
 };
 
 
-void CDownloadCallbackData::Append(const CTarEntryInfo* current)
+
+void CDownloadCallbackData::Append(const CTar::TFile* current)
 {
-    if (m_Current.GetName().empty()) {
+    if (m_Current.first.empty()) {
         // First time
         _ASSERT(m_Filelist.empty());
     } else {
         m_Filelist.push_back(m_Current);
     }
-    m_Current = current ? *current : CTarEntryInfo();
+    m_Current = current ? *current : pair<string,Uint8>(kEmptyStr, 0);
+}
+
+
+class CTarCheckpointed : public CTar {
+public:
+    CTarCheckpointed(istream& is, CDownloadCallbackData* dlcbdata)
+        : CTar(is), m_Dlcbdata(dlcbdata)
+    { }
+
+protected:
+    virtual bool Checkpoint(const CTarEntryInfo& current, bool /**/) const
+    {
+        if (!m_Dlcbdata)
+            return false;
+        cerr.flush();
+        cout << current << endl;
+        TFile file(current.GetName(), current.GetSize());
+        m_Dlcbdata->Append(&file);
+        return true;
+    }
+
+private:
+    CDownloadCallbackData* m_Dlcbdata;
+};
+
+
+class CProcessor
+{
+public:
+    virtual         ~CProcessor() { }
+
+    virtual size_t   Run       (void) = 0;
+    virtual void     Stop      (void) = 0;
+    virtual istream* GetIStream(void) const { return m_Stream; }
+
+protected:
+    CProcessor(CProcessor* prev, istream* isp, CDownloadCallbackData* dlcbdata)
+        : m_Prev(prev), m_Stream(isp),
+          m_Dlcbdata(dlcbdata ? dlcbdata : prev ? prev->m_Dlcbdata : 0)
+    { }
+
+    CProcessor*            m_Prev;
+    istream*               m_Stream;
+    CDownloadCallbackData* m_Dlcbdata;
+};
+
+
+class CNullProcessor : public CProcessor
+{
+public:
+    CNullProcessor(istream& input,   CDownloadCallbackData* dlcbdata = 0)
+        : CProcessor(0, &input, dlcbdata)
+    { }
+    CNullProcessor(CProcessor& prev, CDownloadCallbackData* dlcbdata = 0)
+        : CProcessor(&prev, 0, dlcbdata)
+    { }
+    ~CNullProcessor() { Stop(); }
+
+    size_t Run (void);
+    void   Stop(void) { m_Stream = 0; delete m_Prev; m_Prev = 0; }
+};
+
+
+class CDirProcessor : public CNullProcessor
+{
+public:
+    CDirProcessor(CProcessor& prev, CDownloadCallbackData* dlcbdata = 0)
+        : CNullProcessor(prev, dlcbdata)
+    { m_Stream = m_Prev->GetIStream(); }
+    ~CDirProcessor() { Stop(); }
+
+    size_t           Run       (void);
+    virtual istream* GetIStream(void) const { return 0; }
+};
+
+
+class CGunzipProcessor : public CNullProcessor
+{
+public:
+    CGunzipProcessor(CProcessor&            prev,
+                     CDownloadCallbackData* dlcbdata = 0);
+    ~CGunzipProcessor() { Stop(); }
+
+    void   Stop(void);
+};
+
+
+class CUntarProcessor : public CProcessor
+{
+public:
+    CUntarProcessor(CProcessor& prev, CDownloadCallbackData* dlcbdata = 0);
+    ~CUntarProcessor() { Stop(); }
+
+    size_t Run (void);
+    void   Stop(void);
+
+private:
+    CTar* m_Tar;
+};
+
+
+size_t CNullProcessor::Run(void)
+{
+    if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata)
+        return 0;
+    Uint8 filesize = 0;
+    do {
+        static char buf[10240];
+        m_Stream->read(buf, sizeof(buf));
+        filesize += m_Stream->gcount();
+    } while (*m_Stream);
+    CTar::TFile file = make_pair(m_Dlcbdata->GetFilename(), filesize);
+    m_Dlcbdata->Append(&file);
+    return 1;
+}
+
+
+size_t CDirProcessor::Run(void)
+{
+    if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata)
+        return 0;
+    auto_ptr<CTar::TEntries> filelist;
+    size_t n = 0;
+    do {
+        string line;
+        getline(*m_Stream, line);
+        if (!line.empty()  &&  NStr::EndsWith(line, '\r'))
+            line.resize(line.size() - 1);
+        if (!line.empty()) {
+            cerr.flush();
+            cout << left << setw(60) << line << endl;
+            CTar::TFile file = make_pair(line, 0);
+            m_Dlcbdata->Append(&file);
+            n++;
+        }
+    } while (*m_Stream);
+    return n;
+}
+
+
+CGunzipProcessor::CGunzipProcessor(CProcessor&            prev,
+                                   CDownloadCallbackData* dlcbdata)
+    : CNullProcessor(prev, dlcbdata)
+{
+    istream* isp = m_Prev->GetIStream();
+    // Build on-the-fly ungzip stream on top of another stream
+    m_Stream =
+        isp ? new CDecompressIStream(*isp, CCompressStream::eGZipFile) : 0;
+}
+
+
+void CGunzipProcessor::Stop(void)
+{
+    delete m_Stream;
+    m_Stream = 0;
+    delete m_Prev;
+    m_Prev = 0;
+}
+
+
+CUntarProcessor::CUntarProcessor(CProcessor&            prev,
+                                 CDownloadCallbackData* dlcbdata)
+    : CProcessor(&prev, 0, dlcbdata)
+{
+    istream* isp = m_Prev->GetIStream();
+    // Build streaming [un]tar on top of another stream
+    m_Tar = isp ? new CTarCheckpointed(*isp, m_Dlcbdata) : 0;
+}
+
+
+size_t CUntarProcessor::Run(void)
+{
+    if (!m_Tar)
+        return 0;
+    auto_ptr<CTar::TEntries> filelist;
+    try {
+        // NB: CTar *loves* exceptions, for some weird reason :-/
+        filelist = m_Tar->List();  // can be tar.Extract() as well
+    } NCBI_CATCH_ALL("TAR Error");
+    return filelist.get() ? filelist->size() : 0;
+}
+
+
+void CUntarProcessor::Stop(void)
+{
+    delete m_Tar;
+    m_Tar = 0;
+    delete m_Prev;
+    m_Prev = 0;
 }
 
 
@@ -120,16 +314,17 @@ static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
     CDownloadCallbackData* dlcbdata
         = reinterpret_cast<CDownloadCallbackData*>(data);
 
-    size_t size = dlcbdata->GetSize();
+    Uint8 size = dlcbdata->GetSize();
     if (!size) {
-        size = (size_t) val;
+        size = val;
         ERR_POST(Info << "Got file size in "
                  << CTempString(cmd, 4) << " command: "
-                 << size << " byte" << &"s"[size == 1]);
+                 << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]);
         dlcbdata->SetSize(size);
-    } else if (size != (size_t) val) {
+    } else if (size != val) {
         ERR_POST(Fatal << "File size " << arg << " in "
-                 << CTempString(cmd, 4) << " command mismatches " << size);
+                 << CTempString(cmd, 4) << " command mismatches "
+                 << NStr::UInt8ToString(size));
     } else {
         ERR_POST(Info << "File size " << arg << " in "
                  << CTempString(cmd, 4) << " command matches");
@@ -148,8 +343,8 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
 
     CDownloadCallbackData* dlcbdata
         = reinterpret_cast<CDownloadCallbackData*>(data);
-    size_t pos  = CONN_GetPosition(conn, eIO_Read);
-    size_t size = dlcbdata->GetSize();
+    Uint8  pos  = CONN_GetPosition(conn, eIO_Read);
+    Uint8  size = dlcbdata->GetSize();
     double time = dlcbdata->GetElapsed();
 
     if (type == eCONN_OnClose) {
@@ -172,12 +367,14 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
 
     cout.flush();
     if (!size) {
-        cerr << "Downloaded " << pos << "/unknown"
+        cerr << "Downloaded " << NStr::UInt8ToString(pos)
+             << "/unknown"
             " in " << fixed << setprecision(2) << time
              << left << setw(16) << 's' << '\r' << flush;
     } else {
         double percent = (pos * 100.0) / size;
-        cerr << "Downloaded " << pos << '/' << size
+        cerr << "Downloaded " << NStr::UInt8ToString(pos)
+             << '/' << NStr::UInt8ToString(size)
              << " (" << fixed << setprecision(2) << percent << "%)"
             " in " << fixed << setprecision(2) << time;
         if (time) {
@@ -197,37 +394,29 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
 }
 
 
-class CTarCheckpointed : public CTar {
-public:
-    CTarCheckpointed(istream& is, CDownloadCallbackData* dlcbdata)
-        : CTar(is), m_DlCbData(dlcbdata) { }
-
-protected:
-    virtual bool Checkpoint(const CTarEntryInfo& current, bool /**/) const
-    {
-        m_DlCbData->Append(&current);
-        cerr.flush();
-        cout << current << endl;
-        return true;
-    }
-
-private:
-    CDownloadCallbackData* m_DlCbData;
-};
-
-
 static void s_TryGetFtpFilesize(iostream& ios, const char* filename)
 {
     _DEBUG_ARG(size_t testval);
     _VERIFY(ios << "SIZE " << filename << endl);
+    // If the SIZE command is not understood, the file size can
+    // be captured at download start (RETR) if reported by the server
+    // in a compatible format (there's callback set for that, too).
     _ASSERT(!(ios >> testval));  //  NB: we're getting a callback instead
     ios.clear();
 }
 
 
-static void s_InitiateFtpFileDownload(iostream& ios, const char* filename)
+static void s_InitiateFtpRetrieval(CConn_IOStream& s,
+                                   const char*     name,
+                                   const STimeout* timeout)
 {
-    ios << "RETR " << filename << endl;
+    // RETR must be understood by all FTP implementations
+    const char* cmd = NStr::EndsWith(name, '/') ? "LIST " : "RETR ";
+    s << cmd << name << endl;
+    EIO_Status status = CONN_Wait(s.GetCONN(), eIO_Read, timeout);
+    _ASSERT(status != eIO_InvalidArg);
+    if (status != eIO_Success)
+        s.clear(IOS_BASE::badbit);
 }
 
 
@@ -238,13 +427,22 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
+    typedef enum {
+        fProcessor_Null   = 0,  // Discard read data
+        fProcessor_List   = 4,  // List files line-by-line
+        fProcessor_Untar  = 1,  // Decompress then discard read data
+        fProcessor_Gunzip = 2   // Untar then discard read data
+    } FProcessor;
+    typedef unsigned int TProcessor;
+
     // Setup error posting
+    SetDiagTrace(eDT_Enable);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostLevel(eDiag_Trace);
 
     CONNECT_Init(0);
 
@@ -254,44 +452,77 @@ int main(int argc, const char* argv[])
     }
 
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    net_info->path[0] = '\0';
+    net_info->args[0] = '\0';
+    net_info->http_referer = 0;
+    ConnNetInfo_SetUserHeader(net_info, 0);
 
     if (!ConnNetInfo_ParseURL(net_info, url)) {
         ERR_POST(Fatal << "Cannot parse URL \"" << url << '"');
     }
-    if (net_info->scheme != eURL_Ftp) {
-        ERR_POST(Fatal << "URL scheme must be FTP (ftp://)");
+    if        (net_info->scheme == eURL_Unspec) {
+        if (strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
+            strcpy(net_info->host, "ftp.ncbi.nlm.nih.gov");
+        }
+    } else if (net_info->scheme != eURL_Ftp) {
+        ERR_POST(Fatal << "URL scheme must be FTP (ftp://) if specified");
     }
     if (!*net_info->user) {
         ERR_POST(Warning << "Username not provided, defaulted to `ftp'");
         strcpy(net_info->user, "ftp");
     }
-    CDownloadCallbackData dlcbdata;
+
+    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+
+    TFTP_Flags flags = 0;
+    if      (net_info->debug_printout == eDebugPrintout_Some)
+        flags |= fFTP_LogControl;
+    else if (net_info->debug_printout == eDebugPrintout_Data)
+        flags |= fFTP_LogAll;
+    if      (net_info->req_method == eReqMethod_Get)
+        flags |= fFTP_UsePassive;
+    else if (net_info->req_method == eReqMethod_Post)
+        flags |= fFTP_UseActive;
+    flags     |= fFTP_UseFeatures | fFTP_NotifySize;
+
+    const char* filename = net_info->path;
+    if (net_info->path[0] == '/') {
+        filename += net_info->path[1] ? 1 : 0;
+    }
+
+    CDownloadCallbackData dlcbdata(filename);
     SFTP_Callback ftpcb = { x_FtpCallback, &dlcbdata };
+
     CConn_FtpStream ftp(net_info->host,
                         net_info->user,
                         net_info->pass,
                         kEmptyStr/*path*/,
                         net_info->port,
-                        (net_info->debug_printout
-                         == eDebugPrintout_Data
-                         ? fFTP_LogAll :
-                         net_info->debug_printout
-                         == eDebugPrintout_Some
-                         ? fFTP_LogControl
-                         : 0) | fFTP_UseFeatures | fFTP_NotifySize,
+                        flags,
                         &ftpcb);
 
-    s_TryGetFtpFilesize(ftp, net_info->path);
-    size_t size = dlcbdata.GetSize();
+    TProcessor proc = fProcessor_Null;
+    if        (NStr::EndsWith(filename, ".tgz",    NStr::eNocase) ||
+               NStr::EndsWith(filename, ".tar.gz", NStr::eNocase)) {
+        proc |= fProcessor_Gunzip | fProcessor_Untar;
+    } else if (NStr::EndsWith(filename, ".gz",     NStr::eNocase)) {
+        proc |= fProcessor_Gunzip;
+    } else if (NStr::EndsWith(filename, ".tar",    NStr::eNocase)) {
+        proc |= fProcessor_Untar;
+    } else if (NStr::EndsWith(filename, '/'))
+        proc |= fProcessor_List;
+
+    s_TryGetFtpFilesize(ftp, filename);
+    Uint8 size = dlcbdata.GetSize();
     if (size) {
-        ERR_POST(Info << "Downloading " << net_info->path
+        ERR_POST(Info << "Downloading " << filename
                  << " from " << net_info->host << ", "
-                 << size << " byte" << &"s"[size == 1]);
+                 << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]);
     } else {
-        ERR_POST(Info << "Downloading " << net_info->path
+        ERR_POST(Info << "Downloading " << filename
                  << " from " << net_info->host);
     }
-    s_InitiateFtpFileDownload(ftp, net_info->path);
+    s_InitiateFtpRetrieval(ftp, filename, net_info->timeout);
 
     ConnNetInfo_Destroy(net_info);
 
@@ -308,41 +539,40 @@ int main(int argc, const char* argv[])
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,  &conncb, 0/*dontcare*/);
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose, &conncb, dlcbdata.CB());
 
-    // Build on-the-fly ungzip stream on top of ftp
-    CDecompressIStream is(ftp, CCompressStream::eGZipFile);
-    // Build streaming [un]tar on top of uncompressed data
-    CTarCheckpointed tar(is, &dlcbdata);
+    CProcessor* processor = new CNullProcessor(ftp, &dlcbdata);
+    if (proc & fProcessor_Gunzip)
+        processor = new CGunzipProcessor(*processor);
+    if (proc & fProcessor_Untar)
+        processor = new CUntarProcessor(*processor);
+    if (proc & fProcessor_List)
+        processor = new CDirProcessor(*processor);
 
-    auto_ptr<CTar::TEntries> filelist;
-    try {
-        // NB: CTar *loves* exceptions, for some weird reason :-/
-        filelist = tar.List();  // can be tar.Extract() as well
-    } NCBI_CATCH_ALL("TAR Error");
+    // Process stream data
+    size_t files = processor->Run();
 
     // These should not matter, and can be issued in any order
     ftp.Close();  // ...so do the "wrong" order on purpose to prove it works!
-    tar.Close();
+    delete processor;
 
     // Conclude the test
     Uint8 totalsize = 0;
-    ITERATE(CTar::TEntries, it, dlcbdata.Filelist()) {
-        totalsize += it->GetSize();
+    ITERATE(CTar::TFiles, it, dlcbdata.Filelist()) {
+        totalsize += it->second;
     }
-    size = dlcbdata.Filelist().size();
-    ERR_POST(Info << "Total downloaded "
-             << size << " file" << &"s"[size == 1]
+
+    ERR_POST(Info << "Total downloaded " << dlcbdata.Filelist().size()
+             << " file" << &"s"[dlcbdata.Filelist().size() == 1]
              << " in " << fixed << setprecision(2) << dlcbdata.GetElapsed()
-             << "s; combined file size " << totalsize);
+             << "s; combined file size " << NStr::UInt8ToString(totalsize));
 
     int exitcode;
-    if (!size  ||  !filelist.get()  ||  !filelist->size()) {
+    if (!files  ||  !dlcbdata.Filelist().size()) {
         // Interrupted or an error has occurred
         ERR_POST("Final file list is empty");
         exitcode = 1;
-    } else if (filelist->size() != size) {
+    } else if (files != dlcbdata.Filelist().size()) {
         // NB: It may be so for an "updated" archive...
-        ERR_POST(Warning << "Final file list size mismatch: "
-                 << filelist->size());
+        ERR_POST(Warning << "Final file list size mismatch: " << files);
         exitcode = 1;
     } else {
         exitcode = 0;
