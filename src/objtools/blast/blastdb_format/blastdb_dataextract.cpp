@@ -112,12 +112,19 @@ string CBlastDBExtractor::ExtractPig() {
 }
 
 string CBlastDBExtractor::ExtractGi() {
+    x_SetGi();
+    return (m_Gi ? NStr::IntToString(m_Gi) : "NA");
+}
+
+void CBlastDBExtractor::x_SetGi() {
+    if (m_Gi) return;
     ITERATE(list<CRef<CSeq_id> >, itr, m_Bioseq->GetId()) {
         if ((*itr)->IsGi()) {
-            return NStr::IntToString((*itr)->GetGi());
+            m_Gi = (*itr)->GetGi();
+            return;
         }
     } 
-    return "NA";
+    return;
 }
 
 string CBlastDBExtractor::ExtractLinkoutInteger()
@@ -394,6 +401,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
 
 int CBlastDBExtractor::x_ExtractTaxId() 
 {
+    x_SetGi();
     if (m_Gi) {
         map <int, int> gi2taxid;
         m_BlastDb.GetTaxIDs(m_Oid, gi2taxid);

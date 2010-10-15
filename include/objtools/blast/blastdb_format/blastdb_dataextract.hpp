@@ -147,6 +147,9 @@ private:
         }
         m_Defline = m_BlastDb.GetHdr(m_Oid);
     }
+
+    /// Setting the target_only m_Gi
+    void x_SetGi();
 };
 
 
