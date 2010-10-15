@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = maning camacho
+
 ASN_DEP = xnetblast blastdb
 
 ###  BASIC PROJECT SETTINGS

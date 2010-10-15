@@ -2,6 +2,9 @@
 
 # Build library "xobjsimple"
 ###############################
+
+WATCHERS =  jcherry 
+
 ASN_DEP = seqset
 
 LIB = xobjsimple

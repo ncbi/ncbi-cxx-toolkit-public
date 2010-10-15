@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = thiessen
+
 ASN_DEP = seq cdd ncbimime
 
 SRC = \

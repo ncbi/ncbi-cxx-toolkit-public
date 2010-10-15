@@ -1,4 +1,6 @@
 # $Id$
 
+WATCHERS = camacho
+
 LIB = gene_info
 SRC = gene_info gene_info_reader file_utils

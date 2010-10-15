@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = dicuccio ludwigf
+
 ASN_DEP = seq seqset
 
 LIB = xobjreadex

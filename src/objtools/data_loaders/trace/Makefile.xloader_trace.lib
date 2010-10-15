@@ -3,6 +3,8 @@
 # Build library "xloader_trace"
 ###############################
 
+WATCHERS = vasilche
+
 LIB = ncbi_xloader_trace
 SRC = trace_chgr
 

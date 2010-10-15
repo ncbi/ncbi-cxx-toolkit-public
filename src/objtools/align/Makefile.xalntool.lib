@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = jianye
+
 ASN_DEP = seqset
 
 LIB = xalntool

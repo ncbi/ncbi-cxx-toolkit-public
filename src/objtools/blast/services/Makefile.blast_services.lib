@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = madden camacho maning
+
 ASN_DEP = seq seqset blastdb xnetblast
 
 SRC = blast_services

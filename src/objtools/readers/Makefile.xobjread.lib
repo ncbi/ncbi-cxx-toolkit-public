@@ -1,5 +1,8 @@
 # $Id$
 
+WATCHERS = jcherry sapojnik bollin ludwigf ucko
+
+
 ASN_DEP = seq seqset
 
 LIB = xobjread

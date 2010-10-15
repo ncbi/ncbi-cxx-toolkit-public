@@ -3,6 +3,8 @@
 # Build library "ncbi_xloader_cdd"
 ###############################
 
+WATCHERS = vasilche
+
 LIB = ncbi_xloader_cdd
 SRC = cdd
 
