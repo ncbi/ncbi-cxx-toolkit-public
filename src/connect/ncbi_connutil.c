@@ -251,16 +251,15 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
     len = strlen(str);
-    if (len > 2  &&  len < 9  &&  strncasecmp(str, "infinite", len) == 0) {
-        info->timeout = 0;
-    } else {
+    if (len < 3  ||  8 < len  ||  strncasecmp(str, "infinite", len) != 0) {
         info->timeout = &info->tmo;
         if (!*str  ||  (dbl = atof(str)) < 0.0)
             dbl = DEF_CONN_TIMEOUT;
         info->timeout->sec  = (unsigned int) dbl;
         info->timeout->usec = (unsigned int)
             ((dbl - info->timeout->sec) * 1000000.0);
-    }
+    } else
+        info->timeout = kInfiniteTimeout;
 
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
