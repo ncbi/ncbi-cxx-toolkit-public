@@ -1,5 +1,8 @@
 # $Id$
 
+WATCHERS = jcherry 
+
+
 ASN_DEP = seqset seqtest entrez2
 
 SRC = seqtest xcript_tests prot_prod_tests blastp_tests \

@@ -1,6 +1,8 @@
 # $Id$
 #################################
 
+WATCHERS = thiessen
+
 SRC = thrdalgs thrdatd thrdbwfi thrdcpal thrdcpll thrdcprl \
 	thrdcxei thrddgri thrdrsmp thrdsal0 thrdsalr \
 	thrdsalu thrdsgoi thrdslo0 thrdslor thrdslou \

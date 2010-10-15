@@ -1,2 +1,4 @@
+WATCHERS = slottad
+
 LIB = pepXML
 SRC = pepXML__ pepXML___

@@ -4,6 +4,8 @@
 # Build library "xomssa"
 #################################
 
+WATCHERS = lewisg slottad
+
 ASN_DEP     = blastdb pepXML omssa
 
 # NCBI_C_LIBS =  -lncbitool -lblastcompadj -lncbiobj -lncbi -lncbimmdb

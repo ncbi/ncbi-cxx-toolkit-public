@@ -4,6 +4,8 @@
 #
 ##########################################
 
+WATCHERS = thiessen
+
 REQUIRES = wxWidgets objects
 
 ASN_DEP = cdd

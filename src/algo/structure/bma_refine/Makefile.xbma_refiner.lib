@@ -4,6 +4,9 @@
 #
 ##########################################
 
+WATCHERS = lanczyck 
+
+
 REQUIRES = objects
 
 ASN_DEP = cdd

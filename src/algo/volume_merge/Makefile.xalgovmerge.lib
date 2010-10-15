@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = dicuccio
+
 
 LIB = xalgovmerge
 

@@ -3,6 +3,8 @@
 # Build library "xcd_utils"
 ##################################
 
+WATCHERS = lanczyck cliu 
+
 REQUIRES = objects
 
 ASN_DEP = ncbimime taxon1 id1 blastdb entrez2

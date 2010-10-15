@@ -4,6 +4,8 @@
 # Build library "xstruct_dp"
 #################################
 
+WATCHERS = thiessen
+
 SRC = block_align
 
 LIB = xstruct_dp

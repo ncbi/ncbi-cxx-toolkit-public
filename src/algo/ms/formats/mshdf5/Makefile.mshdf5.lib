@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = slottad
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(HDF5_INCLUDE)
 
 SRC = MsHdf5

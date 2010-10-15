@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = morgulis
+
 ASN_DEP = seqset
 
 LIB = xalgodustmask

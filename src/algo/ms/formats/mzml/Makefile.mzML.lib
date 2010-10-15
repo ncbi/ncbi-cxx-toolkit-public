@@ -1,2 +1,4 @@
+WATCHERS = slottad
+
 LIB = mzML
 SRC = mzML__ mzML___

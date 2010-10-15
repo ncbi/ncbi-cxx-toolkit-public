@@ -1,5 +1,6 @@
 # $Id$
 
+WATCHERS = dicuccio 
 
 LIB = xalgotext
 

@@ -1,5 +1,7 @@
 # $Id$
 
+WATCHERS = jcherry gorelenk
+
 SRC = NNI bNNI bme fastme gme graph heap inputs newickstring traverse
 LIB = fastme
 
