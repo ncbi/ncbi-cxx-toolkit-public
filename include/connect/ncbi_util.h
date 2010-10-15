@@ -490,7 +490,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
  *  Hostname to shorten (if possible)
  * @return 0 if the hostname wasn't modified, otherwise return "hostname".
  */
-extern char* UTIL_NcbiLocalHostName
+extern NCBI_XCONNECT_EXPORT char* UTIL_NcbiLocalHostName
 (char* hostname
  );
 
@@ -505,7 +505,7 @@ extern char* UTIL_NcbiLocalHostName
  * @return the buffer size needed (0 for NULL or empty (size==0) block).
  * @sa UTIL_PrintableString
  */
-extern size_t UTIL_PrintableStringSize
+extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
 (const char* data,
  size_t      size
  );
@@ -532,7 +532,7 @@ extern size_t UTIL_PrintableStringSize
  * @return next position in the buffer past the last stored character.
  * @sa UTIL_PrintableStringSize
  */
-extern char* UTIL_PrintableString
+extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
 (const char* data,
  size_t      size,
  char*       buf,
