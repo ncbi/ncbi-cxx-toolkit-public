@@ -4507,7 +4507,7 @@ extern unsigned short LSOCK_GetPort(LSOCK         lsock,
                                     ENH_ByteOrder byte_order)
 {
     unsigned short port;
-    port = lsock  &&  lsock->sock != SOCK_INVALID ? lsock->port : 0;
+    port = lsock->sock != SOCK_INVALID ? lsock->port : 0;
     return byte_order == eNH_HostByteOrder ? port : htons(port);
 }
 
@@ -5280,6 +5280,8 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
 {
     EIO_Status status;
+    if (!sock)
+        return eIO_InvalidArg;
     if (s_Initialized <= 0) {
         sock->sock = SOCK_INVALID;
         status = eIO_Success;
@@ -5849,6 +5851,8 @@ extern EIO_Status SOCK_Abort(SOCK sock)
 extern EIO_Status SOCK_Status(SOCK      sock,
                               EIO_Event direction)
 {
+    if (!sock)
+        return eIO_InvalidArg;
     switch (direction) {
     case eIO_Open:
     case eIO_Read:
@@ -6767,32 +6771,32 @@ extern EIO_Status DSOCK_SetBroadcast(SOCK sock, int/*bool*/ broadcast)
 
 extern int/*bool*/ SOCK_IsDatagram(SOCK sock)
 {
-    return sock->sock != SOCK_INVALID  &&  sock->type == eDatagram;
+    return sock &&  sock->sock != SOCK_INVALID  &&  sock->type == eDatagram;
 }
 
 
 extern int/*bool*/ SOCK_IsClientSide(SOCK sock)
 {
-    return sock->sock != SOCK_INVALID  &&  sock->side == eSOCK_Client;
+    return sock &&  sock->sock != SOCK_INVALID  &&  sock->side == eSOCK_Client;
 }
 
 
 extern int/*bool*/ SOCK_IsServerSide(SOCK sock)
 {
-    return sock->sock != SOCK_INVALID  &&  sock->side == eSOCK_Server;
+    return sock &&  sock->sock != SOCK_INVALID  &&  sock->side == eSOCK_Server;
 }
 
 
 extern int/*bool*/ SOCK_IsSecure(SOCK sock)
 {
-    return sock->sock != SOCK_INVALID  &&  sock->session;
+    return sock &&  sock->sock != SOCK_INVALID  &&  sock->session;
 }
 
 
 extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 {
 #ifdef NCBI_OS_UNIX
-    return sock->sock != SOCK_INVALID  &&  sock->path[0];
+    return sock &&  sock->sock != SOCK_INVALID  &&  sock->path[0];
 #else
     return 0/*false*/;
 #endif /*NCBI_OS_UNIX*/
