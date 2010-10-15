@@ -306,12 +306,13 @@ public:
 
 
     /// Define a list of entries.
-    typedef list< CTarEntryInfo > TEntries;
+    typedef list<CTarEntryInfo> TEntries;
 
     /// Define a list of files with sizes (directories and specials, such as
     /// devices, must be given with sizes of 0;  symlinks -- with the sizes
     /// of the names they are linking to).
-    typedef list< pair<string, Uint8> > TFiles;
+    typedef pair<string, Uint8> TFile;
+    typedef list<TFile>         TFiles;
 
 
     //------------------------------------------------------------------------
