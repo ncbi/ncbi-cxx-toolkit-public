@@ -230,32 +230,6 @@ private:
                                    string&       reason);
     /// Obtain FW settings or service entries
     void x_ObtainFirewallSettings(CConn_HttpStream& script);
-
-public:
-    /// Helpers
-    static list<string>& Justify(const string& str,
-                                 SIZE_TYPE     width,
-                                 list<string>& par,
-                                 const string* pfx  = 0,
-                                 const string* pfx1 = 0);
-
-    static list<string>& Justify(const string& str,
-                                 SIZE_TYPE     width,
-                                 list<string>& par,
-                                 const string& pfx,
-                                 const string* pfx1 = 0)
-    {
-        return Justify(str, width, par, &pfx, pfx1);
-    }
-
-    static list<string>& Justify(const string& str,
-                                 SIZE_TYPE     width,
-                                 list<string>& par,
-                                 const string& pfx,
-                                 const string& pfx1)
-    {
-        return Justify(str, width, par, &pfx, &pfx1);
-    }
 };
 
 
