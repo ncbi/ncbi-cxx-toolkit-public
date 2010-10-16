@@ -264,6 +264,38 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
+    /// Create a tunneled socket stream connection.
+    ///
+    /// The following fields of SConnNetInfo are used (other ignored):
+    ///
+    /// scheme                          -- must be http or unspecified, checked
+    /// host:port                       -- target server
+    /// http_proxy_host:http_proxy_port -- proxy server to tunnel via
+    /// http_proxy_user:http_proxy_pass -- credentials for the proxy, if needed
+    /// firewall                        -- if true then look at proxy_server
+    /// proxy_server                    -- use as "host" if non-empty and FW
+    /// debug_printout                  -- how to log socket data
+    ///
+    /// @param net_info
+    ///  Connection point and proxy tunnel location
+    /// @data
+    ///  Pointer to block of data to send once connection is ready
+    /// @size
+    ///  Size of the data block to send (or 0 if to send nothing)
+    /// @param timeout
+    ///  Default I/O timeout
+    /// @param buf_size
+    ///  Default buffer size
+    /// @sa
+    ///  CConn_IOStream, SConnNetInfo
+    CConn_SocketStream
+    (const SConnNetInfo& net_info,
+     const void*         data     = 0,
+     size_t              size     = 0,
+     TSOCK_Flags         flags    = fSOCK_LogDefault,
+     const STimeout*     timeout  = kDefaultTimeout,
+     streamsize          buf_size = kConn_DefaultBufSize);
+
     /// This variant uses an existing socket "sock" to build a stream upon it.
     /// The caller may retain the ownership of "sock" by passing "if_to_own" as
     /// "eNoOwnership" to the stream constructor -- in that case, the socket

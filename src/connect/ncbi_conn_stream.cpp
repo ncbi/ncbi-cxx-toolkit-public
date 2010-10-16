@@ -159,6 +159,64 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 }
 
 
+static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
+                                           const void*         init_data,
+                                           size_t              init_size,
+                                           TSOCK_Flags         flags)
+{
+    SOCK sock = 0;
+    EIO_Status status;
+
+    if (*net_info->http_proxy_host) {
+        SOCK s = 0;
+        status = HTTP_CreateTunnel(net_info, fHCC_DetachableTunnel
+                                   | fHCC_NoAutoRetry, &s);
+        if (status == eIO_Success) {
+            size_t handle_size = SOCK_OSHandleSize();
+            char*  handle      = new char[handle_size];
+            _VERIFY(SOCK_GetOSHandle(s, &handle, handle_size) == eIO_Success);
+            status = SOCK_CreateOnTopEx(handle, handle_size, &sock,
+                                        init_data, init_size, flags);
+            delete[] handle;
+            if (status != eIO_Success) {
+                SOCK_Abort(s);
+                _ASSERT(!sock);
+            } else
+                _ASSERT(sock);
+            SOCK_Close(s);
+        } else
+            _ASSERT(!s);
+    }
+    if (!sock) {
+        const char* host = (net_info->firewall  &&  *net_info->proxy_host
+                            ? net_info->proxy_host : net_info->host);
+        status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
+                               init_data, init_size, flags);
+        if (status != eIO_Success) {
+            _ASSERT(!sock);
+            return 0;
+        }
+        _ASSERT(sock);
+    }
+    string hostport(net_info->host + string(":")
+                    + NStr::UIntToString(net_info->port));
+    return SOCK_CreateConnectorOnTopEx(sock, 1, hostport.c_str());
+}
+
+
+CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
+                                       const void*         data,
+                                       size_t              size,
+                                       TSOCK_Flags         flags,
+                                       const STimeout*     timeout,
+                                       streamsize          buf_size)
+    : CConn_IOStream(s_TunneledSocketConnector(&net_info, data, size, flags),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
 static SOCK s_GrabSOCK(CSocket& socket)
 {
     SOCK sock = socket.GetSOCK();
