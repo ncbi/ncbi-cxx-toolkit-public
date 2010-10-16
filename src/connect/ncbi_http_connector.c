@@ -388,6 +388,28 @@ static int/*bool*/ s_MakeHostTag(SConnNetInfo* net_info)
 }
 
 
+static const char* s_MakePath(const SConnNetInfo* net_info)
+{
+    char* path;
+    if (net_info->req_method == eReqMethod_Connect
+        &&  net_info->firewall  &&  *net_info->proxy_host) {
+        size_t hostlen = strlen(net_info->proxy_host), portlen;
+        char   port[16];
+        if (!net_info->port) {
+            portlen = 1;
+            port[0] = '\0';
+        } else
+            portlen = (size_t) sprintf(port, ":%hu", net_info->port) + 1;
+        if (!(path = (char*) malloc(hostlen + portlen)))
+            return 0;
+        memcpy(path,           net_info->proxy_host, hostlen);
+        memcpy(path + hostlen, port,                 portlen);
+    } else
+        path = ConnNetInfo_URL(net_info);
+    return path;
+}
+
+
 /* Connect to the HTTP server, specified by uuu->net_info's "port:host".
  * Return eIO_Success only if socket connection has succeeded and uuu->sock
  * is non-zero. If unsuccessful, try to adjust uuu->net_info by s_Adjust(),
@@ -433,6 +455,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             net_info->pass[0] = '\0';
             if (!net_info->port)
                 net_info->port = 443/*HTTPS*/;
+            net_info->firewall = 0/*false*/;
+            net_info->proxy_host[0] = '\0';
             ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
             status = HTTP_CreateTunnel(net_info,
                                        fHCC_NoUpread |
@@ -468,7 +492,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 char* temp;
                 host = uuu->net_info->http_proxy_host;
                 port = uuu->net_info->http_proxy_port;
-                path = ConnNetInfo_URL(uuu->net_info);
+                path = s_MakePath(uuu->net_info);
+                if (!path) {
+                    status = eIO_Unknown;
+                    break;
+                }
                 if (uuu->net_info->req_method == eReqMethod_Connect) {
                     if (uuu->flags & fHCC_DetachableTunnel)
                         flags |= fSOCK_KeepOnClose;
@@ -489,7 +517,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                         break;
                     }
                     if (uuu->flags & fHCC_UrlEncodeArgs) {
-                        if (path  &&  (temp = strchr(path, '?')) != 0)
+                        if ((temp = strchr(path, '?')) != 0)
                             *temp = '\0';
                         args = uuu->net_info->args;
                     } else
@@ -541,9 +569,9 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 uuu->net_info->http_user_header = http_user_header;
             }
 
-            if (path  &&  path != uuu->net_info->path)
+            if (path != uuu->net_info->path)
                 free((void*) path);
-            if (args  &&  args != uuu->net_info->args)
+            if (args != uuu->net_info->args  &&  args)
                 free((void*) args);
 
             if (s) {
