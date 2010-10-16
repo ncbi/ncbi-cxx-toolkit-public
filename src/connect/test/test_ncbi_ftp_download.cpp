@@ -62,7 +62,7 @@ static int  s_Throttler = 0;
 extern "C" {
 static void s_Interrupt(int /*signo*/)
 {
-    s_Signaled = 1;
+    s_Signaled = true;
 }
 }
 #endif // NCBI_OS_UNIX
@@ -101,8 +101,8 @@ private:
 double CDownloadCallbackData::GetElapsed(bool update)
 {
     double next = m_Sw.Elapsed();
-    if (m_Last + 0.675 <= next) {
-        m_Last          = next;
+    if (m_Last + 1.0 <= next) {
+        m_Last        = next;
     } else if (!update) {
         next = 0.0;
     }
@@ -155,8 +155,8 @@ public:
     virtual istream* GetIStream(void) const { return m_Stream; }
 
 protected:
-    CProcessor(CProcessor* prev, istream* isp, CDownloadCallbackData* dlcbdata)
-        : m_Prev(prev), m_Stream(isp),
+    CProcessor(CProcessor* prev, istream* is, CDownloadCallbackData* dlcbdata)
+        : m_Prev(prev), m_Stream(is),
           m_Dlcbdata(dlcbdata ? dlcbdata : prev ? prev->m_Dlcbdata : 0)
     { }
 
@@ -198,8 +198,7 @@ public:
 class CGunzipProcessor : public CNullProcessor
 {
 public:
-    CGunzipProcessor(CProcessor&            prev,
-                     CDownloadCallbackData* dlcbdata = 0);
+    CGunzipProcessor(CProcessor& prev, CDownloadCallbackData* dlcbdata = 0);
     ~CGunzipProcessor() { Stop(); }
 
     void   Stop(void);
@@ -224,6 +223,7 @@ size_t CNullProcessor::Run(void)
 {
     if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata)
         return 0;
+
     Uint8 filesize = 0;
     do {
         static char buf[10240];
@@ -240,6 +240,7 @@ size_t CListProcessor::Run(void)
 {
     if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata)
         return 0;
+
     auto_ptr<CTar::TEntries> filelist;
     size_t n = 0;
     do {
@@ -283,9 +284,9 @@ CUntarProcessor::CUntarProcessor(CProcessor&            prev,
                                  CDownloadCallbackData* dlcbdata)
     : CProcessor(&prev, 0, dlcbdata)
 {
-    istream* isp = m_Prev->GetIStream();
+    istream* is = m_Prev->GetIStream();
     // Build streaming [un]tar on top of another stream
-    m_Tar = isp ? new CTarCheckpointed(*isp, m_Dlcbdata) : 0;
+    m_Tar = is ? new CTarCheckpointed(*is, m_Dlcbdata) : 0;
 }
 
 
@@ -293,6 +294,7 @@ size_t CUntarProcessor::Run(void)
 {
     if (!m_Tar)
         return 0;
+
     auto_ptr<CTar::TEntries> filelist;
     try {
         // NB: CTar *loves* exceptions, for some weird reason :-/
@@ -422,9 +424,7 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
             }
         }
         cerr << left << setw(16) << ' ' << '\r' << flush;
-#ifdef NCBI_OS_UNIX
     }
-#endif // NCBI_OS_UNIX
 
     if (type == eCONN_OnClose) {
         cerr << endl << "Connection closed" << endl;
