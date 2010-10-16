@@ -195,9 +195,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 #define REG_VALUE(name, value, def_value)                               \
     ConnNetInfo_GetValue(service, name, value, sizeof(value), def_value)
 
-    SConnNetInfo* info =
-        (SConnNetInfo*) malloc(sizeof(*info)
-                               + (service ? strlen(service) + 1 : 0));
+    SConnNetInfo* info;
     /* aux. storage */
     char   str[1024];
     size_t len;
@@ -205,7 +203,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     double dbl;
     char*  e;
 
-    if (!info)
+    len = service ? strlen(service) : 0;
+
+    if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
 
     /* client host: default */
@@ -252,14 +252,13 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
     len = strlen(str);
     if (len < 3  ||  8 < len  ||  strncasecmp(str, "infinite", len) != 0) {
-        info->timeout = &info->tmo;
         if (!*str  ||  (dbl = atof(str)) < 0.0)
             dbl = DEF_CONN_TIMEOUT;
-        info->timeout->sec  = (unsigned int) dbl;
-        info->timeout->usec = (unsigned int)
-            ((dbl - info->timeout->sec) * 1000000.0);
+        info->tmo.sec  = (unsigned int)  dbl;
+        info->tmo.usec = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
+        info->timeout  = &info->tmo;
     } else
-        info->timeout = 0/*kInfiniteTimeout*/;
+        info->timeout  = kInfiniteTimeout/*0*/;
 
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
@@ -325,8 +324,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                          DEF_CONN_HTTP_REFERER);
     info->http_referer = *str ? strdup(str) : 0;
 
-    /* store the service name for which this structure has been created */
-    info->service = service ? strcpy((char*)info + sizeof(*info), service) : 0;
+    /* store the service name, which this structure has been created for */
+    strcpy((char*) info->svc, service ? service : "");
 
     /* done */
     return info;
@@ -949,25 +948,21 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 {
     SConnNetInfo* x_info;
-    const char* service;
+    const char* svc;
 
     if (!info)
         return 0;
 
-    service = info->service;
-    x_info = (SConnNetInfo*) malloc(sizeof(*x_info)
-                                    + (service ? strlen(service) + 1 : 0));
-    if (!x_info)
+    svc = info->svc;
+    if (!(x_info = (SConnNetInfo*) malloc(sizeof(*info) + strlen(info->svc))))
         return 0;
 
     memcpy(x_info, info, sizeof(*x_info));
     x_info->http_user_header = 0;
     x_info->http_referer = 0;
 
-    if (info->timeout  &&  info->timeout != kDefaultTimeout) {
-        x_info->tmo     = *info->timeout;
+    if (info->timeout)
         x_info->timeout = &x_info->tmo;
-    }
     if (info->http_user_header
         &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
         ConnNetInfo_Destroy(x_info);
@@ -978,8 +973,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
         ConnNetInfo_Destroy(x_info);
         return 0;
     }
-    x_info->service
-        = service ? strcpy((char*) x_info + sizeof(*x_info), service) : 0;
+    strcpy((char*) x_info->svc, info->svc);
     return x_info;
 }
 
@@ -1055,10 +1049,10 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 
     uhlen = info->http_user_header ? strlen(info->http_user_header) : 0;
        
-    len = sizeof(*info) + 1024/*slack for all labels*/
+    len = sizeof(*info) + 1024/*slack for all labels & keywords*/
         + UTIL_PrintableStringSize(info->http_user_header, uhlen)
         + (info->http_referer ? strlen(info->http_referer) : 0)
-        + (info->service ? strlen(info->service) : 0);
+        + strlen(info->svc);
 
     if (!(s = (char*) malloc(len))) {
         LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11,
@@ -1069,7 +1063,10 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 
     strcpy(s, "ConnNetInfo_Log\n"
            "#################### [BEGIN] SConnNetInfo:\n");
-    s_SaveString    (s, "service",         info->service);
+    if (*info->svc)
+        s_SaveString(s, "service",         info->svc);
+    else
+        s_SaveKeyval(s, "service",         "NONE");
     if (*info->client_host)
         s_SaveString(s, "client_host",     info->client_host);
     else
@@ -1348,8 +1345,8 @@ extern EIO_Status URL_ConnectEx
 
     /* connect to HTTPD */
     if (s) {
-        size_t    handle_size = SOCK_OSHandleSize();
-        unsigned char* handle = (unsigned char*) malloc(handle_size);
+        size_t handle_size = SOCK_OSHandleSize();
+        char*  handle      = (char*) malloc(handle_size);
         verify(SOCK_GetOSHandle(s, handle, handle_size) == eIO_Success);
         status = SOCK_CreateOnTopEx(handle, handle_size, sock,
                                     hdr, hdr_len, flags);
@@ -1937,39 +1934,5 @@ extern int/*bool*/ MIME_ParseContentTypeEx
     }
 
     free(x_buf);
-    return 1/*true*/;
-}
-
-
-/* DEPRECATED and scheduled for removal */
-extern char* MIME_ComposeContentType
-(EMIME_SubType  subtype,
- EMIME_Encoding encoding,
- char*          buf,
- size_t         buflen)
-{
-    return MIME_ComposeContentTypeEx(eMIME_T_NcbiData,
-                                     subtype, encoding, buf, buflen);
-}
-
-
-/* DEPRECATED and scheduled for removal */
-extern int/*bool*/ MIME_ParseContentType
-(const char*     str,
- EMIME_SubType*  subtype,
- EMIME_Encoding* encoding)
-{
-    EMIME_Type type;
-    if ( !MIME_ParseContentTypeEx(str, &type, subtype, encoding) )
-        return 0/*false*/;
-
-    if (type != eMIME_T_NcbiData) {
-        if ( subtype )
-            *subtype  = eMIME_Unknown;
-        if ( encoding )
-            *encoding = eENCOD_Unknown;
-        return 0/*false*/;
-    }
-
     return 1/*true*/;
 }

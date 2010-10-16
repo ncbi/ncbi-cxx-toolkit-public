@@ -128,32 +128,32 @@ typedef enum {
  *             or an online tool (search the Web for "base64 online").
  */
 typedef struct {
-    char           client_host[256]; /* effective client hostname ('\0'=def) */
-    EURLScheme     scheme;           /* only pre-defined types (limited)     */
-    char           user[64];         /* username (if specified)              */
-    char           pass[64];         /* password (if any)                    */
-    char           host[256];        /* host to connect to                   */
-    unsigned short port;             /* port to connect to, host byte order  */
-    char           path[1024];       /* service: path(e.g. to  a CGI script) */
-    char           args[1024];       /* service: args(e.g. for a CGI script) */
-    EReqMethod     req_method;       /* method to use in the request (HTTP)  */
-    STimeout*      timeout;          /* ptr to i/o tmo (infinite if NULL)    */
-    unsigned short max_try;          /* max. # of attempts to connect (>= 1) */
-    char           http_proxy_host[256]; /* hostname of HTTP proxy server    */
-    unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
-    char           http_proxy_user[64];  /* http proxy username              */
-    char           http_proxy_pass[64];  /* http proxy password              */
-    char           proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv */
-    EDebugPrintout debug_printout;   /* printout some debug info             */
-    int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
-    int/*bool*/    firewall;         /* to use firewall/relay in connects    */
-    int/*bool*/    lb_disable;       /* to disable local load-balancing      */
-    const char*    http_user_header; /* user header to add to HTTP request   */
-    const char*    http_referer;     /* default referrer (when not spec'd)   */
+    char            client_host[256]; /* effective client hostname ('\0'=def)*/
+    EURLScheme      scheme;           /* only pre-defined types (limited)    */
+    char            user[64];         /* username (if specified)             */
+    char            pass[64];         /* password (if any)                   */
+    char            host[256];        /* host to connect to                  */
+    unsigned short  port;             /* port to connect to, host byte order */
+    char            path[1024];       /* service: path(e.g. to  a CGI script)*/
+    char            args[1024];       /* service: args(e.g. for a CGI script)*/
+    EReqMethod      req_method;       /* method to use in the request (HTTP) */
+    const STimeout* timeout;          /* ptr to i/o tmo (infinite if NULL)   */
+    unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
+    char            http_proxy_host[256]; /* hostname of HTTP proxy server   */
+    unsigned short  http_proxy_port;      /* port #   of HTTP proxy server   */
+    char            http_proxy_user[64];  /* http proxy username             */
+    char            http_proxy_pass[64];  /* http proxy password             */
+    char            proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv*/
+    EDebugPrintout  debug_printout;   /* printout some debug info            */
+    int/*bool*/     stateless;        /* to connect in HTTP-like fashion only*/
+    int/*bool*/     firewall;         /* to use firewall/relay in connects   */
+    int/*bool*/     lb_disable;       /* to disable local load-balancing     */
+    const char*     http_user_header; /* user header to add to HTTP request  */
+    const char*     http_referer;     /* default referrer (when not spec'd)  */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
-    STimeout       tmo;              /* default storage for finite timeout   */
-    const char*    service;          /* service for which this info created  */
+    STimeout        tmo;              /* default storage for finite timeout  */
+    const char      svc[1];           /* service which this info created for */
 } SConnNetInfo;
 
 
@@ -720,34 +720,6 @@ extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentTypeEx
 extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentTypeEx
 (const char*     str,      /* the HTTP "Content-Type:" header to parse */
  EMIME_Type*     type,     /* can be NULL */
- EMIME_SubType*  subtype,  /* can be NULL */
- EMIME_Encoding* encoding  /* can be NULL */
- );
-
-
-#ifndef NCBI_DEPRECATED
-#  define NCBI_CONNUTIL_DEPRECATED
-#else
-#  define NCBI_CONNUTIL_DEPRECATED NCBI_DEPRECATED
-#endif
-
-/* Exactly equivalent to MIME_ComposeContentTypeEx(eMIME_T_NcbiData, ...)
- * Use more explicit Ex variant instead.
- */
-extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED
-char* MIME_ComposeContentType
-(EMIME_SubType  subtype,
- EMIME_Encoding encoding,
- char*          buf,
- size_t         buflen
- );
-
-/* Requires the MIME type be "x-ncbi-data".
- * Use more explicit Ex variant instead.
- */
-extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED
-int/*bool*/ MIME_ParseContentType
-(const char*     str,      /* the HTTP "Content-Type:" header to parse */
  EMIME_SubType*  subtype,  /* can be NULL */
  EMIME_Encoding* encoding  /* can be NULL */
  );
