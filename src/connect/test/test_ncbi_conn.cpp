@@ -186,12 +186,13 @@ int main(int argc, const char* argv[])
 
     // Set error posting and tracing at maximum
     SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Trace);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Trace);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     int retval = 1/*failure*/;
 
