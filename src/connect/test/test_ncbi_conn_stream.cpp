@@ -100,12 +100,14 @@ int main(int argc, const char* argv[])
 
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Info);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+
     reg = s_CreateRegistry();
     CONNECT_Init(reg);
 
