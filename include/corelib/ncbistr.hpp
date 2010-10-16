@@ -1813,19 +1813,19 @@ public:
     ///   Return "arr", the wrapped list.
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
-                                  TWrapFlags flags = 0,
+                                  TWrapFlags    flags = 0,
                                   const string* prefix = 0,
                                   const string* prefix1 = 0);
 
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
-                                  TWrapFlags flags,
+                                  TWrapFlags    flags,
                                   const string& prefix,
                                   const string* prefix1 = 0);
         
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
-                                  TWrapFlags flags,
+                                  TWrapFlags    flags,
                                   const string& prefix,
                                   const string& prefix1);
 
@@ -1838,23 +1838,37 @@ public:
     /// all lines in "par" will begin with "pfx" (counted against "width"),
     /// but the first line will instead begin with "pfx1" if provided.
     ///
-    static list<string>& Justify(const string& str,
-                                 SIZE_TYPE     width,
-                                 list<string>& par,
-                                 const string* pfx  = 0,
-                                 const string* pfx1 = 0);
+    /// @param str
+    ///   String to be split into justified lines.
+    /// @param width
+    ///   Width of every line (except for the last one).
+    /// @param par
+    ///   Resultant list of justified lines.
+    /// @param pfx
+    ///   The prefix string added to each line, except for the first line
+    ///   if non-NULL "pfx1" is also set.  Empty(or NULL) "pfx" causes no
+    ///   additions.
+    /// @param pfx1
+    ///   The prefix string for the first line, if non-NULL.
+    /// @return
+    ///   Return "par", the list of justified lines (a paragraph).
+    static list<string>& Justify(const CTempString& str,
+                                 SIZE_TYPE          width,
+                                 list<string>&      par,
+                                 const CTempString* pfx  = 0,
+                                 const CTempString* pfx1 = 0);
 
-    static list<string>& Justify(const string& str,
-                                 SIZE_TYPE     width,
-                                 list<string>& par,
-                                 const string& pfx,
-                                 const string* pfx1 = 0);
+    static list<string>& Justify(const CTempString& str,
+                                 SIZE_TYPE          width,
+                                 list<string>&      par,
+                                 const CTempString& pfx,
+                                 const CTempString* pfx1 = 0);
 
-    static list<string>& Justify(const string& str,
-                                 SIZE_TYPE     width,
-                                 list<string>& par,
-                                 const string& pfx,
-                                 const string& pfx1);
+    static list<string>& Justify(const CTempString& str,
+                                 SIZE_TYPE          width,
+                                 list<string>&      par,
+                                 const CTempString& pfx,
+                                 const CTempString& pfx1);
 
 
     /// Search for a field
@@ -3601,17 +3615,17 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 }
 
 inline
-list<string>& NStr::Justify(const string& str, SIZE_TYPE width,
-                            list<string>& par, const string& pfx,
-                            const string* pfx1)
+list<string>& NStr::Justify(const CTempString& str, SIZE_TYPE width,
+                            list<string>& par, const CTempString& pfx,
+                            const CTempString* pfx1)
 {
     return Justify(str, width, par, &pfx, pfx1);
 }
 
 inline
-list<string>& NStr::Justify(const string& str, SIZE_TYPE width,
-                            list<string>& par, const string& pfx,
-                            const string& pfx1)
+list<string>& NStr::Justify(const CTempString& str, SIZE_TYPE width,
+                            list<string>& par, const CTempString& pfx,
+                            const CTempString& pfx1)
 {
     return Justify(str, width, par, &pfx, &pfx1);
 }

@@ -2775,15 +2775,16 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 }
 
 
-list<string>& NStr::Justify(const string& str,
-                            SIZE_TYPE     width,
-                            list<string>& par,
-                            const string* pfx,
-                            const string* pfx1)
+list<string>& NStr::Justify(const CTempString& str,
+                            SIZE_TYPE          width,
+                            list<string>&      par,
+                            const CTempString* pfx,
+                            const CTempString* pfx1)
 {
+    static const CTempString kNothing;
     if (!pfx)
-        pfx = &kEmptyStr;
-    const string* p = pfx1 ? pfx1 : pfx ;
+        pfx = &kNothing;
+    const CTempString* p = pfx1 ? pfx1 : pfx;
 
     SIZE_TYPE pos = 0;
     for (SIZE_TYPE len = p->size();  pos < str.size();  len = p->size()) {
