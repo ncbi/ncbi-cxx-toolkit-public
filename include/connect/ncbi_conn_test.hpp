@@ -206,7 +206,6 @@ protected:
     bool                  m_HttpProxy;
     bool                  m_Stateless;
     bool                  m_Firewall;
-    bool                  m_FWProxy;
 
     vector<CFWConnPoint>  m_Fwd;
     vector<CFWConnPoint>  m_FwdFallback;
@@ -224,8 +223,8 @@ private:
     /// Return timeout suggestion
     string     x_TimeoutMsg(void);
     /// Check a single FW connection
-    EIO_Status x_CheckFWConnection(CFWConnPoint& cp,
-                                   char*         val,
+    EIO_Status x_CheckFWConnection(SConnNetInfo* net_info,
+                                   CFWConnPoint& cp,
                                    TSOCK_Flags   flags,
                                    string&       reason);
     /// Obtain FW settings or service entries
