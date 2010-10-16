@@ -633,12 +633,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             net_info->stateless = 1/*true*/;
             return s_Open(uuu, timeout, info, net_info, 1/*second try*/);
         }
-        if (net_info->firewall  &&  *net_info->proxy_host)
-            strcpy(net_info->host, net_info->proxy_host);
-        else
-            SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
+        SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         net_info->port = uuu->port;
-        net_info->req_method = eReqMethod_Connect;
         return s_CreateSocketConnector(net_info, &uuu->ticket,
                                        uuu->ticket ? sizeof(uuu->ticket) : 0);
     }
