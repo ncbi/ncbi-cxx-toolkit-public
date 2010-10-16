@@ -101,11 +101,10 @@ private:
 double CDownloadCallbackData::GetElapsed(bool update)
 {
     double next = m_Sw.Elapsed();
-    if (m_Last + 1.0 <= next) {
-        m_Last        = next;
-    } else if (!update) {
-        next = 0.0;
+    if (m_Last + 1.0 > next  &&  !update) {
+        return 0.0;
     }
+    m_Last = next;
     return next;
 }
 
@@ -113,7 +112,7 @@ double CDownloadCallbackData::GetElapsed(bool update)
 void CDownloadCallbackData::Append(const CTar::TFile* current)
 {
     if (m_Current.first.empty()) {
-        // First time
+        // first time
         _ASSERT(m_Filelist.empty());
     } else {
         m_Filelist.push_back(m_Current);
@@ -131,8 +130,10 @@ public:
 protected:
     virtual bool Checkpoint(const CTarEntryInfo& current, bool /**/) const
     {
-        if (!m_Dlcbdata)
+        if (!m_Dlcbdata) {
             return false;
+        }
+
         cerr.flush();
         cout << current << left << setw(16) << ' ' << endl;
         TFile file(current.GetName(), current.GetSize());
@@ -238,8 +239,9 @@ size_t CNullProcessor::Run(void)
 
 size_t CListProcessor::Run(void)
 {
-    if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata)
+    if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata) {
         return 0;
+    }
 
     auto_ptr<CTar::TEntries> filelist;
     size_t n = 0;
@@ -264,10 +266,9 @@ CGunzipProcessor::CGunzipProcessor(CProcessor&            prev,
                                    CDownloadCallbackData* dlcbdata)
     : CNullProcessor(prev, dlcbdata)
 {
-    istream* isp = m_Prev->GetIStream();
+    istream* is = m_Prev->GetIStream();
     // Build on-the-fly ungzip stream on top of another stream
-    m_Stream =
-        isp ? new CDecompressIStream(*isp, CCompressStream::eGZipFile) : 0;
+    m_Stream = is ? new CDecompressIStream(*is,CCompressStream::eGZipFile) : 0;
 }
 
 
@@ -292,8 +293,9 @@ CUntarProcessor::CUntarProcessor(CProcessor&            prev,
 
 size_t CUntarProcessor::Run(void)
 {
-    if (!m_Tar)
+    if (!m_Tar) {
         return 0;
+    }
 
     auto_ptr<CTar::TEntries> filelist;
     try {
@@ -383,8 +385,9 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
 
     if (type == eCONN_OnClose) {
         // Callback up the chain
-        if (dlcbdata->CB()->func)
+        if (dlcbdata->CB()->func) {
             dlcbdata->CB()->func(conn, type, dlcbdata->CB()->data);
+        }
         // Finalize the filelist
         dlcbdata->Append();
     } else if (s_Signaled) {
@@ -456,8 +459,9 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& s,
     s << cmd << name << endl;
     EIO_Status status = CONN_Wait(s.GetCONN(), eIO_Read, timeout);
     _ASSERT(status != eIO_InvalidArg);
-    if (status != eIO_Success)
+    if (status != eIO_Success) {
         s.clear(IOS_BASE::badbit);
+    }
 }
 
 
@@ -619,17 +623,15 @@ int main(int argc, const char* argv[])
              << CTimeSpan(dlcbdata.GetElapsed()).AsString("h:m:s")
              << "; combined file size " << NStr::UInt8ToString(totalsize));
 
-    int exitcode;
     if (!files  ||  !dlcbdata.Filelist().size()) {
         // Interrupted or an error has occurred
         ERR_POST("Final file list is empty");
-        exitcode = 1;
-    } else if (files != dlcbdata.Filelist().size()) {
+        return 1;
+    }
+    if (files != dlcbdata.Filelist().size()) {
         // NB: It may be so for an "updated" archive...
         ERR_POST(Warning << "Final file list size mismatch: " << files);
-        exitcode = 1;
-    } else {
-        exitcode = 0;
+        return 1;
     }
-    return exitcode;
+    return 0;
 }
