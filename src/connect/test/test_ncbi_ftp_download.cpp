@@ -39,10 +39,12 @@
 #include <util/compress/stream_util.hpp>
 #include <util/compress/tar.hpp>
 #include <string.h>
-#ifdef NCBI_OS_UNIX
+#if   defined(NCBI_OS_UNIX)
 #  include <signal.h>
-#  include <unistd.h>  // isatty()
-#endif // NCBI_OS_UNIX
+#  include <unistd.h>  //  isatty()
+#elif defined(NCBI_OS_MSWIN)
+#  include <io.h>      // _isatty()
+#endif // NCBI_OS
 
 
 BEGIN_NCBI_SCOPE
@@ -69,16 +71,17 @@ static void s_Interrupt(int /*signo*/)
 class CDownloadCallbackData {
 public:
     CDownloadCallbackData(const char* filename, Uint8 size = 0)
-        : m_Sw(CStopWatch::eStart), m_Size(size), m_Filename(filename)
+        : m_Sw(CStopWatch::eStart), m_Size(size), m_Last(0.0),
+          m_Filename(filename)
     {
         memset(&m_Cb, 0, sizeof(m_Cb));
         m_Current = pair<string,Uint8>(kEmptyStr, 0);
     }
 
     SCONN_Callback *       CB(void)        { return &m_Cb;          }
-    size_t            GetSize(void) const  { return m_Size;         }
-    void              SetSize(size_t size) { m_Size = size;         }
-    double         GetElapsed(void) const  { return m_Sw.Elapsed(); }
+    Uint8             GetSize(void) const  { return m_Size;         }
+    void              SetSize(Uint8 size)  { m_Size = size;         }
+    double         GetElapsed(bool update = true);
     const string& GetFilename(void) const  { return m_Filename;     }
 
     void                  Append(const CTar::TFile* current = 0);
@@ -88,11 +91,23 @@ private:
     CStopWatch     m_Sw;
     SCONN_Callback m_Cb;
     Uint8          m_Size;
+    double         m_Last;
     CTar::TFile    m_Current;
     const string   m_Filename;
     CTar::TFiles   m_Filelist;
 };
 
+
+double CDownloadCallbackData::GetElapsed(bool update)
+{
+    double next = m_Sw.Elapsed();
+    if (m_Last + 0.675 <= next) {
+        m_Last          = next;
+    } else if (!update) {
+        next = 0.0;
+    }
+    return next;
+}
 
 
 void CDownloadCallbackData::Append(const CTar::TFile* current)
@@ -119,7 +134,7 @@ protected:
         if (!m_Dlcbdata)
             return false;
         cerr.flush();
-        cout << current << endl;
+        cout << current << left << setw(16) << ' ' << endl;
         TFile file(current.GetName(), current.GetSize());
         m_Dlcbdata->Append(&file);
         return true;
@@ -167,13 +182,13 @@ public:
 };
 
 
-class CDirProcessor : public CNullProcessor
+class CListProcessor : public CNullProcessor
 {
 public:
-    CDirProcessor(CProcessor& prev, CDownloadCallbackData* dlcbdata = 0)
+    CListProcessor(CProcessor& prev, CDownloadCallbackData* dlcbdata = 0)
         : CNullProcessor(prev, dlcbdata)
     { m_Stream = m_Prev->GetIStream(); }
-    ~CDirProcessor() { Stop(); }
+    ~CListProcessor() { Stop(); }
 
     size_t           Run       (void);
     virtual istream* GetIStream(void) const { return 0; }
@@ -221,7 +236,7 @@ size_t CNullProcessor::Run(void)
 }
 
 
-size_t CDirProcessor::Run(void)
+size_t CListProcessor::Run(void)
 {
     if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata)
         return 0;
@@ -296,6 +311,18 @@ void CUntarProcessor::Stop(void)
 }
 
 
+static bool s_IsATTY(void)
+{
+#if   defined(NCBI_OS_UNIX)
+    return  isatty(STDERR_FILENO)   ? true : false;
+#elif defined(NCBI_OS_MSWIN)
+    return _isatty(_fileno(stdout)) ? true : false;
+#else
+    return false/*safe choice*/;
+#endif // NCBI_OS
+}
+
+
 extern "C" {
 static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
 {
@@ -335,17 +362,22 @@ static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
 
 static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
 {
+    bool update;
+
     if (type != eCONN_OnClose  &&  !s_Signaled) {
         // Reinstate the callback right away
         SCONN_Callback cb = { x_ConnectionCallback, data };
         CONN_SetCallback(conn, type, &cb, 0);
+        update = false;
+    } else {
+        update = true;
     }
 
     CDownloadCallbackData* dlcbdata
         = reinterpret_cast<CDownloadCallbackData*>(data);
     Uint8  pos  = CONN_GetPosition(conn, eIO_Read);
+    double time = dlcbdata->GetElapsed(update);
     Uint8  size = dlcbdata->GetSize();
-    double time = dlcbdata->GetElapsed();
 
     if (type == eCONN_OnClose) {
         // Callback up the chain
@@ -359,32 +391,41 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
         SleepMilliSec(s_Throttler);
     }
 
-#ifdef NCBI_OS_UNIX
-    if (!isatty(STDERR_FILENO)) {
+    if (!update  &&  !time) {
         return;
+    }
+
+    if (s_IsATTY()) {
+        cout.flush();
+        if (!size) {
+            cerr << "Downloaded " << NStr::UInt8ToString(pos)
+                 << "/unknown"
+                " in " << fixed << setprecision(2) << time << 's';
+        } else {
+            double percent = (pos * 100.0) / size;
+            cerr << "Downloaded " << NStr::UInt8ToString(pos)
+                 << '/' << NStr::UInt8ToString(size)
+                 << " (" << fixed << setprecision(2) << percent << "%)"
+                " in " << fixed << setprecision(2) << time << 's';
+            if (time) {
+                double kbps = pos / time / 1024.0;
+                cerr << " (" << fixed << setprecision(2) << kbps << "KB/s)";
+                if (pos) {
+                    double eta = time * size / pos - time;
+                    if (eta > 0) {
+                        cerr << " ETA: " <<
+                            (eta > 24 * 3600
+                             ? CTimeSpan(eta).AsString("d") + "+ day(s)"
+                             : CTimeSpan(eta).AsString("h:m:s"));
+                    }
+                }
+            }
+        }
+        cerr << left << setw(16) << ' ' << '\r' << flush;
+#ifdef NCBI_OS_UNIX
     }
 #endif // NCBI_OS_UNIX
 
-    cout.flush();
-    if (!size) {
-        cerr << "Downloaded " << NStr::UInt8ToString(pos)
-             << "/unknown"
-            " in " << fixed << setprecision(2) << time
-             << left << setw(16) << 's' << '\r' << flush;
-    } else {
-        double percent = (pos * 100.0) / size;
-        cerr << "Downloaded " << NStr::UInt8ToString(pos)
-             << '/' << NStr::UInt8ToString(size)
-             << " (" << fixed << setprecision(2) << percent << "%)"
-            " in " << fixed << setprecision(2) << time;
-        if (time) {
-            double kbps = pos / time / 1024.0;
-            cerr << "s (" << fixed << setprecision(2) << kbps
-                 << left << setw(16) << "KB/s)" << '\r' << flush;
-        } else {
-            cerr << left << setw(16) << 's'     << '\r' << flush;
-        }
-    }
     if (type == eCONN_OnClose) {
         cerr << endl << "Connection closed" << endl;
     } else if (s_Signaled) {
@@ -394,13 +435,13 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
 }
 
 
-static void s_TryGetFtpFilesize(iostream& ios, const char* filename)
+static void s_TryAskFtpFilesize(iostream& ios, const char* filename)
 {
     _DEBUG_ARG(size_t testval);
     _VERIFY(ios << "SIZE " << filename << endl);
     // If the SIZE command is not understood, the file size can
     // be captured at download start (RETR) if reported by the server
-    // in a compatible format (there's callback set for that, too).
+    // in a compatible format (there's the callback set for that, too).
     _ASSERT(!(ios >> testval));  //  NB: we're getting a callback instead
     ios.clear();
 }
@@ -437,12 +478,13 @@ int main(int argc, const char* argv[])
 
     // Setup error posting
     SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Trace);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Trace);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     CONNECT_Init(0);
 
@@ -460,10 +502,12 @@ int main(int argc, const char* argv[])
     if (!ConnNetInfo_ParseURL(net_info, url)) {
         ERR_POST(Fatal << "Cannot parse URL \"" << url << '"');
     }
+
     if        (net_info->scheme == eURL_Unspec) {
-        if (strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
+        if (NStr::strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
             strcpy(net_info->host, "ftp.ncbi.nlm.nih.gov");
         }
+        net_info->scheme = eURL_Ftp;
     } else if (net_info->scheme != eURL_Ftp) {
         ERR_POST(Fatal << "URL scheme must be FTP (ftp://) if specified");
     }
@@ -474,20 +518,25 @@ int main(int argc, const char* argv[])
 
     ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
 
+    url = ConnNetInfo_URL(net_info);
+    _ASSERT(url);
+
     TFTP_Flags flags = 0;
-    if      (net_info->debug_printout == eDebugPrintout_Some)
+    if        (net_info->debug_printout == eDebugPrintout_Some) {
         flags |= fFTP_LogControl;
-    else if (net_info->debug_printout == eDebugPrintout_Data)
+    } else if (net_info->debug_printout == eDebugPrintout_Data) {
         flags |= fFTP_LogAll;
-    if      (net_info->req_method == eReqMethod_Get)
+    }
+    if        (net_info->req_method == eReqMethod_Get) {
         flags |= fFTP_UsePassive;
-    else if (net_info->req_method == eReqMethod_Post)
+    } else if (net_info->req_method == eReqMethod_Post) {
         flags |= fFTP_UseActive;
+    }
     flags     |= fFTP_UseFeatures | fFTP_NotifySize;
 
     const char* filename = net_info->path;
-    if (net_info->path[0] == '/') {
-        filename += net_info->path[1] ? 1 : 0;
+    if (filename[0] == '/'  &&  filename[1]) {
+        filename++;
     }
 
     CDownloadCallbackData dlcbdata(filename);
@@ -509,22 +558,24 @@ int main(int argc, const char* argv[])
         proc |= fProcessor_Gunzip;
     } else if (NStr::EndsWith(filename, ".tar",    NStr::eNocase)) {
         proc |= fProcessor_Untar;
-    } else if (NStr::EndsWith(filename, '/'))
+    } else if (NStr::EndsWith(filename, '/')) {
         proc |= fProcessor_List;
+    }
 
-    s_TryGetFtpFilesize(ftp, filename);
+    s_TryAskFtpFilesize(ftp, net_info->path);
     Uint8 size = dlcbdata.GetSize();
     if (size) {
-        ERR_POST(Info << "Downloading " << filename
-                 << " from " << net_info->host << ", "
-                 << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]);
+        ERR_POST(Info << "Downloading " << url << ", "
+                 << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]
+                 << ", processor 0x" << hex << proc);
     } else {
-        ERR_POST(Info << "Downloading " << filename
-                 << " from " << net_info->host);
+        ERR_POST(Info << "Downloading " << url
+                 << ", processor 0x" << hex << proc);
     }
-    s_InitiateFtpRetrieval(ftp, filename, net_info->timeout);
+    s_InitiateFtpRetrieval(ftp, net_info->path, net_info->timeout);
 
     ConnNetInfo_Destroy(net_info);
+    free((void*) url);
 
 #ifdef NCBI_OS_UNIX
     signal(SIGINT,  s_Interrupt);
@@ -540,12 +591,15 @@ int main(int argc, const char* argv[])
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose, &conncb, dlcbdata.CB());
 
     CProcessor* processor = new CNullProcessor(ftp, &dlcbdata);
-    if (proc & fProcessor_Gunzip)
+    if (proc & fProcessor_Gunzip) {
         processor = new CGunzipProcessor(*processor);
-    if (proc & fProcessor_Untar)
+    }
+    if (proc & fProcessor_Untar) {
         processor = new CUntarProcessor(*processor);
-    if (proc & fProcessor_List)
-        processor = new CDirProcessor(*processor);
+    }
+    if (proc & fProcessor_List) {
+        processor = new CListProcessor(*processor);
+    }
 
     // Process stream data
     size_t files = processor->Run();
@@ -561,9 +615,9 @@ int main(int argc, const char* argv[])
     }
 
     ERR_POST(Info << "Total downloaded " << dlcbdata.Filelist().size()
-             << " file" << &"s"[dlcbdata.Filelist().size() == 1]
-             << " in " << fixed << setprecision(2) << dlcbdata.GetElapsed()
-             << "s; combined file size " << NStr::UInt8ToString(totalsize));
+             << " file" << &"s"[dlcbdata.Filelist().size() == 1] << " in "
+             << CTimeSpan(dlcbdata.GetElapsed()).AsString("h:m:s")
+             << "; combined file size " << NStr::UInt8ToString(totalsize));
 
     int exitcode;
     if (!files  ||  !dlcbdata.Filelist().size()) {
@@ -577,8 +631,5 @@ int main(int argc, const char* argv[])
     } else {
         exitcode = 0;
     }
-
-    CORE_SetLOG(0);
-    CORE_SetLOCK(0);
     return exitcode;
 }
