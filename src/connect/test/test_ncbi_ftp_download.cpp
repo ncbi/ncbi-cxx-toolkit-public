@@ -250,7 +250,7 @@ size_t CListProcessor::Run(void)
         if (!line.empty()) {
             cerr.flush();
             cout << left << setw(60) << line << endl;
-            CTar::TFile file = make_pair(line, 0);
+            CTar::TFile file = make_pair(line, (Uint8) 0);
             m_Dlcbdata->Append(&file);
             n++;
         }
