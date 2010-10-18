@@ -187,6 +187,16 @@ public:
     }
     void SetFeatIdMode(EFeatIdMode mode);
     
+    /// Mode of processing SNP strands
+    enum ESNPStrandMode {
+        eSNPStrand_same,
+        eSNPStrand_both  // default
+    };
+    ESNPStrandMode GetSNPStrandMode(void) const {
+        return m_SNPStrandMode;
+    }
+    void SetSNPStrandMode(ESNPStrandMode mode);
+    
     /// Add all features collected by a CFeat_CI to the tree.
     void AddFeatures(CFeat_CI it);
     /// Add a single feature to the tree.
@@ -347,6 +357,7 @@ protected:
     TInfoMap m_InfoMap;
     CFeatInfo m_RootInfo;
     EFeatIdMode m_FeatIdMode;
+    ESNPStrandMode m_SNPStrandMode;
 };
 
 

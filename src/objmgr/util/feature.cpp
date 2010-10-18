@@ -1370,7 +1370,8 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
 CFeatTree::CFeatTree(void)
     : m_AssignedParents(0),
       m_AssignedGenes(0),
-      m_FeatIdMode(eFeatId_by_type)
+      m_FeatIdMode(eFeatId_by_type),
+      m_SNPStrandMode(eSNPStrand_both)
 {
 }
 
@@ -1378,7 +1379,8 @@ CFeatTree::CFeatTree(void)
 CFeatTree::CFeatTree(CFeat_CI it)
     : m_AssignedParents(0),
       m_AssignedGenes(0),
-      m_FeatIdMode(eFeatId_by_type)
+      m_FeatIdMode(eFeatId_by_type),
+      m_SNPStrandMode(eSNPStrand_both)
 {
     AddFeatures(it);
 }
@@ -1392,6 +1394,12 @@ CFeatTree::~CFeatTree(void)
 void CFeatTree::SetFeatIdMode(EFeatIdMode mode)
 {
     m_FeatIdMode = mode;
+}
+
+
+void CFeatTree::SetSNPStrandMode(ESNPStrandMode mode)
+{
+    m_SNPStrandMode = mode;
 }
 
 
@@ -1442,16 +1450,16 @@ namespace {
     struct SBestInfo {
         typedef CFeatTree::CFeatInfo CFeatInfo;
         SBestInfo(void)
-            : m_Quality(0),
+            : m_Quality(kMin_I1),
               m_Overlap(kMax_I8),
               m_Info(0)
             {
             }
 
-        void CheckBest(Uint1 quality, Int8 overlap, CFeatInfo* info)
+        void CheckBest(Int1 quality, Int8 overlap, CFeatInfo* info)
             {
-                if ( overlap >= 0 && overlap < kMax_I8 &&
-                     (quality > m_Quality ||
+                _ASSERT(overlap >= 0);
+                if ( (quality > m_Quality ||
                       (quality == m_Quality && overlap < m_Overlap)) ) {
                     m_Quality = quality;
                     m_Overlap = overlap;
@@ -1459,7 +1467,7 @@ namespace {
                 }
             }
 
-        Uint1 m_Quality;
+        Int1 m_Quality;
         Int8 m_Overlap;
         CFeatInfo* m_Info;
     };
@@ -1538,7 +1546,7 @@ namespace {
     typedef vector<SBestInfo> TBestArray;
 
     inline
-    Uint1 s_GetParentQuality(const CFeatTree::CFeatInfo& feat,
+    Int1 s_GetParentQuality(const CFeatTree::CFeatInfo& feat,
                              const CFeatTree::CFeatInfo& parent)
     {
         return sx_GetTranscriptIdMatch(feat.m_TranscriptId,
@@ -1683,7 +1691,8 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
 static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                                   TBestArray& bests,
                                   const STypeLink& link,
-                                  CFeatTree::TFeatArray& parents)
+                                  CFeatTree::TFeatArray& parents,
+                                  const CFeatTree* tree)
 {
     _ASSERT(!features.empty());
     _ASSERT(!parents.empty());
@@ -1772,6 +1781,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                 // child parameters
                 CFeatTree::CFeatInfo& info = *ci->m_Info;
                 const CSeq_loc& c_loc = info.m_Feat.GetLocation();
+                CRef<CSeq_loc> c_loc2;
                 EOverlapType overlap_type =
                     sx_GetOverlapType(link, c_loc, circular_length);
 
@@ -1793,13 +1803,40 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                         link.m_ByProduct?
                         p_feat.GetProduct():
                         p_feat.GetLocation();
-                    Uint1 quality = s_GetParentQuality(info, *pc->m_Info);
+                    CScope* scope = &p_feat.GetScope();
+                    Int1 quality = s_GetParentQuality(info, *pc->m_Info);
                     Int8 overlap = TestForOverlap64(p_loc,
                                                     c_loc,
                                                     overlap_type,
                                                     circular_length,
-                                                    &p_feat.GetScope());
-                    ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
+                                                    scope);
+                    if ( overlap >= 0 ) {
+                        ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
+                        continue;
+                    }
+                    if ( link.m_StartType != CSeqFeatData::eSubtype_variation ||
+                         tree->GetSNPStrandMode() != tree->eSNPStrand_both ) {
+                        continue;
+                    }
+                    if ( !c_loc2 ) {
+                        c_loc2 = SerialClone(c_loc);
+                        ENa_strand strand = GetStrand(*c_loc2, scope);
+                        if ( strand == eNa_strand_plus ||
+                             strand == eNa_strand_minus ) {
+                            c_loc2->FlipStrand();
+                        }
+                        else if ( strand == eNa_strand_unknown ) {
+                            c_loc2->SetStrand(eNa_strand_minus);
+                        }
+                    }
+                    overlap = TestForOverlap64(p_loc,
+                                               *c_loc2,
+                                               overlap_type,
+                                               circular_length,
+                                               scope);
+                    if ( overlap >= 0 ) {
+                        ci->m_Best->CheckBest(quality-1, overlap, pc->m_Info);
+                    }
                 }
             }
             // skip remaining Seq-id children
@@ -1818,7 +1855,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
         return;
     }
     TBestArray bests;
-    s_CollectBestOverlaps(features, bests, link, parents);
+    s_CollectBestOverlaps(features, bests, link, parents, this);
     size_t cnt = features.size();
     _ASSERT(bests.size() == cnt);
 
@@ -1849,7 +1886,7 @@ void CFeatTree::x_AssignGenesByOverlap(TFeatArray& features,
         return;
     }
     TBestArray bests;
-    s_CollectBestOverlaps(features, bests, STypeLink(), genes);
+    s_CollectBestOverlaps(features, bests, STypeLink(), genes, this);
     size_t cnt = features.size();
     _ASSERT(bests.size() == cnt);
 
