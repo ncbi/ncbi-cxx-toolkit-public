@@ -62,8 +62,6 @@
 
 #include <util/compress/zlib.hpp>
 
-#define ALLOW_GZIPPED 1
-
 #define DEFAULT_DB_SERVER   "PUBSEQ_OS_PUBLIC"
 #define DEFAULT_DB_USER     "anyone"
 #define DEFAULT_DB_PASSWORD "allowed"
@@ -167,13 +165,11 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_DRIVER,
         CConfig::eErr_NoThrow,
         DEFAULT_DB_DRIVER);
-#ifdef ALLOW_GZIPPED
     m_AllowGzip = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_GZIP,
         CConfig::eErr_NoThrow,
         DEFAULT_ALLOW_GZIP);
-#endif
     m_ExclWGSMaster = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_EXCL_WGS_MASTER,
@@ -249,75 +245,40 @@ CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
 }
 
 
-void CPubseqReader::x_ConnectAtSlot(TConn conn_)
-{
-    if ( !m_Context ) {
-        DBLB_INSTALL_DEFAULT();
-        C_DriverMgr drvMgr;
-        map<string,string> args;
-        args["packet"]="3584"; // 7*512
-        args["version"]="125"; // for correct connection to OpenServer
-        vector<string> driver_list;
-        NStr::Tokenize(m_DbapiDriver, ";", driver_list);
-        size_t driver_count = driver_list.size();
-        vector<string> errmsg(driver_count);
-        for ( size_t i = 0; i < driver_count; ++i ) {
-            try {
-                m_Context = drvMgr.GetDriverContext(driver_list[i],
-                                                    &errmsg[i], &args);
-                if ( m_Context )
-                    break;
-            }
-            catch ( CException& exc ) {
-                errmsg[i] = exc.what();
-            }
-        }
-        if ( !m_Context ) {
-            for ( size_t i = 0; i < driver_count; ++i ) {
-                LOG_POST_X(2, "Failed to create dbapi context with driver '"
-                           <<driver_list[i]<<"': "<<errmsg[i]);
-            }
-            NCBI_THROW(CLoaderException, eNoConnection,
-                       "Cannot create dbapi context with driver '"+
-                       m_DbapiDriver+"'");
-        }
-    }
-
-    _TRACE("CPubseqReader::NewConnection("<<m_Server<<")");
-    AutoPtr<CDB_Connection> conn
-        (m_Context->Connect(m_Server, m_User, m_Password, 0));
-    
-    if ( !conn.get() ) {
-        NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
-    }
-    
-    if ( GetDebugLevel() >= 2 ) {
-        NcbiCout << "CPubseqReader::Connected to " << conn->ServerName()
-                 << NcbiEndl;
-    }
-
-#ifdef ALLOW_GZIPPED
-    if ( m_AllowGzip ) {
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set accept gzip"));
-        if ( cmd ) {
-            cmd->Send();
-            cmd->DumpResults();
-        }
-    }
-#endif
-    if ( m_ExclWGSMaster ) {
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set exclude_wgs_master on"));
-        if ( cmd ) {
-            cmd->Send();
-            cmd->DumpResults();
-        }
-    }
-    
-    m_Connections[conn_].reset(conn.release());
-}
-
-
 namespace {
+    class CPubseqValidator : public IConnValidator
+    {
+    public:
+        CPubseqValidator(bool allow_gzip, bool excl_wgs_master)
+            : m_AllowGzip(allow_gzip),
+              m_ExclWGSMaster(excl_wgs_master)
+            {
+            }
+        
+        virtual EConnStatus Validate(CDB_Connection& conn) {
+            if ( m_AllowGzip ) {
+                AutoPtr<CDB_LangCmd> cmd
+                    (conn.LangCmd("set accept gzip"));
+                cmd->Send();
+                cmd->DumpResults();
+            }
+            if ( m_ExclWGSMaster ) {
+                AutoPtr<CDB_LangCmd> cmd
+                    (conn.LangCmd("set exclude_wgs_master on"));
+                cmd->Send();
+                cmd->DumpResults();
+            }
+            return eValidConn;
+        }
+
+        virtual string GetName(void) const {
+            return "CPubseqValidator";
+        }
+
+    private:
+        bool m_AllowGzip, m_ExclWGSMaster;
+    };
+    
     I_BaseCmd* x_SendRequest2(const CBlob_id& blob_id,
                               CDB_Connection* db_conn,
                               const char* rpc)
@@ -385,6 +346,58 @@ namespace {
     private:
         AutoPtr<CDB_Result> m_DB_Result;
     };
+}
+
+
+void CPubseqReader::x_ConnectAtSlot(TConn conn_)
+{
+    if ( !m_Context ) {
+        DBLB_INSTALL_DEFAULT();
+        C_DriverMgr drvMgr;
+        map<string,string> args;
+        args["packet"]="3584"; // 7*512
+        args["version"]="125"; // for correct connection to OpenServer
+        vector<string> driver_list;
+        NStr::Tokenize(m_DbapiDriver, ";", driver_list);
+        size_t driver_count = driver_list.size();
+        vector<string> errmsg(driver_count);
+        for ( size_t i = 0; i < driver_count; ++i ) {
+            try {
+                m_Context = drvMgr.GetDriverContext(driver_list[i],
+                                                    &errmsg[i], &args);
+                if ( m_Context )
+                    break;
+            }
+            catch ( CException& exc ) {
+                errmsg[i] = exc.what();
+            }
+        }
+        if ( !m_Context ) {
+            for ( size_t i = 0; i < driver_count; ++i ) {
+                LOG_POST_X(2, "Failed to create dbapi context with driver '"
+                           <<driver_list[i]<<"': "<<errmsg[i]);
+            }
+            NCBI_THROW(CLoaderException, eNoConnection,
+                       "Cannot create dbapi context with driver '"+
+                       m_DbapiDriver+"'");
+        }
+    }
+
+    _TRACE("CPubseqReader::NewConnection("<<m_Server<<")");
+    CPubseqValidator validator(m_AllowGzip, m_ExclWGSMaster);
+    AutoPtr<CDB_Connection> conn
+        (m_Context->ConnectValidated(m_Server, m_User, m_Password, validator));
+    
+    if ( !conn.get() ) {
+        NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
+    }
+    
+    if ( GetDebugLevel() >= 2 ) {
+        NcbiCout << "CPubseqReader::Connected to " << conn->ServerName()
+                 << NcbiEndl;
+    }
+
+    m_Connections[conn_].reset(conn.release());
 }
 
 

@@ -59,6 +59,8 @@ public:
 
     int GetMaximumConnectionsLimit(void) const;
 
+    void x_InitConnection(CDB_Connection& db_conn, TConn conn);
+
 protected:
     virtual void x_AddConnectionSlot(TConn conn);
     virtual void x_RemoveConnectionSlot(TConn conn);
@@ -71,7 +73,6 @@ protected:
     virtual void x_EndOfPacket(TConn conn);
 
     CDB_Connection& x_GetConnection(TConn conn);
-    void x_InitConnection(CDB_Connection& db_conn, TConn conn);
     AutoPtr<CObjectIStream> x_SendPacket(CDB_Connection& db_conn,
                                          TConn conn,
                                          const CID2_Request_Packet& packet);

@@ -263,6 +263,98 @@ void CPubseq2Reader::x_SetCurrentResult(TConn conn,
 }
 
 
+namespace {
+    class CPubseq2Validator : public IConnValidator
+    {
+    public:
+        typedef CPubseq2Reader::TConn TConn;
+
+        CPubseq2Validator(CPubseq2Reader* reader,
+                          TConn conn,
+                          bool excl_wgs_master)
+            : m_Reader(reader),
+              m_Conn(conn),
+              m_ExclWGSMaster(excl_wgs_master)
+            {
+            }
+        
+        virtual EConnStatus Validate(CDB_Connection& conn) {
+            if ( m_ExclWGSMaster ) {
+                AutoPtr<CDB_LangCmd> cmd
+                    (conn.LangCmd("set exclude_wgs_master on"));
+                cmd->Send();
+                cmd->DumpResults();
+            }
+            m_Reader->x_InitConnection(conn, m_Conn);
+            return eValidConn;
+        }
+
+        virtual string GetName(void) const {
+            return "CPubseq2Validator";
+        }
+
+    private:
+        CPubseq2Reader* m_Reader;
+        TConn m_Conn;
+        bool m_ExclWGSMaster;
+    };
+    
+    bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
+    {
+        while ( result.Fetch() ) {
+            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
+                if ( result.ItemName(pos) == name ) {
+                    return true;
+                }
+                result.SkipItem();
+            }
+        }
+        return false;
+    }
+    
+    class CDB_Result_Reader : public CObject, public IReader
+    {
+    public:
+        CDB_Result_Reader(AutoPtr<CDB_RPCCmd> cmd,
+                          AutoPtr<CDB_Result> db_result)
+            : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
+            {
+            }
+
+        ERW_Result Read(void*   buf,
+                        size_t  count,
+                        size_t* bytes_read)
+            {
+                if ( !count ) {
+                    if ( bytes_read ) {
+                        *bytes_read = 0;
+                    }
+                    return eRW_Success;
+                }
+                size_t ret;
+                while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
+                    if ( !sx_FetchNextItem(*m_DB_Result, "asnout") ) {
+                        m_DB_RPCCmd->DumpResults();
+                        break;
+                    }
+                }
+                if ( bytes_read ) {
+                    *bytes_read = ret;
+                }
+                return ret? eRW_Success: eRW_Eof;
+            }
+        ERW_Result PendingCount(size_t* /*count*/)
+            {
+                return eRW_NotImplemented;
+            }
+
+    private:
+        AutoPtr<CDB_RPCCmd> m_DB_RPCCmd;
+        AutoPtr<CDB_Result> m_DB_Result;
+    };
+}
+
+
 void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
 {
     if ( !m_Context ) {
@@ -297,8 +389,9 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
         }
     }
 
+    CPubseq2Validator validator(this, conn_, m_ExclWGSMaster);
     AutoPtr<CDB_Connection> conn
-        (m_Context->Connect(m_Server, m_User, m_Password, 0));
+        (m_Context->ConnectValidated(m_Server, m_User, m_Password, validator));
     
     if ( !conn.get() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
@@ -307,22 +400,6 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
     if ( GetDebugLevel() >= 2 ) {
         NcbiCout << "CPubseq2Reader::Connected to " << conn->ServerName()
                  << NcbiEndl;
-    }
-
-    if ( m_ExclWGSMaster ) {
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set exclude_wgs_master on"));
-        if ( cmd ) {
-            cmd->Send();
-            cmd->DumpResults();
-        }
-    }
-
-    try {
-        x_InitConnection(*conn, conn_);
-    }
-    catch ( CException& exc ) {
-        NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
-                     "connection initialization failed");
     }
 
     m_Connections[conn_].m_Connection.reset(conn.release());
@@ -412,63 +489,6 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
 }
 
 
-namespace {
-    bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
-    {
-        while ( result.Fetch() ) {
-            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
-                if ( result.ItemName(pos) == name ) {
-                    return true;
-                }
-                result.SkipItem();
-            }
-        }
-        return false;
-    }
-    
-    class CDB_Result_Reader : public CObject, public IReader
-    {
-    public:
-        CDB_Result_Reader(AutoPtr<CDB_RPCCmd> cmd,
-                          AutoPtr<CDB_Result> db_result)
-            : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
-            {
-            }
-
-        ERW_Result Read(void*   buf,
-                        size_t  count,
-                        size_t* bytes_read)
-            {
-                if ( !count ) {
-                    if ( bytes_read ) {
-                        *bytes_read = 0;
-                    }
-                    return eRW_Success;
-                }
-                size_t ret;
-                while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
-                    if ( !sx_FetchNextItem(*m_DB_Result, "asnout") ) {
-                        m_DB_RPCCmd->DumpResults();
-                        break;
-                    }
-                }
-                if ( bytes_read ) {
-                    *bytes_read = ret;
-                }
-                return ret? eRW_Success: eRW_Eof;
-            }
-        ERW_Result PendingCount(size_t* /*count*/)
-            {
-                return eRW_NotImplemented;
-            }
-
-    private:
-        AutoPtr<CDB_RPCCmd> m_DB_RPCCmd;
-        AutoPtr<CDB_Result> m_DB_Result;
-    };
-}
-
-
 void CPubseq2Reader::x_SendPacket(TConn conn,
                                   const CID2_Request_Packet& packet)
 {
@@ -555,7 +575,7 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
             AutoPtr<CRStream> stream
                 (new CRStream(reader.release(), 0, 0, CRWStreambuf::fOwnAll));
             AutoPtr<CObjectIStream> obj_str
-                (new CObjectIStreamAsnBinary(*stream.release(), true));
+                (new CObjectIStreamAsnBinary(*stream.release(), eTakeOwnership));
             return obj_str;
         }
     }
