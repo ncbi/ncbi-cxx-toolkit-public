@@ -372,20 +372,34 @@ namespace impl {
     //####################################################################
     xmlAttributePtr find_default_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace) {
         if (xmlnode->doc != 0) {
-            xmlAttributePtr dtd_attr=0;
+            xmlAttributePtr dtd_attr = 0;
+            const xmlChar* prefix = 0;
+
+            if (nspace && strlen(nspace->get_prefix()) > 0)
+                prefix = reinterpret_cast<const xmlChar*>(nspace->get_prefix());
 
             if (xmlnode->doc->intSubset != 0) {
-                dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->intSubset, xmlnode->name, reinterpret_cast<const xmlChar*>(name));
-                if (dtd_attr)
-                    if (!ns_util::default_attr_ns_match(dtd_attr, nspace))
-                        dtd_attr = 0;
+                if (nspace)
+                    dtd_attr = xmlGetDtdQAttrDesc(xmlnode->doc->intSubset,
+                                                  xmlnode->name,
+                                                  reinterpret_cast<const xmlChar*>(name),
+                                                  prefix);
+                else
+                    dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->intSubset,
+                                                 xmlnode->name,
+                                                 reinterpret_cast<const xmlChar*>(name));
             }
 
             if (dtd_attr == 0 && xmlnode->doc->extSubset != 0) {
-                dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->extSubset, xmlnode->name, reinterpret_cast<const xmlChar*>(name));
-                if (dtd_attr)
-                    if (!ns_util::default_attr_ns_match(dtd_attr, nspace))
-                        dtd_attr = 0;
+                if (nspace)
+                    dtd_attr = xmlGetDtdQAttrDesc(xmlnode->doc->extSubset,
+                                                  xmlnode->name,
+                                                  reinterpret_cast<const xmlChar*>(name),
+                                                  prefix);
+                else
+                    dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->extSubset,
+                                                 xmlnode->name,
+                                                 reinterpret_cast<const xmlChar*>(name));
             }
 
             if (dtd_attr != 0 && dtd_attr->defaultValue != 0) {
