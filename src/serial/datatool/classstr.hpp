@@ -156,6 +156,7 @@ protected:
     bool x_IsNullType(TMembers::const_iterator i) const;
     bool x_IsNullWithAttlist(TMembers::const_iterator i) const;
     bool x_IsAnyContentType(TMembers::const_iterator i) const;
+    bool x_IsUniSeq(TMembers::const_iterator i) const;
 
 private:
     bool m_IsObject;

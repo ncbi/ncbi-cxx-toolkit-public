@@ -93,6 +93,7 @@ public:
 
     TConstObjectPtr GetDefault(void) const;
     CMemberInfo* SetDefault(TConstObjectPtr def);
+    CMemberInfo* SetElementDefault(TConstObjectPtr def);
 
     bool HaveSetFlag(void) const;
     CMemberInfo* SetSetFlag(const bool* setFlag);

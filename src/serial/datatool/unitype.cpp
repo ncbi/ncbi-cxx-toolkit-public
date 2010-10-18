@@ -387,6 +387,9 @@ bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
     const CBlockDataValue* block =
         dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
+        if (CDataType::GetXmlSourceSpec()) {
+            return m_ElementType->CheckValue(value);
+        }
         value.Warning("block of values expected", 18);
         return false;
     }
@@ -398,10 +401,21 @@ bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
     return ok;
 }
 
-TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
+TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue&  value) const
 {
+    if (CDataType::GetXmlSourceSpec()) {
+        return m_ElementType->CreateDefault(value);
+    }
     NCBI_THROW(CDatatoolException,eNotImplemented,
         "SET/SEQUENCE OF default not implemented");
+}
+
+string CUniSequenceDataType::GetDefaultString(const CDataValue& value) const
+{
+    if (CDataType::GetXmlSourceSpec()) {
+        return m_ElementType->GetDefaultString(value);
+    }
+    return CParent::GetDefaultString(value);
 }
 
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)

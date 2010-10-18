@@ -40,6 +40,8 @@
 #include "srcutil.hpp"
 #include "comments.hpp"
 #include "statictype.hpp"
+#include "stlstr.hpp"
+#include "ptrstr.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -95,6 +97,10 @@ bool CClassTypeStrings::x_IsAnyContentType(TMembers::const_iterator i) const
     return (dynamic_cast<CAnyContentTypeStrings*>(i->type.get()) != 0);
 }
 
+bool CClassTypeStrings::x_IsUniSeq(TMembers::const_iterator i) const
+{
+    return i->dataType && i->dataType->IsUniSeq();
+}
 
 void CClassTypeStrings::AddMember(const string& name,
                                   const AutoPtr<CTypeStrings>& type,
@@ -134,6 +140,9 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
     }
 
     bool haveDefault = !defaultValue.empty();
+    if (haveDefault && dataType && dataType->IsUniSeq()) {
+        haveDefault = false;
+    }
     if ( haveDefault  &&  type ) {
         // Some aliased types need to cast default value
         defaultValue = type->GetDefaultCode(defaultValue);
@@ -563,7 +572,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             
             // generate Reset... method
             string destructionCode = i->type->GetDestructionCode(i->valueName);
-            string assignValue = i->defaultValue;
+            string assignValue = x_IsUniSeq(i) ? kEmptyStr : i->defaultValue;
             string resetCode;
             if ( assignValue.empty() && !as_ref ) {
                 resetCode = i->type->GetResetCode(i->valueName);
@@ -696,7 +705,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "        const_cast<"<<code.GetClassNameDT()<<"*>(this)->Reset"<<i->cName<<"();\n"
                         "    }\n";
                 }
-                else if (i->defaultValue.empty() &&
+                else if (assignValue.empty() &&
                          i->type->GetKind() != eKindContainer &&
                          !isNullWithAtt) {
                     code.Methods(inl) <<
@@ -1088,7 +1097,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 has_non_null_refs = true;
             }
             else if ( !as_ref && !x_IsNullType(i) ) {
-                string init = i->defaultValue;
+                string init = x_IsUniSeq(i) ? kEmptyStr : i->defaultValue;
                 if ( init.empty() )
                     init = i->type->GetInitializer();
                 if ( !init.empty() )
@@ -1271,11 +1280,33 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             methods << ")";
 
             if ( !i->defaultValue.empty() ) {
-                methods << "->SetDefault(";
-                if ( ref )
-                    methods << "new NCBI_NS_NCBI::CRef< "+i->tName+" >(";
-                methods << "new "<<i->tName<<"("<<i->defaultValue<<')';
-                if ( ref )
+                bool defref(ref);
+                string defTName(i->tName);
+                string defset("->SetDefault(");
+
+                if (x_IsUniSeq(i)) {
+                    const CTemplate1TypeStrings* uniStr =
+                        dynamic_cast<const CTemplate1TypeStrings*>(i->type.get());
+                    if (uniStr) {
+                        defset = "->SetElementDefault(";
+                        const CTypeStrings* argStr = uniStr->GetArg1Type();
+                        defref = argStr->GetKind() == CTypeStrings::eKindRef;
+                        defTName = argStr->GetCType(code.GetNamespace());
+                        if (defref) {
+                            const CRefTypeStrings* refStr = dynamic_cast<const CRefTypeStrings*>(argStr);
+                            if (refStr) {
+                                defTName = refStr->GetDataType()->GetCType(code.GetNamespace());
+                                defTName += "::Tdata";
+                            }
+                            defref = false;
+                        }
+                    }
+                }
+                methods << defset;
+                if ( defref )
+                    methods << "new NCBI_NS_NCBI::CRef< "+defTName+" >(";
+                methods << "new "<<defTName<<"("<<i->defaultValue<<')';
+                if ( defref )
                     methods << ')';
                 methods << ')';
                 if ( i->haveFlag )

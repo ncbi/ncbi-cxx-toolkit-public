@@ -356,6 +356,11 @@ CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
     return this;
 }
 
+CMemberInfo* CMemberInfo::SetElementDefault(TConstObjectPtr def)
+{
+    return SetDefault(def);
+}
+
 CMemberInfo* CMemberInfo::SetSetFlag(const bool* setFlag)
 {
     _ASSERT(Optional());
@@ -704,9 +709,10 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
     memberInfo->UpdateSetFlagYes(classPtr);
-    if (memberInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
-        in.SetMemberDefault(memberInfo->GetDefault());
-    }
+    ETypeFamily family = memberInfo->GetTypeInfo()->GetTypeFamily();
+    in.SetMemberDefault(
+        (family == eTypeFamilyPrimitive || family == eTypeFamilyContainer) ?
+            memberInfo->GetDefault() : 0);
     try {
         in.ReadObject(memberInfo->GetItemPtr(classPtr),
                       memberInfo->GetTypeInfo());

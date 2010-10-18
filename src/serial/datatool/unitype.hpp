@@ -52,6 +52,7 @@ public:
     bool CheckType(void) const;
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
+    virtual string GetDefaultString(const CDataValue& value) const;
 
     CDataType* GetElementType(void)
         {
