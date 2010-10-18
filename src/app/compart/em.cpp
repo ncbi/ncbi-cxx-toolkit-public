@@ -390,7 +390,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
             const char * pcb (0);
             const Uint4 bases (subjdb->GetSequence(oid, &pcb));
             const char * pcbe (pcb + bases / 4);
-            Uint8 npcb (reinterpret_cast<Uint8>(pcb)), npcb0 (npcb);
+            uintptr_t npcb (reinterpret_cast<uintptr_t>(pcb)), npcb0 (npcb);
             npcb -= npcb % 8;
             if(npcb < npcb0) npcb += 8;
             const size_t gcbase (4*(npcb - npcb0));
@@ -602,7 +602,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
         const char * pcb (0);
         const Uint4 bases (blastdb->GetSequence(oid, &pcb));
         const char * pce (pcb + bases/4);
-        Uint8 npcb (reinterpret_cast<Uint8>(pcb)), npcb0 (npcb);
+        uintptr_t npcb (reinterpret_cast<uintptr_t>(pcb)), npcb0 (npcb);
         npcb -= npcb % 8;
         if(npcb < npcb0) npcb += 8;
         const Uint4  gcbase (4*(npcb - npcb0));
@@ -760,7 +760,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
                     if(gccur + 32 < current_offset + bases) {
 
                         // pre-read next 16 residues
-                        const Uint8 n (reinterpret_cast<Uint8>(pui8 + 1));
+                        const uintptr_t n (reinterpret_cast<uintptr_t>(pui8 + 1));
                         const Uint4 * pui4 (reinterpret_cast<const Uint4*>(n));
                         Uint4 ui4 (*pui4);
                         Uint8 ui8_4 (ui4);
