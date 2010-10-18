@@ -52,6 +52,7 @@
 // standard includes
 #include <algorithm>
 #include <stdexcept>
+#include <string.h>
 
 // libxml2 includes
 #include <libxml/tree.h>
