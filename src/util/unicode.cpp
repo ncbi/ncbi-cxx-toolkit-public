@@ -104,8 +104,12 @@ static TUnicodeTable g_DefaultUnicodeTable =
 // Environment variable:
 //     NCBI_CONFIG__NCBI__UNICODETOASCII
 //
+static string s_FindUnicodeToAscii(void)
+{
+    return CDirEntry::FindDataFile("unicode_to_ascii.txt");
+}
 NCBI_PARAM_DECL(string, NCBI, UnicodeToAscii); 
-NCBI_PARAM_DEF (string, NCBI, UnicodeToAscii, kEmptyStr);
+NCBI_PARAM_DEF_WITH_INIT (string, NCBI, UnicodeToAscii, kEmptyStr, s_FindUnicodeToAscii);
 
 /////////////////////////////////////////////////////////////////////////////
 // CUnicodeToAsciiTranslation helper class
