@@ -53,7 +53,7 @@ class NCBI_XCONNECT_EXPORT CConnTest : virtual public CConnIniter
 public:
     /// Note that each stage has a previous one as a prerequisite, with the
     /// only exception for the stateful service (last check) that may work
-    /// if forced into the stateless mode when firewall connections
+    /// when forced into the stateless mode even if the firewall connections
     /// (in preceding check) have been found non-operational...
     ///
     enum EStage {
@@ -109,8 +109,8 @@ protected:
     ///
     /// Depending on the check progress !okay may mean the CP has
     /// been marked FAIL at NCBI end at an earlier stage of testing,
-    /// as well as turn "false" at a later stage is the actual connection
-    /// attempt to use (otherwise okay CP) fails.
+    /// as well as turned "false" at a later stage when the actual
+    /// connection attempt (to use the otherwise okay CP) failed.
     ///
     /// m_Fwd holds the current list of CPs sorted by the port number.
     ///
@@ -122,7 +122,6 @@ protected:
         bool operator < (const CFWConnPoint& p) const
         { return port < p.port; }
     };
-
 
     /// User-redefinable checks for each stage.
     ///
@@ -144,9 +143,9 @@ protected:
 
     /// User-defined rendering callbacks:  PreCheck() and PostCheck().
     /// Each callback receives a stage enumerator and a step within.
-    /// At least one step (0) is required, and denotes the main check.
+    /// At least one step (0) is required and denotes the main check.
 
-    /// PreCheck gets called before the step starts, with "title"
+    /// PreCheck gets called before the step starts, with the "title"
     /// containing either:
     ///   a single-lined step title; or
     ///   a multi-lined step description:  the first line being the actual
@@ -154,11 +153,11 @@ protected:
     /// Lines are separated with "\n", and normally do not have any
     /// ending punctuation (but may be capitalized).
     /// The default callback does the following:
-    ///   For the single-lined titles, if outputs the title into the output
+    ///   For the single-lined titles, it outputs the title into the output
     ///     stream (if provided in ctor), and then puts the ellipsis (...)
-    ///     without ending newline;
+    ///     without an ending newline;
     ///   For the multi-lined description, the title is printed on
-    ///     the first line, and the each line of the description follows
+    ///     the first line, and then each line of the description follows
     ///     as a justified paragraph.  Last paragraph ends with a new line.
     /// Each PreCheck() is expected to reset the m_End member to "false".
     ///
@@ -196,8 +195,10 @@ protected:
     /// Extended info of the last step IO
     const string&      GetCheckPoint(void) const { return m_CheckPoint; }
 
-    /// As supplied in constructor
+    /// Default timeout value
     static const STimeout kTimeout;
+
+    /// As supplied in constructor
     const STimeout*       m_Timeout;
     SIZE_TYPE             m_Linelen;
     CNcbiOstream*         m_Out;
@@ -207,28 +208,23 @@ protected:
     bool                  m_Stateless;
     bool                  m_Firewall;
 
+    /// Firewall daemon configuration
     vector<CFWConnPoint>  m_Fwd;
-    vector<CFWConnPoint>  m_FwdFallback;
-    EIO_Status            m_FwdStatus;
-    EIO_Status            m_FwdFallbackStatus;
+    vector<CFWConnPoint>  m_FwdFB;
 
+    /// Check step start / stop indicator
     bool                  m_End;
 
 private:
     string                m_CheckPoint;
-    STimeout              m_TimeoutValue;
+    STimeout              m_TimeoutStorage;
 
     /// Pretect from runaway stage argument
     EIO_Status x_CheckTrap(string* reason);
     /// Return timeout suggestion
     string     x_TimeoutMsg(void);
-    /// Check a single FW connection
-    EIO_Status x_CheckFWConnection(SConnNetInfo* net_info,
-                                   CFWConnPoint& cp,
-                                   TSOCK_Flags   flags,
-                                   string&       reason);
-    /// Obtain FW settings or service entries
-    void x_ObtainFirewallSettings(CConn_HttpStream& script);
+    /// Obtain and populate FWD connection points
+    EIO_Status x_GetFirewallConfiguration(const SConnNetInfo* net_info);
 };
 
 
