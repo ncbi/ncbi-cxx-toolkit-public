@@ -79,10 +79,14 @@ public:
 /// [NCBI] DataPath may both list multiple directories, delimited as per
 /// PATH (by ';' on Windows, ':' on Unix).  Return the file's path
 /// (complete with filename) if found, the empty string otherwise.
-
 NCBI_XUTIL_EXPORT
 extern string g_FindDataFile(const CTempString& basename);
 
+/// Ignore (or stop ignoring, depending on do_ignore) NCBI application
+/// data files matching the given pattern to force the use of built-in
+/// fallbacks; mainly of interest to unit tests.
+NCBI_XUTIL_EXPORT
+extern void g_IgnoreDataFile(const string& pattern, bool do_ignore = true);
 
 END_NCBI_SCOPE
 

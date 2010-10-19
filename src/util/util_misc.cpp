@@ -133,6 +133,8 @@ NCBI_PARAM_DECL(string, NCBI, Data);
 NCBI_PARAM_DEF (string, NCBI, Data, kEmptyStr);
 typedef NCBI_PARAM_TYPE(NCBI, Data) TNCBIDataDir;
 
+static vector<string> s_IgnoredDataFiles;
+
 string g_FindDataFile(const CTempString& basename)
 {
 #ifdef NCBI_OS_MSWIN
@@ -140,6 +142,11 @@ string g_FindDataFile(const CTempString& basename)
 #else
     static const string kDelim = ":";
 #endif
+
+    if ( !s_IgnoredDataFiles.empty()
+        &&  CDirEntry::MatchesMask(basename, s_IgnoredDataFiles) ) {
+        return kEmptyStr;
+    }
 
     TNCBIDataPath path;
     list<string> dirs;
@@ -162,6 +169,17 @@ string g_FindDataFile(const CTempString& basename)
     }
 
     return kEmptyStr; // not found
+}
+
+
+void g_IgnoreDataFile(const string& pattern, bool do_ignore)
+{
+    vector<string>& idf = s_IgnoredDataFiles;
+    if (do_ignore) {
+        idf.push_back(pattern);
+    } else {
+        idf.erase(remove(idf.begin(), idf.end(), pattern), idf.end());
+    }
 }
 
 
