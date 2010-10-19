@@ -705,7 +705,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "        const_cast<"<<code.GetClassNameDT()<<"*>(this)->Reset"<<i->cName<<"();\n"
                         "    }\n";
                 }
-                else if (assignValue.empty() &&
+                else if (i->defaultValue.empty() &&
                          i->type->GetKind() != eKindContainer &&
                          !isNullWithAtt) {
                     code.Methods(inl) <<
