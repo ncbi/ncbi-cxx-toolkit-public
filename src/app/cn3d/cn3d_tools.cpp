@@ -468,22 +468,26 @@ CRef < CBioseq > FetchSequenceViaHTTP(const string& id)
 {
     CSeq_entry seqEntry;
     string err;
-    static const string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.fcgi");
-    string args = string("view=0&maxplex=1&save=idf&val=") + id;
-    INFOMSG("Trying to load sequence from URL " << host << path << '?' << args);
+    static const string host("eutils.ncbi.nlm.nih.gov"), path("/entrez/eutils/efetch.fcgi");
+    string args = string("rettype=asn.1&retmode=binary&maxplex=1&id=") + id;
 
+    // efetch doesn't seem to care whether db is protein or nucleotide, when using gi or accession... but that may change in the future
     CRef < CBioseq > bioseq;
-    if (GetAsnDataViaHTTP(host, path, args, &seqEntry, &err)) {
-        if (seqEntry.IsSeq())
-            bioseq.Reset(&(seqEntry.SetSeq()));
-        else if (seqEntry.IsSet() && seqEntry.GetSet().GetSeq_set().front()->IsSeq())
-            bioseq.Reset(&(seqEntry.SetSet().SetSeq_set().front()->SetSeq()));
-        else
-            ERRORMSG("FetchSequenceViaHTTP() - confused by SeqEntry format");
+    for (unsigned int round=1; round<=2 && bioseq.Empty(); ++round) {
+        string db = (round == 1) ? "protein" : "nucleotide";
+        INFOMSG("Trying to load sequence from URL " << host << path << '?' << (args + "&db=" + db));
+        bool ok = GetAsnDataViaHTTP(host, path, (args + "&db=" + db), &seqEntry, &err);
+        if (ok) {
+            if (seqEntry.IsSeq())
+                bioseq.Reset(&(seqEntry.SetSeq()));
+            else if (seqEntry.IsSet() && seqEntry.GetSet().GetSeq_set().front()->IsSeq())
+                bioseq.Reset(&(seqEntry.SetSet().SetSeq_set().front()->SetSeq()));
+            else
+                WARNINGMSG("FetchSequenceViaHTTP() - confused by SeqEntry format");
+        } else {
+            WARNINGMSG("FetchSequenceViaHTTP() - HTTP Bioseq retrieval failed, err: " << err);
+        }
     }
-    if (bioseq.Empty())
-        ERRORMSG("FetchSequenceViaHTTP() - HTTP Bioseq retrieval failed, err: " << err);
-
     return bioseq;
 }
 
