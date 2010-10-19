@@ -488,7 +488,7 @@ bool SeqIdToIdentifier(const CRef < ncbi::objects::CSeq_id >& seqID, string& ide
         return false;
     try {
         CNcbiOstrstream oss;
-        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(eSerial_Xml, oss, false));
+        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(eSerial_Xml, oss, eNoOwnership));
         osa->SetUseIndentation(false);
         CObjectOStreamXml *osx = dynamic_cast<CObjectOStreamXml*>(osa.get());
         if (osx)
@@ -512,7 +512,7 @@ bool IdentifierToSeqId(const string& identifier, CRef < ncbi::objects::CSeq_id >
 {
     try {
         CNcbiIstrstream iss(identifier.data(), identifier.size());
-        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(eSerial_Xml, iss, false));
+        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(eSerial_Xml, iss, eNoOwnership));
         seqID.Reset(new CSeq_id());
         *isa >> *seqID;
         return true;
