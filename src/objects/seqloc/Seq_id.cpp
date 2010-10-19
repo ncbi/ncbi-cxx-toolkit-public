@@ -838,15 +838,14 @@ static void s_LoadGuide(void)
     if (s_Guide.count) {
         return;
     }
-    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        string file = CDirEntry::MakePath(app->GetConfig().Get("NCBI", "Data"),
-                                          "accguide.txt");
-        if (CFile(file).Exists()) {
+    {{
+        string file = CDirEntry::FindDataFile("accguide.txt");
+        if ( !file.empty() ) {
             try {
                 CSeq_id::LoadAccessionGuide(file);
             } STD_CATCH_ALL_X(1, "CSeq_id::LoadAccessionGuide")
         }
-    }
+    }}
     if ( !s_Guide.count ) {
         ERR_POST_X(6, Info << "CSeq_id::IdentifyAccession: " // minor lie
                               "falling back on built-in rules.");
