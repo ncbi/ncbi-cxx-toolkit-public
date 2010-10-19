@@ -52,6 +52,7 @@
 
 #include <boost/test/parameterized_test.hpp>
 #include <util/util_exception.hpp>
+#include <util/util_misc.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -64,8 +65,7 @@ USING_SCOPE(objects);
 NCBITEST_AUTO_INIT()
 {
     // force use of built-in accession guide
-    CNcbiApplication::Instance()->GetConfig().Set("NCBI", "Data", kEmptyStr,
-                                                  IRegistry::fPersistent);
+    g_IgnoreDataFile("accguide.txt");
 }
 
 BOOST_AUTO_TEST_CASE(s_TestDefaultInit)
