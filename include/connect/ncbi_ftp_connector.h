@@ -82,6 +82,11 @@ typedef unsigned int TFTP_Flags;
  * Each time the size gets passed in as a '\0'-terminated character string.
  * The callback remains effective for the entire lifetime span
  * of the connector.
+ *
+ * NOTE:  With restarted data retrievals (REST) the size reported in the
+ * server response to transfer initiation can be either the true size of
+ * the data to be transferred or the entire size of the original file
+ * (without the restart offset taken into account).
  */
 typedef EIO_Status (*FFTP_Callback)(void* data,
                                     const char* cmd, const char* arg);
