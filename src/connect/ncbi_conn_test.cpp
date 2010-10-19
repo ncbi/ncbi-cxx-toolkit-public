@@ -654,8 +654,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     string summary(status != eIO_Success
                    ? "Firewall port check FAILED"
                    : !n
-                   ? "All firewall port checked OK"
-                   : "Firewall port check OK only with fallback");
+                   ? "All firewall port(s) checked OK"
+                   : "Firewall port check PASSED only with fallback");
     PostCheck(eFirewallConnections, 0/*main*/, status, summary);
 
     ConnNetInfo_Destroy(net_info);
