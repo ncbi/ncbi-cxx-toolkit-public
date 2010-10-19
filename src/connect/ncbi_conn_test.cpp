@@ -556,7 +556,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             continue;
         status = eIO_Success;
 
-        typedef pair<CFWConnPoint*,CConn_SockStream*> CFWCheck;
+        typedef pair<CFWConnPoint*,CConn_SocketStream*> CFWCheck;
         vector<CFWCheck> v;
 
         // Spawn connections for all CPs
