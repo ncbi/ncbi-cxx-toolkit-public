@@ -1230,13 +1230,6 @@ public:
                                     ETextBinary   text_binary = eBinary,
                                     EAllowRead    allow_read  = eAllowRead);
 
-    /// Look for an NCBI application data file of the given name; the
-    /// enviroment variable NCBI_DATA_PATH and registry entry [NCBI] Data
-    /// (both delimited by ';' on Windows, ':' on Unix) indicate where to
-    /// look, with the former taking precedence if set.  Return the file's
-    /// path (complete with filename) if found, the empty string otherwise.
-    static string FindDataFile(const CTempString& basename);
-
 protected:
     /// Get the default global mode.
     ///

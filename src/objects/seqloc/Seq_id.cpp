@@ -42,6 +42,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <util/line_reader.hpp>
 #include <util/static_map.hpp>
+#include <util/util_misc.hpp>
 #include <serial/serialimpl.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -839,7 +840,7 @@ static void s_LoadGuide(void)
         return;
     }
     {{
-        string file = CDirEntry::FindDataFile("accguide.txt");
+        string file = g_FindDataFile("accguide.txt");
         if ( !file.empty() ) {
             try {
                 CSeq_id::LoadAccessionGuide(file);

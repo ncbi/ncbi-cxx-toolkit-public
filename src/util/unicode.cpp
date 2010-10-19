@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <util/unicode.hpp>
 #include <util/util_exception.hpp>
+#include <util/util_misc.hpp>
 #include <util/error_codes.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -106,7 +107,7 @@ static TUnicodeTable g_DefaultUnicodeTable =
 //
 static string s_FindUnicodeToAscii(void)
 {
-    return CDirEntry::FindDataFile("unicode_to_ascii.txt");
+    return g_FindDataFile("unicode_to_ascii.txt");
 }
 NCBI_PARAM_DECL(string, NCBI, UnicodeToAscii); 
 NCBI_PARAM_DEF_WITH_INIT (string, NCBI, UnicodeToAscii, kEmptyStr, s_FindUnicodeToAscii);

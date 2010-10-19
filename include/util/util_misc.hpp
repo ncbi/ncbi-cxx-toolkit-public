@@ -72,6 +72,18 @@ public:
 };
 
 
+/// Look for an NCBI application data file of the given name, consulting
+/// (in decreasing order of precedence) the environment variable
+/// NCBI_DATA_PATH, the registry entry [NCBI] DataPath, and the registry
+/// entry [NCBI] Data to determine where to look.  NCBI_DATA_PATH and
+/// [NCBI] DataPath may both list multiple directories, delimited as per
+/// PATH (by ';' on Windows, ':' on Unix).  Return the file's path
+/// (complete with filename) if found, the empty string otherwise.
+
+NCBI_XUTIL_EXPORT
+extern string g_FindDataFile(const CTempString& basename);
+
+
 END_NCBI_SCOPE
 
 

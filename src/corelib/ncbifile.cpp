@@ -2379,37 +2379,6 @@ fstream* CDirEntry::CreateTmpFileEx(const string& dir, const string& prefix,
 }
 
 
-NCBI_PARAM_DECL  (string, NCBI, Data);
-NCBI_PARAM_DEF_EX(string, NCBI, Data, kEmptyStr, 0, NCBI_DATA_PATH);
-typedef   NCBI_PARAM_TYPE(NCBI, Data) TNCBIDataPath;
-
-string CDirEntry::FindDataFile(const CTempString& basename)
-{
-#ifdef NCBI_OS_MSWIN
-    static const string kDelim = ";";
-#else
-    static const string kDelim = ":";
-#endif
-
-    TNCBIDataPath path;
-    if (path.Get().empty()) {
-        return kEmptyStr;
-    }
-
-    list<string> dirs;
-    CFile        file;
-    NStr::Split(path.Get(), kDelim, dirs);
-    ITERATE (list<string>, dir, dirs) {
-        file.Reset(MakePath(*dir, basename));
-        if (file.Exists()) {
-            return file.GetPath();
-        }
-    }
-
-    return kEmptyStr; // not found
-}
-
-
 // Helper: Copy attributes (owner/date/time) from one entry to another.
 // Both entries should have equal type.
 //

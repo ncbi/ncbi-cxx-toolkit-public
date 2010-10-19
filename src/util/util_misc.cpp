@@ -31,7 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <util/util_misc.hpp>
-#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_param.hpp>
+#include <corelib/ncbifile.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -121,6 +122,46 @@ string g_GetPasswordFromConsole(const string& prompt)
 #endif
 
     return password;
+}
+
+
+NCBI_PARAM_DECL  (string, NCBI, DataPath);
+NCBI_PARAM_DEF_EX(string, NCBI, DataPath, kEmptyStr, 0, NCBI_DATA_PATH);
+typedef   NCBI_PARAM_TYPE(NCBI, DataPath) TNCBIDataPath;
+
+NCBI_PARAM_DECL(string, NCBI, Data);
+NCBI_PARAM_DEF (string, NCBI, Data, kEmptyStr);
+typedef NCBI_PARAM_TYPE(NCBI, Data) TNCBIDataDir;
+
+string g_FindDataFile(const CTempString& basename)
+{
+#ifdef NCBI_OS_MSWIN
+    static const string kDelim = ";";
+#else
+    static const string kDelim = ":";
+#endif
+
+    TNCBIDataPath path;
+    list<string> dirs;
+
+    if ( !path.Get().empty() ) {
+        NStr::Split(path.Get(), kDelim, dirs);
+    } else {
+        TNCBIDataDir dir;
+        if ( !dir.Get().empty() ) {
+            dirs.push_back(dir.Get());
+        }
+    }
+
+    CFile file;
+    ITERATE (list<string>, dir, dirs) {
+        file.Reset(CDirEntry::MakePath(*dir, basename));
+        if (file.Exists()) {
+            return file.GetPath();
+        }
+    }
+
+    return kEmptyStr; // not found
 }
 
 
