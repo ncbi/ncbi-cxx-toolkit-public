@@ -353,15 +353,13 @@ VariantProperties ::= SEQUENCE {
         has-genotypes    (2)  -- SNP has individual genotype (0x02)
     } OPTIONAL,
 
-    project-data SET OF SEQUENCE {
-        -- project IDs are IDs from BioProjects
-        -- in order to report information about project relationships, we
-        -- require projects to be registered
-        -- This field in many ways duplicates dbxrefs; however, the
-        -- intention of this field is to more adequately reflects
-        -- ownership and data source
-        project-ids SET OF INTEGER
-    } OPTIONAL,
+    -- project IDs are IDs from BioProjects
+    -- in order to report information about project relationships, we
+    -- require projects to be registered
+    -- This field in many ways duplicates dbxrefs; however, the
+    -- intention of this field is to more adequately reflect
+    -- ownership and data source
+    project-data SET OF INTEGER OPTIONAL,
 
     quality-check INTEGER {
         contig-allele-missing   (1), -- Reference sequence allele at the mapped
