@@ -174,7 +174,7 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
         if (status == eIO_Success) {
             size_t handle_size = SOCK_OSHandleSize();
             char*  handle      = new char[handle_size];
-            _VERIFY(SOCK_GetOSHandle(s, &handle, handle_size) == eIO_Success);
+            _VERIFY(SOCK_GetOSHandle(s, handle, handle_size) == eIO_Success);
             status = SOCK_CreateOnTopEx(handle, handle_size, &sock,
                                         init_data, init_size, flags);
             delete[] handle;
