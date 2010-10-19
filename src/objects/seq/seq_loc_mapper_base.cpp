@@ -246,21 +246,15 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
     // - interval to be mapped has partial "to"
     // - destination range is 1 or 2 bases beyond the end of the source range
     const int frame_shift = ( (m_Frame > 1) ? (m_Frame - 1) : 0 );
-    if ( m_ExtTo ) {
-        bool partial_to = false;
-        if (!m_Reverse) {
-            partial_to = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
-                fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
-        }
-        else {
-            partial_to = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
-                fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
-        }
+    const int is_frame = ( frame_shift > 0 );
+    /* if ( m_ExtTo ) {
         // !!! TODO: what about the minus strand?
-        if ( partial_to && (to < m_Src_to) &&  (m_Src_to + frame_shift - to < 3) ) {
+        const int is_frame = ( frame_shift > 0 ? 1 : 0 );
+        if ( partial_to && (to < m_Src_to) &&  (m_Src_to + is_frame - to < 2) ) {
+        // if ( partial_to && (to == m_Src_to - 1) ) {
             to = m_Src_to;
         }
-    }
+    } */
 
     // If we're partial on the left and we're not at the beginning only because of 
     // frame shift, we shift back to the beginning when mapping.
@@ -274,6 +268,16 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
             fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
     }
 
+    bool partial_to = false;
+    if (!m_Reverse) {
+        partial_to = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
+            fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
+    }
+    else {
+        partial_to = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
+            fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
+    }
+
     from = max(from, m_Src_from);
     to = min(to, m_Src_to);
 
@@ -281,15 +285,19 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         TRange ret(Map_Pos(from), Map_Pos(to));
         // extend to beginning if necessary
         // example accession that triggers this if: AJ237662.1
-        if( (frame_shift > 0) && (from == 0) && (m_Src_from == 0) && (m_Dst_from == frame_shift) ) {
+        if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) && (m_Dst_from == frame_shift) ) {
             ret.SetFrom( 0 );
         }
+        /* const TSeqPos dst_to = Map_Pos(m_Src_to);
+        if ( m_ExtTo && partial_to && (m_Src_to - to + is_frame < 4) ) { //(dst_to + frame_shift - ret.GetTo() < 3) ) {
+            ret.SetTo( dst_to );
+        } */
         return ret;
     }
     else {
         TRange ret(Map_Pos(to), Map_Pos(from));
         // extend to beginning if necessary
-        // !!! TODO need to test this case with the left extension
+        // !!! TODO need to test this case with the left extension and right extension
         return ret;
     }
 }

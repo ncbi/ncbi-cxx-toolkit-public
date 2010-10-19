@@ -1293,7 +1293,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     CConstRef<CSeq_feat>& s_feat )              //  out: gene seq feat
 //
 //  Find the feature's related gene information. The association is established
-//  through dbxref if it exists, and through bet overlap otherwise.
+//  through dbxref if it exists, and through best overlap otherwise.
 //
 //  Note: Any of the two outs may be invalid if the corresponding information
 //  could not be found.
@@ -1363,6 +1363,14 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                 CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
                 feature::CFeatTree ft(feat_it);
                 feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
+                if( ! feat ) {
+                    s_feat =
+                        sequence::GetBestOverlappingFeat
+                        (*m_Loc,
+                        CSeqFeatData::e_Gene,
+                        sequence::eOverlap_Contained,
+                        ctx.GetScope());
+                }
             } else {
                 /// we must use a different call
                 s_feat =
@@ -1571,7 +1579,7 @@ void CFeatureItem::x_AddQuals(
     if ( type != CSeqFeatData::e_Gene &&
          subtype != CSeqFeatData::eSubtype_operon &&
          subtype != CSeqFeatData::eSubtype_gap && 
-         ( subtype != CSeqFeatData::eSubtype_repeat_region || is_not_genbank ) ) 
+         (  is_not_genbank || (subtype != CSeqFeatData::eSubtype_repeat_region && subtype != CSeqFeatData::eSubtype_mobile_element) ) )
     {
         try {
             x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
@@ -2696,7 +2704,7 @@ void CFeatureItem::x_AddQualsGene(
     if ( ! gene_ref || gene_ref->IsSuppressed() ) {
         return;
     }
-    bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
+    const bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
 
     const string* locus = (gene_ref->IsSetLocus()  &&  !NStr::IsBlank(gene_ref->GetLocus())) ?
         &gene_ref->GetLocus() : NULL;
@@ -2721,8 +2729,11 @@ void CFeatureItem::x_AddQualsGene(
             CGene_ref::TSyn syns = *syn;
             m_Gene = syns.front();
         }
-        if ( !m_Gene.empty() ) {
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
+        if( !m_Gene.empty() ) {
+            // we suppress the /gene qual when there's no locus but there is a locus tag (imitates C toolkit)
+            if ( NULL != locus || NULL == locus_tag ) {
+                x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
+            }
         }
     }
     else { // for repeat regions

@@ -213,7 +213,7 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
 
-        if( m_DBSource.empty() ) {
+        if( m_DBSource.empty() && feat != NULL ) {
             const CSeq_loc& loc = feat->GetLocation();
             const CSeq_id *cds_seq_id = loc.GetId();
             if( NULL != cds_seq_id && cds_seq_id->IsGi() ) {
