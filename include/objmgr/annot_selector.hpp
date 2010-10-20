@@ -368,10 +368,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     /// adaptive resolution of another segment.
     /// So, for example, if
     /// Master sequence A has segments B1 and B2, while B1 has segments
-    /// C11 and C12, and B2 has segments C21 and C22:
-    ///  |--------------- A ----------------|
-    ///  |------ B1 ------||------ B2 ------|
-    ///  |- C11 -||- C12 -||- C21 -||- C22 -|
+    /// C11 and C12, and B2 has segments C21 and C22:    <br>
+    ///  |--------------- A ----------------|            <br>
+    ///  |------ B1 ------||------ B2 ------|            <br>
+    ///  |- C11 -||- C12 -||- C21 -||- C22 -|            <br>
     /// Also, there are genes only on sequences B1, C11, C12, C21, and C22.
     /// For simplicity, there are no other adaptive trigger annotations.
     /// In this case annotation iterator in 'adaptive' mode will return
