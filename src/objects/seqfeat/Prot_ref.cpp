@@ -44,6 +44,7 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <util/line_reader.hpp>
+#include <util/util_misc.hpp>
 #include <objects/misc/error_codes.hpp>
 
 #define NCBI_USE_ERRCODE_X  Objects_ProtRef
@@ -117,9 +118,9 @@ static void s_LoadECNumberTable(const string& dir, const string& name,
             s_ProcessECNumberLine(*fallback++, status);
         }
     } else {
-        for (++*lr; !lr->AtEOF(); ++*lr) {
-            s_ProcessECNumberLine(**lr, status);
-        }
+        do {
+            s_ProcessECNumberLine(*++*lr, status);
+        } while ( !lr->AtEOF() );
     }
 }
 
@@ -131,15 +132,12 @@ static void s_InitializeECNumberMaps(void)
         return;
     }
     string dir;
-    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        dir = app->GetConfig().Get("NCBI", "Data");
-        if ( !dir.empty()  
-            && CFile(CDirEntry::MakePath(dir, "ecnum_specific.txt")).Exists()) {
-            dir = CDirEntry::AddTrailingPathSeparator(dir);
-        } else {
-            dir.erase();
+    {{
+        string file = g_FindDataFile("ecnum_specific.txt");
+        if ( !file.empty() ) {
+            dir = CDirEntry::AddTrailingPathSeparator(CDirEntry(file).GetDir());
         }
-    }
+    }}
     if (dir.empty()) {
         ERR_POST_X(2, Info << "s_InitializeECNumberMaps: "
                    "falling back on built-in data.");
