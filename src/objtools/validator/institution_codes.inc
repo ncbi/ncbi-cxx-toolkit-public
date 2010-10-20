@@ -704,6 +704,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CAM<AUST>	s	Central Australian Museum",
 "CAM<UK>	s	St. John's College",
 "CAME	s	Universita di Camerino, Dipartimento de Botanica ed Ecologia",
+"CAMS<ZAF>	c	Centre for Applied Mycological Studies",
 "CAMU	s	Cameron University, Department of Biological Sciences",
 "CAN	s	Canadian Museum of Nature, Vascular Plant Section",
 "CANA	s	Canadian Museum of Nature, Phycology Section",
