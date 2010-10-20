@@ -136,9 +136,8 @@ typedef struct SConnectionTag {
     STimeout               ww_timeout; /* storage for "w_timeout"            */
     STimeout               cc_timeout; /* storage for "c_timeout"            */
 
-    /* FIXME: these should be Uint8 */
-    size_t                 rdpos;      /* read and ...                       */
-    size_t                 wrpos;      /*          ... write positions       */
+    TNCBI_BigCount         rdpos;      /* read and ...                       */
+    TNCBI_BigCount         wrpos;      /*          ... write positions       */
 
     SCONN_Callback         cb[CONN_N_CALLBACKS];
 
@@ -415,7 +414,7 @@ extern EIO_Status CONN_SetTimeout
 }
 
 
-extern size_t CONN_GetPosition(CONN conn, EIO_Event event)
+extern TNCBI_BigCount CONN_GetPosition(CONN conn, EIO_Event event)
 {
     static const STimeout* timeout = 0/*dummy*/;
     char errbuf[80];
@@ -568,7 +567,7 @@ static EIO_Status s_CONN_Write
     status = conn->meta.write(conn->meta.c_write, buf, size,
                               n_written, timeout);
 
-    conn->wrpos += *n_written;
+    conn->wrpos += (TNCBI_BigCount)(*n_written);
 
     if (status != eIO_Success) {
         if (*n_written) {
@@ -742,7 +741,7 @@ static EIO_Status s_CONN_Read
         if (peek  &&  !BUF_Write(&conn->buf, buf, x_read))
             CONN_LOG_EX(32, Read, eLOG_Error, "Cannot save peek data", 0);
 
-        conn->rdpos += x_read;
+        conn->rdpos += (TNCBI_BigCount) x_read;
     }}
 
     if (status != eIO_Success) {

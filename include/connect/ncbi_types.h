@@ -48,6 +48,10 @@
  */
 
 #include <connect/connect_export.h>
+#ifndef _WIN32
+#  include <inttypes.h>
+#  include <stdint.h>
+#endif /*_WIN32*/
 #include <stddef.h>
 
 
@@ -67,8 +71,8 @@ extern "C" {
  * @sa CTimeout, g_CTimeoutToSTimeout, g_STimeoutToCTimeout
  */
 typedef struct STimeoutTag {
-    unsigned int sec;  /**< seconds                                   */
-    unsigned int usec; /**< microseconds (truncated by mod 1,000,000) */
+    unsigned int sec;  /**< seconds                         */
+    unsigned int usec; /**< microseconds (modulo 1,000,000) */
 } STimeout;
 
 #define kDefaultTimeout  ((const STimeout*)(-1))
@@ -114,6 +118,18 @@ typedef unsigned int TNCBI_Size;
 typedef unsigned int TNCBI_Time;
 
 #define NCBI_TIME_INFINITE ((TNCBI_Time)(-1))
+
+
+/** Big integer for file size and position
+ */
+
+#ifdef _WIN32
+typedef unsigned __int64 TNCBI_BigCount;
+#  define NCBI_BIGCOUNT_FORMAT_SPEC "I64u"
+#else
+typedef uint64_t         TNCBI_BigCount;
+#  define NCBI_BIGCOUNT_FORMAT_SPEC PRIu64
+#endif /*_WIN32*/
 
 
 #ifdef __cplusplus

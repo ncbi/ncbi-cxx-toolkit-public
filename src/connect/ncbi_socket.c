@@ -595,12 +595,11 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
             assert(sin  &&  sin->sin_family == AF_INET);
             SOCK_HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
                                   head, sizeof(head));
-            sprintf(tail, ", msg# %u",
-                    (unsigned)(event == eIO_Read ? sock->n_in : sock->n_out));
+            sprintf(tail, ", msg# %" NCBI_BIGCOUNT_FORMAT_SPEC,
+                    event == eIO_Read ? sock->n_in : sock->n_out);
         } else if (!ptr  ||  !*((char*) ptr)) {
-            sprintf(head, " at offset %lu",
-                    (unsigned long)(event == eIO_Read
-                                    ? sock->n_read : sock->n_written));
+            sprintf(head, " at offset %" NCBI_BIGCOUNT_FORMAT_SPEC,
+                    event == eIO_Read ? sock->n_read : sock->n_written);
             strcpy(tail, ptr ? " [OOB]" : "");
         } else {
             strncpy0(head, (const char*) ptr, sizeof(head));
@@ -619,23 +618,21 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
         break;
 
     case eIO_Close:
-        n = sprintf(head, "%lu byte%s",
-                    (unsigned long) sock->n_written,
-                    &"s"[sock->n_written == 1]);
+        n = sprintf(head, "%" NCBI_BIGCOUNT_FORMAT_SPEC " byte%s",
+                    sock->n_written, &"s"[sock->n_written == 1]);
         if (sock->type == eDatagram  ||
             sock->n_out != sock->n_written) {
-            sprintf(head + n, "/%lu %s%s",
-                    (unsigned long) sock->n_out,
+            sprintf(head + n, "/%" NCBI_BIGCOUNT_FORMAT_SPEC " %s%s",
+                    sock->n_out,
                     sock->type == eDatagram ? "msg" : "total byte",
                     &"s"[sock->n_out == 1]);
         }
-        n = sprintf(tail, "%lu byte%s",
-                    (unsigned long) sock->n_read,
-                    &"s"[sock->n_read == 1]);
+        n = sprintf(tail, "%" NCBI_BIGCOUNT_FORMAT_SPEC " byte%s",
+                    sock->n_read, &"s"[sock->n_read == 1]);
         if (sock->type == eDatagram  ||
             sock->n_in != sock->n_read) {
-            sprintf(tail + n, "/%lu %s%s",
-                    (unsigned long) sock->n_in,
+            sprintf(tail + n, "/%" NCBI_BIGCOUNT_FORMAT_SPEC " %s%s",
+                    sock->n_in,
                     sock->type == eDatagram ? "msg" : "total byte",
                     &"s"[sock->n_in == 1]);
         }
@@ -2532,7 +2529,7 @@ static EIO_Status s_Recv(SOCK    sock,
 
             if (x_read > 0) {
                 assert((size_t) x_read <= size);
-                sock->n_read += x_read;
+                sock->n_read += (TNCBI_BigCount) x_read;
                 *n_read       = x_read;
             } else {
                 /* catch EOF/failure */
@@ -2947,7 +2944,7 @@ static EIO_Status s_Send(SOCK        sock,
             }
 
             if (x_written > 0) {
-                sock->n_written += x_written;
+                sock->n_written += (TNCBI_BigCount) x_written;
                 *n_written       = x_written;
                 sock->w_status = eIO_Success;
                 break;
@@ -6439,7 +6436,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
                         (size_t) x_written, &sin);
             }
 
-            sock->n_written += x_written;
+            sock->n_written += (TNCBI_BigCount) x_written;
             sock->n_out++;
             if ((size_t) x_written != x_msgsize) {
                 sock->w_status = status = eIO_Closed;
@@ -6600,7 +6597,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                         (size_t) x_read, &sin);
             }
 
-            sock->n_read += x_read;
+            sock->n_read += (TNCBI_BigCount) x_read;
             sock->n_in++;
             break;
         }
