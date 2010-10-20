@@ -50,7 +50,7 @@
 #endif
 
 #define NETCACHE_CONTROL_VERSION_MAJOR 1
-#define NETCACHE_CONTROL_VERSION_MINOR 2
+#define NETCACHE_CONTROL_VERSION_MINOR 3
 #define NETCACHE_CONTROL_VERSION_PATCH 0
 
 USING_NCBI_SCOPE;
@@ -117,6 +117,12 @@ void CNetCacheControl::Init()
 
     arg_desc->AddOptionalKey("fetch", "key",
         "Retrieve data by key", CArgDescriptions::eString);
+
+    arg_desc->AddDefaultKey("offset", "position",
+        "Read starting from this offset", CArgDescriptions::eInteger, "0");
+
+    arg_desc->AddDefaultKey("part_size", "length",
+        "Retrieve only that many bytes", CArgDescriptions::eInteger, "0");
 
     arg_desc->AddOptionalKey("outputfile", "file_name",
         "Send output to a file instead of stdout", CArgDescriptions::eString);
@@ -187,26 +193,58 @@ int CNetCacheControl::Run()
 
     if (args["fetch"].HasValue()) {
         string key(args["fetch"].AsString());
+        size_t offset = (size_t) args["offset"].AsInt8();
+        size_t part_size = (size_t) args["part_size"].AsInt8();
         size_t blob_size = 0;
+        int reader_select = (password_arg.HasValue() << 1) |
+            (offset != 0 || part_size != 0);
         auto_ptr<IReader> reader;
         if (!icache_mode)
-            reader.reset(password_arg.HasValue() ?
-                CNetCachePasswordGuard(nc_client,
-                    password_arg.AsString())->GetReader(key, &blob_size,
-                        CNetCacheAPI::eCaching_Disable) :
-                nc_client.GetReader(key, &blob_size,
+            switch (reader_select) {
+            case 0: /* no special case */
+                reader.reset(nc_client.GetReader(key, &blob_size,
                     CNetCacheAPI::eCaching_Disable));
+                break;
+            case 1: /* use offset */
+                reader.reset(nc_client.GetPartReader(key, offset, part_size,
+                    &blob_size, CNetCacheAPI::eCaching_Disable));
+                break;
+            case 2: /* use password */
+                reader.reset(CNetCachePasswordGuard(nc_client,
+                    password_arg.AsString())->GetReader(key, &blob_size,
+                    CNetCacheAPI::eCaching_Disable));
+                break;
+            case 3: /* use password and offset */
+                reader.reset(CNetCachePasswordGuard(nc_client,
+                    password_arg.AsString())->GetPartReader(key, offset,
+                    part_size, &blob_size, CNetCacheAPI::eCaching_Disable));
+            }
         else {
             SICacheBlobAddress blob_address;
             ParseICacheBlobAddress(key, &blob_address);
-            reader.reset(password_arg.HasValue() ?
-                CNetICachePasswordGuard(icache_client,
-                    password_arg.AsString())->GetReadStream(blob_address.key,
-                        blob_address.version, blob_address.subkey, NULL,
-                            CNetCacheAPI::eCaching_Disable) :
-                icache_client.GetReadStream(blob_address.key,
+            switch (reader_select) {
+            case 0: /* no special case */
+                reader.reset(icache_client.GetReadStream(blob_address.key,
                     blob_address.version, blob_address.subkey, NULL,
-                        CNetCacheAPI::eCaching_Disable));
+                    CNetCacheAPI::eCaching_Disable));
+                break;
+            case 1: /* use offset */
+                reader.reset(icache_client.GetReadStreamPart(blob_address.key,
+                    blob_address.version, blob_address.subkey, offset,
+                    part_size, NULL, CNetCacheAPI::eCaching_Disable));
+                break;
+            case 2: /* use password */
+                reader.reset(CNetICachePasswordGuard(icache_client,
+                    password_arg.AsString())->GetReadStream(blob_address.key,
+                    blob_address.version, blob_address.subkey, NULL,
+                    CNetCacheAPI::eCaching_Disable));
+                break;
+            case 3: /* use password and offset */
+                reader.reset(CNetICachePasswordGuard(icache_client,
+                    password_arg.AsString())->GetReadStreamPart(
+                    blob_address.key, blob_address.version, blob_address.subkey,
+                    offset, part_size, NULL, CNetCacheAPI::eCaching_Disable));
+            }
         }
         if (!reader.get()) {
             NCBI_THROW(CNetCacheException, eBlobNotFound,
