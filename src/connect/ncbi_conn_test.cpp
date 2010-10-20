@@ -742,8 +742,8 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             if (status == eIO_Timeout)
                 temp += x_TimeoutMsg();
         } else if (!str) {
-            temp += "Unrecognized response from service"
-                "; please contact " NCBI_HELP_DESK "\n";
+            temp += "Unrecognized response from service;"
+                " please contact " NCBI_HELP_DESK "\n";
         }
     } else
         temp = "OK";
