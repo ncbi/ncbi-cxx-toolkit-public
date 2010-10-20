@@ -314,6 +314,11 @@ version  1 # of file format
 2+6  HQ  gb_dirsub
 2+6  HR  gb_other_nuc
 2+6  HS  gb_other_nuc
+2+6  JA  embl_patent
+2+6  JB  embl_patent
+2+6  JC  embl_patent
+2+6  JD  embl_patent
+2+6  JE  embl_patent
 2+6  ??  unreserved_nuc
 
 # Specially handled type-general Dbtag names; commented out for now in
