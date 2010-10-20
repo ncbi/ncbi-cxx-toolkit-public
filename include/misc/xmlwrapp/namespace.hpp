@@ -143,10 +143,21 @@ public:
     /**
      * Compare with another namespace.
      *
-     * @return TRUE if the namespaces have the equal prefixes and URIs.
+     * @return TRUE if the namespaces have the equal URIs.
+     * @note libxml2 compares namespaces basing on URIs so xmlwrapp does.
      * @author Sergey Satskiy, NCBI
     **/
     bool operator==(const ns&  other) const;
+
+
+    /**
+     * Compare with another namespace.
+     *
+     * @return TRUE if the namespaces URIs differ.
+     * @note libxml2 compares namespaces basing on URIs so xmlwrapp does.
+     * @author Sergey Satskiy, NCBI
+    **/
+    bool operator!=(const ns&  other) const;
 
 
     // Create a "void" xml::ns object -- with both prefix and URI empty.

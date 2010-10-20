@@ -140,7 +140,12 @@ bool xml::ns::is_safe (void) const
 
 bool xml::ns::operator==(const ns &  other) const
 {
-    return (strcmp(this->get_prefix(), other.get_prefix()) == 0) &&
-           (strcmp(this->get_uri(), other.get_uri()) == 0);
+    return strcmp(this->get_uri(), other.get_uri()) == 0;
+}
+
+
+bool xml::ns::operator!=(const ns &  other) const
+{
+    return !(*this == other);
 }
 
