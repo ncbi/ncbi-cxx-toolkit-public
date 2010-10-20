@@ -1037,6 +1037,36 @@ public:
     **/
     const node_set run_xpath_query (const xpath_expression& expr) const;
 
+    /**
+     * Run the given XPath query.
+     * The method collects all the effective namespace definitions for the node
+     * and register them automatically before running the query.
+     *
+     * @param expr
+     *  XPath expression to run, must not be NULL
+     * @return
+     *  XPath query result nodes set
+     * @exception
+     *  Throws exceptions in case of problems
+     * @author Sergey Satskiy, NCBI
+    **/
+    node_set run_xpath_query (const char *  expr);
+
+    /**
+     * Run the given XPath query.
+     * The method collects all the effective namespace definitions for the node
+     * and register them automatically before running the query.
+     *
+     * @param expr
+     *  XPath expression to run, must not be NULL
+     * @return
+     *  XPath query const result nodes set
+     * @exception
+     *  Throws exceptions in case of problems
+     * @author Sergey Satskiy, NCBI
+    **/
+    const node_set run_xpath_query (const char *  expr) const;
+
     //####################################################################
     /**
      * Insert a new child node. The new node will be inserted at the end of
@@ -1051,7 +1081,7 @@ public:
     iterator insert (const node &n);
 
     //####################################################################
-    /** 
+    /**
      * Insert a new child node. The new node will be inserted before the
      * node pointed to by the given iterator.
      *
@@ -1064,7 +1094,7 @@ public:
     iterator insert (const iterator& position, const node &n);
 
     //####################################################################
-    /** 
+    /**
      * Replace the node pointed to by the given iterator with another node.
      * The old node will be removed, including all its children, and
      * replaced with the new node. This will invalidate any iterators that
@@ -1080,7 +1110,7 @@ public:
     iterator replace (const iterator& old_node, const node &new_node);
 
     //####################################################################
-    /** 
+    /**
      * Erase the node that is pointed to by the given iterator. The node
      * and all its children will be removed from this node. This will
      * invalidate any iterators that point to the node to be erased, or any
@@ -1095,11 +1125,11 @@ public:
     iterator erase (const iterator& to_erase);
 
     //####################################################################
-    /** 
+    /**
      * Erase all nodes in the given range, from frist to last. This will
      * invalidate any iterators that point to the nodes to be erased, or any
      * pointers or references to those nodes.
-     * 
+     *
      * @param first The first node in the range to be removed.
      * @param last An iterator that points one past the last node to erase. Think xml::node::end().
      * @return An iterator that points to the node after the last one being erased.
@@ -1109,7 +1139,7 @@ public:
     iterator erase (iterator first, const iterator& last);
 
     //####################################################################
-    /** 
+    /**
      * Erase all children nodes with the given name. This will find all
      * nodes that have the given node name and remove them from this node.
      * This will invalidate any iterators that point to the nodes to be
@@ -1123,7 +1153,7 @@ public:
     size_type erase (const char *name);
 
     //####################################################################
-    /** 
+    /**
      * Sort all the children nodes of this node using one of thier
      * attributes. Only nodes that are of xml::node::type_element will be
      * sorted, and they must have the given node_name.
@@ -1139,7 +1169,7 @@ public:
     void sort (const char *node_name, const char *attr_name);
 
     //####################################################################
-    /** 
+    /**
      * Sort all the children nodes of this node using the given comparison
      * function object. All element type nodes will be considered for
      * sorting.
@@ -1152,7 +1182,7 @@ public:
     { impl::sort_callback<T> cb(compare); sort_fo(cb); }
 
     //####################################################################
-    /** 
+    /**
      * Convert the node and all its children into XML text and set the given
      * string to that text.
      *
@@ -1163,7 +1193,7 @@ public:
     void node_to_string (std::string &xml) const;
 
     //####################################################################
-    /** 
+    /**
      * Write a node and all of its children to the given stream.
      *
      * @param stream The stream to write the node as XML.
@@ -1205,7 +1235,7 @@ private:
     // XML XPath support
     void* create_xpath_context (const xml::xpath_expression& expr) const;
     void* evaluate_xpath_expression (const xml::xpath_expression& expr, void* context) const;
-
+    ns_list_type get_effective_namespaces (void) const;
 }; // end xml::node class
 
 } // end xml namespace

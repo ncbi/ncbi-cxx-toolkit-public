@@ -799,6 +799,35 @@ const xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& exp
     return node_set(object);
 }
 //####################################################################
+xml::node_set xml::node::run_xpath_query (const char *  expr) {
+    return run_xpath_query(xpath_expression(expr, get_effective_namespaces()));
+}
+//####################################################################
+const xml::node_set xml::node::run_xpath_query (const char *  expr) const {
+    return run_xpath_query(xpath_expression(expr, get_effective_namespaces()));
+}
+//####################################################################
+ns_list_type xml::node::get_effective_namespaces (void) const {
+    if (!pimpl_->xmlnode_)
+        throw xml::exception("invalid node to get effective namespaces");
+
+    ns_list_type    nspaces;
+    xmlNsPtr *      nsList = xmlGetNsList(pimpl_->xmlnode_->doc,
+                                          pimpl_->xmlnode_);
+    xmlNsPtr *      current = nsList;
+
+    if (!nsList)
+        return nspaces;
+
+    while (*current != NULL) {
+        nspaces.push_back(ns(*current));
+        ++current;
+    }
+    if (nsList)
+        xmlFree(nsList);
+    return nspaces;
+}
+//####################################################################
 void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const {
     if (!pimpl_->xmlnode_ || !pimpl_->xmlnode_->doc) {
         throw xml::exception("cannot create xpath context (reference to document is not set)");
