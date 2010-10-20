@@ -361,8 +361,8 @@ size_t CNetICacheClient::GetSize(const string&  key,
                                  int            version,
                                  const string&  subkey)
 {
-    return NStr::StringToULong(
-        m_Impl->ExecStdCmd("GSIZ", key, version, subkey));
+    return CheckBlobSize(NStr::StringToUInt8(
+        m_Impl->ExecStdCmd("GSIZ", key, version, subkey)));
 }
 
 

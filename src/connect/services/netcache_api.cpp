@@ -371,8 +371,9 @@ bool CNetCacheAPI::HasBlob(const string& key)
 
 size_t CNetCacheAPI::GetBlobSize(const string& key)
 {
-    return (size_t) NStr::StringToULong(m_Impl->GetServer(key).ExecWithRetry(
-        m_Impl->MakeCmd("GSIZ ", key)).response);
+    return CheckBlobSize(NStr::StringToUInt8(
+        m_Impl->GetServer(key).ExecWithRetry(
+            m_Impl->MakeCmd("GSIZ ", key)).response));
 }
 
 

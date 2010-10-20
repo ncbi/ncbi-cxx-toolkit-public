@@ -43,6 +43,7 @@
 
 #include <util/transmissionrw.hpp>
 
+#include <limits>
 
 BEGIN_NCBI_SCOPE
 
@@ -51,6 +52,18 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
+
+#if SIZEOF_SIZE_T < 8
+inline size_t CheckBlobSize(Uint8 blob_size)
+{
+    if (blob_size > std::numeric_limits<std::size_t>::max()) {
+        NCBI_THROW(CNetCacheException, eBlobClipped, "Blob is too big");
+    }
+    return (size_t) blob_size;
+}
+#else
+#define CheckBlobSize(blob_size) ((size_t) (blob_size))
+#endif
 
 
 class CSocket;
@@ -78,7 +91,7 @@ private:
 
     CNetServerConnection m_Connection;
     CFileIO m_CacheFile;
-    size_t m_BlobBytesToRead; // Remaining number of bytes to be read
+    Uint8 m_BlobBytesToRead; // Remaining number of bytes to be read
     bool m_CachingEnabled;
 };
 

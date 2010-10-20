@@ -77,22 +77,30 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
                                       size_t      count,
                                       size_t*     bytes_written)
 {
-    ERW_Result res;
     size_t wrt_count = 0;
     CIOBytesCountGuard guard(bytes_written, wrt_count);
 
-    if (count == sEndPacket) {
-        const char* b = (const char*)buf;
-        size_t cnt = count / 2;
-        res = x_WritePacket(b, cnt, wrt_count);
+    if (count < sEndPacket)
+        return x_WritePacket(buf, count, wrt_count);
+
+    // The buffer cannot fit in one packet -- split it.
+    const size_t split_packet_size = (size_t) 0x80008000LU;
+
+    const char* ptr = (const char*) buf;
+    size_t remaining = count;
+
+    do {
+        size_t written;
+        ERW_Result res = x_WritePacket(ptr, remaining < split_packet_size ?
+            remaining : split_packet_size, written);
         if (res != eRW_Success)
             return res;
-        size_t wrt_count1 = 0;
-        res = x_WritePacket(b+cnt, count - cnt, wrt_count1);
-        wrt_count += wrt_count1;
-        return res;
-    }
-    return x_WritePacket(buf, count, wrt_count);
+        ptr += written;
+        wrt_count += written;
+        remaining -= written;
+    } while (remaining > 0);
+
+    return eRW_Success;
 }
 
 ERW_Result CTransmissionWriter::x_WritePacket(const void* buf,

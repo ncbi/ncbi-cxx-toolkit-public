@@ -44,6 +44,7 @@
 BEGIN_NCBI_SCOPE
 
 #define CACHE_XFER_BUFFER_SIZE 4096
+#define MAX_PENDING_COUNT (1024 * 1024 * 1024)
 
 static const string s_InputBlobCachePrefix = ".nc_cache_input.";
 static const string s_OutputBlobCachePrefix = ".nc_cache_output.";
@@ -63,31 +64,32 @@ CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
             "No SIZE field in reply to the blob reading command");
     }
 
-    m_BlobBytesToRead = (size_t) atoi(
+    m_BlobBytesToRead = NStr::StringToUInt8(
         exec_result.response.c_str() + pos + sizeof("SIZE=") - 1);
 
-    if (blob_size_ptr != NULL)
-        *blob_size_ptr = m_BlobBytesToRead;
+    if (blob_size_ptr != NULL) {
+        *blob_size_ptr = CheckBlobSize(m_BlobBytesToRead);
+    }
 
     if (m_CachingEnabled) {
         m_CacheFile.CreateTemporary(impl->m_TempDir, s_InputBlobCachePrefix);
 
         char buf[CACHE_XFER_BUFFER_SIZE];
-        size_t bytes_to_read = m_BlobBytesToRead;
+        Uint8 bytes_to_read = m_BlobBytesToRead;
 
         while (bytes_to_read > 0) {
             size_t bytes_read = 0;
             SocketRead(buf, sizeof(buf) <= bytes_to_read ?
-                sizeof(buf) : bytes_to_read, &bytes_read);
+                sizeof(buf) : (size_t) bytes_to_read, &bytes_read);
             m_CacheFile.Write(buf, bytes_read);
             bytes_to_read -= bytes_read;
         }
 
         m_Connection = NULL;
 
-        if ((size_t) m_CacheFile.GetFilePos() != m_BlobBytesToRead) {
+        if (m_CacheFile.GetFilePos() != m_BlobBytesToRead) {
             NCBI_THROW(CNetCacheException, eBlobClipped,
-                "Blob size does not match the amount of data cached for ");
+                "Blob size is greater than the amount of data cached for it");
         }
 
         m_CacheFile.Flush();
@@ -121,7 +123,7 @@ ERW_Result CNetCacheReader::Read(void*   buf,
     }
 
     if (m_BlobBytesToRead < count)
-        count = m_BlobBytesToRead;
+        count = (size_t) m_BlobBytesToRead;
 
     size_t bytes_read = 0;
 
@@ -143,7 +145,8 @@ ERW_Result CNetCacheReader::Read(void*   buf,
 ERW_Result CNetCacheReader::PendingCount(size_t* count)
 {
     if (m_CachingEnabled || m_BlobBytesToRead == 0) {
-        *count = m_BlobBytesToRead;
+        *count = m_BlobBytesToRead < MAX_PENDING_COUNT ?
+            (size_t) m_BlobBytesToRead : MAX_PENDING_COUNT;
         return eRW_Success;
     } else {
         return CSocketReaderWriter(&m_Connection->m_Socket).PendingCount(count);
