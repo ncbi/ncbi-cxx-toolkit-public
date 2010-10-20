@@ -208,6 +208,12 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     IReader* GetReader(const string& key, size_t* blob_size = NULL,
         ECachingMode caching_mode = eCaching_AppDefault);
 
+    /// Get a pointer to the IReader interface to read a portion of
+    /// the blob contents. See the description of GetReader() for details.
+    IReader* GetPartReader(const string& key,
+        size_t offset, size_t part_size, size_t* blob_size = NULL,
+        ECachingMode caching_mode = eCaching_AppDefault);
+
     /// Read the blob pointed to by "key" and store its contents
     /// in "buffer". The output string is resized as required.
     ///
@@ -218,9 +224,20 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    Thrown if a communication error occurred.
     void ReadData(const string& key, string& buffer);
 
+    /// Read a part of the blob pointed to by "key" and store its contents
+    /// in "buffer". The output string is resized as required.
+    ///
+    /// @throw CNetCacheException
+    ///    Thrown if either the blob was not found or
+    ///    a protocol error occurred.
+    /// @throw CNetServiceException
+    ///    Thrown if a communication error occurred.
+    void ReadPart(const string& key,
+        size_t offset, size_t part_size, string& buffer);
+
     /// Retrieve BLOB from server by key.
     //
-    /// Caller is responsible for deletion of the IReader*
+    /// Caller is responsible for deletion of the IReader* object.
     /// IReader* MUST be deleted before destruction of CNetCacheAPI.
     ///
     /// @note
@@ -228,7 +245,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///   based, so when reading the BLOB please remember to check
     ///   IReader::Read return codes, it may not be able to read
     ///   the whole BLOB in one call because of network delays.
-     ///
+    ///
     /// @param key
     ///    BLOB key to read (returned by PutData)
     /// @param blob_size

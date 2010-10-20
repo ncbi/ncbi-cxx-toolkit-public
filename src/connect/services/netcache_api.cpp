@@ -405,13 +405,28 @@ string CNetCacheAPI::GetOwner(const string& key)
 IReader* CNetCacheAPI::GetReader(const string& key, size_t* blob_size,
     CNetCacheAPI::ECachingMode caching_mode)
 {
-    return m_Impl->GetReadStream(key, blob_size, caching_mode);
+    return m_Impl->GetPartReader(key, 0, 0, blob_size, caching_mode);
+}
+
+IReader* CNetCacheAPI::GetPartReader(const string& key,
+    size_t offset, size_t part_size, size_t* blob_size,
+    ECachingMode caching_mode)
+{
+    return m_Impl->GetPartReader(key, offset, part_size,
+        blob_size, caching_mode);
 }
 
 void CNetCacheAPI::ReadData(const string& key, string& buffer)
 {
+    ReadPart(key, 0, 0, buffer);
+}
+
+void CNetCacheAPI::ReadPart(const string& key,
+    size_t offset, size_t part_size, string& buffer)
+{
     size_t blob_size;
-    auto_ptr<IReader> reader(GetReader(key, &blob_size, eCaching_Disable));
+    auto_ptr<IReader> reader(GetPartReader(key, offset, part_size,
+        &blob_size, eCaching_Disable));
 
     buffer.resize(blob_size);
 
@@ -431,10 +446,15 @@ IReader* CNetCacheAPI::GetData(const string& key, size_t* blob_size,
     }
 }
 
-IReader* SNetCacheAPIImpl::GetReadStream(const string& blob_id,
+IReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
+    size_t offset, size_t part_size,
     size_t* blob_size_ptr, CNetCacheAPI::ECachingMode caching_mode)
 {
-    string cmd = "GET2 " + blob_id;
+    string cmd(offset == 0 && part_size == 0 ?
+        "GET2 " + blob_id :
+        "GETPART " + blob_id + ' ' + NStr::UInt8ToString((Uint8) offset) +
+            ' ' + NStr::UInt8ToString((Uint8) part_size));
+
     AppendClientIPSessionIDPassword(&cmd);
 
     return new CNetCacheReader(this, GetServer(blob_id).ExecWithRetry(cmd),

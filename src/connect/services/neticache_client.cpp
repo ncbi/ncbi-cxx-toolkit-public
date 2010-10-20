@@ -131,7 +131,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     CNetServer::SExecResult StickToServerAndExec(const string& cmd);
 
     string MakeStdCmd(const char* cmd_base, const string& key,
-        int version, const string& subkey);
+        int version, const string& subkey,
+        const string& injection = kEmptyStr);
 
     string ExecStdCmd(const char* cmd_base, const string& key,
         int version, const string& subkey);
@@ -139,8 +140,10 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     virtual CNetServerConnection InitiateWriteCmd(string* blob_id,
         unsigned time_to_live);
 
-    IReader* GetReadStream(const string& key,
-        int version, const string& subkey, size_t* blob_size_ptr,
+    IReader* GetReadStreamPart(const string& key,
+        int version, const string& subkey,
+        size_t offset, size_t part_size,
+        size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode);
 
     string m_CacheName;
@@ -375,18 +378,24 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
     *owner = kEmptyStr;
 }
 
-IReader* SNetICacheClientImpl::GetReadStream(
+IReader* SNetICacheClientImpl::GetReadStreamPart(
     const string& key, int version, const string& subkey,
+    size_t offset, size_t part_size,
     size_t* blob_size_ptr, CNetCacheAPI::ECachingMode caching_mode)
 {
     try {
-        return new CNetCacheReader(this, StickToServerAndExec(
-            MakeStdCmd("READ", key, version, subkey)),
-                blob_size_ptr, caching_mode);
+        string cmd(offset == 0 && part_size == 0 ?
+            MakeStdCmd("READ", key, version, subkey) :
+            MakeStdCmd("READPART", key, version, subkey,
+                ' ' + NStr::UInt8ToString((Uint8) offset) +
+                ' ' + NStr::UInt8ToString((Uint8) part_size)));
+
+        return new CNetCacheReader(this, StickToServerAndExec(cmd),
+            blob_size_ptr, caching_mode);
     } catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
-            return NULL;
-        throw;
+        if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
+            throw;
+        return NULL;
     }
 }
 
@@ -396,12 +405,24 @@ bool CNetICacheClient::Read(const string& key,
                             void*         buf,
                             size_t        buf_size)
 {
+    return ReadPart(key, version, subkey, 0, 0, buf, buf_size);
+}
+
+bool CNetICacheClient::ReadPart(const string& key,
+    int version,
+    const string& subkey,
+    size_t offset,
+    size_t part_size,
+    void* buf,
+    size_t buf_size)
+{
     size_t blob_size;
 
-    auto_ptr<IReader> rdr(m_Impl->GetReadStream(
-        key, version, subkey, &blob_size, CNetCacheAPI::eCaching_Disable));
+    auto_ptr<IReader> rdr(m_Impl->GetReadStreamPart(
+        key, version, subkey, offset, part_size,
+            &blob_size, CNetCacheAPI::eCaching_Disable));
 
-    if (rdr.get() == 0)
+    if (rdr.get() == NULL)
         return false;
 
     return SNetCacheAPIImpl::ReadBuffer(*rdr, (char*) buf, buf_size,
@@ -414,19 +435,17 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
                                      const string&     subkey,
                                      SBlobAccessDescr* blob_descr)
 {
-    size_t blob_size;
-    blob_descr->reader.reset(m_Impl->GetReadStream(key, version, subkey,
-        &blob_size, CNetCacheAPI::eCaching_AppDefault));
+    blob_descr->reader.reset(m_Impl->GetReadStreamPart(key, version, subkey,
+        0, 0, &blob_descr->blob_size, CNetCacheAPI::eCaching_AppDefault));
 
-    if (blob_descr->reader.get()) {
-        blob_descr->blob_size = blob_size;
+    if (blob_descr->reader.get() != NULL) {
         blob_descr->blob_found = true;
 
-        if (blob_descr->buf && blob_descr->buf_size >= blob_size) {
+        if (blob_descr->buf && blob_descr->buf_size >= blob_descr->blob_size) {
             try {
                 SNetCacheAPIImpl::ReadBuffer(*blob_descr->reader,
                     blob_descr->buf, blob_descr->buf_size,
-                    NULL, blob_size);
+                        NULL, blob_descr->blob_size);
             }
             catch (CNetServiceException&) {
                 blob_descr->reader.reset(NULL);
@@ -514,8 +533,21 @@ IReader* CNetICacheClient::GetReadStream(
     size_t* blob_size_ptr,
     CNetCacheAPI::ECachingMode caching_mode)
 {
-    return m_Impl->GetReadStream(key, version, subkey,
-        blob_size_ptr, caching_mode);
+    return GetReadStreamPart(key, version, subkey,
+        0, 0, blob_size_ptr, caching_mode);
+}
+
+IReader* CNetICacheClient::GetReadStreamPart(
+    const string& key,
+    int version,
+    const string& subkey,
+    size_t offset,
+    size_t part_size,
+    size_t* blob_size_ptr,
+    CNetCacheAPI::ECachingMode caching_mode)
+{
+    return m_Impl->GetReadStreamPart(key, version, subkey,
+        offset, part_size, blob_size_ptr, caching_mode);
 }
 
 IReader* CNetICacheClient::GetReadStream(const string&  key,
@@ -527,7 +559,8 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
 }
 
 string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
-    const string& key, int version, const string& subkey)
+    const string& key, int version, const string& subkey,
+    const string& injection)
 {
     string cmd(kEmptyStr);
     cmd.reserve(m_ICacheCmdPrefix.length() + strlen(cmd_base) +
@@ -539,6 +572,9 @@ string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
     cmd.append(" \"", 2);
 
     CheckAndAppendKeyVersionSubkey(&cmd, key, version, subkey);
+
+    if (!injection.empty())
+        cmd.append(injection);
 
     AppendClientIPSessionIDPassword(&cmd);
 

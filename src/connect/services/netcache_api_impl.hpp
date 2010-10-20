@@ -65,8 +65,10 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
     // For use by SNetICacheClientImpl
     SNetCacheAPIImpl(SNetServiceImpl* service_impl) : m_Service(service_impl) {}
 
-    IReader* GetReadStream(
+    IReader* GetPartReader(
         const string& blob_id,
+        size_t offset,
+        size_t part_size,
         size_t* blob_size,
         CNetCacheAPI::ECachingMode caching_mode);
 

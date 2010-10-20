@@ -134,10 +134,27 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                       void*         buf,
                       size_t        buf_size);
 
+    bool ReadPart(const string& key,
+        int version,
+        const string& subkey,
+        size_t offset,
+        size_t part_size,
+        void* buf,
+        size_t buf_size);
+
     IReader* GetReadStream(
         const string& key,
         int version,
         const string& subkey,
+        size_t* blob_size_ptr,
+        CNetCacheAPI::ECachingMode caching_mode);
+
+    IReader* GetReadStreamPart(
+        const string& key,
+        int version,
+        const string& subkey,
+        size_t offset,
+        size_t part_size,
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode);
 
