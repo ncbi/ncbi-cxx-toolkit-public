@@ -174,7 +174,7 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE_Ex
 
 
 /** Same as CORE_SetLOGFILE_Ex() with last parameter passed as 0
- * (all messages pass).
+ * (all messages get posted).
  * @sa
  *   CORE_SetLOGFILE_Ex, CORE_SetLOG
  */
@@ -216,10 +216,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME
  */
 typedef enum {
     fLOG_Default       = 0x0,    /**< fLOG_Short if NDEBUG, else fLOG_Full   */
-
     fLOG_Level         = 0x1,
     fLOG_Module        = 0x2,
-    fLOG_FileLine      = 0x4,    /**< always here for eLOG_Trace level       */
+    fLOG_FileLine      = 0x4,
     fLOG_DateTime      = 0x8,
     fLOG_FullOctal     = 0x2000, /**< do not do reduction in octal data bytes*/
     fLOG_OmitNoteLevel = 0x4000, /**< do not add NOTE if eLOG_Note is level  */

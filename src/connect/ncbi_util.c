@@ -365,12 +365,8 @@ extern char* LOG_ComposeMessage
     size_t total_len;
 
     /* Adjust formatting flags */
-    if (call_data->level == eLOG_Trace) {
-#if defined(NDEBUG)  &&  !defined(_DEBUG)
-        if (!(format_flags & fLOG_None))
-#endif /*NDEBUG && !_DEBUG*/
-            format_flags |= fLOG_Full;
-    }
+    if (call_data->level == eLOG_Trace  &&  !(format_flags & fLOG_None))
+        format_flags |= fLOG_Full;
     if (format_flags == fLOG_Default) {
 #if defined(NDEBUG)  &&  !defined(_DEBUG)
         format_flags = fLOG_Short;
