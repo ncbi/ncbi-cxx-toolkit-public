@@ -1727,7 +1727,7 @@ static unsigned int s_CountPolls(size_t n, SSOCK_Poll polls[])
             continue;
         }
         if (polls[i].sock->sock == SOCK_INVALID
-            ||  polls[i].revent == eIO_Closed) {
+            ||  polls[i].revent == eIO_Close) {
             /* pre-ready */
             continue;
         }
