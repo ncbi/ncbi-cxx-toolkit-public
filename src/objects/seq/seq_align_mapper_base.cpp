@@ -999,10 +999,6 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
     ++seg_it;
 
     SAlignment_Segment::SAlignment_Row& aln_row = seg.m_Rows[row];
-    // Skip rows with gaps.
-    if (aln_row.m_Start == kInvalidSeqPos) {
-        return CSeq_id_Handle(); // Use empty id to report gaps.
-    }
 
     // Find all matching mappings.
     const CMappingRanges::TIdMap& idmap = m_LocMapper.m_Mappings->GetIdMap();
@@ -1026,8 +1022,30 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
     }
     sort(mappings.begin(), mappings.end(), CMappingRangeRef_Less());
 
-    bool mapped = false;
     CSeq_id_Handle dst_id;
+
+    // Handle rows with gaps.
+    if (aln_row.m_Start == kInvalidSeqPos) {
+        // Gap. Check the mappings. If there's at least one mapping for this
+        // id, change it to the destination one.
+        dst_id = mappings[0]->GetDstIdHandle();
+        // If there are multiple mappings, check if they all have the same
+        // destination id. If there are many of them, do nothing - this gap
+        // can not be mapped.
+        if (mappings.size() > 1) {
+            ITERATE(TSortedMappings, it, mappings) {
+                if ((*it)->GetDstIdHandle() != dst_id) {
+                    return CSeq_id_Handle(); // Use empty id to report gaps.
+                }
+            }
+        }
+        // There's just one destination id, map the gap.
+        seg.m_Rows[row].m_Id = dst_id;
+        seg.m_Rows[row].SetMapped();
+        return seg.m_Rows[row].m_Id;
+    }
+
+    bool mapped = false;
     EAlignFlags align_flags = eAlign_Normal;
     TSeqPos start = aln_row.m_Start;
     TSeqPos stop = start + seg.m_Len - 1;
@@ -2468,6 +2486,40 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
     if (m_DstAlign) {
         // The mapped alignment has been created, just use it.
         return m_DstAlign;
+    }
+
+    // Find first non-gap in each row, get its seq-id.
+    TSegments::iterator seg = m_Segs.begin();
+    vector<CSeq_id_Handle> row_ids;
+    for ( ; seg != m_Segs.end(); ++seg) {
+        if (row_ids.size() < seg->m_Rows.size()) {
+            row_ids.resize(seg->m_Rows.size());
+        }
+        for (size_t r = 0; r < seg->m_Rows.size(); r++) {
+            SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
+            if (row.m_Start != kInvalidSeqPos) {
+                // Remember seq-id used in the last non-gap segment
+                row_ids[r] = row.m_Id;
+                continue;
+            }
+            // Check if an id for this row is known
+            if ( !row_ids[r] ) {
+                // Try to look forward - find non-gap
+                TSegments::iterator fwd = seg;
+                ++fwd;
+                for ( ; fwd != m_Segs.end(); ++fwd) {
+                    if (fwd->m_Rows.size() <= r) continue;
+                    SAlignment_Segment::SAlignment_Row& fwd_row = fwd->m_Rows[r];
+                    if (fwd_row.m_Start != kInvalidSeqPos) {
+                        row_ids[r] = fwd_row.m_Id;
+                        break;
+                    }
+                }
+            }
+            if ( row_ids[r] ) {
+                row.m_Id = row_ids[r];
+            }
+        }
     }
 
     CRef<CSeq_align> dst(new CSeq_align);
