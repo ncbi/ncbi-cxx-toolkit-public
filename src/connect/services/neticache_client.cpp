@@ -130,8 +130,6 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 
     CNetServer::SExecResult StickToServerAndExec(const string& cmd);
 
-    void RegisterUnregisterSession(string cmd, unsigned pid);
-
     string MakeStdCmd(const char* cmd_base, const string& key,
         int version, const string& subkey);
 
@@ -290,20 +288,6 @@ CNetServer::SExecResult
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
         "Couldn't find any availbale servers for the " +
             m_Service.GetServiceName() + " service.");
-}
-
-void SNetICacheClientImpl::RegisterUnregisterSession(string cmd, unsigned pid)
-{
-    char hostname[256];
-    if (SOCK_gethostname(hostname, sizeof(hostname)) != 0) {
-        NCBI_THROW(CNetServiceException, eCommunicationError,
-            "Cannot get host name");
-    }
-    cmd.append(hostname);
-    cmd.push_back(' ');
-    cmd.append(NStr::UIntToString(pid));
-    AppendClientIPSessionIDPassword(&cmd);
-    StickToServerAndExec(cmd);
 }
 
 void CNetICacheClient::RegisterSession(unsigned pid)
