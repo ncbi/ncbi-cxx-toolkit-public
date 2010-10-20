@@ -55,7 +55,6 @@ USING_SCOPE(objects);
 USING_SCOPE(blast);
 
 static bool s_AllowDupes;
-static CRef<CGC_Assembly> s_GenColl;
 
 CQuerySet::CQuerySet(const CSearchResults& Results)
 {
@@ -67,7 +66,10 @@ CQuerySet::CQuerySet(const CSearchResults& Results)
 
 CQuerySet::CQuerySet(const objects::CSeq_align_set& Results)
 {
-    m_QueryId.Reset(new CSeq_id);
+	if(Results.Get().empty()) {
+		cerr << __FILE__<<":"<<__LINE__<<" : "<<"Inserting Empty Seq-align-set?"<<endl;
+	}
+	m_QueryId.Reset(new CSeq_id);
     m_QueryId->Assign(Results.Get().front()->GetSeq_id(0));
     Insert(Results);
 }
@@ -75,6 +77,42 @@ CQuerySet::CQuerySet(const objects::CSeq_align_set& Results)
 
 CQuerySet::CQuerySet(const CRef<CSeq_align> Alignment)
 {
+    if(Alignment.IsNull()) {
+		cerr << __FILE__<<":"<<__LINE__<<" : "<<"Inserting Null Alignment?"<<endl;
+	}
+	m_QueryId.Reset(new CSeq_id);
+    m_QueryId->Assign(Alignment->GetSeq_id(0));
+    Insert(Alignment);
+}
+
+
+CQuerySet::CQuerySet(const CSearchResults& Results, CRef<CGC_Assembly> GenColl)
+{
+	m_GenColl = GenColl;
+    m_QueryId.Reset(new CSeq_id);
+    m_QueryId->Assign(*Results.GetSeqId());
+    Insert(*Results.GetSeqAlign());
+}
+
+
+CQuerySet::CQuerySet(const objects::CSeq_align_set& Results, CRef<CGC_Assembly> GenColl)
+{
+	if(Results.Get().empty()) {
+		cerr << __FILE__<<":"<<__LINE__<<" : "<<"Inserting Empty Seq-align-set?"<<endl;
+	}
+	m_GenColl = GenColl;
+    m_QueryId.Reset(new CSeq_id);
+    m_QueryId->Assign(Results.Get().front()->GetSeq_id(0));
+    Insert(Results);
+}
+
+
+CQuerySet::CQuerySet(const CRef<CSeq_align> Alignment, CRef<CGC_Assembly> GenColl)
+{
+	if(Alignment.IsNull()) {
+		cerr << __FILE__<<":"<<__LINE__<<" : "<<"Inserting Null Alignment?"<<endl;
+	}
+	m_GenColl = GenColl;
     m_QueryId.Reset(new CSeq_id);
     m_QueryId->Assign(Alignment->GetSeq_id(0));
     Insert(Alignment);
@@ -92,7 +130,7 @@ CRef<CSeq_align_set> CQuerySet::ToSeqAlignSet() const
             }
         }
     }
-
+	
     /*
     ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, m_SubjectMap) {
         ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
@@ -100,7 +138,11 @@ CRef<CSeq_align_set> CQuerySet::ToSeqAlignSet() const
         }
     }
     */
-    return Out;
+   	
+	if(!Out->IsSet() || Out->Get().empty())
+		return CRef<CSeq_align_set>();
+
+	return Out;
 }
 
 
@@ -193,19 +235,21 @@ void CQuerySet::Insert(const CRef<CSeq_align> Alignment)
     //}
 
 
-    CSeq_id_Handle IdHandle = CSeq_id_Handle::GetHandle(Alignment->GetSeq_id(1));
-    string AssemblyAcc;
-    if(s_GenColl) {
-        CConstRef<CGC_Sequence> Seq;    
-        Seq = s_GenColl->Find(IdHandle);
-        if(Seq) {
-            CConstRef<CGC_AssemblyUnit> Unit;
-            Unit = Seq->GetAssemblyUnit();
-            if(Unit) {
-                AssemblyAcc = Unit->GetAccession();
-            }
-        }
-    }
+	CSeq_id_Handle IdHandle = CSeq_id_Handle::GetHandle(Alignment->GetSeq_id(1));
+	string AssemblyAcc;
+//cerr << __FILE__<<":"<<__LINE__<<endl;
+	if(m_GenColl) {
+		CConstRef<CGC_Sequence> Seq; 	
+		Seq = m_GenColl->Find(IdHandle);
+		if(Seq) {
+			CConstRef<CGC_AssemblyUnit> Unit;
+			Unit = Seq->GetAssemblyUnit();
+			if(Unit) {
+				AssemblyAcc = Unit->GetAccession();
+			}
+		}
+	}
+//cerr << __FILE__<<":"<<__LINE__<<endl;
 
     string IdString = Alignment->GetSeq_id(1).AsFastaString();
     TSubjectToAlignSet& CurrSubjectSet = m_AssemblyMap[AssemblyAcc];
@@ -238,7 +282,6 @@ int CQuerySet::GetBestRank(const string AssemblyAcc) const
 {
     int BestRank = numeric_limits<int>::max();
     bool NeverRanked = true;
-
 
     ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
 
@@ -387,21 +430,21 @@ bool CQuerySet::x_ContainsAlignment(const CSeq_align& Outer,
         bool InnerMatched = false;
 
         InQueryRange.SetFrom(InnerSeg.GetStarts()[InnerSegIdx*2]);
-        InQueryRange.SetTo(InnerSeg.GetLens()[InnerSegIdx]);
+        InQueryRange.SetLength(InnerSeg.GetLens()[InnerSegIdx]);
         InSubjRange.SetFrom(InnerSeg.GetStarts()[(InnerSegIdx*2)+1]);
-        InSubjRange.SetTo(InnerSeg.GetLens()[InnerSegIdx]);
+        InSubjRange.SetLength(InnerSeg.GetLens()[InnerSegIdx]);
 
         for(OuterSegIdx = 0; OuterSegIdx < OuterSeg.GetNumseg(); OuterSegIdx++) {
 
             OutQueryRange.SetFrom(OuterSeg.GetStarts()[OuterSegIdx*2]);
-            OutQueryRange.SetTo(OuterSeg.GetLens()[OuterSegIdx]);
+            OutQueryRange.SetLength(OuterSeg.GetLens()[OuterSegIdx]);
             OutSubjRange.SetFrom(OuterSeg.GetStarts()[(OuterSegIdx*2)+1]);
-            OutSubjRange.SetTo(OuterSeg.GetLens()[OuterSegIdx]);
+            OutSubjRange.SetLength(OuterSeg.GetLens()[OuterSegIdx]);
 
             // If the Outer segments are >= the Inner segments
-            if(OutQueryRange.IntersectionWith(InQueryRange).GetLength() == InQueryRange.GetLength() &&
-               OutSubjRange.IntersectionWith(InSubjRange).GetLength() == InSubjRange.GetLength() ) {
-                InnerMatched = true;
+            if(OutQueryRange.IntersectionWith(InQueryRange) == InQueryRange &&
+               OutSubjRange.IntersectionWith(InSubjRange) == InSubjRange ) {
+				InnerMatched = true;
                 break;
             }
         }
@@ -418,6 +461,11 @@ bool CQuerySet::x_ContainsAlignment(const CSeq_align& Outer,
 
 ////////////////////////////////////////////////////////////////////////////////
 
+CAlignResultsSet::CAlignResultsSet() 
+{
+}
+
+
 CAlignResultsSet::CAlignResultsSet(bool AllowDupes) 
 {
     m_AllowDupes = AllowDupes;
@@ -427,8 +475,7 @@ CAlignResultsSet::CAlignResultsSet(bool AllowDupes)
 
 CAlignResultsSet::CAlignResultsSet(CRef<CGC_Assembly> Gencoll, bool AllowDupes) 
 {
-    m_GenColl = Gencoll;
-    s_GenColl = Gencoll;
+	m_GenColl = Gencoll;
 
     m_AllowDupes = AllowDupes;
     s_AllowDupes = AllowDupes;
@@ -527,9 +574,18 @@ void CAlignResultsSet::Insert(CRef<CQuerySet> QuerySet)
     if(m_QueryMap.find(IdString) != m_QueryMap.end()) {
         m_QueryMap[IdString]->Insert(QuerySet);
     } else {
-        // this might only work by magic
-        m_QueryMap[IdString] = QuerySet;
-    }
+		// this might only work by magic
+		//m_QueryMap[IdString] = QuerySet;
+        // Make a new Query Set, with the proper GenColl
+		CRef<CSeq_align_set> Alignments;
+		Alignments = QuerySet->ToSeqAlignSet();
+		if (Alignments && 
+			Alignments->CanGet() && 
+			!Alignments->Get().empty()) {
+			CRef<CQuerySet> Set(new CQuerySet(*Alignments, m_GenColl));
+			m_QueryMap[IdString] = Set;
+    	}
+	}
 }
 
 
@@ -544,7 +600,7 @@ void CAlignResultsSet::Insert(CRef<CAlignResultsSet> AlignSet)
 void CAlignResultsSet::Insert(const blast::CSearchResultSet& BlastResults)
 {
     ITERATE(CSearchResultSet, Iter, BlastResults) {
-        CRef<CQuerySet> Set(new CQuerySet(**Iter));
+        CRef<CQuerySet> Set(new CQuerySet(**Iter, m_GenColl));
         string IdString = (*Iter)->GetSeqId()->AsFastaString();
         if(m_QueryMap.find(IdString) != m_QueryMap.end()) {
             m_QueryMap[IdString]->Insert(Set);
@@ -561,7 +617,7 @@ void CAlignResultsSet::Insert(CRef<CSeq_align> Alignment)
     if(m_QueryMap.find(IdString) != m_QueryMap.end()) {
         m_QueryMap[IdString]->Insert(Alignment);
     } else {
-        CRef<CQuerySet> Set(new CQuerySet(Alignment));
+        CRef<CQuerySet> Set(new CQuerySet(Alignment, m_GenColl));
         m_QueryMap[IdString] = Set;
     }
 }

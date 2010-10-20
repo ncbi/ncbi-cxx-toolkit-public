@@ -75,8 +75,12 @@ public:
     CQuerySet(const objects::CSeq_align_set& Results);
     CQuerySet(CRef<objects::CSeq_align> Alignment);
 
+  	CQuerySet(const blast::CSearchResults& Results, CRef<objects::CGC_Assembly> GenColl);
+    CQuerySet(const objects::CSeq_align_set& Results, CRef<objects::CGC_Assembly> GenColl);
+    CQuerySet(CRef<objects::CSeq_align> Alignment, CRef<objects::CGC_Assembly> GenColl);
 
-    TAssemblyToSubjectSet& Get() { return m_AssemblyMap; }
+
+	TAssemblyToSubjectSet& Get() { return m_AssemblyMap; }
     const TAssemblyToSubjectSet& Get() const { return m_AssemblyMap; }
 
     //TSubjectToAlignSet& Get() { return m_SubjectMap; }
@@ -99,7 +103,9 @@ private:
     TSubjectToAlignSet m_SubjectMap;
     CRef<objects::CSeq_id> m_QueryId;
 
-    TAssemblyToSubjectSet m_AssemblyMap;
+	CRef<objects::CGC_Assembly> m_GenColl;
+
+	TAssemblyToSubjectSet m_AssemblyMap;
 
     bool x_AlreadyContains(const objects::CSeq_align_set& Set,
                            const objects::CSeq_align& New) const;
@@ -117,7 +123,8 @@ class CAlignResultsSet : public CObject
 public:
     typedef map<string, CRef<CQuerySet> > TQueryToSubjectSet;
 
-    CAlignResultsSet(bool AllowDupes = false);
+	CAlignResultsSet();
+	CAlignResultsSet(bool AllowDupes);
     CAlignResultsSet(CRef<objects::CGC_Assembly> Gencoll,
                      bool AllowDupes = false);
     CAlignResultsSet(const blast::CSearchResultSet& BlastResults);
