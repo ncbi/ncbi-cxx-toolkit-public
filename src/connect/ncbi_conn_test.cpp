@@ -433,30 +433,29 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         ConnNetInfo_SetupStandardArgs(net_info, 0/*w/o service*/);
     }
 
-    static const char* kFWExplanation[] = {
-        "This is an obsolescent mode that requires to keep a wide port range"
-        " [4444..4544] (inclusive) open to let through connections to any"
-        " NCBI host (130.14.2x.xxx/165.112.xx.xxx) -- this mode was designed"
-        " for unrestricted networks when firewall port blocking was not an"
-        " issue\n"
-        "You may not be able to use this mode if your site has a firewall"
-        " that controls to which hosts and ports the outbound connections"
-        " are allowed to go\n",
-
-        "This mode requires to have your firewall configured such a way"
-        " that it allows outbound connections to the port range ["
-        _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX) "] inclusive"
-        " at the two fixed NCBI hosts, 130.14.29.112 and 165.112.7.12\n"
-        "In order to configure that correctly, please have your network"
-        " administrator read the following (if they have not yet done so): "
-        NCBI_FW_URL "\n"
-    };
-    string temp = m_Firewall ? "FIREWALL" : "RELAY (legacy)";
+    string temp(m_Firewall ? "FIREWALL" : "RELAY (legacy)");
     temp += " connection mode has been detected for stateful services\n";
-    temp += kFWExplanation[m_Firewall];
-    temp += "There are also fallback connection ports 22 and 443 at"
-        " 130.14.29.112. They will be tried if connections to the"
-        " ports in the range described above fail";
+    if (m_Firewall) {
+        temp += "This mode requires to have your firewall configured such a"
+            " way that it allows outbound connections to the port range ["
+            _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX) "] inclusive"
+            " at the two fixed NCBI hosts, 130.14.29.112 and 165.112.7.12\n"
+            "In order to configure that correctly, please have your network"
+            " administrator read the following (if they have not yet done so):"
+            " " NCBI_FW_URL "\n"
+            "There are also fallback connection ports 22 and 443 at"
+            " 130.14.29.112. They will be tried if connections to the"
+            " ports in the range described above fail";
+    } else {
+        temp += "This is an obsolescent mode that requires to keep a wide port"
+            " range [4444..4544] (inclusive) open to let through connections"
+            " to any NCBI host (130.14.2x.xxx/165.112.xx.xxx) -- this mode was"
+            " designed for unrestricted networks when firewall port blocking"
+            " was not an issue\n"
+            "You may not be able to use this mode if your site has a firewall"
+            " that controls to which hosts and ports the outbound connections"
+            " are allowed to go\n";
+    }
     PreCheck(eFirewallConnPoints, 0/*main*/, temp);
 
     PreCheck(eFirewallConnPoints, 1/*sub*/,
@@ -539,7 +538,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
          ? fSOCK_LogOn : fSOCK_LogDefault);
 
     PreCheck(eFirewallConnections, 0/*main*/,
-             "Checking individual connection points\n"
+             "Checking individual connection points..\n"
              "NOTE that even though that not the entire port range can be"
              " currently utilized and checked, in order for NCBI services"
              " to work correctly, your network must support every port in"
@@ -612,7 +611,18 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                         " from this connection point; please contact "
                         NCBI_HELP_DESK "\n";
                 }
-                if (net_info->firewall  &&  *net_info->proxy_host) {
+                if (*net_info->http_proxy_host) {
+                    temp += "Your HTTP proxy '";
+                    temp += net_info->http_proxy_host;
+                    if (net_info->http_proxy_port) {
+                        temp += ':' +
+                            NStr::UIntToString(net_info->http_proxy_port);
+                    }
+                    temp += "' may not allow connection relay to"
+                        " non-conventional ports; please see your network"
+                        " administrator and let them read: " NCBI_FW_URL "\n";
+                }
+                if (m_Firewall  &&  *net_info->proxy_host) {
                     temp += "Non-transparent proxy server '";
                     temp += net_info->proxy_host;
                     temp += "' may not be forwarding connections properly,"
