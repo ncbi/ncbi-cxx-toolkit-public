@@ -1016,9 +1016,9 @@ void CSeq_id::LoadAccessionGuide(const string& filename)
 void CSeq_id::LoadAccessionGuide(ILineReader& in)
 {
     SAccGuide guide;
-    while ( !in.AtEOF() ) {
+    do {
         guide.AddRule(*++in);
-    }
+    } while ( !in.AtEOF() );
     swap(s_Guide, guide);
 }
 
