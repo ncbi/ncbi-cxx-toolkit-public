@@ -38,6 +38,8 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
 
+#include <util/util_misc.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -46,8 +48,7 @@ USING_SCOPE(objects);
 NCBITEST_AUTO_INIT()
 {
     // force use of built-in tables
-    CNcbiApplication::Instance()->GetConfig().Set("NCBI", "Data", kEmptyStr,
-                                                  IRegistry::fPersistent);
+    g_IgnoreDataFile("ecnum_*.txt");
 }
 
 BOOST_AUTO_TEST_CASE(s_TestGetStatus)
