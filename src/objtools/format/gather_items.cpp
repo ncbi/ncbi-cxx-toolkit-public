@@ -55,6 +55,7 @@
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -1360,20 +1361,28 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
         const CBioSource_Base::TOrg& org1 = biosrc1.GetOrg();
         const CBioSource_Base::TOrg& org2 = biosrc2.GetOrg();
 
-        // check org mod
-        if( org1.CanGetMod() != org2.CanGetMod() ) {
+        if( org1.CanGetOrgname() != org2.CanGetOrgname() ) {
             return false;
         }
-        if( biosrc1.IsSetOrgMod() ) {
-            const COrg_ref_Base::TMod& orgmod1 = org1.GetMod();
-            const COrg_ref_Base::TMod& orgmod2 = org2.GetMod();
+        if( org1.CanGetOrgname() ) {
+            const COrg_ref_Base::TOrgname & orgname1 = org1.GetOrgname();
+            const COrg_ref_Base::TOrgname & orgname2 = org2.GetOrgname();
 
-            if( orgmod1.size() != orgmod2.size() ) {
+            // check orgname mod
+            if( orgname1.CanGetMod() != orgname2.CanGetMod() ) {
                 return false;
             }
+            if( orgname1.CanGetMod() ) {
+                const COrgName_Base::TMod& orgmod1 = orgname1.GetMod();
+                const COrgName_Base::TMod& orgmod2 = orgname2.GetMod();
 
-            if( ! equal( orgmod1.begin(), orgmod1.end(), orgmod2.begin() ) ) {
-                return false;
+                if( orgmod1.size() != orgmod2.size() ) {
+                    return false;
+                }
+
+                if( ! equal( orgmod1.begin(), orgmod1.end(), orgmod2.begin() ) ) {
+                    return false;
+                }
             }
         }
 
@@ -2126,12 +2135,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         if ( curr.IsSetData() ) {
             const CSeqFeatData& currData = curr.GetData();
             if ( currData.Which() == CSeqFeatData::e_Prot ) {
-                if ( currData.GetSubtype() == CSeqFeatData::eSubtype_sig_peptide ||
-                     currData.GetSubtype() == CSeqFeatData::eSubtype_sig_peptide_aa )
-                {
-                    cerr << "";
-                }
-                s_FixIntervalProtToCds( feat, curr_loc, loc );
+                // s_FixIntervalProtToCds( feat, curr_loc, loc ); // This line appears to be unnecessary, but I'm leaving it in in case further testing reveals I'm wrong.
             }
         }
 
