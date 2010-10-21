@@ -910,6 +910,25 @@ inline bool CSocket::IsSecure(void) const
 }
 
 
+inline TNCBI_BigCount CSocket::GetPosition(EIO_Event direction) const
+{
+    return m_Socket ? SOCK_GetPosition(m_Socket, direction) : 0;
+}
+
+
+inline TNCBI_BigCount CSocket::GetCount(EIO_Event direction) const
+{
+    return m_Socket ? SOCK_GetCount(m_Socket, direction) : 0;
+}
+
+
+inline TNCBI_BigCount CSocket::GetTotalCount(EIO_Event direction) const
+{
+    return m_Socket ? SOCK_GetTotalCount(m_Socket, direction) : 0;
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///  CDatagramSocket::
 ///
@@ -929,6 +948,12 @@ inline EIO_Status CDatagramSocket::Clear(EIO_Event direction)
 inline EIO_Status CDatagramSocket::SetBroadcast(bool do_broadcast)
 {
     return m_Socket ? DSOCK_SetBroadcast(m_Socket, do_broadcast) : eIO_Closed;
+}
+
+
+inline TNCBI_BigCount CDatagramSocket::GetMessageCount(EIO_Event dir) const
+{
+    return m_Socket ? DSOCK_GetMessageCount(m_Socket, dir) : 0;
 }
 
 

@@ -6781,6 +6781,22 @@ extern EIO_Status DSOCK_SetBroadcast(SOCK sock, int/*bool*/ broadcast)
 }
 
 
+extern TNCBI_BigCount DSOCK_GetMessageCount(SOCK sock, EIO_Event direction)
+{
+    if (sock  &&  sock->type == eDatagram) {
+        switch (direction) {
+        case eIO_Read:
+            return sock->n_in;
+        case eIO_Write:
+            return sock->n_out;
+        default:
+            break;
+        }
+    }
+    return 0;
+}
+
+
 extern int/*bool*/ SOCK_IsDatagram(SOCK sock)
 {
     return sock &&  sock->sock != SOCK_INVALID  &&  sock->type == eDatagram;
@@ -6859,22 +6875,6 @@ extern TNCBI_BigCount SOCK_GetTotalCount(SOCK sock, EIO_Event direction)
             return sock->type != eDatagram ? sock->n_in  : sock->n_read;
         case eIO_Write:
             return sock->type != eDatagram ? sock->n_out : sock->n_written;
-        default:
-            break;
-        }
-    }
-    return 0;
-}
-
-
-extern TNCBI_BigCount SOCK_GetMessageCount(SOCK sock, EIO_Event direction)
-{
-    if (sock  &&  sock->type == eDatagram) {
-        switch (direction) {
-        case eIO_Read:
-            return sock->n_in;
-        case eIO_Write:
-            return sock->n_out;
         default:
             break;
         }

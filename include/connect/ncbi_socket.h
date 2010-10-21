@@ -97,13 +97,17 @@
  *  DSOCK_RecvMsg
  *  DSOCK_WipeMsg
  *  DSOCK_SetBroadcast
+ *  DSOCK_GetMessageCount
  *
- * Socket classification:
+ * Socket classification & statistics:
  *
  *  SOCK_IsDatagram
  *  SOCK_IsClientSide
  *  SOCK_IsServerSide
  *  SOCK_IsUNIX
+ *  SOCK_GetPosition
+ *  SOCK_GetCount
+ *  SOCK_GetTotalCount
  *
  * Data logging:
  *
@@ -1557,10 +1561,23 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SetBroadcast
  int/**bool*/    broadcast             
  );
 
+/**
+ * @param sock
+ *  [in] socket handle (datagram socket only)
+ * @param direction
+ *  [in] either eIO_Read or eIO_Write
+ * @return
+ *  Total number of messages sent or received through this datagram socket.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_BigCount DSOCK_GetMessageCount
+(SOCK      sock,
+ EIO_Event direction
+ );
+
 
 
 /******************************************************************************
- *  Type information for SOCK sockets
+ *  Type & statistics information for SOCK sockets
  */
 
 
@@ -1636,7 +1653,8 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetPosition
  *  [in] either eIO_Read or eIO_Write
  * @return
  *  Count of bytes actually read or written through this socket in the current
- *  session. For datagram sockets the count applies for the last message only.
+ *  session. For datagram sockets the count applies for the last message only;
+ *  for stream sockets it counts only since last accept or connect event.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetCount
 (SOCK      sock,
@@ -1653,20 +1671,6 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetCount
  *  Total number of bytes transferred through the socket in its lifetime.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
-(SOCK      sock,
- EIO_Event direction
- );
-
-
-/**
- * @param sock
- *  [in] socket handle (datagram socket only)
- * @param direction
- *  [in] either eIO_Read or eIO_Write
- * @return
- *  Total number of messages sent or received through this datagram socket.
- */
-extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetMessageCount
 (SOCK      sock,
  EIO_Event direction
  );
