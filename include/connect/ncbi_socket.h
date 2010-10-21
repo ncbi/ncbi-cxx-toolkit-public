@@ -1625,7 +1625,8 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsSecure(SOCK sock);
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetPosition
 (SOCK      sock,
- EIO_Event direction);
+ EIO_Event direction
+ );
 
 
 /**
@@ -1639,7 +1640,8 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetPosition
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetCount
 (SOCK      sock,
- EIO_Event direction);
+ EIO_Event direction
+ );
 
 
 /**
@@ -1652,7 +1654,8 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetCount
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
 (SOCK      sock,
- EIO_Event direction);
+ EIO_Event direction
+ );
 
 
 /**
@@ -1665,7 +1668,8 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetMessageCount
 (SOCK      sock,
- EIO_Event direction);
+ EIO_Event direction
+ );
 
 
 
