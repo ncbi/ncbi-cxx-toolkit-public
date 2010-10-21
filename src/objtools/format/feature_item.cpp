@@ -1040,10 +1040,6 @@ void CFeatureItem::x_AddQualOperon(
     CSeqFeatData::ESubtype subtype )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! ctx.HasOperon() ) {
-        return;
-    }
-
     if ( subtype == CSeqFeatData::eSubtype_operon ||
          subtype == CSeqFeatData::eSubtype_gap ) {
         return;

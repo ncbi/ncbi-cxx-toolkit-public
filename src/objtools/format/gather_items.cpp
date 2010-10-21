@@ -149,6 +149,20 @@ public:
 };
 
 
+class COrgModEquals {
+public:
+    bool operator()( const CRef< COrgMod > & obj1, const CRef< COrgMod > & obj2 ) {
+        if( obj1.IsNull() != obj2.IsNull() ) {
+            return false;
+        }
+        if( ! obj1.IsNull() ) {
+            return obj1->Equals( *obj2 );
+        }
+        return true;
+    }
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Public:
@@ -1282,8 +1296,8 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
     // but you'd have to convert x_BiosourcesEqualForMergingPurposes into a "less-than" function
 
     // merge equal sources ( erase the later one on equality )
-    // ( because deque's erase function invalidates all iterators )
     // First, release the pointers of all the items we plan to remove.
+    // ( because deque's erase function invalidates all iterators, so we can't erase as we go )
     TSourceFeatSet::iterator item_outer = srcs.begin();
     for( ; item_outer != srcs.end(); ++item_outer  ) {
         if( item_outer->IsNull() ) {
@@ -1299,12 +1313,10 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
             if( x_BiosourcesEqualForMergingPurposes( **item_outer, **item_inner ) ) {
                 CRef<CSeq_loc> merged_loc = 
                     Seq_loc_Add((*item_outer)->GetLoc(), (*item_inner)->GetLoc(),
-                    CSeq_loc::fSortAndMerge_All,
+                    CSeq_loc::fMerge_All, // CSeq_loc::fSortAndMerge_All,
                     &m_Current->GetScope());
                 (*item_outer)->SetLoc(*merged_loc);
-                // srcs.erase(item_inner);
                 item_inner->Release(); // marked for later removal
-                continue; // don't increment, since the "erase" already implicitly incremented us
             }
             ++item_inner;
         }
@@ -1380,7 +1392,8 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
                     return false;
                 }
 
-                if( ! equal( orgmod1.begin(), orgmod1.end(), orgmod2.begin() ) ) {
+                if( ! equal( orgmod1.begin(), orgmod1.end(), 
+                    orgmod2.begin(), COrgModEquals() ) ) {
                     return false;
                 }
             }

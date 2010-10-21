@@ -250,15 +250,6 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
     // - interval to be mapped has partial "to"
     // - destination range is 1 or 2 bases beyond the end of the source range
     const int frame_shift = ( (m_Frame > 1) ? (m_Frame - 1) : 0 );
-    const int is_frame = ( frame_shift > 0 );
-    /* if ( m_ExtTo ) {
-        // !!! TODO: what about the minus strand?
-        const int is_frame = ( frame_shift > 0 ? 1 : 0 );
-        if ( partial_to && (to < m_Src_to) &&  (m_Src_to + is_frame - to < 2) ) {
-        // if ( partial_to && (to == m_Src_to - 1) ) {
-            to = m_Src_to;
-        }
-    } */
 
     // If we're partial on the left and we're not at the beginning only because of 
     // frame shift, we shift back to the beginning when mapping.
@@ -292,10 +283,12 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
             ret.SetFrom( m_Dst_from - frame_shift );
         }
-        const TSeqPos dst_to = ret.GetTo();
-        const TSeqPos dst_total_to = m_Dst_from + m_Dst_total_len - m_Src_from - 1 - frame_shift; // TODO: check if invalid pos
-        if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) { //(dst_total_to - dst_to + frame_shift < 3) ) { // (m_Src_to - to + is_frame < 4) ) { //(dst_to + frame_shift - ret.GetTo() < 3) ) {
-            ret.SetTo( dst_total_to );
+        // extend to the end, if necessary
+        if( m_Dst_total_len != kInvalidSeqPos ) {
+            const TSeqPos dst_total_to = m_Dst_from + m_Dst_total_len - m_Src_from - 1 - frame_shift;
+            if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
+                ret.SetTo( dst_total_to );
+            }
         }
         return ret;
     }
@@ -712,6 +705,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     TSeqPos dst_total_len = 0; // total length of the destination
     ESeqType src_type = eSeq_unknown; // source sequence type
     ESeqType dst_type = eSeq_unknown; // destination sequence type
+    // TSeqPos junk1 = GetSequenceLength( *source.GetId() ); // source.GetStop(objects::eExtreme_Biological);
+    // TSeqPos junk2 = GetSequenceLength( *target.GetId() ); // target.GetStop(objects::eExtreme_Biological);
     bool known_src_types = x_CheckSeqTypes(source, src_type, src_total_len);
     bool known_dst_types = x_CheckSeqTypes(target, dst_type, dst_total_len);
     // Check if all sequence types are known and there are no conflicts.

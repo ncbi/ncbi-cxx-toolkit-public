@@ -148,8 +148,9 @@ public:
 
     void SetLoc(const CConstRef<CSeq_loc>& loc);
 
-    // test if matches a publication in the set
+    // test if matches publication(s)
     bool Matches(const CPub_set& ps) const;
+    bool Matches(const CPub& pub) const;
 
     // sort, merge duplicates and cleans up remaining items
     static void Rearrange(TReferences& refs, CBioseqContext& ctx);
@@ -186,7 +187,6 @@ private:
 
     void x_CreateUniqueStr(void) const;
     void x_CleanData(void);
-    bool x_Matches(const CPub& pub) const;
     void x_CapitalizeTitleIfNecessary(void);
 
     // data

@@ -394,7 +394,7 @@ bool CReferenceItem::Matches(const CPub_set& ps) const
     }
 
     ITERATE (CPub_set::TPub, it, ps.GetPub()) {
-        if ( x_Matches(**it) ) {
+        if ( Matches(**it) ) {
             return true;
         }
     }
@@ -443,7 +443,7 @@ void CReferenceItem::x_CreateUniqueStr(void) const
 }
 
 
-bool CReferenceItem::x_Matches(const CPub& pub) const
+bool CReferenceItem::Matches(const CPub& pub) const
 {
     switch (pub.Which()) {
     case CPub::e_Muid:
@@ -452,7 +452,7 @@ bool CReferenceItem::x_Matches(const CPub& pub) const
         return pub.GetPmid() == GetPMID();
     case CPub::e_Equiv:
         ITERATE (CPub::TEquiv::Tdata, it, pub.GetEquiv().Get()) {
-            if ( x_Matches(**it) ) {
+            if ( Matches(**it) ) {
                 return true;
             }
         }
@@ -969,17 +969,13 @@ void CReferenceItem::FormatAuthors(const CAuth_list& alp, string& auth)
     ITERATE (TStrList, it, authors) {
         auth_line << separator << *it;
         ++it;
-        if (it == last) {
-            if (it->size() < 7) {
-                if (NStr::StartsWith(*it, "et al", NStr::eNocase)  ||
-                    NStr::StartsWith(*it, "et,al", NStr::eNocase)) {
-                    separator = " ";
-                } else {
-                    separator = " and ";
-                }
-            } else {
-                separator = " and ";
-            }
+        // TODO: might want to remove "et al" detection once we've moved over to the C++ toolkit.
+        // It's here to make the diffs match.
+        if( (it != authors.end()) && 
+            ( NStr::StartsWith(*it, "et al", NStr::eNocase) || NStr::StartsWith(*it, "et,al", NStr::eNocase) ) ) {
+                separator = " ";
+        } else if (it == last) {
+            separator = " and ";
         } else {
             separator = ", ";
         }

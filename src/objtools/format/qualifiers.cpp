@@ -36,6 +36,7 @@
 #include <serial/enumvalues.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_set.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -1201,10 +1202,22 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
 void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
                            CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
-    ITERATE (vector< CRef<CReferenceItem> >, it, ctx.GetReferences()) {
-        if ((*it)->Matches(*m_Value)) {
-            x_AddFQ(q, name, '[' + NStr::IntToString((*it)->GetSerial()) + ']',
+    if( ! m_Value->IsPub() ) {
+        return; // TODO: is this right?
+    }
+
+    // copy the list
+    list< CRef< CPub > > unusedPubs = m_Value->GetPub();
+
+    ITERATE (vector< CRef<CReferenceItem> >, ref_iter, ctx.GetReferences()) {
+        CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
+        for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
+            if( (*ref_iter)->Matches( **pub_iter ) ) {
+                x_AddFQ(q, name, '[' + NStr::IntToString((*ref_iter)->GetSerial()) + ']',
                     CFormatQual::eUnquoted);
+                pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
+                break; // break so we don't show the same ref more than once
+            }
         }
     }
 }
