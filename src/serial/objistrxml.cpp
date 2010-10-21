@@ -320,9 +320,10 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
 
 bool CObjectIStreamXml::UseDefaultData(void)
 {
-    return !m_Attlist && GetMemberDefault() &&
+    return !m_Attlist &&
         (EndOpeningTagSelfClosed() ||
-            (m_Input.PeekChar(0) == '<' && m_Input.PeekChar(1) == '/'));
+            (m_Input.PeekChar(0) == '<' && m_Input.PeekChar(1) == '/')) &&
+        GetMemberDefault();
 }
 
 char CObjectIStreamXml::BeginOpeningTag(void)
@@ -1091,6 +1092,9 @@ void CObjectIStreamXml::ReadString(string& str, EStringType type)
         } else {
             str = u.AsSingleByteString(m_StringEncoding);
         }
+        return;
+    }
+    if (SelfClosedTag()) {
         return;
     }
     ReadTagData(str, type);
@@ -2031,6 +2035,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
 */
             }
             if ( SelfClosedTag()) {
+                m_Attlist = false;
                 TMemberIndex last = classType->GetMembers().LastIndex();
                 if (pos == last) {
                     if (classType->GetMemberInfo(pos)->GetId().HasNotag()) {
@@ -2038,7 +2043,6 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         return pos;
                     }
                 }
-                m_Attlist = false;
                 return kInvalidMember;
             }
             if ( ThisTagIsSelfClosed() || NextTagIsClosing() )
