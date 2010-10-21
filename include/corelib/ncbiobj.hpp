@@ -2199,6 +2199,8 @@ public:
     typedef CWeakObjectLocker<C>  TLockerType;
 };
 
+template<class Interface, class Locker>
+class CWeakIRef;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2348,6 +2350,8 @@ public:
     }
 
 private:
+    friend class CWeakIRef<C, Locker>;
+
     CRef<proxy_type> m_Proxy;
     locker_type      m_Locker;
 };
@@ -2376,6 +2380,7 @@ class CWeakIRef : public CWeakRef<Interface, Locker>
 public:
     typedef typename TParent::TObjectType TObjectType;
     typedef typename TParent::locker_type locker_type;
+    typedef CIRef<Interface, Locker>      TRefType;
     typedef CWeakIRef<Interface, Locker>  TThisType;
 
 
@@ -2416,6 +2421,17 @@ public:
     {
         TParent::operator= (ptr);
         return *this;
+    }
+
+
+    /// Lock the object and return reference to it.
+    /// If the refenced object is already deleted then return null reference.
+    TRefType Lock(void) const
+    {
+        if (!m_Proxy)
+            return null;
+
+        return m_Locker.GetLockedObject(m_Proxy.GetNCPointer());
     }
 };
 
