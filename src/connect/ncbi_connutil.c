@@ -1177,6 +1177,20 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 }
 
 
+extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
+                                          const STimeout* timeout)
+{
+    if (!info  ||  timeout == kDefaultTimeout)
+        return 0/*failed*/;
+    if (timeout) {
+        info->tmo     = *timeout;
+        info->timeout = &info->tmo;
+    } else
+        info->timeout = kInfiniteTimeout/*0,timeout*/;
+    return 1/*succeeded*/;
+}
+
+
 extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
     if (info) {

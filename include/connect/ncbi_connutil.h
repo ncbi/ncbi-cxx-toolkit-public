@@ -40,6 +40,7 @@
  *       ConnNetInfo_Destroy()
  *       ConnNetInfo_Log()
  *       ConnNetInfo_ParseURL()
+ *       ConnNetInfo_SetTimeout()
  *       ConnNetInfo_SetUserHeader()
  *       ConnNetInfo_AppendUserHeader()
  *       ConnNetInfo_DeleteUserHeader()
@@ -443,6 +444,18 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_LogEx
  */
 extern NCBI_XCONNECT_EXPORT char* ConnNetInfo_URL
 (const SConnNetInfo* info
+ );
+
+
+/* Set the timeout.  Accepted values can include a valid pointer
+ * (to a finite timeout) or kInfiniteTimeout (or 0) to denote
+ * the infinite timeout value.
+ * Note that kDefaultTimeout as a pointer value is not accepted.
+ * Return non-zero (TRUE) on success, or zero (FALSE) on error.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetTimeout
+(SConnNetInfo*   info,
+ const STimeout* timeout
  );
 
 
