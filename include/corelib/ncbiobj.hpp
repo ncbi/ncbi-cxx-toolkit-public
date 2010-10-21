@@ -2428,10 +2428,10 @@ public:
     /// If the refenced object is already deleted then return null reference.
     TRefType Lock(void) const
     {
-        if (!m_Proxy)
+        if (!this->m_Proxy)
             return null;
 
-        return m_Locker.GetLockedObject(m_Proxy.GetNCPointer());
+        return this->m_Locker.GetLockedObject(this->m_Proxy.GetNCPointer());
     }
 };
 
