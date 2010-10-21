@@ -11,6 +11,7 @@ HOSTED_LIBS    = \
                  xalgoseq               \
                  xalgoseqqa             \
                  xalgotext              \
+                 xalgosegmask           \
                  xalgowinmask           \
                  \
                  prosplign              \
