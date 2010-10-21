@@ -1,0 +1,13 @@
+# $Id$
+
+WATCHERS = blastsoft
+
+ASN_DEP = seqset
+
+LIB = xalgosegmask
+
+SRC = seg
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+

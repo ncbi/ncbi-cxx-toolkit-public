@@ -52,7 +52,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/bioseq_handle.hpp>
 
-#include "seg.hpp"
+#include <algo/segmask/seg.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;

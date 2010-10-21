@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
  **\brief This class encapsulates the SEG filtering algorithm
  **
  **/
-class CSegMasker
+class NCBI_XALGOSEGMASK_EXPORT CSegMasker
 {
 public:
 

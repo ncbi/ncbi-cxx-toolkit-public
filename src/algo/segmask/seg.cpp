@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <algo/blast/core/blast_seg.h>
 #include <algo/blast/core/blast_filter.h>
-#include "seg.hpp"
+#include <algo/segmask/seg.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);

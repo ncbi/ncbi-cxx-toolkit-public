@@ -5,9 +5,9 @@ REQUIRES = objects algo
 ASN_DEP = seq
 
 APP = segmasker
-SRC = segmasker seg
+SRC = segmasker
 
-LIB_ = xobjsimple seqmasks_io xalgowinmask $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = xobjsimple seqmasks_io $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

@@ -15,7 +15,7 @@ BLAST_INPUT_LIBS = blastinput \
     $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_FORMATTER_MINIMAL_LIBS)
 
 # BLAST_FORMATTER_LIBS and BLAST_INPUT_LIBS need $BLAST_LIBS
-BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
-             xalgowinmask seqmasks_io seqdb blast_services xobjutil xobjread \
-             creaders xnetblastcli xnetblast blastdb scoremat tables
+BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgosegmask \
+		xalgodustmask xalgowinmask seqmasks_io seqdb blast_services xobjutil \
+		xobjread creaders xnetblastcli xnetblast blastdb scoremat tables
 # BLAST additionally needs xconnect $(SOBJMGR_LIBS) or $(OBJMGR_LIBS)
