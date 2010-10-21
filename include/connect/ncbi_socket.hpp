@@ -31,9 +31,6 @@
  * File Description:
  *   C++ wrapper for the C "SOCK" API (UNIX, MS-Win, MacOS, Darwin)
  *     NOTE:  for more details and documentation see "ncbi_socket.h"
- *     CSocket
- *     CListeningSocket
- *     CSocketAPI
  *
  * ---------------------------------------------------------------------------
  */
@@ -289,6 +286,10 @@ public:
     unsigned short GetLocalPort(ENH_ByteOrder byte_order,
                                 bool trueport = false) const;
 
+    /// @param byte_order
+    ///
+    unsigned short GetRemotePort(ENH_ByteOrder byte_order) const;
+
     /// @li  <b>NOTE 1:</b>  either of "host", "port" can be NULL to opt out
     ///          from obtaining the corresponding value;
     /// @li  <b>NOTE 2:</b> both "*host" and "*port" come out in the same
@@ -377,6 +378,11 @@ public:
     /// @param whence
     ///
     void Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence);
+
+    /// Positions and byte counts (direction = eIO_Read or eIO_Write)
+    TNCBI_BigCount GetPosition  (EIO_Event direction) const;
+    TNCBI_BigCount GetCount     (EIO_Event direction) const;
+    TNCBI_BigCount GetTotalCount(EIO_Event direction) const;
 
 protected:
     SOCK       m_Socket;
@@ -491,6 +497,9 @@ public:
     ///
     EIO_Status SetBroadcast(bool do_broadcast = true);
 
+    /// Message count
+    TNCBI_BigCount GetMessageCount(EIO_Event direction) const;
+
 protected:
     /// @li <b>NOTE:</b> these calls are not valid with datagram sockets
     ///
@@ -542,7 +551,9 @@ public:
     /// Call Close(), then self-destruct
     virtual ~CListeningSocket(void);
 
-    /// Return eIO_Success if CListeningSocket is opened and bound;
+    /// Return port which the server listens on
+    unsigned short GetPort(ENH_ByteOrder byte_order) const;
+
     /// Return eIO_Closed if not yet bound or Close()'d.
     EIO_Status GetStatus(void) const;
 
@@ -624,12 +635,14 @@ class NCBI_XCONNECT_EXPORT CSocketAPI
 {
 public:
     /// Generic
-    /// @param t
     ///
     static const STimeout* SetSelectInternalRestartTimeout(const STimeout* t);
     static void         AllowSigPipe(void);
     static EIO_Status   Initialize  (void);
     static EIO_Status   Shutdown    (void);
+
+    /// Get OS handle size for sockets
+    static size_t OSHandleSize(void);
 
     /// Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
     /// @param read_on_write
@@ -803,6 +816,12 @@ inline unsigned short CSocket::GetLocalPort(ENH_ByteOrder byte_order,
 }
 
 
+inline unsigned short CSocket::GetRemotePort(ENH_ByteOrder byte_order) const
+{
+    return m_Socket ? SOCK_GetRemotePort(m_Socket, byte_order) : 0;
+}
+
+
 inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
 {
     return m_Socket ? SOCK_Status(m_Socket, direction) : eIO_Closed;
@@ -918,6 +937,12 @@ inline EIO_Status CDatagramSocket::SetBroadcast(bool do_broadcast)
 ///  CListeningSocket::
 ///
 
+inline unsigned short CListeningSocket::GetPort(ENH_ByteOrder byte_order) const
+{
+    return m_Socket ? LSOCK_GetPort(m_Socket, byte_order) : 0;
+}
+
+
 inline EIO_Status CListeningSocket::GetStatus(void) const
 {
     return m_Socket ? eIO_Success : eIO_Closed;
@@ -973,6 +998,12 @@ inline EIO_Status CSocketAPI::Initialize(void)
 inline EIO_Status CSocketAPI::Shutdown(void)
 {
     return SOCK_ShutdownAPI();
+}
+
+
+inline size_t CSocketAPI::OSHandleSize(void)
+{
+    return SOCK_OSHandleSize();
 }
 
 

@@ -733,6 +733,7 @@ static void s_ShowDataLayout(void)
         "\tc_tv:      %3u (%u)\n"
         "\tc_to:      %3u (%u)\n"
         "\tr_buf:     %3u (%u)\n"
+        "\tr_len:     %3u (%u)\n"
         "\tw_buf:     %3u (%u)\n"
         "\tw_len:     %3u (%u)\n"
         "\tn_read:    %3u (%u)\n"
@@ -790,6 +791,7 @@ static void s_ShowDataLayout(void)
         infof(SOCK_struct,    c_tv),                \
         infof(SOCK_struct,    c_to),                \
         infof(SOCK_struct,    r_buf),               \
+        infof(SOCK_struct,    r_len),               \
         infof(SOCK_struct,    w_buf),               \
         infof(SOCK_struct,    w_len),               \
         infof(SOCK_struct,    n_read),              \
@@ -2795,7 +2797,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                        sock->sock != SOCK_INVALID    &&
                        sock->type == eSocket         &&
                        sock->w_status != eIO_Closed  &&
-                       (sock->pending  ||  sock->w_len));
+                       (sock->pending | sock->w_len));
                 s_WritePending(sock, &zero, 1/*writeable*/, 0);
                 if (s_Status(sock, eIO_Read) == eIO_Closed) {
                     polls[i].revent = eIO_Read;
@@ -3367,6 +3369,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
     /* reset the auxiliary data buffers */
     s_WipeRBuf(sock);
     if (sock->type == eDatagram) {
+        sock->r_len = 0;
         s_WipeWBuf(sock);
     } else if (abort  ||  !sock->keep) {
         /* set the close()'s linger period be equal to the close timeout */
@@ -6380,8 +6383,17 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
         return eIO_Closed;
     }
 
+    sock->w_len = 0;
     if (datalen) {
-        s_Write(sock, data, datalen, &x_msgsize, 0);
+        status = s_Write(sock, data, datalen, &x_msgsize, 0);
+        if (status != eIO_Success) {
+            CORE_LOGF_ERRNO_X(154, eLOG_Error, errno,
+                              ("%s[DSOCK::SendMsg] "
+                               " Failed to finalize message (%lu byte%s)",
+                               s_ID(sock, w), (unsigned long) datalen,
+                               &"s"[datalen == 1]));
+            return status;
+        }
         verify(x_msgsize == datalen);
     }
     sock->eof = 1/*true - finalized message*/;
@@ -6436,6 +6448,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
                         (size_t) x_written, &sin);
             }
 
+            sock->w_len      = (TNCBI_BigCount) x_written;
             sock->n_written += (TNCBI_BigCount) x_written;
             sock->n_out++;
             if ((size_t) x_written != x_msgsize) {
@@ -6537,6 +6550,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         return eIO_Closed;
     }
 
+    sock->r_len = 0;
     s_WipeRBuf(sock);
     if (msglen)
         *msglen = 0;
@@ -6574,6 +6588,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         if (x_read >= 0) {
             /* got a message */
             sock->r_status = status = eIO_Success;
+            sock->r_len    = (TNCBI_BigCount) x_read;
             if (x_read) {
                 if (msglen)
                     *msglen = x_read;
@@ -6797,6 +6812,74 @@ extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 #else
     return 0/*false*/;
 #endif /*NCBI_OS_UNIX*/
+}
+
+
+extern TNCBI_BigCount SOCK_GetPosition(SOCK sock, EIO_Event direction)
+{
+    if (sock) {
+        switch (direction) {
+        case eIO_Read:
+            if (sock->type == eDatagram)
+                return BUF_Size(sock->r_buf);
+            return sock->n_read    - (TNCBI_BigCount) BUF_Size(sock->r_buf);
+        case eIO_Write:
+            if (sock->type == eDatagram)
+                return BUF_Size(sock->w_buf);
+            return sock->n_written + (TNCBI_BigCount)          sock->w_len;
+        default:
+            break;
+        }
+    }
+    return 0;
+}
+
+
+extern TNCBI_BigCount SOCK_GetCount(SOCK sock, EIO_Event direction)
+{
+    if (sock) {
+        switch (direction) {
+        case eIO_Read:
+            return sock->type == eDatagram ? sock->r_len : sock->n_read;
+        case eIO_Write:
+            return sock->type == eDatagram ? sock->w_len : sock->n_written;
+        default:
+            break;
+        }
+    }
+    return 0;
+}
+
+
+extern TNCBI_BigCount SOCK_GetTotalCount(SOCK sock, EIO_Event direction)
+{
+    if (sock) {
+        switch (direction) {
+        case eIO_Read:
+            return sock->type != eDatagram ? sock->n_in  : sock->n_read;
+        case eIO_Write:
+            return sock->type != eDatagram ? sock->n_out : sock->n_written;
+        default:
+            break;
+        }
+    }
+    return 0;
+}
+
+
+extern TNCBI_BigCount SOCK_GetMessageCount(SOCK sock, EIO_Event direction)
+{
+    if (sock  &&  sock->type == eDatagram) {
+        switch (direction) {
+        case eIO_Read:
+            return sock->n_in;
+        case eIO_Write:
+            return sock->n_out;
+        default:
+            break;
+        }
+    }
+    return 0;
 }
 
 

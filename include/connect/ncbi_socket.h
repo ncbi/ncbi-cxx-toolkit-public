@@ -1614,6 +1614,60 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsUNIX(SOCK sock);
 extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsSecure(SOCK sock);
 
 
+/**
+ * @param sock
+ *  [in] socket handle
+ * @param direction
+ *  [in] either eIO_Read or eIO_Write
+ * @return
+ *  Current read or write logical position, which takes any pending
+ *  (i.e. unread or unwritten) data into account.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetPosition
+(SOCK      sock,
+ EIO_Event direction);
+
+
+/**
+ * @param sock
+ *  [in] socket handle
+ * @param direction
+ *  [in] either eIO_Read or eIO_Write
+ * @return
+ *  Count of bytes actually read or written through this socket in the current
+ *  session. For datagram sockets the count applies for the last message only.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetCount
+(SOCK      sock,
+ EIO_Event direction);
+
+
+/**
+ * @param sock
+ *  [in] socket handle
+ * @param direction
+ *  [in] either eIO_Read or eIO_Write
+ * @return
+ *  Total number of bytes transferred through the socket in its lifetime.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
+(SOCK      sock,
+ EIO_Event direction);
+
+
+/**
+ * @param sock
+ *  [in] socket handle (datagram socket only)
+ * @param direction
+ *  [in] either eIO_Read or eIO_Write
+ * @return
+ *  Total number of messages sent or received through this datagram socket.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetMessageCount
+(SOCK      sock,
+ EIO_Event direction);
+
+
 
 /******************************************************************************
  *  AUXILIARY network-specific functions (added for the portability reasons)
