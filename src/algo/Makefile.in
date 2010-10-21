@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-SUB_PROJ = dustmask winmask sequence segmask blast align structure ms gnomon \
+SUB_PROJ = dustmask winmask sequence blast segmask align structure ms gnomon \
            tree phy_tree seqqa cobalt text volume_merge
 
 REQUIRES = objects algo
