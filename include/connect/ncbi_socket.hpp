@@ -379,7 +379,7 @@ public:
     ///
     void Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence);
 
-    /// Positions and byte counts (direction = eIO_Read or eIO_Write)
+    /// Positions and stats (direction is either eIO_Read or eIO_Write)
     TNCBI_BigCount GetPosition  (EIO_Event direction) const;
     TNCBI_BigCount GetCount     (EIO_Event direction) const;
     TNCBI_BigCount GetTotalCount(EIO_Event direction) const;
