@@ -6,7 +6,7 @@ ASN_DEP = seqset
 
 LIB = xalgosegmask
 
-SRC = seg
+SRC = segmask
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
