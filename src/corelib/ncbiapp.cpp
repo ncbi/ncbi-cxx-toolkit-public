@@ -723,6 +723,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
     CMetaRegistry::SEntry entry;
 
     if ( !conf ) {
+        reg.IncludeNcbircIfAllowed(reg_flags);
         return false;
     } else if (conf->empty()) {
         entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini, 0,
