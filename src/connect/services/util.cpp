@@ -239,15 +239,20 @@ unsigned g_NetService_gethostbyname(const string& hostname)
     unsigned ip = CSocketAPI::gethostbyname(hostname, eOn);
     if (ip == 0) {
         NCBI_THROW_FMT(CNetServiceException, eCommunicationError,
-            "gethostbyname(" << hostname << ") failed");
+            "gethostbyname('" << hostname << "') failed");
     }
     return ip;
 }
 
 string g_NetService_gethostname(const string& ip_or_hostname)
 {
-    return CSocketAPI::gethostbyaddr(
-        g_NetService_gethostbyname(ip_or_hostname));
+    string hostname(CSocketAPI::gethostbyaddr(
+        g_NetService_gethostbyname(ip_or_hostname), eOn));
+    if (hostname.empty()) {
+        NCBI_THROW_FMT(CNetServiceException, eCommunicationError,
+            "g_NetService_gethostname('" << ip_or_hostname << "') failed");
+    }
+    return hostname;
 }
 
 string g_NetService_gethostip(const string& ip_or_hostname)
