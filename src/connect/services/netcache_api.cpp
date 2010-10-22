@@ -74,7 +74,7 @@ static SServerAddress* s_GetFallbackServer()
        hostport = TCGI_NetCacheFallbackServer::GetDefault();
        if (NStr::SplitInTwo(hostport, ":", host, sport)) {
           unsigned int port = NStr::StringToInt(sport);
-          host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
+          host = g_NetService_gethostip(host);
           s_FallbackServer->reset(new SServerAddress(host, port));
        }
     } catch (...) {

@@ -57,9 +57,7 @@ struct SServerAddress {
 
     string AsString() const
     {
-        string address =
-            CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(host));
-
+        string address(g_NetService_gethostname(host));
         address += ':';
         address += NStr::UIntToString(port);
 

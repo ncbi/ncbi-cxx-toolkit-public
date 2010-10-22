@@ -209,8 +209,7 @@ void CNetScheduleAdmin::GetWorkerNodes(
                 NStr::SplitInTwo(response, " ", host, response);
 
                 if (NStr::Compare(host, "localhost") == 0)
-                    host = CSocketAPI::gethostbyaddr(
-                        CSocketAPI::gethostbyname((*it).GetHost()));
+                    host = g_NetService_gethostname((*it).GetHost());
 
                 NStr::TruncateSpacesInPlace(response);
 
@@ -366,8 +365,8 @@ void CNetScheduleAdmin::RetrieveKeys(const string& query,
             m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
         CNetServer server = *it;
 
-        inter_ids[SNetScheduleAdminImpl::TIDsMap::key_type(CSocketAPI::ntoa(
-            CSocketAPI::gethostbyname(server->m_Address.host)),
+        inter_ids[SNetScheduleAdminImpl::TIDsMap::key_type(
+            g_NetService_gethostip(server->m_Address.host),
             server->m_Address.port)] = server.ExecWithRetry(cmd).response;
     }
 

@@ -231,4 +231,25 @@ bool CBitVectorDecoder::GetNextRange(unsigned& from, unsigned& to)
     return false;
 }
 
+unsigned g_NetService_gethostbyname(const string& hostname)
+{
+    unsigned ip = CSocketAPI::gethostbyname(hostname, eOn);
+    if (ip == 0) {
+        NCBI_THROW_FMT(CNetServiceException, eCommunicationError,
+            "gethostbyname(" << hostname << ") failed");
+    }
+    return ip;
+}
+
+string g_NetService_gethostname(const string& ip_or_hostname)
+{
+    return CSocketAPI::gethostbyaddr(
+        g_NetService_gethostbyname(ip_or_hostname));
+}
+
+string g_NetService_gethostip(const string& ip_or_hostname)
+{
+    return CSocketAPI::ntoa(g_NetService_gethostbyname(ip_or_hostname));
+}
+
 END_NCBI_SCOPE

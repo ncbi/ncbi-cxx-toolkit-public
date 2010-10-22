@@ -285,7 +285,7 @@ void SNetServiceImpl::Init(CNetObject* api_impl,
         if (NStr::SplitInTwo(m_ServiceName, ":", host, sport)) {
             m_ServiceType = eSingleServer;
             unsigned int port = NStr::StringToInt(sport);
-            host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
+            host = g_NetService_gethostip(host);
             // No need to lock in the constructor:
             // CFastMutexGuard g(m_ServerGroupMutex);
             SNetServerImpl* single_server = new SNetServerImplReal(host, port);

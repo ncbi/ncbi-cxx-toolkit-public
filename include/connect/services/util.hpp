@@ -100,6 +100,12 @@ inline CBitVectorDecoder::CBitVectorDecoder(const string source) :
 {
 }
 
+unsigned g_NetService_gethostbyname(const string& hostname);
+
+string g_NetService_gethostname(const string& ip_or_hostname);
+
+string g_NetService_gethostip(const string& ip_or_hostname);
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___UTIL__HPP */
