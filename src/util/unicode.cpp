@@ -259,16 +259,42 @@ int CUnicodeToAsciiTranslation::x_ParseLine(
     const char* data = line.data()+begin;
     const char* dataend = line.data()+line.size();
     for (++data; data < dataend; ++data) {
-        if (*data == '"') {
+        char c = *data;
+        if (c == '"') {
             break;
         }
-        if (*data == '\\') {
+        if (c == '\\') {
             ++data;
+            if (data < dataend) {
+                c = *data;
+                switch (c) {
+                default:           break;
+                case 'a': c = 0x7; break;
+                case 'b': c = 0x8; break;
+                case 't': c = 0x9; break;
+                case 'n': c = 0xA; break;
+                case 'v': c = 0xB; break;
+                case 'f': c = 0xC; break;
+                case 'r': c = 0xD; break;
+                case '0': c = 0x0; break;
+                case 'x':
+                    if (data + 1 < dataend) {
+                        begin = data + 1 - line.data();
+                        end = line.find_first_not_of("0123456789abcdefABCDEF", begin);
+                        if (end == string::npos) {
+                            end = line.size();
+                        }
+                        c = (char)NStr::StringToUInt( CTempString( line.data()+begin, end-begin), 0, 16);
+                        data = line.data() + end;
+                    }
+                    break;
+                }
+            }
             if (data == dataend) {
                 break;
             }
         }
-        translation.append(1,*data);
+        translation.append(1,c);
     }
     ++res;
     return res;
