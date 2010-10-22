@@ -35,7 +35,10 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_limits.hpp>
+#include <math.h>
 #include <memory>
+#include <stdlib.h>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -49,17 +52,22 @@ USING_NCBI_SCOPE;
 
 static void Test_General(void)
 {
-    LOG_POST("\nGeneral tests\n");
+    LOG_POST("\nGeneral tests");
 
-    cout << "Number of processors: " << GetCpuCount()              << endl;
-    cout << "Page size:            " << GetVirtualMemoryPageSize() << endl;
-    cout << "Physical memory:      " << GetPhysicalMemorySize()    << endl;
+    cout << "\nPer system:\n" << endl;
+    cout << "Number of CPUs              : " << GetCpuCount()
+         << endl;
+    cout << "Page size            (bytes): " << GetVirtualMemoryPageSize()
+         << endl;
+    cout << "Physical memory size (bytes): " << GetPhysicalMemorySize()
+         << endl;
 
+    cout << "\nPer process:\n" << endl;
     size_t total, resident, shared;
     if (GetMemoryUsage(&total, &resident, &shared)) {
-        cout << "Total memory usage (in bytes):  " << total    << endl;
-        cout << "Resident set size (in bytes):   " << resident << endl;
-        cout << "Shared memory usage (in bytes): " << shared   << endl;
+        cout << "Total memory usage   (bytes): " << total    << endl;
+        cout << "Resident set size    (bytes): " << resident << endl;
+        cout << "Shared memory usage  (bytes): " << shared   << endl;
     } else {
         cout << "Couldn't determine memory usage." << endl;
     }
@@ -72,14 +80,18 @@ static void Test_General(void)
 
 int s_PrintParameter = 0;
 
-static void PrintHandler (ELimitsExitCode code, size_t limit, CTime& time, 
-                   TLimitsPrintParameter param) 
+static void PrintHandler(ELimitsExitCode code, size_t limit,
+                         CTime& time, TLimitsPrintParameter param) 
 {
-    cout << "Type          : " << 
+    cout << "Type         : " << 
         (code == eLEC_Memory ? "Memory limit" : "CPU limit") << endl;
-    cout << "Limit value   : " << limit << endl;
-    cout << "Set time      : " << time.AsString() << endl;
-    cout << "Our parameter : " << (param ? *(int*)param : 0) << endl;
+    cout << "Limit value  : " << limit << endl;
+    cout << "Set time     : " << time.AsString() << endl;
+    if (param) {
+        cout << "Our parameter: " << *(int*) param << endl;
+    } else {
+        cout << "Current time : " << CTime(CTime::eCurrent).AsString() << endl;
+    }
 }
 
 
@@ -100,6 +112,7 @@ static void Test_MemLimit(void)
         int* pi = new int[1024];
         assert(pi);
     }
+    _ASSERT(0);
 }
 
 
@@ -111,11 +124,13 @@ static void Test_CpuLimit(void)
 {
     LOG_POST("\nCPU time limit test\n");
 
-    assert( SetCpuTimeLimit(2) );
+    assert( SetCpuTimeLimit(1, PrintHandler) );
 
-    for (;;) {
-        continue;
+    double a = 0.0;
+    while (a <= get_limits(a).max()) {
+        a = sin(rand() + a);
     }
+    _ASSERT(0);
 }
 
 
