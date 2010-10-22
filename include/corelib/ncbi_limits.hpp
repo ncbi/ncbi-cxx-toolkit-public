@@ -156,10 +156,11 @@ BEGIN_NCBI_SCOPE
 /// Typical use:
 /// <pre>
 ///  int a = 10; 
-///  
+///  get_limits(a).max();
+/// </pre>
 /// @note 
 ///   Causes a compile-time failure if used
-///    instead of the specialized implementations.
+///   instead of the specialized implementations.
 template<typename T> 
 inline numeric_limits<T> get_limits(const T&)
 {
