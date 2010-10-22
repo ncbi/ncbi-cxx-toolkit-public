@@ -357,6 +357,10 @@ static void s_SignalHandler(int _DEBUG_ARG(sig))
     _ASSERT(sig == SIGXCPU);
     _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
     s_ExitCode = eLEC_Cpu;
+    // if (s_ExitHandlerIsSet) {
+    //     s_ExitHandler();
+    // }
+    // NB: _exit() does not go over atexit() chain
     _exit(-1);
 }
 
