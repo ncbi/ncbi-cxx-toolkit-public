@@ -77,77 +77,11 @@ using namespace xml::impl;
 //####################################################################
 namespace {
     const char const_default_encoding[] = "ISO-8859-1";
+
+    // Callbacks for validating internal DTD
+    extern "C" void cb_dtd_valid_error (void *v, const char *message, ...);
+    extern "C" void cb_dtd_valid_warning (void *v, const char *message, ...);
 }
-//####################################################################
-#if 0
-struct xml::impl::doc_impl {
-    //####################################################################
-    doc_impl (void) : doc_(0), xslt_result_(0) { 
-	xmlDocPtr tmpdoc;
-	if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
-	set_doc_data(tmpdoc, true);
-    }
-    //####################################################################
-    doc_impl (const char *root_name) : doc_(0), xslt_result_(0), root_(root_name) {
-	xmlDocPtr tmpdoc;
-	if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
-	set_doc_data(tmpdoc, true);
-    }
-    //####################################################################
-    doc_impl (const doc_impl &other) : doc_(0), xslt_result_(0) {
-	xmlDocPtr tmpdoc;
-	if ( (tmpdoc = xmlCopyDoc(other.doc_, 1)) == 0) throw std::bad_alloc();
-	set_doc_data(tmpdoc, false);
-    }
-    //####################################################################
-    void set_doc_data (xmlDocPtr newdoc, bool root_is_okay) {
-	if (doc_) xmlFreeDoc(doc_);
-	doc_ = newdoc;
-
-	if (doc_->version)  version_  = reinterpret_cast<const char*>(doc_->version);
-	if (doc_->encoding) encoding_ = reinterpret_cast<const char*>(doc_->encoding);
-
-	if (root_is_okay) {
-	    xmlDocSetRootElement(doc_, static_cast<xmlNodePtr>(root_.release_node_data()));
-	} else {
-	    xmlNodePtr libxml_root_node = xmlDocGetRootElement(doc_);
-
-	    if (libxml_root_node)  {
-		root_.set_node_data(libxml_root_node);
-	    } else { 
-		node tmpnode;
-		root_.swap(tmpnode);
-
-		xmlDocSetRootElement(doc_, static_cast<xmlNodePtr>(root_.release_node_data()));
-	    }
-	}
-    }
-    //####################################################################
-    void set_root_node (const node &n) {
-	node &non_const_node = const_cast<node&>(n);
-	xmlNodePtr new_root_node = xmlCopyNode(static_cast<xmlNodePtr>(non_const_node.get_node_data()), 1);
-	if (!new_root_node) throw std::bad_alloc();
-
-	xmlNodePtr old_root_node = xmlDocSetRootElement(doc_, new_root_node);
-	root_.set_node_data(new_root_node);
-	if (old_root_node) xmlFreeNode(old_root_node);
-
-	xslt_result_ = 0;
-    }
-    //####################################################################
-    ~doc_impl (void) {
-	if (doc_) xmlFreeDoc(doc_);
-	delete xslt_result_;
-    }
-    //####################################################################
-
-    xmlDocPtr doc_;
-    xslt::impl::result *xslt_result_;
-    node root_;
-    std::string version_;
-    mutable std::string encoding_;
-};
-#endif
 //####################################################################
 xml::document::document (void) {
     pimpl_ = new doc_impl;
@@ -273,6 +207,57 @@ bool xml::document::validate (schema &xsd_schema,
     return xsd_schema.validate(*this, how);
 }
 //####################################################################
+bool document::validate (error_messages *  messages_,
+                         warnings_as_errors_type how) const {
+    error_messages *                temp(messages_);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages_)
+        msgs.reset(temp = new error_messages);
+
+    xmlValidCtxt        vctxt;
+
+    memset(&vctxt, 0, sizeof(vctxt));
+    vctxt.error    = cb_dtd_valid_error;
+    vctxt.warning  = cb_dtd_valid_warning;
+    vctxt.userData = temp;
+
+    temp->get_messages().clear();
+
+    int retCode = xmlValidateDocument(&vctxt, pimpl_->doc_);
+    if (retCode == 0)
+        return false;
+    if (static_cast<error_messages*>(vctxt.userData)->has_errors())
+        return false;
+    if (static_cast<error_messages*>(vctxt.userData)->has_warnings()) {
+        if (how == type_warnings_are_errors)
+            return false;
+    }
+    return true;
+}
+//####################################################################
+bool document::validate (const dtd& dtd_, error_messages* messages_,
+                         warnings_as_errors_type how) const {
+    return dtd_.validate(*this, messages_, how);
+}
+//####################################################################
+bool document::validate (const schema& schema_, error_messages* messages_,
+                         warnings_as_errors_type how) const {
+    return schema_.validate(*this, messages_, how);
+}
+//####################################################################
+void document::set_external_subset (const dtd& dtd_) {
+    if (!dtd_.get_raw_pointer())
+        throw xml::exception("xml::document::set_external_subset dtd is not loaded");
+
+    xmlDtdPtr   copy = xmlCopyDtd(static_cast<xmlDtdPtr>(dtd_.get_raw_pointer()));
+    if (copy == NULL)
+        throw xml::exception("Error copying DTD");
+
+    if (pimpl_->doc_->extSubset != 0) xmlFreeDtd(pimpl_->doc_->extSubset);
+    pimpl_->doc_->extSubset = copy;
+}
+
+//####################################################################
 xml::document::size_type xml::document::size (void) const {
     #ifdef NCBI_COMPILER_WORKSHOP
         xml::document::size_type   dist(0);
@@ -355,10 +340,10 @@ bool xml::document::save_to_file (const char *filename, int compression_level) c
     std::swap(pimpl_->doc_->compression, compression_level);
 
     if (pimpl_->xslt_result_ != 0) {
-	bool rc = pimpl_->xslt_result_->save_to_file(filename, compression_level);
-	std::swap(pimpl_->doc_->compression, compression_level);
+        bool rc = pimpl_->xslt_result_->save_to_file(filename, compression_level);
+        std::swap(pimpl_->doc_->compression, compression_level);
 
-	return rc;
+        return rc;
     }
 
     const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
@@ -402,4 +387,38 @@ std::ostream& xml::operator<< (std::ostream &stream, const xml::document &doc) {
     return stream;
 }
 //####################################################################
+
+namespace {
+    void register_error_helper (error_message::message_type mt,
+                                void *v,
+                                const std::string &message) {
+        try {
+            error_messages *p = static_cast<error_messages*>(v);
+            if (p)
+                p->get_messages().push_back(error_message(message, mt));
+        } catch (...) {}
+    }
+
+    extern "C" void cb_dtd_valid_error (void *v, const char *message, ...) {
+        std::string temporary;
+
+        va_list ap;
+        va_start(ap, message);
+        printf2string(temporary, message, ap);
+        va_end(ap);
+
+        register_error_helper(error_message::type_error, v, temporary);
+    }
+
+    extern "C" void cb_dtd_valid_warning (void *v, const char *message, ...) {
+        std::string temporary;
+
+        va_list ap;
+        va_start(ap, message);
+        printf2string(temporary, message, ap);
+        va_end(ap);
+
+        register_error_helper(error_message::type_warning, v, temporary);
+    }
+}
 

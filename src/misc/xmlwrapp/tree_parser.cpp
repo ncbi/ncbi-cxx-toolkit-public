@@ -98,6 +98,76 @@ struct xml::impl::tree_impl {
     std::string    errors_as_string_;
 };
 //####################################################################
+tree_parser::tree_parser (const char* filename, error_messages* messages,
+                          warnings_as_errors_type how) {
+    if (!filename)
+        throw xml::exception("invalid file name");
+
+    std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
+
+    error_messages* temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+    else
+        messages->get_messages().clear();
+
+    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&(pimpl_->sax_), filename,
+                                               0, temp);
+
+    if (is_failure(temp, how) || !tmpdoc) {
+        if (tmpdoc) xmlFreeDoc(tmpdoc);
+        throw parser_exception(*temp);
+    }
+    pimpl_->doc_.set_doc_data(tmpdoc);
+
+    ap.release();
+    return;
+}
+//####################################################################
+tree_parser::tree_parser (const char* data, size_type size,
+                          error_messages* messages,
+                          warnings_as_errors_type how) {
+    if (!data)
+        throw xml::exception("invalid data pointer");
+
+    std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
+    xmlParserCtxtPtr ctxt;
+
+    if ( (ctxt = xmlCreateMemoryParserCtxt(data, static_cast<int>(size))) == 0) {
+        throw std::bad_alloc();
+    }
+
+    if (ctxt->sax) xmlFree(ctxt->sax);
+    ctxt->sax = &(pimpl_->sax_);
+
+    error_messages* temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+    else
+        messages->get_messages().clear();
+    ctxt->_private = temp;
+
+    int ret(xmlParseDocument(ctxt));
+
+    if (!ctxt->wellFormed || ret != 0 ||
+        is_failure(temp, how)) {
+        xmlFreeDoc(ctxt->myDoc);
+        ctxt->myDoc = 0;
+        ctxt->sax = 0;
+        xmlFreeParserCtxt(ctxt);
+
+        throw parser_exception(*temp);
+    }
+
+    pimpl_->doc_.set_doc_data(ctxt->myDoc);
+    ctxt->sax = 0;
+
+    xmlFreeParserCtxt(ctxt);
+    ap.release();
+}
+//####################################################################
 xml::tree_parser::tree_parser (const char *filename,
                                warnings_as_errors_type how) {
     if (!filename)
@@ -105,9 +175,10 @@ xml::tree_parser::tree_parser (const char *filename,
 
     std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
 
-    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&(pimpl_->sax_), filename, 0, pimpl_);
+    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&(pimpl_->sax_), filename,
+                                               0, &pimpl_->parser_messages_);
 
-    if (is_failure(how) || !tmpdoc) {
+    if (is_failure(&pimpl_->parser_messages_, how) || !tmpdoc) {
         if (tmpdoc) xmlFreeDoc(tmpdoc);
         throw parser_exception(pimpl_->parser_messages_);
     }
@@ -133,11 +204,12 @@ xml::tree_parser::tree_parser (const char *data,
     if (ctxt->sax) xmlFree(ctxt->sax);
     ctxt->sax = &(pimpl_->sax_);
 
-    ctxt->_private = pimpl_;
+    ctxt->_private = &pimpl_->parser_messages_;
 
     int ret(xmlParseDocument(ctxt));
 
-    if (!ctxt->wellFormed || ret != 0 || is_failure(how)) {
+    if (!ctxt->wellFormed || ret != 0 ||
+        is_failure(&pimpl_->parser_messages_, how)) {
         xmlFreeDoc(ctxt->myDoc);
         ctxt->myDoc = 0;
         ctxt->sax = 0;
@@ -156,9 +228,10 @@ xml::tree_parser::tree_parser (const char *data,
 xml::tree_parser::tree_parser (const char *name, bool allow_exceptions) {
     std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
 
-    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&(pimpl_->sax_), name, 0, pimpl_);
+    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&(pimpl_->sax_), name,
+                                               0, &pimpl_->parser_messages_);
 
-    if (!tmpdoc || is_failure(type_warnings_not_errors))
+    if (!tmpdoc || is_failure(&pimpl_->parser_messages_, type_warnings_not_errors))
     {
         // A problem appeared
         if (tmpdoc) xmlFreeDoc(tmpdoc);
@@ -184,11 +257,12 @@ xml::tree_parser::tree_parser (const char *data, size_type size, bool allow_exce
     if (ctxt->sax) xmlFree(ctxt->sax);
     ctxt->sax = &(pimpl_->sax_);
 
-    ctxt->_private = pimpl_;
+    ctxt->_private = &pimpl_->parser_messages_;
 
     int ret(xmlParseDocument(ctxt));
 
-    if (!ctxt->wellFormed || ret != 0 || is_failure(type_warnings_not_errors)) {
+    if (!ctxt->wellFormed || ret != 0 ||
+        is_failure(&pimpl_->parser_messages_, type_warnings_not_errors)) {
         xmlFreeDoc(ctxt->myDoc);
         ctxt->myDoc = 0;
         ctxt->sax = 0;
@@ -211,7 +285,7 @@ xml::tree_parser::~tree_parser (void) {
 //####################################################################
 bool xml::tree_parser::operator! (void) const {
     //return !pimpl_->okay_;
-    return is_failure(type_warnings_not_errors);
+    return is_failure(&pimpl_->parser_messages_, type_warnings_not_errors);
 }
 //####################################################################
 const std::string& xml::tree_parser::get_error_message (void) const {
@@ -235,14 +309,15 @@ const error_messages& xml::tree_parser::get_parser_messages (void) const {
     return pimpl_->parser_messages_;
 }
 //####################################################################
-bool xml::tree_parser::is_failure (warnings_as_errors_type how) const {
+bool xml::tree_parser::is_failure (error_messages* messages,
+                                   warnings_as_errors_type how) const {
     // if there are fatal errors or errors it is a failure
-    if (pimpl_->parser_messages_.has_errors() ||
-        pimpl_->parser_messages_.has_fatal_errors())
+    if (messages->has_errors() ||
+        messages->has_fatal_errors())
         return true;
     // if there are warnings and they are treated as errors it is a failure
     if ((how == type_warnings_are_errors) &&
-         pimpl_->parser_messages_.has_warnings())
+         messages->has_warnings())
         return true;
     return false;
 }
@@ -253,10 +328,10 @@ namespace {
                                        const std::string &message) {
         try {
             xmlParserCtxtPtr ctxt = static_cast<xmlParserCtxtPtr>(v);
-            tree_impl *p = static_cast<tree_impl*>(ctxt->_private);
+            error_messages *p = static_cast<error_messages*>(ctxt->_private);
 
             if (!p) return; // handle bug in older versions of libxml
-            p->parser_messages_.get_messages().push_back(error_message(message, mt));
+            p->get_messages().push_back(error_message(message, mt));
         } catch (...) {}
     }
 

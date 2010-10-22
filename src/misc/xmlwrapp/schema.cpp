@@ -71,25 +71,101 @@ struct xml::impl::schema_impl {
 
 
 schema::schema (const char* filename,
-                warnings_as_errors_type how) {
+                error_messages* messages,
+                warnings_as_errors_type how) : pimpl_(NULL) {
     if (!filename)
         throw xml::exception("invalid file name");
-    construct(filename, (size_type)(-1), how);
+
+    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
+    error_messages *    temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+
+    construct(filename, (size_type)(-1), temp, how);
+    ap.release();
 }
 
 schema::schema (const char* data, size_type size,
-                warnings_as_errors_type how) {
+                error_messages* messages,
+                warnings_as_errors_type how) : pimpl_(NULL) {
     if (!data)
         throw xml::exception("invalid data pointer");
-    construct(data, size, how);
+
+    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
+    error_messages *    temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+
+    construct(data, size, temp, how);
+    ap.release();
+}
+
+bool schema::validate (const document& doc,
+                       error_messages* messages,
+                       warnings_as_errors_type how) const
+{
+    xmlSchemaValidCtxtPtr ctxt;
+    if ((ctxt = xmlSchemaNewValidCtxt(pimpl_->schema_)) == 0) {
+        throw std::bad_alloc();
+    }
+
+    error_messages* temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+    else
+        messages->get_messages().clear();
+    xmlSchemaSetValidErrors(ctxt, cb_schema_error,
+                                  cb_schema_warning,
+                                  temp);
+
+    int retCode = xmlSchemaValidateDoc(ctxt, doc.pimpl_->doc_);
+    xmlSchemaFreeValidCtxt(ctxt);
+
+    if (retCode == -1)
+        throw xml::exception("internal libxml2 API error");
+
+    // There are errors
+    if (temp->has_errors())
+        return false;
+
+    // There are warnings and they are treated as errors
+    if (temp->has_warnings()) {
+        if (how == type_warnings_are_errors)
+            return false;
+    }
+
+    return true;
+}
+
+schema::schema (const char* filename,
+                warnings_as_errors_type how) : pimpl_(NULL) {
+    if (!filename)
+        throw xml::exception("invalid file name");
+    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
+    construct(filename, (size_type)(-1),
+              &pimpl_->schema_parser_messages_, how);
+    ap.release();
+}
+
+schema::schema (const char* data, size_type size,
+                warnings_as_errors_type how) : pimpl_(NULL) {
+    if (!data)
+        throw xml::exception("invalid data pointer");
+    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
+    construct(data, size,
+              &pimpl_->schema_parser_messages_, how);
+    ap.release();
 }
 
 // Helper constructor.
 // Two public constructors bodies differ only in the way of creating the parser
 // context. So this function is introduced.
 void schema::construct (const char* file_or_data, size_type size,
-           warnings_as_errors_type how) {
-    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
+                        error_messages* messages,
+                        warnings_as_errors_type how) {
     xmlSchemaParserCtxtPtr ctxt;
 
     // Create a context depending on where data come from - a file or memory
@@ -105,26 +181,24 @@ void schema::construct (const char* file_or_data, size_type size,
         }
     }
 
+    messages->get_messages().clear();
     xmlSchemaSetParserErrors(ctxt, cb_schema_error,
                                    cb_schema_warning,
-                                   pimpl_);
+                                   messages);
     pimpl_->schema_ = xmlSchemaParse(ctxt);
     xmlSchemaFreeParserCtxt(ctxt);
 
     // Fatal errors are impossible here. They may appear for document parser
     // only.
-    if (pimpl_->schema_parser_messages_.has_errors())
-        throw parser_exception(pimpl_->schema_parser_messages_);
+    if (messages->has_errors())
+        throw parser_exception(*messages);
 
-    if ((how == type_warnings_are_errors) && pimpl_->schema_parser_messages_.has_warnings())
-        throw parser_exception(pimpl_->schema_parser_messages_);
+    if ((how == type_warnings_are_errors) && messages->has_warnings())
+        throw parser_exception(*messages);
 
     // To be 100% sure that schema was created successfully
     if (pimpl_->schema_ == NULL)
         throw xml::exception("unknown schema parsing error");
-
-    ap.release();
-    return;
 }
 
 schema::~schema() {
@@ -147,7 +221,7 @@ bool schema::validate (const document& doc,
 
     xmlSchemaSetValidErrors(ctxt, cb_schema_error,
                                   cb_schema_warning,
-                                  pimpl_);
+                                  &pimpl_->validation_messages_);
     int retCode = xmlSchemaValidateDoc(ctxt, doc.pimpl_->doc_);
     xmlSchemaFreeValidCtxt(ctxt);
 
@@ -181,14 +255,9 @@ namespace {
                                 void *v,
                                 const std::string &message) {
         try {
-            impl::schema_impl *p = static_cast<impl::schema_impl*>(v);
-
-            // While the schema is parsed the pointer is NULL
-            // While validating the schema is ready
-            if (p->schema_)
-                p->validation_messages_.get_messages().push_back(error_message(message, mt));
-            else
-                p->schema_parser_messages_.get_messages().push_back(error_message(message, mt));
+            error_messages *p = static_cast<error_messages*>(v);
+            if (p)
+                p->get_messages().push_back(error_message(message, mt));
         } catch (...) {}
     }
 

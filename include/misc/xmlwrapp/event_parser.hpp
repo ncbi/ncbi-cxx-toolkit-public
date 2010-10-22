@@ -150,6 +150,94 @@ public:
      * Call this member function to parse the given file.
      *
      * @param filename The name of the file to parse.
+     * @param messages A pointer to the object where all the warnings and error
+     *                 messages are collected. If NULL then no messages will be
+     *                 collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors.
+     * @return True if the file was successfully parsed and was not interrupted
+     *         by the user; false otherwise.
+     * @author Peter Jones; Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    bool parse_file (const char *filename, error_messages* messages,
+                     warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
+     * Parse what ever data that can be read from the given stream.
+     *
+     * @param stream The stream to read data from.
+     * @param messages A pointer to the object where all the warnings and error
+     *                 messages are collected. If NULL then no messages will be
+     *                 collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors.
+     * @return True if the stream was successfully parsed and was not
+     *         interrupted by the user; false otherwise.
+     * @author Peter Jones; Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    bool parse_stream (std::istream &stream, error_messages* messages,
+                       warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
+     * Call this function to parse a chunk of xml data. When you are done
+     * feeding the parser chucks of data you need to call the parse_finish
+     * member function.
+     *
+     * @param chunk The xml data chuck to parse.
+     * @param messages A pointer to the object where all the warnings and error
+     *                 messages are collected. If NULL then no messages will be
+     *                 collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors.
+     * @param length The size of the given data chunk
+     * @return True if the chunk was parsed sucessfully and was not interrupted
+     *         by the user; false otherwise.
+     * @author Peter Jones; Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    bool parse_chunk (const char *chunk, size_type length,
+                      error_messages* messages,
+                      warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
+     * Finish parsing chunked data. You only need to call this member
+     * function if you were parsing chunked xml data via the parse_chunk
+     * member function.
+     *
+     * @param messages A pointer to the object where all the warnings and error
+     *                 messages are collected. If NULL then no messages will be
+     *                 collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors.
+     * @return True if all parsing was successful; false otherwise.
+     * @author Peter Jones
+    **/
+    //####################################################################
+    bool parse_finish (error_messages* messages,
+                       warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
+     * Call this member function to parse the given file.
+     *
+     * @param filename The name of the file to parse.
      * @param how How to treat warnings (default: warnings are not treated as
      *            errors). If warnings are treated as errors false is
      *            returned in case of both errors and/or warnings. If warnings
@@ -159,9 +247,11 @@ public:
      *            get_parser_messages() method.
      * @return True if the file was successfully parsed and was not interrupted
      *         by the user; false otherwise.
+     * @deprecated
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool parse_file (const char *filename,
                      warnings_as_errors_type how = type_warnings_not_errors);
 
@@ -179,9 +269,11 @@ public:
      *            get_parser_messages() method.
      * @return True if the stream was successfully parsed and was not
      *         interrupted by the user; false otherwise.
+     * @deprecated
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool parse_stream (std::istream &stream,
                        warnings_as_errors_type how = type_warnings_not_errors);
 
@@ -202,9 +294,11 @@ public:
      * @param length The size of the given data chunk
      * @return True if the chunk was parsed sucessfully and was not interrupted
      *         by the user; false otherwise.
+     * @deprecated
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool parse_chunk (const char *chunk, size_type length,
                       warnings_as_errors_type how = type_warnings_not_errors);
 
@@ -222,9 +316,11 @@ public:
      *            errors can be retrieved by calling the
      *            get_parser_messages() method.
      * @return True if all parsing was successful; false otherwise.
+     * @deprecated
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool parse_finish (warnings_as_errors_type how = type_warnings_not_errors);
 
     //####################################################################
@@ -236,6 +332,7 @@ public:
      * @deprecated Use get_parser_messages() instead to get complete
      *             information about all the collected messages.
      * @return A description of the XML parsing error.
+     * @deprecated
      * @author Peter Jones
     **/
     //####################################################################
@@ -248,8 +345,10 @@ public:
      * warnings, errors and fatal errors.
      *
      * @return XML document parser error messages.
+     * @deprecated
      * @author Sergey Satskiy, NCBI
     **/
+    NCBI_DEPRECATED
     const error_messages& get_parser_messages (void) const;
 
 protected:
@@ -598,6 +697,7 @@ protected:
     //####################################################################
     NCBI_DEPRECATED
     void set_error_message (const char *message);
+
 private:
     friend struct impl::epimpl;
     impl::epimpl *pimpl_; // private implementation
@@ -614,7 +714,8 @@ private:
     // the whole parsing process.warnings
     bool    parse_finished_;
 
-    bool is_failure (warnings_as_errors_type how) const;
+    bool is_failure (error_messages* messages,
+                     warnings_as_errors_type how) const;
 
     /*
      * Don't allow anyone to copy construct an event_parser or to call the

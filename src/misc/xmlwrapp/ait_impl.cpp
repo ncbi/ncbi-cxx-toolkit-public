@@ -70,7 +70,7 @@ ait_impl::ait_impl (xmlNodePtr node, xmlAttrPtr prop) : xmlnode_(node), xmlattr_
 }
 //####################################################################
 ait_impl::ait_impl (const char *name, const char *value, bool) : xmlnode_(0), xmlattr_(0), fake_(true) {
-    /* 
+    /*
      * in this constructor and in the functions to follow, the last
      * parameter, the bool, is only used to create a unique signature
      */

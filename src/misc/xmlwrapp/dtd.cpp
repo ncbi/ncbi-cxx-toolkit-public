@@ -71,9 +71,82 @@ struct xml::impl::dtd_impl {
 };
 
 
+static std::string get_dtd_parsing_error_message(const char*  filename)
+{
+    FILE *test(fopen(filename, "r"));
+    std::string message;
+    if (test != NULL) {
+        fclose(test);
+        return std::string("unable to parse DTD ") + filename;
+    }
+    return std::string("cannot open DTD ") + filename;
+}
+
+
+// There is a hope that libxml2 will be extended eventually and
+// will provide the detailed errors and warnings for the parsed
+// dtd file.
+dtd::dtd (const char* filename, error_messages* messages,
+          warnings_as_errors_type how) : pimpl_(NULL)
+{
+    if (!filename)
+        throw xml::exception("invalid file name");
+    std::auto_ptr<dtd_impl> ap(pimpl_ = new dtd_impl);
+
+    if (messages)
+        messages->get_messages().clear();
+
+    pimpl_->dtd_ = xmlParseDTD(0, reinterpret_cast<const xmlChar*>(filename));
+    if (pimpl_->dtd_ == NULL) {
+        // It is a common case that the file does not exist or cannot be
+        // opened. libxml2 does not recognise it so make a test here to
+        // have a better error message.
+        error_messages dtd_parser_messages_;
+        error_message msg(get_dtd_parsing_error_message(filename),
+                          error_message::type_error);
+        if (messages)
+            messages->get_messages().push_back(msg);
+        dtd_parser_messages_.get_messages().push_back(msg);
+        throw parser_exception(dtd_parser_messages_);
+    }
+    ap.release();
+}
+
 dtd::dtd () : pimpl_(new dtd_impl)
 {}
 
+bool dtd::validate (const document& doc, error_messages* messages,
+                    warnings_as_errors_type how) const
+{
+    if (!pimpl_->dtd_)
+        throw xml::exception("dtd has not been loaded");
+
+    error_messages *    temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+
+    xmlValidCtxt        vctxt;
+
+    memset(&vctxt, 0, sizeof(vctxt));
+    vctxt.error    = cb_dtd_error;
+    vctxt.warning  = cb_dtd_warning;
+    vctxt.userData = temp;
+
+    temp->get_messages().clear();
+
+    int     retCode = xmlValidateDtd(&vctxt, doc.pimpl_->doc_, pimpl_->dtd_);
+
+    if (retCode == 0)
+        return false;
+    if (static_cast<error_messages*>(vctxt.userData)->has_errors())
+        return false;
+    if (static_cast<error_messages*>(vctxt.userData)->has_warnings()) {
+        if (how == type_warnings_are_errors)
+            return false;
+    }
+    return true;
+}
 
 // There is a hope that libxml2 will be extended eventually and
 // will provide the detailed errors and warnings for the parsed
@@ -89,20 +162,11 @@ dtd::dtd (const char* filename,
         // It is a common case that the file does not exist or cannot be
         // opened. libxml2 does not recognise it so make a test here to
         // have a better error message.
-        FILE *test(fopen(filename, "r"));
-        std::string message;
-        if (test == NULL) {
-            message = std::string("cannot open DTD ") + filename;
-        }
-        else {
-            fclose(test);
-            message = std::string("unable to parse DTD ") + filename;
-        }
-        error_message msg(message, error_message::type_error);
+        error_message msg(get_dtd_parsing_error_message(filename),
+                          error_message::type_error);
         pimpl_->dtd_parser_messages_.get_messages().push_back(msg);
         throw parser_exception(pimpl_->dtd_parser_messages_);
     }
-
     ap.release();
 }
 
@@ -121,7 +185,7 @@ bool dtd::validate (document& doc, warnings_as_errors_type how) {
     xmlValidCtxt    vctxt;
 
     memset(&vctxt, 0, sizeof(vctxt));
-    vctxt.userData = pimpl_;
+    vctxt.userData = &pimpl_->dtd_validation_messages_;
     vctxt.error    = cb_dtd_error;
     vctxt.warning  = cb_dtd_warning;
 
@@ -159,6 +223,11 @@ bool dtd::validate (document& doc, warnings_as_errors_type how) {
     return true;
 }
 
+// The document needs access to the raw dtd pointer to set external subset
+void* dtd::get_raw_pointer (void) const {
+    return pimpl_->dtd_;
+}
+
 const error_messages& dtd::get_dtd_parser_messages (void) const {
     return pimpl_->dtd_parser_messages_;
 }
@@ -184,8 +253,9 @@ namespace {
                                 void *v,
                                 const std::string &message) {
         try {
-            impl::dtd_impl *p = static_cast<impl::dtd_impl*>(v);
-            p->dtd_validation_messages_.get_messages().push_back(error_message(message, mt));
+            error_messages *p = static_cast<error_messages*>(v);
+            if (p)
+                p->get_messages().push_back(error_message(message, mt));
         } catch (...) {}
     }
 

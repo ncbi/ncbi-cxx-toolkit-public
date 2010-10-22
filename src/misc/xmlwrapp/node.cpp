@@ -310,7 +310,7 @@ xml::node::node (text text_info) {
     std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
 
     if ( (pimpl_->xmlnode_ =  xmlNewText(reinterpret_cast<const xmlChar*>(text_info.t))) == 0) {
-	throw std::bad_alloc();
+        throw std::bad_alloc();
     }
 
     ap.release();

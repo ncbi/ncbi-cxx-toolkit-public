@@ -36,6 +36,9 @@
 #ifndef _xmlwrapp_schema_hpp_
 #define _xmlwrapp_schema_hpp_
 
+// for NCBI_DEPRECATED
+#include <ncbiconf.h>
+
 // standard includes
 #include <string>
 
@@ -63,6 +66,8 @@ public:
      * Create a new xml::schema object by parsing the given XML schema file.
      *
      * @param filename The XML schema file name.
+     * @param messages A pointer to the object where all the warnings are
+     *                 collected. If NULL then no messages will be collected.
      * @param how How to treat warnings (default: warnings are not treated as
      *            errors). If warnings are treated as errors then an exception
      *            is thrown in case of both errors and/or warnings. If warnings
@@ -72,6 +77,70 @@ public:
      *            and std::exception in case of other problems.
      * @author Sergey Satskiy, NCBI
     **/
+    schema (const char* filename, error_messages* messages,
+            warnings_as_errors_type how = type_warnings_not_errors);
+
+    /**
+     * Create a new xml::schema object by parsing the given XML schema from a
+     * memory buffer.
+     *
+     * @param data The XML schema memory buffer.
+     * @param size Size of the memory buffer.
+     * @param messages A pointer to the object where all the warnings are
+     *                 collected. If NULL then no messages will be collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors then an exception
+     *            is thrown in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then an exception will be thrown
+     *            only when there are errors.
+     * @exception Throws xml::parser_exception in case of schema parsing errors
+     *            and std::exception in case of other problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    schema (const char* data, size_type size,
+            error_messages* messages,
+            warnings_as_errors_type how = type_warnings_not_errors);
+
+    /**
+     * Validate the given XML document.
+     *
+     * @param doc XML document.
+     * @param messages A pointer to the object where all the warnings are
+     *                 collected. If NULL then no messages will be collected.
+     * @param how How to treat warnings (default: warnings are treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors.
+     * @return true if the document is valid, false otherwise.
+     * @exception Throws std::exception in case of problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    bool validate (const document& doc, error_messages* messages,
+                   warnings_as_errors_type how = type_warnings_are_errors) const;
+
+    /**
+     * Destroy the object.
+     *
+     * @author Sergey Satskiy, NCBI
+    **/
+    virtual ~schema();
+
+    /**
+     * Create a new xml::schema object by parsing the given XML schema file.
+     *
+     * @param filename The XML schema file name.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors then an exception
+     *            is thrown in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then an exception will be thrown
+     *            only when there are errors.
+     * @exception Throws xml::parser_exception in case of schema parsing errors
+     *            and std::exception in case of other problems.
+     * @deprecated
+     * @author Sergey Satskiy, NCBI
+    **/
+    NCBI_DEPRECATED
     schema (const char* filename,
             warnings_as_errors_type how = type_warnings_not_errors);
 
@@ -88,24 +157,21 @@ public:
      *            only when there are errors.
      * @exception Throws xml::parser_exception in case of schema parsing errors
      *            and std::exception in case of other problems.
+     * @deprecated
      * @author Sergey Satskiy, NCBI
     **/
+    NCBI_DEPRECATED
     schema (const char* data, size_type size,
             warnings_as_errors_type how = type_warnings_not_errors);
-
-    /**
-     * Destroy the object.
-     *
-     * @author Sergey Satskiy, NCBI
-    **/
-    virtual ~schema();
 
     /**
      * Get the XML schema parsing error messages.
      *
      * @return XML schema error messages.
+     * @deprecated
      * @author Sergey Satskiy, NCBI
     **/
+    NCBI_DEPRECATED
     const error_messages& get_schema_parser_messages (void) const;
 
     /**
@@ -121,8 +187,10 @@ public:
      *            get_validation_messages() member function.
      * @return true if the document is valid, false otherwise.
      * @exception Throws std::exception in case of problems.
+     * @deprecated
      * @author Sergey Satskiy, NCBI
     **/
+    NCBI_DEPRECATED
     bool validate (const document& doc,
                    warnings_as_errors_type how = type_warnings_are_errors) const;
 
@@ -130,13 +198,16 @@ public:
      * Get the XML document validating error messages.
      *
      * @return XML schema error messages.
+     * @deprecated
      * @author Sergey Satskiy, NCBI
     **/
+    NCBI_DEPRECATED
     const error_messages& get_validation_messages(void) const;
 
 private:
     impl::schema_impl *pimpl_;
     void construct (const char* file_or_data, size_type size,
+                    error_messages* messages,
                     warnings_as_errors_type how);
 
     // prohibited
