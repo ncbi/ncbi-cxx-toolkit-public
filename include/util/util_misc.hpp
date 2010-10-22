@@ -30,7 +30,7 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -72,15 +72,21 @@ public:
 };
 
 
-/// Look for an NCBI application data file of the given name, consulting
-/// (in decreasing order of precedence) the environment variable
-/// NCBI_DATA_PATH, the registry entry [NCBI] DataPath, and the registry
-/// entry [NCBI] Data to determine where to look.  NCBI_DATA_PATH and
-/// [NCBI] DataPath may both list multiple directories, delimited as per
-/// PATH (by ';' on Windows, ':' on Unix).  Return the file's path
-/// (complete with filename) if found, the empty string otherwise.
+/// Look for an NCBI application data file or directory of the given name and
+/// type; in general, searches directories listed in the registry entry
+/// [NCBI] DataPath (which the environment variable NCBI_DATA_PATH may
+/// override) followed by [NCBI] Data (or NCBI_DATA).  (Passing an absolute
+/// path bypasses this step.)  NCBI_DATA_PATH and [NCBI] DataPath may both
+/// list multiple directories, delimited as per PATH (by ';' on Windows, ':'
+/// on Unix).
+/// @param name The name of the file or directory to look for.
+/// @param type The type to look for (following links unless explicitly
+///   looking for one); CDirEntry::eUnknown matches anything.
+/// @return
+///   A full path if found, the empty string otherwise.
 NCBI_XUTIL_EXPORT
-extern string g_FindDataFile(const CTempString& basename);
+extern string g_FindDataFile(const CTempString& name,
+                             CDirEntry::EType type = CDirEntry::eFile);
 
 /// Ignore (or stop ignoring, depending on do_ignore) NCBI application
 /// data files matching the given pattern to force the use of built-in

@@ -135,7 +135,7 @@ typedef NCBI_PARAM_TYPE(NCBI, Data) TNCBIDataDir;
 
 static vector<string> s_IgnoredDataFiles;
 
-string g_FindDataFile(const CTempString& basename)
+string g_FindDataFile(const CTempString& name, CDirEntry::EType type)
 {
 #ifdef NCBI_OS_MSWIN
     static const string kDelim = ";";
@@ -144,27 +144,32 @@ string g_FindDataFile(const CTempString& basename)
 #endif
 
     if ( !s_IgnoredDataFiles.empty()
-        &&  CDirEntry::MatchesMask(basename, s_IgnoredDataFiles) ) {
+        &&  CDirEntry::MatchesMask(name, s_IgnoredDataFiles) ) {
         return kEmptyStr;
     }
 
-    TNCBIDataPath path;
     list<string> dirs;
 
-    if ( !path.Get().empty() ) {
-        NStr::Split(path.Get(), kDelim, dirs);
+    if (CDirEntry::IsAbsolutePath(name)) {
+        dirs.push_back(kEmptyStr);
     } else {
+        TNCBIDataPath path;
         TNCBIDataDir dir;
+
+        if ( !path.Get().empty() ) {
+            NStr::Split(path.Get(), kDelim, dirs);
+        }
         if ( !dir.Get().empty() ) {
             dirs.push_back(dir.Get());
         }
     }
 
-    CFile file;
+    CDirEntry candidate;
+    EFollowLinks fl = (type == CDirEntry::eLink) ? eIgnoreLinks : eFollowLinks;
     ITERATE (list<string>, dir, dirs) {
-        file.Reset(CDirEntry::MakePath(*dir, basename));
-        if (file.Exists()) {
-            return file.GetPath();
+        candidate.Reset(CDirEntry::MakePath(*dir, name));
+        if (candidate.Exists() &&  candidate.GetType(fl) == type) {
+            return candidate.GetPath();
         }
     }
 
