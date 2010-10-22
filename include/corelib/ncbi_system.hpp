@@ -139,18 +139,21 @@ extern bool SetMemoryLimit(size_t max_size,
 /// 
 /// @param max_cpu_time
 ///   The maximal amount of seconds of CPU time can be consumed by the process.
-///   The 0 value lift off the CPU time restrictions.
+///   The 0 value lifts off the CPU time restrictions if allowed to do so.
 /// @param handler
 ///   Pointer to a print handler used for dump output in the case of reaching
 ///   CPU usage limit. Use default handler if passed as NULL.
 /// @param parameter
 ///   Parameter carried into the print handler. Can be passed as NULL.
 /// @terminate_time
-///   The time in seconds, that have the process to terminate itself after
-///   receiving a signal about exceeding CPU usage limit. After that it
-///   can be killed by OS.
+///   The time in seconds that the process will have to terminate itself after
+///   receiving a signal about exceeding CPU usage limit. After that it can
+///   be killed by OS.
 /// @return 
 ///   Completion status.
+/// @note
+///   Setting a low CPU time limit cannot be generally undone to a value
+///   higher than "max_cpu_time + terminate_time" at a later time.
 /// @sa SetMemoryLimit, TLimitsPrintHandler
 NCBI_XNCBI_EXPORT
 extern bool SetCpuTimeLimit(size_t                max_cpu_time,
