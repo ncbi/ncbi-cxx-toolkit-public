@@ -321,15 +321,15 @@ string SNetServiceImpl::MakeAuthString()
 {
     string auth = m_ClientName;
 
-    auth += " svc='";
+    auth += " svc=\"";
     auth += m_ServiceName;
-    auth += '\'';
+    auth += '\"';
 
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app != NULL) {
-        auth += " app='";
+        auth += " app=\"";
         auth += app->GetProgramExecutablePath();
-        auth += '\'';
+        auth += '\"';
     }
 
     return auth;

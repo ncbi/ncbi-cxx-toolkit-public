@@ -52,12 +52,14 @@ BEGIN_NCBI_SCOPE
 void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
     SNetScheduleAPIImpl* impl)
 {
-    string auth = impl->m_Service->m_ClientName;
+    string auth(impl->m_Service->MakeAuthString());
+
     if (!impl->m_ProgramVersion.empty()) {
-        auth += " prog='";
+        auth += " prog=\"";
         auth += impl->m_ProgramVersion;
-        auth += '\'';
+        auth += '\"';
     }
+
     auth += "\r\n";
 
     auth += impl->m_Queue;
