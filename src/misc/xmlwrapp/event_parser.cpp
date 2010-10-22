@@ -63,6 +63,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <memory>
 
 using namespace xml;
 using namespace xml::impl;

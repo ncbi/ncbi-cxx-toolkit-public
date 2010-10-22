@@ -58,6 +58,7 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include <string.h>
 
 // libxml includes
 #include <libxml/tree.h>
