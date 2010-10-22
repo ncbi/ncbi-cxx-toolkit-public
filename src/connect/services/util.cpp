@@ -34,6 +34,9 @@
 #include <ncbi_pch.hpp>
 
 #include <connect/services/util.hpp>
+#include <connect/services/netservice_api_expt.hpp>
+
+#include <connect/ncbi_socket.hpp>
 
 #include <corelib/ncbifile.hpp>
 
