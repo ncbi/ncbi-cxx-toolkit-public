@@ -723,7 +723,10 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
     CMetaRegistry::SEntry entry;
 
     if ( !conf ) {
-        reg.IncludeNcbircIfAllowed(reg_flags);
+        if (reg.IncludeNcbircIfAllowed(reg_flags)) {
+            m_ConfigPath = CMetaRegistry::FindRegistry
+                ("ncbi", CMetaRegistry::eName_RcOrIni);
+        }
         return false;
     } else if (conf->empty()) {
         entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini, 0,
@@ -750,7 +753,10 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
                        "Registry file \"" + *conf + "\" cannot be opened");
         }
         // still consider pulling in defaults from .ncbirc
-        reg.IncludeNcbircIfAllowed(reg_flags);
+        if (reg.IncludeNcbircIfAllowed(reg_flags)) {
+            m_ConfigPath = CMetaRegistry::FindRegistry
+                ("ncbi", CMetaRegistry::eName_RcOrIni);
+        }
         return false;
     } else if (entry.registry != static_cast<IRWRegistry*>(&reg)) {
         // should be impossible with new CMetaRegistry interface...
