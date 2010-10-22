@@ -46,6 +46,9 @@
 #ifndef _xmlwrapp_node_h_
 #define _xmlwrapp_node_h_
 
+// for NCBI_DEPRECATED
+#include <ncbiconf.h>
+
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
 #include <misc/xmlwrapp/namespace.hpp>
@@ -100,23 +103,23 @@ public:
 
     /// enum for the different types of XML nodes
     enum node_type {
-	type_element,		///< XML element such as "<chapter/>"
-	type_text,		///< Text node
-	type_cdata,		///< <![CDATA[text]]>
-	type_pi,		///< Processing Instruction
-	type_comment,		///< XML comment
-	type_entity,		///< Entity as in &amp;amp;
-	type_entity_ref,	///< Entity ref
-	type_xinclude,		///< <xi:include/> node
-	type_document,		///< Document node
-	type_document_type,	///< DOCTYPE node
-	type_document_frag,	///< Document Fragment
-	type_notation,		///< Notation
-	type_dtd,		///< DTD node
-	type_dtd_element,	///< DTD <!ELEMENT> node
-	type_dtd_attribute,	///< DTD <!ATTRLIST> node
-	type_dtd_entity,	///< DTD <!ENTITY>
-	type_dtd_namespace	///< ?
+        type_element,           ///< XML element such as "<chapter/>"
+        type_text,              ///< Text node
+        type_cdata,             ///< <![CDATA[text]]>
+        type_pi,                ///< Processing Instruction
+        type_comment,           ///< XML comment
+        type_entity,            ///< Entity as in &amp;amp;
+        type_entity_ref,        ///< Entity ref
+        type_xinclude,          ///< <xi:include/> node
+        type_document,          ///< Document node
+        type_document_type,     ///< DOCTYPE node
+        type_document_frag,     ///< Document Fragment
+        type_notation,          ///< Notation
+        type_dtd,               ///< DTD node
+        type_dtd_element,       ///< DTD <!ELEMENT> node
+        type_dtd_attribute,     ///< DTD <!ATTRLIST> node
+        type_dtd_entity,        ///< DTD <!ENTITY>
+        type_dtd_namespace      ///< ?
     };
 
     /// enum for policies of adding namespace definitions
@@ -133,8 +136,8 @@ public:
      * @endcode
      */
     struct cdata {
-	explicit cdata (const char *text) : t(text) { }
-	const char *t;
+        explicit cdata (const char *text) : t(text) { }
+        const char *t;
     };
 
     /**
@@ -145,8 +148,8 @@ public:
      * @endcode
      */
     struct comment {
-	explicit comment (const char *text) : t(text) { }
-	const char *t;
+        explicit comment (const char *text) : t(text) { }
+        const char *t;
     };
 
     /**
@@ -157,8 +160,8 @@ public:
      * @endcode
      */
     struct pi {
-	explicit pi (const char *name, const char *content=0) : n(name), c(content) { }
-	const char *n, *c;
+        explicit pi (const char *name, const char *content=0) : n(name), c(content) { }
+        const char *n, *c;
     };
 
     /**
@@ -169,12 +172,12 @@ public:
      * @endcode
      */
     struct text {
-	explicit text (const char *text) : t(text) { }
-	const char *t;
+        explicit text (const char *text) : t(text) { }
+        const char *t;
     };
 
     //####################################################################
-    /** 
+    /**
      * Construct a new blank xml::node.
      *
      * @author Peter Jones
@@ -183,7 +186,7 @@ public:
     node (void);
 
     //####################################################################
-    /** 
+    /**
      * Construct a new xml::node and set the name of the node.
      *
      * @param name The name of the new node.
@@ -193,7 +196,7 @@ public:
     explicit node (const char *name);
 
     //####################################################################
-    /** 
+    /**
      * Construct a new xml::node given a name and content. The content will
      * be used to create a new child text node.
      *
@@ -205,12 +208,12 @@ public:
     node (const char *name, const char *content);
 
     //####################################################################
-    /** 
+    /**
      * Construct a new xml::node that is of type_cdata. The cdata_info
      * parameter should contain the contents of the CDATA section.
      *
      * @note Sample Use Example:
-     * @code 
+     * @code
      * xml::node mynode(xml::node::cdata("This is a CDATA section"));
      * @endcode
      *
@@ -221,7 +224,7 @@ public:
     explicit node (cdata cdata_info);
 
     //####################################################################
-    /** 
+    /**
      * Construct a new xml::node that is of type_comment. The comment_info
      * parameter should contain the contents of the XML comment.
      *
@@ -237,7 +240,7 @@ public:
     explicit node (comment comment_info);
 
     //####################################################################
-    /** 
+    /**
      * Construct a new xml::node that is of type_pi. The pi_info parameter
      * should contain the name of the XML processing instruction (PI), and
      * optionally, the contents of the XML PI.
@@ -254,7 +257,7 @@ public:
     explicit node (pi pi_info);
 
     //####################################################################
-    /** 
+    /**
      * Construct a new xml::node that is of type_text. The text_info
      * parameter should contain the text.
      *
@@ -270,28 +273,19 @@ public:
     explicit node (text text_info);
 
     //####################################################################
-    /** 
-     * Construct a new xml::node by copying another xml::node.
+    /**
+     * Create a copy of the node which is detached from the document.
+     * The nested nodes as well as namespace definitions are copied too.
      *
-     * @param other The other node to copy.
-     * @author Peter Jones
+     * @return A pointer to the copied node. The user is responsible to delete
+     *         it.
+     * @exception Throws xml::exception if the copying failed.
     **/
     //####################################################################
-    node (const node &other);
+    node* detached_copy (void) const;
 
     //####################################################################
-    /** 
-     * Make this node equal to some other node via assignment.
-     *
-     * @param other The other node to copy.
-     * @return A reference to this node.
-     * @author Peter Jones
-    **/
-    //####################################################################
-    node& operator= (const node &other);
-
-    //####################################################################
-    /** 
+    /**
      * Class destructor
      *
      * @author Peter Jones
@@ -300,7 +294,7 @@ public:
     virtual ~node (void);
 
     //####################################################################
-    /** 
+    /**
      * Set the name of this xml::node.
      *
      * @param name The new name for this xml::node.
@@ -310,7 +304,7 @@ public:
     void set_name (const char *name);
 
     //####################################################################
-    /** 
+    /**
      * Get the name of this xml::node.
      *
      * This function may change in the future to return std::string.
@@ -640,39 +634,39 @@ public:
      */
     class iterator {
     public:
-	typedef node value_type;
-	typedef std::ptrdiff_t difference_type;
-	typedef value_type* pointer;
-	typedef value_type& reference;
-	typedef std::forward_iterator_tag iterator_category;
+        typedef node value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef value_type* pointer;
+        typedef value_type& reference;
+        typedef std::forward_iterator_tag iterator_category;
 
-	iterator  (void) : pimpl_(0) {}
-	iterator  (const iterator &other);
-	iterator& operator= (const iterator& other);
-	~iterator (void);
+        iterator  (void) : pimpl_(0) {}
+        iterator  (const iterator &other);
+        iterator& operator= (const iterator& other);
+        ~iterator (void);
 
-	reference operator*  (void) const;
-	pointer   operator-> (void) const;
+        reference operator*  (void) const;
+        pointer   operator-> (void) const;
 
-	/// prefix increment
-	iterator& operator++ (void);
+        /// prefix increment
+        iterator& operator++ (void);
 
-	/// postfix increment (avoid if possible for better performance)
-	iterator  operator++ (int);
+        /// postfix increment (avoid if possible for better performance)
+        iterator  operator++ (int);
 
-    bool operator==(const iterator& other) const
+        bool operator==(const iterator& other) const
         { return get_raw_node() == other.get_raw_node(); }
-    bool operator!=(const iterator& other) const
+        bool operator!=(const iterator& other) const
         { return !(*this == other); }
 
     private:
-    impl::nipimpl *pimpl_;
-	explicit iterator (void *data);
-	void* get_raw_node (void) const;
-	void swap (iterator &other);
-	friend class node;
-	friend class document;
-	friend class const_iterator;
+        impl::nipimpl *pimpl_;
+        explicit iterator (void *data);
+        void* get_raw_node (void) const;
+        void swap (iterator &other);
+        friend class node;
+        friend class document;
+        friend class const_iterator;
     };
 
     /**
@@ -682,42 +676,42 @@ public:
      */
     class const_iterator {
     public:
-	typedef const node value_type;
-	typedef std::ptrdiff_t difference_type;
-	typedef value_type* pointer;
-	typedef value_type& reference;
-	typedef std::forward_iterator_tag iterator_category;
+        typedef const node value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef value_type* pointer;
+        typedef value_type& reference;
+        typedef std::forward_iterator_tag iterator_category;
 
-	const_iterator  (void) : pimpl_(0) {}
-	const_iterator  (const const_iterator &other);
-	const_iterator  (const iterator &other);
-	const_iterator& operator= (const const_iterator& other);
-	~const_iterator (void);
+        const_iterator  (void) : pimpl_(0) {}
+        const_iterator  (const const_iterator &other);
+        const_iterator  (const iterator &other);
+        const_iterator& operator= (const const_iterator& other);
+        ~const_iterator (void);
 
-	reference operator*  (void) const;
-	pointer   operator-> (void) const;
+        reference operator*  (void) const;
+        pointer   operator-> (void) const;
 
-	/// prefix increment
-	const_iterator& operator++ (void);
+        /// prefix increment
+        const_iterator& operator++ (void);
 
-	/// postfix increment (avoid if possible for better performance)
-	const_iterator  operator++ (int);
+        /// postfix increment (avoid if possible for better performance)
+        const_iterator  operator++ (int);
 
-    bool operator==(const const_iterator& other) const
+        bool operator==(const const_iterator& other) const
         { return get_raw_node() == other.get_raw_node(); }
-    bool operator!=(const const_iterator& other) const
+        bool operator!=(const const_iterator& other) const
         { return !(*this == other); }
     private:
-    impl::nipimpl *pimpl_;
-	explicit const_iterator (void *data);
-	void* get_raw_node (void) const;
-	void swap (const_iterator &other);
-	friend class document;
-	friend class node;
+        impl::nipimpl *pimpl_;
+        explicit const_iterator (void *data);
+        void* get_raw_node (void) const;
+        void swap (const_iterator &other);
+        friend class document;
+        friend class node;
     };
 
     //####################################################################
-    /** 
+    /**
      * Returns the number of childer this nodes has. If you just want to
      * know how if this node has children or not, you should use
      * xml::node::empty() instead.
@@ -729,7 +723,7 @@ public:
     size_type size (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Find out if this node has any children. This is the same as
      * xml::node::size() == 0 except it is much faster.
      *
@@ -741,7 +735,7 @@ public:
     bool empty (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Get an iterator that points to the beginning of this node's children.
      *
      * @return An iterator that points to the beginning of the children.
@@ -751,7 +745,7 @@ public:
     iterator begin (void);
 
     //####################################################################
-    /** 
+    /**
      * Get a const_iterator that points to the beginning of this node's
      * children.
      *
@@ -762,7 +756,7 @@ public:
     const_iterator begin (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Get an iterator that points one past the last child for this node.
      *
      * @return A "one past the end" iterator.
@@ -772,7 +766,7 @@ public:
     iterator end (void) { return iterator(); }
 
     //####################################################################
-    /** 
+    /**
      * Get a const_iterator that points one past the last child for this
      * node.
      *
@@ -783,7 +777,7 @@ public:
     const_iterator end (void) const { return const_iterator(); }
 
     //####################################################################
-    /** 
+    /**
      * Get an iterator that points back at this node.
      *
      * @return An iterator that points at this node.
@@ -793,7 +787,7 @@ public:
     iterator self (void);
 
     //####################################################################
-    /** 
+    /**
      * Get a const_iterator that points back at this node.
      *
      * @return A const_iterator that points at this node.
@@ -803,7 +797,7 @@ public:
     const_iterator self (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Get an iterator that points at the parent of this node. If this node
      * does not have a parent, this member function will return an "end"
      * iterator.
@@ -816,7 +810,7 @@ public:
     iterator parent (void);
 
     //####################################################################
-    /** 
+    /**
      * Get a const_iterator that points at the parent of this node. If this
      * node does not have a parent, this member function will return an
      * "end" const_iterator.
@@ -1203,6 +1197,31 @@ public:
     **/
     //####################################################################
     friend std::ostream& operator<< (std::ostream &stream, const node &n);
+
+    //####################################################################
+    /**
+     * Construct a new xml::node by copying another xml::node.
+     *
+     * @param other The other node to copy.
+     * @author Peter Jones
+     * @deprecated
+    **/
+    //####################################################################
+    NCBI_DEPRECATED
+    node (const node &other);
+
+    //####################################################################
+    /**
+     * Make this node equal to some other node via assignment.
+     *
+     * @param other The other node to copy.
+     * @return A reference to this node.
+     * @author Peter Jones
+     * @deprecated
+    **/
+    //####################################################################
+    NCBI_DEPRECATED
+    node& operator= (const node &other);
 
 private:
     impl::node_impl *pimpl_;
