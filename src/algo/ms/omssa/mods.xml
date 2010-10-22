@@ -3018,4 +3018,100 @@
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
     </MSModSpec_residues>
   </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod208">208</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modnp">5</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>mTRAQ light on nterm</MSModSpec_name>
+    <MSModSpec_monomass>140.094963</MSModSpec_monomass>
+    <MSModSpec_averagemass>140.1830</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_unimod>888</MSModSpec_unimod>
+    <MSModSpec_psi-ms></MSModSpec_psi-ms>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod209">209</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>mTRAQ light on K</MSModSpec_name>
+    <MSModSpec_monomass>140.094963</MSModSpec_monomass>
+    <MSModSpec_averagemass>140.1830</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>K</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>888</MSModSpec_unimod>
+    <MSModSpec_psi-ms></MSModSpec_psi-ms>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod210">210</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>mTRAQ light on Y</MSModSpec_name>
+    <MSModSpec_monomass>140.094963</MSModSpec_monomass>
+    <MSModSpec_averagemass>140.1830</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>Y</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>888</MSModSpec_unimod>
+    <MSModSpec_psi-ms></MSModSpec_psi-ms>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod211">211</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modnp">5</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>mTRAQ heavy on nterm</MSModSpec_name>
+    <MSModSpec_monomass>144.102063</MSModSpec_monomass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_unimod>889</MSModSpec_unimod>
+    <MSModSpec_psi-ms></MSModSpec_psi-ms>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod212">212</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>mTRAQ heavy on K</MSModSpec_name>
+    <MSModSpec_monomass>144.102063</MSModSpec_monomass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>K</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>889</MSModSpec_unimod>
+    <MSModSpec_psi-ms></MSModSpec_psi-ms>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod213">213</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>mTRAQ heavy on Y</MSModSpec_name>
+    <MSModSpec_monomass>144.102063</MSModSpec_monomass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>Y</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>889</MSModSpec_unimod>
+    <MSModSpec_psi-ms></MSModSpec_psi-ms>
+  </MSModSpec>
 </MSModSpecSet>
