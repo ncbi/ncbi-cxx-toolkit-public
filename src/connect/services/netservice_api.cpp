@@ -317,6 +317,24 @@ void SNetServiceImpl::Init(CNetObject* api_impl,
     m_Listener->OnInit(api_impl, config, section);
 }
 
+string SNetServiceImpl::MakeAuthString()
+{
+    string auth = m_ClientName;
+
+    auth += " svc='";
+    auth += m_ServiceName;
+    auth += '\'';
+
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app != NULL) {
+        auth += " app='";
+        auth += app->GetProgramExecutablePath();
+        auth += '\'';
+    }
+
+    return auth;
+}
+
 const string& CNetService::GetClientName() const
 {
     return m_Impl->m_ClientName;

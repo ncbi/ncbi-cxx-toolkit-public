@@ -98,6 +98,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
         CConfig* config, const string& config_section,
         const char* const* default_config_sections);
 
+    string MakeAuthString();
+
     SNetServerImpl* FindOrCreateServerImpl(
         const string& host, unsigned short port);
     CNetServer ReturnServer(SNetServerImpl* server_impl);
