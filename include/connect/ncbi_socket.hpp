@@ -685,15 +685,15 @@ public:
 
     /// Misc  (mostly BSD-like); "host" ought to be in network byte order
     /// empty str on err
-    static string gethostname(void);
+    static string gethostname(ESwitch log = eOff);
 
     static string ntoa(unsigned int  host);
     static bool   isip(const string& host);
 
     /// empty str on err
-    static string       gethostbyaddr(unsigned int  host);
+    static string       gethostbyaddr(unsigned int  host, ESwitch log = eOff);
     /// 0 on error
-    static unsigned int gethostbyname(const string& hostname);
+    static unsigned int gethostbyname(const string& host, ESwitch log = eOff);
 
     static unsigned int   HostToNetLong (unsigned int   value);
     static unsigned int   NetToHostLong (unsigned int   value);

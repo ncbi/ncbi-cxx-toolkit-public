@@ -598,10 +598,10 @@ EIO_Status CListeningSocket::Close(void)
 //  CSocketAPI::
 //
 
-string CSocketAPI::gethostname(void)
+string CSocketAPI::gethostname(ESwitch log)
 {
     char hostname[256];
-    if (SOCK_gethostname(hostname, sizeof(hostname)) != 0)
+    if (SOCK_gethostnameEx(hostname, sizeof(hostname), log) != 0)
         *hostname = 0;
     return string(hostname);
 }
@@ -616,19 +616,18 @@ string CSocketAPI::ntoa(unsigned int host)
 }
 
 
-string CSocketAPI::gethostbyaddr(unsigned int host)
+string CSocketAPI::gethostbyaddr(unsigned int host, ESwitch log)
 {
     char hostname[256];
-    if (!SOCK_gethostbyaddr(host, hostname, sizeof(hostname)))
+    if (!SOCK_gethostbyaddrEx(host, hostname, sizeof(hostname), log))
         *hostname = 0;
     return string(hostname);
 }
 
 
-unsigned int CSocketAPI::gethostbyname(const string& hostname)
+unsigned int CSocketAPI::gethostbyname(const string& host, ESwitch log)
 {
-    const char* host = hostname.c_str();
-    return SOCK_gethostbyname(*host ? host : 0);
+    return SOCK_gethostbynameEx(host == kEmptyStr ? 0 : host.c_str(), log);
 }
 
 

@@ -6889,6 +6889,12 @@ extern int SOCK_gethostname(char* name, size_t namelen)
 }
 
 
+extern int SOCK_gethostnameEx(char* name, size_t namelen, ESwitch log)
+{
+    return s_gethostname(name, namelen, log);
+}
+
+
 extern int SOCK_ntoa(unsigned int host,
                      char*        buf,
                      size_t       buflen)
@@ -6976,11 +6982,19 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 }
 
 
-extern char* SOCK_gethostbyaddr(unsigned int host,
-                                char*        name,
-                                size_t       namelen)
+extern unsigned int SOCK_gethostbynameEx(const char* hostname,
+                                         ESwitch log)
 {
-    return s_gethostbyaddr(host, name, namelen, s_Log);
+    return s_gethostbyname(hostname, log);
+}
+
+
+extern char* SOCK_gethostbyaddrEx(unsigned int host,
+                                  char*        name,
+                                  size_t       namelen,
+                                  ESwitch      log)
+{
+    return s_gethostbyaddr(host, name, namelen, log);
 }
 
 

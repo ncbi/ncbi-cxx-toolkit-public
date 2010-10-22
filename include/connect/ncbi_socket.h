@@ -116,7 +116,7 @@
  *
  * Auxiliary:
  *
- *  SOCK_gethostname
+ *  SOCK_gethostname[Ex]
  *  SOCK_ntoa
  *  SOCK_isip
  *  SOCK_isipEx
@@ -124,8 +124,8 @@
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
  *  SOCK_NetToHostLong
- *  SOCK_gethostbyname
- *  SOCK_gethostbyaddr
+ *  SOCK_gethostbyname[Ex]
+ *  SOCK_gethostbyaddr[Ex]
  *  SOCK_GetLoopbackAddress
  *  SOCK_StringToHostPort
  *  SOCK_HostPortToString
@@ -1687,9 +1687,24 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
  *  [out] (guaranteed to be '\0'-terminated)
  * @param namelen
  *  [in]  max # of bytes allowed to put to "name" 
+ * @param log
+ *  [in]  whether to log failures
  * @return
  *  Zero on success, non-zero on error.  See BSD gethostname().
  *  On error "name" returned emptied (name[0] == '\0').
+ * @sa
+ *  SOCK_gethostname
+ */
+extern NCBI_XCONNECT_EXPORT int SOCK_gethostnameEx
+(char*   name,
+ size_t  namelen,
+ ESwitch log
+ );
+
+
+/** Same as SOCK_gethostnameEx(,,eOff)
+ * @sa
+ *  SOCK_gethostnameEx
  */
 extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
 (char*  name,
@@ -1777,13 +1792,27 @@ unsigned short SOCK_htons(unsigned short);
 
 /** 
  * @param hostname
- *  [in] return current host address if hostname is 0 
+ *  [in] specified host, or the current host if hostname is 0 
+ * @param log
+ *  [in] whether to log failures
  * @return
  *  INET host address (in network byte order) of the
  *  specified host (or local host, if hostname is passed as NULL),
  *  which can be either domain name or an IP address in
  *  dotted notation (e.g. "123.45.67.89\0"). Return 0 on error.
  *  @li <b>NOTE:</b> "0.0.0.0" and "255.255.255.255" are considered invalid.
+ * @sa
+ *  SOCK_gethostbyname, SOCK_gethostname
+ */
+extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbynameEx
+(const char* hostname,
+ ESwitch     log
+ );
+
+
+/** Same as SOCK_gethostbynameEx(,eOff)
+ * @sa
+ *  SOCK_gethostbynameEx
  */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
 (const char* hostname
@@ -1799,15 +1828,31 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  *  [out] buffer to put the name to 
  * @param namelen
  *  [in]  size (bytes) of the buffer above 
+ * @param log
+ *  [in]  whether to log failures
  * @return
  *  Value 0
  *  means error, while success is denoted by the 'name' argument returned.
  *  Note that on error the name returned emptied (name[0] == '\0').
+ * @sa
+ *  SOCK_gethostbyaddr
+ */
+extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddrEx
+(unsigned int addr,
+ char*        name,
+ size_t       namelen,
+ ESwitch      log
+ );
+
+
+/** Same as SOCK_gethostbyaddrEx(,,eOff)
+ * @sa
+ *  SOCK_gethostbyaddrEx
  */
 extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
-(unsigned int addr,  
- char*        name,   
- size_t       namelen  
+(unsigned int addr,
+ char*        name,
+ size_t       namelen
  );
 
 
