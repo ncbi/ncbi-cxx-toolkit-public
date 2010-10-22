@@ -168,26 +168,6 @@ tree_parser::tree_parser (const char* data, size_type size,
     ap.release();
 }
 //####################################################################
-xml::tree_parser::tree_parser (const char *filename,
-                               warnings_as_errors_type how) {
-    if (!filename)
-        throw xml::exception("invalid file name");
-
-    std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
-
-    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&(pimpl_->sax_), filename,
-                                               0, &pimpl_->parser_messages_);
-
-    if (is_failure(&pimpl_->parser_messages_, how) || !tmpdoc) {
-        if (tmpdoc) xmlFreeDoc(tmpdoc);
-        throw parser_exception(pimpl_->parser_messages_);
-    }
-    pimpl_->doc_.set_doc_data(tmpdoc);
-
-    ap.release();
-    return;
-}
-//####################################################################
 xml::tree_parser::tree_parser (const char *data,
                                size_type size,
                                warnings_as_errors_type how) {

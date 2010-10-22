@@ -338,7 +338,7 @@ public:
      * @return False if there was a problem with the XML doc.
      * @author Sergey Satskiy, NCBI
     **/
-    bool validate (error_messages *  messages_,
+    bool validate (error_messages *  messages_ = NULL,
                    warnings_as_errors_type how = type_warnings_are_errors) const;
 
     //####################################################################
@@ -623,33 +623,6 @@ public:
     //####################################################################
     NCBI_DEPRECATED
     document& operator= (const document &other);
-
-    //####################################################################
-    /**
-     * Validate this document against the DTD that has been attached to it.
-     * This would happen at parse time if there was a !DOCTYPE definition.
-     * If the DTD is valid, and the document is valid, this member function
-     * will return true.
-     *
-     * There is no way to get warnings and error messages using this method.
-     * If you need it then you should instantiate an empty xml::dtd object
-     * and then use its validate method. The warnings and error messages
-     * will be available via the xml::dtd object, e.g.:
-     *     dtd   empty_dtd;
-     *     empty_dtd.validate(my_doc);
-     *     error_messages  msgs(empty_dtd.get_validation_messages());
-     *
-     * The method is deprecated. Use xml::document::validate(xml::dtd&)
-     * or xml::dtd::validate(xml::document&) instead.
-     *
-     * @return True if the document is valid.
-     * @return False if there was a problem with the DTD or XML doc.
-     * @deprecated
-     * @author Peter Jones
-    **/
-    //####################################################################
-    NCBI_DEPRECATED
-    bool validate (void);
 
     //####################################################################
     /**

@@ -188,11 +188,6 @@ const xml::dtd& xml::document::get_external_subset (void) const {
     return pimpl_->external_subset_;
 }
 //####################################################################
-bool xml::document::validate (void) {
-    dtd     empty_dtd;
-    return empty_dtd.validate(*this, type_warnings_not_errors);
-}
-//####################################################################
 bool xml::document::validate (const char *dtdname) {
     dtd     file_dtd(dtdname, type_warnings_not_errors);
     return file_dtd.validate(*this, type_warnings_not_errors);

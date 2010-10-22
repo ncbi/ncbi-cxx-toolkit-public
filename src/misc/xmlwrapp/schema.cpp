@@ -140,16 +140,6 @@ bool schema::validate (const document& doc,
     return true;
 }
 
-schema::schema (const char* filename,
-                warnings_as_errors_type how) : pimpl_(NULL) {
-    if (!filename)
-        throw xml::exception("invalid file name");
-    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
-    construct(filename, (size_type)(-1),
-              &pimpl_->schema_parser_messages_, how);
-    ap.release();
-}
-
 schema::schema (const char* data, size_type size,
                 warnings_as_errors_type how) : pimpl_(NULL) {
     if (!data)

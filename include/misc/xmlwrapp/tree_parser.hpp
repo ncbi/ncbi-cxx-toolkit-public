@@ -89,7 +89,7 @@ public:
      *            and std::exception in case of other problems.
      * @author Sergey Satskiy, NCBI
     **/
-    tree_parser (const char* filename, error_messages* messages,
+    tree_parser (const char* filename, error_messages* messages = NULL,
                  warnings_as_errors_type how = type_warnings_not_errors);
 
     //####################################################################
@@ -193,25 +193,6 @@ public:
     //####################################################################
     NCBI_DEPRECATED
     tree_parser (const char *data, size_type size, bool allow_exceptions);
-
-    //####################################################################
-    /**
-     * Create a new xml::tree_parser object by parsing the given XML file.
-     *
-     * @param filename The XML file name.
-     * @param how How to treat warnings (default: warnings are not treated as
-     *            errors). If warnings are treated as errors then an exception
-     *            is thrown in case of both errors and/or warnings. If warnings
-     *            are not treated as errors then an exception will be thrown
-     *            only when there are errors.
-     * @exception Throws xml::parser_exception in case of schema parsing errors
-     *            and std::exception in case of other problems.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    tree_parser (const char* filename,
-                 warnings_as_errors_type how = type_warnings_not_errors);
 
     //####################################################################
     /**

@@ -205,7 +205,8 @@ xslt::stylesheet::stylesheet(const char *filename)
 {
     std::auto_ptr<pimpl> ap(pimpl_ = new pimpl);
 
-    xml::tree_parser parser(filename, xml::type_warnings_not_errors);
+    xml::error_messages msgs;
+    xml::tree_parser parser(filename, &msgs, xml::type_warnings_not_errors);
     xmlDocPtr xmldoc = static_cast<xmlDocPtr>(parser.get_document().get_doc_data());
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
