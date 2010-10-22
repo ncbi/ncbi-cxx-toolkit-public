@@ -6989,6 +6989,14 @@ extern unsigned int SOCK_gethostbynameEx(const char* hostname,
 }
 
 
+extern char* SOCK_gethostbyaddr(unsigned int host,
+                                char*        name,
+                                size_t       namelen)
+{
+    return s_gethostbyaddr(host, name, namelen, s_Log);
+}
+
+
 extern char* SOCK_gethostbyaddrEx(unsigned int host,
                                   char*        name,
                                   size_t       namelen,
