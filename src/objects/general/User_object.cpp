@@ -151,7 +151,8 @@ CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
     /// pass 1: see if we have a field that starts with this label already
     NON_CONST_ITERATE(TData, field_iter, SetData()) {
         CUser_field& field = **field_iter;
-        if (field.GetLabel().GetStr() == toks.front()) {
+        if (field.GetLabel().IsStr()  &&
+            field.GetLabel().GetStr() == toks.front()) {
             field_ref = *field_iter;
             break;
         }
