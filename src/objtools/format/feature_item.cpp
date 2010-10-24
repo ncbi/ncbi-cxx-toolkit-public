@@ -1311,7 +1311,8 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         }
     }
 
-    const CGene_ref *xref_g_ref = m_Feat.GetGeneXref(); // this will point to the gene xref inside the feature, if any
+    // this will point to the gene xref inside the feature, if any
+    const CGene_ref *xref_g_ref = m_Feat.GetGeneXref();
     string xref_label;
     if( xref_g_ref ) {
         xref_g_ref->GetLabel(&xref_label);
@@ -1319,56 +1320,47 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 
     const bool thereIsXrefToGene = ( ! xref_label.empty() );
 
-    if ( m_Feat && ! thereIsXrefToGene ) {
-        CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
-                                             sequence::eGetId_Canonical);
-        CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
-                                                   &ctx.GetScope());
+    CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
+                                         sequence::eGetId_Canonical);
+    CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
+                                               &ctx.GetScope());
 
-        CMappedFeat feat;
-        if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
-            feat = GetBestGeneForFeat(m_Feat, &ctx.GetFeatTree(), 
-                NULL, feature::CFeatTree::eBestGene_AllowOverlapped );
-            if ( !feat ) {
-                feat = feature::GetBestOverlappingFeat
-                    (m_Feat, CSeqFeatData::eSubtype_gene,
-                     sequence::eOverlap_Contains,
-                     &ctx.GetFeatTree());
-            }
+    CMappedFeat feat;
+    if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
+        feat = GetBestGeneForFeat(m_Feat, &ctx.GetFeatTree(), 
+                                  NULL,
+                                  feature::CFeatTree::eBestGene_AllowOverlapped );
+        if ( !feat ) {
+            feat = feature::GetBestOverlappingFeat
+                (m_Feat, CSeqFeatData::eSubtype_gene,
+                 sequence::eOverlap_Contains,
+                 &ctx.GetFeatTree());
         }
-        else if (ctx.IsProt()  &&  m_Feat.GetData().IsCdregion()) {
-            /// genpept report; we need to do something different
-            CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
-            if (cds) {
-                SAnnotSelector sel = ctx.SetAnnotSelector();
-                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                    .IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-                CFeat_CI feat_it(ctx.GetScope(), cds.GetLocation(), sel);
-                feature::CFeatTree ft(feat_it);
-                feat = ft.GetParent(cds, CSeqFeatData::e_Gene);
-            }
+    }
+    else if (ctx.IsProt()  &&  m_Feat.GetData().IsCdregion()) {
+        /// genpept report; we need to do something different
+        CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
+        if (cds) {
+            SAnnotSelector sel = ctx.SetAnnotSelector();
+            sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                .IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+            CFeat_CI feat_it(ctx.GetScope(), cds.GetLocation(), sel);
+            feature::CFeatTree ft(feat_it);
+            feat = ft.GetParent(cds, CSeqFeatData::e_Gene);
         }
-        else {
-            CSeq_id_Handle id3 = sequence::GetIdHandle(*m_Loc,
-                                                       &ctx.GetScope());
-            if (sequence::IsSameBioseq(id2, id3, &ctx.GetScope())) {
-                /// slow path
-                SAnnotSelector sel = ctx.SetAnnotSelector();
-                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                    .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
-                CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
-                feature::CFeatTree ft(feat_it);
-                feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
-                if( ! feat ) {
-                    s_feat =
-                        sequence::GetBestOverlappingFeat
-                        (*m_Loc,
-                        CSeqFeatData::e_Gene,
-                        sequence::eOverlap_Contained,
-                        ctx.GetScope());
-                }
-            } else {
-                /// we must use a different call
+    }
+    else {
+        CSeq_id_Handle id3 = sequence::GetIdHandle(*m_Loc,
+                                                   &ctx.GetScope());
+        if (sequence::IsSameBioseq(id2, id3, &ctx.GetScope())) {
+            /// slow path
+            SAnnotSelector sel = ctx.SetAnnotSelector();
+            sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
+            CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
+            feature::CFeatTree ft(feat_it);
+            feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
+            if( ! feat ) {
                 s_feat =
                     sequence::GetBestOverlappingFeat
                     (*m_Loc,
@@ -1376,8 +1368,18 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                      sequence::eOverlap_Contained,
                      ctx.GetScope());
             }
+        } else {
+            /// we must use a different call
+            s_feat =
+                sequence::GetBestOverlappingFeat
+                (*m_Loc,
+                 CSeqFeatData::e_Gene,
+                 sequence::eOverlap_Contained,
+                 ctx.GetScope());
         }
+    }
 
+    if ( m_Feat && ! thereIsXrefToGene ) {
         if (feat) {
             s_feat.Reset(&feat.GetOriginalFeature());
         }
@@ -1385,29 +1387,40 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             g_ref = &( s_feat->GetData().GetGene() );
         }
     }
+    else {
 
-    // if we used an xref to a gene, but the new gene doesn't equal the xref, then 
-    // override it (example accession where this issue crops up: AF231993.1 )
-    if( thereIsXrefToGene ) {
+        // if we used an xref to a gene, but the new gene doesn't equal the xref,
+        // then override it (example accession where this issue crops up:
+        // AF231993.1 )
 
-        // we iterate through all the genes to find a match.  Is this efficient?
-        SAnnotSelector sel = ctx.SetAnnotSelector();
-        sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-            .IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
-        CFeat_CI feat_it(ctx.GetHandle(), sel );
-        for( ; feat_it; ++feat_it ) {
-            const CMappedFeat &feat = (*feat_it);
-            const CGene_ref& other_ref = feat.GetData().GetGene();
-            string other_label;
-            other_ref.GetLabel( &other_label );
+        if (feat) {
+            s_feat.Reset(&feat.GetOriginalFeature());
+            g_ref = &feat.GetData().GetGene();
+        } else {
+            // we iterate through all the genes to find a match.  Is this
+            // efficient?
+            SAnnotSelector sel = ctx.SetAnnotSelector();
+            sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                .IncludeFeatSubtype(CSeqFeatData::eSubtype_gene)
+                .SetOverlapTotalRange();
+            CFeat_CI feat_it(ctx.GetHandle(),
+                             m_Feat.GetLocation().GetTotalRange(), sel );
+            for( ; feat_it; ++feat_it ) {
+                const CMappedFeat &feat = (*feat_it);
+                const CGene_ref& other_ref = feat.GetData().GetGene();
+                string other_label;
+                other_ref.GetLabel( &other_label );
 
-            if( xref_label == other_label ) {
-                s_feat.Reset(&feat.GetOriginalFeature());
-                g_ref = &other_ref;
+                if( xref_label == other_label ) {
+                    s_feat.Reset(&feat.GetOriginalFeature());
+                    g_ref = &other_ref;
+                    break;
+                }
             }
         }
 
-        // we found no match for the gene, but we can fall back on the xref itself (e.g. K03223.1)
+        // we found no match for the gene, but we can fall back on the xref
+        // itself (e.g. K03223.1)
         if( NULL == g_ref ) {
             g_ref = xref_g_ref;
         }
