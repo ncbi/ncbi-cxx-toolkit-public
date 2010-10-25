@@ -33,6 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <util/utf8.hpp>
 #include <util/sgml_entity.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <util/unicode.hpp>
 
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -161,4 +163,65 @@ BOOST_AUTO_TEST_CASE(TestSgml)
 //        NcbiCout << sTest[i] << " -> " << sRes << NcbiEndl;
         BOOST_CHECK_EQUAL(sRes, sResult[i]);
     }
+}
+
+BOOST_AUTO_TEST_CASE(TestUnicodeToAscii)
+{
+    NcbiCout << "\nUnicode -> Ascii\n" << NcbiEndl;
+    utf8::TUnicode unidata[256];
+    const utf8::SUnicodeTranslation* u2a_translation;
+    string ascdata;
+    int i;
+
+    CNcbiApplication::Instance()->SetEnvironment().Set("NCBI_CONFIG__NCBI__UnicodeToAscii", "test_utf8_u2a.txt");
+
+// --------------------------------------
+    for (i=0; i< 126; ++i) {
+        unidata[i] = i+1;
+    }
+    unidata[i] = 0;
+    for (i=0; unidata[i] != 0; ++i) {
+        u2a_translation = utf8::UnicodeToAscii(unidata[i]);
+        NcbiCout << unidata[i] << " -> ";
+        if (u2a_translation) {
+            NcbiCout << u2a_translation->Subst;
+        }
+        NcbiCout << NcbiEndl;
+        BOOST_CHECK (u2a_translation);
+        BOOST_CHECK (u2a_translation->Subst[0] == (char)unidata[i]);
+    }
+
+// --------------------------------------
+    ascdata.clear();
+    for (i=0; i< 5; ++i) {
+        unidata[i] = i+934;
+    }
+    unidata[i] = 0;
+    for (i=0; unidata[i] != 0; ++i) {
+        u2a_translation = utf8::UnicodeToAscii(unidata[i]);
+        NcbiCout << unidata[i] << " -> ";
+        if (u2a_translation) {
+            NcbiCout << u2a_translation->Subst;
+            ascdata += u2a_translation->Subst;
+        }
+        NcbiCout << NcbiEndl;
+    }
+    BOOST_CHECK_EQUAL(ascdata, "PhiChiPsiOmegaIota");
+
+// --------------------------------------
+    ascdata.clear();
+    for (i=0; i< 3; ++i) {
+        unidata[i] = i+128640;
+    }
+    unidata[i] = 0;
+    for (i=0; unidata[i] != 0; ++i) {
+        u2a_translation = utf8::UnicodeToAscii(unidata[i]);
+        NcbiCout << unidata[i] << " -> ";
+        if (u2a_translation) {
+            NcbiCout << u2a_translation->Subst;
+            ascdata += u2a_translation->Subst;
+        }
+        NcbiCout << NcbiEndl;
+    }
+    BOOST_CHECK_EQUAL(ascdata, "RocketHelicopterSteam locomotive");
 }
