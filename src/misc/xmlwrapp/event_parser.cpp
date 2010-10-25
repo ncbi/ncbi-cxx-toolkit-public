@@ -383,7 +383,7 @@ bool event_parser::parse_finish (error_messages* messages,
 //####################################################################
 bool xml::event_parser::parse_file (const char *filename, warnings_as_errors_type how) {
     if (!parse_finished_)
-        parse_finish(how);
+        parse_finish(how);          /* NCBI_FAKE_WARNING */
 
     pimpl_->parser_messages_.get_messages().clear();
     pimpl_->parser_status_ = true;
@@ -397,14 +397,14 @@ bool xml::event_parser::parse_file (const char *filename, warnings_as_errors_typ
                                                                         error_message::type_error));
         return false;
     }
-    return parse_stream(file, how);
-} /* NCBI_FAKE_WARNING */
+    return parse_stream(file, how); /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 bool xml::event_parser::parse_stream (std::istream &stream, warnings_as_errors_type how) {
     char buffer[const_buffer_size];
 
     if (!parse_finished_)
-        parse_finish(how);
+        parse_finish(how);          /* NCBI_FAKE_WARNING */
 
     pimpl_->parser_messages_.get_messages().clear();
     pimpl_->parser_status_ = true;
@@ -420,11 +420,11 @@ bool xml::event_parser::parse_stream (std::istream &stream, warnings_as_errors_t
 
     parse_finished_ = false;
     while (pimpl_->parser_status_ && (stream.read(buffer, const_buffer_size) || stream.gcount()))
-        pimpl_->parser_status_ = parse_chunk(buffer, stream.gcount(), how);
+        pimpl_->parser_status_ = parse_chunk(buffer, stream.gcount(), how); /* NCBI_FAKE_WARNING */
 
-    if (!stream && !stream.eof()) { parse_finish(how); return false; }
-    return parse_finish(how);
-} /* NCBI_FAKE_WARNING */
+    if (!stream && !stream.eof()) { parse_finish(how); return false; }      /* NCBI_FAKE_WARNING */
+    return parse_finish(how);                                               /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 bool xml::event_parser::parse_chunk (const char *chunk, size_type length,
                                      warnings_as_errors_type how) {

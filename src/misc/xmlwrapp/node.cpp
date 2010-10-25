@@ -323,23 +323,23 @@ xml::node::node (const node &other) {
     if (!pimpl_->xmlnode_) throw std::bad_alloc();
 
     ap.release();
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::node& xml::node::operator= (const node &other) {
-    node tmp_node(other);
+    node tmp_node(other);                   /* NCBI_FAKE_WARNING */
     swap(tmp_node);
     return *this;
-} /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 xml::node* xml::node::detached_copy (void) const {
     try {
-        node* new_node = new node(*this);
+        node* new_node = new node(*this);   /* NCBI_FAKE_WARNING */
         return new_node;
     }
     catch (std::exception & ex) {
         throw xml::exception(ex.what());
     }
-} /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 void xml::node::swap (node &other) {
     std::swap(pimpl_, other.pimpl_);

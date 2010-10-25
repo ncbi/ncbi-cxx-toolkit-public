@@ -78,10 +78,10 @@ namespace xml
                 if (element != references_.end())
                     return element->second;
 
-                xml::node &     ref( references_[index] = node() );
+                xml::node &     ref( references_[index] = node() ); /* NCBI_FAKE_WARNING */
                 parent_->set_node_data(ref, results_->nodesetval->nodeTab[index]);
                 return ref;
-            } /* NCBI_FAKE_WARNING */
+            }
 
         protected:
             ~nset_impl() {}

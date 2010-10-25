@@ -49,23 +49,23 @@ using namespace xml;
 using namespace xml::impl;
 
 
-doc_impl::doc_impl (void) : doc_(0), xslt_result_(0) {
+doc_impl::doc_impl (void) : doc_(0), xslt_result_(0) { /* NCBI_FAKE_WARNING */
     xmlDocPtr tmpdoc;
     if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
     set_doc_data(tmpdoc, true);
-} /* NCBI_FAKE_WARNING */
+}
 
-doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_result_(0), root_(root_name) {
+doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_result_(0), root_(root_name) { /* NCBI_FAKE_WARNING */
     xmlDocPtr tmpdoc;
     if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
     set_doc_data(tmpdoc, true);
-} /* NCBI_FAKE_WARNING */
+}
 
-doc_impl::doc_impl (const doc_impl &other) : doc_(0), xslt_result_(0) {
+doc_impl::doc_impl (const doc_impl &other) : doc_(0), xslt_result_(0) { /* NCBI_FAKE_WARNING */
     xmlDocPtr tmpdoc;
     if ( (tmpdoc = xmlCopyDoc(other.doc_, 1)) == 0) throw std::bad_alloc();
     set_doc_data(tmpdoc, false);
-} /* NCBI_FAKE_WARNING */
+}
 
 void doc_impl::set_doc_data (xmlDocPtr newdoc, bool root_is_okay) {
     if (doc_) xmlFreeDoc(doc_);

@@ -100,13 +100,13 @@ xml::document::document (const node &n) {
 //####################################################################
 xml::document::document (const document &other) {
     pimpl_ = new doc_impl(*(other.pimpl_));
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::document& xml::document::operator= (const document &other) {
-    document tmp(other);
+    document tmp(other);        /* NCBI_FAKE_WARNING */
     swap(tmp);
     return *this;
-} /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 void xml::document::swap (document &other) {
     std::swap(pimpl_, other.pimpl_);
@@ -189,19 +189,19 @@ const xml::dtd& xml::document::get_external_subset (void) const {
 }
 //####################################################################
 bool xml::document::validate (const char *dtdname) {
-    dtd     file_dtd(dtdname, type_warnings_not_errors);
-    return file_dtd.validate(*this, type_warnings_not_errors);
-} /* NCBI_FAKE_WARNING */
+    dtd     file_dtd(dtdname, type_warnings_not_errors);        /* NCBI_FAKE_WARNING */
+    return file_dtd.validate(*this, type_warnings_not_errors);  /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 bool xml::document::validate (dtd &dtd_,
                               warnings_as_errors_type how) {
-    return dtd_.validate(*this, how);
-} /* NCBI_FAKE_WARNING */
+    return dtd_.validate(*this, how);       /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 bool xml::document::validate (schema &xsd_schema,
                               warnings_as_errors_type how) const {
-    return xsd_schema.validate(*this, how);
-} /* NCBI_FAKE_WARNING */
+    return xsd_schema.validate(*this, how); /* NCBI_FAKE_WARNING */
+}
 //####################################################################
 bool document::validate (error_messages *  messages_,
                          warnings_as_errors_type how) const {
