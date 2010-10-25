@@ -148,7 +148,7 @@ schema::schema (const char* data, size_type size,
     construct(data, size,
               &pimpl_->schema_parser_messages_, how);
     ap.release();
-}
+} /* NCBI_FAKE_WARNING */
 
 // Helper constructor.
 // Two public constructors bodies differ only in the way of creating the parser

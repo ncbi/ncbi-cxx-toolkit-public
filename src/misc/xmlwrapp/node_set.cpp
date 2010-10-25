@@ -81,7 +81,7 @@ namespace xml
                 xml::node &     ref( references_[index] = node() );
                 parent_->set_node_data(ref, results_->nodesetval->nodeTab[index]);
                 return ref;
-            }
+            } /* NCBI_FAKE_WARNING */
 
         protected:
             ~nset_impl() {}

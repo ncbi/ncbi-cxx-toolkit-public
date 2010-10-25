@@ -398,7 +398,7 @@ bool xml::event_parser::parse_file (const char *filename, warnings_as_errors_typ
         return false;
     }
     return parse_stream(file, how);
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 bool xml::event_parser::parse_stream (std::istream &stream, warnings_as_errors_type how) {
     char buffer[const_buffer_size];
@@ -424,7 +424,7 @@ bool xml::event_parser::parse_stream (std::istream &stream, warnings_as_errors_t
 
     if (!stream && !stream.eof()) { parse_finish(how); return false; }
     return parse_finish(how);
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 bool xml::event_parser::parse_chunk (const char *chunk, size_type length,
                                      warnings_as_errors_type how) {
@@ -613,8 +613,9 @@ xml::event_parser::element_content_type xml::event_parser::get_element_content_t
 }
 //####################################################################
 epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
-    : parser_status_(true), parent_(parent),
-      is_outside_errors_(false), outside_errors_(NULL)
+    : parser_status_(true),
+      is_outside_errors_(false), outside_errors_(NULL),
+      parent_(parent)
 {
     std::memset(&sax_handler_, 0, sizeof(sax_handler_));
 

@@ -329,7 +329,7 @@ xml::node& xml::node::operator= (const node &other) {
     node tmp_node(other);
     swap(tmp_node);
     return *this;
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::node* xml::node::detached_copy (void) const {
     try {
@@ -339,7 +339,7 @@ xml::node* xml::node::detached_copy (void) const {
     catch (std::exception & ex) {
         throw xml::exception(ex.what());
     }
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 void xml::node::swap (node &other) {
     std::swap(pimpl_, other.pimpl_);

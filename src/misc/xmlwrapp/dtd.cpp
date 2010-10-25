@@ -113,7 +113,7 @@ dtd::dtd (const char* filename, error_messages* messages,
 }
 
 dtd::dtd () : pimpl_(new dtd_impl)
-{}
+{} /* NCBI_FAKE_WARNING */
 
 bool dtd::validate (const document& doc, error_messages* messages,
                     warnings_as_errors_type how) const
@@ -168,7 +168,7 @@ dtd::dtd (const char* filename,
         throw parser_exception(pimpl_->dtd_parser_messages_);
     }
     ap.release();
-}
+} /* NCBI_FAKE_WARNING */
 
 dtd::~dtd() {
     if (pimpl_->owned_ && pimpl_->dtd_)
