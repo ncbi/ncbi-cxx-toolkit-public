@@ -95,16 +95,24 @@ private:
     const char* m_Ptr;
 };
 
+
 inline CBitVectorDecoder::CBitVectorDecoder(const string source) :
     m_Source(source), m_Ptr(m_Source.c_str())
 {
 }
 
+
+extern NCBI_XCONNECT_EXPORT
 unsigned g_NetService_gethostbyname(const string& hostname);
 
+
+extern NCBI_XCONNECT_EXPORT
 string g_NetService_gethostname(const string& ip_or_hostname);
 
+
+extern NCBI_XCONNECT_EXPORT
 string g_NetService_gethostip(const string& ip_or_hostname);
+
 
 END_NCBI_SCOPE
 
