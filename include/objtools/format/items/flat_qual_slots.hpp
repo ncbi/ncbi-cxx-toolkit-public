@@ -206,7 +206,9 @@ enum ESourceQualifier {
     eSQ_lab_host,
     eSQ_label,
     eSQ_lat_lon,
+    eSQ_linkage_group,
     eSQ_macronuclear,
+    eSQ_mating_type,
     eSQ_map,
     eSQ_metagenomic,
     eSQ_mobile_element,
@@ -251,6 +253,7 @@ enum ESourceQualifier {
     eSQ_unstructured,
     eSQ_usedin,
     eSQ_variety,
+    eSQ_whole_replicon,
     eSQ_zero_orgmod,
     eSQ_one_orgmod,
     eSQ_zero_subsrc

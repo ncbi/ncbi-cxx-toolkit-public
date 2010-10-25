@@ -1890,6 +1890,7 @@ START_SUBTYPE(source)
     ADD_QUAL(lab_host);
     ADD_QUAL(label);
     ADD_QUAL(lat_lon);
+    ADD_QUAL(linkage_group);
     ADD_QUAL(macronuclear);
     ADD_QUAL(map);
     ADD_QUAL(mating_type);
@@ -1921,6 +1922,7 @@ START_SUBTYPE(source)
     ADD_QUAL(usedin);
     ADD_QUAL(variety);
     ADD_QUAL(virion);
+    ADD_QUAL(whole_replicon);
 END_SUBTYPE
 
 START_SUBTYPE(stem_loop)
@@ -2404,7 +2406,6 @@ START_SUBTYPE(het)  //  same as misc_feature
 END_SUBTYPE
 
 START_SUBTYPE(mobile_element)
-    // TODO: need to check this
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
@@ -2422,7 +2423,6 @@ START_SUBTYPE(mobile_element)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
-    ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
     ADD_QUAL(rpt_unit_range);
     ADD_QUAL(rpt_unit_seq);

@@ -4706,7 +4706,6 @@ static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
         DO_SS(clone);
         DO_SS(subclone);
         DO_SS(haplotype);
-        DO_SS(haplogroup);
         DO_SS(genotype);
         DO_SS(sex);
         DO_SS(cell_line);
@@ -4739,6 +4738,10 @@ static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
         DO_SS(fwd_primer_name);
         DO_SS(rev_primer_name);
         DO_SS(metagenomic);
+        DO_SS(mating_type);
+        DO_SS(linkage_group);
+        DO_SS(haplogroup);
+        DO_SS(whole_replicon);
 #undef DO_SS
     case CSubSource::eSubtype_other:  return eSQ_subsource_note;
     default:                          return eSQ_none;
@@ -4937,6 +4940,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(haplotype);
     DO_QUAL(haplogroup);
     DO_QUAL(sex);
+    DO_QUAL(mating_type);
     DO_QUAL(cell_line);
     DO_QUAL(cell_type);
     DO_QUAL(tissue_type);

@@ -280,6 +280,7 @@ public:
         eQual_lab_host,
         eQual_label,
         eQual_lat_lon,
+        eQual_linkage_group,
         eQual_locus_tag,
         eQual_macronuclear,
         eQual_map,
@@ -344,7 +345,8 @@ public:
         eQual_UniProtKB_evidence,
         eQual_usedin,
         eQual_variety,
-        eQual_virion
+        eQual_virion,
+        eQual_whole_replicon
     };
     typedef vector<EQualifier> TQualifiers;
 
