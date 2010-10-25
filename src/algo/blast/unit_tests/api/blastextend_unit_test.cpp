@@ -431,6 +431,106 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignment) {
     Blast_HSPListFree(hsp_list);
 }
 
+// Test for SB-666 fix
+BOOST_AUTO_TEST_CASE(testGreedyAlignmentWithBadStart) {
+    const int query_start = 2667;
+    const int query_end = 2754;
+    const int subject_start = 350;
+    const int subject_end = 438;
+    const int q_offset = 2754;
+    const int s_offset = 438;
+    BlastGappedStats* gapped_stats = NULL;
+    BlastUngappedData ungapped;
+
+    ungapped.q_start = 2671;
+    ungapped.s_start = 355;
+    ungapped.length = 167;
+    ungapped.score = 42;
+
+    CSeq_id qid("gi|156523973");
+    auto_ptr<SSeqLoc> qsl(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    CSeq_id sid("gi|224514626");
+    pair<TSeqPos, TSeqPos> range(1896999, 1897550);
+    auto_ptr<SSeqLoc> ssl(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
+
+    CBlastNucleotideOptionsHandle opts_handle;
+
+    TSeqLocVector queries;
+    TSeqLocVector subjects;
+    queries.push_back(*qsl);
+    subjects.push_back(*ssl);
+
+    const CBlastOptions& kOpts = opts_handle.GetOptions();
+    EBlastProgramType prog = kOpts.GetProgramType();
+    ENa_strand strand_opt = kOpts.GetStrandOption();
+    TSearchMessages blast_msg;
+
+    SetupQueryInfo(queries, prog, strand_opt, &m_iclsQueryInfo); 
+    SetupQueries(queries, m_iclsQueryInfo, &m_iclsQueryBlk, 
+                    prog, strand_opt, blast_msg);
+    ITERATE(TSearchMessages, m, blast_msg) {
+        BOOST_REQUIRE(m->empty());
+    }
+    
+    Uint4 subject_length;
+    vector<BLAST_SequenceBlk*> subject_blk_v;
+    SetupSubjects(subjects, opts_handle.GetOptions().GetProgramType(), 
+                    &subject_blk_v, &subject_length);
+
+    setupStructures(subject_length, true);
+
+    // The following options must be patched to reproduce SB-666
+    m_ipScoreParams->reward = 1;
+    m_ipScoreParams->penalty = -2;
+    m_ipScoreParams->gap_open = 0;
+    m_ipScoreParams->gap_extend = 0;
+
+    m_ipExtParams->gap_x_dropoff = 16;
+    m_ipExtParams->gap_x_dropoff_final = 54;
+
+    m_ipGapAlign = BLAST_GapAlignStructFree(m_ipGapAlign);
+
+    BLAST_GapAlignStructNew(m_ipScoreParams, m_ipExtParams, 
+                            subject_length, m_ipScoreBlk, &m_ipGapAlign);
+
+    m_ipInitHitlist = BLAST_InitHitListNew();       
+
+    BLAST_SaveInitialHit(m_ipInitHitlist, q_offset, s_offset, &ungapped);
+    
+    BlastHSPList* hsp_list = Blast_HSPListNew(0);
+    gapped_stats = 
+        (BlastGappedStats*) calloc(1, sizeof(BlastGappedStats));
+
+    BLAST_GetGappedScore(opts_handle.GetOptions().GetProgramType(), 
+                            m_iclsQueryBlk, m_iclsQueryInfo, subject_blk_v[0],
+                            m_ipGapAlign, m_ipScoreParams, m_ipExtParams, 
+                            m_ipHitParams, m_ipInitHitlist, &hsp_list, 
+                            gapped_stats, NULL);
+
+    m_ipInitHitlist->init_hsp_array[0].ungapped_data = NULL;
+
+    BOOST_REQUIRE_EQUAL(1, hsp_list->hspcnt);
+
+    BlastSequenceBlkFree(subject_blk_v[0]);
+
+    sfree(gapped_stats);
+
+    BOOST_REQUIRE_EQUAL(hsp_list->hsp_array[0]->query.offset, query_start);
+    BOOST_REQUIRE_EQUAL(hsp_list->hsp_array[0]->subject.offset, subject_start);
+    BOOST_REQUIRE_EQUAL(hsp_list->hsp_array[0]->query.end, query_end);
+    BOOST_REQUIRE_EQUAL(hsp_list->hsp_array[0]->subject.end, subject_end);
+
+    // The following are required to fix SB-666
+    BOOST_REQUIRE(m_ipGapAlign->greedy_query_seed_start >= query_start);
+    BOOST_REQUIRE(m_ipGapAlign->greedy_query_seed_start <= query_end);
+    BOOST_REQUIRE(m_ipGapAlign->greedy_subject_seed_start >= subject_start);
+    BOOST_REQUIRE(m_ipGapAlign->greedy_subject_seed_start <= subject_end);
+
+    Blast_HSPListFree(hsp_list);
+}
+
 BOOST_AUTO_TEST_CASE(testSmallMBSpaceValue) {
         const int kSize = 100;
         const int kDefaultSize = 1000000;
