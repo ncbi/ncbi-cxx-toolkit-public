@@ -954,6 +954,12 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
 
 void CBlastFormat::ResetScopeHistory()
 {
+    // Do not reset the scope for BLAST2Sequences or else we'll loose the
+    // sequence data! (see x_CreateSubjectBioseq)
+    if (m_IsBl2Seq) {
+        return;
+    }
+
     // Our current XML/ASN.1 libraries do not have provisions for
     // incremental object input/output, so with XML output format we
     // need to accumulate the whole document before writing any data.
