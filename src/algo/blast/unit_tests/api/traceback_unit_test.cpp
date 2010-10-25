@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(testHSPUpdateWithTraceback) {
 }
 
 BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
-     const int k_num_hsps_start = 8;
+     const int k_num_hsps_start = 9;
      const int k_num_hsps_end = 7;
 
      CSeq_id qid("gi|1945388");
@@ -244,15 +244,15 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
 
      BlastHSPStream* hsp_stream = x_MakeStream(blaster.GetOptionsHandle().GetOptions());
 
-     const int query_offset[k_num_hsps_start] = { 6022, 6622, 6622, 5295, 5199, 7191, 3818, 7408};
-     const int query_end[k_num_hsps_start] = { 6161, 6730, 6753, 5386, 5219, 7227, 3830, 7419};
-     const int subject_offset[k_num_hsps_start] = { 104, 241, 241, 16, 0, 378, 71, 63};
-     const int subject_end[k_num_hsps_start] = { 241, 350, 376, 107, 20, 415, 83, 74};
-     const int score[k_num_hsps_start] = { 115, 93, 91, 91, 20, 17, 12, 11};
-     const int context[k_num_hsps_start] = { 0, 0, 0, 0, 0, 0, 1, 1};
-     const int subject_frame[k_num_hsps_start] = { 1, 1, 1, 1, 1, 1, 1, 1};
-     const int query_gapped_start[k_num_hsps_start] = { 6035, 6625, 6745, 5295, 5199, 7193, 3819, 7409};
-     const int subject_gapped_start[k_num_hsps_start] = { 116, 244, 368, 16, 0, 380, 72, 64};
+     const int query_offset[k_num_hsps_start] = { 6020, 6022, 6622, 6622, 5295, 5199, 7191, 3818, 7408};
+     const int query_end[k_num_hsps_start] = { 6032, 6161, 6730, 6753, 5386, 5219, 7227, 3830, 7419};
+     const int subject_offset[k_num_hsps_start] = { 98, 104, 241, 241, 16, 0, 378, 71, 63};
+     const int subject_end[k_num_hsps_start] = { 110, 241, 350, 376, 107, 20, 415, 83, 74};
+     const int score[k_num_hsps_start] = { 17, 115, 93, 91, 91, 20, 17, 12, 11};
+     const int context[k_num_hsps_start] = { 0, 0, 0, 0, 0, 0, 0, 1, 1};
+     const int subject_frame[k_num_hsps_start] = { 1, 1, 1, 1, 1, 1, 1, 1, 1};
+     const int query_gapped_start[k_num_hsps_start] = { 20, 6035, 6625, 6745, 5295, 5199, 7193, 3819, 7409};
+     const int subject_gapped_start[k_num_hsps_start] = { 115, 116, 244, 368, 16, 0, 380, 72, 64};
 
     for (int index=0; index<k_num_hsps_start; index++)
     {

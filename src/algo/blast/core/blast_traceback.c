@@ -505,7 +505,10 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                BlastGetOffsetsForGappedAlignment(query, subject, sbp,
                    hsp, &q_start, &s_start);
             if (!retval)
-               return -1;
+            {  /* Unable to find start for this HSP */
+               hsp_array[index] = Blast_HSPFree(hsp);
+               continue;
+            }
             hsp->query.gapped_start = q_start;
             hsp->subject.gapped_start = s_start;
          } else {
