@@ -231,7 +231,11 @@ SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
         s_MakeFrom(info->from, sizeof(info->from), user);
         info->header          = 0;
         info->body_size       = 0;
+#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
+        info->mx_host         = "localhost";
+#else
         info->mx_host         = "mailgw";
+#endif /*NCBI_OS_UNIX && !NCBI_OS_CYGWIN*/
         info->mx_port         = 25;
         info->mx_timeout.sec  = 120;
         info->mx_timeout.usec = 0;
