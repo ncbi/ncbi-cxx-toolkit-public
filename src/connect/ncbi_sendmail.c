@@ -221,7 +221,7 @@ static STimeout       s_MxTmo;
 
 static void x_Sendmail_InitEnv(void)
 {
-    char         buf[80];
+    char         buf[40];
     unsigned int port;
     double       tmo;
 
@@ -242,7 +242,8 @@ static void x_Sendmail_InitEnv(void)
         s_MxPort = port;
     } else
         s_MxPort = 25;
-    if (!ConnNetInfo_GetValue(0, "MX_HOST", s_MxHost, sizeof(s_MxHost), 0)) {
+    if (!ConnNetInfo_GetValue(0, "MX_HOST", s_MxHost, sizeof(s_MxHost), 0)
+        ||  !*s_MxHost) {
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
         strcpy(s_MxHost, "localhost");
 #else
