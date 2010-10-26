@@ -32,6 +32,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_sendmail.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
@@ -213,11 +214,42 @@ static void s_MakeFrom(char* buf, size_t size, const char* user)
 }
 
 
-/* FIXME:  To remove altogether */
-#undef SendMailInfo_Init
-SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info)
+static char           s_MxHost[256];
+static unsigned short s_MxPort;
+static STimeout       s_MxTmo;
+
+
+static void x_Sendmail_InitEnv(void)
 {
-    return SendMailInfo_InitEx(info, 0);
+    char         buf[80];
+    unsigned int port;
+    double       tmo;
+
+    if (*s_MxHost)
+        return;
+
+    CORE_LOCK_WRITE;
+    if (ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)
+        &&  (tmo = atof(buf)) > 0.0) {
+        s_MxTmo.sec  = (unsigned int)  tmo;
+        s_MxTmo.usec = (unsigned int)((tmo - s_MxTmo.sec) * 1000000.0);
+    } else {
+        s_MxTmo.sec  = 120;
+        s_MxTmo.usec = 0;
+    }
+    if (ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
+        &&  (port = atoi(buf)) > 0  &&  port < 65536) {
+        s_MxPort = port;
+    } else
+        s_MxPort = 25;
+    if (!ConnNetInfo_GetValue(0, "MX_HOST", s_MxHost, sizeof(s_MxHost), 0)) {
+#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
+        strcpy(s_MxHost, "localhost");
+#else
+        strcpy(s_MxHost, "mailgw");
+#endif /*NCBI_OS_UNIX && !NCBI_OS_CYGWIN*/
+    }
+    CORE_UNLOCK;
 }
 
 
@@ -225,20 +257,16 @@ SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
                                    const char*    user)
 {
     if (info) {
+        x_Sendmail_InitEnv();
         info->magic_number    = MX_MAGIC_NUMBER;
         info->cc              = 0;
         info->bcc             = 0;
         s_MakeFrom(info->from, sizeof(info->from), user);
         info->header          = 0;
         info->body_size       = 0;
-#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
-        info->mx_host         = "localhost";
-#else
-        info->mx_host         = "mailgw";
-#endif /*NCBI_OS_UNIX && !NCBI_OS_CYGWIN*/
-        info->mx_port         = 25;
-        info->mx_timeout.sec  = 120;
-        info->mx_timeout.usec = 0;
+        info->mx_host         = s_MxHost;
+        info->mx_port         = s_MxPort;
+        info->mx_timeout      = s_MxTmo;
         info->mx_options      = 0;
     }
     return info;
