@@ -512,7 +512,7 @@ CAlignFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs,
     
     string all_id_str = GetSeqIdString(cbs, believe_query);
     all_id_str += " ";
-    all_id_str += GetSeqDescrString(cbs);
+    all_id_str = NStr::TruncateSpaces(all_id_str + GetSeqDescrString(cbs));
 
     // For tabular output, there is no limit on the line length.
     // There is also no extra line with the sequence length.
