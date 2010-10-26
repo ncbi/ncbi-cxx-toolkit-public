@@ -137,6 +137,11 @@ void CNetCacheServerListener::OnError(
         sizeof(s_BlobNotFoundMsg) - 1) == 0)
         NCBI_THROW(CNetCacheException, eBlobNotFound, message);
 
+    static const char s_AccessDenied[] = "Access denied";
+    if (NStr::strncmp(err_msg.c_str(), s_AccessDenied,
+        sizeof(s_AccessDenied) - 1) == 0)
+        NCBI_THROW(CNetCacheException, eAccessDenied, message);
+
     static const char s_UnknownCommandMsg[] = "Unknown command";
     if (NStr::strncmp(err_msg.c_str(), s_UnknownCommandMsg,
         sizeof(s_UnknownCommandMsg) - 1) == 0)
@@ -440,8 +445,11 @@ IReader* CNetCacheAPI::GetData(const string& key, size_t* blob_size,
     try {
         return GetReader(key, blob_size, caching_mode);
     } catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
+        switch (e.GetErrCode()) {
+        case CNetCacheException::eBlobNotFound:
+        case CNetCacheException::eAccessDenied:
             return NULL;
+        }
         throw;
     }
 }

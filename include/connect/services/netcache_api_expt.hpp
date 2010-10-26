@@ -63,6 +63,8 @@ public:
         eServerError,
         ///< Blob is not found
         eBlobNotFound,
+        ///< Access denied
+        eAccessDenied,
         ///< Blob could not be read completely
         eBlobClipped,
         ///< The requested command is (yet) unknown
@@ -80,6 +82,7 @@ public:
         case eKeyFormatError:           return "eKeyFormatError";
         case eServerError:              return "eServerError";
         case eBlobNotFound:             return "eBlobNotFound";
+        case eAccessDenied:             return "eAccessDenied";
         case eUnknownCommand:           return "eUnknownCommand";
         case eNotImplemented:           return "eNotImplemented";
         case eInvalidServerResponse:    return "eInvalidServerResponse";
