@@ -171,10 +171,15 @@ void CGenbankFormatter::FormatLocus
     string mol = s_GenbankMol[locus.GetBiomol()];
 
     locus_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
-    locus_line << setw(16) << locus.GetName() << ' ';
+    locus_line << setw(16) << locus.GetName();
+    // long LOCUS names may impinge on the length (e.g. gi 1449456)
+    // I would consider this behavior conceptually incorrect; we should either fix the data
+    // or truncate the locus names to 16 chars.  This is done here as a temporary measure
+    // to make the asn2gb and asn2flat diffs match.
+    const int spaceForLength = max( 0, min( 12, (int)(12 - (locus.GetName().length() - 16))  ) );
     locus_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
     locus_line
-        << setw(11) << locus.GetLength()
+        << setw(spaceForLength) << locus.GetLength()
         << ' '
         << units
         << ' '

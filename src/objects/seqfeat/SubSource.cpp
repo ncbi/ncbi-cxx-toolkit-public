@@ -139,15 +139,15 @@ string CSubSource::GetSubtypeName(CSubSource::TSubtype stype)
 
 bool CSubSource::NeedsNoText(const TSubtype& subtype)
 {
-	if (subtype == eSubtype_germline
-		|| subtype == eSubtype_rearranged
-		|| subtype == eSubtype_transgenic
-		|| subtype == eSubtype_environmental_sample
-		|| subtype == eSubtype_metagenomic) {
-		return true;
-	} else {
-		return false;
-	}
+    if (subtype == eSubtype_germline
+        || subtype == eSubtype_rearranged
+        || subtype == eSubtype_transgenic
+        || subtype == eSubtype_environmental_sample
+        || subtype == eSubtype_metagenomic) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -169,96 +169,96 @@ const string sm_LegalMonths [] = {
 
 CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CException))
 {
-	if (NStr::IsBlank(str)) {
-		NCBI_THROW (CException, eUnknown,
+    if (NStr::IsBlank(str)) {
+        NCBI_THROW (CException, eUnknown,
                         "collection-date string is blank");
-	}
-	size_t pos = NStr::Find(str, "-");
-	string year = "";
-	string month = "";
-	string day = "";
+    }
+    size_t pos = NStr::Find(str, "-");
+    string year = "";
+    string month = "";
+    string day = "";
 
-	if (pos == string::npos) {
-		year = str;
-	} else {
-		size_t pos2 = NStr::Find(str, "-", pos + 1);
-		if (pos2 == string::npos) {
+    if (pos == string::npos) {
+        year = str;
+    } else {
+        size_t pos2 = NStr::Find(str, "-", pos + 1);
+        if (pos2 == string::npos) {
             month = str.substr(0, pos);
             year = str.substr(pos + 1);
-			if (NStr::IsBlank(month)) {
-				NCBI_THROW (CException, eUnknown,
-								"collection-date string is improperly formatted");
-			}
-		} else {
-			day = str.substr(0, pos);
-			month = str.substr(pos + 1, pos2 - pos - 1);
-			year = str.substr(pos2 + 1);
-			if (NStr::IsBlank(month) || NStr::IsBlank(day)) {
-				NCBI_THROW (CException, eUnknown,
-								"collection-date string is improperly formatted");
-			}
-		}
-	}
+            if (NStr::IsBlank(month)) {
+                NCBI_THROW (CException, eUnknown,
+                                "collection-date string is improperly formatted");
+            }
+        } else {
+            day = str.substr(0, pos);
+            month = str.substr(pos + 1, pos2 - pos - 1);
+            year = str.substr(pos2 + 1);
+            if (NStr::IsBlank(month) || NStr::IsBlank(day)) {
+                NCBI_THROW (CException, eUnknown,
+                                "collection-date string is improperly formatted");
+            }
+        }
+    }
 
-	int day_val = 0;
-	if (!NStr::IsBlank(day)) {
-		try {
-			day_val = NStr::StringToInt (day);
-			if (day_val < 1 || day_val > 31) {
-				NCBI_THROW (CException, eUnknown,
-								"collection-date string has invalid day value");
-			}
-		} catch ( const exception& e ) {
-			// threw exception while converting to int
-			NCBI_THROW (CException, eUnknown,
-							"collection-date string is improperly formatted");
-		}
-	}
+    int day_val = 0;
+    if (!NStr::IsBlank(day)) {
+        try {
+            day_val = NStr::StringToInt (day);
+            if (day_val < 1 || day_val > 31) {
+                NCBI_THROW (CException, eUnknown,
+                                "collection-date string has invalid day value");
+            }
+        } catch ( const exception& e ) {
+            // threw exception while converting to int
+            NCBI_THROW (CException, eUnknown,
+                            "collection-date string is improperly formatted");
+        }
+    }
 
-	int month_val = 0;
-	if (!NStr::IsBlank(month)) {
-		for (size_t i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
-			if (NStr::Equal(month, sm_LegalMonths[i])) {
-				month_val = i + 1;
-				break;
-			}
-		}
-		if (month_val == 0) {
-			NCBI_THROW (CException, eUnknown,
-							"collection-date string has invalid month");
-		}
-	}
+    int month_val = 0;
+    if (!NStr::IsBlank(month)) {
+        for (size_t i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
+            if (NStr::Equal(month, sm_LegalMonths[i])) {
+                month_val = i + 1;
+                break;
+            }
+        }
+        if (month_val == 0) {
+            NCBI_THROW (CException, eUnknown,
+                            "collection-date string has invalid month");
+        }
+    }
 
-	if (NStr::IsBlank(year)) {
-		NCBI_THROW (CException, eUnknown,
-						"collection-date string is improperly formatted");
-	} 
+    if (NStr::IsBlank(year)) {
+        NCBI_THROW (CException, eUnknown,
+                        "collection-date string is improperly formatted");
+    } 
 
-	int year_val = 0;
-	try {
-		year_val = NStr::StringToInt (year);
-	} catch ( const exception& e ) {
-		// threw exception while converting to int
-		NCBI_THROW (CException, eUnknown,
-						"collection-date string is improperly formatted");
-	}
+    int year_val = 0;
+    try {
+        year_val = NStr::StringToInt (year);
+    } catch ( const exception& ) {
+        // threw exception while converting to int
+        NCBI_THROW (CException, eUnknown,
+                        "collection-date string is improperly formatted");
+    }
 
-	if (year_val < 1700 || year_val >= 2100) {
-		NCBI_THROW (CException, eUnknown,
-						"collection-date year is out of range");
-	}
+    if (year_val < 1700 || year_val >= 2100) {
+        NCBI_THROW (CException, eUnknown,
+                        "collection-date year is out of range");
+    }
 
     CRef<CDate> date(new CDate);
 
-	date->SetStd().SetYear (year_val);
-	if (month_val > 0) {
-		date->SetStd().SetMonth (month_val);
-	}
-	if (day_val > 0) {
-		date->SetStd().SetDay (day_val);
-	}
-	
-	return date;
+    date->SetStd().SetYear (year_val);
+    if (month_val > 0) {
+        date->SetStd().SetMonth (month_val);
+    }
+    if (day_val > 0) {
+        date->SetStd().SetDay (day_val);
+    }
+    
+    return date;
 }
 
 

@@ -1562,11 +1562,6 @@ CSeqMap_CI s_CreateGapMapIter(const CSeq_loc& loc, CBioseqContext& ctx)
 {
     CSeqMap_CI gap_it;
 
-    // EMBL and DDBJ have gap imp features
-    if (ctx.IsEMBL()  ||  ctx.IsDDBJ()) {
-        return gap_it;
-    }
-    
     if ( !ctx.IsDelta() ) {
         return gap_it;
     }
@@ -1690,6 +1685,33 @@ static void s_CleanCDDFeature(const CSeq_feat& feat)
     }
 }
 
+//  ============================================================================
+bool s_CoincidingGapFeatures(
+    CFeat_CI it, // it's important to use a *copy* of the iterator so we don't change the one in the caller.
+    const TSeqPos gap_start, 
+    const TSeqPos gap_end )
+//  ============================================================================
+{
+    for( ; it; ++it ) {
+        CConstRef<CSeq_loc> feat_loc(&it->GetLocation());
+
+        const TSeqPos feat_start = feat_loc->GetStart(eExtreme_Positional);
+        const TSeqPos feat_end   = feat_loc->GetStop (eExtreme_Positional);
+        const bool featIsGap = (  it->GetFeatSubtype() == CSeqFeatData::eSubtype_gap );
+
+        // found coinciding gap feature
+        if( featIsGap && (feat_start == gap_start) && (feat_end == gap_end) ) {
+            return true;
+        }
+
+        // went past the gap, so there's no coinciding gap feature
+        if( feat_start > gap_start ) {
+            return false;
+        }
+    }
+
+    return false;
+}
 
 void CFlatGatherer::x_GatherFeaturesOnLocation
 (const CSeq_loc& loc,
@@ -1779,22 +1801,16 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
         
             // handle gaps
             const TSeqPos feat_start = feat_loc->GetStart(eExtreme_Positional);
-            const TSeqPos feat_end   = feat_loc->GetStop (eExtreme_Positional);
-            const bool featIsGap = ( feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap );
             while (gap_it) {
                 const TSeqPos gap_start = gap_it.GetPosition();
                 const TSeqPos gap_end   = (gap_it.GetEndPosition() - 1);
 
-                // make sure this gap doesn't overlap with the feature, if the feature is a gap
-                if( featIsGap && (feat_start == gap_start) && (feat_end == gap_end) ) {
-                    ++gap_it;
-                    continue;
-                }
-
                 // if feature after gap first output the gap 
                 if ( feat_start >= gap_start ) {
-                    // but don't output gaps of size zero (except: see showGapsOfSizeZero's definition)
-                    if( showGapsOfSizeZero || (gap_start <= gap_end) ) {
+                    // - Don't output gaps of size zero (except: see showGapsOfSizeZero's definition)
+                    // - Don't output if there's an explicit gap that overlaps this one
+                    if( ( showGapsOfSizeZero || (gap_start <= gap_end) ) &&
+                        ! s_CoincidingGapFeatures( it, gap_start, gap_end ) ) {
                         item.Reset( s_NewGapItem(gap_it, ctx) );
                         out << item;
                     }
@@ -1946,7 +1962,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
         CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
         if (cds) {
             item.Reset(
-                x_NewFeatureItem(cds, ctx, &cds.GetProduct(), 
+                x_NewFeatureItem(cds, ctx, &cds.GetProduct(),
                     CFeatureItem::eMapped_from_cdna) );
             out << item;
         }
@@ -2076,7 +2092,7 @@ void s_FixIntervalProtToCds(
         destInt.ResetFuzz_to();
     }
 }
-    
+
 //  ============================================================================
 void CFlatGatherer::x_GetFeatsOnCdsProduct(
     const CSeq_feat& feat,
