@@ -252,6 +252,7 @@ void CId2FetchApp::x_InitPubSeqConnection(const string& server_name,
         AutoPtr<CDB_LangCmd> cmd(m_PubSeqOS->LangCmd("set blob_stream on"));
         if ( cmd ) {
             cmd->Send();
+            cmd->DumpResults();
         }
     }}
 
