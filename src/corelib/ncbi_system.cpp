@@ -523,11 +523,18 @@ Uint8 GetPhysicalMemorySize(void)
 
 #elif defined(NCBI_OS_BSD)  ||  defined(NSBI_OS_DARWIN)
 
-    int mib[2];
-    int physmem;
-    size_t len = sizeof(physmem);
-    mib[0] = CTL_HW;
+    size_t   len;
+    int      mib[2];
+#  ifdef HW_MEMSIZE
+    uint64_t physmem;
+    mib[1] = HW_MEMSIZE;
+#  else
+    /* Native BSD, may be truncated */
+    int      physmem;
     mib[1] = HW_PHYSMEM;
+#  endif /*HW_MEMSIZE*/
+    mib[0] = CTL_HW;
+    len = sizeof(physmem);
     if (sysctl(mib, 2, &physmem, &len, 0, 0) == 0  &&  len == sizeof(physmem)){
         return Uint8(physmem);
     }
