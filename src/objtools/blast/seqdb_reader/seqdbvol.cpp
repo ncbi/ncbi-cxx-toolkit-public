@@ -2190,7 +2190,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
             if (m_IsamTi->IdToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
-        } else {
+        } else if (m_IsamStr) {
             // Not every database with TIs has a TI index, so fall
             // back to a string comparison if the first attempt fails.
             // 
