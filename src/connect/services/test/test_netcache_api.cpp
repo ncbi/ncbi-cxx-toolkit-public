@@ -446,7 +446,7 @@ int CTestNetCacheClient::Run(void)
     {{
         CNetCacheAPI nc_client(service, s_ClientName);
 
-        key = nc_client.PutData((const void*)0, 0, 120);
+        key = nc_client.PutData(NULL, 0, 120);
         NcbiCout << key << NcbiEndl;
         assert(!key.empty());
 
@@ -491,6 +491,22 @@ int CTestNetCacheClient::Run(void)
         assert(res == 0);
 
         assert(blob_size == sizeof(test_data));
+
+        reader = nc_client.GetPartReader(key,
+            sizeof(test_data) - sizeof("dog."), sizeof(dataBuf), &blob_size);
+
+        assert(blob_size == sizeof("dog."));
+
+        size_t bytes_read;
+
+        reader->Read(dataBuf, sizeof(dataBuf), &bytes_read);
+
+        assert(bytes_read == sizeof("dog."));
+
+        delete reader;
+
+        res = strcmp(dataBuf, "dog.");
+        assert(res == 0);
     }}
 
     {{
@@ -505,6 +521,13 @@ int CTestNetCacheClient::Run(void)
 
         int res = strcmp(dataBuf, test_data);
         assert(res == 0);
+
+        string str;
+
+        nc_client.ReadPart(key, sizeof("The ") - 1,
+            sizeof("The quick") - sizeof("The "), str);
+
+        assert(str == "quick");
     }}
 
     // update existing BLOB

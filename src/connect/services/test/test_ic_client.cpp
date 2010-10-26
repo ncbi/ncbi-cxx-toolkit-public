@@ -133,14 +133,20 @@ int CTestICClient::Run(void)
     assert(sz == data_size);
 
     char buf[1024] = {0,};
-    cl.Read(key1, version, subkey, buf, sizeof(buf));
+    cl.Read(key1, version, subkey, buf, sizeof(buf) - 1);
 
     assert(strcmp(buf, test_data) == 0);
 
     memset(buf, 0, sizeof(buf));
-    cl.Read(key1, version, subkey, buf, sizeof(buf));
+    cl.Read(key1, version, subkey, buf, sizeof(buf) - 1);
 
     assert(strcmp(buf, test_data) == 0);
+
+    memset(buf, 0, sizeof(buf));
+    cl.ReadPart(key1, version, subkey, sizeof("The ") - 1,
+        sizeof("The quick") - sizeof("The "), buf, sizeof(buf) - 1);
+
+    assert(strcmp(buf, "quick") == 0);
 
 
     sz = cl.GetSize(key1, version, subkey);
