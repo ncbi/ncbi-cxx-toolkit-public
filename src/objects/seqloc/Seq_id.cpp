@@ -1909,6 +1909,90 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
 }
 
 
+SSeqIdRange::SSeqIdRange(const CTempString& s, TFlags flags)
+    : start(0), stop(0), digits(0), acc_info(CSeq_id::eAcc_unknown)
+{
+    size_t pos = 0, n = s.size();
+    while (pos < n
+           &&  (isalpha((unsigned char) s[pos])
+                ||  (((flags & fAllowUnderscores) != 0)  &&  s[pos] == '_'))) {
+        prefix += s[pos++];
+    }
+    while (pos < n  &&  isdigit((unsigned char) s[pos])) {
+        start = start * 10 + s[pos++] - '0';
+        ++digits;
+    }
+    if (pos == n) {
+        stop = start;
+        return;
+    } else if (s[pos++] != '-') {
+        NCBI_THROW(CSeqIdException, eFormat,
+                   "Expected hyphen in range " + string(s));
+    }
+
+    {{
+        string pfx2;
+        while (pos < n
+               && (isalpha((unsigned char) s[pos])
+                   || (((flags & fAllowUnderscores) != 0) && s[pos] == '_'))) {
+            pfx2 += s[pos++];
+        }
+        if ( !pfx2.empty()  &&  pfx2 != prefix) {
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "Mismatched prefixes in range " + string(s));
+        }
+    }}
+    if (pos + digits != n) {
+        NCBI_THROW(CSeqIdException, eFormat,
+                   "Mismatched digit counts in range " + string(s));
+    }
+    while (pos < n  &&  isdigit((unsigned char) s[pos])) {
+        stop = stop * 10 + s[pos++] - '0';
+    }    
+}
+
+
+CRef<CSeq_id> SSeqIdRange::const_iterator::GetID(void) const
+{
+    CRef<CSeq_id> ret;
+
+    if (m_Range->acc_info == CSeq_id::eAcc_unknown) {
+        m_Range->acc_info = CSeq_id::IdentifyAccession(**this);
+        if (m_Range->size() > 1  &&  m_Range->digits == 5) {
+            // account for possible non-uniformity
+            switch (m_Range->prefix[0]) {
+            case 'C': case 'D': case 'c': case 'd':
+                if (m_Range->prefix.size() == 3) {
+                    m_Range->acc_info = CSeq_id::eAcc_unreserved_prot;
+                }
+            case 'N': case 'n':
+                if (m_Range->prefix.size() == 1) {
+                    m_Range->acc_info = CSeq_id::eAcc_unreserved_nuc;
+                }
+            }
+        }
+    }
+
+    CSeq_id::E_Choice type = CSeq_id::GetAccType(m_Range->acc_info);
+    if (type == CSeq_id::e_not_set) {
+        ret = new CSeq_id(**this);
+    } else {
+        ret = new CSeq_id(type, **this);
+    }
+
+    return ret;
+}
+
+
+const string& SSeqIdRange::const_iterator::x_SetAccession(void) const
+{
+    CNcbiOstrstream oss;
+    oss << m_Range->prefix << setw(m_Range->digits) << setfill('0') << m_Number;
+    m_Accession = CNcbiOstrstreamToString(oss);
+    return m_Accession;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
