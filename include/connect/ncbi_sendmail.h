@@ -108,6 +108,11 @@ typedef struct {
  *   'mx_*' filled out in accordance with some hard-coded defaults, which are
  *          very NCBI-specific; an outside application is likely to choose and
  *          use different values (at least for mx_host).
+ *          The mx_... fields can be configured via the registry file at
+ *          [CONN]MX_HOST, [CONN]MX_PORT, and [CONN]MX_TIMEOUT, as well as
+ *          through their process environment equivalents (which have higher
+ *          precedence, and override the values found in the registry):
+ *          CONN_MX_HOST, CONN_MX_PORT, and CONN_MX_TIMEOUT, respectively
  * Return value equals the argument passed in.
  * Note: This call is the only valid way to properly init SSendMailInfo.
  */
@@ -117,6 +122,7 @@ extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
  );
 
 #define SendMailInfo_Init(info)  SendMailInfo_InitEx(info, 0)
+
 
 /* Send a simple message to recipient(s) defined in 'to',
  * and having subject 'subject', which may be empty (both NULL and "" treated
