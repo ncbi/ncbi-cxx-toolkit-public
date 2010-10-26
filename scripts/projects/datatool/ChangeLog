@@ -41,3 +41,12 @@ September 02, 2010
 version 2.2.2
 Corrected code generation of choice data objects, added ResetSelection? method.
 Corrected generation of WSDL client code. 
+
+October 26, 2010
+version 2.3.0
+Added support of sequences of elements with a default in XML schema.
+Fixed handling of default values of long and double element types.
+Corrected initialization of wrapper class objects.
+Corrected code generation for elements of type vector<char> with attributes.
+
+
