@@ -153,7 +153,13 @@ static bool s_ValidId(const CSeq_id& id)
 
 // returns how many times ch appears in str
 static int s_CountChar( const string &str, const char ch ) {
+#ifdef NCBI_COMPILER_WORKSHOP
+    SIZE_TYPE n = 0;
+    count( str.begin(), str.end(), ch, n );
+    return n;
+#else
     return count( str.begin(), str.end(), ch );
+#endif
 }
 
 static bool s_QualifiersMeetPrimerReqs( 
