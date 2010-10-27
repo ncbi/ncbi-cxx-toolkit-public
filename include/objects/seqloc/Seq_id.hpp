@@ -542,7 +542,7 @@ private:
 ///
 /// Represent a range of contiguous INSD-style accessions.
 
-struct SSeqIdRange
+struct NCBI_SEQLOC_EXPORT SSeqIdRange
 {
     enum EFlags {
         fAllowUnderscores = 0x1 ///< Allow prefixes to contain underscores.
