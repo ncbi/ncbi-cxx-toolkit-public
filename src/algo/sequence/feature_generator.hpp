@@ -77,6 +77,9 @@ struct CFeatureGenerator::SImplementation {
                              int gene_id, const objects::CSeq_feat* cdregion);
     void SetFeatureExceptions(objects::CSeq_feat& feat,
                               const objects::CSeq_align* align);
+    void SetPartialFlags(CRef<CSeq_feat> gene_feat,
+                         CRef<CSeq_feat> mrna_feat,
+                         CRef<CSeq_feat> cds_feat);
 
     TSignedSeqPos GetCdsStart(const objects::CSeq_id& seqid);
 
@@ -163,9 +166,6 @@ private:
                                        CBioseq_set& seqs,
                                        CSeq_loc_Mapper::TMapOptions opts,
                                        CRef<CSeq_feat> gene_feat);
-    void x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat,
-                                 CRef<CSeq_feat> cds_feat,
-                                 CRef<CSeq_feat> gene_feat);
     void x_CopyAdditionalFeatures(const CBioseq_Handle& handle,
                                   SMapper& mapper,
                                   CSeq_annot& annot);

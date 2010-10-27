@@ -77,6 +77,11 @@ public:
                                      objects::CScope& scope,
                                      const objects::CSeq_align* align = NULL);
 
+    NCBI_DEPRECATED
+    static void SetPartialFlags(objects::CScope& scope,
+                                CRef<objects::CSeq_feat> gene_feat,
+                                CRef<objects::CSeq_feat> mrna_feat,
+                                CRef<objects::CSeq_feat> cds_feat);
 };
 
 class NCBI_XALGOSEQ_EXPORT CFeatureGenerator
@@ -131,6 +136,12 @@ public:
     ///
     void SetFeatureExceptions(objects::CSeq_feat& feat,
                               const objects::CSeq_align* align = NULL);
+
+    /// Mark the correct partial states for a set of features
+    ///
+    void SetPartialFlags(CRef<objects::CSeq_feat> gene_feat,
+                         CRef<objects::CSeq_feat> mrna_feat,
+                         CRef<objects::CSeq_feat> cds_feat);
 
 private:
     struct SImplementation;

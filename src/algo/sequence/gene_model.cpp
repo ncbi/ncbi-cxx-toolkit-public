@@ -90,6 +90,16 @@ void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
     generator.SetFeatureExceptions(feat, align);
 }
 
+void CGeneModel::SetPartialFlags(CScope& scope,
+                                 CRef<CSeq_feat> gene_feat,
+                                 CRef<CSeq_feat> mrna_feat,
+                                 CRef<CSeq_feat> cds_feat)
+{
+    CFeatureGenerator generator(scope);
+    generator.SetPartialFlags(gene_feat, mrna_feat, cds_feat);
+}
+
+
 /////////////////////////////////////
 
 CFeatureGenerator::SImplementation::SImplementation(CScope& scope)
@@ -166,6 +176,14 @@ void CFeatureGenerator::SetFeatureExceptions(CSeq_feat& feat,
                                              const CSeq_align* align)
 {
     m_impl->SetFeatureExceptions(feat, align);
+}
+
+
+void CFeatureGenerator::SetPartialFlags(CRef<objects::CSeq_feat> gene_feat,
+                                        CRef<objects::CSeq_feat> mrna_feat,
+                                        CRef<objects::CSeq_feat> cds_feat)
+{
+    m_impl->SetPartialFlags(gene_feat, mrna_feat, cds_feat);
 }
 
 
@@ -454,7 +472,7 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
         annot.SetData().SetFtable().push_back(cds_feat);
     }
 
-    x_SetPartialWhereNeeded(mrna_feat, cds_feat, gene_feat);
+    SetPartialFlags(gene_feat, mrna_feat, cds_feat);
     x_CopyAdditionalFeatures(handle, mapper, annot);
 
     return mrna_feat;
@@ -1249,9 +1267,9 @@ static void s_SetGeneId(CSeq_feat& feat, int gene_id)
 
 
 void CFeatureGenerator::
-SImplementation::x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat,
-                                         CRef<CSeq_feat> cds_feat,
-                                         CRef<CSeq_feat> gene_feat)
+SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
+                                 CRef<CSeq_feat> mrna_feat,
+                                 CRef<CSeq_feat> cds_feat)
 {
     ///
     /// partial flags may require a global analysis - we may need to mark some
