@@ -962,16 +962,6 @@ void CMultiAligner::x_ComputeProfileRangeAlignment(
                                    * kScale / 2);
             }
          }
-         if ((full_prof_len1 > 1.5 * full_prof_len2 ||
-              full_prof_len2 > 1.5 * full_prof_len1)) {
-
-            if (left_margin) {
-                m_Aligner.SetEndSpaceFree(true, false, true, false);
-            }
-            else {
-                m_Aligner.SetEndSpaceFree(false, true, false, true);
-            }
-        }
 
         // run the aligner, scale the penalties back down
         m_Aligner.Run();
