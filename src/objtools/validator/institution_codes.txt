@@ -5378,7 +5378,7 @@ SZG	s	Shenzhen Fairy Lake Botanical Garden
 SZL	s	Landesherbar von Salzburg
 SZM	s	Saitama Zoogeographical Museum
 SZMC	c	Szeged Microbiological Collection
-SZMN	s	Institute of Animal Systematics and Ecology, Siberian Zoological Museum
+SZMN	s	Siberian Zoological Museum
 SZPT	s	Shenzhen Polytechnic
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection
@@ -6523,6 +6523,7 @@ ZMLU	s	Lunds Universitet, Zoologiska Institutionen
 ZMM	s	M. V. Lomonosov Moscow State University, Zoological Museum
 ZMMGU	s	Zoological Museum
 ZMMU	s	Zoological Museum, Moscow University
+ZMMU:Mamm	s	Zoological Museum, Moscow University, Mammal Collection
 ZMNH	s	Zhejiang Museum of Natural History
 ZMO	s	Zoology Museum, Oxford University
 ZMSZ	s	Zemaljski Mujski
