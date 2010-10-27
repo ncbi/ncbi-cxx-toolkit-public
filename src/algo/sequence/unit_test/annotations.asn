@@ -1916,7 +1916,20 @@ Seq-annot ::= {
           val "similar to AA sequence:UniProtKB:Q9VPS3"
         }
       },
-      exp-ev not-experimental,
+      dbxref {
+        {
+          db "GOA",
+          tag str "C5J7W9"
+        },
+        {
+          db "UniProtKB/TrEMBL",
+          tag str "C5J7W9"
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-081107-52"
+        }
+      },
       except-text "unclassified translation discrepancy"
     }
   }
