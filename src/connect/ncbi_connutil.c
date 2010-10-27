@@ -1224,17 +1224,18 @@ extern EIO_Status URL_ConnectEx
  TSOCK_Flags     flags,
  SOCK*           sock)
 {
-    static const char X_REQ_Q[]  = "?";
-    static const char X_REQ_E[]  = " HTTP/1.0\r\n";
+    static const char kQMark     = '?';
+    static const char kHostTag[] = "Host: ";
+    static const char kHttpVer[] = " HTTP/1.0\r\n";
 
     SOCK        s;
     BUF         buf;
     char*       hdr;
     const char* temp;
     EIO_Status  status;
+    int         add_hdr;
     size_t      hdr_len;
-    int         cl_size;
-    char        cl_data[80];
+    char        hdr_buf[80];
     size_t      args_len = 0;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
     const char* x_req_method; /* "CONNECT " / "POST " / "GET " */
@@ -1262,12 +1263,15 @@ extern EIO_Status URL_ConnectEx
     switch (req_method) {
     case eReqMethod_Connect:
         x_req_method = "CONNECT ";
+        add_hdr = 0;
         break;
     case eReqMethod_Post:
         x_req_method = "POST ";
+        add_hdr = 1;
         break;
     case eReqMethod_Get:
         x_req_method = "GET ";
+        add_hdr = 1;
         break;
     default:
         CORE_LOGF_X(4, eLOG_Error,
@@ -1277,9 +1281,22 @@ extern EIO_Status URL_ConnectEx
         return eIO_InvalidArg;
     }
 
-    if (req_method != eReqMethod_Connect) {
-        if (!port)
+    if (add_hdr) {
+        assert(req_method != eReqMethod_Connect);
+        for (temp = user_hdr;  temp  &&  *temp;  temp = strchr(temp, '\n')) {
+            if (temp != user_hdr)
+                temp++;
+            if (strncasecmp(temp, kHostTag, sizeof(kHostTag) - 2) == 0) {
+                add_hdr = 0;
+                break;
+            }
+        }
+
+        if (!port) {
+            hdr_len = 0;
             port = flags & fSOCK_Secure ? 443 : 80;
+        } else
+            hdr_len = (size_t)(add_hdr ? sprintf(hdr_buf, ":%hu", port) : 0);
 
         if (args  &&  (args_len = strcspn(args, "#")) > 0) {
             /* URL-encode "args", if any specified */
@@ -1311,16 +1328,23 @@ extern EIO_Status URL_ConnectEx
         !BUF_Write(&buf, x_req_method,   strlen(x_req_method))  ||
         !BUF_Write(&buf, path,           strlen(path))          ||
         (args_len
-         &&  (!BUF_Write(&buf, X_REQ_Q,  sizeof(X_REQ_Q) - 1)   ||
+         &&  (!BUF_Write(&buf, &kQMark,  1)                     ||
               !BUF_Write(&buf, temp,     args_len)))            ||
-        !BUF_Write      (&buf, X_REQ_E,  sizeof(X_REQ_E) - 1)   ||
+        !BUF_Write      (&buf, kHttpVer, sizeof(kHttpVer) - 1)  ||
+
+        (add_hdr
+         /* Host: host[:port]\r\n */
+         &&  (!BUF_Write(&buf, kHostTag, sizeof(kHostTag) - 1)  ||
+              !BUF_Write(&buf, host,     strlen(host))          ||
+              !BUF_Write(&buf, hdr_buf,  hdr_len)               ||
+              !BUF_Write(&buf, "\r\n",   2)))                   ||
 
         /* Content-Length: <content_length>\r\n */
         (req_method == eReqMethod_Post
-         &&  ((cl_size =
-               sprintf(cl_data, "Content-Length: %lu\r\n",
+         &&  ((add_hdr =
+               sprintf(hdr_buf, "Content-Length: %lu\r\n",
                        (unsigned long) content_length)) <= 0    ||
-              !BUF_Write(&buf, cl_data,  (size_t) cl_size)))    ||
+              !BUF_Write(&buf, hdr_buf,  (size_t) add_hdr)))    ||
 
         /* <user_header> */
         (user_hdr_len
@@ -1348,8 +1372,8 @@ extern EIO_Status URL_ConnectEx
         ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
-                          ("[URL_Connect]  Cannot store HTTP header for"
-                           " %s:%hu", host, port));
+                          ("[URL_Connect]  Cannot convert HTTP header to"
+                           " string for %s:%hu", host, port));
         if (hdr)
             free(hdr);
         BUF_Destroy(buf);
@@ -1375,17 +1399,16 @@ extern EIO_Status URL_ConnectEx
     free(hdr);
 
     if (status != eIO_Success) {
-        char temp[80];
         assert(!*sock);
         if (status == eIO_Timeout  &&  o_timeout) {
-            sprintf(temp, "[%u.%06u]",
+            sprintf(hdr_buf, "[%u.%06u]",
                     (unsigned int)(o_timeout->sec + o_timeout->usec/1000000),
                     (unsigned int)                 (o_timeout->usec%1000000));
         } else
-            *temp = '\0';
+            *hdr_buf = '\0';
         CORE_LOGF_X(7, eLOG_Error,
                     ("[URL_Connect]  Socket connect to %s:%hu failed: %s%s",
-                     host, port, IO_StatusStr(status), temp));
+                     host, port, IO_StatusStr(status), hdr_buf));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
     return status;

@@ -465,24 +465,40 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
 
 
 
-/* Hit URL "http[s]://host[:port]/path?args" with the following
- * request (argument substitution enclosed in angle brackets, with
- * optional parts in square brackets):
+/* Very low-level HTTP connection routine.  Regular use is highly discouraged.
+ * Instead, please consider using higher level APIs such as HTTP connections
+ * or streams:
+ * @sa
+ *  HTTP_CreateConnector, CConn_HttpStream
+ * 
+ * Hit URL "http[s]://host[:port]/path?args" with the following request
+ * (argument substitution is shown as enclosed in angle brackets (not present
+ * in the actual request), and all optional parts shown in square brackets):
  *
  *    {CONNECT|POST|GET} <path>[?<args>] HTTP/1.0\r\n
+ *    [Host: host[:port]\r\n]
  *    [Content-Length: <content_length>\r\n]
  *    [<user_header>]
  *
- * Request method "eReqMethod_Any" selects an appropriate method depending
- * on the value of "content_length":  GET when no content is expected
+ * Request method "eReqMethod_Any" selects an appropriate method depending on
+ * the value of "content_length":  results in GET when no content is expected
  * (content_length==0), and POST when "content_length" provided non-zero. 
+ *
+ * For GET/POST(or ANY) methods the call attempts to provide the "Host:" HTTP
+ * tag using information from the "host" and "port" parameters if the tag is
+ * not present within the "user_header" (notwithstanding below, the port part
+ * of the tag does not get added for non-specified "port" passed as 0).
+ * Note that the result of the above said courtesy can be incorrect for HTTP
+ * retrievals through a proxy server (since the built tag would correspond
+ * to the proxy connection point, not the actual resource as it should have).
+ * Which is why the Host: tag courtesy is to be discontinued in the future.
  *
  * If "port" is not specified (0) it will be assigned automatically
  * to a well-known standard value depending on the "fSOCK_Secure" bit
- * in the "flags" parameter.
+ * in the "flags" parameter, when connecting to the HTTP server.
  *
  * The "content_length" must specify an exact(!) amount of data that
- * is going to POST (or is been sent with CONNECT) to HTTPD (0 if none).
+ * is going to POST (or be sent with CONNECT) to HTTPD (0 if none).
  * "Content-Length" header gets always added in all POST requests,
  * yet it is always omitted in all other requests.
  *
@@ -498,8 +514,17 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * been tunneled, in which case "args" must be a pointer to such data, but the
  * "Content-Length" header does not get added, and "encode_args" is ignored.
  *
+ * If *sock is non-NULL, the call *does not* create a new socket, but builds
+ * the HTTP data stream on top of the passed socket.  If the result is
+ * successful, the original SOCK handle will be closed (SOCK_Close), which
+ * means that the passed *sock should have been created with fSOCK_KeepOnClose,
+ * and a new handle will be returned via the same last parameter.
+ * In case of errors, the original *sock will be left intact yet the last
+ * parameter may be updated to return as NULL.
+ *
  * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
+ *
  * ATTENTION:  due to the very essence of the HTTP connection, you may
  *             perform only one { WRITE, ..., WRITE, READ, ..., READ } cycle,
  *             if doing a GET or a POST.
@@ -514,7 +539,7 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  *       the resultant socket.  It is responsibility of the application to
  *       analyze the actual socket state in this case (see "ncbi_socket.h").
  * @sa
- *  SOCK_Wait, SOCK_Close, SOCK_Abort
+ *  SOCK_Create, SOCK_CreateOnTop, SOCK_Wait, SOCK_Close, SOCK_Abort
  */
 
 extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
