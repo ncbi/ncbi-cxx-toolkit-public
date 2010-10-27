@@ -3853,12 +3853,12 @@ void CFeatureItem::x_CleanQuals(
             }
         }
         if (cds_product != NULL) {
-            if (NStr::Find(cds_product->GetValue(), feat_comment) != NPOS ) {
+            if ( NStr::Equal(cds_product->GetValue(), feat_comment) ) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
         if( prot_desc != NULL ) { // e.g. L07143
-            if( NStr::Equal(prot_desc->GetValue(), feat_comment) ) {
+            if( NStr::Find(prot_desc->GetValue(), feat_comment) != NPOS ) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
