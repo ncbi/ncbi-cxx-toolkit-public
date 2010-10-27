@@ -290,6 +290,8 @@ protected:
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
     void x_FormatNoteQual(EFeatureQualifier slot, const char* name, 
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
+    void x_FormatGOQualCombined( EFeatureQualifier slot, const char* name,
+        CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
 
     // data
     mutable CSeqFeatData::ESubtype m_Type;

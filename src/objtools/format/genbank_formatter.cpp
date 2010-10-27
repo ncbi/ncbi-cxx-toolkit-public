@@ -176,6 +176,7 @@ void CGenbankFormatter::FormatLocus
     // I would consider this behavior conceptually incorrect; we should either fix the data
     // or truncate the locus names to 16 chars.  This is done here as a temporary measure
     // to make the asn2gb and asn2flat diffs match.
+    // Note: currently this still cannot handle very long LOCUS names (e.g. in gi 1449821)
     const int spaceForLength = max( 0, min( 12, (int)(12 - (locus.GetName().length() - 16))  ) );
     locus_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
     locus_line

@@ -43,6 +43,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Gene_nomenclature.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
@@ -333,6 +334,16 @@ public:
                 TFlags flags) const;
 };
 
+class NCBI_FORMAT_EXPORT CFlatNomenclatureQVal : public IFlatQVal
+{
+public:
+    CFlatNomenclatureQVal( const CGene_ref_Base::TFormal_name& value ) : m_Value(&value) { }
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const; 
+
+private:
+    CConstRef<CGene_ref_Base::TFormal_name> m_Value;
+};
 
 class NCBI_FORMAT_EXPORT CFlatCodeBreakQVal : public IFlatQVal
 {
@@ -565,6 +576,9 @@ public:
     CFlatGoQVal(const CUser_field& value) : m_Value(&value) { }
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
+
+    const string & GetTextString(void) const;
+    int GetPubmedId(void) const;
 
 private:
     CConstRef<CUser_field> m_Value;

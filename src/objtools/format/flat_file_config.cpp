@@ -78,21 +78,21 @@ const bool CFlatFileConfig::sm_ModeFlags[4][32] = {
     {
         false, true, true, true, true, false, true, true, true, true,
         true, true, true, true, true, true, false, false, true, true,
-        true, true, true, true, false, true, true, false, false, false, 
+        true, true, true, true, false, true, true, true, false, false, 
         false, false
     },
     // GBench
     {
         false, false, false, false, false, false, false, true, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, false, false, false, false, 
+        false, false, false, false, false, false, true, false, false, false, 
         false, false
     },
     // Dump
     {
         false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, false, false, false, false, 
+        false, false, false, false, false, false, true, false, false, false, 
         false, false
     }
 };
@@ -123,13 +123,14 @@ MODE_FLAG_GET(UseEmblMolType, 15);
 MODE_FLAG_GET(HideBankItComment, 16);
 MODE_FLAG_GET(CheckCDSProductId, 17);
 MODE_FLAG_GET(SuppressSegLoc, 18);
-//MODE_FLAG_GET(SrcQualsToNote, 19);
+//MODE_FLAG_GET(SrcQualsToNote, 19); // implementation below
 MODE_FLAG_GET(HideEmptySource, 20);
-MODE_FLAG_GET(GoQualsToNote, 21);
-//MODE_FLAG_GET(SelenocysteineToNote, 23);
+// MODE_FLAG_GET(GoQualsToNote, 21); // implementation below
+//MODE_FLAG_GET(SelenocysteineToNote, 23); // implementation below
 MODE_FLAG_GET(ForGBRelease, 24);
 MODE_FLAG_GET(HideUnclassPartial, 25);
-MODE_FLAG_GET(CodonRecognizedToNote, 26);
+// MODE_FLAG_GET(CodonRecognizedToNote, 26); // implementation below
+MODE_FLAG_GET(GoQualsEachMerge, 27);
 
 #undef MODE_FLAG_GET
 
@@ -138,11 +139,20 @@ bool CFlatFileConfig::SrcQualsToNote(void) const
     return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][19];
 }
 
+bool CFlatFileConfig::GoQualsToNote(void) const
+{
+    return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][21];
+}
+
 bool CFlatFileConfig::SelenocysteineToNote(void) const 
 {
     return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][23];
 }
 
+bool CFlatFileConfig::CodonRecognizedToNote(void) const
+{
+    return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][26];
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

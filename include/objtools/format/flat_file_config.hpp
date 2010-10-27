@@ -213,7 +213,7 @@ public:
     // -- Flags
     // getters
     const TFlags& GetFlags(void) const { return m_Flags; }
-    // custumizable flags
+    // customizable flags
     bool DoHTML                (void) const;
     bool HideImpFeatures       (void) const;
     bool HideSNPFeatures       (void) const;
@@ -271,6 +271,7 @@ public:
     bool ForGBRelease        (void) const;
     bool HideUnclassPartial  (void) const;
     bool CodonRecognizedToNote(void) const;
+    bool GoQualsEachMerge    (void) const;
     
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);

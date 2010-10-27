@@ -208,7 +208,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
                 NCBI_THROW (CException, eUnknown,
                                 "collection-date string has invalid day value");
             }
-        } catch ( const exception& e ) {
+        } catch ( const exception& ) {
             // threw exception while converting to int
             NCBI_THROW (CException, eUnknown,
                             "collection-date string is improperly formatted");

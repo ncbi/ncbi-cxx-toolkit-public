@@ -96,6 +96,7 @@ enum EFeatureQualifier {
     eFQ_modelev,
     eFQ_mol_wt,
     eFQ_ncRNA_class,
+    eFQ_nomenclature,
     eFQ_number,
     eFQ_old_locus_tag,
     eFQ_operon,

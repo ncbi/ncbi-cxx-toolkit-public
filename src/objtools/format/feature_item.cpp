@@ -59,6 +59,7 @@
 #include <objects/seqfeat/PCRReaction.hpp>
 #include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Gene_nomenclature.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
@@ -107,6 +108,38 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
+class CGoQualLessThan
+{
+public:
+    bool operator() ( const CConstRef<IFlatQVal> &obj1, const CConstRef<IFlatQVal> &obj2 ) 
+    {
+        const CFlatGoQVal *qval1 = dynamic_cast<const CFlatGoQVal *>( obj1.GetNonNullPointer() );
+        const CFlatGoQVal *qval2 = dynamic_cast<const CFlatGoQVal *>( obj2.GetNonNullPointer() );
+        
+        // sort by text string
+        const string &str1 = qval1->GetTextString();
+        const string &str2 = qval2->GetTextString();
+
+        const int textComparison = str1.compare( str2 );
+        if( textComparison < 0 ) {
+            return true;
+        } else if( textComparison > 0 ) {
+            return false;
+        }
+
+        // if tied, then sort by pubmed id, if any
+        int pmid1 = qval1->GetPubmedId();
+        int pmid2 = qval1->GetPubmedId();
+
+        if( 0 == pmid1 ) {
+            return false;
+        } else if( 0 == pmid2 ) {
+            return true;
+        } else {
+            return pmid1 < pmid2;
+        }
+    }
+};
 
 // -- static functions
 
@@ -120,15 +153,7 @@ static bool s_ValidId(const CSeq_id& id)
 
 // returns how many times ch appears in str
 static int s_CountChar( const string &str, const char ch ) {
-    int total = 0;
-
-    ITERATE( string, it, str ) {
-        if( *it == ch ) {
-            ++total;
-        }
-    }
-
-    return total;
+    return count( str.begin(), str.end(), ch );
 }
 
 static bool s_QualifiersMeetPrimerReqs( 
@@ -1295,6 +1320,13 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 //  could not be found.
 //  ----------------------------------------------------------------------------
 {
+    // This commented-out code is left here because it is very convenient
+    // for debugging purposes.
+    /* if( ! m_Loc.IsNull() && m_Loc->IsInt() && 
+        m_Loc->GetInt().GetFrom() == 29829 ) {
+            cerr << "";
+    } */
+
     s_feat.Reset();
     g_ref = NULL;
 
@@ -1592,7 +1624,7 @@ void CFeatureItem::x_AddQuals(
     {
         try {
             x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
-        } catch(const CObjMgrException &e) {
+        } catch(const CObjMgrException & ) {
             // maybe put a warning here?  We end up here in, e.g., accession AAY81715.1
         }
     }
@@ -1928,7 +1960,7 @@ void CFeatureItem::x_AddQualTranslation(
             // Although I don't know of any released .asn files with this problem, it can occur
             // in submissions.
             seqv.GetSeqData( 0, seqv.size(), translation );
-        } catch( const CException &e ) {
+        } catch( const CException & ) {
             // we're unable to do the translation
             translation.clear();
         }
@@ -2802,6 +2834,11 @@ void CFeatureItem::x_AddQualsGene(
         }
     }
 
+    // gene nomenclature
+    if( gene_ref->IsSetFormal_name() ) {
+        x_AddQual( eFQ_nomenclature, new CFlatNomenclatureQVal(gene_ref->GetFormal_name()) );
+    }
+
     // gene allele:
     if (subtype != CSeqFeatData::eSubtype_variation && 
       subtype != CSeqFeatData::eSubtype_repeat_region &&
@@ -3433,10 +3470,19 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(artificial_location);
 
     if ( !cfg.GoQualsToNote() ) {
-        x_FormatQual(eFQ_go_component, "GO_component", qvec);
-        x_FormatQual(eFQ_go_function, "GO_function", qvec);
-        x_FormatQual(eFQ_go_process, "GO_process", qvec);
+        if( cfg.GoQualsEachMerge() ) {
+            // combine all quals of a given type onto the same qual
+            x_FormatGOQualCombined(eFQ_go_component, "GO_component", qvec);
+            x_FormatGOQualCombined(eFQ_go_function, "GO_function", qvec);
+            x_FormatGOQualCombined(eFQ_go_process, "GO_process", qvec);
+        } else {
+            x_FormatQual(eFQ_go_component, "GO_component", qvec);
+            x_FormatQual(eFQ_go_function, "GO_function", qvec);
+            x_FormatQual(eFQ_go_process, "GO_process", qvec);
+        }
     }
+
+    DO_QUAL(nomenclature);
 
     x_FormatNoteQuals(ff);
     DO_QUAL(citation);
@@ -3632,6 +3678,48 @@ void CFeatureItem::x_FormatNoteQual
     }
 }
 
+// This produces one qual out of all the GO quals of the given slot, with their
+// values concatenated.
+void CFeatureItem::x_FormatGOQualCombined
+(EFeatureQualifier slot, 
+ const char* name,
+ CFlatFeature::TQuals& qvec, 
+ TQualFlags flags) const
+{
+    // copy all the given quals with that name since we need to sort them
+    vector<CConstRef<IFlatQVal> > goQuals;
+
+    TQCI it = const_cast<const TQuals&>(m_Quals).LowerBound(slot);
+    TQCI end = const_cast<const TQuals&>(m_Quals).end();
+    while (it != end  &&  it->first == slot) {
+        goQuals.push_back( it->second );
+        ++it;
+    }
+
+    sort( goQuals.begin(), goQuals.end(), CGoQualLessThan() );
+
+    CFlatFeature::TQuals temp_qvec;
+
+    string combined;
+
+    // now concatenate their values into the variable "combined"
+    ITERATE( vector<CConstRef<IFlatQVal> >, iter, goQuals ) {
+        (*iter)->Format(temp_qvec, name, *GetContext(), flags);
+
+        if( ! combined.empty() ) {
+            combined += "; ";
+        }
+        combined += temp_qvec.back()->GetValue();
+    }
+    
+    // add the final merged CFormatQual
+    if( ! combined.empty() ) {
+        const string prefix = " ";
+        const string suffix = ";";
+        TFlatQual res(new CFormatQual(name, combined, prefix, suffix, CFormatQual::eQuoted ));
+        qvec.push_back(res); 
+    }
+}
 
 const CFlatStringQVal* CFeatureItem::x_GetStringQual(EFeatureQualifier slot) const
 {
@@ -3752,18 +3840,25 @@ void CFeatureItem::x_CleanQuals(
         }
     }
 
-    // product same as seqfeat_comment will suppress /note
+    // check if need to remove seqfeat_note
+    // (This generally occurs when it's equal to (or, sometimes, contained in) another qual
     if (m_Feat.IsSetComment()) {
         const string& feat_comment = m_Feat.GetComment();
         const CFlatStringQVal* product     = x_GetStringQual(eFQ_product);
         const CFlatStringQVal* cds_product = x_GetStringQual(eFQ_cds_product);
+
         if (product != NULL) {
             if (NStr::Equal(product->GetValue(), feat_comment)) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
         if (cds_product != NULL) {
-            if (NStr::Equal(cds_product->GetValue(), feat_comment)) {
+            if (NStr::Find(cds_product->GetValue(), feat_comment) != NPOS ) {
+                x_RemoveQuals(eFQ_seqfeat_note);
+            }
+        }
+        if( prot_desc != NULL ) { // e.g. L07143
+            if( NStr::Equal(prot_desc->GetValue(), feat_comment) ) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
@@ -3864,6 +3959,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_modelev, CSeqFeatData::eQual_note),
     TQualPair(eFQ_mol_wt, CSeqFeatData::eQual_calculated_mol_wt),
     TQualPair(eFQ_ncRNA_class, CSeqFeatData::eQual_ncRNA_class),
+    TQualPair(eFQ_nomenclature, CSeqFeatData::eQual_nomenclature),
     TQualPair(eFQ_number, CSeqFeatData::eQual_number),
     TQualPair(eFQ_old_locus_tag, CSeqFeatData::eQual_old_locus_tag),
     TQualPair(eFQ_operon, CSeqFeatData::eQual_operon),

@@ -541,6 +541,61 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
     }
 }
 
+void CFlatNomenclatureQVal::Format(TFlatQuals& q, const string& name,
+                              CBioseqContext& ctx, IFlatQVal::TFlags) const
+{
+    if( m_Value.IsNull() ) {
+        return;
+    }
+
+    if( ! m_Value->CanGetStatus() || ! m_Value->CanGetSymbol() || m_Value->GetSymbol().empty() ) {
+        return;
+    }
+
+    // we build up the final result in this variable
+    string nomenclature; 
+
+    // add the status part
+    switch( m_Value->GetStatus() ) {
+        case CGene_nomenclature::eStatus_official:
+            nomenclature += "Official ";
+            break;
+        case CGene_nomenclature::eStatus_interim:
+            nomenclature += "Interim ";
+            break;
+        default:
+            nomenclature += "Unclassified ";
+            break;
+    }
+    nomenclature += "Symbol: ";
+
+    // add the symbol part
+    nomenclature += m_Value->GetSymbol();
+
+    // add the name part, if any
+    if( m_Value->CanGetName() && ! m_Value->GetName().empty() ) {
+        nomenclature += " | Name: " + m_Value->GetName();
+    }
+
+    // add the source part, if any
+    if( m_Value->CanGetSource() ) {
+        const CGene_nomenclature_Base::TSource& source = m_Value->GetSource();
+        
+        if( source.CanGetDb() && ! source.GetDb().empty() && source.CanGetTag() ) {
+            if( source.GetTag().IsId() || ( source.GetTag().IsStr() && ! source.GetTag().GetStr().empty() ) ) {
+                nomenclature += " | Provided by: " + source.GetDb() + ":";
+                if( source.GetTag().IsStr() ) {
+                    nomenclature += source.GetTag().GetStr();
+                } else {
+                    nomenclature += NStr::IntToString( source.GetTag().GetId() );
+                }
+            }
+        }
+    }
+
+    x_AddFQ(q, name, nomenclature, CFormatQual::eQuoted );
+}
+
 
 CFlatCodonQVal::CFlatCodonQVal(unsigned int codon, unsigned char aa, bool is_ascii)
     : m_Codon(CGen_code_table::IndexToCodon(codon)),
@@ -1647,6 +1702,43 @@ void CFlatGoQVal::Format
     }
 }
 
+const string & CFlatGoQVal::GetTextString(void) const
+{
+    if( m_Value.IsNull() ) {
+        return kEmptyStr;
+    }
+
+    CConstRef<CUser_field> textStringField = m_Value->GetFieldRef("text string");
+    if( textStringField.IsNull() ) {
+        return kEmptyStr;
+    }
+
+    const CUser_field_Base::TData & textStringData = textStringField->GetData();
+    if( ! textStringData.IsStr() ) {
+        return kEmptyStr;
+    }
+
+    return textStringData.GetStr();
+}
+
+int CFlatGoQVal::GetPubmedId(void) const
+{
+    if( m_Value.IsNull() ) {
+        return 0;
+    }
+
+    CConstRef<CUser_field> pmidField = m_Value->GetFieldRef("pubmed id");
+    if( pmidField.IsNull() ) {
+        return 0;
+    }
+
+    const CUser_field_Base::TData & pmidData = pmidField->GetData();
+    if( ! pmidData.IsInt() ) {
+        return 0;
+    }
+    
+    return pmidData.GetInt();
+}
 
 void CFlatAnticodonQVal::Format
 (TFlatQuals& q,

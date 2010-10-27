@@ -647,6 +647,7 @@ START_SUBTYPE(gene)
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(nomenclature);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
