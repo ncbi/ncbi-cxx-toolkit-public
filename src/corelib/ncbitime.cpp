@@ -2782,12 +2782,7 @@ void CFastLocalTime::Tuneup(void)
     time_t timer;
     long ns;
     s_GetTimeT(timer, ns);
-    if (x_Tuneup(timer, ns)) {
-        // MT-Safe protect: copy current local time to cached time
-        CFastMutexGuard LOCK(s_FastLocalTimeMutex);
-        m_LocalTime   = m_TunedTime;
-        m_LastSysTime = m_LastTuneupTime;
-    }
+    x_Tuneup(timer, ns);
 }
 
 
@@ -2806,10 +2801,18 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
     m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
 #endif
+
+    LOCK.Release();
+
+    // Copy tuned time to cached local time
+    CFastMutexGuard FLT_LOCK(s_FastLocalTimeMutex);
     m_LastTuneupTime = timer;
+    m_LocalTime   = m_TunedTime;
+    m_LastSysTime = m_LastTuneupTime;
 
     // Clear flag
     m_IsTuneup = NULL;
+
     return true;
 }
 
@@ -2843,10 +2846,6 @@ CTime CFastLocalTime::GetLocalTime(void)
 #endif
         ) {
             if (x_Tuneup(timer, ns)) {
-                // MT-Safe protect: copy tuned time to cached local time
-                CFastMutexGuard LOCK(s_FastLocalTimeMutex);
-                m_LocalTime   = m_TunedTime;
-                m_LastSysTime = m_LastTuneupTime;
                 return m_LocalTime;
             }
         }
@@ -2903,12 +2902,7 @@ int CFastLocalTime::GetLocalTimezone(void)
              (timer % 3600 >  (time_t)m_SecAfterHour))
             ||  (x_timezone != m_Timezone  ||  x_daylight != m_Daylight)
         ) {
-            if (x_Tuneup(timer, ns)) {
-                // MT-Safe protect: copy tuned time to cached local time
-                CFastMutexGuard LOCK(s_FastLocalTimeMutex);
-                m_LocalTime   = m_TunedTime;
-                m_LastSysTime = m_LastTuneupTime;
-            }
+            x_Tuneup(timer, ns);
         }
     }
 #endif
