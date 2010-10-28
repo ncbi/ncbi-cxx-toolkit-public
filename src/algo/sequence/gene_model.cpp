@@ -397,13 +397,20 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
     static CAtomicCounter counter;
     size_t model_num = counter.Add(1);
 
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+
+    CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
+    if (cdregion == NULL && feat_iter  &&  feat_iter.GetSize()) {
+        cdregion = &feat_iter->GetOriginalFeature();
+    }
+
     CRef<CSeq_feat> mrna_feat =
         x_CreateMrnaFeature(align, loc, time, model_num,
                             seqs, rna_id, cdregion);
 
     CRef<CSeq_feat> gene_feat;
 
-    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+    handle = m_scope->GetBioseqHandle(rna_id);
 
 
     if (gene_id) {
@@ -451,7 +458,7 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
     }
 
     CRef<CSeq_feat> cds_feat =
-        x_CreateCdsFeature(handle, align, loc,
+        x_CreateCdsFeature(cdregion, align, loc,
                            time, model_num, seqs, opts, gene_feat);
 
     if (cds_feat) {
@@ -993,7 +1000,7 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
 
 CRef<CSeq_feat>
 CFeatureGenerator::
-SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
+SImplementation::x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                                     const CSeq_align& align,
                                     CRef<CSeq_loc> loc,
                                     const CTime& time,
@@ -1003,12 +1010,8 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
                                     CRef<CSeq_feat> gene_feat)
 {
     CRef<CSeq_feat> cds_feat;
-    if (m_flags & fCreateCdregion) {
-        //
-        // only create a CDS feature if one exists on the mRNA feature
-        //
-        CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
-        if (feat_iter  &&  feat_iter.GetSize()) {
+    if (m_flags & fCreateCdregion && cdregion_on_mrna != NULL) {
+
             // from this point on, we will get complex locations back
             SMapper mapper(align, *m_scope, 0, opts);
             mapper.IncludeSourceLocs();
@@ -1024,7 +1027,7 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
             /// segment.
             ///
             CRef<CSeq_loc> cds_loc;
-            for (CSeq_loc_CI loc_it(feat_iter->GetLocation());
+            for (CSeq_loc_CI loc_it(cdregion_on_mrna->GetLocation());
                  loc_it;  ++loc_it) {
                 /// location for this interval
                 CConstRef<CSeq_loc> this_loc = GetSeq_loc(loc_it);
@@ -1096,7 +1099,7 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
             }
             if (cds_loc  && cds_loc->Which() != CSeq_loc::e_not_set) {
                 cds_feat.Reset(new CSeq_feat());
-                cds_feat->Assign(feat_iter->GetOriginalFeature());
+                cds_feat->Assign(*cdregion_on_mrna);
 
                 CConstRef<CSeq_id> prot_id(new CSeq_id);
                 if (cds_feat->CanGetProduct()) {
@@ -1137,7 +1140,7 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
                 /// to ensure that conceptual translations are in-frame
                 if (is_partial_5prime) {
                     TSeqRange orig_range = 
-                        feat_iter->GetOriginalFeature().GetLocation().GetTotalRange();
+                        cdregion_on_mrna->GetLocation().GetTotalRange();
                     TSeqRange mappable_range = 
                         source_loc->GetTotalRange();
 
@@ -1180,8 +1183,9 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
                 }
 
                 if (!gnomon_model_num.empty() && !is_partial_5prime) {
-                    int cds_start = feat_iter->GetOriginalFeature().GetLocation().GetTotalRange().GetFrom();
+                    int cds_start = cdregion_on_mrna->GetLocation().GetTotalRange().GetFrom();
                     if (cds_start >= 3) {
+                        CBioseq_Handle handle = m_scope->GetBioseqHandle(*cdregion_on_mrna->GetLocation().GetId());
                         CSeqVector vec(handle, CBioseq_Handle::eCoding_Iupac);
                         string mrna;
                         vec.GetSeqData(cds_start%3, cds_start, mrna);
@@ -1253,7 +1257,6 @@ SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle,
                 SetFeatureExceptions(*cds_feat, &align);
 
             }
-        }
     }
     return cds_feat;
 }
