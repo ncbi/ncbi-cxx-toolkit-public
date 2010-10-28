@@ -536,7 +536,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// error code and message string.
 #define NCBI_EXCEPTION(exception_class, err_code, message)           \
     NCBI_EXCEPTION_VAR(NCBI_EXCEPTION_EMPTY_NAME,                    \
-    exception_class, err_code, message)
+                       exception_class, err_code, message)
 
 /// Generic macro to throw an exception, given the exception class,
 /// error code and message string.
@@ -548,7 +548,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// This macro is intended for use only in stand-alone applications.
 /// Library APIs should properly declare their specific exception types.
 #define NCBI_USER_THROW(exception_class, err_code, message) \
-    NCBI_THROW(CException, eUnknown, message)
+    NCBI_THROW(NCBI_NS_NCBI::CException, eUnknown, message)
 
 /// The same as NCBI_THROW but with message processed as output to ostream.
 #define NCBI_THROW_FMT(exception_class, err_code, message)  \
@@ -557,13 +557,13 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Throw a "user exception" with message processed as output to ostream.
 /// See NCBI_USER_THROW for details.
 #define NCBI_USER_THROW_FMT(message)  \
-    NCBI_THROW_FMT(CException, eUnknown, message)
+    NCBI_THROW_FMT(NCBI_NS_NCBI::CException, eUnknown, message)
 
 /// Generic macro to make an exception, given the exception class,
 /// previous exception , error code and message string.
 #define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)\
     NCBI_EXCEPTION_VAR_EX(NCBI_EXCEPTION_EMPTY_NAME, &(prev_exception),      \
-    exception_class, err_code, message)
+                          exception_class, err_code, message)
 
 /// Generic macro to re-throw an exception.
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
@@ -580,7 +580,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 /// Generate a report on the exception.
 #define NCBI_REPORT_EXCEPTION(title,ex) \
-    CExceptionReporter::ReportDefault(DIAG_COMPILE_INFO,title,ex,eDPF_Default)
+    NCBI_NS_NCBI::CExceptionReporter::ReportDefault \
+        (DIAG_COMPILE_INFO,title,ex,eDPF_Default)
 
 /// Generate a report on the exception with default error code and
 /// given subcode.
@@ -591,7 +592,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// given subcode.
 #define NCBI_REPORT_EXCEPTION_XX(err_name, err_subcode, title, ex)   \
     NCBI_CHECK_ERR_SUBCODE_X_NAME(err_name, err_subcode);            \
-    CExceptionReporter::ReportDefaultEx(                             \
+    NCBI_NS_NCBI::CExceptionReporter::ReportDefaultEx(               \
                 NCBI_ERRCODE_X_NAME(err_name), err_subcode,          \
                 DIAG_COMPILE_INFO, title, ex, eDPF_Default)
 
