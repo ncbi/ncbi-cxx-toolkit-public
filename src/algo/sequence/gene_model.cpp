@@ -670,7 +670,10 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
     }
     seqs.SetSeq_set().push_back(entry);
 
-    m_scope->AddTopLevelSeqEntry(*entry);
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
+    if (!handle) {
+        m_scope->AddTopLevelSeqEntry(*entry);
+    }
 }
 
 void CFeatureGenerator::
@@ -780,7 +783,12 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         }
         _ASSERT( b == strprot.size() );
     }
-    m_scope->AddTopLevelSeqEntry(*entry);
+
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
+    if (!handle) {
+        m_scope->AddTopLevelSeqEntry(*entry);
+    }
+
 #ifdef _DEBUG
     CBioseq_Handle prot_h = m_scope->GetBioseqHandle(*id);
     CSeqVector vec(prot_h, CBioseq_Handle::eCoding_Iupac);
@@ -914,6 +922,7 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
             // always create a gene feature
             //
             gene_feat.Reset(new CSeq_feat());
+            gene_feat->SetData().SetGene();
             string title = sequence::GetTitle(handle);
             if (!title.empty()) {
                 gene_feat->SetData().SetGene().SetLocus(title);
