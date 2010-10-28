@@ -158,7 +158,7 @@ private:
                                         CRef<CSeq_loc> loc,
                                         const CSeq_id& genomic_id,
                                         int gene_id = 0);
-    CRef<CSeq_feat> x_CreateCdsFeature(const CBioseq_Handle& handle,
+    CRef<CSeq_feat> x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                                        const CSeq_align& align,
                                        CRef<CSeq_loc> loc,
                                        const CTime& time,

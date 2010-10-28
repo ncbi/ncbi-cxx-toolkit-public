@@ -7,7 +7,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -718,6 +718,32 @@ FBF000DD204740'H,
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                }
+              },
+              product whole gi 49619231,
+              location int {
+                from 412,
+                to 2013,
+                strand plus,
+                id gi 49619230
+              },
+              dbxref {
+                {
+                  db "CCDS",
+                  tag str "CCDS13689.1"
+                }
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -755,7 +781,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -1906,6 +1932,30 @@ AA055AAE544A595E6AE04092518AE410AD77B4B449455E235A4134158B4F6F7BA2A10BA1D2A499
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1,
+                  id 1,
+                  id 1,
+                  id 1
+                }
+              },
+              comment "isoform 2 precursor is encoded by transcript variant 2",
+              product whole gi 110611233,
+              location int {
+                from 49,
+                to 4059,
+                strand plus,
+                id gi 110611232
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -1953,7 +2003,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -2540,6 +2590,37 @@ Bioseq-set ::= {
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 1465,
+                      to 1467,
+                      strand plus,
+                      id gi 219879766
+                    },
+                    aa ncbieaa 85
+                  }
+                }
+              },
+              product whole gi 219879767,
+              location int {
+                from 157,
+                to 4452,
+                strand plus,
+                id gi 219879766
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -2588,7 +2669,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -3086,6 +3167,27 @@ A8DE1079440FEE84D7A979914DF557BD38219508238202EA0CD210104E0811BB9D4D365D4E78A0
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole gi 41053666,
+              location int {
+                from 102,
+                to 1793,
+                strand plus,
+                id gi 41053665
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -3123,7 +3225,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -3367,6 +3469,38 @@ B52A5DAEB9D78ED5D1515782354AEA62A0CB48A8D10DFD270FCFF1DE30DA783B048A0706DC3042
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                }
+              },
+              except TRUE,
+              comment "protein translation is dependent on +1
+ polyamine-induced ribosomal frameshift",
+              product whole gi 187829867,
+              location packed-int {
+                {
+                  from 79,
+                  to 282,
+                  strand plus,
+                  id gi 187829866
+                },
+                {
+                  from 284,
+                  to 763,
+                  strand plus,
+                  id gi 187829866
+                }
+              },
+              except-text "ribosomal slippage"
+            }
+          }
+        }
       }
     },
     seq {
@@ -3400,7 +3534,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -3520,6 +3654,38 @@ F0C8A38B85DE303C79C8381FB438E8EB03FD3A0BCC02E3030015F9FF157B4B2575D71478154F95
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1,
+                  id 1
+                }
+              },
+              except TRUE,
+              comment "isoform 1 is encoded by transcript variant 1",
+              product whole gi 94421475,
+              location packed-int {
+                {
+                  from 479,
+                  to 1435,
+                  strand plus,
+                  id gi 94421474
+                },
+                {
+                  from 1435,
+                  to 2604,
+                  strand plus,
+                  id gi 94421474
+                }
+              },
+              except-text "ribosomal slippage"
+            }
+          }
+        }
       }
     },
     seq {
@@ -3559,7 +3725,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -3809,6 +3975,28 @@ FFFFFFFFF0'H
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1,
+                  id 1
+                }
+              },
+              product whole gi 47086061,
+              location int {
+                from 142,
+                to 2712,
+                strand plus,
+                id gi 47086060
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -3822,8 +4010,8 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
-          completeness unknown
+          biomol mRNA,
+          completeness no-ends
         }
       },
       inst {
@@ -3966,6 +4154,50 @@ F5788DF7565EBE33378634AFE64FFDB879F6A8FEA6C5277F438FF0493FD351CBFBBF3451733B53
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame two,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole gi 240248231,
+              location int {
+                from 0,
+                to 1281,
+                strand minus,
+                id gi 240248230,
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              },
+              qual {
+                {
+                  qual "inference",
+                  val "similar to AA sequence:UniProtKB:Q9VPS3"
+                }
+              },
+              dbxref {
+                {
+                  db "GOA",
+                  tag str "C5J7W9"
+                },
+                {
+                  db "UniProtKB/TrEMBL",
+                  tag str "C5J7W9"
+                },
+                {
+                  db "ZFIN",
+                  tag str "ZDB-GENE-081107-52"
+                }
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -4001,7 +4233,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -5152,6 +5384,30 @@ A49754D4A955374E55E9EA1BA749491FB5278994A3A046944D0229E29E91284E6B252444A92E2A
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1,
+                  id 1,
+                  id 1,
+                  id 1
+                }
+              },
+              comment "isoform 2 precursor is encoded by transcript variant 2",
+              product whole gi 110611233,
+              location int {
+                from 49,
+                to 4059,
+                strand plus,
+                id gi 110611232
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -5199,7 +5455,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -6041,6 +6297,28 @@ C782A2344567B086B7E17562DAEB74E9FD9D2018247E4DA79227B9E0058EE9ECE61F79002220DE
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1,
+                  id 1
+                }
+              },
+              product whole gi 89886293,
+              location int {
+                from 110,
+                to 3427,
+                strand plus,
+                id gi 89886292
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -6088,7 +6366,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -6953,6 +7231,27 @@ A201FF904BB3C3B8FAFF7FFBFC2701370040FD0BC12F4C41D23F2CB3EFCD3004CF3BD72FF00215
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1,
+                  id 1
+                }
+              },
+              product whole gi 4505541,
+              location int {
+                from 175,
+                to 3063,
+                strand plus,
+                id gi 119220582
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -7003,7 +7302,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -7866,6 +8165,27 @@ A201FF904BB3C3B8FAFF7FFBFC2701370040FD0BC12F4C41D23F2CB3EFCD3004CF3BD72FF00215
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1,
+                  id 1
+                }
+              },
+              product whole gi 4505541,
+              location int {
+                from 175,
+                to 3063,
+                strand plus,
+                id gi 119220582
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -7916,7 +8236,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -8712,6 +9032,27 @@ A201FF904BB3C3B8FAFF7FFBFC2701370040FD0BC12F4C41D23F2CB3EFCD3004CF3BD72FF00215
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1,
+                  id 1
+                }
+              },
+              product whole gi 4505541,
+              location int {
+                from 175,
+                to 3063,
+                strand plus,
+                id gi 119220582
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -8762,7 +9103,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -9503,6 +9844,26 @@ D27FA8632E49FEAE37E00D031CD731D49E7C1F4FF3DFC3BB17809D7A439E803FF3548AAEAAA2AA
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                }
+              },
+              product whole gi 109134349,
+              location int {
+                from 90,
+                to 2705,
+                strand plus,
+                id gi 256985143
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -9547,7 +9908,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -10335,6 +10696,26 @@ FCF7F0EEC5E0275E90E7A00FFCD522ABAAA8AAA2A82522D47FED10F4FFCF0C803011F3D4BF40'H
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                }
+              },
+              product whole gi 109134349,
+              location int {
+                from 90,
+                to 2705,
+                strand plus,
+                id gi 256985143
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -10384,7 +10765,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -11165,6 +11546,26 @@ FCF7F0EEC5E0275E90E7A00FFCD522ABAAA8AAA2A82522D47FED10F4FFCF0C803011F3D4BF40'H
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                }
+              },
+              product whole gi 109134349,
+              location int {
+                from 90,
+                to 2705,
+                strand plus,
+                id gi 256985143
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -11214,7 +11615,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -11722,6 +12123,26 @@ FCF7F0EEC5E0275E90E7A00FFCD522ABAAA8AAA2A82522D47FED10F4FFCF0C803011F3D4BF40'H
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                }
+              },
+              product whole gi 109134349,
+              location int {
+                from 90,
+                to 2705,
+                strand plus,
+                id gi 256985143
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -11771,7 +12192,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness unknown
         }
       },
@@ -11966,6 +12387,27 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF4221421411444482214821884811218482888212148
             }
           }
         }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole gi 45429981,
+              location int {
+                from 91,
+                to 783,
+                strand plus,
+                id gi 148231791
+              }
+            }
+          }
+        }
       }
     },
     seq {
@@ -11999,7 +12441,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol mRNA,
           completeness partial
         }
       },
@@ -14013,6 +14455,27 @@ E33C004000F3E80B10'H
                     }
                   }
                 }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole gi 55742776,
+              location int {
+                from 20,
+                to 4483,
+                strand plus,
+                id gi 55742775
               }
             }
           }
