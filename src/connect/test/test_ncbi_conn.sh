@@ -22,7 +22,7 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-if [ -f /am/ncbiapdata/test_data/proxy/test_ncbi_proxy ]; then
+if [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy ]; then
   . /am/ncbiapdata/test_data/proxy/test_ncbi_proxy
 fi
 
