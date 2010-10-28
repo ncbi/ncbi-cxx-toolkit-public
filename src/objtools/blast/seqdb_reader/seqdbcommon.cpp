@@ -1227,7 +1227,7 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
             string acc(head, p);
             string str_id = SeqDB_SimplifyAccession(acc);
             if (str_id != "") {
-                sis.push_back(str_id);
+                sis.push_back(NStr::ToLower(str_id));
             } else {
                 cerr << "WARNING:  " << acc
                      << " is not a valid seqid string." << endl;
@@ -2193,7 +2193,6 @@ ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
         result = SeqDB_SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
     } else {
         str_id = acc;
-        str_id = NStr::ToLower(str_id);
         result = eStringId;
         simpler = false;
     }
