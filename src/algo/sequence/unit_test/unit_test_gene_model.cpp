@@ -140,12 +140,14 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
         CBioseq_set seqs;
         CSeq_annot actual_annot;
-        BOOST_CHECK_NO_THROW
-            (CGeneModel::CreateGeneModelFromAlign(align, scope,
-                                                  actual_annot, seqs,
-                                                  CGeneModel::fDefaults | CGeneModel::fForceTranslateCds | CGeneModel::fForceTranscribeMrna));
+        {
+            CFeatureGenerator generator(scope);
+            generator.SetFlags(CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds |
+                               CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna);
 
-        //cerr << MSerial_AsnText << actual_annot;
+            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+            generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs);
+        }
 
         *annot_is >> expected_annot;
         if (annot_os.get() != NULL) {

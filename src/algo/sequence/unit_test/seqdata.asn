@@ -3,7 +3,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_1"
+        gi 49619230
       },
       descr {
         molinfo {
@@ -722,7 +722,7 @@ FBF000DD204740'H,
     },
     seq {
       id {
-        local str "PROT_20101028_1"
+        gi 49619231
       },
       descr {
         molinfo {
@@ -751,7 +751,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_2"
+        gi 110611232
       },
       descr {
         molinfo {
@@ -1910,7 +1910,7 @@ AA055AAE544A595E6AE04092518AE410AD77B4B449455E235A4134158B4F6F7BA2A10BA1D2A499
     },
     seq {
       id {
-        local str "PROT_20101028_2"
+        gi 110611233
       },
       descr {
         molinfo {
@@ -1949,7 +1949,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_3"
+        gi 219879766
       },
       descr {
         molinfo {
@@ -2544,7 +2544,7 @@ Bioseq-set ::= {
     },
     seq {
       id {
-        local str "PROT_20101028_3"
+        gi 219879767
       },
       descr {
         molinfo {
@@ -2584,7 +2584,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_4"
+        gi 41053665
       },
       descr {
         molinfo {
@@ -3090,7 +3090,7 @@ A8DE1079440FEE84D7A979914DF557BD38219508238202EA0CD210104E0811BB9D4D365D4E78A0
     },
     seq {
       id {
-        local str "PROT_20101028_4"
+        gi 41053666
       },
       descr {
         molinfo {
@@ -3119,7 +3119,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_5"
+        gi 187829866
       },
       descr {
         molinfo {
@@ -3371,7 +3371,7 @@ B52A5DAEB9D78ED5D1515782354AEA62A0CB48A8D10DFD270FCFF1DE30DA783B048A0706DC3042
     },
     seq {
       id {
-        local str "PROT_20101028_5"
+        gi 187829867
       },
       descr {
         molinfo {
@@ -3396,7 +3396,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_6"
+        gi 94421474
       },
       descr {
         molinfo {
@@ -3524,7 +3524,7 @@ F0C8A38B85DE303C79C8381FB438E8EB03FD3A0BCC02E3030015F9FF157B4B2575D71478154F95
     },
     seq {
       id {
-        local str "PROT_20101028_6"
+        gi 94421475
       },
       descr {
         molinfo {
@@ -3555,7 +3555,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_7"
+        gi 47086060
       },
       descr {
         molinfo {
@@ -3818,7 +3818,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_8"
+        gi 240248230
       },
       descr {
         molinfo {
@@ -3970,7 +3970,7 @@ F5788DF7565EBE33378634AFE64FFDB879F6A8FEA6C5277F438FF0493FD351CBFBBF3451733B53
     },
     seq {
       id {
-        local str "PROT_20101028_8"
+        gi 240248231
       },
       descr {
         molinfo {
@@ -3997,7 +3997,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_9"
+        gi 110611232
       },
       descr {
         molinfo {
@@ -5156,7 +5156,7 @@ A49754D4A955374E55E9EA1BA749491FB5278994A3A046944D0229E29E91284E6B252444A92E2A
     },
     seq {
       id {
-        local str "PROT_20101028_9"
+        gi 110611233
       },
       descr {
         molinfo {
@@ -5195,7 +5195,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_10"
+        gi 89886292
       },
       descr {
         molinfo {
@@ -6045,7 +6045,7 @@ C782A2344567B086B7E17562DAEB74E9FD9D2018247E4DA79227B9E0058EE9ECE61F79002220DE
     },
     seq {
       id {
-        local str "PROT_20101028_10"
+        gi 89886293
       },
       descr {
         molinfo {
@@ -6081,7 +6081,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_11"
+        other {
+          accession "NM_003715",
+          version 2
+        }
       },
       descr {
         molinfo {
@@ -6954,7 +6957,7 @@ A201FF904BB3C3B8FAFF7FFBFC2701370040FD0BC12F4C41D23F2CB3EFCD3004CF3BD72FF00215
     },
     seq {
       id {
-        local str "PROT_20101028_11"
+        gi 4505541
       },
       descr {
         molinfo {
@@ -6993,7 +6996,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_12"
+        other {
+          accession "NM_003715",
+          version 2
+        }
       },
       descr {
         molinfo {
@@ -7864,7 +7870,7 @@ A201FF904BB3C3B8FAFF7FFBFC2701370040FD0BC12F4C41D23F2CB3EFCD3004CF3BD72FF00215
     },
     seq {
       id {
-        local str "PROT_20101028_12"
+        gi 4505541
       },
       descr {
         molinfo {
@@ -7903,7 +7909,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_13"
+        other {
+          accession "NM_003715",
+          version 2
+        }
       },
       descr {
         molinfo {
@@ -8707,7 +8716,7 @@ A201FF904BB3C3B8FAFF7FFBFC2701370040FD0BC12F4C41D23F2CB3EFCD3004CF3BD72FF00215
     },
     seq {
       id {
-        local str "PROT_20101028_13"
+        gi 4505541
       },
       descr {
         molinfo {
@@ -8746,7 +8755,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_14"
+        other {
+          accession "NM_012133",
+          version 4
+        }
       },
       descr {
         molinfo {
@@ -9495,7 +9507,7 @@ D27FA8632E49FEAE37E00D031CD731D49E7C1F4FF3DFC3BB17809D7A439E803FF3548AAEAAA2AA
     },
     seq {
       id {
-        local str "PROT_20101028_14"
+        gi 109134349
       },
       descr {
         molinfo {
@@ -9528,7 +9540,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_15"
+        other {
+          accession "NM_012133",
+          version 4
+        }
       },
       descr {
         molinfo {
@@ -10324,7 +10339,7 @@ FCF7F0EEC5E0275E90E7A00FFCD522ABAAA8AAA2A82522D47FED10F4FFCF0C803011F3D4BF40'H
     },
     seq {
       id {
-        local str "PROT_20101028_15"
+        gi 109134349
       },
       descr {
         molinfo {
@@ -10362,7 +10377,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_16"
+        other {
+          accession "NM_012133",
+          version 4
+        }
       },
       descr {
         molinfo {
@@ -11151,7 +11169,7 @@ FCF7F0EEC5E0275E90E7A00FFCD522ABAAA8AAA2A82522D47FED10F4FFCF0C803011F3D4BF40'H
     },
     seq {
       id {
-        local str "PROT_20101028_16"
+        gi 109134349
       },
       descr {
         molinfo {
@@ -11189,7 +11207,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_17"
+        other {
+          accession "NM_012133",
+          version 4
+        }
       },
       descr {
         molinfo {
@@ -11705,7 +11726,7 @@ FCF7F0EEC5E0275E90E7A00FFCD522ABAAA8AAA2A82522D47FED10F4FFCF0C803011F3D4BF40'H
     },
     seq {
       id {
-        local str "PROT_20101028_17"
+        gi 109134349
       },
       descr {
         molinfo {
@@ -11743,7 +11764,10 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_18"
+        other {
+          accession "NM_205781",
+          version 2
+        }
       },
       descr {
         molinfo {
@@ -11946,7 +11970,7 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF4221421411444482214821884811218482888212148
     },
     seq {
       id {
-        local str "PROT_20101028_18"
+        gi 45429981
       },
       descr {
         molinfo {
@@ -11971,7 +11995,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_20101028_19"
+        gi 55742775
       },
       descr {
         molinfo {
@@ -13997,7 +14021,7 @@ E33C004000F3E80B10'H
     },
     seq {
       id {
-        local str "PROT_20101028_19"
+        gi 55742776
       },
       descr {
         molinfo {
