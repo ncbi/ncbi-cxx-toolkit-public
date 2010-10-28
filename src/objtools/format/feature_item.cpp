@@ -44,6 +44,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
+#include <algorithm>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Heterogen.hpp>
@@ -111,25 +112,43 @@ USING_SCOPE(sequence);
 class CGoQualLessThan
 {
 public:
-    bool operator() ( const CConstRef<IFlatQVal> &obj1, const CConstRef<IFlatQVal> &obj2 ) 
+    bool operator() ( const CConstRef<CFlatGoQVal> &obj1, const CConstRef<CFlatGoQVal> &obj2 ) 
     {
-        const CFlatGoQVal *qval1 = dynamic_cast<const CFlatGoQVal *>( obj1.GetNonNullPointer() );
-        const CFlatGoQVal *qval2 = dynamic_cast<const CFlatGoQVal *>( obj2.GetNonNullPointer() );
+        const CFlatGoQVal *qval1 = obj1.GetNonNullPointer();
+        const CFlatGoQVal *qval2 = obj2.GetNonNullPointer();
         
         // sort by text string
-        const string &str1 = qval1->GetTextString();
+        const string &str1 = qval1->GetTextString(); 
         const string &str2 = qval2->GetTextString();
 
-        const int textComparison = str1.compare( str2 );
+        int textComparison = 0;
+
+        // This whole paragraph should eventually be replaced with a mere NStr::CompareNocase stored into textComparison
+        // We can't just use NStr::CompareNocase, because that compares using tolower, whereas
+        // we must compare with toupper to maintain compatibility with C.
+        SIZE_TYPE pos = 0;
+        const SIZE_TYPE min_length = min( str1.length(), str2.length() );
+        for( ; pos < min_length; ++pos ) {
+            textComparison = toupper( str1[pos] ) - toupper( str2[pos] );
+            if( textComparison != 0 ) {
+                break;
+            }
+        }
+        if( 0 == textComparison ) {
+            // if we reached the end, compare via length (shorter first)
+            textComparison = str1.length() - str2.length();
+        }
+
+        // compare by text, if possible
         if( textComparison < 0 ) {
             return true;
         } else if( textComparison > 0 ) {
             return false;
         }
 
-        // if tied, then sort by pubmed id, if any
+        // if text is tied, then sort by pubmed id, if any
         int pmid1 = qval1->GetPubmedId();
-        int pmid2 = qval1->GetPubmedId();
+        int pmid2 = qval2->GetPubmedId();
 
         if( 0 == pmid1 ) {
             return false;
@@ -1570,15 +1589,15 @@ void CFeatureItem::x_AddQuals(
 //  Add the various qualifiers to this feature. Top level function.
 //  ----------------------------------------------------------------------------
 {
-//  /**fl**/>>
+//  /**fl**/
 //    if ( GetLoc().IsInt() ) {
 //        size_t uFrom = GetLoc().GetInt().GetFrom();
 //        size_t uTo = GetLoc().GetInt().GetTo();
-//        if ( uFrom == 18269 ) {
+//        if ( uFrom == 4178 ) {
 //            cerr << "";
 //        }
 //    }
-//  <</**fl**/
+//  /**fl**/
 
     if ( ctx.Config().IsFormatFTable() ) {
         x_AddFTableQuals( ctx );
@@ -2201,7 +2220,7 @@ void CFeatureItem::x_AddQualProteinId(
     CConstRef<CSeq_id> protId )
 //  ----------------------------------------------------------------------------
 {
-    if ( !protHandle || !protId ) {
+    if ( !protId ) {
         return;
     }
 
@@ -2806,7 +2825,9 @@ void CFeatureItem::x_AddQualsGene(
     if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
         if (locus != NULL) {
             if (is_gene  &&  desc != NULL) {
-                x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
+                string desc_cleaned = *desc;
+                RemovePeriodFromEnd( desc_cleaned, true );
+                x_AddQual(eFQ_gene_desc, new CFlatStringQVal(desc_cleaned));
             }
         }
         else if (locus_tag != NULL) {
@@ -3693,30 +3714,62 @@ void CFeatureItem::x_FormatGOQualCombined
  TQualFlags flags) const
 {
     // copy all the given quals with that name since we need to sort them
-    vector<CConstRef<IFlatQVal> > goQuals;
+    vector<CConstRef<CFlatGoQVal> > goQuals;
 
     TQCI it = const_cast<const TQuals&>(m_Quals).LowerBound(slot);
     TQCI end = const_cast<const TQuals&>(m_Quals).end();
     while (it != end  &&  it->first == slot) {
-        goQuals.push_back( it->second );
+        goQuals.push_back( CConstRef<CFlatGoQVal>( dynamic_cast<const CFlatGoQVal*>( it->second.GetNonNullPointer() ) ) );
         ++it;
     }
 
-    sort( goQuals.begin(), goQuals.end(), CGoQualLessThan() );
+    if( goQuals.empty() ) {
+        return;
+    }
+
+    stable_sort( goQuals.begin(), goQuals.end(), CGoQualLessThan() );
 
     CFlatFeature::TQuals temp_qvec;
 
     string combined;
 
     // now concatenate their values into the variable "combined"
-    ITERATE( vector<CConstRef<IFlatQVal> >, iter, goQuals ) {
+    const string *pLastQualTextString = NULL; 
+    ITERATE( vector<CConstRef<CFlatGoQVal> >, iter, goQuals ) {
+
+        // Use thisQualTextString to tell when we have consecutive quals with the
+        // same text string.
+        const string *pThisQualTextString = &(*iter)->GetTextString();
+        if( NULL == pThisQualTextString ) {
+            continue;
+        }
+
         (*iter)->Format(temp_qvec, name, *GetContext(), flags);
 
-        if( ! combined.empty() ) {
-            combined += "; ";
+        if( pLastQualTextString == NULL || ! NStr::EqualNocase( *pLastQualTextString, *pThisQualTextString ) ) {
+            // normal case: each CFlatGoQVal has its own part
+            if( ! combined.empty() ) {
+                combined += "; ";
+            }
+            combined += temp_qvec.back()->GetValue();
+        } else {
+            // consecutive CFlatGoQVal with the same text string: merge
+            // (chop off the part up to and including the text string )
+            const string & new_value = temp_qvec.back()->GetValue();
+
+            // let text_string_pos point to the part *after* the text string
+            SIZE_TYPE post_text_string_pos = NStr::FindNoCase( new_value, *pLastQualTextString );
+            _ASSERT( post_text_string_pos != NPOS );
+            post_text_string_pos += pLastQualTextString->length();
+
+            // append the new part after the text string
+            combined.append( new_value, post_text_string_pos, 
+                (pLastQualTextString->length() - post_text_string_pos) );
         }
-        combined += temp_qvec.back()->GetValue();
+
+        pLastQualTextString = pThisQualTextString;
     }
+    pLastQualTextString = NULL; // just to make sure we don't accidentally use it
     
     // add the final merged CFormatQual
     if( ! combined.empty() ) {
