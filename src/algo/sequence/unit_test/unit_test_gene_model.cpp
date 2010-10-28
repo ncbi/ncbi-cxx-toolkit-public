@@ -51,6 +51,9 @@
 
 #include <algo/sequence/gene_model.hpp>
 
+#include <boost/test/output_test_stream.hpp> 
+using boost::test_tools::output_test_stream;
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -66,8 +69,14 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     arg_desc->AddKey("data-expected", "InputData",
                      "Expected Seq-annots produced from input alignments",
                      CArgDescriptions::eInputFile);
+    arg_desc->AddKey("seqdata-expected", "InputData",
+                     "Expected bioseqs produced from input alignments",
+                     CArgDescriptions::eString);
     arg_desc->AddOptionalKey("data-out", "OutputData",
                      "Seq-annots produced from input alignments",
+                     CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("seqdata-out", "OutputData",
+                     "Bioseqss produced from input alignments",
                      CArgDescriptions::eOutputFile);
 }
 
@@ -91,6 +100,15 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         CNcbiOstream& annot_ostr = args["data-out"].AsOutputFile();
         annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
                                             annot_ostr));
+    }
+    output_test_stream seqdata_test_stream( args["seqdata-expected"].AsString(), true );
+    auto_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
+                                                                  seqdata_test_stream));
+    auto_ptr<CObjectOStream> seqdata_os;
+    if (args["seqdata-out"]) {
+        CNcbiOstream& seqdata_ostr = args["seqdata-out"].AsOutputFile();
+        seqdata_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            seqdata_ostr));
     }
 
     int count = 0;
@@ -124,7 +142,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         CSeq_annot actual_annot;
         BOOST_CHECK_NO_THROW
             (CGeneModel::CreateGeneModelFromAlign(align, scope,
-                                                  actual_annot, seqs));
+                                                  actual_annot, seqs,
+                                                  CGeneModel::fDefaults | CGeneModel::fForceTranslateCds | CGeneModel::fForceTranscribeMrna));
 
         //cerr << MSerial_AsnText << actual_annot;
 
@@ -132,6 +151,12 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         if (annot_os.get() != NULL) {
             *annot_os << actual_annot;
         }
+        if (seqdata_os.get() != NULL) {
+            *seqdata_os << seqs;
+        }
+
+        *seqdata_test_os << seqs;
+        BOOST_CHECK( seqdata_test_stream.match_pattern() );
 
         CSeq_annot::TData::TFtable::const_iterator actual_iter =
             actual_annot.GetData().GetFtable().begin();
