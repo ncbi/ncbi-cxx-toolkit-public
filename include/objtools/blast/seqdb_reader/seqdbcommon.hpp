@@ -162,6 +162,8 @@ public:
         SSiOid(const string &si_in = "", int oid_in = -1)
             : si(si_in), oid(oid_in)
         {
+            // make sure to lower case as this is what's indexed in ISAM
+            NStr::ToLower(si);
         }
         
         /// The String-id or "" if unknown.
