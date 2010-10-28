@@ -70,7 +70,7 @@ class CBioseq;
 /// for allowing them to contain bracketed modifiers of the form [key=value],
 /// as documented at http://www.ncbi.nlm.nih.gov/Sequin/modifiers.html .
 
-class CSourceModParser
+class NCBI_XOBJREAD_EXPORT CSourceModParser
 {
 public:
     CSourceModParser(void) { }
