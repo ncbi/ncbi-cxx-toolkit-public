@@ -45,45 +45,6 @@ BEGIN_SCOPE(objects)
     class CBioseq_set;
 END_SCOPE(objects)
 
-class NCBI_XALGOSEQ_EXPORT CGeneModel
-{
-public:
-    enum EGeneModelCreateFlags {
-        fCreateGene          = 0x01,
-        fCreateMrna          = 0x02,
-        fCreateCdregion      = 0x04,
-        fForceTranslateCds   = 0x08,
-        fForceTranscribeMrna = 0x10,
-
-        fDefaults = fCreateGene | fCreateMrna | fCreateCdregion
-    };
-    typedef int TGeneModelCreateFlags;
-
-    /// Create a gene model from an alignment
-    /// this will optionally promote all features through the alignment
-    NCBI_DEPRECATED
-    static void CreateGeneModelFromAlign(const objects::CSeq_align& align,
-                                         objects::CScope& scope,
-                                         objects::CSeq_annot& annot,
-                                         objects::CBioseq_set& seqs,
-                                         TGeneModelCreateFlags flags = fDefaults,
-                                         TSeqPos allowed_unaligned = 10);
-
-
-    /// Correctly mark exceptions on a feature
-    ///
-    NCBI_DEPRECATED
-    static void SetFeatureExceptions(objects::CSeq_feat& feat,
-                                     objects::CScope& scope,
-                                     const objects::CSeq_align* align = NULL);
-
-    NCBI_DEPRECATED
-    static void SetPartialFlags(objects::CScope& scope,
-                                CRef<objects::CSeq_feat> gene_feat,
-                                CRef<objects::CSeq_feat> mrna_feat,
-                                CRef<objects::CSeq_feat> cds_feat);
-};
-
 class NCBI_XALGOSEQ_EXPORT CFeatureGenerator
 {
 public:
@@ -148,6 +109,45 @@ private:
     auto_ptr<SImplementation> m_impl;
 };
 
+
+class NCBI_XALGOSEQ_EXPORT CGeneModel
+{
+public:
+    enum EGeneModelCreateFlags {
+        fCreateGene          = CFeatureGenerator::fCreateGene,
+        fCreateMrna          = CFeatureGenerator::fCreateMrna,
+        fCreateCdregion      = CFeatureGenerator::fCreateCdregion,
+        fForceTranslateCds   = CFeatureGenerator::fForceTranslateCds,
+        fForceTranscribeMrna = CFeatureGenerator::fForceTranscribeMrna,
+
+        fDefaults = fCreateGene | fCreateMrna | fCreateCdregion
+    };
+    typedef int TGeneModelCreateFlags;
+
+    /// Create a gene model from an alignment
+    /// this will optionally promote all features through the alignment
+    NCBI_DEPRECATED
+    static void CreateGeneModelFromAlign(const objects::CSeq_align& align,
+                                         objects::CScope& scope,
+                                         objects::CSeq_annot& annot,
+                                         objects::CBioseq_set& seqs,
+                                         TGeneModelCreateFlags flags = fDefaults,
+                                         TSeqPos allowed_unaligned = 10);
+
+
+    /// Correctly mark exceptions on a feature
+    ///
+    NCBI_DEPRECATED
+    static void SetFeatureExceptions(objects::CSeq_feat& feat,
+                                     objects::CScope& scope,
+                                     const objects::CSeq_align* align = NULL);
+
+    NCBI_DEPRECATED
+    static void SetPartialFlags(objects::CScope& scope,
+                                CRef<objects::CSeq_feat> gene_feat,
+                                CRef<objects::CSeq_feat> mrna_feat,
+                                CRef<objects::CSeq_feat> cds_feat);
+};
 
 END_NCBI_SCOPE
 
