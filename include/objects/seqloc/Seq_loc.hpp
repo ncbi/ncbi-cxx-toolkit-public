@@ -66,6 +66,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CSeq_id_Handle;
 class ISynonymMapper;
 class ILengthGetter;
+class CSeq_loc_CI;
 
 
 class NCBI_SEQLOC_EXPORT CSeq_loc : public CSeq_loc_Base
@@ -293,6 +294,12 @@ public:
     CRef<CSeq_loc> Intersect(const CSeq_loc& other,
                              TOpFlags        flags,
                              ISynonymMapper* syn_mapper) const;
+
+    /// Make CSeq_loc look like an STL container
+    typedef CSeq_loc_CI                  const_iterator;
+    const_iterator begin(void) const;
+    const_iterator end(void) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
@@ -344,6 +351,26 @@ public:
 };
 
 
+// Simple location structure: id/from/to
+struct SSeq_loc_CI_RangeInfo {
+    SSeq_loc_CI_RangeInfo(void);
+    void SetStrand(ENa_strand strand);
+
+    typedef CSeq_loc::TRange    TRange;
+    typedef vector<SSeq_loc_CI_RangeInfo> TRangeList;
+
+    CConstRef<CSeq_id>  m_Id;
+    TRange              m_Range;
+    bool                m_IsSetStrand;
+    ENa_strand          m_Strand;
+    // The original seq-loc for the interval
+    CConstRef<CSeq_loc> m_Loc;
+    pair<CConstRef<CInt_fuzz>, CConstRef<CInt_fuzz> > m_Fuzz;
+};
+
+
+class CSeq_loc_CI_Impl;
+
 /// Seq-loc iterator class -- iterates all intervals from a seq-loc
 /// in the correct order.
 class NCBI_SEQLOC_EXPORT CSeq_loc_CI
@@ -358,7 +385,7 @@ public:
         eOrder_Positional,    /// Iterate sub-locations in positional order
         eOrder_Biological     /// Iterate sub-locations in biological order
     };
-    typedef CSeq_loc::TRange    TRange;
+    typedef SSeq_loc_CI_RangeInfo::TRange TRange;
 
     /// constructors
     CSeq_loc_CI(void);
@@ -373,6 +400,9 @@ public:
 
     CSeq_loc_CI& operator++ (void);
     DECLARE_OPERATOR_BOOL(x_IsValid());
+
+    bool operator== (const CSeq_loc_CI& iter) const;
+    bool operator!= (const CSeq_loc_CI& iter) const;
 
     /// Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;
@@ -416,39 +446,18 @@ public:
     void Rewind(void);
 
 private:
+    const SSeq_loc_CI_RangeInfo& x_GetRangeInfo(void) const;
+
+    typedef SSeq_loc_CI_RangeInfo::TRangeList TRangeList;
+    CRef<CSeq_loc_CI_Impl> m_Impl;
+
     // Check the iterator position
     bool x_IsValid(void) const;
     // Check the position, throw exception if not valid
     void x_CheckNotValid(const char* where) const;
     void x_ThrowNotValid(const char* where) const;
 
-    // Process the location, fill the list
-    void x_ProcessLocation(const CSeq_loc& loc);
-
-    // Simple location structure: id/from/to
-    struct SLoc_Info {
-        SLoc_Info(void);
-        void SetStrand(ENa_strand strand);
-
-        CConstRef<CSeq_id>  m_Id;
-        TRange              m_Range;
-        bool                m_IsSetStrand;
-        ENa_strand          m_Strand;
-        // The original seq-loc for the interval
-        CConstRef<CSeq_loc> m_Loc;
-        pair<CConstRef<CInt_fuzz>, CConstRef<CInt_fuzz> > m_Fuzz;
-    };
-
-    typedef list<SLoc_Info> TLocList;
-
-    // Prevent seq-loc destruction
-    CConstRef<CSeq_loc>      m_Location;
-    // List of intervals
-    TLocList                 m_LocList;
-    // Current interval
-    TLocList::const_iterator m_CurLoc;
-    // Empty locations processing option
-    EEmptyFlag               m_EmptyFlag;
+    size_t m_Index;
 };
 
 
@@ -597,7 +606,7 @@ bool CSeq_loc::IsReverseStrand(void) const
 /////////////////// CSeq_loc_CI inline methods
 
 inline
-CSeq_loc_CI::SLoc_Info::SLoc_Info(void)
+SSeq_loc_CI_RangeInfo::SSeq_loc_CI_RangeInfo(void)
     : m_Id(0),
       m_IsSetStrand(false),
       m_Strand(eNa_strand_unknown),
@@ -607,7 +616,7 @@ CSeq_loc_CI::SLoc_Info::SLoc_Info(void)
 }
 
 inline
-void CSeq_loc_CI::SLoc_Info::SetStrand(ENa_strand strand)
+void SSeq_loc_CI_RangeInfo::SetStrand(ENa_strand strand)
 {
     m_IsSetStrand = true;
     m_Strand = strand;
@@ -616,14 +625,8 @@ void CSeq_loc_CI::SLoc_Info::SetStrand(ENa_strand strand)
 inline
 CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
 {
-    ++m_CurLoc;
+    ++m_Index;
     return *this;
-}
-
-inline
-bool CSeq_loc_CI::x_IsValid(void) const
-{
-    return m_CurLoc != m_LocList.end();
 }
 
 inline
@@ -637,7 +640,7 @@ inline
 const CSeq_id& CSeq_loc_CI::GetSeq_id(void) const
 {
     x_CheckNotValid("GetSeq_id()");
-    return *m_CurLoc->m_Id;
+    return *x_GetRangeInfo().m_Id;
 }
 
 inline
@@ -650,62 +653,62 @@ inline
 CSeq_loc_CI::TRange CSeq_loc_CI::GetRange(void) const
 {
     x_CheckNotValid("GetRange()");
-    return m_CurLoc->m_Range;
+    return x_GetRangeInfo().m_Range;
 }
 
 inline
 bool CSeq_loc_CI::IsSetStrand(void) const
 {
     x_CheckNotValid("IsSetStrand()");
-    return m_CurLoc->m_IsSetStrand;
+    return x_GetRangeInfo().m_IsSetStrand;
 }
 
 inline
 ENa_strand CSeq_loc_CI::GetStrand(void) const
 {
     x_CheckNotValid("GetStrand()");
-    return m_CurLoc->m_Strand;
+    return x_GetRangeInfo().m_Strand;
 }
 
 inline
 const CInt_fuzz* CSeq_loc_CI::GetFuzzFrom(void) const
 {
     x_CheckNotValid("GetFuzzFrom()");
-    return m_CurLoc->m_Fuzz.first;
+    return x_GetRangeInfo().m_Fuzz.first;
 }
 
 inline
 const CInt_fuzz* CSeq_loc_CI::GetFuzzTo(void) const
 {
     x_CheckNotValid("GetFuzzTo()");
-    return m_CurLoc->m_Fuzz.second;
+    return x_GetRangeInfo().m_Fuzz.second;
 }
 
 inline
 bool CSeq_loc_CI::IsWhole(void) const
 {
     x_CheckNotValid("IsWhole()");
-    return m_CurLoc->m_Range.IsWhole();
+    return x_GetRangeInfo().m_Range.IsWhole();
 }
 
 inline
 bool CSeq_loc_CI::IsEmpty(void) const
 {
     x_CheckNotValid("IsEmpty()");
-    return m_CurLoc->m_Range.Empty();
+    return x_GetRangeInfo().m_Range.Empty();
 }
 
 inline
 bool CSeq_loc_CI::IsPoint(void) const
 {
     x_CheckNotValid("IsPoint()");
-    return m_CurLoc->m_Range.GetLength() == 1;
+    return x_GetRangeInfo().m_Range.GetLength() == 1;
 }
 
 inline
 void CSeq_loc_CI::Rewind(void)
 {
-    m_CurLoc = m_LocList.begin();
+    m_Index = 0;
 }
 
 /////////////////// end of CSeq_loc_CI inline methods
