@@ -1281,6 +1281,7 @@ extern EIO_Status URL_ConnectEx
         return eIO_InvalidArg;
     }
 
+    hdr_len = 0;
     if (add_hdr) {
         assert(req_method != eReqMethod_Connect);
         for (temp = user_hdr;  temp  &&  *temp;  temp = strchr(temp, '\n')) {
@@ -1292,11 +1293,10 @@ extern EIO_Status URL_ConnectEx
             }
         }
 
-        if (!port) {
-            hdr_len = 0;
-            port = flags & fSOCK_Secure ? 443 : 80;
-        } else
+        if (port)
             hdr_len = (size_t)(add_hdr ? sprintf(hdr_buf, ":%hu", port) : 0);
+        else
+            port = flags & fSOCK_Secure ? 443 : 80;
 
         if (args  &&  (args_len = strcspn(args, "#")) > 0) {
             /* URL-encode "args", if any specified */
