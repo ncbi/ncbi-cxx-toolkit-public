@@ -2421,16 +2421,20 @@ static EIO_Status s_IsConnected(SOCK                  sock,
   
     if (!sock->connected) {
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-        int            mtu;
+        char mtu[128];
 #  if defined(SOL_IP)  &&  defined(IP_MTU)
-        SOCK_socklen_t mtulen = (SOCK_socklen_t) sizeof(mtu);
-        if (getsockopt(sock->sock, SOL_IP, IP_MTU, &mtu, &mtulen) != 0)
+        if (sock->port) {
+            int            m;
+            SOCK_socklen_t mlen = (SOCK_socklen_t) sizeof(m);
+            if (getsockopt(sock->sock, SOL_IP, IP_MTU, &m, &mlen) != 0)
+                sprintf(mtu, ", MTU unknown (%s)", SOCK_STRERROR(errno));
+            else
+                sprintf(mtu, ", MTU = %d", m);
+        } else
 #  endif /*SOL_IP && IP_MTU*/
-            mtu = -1;
-        if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
-            CORE_TRACEF(("%sConnection established, MTU = %d%s",
-                         s_ID(sock, _id), mtu, mtu < 0 ? " [unknown]" : ""));
-        }
+            *mtu = '\0';
+        if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
+            CORE_TRACEF(("%sConnection established%s", s_ID(sock, _id), mtu));
 #endif /*_DEBUG && !NDEBUG*/
         if (s_ReuseAddress == eOn
 #ifdef NCBI_OS_UNIX
@@ -3316,7 +3320,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     }
 
 #ifndef NCBI_OS_MSWIN
-    /* on MS-Win, socket shutdown for write apparently messes up (?!) *
+    /* on MS-Win, socket shutdown for write apparently messes up (?!)
      * with the later reading, esp. when reading a lot of data...    */
 
 #  ifdef NCBI_OS_BSD
@@ -3327,6 +3331,11 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     if (dir == eIO_ReadWrite  &&  how != SOCK_SHUTDOWN_RDWR)
         return status;
 #  endif /*NCBI_OS_BSD*/
+
+#  ifdef NCBI_OS_UNIX
+    if (sock->path[0])
+        return status;
+#  endif /*NCBI_OS_UNIX*/
 
     if (s_Initialized > 0  &&  SOCK_SHUTDOWN(sock->sock, how) != 0) {
         x_error = SOCK_ERRNO;
@@ -3352,7 +3361,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                                  dir == eIO_Write ? "W" : "RW"));
         }
     }
-#endif /*NCBI_OS_MSWIN*/
+#endif /*!NCBI_OS_MSWIN*/
 
     return status;
 }
@@ -3372,10 +3381,20 @@ static EIO_Status s_Close(SOCK sock, int abort)
         sock->r_len = 0;
         s_WipeWBuf(sock);
     } else if (abort  ||  !sock->keep) {
+        int/*bool*/ shut_down = sock->w_status != eIO_Closed ? 0/*F*/ : 1/*T*/;
+
+        if (!abort) {
+            /* orderly shutdown in both directions */
+            s_Shutdown(sock, eIO_ReadWrite, sock->c_timeout);
+            assert(sock->r_status == eIO_Closed  &&
+                   sock->w_status == eIO_Closed);
+        } else
+            sock->r_status = sock->w_status = eIO_Closed;
+
         /* set the close()'s linger period be equal to the close timeout */
 #if (defined(NCBI_OS_UNIX) && !defined(NCBI_OS_BEOS)) || defined(NCBI_OS_MSWIN)
         /* setsockopt() is not implemented for MAC (MIT socket emulation lib)*/
-        if (sock->w_status != eIO_Closed
+        if (!shut_down
 #  ifdef NCBI_OS_UNIX
             &&  !sock->path[0]
 #  endif /*NCBI_OS_UNIX*/
@@ -3428,16 +3447,6 @@ static EIO_Status s_Close(SOCK sock, int abort)
 #  endif /*TCP_LINGER2*/
         }
 #endif /*(NCBI_OS_UNIX && !NCBI_OS_BEOS) || NCBI_OS_MSWIN*/
-
-        if (!abort
-#ifdef NCBI_OS_UNIX
-            &&  !sock->path[0]
-#endif /*NCBI_OS_UNIX*/
-            ) {
-            /* orderly shutdown in both directions */
-            s_Shutdown(sock, eIO_ReadWrite, sock->c_timeout);
-        } else
-            sock->r_status = sock->w_status = eIO_Closed;
 
 #ifdef NCBI_OS_MSWIN
         WSAEventSelect(sock->sock, sock->event, 0); /*cancel any events*/
