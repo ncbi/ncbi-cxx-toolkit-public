@@ -551,8 +551,8 @@ struct NCBI_SEQLOC_EXPORT SSeqIdRange
 
     explicit SSeqIdRange(const CTempString& s, TFlags flags = 0);
 
-    class const_iterator : public iterator<random_access_iterator_tag, string,
-                                           int, const string*, string>
+    class NCBI_SEQLOC_EXPORT const_iterator : public iterator<
+                             random_access_iterator_tag, string, int, const string*, string>
     {
     public:
         const_iterator(const SSeqIdRange& range)
