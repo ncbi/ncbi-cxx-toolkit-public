@@ -6936,3 +6936,5 @@
 0xFEFD
 0xFEFE
 0xFEFF
+
+0x10467, " Egg" # Shavian letter; out of range for built-in tables.
