@@ -337,7 +337,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 
     /// Submit job.
     /// @note on success job.job_id will be set.
-    string SubmitJob(CNetScheduleJob& job) const;
+    string SubmitJob(CNetScheduleJob& job);
 
     /// Submit job batch.
     /// Method automatically splits the submission into reasonable sized
@@ -345,7 +345,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///
     /// Every job in the job list receives job id
     ///
-    void SubmitJobBatch(vector<CNetScheduleJob>& jobs) const;
+    void SubmitJobBatch(vector<CNetScheduleJob>& jobs);
 
     /// Initiate bulk retrieval of job results.
     /// The command retrieves ids of jobs marked as done.
@@ -441,7 +441,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///
     /// @param job_key
     ///    Job key
-    void CancelJob(const string& job_key) const;
+    void CancelJob(const string& job_key);
 
     /// Get progress message
     ///
@@ -498,7 +498,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa WaitJob
     ///
-    bool GetJob(CNetScheduleJob& job) const;
+    bool GetJob(CNetScheduleJob& job);
 
     /// Wait for a job to come.
     /// Variant of GetJob method. The difference is that if there no
@@ -526,7 +526,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa GetJob, WaitNotification
     ///
-    bool WaitJob(CNetScheduleJob& job, unsigned wait_time) const;
+    bool WaitJob(CNetScheduleJob& job, unsigned wait_time);
 
 
     /// Put job result (job should be received by GetJob() or WaitJob())
@@ -535,7 +535,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///     NetSchedule job description structure. its ret_code
     ///     and output fields should be set
     ///
-    void PutResult(const CNetScheduleJob& job) const;
+    void PutResult(const CNetScheduleJob& job);
 
     /// Put job result, get new job from the queue
     /// If this is the first call and there is no previous job
@@ -543,7 +543,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa PutResult, GetJob
     bool PutResultGetJob(const CNetScheduleJob& done_job,
-        CNetScheduleJob& new_job) const;
+        CNetScheduleJob& new_job);
 
     /// Put job interim (progress) message
     ///
@@ -553,7 +553,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa GetProgressMsg
     ///
-    void PutProgressMsg(const CNetScheduleJob& job) const;
+    void PutProgressMsg(const CNetScheduleJob& job);
 
     /// Get progress message
     ///
@@ -573,7 +573,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///     NetSchedule job description structure. its error_msg
     ///     and optionally ret_code and output fields should be set
     ///
-    void PutFailure(const CNetScheduleJob& job) const;
+    void PutFailure(const CNetScheduleJob& job);
 
     /// Request of current job status
     /// eJobNotFound is returned if job status cannot be found
@@ -587,7 +587,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// Node may decide to return the job if it cannot process it right
     /// now (does not have resources, being asked to shutdown, etc.)
     ///
-    void ReturnJob(const string& job_key) const;
+    void ReturnJob(const string& job_key);
 
     /// Set job execution timeout
     ///
@@ -602,7 +602,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// @param time_to_run
     ///    Time in seconds to finish the job. 0 means "queue default value".
     ///
-    void SetRunTimeout(const string& job_key, unsigned time_to_run) const;
+    void SetRunTimeout(const string& job_key, unsigned time_to_run);
 
     /// Increment job execution timeout
     ///
@@ -616,24 +616,24 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///    finish the job.
     ///
     /// @sa SetRunTimeout
-    void JobDelayExpiration(const string& job_key, unsigned runtime_inc) const;
+    void JobDelayExpiration(const string& job_key, unsigned runtime_inc);
 
 
     /// Register client-listener
-    void RegisterClient() const;
+    void RegisterClient();
 
-    const CNetScheduleAPI::SServerParams& GetServerParams() const;
+    const CNetScheduleAPI::SServerParams& GetServerParams();
 
 
     /// Unregister client-listener. After this call, the
     /// server will not try to send any notification messages or
     /// maintain job affinity for the client.
-    void UnRegisterClient() const;
+    void UnRegisterClient();
 
     /// Return Queue name
-    const string& GetQueueName() const;
-    const string& GetClientName() const;
-    const string& GetServiceName() const;
+    const string& GetQueueName();
+    const string& GetClientName();
+    const string& GetServiceName();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -654,7 +654,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     /// @param affinity_token
     ///    Affinity token (optional)
     void StatusSnapshot(TStatusMap& status_map,
-        const string& affinity_token) const;
+        const string& affinity_token);
 
 
     /// Delete job
@@ -673,7 +673,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void CreateQueue(
         const string& qname,
         const string& qclass,
-        const string& comment = kEmptyStr) const;
+        const string& comment = kEmptyStr);
 
     /// Create queue of given queue class
     /// @param qname
@@ -686,13 +686,13 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         const string& qname,
         const string& qclass,
         const string& comment,
-        ECreateQueueFlags flags) const;
+        ECreateQueueFlags flags);
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method
     /// @param qname
     ///    Name of the queue to delete.
-    void DeleteQueue(const string& qname) const;
+    void DeleteQueue(const string& qname);
 
 
     /// Shutdown level
@@ -706,27 +706,27 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     /// Shutdown the server daemon.
     ///
-    void ShutdownServer(EShutdownLevel level = eNormalShutdown) const;
+    void ShutdownServer(EShutdownLevel level = eNormalShutdown);
 
     /// Kill all jobs in the queue.
     ///
-    void DropQueue() const;
+    void DropQueue();
 
-    void DumpJob(CNcbiOstream& out, const string& job_key) const;
+    void DumpJob(CNcbiOstream& out, const string& job_key);
 
     /// Reschedule a job
     ///
-    void ForceReschedule(const string& job_key) const;
+    void ForceReschedule(const string& job_key);
 
     /// Turn server-side logging on(off)
     ///
-    void Logging(bool on_off) const;
+    void Logging(bool on_off);
 
-    void ReloadServerConfig() const;
+    void ReloadServerConfig();
 
     //////////////////////////////////////////////////////
     /// Print version string
-    void PrintServerVersion(CNcbiOstream& output_stream) const;
+    void PrintServerVersion(CNcbiOstream& output_stream);
 
     struct SWorkerNodeInfo {
         string name;
@@ -736,7 +736,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         CTime last_access;
     };
 
-    void GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes) const;
+    void GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes);
 
     void PrintConf(CNcbiOstream& output_stream);
 
@@ -747,16 +747,16 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     };
 
     void PrintServerStatistics(CNcbiOstream& output_stream,
-        EStatisticsOptions opt = eStatisticsBrief) const;
+        EStatisticsOptions opt = eStatisticsBrief);
 
-    void DumpQueue(CNcbiOstream& output_stream) const;
+    void DumpQueue(CNcbiOstream& output_stream);
 
     void PrintQueue(CNcbiOstream& output_stream,
-        CNetScheduleAPI::EJobStatus status) const;
+        CNetScheduleAPI::EJobStatus status);
 
     unsigned CountActiveJobs();
 
-    void Monitor(CNcbiOstream& out) const;
+    void Monitor(CNcbiOstream& out);
 
     struct SServerQueueList {
         CNetServer server;
@@ -767,14 +767,14 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     typedef list<SServerQueueList> TQueueList;
 
-    void GetQueueList(TQueueList& result) const;
+    void GetQueueList(TQueueList& result);
 
     /// Query by tags
-    unsigned long Count(const string& query) const;
-    void Query(const string& query, const vector<string>& fields, CNcbiOstream& os) const;
-    void Select(const string& select_stmt, CNcbiOstream& os) const;
+    unsigned long Count(const string& query);
+    void Query(const string& query, const vector<string>& fields, CNcbiOstream& os);
+    void Select(const string& select_stmt, CNcbiOstream& os);
 
-    void RetrieveKeys(const string& query, CNetScheduleKeys& ids) const;
+    void RetrieveKeys(const string& query, CNetScheduleKeys& ids);
 };
 
 

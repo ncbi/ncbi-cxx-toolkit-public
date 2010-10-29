@@ -46,7 +46,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
     public INetServerConnectionListener
 {
 protected:
-    virtual void OnInit(CNetObject* api_impl,
+    virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
@@ -57,7 +57,7 @@ private:
 
 class CNetCacheWriter;
 
-struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
+struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 {
     SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name);
@@ -97,7 +97,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
     string m_Password;
 };
 
-struct SNetCacheAdminImpl : public CNetObject
+struct SNetCacheAdminImpl : public CObject
 {
     SNetCacheAdminImpl(SNetCacheAPIImpl* nc_api_impl);
 

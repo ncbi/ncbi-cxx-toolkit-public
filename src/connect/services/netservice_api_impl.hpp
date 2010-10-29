@@ -48,7 +48,7 @@ struct SCompareServerAddress {
 typedef vector<SNetServerImpl*> TNetServerList;
 typedef set<SNetServerImpl*, SCompareServerAddress> TNetServerSet;
 
-struct SNetServerGroupIteratorImpl : public CNetObject
+struct SNetServerGroupIteratorImpl : public CObject
 {
     SNetServerGroupIteratorImpl(SNetServerGroupImpl* server_group_impl,
         TNetServerList::const_iterator position);
@@ -58,14 +58,14 @@ struct SNetServerGroupIteratorImpl : public CNetObject
     TNetServerList::const_iterator m_Position;
 };
 
-struct SNetServerGroupImpl : public CNetObject
+struct SNetServerGroupImpl : public CObject
 {
     SNetServerGroupImpl(unsigned discovery_iteration);
 
     // Releases a reference to the parent service object,
     // and if that was the last reference, the service object
     // will be deleted.
-    virtual void Delete();
+    virtual void DeleteThis();
 
     // A list of servers discovered by the load balancer.
     TNetServerList m_Servers;
@@ -85,7 +85,7 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 {
 }
 
-struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
+struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
     // Construct a new object.
     SNetServiceImpl(
@@ -94,7 +94,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
         const string& client_name,
         INetServerConnectionListener* listener);
 
-    void Init(CNetObject* api_impl,
+    void Init(CObject* api_impl,
         CConfig* config, const string& config_section,
         const char* const* default_config_sections);
 
@@ -128,8 +128,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
 
     // Connection event listening. In fact, this listener implements
     // the authentication part of both NS and NC protocols.
-    CNetObjectRef<INetServerConnectionListener> m_Listener;
-    CNetObjectRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
+    CRef<INetServerConnectionListener> m_Listener;
+    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
     string m_LBSMAffinityName;
     const char* m_LBSMAffinityValue;

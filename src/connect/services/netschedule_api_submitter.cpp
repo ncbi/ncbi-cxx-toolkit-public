@@ -126,13 +126,13 @@ void static s_CheckInputSize(const string& input, size_t max_input_size)
     }
 }
 
-string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
+string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job)
 {
     return m_Impl->SubmitJobImpl(job, 0, 0);
 }
 
 string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
-    unsigned short udp_port, unsigned wait_time) const
+    unsigned short udp_port, unsigned wait_time)
 {
     size_t max_input_size = m_API->GetServerParams().max_input_size;
     s_CheckInputSize(job.input, max_input_size);
@@ -154,7 +154,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
     return job.job_id;
 }
 
-void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
+void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
 {
     // verify the input data
     size_t max_input_size = m_Impl->m_API->GetServerParams().max_input_size;
@@ -433,7 +433,7 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
     return status;
 }
 
-void CNetScheduleSubmitter::CancelJob(const string& job_key) const
+void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
     m_Impl->m_API->x_SendJobCmdWaitResponse("CANCEL", job_key);
 }

@@ -37,7 +37,7 @@
 /// Administrative API for NetCache.
 ///
 
-#include "netobject.hpp"
+#include "netcomponent.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -68,15 +68,15 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     void Reinitialize(const string& cache_name = kEmptyStr);
 
     /// Print contents of the configuration file
-    void PrintConfig(CNcbiOstream& output_stream) const;
+    void PrintConfig(CNcbiOstream& output_stream);
 
     /// Print server statistics
-    void PrintStat(CNcbiOstream& output_stream) const;
+    void PrintStat(CNcbiOstream& output_stream);
 
     // Print server health information
-    void PrintHealth(CNcbiOstream& output_stream) const;
+    void PrintHealth(CNcbiOstream& output_stream);
 
-    void GetServerVersion(CNcbiOstream& output_stream) const;
+    void GetServerVersion(CNcbiOstream& output_stream);
 };
 
 /* @} */

@@ -35,7 +35,7 @@
 #ifndef CONNECT_SERVICES___UTIL__HPP
 #define CONNECT_SERVICES___UTIL__HPP
 
-#include "netobject.hpp"
+#include "netcomponent.hpp"
 
 BEGIN_NCBI_SCOPE
 

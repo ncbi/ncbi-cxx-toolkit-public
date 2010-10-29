@@ -40,7 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SNetServerMultilineCmdOutputImpl : public CNetObject
+struct SNetServerMultilineCmdOutputImpl : public CObject
 {
     SNetServerMultilineCmdOutputImpl(
         const CNetServer::SExecResult& exec_result) :
@@ -67,12 +67,12 @@ struct SNetServerMultilineCmdOutputImpl : public CNetObject
 
 struct SNetServerImpl;
 
-struct SNetServerConnectionImpl : public CNetObject
+struct SNetServerConnectionImpl : public CObject
 {
     SNetServerConnectionImpl(SNetServerImpl* pool);
 
     // Return this connection to the pool.
-    virtual void Delete();
+    virtual void DeleteThis();
 
     void WriteLine(const string& line);
     void ReadCmdOutputLine(string& result);
@@ -90,17 +90,17 @@ struct SNetServerConnectionImpl : public CNetObject
 };
 
 
-class INetServerConnectionListener : public CNetObject
+class INetServerConnectionListener : public CObject
 {
 public:
-    virtual void OnInit(CNetObject* api_impl,
+    virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section) = 0;
     virtual void OnConnected(CNetServerConnection::TInstance conn) = 0;
     virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
 };
 
 
-struct SNetServerImpl : public CNetObject
+struct SNetServerImpl : public CObject
 {
     // Special constructor for making search images
     // for searching in TNetServerSet.
@@ -114,7 +114,7 @@ struct SNetServerImpl : public CNetObject
     // will be deleted, which in turn will lead to this server
     // object being deleted too (along with all other server
     // objects that the parent service object may contain).
-    virtual void Delete();
+    virtual void DeleteThis();
 
     CNetServerConnection GetConnectionFromPool();
     CNetServerConnection Connect();

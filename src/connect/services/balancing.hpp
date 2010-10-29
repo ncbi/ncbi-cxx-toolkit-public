@@ -38,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CSimpleRebalanceStrategy : public CNetObject
+class CSimpleRebalanceStrategy : public CObject
 {
 public:
     CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time) :
@@ -78,13 +78,13 @@ private:
 
 class CConfig;
 
-NCBI_XCONNECT_EXPORT CNetObjectRef<CSimpleRebalanceStrategy>
+NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name);
 
-NCBI_XCONNECT_EXPORT CNetObjectRef<CSimpleRebalanceStrategy>
+NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time);
 
-NCBI_XCONNECT_EXPORT CNetObjectRef<CSimpleRebalanceStrategy>
+NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
     CreateDefaultRebalanceStrategy();
 
 END_NCBI_SCOPE

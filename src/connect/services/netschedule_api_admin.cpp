@@ -45,7 +45,7 @@ void CNetScheduleAdmin::DropJob(const string& job_key)
 }
 
 void CNetScheduleAdmin::ShutdownServer(
-    CNetScheduleAdmin::EShutdownLevel level) const
+    CNetScheduleAdmin::EShutdownLevel level)
 {
     string cmd;
 
@@ -65,12 +65,12 @@ void CNetScheduleAdmin::ShutdownServer(
 }
 
 
-void CNetScheduleAdmin::ForceReschedule(const string& job_key) const
+void CNetScheduleAdmin::ForceReschedule(const string& job_key)
 {
     m_Impl->m_API->x_SendJobCmdWaitResponse("FRES", job_key);
 }
 
-void CNetScheduleAdmin::ReloadServerConfig() const
+void CNetScheduleAdmin::ReloadServerConfig()
 {
     string cmd("RECO");
 
@@ -79,7 +79,7 @@ void CNetScheduleAdmin::ReloadServerConfig() const
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
-                                    const string& comment) const
+                                    const string& comment)
 {
     string cmd = "QCRE " + qname;
     cmd += ' ';
@@ -98,7 +98,7 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
 
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
-                                    const string& comment, ECreateQueueFlags flags) const
+                                    const string& comment, ECreateQueueFlags flags)
 {
     try {
         CreateQueue(qname, qclass, comment);
@@ -111,7 +111,7 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
 }
 
 
-void CNetScheduleAdmin::DeleteQueue(const string& qname) const
+void CNetScheduleAdmin::DeleteQueue(const string& qname)
 {
     string cmd = "QDEL " + qname;
 
@@ -120,7 +120,7 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
         (*it).ExecWithRetry(cmd);
 }
 
-void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
+void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key)
 {
     CNetServerMultilineCmdOutput output(
         m_Impl->m_API->GetServer(job_key).ExecWithRetry("DUMP " + job_key));
@@ -131,7 +131,7 @@ void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
         out << line << "\n";
 }
 
-void CNetScheduleAdmin::DropQueue() const
+void CNetScheduleAdmin::DropQueue()
 {
     string cmd = "DROPQ";
 
@@ -141,14 +141,14 @@ void CNetScheduleAdmin::DropQueue() const
 }
 
 
-void CNetScheduleAdmin::PrintServerVersion(CNcbiOstream& output_stream) const
+void CNetScheduleAdmin::PrintServerVersion(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput("VERSION",
         output_stream, CNetService::eSingleLineOutput);
 }
 
 
-void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream) const
+void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput("DUMP",
         output_stream, CNetService::eMultilineOutput);
@@ -156,7 +156,7 @@ void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream) const
 
 
 void CNetScheduleAdmin::PrintQueue(CNcbiOstream& output_stream,
-    CNetScheduleAPI::EJobStatus status) const
+    CNetScheduleAPI::EJobStatus status)
 {
     string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
@@ -172,7 +172,7 @@ unsigned CNetScheduleAdmin::CountActiveJobs()
 }
 
 void CNetScheduleAdmin::GetWorkerNodes(
-    list<SWorkerNodeInfo>& worker_nodes) const
+    list<SWorkerNodeInfo>& worker_nodes)
 {
     worker_nodes.clear();
 
@@ -244,7 +244,7 @@ void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)
 }
 
 void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
-    EStatisticsOptions opt) const
+    EStatisticsOptions opt)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(
         opt == eStatisticsBrief ? "STAT" : "STAT ALL",
@@ -252,12 +252,12 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 }
 
 
-void CNetScheduleAdmin::Monitor(CNcbiOstream& out) const
+void CNetScheduleAdmin::Monitor(CNcbiOstream& out)
 {
     m_Impl->m_API->m_Service->Monitor(out, "MONI QUIT");
 }
 
-void CNetScheduleAdmin::Logging(bool on_off) const
+void CNetScheduleAdmin::Logging(bool on_off)
 {
     string cmd(on_off ? "LOG ON" : "LOG OFF");
 
@@ -266,7 +266,7 @@ void CNetScheduleAdmin::Logging(bool on_off) const
 }
 
 
-void CNetScheduleAdmin::GetQueueList(TQueueList& qlist) const
+void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 {
     for (CNetServerGroupIterator it =
             m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
@@ -280,7 +280,7 @@ void CNetScheduleAdmin::GetQueueList(TQueueList& qlist) const
 
 void CNetScheduleAdmin::StatusSnapshot(
     CNetScheduleAdmin::TStatusMap&  status_map,
-    const string& affinity_token) const
+    const string& affinity_token)
 {
     string cmd = "STSN aff=\"";
     cmd.append(NStr::PrintableString(affinity_token));
@@ -303,7 +303,7 @@ void CNetScheduleAdmin::StatusSnapshot(
     }
 }
 
-unsigned long CNetScheduleAdmin::Count(const string& query) const
+unsigned long CNetScheduleAdmin::Count(const string& query)
 {
     string cmd = "QERY \"";
     cmd.append(NStr::PrintableString(query));
@@ -319,7 +319,7 @@ unsigned long CNetScheduleAdmin::Count(const string& query) const
 }
 
 void CNetScheduleAdmin::Query(const string& query,
-    const vector<string>& fields, CNcbiOstream& os) const
+    const vector<string>& fields, CNcbiOstream& os)
 {
     if (fields.empty())
         return;
@@ -342,7 +342,7 @@ void CNetScheduleAdmin::Query(const string& query,
         CNetService::eDumpNoHeaders);
 }
 
-void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) const
+void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os)
 {
     string cmd = "QSEL \"";
     cmd += NStr::PrintableString(select_stmt);
@@ -353,7 +353,7 @@ void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) cons
 }
 
 void CNetScheduleAdmin::RetrieveKeys(const string& query,
-    CNetScheduleKeys& ids) const
+    CNetScheduleKeys& ids)
 {
     SNetScheduleAdminImpl::TIDsMap inter_ids;
 

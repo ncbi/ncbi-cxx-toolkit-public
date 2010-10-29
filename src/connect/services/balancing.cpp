@@ -57,28 +57,30 @@ bool CSimpleRebalanceStrategy::NeedRebalance()
     return false;
 }
 
-CNetObjectRef<CSimpleRebalanceStrategy>
+CRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name)
 {
-    return new CSimpleRebalanceStrategy(
+    return CRef<CSimpleRebalanceStrategy>(new CSimpleRebalanceStrategy(
         config.GetInt(driver_name, "rebalance_requests",
             CConfig::eErr_NoThrow, REBALANCE_REQUESTS_DEFAULT),
         s_SecondsToMilliseconds(config.GetString(driver_name,
             "rebalance_time", CConfig::eErr_NoThrow,
                 NCBI_AS_STRING(REBALANCE_TIME_DEFAULT)),
-            SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT)));
+            SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT))));
 }
 
-CNetObjectRef<CSimpleRebalanceStrategy>
+CRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time)
 {
-    return new CSimpleRebalanceStrategy(rebalance_requests, rebalance_time);
+    return CRef<CSimpleRebalanceStrategy>(
+        new CSimpleRebalanceStrategy(rebalance_requests, rebalance_time));
 }
 
-CNetObjectRef<CSimpleRebalanceStrategy> CreateDefaultRebalanceStrategy()
+CRef<CSimpleRebalanceStrategy> CreateDefaultRebalanceStrategy()
 {
-    return new CSimpleRebalanceStrategy(REBALANCE_REQUESTS_DEFAULT,
-        SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT));
+    return CRef<CSimpleRebalanceStrategy>(
+        new CSimpleRebalanceStrategy(REBALANCE_REQUESTS_DEFAULT,
+            SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT)));
 }
 
 

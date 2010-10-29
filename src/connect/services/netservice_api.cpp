@@ -48,7 +48,7 @@
 
 BEGIN_NCBI_SCOPE
 
-void SNetServerGroupImpl::Delete()
+void SNetServerGroupImpl::DeleteThis()
 {
     // Before resetting the m_Service pointer, verify that no other object
     // has acquired a reference to this server group object yet (between
@@ -56,7 +56,7 @@ void SNetServerGroupImpl::Delete()
     // when m_Service is about to be reset).
     CFastMutexGuard g(m_Service->m_ServerGroupMutex);
 
-    if (GetRefCount() == 0)
+    if (!Referenced())
         m_Service = NULL;
 }
 
@@ -70,9 +70,9 @@ bool CNetServerGroupIterator::Next()
     if (++m_Impl->m_Position != m_Impl->m_ServerGroup->m_Servers.end())
         return true;
 
-        m_Impl.Assign(NULL);
-        return false;
-    }
+    m_Impl.Reset(NULL);
+    return false;
+}
 
 CNetServerGroupIterator CNetServerGroup::Iterate()
 {
@@ -97,7 +97,7 @@ SNetServiceImpl::SNetServiceImpl(
 {
 }
 
-void SNetServiceImpl::Init(CNetObject* api_impl,
+void SNetServiceImpl::Init(CObject* api_impl,
     CConfig* config, const string& config_section,
     const char* const* default_config_sections)
 {
@@ -478,7 +478,7 @@ SNetServerGroupImpl* SNetServiceImpl::CreateServerGroup(
 {
     SNetServerGroupImpl** server_group = m_ServerGroups + discovery_mode;
 
-    if (*server_group != NULL && (*server_group)->GetRefCount() == 0)
+    if (*server_group != NULL && !(*server_group)->Referenced())
         delete *server_group;
 
     return *server_group = new SNetServerGroupImpl(m_LatestDiscoveryIteration);

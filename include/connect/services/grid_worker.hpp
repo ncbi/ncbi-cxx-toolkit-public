@@ -634,7 +634,7 @@ private:
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
     unsigned int                 m_CheckStatusPeriod;
-    CNetObjectRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
+    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
     bool                         m_UseEmbeddedStorage;

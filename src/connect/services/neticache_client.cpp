@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 class CNetICacheServerListener : public CNetCacheServerListener
 {
 protected:
-    virtual void OnInit(CNetObject* api_impl,
+    virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
 };
 
@@ -152,7 +152,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     CNetServer m_SelectedServer;
 };
 
-void CNetICacheServerListener::OnInit(CNetObject* api_impl,
+void CNetICacheServerListener::OnInit(CObject* api_impl,
     CConfig* config, const string& config_section)
 {
     CNetCacheServerListener::OnInit(api_impl, config, config_section);

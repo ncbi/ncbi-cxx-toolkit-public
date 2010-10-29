@@ -123,7 +123,7 @@ template<> struct ToStr<int> {
     }
 };
 
-struct SNetScheduleAPIImpl : public CNetObject
+struct SNetScheduleAPIImpl : public CObject
 {
     class CNetScheduleServerListener : public INetServerConnectionListener
     {
@@ -135,7 +135,7 @@ struct SNetScheduleAPIImpl : public CNetObject
         void MakeWorkerNodeInitCmd(const string& uid,
             unsigned short control_port);
 
-        virtual void OnInit(CNetObject* api_impl,
+        virtual void OnInit(CObject* api_impl,
             CConfig* config, const string& config_section);
         virtual void OnConnected(CNetServerConnection::TInstance conn);
         virtual void OnError(const string& err_msg, SNetServerImpl* server);
@@ -209,12 +209,12 @@ struct SNetScheduleAPIImpl : public CNetObject
 };
 
 
-struct SNetScheduleSubmitterImpl : public CNetObject
+struct SNetScheduleSubmitterImpl : public CObject
 {
     SNetScheduleSubmitterImpl(CNetScheduleAPI::TInstance ns_api_impl);
 
     string SubmitJobImpl(CNetScheduleJob& job,
-        unsigned short udp_port, unsigned wait_time) const;
+        unsigned short udp_port, unsigned wait_time);
 
     void ExecReadCommand(const char* cmd_start,
         const char* cmd_name,
@@ -231,14 +231,14 @@ inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
 {
 }
 
-struct SNetScheduleExecuterImpl : public CNetObject
+struct SNetScheduleExecuterImpl : public CObject
 {
     SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl,
         unsigned short control_port);
 
-    bool GetJobImpl(const string& cmd, CNetScheduleJob& job) const;
+    bool GetJobImpl(const string& cmd, CNetScheduleJob& job);
 
-    void x_RegUnregClient(const string& cmd) const;
+    void x_RegUnregClient(const string& cmd);
 
     CNetScheduleAPI m_API;
     string m_UID;
@@ -254,11 +254,11 @@ inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
     CFastMutexGuard g(ns_api_impl->m_FastMutex);
 
     static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
-        ns_api_impl->m_Service->m_Listener.GetPtr())->MakeWorkerNodeInitCmd(
+        ns_api_impl->m_Service->m_Listener.GetPointer())->MakeWorkerNodeInitCmd(
             m_UID, control_port);
 }
 
-struct SNetScheduleAdminImpl : public CNetObject
+struct SNetScheduleAdminImpl : public CObject
 {
     SNetScheduleAdminImpl(CNetScheduleAPI::TInstance ns_api_impl);
 

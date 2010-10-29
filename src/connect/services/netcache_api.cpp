@@ -83,7 +83,7 @@ static SServerAddress* s_GetFallbackServer()
     return s_FallbackServer->get();
 }
 
-void CNetCacheServerListener::OnInit(CNetObject* api_impl,
+void CNetCacheServerListener::OnInit(CObject* api_impl,
     CConfig* config, const string& config_section)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);

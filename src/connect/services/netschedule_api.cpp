@@ -82,7 +82,7 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::MakeWorkerNodeInitCmd(
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
-    CNetObject* api_impl, CConfig* config, const string& config_section)
+    CObject* api_impl, CConfig* config, const string& config_section)
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
 
@@ -189,7 +189,7 @@ void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
     static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
-        m_Impl->m_Service->m_Listener.GetPtr())->SetAuthString(m_Impl);
+        m_Impl->m_Service->m_Listener.GetPointer())->SetAuthString(m_Impl);
 }
 
 const string& CNetScheduleAPI::GetProgramVersion() const
@@ -477,7 +477,7 @@ void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 {
     SNetScheduleAPIImpl::CNetScheduleServerListener* listener =
         static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
-            m_Impl->m_Service->m_Listener.GetPtr());
+            m_Impl->m_Service->m_Listener.GetPointer());
 
     listener->m_WorkerNodeCompatMode = true;
     listener->SetAuthString(m_Impl);

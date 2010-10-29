@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SCmdLineArgListImpl : public CNetObject
+struct SCmdLineArgListImpl : public CObject
 {
     SCmdLineArgListImpl(FILE* file, const string& file_name);
     SCmdLineArgListImpl(const string& file_name, bool for_output);

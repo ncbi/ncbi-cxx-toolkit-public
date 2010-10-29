@@ -97,7 +97,7 @@ inline SNetServerConnectionImpl::SNetServerConnectionImpl(
         m_Socket.SetTimeout(eIO_Close, &s_ZeroTimeout);
 }
 
-void SNetServerConnectionImpl::Delete()
+void SNetServerConnectionImpl::DeleteThis()
 {
     // Return this connection to the pool.
     if (m_Server->m_Service->m_PermanentConnection != eOff &&
@@ -226,7 +226,7 @@ SNetServerImplReal::SNetServerImplReal(const string& host,
     ResetThrottlingParameters();
 }
 
-void SNetServerImpl::Delete()
+void SNetServerImpl::DeleteThis()
 {
     // Before resetting the m_Service pointer, verify that no other object
     // has acquired a reference to this server object yet (between
@@ -235,7 +235,7 @@ void SNetServerImpl::Delete()
 
     CFastMutexGuard g(m_Service->m_ServerMutex);
 
-    if (GetRefCount() == 0)
+    if (!Referenced())
         m_Service = NULL;
 }
 

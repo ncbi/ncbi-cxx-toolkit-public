@@ -64,25 +64,25 @@ void CNetCacheAdmin::Reinitialize(const string& cache_name)
         ExecWithRetry(cmd);
 }
 
-void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const
+void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("GETCONF"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
-void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream) const
+void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("GETSTAT"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
-void CNetCacheAdmin::PrintHealth(CNcbiOstream& output_stream) const
+void CNetCacheAdmin::PrintHealth(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("HEALTH"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
-void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
+void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("VERSION"),
         output_stream, CNetService::eSingleLineOutput);
