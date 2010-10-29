@@ -83,6 +83,13 @@ SSplitQueryBlk* SplitQueryBlkNew(Uint4 num_chunks, Boolean gapped_merge);
 NCBI_XBLAST_EXPORT
 SSplitQueryBlk* SplitQueryBlkFree(SSplitQueryBlk* squery_blk);
 
+/** Determines whether HSPs on different diagnonals may be merged
+ * @param squery_blk split query block structure [in]
+ * @return TRUE if possible, FALSE otherwise
+ */
+NCBI_XBLAST_EXPORT
+Boolean SplitQueryBlk_AllowGap(SSplitQueryBlk* squery_blk);
+
 /** Set the query chunk's bounds with respect to the full sized concatenated 
  * query 
  * @param squery_blk split query block structure [in]
