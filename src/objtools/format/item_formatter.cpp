@@ -673,7 +673,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
     if (imp.IsSetPrepub()) {
         CImprint::TPrepub prepub = imp.GetPrepub();
         if (prepub == CImprint::ePrepub_submitted  ||  prepub == CImprint::ePrepub_other) {
-            journal = "Unpublished ";
+            journal = "Unpublished";
             journal += year;
             return;
         }
@@ -807,10 +807,10 @@ static void s_FormatCitGen
                     }
                 }
                 journal += "Unpublished";
-                if (!NStr::IsBlank(year)) {
+                /* if (!NStr::IsBlank(year)) {
                     journal += ' ';
                     journal += year;
-                }
+                } */
                 return;
             }
             journal = "Unpublished";
@@ -1388,11 +1388,11 @@ void CFlatItemFormatter::x_FormatRefJournal
 
     if (NStr::IsBlank(journal)) {
         journal = "Unpublished";
-        if ( ref.IsSetDate() ) {
+        /* if ( ref.IsSetDate() ) {
             string year;
             s_FormatYear(ref.GetDate(), year);
             journal += string(" ") + year;
-        }
+        } */
     }
     StripSpaces(journal);
 }

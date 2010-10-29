@@ -240,6 +240,50 @@ void CReferenceItem::SetLoc(const CConstRef<CSeq_loc>& loc)
     m_Loc = loc;
 }
 
+static bool s_ShouldRemoveRef
+(const CReferenceItem& curr_ref,
+ const CReferenceItem& prev_ref)
+{
+    // all tests at least require overlap
+    const bool currPrevOverlap = ( prev_ref.GetLoc().GetStop(eExtreme_Biological) + 1 >= curr_ref.GetLoc().GetStart(eExtreme_Biological) );
+    if( ! currPrevOverlap ) {
+        return false;
+    }
+
+    // same PMID ( and overlap )
+    if( curr_ref.GetPMID() != 0 && prev_ref.GetPMID() != 0 ) {
+        if( curr_ref.GetPMID() == prev_ref.GetPMID() ) {
+            return true;
+        }
+    }
+        
+    // same MUID ( and overlap )
+    if( curr_ref.GetMUID() != 0 && prev_ref.GetMUID() != 0 ) {
+        if( curr_ref.GetMUID() == prev_ref.GetMUID() ) {
+            return true;
+        }
+    }
+
+    // check if references are basically identical
+        // next use AUTHOR string
+    string auth1, auth2;
+    if (curr_ref.IsSetAuthors()) {
+        CReferenceItem::FormatAuthors(curr_ref.GetAuthors(), auth1);
+    }
+    if (prev_ref.IsSetAuthors()) {
+        CReferenceItem::FormatAuthors(prev_ref.GetAuthors(), auth2);
+    }
+    const bool authorsSame = NStr::EqualNocase(auth1, auth2);
+
+    if( NStr::EqualNocase( curr_ref.GetUniqueStr(), prev_ref.GetUniqueStr() ) &&
+        curr_ref.GetLoc().Equals( prev_ref.GetLoc() ) &&
+        authorsSame ) {
+            return true;
+    }
+
+    return false;
+}
+
 
 static void s_MergeDuplicates
 (CReferenceItem::TReferences& refs,
@@ -251,6 +295,11 @@ static void s_MergeDuplicates
         **/
 
     if ( refs.size() < 2 ) {
+        return;
+    }
+
+    // for EMBL and DDBJ, we don't remove refs
+    if( ctx.IsEMBL() || ctx.IsDDBJ() ) {
         return;
     }
 
@@ -315,11 +364,21 @@ static void s_MergeDuplicates
         if ( curr_ref.IsJustUids() ) {
             remove = true;
         } else {
+
             // EMBL patent records do not need author or title - A29528.1
-            // do not allow no author reference to appear by itself - U07000.1
-            if (!(ctx.IsEMBL()  &&  ctx.IsPatent())  &&  !curr_ref.IsSetAuthors()) {
-                remove = true;
-            }
+            // if ( !(ctx.IsEMBL()  &&  ctx.IsPatent())  ) {
+
+                // do not allow no author reference to appear by itself - U07000.1
+                if( !curr_ref.IsSetAuthors() ) {
+                    remove = true;
+                } else {
+                    // GenPept RefSeq suppresses cit-subs
+                    if( ctx.IsRefSeq() && ctx.IsProt() && curr_ref.GetCategory() == CReferenceItem::eSubmission ) {
+                        remove = true;
+                    }
+                }
+
+            // }
         }
 
         // check for duplicate references (if merging is allowed)
@@ -327,9 +386,13 @@ static void s_MergeDuplicates
             const CReferenceItem& prev_ref = **(curr-1);
 
             // use less-than operator to check for equality
-            LessThan lessThan(false, ctx.IsRefSeq());
+            /* LessThan lessThan(false, ctx.IsRefSeq());
             if( ! lessThan( *(curr-1), *curr ) && ! lessThan( *curr, *(curr-1) ) ) {
                 // they're equal (i.e., duplicates)
+                remove = true;
+            } */
+
+            if( s_ShouldRemoveRef( curr_ref, prev_ref ) ) {
                 remove = true;
             }
         }
@@ -1397,23 +1460,6 @@ bool LessThan::operator()
         return ref1->GetReftype() < ref2->GetReftype();
     }
 
-    // put pub descriptors before features, sort features by location
-    const CSeq_feat* f1 = dynamic_cast<const CSeq_feat*>(ref1->GetObject());
-    const CSeq_feat* f2 = dynamic_cast<const CSeq_feat*>(ref2->GetObject());
-    if (f1 == NULL  &&  f2 != NULL) {
-        return true;
-    } else if (f1 != NULL  &&  f2 == NULL) {
-        return false;
-    } else if (f1 != NULL  &&  f2 != NULL) {
-        CSeq_loc::TRange r1 = f1->GetLocation().GetTotalRange();
-        CSeq_loc::TRange r2 = f2->GetLocation().GetTotalRange();
-        if (r1 < r2) {
-            return true;
-        } else if (r2 < r1) {
-            return false;
-        }
-    }
-
     // next use AUTHOR string
     string auth1, auth2;
     if (ref1->IsSetAuthors()) {
@@ -1434,6 +1480,23 @@ bool LessThan::operator()
         comp = NStr::CompareNocase(uniquestr1, uniquestr2);
         if ( comp != 0 ) {
             return comp < 0;
+        }
+    }
+
+    // put pub descriptors before features, sort features by location
+    const CSeq_feat* f1 = dynamic_cast<const CSeq_feat*>(ref1->GetObject());
+    const CSeq_feat* f2 = dynamic_cast<const CSeq_feat*>(ref2->GetObject());
+    if (f1 == NULL  &&  f2 != NULL) {
+        return true;
+    } else if (f1 != NULL  &&  f2 == NULL) {
+        return false;
+    } else if (f1 != NULL  &&  f2 != NULL) {
+        CSeq_loc::TRange r1 = f1->GetLocation().GetTotalRange();
+        CSeq_loc::TRange r2 = f2->GetLocation().GetTotalRange();
+        if (r1 < r2) {
+            return true;
+        } else if (r2 < r1) {
+            return false;
         }
     }
 

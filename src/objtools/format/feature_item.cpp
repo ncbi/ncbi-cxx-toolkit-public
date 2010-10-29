@@ -3001,7 +3001,7 @@ void CFeatureItem::x_AddQualsProt(
     ///
     /// report molecular weights
     ///
-    if (ctx.IsProt()) {
+    if (ctx.IsProt() && ctx.IsRefSeq() ) {
         double wt = 0;
         bool has_mat_peptide = false;
         bool has_signal_peptide = false;
@@ -3018,8 +3018,9 @@ void CFeatureItem::x_AddQualsProt(
                 case CProt_ref::eProcessed_transit_peptide:
                     {{
                          has_signal_peptide = true;
-                         if (feat_it->GetLocation().GetTotalRange().GetFrom() ==
-                             m_Feat.GetLocation().GetTotalRange().GetFrom()) {
+                         if ( (feat_it->GetLocation().GetTotalRange().GetFrom() ==
+                               m_Feat.GetLocation().GetTotalRange().GetFrom()) &&
+                               ! feat_it->GetLocation().Equals( m_Feat.GetLocation() ) ) {
                              loc = loc->Subtract(feat_it->GetLocation(),
                                                  CSeq_loc::fSortAndMerge_All,
                                                  NULL, NULL);
@@ -3056,7 +3057,7 @@ void CFeatureItem::x_AddQualsProt(
              }
          }}
 
-        if (comp == CMolInfo::eCompleteness_complete  ||  ctx.IsRefSeq()) {
+        if ( !(loc->IsPartialStart(eExtreme_Biological) || loc->IsPartialStop(eExtreme_Biological)) ) {
 
             bool proteinIsAtLeastMature;
             switch( pref.GetProcessed() ) {
@@ -3069,7 +3070,7 @@ void CFeatureItem::x_AddQualsProt(
                     break;
             }
 
-            if ( (!has_mat_peptide  ||  !has_signal_peptide) && (proteinIsAtLeastMature || ctx.IsRefSeq()) ) {
+            if ( (!has_mat_peptide  ||  !has_signal_peptide) || (proteinIsAtLeastMature) ) { 
                 try {
                     //wt = GetProteinWeight(ctx.GetHandle(), loc);
                     wt = GetProteinWeight(m_Feat.GetOriginalFeature(),
