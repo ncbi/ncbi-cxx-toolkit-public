@@ -1218,7 +1218,7 @@ private:
     void x_OnLockReleased(void);
     /// "Delete" this holder after last reference was removed.
     /// Actually deletes using factory's DeleteHolder().
-    virtual void DeleteThis(void) const;
+    virtual void DeleteThis(void);
 
 
     typedef list<TRWLockHolder_ListenerWeakRef> TListenersList;

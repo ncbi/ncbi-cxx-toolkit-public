@@ -1309,9 +1309,9 @@ CRWLockHolder::~CRWLockHolder(void)
 }
 
 void
-CRWLockHolder::DeleteThis(void) const
+CRWLockHolder::DeleteThis(void)
 {
-    m_Factory->DeleteHolder(const_cast<CRWLockHolder*>(this));
+    m_Factory->DeleteHolder(this);
 }
 
 void

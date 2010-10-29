@@ -113,7 +113,7 @@ public:
 
 private:
     ///
-    virtual void DeleteThis(void) const;
+    virtual void DeleteThis(void);
 
     ///
     size_t  m_Size;
@@ -158,7 +158,7 @@ private:
     SNCBlobVerData& operator= (const SNCBlobVerData&);
 
     ///
-    virtual void DeleteThis(void) const;
+    virtual void DeleteThis(void);
 };
 
 

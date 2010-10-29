@@ -250,12 +250,12 @@ public:
     static void ThrowNullPointerException(const type_info& type);
 
 
-    /// Controll filling of newly allocated memory
+    /// Control filling of newly allocated memory
     /// 
     /// Default mode is eAllocFillNone if not changed by configuration.
     ///   eAllocFillNone - do not fill at all
     ///       this mode is faster and is necessary to avoid interference with
-    ///       memory checker programs like valgrind.
+    ///       memory checker programs like Valgrind.
     ///   eAllocFillZero - fill new memory with zeros (old default mode)
     ///   eAllocFillPattern - fill with non-zero pattern
     enum EAllocFillMode {
@@ -278,7 +278,7 @@ protected:
     /// know that they are allocated at some pool they should return
     /// themselves to this pool).
     NCBI_XNCBI_EXPORT
-    virtual void DeleteThis(void) const;
+    virtual void DeleteThis(void);
 
 private:
     typedef CAtomicCounter   TCounter;  ///< Counter type is CAtomiCounter

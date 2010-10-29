@@ -54,11 +54,10 @@ CNCBlobBuffer::~CNCBlobBuffer(void)
 {}
 
 void
-CNCBlobBuffer::DeleteThis(void) const
+CNCBlobBuffer::DeleteThis(void)
 {
-    CNCBlobBuffer* nc_this = const_cast<CNCBlobBuffer*>(this);
-    nc_this->m_Size = 0;
-    s_BufferPool.Return(nc_this);
+    m_Size = 0;
+    s_BufferPool.Return(this);
 }
 
 
@@ -406,15 +405,14 @@ CNCBlobVerManager::ReleaseVerData(const SNCBlobVerData* ver_data)
 }
 
 void
-SNCBlobVerData::DeleteThis(void) const
+SNCBlobVerData::DeleteThis(void)
 {
     manager->ReleaseVerData(this);
-    SNCBlobVerData* nc_this = const_cast<SNCBlobVerData*>(this);
-    nc_this->chunks.clear();
-    nc_this->password.clear();
-    nc_this->data.Reset();
-    nc_this->data_trigger.Reset();
-    s_VerDataPool.Return(nc_this);
+    chunks.clear();
+    password.clear();
+    data.Reset();
+    data_trigger.Reset();
+    s_VerDataPool.Return(this);
 }
 
 

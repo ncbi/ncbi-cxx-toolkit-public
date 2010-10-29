@@ -509,7 +509,7 @@ void CObject::CheckReferenceOverflow(TCount count) const
 }
 
 
-void CObject::DeleteThis(void) const
+void CObject::DeleteThis(void)
 {
     TCount count = m_Counter.Get();
     // Counter could be changed by some other thread,
@@ -529,7 +529,7 @@ void CObject::RemoveLastReference(TCount count) const
     if ( ObjectStateCanBeDeleted(count) ) {
         // last reference to heap object -> delete it
         if ( ObjectStateUnreferenced(count) ) {
-            DeleteThis();
+            const_cast<CObject*>(this)->DeleteThis();
             return;
         }
     }
