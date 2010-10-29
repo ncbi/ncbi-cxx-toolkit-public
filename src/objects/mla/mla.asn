@@ -99,7 +99,11 @@ Error-val ::= ENUMERATED {
     citation-not-found (5),      -- Volume, Page and Author do not match any
                                  -- article
     citation-ambiguous (6),      -- More than one article found
-    citation-too-many (7)        -- Too many article was found
+    citation-too-many (7),       -- Too many article was found
+
+    cannot-connect-searchbackend-jrsrv(8),	-- Cannot connect to searchbackend Journals db
+    cannot-connect-searchbackend-pmdb(9),	-- Cannot connect to searchbackend PubMed db
+    cannot-connect-docsumbackend(10)		-- Cannot connect to docsumbackend
     }
 
 Mla-back ::= CHOICE {
