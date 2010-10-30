@@ -4124,6 +4124,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NMPG<DEU>	s	Museum der Natur-Gotha",
 "NMPI	s	Division of Plant Industry",
 "NMQR	s	National Museum",
+"NMRC<USA-MD>	c	Naval Medical Research Center",
+"NMRC<USA-MD>:RDD	c	Naval Medical Research Center, Rickettsial Diseases Division",
 "NMS	s	National Museum",
 "NMS-G	s	National Museums of Scotland - Geology & Zoology",
 "NMSA	s	Natal Museum",
