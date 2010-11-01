@@ -3533,6 +3533,21 @@ void CDisplaySeqalign::x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info)
     }
 }
 
+static string s_MapFeatureURL(string viewerURL,                           
+                              int subject_gi,  
+                              string db,                              
+                              int fromRange, 
+                              int toRange,
+                              string rid)
+{    
+    string url_link = CAlignFormatUtil::MapTemplate(viewerURL,"db",db);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",subject_gi);    
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid); 
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"from",fromRange); 
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"to",toRange); 
+    return url_link;
+}
+
 string CDisplaySeqalign::x_FormatOneDynamicFeature(string viewerURL,
                                                    int subject_gi,                                                    
                                                    int fromRange, 
@@ -3542,11 +3557,12 @@ string CDisplaySeqalign::x_FormatOneDynamicFeature(string viewerURL,
     string alignFeature = m_AlignTemplates->alignFeatureTmpl;
     if(subject_gi > 0){                   
         alignFeature = CAlignFormatUtil::MapTemplate(alignFeature,"aln_feat_info",m_AlignTemplates->alignFeatureLinkTmpl);
-        string url = viewerURL + "?val=" + NStr::IntToString(subject_gi) +
-               "&db=" + string(m_IsDbNa ? "Nucleotide" : "Protein") +   
-               "&from=" + NStr::IntToString(fromRange + 1) +
-               "&to=" + NStr::IntToString(toRange + 1) + 
-               "&view=gbwithparts&RID=" + m_Rid;
+        string url = s_MapFeatureURL(viewerURL,
+                                     subject_gi,
+                                     string(m_IsDbNa ? "nucleotide" : "protein"),
+                                     fromRange + 1,
+                                     toRange + 1,
+                                     m_Rid);
         alignFeature = CAlignFormatUtil::MapTemplate(alignFeature,"aln_feat_url",url);
         alignFeature = CAlignFormatUtil::MapTemplate(alignFeature,"aln_feat",featText);
     }
@@ -3564,7 +3580,7 @@ string CDisplaySeqalign::x_FormatDynamicFeaturesInfo(string alignInfo, SAlnInfo*
     //string alignFeature = m_AlignTemplates->alignFeatureTmpl;
     
     //char urlBuf[2048];   
-    string viewerURL = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_VIEWER_CGI");
+    string viewerURL = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_SUBSEQ_TM");
 
     string allAlnFeatures = "";
     if(aln_vec_info->feat_list.size() > 0) { //has feature in this range
@@ -3616,7 +3632,6 @@ string CDisplaySeqalign::x_FormatDynamicFeaturesInfo(string alignInfo, SAlnInfo*
 
 void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_vec_info) 
 {
-    char urlBuf[2048];
     string l_EntrezSubseqUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_SUBSEQ");
 
     if(aln_vec_info->feat_list.size() > 0) { //has feature in this range
@@ -3624,11 +3639,13 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
         ITERATE(vector<SFeatInfo*>, iter, aln_vec_info->feat_list){
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
-                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), aln_vec_info->subject_gi,
-                        m_IsDbNa ? "Nucleotide" : "Protein",  
-                        (*iter)->range.GetFrom() +1 , (*iter)->range.GetTo() + 1,
-                        m_Rid.c_str());
-                out << urlBuf;
+                string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
+                                              aln_vec_info->subject_gi,
+                                              m_IsDbNa ? "nucleotide" : "protein",  
+                                              (*iter)->range.GetFrom() +1 , 
+                                              (*iter)->range.GetTo() + 1,
+                                              m_Rid);                
+                out << featStr;
             }  
             out << (*iter)->feat_str;
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
@@ -3643,11 +3660,13 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
         if(aln_vec_info->feat5){
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
-                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), aln_vec_info->subject_gi,
-                        m_IsDbNa ? "Nucleotide" : "Protein",  
-                        aln_vec_info->feat5->range.GetFrom() + 1 , aln_vec_info->feat5->range.GetTo() + 1,
-                        m_Rid.c_str());
-                out << urlBuf;
+                string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
+                                              aln_vec_info->subject_gi,
+                                              m_IsDbNa ? "nucleotide" : "protein",  
+                                              aln_vec_info->feat5->range.GetFrom() + 1 , 
+                                              aln_vec_info->feat5->range.GetTo() + 1,
+                                              m_Rid);
+                out << featStr;
             }  
             out << aln_vec_info->actual_range.GetFrom() - aln_vec_info->feat5->range.GetTo() 
                 << " bp at 5' side: " << aln_vec_info->feat5->feat_str;
@@ -3659,11 +3678,13 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
         if(aln_vec_info->feat3){
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
-                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), aln_vec_info->subject_gi,
-                        m_IsDbNa ? "Nucleotide" : "Protein",  
-                        aln_vec_info->feat3->range.GetFrom() + 1 , aln_vec_info->feat3->range.GetTo() + 1,
-                        m_Rid.c_str());
-                out << urlBuf;
+                string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
+                                              aln_vec_info->subject_gi,
+                                              m_IsDbNa ? "nucleotide" : "protein",  
+                                              aln_vec_info->feat3->range.GetFrom() + 1 , 
+                                              aln_vec_info->feat3->range.GetTo() + 1,
+                                              m_Rid);
+                out << featStr;
             }
             out << aln_vec_info->feat3->range.GetFrom() - aln_vec_info->actual_range.GetTo() 
                 << " bp at 3' side: " << aln_vec_info->feat3->feat_str;
