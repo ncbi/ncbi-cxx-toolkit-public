@@ -43,8 +43,11 @@
 // generated includes
 #include <objects/genomecoll/GC_Sequence_.hpp>
 
-// generated classes
 #include <objects/genomecoll/GC_TaggedSequences.hpp>
+#include <objects/genomecoll/GC_TypedSeqId.hpp>
+#include <objects/genomecoll/GC_SeqIdAlias.hpp>
+
+// generated classes
 
 BEGIN_NCBI_SCOPE
 
@@ -86,6 +89,8 @@ public:
 
     /// Access the relationship to the parent
     CGC_TaggedSequences::TState GetParentRelation() const;
+
+    CConstRef<CSeq_id> GetSynonymSeq_id( CGC_TypedSeqId::E_Choice type, CGC_SeqIdAlias::E_AliasTypes ) const;
 
 protected:
     CGC_Assembly*     m_Assembly;
