@@ -521,7 +521,7 @@ CAlignFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs,
     } else {
         x_WrapOutputLine(all_id_str, line_len, out);
         if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
-            out << "Length=";
+            out << "\nLength=";
             out << cbs.GetInst().GetLength() <<"\n";
         }
     }
