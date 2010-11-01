@@ -75,6 +75,15 @@ public:
                                     blast::CReference::eGappedBlast,
                                     bool is_psiblast = false);
 
+
+    static void PrintDbInformation(size_t line_len,
+                                   string definition_line, 
+                                   int nNumSeqs, 
+                                   Uint8 nTotalLength,
+                                   bool html,   
+                                   bool with_links,
+                                   CNcbiOstream& out);
+
     /** 
      * @brief Prints the PSSM in ASCII format (as in blastpgp's -Q option)
      * 
