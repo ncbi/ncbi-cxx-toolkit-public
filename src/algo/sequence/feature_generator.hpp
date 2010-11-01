@@ -130,6 +130,7 @@ private:
     void x_CollectMrnaSequence(CSeq_inst& inst,
                                const CSeq_align& align,
                                const CSeq_loc& loc,
+                               bool add_unaligned_parts = true,
                                bool* has_gap = NULL,
                                bool* has_indel = NULL);
     void x_CreateMrnaBioseq(const CSeq_align& align,

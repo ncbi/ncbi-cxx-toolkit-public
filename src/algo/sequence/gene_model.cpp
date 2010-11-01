@@ -59,7 +59,7 @@
 #include <objects/seq/seq__.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Object_id.hpp>
-
+#include <util/sequtil/sequtil_convert.hpp>
 
 #include "feature_generator.hpp"
 
@@ -375,6 +375,8 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
                                      int gene_id,
                                      const objects::CSeq_feat* cdregion)
 {
+    CScopeTransaction tr = m_scope->GetTransaction(); // to rollback any changes at return
+
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (m_flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
@@ -397,11 +399,14 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
     static CAtomicCounter counter;
     size_t model_num = counter.Add(1);
 
-    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
-
-    CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
-    if (cdregion == NULL && feat_iter  &&  feat_iter.GetSize()) {
-        cdregion = &feat_iter->GetOriginalFeature();
+    if (cdregion == NULL) {
+        CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+        if (handle) {
+            CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
+            if (feat_iter  &&  feat_iter.GetSize()) {
+                cdregion = &feat_iter->GetOriginalFeature();
+            }
+        }
     }
 
     CRef<CSeq_feat> mrna_feat =
@@ -410,7 +415,7 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
 
     CRef<CSeq_feat> gene_feat;
 
-    handle = m_scope->GetBioseqHandle(rna_id);
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
 
 
     if (gene_id) {
@@ -450,7 +455,6 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
     }
 
     if (mrna_feat) {
-        SetFeatureExceptions(*mrna_feat, &align);
         // NOTE: added after gene!
 
         _ASSERT(mrna_feat->GetData().Which() != CSeqFeatData::e_not_set);
@@ -482,6 +486,19 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
     SetPartialFlags(gene_feat, mrna_feat, cds_feat);
     x_CopyAdditionalFeatures(handle, mapper, annot);
 
+    if (gene_id) {
+        tr.Commit();
+    } else {
+        tr.RollBack();
+    }
+
+    if (mrna_feat) {
+        SetFeatureExceptions(*mrna_feat, &align);
+    }
+    if (cds_feat) {
+        SetFeatureExceptions(*cds_feat, &align);
+    }
+
     return mrna_feat;
 }
 
@@ -509,16 +526,55 @@ CConstRef<CSeq_loc> GetSeq_loc(CSeq_loc_CI& loc_it)
     return this_loc;
 }
 
+void AddLiteral(CSeq_inst& inst, const string& seq, CSeq_inst::EMol mol_class)
+{
+    if (inst.IsSetExt()) {
+        CDelta_seq& delta_seq = *inst.SetExt().SetDelta().Set().back();
+        if (delta_seq.IsLiteral() && delta_seq.GetLiteral().IsSetSeq_data()) {
+            string iupacna;
+            switch(delta_seq.GetLiteral().GetSeq_data().Which()) {
+            case CSeq_data::e_Iupacna:
+                iupacna = delta_seq.GetLiteral().GetSeq_data().GetIupacna();
+                break;
+            case CSeq_data::e_Ncbi2na:
+                CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi2na().Get(), CSeqUtil::e_Ncbi2na,
+                                     0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
+                break;
+            case CSeq_data::e_Ncbi4na:
+                CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi4na().Get(), CSeqUtil::e_Ncbi4na,
+                                     0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
+                break;
+            case CSeq_data::e_Ncbi8na:
+                CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi8na().Get(), CSeqUtil::e_Ncbi8na,
+                                     0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
+                break;
+            default:
+                inst.SetExt().SetDelta().AddLiteral(seq, mol_class);
+                return;
+            }
+            iupacna += seq;
+            delta_seq.SetLiteral().SetSeq_data().SetIupacna().Set(iupacna);
+            delta_seq.SetLiteral().SetLength(iupacna.size());
+            CSeqportUtil::Pack(&delta_seq.SetLiteral().SetSeq_data());
+        } else {
+            inst.SetExt().SetDelta().AddLiteral(seq, mol_class);
+        }
+    } else {
+        inst.SetSeq_data().SetIupacna().Set() += seq;
+    }
+}
+
 void CFeatureGenerator::
 SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                                        const CSeq_align& align,
                                        const CSeq_loc& loc,
+                                       bool add_unaligned_parts,
                                        bool* has_gap,
                                        bool* has_indel)
 {
     /// set up the inst
     inst.SetMol(CSeq_inst::eMol_rna);
-    
+
     // this is created as a transcription of the genomic location
 
     CSeq_loc_Mapper to_mrna(align, CSeq_loc_Mapper::eSplicedRow_Prod);
@@ -537,6 +593,10 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                             CSeq_loc_CI::eEmpty_Skip,
                             CSeq_loc_CI::eOrder_Biological);
          loc_it;  ++loc_it) {
+
+        CConstRef<CSeq_loc> exon = GetSeq_loc(loc_it);
+        CRef<CSeq_loc> mrna_loc = to_mrna.Map(*exon);
+
         if ((prev_to > -1  &&
              (loc_it.GetStrand() != eNa_strand_minus ?
               loc_it.GetFuzzFrom() : loc_it.GetFuzzTo()) != NULL)  ||
@@ -549,18 +609,22 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                     (inst.GetSeq_data().GetIupacna().Get(),CSeq_inst::eMol_rna);
                 inst.ResetSeq_data();
             }
-            inst.SetExt().SetDelta().AddLiteral(0);
-            inst.SetExt().SetDelta().Set().back()
-                ->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            int gap_len = add_unaligned_parts ? mrna_loc->GetTotalRange().GetFrom()-(prev_to+1) : 0;
+            inst.SetExt().SetDelta().AddLiteral(gap_len);
+            if (gap_len == 0)
+                inst.SetExt().SetDelta().Set().back()
+                    ->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
         }
 
-        CConstRef<CSeq_loc> exon = GetSeq_loc(loc_it);
-        CRef<CSeq_loc> mrna_loc = to_mrna.Map(*exon);
         int part_count = 0;
         for (CSeq_loc_CI part_it(*mrna_loc);  part_it;  ++part_it) {
             ++part_count;
             if (prev_to<0) {
                 prev_to = part_it.GetRange().GetFrom()-1;
+                if (add_unaligned_parts && part_it.GetRange().GetFrom() > 0) {
+                    seq_size = part_it.GetRange().GetFrom();
+                    inst.SetExt().SetDelta().AddLiteral(seq_size);
+                }
             }
             int deletion_len = part_it.GetRange().GetFrom()-(prev_to+1);
             if (deletion_len > 0) {
@@ -568,11 +632,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                     *has_indel = true;
                 }
                 string deletion(deletion_len, 'N');
-                if (inst.IsSetExt()) {
-                    inst.SetExt().SetDelta().AddLiteral(deletion, CSeq_inst::eMol_rna);
-                } else {
-                    inst.SetSeq_data().SetIupacna().Set() += deletion;
-                }
+                AddLiteral(inst, deletion, CSeq_inst::eMol_rna);
             }
 
             CConstRef<CSeq_loc> part = GetSeq_loc(part_it);
@@ -582,11 +642,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
             string seq;
             vec.GetSeqData(0, vec.size(), seq);
 
-            if (inst.IsSetExt()) {
-                inst.SetExt().SetDelta().AddLiteral(seq, CSeq_inst::eMol_rna);
-            } else {
-                inst.SetSeq_data().SetIupacna().Set() += seq;
-            }
+            AddLiteral(inst, seq, CSeq_inst::eMol_rna);
 
             seq_size += part_it.GetRange().GetTo()-prev_to;
 
@@ -598,6 +654,22 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
             
         prev_fuzz = (loc_it.GetStrand() != eNa_strand_minus ?
                      loc_it.GetFuzzTo() : loc_it.GetFuzzFrom()) != NULL;
+    }
+
+    if (add_unaligned_parts && align.GetSegs().IsSpliced()) {
+        const CSpliced_seg& spl = align.GetSegs().GetSpliced();
+        if (spl.IsSetProduct_length()) {
+            TSeqPos length = spl.GetProduct_length();
+            if (seq_size < (int)length) {
+                if (!inst.IsSetExt()) {
+                    inst.SetExt().SetDelta().AddLiteral
+                        (inst.GetSeq_data().GetIupacna().Get(),CSeq_inst::eMol_rna);
+                    inst.ResetSeq_data();
+                }
+                inst.SetExt().SetDelta().AddLiteral(length-seq_size);
+                seq_size = length;
+            }
+        }
     }
 
     inst.SetLength(seq_size);
@@ -679,7 +751,11 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
 
     CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
     if (!handle) {
+        m_scope->ResetHistory(); //otherwise adding new entry to non-clean scope produces warnings
         m_scope->AddTopLevelSeqEntry(*entry);
+    } else {
+        CBioseq_EditHandle edithandle = m_scope->GetEditHandle(handle);
+        edithandle.SetInst(bioseq.SetInst());
     }
 }
 
@@ -732,17 +808,12 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     // set up the inst
 
     string strprot;
-    CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, false, true);
+    CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, false, false);
 
     CSeq_inst& seq_inst = bioseq.SetInst();
     seq_inst.SetMol(CSeq_inst::eMol_aa);
     seq_inst.SetLength(strprot.size());
 
-    if (IsContinuous(*cds_loc)) {
-        seq_inst.SetRepr(CSeq_inst::eRepr_raw);
-        CRef<CSeq_data> dprot(new CSeq_data(strprot, CSeq_data::e_Ncbieaa));
-        seq_inst.SetSeq_data(*dprot);
-    } else {
         seq_inst.SetRepr(CSeq_inst::eRepr_delta);
         CSeqVector seqv(cds_on_mrna.GetLocation(), m_scope, CBioseq_Handle::eCoding_Ncbi);
         CConstRef<CSeqMap> map;
@@ -768,11 +839,13 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
         for( CSeqMap_CI ci = map->BeginResolved(m_scope.GetPointer()); ci; ) {
             TSeqPos len = ci.GetLength() - frame;
-            frame = 0;
+            frame = (2*len)%3;
             e = b + (len+2)/3;
             if (ci.IsUnknownLength()) {
                 seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            } else if (!ci.IsSetData()) {
+                seq_inst.SetExt().SetDelta().AddLiteral(e-b);
             } else {
                 if (e > strprot.size()) {
                     _ASSERT( len%3 != 0 || !cds_loc->IsPartialStop(eExtreme_Biological) );
@@ -785,15 +858,24 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             b = e;
 
             ci.Next();
-
-            _ASSERT( len%3 == 0 || !ci );
         }
         _ASSERT( b == strprot.size() );
+
+    if (seq_inst.SetExt().SetDelta().Set().size() == 1) {
+        seq_inst.SetRepr(CSeq_inst::eRepr_raw);
+        CRef<CSeq_data> dprot(new CSeq_data);
+        dprot->Assign(seq_inst.SetExt().SetDelta().Set().back()->GetLiteral().GetSeq_data());
+        seq_inst.SetSeq_data(*dprot);
+        seq_inst.ResetExt();
     }
 
     CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
     if (!handle) {
+        m_scope->ResetHistory(); //otherwise adding new entry to non-clean scope produces warnings
         m_scope->AddTopLevelSeqEntry(*entry);
+    } else {
+        CBioseq_EditHandle edithandle = m_scope->GetEditHandle(handle);
+        edithandle.SetInst(bioseq.SetInst());
     }
 
 #ifdef _DEBUG
@@ -801,7 +883,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     CSeqVector vec(prot_h, CBioseq_Handle::eCoding_Iupac);
     string result;
     vec.GetSeqData(0, vec.size(), result);
-    _ASSERT( strprot==result );
+    _ASSERT( strprot.size()==result.size() );
 #endif
     
     seqs.SetSeq_set().push_back(entry);
@@ -1207,11 +1289,7 @@ SImplementation::x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                             SAnnotSelector sel(CSeq_annot::C_Data::e_Ftable);
                             sel.SetResolveNone();
                             CAnnot_CI it(handle, sel);
-                            CConstRef<CSeq_annot> sap = it->GetCompleteSeq_annot();
-                            it->GetEditHandle().Remove();
-                            CSeq_annot& annot = const_cast<CSeq_annot&>(*sap);
-                            annot.SetData().SetFtable().push_back(stop_5prime_feature);
-                            handle.GetEditHandle().AttachAnnot(annot);
+                            it->GetEditHandle().AddFeat(*stop_5prime_feature);
                         }
                     }
                 }
@@ -1253,8 +1331,6 @@ SImplementation::x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                         cds.ResetCode_break();
                     }
                 }
-
-                SetFeatureExceptions(*cds_feat, &align);
 
             }
     }
@@ -1688,7 +1764,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
 
     if (align != NULL) {
         CBioseq bioseq;
-        x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), &has_gap, &has_indel);
+        x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), false, &has_gap, &has_indel);
         CSeqVector seq(bioseq, &scope,
                        CBioseq_Handle::eCoding_Iupac);
         string mrna;
