@@ -4409,10 +4409,8 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          ;;
    esac
 
-   case "$BOOST_TAG" in
-      *-mt*) ;;
-      *) BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS" ;;
-   esac
+   test "$with_mt" = yes  || \
+      BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS"
 
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_regex${BOOST_TAG}-static.a"; then

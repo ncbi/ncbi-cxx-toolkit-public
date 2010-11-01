@@ -24324,10 +24324,8 @@ echo "${ECHO_T}$BOOST_TAG (by explicit request)" >&6
          ;;
    esac
 
-   case "$BOOST_TAG" in
-      *-mt*) ;;
-      *) BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS" ;;
-   esac
+   test "$with_mt" = yes  || \
+      BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS"
 
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_regex${BOOST_TAG}-static.a"; then
