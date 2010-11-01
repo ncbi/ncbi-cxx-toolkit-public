@@ -39,6 +39,9 @@
 
 // generated includes
 #include <objects/genomecoll/GC_AssemblyUnit.hpp>
+#include <objects/genomecoll/GC_Assembly.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 
 // generated classes
 

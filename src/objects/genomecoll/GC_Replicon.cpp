@@ -39,6 +39,8 @@
 
 // generated includes
 #include <objects/genomecoll/GC_Replicon.hpp>
+#include <objects/genomecoll/GC_AssemblyUnit.hpp>
+#include <objects/genomecoll/GC_Assembly.hpp>
 
 // generated classes
 
