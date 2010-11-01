@@ -134,8 +134,10 @@ const string kDownloadImg = "<img border=0 height=16 width=16 src=\"images/D.gif
 
 ///Sub-sequence
 // .ncbirc alias: ENTREZ_SUBSEQ
-const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.\
-gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts&RID=%s\">";
+const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>\">";
+
+// .ncbirc alias: ENTREZ_SUBSEQ_TM
+const string kEntrezSubseqTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>";
 
 ///Bl2seq 
 // .ncbirc alias: BL2SEQ
@@ -213,6 +215,7 @@ static const TTagUrl s_TagUrls [] = {
   TTagUrl("ENTREZ_SITES_CGI",  kEntrezSitesCgi),
   TTagUrl("ENTREZ_SUBSEQ",  kEntrezSubseqUrl),
   TTagUrl("ENTREZ_TM",  kEntrezTMUrl),
+  TTagUrl("ENTREZ_SUBSEQ_TM",  kEntrezSubseqTMUrl),  
   TTagUrl("ENTREZ_VIEWER_CGI",  kEntrezViewerCgi),
   TTagUrl("GENE",  kGeneUrl),
   TTagUrl("GENE_INFO",  kGeneInfoUrl),
