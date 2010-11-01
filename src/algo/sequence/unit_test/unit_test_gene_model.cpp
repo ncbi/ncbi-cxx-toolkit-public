@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         CSeq_annot actual_annot;
         {
             CFeatureGenerator generator(scope);
-            generator.SetFlags(CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds |
+            generator.SetFlags((CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
                                CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna);
 
             CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
