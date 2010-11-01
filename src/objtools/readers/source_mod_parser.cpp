@@ -464,7 +464,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CGB_block>& gbb)
                 ITERATE (SSeqIdRange, it2, range) {
                     gbb->SetExtra_accessions().push_back(*it2);
                 }
-            } catch (CSeqIdException& e) {
+            } catch (CSeqIdException&) {
                 gbb->SetExtra_accessions().push_back(s);
             }
         }
@@ -489,7 +489,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
                 ITERATE (SSeqIdRange, it2, range) {
                     hist->SetReplaces().SetIds().push_back(it2.GetID());
                 }
-            } catch (CSeqIdException& e) {
+            } catch (CSeqIdException&) {
                 NStr::ReplaceInPlace(s, "ref_seq|", "ref|", 0, 1);
                 hist->SetReplaces().SetIds()
                     .push_back(CRef<CSeq_id>(new CSeq_id(s)));
