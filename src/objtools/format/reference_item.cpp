@@ -347,7 +347,12 @@ static void s_MergeDuplicates
                 }
             }
         }
-    }}                        
+    }}       
+
+    // no merging allowed in this case
+    if( ! sourcePubFuse ) {
+      return;
+    }
 
     CReferenceItem::TReferences::iterator curr = refs.begin();
 
@@ -382,7 +387,7 @@ static void s_MergeDuplicates
         }
 
         // check for duplicate references (if merging is allowed)
-        if( sourcePubFuse && curr != refs.begin() ) {
+        if( curr != refs.begin() ) {
             const CReferenceItem& prev_ref = **(curr-1);
 
             // use less-than operator to check for equality
