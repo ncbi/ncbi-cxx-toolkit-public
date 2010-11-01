@@ -105,6 +105,23 @@ CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
     out << "\n";
 }
 
+void CBlastFormatUtil::PrintDbInformation(size_t line_len,
+                                          string definition_line, 
+                                          int nNumSeqs, 
+                                          Uint8 nTotalLength,
+                                          bool html,                                                                                       
+                                          bool with_links,
+                                          CNcbiOstream& out)
+                                      
+                                      
+{
+    ostringstream str;
+    string dbString = (html) ? "<b>Database:</b> " : "Database: ";
+    str << dbString << definition_line << endl;
+    if(!(html && with_links)) x_WrapOutputLine(str.str(),line_len, out);
+
+    out << "           " << NStr::IntToString(nNumSeqs,NStr::fWithCommas) << " sequences; " << NStr::IntToString(nTotalLength,NStr::fWithCommas) << " total letters" << endl;
+}
 
 /** Standard order of letters according to S. Altschul
  * FIXME: Move to blast_encoding.[hc] ?
