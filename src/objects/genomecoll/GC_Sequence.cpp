@@ -39,6 +39,10 @@
 
 // generated includes
 #include <objects/genomecoll/GC_Sequence.hpp>
+#include <objects/genomecoll/GC_AssemblyUnit.hpp>
+#include <objects/genomecoll/GC_Assembly.hpp>
+#include <objects/genomecoll/GC_Replicon.hpp>
+#include <objects/genomecoll/GC_External_Seqid.hpp>
 
 // generated classes
 
@@ -97,6 +101,61 @@ CConstRef<CGC_Sequence> CGC_Sequence::GetTopLevelParent() const
     for ( ;  top  &&  top->GetParent();  top = top->GetParent()) {
     }
     return top;
+}
+
+CConstRef<CSeq_id> CGC_Sequence::GetSynonymSeq_id( CGC_TypedSeqId::E_Choice syn_type, CGC_SeqIdAlias::E_AliasTypes alias_type ) const
+{
+    CConstRef<CSeq_id> ret;
+    if( !IsSetSeq_id_synonyms() )
+        return ret;
+
+    CConstRef<CGC_TypedSeqId> typed_seq_id;
+
+    ITERATE( TSeq_id_synonyms, it_syn, GetSeq_id_synonyms() )
+    {
+        if( (*it_syn)->Which() == syn_type )
+        {
+            typed_seq_id = *it_syn;
+            break;
+        }
+    }
+
+    if( typed_seq_id.IsNull() )
+        return ret;
+
+
+    if( syn_type == CGC_TypedSeqId::e_Genbank || syn_type == CGC_TypedSeqId::e_Refseq )
+    {
+        CConstRef<CGC_SeqIdAlias> seq_id_alias;
+        if( syn_type == CGC_TypedSeqId::e_Genbank )
+            seq_id_alias = CConstRef<CGC_SeqIdAlias> ( &typed_seq_id->GetGenbank() );
+        else
+            seq_id_alias = CConstRef<CGC_SeqIdAlias>( &typed_seq_id->GetRefseq() );
+
+        switch( alias_type )
+        {
+        case CGC_SeqIdAlias::e_Public:
+            if( seq_id_alias->IsSetPublic() )
+                ret = CConstRef<CSeq_id>( &seq_id_alias->GetPublic() );
+            break;
+        case CGC_SeqIdAlias::e_Gpipe:
+            if( seq_id_alias->IsSetGpipe() )
+                ret = CConstRef<CSeq_id>( &seq_id_alias->GetGpipe() );
+            break;
+        case CGC_SeqIdAlias::e_Gi:
+            if( seq_id_alias->IsSetGi() )
+                ret = CConstRef<CSeq_id>( &seq_id_alias->GetGi() );
+            break;
+        }
+        
+    }
+    else if( syn_type == CGC_TypedSeqId::e_Private )
+        ret = CConstRef<CSeq_id>( &typed_seq_id->GetPrivate() );
+
+    else if( syn_type == CGC_TypedSeqId::e_External )
+        ret = CConstRef<CSeq_id>( &typed_seq_id->GetExternal().GetId() );
+
+    return ret;
 }
 
 
