@@ -554,7 +554,7 @@ Uint8 GetPhysicalMemorySize(void)
     }
 #  endif //NCBI_OS_DARWIN
 
-#elif NCBI_OS_IRIX
+#elif defined(NCBI_OS_IRIX)
 
     struct rminfo rmi;
     if (sysmp(MP_SAGET, MPSA_RMINFO, &rmi, sizeof(rmi)) >= 0) {
