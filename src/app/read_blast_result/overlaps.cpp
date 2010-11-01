@@ -635,8 +635,10 @@ bool CReadBlastApp::overlaps
   bool complete_overlaps = false;
   int scratch_overlap;
   result = overlaps(left_genomic_int, right_genomic_int, scratch_overlap);
-  if(result) complete_overlaps = complete_overlap(left_genomic_int, right_genomic_int)
-                       || complete_overlap(right_genomic_int, left_genomic_int);
+  bool  left_covered_by_right=false;
+  bool  right_covered_by_left=false;
+  if(result) complete_overlaps = (left_covered_by_right=complete_overlap(left_genomic_int, right_genomic_int))
+                       || (right_covered_by_left=complete_overlap(right_genomic_int, left_genomic_int));
   if(PrintDetails()) NcbiCerr << "space = " << space
      << ", complete_overlap = " << complete_overlaps
      << ", result = " << result
@@ -688,7 +690,7 @@ bool CReadBlastApp::overlaps
     if(complete_overlaps)
       {
       // problem  = problemCO;
-      if(report->q_name_left.find("hypothetical")!=string::npos)
+      if(report->q_name_left.find("hypothetical")!=string::npos && left_covered_by_right && !right_covered_by_left)
         {
         NcbiCerr << "CReadBlastApp::overlaps: WARNING: sequence of a hypothetical protein "
                  << "[" << qname << "]"
@@ -709,7 +711,7 @@ bool CReadBlastApp::overlaps
                    << qname << NcbiEndl;
           }
         }
-      if(report->q_name_right.find("hypothetical")!=string::npos)
+      if(report->q_name_right.find("hypothetical")!=string::npos && right_covered_by_left)
         {
         NcbiCerr << "CReadBlastApp::overlaps: WARNING: sequence of a hypothetical protein "
                  << "[" << qrname << "]"
