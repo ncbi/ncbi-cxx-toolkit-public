@@ -521,7 +521,7 @@ Uint8 GetPhysicalMemorySize(void)
         return GetVirtualMemoryPageSize() * Uint8(num_pages);
     }
 
-#elif defined(NCBI_OS_BSD)  ||  defined(NSBI_OS_DARWIN)
+#elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)
 
     size_t   len;
     int      mib[2];
