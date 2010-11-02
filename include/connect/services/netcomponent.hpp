@@ -48,7 +48,7 @@ enum EVoid {
 };
 
 template <class S>
-class CNetObjectCounterLocker : public CObjectCounterLocker
+class CNetComponentCounterLocker : public CObjectCounterLocker
 {
 public:
     void Lock(const S* object) const
@@ -77,7 +77,7 @@ public:
 #define NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component_name) \
     protected: \
     CRef<S##component_name##Impl, \
-        CNetObjectCounterLocker<S##component_name##Impl> > m_Impl; \
+        CNetComponentCounterLocker<S##component_name##Impl> > m_Impl; \
     public: \
     typedef S##component_name##Impl* TInstance; \
     C##component_name(TInstance impl) : m_Impl(impl) {} \
