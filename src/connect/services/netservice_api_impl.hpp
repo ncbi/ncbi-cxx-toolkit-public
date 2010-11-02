@@ -160,7 +160,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SNetServerGroupImpl* m_ServerGroupPool;
 
     union {
-        SNetServerGroupImpl* m_SignleServerGroup;
+        SNetServerGroupImpl* m_SingleServerGroup;
         SNetServerGroupImpl* m_ServerGroups[
             CNetService::eNumberOfDiscoveryModes];
     };

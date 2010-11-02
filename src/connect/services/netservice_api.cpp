@@ -301,9 +301,9 @@ void SNetServiceImpl::Init(CObject* api_impl,
             // CFastMutexGuard g(m_SharedData->m_ServerGroupMutex);
             SNetServerImpl* single_server = new SNetServerImplReal(host, port);
             m_Servers.insert(single_server);
-            m_SignleServerGroup = new SNetServerGroupImpl(m_SharedData);
-            m_SignleServerGroup->Reset(CNetService::eSortByLoad, 0);
-            m_SignleServerGroup->m_Servers.push_back(single_server);
+            m_SingleServerGroup = new SNetServerGroupImpl(m_SharedData);
+            m_SingleServerGroup->Reset(CNetService::eSortByLoad, 0);
+            m_SingleServerGroup->m_Servers.push_back(single_server);
         } else {
             m_ServiceType = eLoadBalanced;
             memset(&m_ServerGroups, 0, sizeof(m_ServerGroups));
@@ -438,7 +438,7 @@ CNetServer SNetServiceImpl::GetSingleServer(const string& cmd)
                 "' requires a server but none specified");
     }
 
-    return ReturnServer(m_SignleServerGroup->m_Servers.front());
+    return ReturnServer(m_SingleServerGroup->m_Servers.front());
 }
 
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
@@ -522,8 +522,8 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
             m_APIName << ": service name is not set");
 
     case SNetServiceImpl::eSingleServer:
-        m_SignleServerGroup->m_Service = this;
-        return m_SignleServerGroup;
+        m_SingleServerGroup->m_Service = this;
+        return m_SingleServerGroup;
 
     case SNetServiceImpl::eLoadBalanced:
         break;
@@ -696,7 +696,7 @@ SNetServiceImpl::~SNetServiceImpl()
         break;
 
     case eSingleServer:
-        delete m_SignleServerGroup;
+        delete m_SingleServerGroup;
         break;
 
     case eNotDefined:
