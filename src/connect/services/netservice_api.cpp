@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 void SNetServerGroupImpl::DeleteThis()
 {
-    SNetServiceImpl* service_impl = m_Service->m_Impl;
+    SNetServiceImpl* service_impl = m_Service;
 
     if (service_impl == NULL)
         return;
