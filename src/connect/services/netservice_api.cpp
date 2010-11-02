@@ -50,11 +50,16 @@ BEGIN_NCBI_SCOPE
 
 void SNetServerGroupImpl::DeleteThis()
 {
+    SNetServiceImpl* service_impl = m_Service->m_Impl;
+
+    if (service_impl == NULL)
+        return;
+
     // Before resetting the m_Service pointer, verify that no other object
     // has acquired a reference to this server group object yet (between
     // the time the reference counter went to zero, and the current moment
     // when m_Service is about to be reset).
-    CFastMutexGuard g(m_Service->m_ServerGroupMutex);
+    CFastMutexGuard g(service_impl->m_ServerGroupMutex);
 
     if (!Referenced() && m_Service) {
         if (m_Service->m_ServerGroups[m_DiscoveryMode] != this) {
