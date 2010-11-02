@@ -127,13 +127,13 @@ typedef unsigned int TNCBI_Time;
  */
 
 #if   defined(_MINGW32_)
-typedef unsigned __int64 TNCBI_BigCount;
+typedef unsigned long long TNCBI_BigCount;
 #  define NCBI_BIGCOUNT_FORMAT_SPEC "I64u"
 #elif defined(_WIN32)
-typedef unsigned __int64 TNCBI_BigCount;
+typedef unsigned __int64   TNCBI_BigCount;
 #  define NCBI_BIGCOUNT_FORMAT_SPEC "I64u"
 #else
-typedef uint64_t         TNCBI_BigCount;
+typedef uint64_t           TNCBI_BigCount;
 #  define NCBI_BIGCOUNT_FORMAT_SPEC PRIu64
 #endif
 
