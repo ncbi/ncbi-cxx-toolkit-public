@@ -198,7 +198,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
     // sort our compartments by size descending
     //
     std::sort(scored_compartments.begin(), scored_compartments.end());
-    REVERSE_ITERATE (vector<TCompartScore>, it, scored_compartments) {
+    NON_CONST_REVERSE_ITERATE (vector<TCompartScore>, it, scored_compartments) {
         align_sets.push_back(it->second);
     }
 }
