@@ -58,8 +58,18 @@ struct SNetServerGroupIteratorImpl : public CObject
     TNetServerList::const_iterator m_Position;
 };
 
+struct SNetServiceSharedData : public CObject
+{
+    CFastMutex m_ServerGroupMutex;
+};
+
 struct SNetServerGroupImpl : public CObject
 {
+    SNetServerGroupImpl(SNetServiceSharedData* shared_data) :
+        m_SharedData(shared_data)
+    {
+    }
+
     void Reset(CNetService::EDiscoveryMode discovery_mode,
         unsigned discovery_iteration)
     {
@@ -73,6 +83,8 @@ struct SNetServerGroupImpl : public CObject
     // and if that was the last reference, the service object
     // will be deleted.
     virtual void DeleteThis();
+
+    CRef<SNetServiceSharedData> m_SharedData;
 
     SNetServerGroupImpl* m_NextGroupInPool;
 
@@ -152,7 +164,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         SNetServerGroupImpl* m_ServerGroups[
             CNetService::eNumberOfDiscoveryModes];
     };
-    CFastMutex m_ServerGroupMutex;
+    CRef<SNetServiceSharedData> m_SharedData;
 
     TNetServerSet m_Servers;
     CFastMutex m_ServerMutex;

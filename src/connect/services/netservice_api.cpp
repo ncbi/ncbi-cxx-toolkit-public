@@ -50,11 +50,15 @@ BEGIN_NCBI_SCOPE
 
 void SNetServerGroupImpl::DeleteThis()
 {
+    // Protect the SharedData object from premature deletion by making
+    // a local reference to it.
+    CRef<SNetServiceSharedData> shared_data(m_SharedData);
+
     // Before resetting the m_Service pointer, verify that no other object
     // has acquired a reference to this server group object yet (between
     // the time the reference counter went to zero, and the current moment
     // when m_Service is about to be reset).
-    CFastMutexGuard g(m_Service->m_ServerGroupMutex);
+    CFastMutexGuard g(shared_data->m_ServerGroupMutex);
 
     if (!Referenced() && m_Service) {
         if (m_Service->m_ServerGroups[m_DiscoveryMode] != this) {
@@ -99,6 +103,7 @@ SNetServiceImpl::SNetServiceImpl(
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
     m_ServerGroupPool(NULL),
+    m_SharedData(new SNetServiceSharedData),
     m_ServiceType(eNotDefined)
 {
 }
@@ -293,10 +298,10 @@ void SNetServiceImpl::Init(CObject* api_impl,
             unsigned int port = NStr::StringToInt(sport);
             host = g_NetService_gethostip(host);
             // No need to lock in the constructor:
-            // CFastMutexGuard g(m_ServerGroupMutex);
+            // CFastMutexGuard g(m_SharedData->m_ServerGroupMutex);
             SNetServerImpl* single_server = new SNetServerImplReal(host, port);
             m_Servers.insert(single_server);
-            m_SignleServerGroup = new SNetServerGroupImpl;
+            m_SignleServerGroup = new SNetServerGroupImpl(m_SharedData);
             m_SignleServerGroup->Reset(CNetService::eSortByLoad, 0);
             m_SignleServerGroup->m_Servers.push_back(single_server);
         } else {
@@ -486,7 +491,7 @@ SNetServerGroupImpl* SNetServiceImpl::AllocServerGroup(
     SNetServerGroupImpl* server_group;
 
     if (m_ServerGroupPool == NULL)
-        server_group = new SNetServerGroupImpl;
+        server_group = new SNetServerGroupImpl(m_SharedData);
     else {
         server_group = m_ServerGroupPool;
         m_ServerGroupPool = server_group->m_NextGroupInPool;
@@ -719,7 +724,7 @@ void CNetService::SetPermanentConnection(ESwitch type)
 CNetServerGroup CNetService::DiscoverServers(
     CNetService::EDiscoveryMode discovery_mode)
 {
-    CFastMutexGuard g(m_Impl->m_ServerGroupMutex);
+    CFastMutexGuard g(m_Impl->m_SharedData->m_ServerGroupMutex);
 
     return m_Impl->DiscoverServers(discovery_mode);
 }
