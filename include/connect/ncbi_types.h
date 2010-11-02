@@ -126,13 +126,16 @@ typedef unsigned int TNCBI_Time;
 /** Big integer for file size and position
  */
 
-#ifdef _WIN32
+#if   defined(_MINGW32_)
+typedef unsigned __int64 TNCBI_BigCount;
+#  define NCBI_BIGCOUNT_FORMAT_SPEC "I64u"
+#elif defined(_WIN32)
 typedef unsigned __int64 TNCBI_BigCount;
 #  define NCBI_BIGCOUNT_FORMAT_SPEC "I64u"
 #else
 typedef uint64_t         TNCBI_BigCount;
 #  define NCBI_BIGCOUNT_FORMAT_SPEC PRIu64
-#endif /*_WIN32*/
+#endif
 
 
 #ifdef __cplusplus
