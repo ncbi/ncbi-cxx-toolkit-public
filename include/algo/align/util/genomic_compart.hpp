@@ -47,9 +47,10 @@ enum ECompartOptions {
 };
 typedef int TCompartOptions;
 
-void FindCompartments(const list< CRef<CSeq_align> >& aligns,
-                      list< CRef<CSeq_align_set> >& align_sets,
-                      TCompartOptions options = fCompart_Defaults);
+void NCBI_XALGOALIGN_EXPORT 
+FindCompartments(const list< CRef<CSeq_align> >& aligns,
+                 list< CRef<CSeq_align_set> >& align_sets,
+                 TCompartOptions options = fCompart_Defaults);
 
 
 END_SCOPE(objects)
