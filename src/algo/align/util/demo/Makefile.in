@@ -10,7 +10,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = demo_score_builder
+APP_PROJ = demo_score_builder demo_genomic_compart
 PROJ_TAG = demo
 
 srcdir = @srcdir@
