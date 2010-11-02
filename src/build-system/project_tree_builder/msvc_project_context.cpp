@@ -449,6 +449,9 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         string dynamic_lib_dir = CDirEntry::ConcatPath(m_DynamicLibRoot, cfg_info.GetConfigFullName());
         ITERATE(list<CProjKey>, n, m_Project.m_Depends) {
             const CProjKey& depend_id = *n;
+            if (SMakeProjectT::IsConfigurableDefine(depend_id.Id())) {
+                continue;
+            }
             if (depend_id.Type() == CProjKey::eLib || depend_id.Type() == CProjKey::eDll) {
                 CProjectItemsTree::TProjects::const_iterator i =
                     all_projects->m_Projects.find(depend_id);
