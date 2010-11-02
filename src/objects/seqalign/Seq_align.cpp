@@ -1227,11 +1227,10 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
         ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
             const CStd_seg& seg = **iter;
             ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
-                for (int i = 0;  i < seg.GetDim();  ++i) {
-                    if ((*it)[i].IsEmpty()) {
-                        ++retval;
-                        break;
-                    }
+                const CSeq_loc& loc = **it;
+                if (loc.IsEmpty()) {
+                    ++retval;
+                    break;
                 }
             }
         }
