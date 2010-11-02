@@ -65,8 +65,6 @@ struct SNetServerMultilineCmdOutputImpl : public CObject
     bool m_ReadCompletely;
 };
 
-struct SNetServerImpl;
-
 struct SNetServerConnectionImpl : public CObject
 {
     SNetServerConnectionImpl(SNetServerImpl* pool);
