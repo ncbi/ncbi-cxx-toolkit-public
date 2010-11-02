@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,10 +31,10 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements. 
+ *       API and functionality requirements.
  */
 
 /** @file
@@ -57,38 +57,56 @@ namespace xml {
 
 namespace impl {
 
+/*
+ * The struct is used to keep a list of the default attributes proxies
+ * which help to track attributes conversions from default to non default ones
+ */
+struct phantom_attr
+{
+    xmlAttributePtr         def_prop_;  // Must always be set correspondingly
+    xmlAttrPtr              prop_;      // Set if only this default attribute has been converted
+    struct phantom_attr *   next;       // The next phantom attribute
+};
+
+
 /**
  * the class that does all the work behind xml::attributes::iterator and
  * xml::attributes::const_iterator.
  */
-class ait_impl : public pimpl_base<ait_impl> {
-public:
-    ait_impl (xmlNodePtr node, xmlAttrPtr prop);
-    ait_impl (const char *name, const char *value, bool);
-    ait_impl (const ait_impl &other);
-    ait_impl& operator= (const ait_impl &other);
+class ait_impl : public pimpl_base<ait_impl>
+{
+    public:
+        ait_impl (xmlNodePtr node, xmlAttrPtr prop, bool from_find);
+        ait_impl (xmlNodePtr node, phantom_attr* prop, bool from_find);
+        ait_impl (const ait_impl &other);
+        ait_impl& operator= (const ait_impl &other);
 
-    attributes::attr* get (void);
-    xmlAttrPtr get_raw_attr (void);
+        attributes::attr* get (void);
 
-    ait_impl& operator++ (void);
-    ait_impl  operator++ (int);
+        ait_impl& operator++ (void);
+        ait_impl  operator++ (int);
 
-    friend bool operator== (const ait_impl &lhs, const ait_impl &rhs);
-    friend bool operator!= (const ait_impl &lhs, const ait_impl &rhs);
-private:
-    xmlNodePtr xmlnode_;
-    xmlAttrPtr xmlattr_;
-    attributes::attr attr_;
-    bool fake_;
+        friend bool operator== (const ait_impl &lhs, const ait_impl &rhs);
+        friend bool operator!= (const ait_impl &lhs, const ait_impl &rhs);
 
+    private:
+        attributes::attr    attr_;
+        bool                from_find_;
 }; // end xml::ait_impl class
+
+
+/* libxml2 will call it each time a node is destroyed.
+ * The function cleans up the linked list of the
+ * phantom_attrs attached to the node
+ */
+void cleanup_phantom_attributes (xmlNodePtr xmlnode);
 
 // a couple helper functions
 xmlAttrPtr find_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace);
-xmlAttributePtr find_default_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace);
+phantom_attr* find_default_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace);
 
 } // end impl namespace
 
 } // end xml namespace
 #endif
+

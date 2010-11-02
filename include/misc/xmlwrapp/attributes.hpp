@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,7 +31,7 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
  *       API and functionality requirements.
@@ -62,6 +62,7 @@ class node;
 namespace impl {
 class ait_impl;
 struct node_impl;
+bool operator== (const ait_impl &lhs, const ait_impl &rhs);
 }
 
 /**
@@ -77,7 +78,7 @@ public:
     typedef std::size_t size_type; ///< size type
 
     //####################################################################
-    /** 
+    /**
      * Create a new xml::attributes object with no attributes.
      *
      * @author Peter Jones
@@ -86,7 +87,7 @@ public:
     attributes (void);
 
     //####################################################################
-    /** 
+    /**
      * Copy construct a xml::attributes object.
      *
      * @param other The xml::attributes object to copy from.
@@ -96,7 +97,7 @@ public:
     attributes (const attributes &other);
 
     //####################################################################
-    /** 
+    /**
      * Copy the given xml::attributes object into this one.
      *
      * @param other The xml::attributes object to copy from.
@@ -107,7 +108,7 @@ public:
     attributes& operator= (const attributes &other);
 
     //####################################################################
-    /** 
+    /**
      * Swap this xml::attributes object with another one.
      *
      * @param other The other xml::attributes object to swap with.
@@ -117,7 +118,7 @@ public:
     void swap (attributes &other);
 
     //####################################################################
-    /** 
+    /**
      * Clean up after a xml::attributes object.
      *
      * @author Peter Jones
@@ -127,6 +128,7 @@ public:
 
     // forward declarations
     class const_iterator;
+    class iterator;
 
     /**
      * The xml::attributes::attr class is used to hold information about one
@@ -134,99 +136,128 @@ public:
      */
     class attr {
     public:
-	//####################################################################
-	/** 
-	 * Get the name of this attribute.
-	 *
-	 * @return The name for this attribute.
-	 * @author Peter Jones
-	**/
-	//####################################################################
-	const char* get_name (void) const;
+        //####################################################################
+        /**
+         * Test if the attribute is default.
+         *
+         * @return true if the attribute is default
+         * @author Sergey Satskiy, NCBI
+        **/
+        //####################################################################
+        bool is_default (void) const;
 
-	//####################################################################
-	/** 
-	 * Get the value of this attribute.
-	 *
-	 * @return The value for this attribute.
-	 * @author Peter Jones
-	**/
-	//####################################################################
-	const char* get_value (void) const;
+        //####################################################################
+        /**
+         * Get the name of this attribute.
+         *
+         * @return The name for this attribute.
+         * @author Peter Jones
+        **/
+        //####################################################################
+        const char* get_name (void) const;
 
-	//####################################################################
-	/**
-	 * Get the attribute's namespace.
-	 *
-	 * @param type The required type of namespace object (safe/unsafe).
-	 * @return
-	 *  The attribute's namespace ("void" namespace if the attribute has
-	 *  no namespace set).
-	 * @author Sergey Satskiy, NCBI
-	**/
-	//####################################################################
-	ns get_namespace (ns::ns_safety_type type = ns::type_safe_ns) const;
+        //####################################################################
+        /**
+         * Get the value of this attribute.
+         *
+         * @return The value for this attribute.
+         * @author Peter Jones
+        **/
+        //####################################################################
+        const char* get_value (void) const;
 
-	//####################################################################
-	/**
-	 * Unset the attribute's namespace.
-	 *
-	 * @author Sergey Satskiy, NCBI
-	**/
-	//####################################################################
-	void erase_namespace (void);
+        //####################################################################
+        /**
+         * Set the value of this attribute.
+         *
+         * @param value  The value for this attribute.
+         * @note If the value is set for the default attribute then it
+         *       will be implicilty converted to a regular one and then the
+         *       value will be changed.
+         * @author Sergey Satskiy, NCBI
+        **/
+        //####################################################################
+        void set_value (const char*  value);
 
-	//####################################################################
-	/**
-	 * Set the attribute's namespace.
-	 *
-	 * The namespace definition is searched up in the hierarchy of nodes.
-	 * If a namespace with the given prefix is not found then throw an
-	 * exception.
-	 *
-	 * @param prefix
-	 *  Namespace prefix.
-	 *  You can use empty string or NULL to remove the namespace -- it
-	 *  works exactly the same as erase_namespace() call.
-	 * @return  Unsafe namespace
-	 * @author Sergey Satskiy, NCBI
-	**/
-	//####################################################################
-	ns set_namespace (const char* prefix);
+        //####################################################################
+        /**
+         * Get the attribute's namespace.
+         *
+         * @param type The required type of namespace object (safe/unsafe).
+         * @return
+         *  The attribute's namespace ("void" namespace if the attribute has
+         *  no namespace set).
+         * @author Sergey Satskiy, NCBI
+        **/
+        //####################################################################
+        ns get_namespace (ns::ns_safety_type type = ns::type_safe_ns) const;
 
-	//####################################################################
-	/**
-	 * Set the attribute's namespace.
-	 *
-	 * The namespace definition is searched up in the hierarchy of nodes.
-	 * If a namespace with the given prefix and URI is not found
-	 * then throw an exception.
-	 *
-	 * @param name_space
-	 *  Namespace object.
-	 *  You can use "void" or default namespace to remove the namespace --
-	 *  it works exactly the same as erase_namespace() call.
-	 * @note There are no checks at all if an unsafe ns object is provided.
-	 * @return unsafe namespace
-	 * @author Sergey Satskiy, NCBI
-	**/
-	//####################################################################
-	ns set_namespace (const ns& name_space);
+        //####################################################################
+        /**
+         * Unset the attribute's namespace.
+         *
+         * @author Sergey Satskiy, NCBI
+        **/
+        //####################################################################
+        void erase_namespace (void);
+
+        //####################################################################
+        /**
+         * Set the attribute's namespace.
+         *
+         * The namespace definition is searched up in the hierarchy of nodes.
+         * If a namespace with the given prefix is not found then throw an
+         * exception.
+         *
+         * @param prefix
+         *  Namespace prefix.
+         *  You can use empty string or NULL to remove the namespace -- it
+         *  works exactly the same as erase_namespace() call.
+         * @return  Unsafe namespace
+         * @author Sergey Satskiy, NCBI
+        **/
+        //####################################################################
+        ns set_namespace (const char* prefix);
+
+        //####################################################################
+        /**
+         * Set the attribute's namespace.
+         *
+         * The namespace definition is searched up in the hierarchy of nodes.
+         * If a namespace with the given prefix and URI is not found
+         * then throw an exception.
+         *
+         * @param name_space
+         *  Namespace object.
+         *  You can use "void" or default namespace to remove the namespace --
+         *  it works exactly the same as erase_namespace() call.
+         * @note There are no checks at all if an unsafe ns object is provided.
+         * @return unsafe namespace
+         * @author Sergey Satskiy, NCBI
+        **/
+        //####################################################################
+        ns set_namespace (const ns& name_space);
 
     private:
-	void *node_;
-	void *prop_;
-	std::string name_;
-	mutable std::string value_;
+        void *xmlnode_;
+        void *prop_;
+        void *phantom_prop_;
+        mutable std::string value_;
 
-	attr (void);
-	attr (const attr &other);
-	attr& operator= (const attr &other);
-	void swap (attr &other);
+        attr (void);
+        attr (const attr &other);
+        attr& operator= (const attr &other);
+        void swap (attr &other);
 
-	void set_data (void *node, void *prop);
-	void set_data (const char *name, const char *value, bool);
-	friend class impl::ait_impl;
+        void set_data (void *node, void *prop, bool def_prop);
+        void *normalize (void) const;
+        void convert (void);
+        void *resolve_default_attr_ns (void) const;
+
+        friend bool impl::operator== (const impl::ait_impl &lhs, const impl::ait_impl &rhs);
+        friend class impl::ait_impl;
+        friend class iterator;
+        friend class attributes;
     }; // end xml::attributes::attr class
 
     /**
@@ -234,36 +265,34 @@ public:
      */
     class iterator {
     public:
-	typedef attr value_type;
-	typedef std::ptrdiff_t difference_type;
-	typedef value_type* pointer;
-	typedef value_type& reference;
-	typedef std::forward_iterator_tag iterator_category;
+        typedef attr value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef value_type* pointer;
+        typedef value_type& reference;
+        typedef std::forward_iterator_tag iterator_category;
 
-	iterator  (void);
-	iterator  (const iterator &other);
-	iterator& operator= (const iterator& other);
-	~iterator (void);
+        iterator  (void);
+        iterator  (const iterator &other);
+        iterator& operator= (const iterator& other);
+        ~iterator (void);
 
-	reference operator*  (void) const;
-	pointer   operator-> (void) const;
+        reference operator*  (void) const;
+        pointer   operator-> (void) const;
 
-	/// prefix increment
-	iterator& operator++ (void);
+        /// prefix increment
+        iterator& operator++ (void);
 
-	/// postfix increment (avoid if possible for better performance)
-	iterator  operator++ (int);
+        /// postfix increment (avoid if possible for better performance)
+        iterator  operator++ (int);
 
-	friend bool operator== (const iterator &lhs, const iterator &rhs);
-	friend bool operator!= (const iterator &lhs, const iterator &rhs);
+        friend bool operator== (const iterator &lhs, const iterator &rhs);
+        friend bool operator!= (const iterator &lhs, const iterator &rhs);
     private:
-    impl::ait_impl *pimpl_;
-	iterator (void *node, void *prop);
-	iterator (const char *name, const char *value, bool);
-	void swap (iterator &other);
-	void* get_raw_attr (void);
-	friend class attributes;
-	friend class const_iterator;
+        impl::ait_impl *pimpl_;
+        iterator (void *node, void *prop, bool def_prop, bool from_find);
+        void swap (iterator &other);
+        friend class attributes;
+        friend class const_iterator;
     }; // end xml::attributes::iterator class
 
     /**
@@ -271,40 +300,38 @@ public:
      */
     class const_iterator {
     public:
-	typedef const attr value_type;
-	typedef std::ptrdiff_t difference_type;
-	typedef value_type* pointer;
-	typedef value_type& reference;
-	typedef std::forward_iterator_tag iterator_category;
+        typedef const attr value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef value_type* pointer;
+        typedef value_type& reference;
+        typedef std::forward_iterator_tag iterator_category;
 
-	const_iterator  (void);
-	const_iterator  (const const_iterator &other);
-	const_iterator  (const iterator &other);
-	const_iterator& operator= (const const_iterator& other);
-	~const_iterator (void);
+        const_iterator  (void);
+        const_iterator  (const const_iterator &other);
+        const_iterator  (const iterator &other);
+        const_iterator& operator= (const const_iterator& other);
+        ~const_iterator (void);
 
-	reference operator*  (void) const;
-	pointer   operator-> (void) const;
+        reference operator*  (void) const;
+        pointer   operator-> (void) const;
 
-	/// prefix increment
-	const_iterator& operator++ (void);
+        /// prefix increment
+        const_iterator& operator++ (void);
 
-	/// postfix increment (avoid if possible better for performance)
-	const_iterator  operator++ (int);
+        /// postfix increment (avoid if possible better for performance)
+        const_iterator  operator++ (int);
 
-	friend bool operator== (const const_iterator &lhs, const const_iterator &rhs);
-	friend bool operator!= (const const_iterator &lhs, const const_iterator &rhs);
+        friend bool operator== (const const_iterator &lhs, const const_iterator &rhs);
+        friend bool operator!= (const const_iterator &lhs, const const_iterator &rhs);
     private:
-    impl::ait_impl *pimpl_;
-	const_iterator (void *node, void *prop);
-	const_iterator (const char *name, const char *value, bool);
-	void swap (const_iterator &other);
-	void* get_raw_attr (void);
-	friend class attributes;
+        impl::ait_impl *pimpl_;
+        const_iterator (void *node, void *prop, bool def_prop, bool from_find);
+        void swap (const_iterator &other);
+        friend class attributes;
     }; // end xml::attributes::const_iterator class
 
     //####################################################################
-    /** 
+    /**
      * Get an iterator that points to the first attribute.
      *
      * @return An iterator that points to the first attribute.
@@ -317,7 +344,7 @@ public:
     iterator begin (void);
 
     //####################################################################
-    /** 
+    /**
      * Get a const_iterator that points to the first attribute.
      *
      * @return A const_iterator that points to the first attribute.
@@ -330,7 +357,7 @@ public:
     const_iterator begin (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Get an iterator that points one past the the last attribute.
      *
      * @return An "end" iterator.
@@ -340,7 +367,7 @@ public:
     iterator end (void);
 
     //####################################################################
-    /** 
+    /**
      * Get a const_iterator that points one past the last attribute.
      *
      * @return An "end" const_iterator.
@@ -350,7 +377,7 @@ public:
     const_iterator end (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Add an attribute to the attributes list. If there is another
      * attribute with the same name, it will be replaced with this one.
      *
@@ -404,7 +431,7 @@ public:
     const_iterator find (const char *name, const ns *nspace=NULL) const;
 
     //####################################################################
-    /** 
+    /**
      * Erase the attribute that is pointed to by the given iterator. This
      * will invalidate any iterators for this attribute, as well as any
      * pointers or references to it.
@@ -419,7 +446,7 @@ public:
     iterator erase (iterator to_erase);
 
     //####################################################################
-    /** 
+    /**
      * Erase the attribute with the given name. This will invalidate any
      * iterators that are pointing to that attribute, as well as any
      * pointers or references to that attribute.
@@ -431,7 +458,7 @@ public:
     void erase (const char *name);
 
     //####################################################################
-    /** 
+    /**
      * Find out if there are any attributes in this xml::attributes object.
      *
      * @return True if there are no attributes.
@@ -442,7 +469,7 @@ public:
     bool empty (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Find out how many attributes there are in this xml::attributes
      * object.
      *
@@ -475,3 +502,4 @@ private:
 
 } // end xml namespace
 #endif
+

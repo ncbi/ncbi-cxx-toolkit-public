@@ -157,7 +157,8 @@ namespace {
 
         bool operator() (xmlNodePtr lhs, xmlNodePtr rhs) {
             xmlAttrPtr attr_l, attr_r;
-            xmlAttributePtr dtd_l(0), dtd_r(0);
+            phantom_attr * dtd_l(0);
+            phantom_attr * dtd_r(0);
 
             attr_l = find_prop(lhs, name_, NULL);
             if (attr_l == 0 && (dtd_l = find_default_prop(lhs, name_, NULL)) == 0) return true;
@@ -167,10 +168,10 @@ namespace {
 
             xmlChar *value_l, *value_r;
 
-            if (dtd_l) value_l = const_cast<xmlChar*>(dtd_l->defaultValue);
+            if (dtd_l) value_l = const_cast<xmlChar*>(dtd_l->def_prop_->defaultValue);
             else value_l = xmlNodeListGetString(lhs->doc, attr_l->children, 1);
 
-            if (dtd_r) value_r = const_cast<xmlChar*>(dtd_r->defaultValue);
+            if (dtd_r) value_r = const_cast<xmlChar*>(dtd_r->def_prop_->defaultValue);
             else value_r = xmlNodeListGetString(rhs->doc, attr_r->children, 1);
 
             int rc = xmlStrcmp(value_l, value_r);

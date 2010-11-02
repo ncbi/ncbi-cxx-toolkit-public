@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,7 +31,7 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
  *       API and functionality requirements.
@@ -60,36 +60,37 @@
 using namespace xml;
 using namespace xml::impl;
 
+
+const char*     kDerefError = "dereferencing non initialised or out of range iterator";
+const char*     kRefError   = "referencing non initialised or out of range iterator";
+const char*     kAdvError   = "advancing non initialised or out of range iterator";
+
+
 /*
  * First we have the ait_impl class.
  */
 
 //####################################################################
-ait_impl::ait_impl (xmlNodePtr node, xmlAttrPtr prop) : xmlnode_(node), xmlattr_(prop), fake_(false) {
-    attr_.set_data(xmlnode_, xmlattr_);
+ait_impl::ait_impl (xmlNodePtr node, xmlAttrPtr prop, bool from_find) :
+    from_find_(from_find) {
+    attr_.set_data(node, prop, false);
 }
 //####################################################################
-ait_impl::ait_impl (const char *name, const char *value, bool) : xmlnode_(0), xmlattr_(0), fake_(true) {
-    /*
-     * in this constructor and in the functions to follow, the last
-     * parameter, the bool, is only used to create a unique signature
-     */
-    attr_.set_data(name, value, true);
+ait_impl::ait_impl (xmlNodePtr node, phantom_attr* prop, bool from_find) :
+    from_find_(from_find) {
+    attr_.set_data(node, prop, true);
 }
 //####################################################################
-ait_impl::ait_impl (const ait_impl &other) : xmlnode_(other.xmlnode_), xmlattr_(other.xmlattr_), fake_(other.fake_)  {
-    if (fake_) attr_.set_data(other.attr_.get_name(), other.attr_.get_value(), true);
-    else attr_.set_data(xmlnode_, xmlattr_);
-}
+ait_impl::ait_impl (const ait_impl &other) :
+    attr_(other.attr_),
+    from_find_(other.from_find_)
+{}
 //####################################################################
 ait_impl& ait_impl::operator= (const ait_impl &other) {
     ait_impl tmp(other);
 
-    std::swap(xmlnode_, tmp.xmlnode_);
-    std::swap(xmlattr_, tmp.xmlattr_);
-    std::swap(fake_, tmp.fake_);
     attr_.swap(tmp.attr_);
-
+    std::swap(from_find_, tmp.from_find_);
     return *this;
 }
 //####################################################################
@@ -97,20 +98,22 @@ xml::attributes::attr* ait_impl::get (void) {
     return &attr_;
 }
 //####################################################################
-xmlAttrPtr ait_impl::get_raw_attr (void) {
-    return xmlattr_;
-}
-//####################################################################
 ait_impl& ait_impl::operator++ (void) {
-    if (xmlattr_) xmlattr_ = xmlattr_->next;
-    else fake_ = false;
+    if (from_find_)
+        throw xml::exception("cannot iterate using iterators "
+                             "produced by find(...) methods");
 
-    attr_.set_data(xmlnode_, xmlattr_);
+    // Here: the iterator cannot point to a default attribute because
+    //       it is not produced by find(...) methods
+    if (attr_.prop_)
+        attr_.prop_ = static_cast<xmlAttrPtr>(attr_.prop_)->next;
+    else
+        throw xml::exception(kAdvError);
     return *this;
 }
 //####################################################################
 ait_impl ait_impl::operator++ (int) {
-    ait_impl tmp(xmlnode_, xmlattr_);
+    ait_impl tmp(*this);
     ++(*this);
     return tmp;
 }
@@ -122,22 +125,25 @@ ait_impl ait_impl::operator++ (int) {
 
 //####################################################################
 xml::attributes::iterator::iterator (void) {
-    pimpl_ = new ait_impl(0, 0);
+    pimpl_ = new ait_impl(0, static_cast<xmlAttrPtr>(0), false);
 }
 //####################################################################
-xml::attributes::iterator::iterator (void *node, void *prop) {
-    pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node), static_cast<xmlAttrPtr>(prop));
-}
-//####################################################################
-xml::attributes::iterator::iterator (const char *name, const char *value, bool) {
-    pimpl_ = new ait_impl(name, value, true);
+xml::attributes::iterator::iterator (void *node, void *prop,
+                                     bool def_prop, bool from_find) {
+    if (def_prop)
+        pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
+                              static_cast<phantom_attr*>(prop), from_find);
+    else
+        pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
+                              static_cast<xmlAttrPtr>(prop), from_find);
 }
 //####################################################################
 xml::attributes::iterator::iterator (const iterator &other) {
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
-xml::attributes::iterator& xml::attributes::iterator::operator= (const iterator &other) {
+xml::attributes::iterator&
+xml::attributes::iterator::operator= (const iterator &other) {
     iterator tmp(other);
     swap(tmp);
     return *this;
@@ -151,16 +157,20 @@ xml::attributes::iterator::~iterator (void) {
     delete pimpl_;
 }
 //####################################################################
-void* xml::attributes::iterator::get_raw_attr (void) {
-    return pimpl_->get_raw_attr();
+xml::attributes::iterator::reference
+xml::attributes::iterator::operator* (void) const {
+    xml::attributes::attr*  att = pimpl_->get();
+    if (att->normalize())
+        return *att;
+    throw xml::exception(kDerefError);
 }
 //####################################################################
-xml::attributes::iterator::reference xml::attributes::iterator::operator* (void) const {
-    return *(pimpl_->get());
-}
-//####################################################################
-xml::attributes::iterator::pointer xml::attributes::iterator::operator-> (void) const {
-    return pimpl_->get();
+xml::attributes::iterator::pointer
+xml::attributes::iterator::operator-> (void) const {
+    xml::attributes::attr*  att = pimpl_->get();
+    if (att->normalize())
+        return att;
+    throw xml::exception(kRefError);
 }
 //####################################################################
 xml::attributes::iterator& xml::attributes::iterator::operator++ (void) {
@@ -181,15 +191,18 @@ xml::attributes::iterator xml::attributes::iterator::operator++ (int) {
 
 //####################################################################
 xml::attributes::const_iterator::const_iterator (void) {
-    pimpl_ = new ait_impl(0, 0);
+    pimpl_ = new ait_impl(0, static_cast<xmlAttrPtr>(0), false);
 }
 //####################################################################
-xml::attributes::const_iterator::const_iterator (void *node, void *prop) {
-    pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node), static_cast<xmlAttrPtr>(prop));
-}
-//####################################################################
-xml::attributes::const_iterator::const_iterator (const char *name, const char *value, bool) {
-    pimpl_ = new ait_impl(name, value, true);
+xml::attributes::const_iterator::const_iterator (void *node, void *prop,
+                                                 bool def_prop,
+                                                 bool from_find) {
+    if (def_prop)
+        pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
+                              static_cast<phantom_attr*>(prop), from_find);
+    else
+        pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
+                              static_cast<xmlAttrPtr>(prop), from_find);
 }
 //####################################################################
 xml::attributes::const_iterator::const_iterator (const const_iterator &other) {
@@ -200,7 +213,8 @@ xml::attributes::const_iterator::const_iterator (const iterator &other) {
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
-xml::attributes::const_iterator& xml::attributes::const_iterator::operator= (const const_iterator &other) {
+xml::attributes::const_iterator&
+xml::attributes::const_iterator::operator= (const const_iterator &other) {
     const_iterator tmp(other);
     swap(tmp);
     return *this;
@@ -214,24 +228,24 @@ xml::attributes::const_iterator::~const_iterator (void) {
     delete pimpl_;
 }
 //####################################################################
-void* xml::attributes::const_iterator::get_raw_attr (void) {
-    return pimpl_->get_raw_attr();
-}
-//####################################################################
-xml::attributes::const_iterator::reference xml::attributes::const_iterator::operator* (void) const {
+xml::attributes::const_iterator::reference
+xml::attributes::const_iterator::operator* (void) const {
     return *(pimpl_->get());
 }
 //####################################################################
-xml::attributes::const_iterator::pointer xml::attributes::const_iterator::operator-> (void) const {
+xml::attributes::const_iterator::pointer
+xml::attributes::const_iterator::operator-> (void) const {
     return pimpl_->get();
 }
 //####################################################################
-xml::attributes::const_iterator& xml::attributes::const_iterator::operator++ (void) {
+xml::attributes::const_iterator&
+xml::attributes::const_iterator::operator++ (void) {
     ++(*pimpl_);
     return *this;
 }
 //####################################################################
-xml::attributes::const_iterator xml::attributes::const_iterator::operator++ (int) {
+xml::attributes::const_iterator
+xml::attributes::const_iterator::operator++ (int) {
     const_iterator tmp(*this);
     ++(*this);
     return tmp;
@@ -243,11 +257,13 @@ xml::attributes::const_iterator xml::attributes::const_iterator::operator++ (int
  */
 
 //####################################################################
-xml::attributes::attr::attr (void) : node_(0), prop_(0)
-{ }
+xml::attributes::attr::attr (void) : xmlnode_(0), prop_(0), phantom_prop_(0)
+{}
 //####################################################################
-xml::attributes::attr::attr (const attr &other) : node_(other.node_), prop_(other.prop_), name_(other.name_), value_(other.value_)
-{ }
+xml::attributes::attr::attr (const attr &other) :
+    xmlnode_(other.xmlnode_), prop_(other.prop_),
+    phantom_prop_(other.phantom_prop_), value_(other.value_)
+{}
 //####################################################################
 xml::attributes::attr& xml::attributes::attr::operator= (const attr &other) {
     attr tmp(other);
@@ -256,37 +272,76 @@ xml::attributes::attr& xml::attributes::attr::operator= (const attr &other) {
 }
 //####################################################################
 void xml::attributes::attr::swap (attr &other) {
-    std::swap(node_, other.node_);
+    std::swap(xmlnode_, other.xmlnode_);
     std::swap(prop_, other.prop_);
-    name_.swap(other.name_);
+    std::swap(phantom_prop_, other.phantom_prop_);
     value_.swap(other.value_);
 }
 //####################################################################
-void xml::attributes::attr::set_data (void *node, void *prop) {
-    node_ = node;
-    prop_ = prop;
-    name_.erase();
+void xml::attributes::attr::set_data (void *node, void *prop, bool def_prop) {
+    xmlnode_ = node;
     value_.erase();
+    if (def_prop) {
+        prop_ = 0;
+        phantom_prop_ = prop;
+    }
+    else {
+        prop_ = prop;
+        phantom_prop_ = 0;
+    }
 }
 //####################################################################
-void xml::attributes::attr::set_data (const char *name, const char *value, bool) {
-    node_ = 0;
-    prop_ = 0;
-    name_ = name;
-    value_ = value;
+void * xml::attributes::attr::normalize (void) const {
+    if (!xmlnode_)  return NULL;
+    if (prop_)      return prop_;
+
+    if (phantom_prop_) {
+        if (static_cast<phantom_attr*>(phantom_prop_)->prop_)
+            return static_cast<phantom_attr*>(phantom_prop_)->prop_;
+        if (static_cast<phantom_attr*>(phantom_prop_)->def_prop_)
+            return static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+    }
+    return NULL;
+}
+//####################################################################
+bool xml::attributes::attr::is_default (void) const {
+    if (phantom_prop_ && (!static_cast<phantom_attr*>(phantom_prop_)->prop_))
+        return true;
+    return false;
 }
 //####################################################################
 const char* xml::attributes::attr::get_name (void) const {
-    if (!name_.empty()) return name_.c_str(); // we were given a name not a node
-    if (!node_ || !prop_) throw xml::exception("access to invalid xml::attributes::attr object!");
-    return reinterpret_cast<const char*>(static_cast<xmlAttrPtr>(prop_)->name);
+    if (is_default()) {
+        xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+        return reinterpret_cast<const char*>(dprop->name);
+    }
+    if (prop_) {
+        const xmlChar *  name = static_cast<xmlAttrPtr>(prop_)->name;
+        return reinterpret_cast<const char*>(name);
+    }
+    const xmlChar *  name = static_cast<phantom_attr*>(phantom_prop_)->prop_->name;
+    return reinterpret_cast<const char*>(name);
 }
 //####################################################################
 const char* xml::attributes::attr::get_value (void) const {
-    if (!value_.empty()) return value_.c_str(); // we were given a value, not a node
-    if (!node_ || !prop_) throw xml::exception("access to invalid xml::attributes::attr object!");
+    if (is_default()) {
+        xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+        if (dprop->defaultValue)
+            return reinterpret_cast<const char*>(dprop->defaultValue);
+        return "";
+    }
 
-    xmlChar *tmpstr = xmlNodeListGetString(reinterpret_cast<xmlNodePtr>(node_)->doc, reinterpret_cast<xmlAttrPtr>(prop_)->children, 1);
+    xmlChar *tmpstr;
+    if (prop_) {
+        tmpstr = xmlNodeListGetString(reinterpret_cast<xmlNodePtr>(xmlnode_)->doc,
+                                      reinterpret_cast<xmlAttrPtr>(prop_)->children,
+                                      1);
+    }
+    else {
+        tmpstr = xmlNodeListGetString(reinterpret_cast<xmlNodePtr>(xmlnode_)->doc,
+                                      reinterpret_cast<phantom_attr*>(phantom_prop_)->prop_->children,
+                                      1);
+    }
     if (tmpstr == 0) return "";
 
     xmlchar_helper helper(tmpstr);
@@ -294,58 +349,123 @@ const char* xml::attributes::attr::get_value (void) const {
     return value_.c_str();
 }
 //####################################################################
-xml::ns xml::attributes::attr::get_namespace (xml::ns::ns_safety_type type) const {
-    if (!node_ || !prop_) throw xml::exception("access to invalid xml::attributes::attr object!");
-    xmlNs *     nspace(reinterpret_cast<xmlAttrPtr>(prop_)->ns);
+xml::ns
+xml::attributes::attr::get_namespace (xml::ns::ns_safety_type type) const {
+    xmlNs *     definition;
+    if (is_default()) {
+        definition = static_cast<xmlNs*>(resolve_default_attr_ns());
+    }
+    else {
+        xmlAttrPtr  prop = reinterpret_cast<xmlAttrPtr>(prop_);
+        if (!prop_)
+            prop = reinterpret_cast<phantom_attr*>(phantom_prop_)->prop_;
+        definition = prop->ns;
+    }
+
     if (type == xml::ns::type_safe_ns) {
-        return nspace
-            ? xml::ns(reinterpret_cast<const char*>(nspace->prefix), reinterpret_cast<const char*>(nspace->href))
+        return definition
+            ? xml::ns(reinterpret_cast<const char*>(definition->prefix),
+                      reinterpret_cast<const char*>(definition->href))
             : xml::ns(xml::ns::type_void);
     }
     // unsafe namespace
-    return xml::attributes::createUnsafeNamespace(nspace);
+    return xml::attributes::createUnsafeNamespace(definition);
+}
+//####################################################################
+// Resolves a namespace for a default attribute.
+// If it cannot resolve it then an exception is thrown.
+// NULL is returned if no namespace should be used.
+void *xml::attributes::attr::resolve_default_attr_ns (void) const {
+    if (!is_default())
+        throw xml::exception("internal library error: "
+                             "resolving non-default attribute namespace");
+
+    xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+    xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(xmlnode_),
+                                          dprop->prefix));
+    if (dprop->prefix)
+        if (!definition)
+            throw xml::exception("cannot resolve default attribute namespace");
+    return definition;
+}
+//####################################################################
+// This converts a default attribute to a regular one
+void xml::attributes::attr::convert (void) {
+    if (!is_default())
+        return;
+
+    xmlNs * definition = static_cast<xmlNs*>(resolve_default_attr_ns());
+    xmlAttributePtr  dprop = static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
+    xmlAttrPtr new_attr = xmlSetNsProp(reinterpret_cast<xmlNode*>(xmlnode_),
+                                       definition,
+                                       dprop->name,
+                                       dprop->defaultValue);
+    if (!new_attr)
+        throw xml::exception("cannot convert default attribute into a regular one");
+
+    // It's not a default any more
+    static_cast<phantom_attr*>(phantom_prop_)->def_prop_ = NULL;
+    static_cast<phantom_attr*>(phantom_prop_)->prop_ = new_attr;
+    return;
+}
+//####################################################################
+void xml::attributes::attr::set_value (const char*  value) {
+    convert();
+    xmlAttrPtr prop = reinterpret_cast<xmlAttrPtr>(normalize());
+    xmlSetNsProp(reinterpret_cast<xmlNode*>(xmlnode_),
+                 prop->ns,
+                 prop->name,
+                 reinterpret_cast<const xmlChar*>(value));
+    return;
 }
 //####################################################################
 void xml::attributes::attr::erase_namespace (void) {
-    if (!node_ || !prop_) throw xml::exception("access to invalid xml::attributes::attr object!");
-    reinterpret_cast<xmlAttrPtr>(prop_)->ns = NULL;
+    convert();
+    xmlAttrPtr prop = reinterpret_cast<xmlAttrPtr>(normalize());
+    prop->ns = NULL;
 }
 //####################################################################
 xml::ns xml::attributes::attr::set_namespace (const char *prefix) {
-    if (!node_ || !prop_) throw xml::exception("access to invalid xml::attributes::attr object!");
     if (!prefix || prefix[0] == '\0') {
         erase_namespace();
         return xml::attributes::createUnsafeNamespace(NULL);
     }
-    xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(node_),
+
+    convert();
+    xmlAttrPtr prop = reinterpret_cast<xmlAttrPtr>(normalize());
+    xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(xmlnode_),
                                           reinterpret_cast<const xmlChar*>(prefix)));
-    if (!definition) throw xml::exception("Namespace definition is not found");
-    reinterpret_cast<xmlAttrPtr>(prop_)->ns = definition;
+    if (!definition)
+        throw xml::exception("Namespace definition is not found");
+    prop->ns = definition;
     return xml::attributes::createUnsafeNamespace(definition);
 }
 //####################################################################
 xml::ns xml::attributes::attr::set_namespace (const xml::ns &name_space) {
-    if (!node_ || !prop_) throw xml::exception("access to invalid xml::attributes::attr object!");
     if (name_space.is_void()) {
         erase_namespace();
         return xml::attributes::createUnsafeNamespace(NULL);
     }
+
+    convert();
+    xmlAttrPtr prop = reinterpret_cast<xmlAttrPtr>(normalize());
+
     if (!name_space.is_safe()) {
-        reinterpret_cast<xmlAttrPtr>(prop_)->ns = reinterpret_cast<xmlNs*>(xml::attributes::getUnsafeNamespacePointer(name_space));
+        prop->ns = reinterpret_cast<xmlNs*>(getUnsafeNamespacePointer(name_space));
     }
     else {
         const char *    prefix(name_space.get_prefix());
-        if (prefix[0] == '\0') {
-            erase_namespace();
-            return xml::attributes::createUnsafeNamespace(NULL);
-        }
-        xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(node_),
+        if (prefix[0] == '\0')
+            prefix = NULL;
+        xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(xmlnode_),
                                               reinterpret_cast<const xmlChar*>(prefix)));
-        if (!definition) throw xml::exception("Namespace definition is not found");
-        if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri()))) throw xml::exception("Namespace definition URI differs to the given");
-        reinterpret_cast<xmlAttrPtr>(prop_)->ns = definition;
+        if (!definition)
+            throw xml::exception("Namespace definition is not found");
+        if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri())))
+            throw xml::exception("Namespace definition URI differs to the given");
+        prop->ns = definition;
     }
-    return xml::attributes::createUnsafeNamespace(reinterpret_cast<xmlAttrPtr>(prop_)->ns);
+    return createUnsafeNamespace(prop->ns);
 }
 //####################################################################
 
@@ -358,11 +478,13 @@ namespace xml {
 
 namespace impl {
     //####################################################################
-    xmlAttrPtr find_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace) {
+    xmlAttrPtr find_prop (xmlNodePtr xmlnode,
+                          const char *name, const ns *nspace) {
         xmlAttrPtr prop = xmlnode->properties;
 
         for (; prop!=0; prop = prop->next) {
-            if (xmlStrEqual(prop->name, reinterpret_cast<const xmlChar*>(name))) {
+            if (xmlStrEqual(prop->name,
+                            reinterpret_cast<const xmlChar*>(name))) {
                 if (ns_util::attr_ns_match(prop, nspace))
                     return prop;
             }
@@ -371,7 +493,8 @@ namespace impl {
         return 0;
     }
     //####################################################################
-    xmlAttributePtr find_default_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace) {
+    phantom_attr* find_default_prop (xmlNodePtr xmlnode,
+                                     const char *name, const ns *nspace) {
         if (xmlnode->doc != 0) {
             xmlAttributePtr dtd_attr = 0;
             const xmlChar* prefix = 0;
@@ -404,39 +527,70 @@ namespace impl {
             }
 
             if (dtd_attr != 0 && dtd_attr->defaultValue != 0) {
-                return dtd_attr;
+
+                // Found, now check the phantom attributes list attached to the
+                // node
+                phantom_attr *  current = static_cast<phantom_attr*>(xmlnode->_private);
+                while (current != NULL) {
+                    if (current->def_prop_ == dtd_attr)
+                        return current;
+                    current = current->next;
+                }
+
+                // Not found. Create a new phantom_attr structure
+                phantom_attr *  new_phantom = new phantom_attr;
+                memset( new_phantom, 0, sizeof( phantom_attr ) );
+                new_phantom->def_prop_ = dtd_attr;
+
+                current = static_cast<phantom_attr*>(xmlnode->_private);
+                new_phantom->next = current;
+                xmlnode->_private = new_phantom;
+                return new_phantom;
             }
         }
-
-        return 0;
+        return NULL;
     }
 }
 
     //####################################################################
-    bool operator== (const attributes::iterator &lhs, const attributes::iterator &rhs) {
-	return *(lhs.pimpl_) == *(rhs.pimpl_);
+    bool operator== (const attributes::iterator &lhs,
+                     const attributes::iterator &rhs) {
+        return *(lhs.pimpl_) == *(rhs.pimpl_);
     }
     //####################################################################
-    bool operator!= (const attributes::iterator &lhs, const attributes::iterator &rhs) {
-	return !(lhs == rhs);
+    bool operator!= (const attributes::iterator &lhs,
+                     const attributes::iterator &rhs) {
+        return !(lhs == rhs);
     }
     //####################################################################
-    bool operator== (const attributes::const_iterator &lhs, const attributes::const_iterator &rhs) {
-	return *(lhs.pimpl_) == *(rhs.pimpl_);
+    bool operator== (const attributes::const_iterator &lhs,
+                     const attributes::const_iterator &rhs) {
+        return *(lhs.pimpl_) == *(rhs.pimpl_);
     }
     //####################################################################
-    bool operator!= (const attributes::const_iterator &lhs, const attributes::const_iterator &rhs) {
-	return !(lhs == rhs);
+    bool operator!= (const attributes::const_iterator &lhs,
+                     const attributes::const_iterator &rhs) {
+        return !(lhs == rhs);
     }
     //####################################################################
 namespace impl {
     bool operator== (const ait_impl &lhs, const ait_impl &rhs) {
-	if (lhs.fake_ || rhs.fake_) return false;
-	return lhs.xmlattr_ == rhs.xmlattr_;
+        return ((lhs.attr_.xmlnode_ == rhs.attr_.xmlnode_) &&
+                (lhs.attr_.normalize() == rhs.attr_.normalize()));
     }
     //####################################################################
     bool operator!= (const ait_impl &lhs, const ait_impl &rhs) {
-	return !(lhs == rhs);
+        return !(lhs == rhs);
+    }
+    //####################################################################
+    void cleanup_phantom_attributes (xmlNodePtr xmlnode) {
+        phantom_attr* current = static_cast<phantom_attr*>(xmlnode->_private);
+        phantom_attr* next = NULL;
+        while (current != NULL) {
+            next = current->next;
+            delete current;
+            current = next;
+        }
     }
 }
     //####################################################################
