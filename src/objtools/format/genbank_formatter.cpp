@@ -850,9 +850,18 @@ void CGenbankFormatter::FormatFeature
         // before the start of the value (in /translation, e.g.)
         NStr::Wrap(value, GetWidth(), l_new, SetWrapFlags(), GetFeatIndent(),
             GetFeatIndent() + qual);
-        if ( l_new.size() > 1  &&  NStr::TruncateSpaces( l_new.back() ) == "\"" ) {
-            l_new.pop_back();
-            l_new.back() += "\"";
+        if ( l_new.size() > 1 ) {
+            const string &last_line = l_new.back();
+
+            list<string>::const_iterator end_iter = l_new.end();
+            end_iter--;
+            end_iter--;
+            const string &second_to_last_line = *end_iter;
+
+            if( NStr::TruncateSpaces( last_line ) == "\"" && second_to_last_line.length() < GetWidth() ) {
+                l_new.pop_back();
+                l_new.back() += "\"";
+            }
         }
         // Values of qualifiers coming down this path do not carry additional
         // internal format (at least, they aren't supposed to). So we strip extra

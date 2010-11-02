@@ -259,8 +259,8 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         partial_from = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
             fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
     } else {
-        partial_from = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
-            fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
+        partial_from = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
+            fuzz->first->GetLim() == CInt_fuzz::eLim_gt;
     }
 
     bool partial_to = false;
@@ -269,8 +269,8 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
             fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
     }
     else {
-        partial_to = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
-            fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
+        partial_to = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
+            fuzz->second->GetLim() == CInt_fuzz::eLim_lt;
     }
 
     from = max(from, m_Src_from);
@@ -285,7 +285,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         }
         // extend to the end, if necessary
         if( m_Dst_total_len != kInvalidSeqPos ) {
-            const TSeqPos dst_total_to = m_Dst_from + m_Dst_total_len - m_Src_from - 1 - frame_shift;
+            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from ;
             if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
                 ret.SetTo( dst_total_to );
             }
@@ -296,6 +296,16 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         TRange ret(Map_Pos(to), Map_Pos(from));
         // extend to beginning if necessary
         // !!! TODO need to test this case with the left extension and right extension
+        /* if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
+            ret.SetTo( Map_Pos(m_Src_from) - frame_shift );
+        } */
+        // extend to the end, if necessary
+        if( m_Dst_total_len != kInvalidSeqPos ) {
+            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from;
+            if( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
+                ret.SetFrom( 0 );
+            }
+        }
         return ret;
     }
 }
