@@ -56,7 +56,7 @@ void SNetServerGroupImpl::DeleteThis()
     // when m_Service is about to be reset).
     CFastMutexGuard g(m_Service->m_ServerGroupMutex);
 
-    if (m_Service) {
+    if (!Referenced() && m_Service) {
         if (m_Service->m_ServerGroups[m_DiscoveryMode] != this) {
             m_NextGroupInPool = m_Service->m_ServerGroupPool;
             m_Service->m_ServerGroupPool = this;
