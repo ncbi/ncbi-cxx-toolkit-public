@@ -203,6 +203,7 @@ const string kEntrezSitesCgi = "http://www.ncbi.nlm.nih.gov/sites/entrez";
 
 
 /// create map source of all static URL's using previously defined pairs
+/// this map should be in alphabetical order!!!
 typedef pair<string, string> TTagUrl;
 static const TTagUrl s_TagUrls [] = {
   TTagUrl("BIOASSAY_NUC",  kBioAssayNucURL),
@@ -214,8 +215,8 @@ static const TTagUrl s_TagUrls [] = {
   TTagUrl("ENTREZ_QUERY_CGI",  kEntrezQueryCgi),
   TTagUrl("ENTREZ_SITES_CGI",  kEntrezSitesCgi),
   TTagUrl("ENTREZ_SUBSEQ",  kEntrezSubseqUrl),
-  TTagUrl("ENTREZ_TM",  kEntrezTMUrl),
-  TTagUrl("ENTREZ_SUBSEQ_TM",  kEntrezSubseqTMUrl),  
+  TTagUrl("ENTREZ_SUBSEQ_TM",  kEntrezSubseqTMUrl),
+  TTagUrl("ENTREZ_TM",  kEntrezTMUrl),  
   TTagUrl("ENTREZ_VIEWER_CGI",  kEntrezViewerCgi),
   TTagUrl("GENE",  kGeneUrl),
   TTagUrl("GENE_INFO",  kGeneInfoUrl),
