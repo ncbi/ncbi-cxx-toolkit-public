@@ -60,12 +60,21 @@ struct SNetServerGroupIteratorImpl : public CObject
 
 struct SNetServerGroupImpl : public CObject
 {
-    SNetServerGroupImpl(unsigned discovery_iteration);
+    void Reset(CNetService::EDiscoveryMode discovery_mode,
+        unsigned discovery_iteration)
+    {
+        m_NextGroupInPool = NULL;
+        m_Servers.clear();
+        m_DiscoveryMode = discovery_mode;
+        m_DiscoveryIteration = discovery_iteration;
+    }
 
     // Releases a reference to the parent service object,
     // and if that was the last reference, the service object
     // will be deleted.
     virtual void DeleteThis();
+
+    SNetServerGroupImpl* m_NextGroupInPool;
 
     // A list of servers discovered by the load balancer.
     TNetServerList m_Servers;
@@ -74,6 +83,7 @@ struct SNetServerGroupImpl : public CObject
     // that contains this NetServerGroup.
     CNetService m_Service;
 
+    CNetService::EDiscoveryMode m_DiscoveryMode;
     unsigned m_DiscoveryIteration;
 };
 
@@ -112,7 +122,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     // name).
     CNetServer RequireStandAloneServerSpec(const string& cmd);
 
-    SNetServerGroupImpl* CreateServerGroup(
+    SNetServerGroupImpl* AllocServerGroup(
         CNetService::EDiscoveryMode discovery_mode);
 
     SNetServerGroupImpl* DiscoverServers(
@@ -134,6 +144,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     string m_LBSMAffinityName;
     const char* m_LBSMAffinityValue;
     unsigned m_LatestDiscoveryIteration;
+
+    SNetServerGroupImpl* m_ServerGroupPool;
 
     union {
         SNetServerGroupImpl* m_SignleServerGroup;
@@ -162,11 +174,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     bool m_ThrottleUntilDiscoverable;
     int m_ForceRebalanceAfterThrottleWithin;
 };
-
-inline SNetServerGroupImpl::SNetServerGroupImpl(unsigned discovery_iteration) :
-    m_DiscoveryIteration(discovery_iteration)
-{
-}
 
 inline CNetServer SNetServiceImpl::GetServer(
     const SServerAddress& server_address)

@@ -56,8 +56,13 @@ void SNetServerGroupImpl::DeleteThis()
     // when m_Service is about to be reset).
     CFastMutexGuard g(m_Service->m_ServerGroupMutex);
 
-    if (!Referenced())
+    if (m_Service) {
+        if (m_Service->m_ServerGroups[m_DiscoveryMode] != this) {
+            m_NextGroupInPool = m_Service->m_ServerGroupPool;
+            m_Service->m_ServerGroupPool = this;
+        }
         m_Service = NULL;
+    }
 }
 
 CNetServer CNetServerGroupIterator::GetServer()
@@ -93,6 +98,7 @@ SNetServiceImpl::SNetServiceImpl(
     m_Listener(listener),
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
+    m_ServerGroupPool(NULL),
     m_ServiceType(eNotDefined)
 {
 }
@@ -290,8 +296,9 @@ void SNetServiceImpl::Init(CObject* api_impl,
             // CFastMutexGuard g(m_ServerGroupMutex);
             SNetServerImpl* single_server = new SNetServerImplReal(host, port);
             m_Servers.insert(single_server);
-            (m_SignleServerGroup = new SNetServerGroupImpl(0))->
-                m_Servers.push_back(single_server);
+            m_SignleServerGroup = new SNetServerGroupImpl;
+            m_SignleServerGroup->Reset(CNetService::eSortByLoad, 0);
+            m_SignleServerGroup->m_Servers.push_back(single_server);
         } else {
             m_ServiceType = eLoadBalanced;
             memset(&m_ServerGroups, 0, sizeof(m_ServerGroups));
@@ -473,15 +480,32 @@ CNetServer SNetServiceImpl::RequireStandAloneServerSpec(const string& cmd)
 
 #define LBSMD_IS_PENALIZED_RATE(rate) (rate <= -0.01)
 
-SNetServerGroupImpl* SNetServiceImpl::CreateServerGroup(
+SNetServerGroupImpl* SNetServiceImpl::AllocServerGroup(
     CNetService::EDiscoveryMode discovery_mode)
 {
-    SNetServerGroupImpl** server_group = m_ServerGroups + discovery_mode;
+    SNetServerGroupImpl* server_group;
 
-    if (*server_group != NULL && !(*server_group)->Referenced())
-        delete *server_group;
+    if (m_ServerGroupPool == NULL)
+        server_group = new SNetServerGroupImpl;
+    else {
+        server_group = m_ServerGroupPool;
+        m_ServerGroupPool = server_group->m_NextGroupInPool;
+    }
 
-    return *server_group = new SNetServerGroupImpl(m_LatestDiscoveryIteration);
+    server_group->Reset(discovery_mode, m_LatestDiscoveryIteration);
+
+    SNetServerGroupImpl* replaced_group = m_ServerGroups[discovery_mode];
+
+    // If the replaced group hasn't been "issued" to the outside
+    // callers yet, put it in the pool for recycling.
+    if (replaced_group != NULL && !replaced_group->m_Service) {
+        replaced_group->m_NextGroupInPool = m_ServerGroupPool;
+        m_ServerGroupPool = replaced_group;
+    }
+
+    m_ServerGroups[discovery_mode] = server_group;
+
+    return server_group;
 }
 
 SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
@@ -556,7 +580,7 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
             SleepMilliSec(s_GetRetryDelay());
         }
 
-        base_group = CreateServerGroup(
+        base_group = AllocServerGroup(
             discovery_mode == CNetService::eIncludePenalized ?
                 CNetService::eIncludePenalized : CNetService::eSortByLoad);
 
@@ -587,7 +611,7 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
         }
     }
 
-    result = CreateServerGroup(discovery_mode);
+    result = AllocServerGroup(discovery_mode);
 
     if (discovery_mode == CNetService::eRandomize) {
         size_t servers_size = base_group->m_Servers.size();
@@ -652,6 +676,16 @@ SNetServiceImpl::~SNetServiceImpl()
                 if (*server_group != NULL)
                     delete *server_group;
                 ++server_group;
+            }
+        }}
+        {{
+            // Clean up m_ServerGroupPool
+            SNetServerGroupImpl* server_group = m_ServerGroupPool;
+            while (server_group != NULL) {
+                SNetServerGroupImpl* next_group =
+                    server_group->m_NextGroupInPool;
+                delete server_group;
+                server_group = next_group;
             }
         }}
         break;
