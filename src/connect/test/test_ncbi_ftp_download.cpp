@@ -101,7 +101,7 @@ private:
 double CDownloadCallbackData::GetElapsed(bool update)
 {
     double next = m_Sw.Elapsed();
-    if (m_Last + 1.0 > next  &&  !update) {
+    if (!update  &&  m_Last + 0.5 > next) {
         return 0.0;
     }
     m_Last = next;
@@ -620,7 +620,7 @@ int main(int argc, const char* argv[])
 
     ERR_POST(Info << "Total downloaded " << dlcbdata.Filelist().size()
              << " file" << &"s"[dlcbdata.Filelist().size() == 1] << " in "
-             << CTimeSpan(dlcbdata.GetElapsed()).AsString("h:m:s")
+             << CTimeSpan(dlcbdata.GetElapsed() + 0.5).AsString("h:m:s")
              << "; combined file size " << NStr::UInt8ToString(totalsize));
 
     if (!files  ||  !dlcbdata.Filelist().size()) {
