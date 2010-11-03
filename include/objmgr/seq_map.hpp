@@ -217,6 +217,14 @@ public:
     void SetMol(CSeq_inst::TMol mol);
     void ResetMol(void);
 
+    /// Returns true if there is zero-length gap at position.
+    /// Checks referenced sequences too.
+    /// @param pos
+    ///   Sequence position to check
+    /// @param scope
+    ///   Optional scope for segments resolution
+    bool HasZeroGapAt(TSeqPos pos, CScope* scope = 0) const;
+
 protected:
 
     class CSegment;

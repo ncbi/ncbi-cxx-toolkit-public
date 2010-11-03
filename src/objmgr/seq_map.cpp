@@ -816,6 +816,48 @@ size_t CSeqMap::CountSegmentsOfType(ESegmentType type) const
 }
 
 
+bool CSeqMap::HasZeroGapAt(TSeqPos pos, CScope* scope) const
+{
+    size_t index = x_FindSegment(pos, scope);
+    if ( index == size_t(-1) && pos == GetLength(scope) ) {
+        index = x_GetLastEndSegmentIndex();
+    }
+    const CSegment& seg = x_GetSegment(index);
+    TSeqPos pos_in_seg = pos - seg.m_Position;
+    _ASSERT(index == x_GetLastEndSegmentIndex() || pos_in_seg < seg.m_Length);
+    if ( pos_in_seg > 0 ) {
+        if ( seg.m_SegType != eSeqRef ) {
+            // not zero length segment
+            return false;
+        }
+        CConstRef<CSeqMap> sub_map = x_GetSubSeqMap(seg, scope, true);
+        TSeqPos sub_pos;
+        if ( !seg.m_RefMinusStrand ) {
+            sub_pos = seg.m_RefPosition + pos_in_seg;
+        }
+        else {
+            sub_pos = seg.m_RefPosition + (seg.m_Length-pos_in_seg);
+        }
+        return sub_map->HasZeroGapAt(sub_pos, scope);
+    }
+    else {
+        // pos_in_seg == 0, check previous segments
+        while ( index > x_GetFirstEndSegmentIndex() ) {
+            const CSegment& pseg = x_GetSegment(--index);
+            if ( pseg.m_Position < pos ) {
+                // no more zero length segments
+                return false;
+            }
+            if ( pseg.m_SegType == eSeqGap ) {
+                // found zero gap segment
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 bool CSeqMap::CanResolveRange(CScope* scope,
                               TSeqPos from,
                               TSeqPos length,

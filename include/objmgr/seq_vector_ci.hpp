@@ -218,6 +218,8 @@ public:
     /// returns number of skipped gap symbols
     /// does nothing and returns 0 if current position is not in gap
     TSeqPos SkipGapBackward(void);
+    /// true if there is zero-length gap before current position
+    bool HasZeroGapBefore(void);
 
     CSeqVector_CI& operator+=(TSeqPos value);
     CSeqVector_CI& operator-=(TSeqPos value);

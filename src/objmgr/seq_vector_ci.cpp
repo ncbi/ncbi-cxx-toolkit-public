@@ -410,6 +410,21 @@ TSeqPos CSeqVector_CI::SkipGapBackward(void)
 }
 
 
+// return true if there is zero-length gap before current position
+// it might happen only if current position is at the beginning of buffer
+bool CSeqVector_CI::HasZeroGapBefore(void)
+{
+    if ( x_CacheOffset() != 0 ) {
+        return false;
+    }
+    TSeqPos pos = GetPos();
+    if ( IsReverse(m_Strand) ) {
+        pos = x_GetSize() - pos;
+    }
+    return m_SeqMap->HasZeroGapAt(pos, m_Scope.GetScopeOrNull());
+}
+
+
 CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
 {
     if ( this == &sv_it ) {
@@ -720,6 +735,10 @@ void CSeqVector_CI::x_UpdateSeg(TSeqPos pos)
             x_InitSeg(pos);
         }
     }
+    if ( !m_Seg && pos == x_GetSize() ) {
+        // it's ok to position to the very end
+        return;
+    }
     if ( !m_Seg || pos<m_Seg.GetPosition() || pos>=m_Seg.GetEndPosition() ) {
         NCBI_THROW_FMT(CSeqVectorException, eDataError,
                        "CSeqVector_CI: cannot locate segment at "<<pos);
@@ -787,9 +806,7 @@ void CSeqVector_CI::x_NextCacheSeg()
     _ASSERT(x_CacheSize());
     x_SwapCache();
     // update segment if needed
-    while ( m_Seg && m_Seg.GetEndPosition() <= pos ) {
-        x_IncSeg();
-    }
+    x_UpdateSeg(pos);
     if ( !m_Seg ) {
         // end of sequence
         NCBI_THROW_FMT(CSeqVectorException, eDataError,
