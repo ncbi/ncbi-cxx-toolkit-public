@@ -2132,6 +2132,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
     if (!it) {
         return;
     }
+    ctx.GetFeatTree().AddFeatures( it ); // !!!
 
     // map from cds product to nucleotide
     CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
