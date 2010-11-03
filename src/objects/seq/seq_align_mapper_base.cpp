@@ -1653,22 +1653,11 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 prod_id = prod_row.m_Id;
                 exon->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
             }
-            CSeq_loc_Mapper_Base::ESeqType prod_type =
-                m_LocMapper.GetSeqTypeById(prod_id);
-            // This part's product type. Make sure the whole alignment
-            // has the same product type (or set the type if not yet set).
-            bool part_protein = prod_type == CSeq_loc_Mapper_Base::eSeq_prot;
-            if ( spliced.IsSetProduct_type() ) {
-                if (part_protein != aln_protein) {
-                    // Make sure types are consistent.
-                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
-                        "Can not construct spliced-seg -- "
-                        "exons have different product types");
-                }
-            }
-            else {
-                aln_protein = part_protein;
-                spliced.SetProduct_type(part_protein ?
+            if ( !spliced.IsSetProduct_type() ) {
+                CSeq_loc_Mapper_Base::ESeqType prod_type =
+                    m_LocMapper.GetSeqTypeById(prod_id);
+                aln_protein = (prod_type == CSeq_loc_Mapper_Base::eSeq_prot);
+                spliced.SetProduct_type(aln_protein ?
                     CSpliced_seg::eProduct_type_protein
                     : CSpliced_seg::eProduct_type_transcript);
             }
