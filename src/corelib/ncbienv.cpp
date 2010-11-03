@@ -38,6 +38,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
 #include <algorithm>
+#include <stdarg.h>
 
 #ifdef NCBI_OS_LINUX
 #  include <unistd.h>
@@ -231,6 +232,40 @@ CAutoEnvironmentVariable::CAutoEnvironmentVariable(const CTempString& var_name,
 CAutoEnvironmentVariable::~CAutoEnvironmentVariable()
 {
     m_Env->Set(m_VariableName, m_PrevValue);
+}
+
+
+
+
+///////////////////////////////////////////////////////
+//  CEnvironmentCleaner::
+
+
+CEnvironmentCleaner::CEnvironmentCleaner(const char* s ...)
+{
+    if (s != NULL) {
+        Clean(s);
+        va_list ap;
+        va_start(ap, s);
+        for (;;) {
+            const char* p = va_arg(ap, const char*);
+            if (p == NULL) {
+                break;
+            }
+            Clean(p);
+        }
+        va_end(ap);
+    }
+}
+
+void CEnvironmentCleaner::Clean(const string& name)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        app->SetEnvironment().Unset(name);
+    } else {
+        unsetenv(name.c_str());
+    }
 }
 
 

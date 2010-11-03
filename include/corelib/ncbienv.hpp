@@ -195,6 +195,26 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CEnvironmentCleaner --
+///
+/// Remove unwanted settings from the environment, for instance to allow
+/// test suites to start from suitably clean slates (in which case a global
+/// static instance may be in order).
+class NCBI_XNCBI_EXPORT CEnvironmentCleaner
+{
+public:
+    /// Immediately clean some settings, to be passed in as a NULL-terminated
+    /// sequence of C strings.
+    CEnvironmentCleaner(const char* s = NULL ...);
+
+    /// Clean the specified setting.
+    void Clean(const string& name);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CNcbiArguments --
 ///
 /// Store application command-line arguments & application name.
