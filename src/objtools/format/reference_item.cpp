@@ -252,20 +252,15 @@ static bool s_ShouldRemoveRef
 
     // same PMID ( and overlap )
     if( curr_ref.GetPMID() != 0 && prev_ref.GetPMID() != 0 ) {
-        if( curr_ref.GetPMID() == prev_ref.GetPMID() ) {
-            return true;
-        }
+        return ( curr_ref.GetPMID() == prev_ref.GetPMID() );
     }
         
     // same MUID ( and overlap )
     if( curr_ref.GetMUID() != 0 && prev_ref.GetMUID() != 0 ) {
-        if( curr_ref.GetMUID() == prev_ref.GetMUID() ) {
-            return true;
-        }
+        return ( curr_ref.GetMUID() == prev_ref.GetMUID() );
     }
 
-    // check if references are basically identical
-        // next use AUTHOR string
+    // next use AUTHOR string
     string auth1, auth2;
     if (curr_ref.IsSetAuthors()) {
         CReferenceItem::FormatAuthors(curr_ref.GetAuthors(), auth1);

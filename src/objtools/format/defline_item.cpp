@@ -80,6 +80,7 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     CConstRef<CBioseq> bioseq = ctx.GetHandle().GetBioseqCore();
     CScope& scope = ctx.GetScope();
     m_Defline = Defliner.GenerateDefline( *bioseq, scope );
+    CompressSpaces( m_Defline );
     ConvertQuotes(m_Defline);
     AddPeriod(m_Defline);
 }

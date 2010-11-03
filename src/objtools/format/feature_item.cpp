@@ -1589,15 +1589,15 @@ void CFeatureItem::x_AddQuals(
 //  Add the various qualifiers to this feature. Top level function.
 //  ----------------------------------------------------------------------------
 {
-//  /**fl**/
-//    if ( GetLoc().IsInt() ) {
-//        size_t uFrom = GetLoc().GetInt().GetFrom();
-//        size_t uTo = GetLoc().GetInt().GetTo();
-//        if ( uFrom == 4178 ) {
-//            cerr << "";
-//        }
-//    }
-//  /**fl**/
+//   /**fl**/
+//     if ( GetLoc().IsInt() ) {
+//         size_t uFrom = GetLoc().GetInt().GetFrom();
+//         size_t uTo = GetLoc().GetInt().GetTo();
+//         if ( uFrom == 19267 ) {
+//             cerr << "";
+//         }
+//     }
+//   /**fl**/
 
     if ( ctx.Config().IsFormatFTable() ) {
         x_AddFTableQuals( ctx );
@@ -3800,6 +3800,56 @@ CFlatStringListQVal* CFeatureItem::x_GetStringListQual(EFeatureQualifier slot) c
     return dynamic_cast<CFlatStringListQVal*>(qual);
 }
 
+// maps each valid mobile_element_type prefix to whether it
+// must have more info after the prefix
+typedef pair <const char *, bool> TMobileElemTypeKey;
+
+static const TMobileElemTypeKey mobile_element_key_to_suffix_required [] = {
+    TMobileElemTypeKey ( "LINE",                     false ),
+    TMobileElemTypeKey ( "MITE",                     false ),
+    TMobileElemTypeKey ( "SINE",                     false ),
+    TMobileElemTypeKey ( "insertion sequence",       false ),
+    TMobileElemTypeKey ( "integron",                 false ),
+    TMobileElemTypeKey ( "non-LTR retrotransposon",  false ),
+    TMobileElemTypeKey ( "other",                    true  ),
+    TMobileElemTypeKey ( "retrotransposon",          false ),
+    TMobileElemTypeKey ( "transposon",               false )
+};
+
+typedef CStaticArrayMap <const char*, bool, PCase_CStr> TMobileElemTypeMap;
+DEFINE_STATIC_ARRAY_MAP(TMobileElemTypeMap, sm_MobileElemTypeKeys, mobile_element_key_to_suffix_required);
+
+// returns whether or not it's valid
+bool s_ValidateMobileElementType( const string & mobile_element_type_value )
+{
+    if( mobile_element_type_value.empty() ) {
+        return false;
+    }
+
+    // if there's a colon, we ignore the part after the colon for testing purposes
+    string::size_type colon_pos = mobile_element_type_value.find( ':' );
+    
+    const string value_before_colon = ( string::npos == colon_pos 
+        ? mobile_element_type_value 
+        : mobile_element_type_value.substr( 0, colon_pos ) );
+
+    TMobileElemTypeMap::const_iterator prefix_info = 
+        sm_MobileElemTypeKeys.find( value_before_colon.c_str() );
+    if( prefix_info == sm_MobileElemTypeKeys.end() ) {
+        return false; // prefix not found
+    }
+    
+    // check if info required after prefix (colon plus info, actually)
+    if( prefix_info->second ) {
+        if( string::npos == colon_pos ) {
+            return false; // no additional info supplied, even though required
+        }
+    }
+   
+    // all tests passed
+    return true; 
+}
+
 void CFeatureItem::x_CleanQuals(
     const CGene_ref* gene_ref )
 { 
@@ -3961,6 +4011,16 @@ void CFeatureItem::x_CleanQuals(
     // prot_desc is actually to be removed )
     if( note != NULL && x_GetStringQual(eFQ_prot_desc ) ) {
         const_cast<CFlatStringQVal*>(note)->SetAddPeriod( false );
+    }
+
+    // hide invalid mobile_element_quals
+    if( ctx.Config().IsModeRelease() || ctx.Config().IsModeEntrez() ) {
+
+        const CFlatStringQVal *mobile_element_type = x_GetStringQual( eFQ_mobile_element_type );
+        if( NULL != mobile_element_type && ! s_ValidateMobileElementType(mobile_element_type->GetValue()) ) {
+            x_RemoveQuals( eFQ_mobile_element_type );
+        }
+
     }
 }
 

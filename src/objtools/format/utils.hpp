@@ -71,6 +71,7 @@ string JoinString(const list<string>& l,
 void StripSpaces(string& str);
 void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
 void TrimSpaces(string& str, int indent = 0);
+string &CompressSpaces( string& str, const bool trim_beginning = true, const bool trim_end = true );
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
 

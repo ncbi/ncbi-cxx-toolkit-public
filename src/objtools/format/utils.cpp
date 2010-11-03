@@ -344,6 +344,76 @@ void TrimSpaces(string& str, int indent)
     }
 }
 
+class CIsGraph
+{
+public:
+    bool operator()( const char c ) {
+        return isgraph(c);
+    }
+};
+
+// This will compress multiple spaces in a row.
+// It also translates unprintable characters to spaces.
+// If trim_beginning, strips all spaces and unprintables from beginning of string.
+// If trim_end, strips all spaces and unprintables from end of string.
+// returns the string you gave it.
+string &CompressSpaces( string& str, const bool trim_beginning, const bool trim_end )
+{
+    if( str.empty() ) {
+        return str;
+    }
+
+    // set up start_iter and end_iter to determine the range in which we're looking
+
+    string::iterator start_iter = str.begin();
+    if( trim_beginning ) {
+        start_iter = find_if( str.begin(), str.end(), CIsGraph() );
+    }
+    if( str.end() == start_iter ) {
+        str.clear();
+        return str;
+    }
+
+    string::iterator end_iter = str.end();
+    if( trim_end ) {
+        string::reverse_iterator rev_iter = find_if( str.rbegin(), str.rend(), CIsGraph() );
+        end_iter = str.begin() + ( str.rend() - rev_iter );
+    }
+    if( str.begin() == end_iter ) {
+        str.clear();
+        return str;
+    }
+
+    // The main part, where we compress spaces
+    string newstr; // result will end up here
+    newstr.reserve( end_iter - start_iter );
+
+    // efficiency note: If the efficiency of unique_copy followed by transform becomes 
+    // burdensome, we may have to replace these 2 calls with one raw loop that does
+    // what those calls do ( a sloppier and more bug-prone ( but faster ), prospect)
+
+    // copy such that consecutive spaces or control characters are compressed to one space
+    char last_ch_was_printable = true;
+    for( string::iterator iter = start_iter; iter < end_iter; ++iter ) {
+        const char ch = *iter;
+        if( isgraph(ch) ) {
+            // visible characters get copied straight
+            newstr += ch;
+            last_ch_was_printable = true;
+        } else {
+            // unprintable chars become space, and they're only appended if the last char was 
+            // printable
+            if( last_ch_was_printable ) {
+                newstr += ' ';
+            }
+            last_ch_was_printable = false;
+        }
+    }
+
+    str.swap( newstr );
+    return str;
+}
+
 
 void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 {

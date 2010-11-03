@@ -295,38 +295,26 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
     else {
         TRange ret(Map_Pos(to), Map_Pos(from));
 
-        // undo frameshift
+        // undo frameshift for reverse strand
+        // (I assume it's because frameshift applies only to the plus strand so makes
+        // no sense for the minus strand)
         if( frame_shift > 0 ) {
             ret.SetFrom( ret.GetFrom() - frame_shift );
             ret.SetTo( ret.GetTo() - frame_shift );
         }
 
-        // extend to the end, if necessary
+        // This part is just like for the "plus" strand except that we extend the opposite side
         if( m_Dst_total_len != kInvalidSeqPos ) {
             if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
                 ret.SetFrom( m_Dst_from - frame_shift );
             }
         }
-
         if( m_Dst_total_len != kInvalidSeqPos ) {
             const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from ;
             if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
                 ret.SetTo( dst_total_to );
             }
         }
-
-        // extend to beginning if necessary
-        // !!! TODO need to test this case with the left extension and right extension
-        /*if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
-            ret.SetTo( Map_Pos(m_Src_to) );
-        }
-        // extend to the end, if necessary
-        if( m_Dst_total_len != kInvalidSeqPos ) {
-            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from;
-            if( partial_from && to == m_Src_bioseq_len ) {
-                ret.SetFrom( 0 );
-            }
-        }*/
 
         return ret;
     }

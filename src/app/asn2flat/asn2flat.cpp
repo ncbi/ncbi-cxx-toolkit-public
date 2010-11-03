@@ -286,6 +286,9 @@ int CAsn2FlatApp::Run(void)
         NCBI_THROW(CException, eUnknown, "Could not open output stream");
     }
 
+    // so we don't fail silently if, e.g., the output disk gets full
+    m_Os->exceptions( ios::failbit | ios::badbit );
+
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
     if (args["no-external"]) {
