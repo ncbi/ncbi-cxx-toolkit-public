@@ -3270,18 +3270,21 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     case eIO_Write:
         if (sock->w_status == eIO_Closed  &&  dir == eIO_Write)
             return eIO_Success;  /* has been shut down already */
+        /*FALLTHRU*/
+
+    case eIO_Open:
         if (sock->w_status != eIO_Closed) {
             if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success) {
-                CORE_LOGF_X(13, !tv  ||  (tv->tv_sec | tv->tv_usec)
+                CORE_LOGF_X(dir ? 13 : 20, !tv  ||  (tv->tv_sec | tv->tv_usec)
                             ? eLOG_Warning : eLOG_Trace,
-                            ("%s[SOCK::Shutdown] "
-                             " Shutting down for %s with"
-                             " output still pending (%s)",
-                             s_ID(sock, _id),
-                             dir == eIO_Write ? "write" : "read/write",
+                            ("%s[SOCK::%s] "
+                             " %s with output still pending (%s)",
+                             s_ID(sock, _id), dir ? "Shutdown" : "Close",
+                             !dir ? "Leaving " : dir == eIO_Write
+                             ? "Shutting down for write"
+                             : "Shutting does for read/write",
                              IO_StatusStr(status)));
             }
-
             if (sock->session  &&  !sock->pending) {
                 FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
                 assert(sock->session != SESSION_INVALID);
@@ -3296,9 +3299,10 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                     if (status != eIO_Success) {
                         CORE_LOGF_ERRNO_EXX(127, eLOG_Trace,
                                             x_error, s_StrError(sock, x_error),
-                                            ("%s[SOCK::Shutdown] "
+                                            ("%s[SOCK::%s] "
                                              " Failed SSL bye",
-                                             s_ID(sock, _id)));
+                                             s_ID(sock, _id),
+                                             dir ? "Shutdown" : "Close"));
                     }
                 }
             }
@@ -3308,26 +3312,27 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         if (dir != eIO_Write) {
             sock->eof = 0/*false*/;
             sock->r_status = eIO_Closed;
+            if (!dir)
+                return status;
         }
         break;
 
     default:
-        CORE_LOGF_X(15, eLOG_Error,
-                    ("%s[SOCK::Shutdown] "
-                     " Invalid direction #%u",
-                     s_ID(sock, _id), (unsigned int) dir));
+        assert(0);
         return eIO_InvalidArg;
     }
+    assert(dir);
 
 #ifndef NCBI_OS_MSWIN
     /* on MS-Win, socket shutdown for write apparently messes up (?!)
-     * with the later reading, esp. when reading a lot of data...    */
+     * with later reading, especially when reading a lot of data... */
 
 #  ifdef NCBI_OS_BSD
     /* at least on FreeBSD: shutting down a socket for write (i.e. forcing to
      * send a FIN) for a socket that has been already closed by another end
-     * (e.g. when it was done writing, so this end has done reading and is
-     * about to close) seems to cause ECONNRESET in the coming close()... */
+     * (e.g. when peer has done writing, so this end has done reading and is
+     * about to close) seems to cause ECONNRESET in the coming close()...
+     * see kern/146845 at http://www.freebsd.org/cgi/query-pr.cgi?pr=146845 */
     if (dir == eIO_ReadWrite  &&  how != SOCK_SHUTDOWN_RDWR)
         return status;
 #  endif /*NCBI_OS_BSD*/
@@ -3381,24 +3386,14 @@ static EIO_Status s_Close(SOCK sock, int abort)
         sock->r_len = 0;
         s_WipeWBuf(sock);
     } else if (abort  ||  !sock->keep) {
-        int/*bool*/ shut_down = sock->w_status != eIO_Closed ? 0/*F*/ : 1/*T*/;
-
-        if (!abort) {
-            /* orderly shutdown in both directions */
-            s_Shutdown(sock, eIO_ReadWrite, sock->c_timeout);
-            assert(sock->r_status == eIO_Closed  &&
-                   sock->w_status == eIO_Closed);
-        } else
-            sock->r_status = sock->w_status = eIO_Closed;
-
-        /* set the close()'s linger period be equal to the close timeout */
 #if (defined(NCBI_OS_UNIX) && !defined(NCBI_OS_BEOS)) || defined(NCBI_OS_MSWIN)
         /* setsockopt() is not implemented for MAC (MIT socket emulation lib)*/
-        if (!shut_down
+        if (sock->w_status != eIO_Closed
 #  ifdef NCBI_OS_UNIX
             &&  !sock->path[0]
 #  endif /*NCBI_OS_UNIX*/
             ) {
+            /* set the close()'s linger period be equal to the close timeout */
             const struct timeval* tv = sock->c_timeout;
             struct linger lgr;
 
@@ -3406,7 +3401,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
                 lgr.l_linger = 0;   /* RFC 793, Abort */
                 lgr.l_onoff  = 1;
             } else if (!tv) {
-                lgr.l_linger = 120; /*this is standard TCP TTL, 2 minutes*/
+                lgr.l_linger = 120; /* this is standard TCP TTL, 2 minutes */
                 lgr.l_onoff  = 1;
             } else if (tv->tv_sec | tv->tv_usec) {
                 unsigned int tmo = tv->tv_sec + (tv->tv_usec + 500000)/1000000;
@@ -3414,7 +3409,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
                     lgr.l_linger = tmo;
                     lgr.l_onoff  = 1;
                 } else
-                    lgr.l_onoff = 0;
+                    lgr.l_onoff  = 0;
             } else
                 lgr.l_onoff = 0;
             if (lgr.l_onoff
@@ -3448,6 +3443,14 @@ static EIO_Status s_Close(SOCK sock, int abort)
         }
 #endif /*(NCBI_OS_UNIX && !NCBI_OS_BEOS) || NCBI_OS_MSWIN*/
 
+        if (!abort) {
+            /* orderly shutdown in both directions */
+            s_Shutdown(sock, eIO_ReadWrite, sock->c_timeout);
+            assert(sock->r_status == eIO_Closed  &&
+                   sock->w_status == eIO_Closed);
+        } else
+            sock->r_status = sock->w_status = eIO_Closed;
+
 #ifdef NCBI_OS_MSWIN
         WSAEventSelect(sock->sock, sock->event, 0); /*cancel any events*/
 #endif /*NCBI_OS_MSWIN*/
@@ -3461,15 +3464,8 @@ static EIO_Status s_Close(SOCK sock, int abort)
                                  " Cannot set socket back to blocking mode",
                                  s_ID(sock, _id)));
         }
-    } else if (sock->w_status != eIO_Closed) {
-        status = s_WritePending(sock, sock->c_timeout, 0, 0);
-        if (status != eIO_Success) {
-            CORE_LOGF_X(20, eLOG_Warning,
-                        ("%s[SOCK::Close] "
-                         " Leaving with some output data pending (%s)",
-                         s_ID(sock, _id), IO_StatusStr(status)));
-        }
-    }
+    } else
+        status = s_Shutdown(sock, eIO_Open, sock->c_timeout);
     sock->w_len = 0;
 
     if (sock->session  &&  sock->session != SESSION_INVALID) {
@@ -5279,6 +5275,13 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
                      " Datagram socket",
                      s_ID(sock, _id)));
         assert(0);
+        return eIO_InvalidArg;
+    }
+    if (!dir  ||  (EIO_Event)(dir | eIO_ReadWrite) != eIO_ReadWrite) {
+        CORE_LOGF_X(15, eLOG_Error,
+                    ("%s[SOCK::Shutdown] "
+                     " Invalid direction #%u",
+                     s_ID(sock, _id), (unsigned int) dir));
         return eIO_InvalidArg;
     }
 
