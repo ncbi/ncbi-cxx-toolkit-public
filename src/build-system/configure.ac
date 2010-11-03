@@ -69,7 +69,7 @@ case "$with_3psw" in
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
                      python, jni, cppunit, boost, sqlite, sqlite3, icu, expat,
                      sablot, libxml, libxslt, xerces, xalan, oechem, sge,
-                     muparser, hdf5, gif, jpeg, png, tiff, xpm],
+                     muparser, hdf5, gif, jpeg, png, tiff, xpm, magic],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -399,6 +399,10 @@ AC_ARG_WITH(xpm,
    [ --with-xpm=DIR          use libXpm installation in DIR])
 AC_ARG_WITH(xpm2,
    [ --without-xpm           do not use libXpm])
+AC_ARG_WITH(magic,
+   [ --with-magic=DIR        use libmagic installation in DIR])
+AC_ARG_WITH(magic2,
+   [ --without-magic         do not use libmagic])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -450,7 +454,7 @@ z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
-gif jpeg tiff png xpm 3psw \
+gif jpeg tiff png xpm magic 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -502,7 +506,7 @@ for x_arg in "$@" ; do
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
-      | --with-muparser=* | --with-hdf5=* | --with-jni=* \
+      | --with-muparser=* | --with-hdf5=* | --with-jni=* | --with-magic=* \
       | --x-includes=* | --x-libraries=* | --with-3psw=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -5841,6 +5845,11 @@ else
    NCBI_PACKAGE(FreeType)
    AC_DEFINE(HAVE_FREETYPE, 1, [Define to 1 if FreeType is available.])
 fi
+
+
+NCBI_CHECK_THIRD_PARTY_LIB(magic,
+   [AC_LANG_PROGRAM([#include <magic.h>],
+       [magic_t m = magic_open(17);])])
 
 
 ### Restore original compiler/linker flags
