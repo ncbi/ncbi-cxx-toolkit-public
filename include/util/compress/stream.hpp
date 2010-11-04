@@ -244,14 +244,14 @@ private:
 // I/O stream classes
 //
 
-class NCBI_XUTIL_EXPORT CCompressionIStream : public istream,
+class NCBI_XUTIL_EXPORT CCompressionIStream : public CNcbiIstream,
                                               public CCompressionStream
 {
 public:
     CCompressionIStream(CNcbiIos&                    stream,
                         CCompressionStreamProcessor* stream_processor,
                         TOwnership                   ownership = 0)
-        : istream(0),
+        : CNcbiIstream(0),
           CCompressionStream(stream, stream_processor, 0, ownership)
     {}
 
@@ -292,7 +292,7 @@ protected:
     /// characteristics later, not necessary in the constructor.
     /// Can be used in derived classes.
     /// @sa CCompressionStream, Create()
-    CCompressionIStream(void) : istream(0) { }
+    CCompressionIStream(void) : CNcbiIstream(0) { }
 
     /// Create stream with specific characteristics later,
     /// not necessary in the constructor. 
@@ -307,14 +307,14 @@ protected:
 };
 
 
-class NCBI_XUTIL_EXPORT CCompressionOStream : public ostream,
+class NCBI_XUTIL_EXPORT CCompressionOStream : public CNcbiOstream,
                                               public CCompressionStream
 {
 public:
     CCompressionOStream(CNcbiIos&                    stream,
                         CCompressionStreamProcessor* stream_processor,
                         TOwnership                   ownership = 0)
-        : ostream(0),
+        : CNcbiOstream(0),
           CCompressionStream(stream, 0, stream_processor, ownership)
     {}
 
@@ -355,7 +355,7 @@ protected:
     /// characteristics later, not necessary in the constructor.
     /// Can be used in derived classes.
     /// @sa CCompressionStream, Create()
-    CCompressionOStream(void) : ostream(0) { }
+    CCompressionOStream(void) : CNcbiOstream(0) { }
 
     /// Create stream with specific characteristics later,
     /// not necessary in the constructor. 
@@ -370,7 +370,7 @@ protected:
 };
 
 
-class NCBI_XUTIL_EXPORT CCompressionIOStream : public iostream,
+class NCBI_XUTIL_EXPORT CCompressionIOStream : public CNcbiIostream,
                                                public CCompressionStream
 {
 public:
@@ -378,7 +378,7 @@ public:
                          CCompressionStreamProcessor* read_sp,
                          CCompressionStreamProcessor* write_sp,
                          TOwnership                   ownership = 0)
-        : iostream(0),
+        : CNcbiIostream(0),
           CCompressionStream(stream, read_sp, write_sp, ownership)
     { }
 
@@ -413,7 +413,7 @@ protected:
     /// characteristics later, not necessary in the constructor.
     /// Can be used in derived classes.
     /// @sa CCompressionStream, Create()
-    CCompressionIOStream(void) : iostream(0) { }
+    CCompressionIOStream(void) : CNcbiIostream(0) { }
 };
 
 
