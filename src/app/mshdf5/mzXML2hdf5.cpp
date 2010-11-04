@@ -41,6 +41,7 @@
 #include <util/compress/bzip2.hpp>
 #include <util/compress/stream.hpp>
 
+#include <misc/xmlwrapp/event_parser.hpp>
 #include <misc/xmlwrapp/errors.hpp>
 
 #include <algo/ms/formats/mshdf5/MsHdf5.hpp>
@@ -163,12 +164,18 @@ void CMzXML2hdf5Application::ProcessFiles(CDir::TEntries* entries)
             string base;
             if (suffix == ".bz2") {
                 base = fileName.substr(startPos,fileName.rfind(".", pos-1)-startPos);
-                inCompStream = new CCompressionIStream(ifStream, new CBZip2StreamDecompressor(), CCompressionStream::fOwnProcessor);
+                inCompStream = new CCompressionIStream(
+                    ifStream, 
+                    new CBZip2StreamDecompressor(), 
+                    CCompressionStream::fOwnProcessor);
                 inStream = inCompStream;
             }
             else if (suffix == ".gz") {
                 base = fileName.substr(startPos,fileName.rfind(".", pos-1)-startPos);
-                inCompStream = new CCompressionIStream(ifStream, new CZipStreamDecompressor(CZipCompression::fGZip), CCompressionStream::fOwnProcessor);
+                inCompStream = new CCompressionIStream(
+                    ifStream, 
+                    new CZipStreamDecompressor(CZipCompression::fGZip),
+                    CCompressionStream::fOwnProcessor);
                 inStream = inCompStream;
             }
             else { // no compression
@@ -179,11 +186,10 @@ void CMzXML2hdf5Application::ProcessFiles(CDir::TEntries* entries)
 
             MzXmlReader mzXmlParser(m_msHdf5);            
             if (m_msHdf5) m_msHdf5->newSpectraSet(base);  // Need to catch existing path exception
-            if (!mzXmlParser.parse_stream(*inStream)) {
-                //cout << "  Parse failed!  " << mzXmlParser.get_error_message() << endl;
+            xml::error_messages errMsgs;
+            if (!mzXmlParser.parse_stream(*inStream, &errMsgs)) {
                 cout << " - unable to parse";
-                //m_errors[(*it)->GetPath()] = mzXmlParser.get_error_message();
-                m_errors[(*it)->GetPath()] = mzXmlParser.get_parser_messages();
+                m_errors[(*it)->GetPath()] = errMsgs;
             }
 
             if (inCompStream) {
