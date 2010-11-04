@@ -136,12 +136,12 @@
             //usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
             usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v]\n";
             usage_str += "SYNOPSIS:\n";
-            usage_str += "    Create new MSVC7.1 application project from sample template:\n";
+            usage_str += "    Create new MSVC application project from sample template:\n";
             usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
             usage_str += "      Copy and adjust sample code.\n";
 //            usage_str += "      Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
             usage_str += "      Run project tree builder on local build tree.\n";
-            usage_str += "      Open created solution in MSVC7.1 IDE.\n";
+            usage_str += "      Open created solution in MSVC IDE.\n";
             usage_str += "ARGUMENTS:\n";
             usage_str += "    <name>      -- name of the project\n";
             usage_str += "    <type>      -- one of the following:\n";
@@ -168,7 +168,7 @@
             usage_str += "    [builddir]  -- path to the pre-built NCBI C++ toolkit\n";
             usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
             usage_str += "                       you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
-            usage_str += "    [-msvc nn]  -- MSVC version: 80, 80x64, 90, 90x64; default is " + GetDefaultMsvcVer() + "\n";
+            usage_str += "    [-msvc nn]  -- MSVC version: 90, 90x64, 100, 100x64; default is " + GetDefaultMsvcVer() + "\n";
             usage_str += "    [-dll]      -- use  NCBI C++ toolkit DLLs' instead of static libraries\n";
             usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
@@ -632,6 +632,68 @@
         // Run project tree builder
         function RunPtb(oShell, oTree, oTask)
         {
+            var ptb_platform = GetTargetPlatform();
+            var sln_path;
+            if ( oTask.DllBuild ) {
+                sln_path = oTree.CompilersBranchDll   + "\\build\\" + oTask.ProjectName + ".sln";
+            } else {
+                sln_path = oTree.CompilersBranchStatic + "\\build\\" + oTask.ProjectName + ".sln";
+            }
+            var ptb_path;
+            var conf = GetConfigs(oTask)[0];
+            if (oTask.DllBuild) {
+                ptb_path = oTree.BinPathDll;
+            } else {
+                ptb_path = oTree.BinPathStatic;
+            }
+            ptb_path += "\\" + conf;
+            var ptb_flags;
+            ptb_flags = "";
+            if ( oTask.DllBuild ) {
+                ptb_flags += " -dll";
+            }
+            if (GetVerbose()) {
+                ptb_flags += " -cfg";
+            }
+            ptb_flags += " -nobuildptb";
+            ptb_flags += " -ext -nws -extroot \"";
+            var lib_dir = oTask.ToolkitPath + "\\lib\\";
+            if ( oTask.DllBuild ) {
+                lib_dir += "dll";
+            } else {
+                lib_dir += "static";
+            }
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            if (!oFso.FolderExists(lib_dir)) {
+                lib_dir = oTask.ToolkitPath + "\\";
+                if ( oTask.DllBuild ) {
+                    lib_dir += "dll";
+                } else {
+                    lib_dir += "static";
+                }
+                lib_dir += "\\lib";
+            }
+            ptb_flags += lib_dir + "\"";
+            var sysenv = oShell.Environment("PROCESS");
+            sysenv("PTB_PLATFORM") = ptb_platform;
+            sysenv("PTB_FLAGS") = ptb_flags;
+            sysenv("PTB_PATH") = ptb_path;
+            sysenv("SLN_PATH") = sln_path;
+            sysenv("TREE_ROOT") = oTree.TreeRoot;
+            sysenv("BUILD_TREE_ROOT") = oTree.CompilersBranch;
+            sysenv("PTB_PROJECT_REQ") = "src\\";
+
+            var ptb_command_line;
+            ptb_command_line = oTree.CompilersBranch + "\\ptb.bat";
+            if (!GetVerbose()) {
+                WScript.Echo(ptb_command_line);
+            }
+            if ( execute(oShell, ptb_command_line) != 0) {
+                WScript.Echo("ERROR: project_tree_builder failed");
+                WScript.Quit(1);
+            }
+
+/*
             var ptb;
             if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
                 var conf = GetConfigs(oTask)[0];
@@ -699,6 +761,7 @@
                 WScript.Echo("ERROR: project_tree_builder failed");
                 WScript.Quit(1);
             }
+*/
         }
         // Open generated solution in  MSVC IDE
         function LoadSolution(oShell, oTree, oTask)

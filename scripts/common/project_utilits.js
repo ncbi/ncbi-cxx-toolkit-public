@@ -9,9 +9,9 @@ var g_make_solution = true;
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
-// valid:   "71", "80", "80x64", "90", "90x64"
-var g_def_msvcver = "80";
-var g_msvcver     = "80";
+// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64"
+var g_def_msvcver = "90";
+var g_msvcver     = "90";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -190,6 +190,7 @@ function CreateTreeStructure(oTree, oTask)
     // do not create tree root - it is cwd :-))
     CreateFolderIfAbsent(oFso, oTree.CompilersBranch       );
     CreateFolderIfAbsent(oFso, oTree.CompilersBranchStatic );
+    CreateFolderIfAbsent(oFso, oTree.CompilersBranchStatic + "\\build");
 
     var configs = GetConfigs(oTask);
     for(var config_i = 0; config_i < configs.length; config_i++) {
@@ -203,6 +204,7 @@ function CreateTreeStructure(oTree, oTask)
     }
 
     CreateFolderIfAbsent(oFso, oTree.CompilersBranchDll    );
+    CreateFolderIfAbsent(oFso, oTree.CompilersBranchDll + "\\build");
 
     CreateFolderIfAbsent(oFso, oTree.IncludeRootBranch     );
     CreateFolderIfAbsent(oFso, oTree.IncludeConfig         );
@@ -472,7 +474,8 @@ function SetMsvcVer(oArgs, flag)
 {
     g_msvcver = GetFlaggedValue(oArgs, flag, g_msvcver);
     if (g_msvcver != "71" && g_msvcver != "80" && g_msvcver != "80x64"
-                          && g_msvcver != "90" && g_msvcver != "90x64") {
+                          && g_msvcver != "90" && g_msvcver != "90x64"
+                          && g_msvcver != "100" && g_msvcver != "100x64") {
         g_msvcver = GetDefaultMsvcVer();
     }
 }
@@ -484,6 +487,9 @@ function GetMsvcFolder()
     }
     if (g_msvcver == "90" || g_msvcver == "90x64") {
         return "msvc900_prj";
+    }
+    if (g_msvcver == "100" || g_msvcver == "100x64") {
+        return "msvc1000_prj";
     }
     return "msvc710_prj";
 }
@@ -559,6 +565,10 @@ function GetDefaultSuffix()
         s = "9";
     } else if (g_msvcver == "90x64") {
         s = "9.64";
+    } else if (g_msvcver == "100") {
+        s = "10";
+    } else if (g_msvcver == "100x64") {
+        s = "10.64";
     } else {
         s = "71";
     }
@@ -579,10 +589,21 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
         s = " -ide 900 -arch Win32";
     } else if (g_msvcver == "90x64") {
         s = " -ide 900 -arch x64";
+    } else if (g_msvcver == "100") {
+        s = " -ide 1000 -arch Win32";
+    } else if (g_msvcver == "100x64") {
+        s = " -ide 1000 -arch x64";
     } else {
         s = " -ide 710 -arch Win32";
     }
     return s;
+}
+function GetTargetPlatform()
+{
+    if (g_msvcver == "80x64" || g_msvcver == "90x64" || g_msvcver == "100x64") {
+        return "x64";
+    }
+    return "Win32";
 }
 function GetDefaultCXX_ToolkitFolder()
 {
