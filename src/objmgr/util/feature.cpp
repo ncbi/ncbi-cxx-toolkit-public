@@ -1237,8 +1237,9 @@ namespace {
     }
 
     
-    static const int kSameTypeParentQuality = 1000;
-    static const int kWorseTypeParentQuality = 500;
+    static const int kSameTypeParentQuality  = 1000;
+    static const int kByLocusParentQuality   =  750;
+    static const int kWorseTypeParentQuality =  500;
 
     static
     int sx_GetParentTypeQuality(CSeqFeatData::ESubtype parent,
@@ -1611,7 +1612,7 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
             }
         }
     }
-    if ( ret.second ) {
+    if ( ret.first > kByLocusParentQuality ) {
         return ret;
     }
     if ( parent_type == CSeqFeatData::eSubtype_gene ||
@@ -1626,7 +1627,7 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
                     ITERATE ( vector<CSeq_feat_Handle>, fit, ff ) {
                         CFeatInfo* gene = x_FindInfo(*fit);
                         if ( gene ) {
-                            ret.first = 1;
+                            ret.first = kByLocusParentQuality;
                             ret.second = gene;
                             return ret;
                         }
@@ -1646,7 +1647,14 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
     if ( !parent.second ) {
         return false;
     }
-    if ( parent.second->IsSetParent() && parent.second->m_Parent == &info ) {
+    if ( m_FeatIdMode != eFeatId_always &&
+         parent.first < kWorseTypeParentQuality ) {
+        // found reference is of worse type
+        return false;
+    }
+        
+    if ( parent.second->IsSetParent() &&
+         parent.second->m_Parent == &info ) {
         // circular reference, keep existing parent
         return false;
     }
@@ -1926,7 +1934,7 @@ void CFeatTree::x_AssignGenes(void)
     NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
         CFeatInfo& info = it->second;
         if ( info.m_Feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene ) {
-            x_AssignGeneToChildren(info, info);
+            //x_AssignGeneToChildren(info, info);
             genes.push_back(&info);
         }
     }
@@ -1934,7 +1942,7 @@ void CFeatTree::x_AssignGenes(void)
         return;
     }
     TFeatArray feats;
-    // collect all features without assigned parent
+    // collect all features without assigned gene
     NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
         CFeatInfo& info = it->second;
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
@@ -1967,7 +1975,7 @@ void CFeatTree::x_AssignParents(void)
         if ( info.IsSetParent() ) {
             continue;
         }
-        if ( m_FeatIdMode == eFeatId_always && x_AssignParentByRef(info) ) {
+        if ( x_AssignParentByRef(info) ) {
             continue;
         }
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
@@ -1999,7 +2007,7 @@ void CFeatTree::x_AssignParents(void)
             continue;
         }
         for ( STypeLink link(feat_set.m_FeatType); link; ++link ) {
-            if ( m_FeatIdMode == eFeatId_by_type ) {
+            if ( false && m_FeatIdMode == eFeatId_by_type ) {
                 x_AssignParentsByRef(feat_set.m_New, link);
                 if ( feat_set.m_New.empty() ) {
                     break;
@@ -2154,8 +2162,11 @@ void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
 CMappedFeat CFeatTree::GetBestGene(const CMappedFeat& feat,
                                    EBestGeneType lookup_type)
 {
-    CMappedFeat ret = GetParent(feat, CSeqFeatData::eSubtype_gene);
-    if ( !ret && lookup_type == eBestGene_AllowOverlapped ) {
+    CMappedFeat ret;
+    if ( lookup_type != eBestGene_OverlappedOnly ) {
+        ret = GetParent(feat, CSeqFeatData::eSubtype_gene);
+    }
+    if ( !ret && lookup_type != eBestGene_TreeOnly ) {
         x_AssignGenes();
         CFeatInfo* gene = x_GetInfo(feat).m_Gene;
         if ( gene ) {

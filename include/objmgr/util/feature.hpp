@@ -271,7 +271,8 @@ public:
 
     enum EBestGeneType {
         eBestGene_TreeOnly,
-        eBestGene_AllowOverlapped
+        eBestGene_AllowOverlapped,
+        eBestGene_OverlappedOnly
     };
 
     /// Return parent gene if exists or best overlapping gene
