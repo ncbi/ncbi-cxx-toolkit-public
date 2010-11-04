@@ -134,6 +134,8 @@ CConstRef<CSeq_id> CGC_Sequence::GetSynonymSeq_id( CGC_TypedSeqId::E_Choice syn_
 
         switch( alias_type )
         {
+        case CGC_SeqIdAlias::e_None: 
+            break;
         case CGC_SeqIdAlias::e_Public:
             if( seq_id_alias->IsSetPublic() )
                 ret = CConstRef<CSeq_id>( &seq_id_alias->GetPublic() );
