@@ -422,6 +422,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     if (net_info) {
         const char* user_header;
+        net_info->req_method = eReqMethod_Post;
         if (net_info->firewall) {
             user_header = "NCBI-RELAY: FALSE";
             m_Firewall = true;
