@@ -264,7 +264,18 @@ void CEnvironmentCleaner::Clean(const string& name)
     if (app) {
         app->SetEnvironment().Unset(name);
     } else {
+#ifdef NCBI_OS_MSWIN
+        ::SetEnvironmentVariable(name.c_str(), NULL);
+#elif defined(NCBI_OS_IRIX)
+        char* p = getenv(name.c_str());
+        if (p) {
+            _ASSERT(p[-1] == '=');
+            _ASSERT( !memcmp(p - name.size() - 1, name.data(), name.size()) );
+            p[-1] = '\0';
+        }
+#else
         unsetenv(name.c_str());
+#endif
     }
 }
 
