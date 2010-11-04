@@ -1290,51 +1290,9 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
 //
 // Reference Sorting
 
-
-/**
-static size_t s_CountFields(const CDate& date)
-{
-    _ASSERT(date.IsStd());
-
-    const CDate::TStd& std = date.GetStd();
-    size_t count = 0;
-
-    if ( std.IsSetYear() ) {
-        ++count;
-    }
-    if ( std.IsSetMonth() ) {
-        ++count;
-    }
-    if ( std.IsSetDay() ) {
-        ++count;
-    }
-    if ( std.IsSetHour() ) {
-        ++count;
-    }
-    if ( std.IsSetMinute() ) {
-        ++count;
-    }
-    if ( std.IsSetSecond() ) {
-        ++count;
-    }
-    if ( std.IsSetSeason() ) {
-        ++count;
-    }
-
-    return count;
-}
-**/
-
 // Used for sorting references
 static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
 {
-    /* CDate::ECompare status = d1.Compare(d2);
-    if (status != CDate::eCompare_unknown) {
-        return status;
-    } */
-
-    // NB: handle cases not handled by CDate::Compare(...)
-
     if (d1.IsStr()  &&  d2.IsStr()) {
         int diff = NStr::CompareNocase(d1.GetStr(), d2.GetStr());
         if (diff == 0) {
@@ -1344,9 +1302,9 @@ static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
         }
     }
 
-    // uncomparable if not same type
+    // arbitrary ordering (std before str)
     if (d1.Which() != d2.Which()) {
-        return CDate::eCompare_unknown;
+        return d1.IsStd() ? CDate::eCompare_before : CDate::eCompare_after;
     }
 
     _ASSERT(d1.IsStd()  &&  d2.IsStd());
@@ -1397,7 +1355,6 @@ static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
     return CDate::eCompare_same;
 }
 
-
 LessThan::LessThan(bool serial_first, bool is_refseq) :
     m_SerialFirst(serial_first), m_IsRefSeq(is_refseq)
 {}
@@ -1428,15 +1385,8 @@ bool LessThan::operator()
     
     if (ref1->IsSetDate()  &&  ref2->IsSetDate()) {
         CDate::ECompare status = s_CompareDates(ref1->GetDate(), ref2->GetDate());
-        //const CDate& d1 = ref1->GetDate();
-        //const CDate& d2 = ref2->GetDate();
-        //CDate::ECompare status = d1.Compare(d2);
-        //if (status == CDate::eCompare_unknown  &&  d1.IsStd()  &&  d2.IsStd()) {
-        //    // one object is more specific than the other.
-        //    size_t s1 = s_CountFields(d1);
-        //    size_t s2 = s_CountFields(d2);
-        //    return m_IsRefSeq ? s1 > s2 : s1 < s2;
-        if (status != CDate::eCompare_same && status != CDate::eCompare_unknown ) {
+        _ASSERT( status != CDate::eCompare_unknown ); // unknown would produce invalid ordering
+        if (status != CDate::eCompare_same ) {
             return m_IsRefSeq ? (status == CDate::eCompare_after) :
                                 (status == CDate::eCompare_before);
         }
