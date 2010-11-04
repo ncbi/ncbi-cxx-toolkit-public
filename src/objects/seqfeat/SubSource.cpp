@@ -289,6 +289,7 @@ const string CCountries::sm_Countries[] = {
     "Azerbaijan",
     "Bahamas",
     "Bahrain",
+    "Baltic Sea",
     "Baker Island",
     "Bangladesh",
     "Barbados",
