@@ -107,15 +107,16 @@ static void s_CloseDispatcher(SServiceConnector* uuu)
 /* Reset functions, which are implemented only in transport
  * connectors, but not in this connector.
  */
-static void s_Reset(SMetaConnector *meta)
+static void s_Reset(SMetaConnector *meta, CONNECTOR connector)
 {
+    CONN_SET_METHOD(meta, descr,  s_VT_Descr,  connector);
     CONN_SET_METHOD(meta, wait,   0,           0);
     CONN_SET_METHOD(meta, write,  0,           0);
     CONN_SET_METHOD(meta, flush,  0,           0);
     CONN_SET_METHOD(meta, read,   0,           0);
-    CONN_SET_METHOD(meta, status, s_VT_Status, 0);
+    CONN_SET_METHOD(meta, status, s_VT_Status, connector);
 }
- 
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -676,8 +677,10 @@ static void s_Close(CONNECTOR       connector,
         SMetaConnector* meta = connector->meta;
         METACONN_Remove(meta, uuu->meta.list);
         uuu->meta.list = 0;
-        s_Reset(meta);
+        s_Reset(meta, connector);
     }
+
+    uuu->status = eIO_Closed;
 }
 
 
@@ -770,6 +773,8 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                 }
             }
         }
+        if (!uuu->descr  &&  uuu->meta.descr)
+            CONN_SET_METHOD(meta, descr, uuu->meta.descr, uuu->meta.c_descr);
 
         status = uuu->meta.open
             ? uuu->meta.open(uuu->meta.c_open, timeout) : eIO_Success;
@@ -816,13 +821,12 @@ static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     /* initialize virtual table */
+    CONN_SET_DEFAULT_TIMEOUT(meta, uuu->net_info->timeout);
     CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
-    CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
     CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
     CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
-    CONN_SET_DEFAULT_TIMEOUT(meta, uuu->net_info->timeout);
-    /* all the rest is reset to NULL */
-    s_Reset(meta);
+    /* reset everything else */
+    s_Reset(meta, connector);
 }
 
 
