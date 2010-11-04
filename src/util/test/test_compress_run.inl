@@ -3,11 +3,11 @@
     char* dst_buf = dst_buf_arr.get();
     char* cmp_buf = cmp_buf_arr.get();
 
-    size_t dst_len, out_len;
-    bool result;
-
     assert(dst_buf);
     assert(cmp_buf);
+
+    size_t dst_len, out_len;
+    bool result;
 
     // The fAllowTransparentRead should be the same for all compressors.
     
@@ -28,8 +28,9 @@
     // zlib v1.2.2 and earlier have a bug in decoding. In some cases
     // decompressor can produce output data on invalid compressed data.
     // So, we do not run such tests if zlib version < 1.2.3.
+    string test_name = version.GetName();
     bool allow_transparent_read_test = 
-            version.GetName() != "zlib"  || 
+            test_name != "zlib"  || 
             version.IsUpCompatible(CVersionInfo(1,2,3));
 
     _TRACE("Transparent read tests are " << 
@@ -44,15 +45,13 @@
 
         // Compress data
         TCompression c(CCompression::eLevel_Medium);
-        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
-                                  &out_len);
+        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen, &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
         assert(result);
 
         // Decompress data
         dst_len = out_len;
-        result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen,
-                                    &out_len);
+        result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen, &out_len);
         PrintResult(eDecompress, c.GetErrorCode(), dst_len, kBufLen,out_len);
         assert(result);
         assert(out_len == kDataLen);
@@ -67,7 +66,7 @@
     //------------------------------------------------------------------------
 
 #if defined(HAVE_LIBLZO)
-    if (version.GetName() == "lzo")
+    if (test_name == "lzo")
     {{
         _TRACE("Compress/decompress buffer test (LZO, CRC32, default level)...");
         INIT_BUFFERS;
@@ -75,15 +74,13 @@
         // Compress data
         TCompression c(CCompression::eLevel_Best);
         c.SetFlags(c.GetFlags() | CLZOCompression::fChecksum);
-        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
-                                  &out_len);
+        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen, &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
         assert(result);
 
         // Decompress data
         dst_len = out_len;
-        result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen,
-                                    &out_len);
+        result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen, &out_len);
         PrintResult(eDecompress, c.GetErrorCode(), dst_len, kBufLen,out_len);
         assert(result);
         assert(out_len == kDataLen);
@@ -102,8 +99,7 @@
 
         TCompression c;
         dst_len = 5;
-        result = c.CompressBuffer(src_buf, kDataLen,
-                                  dst_buf, dst_len, &out_len);
+        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, dst_len, &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, dst_len, out_len);
         assert(!result);
         // The lzo decoder produce nothing in the buffer overflow case,
@@ -125,8 +121,7 @@
         c.SetFlags(CZipCompression::fAllowTransparentRead);
 
         // "Decompress" source buffer, which is uncompressed
-        result = c.DecompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
-                                    &dst_len);
+        result = c.DecompressBuffer(src_buf, kDataLen, dst_buf, kBufLen, &dst_len);
         PrintResult(eDecompress, c.GetErrorCode(), kDataLen, kBufLen, dst_len);
         assert(result);
         // Should have the same buffer as output
@@ -298,7 +293,7 @@
         // Decompress data
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (version.GetName() == "lzo") {
+        if (test_name == "lzo") {
             // For LZO we should use fStreamFormat flag for DecompressBuffer()
             // method to decompress data, compressed using streams.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
@@ -325,7 +320,7 @@
         // Compress data and create test stream
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (version.GetName() == "lzo") {
+        if (test_name == "lzo") {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
             // method, because we will decompress it using decompression
             // stream.
@@ -381,7 +376,7 @@
         // Try to decompress data
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (version.GetName() == "lzo") {
+        if (test_name == "lzo") {
             // For LZO we should use fStreamFormat flag for DecompressBuffer()
             // method to decompress data compressed inside compression stream.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
@@ -410,7 +405,7 @@
         // Compress the data
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (version.GetName() == "lzo") {
+        if (test_name == "lzo") {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
             // method for following decompress of data using compression
             // stream.
@@ -418,8 +413,7 @@
                        CLZOCompression::fChecksum);
         }
 #endif
-        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
-                                  &out_len);
+        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen, &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
         assert(result);
 
@@ -502,8 +496,7 @@
             zip.Finalize(CCompressionStream::eWrite);
             assert(!zip.eof()  &&  zip.good());
             assert(!stm.eof()  &&  stm.good());
-            assert(zip.GetProcessedSize(CCompressionStream::eWrite)
-                   == kDataLen);
+            assert(zip.GetProcessedSize(CCompressionStream::eWrite) == kDataLen);
             assert(zip.GetProcessedSize(CCompressionStream::eRead) == 0);
             assert(zip.GetOutputSize(CCompressionStream::eWrite) > 0);
             assert(zip.GetOutputSize(CCompressionStream::eRead) == 0);
@@ -514,8 +507,7 @@
             assert(!stm.eof()  &&  stm.good());
             assert(!zip.eof()  &&  zip.good());
             assert(out_len == kDataLen);
-            assert(zip.GetProcessedSize(CCompressionStream::eWrite)
-                   == kDataLen);
+            assert(zip.GetProcessedSize(CCompressionStream::eWrite) == kDataLen);
             assert(zip.GetProcessedSize(CCompressionStream::eRead) > 0);
             assert(zip.GetOutputSize(CCompressionStream::eWrite) > 0);
             assert(zip.GetOutputSize(CCompressionStream::eRead) == kDataLen);
@@ -609,4 +601,282 @@
         }
         OK;
     }}
+
     //------------------------------------------------------------------------
+    // Manipulators: char* / string
+    //
+    // Compress data from char* to stream. 
+    // Decompress data from stream to string.
+    //------------------------------------------------------------------------
+    {{
+        _TRACE("Manipulators: string test...");
+        INIT_BUFFERS;
+        TCompression c;
+        CNcbiOstrstream os_str;
+
+        // Compress data using manipulator.
+        // The 'src_buf' is zero-terminated and have only printable characters.
+        if (test_name == "bzip2") {
+            os_str << MCompress_BZip2 << src_buf;
+        } else 
+#if defined(HAVE_LIBLZO)
+        if (test_name == "lzo") {
+            os_str << MCompress_LZO << src_buf;
+            // For LZO we should use fStreamFormat flag for DecompressBuffer()
+            // method to decompress data compressed using streams/manipulators.
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+        } else 
+#endif
+        if (test_name == "zlib") {
+            os_str << MCompress_Zip << src_buf;
+        } else {
+            _TROUBLE;
+        }
+        const char* str = os_str.str();
+        size_t os_str_len = os_str.pcount();
+        PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
+        // Decompress data and compare with original
+        result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen, out_len);
+        assert(result);
+        assert(out_len == kDataLen);
+        assert(memcmp(src_buf, cmp_buf, out_len) == 0);
+
+        // Decompress data using manipulator
+        CNcbiIstrstream is_cmp(str, os_str_len);
+        string str_cmp;
+        INIT_BUFFERS;
+        if (test_name == "bzip2") {
+            is_cmp >> MDecompress_BZip2 >> str_cmp;
+        } else 
+#if defined(HAVE_LIBLZO)
+        if (test_name == "lzo") {
+            is_cmp >> MDecompress_LZO >> str_cmp;
+        } else 
+#endif
+        if (test_name == "zlib") {
+            is_cmp >> MDecompress_Zip >> str_cmp;
+        } else {
+            _TROUBLE;
+        }
+        str = str_cmp.data();
+        out_len = str_cmp.length();
+        PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
+        // Compare original and decompressed data
+        assert(out_len == kDataLen);
+        assert(memcmp(src_buf, str, out_len) == 0);
+
+        // Done
+        os_str.rdbuf()->freeze(0);
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // Manipulators: strstream
+    //
+    // Compress data from istrstream to ostrstream. 
+    // Decompress data from istrstream to ostrstream.
+    //------------------------------------------------------------------------
+    {{
+        _TRACE("Manipulators: strstream test...");
+
+        TCompression c;
+#if defined(HAVE_LIBLZO)
+        if (test_name == "lzo") {
+            // For LZO we should use fStreamFormat flag for CompressBuffer()
+            // method, because we will decompress it using decompression
+            // stream.
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+        }
+#endif
+        // Manipulators and operator<<
+        {{
+            INIT_BUFFERS;
+            CNcbiIstrstream is_str(src_buf, kDataLen);
+            CNcbiOstrstream os_str;
+            if (test_name == "bzip2") {
+                os_str << MCompress_BZip2 << is_str;
+            } else 
+    #if defined(HAVE_LIBLZO)
+            if (test_name == "lzo") {
+                os_str << MCompress_LZO << is_str;
+            } else 
+    #endif
+            if (test_name == "zlib") {
+                os_str << MCompress_Zip << is_str;
+            } else {
+                _TROUBLE;
+            }
+            const char* str = os_str.str();
+            size_t os_str_len = os_str.pcount();
+            PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
+            // Decompress data and compare with original
+            result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
+            PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen, out_len);
+            assert(result);
+            assert(out_len == kDataLen);
+            assert(memcmp(src_buf, cmp_buf, out_len) == 0);
+
+            // Decompress data using manipulator and << operator
+            INIT_BUFFERS;
+            CNcbiIstrstream is_cmp(str, os_str_len);
+            CNcbiOstrstream os_cmp;
+            if (test_name == "bzip2") {
+                os_cmp << MDecompress_BZip2 << is_cmp;
+            } else 
+    #if defined(HAVE_LIBLZO)
+            if (test_name == "lzo") {
+                os_cmp << MDecompress_LZO << is_cmp;
+            } else 
+    #endif
+            if (test_name == "zlib") {
+                os_cmp << MDecompress_Zip << is_cmp;
+            } else {
+                _TROUBLE;
+            }
+            str = os_cmp.str();
+            out_len = os_cmp.pcount();
+            PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
+            // Compare original and decompressed data
+            assert(out_len == kDataLen);
+            assert(memcmp(src_buf, str, out_len) == 0);
+
+            // Done
+            os_str.rdbuf()->freeze(0);
+            os_cmp.rdbuf()->freeze(0);
+        }}
+
+        // Manipulators and operator>>
+        {{
+            INIT_BUFFERS;
+            CNcbiIstrstream is_str(src_buf, kDataLen);
+            CNcbiOstrstream os_str;
+            if (test_name == "bzip2") {
+                is_str >> MCompress_BZip2 >> os_str;
+            } else 
+    #if defined(HAVE_LIBLZO)
+            if (test_name == "lzo") {
+                is_str >> MCompress_LZO >> os_str;
+            } else 
+    #endif
+            if (test_name == "zlib") {
+                is_str >> MCompress_Zip >> os_str;
+            } else {
+                _TROUBLE;
+            }
+            const char* str = os_str.str();
+            size_t os_str_len = os_str.pcount();
+            PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
+            // Decompress data and compare with original
+            result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
+            PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen, out_len);
+            assert(result);
+            assert(out_len == kDataLen);
+            assert(memcmp(src_buf, cmp_buf, out_len) == 0);
+
+            // Decompress data using manipulator and << operator
+            INIT_BUFFERS;
+            CNcbiIstrstream is_cmp(str, os_str_len);
+            CNcbiOstrstream os_cmp;
+            if (test_name == "bzip2") {
+                is_cmp >> MDecompress_BZip2 >> os_cmp;
+            } else 
+    #if defined(HAVE_LIBLZO)
+            if (test_name == "lzo") {
+                is_cmp >> MDecompress_LZO >> os_cmp;
+            } else 
+    #endif
+            if (test_name == "zlib") {
+                is_cmp >> MDecompress_Zip >> os_cmp;
+            } else {
+                _TROUBLE;
+            }
+            str = os_cmp.str();
+            out_len = os_cmp.pcount();
+            PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
+            // Compare original and decompressed data
+            assert(out_len == kDataLen);
+            assert(memcmp(src_buf, str, out_len) == 0);
+
+            // Done
+            os_str.rdbuf()->freeze(0);
+            os_cmp.rdbuf()->freeze(0);
+        }}
+
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // Manipulators: fstream
+    //
+    // Compress data from istrstream to fstream. 
+    // Decompress data from fstream to ostrstream.
+    //------------------------------------------------------------------------
+    {{
+        _TRACE("Manipulators: fstream test...");
+        INIT_BUFFERS;
+
+        TCompression c;
+#if defined(HAVE_LIBLZO)
+        if (test_name == "lzo") {
+            // For LZO we should use fStreamFormat flag for CompressBuffer()
+            // method, because we will decompress it using decompression
+            // stream.
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+        } else
+        if (test_name == "zlib") {
+            /// Set of flags for gzip file format support
+            c.SetFlags(c.GetFlags() | CZipCompression::fGZip);
+        }
+#endif
+
+        // Compress data into the file
+        CNcbiIstrstream is_str(src_buf, kDataLen);
+        CNcbiOfstream os(kFileName, IOS_BASE::out | IOS_BASE::binary);
+        assert(os.good());
+        if (test_name == "bzip2") {
+            os << MCompress_BZip2 << is_str;
+        } else 
+#if defined(HAVE_LIBLZO)
+        if (test_name == "lzo") {
+            os << MCompress_LZO << is_str;
+        } else 
+#endif
+        if (test_name == "zlib") {
+            os << MCompress_GZipFile << is_str;
+        } else {
+            _TROUBLE;
+        }
+        os.close();
+        dst_len = (size_t)CFile(kFileName).GetLength();
+        assert(dst_len > 0);
+        PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, dst_len);
+
+        // Decompress file and compare result with original data
+        CNcbiOstrstream os_cmp;
+        CNcbiIfstream is(kFileName, IOS_BASE::in | IOS_BASE::binary);
+        assert(is.good());
+        if (test_name == "bzip2") {
+            is >> MDecompress_BZip2 >> os_cmp;
+        } else 
+#if defined(HAVE_LIBLZO)
+        if (test_name == "lzo") {
+            is >> MDecompress_LZO >> os_cmp;
+        } else 
+#endif
+        if (test_name == "zlib") {
+            is >> MDecompress_GZipFile >> os_cmp;
+        } else {
+            _TROUBLE;
+        }
+        out_len = os_cmp.pcount();
+        PrintResult(eDecompress, kUnknownErr, dst_len, kUnknown, out_len);
+        // Compare original and decompressed data
+        assert(out_len == kDataLen);
+        assert(memcmp(src_buf, os_cmp.str(), out_len) == 0);
+
+        // Done
+        os_cmp.rdbuf()->freeze(0);
+        CFile(kFileName).Remove();
+        OK;
+    }}

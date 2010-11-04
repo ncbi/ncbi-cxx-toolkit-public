@@ -34,10 +34,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbifile.hpp>
-
-#include <util/compress/bzip2.hpp>
-#include <util/compress/zlib.hpp>
-#include <util/compress/lzo.hpp>
+#include <util/compress/stream_util.hpp>
 
 #include <common/test_assert.h>  // This header must go last
 
@@ -164,6 +161,20 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
+    char b[300];
+    CNcbiIstrstream is(b, 20);
+    CNcbiOstrstream os;
+
+//    os << MCompress_Zip << os;
+//    is >> MCompress_Zip >> is;
+    CTempString tmp("1111111111111111111111111111");
+
+    os << MCompress_Zip << tmp;
+
+    return 0;
+
+
+
     // Get arguments
     CArgs args = GetArgs();
     string test = args["lib"].AsString();
@@ -174,7 +185,7 @@ int CTest::Run(void)
     srand(seed);
 
     // Preparing a data for compression
-    AutoArray<char> src_buf_arr(kBufLen);
+    AutoArray<char> src_buf_arr(kBufLen + 1 /* for possible '\0' */);
     char* src_buf = src_buf_arr.get();
     assert(src_buf);
 
@@ -186,32 +197,39 @@ int CTest::Run(void)
     // Test compressors with different size of data
     for (size_t i = 0; i < kTestCount; i++) {
 
+        // Some test require zero-terminated data.
+        size_t len = kDataLength[i];
+        char   saved = src_buf[len];
+        src_buf[len] = '\0';
+
         _TRACE("====================================\n" << 
-               "Data size = " << kDataLength[i] << "\n\n");
+               "Data size = " << len << "\n\n");
 
         if (test== "all"  ||  test == "z") {
             _TRACE("-------------- Zlib ----------------\n");
             CTestCompressor<CZipCompression, CZipCompressionFile,
                             CZipStreamCompressor, CZipStreamDecompressor>
-                ::Run(src_buf, kDataLength[i]);
+                ::Run(src_buf, len);
         }
         if (test == "all"  ||  test == "bz2") {
             _TRACE("-------------- BZip2 ---------------\n");
             CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
                             CBZip2StreamCompressor, CBZip2StreamDecompressor>
-                ::Run(src_buf, kDataLength[i]);
+                ::Run(src_buf, len);
         }
 #if defined(HAVE_LIBLZO)
         if (test == "all"  ||  test == "lzo") {
             _TRACE("-------------- LZO -----------------\n");
             CTestCompressor<CLZOCompression, CLZOCompressionFile,
                             CLZOStreamCompressor, CLZOStreamDecompressor>
-                ::Run(src_buf, kDataLength[i]);
+                ::Run(src_buf, len);
         }
 #endif
-
-        _TRACE("\nTEST execution completed successfully!\n");
+        // Restore saved character
+        src_buf[len] = saved;
     }
+
+    _TRACE("\nTEST execution completed successfully!\n");
     return 0;
 }
 
