@@ -198,7 +198,9 @@ CReferenceItem::CReferenceItem
         m_Loc.Reset(&(feat.GetLocation()));
     }
     // cleanup location
-    m_Loc = Seq_loc_Merge(*m_Loc, CSeq_loc::fSortAndMerge_All, &ctx.GetScope());
+    const bool is_circular = ( ctx.GetHandle().CanGetInst_Topology() && ctx.GetHandle().GetInst_Topology() == CSeq_inst_Base::eTopology_circular );
+    CSeq_loc::EOpFlags merge_flags = ( is_circular ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All );
+    m_Loc = Seq_loc_Merge(*m_Loc, merge_flags, &ctx.GetScope());
 
     x_GatherInfo(ctx);
 }
@@ -1323,13 +1325,13 @@ static size_t s_CountFields(const CDate& date)
 }
 **/
 
-
+// Used for sorting references
 static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
 {
-    CDate::ECompare status = d1.Compare(d2);
+    /* CDate::ECompare status = d1.Compare(d2);
     if (status != CDate::eCompare_unknown) {
         return status;
-    }
+    } */
 
     // NB: handle cases not handled by CDate::Compare(...)
 
@@ -1342,9 +1344,9 @@ static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
         }
     }
 
-    // arbitrary ordering (std before str)
+    // uncomparable if not same type
     if (d1.Which() != d2.Which()) {
-        return d1.IsStd() ? CDate::eCompare_before : CDate::eCompare_after;
+        return CDate::eCompare_unknown;
     }
 
     _ASSERT(d1.IsStd()  &&  d2.IsStd());
@@ -1352,6 +1354,15 @@ static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
     const CDate::TStd& std1 = d1.GetStd();
     const CDate::TStd& std2 = d2.GetStd();
 
+    if( std1.IsSetYear() || std2.IsSetYear() ) {
+        CDate_std::TYear y1 = std1.IsSetYear() ? std1.GetYear() : 0;
+        CDate_std::TYear y2 = std2.IsSetYear() ? std2.GetYear() : 0;
+        if (y1 < y2) {
+            return CDate::eCompare_before;
+        } else if (y1 > y2) {
+            return CDate::eCompare_after;
+        }
+    }
     if (std1.IsSetMonth()  ||  std2.IsSetMonth()) {
         CDate_std::TMonth m1 = std1.IsSetMonth() ? std1.GetMonth() : 0;
         CDate_std::TMonth m2 = std2.IsSetMonth() ? std2.GetMonth() : 0;
@@ -1410,9 +1421,9 @@ bool LessThan::operator()
     // - more specific dates come before less specific ones.
     // - older publication comes first (except RefSeq).
     if (ref1->IsSetDate()  &&  !ref2->IsSetDate()) {
-        return false;
+        return m_IsRefSeq;
     } else if (!ref1->IsSetDate()  &&  ref2->IsSetDate()) {
-        return true;
+        return ! m_IsRefSeq;
     }
     
     if (ref1->IsSetDate()  &&  ref2->IsSetDate()) {
@@ -1425,7 +1436,7 @@ bool LessThan::operator()
         //    size_t s1 = s_CountFields(d1);
         //    size_t s2 = s_CountFields(d2);
         //    return m_IsRefSeq ? s1 > s2 : s1 < s2;
-        if (status != CDate::eCompare_same) {
+        if (status != CDate::eCompare_same && status != CDate::eCompare_unknown ) {
             return m_IsRefSeq ? (status == CDate::eCompare_after) :
                                 (status == CDate::eCompare_before);
         }
