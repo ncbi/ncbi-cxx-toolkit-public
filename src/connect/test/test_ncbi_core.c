@@ -33,6 +33,7 @@
  */
 
 #include <connect/ncbi_util.h>
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_assert.h"
 #include <stdlib.h>
 #include <errno.h>
@@ -337,14 +338,29 @@ static void TEST_UTIL_Log(void)
 }
 
 
+/* NOTE: closes STDIN */
 static void TEST_CORE_GetUsername(void)
 {
     char buffer[512];
-    const char* username = CORE_GetUsername(buffer, sizeof(buffer));
+    const char* temp = CORE_GetUsername(buffer, sizeof(buffer));
+    char* user = temp  &&  *temp ? strdup(temp) : 0;
+    printf("Username = %s%s%s%s\n",
+           temp ? (*temp ? "" : "\"") : "<",
+           temp ?   temp              : "NULL",
+           temp ? (*temp ? "" : "\"") : ">",
+           !temp ^ !user ? ", error!" : "");
+    (void) fclose(stdin);
+    temp = CORE_GetUsername(buffer, sizeof(buffer));
     printf("Username = %s%s%s\n",
-           username ? (*username ? "" : "\"") : "<",
-           username ?   username              : "NULL",
-           username ? (*username ? "" : "\"") : ">");
+           temp ? (*temp ? "" : "\"") : "<",
+           temp ?   temp              : "NULL",
+           temp ? (*temp ? "" : "\"") : ">");
+    if (temp  &&  !*temp)
+        temp = 0;
+    assert((!temp  &&  !user)  ||
+           ( temp  &&   user  &&  strcasecmp(temp, user) == 0));
+    if (user)
+        free(user);
 }
 
 
