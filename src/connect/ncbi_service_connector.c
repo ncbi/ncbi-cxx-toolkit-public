@@ -752,11 +752,13 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         conn->next = meta->list;
         meta->list = conn;
 
-        CONN_SET_METHOD(meta, wait,   uuu->meta.wait,   uuu->meta.c_wait);
-        CONN_SET_METHOD(meta, write,  uuu->meta.write,  uuu->meta.c_write);
-        CONN_SET_METHOD(meta, flush,  uuu->meta.flush,  uuu->meta.c_flush);
-        CONN_SET_METHOD(meta, read,   uuu->meta.read,   uuu->meta.c_read);
-        CONN_SET_METHOD(meta, status, uuu->meta.status, uuu->meta.c_status);
+        if (!uuu->descr  &&  uuu->meta.descr)
+            CONN_SET_METHOD(meta, descr, uuu->meta.descr, uuu->meta.c_descr);
+        CONN_SET_METHOD    (meta, wait,  uuu->meta.wait,  uuu->meta.c_wait);
+        CONN_SET_METHOD    (meta, write, uuu->meta.write, uuu->meta.c_write);
+        CONN_SET_METHOD    (meta, flush, uuu->meta.flush, uuu->meta.c_flush);
+        CONN_SET_METHOD    (meta, read,  uuu->meta.read,  uuu->meta.c_read);
+        CONN_SET_METHOD    (meta, status,uuu->meta.status,uuu->meta.c_status);
         if (uuu->meta.get_type) {
             const char* type;
             if ((type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
@@ -773,8 +775,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                 }
             }
         }
-        if (!uuu->descr  &&  uuu->meta.descr)
-            CONN_SET_METHOD(meta, descr, uuu->meta.descr, uuu->meta.c_descr);
 
         status = uuu->meta.open
             ? uuu->meta.open(uuu->meta.c_open, timeout) : eIO_Success;
