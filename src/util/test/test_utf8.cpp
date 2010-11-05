@@ -173,8 +173,6 @@ BOOST_AUTO_TEST_CASE(TestUnicodeToAscii)
     string ascdata;
     int i;
 
-    CNcbiApplication::Instance()->SetEnvironment().Set("NCBI_CONFIG__NCBI__UnicodeToAscii", "test_utf8_u2a.txt");
-
 // --------------------------------------
     for (i=0; i< 126; ++i) {
         unidata[i] = i+1;
