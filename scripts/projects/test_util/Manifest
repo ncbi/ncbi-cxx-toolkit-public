@@ -1,0 +1,32 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Alexey Rafanovich
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+
+APP: test_util
+
+
+DEFAULT_CONFIGURATIONS: Linux64-Suse:plain-GCC
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+#Linux32-Suse    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-internal
+#Linux32-Suse    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-internal
+
+#Linux64-Suse    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-internal
+Linux64-Suse    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-internal
+
+#Linux64-Centos    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-internal
