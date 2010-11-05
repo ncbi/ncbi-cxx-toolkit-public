@@ -59,10 +59,43 @@
 #define kLocalOffsetMask     0x0000ffff
 #define kFullOffsetMask      0x7fffffff
 #define kTopBit              0x80000000
+#define kUint4Mask           0xffffffff
 
 #define INDEX_CACHE_SIZE     32768
 #define DATA_CACHE_SIZE      8192
 
+// Each top-level page correponds to a range of 2^25 gis (because 2 gis are
+// packed in each slot on leaf pages). Since gi is a signed integer, there are
+// a total of 2^31/2^25 = 2^6 = 64 top level pages.
+// The offset header contains 8-byte starting offsets for each top-level page,
+// but size is measured in 4-byte units of the m_GiIndex array, so it's
+// sufficient to have header size = 64 * 8 / 4 = 128.
+// However page size for the index file is 256, and it's inconvenient to use
+// fraction of a page for the header. Hence use one whole page.
+#define kOffsetHeaderSize    256
+
+// Given a Uint4* p
+#define GET_INT8(p) (((Int8)(*(p) & kUint4Mask))<<32) | ((Int8)(*((p)+1)))
+
+// If offset for top-level page corresponding to a given gi is not set ( = 0),
+// go back to previous top-level pages until a non-zero offset is found.
+#if 0
+#define GET_TOP_PAGE_OFFSET(gi,ret) \
+    {\
+        int i = 2*(gi>>25);\
+        for ( ; i >= 0; i -= 2) {\
+            if ((ret = GET_INT8(&data_index->m_GiIndex[i])) > 0)\
+                break;\
+        }\
+    }
+#else
+#define GET_TOP_PAGE_OFFSET(gi) GET_INT8(&data_index->m_GiIndex[2*((gi)>>25)])
+#endif
+
+
+#define SET_TOP_PAGE_OFFSET(gi,off) \
+    data_index->m_GiIndex[2*((gi)>>25)] = (Uint4)((off)>>32);\
+    data_index->m_GiIndex[2*((gi)>>25)+1] = (Uint4)((off)&kUint4Mask);
 
 typedef struct {
     Uint4*  m_GiIndex;
@@ -70,10 +103,10 @@ typedef struct {
     int     m_GiIndexFile;
     int     m_DataFile;
     Uint4   m_GiIndexLen;
-    Uint4   m_DataLen;
-    Uint4   m_MappedDataLen;
+    Int8    m_DataLen;
+    Int8    m_MappedDataLen;
     Uint4   m_MappedIndexLen;
-    Uint1 m_ReadOnlyMode;
+    Uint1   m_ReadOnlyMode;
     Uint4   m_IndexCacheLen;
     Uint4   m_DataCacheLen;
     char    m_FileNamePrefix[256];
@@ -82,8 +115,8 @@ typedef struct {
     Uint4*  m_IndexCache;
     Uint4   m_DataCacheSize;
     char*   m_DataCache;
-    Uint1 m_SequentialData;
-    Uint1 m_FreeOnDrop;
+    Uint1   m_SequentialData;
+    Uint1   m_FreeOnDrop;
     volatile int m_Remapping; /* Count of threads currently trying to remap */
     volatile Uint1 m_NeedRemap; /* Is remap needed? */
     Uint1 m_RemapOnRead; /* Is remap allowed when reading data? */
@@ -219,8 +252,14 @@ static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
         data_index->m_GiIndexFile) {
         Uint4* b;
         int bytes_written = 0;
-        /* First page of the index is reserved for the pointers to other pages. */
-        data_index->m_GiIndexLen = 1<<kPageSize;
+        /* First 2Kb of the index are reserved to store 8-byte
+           starting offsets for data corresponding to the 256 top level 
+           pages.
+           The third page of the index is reserved for the pointers to other
+           pages.
+        */
+        data_index->m_GiIndexLen = kOffsetHeaderSize + (1<<kPageSize);
+
         b = (Uint4*) calloc(data_index->m_GiIndexLen, sizeof(Uint4));
         assert(0 == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         bytes_written = write(data_index->m_GiIndexFile, b,
@@ -445,9 +484,8 @@ x_GetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level)
     Uint4* gi_index = NULL;
 
     if (page >= data_index->m_GiIndexLen + data_index->m_IndexCacheLen) {
-        /* This is an error condition, however it is not fatal, hence return 0,
-           which means this page could not be found in the index! */
-        return 0;
+        /* This is an error condition - this page could not be found in the index! */
+        return -1;
     } else {
         if (page < data_index->m_GiIndexLen) {
             if (page >= data_index->m_MappedIndexLen) {
@@ -474,9 +512,11 @@ x_GetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level)
             if ((gi_index[page] & kTopBit) == kTopBit)
                 base = gi_index[page] & kFullOffsetMask;
             else
-                base = 0;
+                base = -1;
         } else {
-            Uint4 mask; 
+            Uint4 mask;
+            Uint4 base_offset;
+            
             base_page = page - remainder;
             if (remainder == 0 && (gi&1) == 1) {
                 base = (gi_index[base_page+1]>>24);
@@ -492,10 +532,15 @@ x_GetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level)
                 mask = kLocalOffsetMask;
             }
             
-            if ((Uint4)base == mask) {
-                base = (int) gi_index[base_page] & kFullOffsetMask;
-            } else if (base != 0) {
-                base += (int) gi_index[base_page] & kFullOffsetMask;
+            if (base == 0) {
+                base = -1;
+            } else {
+                base_offset = (gi_index[base_page] == kFullOffsetMask ? 0 :
+                               gi_index[base_page]);
+                if ((Uint4)base == mask)
+                    base = (Uint4) base_offset & kFullOffsetMask;
+                else
+                    base += (Uint4) base_offset & kFullOffsetMask;
             }
         }
     }
@@ -536,10 +581,25 @@ x_SetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level,
             Uint4 local_offset;
 
             base_page = page - remainder;
-            base_offset = gi_index[base_page] & kFullOffsetMask;
-            /* If base offset is not yet available, it must be set now. */
-            if (base_offset == 0)
-                base_offset = gi_index[base_page] = offset;
+            base_offset = gi_index[base_page];
+
+            /* If base offset is not yet available, it must be set now.
+               NB: the base page offset is relative to the base top-level page
+               offset, hence it may be = 0. To distinguish 0 value from
+               "not-set", use a special mask value.
+            */
+            if (base_offset == 0) {
+                base_offset = offset;
+                gi_index[base_page] = (offset > 0 ? offset : kFullOffsetMask);
+            } else {
+                // Get rid of the top bit if it's set (indicating availability
+                // of the first gi on the page).
+                base_offset &= kFullOffsetMask;
+                // Check for the special value indicating relative offset = 0.
+                if (base_offset == kFullOffsetMask)
+                    base_offset = 0;
+            }
+
             local_offset = offset - base_offset;
             /* If base offset was not previously set, use a special value for
                the relative offset to distinguish a 0 offset from absence of 
@@ -563,7 +623,7 @@ x_SetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level,
 static char* x_GetGiData(SGiDataIndex* data_index, int gi)
 {
     Uint4 page = 0;
-    int base = 0;
+    int base = kOffsetHeaderSize;
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int level;
 
@@ -599,32 +659,45 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
          * other pages. If we got there, it means the requested gi is not 
          * present in the index.
          */
-        if (base <= 0)
+        if (base == -1)
             return NULL;
     }
     
+#if 0
+    Int8 gi_offset;
+    GET_TOP_PAGE_OFFSET(gi, gi_offset);
+    gi_offset += base;
+#else
+    Int8 gi_offset = GET_TOP_PAGE_OFFSET(gi);
+    /* If top page offset is not set, it means no gis from this whole top page
+       have been saved in cache so far. */
+    if (gi_offset == 0)
+        return NULL;
+    gi_offset += base;
+#endif
+
     /* If offset points beyond the combined length of the mapped data and cache,
        try to remap data. If that still doesn't help, bail out. */
-    if ((Uint4)base >= data_index->m_DataLen + data_index->m_DataCacheLen) {
+    if (gi_offset >= data_index->m_DataLen + data_index->m_DataCacheLen) {
         data_index->m_NeedRemap = 1;
         if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index,0) ||
-            (Uint4)base >= data_index->m_DataLen + data_index->m_DataCacheLen) 
+            gi_offset >= data_index->m_DataLen + data_index->m_DataCacheLen) 
             return NULL;
     }
 
     /* If offset is beyond the mapped data, get the data from cache, otherwise
        from the memory mapped location. */
-    if ((Uint4)base >= data_index->m_DataLen) {
-        return data_index->m_DataCache + base - data_index->m_DataLen;
+    if (gi_offset >= data_index->m_DataLen) {
+        return data_index->m_DataCache + (gi_offset - data_index->m_DataLen);
     } else {
         /* If offset points to data that has been written to disk but not yet
            mapped, remap now. */
-        if ((Uint4)base >= data_index->m_MappedDataLen) {
+        if (gi_offset >= data_index->m_MappedDataLen) {
             data_index->m_NeedRemap = 1;
             if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index,0))
                 return NULL;
         }
-        return data_index->m_Data + base;
+        return data_index->m_Data + gi_offset;
     }
 }
 
@@ -696,9 +769,9 @@ static Uint1
 GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
                     Uint1 overwrite, Uint4 data_size)
 {
-    const Uint4 kAllOneMask = 0x7fffffff;
     Uint4 page = 0;  
-    int base = 0;
+    Int8 base = kOffsetHeaderSize;
+    Int8 top_page_offset = 0;
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int level;
 
@@ -713,24 +786,24 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
     if (data_index->m_Data == MAP_FAILED && !x_MapData(data_index))
         return 0;
 
-    if ((data_index->m_GiIndexLen + (1<<kPageSize))*sizeof(Uint4) >= kAllOneMask)
-        return 0; /* can not map this amount of data anyway */
-    if (data_index->m_DataLen + sizeof(Uint4)*(1<<kPageSize) >= kAllOneMask)
+    if ((data_index->m_GiIndexLen + (1<<kPageSize))*sizeof(Uint4) >= kFullOffsetMask)
         return 0; /* can not map this amount of data anyway */
     
     for (level = 3; level >= 0; --level) {
 
         page = (Uint4)base + ((gi>>(level*kPageSize+shift)) & kPageMask);
 
-        /* The page can never point beyond the length of the index. If that 
-         * happens, set next base to 0, so new page could be allocated for
-         * this data.
-         * If we got to a page that has been written, but not yet mapped, 
+        /* Find next level page offset for this gi. On the leaf level,
+         * if offset is not found, base will be set to -1, to distinguish from a
+         * 0 relative offset.
+         * NB: in particular, page can never point beyond the length of the
+         * index. If that happens, set next base to -1, so new page could be
+         * allocated for this data.
+         * NB2: If we got to a page that has been written, but not yet mapped, 
          * remapping must be done here. If remapping fails, the error is
          * unrecoverable within the current process.
          */
-        if ((base = x_GetIndexOffset(data_index, gi, page, level)) < 0)
-            return 0;
+        base = x_GetIndexOffset(data_index, gi, page, level);
 
         /* If there are no gis from the same page in the index yet, assign a new
            page in the index for this gi's page. */
@@ -760,16 +833,20 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
     if (data_size== 0)
         data_size = data_index->m_DataUnitSize;
 
+    top_page_offset = GET_TOP_PAGE_OFFSET(gi);
+
     /* Check if data is already present. If it is, and overwrite is not 
      * requested, just return, otherwise write new data in place of the old one.
      * If previous data for this gi is not available, write the new data at the
      * end of the data file.
      */
-    if (base > 0) {
+    if (base >= 0 && top_page_offset > 0) {
         if (!overwrite)
             return 0;
+        
+        base += top_page_offset;
 
-        if (base >= (int)data_index->m_DataLen) {
+        if (base >= (Int8)data_index->m_DataLen) {
             /* The previous data for this gi is currently in cache. */
             if (base + data_size <=
                 data_index->m_DataLen + data_index->m_DataCacheLen) {
@@ -787,14 +864,19 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
             memcpy(data_index->m_Data + base, data, data_size);
         }
     } else {
+        if (top_page_offset == 0) {
+            top_page_offset = data_index->m_DataLen + data_index->m_DataCacheLen;
+            SET_TOP_PAGE_OFFSET(gi, top_page_offset);
+        }
+        
         x_SetIndexOffset(data_index, gi, page, 0,
-                         data_index->m_DataLen + data_index->m_DataCacheLen);
+                         data_index->m_DataLen + data_index->m_DataCacheLen - top_page_offset);
 
         /* This should already be valid, but in case of corruption, make sure
          * that value data_index->m_DataLen reflects what is actually available
          * on disk.
          */
-        data_index->m_DataLen = lseek(data_index->m_DataFile, 0, SEEK_END);
+        data_index->m_DataLen = (Int8) lseek(data_index->m_DataFile, 0, SEEK_END);
         /* Check if there is space for current data in cache. If not, flush the 
            cache. */
         if (data_index->m_DataCacheLen + data_size >=
@@ -856,7 +938,7 @@ static Uint1 GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
                 if (!x_ReMapIndex(data_index))
                     return 0;
             }
-            base = (int) data_index->m_GiIndex[page];
+            base = data_index->m_GiIndex[page + kOffsetHeaderSize];
         } else {
             base = (int) data_index->m_IndexCache[page-data_index->m_GiIndexLen];
         }
