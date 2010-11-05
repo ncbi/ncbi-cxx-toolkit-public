@@ -648,32 +648,38 @@ ENa_strand CCreateFeat::GetStrand(const CAnnotObject_Ref& ref,
                                   const CAnnotObject_Info* info,
                                   bool by_product)
 {
-    CAnnotMapping_Info& map = ref.GetMappingInfo();
-    if ( map.IsMappedLocation() ) {
-        // location is mapped
-        if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_feat ) {
-            // mapped Seq-feat is created already
-            return GetLoc(map.GetMappedSeq_feat(), by_product).GetStrand();
-        }
-        else if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_loc ) {
-            // mapped Seq-loc is created already
-            return map.GetMappedSeq_loc().GetStrand();
+    try {
+        CAnnotMapping_Info& map = ref.GetMappingInfo();
+        if ( map.IsMappedLocation() ) {
+            // location is mapped
+            if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_feat ) {
+                // mapped Seq-feat is created already
+                return GetLoc(map.GetMappedSeq_feat(), by_product).GetStrand();
+            }
+            else if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_loc ) {
+                // mapped Seq-loc is created already
+                return map.GetMappedSeq_loc().GetStrand();
+            }
+            else {
+                // whole, interval, point, or mix
+                return map.GetMappedStrand();
+            }
         }
         else {
-            // whole, interval, point, or mix
-            return map.GetMappedStrand();
+            // location is not mapped - use original
+            if ( !info ) {
+                // table SNP without mapping
+                return map.GetMappedStrand();
+            }
+            else {
+                // get location from the Seq-feat
+                return GetLoc(GetOriginalFeat(ref, info), by_product).GetStrand();
+            }
         }
     }
-    else {
-        // location is not mapped - use original
-        if ( !info ) {
-            // table SNP without mapping
-            return map.GetMappedStrand();
-        }
-        else {
-            // get location from the Seq-feat
-            return GetLoc(GetOriginalFeat(ref, info), by_product).GetStrand();
-        }
+    catch ( CException& /*ignored*/ ) {
+        // assume unknown strand for sorting
+        return eNa_strand_unknown;
     }
 }
 
@@ -782,9 +788,9 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
 
         // compare strands
         bool x_minus =
-            x_create.GetStrand(x, x_info, m_ByProduct) == eNa_strand_minus;
+            IsReverse(x_create.GetStrand(x, x_info, m_ByProduct));
         bool y_minus =
-            y_create.GetStrand(y, y_info, m_ByProduct) == eNa_strand_minus;
+            IsReverse(y_create.GetStrand(y, y_info, m_ByProduct));
         if ( x_minus != y_minus ) {
             // minus strand last
             return y_minus;
