@@ -773,6 +773,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCCC	s	Carthage College",
 "CCCIEB	c	Culture Collections of Microorgansisms of Center of Genetic Engineering and Biotechnology",
 "CCCM	c	Canadian Center for the Culture of Microorganisms",
+"CCCryo<DEU>	c	Culture Collection of Cryophilic Algae",
 "CCCZ	s	University of Malawi",
 "CCDM<CHN>	c	Culture Collection of Department of Microbiology",
 "CCDM<CZH>	c	Culture Collection of Dairy Microorganisms Laktoflora",
