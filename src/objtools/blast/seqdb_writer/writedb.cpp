@@ -317,7 +317,7 @@ s_PrintAliasFileCreationLog(const string& dbname,
             (num_seqs_found*100.0/num_seqs_in_gifile) << "% found)");
     } else {
         LOG_POST("Created " << (is_protein ? "protein " : "nucleotide ") <<
-            "BLAST (alias) database over " << dbname << " with " << 
+            "BLAST (alias) database " << dbname << " with " << 
             num_seqs_found << " sequences");
     }
 }
