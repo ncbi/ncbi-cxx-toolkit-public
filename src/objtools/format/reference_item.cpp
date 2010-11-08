@@ -1072,9 +1072,11 @@ static void s_RemovePeriod(string& title)
 void CReferenceItem::x_CleanData(void)
 {
     // title
-    ExpandTildes(m_Title, eTilde_space);
     NStr::TruncateSpacesInPlace(m_Title);
     StripSpaces(m_Title);   // internal spaces
+    // In the future, expand tildes before stripping spaces.'
+    // We leave this ordering for now for compatibility with C toolkit asn2gb
+    ExpandTildes(m_Title, eTilde_space);
     ConvertQuotes(m_Title);
     s_RemovePeriod(m_Title);
     x_CapitalizeTitleIfNecessary();

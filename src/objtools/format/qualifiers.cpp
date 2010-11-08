@@ -488,6 +488,24 @@ void CFlatStringListQVal::Format
 
 // === CFlatGeneSynonymsQVal ================================================
 
+class CLessThanNoCaseViaUpper {
+public:
+    bool operator()( const string &str1, const string &str2 ) {
+        // C++'s built-in stuff compares via "tolower" which gets a different ordering
+        // in some subtle cases than C's no-case comparison which uses "toupper"
+        SIZE_TYPE pos = 0;
+        const SIZE_TYPE min_length = min( str1.length(), str2.length() );
+        for( ; pos < min_length; ++pos ) {
+            const char textComparison = toupper( str1[pos] ) - toupper( str2[pos] );
+            if( textComparison != 0 ) {
+                return textComparison < 0;
+            }
+        }
+        // if we reached the end, compare via length (shorter first)
+        return ( str1.length() < str2.length() );
+    }
+};
+
 void CFlatGeneSynonymsQVal::Format
 (TFlatQuals& q,
  const string& name,
@@ -503,7 +521,12 @@ void CFlatGeneSynonymsQVal::Format
     vector<string> sub;
     std::copy(synonyms.begin(), synonyms.end(),
               back_inserter(sub));
-    std::sort(sub.begin(), sub.end(), PNocase());
+
+    // For compatibility with C, we use a slightly different sorting algo
+    // In the future, we might go back to the other one for simplicity
+    // std::sort(sub.begin(), sub.end(), PNocase());
+    std::sort(sub.begin(), sub.end(), CLessThanNoCaseViaUpper() );
+
     if (ctx.IsRefSeq()) {
         x_AddFQ( q, qual, NStr::Join(sub, "; "), m_Style );
     } else {

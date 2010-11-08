@@ -1057,6 +1057,8 @@ bool CFeatureItem::x_ExceptionIsLegalForFeature() const
     case CSeqFeatData::eSubtype_3UTR:
     case CSeqFeatData::eSubtype_5clip:
     case CSeqFeatData::eSubtype_5UTR:
+    case CSeqFeatData::eSubtype_sig_peptide_aa:
+    case CSeqFeatData::eSubtype_mat_peptide_aa:
         return true;
 
     default:
@@ -1333,6 +1335,35 @@ void CFeatureItem::x_AddQualExceptions(
 }
 
 //  ----------------------------------------------------------------------------
+static bool s_GeneMatchesXref
+( const CGene_ref * other_ref, 
+  const CGene_ref * xref )
+{
+    if( NULL == other_ref || NULL == xref ) {
+        return false;
+    }
+
+    // in case we get a weird xref with nothing useful set
+    if( ! xref->IsSetLocus() && ! xref->IsSetLocus_tag() ) {
+        return false;
+    }
+
+    if( xref->IsSetLocus() ) {
+        if( ! other_ref->IsSetLocus() || other_ref->GetLocus() != xref->GetLocus() ) {
+            return false;
+        }
+    }
+
+    if( xref->IsSetLocus_tag() ) {
+        if( ! other_ref->IsSetLocus_tag() || other_ref->GetLocus_tag() != xref->GetLocus_tag() ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatureItem::x_GetAssociatedGeneInfo(
     CBioseqContext& ctx,
     const CGene_ref*& g_ref,                    //  out: gene ref
@@ -1386,7 +1417,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
         feat = GetBestGeneForFeat(m_Feat, &ctx.GetFeatTree(), 
                                   NULL,
-                                  feature::CFeatTree::eBestGene_AllowOverlapped );
+                                  feature::CFeatTree::eBestGene_OverlappedOnly );
         if ( !feat ) {
             feat = feature::GetBestOverlappingFeat
                 (m_Feat, CSeqFeatData::eSubtype_gene,
@@ -1453,22 +1484,36 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         if (feat) {
             s_feat.Reset(&feat.GetOriginalFeature());
             g_ref = &feat.GetData().GetGene();
-        } else {
-            // we iterate through all the genes to find a match.  Is this
-            // efficient?
+        } 
+
+        // we iterate through all the genes to find a match.  Is this
+        // efficient?
+        if( thereIsXrefToGene && ! s_GeneMatchesXref( g_ref, xref_g_ref ) )
+        {
+            g_ref = NULL;
+            s_feat.Reset();
+
             SAnnotSelector sel = ctx.SetAnnotSelector();
             sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
                 .IncludeFeatSubtype(CSeqFeatData::eSubtype_gene)
                 .SetOverlapTotalRange();
-            CFeat_CI feat_it(ctx.GetHandle(),
-                             m_Feat.GetLocation().GetTotalRange(), sel );
-            for( ; feat_it; ++feat_it ) {
-                const CMappedFeat &feat = (*feat_it);
-                const CGene_ref& other_ref = feat.GetData().GetGene();
-                string other_label;
-                other_ref.GetLabel( &other_label );
 
-                if( xref_label == other_label ) {
+            auto_ptr<CFeat_CI> feat_it;
+
+            // if we can't get the total range (usually because we span multiple
+            // SeqIds, we fall back on the whole thing
+            try {
+                CSeq_loc::TRange totalRange = m_Feat.GetLocation().GetTotalRange();
+                feat_it.reset( new CFeat_CI(ctx.GetHandle(), totalRange, sel ) );
+            } catch( const CException &e ) {
+                feat_it.reset( new CFeat_CI(ctx.GetHandle(), sel ) );
+            }
+
+            for( ; *feat_it; ++*feat_it ) {
+                const CMappedFeat &feat = (**feat_it);
+                const CGene_ref& other_ref = feat.GetData().GetGene();
+
+                if( s_GeneMatchesXref( &other_ref, xref_g_ref ) ) {
                     s_feat.Reset(&feat.GetOriginalFeature());
                     g_ref = &other_ref;
                     break;
@@ -1589,15 +1634,20 @@ void CFeatureItem::x_AddQuals(
 //  Add the various qualifiers to this feature. Top level function.
 //  ----------------------------------------------------------------------------
 {
-//   /**fl**/
-//     if ( GetLoc().IsInt() ) {
-//         size_t uFrom = GetLoc().GetInt().GetFrom();
-//         size_t uTo = GetLoc().GetInt().GetTo();
-//         if ( uFrom == 19267 ) {
-//             cerr << "";
-//         }
-//     }
-//   /**fl**/
+//    /**fl**/
+//      if ( GetLoc().IsInt() ) {
+//          size_t uFrom = GetLoc().GetInt().GetFrom();
+//          size_t uTo = GetLoc().GetInt().GetTo();
+//          if ( uFrom == 75658 ) {
+//              cerr << "";
+//          }
+//      }
+//      if( GetLoc().IsPnt() ) {
+//          if( GetLoc().GetPnt().GetPoint() == 516 ) {
+//              cerr << "";
+//          }
+//      }
+//    /**fl**/
 
     if ( ctx.Config().IsFormatFTable() ) {
         x_AddFTableQuals( ctx );
@@ -3008,7 +3058,12 @@ void CFeatureItem::x_AddQualsProt(
 
         CConstRef<CSeq_loc> loc(&m_Feat.GetLocation());
 
-        if (processed == CProt_ref::eProcessed_not_set) {
+        const bool is_pept_whole_loc = loc->IsWhole() || 
+            ( loc->GetStart(eExtreme_Biological) == 0 && 
+              loc->GetStop(eExtreme_Biological) == (ctx.GetHandle().GetBioseqLength() - 1) );
+
+        if (processed == CProt_ref::eProcessed_not_set || 
+                processed == CProt_ref::eProcessed_preprotein ) {
             SAnnotSelector sel = ctx.SetAnnotSelector();
             sel.SetFeatType(CSeqFeatData::e_Prot);
             for (CFeat_CI feat_it(ctx.GetHandle(), sel);  feat_it;  ++feat_it) {
@@ -3070,7 +3125,7 @@ void CFeatureItem::x_AddQualsProt(
                     break;
             }
 
-            if ( (!has_mat_peptide  ||  !has_signal_peptide) || (proteinIsAtLeastMature) ) { 
+            if ( (!has_mat_peptide  ||  !has_signal_peptide) || (proteinIsAtLeastMature) || (!is_pept_whole_loc) ) { 
                 try {
                     //wt = GetProteinWeight(ctx.GetHandle(), loc);
                     wt = GetProteinWeight(m_Feat.GetOriginalFeature(),
