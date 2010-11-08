@@ -49,6 +49,7 @@
 #include "pimpl_base.hpp"
 
 // standard includes
+#include <string.h>
 #include <new>
 #include <algorithm>
 
@@ -57,6 +58,9 @@
 
 using namespace xml;
 using namespace xml::impl;
+
+const char *    kInsertError = "inserting attribute error";
+
 
 //####################################################################
 struct xml::attributes::pimpl : public pimpl_base<xml::attributes::pimpl> {
@@ -159,10 +163,88 @@ xml::attributes::const_iterator xml::attributes::end (void) const {
                           false);
 }
 //####################################################################
-void xml::attributes::insert (const char *name, const char *value) {
-    xmlSetProp(pimpl_->xmlnode_,
-               reinterpret_cast<const xmlChar*>(name),
-               reinterpret_cast<const xmlChar*>(value));
+void xml::attributes::insert (const char *name, const char *value,
+                              const ns *nspace ) {
+    if ( (!name) || (!value))
+        throw xml::exception("name and value of an attribute to "
+                             "insert must not be NULL");
+
+    const char *  column = strchr(name, ':');
+
+    if (!nspace) {
+        // It means ithat the user does not care about namespaces.
+        // So we should bother about them.
+        if (column) {
+            // The given name is qualified. Search for the namespace basing on
+            // the prefix
+            if (*(column + 1) == '\0')
+                throw xml::exception("invalid attribute name");
+            if (column == name)
+                throw xml::exception("an attribute may not have a default namespace");
+
+            std::string prefix(name, column - name);
+            xmlNsPtr  resolved_ns = xmlSearchNs(pimpl_->xmlnode_->doc,
+                                                pimpl_->xmlnode_,
+                                                reinterpret_cast<const xmlChar*>(prefix.c_str()));
+            if (!resolved_ns)
+                throw xml::exception("cannot resolve namespace");
+
+            if (xmlSetNsProp(pimpl_->xmlnode_,
+                             resolved_ns,
+                             reinterpret_cast<const xmlChar*>(column + 1),
+                             reinterpret_cast<const xmlChar*>(value)) == NULL)
+                throw xml::exception(kInsertError);
+            return;
+        }
+
+        // The given name is not qualified.
+        if (xmlSetProp(pimpl_->xmlnode_,
+                       reinterpret_cast<const xmlChar*>(name),
+                       reinterpret_cast<const xmlChar*>(value)) == NULL)
+            throw xml::exception(kInsertError);
+        return;
+    }
+
+    // Some namespace is provided. Check that the name is not qualified.
+    if (column)
+        throw xml::exception("cannot specify both a qualified name and a namespace");
+
+    if (nspace->is_void()) {
+        // The user wanted to insert an attribute without a namespace at all.
+        if (xmlSetProp(pimpl_->xmlnode_,
+                         reinterpret_cast<const xmlChar*>(name),
+                         reinterpret_cast<const xmlChar*>(value)) == NULL)
+            throw xml::exception(kInsertError);
+        return;
+    }
+
+    if (nspace->get_prefix() == std::string(""))
+        throw xml::exception("an attribute may not have a default namespace");
+
+    if (!nspace->is_safe()) {
+        if (xmlSetNsProp(pimpl_->xmlnode_,
+                         reinterpret_cast<xmlNsPtr>(nspace->unsafe_ns_),
+                         reinterpret_cast<const xmlChar*>(name),
+                         reinterpret_cast<const xmlChar*>(value)) == NULL)
+            throw xml::exception(kInsertError);
+        return;
+    }
+
+
+    // Resolve namespace basing on uri
+    xmlNsPtr  resolved_ns = xmlSearchNsByHref(pimpl_->xmlnode_->doc,
+                                              pimpl_->xmlnode_,
+                                              reinterpret_cast<const xmlChar*>(nspace->get_uri()));
+    if (!resolved_ns)
+        throw xml::exception("inserting attribute error: "
+                             "cannot resolve namespace");
+
+    if (xmlSetNsProp(pimpl_->xmlnode_,
+                     resolved_ns,
+                     reinterpret_cast<const xmlChar*>(name),
+                     reinterpret_cast<const xmlChar*>(value)) == NULL)
+        throw xml::exception(kInsertError);
+    return;
 }
 //####################################################################
 xml::attributes::iterator xml::attributes::find(const char *name,
@@ -213,8 +295,81 @@ xml::attributes::iterator xml::attributes::erase (iterator to_erase) {
     return to_erase;
 }
 //####################################################################
-void xml::attributes::erase (const char *name) {
-    xmlUnsetProp(pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(name));
+xml::attributes::size_type xml::attributes::erase (const char *name, const ns *nspace) {
+
+    if (!name)
+        return 0;
+
+    const char *  column = strchr(name, ':');
+    if (!nspace) {
+        if (column) {
+            // name is qualified
+            if (column == name)
+                return 0;   // Default NS is provided
+            if (*(column + 1) == '\0')
+                return 0;   // No name is provided
+
+            std::string prefix(name, column - name);
+            xmlNsPtr  resolved_ns = xmlSearchNs(pimpl_->xmlnode_->doc,
+                                                pimpl_->xmlnode_,
+                                                reinterpret_cast<const xmlChar*>(prefix.c_str()));
+            if (!resolved_ns)
+                return 0;
+
+            if (xmlUnsetNsProp(pimpl_->xmlnode_,
+                               resolved_ns,
+                               reinterpret_cast<const xmlChar*>(column + 1)) == 0)
+                return 1;
+            return 0;
+        }
+
+        // It is a non-qualified name. Search basing on names only.
+        size_type  count = 0;
+        xmlAttrPtr  att = find_prop(pimpl_->xmlnode_, name, NULL);
+        while (att != NULL) {
+            ++count;
+            xmlUnlinkNode(reinterpret_cast<xmlNodePtr>(att));
+            xmlFreeProp(att);
+            att = find_prop(pimpl_->xmlnode_, name, NULL);
+        }
+        return count;
+    }
+
+    if (column)
+        return 0;   // Both a namespace and a prefix in the name are provided
+
+    if (nspace->is_void()) {
+        // The attribute must not have a namespace at all
+        if (xmlUnsetProp(pimpl_->xmlnode_,
+                         reinterpret_cast<const xmlChar*>(name)) == 0)
+            return 1;
+        return 0;
+    }
+
+    if (!nspace->is_safe()) {
+        if (xmlUnsetNsProp(pimpl_->xmlnode_,
+                           reinterpret_cast<xmlNsPtr>(nspace->unsafe_ns_),
+                           reinterpret_cast<const xmlChar*>(name)) == 0)
+            return 1;
+        return 0;
+    }
+
+    // Safe namespace. Resolve it basing on the uri.
+    xmlNsPtr  resolved_ns = xmlSearchNsByHref(pimpl_->xmlnode_->doc,
+                                              pimpl_->xmlnode_,
+                                              reinterpret_cast<const xmlChar*>(nspace->get_uri()));
+
+    if (!resolved_ns)
+        return 0;   // Namespace is not resolved. Nothing will be deleted anyway.
+
+    // There could be many attributes with different prefixes but with the same
+    // URIs and names
+    size_type  count = 0;
+    while (xmlUnsetNsProp(pimpl_->xmlnode_,
+                          resolved_ns,
+                          reinterpret_cast<const xmlChar*>(name)) == 0)
+        ++count;
+    return count;
 }
 //####################################################################
 bool xml::attributes::empty (void) const {

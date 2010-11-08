@@ -480,9 +480,14 @@ namespace impl {
     //####################################################################
     xmlAttrPtr find_prop (xmlNodePtr xmlnode,
                           const char *name, const ns *nspace) {
+        if ( (xmlnode == NULL) ||
+             (xmlnode->type != XML_ELEMENT_NODE) ||
+             (name == NULL) )
+            return NULL;
+
         xmlAttrPtr prop = xmlnode->properties;
 
-        for (; prop!=0; prop = prop->next) {
+        for (; prop != NULL; prop = prop->next) {
             if (xmlStrEqual(prop->name,
                             reinterpret_cast<const xmlChar*>(name))) {
                 if (ns_util::attr_ns_match(prop, nspace))
@@ -490,7 +495,7 @@ namespace impl {
             }
         }
 
-        return 0;
+        return NULL;
     }
     //####################################################################
     phantom_attr* find_default_prop (xmlNodePtr xmlnode,

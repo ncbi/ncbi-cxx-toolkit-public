@@ -381,12 +381,22 @@ public:
      * Add an attribute to the attributes list. If there is another
      * attribute with the same name, it will be replaced with this one.
      *
-     * @param name The name of the attribute to add.
+     * @param name The name of the attribute to add. The name could be
+     *   qualified. If it is qualified then the namespace parameter must be
+     *   NULL.
      * @param value The value of the attribute to add.
-     * @author Peter Jones
+     * @param nspace
+     *   The namespace of the atrribute to insert:
+     *   - NULL or void namespace insert an attribute without a namespace.
+     *   - default namespace causes an exception because attributes may not
+     *     have default namespace.
+     *   - Unsafe namespace is used as it is.
+     *   - A safe namespace is resolved basing on the uri only
+     * @exception Throws exceptions in case of problems.
+     * @author Peter Jones, Sergey Satskiy
     **/
     //####################################################################
-    void insert (const char *name, const char *value);
+    void insert (const char *name, const char *value, const ns *nspace=NULL);
 
     //####################################################################
     /**
@@ -451,11 +461,22 @@ public:
      * iterators that are pointing to that attribute, as well as any
      * pointers or references to that attribute.
      *
-     * @param name The name of the attribute to erase.
-     * @author Peter Jones
+     * This function does not throw any exceptions.
+     *
+     * @param name The name of the attribute to erase. The name may be
+     *   qualified. If it is qualified then the namespace parameter must be
+     *   NULL.
+     * @param nspace
+     *   The namespace of the atrribute to erase:
+     *   - NULL matches any namespace
+     *   - Void namespace matches attributes without a namespace set
+     *   - Unsafe namespace is used as it is
+     *   - A safe namespace is resolved basing on the uri only
+     * @return The number of erased attributes.
+     * @author Peter Jones, Sergey Satskiy
     **/
     //####################################################################
-    void erase (const char *name);
+    size_type erase (const char *name, const ns *nspace=NULL);
 
     //####################################################################
     /**
