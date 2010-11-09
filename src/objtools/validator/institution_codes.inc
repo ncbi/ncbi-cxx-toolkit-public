@@ -1007,6 +1007,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMBGCAS	c	Collection of Marine Biological Germplasm",
 "CMBK	s	The City Museum and Art Gallery, Department of Natural History",
 "CMBY	s	Camberley Museum",
+"CMC<MEX>	s	Coleccion Mastozoologica del Centro de Investigacion en Biodiversidad y Conservacion,Universidad Autonoma del Estado de Morelos",
 "CMC<NZ>	s	Canterbury Museum",
 "CMC<USA-MI>	s	Central Michigan University, Department of Biology",
 "CMCC	c	National Center for Medical Culture Collections",
