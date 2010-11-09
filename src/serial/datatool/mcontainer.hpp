@@ -37,7 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNcbiRegistry;
+class CMemoryRegistry;
 class CDataType;
 class CDataTypeModule;
 class CNamespace;
@@ -55,7 +55,7 @@ public:
     CModuleContainer(void);
     virtual ~CModuleContainer(void);
 
-    virtual const CNcbiRegistry& GetConfig(void) const;
+    virtual const CMemoryRegistry& GetConfig(void) const;
     virtual const string& GetSourceFileName(void) const;
     virtual string GetFileNamePrefix(void) const;
     virtual EFileNamePrefixSource GetFileNamePrefixSource(void) const;

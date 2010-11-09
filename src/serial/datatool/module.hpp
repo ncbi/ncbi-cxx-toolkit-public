@@ -157,6 +157,8 @@ private:
     set<string> m_ImportRef;
     static string s_ModuleFileSuffix;
     mutable map< string, set< string > > m_DefVars;
+    mutable map< string, bool > m_DefSections;
+    mutable map< string, list< string > > m_DefSectionEntries;
 };
 
 END_NCBI_SCOPE

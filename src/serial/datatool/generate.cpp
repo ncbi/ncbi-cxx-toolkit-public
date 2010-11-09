@@ -70,7 +70,7 @@ CCodeGenerator::~CCodeGenerator(void)
 {
 }
 
-const CNcbiRegistry& CCodeGenerator::GetConfig(void) const
+const CMemoryRegistry& CCodeGenerator::GetConfig(void) const
 {
     return m_Config;
 }

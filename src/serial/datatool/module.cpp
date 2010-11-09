@@ -511,7 +511,27 @@ const string CDataTypeModule::x_GetVar(
     if (collect) {
         m_DefVars[section].insert(value);
     }
-    return GetConfig().Get(section, value);
+    map< string, bool >::const_iterator i = m_DefSections.find(section);
+    if (i == m_DefSections.end()) {
+        m_DefSections[section] = GetConfig().HasEntry(section);
+        i = m_DefSections.find(section);
+        if (i == m_DefSections.end()) {
+            return kEmptyStr;
+        }
+        if (i->second) {
+            list<string> entries;
+            GetConfig().EnumerateEntries(section,&entries);
+            m_DefSectionEntries[section] = entries;
+        }
+    }
+    if (!i->second) {
+        return kEmptyStr;
+    }
+    map< string, list< string > >::const_iterator e =
+        m_DefSectionEntries.find(section);
+    bool found = e != m_DefSectionEntries.end() &&
+        find(e->second.begin(), e->second.end(), value) != e->second.end();
+    return found ? GetConfig().Get(section, value) : kEmptyStr;
 }
 
 bool CDataTypeModule::AddImportRef(const string& imp)

@@ -141,7 +141,7 @@ public:
     bool Imported(const CDataType* type) const;
 
     // generation interface
-    const CNcbiRegistry& GetConfig(void) const;
+    const CMemoryRegistry& GetConfig(void) const;
     string GetFileNamePrefix(void) const;
     void UseQuotedForm(bool use);
     void CreateCvsignore(bool create);
@@ -193,7 +193,7 @@ protected:
 
 private:
 
-    CNcbiRegistry m_Config;
+    CMemoryRegistry m_Config;
     CFileSet m_MainFiles;
     CFileSet m_ImportFiles;
     TTypeNames m_GenerateTypes;

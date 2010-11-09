@@ -57,7 +57,7 @@ const CModuleContainer& CModuleContainer::GetModuleContainer(void) const
     return *m_Parent;
 }
 
-const CNcbiRegistry& CModuleContainer::GetConfig(void) const
+const CMemoryRegistry& CModuleContainer::GetConfig(void) const
 {
     return GetModuleContainer().GetConfig();
 }
