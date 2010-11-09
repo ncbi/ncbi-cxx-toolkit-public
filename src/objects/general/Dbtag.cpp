@@ -161,6 +161,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("BEEBASE", CDbtag::eDbtagType_BEEBASE),
+    TDbxrefPair("BioProject", CDbtag::eDbtagType_BioProject),
     TDbxrefPair("CCDS", CDbtag::eDbtagType_CCDS),
     TDbxrefPair("CGNC", CDbtag::eDbtagType_CGNC),
     TDbxrefPair("CloneID", CDbtag::eDbtagType_CloneID),

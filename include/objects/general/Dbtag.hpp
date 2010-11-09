@@ -178,7 +178,8 @@ public:
         eDbtagType_MGD,
         eDbtagType_PID,
         eDbtagType_BEEBASE,
-        eDbtagType_NASONIABASE
+        eDbtagType_NASONIABASE,
+        eDbtagType_BioProject
     };
 
     enum EDbtagGroup {
