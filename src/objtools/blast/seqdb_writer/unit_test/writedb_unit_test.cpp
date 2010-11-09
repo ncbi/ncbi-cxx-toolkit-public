@@ -1450,6 +1450,55 @@ BOOST_AUTO_TEST_CASE(HashToOid)
     s_WrapUpDb(*nucl);
 }
 
+BOOST_AUTO_TEST_CASE(PDBIdLowerCase)
+{
+        
+    vector<string> files;
+    
+    string title = "pdb-id";
+    
+    string
+        I1("pdb|3E3Q|BB"), T1("Lower case chain b");
+    
+    {
+        CRef<CWriteDB> wr(new CWriteDB(title,
+                                       CWriteDB::eProtein,
+                                       "title",
+                                       CWriteDB::eFullIndex));
+        
+        // Build a multi-defline bioseq and read it with CFastaReader.
+        
+        string str = ">"    + I1 + " " + T1 + "\n" + "ELVISLIVES\n";
+        
+        CRef<CBioseq> bs = s_FastaStringToBioseq(str, true);
+        
+        wr->AddSequence(*bs);
+        wr->Close();
+        
+        // Clean up.
+        
+        wr->ListFiles(files);
+    }
+    
+    {
+        CSeqDB rd("pdb-id", CSeqDB::eProtein);
+        BOOST_REQUIRE(rd.GetNumOIDs() == 1);
+        
+        vector<int> oids;
+        rd.AccessionToOids("3e3q bb", oids);
+        
+        BOOST_REQUIRE(oids.size() == 1);
+        BOOST_REQUIRE(oids[0] == 0);
+
+        oids.clear();
+        rd.AccessionToOids("3e3q b", oids);
+        
+        BOOST_REQUIRE(oids.size() == 0);
+    }
+    
+    s_WrapUpFiles(files);
+}
+
 BOOST_AUTO_TEST_CASE(FastaReaderBioseq)
 {
         
