@@ -61,6 +61,18 @@ CNetServProtoParserBase::x_GetNextInCmdMap(T* ptr)
     return reinterpret_cast<T*>(reinterpret_cast<const char*>(ptr) + m_CmdDefSize);
 }
 
+
+// For internal use only
+enum ENSProtoTokenType {
+    eNSTT_None  = -1,    // No more tokens
+    eNSTT_Int   =  1,    // Avoid 0 as meaningful value
+    eNSTT_Str,
+    eNSTT_Id,
+    eNSTT_NCID,
+    eNSTT_Key,
+    eNSTT_ICPrefix
+};
+
 ENSProtoTokenType
 CNetServProtoParserBase::x_GetToken(const char** str,
                                     const char*  str_end,
@@ -74,7 +86,9 @@ CNetServProtoParserBase::x_GetToken(const char** str,
     }
 
     const char* tok_start = s;
-    if (*s == '"') {
+    char quote_char;
+    if (*s == '"' || *s == '\'') {
+        quote_char = *s;
         ++s;
         tok_start = s;
         ttype = eNSTT_Str;
@@ -88,7 +102,7 @@ CNetServProtoParserBase::x_GetToken(const char** str,
 
     for (; s < str_end; ++s) {
         if (ttype == eNSTT_Str) {
-            if (*s == '"') {
+            if (*s == quote_char) {
                 break;
             }
             else if (*s == '\\'  &&  (s + 1 < str_end)) {
@@ -105,7 +119,7 @@ CNetServProtoParserBase::x_GetToken(const char** str,
     if (*s == '=') {
         ttype = eNSTT_Key;
     }
-    else if (ttype == eNSTT_Str  &&  *s != '"') {
+    else if (ttype == eNSTT_Str  &&  *s != quote_char) {
         NCBI_THROW_FMT(CNSProtoParserException, eBadToken,
                        "String is not ended correctly: \""
                        << string(tok_start, s - tok_start));
