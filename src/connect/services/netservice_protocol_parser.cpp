@@ -62,17 +62,6 @@ CNetServProtoParserBase::x_GetNextInCmdMap(T* ptr)
 }
 
 
-// For internal use only
-enum ENSProtoTokenType {
-    eNSTT_None  = -1,    // No more tokens
-    eNSTT_Int   =  1,    // Avoid 0 as meaningful value
-    eNSTT_Str,
-    eNSTT_Id,
-    eNSTT_NCID,
-    eNSTT_Key,
-    eNSTT_ICPrefix
-};
-
 ENSProtoTokenType
 CNetServProtoParserBase::x_GetToken(const char** str,
                                     const char*  str_end,
