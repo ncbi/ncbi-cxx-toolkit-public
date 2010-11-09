@@ -713,6 +713,9 @@ however be referenced remotely.")),
    TErrTypStrs ( eErr_SEQ_PKG_SingleItemSet,
    TErrStrs ("SingleItemSet",
 "Only a single Bioseq was found in this BioseqSet. Is that what was intended?")),
+   TErrTypStrs ( eErr_SEQ_PKG_MisplacedMolInfo,
+   TErrStrs ("MisplacedMolInfo",
+"Mol-info should not be on a pop/phy/mut/eco/wgs/genbank/genprod set.")),
 
 /* SEQ_FEAT */
 

@@ -1755,7 +1755,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
         if (vec.IsInGap (end)) {
             //is ok
         } else if (strand == eNa_strand_minus) {            
-            if (end > 1
+            if (end < seq_len - 1
                 && IsResidue (vec[end]) && vec[end] == 'C'
                 && IsResidue (vec[end + 1]) && vec[end + 1] == 'T') {
                 // matches acceptor
@@ -2048,9 +2048,9 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         }           
 
         bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
-        bool first = true;
+        int part_num = 0;
 
-        for ( CSeq_loc_CI si(loc); si; ++si ) {
+        for ( CSeq_loc_CI si(loc); si; ++si, ++part_num ) {
             try {
                 const CSeq_loc& part = si.GetSeq_loc();
                 CSeq_loc::TRange range = si.GetRange();
@@ -2058,20 +2058,24 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 if (bsh_si) {
                     CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
 
-#if 1
                     string label = GetBioseqIdLabel (*(bsh_si.GetCompleteBioseq()), true);
-#else
-                    string label;
-                    bsh.GetCompleteBioseq()->GetLabel(&label, CBioseq::eContent, true);
-#endif
+
                     TSeqPos start = part.GetStart(eExtreme_Biological);
                     TSeqPos stop = part.GetStop(eExtreme_Biological);
+                    bool first = false;
+                    bool last = false;
                     if (si.GetStrand() == eNa_strand_minus) {
                         start = range.GetTo();
                         stop = range.GetFrom();
                     } else {
                         start = range.GetFrom();
                         stop = range.GetTo();
+                    }
+                    if (part_num == 0) {
+                        first = true;
+                    }
+                    if (part_num == num_parts - 1) {
+                        last = true;
                     }
 
                     bool checkExonDonor = false;
@@ -2088,7 +2092,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                             }
                         }
                     }
-                    bool last = (stop == cds_stop);
+                        
                     bool last_partial = last && part.IsPartialStop(eExtreme_Biological);
                     bool first_partial = first && part.IsPartialStart(eExtreme_Biological);
 
@@ -2104,11 +2108,10 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
                 }
-			} catch (CException ) {
-			} catch (std::exception ) {
+			      } catch (CException ) {
+			      } catch (std::exception ) {
                 // could get errors from CSeqVector
             }
-            first = false;
         }
     }                   
 
@@ -2420,6 +2423,11 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
                  "Comment has same value as protein description",
                  feat);
+    }
+
+    if (feat.IsSetComment() && HasECnumberPattern(feat.GetComment())) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, 
+                 "Apparent EC number in protein comment", feat);
     }
 
     if ( prot.CanGetDb () ) {
@@ -3267,7 +3275,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
             CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
             if ( range.GetFrom() == range.GetTo() ) {
                 EDiagSev sev = eDiag_Warning;
-                if (m_Imp.IsINSDInSep()) {
+                if (m_Imp.IsRefSeq()) {
                     sev = eDiag_Error;
                 }
                 PostErr (sev, eErr_SEQ_FEAT_PolyAsignalNotRange, "PolyA_signal should be a range", feat);
@@ -4700,7 +4708,7 @@ void CValidError_feat::ValidateCommonCDSProduct
 
 bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 {
-    if (!feat.IsSetData() || !feat.GetData().IsCdregion() || !feat.IsSetLocation()) {
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() || !feat.IsSetLocation() || feat.IsSetPseudo()) {
         return false;
     }
 
@@ -4731,7 +4739,8 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 {
     if (!feat.IsSetData() 
         || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_intron 
-        || !feat.IsSetLocation()) {
+        || !feat.IsSetLocation()
+        || feat.IsSetPseudo()) {
         return false;
     }
 
@@ -5462,7 +5471,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         mismatch_except = false, frameshift_except = false,
         rearrange_except = false, product_replaced = false,
         mixed_population = false, low_quality = false,
-        report_errors = true, other_than_mismatch = false;
+        report_errors = true, other_than_mismatch = false,
+        rna_editing = false;
     string farstr;
     
     if (!m_Imp.IgnoreExceptions() &&
@@ -5496,6 +5506,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
         if (NStr::FindNoCase(except_text, "low-quality sequence region") != NPOS) {
             low_quality = true;
+        }
+        if (NStr::FindNoCase (except_text, "RNA editing") != NPOS) {
+            rna_editing = true;
         }
     }
 
@@ -5788,8 +5801,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         } else {
             has_errors = true;
-            if (report_errors) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_TransLen,
+            if (report_errors || (rna_editing && (prot_len < len - 1 || prot_len > len))) {
+                PostErr(rna_editing ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_TransLen,
                     "Given protein length [" + NStr::IntToString(prot_len) + 
                     "] does not match " + farstr + "translation length [" + 
                     NStr::IntToString(len) + "]", feat);
@@ -6238,18 +6251,23 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         if (redundant_xref && overlapping_genes.size() > 1) {
             size_t num_at_min_length = 0;
             size_t min_length = 0;
+            string label_min = "";
             TFeatScores::iterator f1 = overlapping_genes.begin();
             while (f1 != overlapping_genes.end()) {
                 size_t len = GetLength (f1->second->GetLocation(), m_Scope);
                 if (num_at_min_length == 0 || len < min_length) {
                     num_at_min_length = 1;
                     min_length = len;
-                } else if (len == min_length) {
+                    label_min = "";
+                    f1->second->GetData().GetGene().GetLabel (&label_min);
+                } else if (len == min_length) {                    
                     num_at_min_length++;
                 }
                 ++f1;
             }
             if (num_at_min_length > 1) {
+                redundant_xref = false;
+            } else if (num_at_min_length == 1 && !NStr::Equal (label_min, label)) {
                 redundant_xref = false;
             }
         }
@@ -6366,13 +6384,14 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             CFeat_CI f (bsh, sel);
             bool found = false;
             while (f && !found) {
-                if (f->GetData().GetGene().IsSetLocus() 
-                    && NStr::EqualCase (f->GetData().GetGene().GetLocus(), gene_xref->GetLocus())) {
+                string label;
+                f->GetData().GetGene().GetLabel(&label);
+                if (NStr::Equal(label, gene_xref->GetLocus())) {
                     found = true;
-					if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation())) {
-						PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-							"Gene cross-reference is not on expected strand", feat);
-					}
+					          if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation())) {
+						          PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+							          "Gene cross-reference is not on expected strand", feat);
+					          }
                 } else {
                     ++f;
                 }
@@ -6705,8 +6724,10 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
 
             // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
             // ignore gap features for this
-            if ((!feat.GetData().IsImp() || !feat.GetData().GetImp().IsSetKey() || !NStr::EqualNocase(feat.GetData().GetImp().GetKey(), "gap"))
-                && bsh.IsNa()) {
+            if (bsh.IsNa() && bsh.IsSetInst_Repr() && bsh.GetInst_Repr() == CSeq_inst::eRepr_delta
+                && (!feat.GetData().IsImp() 
+                    || !feat.GetData().GetImp().IsSetKey() 
+                    || !NStr::EqualNocase(feat.GetData().GetImp().GetKey(), "gap"))) {
                 try {
                     int num_n = 0;
                     int num_real = 0;

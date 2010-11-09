@@ -214,7 +214,7 @@ static string s_GetBioseqAcc(const CSeq_id& id)
 static string s_GetBioseqAcc(const CBioseq_Handle& handle)
 {
     if (handle) {
-        CConstRef<CSeq_id> seqid = sequence::GetId(handle).GetSeqId();
+        CConstRef<CSeq_id> seqid = sequence::GetId(handle, sequence::eGetId_Best).GetSeqId();
         if (seqid) {
             return s_GetBioseqAcc(*seqid);
         }
@@ -408,13 +408,22 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
             }
         } else if (obj->GetThisTypeInfo() == CSeq_align::GetTypeInfo()) {
             const CSeq_align& align = dynamic_cast<const CSeq_align&>(*obj);
+            // temporary - to match C Toolkit
+            if (align.IsSetSegs() && align.GetSegs().IsStd()) {
+                return kEmptyStr;
+            }
             try {
-                for (int i = 0; i < align.GetDim(); ++i) {
-                    const CSeq_id& id = align.GetSeq_id(i);
-                    CBioseq_Handle bsh = scope.GetBioseqHandle(id);
-                    if (bsh) {
-                        return s_GetBioseqAcc(bsh);
+                if (align.IsSetDim()) {
+                    for (int i = 0; i < align.GetDim(); ++i) {
+                        const CSeq_id& id = align.GetSeq_id(i);
+                        CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+                        if (bsh) {
+                            return s_GetBioseqAcc(bsh);
+                        }
                     }
+                } else if (align.IsSetSegs() && align.GetSegs().IsDendiag()) {
+                    CBioseq_Handle bsh = scope.GetBioseqHandle(*(align.GetSegs().GetDendiag().front()->GetIds()[0]));
+                    return s_GetBioseqAcc(bsh);
                 }
                 // failed to find resolvable ID, use bare ID
                 return s_GetBioseqAcc(align.GetSeq_id(0));               

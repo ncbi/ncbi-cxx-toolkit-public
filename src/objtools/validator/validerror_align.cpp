@@ -121,14 +121,17 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
         break;
     }  // end of switch statement
 
-	if (segtype != CSeq_align::C_Segs::e_Denseg) {
-		PostErr(eDiag_Error, eErr_SEQ_ALIGN_UnexpectedAlignmentType, "This is not a DenseSeg alignment.", align);
-	}
-	try {
+    if (segtype != CSeq_align::C_Segs::e_Denseg 
+        && align.IsSetType() 
+        && (align.GetType() == CSeq_align::eType_partial
+            || align.GetType() == CSeq_align::eType_global)) {
+		    PostErr(eDiag_Error, eErr_SEQ_ALIGN_UnexpectedAlignmentType, "This is not a DenseSeg alignment.", align);
+    }
+	  try {
         x_ValidateAlignPercentIdentity (align, false);
-	} catch (CException &x1) {
-	} catch (std::exception &x2) {
-	}
+	  } catch (CException &x1) {
+	  } catch (std::exception &x2) {
+	  }
 
 }
 
@@ -197,8 +200,9 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
     TSignedSeqPos col = 0;
     size_t num_match = 0;
     size_t match_25 = 0;
+    bool   ids_missing = false;
 
-        // Now calculate Percent Identity
+    // Now calculate Percent Identity
     if (!align.IsSetSegs()) {
         return;
     } else if (align.GetSegs().IsDenseg()) {
@@ -236,7 +240,7 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             TSeqPos aln_len = av->GetAlnStop() + 1;
 
             try {
-                while (col < aln_len) {
+                while (col < aln_len && !ids_missing) {
                     string column;
                     av->GetColumnVector(column, col);
                     bool match = true;
@@ -273,16 +277,18 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                         match_25 = 0;
                     }
                 }
-	        } catch (CException &x1) {
-                // if sequence is not in scope,
-                // the above is impossible
-                // report 0 %, same as C Toolkit
-                col = aln_len;
-	        } catch (std::exception &x2) {
-                // if sequence is not in scope,
-                // the above is impossible
-                // report 0 %, same as C Toolkit
-                col = aln_len;
+	          } catch (CException &x1) {
+                  // if sequence is not in scope,
+                  // the above is impossible
+                  // report 0 %, same as C Toolkit
+                  col = aln_len;
+                  ids_missing = true;
+	          } catch (std::exception &x2) {
+                  // if sequence is not in scope,
+                  // the above is impossible
+                  // report 0 %, same as C Toolkit
+                  col = aln_len;
+                  ids_missing = true;
             }
         } catch (CException &x1) {
             // if AlnVec can't resolve seq id, 
@@ -290,124 +296,141 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             // report 0 %, same as C Toolkit
             col = 1;
             num_match = 0;
+            ids_missing = true;
         }
 
     } else {
+        try {
+            TIdExtract id_extract;
+            TAlnIdMap aln_id_map(id_extract, 1);
+            aln_id_map.push_back (align);
+            TAlnStats aln_stats (aln_id_map);
 
-        TIdExtract id_extract;
-        TAlnIdMap aln_id_map(id_extract, 1);
-        aln_id_map.push_back (align);
-        TAlnStats aln_stats (aln_id_map);
+            // Create user options
+            CAlnUserOptions aln_user_options;
+            TAnchoredAlnVec anchored_alignments;
 
-        // Create user options
-        CAlnUserOptions aln_user_options;
-        TAnchoredAlnVec anchored_alignments;
+            CreateAnchoredAlnVec (aln_stats, anchored_alignments, aln_user_options);
 
-        CreateAnchoredAlnVec (aln_stats, anchored_alignments, aln_user_options);
+            /// Build a single anchored aln
+            CAnchoredAln out_anchored_aln;
 
-        /// Build a single anchored aln
-        CAnchoredAln out_anchored_aln;
+            /// Optionally, create an id for the alignment pseudo sequence
+            /// (otherwise one would be created automatically)
+            CRef<CSeq_id> seq_id (new CSeq_id("lcl|PSEUDO ALNSEQ"));
+            CRef<CAlnSeqId> aln_seq_id(new CAlnSeqId(*seq_id));
+            TAlnSeqIdIRef pseudo_seqid(aln_seq_id);
 
-        /// Optionally, create an id for the alignment pseudo sequence
-        /// (otherwise one would be created automatically)
-        CRef<CSeq_id> seq_id (new CSeq_id("lcl|PSEUDO ALNSEQ"));
-        CRef<CAlnSeqId> aln_seq_id(new CAlnSeqId(*seq_id));
-        TAlnSeqIdIRef pseudo_seqid(aln_seq_id);
+            BuildAln(anchored_alignments,
+                     out_anchored_aln,
+                     aln_user_options,
+                     pseudo_seqid);
 
-        BuildAln(anchored_alignments,
-                 out_anchored_aln,
-                 aln_user_options,
-                 pseudo_seqid);
+            CSparseAln sparse_aln(out_anchored_aln, *m_Scope);
 
-        CSparseAln sparse_aln(out_anchored_aln, *m_Scope);
-
-        // check to see if alignment is TPA
-        bool is_tpa = false;
-        for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim() && !is_tpa;  ++row) {
-            const CSeq_id& id = sparse_aln.GetSeqId(row);
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle (id);
-            if (bsh) {
-                CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
-                while (desc_ci && !is_tpa) {
-                    if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
-                        && NStr::EqualNocase (desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
-                        is_tpa = true;
-                    }
-                    ++desc_ci;
-                }
-            }
-        }
-        if (is_tpa) {
-            return;
-        }            
-
-        vector <string> aln_rows;
-        vector <TSignedSeqPos> row_starts;
-        vector <TSignedSeqPos> row_stops;
-
-        for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
-            try {
-                string sequence;
-                sparse_aln.GetAlnSeqString
-                    (row,
-                     sequence,
-                     sparse_aln.GetAlnRange());
-                aln_rows.push_back (sequence);
-                TSignedSeqPos a = sparse_aln.GetSeqStart(row);
-                TSignedSeqPos b = sparse_aln.GetAlnPosFromSeqPos(row, a);
-                TSignedSeqPos c = sparse_aln.GetSeqPosFromAlnPos (row, a);
-                TSignedSeqPos aln_start = sparse_aln.GetSeqAlnStart(row);
-                TSignedSeqPos start = sparse_aln.GetSeqPosFromAlnPos(row, aln_start);
-                row_starts.push_back (start);
-                row_stops.push_back (sparse_aln.GetAlnPosFromSeqPos(row, sparse_aln.GetSeqAlnStop(row)));
-		    } catch (CException &x1) {
-		    } catch (std::exception &x2) {
-                // if sequence is not in scope,
-                // the above is impossible
-            }
-        }
-
-        TSignedSeqPos aln_len = sparse_aln.GetAlnRange().GetLength();
-        while (col < aln_len) {
-            string column;
-            bool match = true;
-            for (size_t row = 0; row < aln_rows.size() && match; row++) {
-                if (row_starts[row] >= col && row_stops[row] <= col
-                    && aln_rows[row].length() > col) {
-                    string nt = aln_rows[row].substr(col - row_starts[row], 1);
-                    if (NStr::Equal (nt, "-")) {
-                        if (internal_gaps) {
-                            match = false;
+            // check to see if alignment is TPA
+            bool is_tpa = false;
+            for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim() && !is_tpa;  ++row) {
+                const CSeq_id& id = sparse_aln.GetSeqId(row);
+                CBioseq_Handle bsh = m_Scope->GetBioseqHandle (id);
+                if (bsh) {
+                    CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
+                    while (desc_ci && !is_tpa) {
+                        if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
+                            && NStr::EqualNocase (desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
+                            is_tpa = true;
                         }
-                    } else {                    
-                        column += nt;
+                        ++desc_ci;
                     }
                 }
             }
-            if (match) {
-                if (!NStr::IsBlank (column)) {
-                    string::iterator it1 = column.begin();
-                    string::iterator it2 = it1;
-                    ++it2;
-                    while (match && it2 != column.end()) {
-                        if (!s_AmbiguousMatch (*it1, *it2)) {
-                            match = false;
+            if (is_tpa) {
+                return;
+            }            
+
+            vector <string> aln_rows;
+            vector <TSignedSeqPos> row_starts;
+            vector <TSignedSeqPos> row_stops;
+
+            for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim() && !ids_missing;  ++row) {
+                try {
+                    string sequence;
+                    sparse_aln.GetAlnSeqString
+                        (row,
+                         sequence,
+                         sparse_aln.GetAlnRange());
+                    aln_rows.push_back (sequence);
+                    TSignedSeqPos a = sparse_aln.GetSeqStart(row);
+                    TSignedSeqPos b = sparse_aln.GetAlnPosFromSeqPos(row, a);
+                    TSignedSeqPos c = sparse_aln.GetSeqPosFromAlnPos (row, a);
+                    TSignedSeqPos aln_start = sparse_aln.GetSeqAlnStart(row);
+                    TSignedSeqPos start = sparse_aln.GetSeqPosFromAlnPos(row, aln_start);
+                    row_starts.push_back (start);
+                    row_stops.push_back (sparse_aln.GetAlnPosFromSeqPos(row, sparse_aln.GetSeqAlnStop(row)));
+		            } catch (CException &x1) {
+                    ids_missing = true;
+		            } catch (std::exception &x2) {
+                    // if sequence is not in scope,
+                    // the above is impossible
+                    ids_missing = true;
+                }
+            }
+
+            if (!ids_missing) {
+                TSignedSeqPos aln_len = sparse_aln.GetAlnRange().GetLength();
+                while (col < aln_len) {
+                    string column;
+                    bool match = true;
+                    for (size_t row = 0; row < aln_rows.size() && match; row++) {
+                        if (row_starts[row] >= col && row_stops[row] <= col
+                            && aln_rows[row].length() > col) {
+                            string nt = aln_rows[row].substr(col - row_starts[row], 1);
+                            if (NStr::Equal (nt, "-")) {
+                                if (internal_gaps) {
+                                    match = false;
+                                }
+                            } else {                    
+                                column += nt;
+                            }
                         }
-                        ++it2;
-                        if (it2 == column.end()) {
-                            ++it1;
-                            it2 = it1;
+                    }
+                    if (match) {
+                        if (!NStr::IsBlank (column)) {
+                            string::iterator it1 = column.begin();
+                            string::iterator it2 = it1;
                             ++it2;
+                            while (match && it2 != column.end()) {
+                                if (!s_AmbiguousMatch (*it1, *it2)) {
+                                    match = false;
+                                }
+                                ++it2;
+                                if (it2 == column.end()) {
+                                    ++it1;
+                                    it2 = it1;
+                                    ++it2;
+                                }
+                            }
+                        }
+                        if (match) {
+                            ++num_match;
                         }
                     }
-                }
-                if (match) {
-                    ++num_match;
+                    col++;
                 }
             }
-            col++;
+        } catch (CException &x1) {
+            ids_missing = true;
+        } catch (std::exception &x2) {
+            ids_missing = true;
         }
     }
+
+    if (ids_missing) {
+        // if no columns, set col to one, so that we'll get a zero percent id error
+        col = 1;
+        num_match = 0;
+    }
+
     if (col > 0) {
         int pct_id = (num_match * 100) / col;
         if (pct_id < 50) {
@@ -430,11 +453,14 @@ void CValidError_align::x_ValidateDenseg
 
     size_t dim     = denseg.GetDim();
     size_t numseg  = denseg.GetNumseg();
+    string label;
+    denseg.GetIds()[0]->GetLabel (&label);
 
     // assert dim == Ids.size()
     if ( dim != denseg.GetIds().size() ) {
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_AlignDimSeqIdNotMatch,
-                "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment.  Look for possible formatting errors in the ids.", align);
+                "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment (context "
+                    + label + ").  Look for possible formatting errors in the ids.", align);
     }
 
     // assert numseg == Lens.size()
@@ -755,7 +781,7 @@ void CValidError_align::x_ValidateStrand
             // strands should be same for a given seq-id
             if ( strand1 != strand2 ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_StrandRev,
-                    "The strand labels for SeqId " + 
+                    "Strand: The strand labels for SeqId " + 
                     denseg.GetIds()[id]->AsFastaString() +
                     " are inconsistent across the alignment. "
                     "The first inconsistent region is the " + 
@@ -813,7 +839,7 @@ void CValidError_align::x_ValidateStrand
                     }
                     
                     PostErr(eDiag_Error, eErr_SEQ_ALIGN_StrandRev,
-                        "The strand labels for SeqId " + (*id_iter)->AsFastaString() +
+                        "Strand: The strand labels for SeqId " + (*id_iter)->AsFastaString() +
                         " are inconsistent across the alignment", align);
                 }
                 ++strand;
@@ -857,7 +883,7 @@ void CValidError_align::x_ValidateStrand
                 && strands[id_label] != strand ) {
                 TSeqPos start = loc.GetStart(eExtreme_Positional);
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_StrandRev,
-                    "The strand labels for SeqId " + id_label + 
+                    "Strand: The strand labels for SeqId " + id_label + 
                     " are inconsistent across the alignment.  The first inconsistent region is the "
                     + NStr::IntToString (region) + "(th) region, near sequence position "
                     + NStr::IntToString (start), align);
@@ -886,10 +912,10 @@ static size_t s_PercentBioseqMatch (CBioseq_Handle b1, CBioseq_Handle b2)
     }
 
     try {
-        CSeqVector sv1 = b1.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
-        CSeqVector sv2 = b2.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
+        CSeqVector sv1 = b1.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        CSeqVector sv2 = b2.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         for ( CSeqVector_CI sv1_iter(sv1), sv2_iter(sv2); (sv1_iter) && (sv2_iter); ++sv1_iter, ++sv2_iter ) {
-            if (*sv1_iter == *sv2_iter) {
+            if (*sv1_iter == *sv2_iter || *sv1_iter == 'N' || *sv2_iter == 'N') {
                 match++;
             }
         }

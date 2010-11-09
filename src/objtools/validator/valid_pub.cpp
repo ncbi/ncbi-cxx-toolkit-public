@@ -362,6 +362,9 @@ void CValidError_imp::ValidatePubArticle
                                 NStr::IsBlank(imp.GetPages());
 
                 EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
+                if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_epublish) {
+                    sev = eDiag_Warning;
+                }
 
                 if ( no_vol  &&  no_pages ) {
                     PostObjErr(sev, eErr_GENERIC_MissingPubInfo, 
@@ -480,26 +483,46 @@ void CValidError_imp::x_ValidatePages
     NStr::ReplaceInPlace(start, " ", "");
     NStr::ReplaceInPlace(stop, " ", "");
 
-    try {
-        int p1 = NStr::StringToInt (start);
-        try {
-            int p2 = NStr::StringToInt (stop);
+    int p1 = 0, p2 = 0;
+    bool start_good = false, stop_good = false;
+    size_t num_digits = 0;
 
-            if (p1 == 0 || p2 == 0) {
-                PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering has zero value", obj, ctx);
-            } else if (p1 < 0 || p2 < 0) {
-                PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering has negative value", obj, ctx);
-            } else if (p1 > p2) {
-                PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering out of order", obj, ctx);
-            } else if (p2 > p1 + 50) {
-                PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering greater than 50", obj, ctx);
-            }
-        } catch (CStringException& c) {
-            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering stop looks strange", obj, ctx);
-        }
-    } catch (CStringException& c) {
-        if (!isalpha(pages.c_str()[0])) {
+    if (start.c_str()[0] == '-') {
+        num_digits++;
+    }
+    while (isdigit (start.c_str()[num_digits])) {
+        num_digits++;
+    }
+    if (num_digits == 0) {
+        if (!isalpha(start.c_str()[0])) {
             PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering start looks strange", obj, ctx);
+        }
+    } else {
+        start_good = true;
+        p1 = NStr::StringToInt (start.substr(0, num_digits));
+
+        num_digits = 0;
+        if (stop.c_str()[0] == '-') {
+            num_digits++;
+        }
+        while (isdigit (stop.c_str()[num_digits])) {
+          num_digits++;
+        }
+        if (num_digits == 0) {
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering stop looks strange", obj, ctx);
+        } else {
+            stop_good = true;
+            p2 = NStr::StringToInt (stop.substr(0, num_digits));
+        }
+
+        if ((start_good && p1 == 0) || (stop_good && p2 == 0)) {
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering has zero value", obj, ctx);
+        } else if ((start_good && p1 < 0) || (stop_good && p2 < 0)) {
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering has negative value", obj, ctx);
+        } else if (start_good && stop_good && p1 > p2) {
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering out of order", obj, ctx);
+        } else if (start_good && stop_good && p2 > p1 + 50) {
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering greater than 50", obj, ctx);
         }
     }
 }

@@ -5670,6 +5670,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+    SetGenome (entry, CBioSource::eGenome_macronuclear);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrganelle",
+                              "Only Ciliophora have macronuclear locations"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
@@ -11208,6 +11215,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
     expected_errors[0]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site, but is on an mRNA that is already spliced)");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -12613,12 +12621,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryGeneXref)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // now gene xref is redundant
+    // now gene xref is necessary
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_feat> gene2 = AddMiscFeature (entry);
     gene2->SetData().SetGene().SetLocus("bar");
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
+    CLEAR_ERRORS
     CheckErrors (*eval, expected_errors);
 
     // error if gene references itself

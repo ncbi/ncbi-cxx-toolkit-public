@@ -934,12 +934,16 @@ void CValidError_imp::ValidateBioSource
 				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
 						 "Only Kinetoplastida have kinetoplasts", obj, ctx);
 			}
-		} 
-		if ( bsrc.GetGenome() == CBioSource::eGenome_nucleomorph ) {
+		} else if ( bsrc.GetGenome() == CBioSource::eGenome_nucleomorph ) {
 			if ( lineage.find("Chlorarachniophyceae") == string::npos  &&
 				lineage.find("Cryptophyta") == string::npos ) {
 				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
                     "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs", obj, ctx);
+			}
+    } else if ( bsrc.GetGenome() == CBioSource::eGenome_macronuclear) {
+			if ( lineage.find("Ciliophora") == string::npos ) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
+                    "Only Ciliophora have macronuclear locations", obj, ctx);
 			}
 		}
 
@@ -2048,7 +2052,7 @@ const string CValidError_imp::sm_SourceQualPrefixes[] = {
 
 void CValidError_imp::InitializeSourceQualTags() 
 {
-    m_SourceQualTags.reset(new CTextFsa);
+    m_SourceQualTags.reset(new CTextFsa(true));
     size_t size = sizeof(sm_SourceQualPrefixes) / sizeof(string);
 
     for (size_t i = 0; i < size; ++i ) {

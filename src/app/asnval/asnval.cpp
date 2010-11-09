@@ -410,6 +410,7 @@ void CAsnvalApp::ReadClassMember
     m_Level++;
 
     if ( m_Level == 1 ) {
+        size_t n = 0;
         // Read each element separately to a local TSeqEntry,
         // process it somehow, and... not store it in the container.
         for ( CIStreamContainerIterator i(in, member); i; ++i ) {
@@ -448,6 +449,7 @@ void CAsnvalApp::ReadClassMember
                         *m_ValidErrorStream << "Elapsed time " << NStr::IntToString (t2 - t1) << endl;
                     }
                 }
+                n++;
             } catch (exception e) {
                 if ( !m_Continue ) {
                     throw;

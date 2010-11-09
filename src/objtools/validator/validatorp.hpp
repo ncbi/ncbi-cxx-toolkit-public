@@ -857,7 +857,7 @@ private:
     void ValidateFeatPartialInContext (const CMappedFeat& feat);
     bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
     bool x_SplicingNotExpected(const CMappedFeat& feat);
-    bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type, bool& bypass_gene_test);
+    bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type);
     bool x_IsSameAsCDS(const CMappedFeat& feat);
     void ValidateSeqFeatContext(const CBioseq& seq);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
@@ -967,7 +967,6 @@ private:
 
         CMappedFeat GetmRNAForCDS(CMappedFeat cds);
         CMappedFeat GetCDSFormRNA(CMappedFeat cds);
-        CMappedFeat GetCDSForPartialmRNA(CMappedFeat mRNA, unsigned int partial_type);
 
     private:
         typedef pair <CMappedFeat, CMappedFeat> TmRNACDSPair;
@@ -1008,6 +1007,7 @@ private:
     void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);
     void CheckForInconsistentBiomols (const CBioseq_set& seqset);
+    void SetShouldNotHaveMolInfo(const CBioseq_set& seqset);
 
     bool IsMrnaProductInGPS(const CBioseq& seq); 
     bool IsCDSProductInGPS(const CBioseq& seq, const CBioseq_set& gps); 

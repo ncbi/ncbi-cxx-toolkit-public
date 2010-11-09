@@ -181,6 +181,7 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
         break;
     }
 
+    SetShouldNotHaveMolInfo(seqset);
     ValidateSetTitle(seqset);
     ValidateSetElements(seqset);
 
@@ -287,15 +288,17 @@ void CValidError_bioseqset::ValidateNucProtSet
                         "feature on contig, but is not",
                         seq);
                 }
+                string instantiated = "";
                 FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
                     if ((*it)->IsSource()) {
                         prot_biosource++;
                     }
+                    if ((*it)->IsTitle()) {
+                        instantiated = (*it)->GetTitle();
+                    }
                 }
                 // look for instantiated protein titles that don't match
-                CSeqdesc_CI desc(bsh, CSeqdesc::e_Title);
-                if (desc) {
-                    const string& instantiated = desc->GetTitle();                    
+                if (!NStr::IsBlank(instantiated)) {
                     const string & generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
                     if (!NStr::EqualNocase(instantiated, generated)) {
                         const string & generated = defline_generator.GenerateDefline(seq, *m_Scope,
@@ -578,38 +581,73 @@ void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset)
 }
 
 
+void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
+{
+    string class_name = "";
+
+    switch (seqset.GetClass()) {
+        case CBioseq_set::eClass_pop_set:
+            class_name = "Pop set";
+            break;
+        case CBioseq_set::eClass_mut_set:
+            class_name = "Mut set";
+            break;
+        case CBioseq_set::eClass_genbank:
+            class_name = "Genbank set";
+            break;
+        case CBioseq_set::eClass_phy_set:
+        case CBioseq_set::eClass_wgs_set:
+        case CBioseq_set::eClass_eco_set:
+            class_name = "Phy/eco/wgs set";
+            break;
+        case CBioseq_set::eClass_gen_prod_set:
+            class_name = "GenProd set";
+            break;
+        default:
+            return;
+            break;
+    }
+
+    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
+        if ((*it)->IsMolinfo()) {
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_MisplacedMolInfo,
+                    class_name + " has MolInfo on set", seqset);
+            return;
+        }
+    }            
+}
+
 
 void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 {
     const CBioSource*   biosrc  = 0;
     static const string sp = " sp. ";
 
-	if (m_Imp.IsRefSeq()) {
-		PostErr (eDiag_Critical, eErr_SEQ_PKG_RefSeqPopSet,
-				"RefSeq record should not be a Pop-set", seqset);
-	}
+	  if (m_Imp.IsRefSeq()) {
+		  PostErr (eDiag_Critical, eErr_SEQ_PKG_RefSeqPopSet,
+				  "RefSeq record should not be a Pop-set", seqset);
+	  }
 
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     string first_taxname = "";
     bool is_first = true;
     for (; seqit; ++seqit) {
-        
-        biosrc = 0;
-        
+        string taxname = "";
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (*seqit);
         // Will get the first biosource either from the descriptor
         // or feature.
-        CTypeConstIterator<CBioSource> biosrc_it(ConstBegin(*seqit));
-        if (biosrc_it) {
-            biosrc = &(*biosrc_it);
-        } 
-        
-        if (biosrc == 0)
-            continue;
-        
-        string taxname = "";
-        if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetTaxname()) {
-            taxname = biosrc->GetOrg().GetTaxname();
+        CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
+        if (d) {
+            if (d->GetSource().IsSetOrg() && d->GetSource().GetOrg().IsSetTaxname()) {
+                taxname = d->GetSource().GetOrg().GetTaxname();
+            }
+        } else {
+            CFeat_CI f(bsh, CSeqFeatData::e_Biosrc);
+            if (f && f->GetData().GetBiosrc().IsSetOrg() && f->GetData().GetBiosrc().GetOrg().IsSetTaxname()) {
+                taxname = f->GetData().GetBiosrc().GetOrg().GetTaxname();
+            }
         }
+
         if (is_first) {
             first_taxname = taxname;
             is_first = false;
