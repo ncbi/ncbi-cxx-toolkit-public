@@ -1435,6 +1435,14 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             CFeat_CI feat_it(ctx.GetScope(), cds.GetLocation(), sel);
             feature::CFeatTree ft(feat_it);
             feat = ft.GetParent(cds, CSeqFeatData::e_Gene);
+            if( ! feat ) {
+                s_feat =
+                    sequence::GetBestOverlappingFeat
+                    (cds.GetLocation(),
+                     CSeqFeatData::e_Gene,
+                     sequence::eOverlap_Contained,
+                     ctx.GetScope());
+            }
         }
     }
     else {

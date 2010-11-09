@@ -349,6 +349,24 @@ CFlatStringQVal::CFlatStringQVal
     NStr::TruncateSpacesInPlace(m_Value);
 }
 
+typedef pair<const char*, ETildeStyle> TNameTildeStylePair;
+typedef CStaticArrayMap<const char*, ETildeStyle, PCase_CStr > TNameTildeStyleMap;
+static const TNameTildeStylePair kNameTildeStyleMap[] = {
+    TNameTildeStylePair("function",     eTilde_tilde),
+    TNameTildeStylePair("seqfeat_note", eTilde_note)
+};
+DEFINE_STATIC_ARRAY_MAP(TNameTildeStyleMap, sc_NameTildeStyleMap, kNameTildeStyleMap);
+
+// a few kinds don't use the default tilde style
+ETildeStyle s_TildeStyleFromName( const string &name )
+{
+    TNameTildeStyleMap::const_iterator result = sc_NameTildeStyleMap.find( name.c_str() );
+    if( sc_NameTildeStyleMap.end() == result ) {
+        return eTilde_space;
+    } else {
+        return result->second;
+    }
+}
 
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
@@ -366,7 +384,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     }
     flags |= m_AddPeriod;
 
-    ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_note : eTilde_space);
+    ETildeStyle tilde_style = s_TildeStyleFromName( name );
     ExpandTildes(m_Value, tilde_style);
                 
     TFlatQual qual = x_AddFQ(q, (s_IsNote(flags, ctx) ? "note" : name), m_Value, m_Style);
