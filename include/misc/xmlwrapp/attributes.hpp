@@ -407,9 +407,12 @@ public:
      * provided then the only namespace prefix is taken into account.
      *
      * @param name The name of the attribute to find.
-     * @param nspace The namespace of the atrribute to find. NULL matches
-     *               any namespace. Void namespace matches attributes without
-     *               namespace set.
+     * @param nspace
+     *   The namespace of the atrribute to find:
+     *   - NULL matches any namespace
+     *   - Void namespace matches attributes without a namespace set
+     *   - Unsafe namespace is used as it is
+     *   - A safe namespace is resolved basing on the uri only
      * @return An iterator that points to the attribute with the given name.
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::iterator
@@ -428,9 +431,12 @@ public:
      * provided then the only namespace prefix is taken into account.
      *
      * @param name The name of the attribute to find.
-     * @param nspace The namespace of the atrribute to find. NULL matches
-     *               any namespace. Void namespace matches attributes without
-     *               namespace set.
+     * @param nspace
+     *   The namespace of the atrribute to find:
+     *   - NULL matches any namespace
+     *   - Void namespace matches attributes without a namespace set
+     *   - Unsafe namespace is used as it is
+     *   - A safe namespace is resolved basing on the uri only
      * @return A const_iterator that points to the attribute with the given name.
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::const_iterator

@@ -383,13 +383,16 @@ public:
     /**
      * Search for a node attribute.
      *
-     * @param name Name of the attribute to search. Cannot be NULL.
-     * @param nspace Namespace of the attribute to search. If NULL then
-     *               namespaces are not compared.
+     * @param name Name of the attribute to search.
+     * @param nspace
+     *   The namespace of the atrribute to find:
+     *   - NULL matches any namespace
+     *   - Void namespace matches attributes without a namespace set
+     *   - Unsafe namespace is used as it is
+     *   - A safe namespace is resolved basing on the uri only
      * @return iterator to the found attribute. If there is no such an
      *         attribute then the provided iterator equals to
      *         attributes::end().
-     * @exception xml::exception in case of problems.
      * @author Sergey Satskiy, NCBI
     **/
     attributes::iterator find_attribute (const char* name,
@@ -399,13 +402,16 @@ public:
     /**
      * Search for a node attribute.
      *
-     * @param name Name of the attribute to search. Cannot be NULL.
-     * @param nspace Namespace of the attribute to search. If NULL then
-     *               namespaces are not compared.
+     * @param name Name of the attribute to search.
+     * @param nspace
+     *   The namespace of the atrribute to find:
+     *   - NULL matches any namespace
+     *   - Void namespace matches attributes without a namespace set
+     *   - Unsafe namespace is used as it is
+     *   - A safe namespace is resolved basing on the uri only
      * @return const iterator to the found attribute. If there is no such an
      *         attribute then the provided iterator equals to
      *         attributes::end().
-     * @exception xml::exception in case of problems.
      * @author Sergey Satskiy, NCBI
     **/
     attributes::const_iterator find_attribute (const char* name,

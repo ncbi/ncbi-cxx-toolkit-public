@@ -480,21 +480,56 @@ namespace impl {
     //####################################################################
     xmlAttrPtr find_prop (xmlNodePtr xmlnode,
                           const char *name, const ns *nspace) {
+
+        // The similar check is in libxml2 static function
+        // xmlGetPropNodeInternal(...)
         if ( (xmlnode == NULL) ||
              (xmlnode->type != XML_ELEMENT_NODE) ||
              (name == NULL) )
             return NULL;
 
-        xmlAttrPtr prop = xmlnode->properties;
+        const ns *      ns_to_match = nspace;
+        const char *    name_to_match = name;
 
+        // Check first if the name is qualified
+        const char *  column = strchr(name, ':');
+
+        if (column) {
+            if (nspace)
+                return NULL;    // Both namespace and the name is qualified
+
+            if (column == name)
+                return NULL;    // The name starts with :
+
+            if (*(column + 1) == '\0')
+                return NULL;    // No attribute name is given
+
+            std::string prefix(name, column - name);
+            xmlNsPtr  resolved_ns = xmlSearchNs(xmlnode->doc,
+                                                xmlnode,
+                                                reinterpret_cast<const xmlChar*>(prefix.c_str()));
+            if (!resolved_ns)
+                return NULL;    // No such namespace found
+
+            name_to_match = column + 1;
+            ns_to_match = new ns(reinterpret_cast<const char *>(resolved_ns->prefix),
+                                 reinterpret_cast<const char *>(resolved_ns->href));
+        }
+
+        xmlAttrPtr prop = xmlnode->properties;
         for (; prop != NULL; prop = prop->next) {
             if (xmlStrEqual(prop->name,
-                            reinterpret_cast<const xmlChar*>(name))) {
-                if (ns_util::attr_ns_match(prop, nspace))
+                            reinterpret_cast<const xmlChar*>(name_to_match))) {
+                if (ns_util::attr_ns_match(prop, ns_to_match)) {
+                    if (ns_to_match != nspace)
+                        delete ns_to_match;
                     return prop;
+                }
             }
         }
 
+        if (ns_to_match != nspace)
+            delete ns_to_match;
         return NULL;
     }
     //####################################################################

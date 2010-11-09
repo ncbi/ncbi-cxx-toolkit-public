@@ -429,15 +429,11 @@ const xml::attributes& xml::node::get_attributes (void) const {
 //####################################################################
 xml::attributes::iterator xml::node::find_attribute (const char* name,
                                                      const ns* nspace) {
-    if (!name)
-        throw xml::exception("Bad attribute name");
     return get_attributes().find(name, nspace);
 }
 //####################################################################
 xml::attributes::const_iterator xml::node::find_attribute (const char* name,
                                                            const ns* nspace) const {
-    if (!name)
-        throw xml::exception("Bad attribute name");
     return get_attributes().find(name, nspace);
 }
 //####################################################################
