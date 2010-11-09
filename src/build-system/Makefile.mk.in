@@ -215,6 +215,9 @@ FAST_CFLAGS   = @FAST_CFLAGS@
 FAST_CXXFLAGS = @FAST_CXXFLAGS@
 FAST_LDFLAGS  = @FAST_LDFLAGS@
 
+# Refrain from optimizations that assume no aliasing.
+NO_STRICT_ALIASING = @NO_STRICT_ALIASING@
+
 ### For platform-specific includes
 COMPILER = @COMPILER@
 OSTYPE   = @OSTYPE@

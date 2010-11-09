@@ -1651,6 +1651,15 @@ if test "$compiler" = "ICC" ; then
 fi
 
 
+#### How to ensure that the compiler will account for potential aliasing
+case "$compiler" in
+   GCC ) NO_STRICT_ALIASING=-fno-strict-aliasing ;;
+   ICC ) NO_STRICT_ALIASING='-falias -ffnalias' ;;
+   WorkShop* ) NO_STRICT_ALIASING='-xalias_level=any' ;;
+   * ) NO_STRICT_ALIASING=
+esac
+
+
 #### Automatic generation of dependencies for/by the "make" utility
 case "$host_os" in
    solaris* )  KeepStateTarget=".KEEP_STATE:" ;;
@@ -6333,6 +6342,7 @@ AC_SUBST(LIBS)
 AC_SUBST(C_LIBS)
 AC_SUBST(GCCPCH)
 AC_SUBST(RUNPATH_ORIGIN)
+AC_SUBST(NO_STRICT_ALIASING)
 
 AC_SUBST(D_SFX)
 AC_SUBST(DEBUG_SFX)
