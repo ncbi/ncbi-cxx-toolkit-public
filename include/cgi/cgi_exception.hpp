@@ -165,7 +165,7 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eValue:   return "Bad cookie value";
+        case eValue:   return "Bad cookie";
         case eString:  return "Bad cookie string format";
         default:       return CException::GetErrCodeString();
         }

@@ -260,15 +260,8 @@ void CCgiCookie::x_CheckField(const string& str,
             string msg = "Banned symbol '" +
                 NStr::PrintableString(string(1, *s))
                 + "' in the cookie";
-            switch ( ftype ) {
-            case eField_Name:
+            if (ftype == eField_Name) {
                 msg += " name";
-                break;
-            case eField_Value:
-                msg += " value";
-                break;
-            default:
-                break;
             }
             if ( cookie_name ) {
                 msg += " (name: '" + *cookie_name + "')";
@@ -1495,7 +1488,7 @@ string CCgiRequest::GetCGIEntriesStr(void) const
                 continue;
             }
             if ( !args.empty() ) {
-                args += "+";
+                args += '+';
             }
             args += NStr::URLEncode(*idx, NStr::eUrlEnc_PercentOnly);
         }
@@ -1556,14 +1549,14 @@ string CCgiRequest::GetCGIEntriesStr(void) const
             continue;
         }
         if ( !args.empty() ) {
-            args += "&";
+            args += '&';
         }
-        args += NStr::URLEncode(entry->first, NStr::eUrlEnc_ProcessMarkChars);
-        args += "=";
+        args += NStr::URLEncode(entry->first, NStr::eUrlEnc_URIQueryName);
+        args += '=';
         args += NStr::URLEncode(lim >= 0 ?
                                 entry->second.substr(0, lim) :
                                 string(entry->second),
-                                NStr::eUrlEnc_ProcessMarkChars);
+                                NStr::eUrlEnc_URIQueryValue);
     }
     return args;
 }
