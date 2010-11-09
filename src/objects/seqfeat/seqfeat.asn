@@ -359,6 +359,10 @@ VariantProperties ::= SEQUENCE {
     -- This field in many ways duplicates dbxrefs; however, the
     -- intention of this field is to more adequately reflect
     -- ownership and data source
+    --
+    -- 11/9/2010: DO NOT USE
+    -- This field was changed in the spec in a breaking way; using it will
+    -- break clients.  We are officially suppressing / abandoning this field.
     project-data SET OF INTEGER OPTIONAL,
 
     quality-check INTEGER {
