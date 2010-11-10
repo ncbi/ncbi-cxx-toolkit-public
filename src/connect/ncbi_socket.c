@@ -1444,6 +1444,15 @@ static EIO_Status s_Select_(size_t                n,
     struct timeval x_tv;
     size_t         i;
 
+#ifdef NCBI_OS_MSWIN
+    if (!n) {
+        DWORD ms =
+            tv ? tv->tv_sec * 1000 + (tv->tv_usec + 500) / 1000 : INFINITE;
+        Sleep(ms);
+        return eIO_Success;
+    }
+#endif /*NCBI_OS_MSWIN*/
+
     if (tv)
         x_tv = *tv;
     else /* won't be used but keeps compilers happy */
