@@ -27816,9 +27816,6 @@ esac
 
 if test "$with_sss" != "no" ; then
    local_sss=${real_srcdir}/src/internal/sss
-   if test -f "$local_sss/../ncbi_ls/asn/login.asn"; then
-                WithPackages="$WithPackages${WithPackagesSep}LocalNCBILS"; WithPackagesSep=" "
-   fi
    if test "${with_included_sss-no}" = "yes" \
        -a -f "$local_sss/utils/sssdebug.hpp" \
        -a -f "${local_sss}srv/cli/sssconnection.cpp"; then
@@ -27955,6 +27952,7 @@ _ACEOF
          if test -f "$local_sss/../ncbils2/asn/login.asn"; then
             if test "$with_included_sss" = yes  || \
                grep vformat $NCBI_SSS_INCLUDE/String.hpp >/dev/null 2>&1; then
+                         WithPackages="$WithPackages${WithPackagesSep}LocalNCBILS"; WithPackagesSep=" " # temporary compatibility measure
                          WithPackages="$WithPackages${WithPackagesSep}NCBILS2"; WithPackagesSep=" "
             fi
          fi
@@ -32515,7 +32513,7 @@ for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_B
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets wx2.8 Fast-CGI LocalNCBILS LocalSSS LocalMSGMAIL2 SSSUTILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType MAGIC; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType MAGIC; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"

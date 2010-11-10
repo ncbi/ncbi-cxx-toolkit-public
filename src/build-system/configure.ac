@@ -5108,9 +5108,6 @@ esac
 
 if test "$with_sss" != "no" ; then
    local_sss=${real_srcdir}/src/internal/sss
-   if test -f "$local_sss/../ncbi_ls/asn/login.asn"; then
-      NCBI_PACKAGE(LocalNCBILS)
-   fi
    if test "${with_included_sss-no}" = "yes" \
        -a -f "$local_sss/utils/sssdebug.hpp" \
        -a -f "${local_sss}srv/cli/sssconnection.cpp"; then
@@ -5179,6 +5176,7 @@ else
          if test -f "$local_sss/../ncbils2/asn/login.asn"; then
             if test "$with_included_sss" = yes  || \
                grep vformat $NCBI_SSS_INCLUDE/String.hpp >/dev/null 2>&1; then
+               NCBI_PACKAGE(LocalNCBILS) # temporary compatibility measure
                NCBI_PACKAGE(NCBILS2)
             fi
          fi

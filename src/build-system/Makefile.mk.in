@@ -466,9 +466,8 @@ NCBI_SSS_LIBPATH = @NCBI_SSS_LIBPATH@
 LIBSSSUTILS      = @LIBSSSUTILS@
 LIBSSSDB         = @LIBSSSDB@
 sssutils         = @sssutils@
-NCBILS1_LIB      = ncbils_cli ncbils_asn ncbils_cmn
 NCBILS2_LIB      = ncbils2_cli ncbils2_asn ncbils2_cmn
-NCBILS_LIB       = $(NCBILS1_LIB)
+NCBILS_LIB       = $(NCBILS2_LIB)
 
 # SP:  headers, libraries
 SP_INCLUDE = @SP_INCLUDE@
