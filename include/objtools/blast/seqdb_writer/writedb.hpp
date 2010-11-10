@@ -628,6 +628,29 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               unsigned int num_volumes,
                               CWriteDB::ESeqType seq_type,
                               const string& title = string());
+
+/** Consolidate the alias files specified into a group alias file.
+ * @param alias_files list of alias file names with extension to
+ * consolidate [in]
+ * @param delete_source_alias_files if true, the alias files in the alias_files
+ * argument are deleted [in]
+ * @post a group alias file is written in the current working directory
+ * @throws CWriteDBException if no alias files are provided to write group
+ * alias file
+ */
+NCBI_XOBJWRITE_EXPORT 
+void CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files,
+                                    const string& output_directory = kEmptyStr,
+                                    bool delete_source_alias_files = false);
+
+/** Consolidate all the alias files in the current working directory.
+ * @param delete_source_alias_files if true, the alias files consolidated are
+ * deleted [in]
+ * @throws CWriteDBException if no alias files can be consolidated
+ */
+NCBI_XOBJWRITE_EXPORT 
+void CWriteDB_ConsolidateAliasFiles(bool delete_source_alias_files = false);
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_BLAST_SEQDB_WRITER___WRITEDB__HPP

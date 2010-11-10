@@ -451,5 +451,56 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     s_PrintAliasFileCreationLog(concatenated_blastdb_name, is_prot, num_seqs);
 }
 
+void 
+CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files, 
+                               bool delete_source_alias_files /* = false */)
+{
+    if (alias_files.empty()) {
+        NCBI_THROW(CWriteDBException,
+                   eArgErr,
+                   "No alias files available to create group alias file.");
+    }
+
+    ofstream out(kSeqDBGroupAliasFileName.c_str());
+    out << "# Alias file index for " << CDir::GetCwd() << endl;
+    out << "# Generated on " << CTime(CTime::eCurrent).AsString() << " by " 
+        << __FUNCTION__ << endl;
+    out << "#" << endl;
+
+    ITERATE(list<string>, itr, alias_files) {
+        ifstream in(itr->c_str());
+        if ( !in ) {
+            LOG_POST(Warning << *itr << " does not exist, omitting from group alias file");
+            continue;
+        }
+        out << "ALIAS_FILE " << CFile(*itr).GetName() << endl;
+        string line;
+        while (getline(in, line)) {
+            NStr::TruncateSpacesInPlace(line);
+            if (line.empty() || NStr::StartsWith(line, "#")) {
+                continue;
+            }
+            out << line << endl;
+        }
+        out << endl;
+    }
+
+    if (delete_source_alias_files) {
+        ITERATE(list<string>, itr, alias_files) {
+            CFile(*itr).Remove(); // ignore errors
+        }
+    }
+}
+
+void 
+CWriteDB_ConsolidateAliasFiles(bool delete_source_alias_files /* = false */)
+{
+    list<string> alias_files;
+    // Using "*.[pn]al" as pattern doesn't work
+    FindFiles("*.nal", alias_files, fFF_File);
+    FindFiles("*.pal", alias_files, fFF_File);
+    CWriteDB_ConsolidateAliasFiles(alias_files, delete_source_alias_files);
+}
+
 END_NCBI_SCOPE
 

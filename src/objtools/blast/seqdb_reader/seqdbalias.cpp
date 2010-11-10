@@ -260,7 +260,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
         
         CSeqDB_Path resolved_path;
         
-        // search for X/index.alx
+        // search for X/kSeqDBGroupAliasFileName
         if (! m_AliasSets.FindAliasPath(db_path, & resolved_path, locked)) {
             CSeqDB_BasePath base(db_path.FindBasePath());
             CSeqDB_BasePath resolved_bp;
@@ -447,7 +447,8 @@ void CSeqDBAliasSets::x_DbToIndexName(const CSeqDB_Path & dbpath,
                                       CSeqDB_Path       & index_path,
                                       CSeqDB_FileName   & alias_fname)
 {
-    index_path.ReplaceFilename(dbpath, CSeqDB_Substring("index.alx"));
+    index_path.ReplaceFilename(dbpath,
+                               CSeqDB_Substring(kSeqDBGroupAliasFileName));
     alias_fname.Assign(dbpath.FindFileName());
 }
 

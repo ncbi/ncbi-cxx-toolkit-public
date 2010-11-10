@@ -49,6 +49,8 @@ static char const rcsid[] = "$Id$";
 
 BEGIN_NCBI_SCOPE
 
+const string kSeqDBGroupAliasFileName("index.alx");
+
 CSeqDB_Substring SeqDB_RemoveDirName(CSeqDB_Substring s)
 {
     int off = s.FindLastOf(CFile::GetPathSeparator());

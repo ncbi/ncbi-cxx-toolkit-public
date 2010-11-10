@@ -88,6 +88,10 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSeqDBException,CException);
 };
 
+/// The name of the group alias file name expected at each directory
+/// For more documentation, see "Group Alias Files" in
+/// source/src/objtools/blast/seqdb_reader/alias_files.txt
+NCBI_XOBJREAD_EXPORT extern const string kSeqDBGroupAliasFileName;
 
 /// Used to request ambiguities in Ncbi/NA8 format.
 const int kSeqDBNuclNcbiNA8  = 0;
