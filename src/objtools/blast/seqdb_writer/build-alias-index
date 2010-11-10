@@ -1,0 +1,23 @@
+#!/bin/bash
+# Script to create group alias files, currently in use by Microbial
+# subdirectory
+# Author: Kevin Bealer
+# $URL$
+
+INDEX_NAME=index.alx
+OUTNAME=index.alx.new
+
+: > $OUTNAME
+echo "# Alias file index for" `pwd` >> $OUTNAME
+echo "# Generated on `date`." >> $OUTNAME
+echo "#" >> $OUTNAME
+
+for i in `ls | egrep ".[pn]al\$"`
+do
+    echo -e "\nALIAS_FILE $i" >> $OUTNAME
+    grep -v xxxx $i | grep -v "^\$" >> $OUTNAME
+    echo >> $OUTNAME
+done
+
+mv $OUTNAME $INDEX_NAME
+
