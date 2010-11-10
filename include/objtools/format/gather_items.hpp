@@ -79,9 +79,10 @@ protected:
         const CMappedFeat& feat,
         CBioseqContext& ctx,
         const CSeq_loc* loc,
-        CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped ) const
+        CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped,
+        CConstRef<CFeatureItem> parentFeatureItem = CConstRef<CFeatureItem>() ) const
     {
-        return new CFeatureItem( feat, ctx, loc, mapped );
+        return new CFeatureItem( feat, ctx, loc, mapped, parentFeatureItem );
     };
 
     // references
@@ -92,7 +93,8 @@ protected:
 
     // features
     void x_GatherFeatures  (void) const;
-    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, const CSeq_loc& mapped_loc, CBioseqContext& ctx) const;
+    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, const CSeq_loc& mapped_loc, CBioseqContext& ctx,
+        CConstRef<CFeatureItem> cdsFeatureItem = CConstRef<CFeatureItem>() ) const;
     void x_CopyCDSFromCDNA(const CSeq_feat& feat, CBioseqContext& ctx) const;
     bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
     virtual void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,

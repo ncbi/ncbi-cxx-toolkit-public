@@ -785,7 +785,8 @@ static void s_FormatCitBook(const CReferenceItem& ref, string& journal)
 static void s_FormatCitGen
 (const CReferenceItem& ref,
  string& journal,
- const CFlatFileConfig& cfg
+ const CFlatFileConfig& cfg,
+ CBioseqContext& ctx
  )
 {
     _ASSERT(ref.IsSetGen());
@@ -797,7 +798,9 @@ static void s_FormatCitGen
 
     if (!gen.IsSetJournal()  &&  NStr::StartsWith(cit, "unpublished", NStr::eNocase)) {
         if (cfg.NoAffilOnUnpub()) {
-            if (cfg.DropBadCitGens()) {
+            // a comment in asn2gnb5.c says "remove [...] section once QA against asn2ff is done",
+            // so I suspect we'll have to remove this if-statement at some point
+            if (cfg.DropBadCitGens() && ( ctx.IsEMBL() || ctx.IsDDBJ() ) ) {
                 string year;
                 if (gen.IsSetDate()) {
                     const CDate& date = gen.GetDate();
@@ -807,10 +810,10 @@ static void s_FormatCitGen
                     }
                 }
                 journal += "Unpublished";
-                /* if (!NStr::IsBlank(year)) {
+                if (!NStr::IsBlank(year)) {
                     journal += ' ';
                     journal += year;
-                } */
+                }
                 return;
             }
             journal = "Unpublished";
@@ -937,7 +940,7 @@ static void s_FormatThesis(const CReferenceItem& ref, string& journal)
         }
     }
 
-    if (imp.CanGetPrepub()  &&  imp.GetPrepub() == CImprint::ePrepub_in_press) {
+    if ( imp.CanGetPub() && imp.CanGetPrepub()  &&  imp.GetPrepub() == CImprint::ePrepub_in_press) {
         journal += ", In press";
     }
 }
@@ -1347,7 +1350,7 @@ void CFlatItemFormatter::x_FormatRefJournal
 
         case CReferenceItem::ePub_gen:
             if (ref.IsSetGen()) {
-                s_FormatCitGen(ref, journal, cfg);
+                s_FormatCitGen(ref, journal, cfg, ctx);
             }
             break;
 

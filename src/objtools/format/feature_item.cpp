@@ -1021,21 +1021,22 @@ CFeatureItem::CFeatureItem
 (const CMappedFeat& feat,
  CBioseqContext& ctx,
  const CSeq_loc* loc,
- EMapped mapped) :
+ EMapped mapped,
+ CConstRef<CFeatureItem> parentFeatureItem) :
     CFeatureItemBase(feat, ctx, loc), m_Mapped(mapped)
 {
-    x_GatherInfo(ctx);
+    x_GatherInfo(ctx, parentFeatureItem);
 }
 
 
-void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
+void CFeatureItem::x_GatherInfo(CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem )
 {
     if ( s_SkipFeature(GetFeat(), GetLoc(), ctx) ) {
         x_SetSkip();
         return;
     }
     m_Type = m_Feat.GetData().GetSubtype();
-    x_AddQuals(ctx);
+    x_AddQuals(ctx, parentFeatureItem );
 }
 
 
@@ -1366,8 +1367,9 @@ static bool s_GeneMatchesXref
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_GetAssociatedGeneInfo(
     CBioseqContext& ctx,
-    const CGene_ref*& g_ref,                    //  out: gene ref
-    CConstRef<CSeq_feat>& s_feat )              //  out: gene seq feat
+    const CGene_ref*& g_ref,      //  out: gene ref
+    CConstRef<CSeq_feat>& s_feat, //  out: gene seq feat
+    CConstRef<CFeatureItem> parentFeatureItem )
 //
 //  Find the feature's related gene information. The association is established
 //  through dbxref if it exists, and through best overlap otherwise.
@@ -1406,7 +1408,9 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         xref_g_ref->GetLabel(&xref_label);
     }
 
-    const bool thereIsXrefToGene = ( ! xref_label.empty() );
+    if( xref_label.empty() ) {
+        xref_g_ref = NULL;
+    }
 
     CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
                                          sequence::eGetId_Canonical);
@@ -1475,7 +1479,52 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         }
     }
 
-    if ( m_Feat && ! thereIsXrefToGene ) {
+    // special cases for some subtypes
+    if( s_feat ) {
+        switch( m_Feat.GetFeatSubtype() ) {
+        case CSeqFeatData::eSubtype_mat_peptide_aa:
+            {{
+                // Priority order for finding the peptide's gene
+                // 1. Use parent CDS's gene xref (from the .asn)
+                // 2. Use the peptide's own gene but only 
+                //    if it *exactly* overlaps the peptide.
+                // 3. Use the parent CDS's gene (found via overlap)
+
+                // remove mat_peptide's gene if bad match
+                const CSeq_loc &gene_loc = s_feat->GetLocation();
+                if( ! gene_loc.Equals( *m_Loc ) ) {
+                    s_feat.Reset();
+                }
+
+                // get its CDS
+                CConstRef<CSeq_feat> cds_feat =
+                    sequence::GetBestOverlappingFeat
+                    (*m_Loc,
+                    CSeqFeatData::e_Cdregion,
+                    sequence::eOverlap_Contained,
+                    ctx.GetScope());
+                if( cds_feat ) {
+                    const CGene_ref* cds_gene_xref = cds_feat->GetGeneXref();
+                    if( NULL != cds_gene_xref ) {
+                        xref_g_ref = cds_gene_xref;
+                        s_feat.Reset();
+                    }
+                }
+
+                // get the parent CDS's gene
+                if( ! s_feat && parentFeatureItem && parentFeatureItem->m_GeneRef ) {
+                    s_feat.Reset();
+                    g_ref = parentFeatureItem->m_GeneRef;
+                }
+            }}
+            break;
+        default:
+            // do nothing by default
+            break;
+        }
+    }
+
+    if ( m_Feat && NULL == xref_g_ref ) {
         if (feat) {
             s_feat.Reset(&feat.GetOriginalFeature());
         }
@@ -1496,7 +1545,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 
         // we iterate through all the genes to find a match.  Is this
         // efficient?
-        if( thereIsXrefToGene && ! s_GeneMatchesXref( g_ref, xref_g_ref ) )
+        if( NULL != xref_g_ref && ! s_GeneMatchesXref( g_ref, xref_g_ref ) )
         {
             g_ref = NULL;
             s_feat.Reset();
@@ -1637,7 +1686,8 @@ bool CFeatureItem::x_GetPseudo(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQuals(
-    CBioseqContext& ctx )
+    CBioseqContext& ctx,
+    CConstRef<CFeatureItem> parentFeatureItem )
 //
 //  Add the various qualifiers to this feature. Top level function.
 //  ----------------------------------------------------------------------------
@@ -1706,7 +1756,7 @@ void CFeatureItem::x_AddQuals(
          (  is_not_genbank || (subtype != CSeqFeatData::eSubtype_repeat_region && subtype != CSeqFeatData::eSubtype_mobile_element) ) )
     {
         try {
-            x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
+            x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat, parentFeatureItem );
         } catch(const CObjMgrException & ) {
             // maybe put a warning here?  We end up here in, e.g., accession AAY81715.1
         }
@@ -2828,6 +2878,9 @@ void CFeatureItem::x_AddQualsGene(
     if ( ! gene_ref || gene_ref->IsSuppressed() ) {
         return;
     }
+
+    m_GeneRef = gene_ref;
+
     const bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
 
     const string* locus = (gene_ref->IsSetLocus()  &&  !NStr::IsBlank(gene_ref->GetLocus())) ?

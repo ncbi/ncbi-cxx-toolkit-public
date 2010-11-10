@@ -1830,6 +1830,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             out << item;
 
             // Add more features depending on user preferences
+
             switch (feat.GetFeatSubtype()) {
                 case CSeqFeatData::eSubtype_mRNA:
                 {{
@@ -1843,7 +1844,8 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                     {{  
                         // map features from protein
                         if (!ctx.Config().IsFormatFTable()) {
-                            x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx);
+                            x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx, 
+                                CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
                         }
                         break;
                     }}
@@ -2102,7 +2104,8 @@ void s_FixIntervalProtToCds(
 void CFlatGatherer::x_GetFeatsOnCdsProduct(
     const CSeq_feat& feat,
     const CSeq_loc& mapped_loc,
-    CBioseqContext& ctx ) const
+    CBioseqContext& ctx,
+    CConstRef<CFeatureItem> cdsFeatureItem ) const
 //  ============================================================================
 {
     const CFlatFileConfig& cfg = ctx.Config();
@@ -2196,7 +2199,8 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
                     
         CConstRef<IFlatItem> item
             ( x_NewFeatureItem(*it, ctx, 
-                               loc, CFeatureItem::eMapped_from_prot) );
+                               loc, CFeatureItem::eMapped_from_prot,
+                               cdsFeatureItem ) );
         *m_ItemOS << item;
 
         prev = curr;

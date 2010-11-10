@@ -153,7 +153,8 @@ public:
     // constructors
     CFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
                  const CSeq_loc* loc,
-                 EMapped mapped = eMapped_not_mapped);
+                 EMapped mapped = eMapped_not_mapped,
+                 CConstRef<CFeatureItem> parentFeatureItem = CConstRef<CFeatureItem>() );
 
     virtual ~CFeatureItem() {};
 
@@ -169,12 +170,12 @@ public:
 protected:
     typedef CGene_ref::TSyn TGeneSyn;
 
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
     //void x_FixLocation(CBioseqContext& ctx);
 
     bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
-        CConstRef<CSeq_feat>& );
+        CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem );
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );
@@ -223,7 +224,8 @@ protected:
     void x_AddQualsPsecStr( CBioseqContext& );
     void x_AddQualsHet( CBioseqContext& ctx );
 
-    void x_AddQuals( CBioseqContext& ctx );
+    void x_AddQuals( CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
+    void x_AddQuals( CBioseqContext& ctx ) { x_AddQuals( ctx, CConstRef<CFeatureItem>() ); }
     void x_AddQuals(const CProt_ref& prot);
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot);
     void x_AddQualsProductId( CBioseq_Handle& );
@@ -298,7 +300,8 @@ protected:
     mutable TQuals                 m_Quals;
     mutable TQualVec               m_FTableQuals;
     EMapped                        m_Mapped;
-    mutable string                         m_Gene;
+    mutable string                 m_Gene;
+    mutable CConstRef<CGene_ref>   m_GeneRef;
 };
 
 //  ----------------------------------------------------------------------------
