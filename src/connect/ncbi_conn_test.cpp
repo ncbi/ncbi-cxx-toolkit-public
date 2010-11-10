@@ -131,10 +131,14 @@ EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream& io)
     CONN conn = io.GetCONN();
     const char* ctype = conn ? CONN_GetType(conn)     : 0;
     const char* descr = conn ? CONN_Description(conn) : 0;
+    _ASSERT(!ctype  ||  *ctype);
+    _ASSERT(!descr  ||  *descr);
     m_CheckPoint =
         string(ctype            ? ctype : kEmptyStr) +
         string(ctype  &&  descr ? "; "  : kEmptyStr) +
         string(descr            ? descr : kEmptyStr);
+    if (descr)
+        free((void*) descr);
     if (!failure)
         return eIO_Success;
     EIO_Status status = io.Status();
@@ -380,7 +384,9 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
     fwdcgi << "selftest" << NcbiEndl;
 
     char line[256];
+    bool responded = false;
     while (fwdcgi.getline(line, sizeof(line))) {
+        responded = true;
         CTempString hostport, state;
         if (!NStr::SplitInTwo(line, "\t", hostport, state))
             continue;
@@ -413,7 +419,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
             m_FwdFB.push_back(cp);
     }
 
-    return ConnStatus(fwdcgi.fail()  &&  !fwdcgi.eof(), fwdcgi);
+    return ConnStatus(!responded || (fwdcgi.fail() && !fwdcgi.eof()), fwdcgi);
 }
 
 
