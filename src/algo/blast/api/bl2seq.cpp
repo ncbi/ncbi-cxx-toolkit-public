@@ -327,22 +327,16 @@ CBl2Seq::RunFullSearch()
     mi_pDiagnostics = Blast_DiagnosticsInit();
 
     const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
+    auto_ptr<const CBlastOptionsMemento> opts_mem(kOptions.CreateSnapshot());
+    
+    BlastHSPStream* hsp_stream = 
+        CSetupFactory::CreateHspStream(opts_mem.get(),
+                                       mi_clsQueryInfo->num_queries,
+        CSetupFactory::CreateHspWriter(opts_mem.get(), mi_clsQueryInfo));
 
-    // the following should be moved to APP layer ...
-    BlastHSPWriterInfo* writer_info = BlastHSPCollectorInfoNew(
-                             BlastHSPCollectorParamsNew(
-                                   kOptions.GetHitSaveOpts(), 
-                                   kOptions.GetExtnOpts()->compositionBasedStats,
-                                   kOptions.GetScoringOpts()->gapped_calculation));
-    // the above should be moved to APP layer ...
-
-    /* Initialize an HSPList stream to collect hits; 
-       results should not be sorted for reading from the stream. */
-    BlastHSPStream* hsp_stream = BlastHSPStreamNew(
-                                   kOptions.GetProgramType(), 
-                                   kOptions.GetExtnOpts(), FALSE,
-                                   mi_clsQueryInfo->num_queries,
-                                   BlastHSPWriterNew(&writer_info, NULL));
+    BlastHSPStreamRegisterPipe(hsp_stream,
+        CSetupFactory::CreateHspPipe(opts_mem.get(), mi_clsQueryInfo),
+                               eTracebackSearch);
 
     TBlastHSPStream thsp_stream(hsp_stream, BlastHSPStreamFree);
     
