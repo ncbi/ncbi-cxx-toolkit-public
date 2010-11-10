@@ -2,6 +2,7 @@
 # Script to create group alias files, currently in use by Microbial
 # subdirectory
 # Author: Kevin Bealer
+# Original date: 10/21/2005
 # $URL$
 
 INDEX_NAME=index.alx
