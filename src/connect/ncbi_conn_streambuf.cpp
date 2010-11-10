@@ -85,7 +85,6 @@ CConn_Streambuf::CConn_Streambuf(CONN            conn,
         return;
     }
     x_Init(timeout, buf_size, ptr, size);
-    m_Status = eIO_Success;
 }
 
 
@@ -112,6 +111,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, streamsize buf_size,
     cb.data = this;
     CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, &m_Cb);
     m_CbValid = true;
+    m_Status = eIO_Success;
 }
 
 
