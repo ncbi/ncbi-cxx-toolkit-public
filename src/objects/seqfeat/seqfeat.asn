@@ -363,6 +363,8 @@ VariantProperties ::= SEQUENCE {
     -- 11/9/2010: DO NOT USE
     -- This field was changed in the spec in a breaking way; using it will
     -- break clients.  We are officially suppressing / abandoning this field.
+    -- Clients who need to use this should instead place the data in
+    -- Seq-feat.dbxref, using the db name 'BioProject'
     project-data SET OF INTEGER OPTIONAL,
 
     quality-check INTEGER {
