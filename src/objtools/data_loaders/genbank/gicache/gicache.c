@@ -1500,8 +1500,12 @@ static void x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 is_64bit)
     // First try local files
     sprintf(prefix_str, "%s.", (prefix ? prefix : DEFAULT_GI_CACHE_PREFIX));
 
+    if (!prefix && is_64bit)
+       strcat(prefix_str, DEFAULT_64BIT_SUFFIX);
+
     /* When reading data, use readonly mode. */
-    if(gi_cache) return;
+    if (gi_cache) return;
+
     gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str, readonly,
                                1, is_64bit);
 
@@ -1522,7 +1526,12 @@ static void x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 is_64bit)
 
 void GICache_ReadData(const char *prefix)
 {
-    Uint1 is_64bit = (strstr(prefix, DEFAULT_64BIT_SUFFIX) != NULL);
+    Uint1 is_64bit = 0;
+
+    if (sizeof(void*) >= 8 &&
+        (!prefix || (strstr(prefix, DEFAULT_64BIT_SUFFIX) != NULL)))
+        is_64bit = 1;
+
     x_GICacheInit(prefix, 1, is_64bit);
 }
 
@@ -1570,8 +1579,14 @@ int GICache_GetMaxGi()
 
 int GICache_LoadStart(const char* cache_prefix)
 {
-    Uint1 is_64bit = (strstr(cache_prefix, DEFAULT_64BIT_SUFFIX) != NULL);
+    Uint1 is_64bit = 0;
+
+    if (sizeof(void*) >= 8 && cache_prefix &&
+        (strstr(cache_prefix, DEFAULT_64BIT_SUFFIX) != NULL))
+        is_64bit = 1;
+
     x_GICacheInit(cache_prefix, 0, is_64bit);
+
     return 0;
 }
 
