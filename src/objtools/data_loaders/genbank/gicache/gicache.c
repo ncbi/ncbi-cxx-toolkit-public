@@ -79,18 +79,7 @@
 
 // If offset for top-level page corresponding to a given gi is not set ( = 0),
 // go back to previous top-level pages until a non-zero offset is found.
-#if 0
-#define GET_TOP_PAGE_OFFSET(gi,ret) \
-    {\
-        int i = 2*(gi>>25);\
-        for ( ; i >= 0; i -= 2) {\
-            if ((ret = GET_INT8(&data_index->m_GiIndex[i])) > 0)\
-                break;\
-        }\
-    }
-#else
 #define GET_TOP_PAGE_OFFSET(gi) GET_INT8(&data_index->m_GiIndex[2*((gi)>>25)])
-#endif
 
 
 #define SET_TOP_PAGE_OFFSET(gi,off) \
@@ -119,7 +108,8 @@ typedef struct {
     Uint1   m_FreeOnDrop;
     volatile int m_Remapping; /* Count of threads currently trying to remap */
     volatile Uint1 m_NeedRemap; /* Is remap needed? */
-    Uint1 m_RemapOnRead; /* Is remap allowed when reading data? */
+    Uint1   m_RemapOnRead; /* Is remap allowed when reading data? */
+    Uint4   m_OffsetHeaderSize; /* 0 for 32-bit version, 256 for 64-bit */
 } SGiDataIndex;
 
 /****************************************************************************
@@ -252,14 +242,14 @@ static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
         data_index->m_GiIndexFile) {
         Uint4* b;
         int bytes_written = 0;
-        /* First 2Kb of the index are reserved to store 8-byte
-           starting offsets for data corresponding to the 256 top level 
-           pages.
-           The third page of the index is reserved for the pointers to other
-           pages.
+        /* For 64-bit version only, the first page of the index is reserved to
+           store 8-byte starting offsets for data corresponding to the 64 top
+           level pages.
+           The next (first for 32-bit version, second for 64-bit) page of the
+           index is reserved for the pointers to other pages.
         */
-        data_index->m_GiIndexLen = kOffsetHeaderSize + (1<<kPageSize);
-
+        data_index->m_GiIndexLen = data_index->m_OffsetHeaderSize + (1<<kPageSize);
+        
         b = (Uint4*) calloc(data_index->m_GiIndexLen, sizeof(Uint4));
         assert(0 == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         bytes_written = write(data_index->m_GiIndexFile, b,
@@ -584,9 +574,10 @@ x_SetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level,
             base_offset = gi_index[base_page];
 
             /* If base offset is not yet available, it must be set now.
-               NB: the base page offset is relative to the base top-level page
-               offset, hence it may be = 0. To distinguish 0 value from
-               "not-set", use a special mask value.
+               NB: For 64-bit version, the base page offset is relative to the
+               base top-level page offset, hence it may be = 0. To distinguish 0
+               value from "not-set", use a special mask value. In 32-bit version
+               this is never necessary.
             */
             if (base_offset == 0) {
                 base_offset = offset;
@@ -623,9 +614,10 @@ x_SetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level,
 static char* x_GetGiData(SGiDataIndex* data_index, int gi)
 {
     Uint4 page = 0;
-    int base = kOffsetHeaderSize;
+    int base = data_index->m_OffsetHeaderSize;
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int level;
+    Uint1 is_64bit = (data_index->m_OffsetHeaderSize > 0);
 
     /* If some thread is currently remapping, the data is in an inconsistent
        state, therefore return NULL. */
@@ -655,26 +647,22 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
          */
         base = x_GetIndexOffset(data_index, gi, page, level);
         
-        /* The 0th page in the index file is reserved for the start offsets of
-         * other pages. If we got there, it means the requested gi is not 
-         * present in the index.
-         */
+        /* If base wasn't found, bail out */
         if (base == -1)
             return NULL;
     }
     
-#if 0
-    Int8 gi_offset;
-    GET_TOP_PAGE_OFFSET(gi, gi_offset);
+    Int8 gi_offset = 0;
+
+    if (is_64bit) {
+        gi_offset = GET_TOP_PAGE_OFFSET(gi);
+        /* If top page offset is not set, it means no gis from this whole top page
+           have been saved in cache so far. */
+        if (gi_offset == 0)
+            return NULL;
+    }
+    
     gi_offset += base;
-#else
-    Int8 gi_offset = GET_TOP_PAGE_OFFSET(gi);
-    /* If top page offset is not set, it means no gis from this whole top page
-       have been saved in cache so far. */
-    if (gi_offset == 0)
-        return NULL;
-    gi_offset += base;
-#endif
 
     /* If offset points beyond the combined length of the mapped data and cache,
        try to remap data. If that still doesn't help, bail out. */
@@ -704,7 +692,7 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
 /* Constructor */
 static SGiDataIndex*
 GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
-                Uint1 readonly, Uint1 sequential)
+                Uint1 readonly, Uint1 sequential, Uint1 is_64bit)
 {
     if (!data_index) {
         data_index = (SGiDataIndex*) malloc(sizeof(SGiDataIndex));
@@ -736,6 +724,7 @@ GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
     data_index->m_Remapping = 0;
     data_index->m_NeedRemap = 1;
     data_index->m_RemapOnRead = 1;
+    data_index->m_OffsetHeaderSize = (is_64bit ? kOffsetHeaderSize : 0);
 
     return data_index;
 }
@@ -770,10 +759,11 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
                     Uint1 overwrite, Uint4 data_size)
 {
     Uint4 page = 0;  
-    Int8 base = kOffsetHeaderSize;
+    Int8 base = (Int8) data_index->m_OffsetHeaderSize;
     Int8 top_page_offset = 0;
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int level;
+    Uint1 is_64bit = (data_index->m_OffsetHeaderSize > 0);
 
     /* No writing can occur in read-only mode. */
     if (data_index->m_ReadOnlyMode)
@@ -789,7 +779,14 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
     if ((data_index->m_GiIndexLen + (1<<kPageSize))*sizeof(Uint4) >= kFullOffsetMask)
         return 0; /* can not map this amount of data anyway */
     
+    /* For 32-bit version check the data file length too */
+    if (!is_64bit &&  
+        data_index->m_DataLen + sizeof(Uint4)*(1<<kPageSize) >= kFullOffsetMask)
+        return 0;
+
     for (level = 3; level >= 0; --level) {
+        if (base < 0)
+            return 0;
 
         page = (Uint4)base + ((gi>>(level*kPageSize+shift)) & kPageMask);
 
@@ -833,14 +830,15 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
     if (data_size== 0)
         data_size = data_index->m_DataUnitSize;
 
-    top_page_offset = GET_TOP_PAGE_OFFSET(gi);
+    if (is_64bit)
+        top_page_offset = GET_TOP_PAGE_OFFSET(gi);
 
     /* Check if data is already present. If it is, and overwrite is not 
      * requested, just return, otherwise write new data in place of the old one.
      * If previous data for this gi is not available, write the new data at the
      * end of the data file.
      */
-    if (base >= 0 && top_page_offset > 0) {
+    if (base >= 0 && (!is_64bit || top_page_offset > 0)) {
         if (!overwrite)
             return 0;
         
@@ -864,7 +862,7 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
             memcpy(data_index->m_Data + base, data, data_size);
         }
     } else {
-        if (top_page_offset == 0) {
+        if (is_64bit && top_page_offset == 0) {
             top_page_offset = data_index->m_DataLen + data_index->m_DataCacheLen;
             SET_TOP_PAGE_OFFSET(gi, top_page_offset);
         }
@@ -938,7 +936,7 @@ static Uint1 GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
                 if (!x_ReMapIndex(data_index))
                     return 0;
             }
-            base = data_index->m_GiIndex[page + kOffsetHeaderSize];
+            base = data_index->m_GiIndex[page + data_index->m_OffsetHeaderSize];
         } else {
             base = (int) data_index->m_IndexCache[page-data_index->m_GiIndexLen];
         }
@@ -1495,7 +1493,7 @@ s_DecodeGiAccession(const char* inbuf, char* acc, int acc_len)
 
 static SGiDataIndex *gi_cache=NULL;
 
-static void x_GICacheInit(const char* prefix, Uint1 readonly)
+static void x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 is_64bit)
 {
     char prefix_str[256];
 
@@ -1504,7 +1502,8 @@ static void x_GICacheInit(const char* prefix, Uint1 readonly)
 
     /* When reading data, use readonly mode. */
     if(gi_cache) return;
-    gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
+    gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str, readonly,
+                               1, is_64bit);
 
     if (readonly) {
         /* Check whether gi cache is available at this location, by trying to
@@ -1515,14 +1514,16 @@ static void x_GICacheInit(const char* prefix, Uint1 readonly)
             sprintf(prefix_str, "%s/%s.", DEFAULT_GI_CACHE_PATH,
                     DEFAULT_GI_CACHE_PREFIX);
             gi_cache = GiDataIndex_Free(gi_cache);
-            gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
+            gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str,
+                                       readonly, 1, is_64bit);
         }
     }
 }
 
 void GICache_ReadData(const char *prefix)
 {
-    x_GICacheInit(prefix, 1);
+    Uint1 is_64bit = (strstr(prefix, DEFAULT_64BIT_SUFFIX) != NULL);
+    x_GICacheInit(prefix, 1, is_64bit);
 }
 
 void GICache_ReMap(int delay_in_sec) {
@@ -1569,7 +1570,8 @@ int GICache_GetMaxGi()
 
 int GICache_LoadStart(const char* cache_prefix)
 {
-    x_GICacheInit(cache_prefix, 0);
+    Uint1 is_64bit = (strstr(cache_prefix, DEFAULT_64BIT_SUFFIX) != NULL);
+    x_GICacheInit(cache_prefix, 0, is_64bit);
     return 0;
 }
 
