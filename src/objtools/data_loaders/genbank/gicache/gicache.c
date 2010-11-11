@@ -363,6 +363,7 @@ static Uint1 x_ReMapIndex(SGiDataIndex* data_index)
 static Uint1 x_ReMapData(SGiDataIndex* data_index)
 {
     x_UnMapData(data_index);
+    x_CloseDataFiles(data_index);
     if (!x_MapData(data_index)) return 0;
     
     return 1;
@@ -1010,28 +1011,34 @@ static int GiDataIndex_GetMappedSize(SGiDataIndex* data_index)
 
 static int GiDataIndex_GetMaxGi(SGiDataIndex* data_index)
 {
-    int base = 0;
+    int base = data_index->m_OffsetHeaderSize;
     int page = 0;
     int gi = 0;
     int index;
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int remainder = 0;
+    Uint4* gi_index;
+    Int8 base_offset;
 
     x_Flush(data_index);
 
     if (data_index->m_GiIndex == MAP_FAILED && !x_MapIndex(data_index))
         return -1;
 
+    gi_index = data_index->m_GiIndex;
+
     for (index = 3; index >=0; --index) {
         /* Find largest page present in the gi index.
-           Check if referenced page points beyond index size. If invalid page is
-           found, fix the index by resetting it to 0. */
+         * Check if referenced page points beyond index size. If invalid page is
+         * found, fix the index by resetting it to 0 (unless it's a read-only
+         * mode).
+         */
         for (page = base + kPageMask; page >= 0; --page) {
-            if (data_index->m_GiIndex[page] == 0)
+            if (gi_index[page] == 0)
                 continue;
-            if (index > 0 &&
-                data_index->m_GiIndex[page] >= data_index->m_GiIndexLen - kPageMask) {
-                data_index->m_GiIndex[page] = 0;
+            if (index > 0 && gi_index[page] >= data_index->m_GiIndexLen) {
+                if (!data_index->m_ReadOnlyMode)
+                    gi_index[page] = 0;
                 continue;
             } else {
                 break;
@@ -1039,10 +1046,10 @@ static int GiDataIndex_GetMaxGi(SGiDataIndex* data_index)
         }
         if(page<0)
           return -1;
-        if (data_index->m_GiIndex[page] != 0) {
+        if (gi_index[page] != 0) {
             remainder = page - base;
             gi |= (remainder<<(index*kPageSize+shift));
-            base = (int) data_index->m_GiIndex[page];
+            base = (int) gi_index[page];
         }
     }
 
