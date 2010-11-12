@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define DEFAULT_GI_CACHE_PATH "/panfs/pan1.be-md.ncbi.nlm.nih.gov/id_dumps/gi_cache"
+#define DEFAULT_GI_CACHE_PATH "//panfs/pan1.be-md.ncbi.nlm.nih.gov/id_dumps/gi_cache"
 #define DEFAULT_GI_CACHE_PREFIX "gi2acc"
 #define DEFAULT_64BIT_SUFFIX ".64"
 
