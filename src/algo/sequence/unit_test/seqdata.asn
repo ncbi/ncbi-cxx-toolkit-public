@@ -3715,7 +3715,6 @@ F0C3F0C8A38B85DE303C79C8381FB438E8EB03FD3A0BCC02E3030015F9FF157B4B2575D7147815
             {
               data cdregion {
                 code {
-                  id 1,
                   id 1
                 }
               },
@@ -4029,7 +4028,6 @@ FFFFFFFFF1481214411818884212FF421214848484888112128418484848881842818118128282
               data cdregion {
                 frame one,
                 code {
-                  id 1,
                   id 1
                 }
               },
@@ -7240,7 +7238,6 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF218488828211121114248821418
             {
               data cdregion {
                 code {
-                  id 1,
                   id 1
                 }
               },
@@ -8120,7 +8117,6 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF218488828211121114248821418
             {
               data cdregion {
                 code {
-                  id 1,
                   id 1
                 }
               },
@@ -8942,7 +8938,6 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFF821418828411181181448818428884412121281818118181181
             {
               data cdregion {
                 code {
-                  id 1,
                   id 1
                 }
               },
