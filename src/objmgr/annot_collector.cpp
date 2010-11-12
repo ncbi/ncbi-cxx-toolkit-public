@@ -560,9 +560,9 @@ public:
                          const CAnnotObject_Info* info,
                          bool by_product);
 
-    const CSeq_loc_mix* GetMix(const CAnnotObject_Ref& ref,
-                               const CAnnotObject_Info* info,
-                               bool by_product);
+    const CSeq_loc* GetLoc(const CAnnotObject_Ref& ref,
+                           const CAnnotObject_Info* info,
+                           bool by_product);
 
 private:
     CRef<CSeq_feat> m_CreatedOriginalFeat;
@@ -684,7 +684,7 @@ ENa_strand CCreateFeat::GetStrand(const CAnnotObject_Ref& ref,
 }
 
 
-const CSeq_loc_mix* CCreateFeat::GetMix(const CAnnotObject_Ref& ref,
+const CSeq_loc* CCreateFeat::GetLoc(const CAnnotObject_Ref& ref,
                                         const CAnnotObject_Info* info,
                                         bool by_product)
 {
@@ -698,7 +698,7 @@ const CSeq_loc_mix* CCreateFeat::GetMix(const CAnnotObject_Ref& ref,
         if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_loc ) {
             // mapped Seq-loc is created already
             const CSeq_loc& loc = map.GetMappedSeq_loc();
-            return loc.IsMix()? &loc.GetMix(): 0;
+            return &loc;
         }
         else if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_id ) {
             // whole, interval, or point
@@ -706,15 +706,125 @@ const CSeq_loc_mix* CCreateFeat::GetMix(const CAnnotObject_Ref& ref,
         }
         // get location from the Seq-feat
         const CSeq_loc& loc = GetLoc(GetMappedFeat(ref, info), by_product);
-        return loc.IsMix()? &loc.GetMix(): 0;
+        return &loc;
     }
     else {
         // get location from the Seq-feat
         const CSeq_loc& loc = GetLoc(GetOriginalFeat(ref, info), by_product);
-        return loc.IsMix()? &loc.GetMix(): 0;
+        return &loc;
     }
 }
 
+// This just exists so that lexicographical_transform_and_compare_3way doesn't
+// have to call the transform functions extra times
+template< typename T1, typename T2, typename Pred >
+int pred_to_comparison( const T1 &obj1, const T2 &obj2, Pred pred ) 
+{
+    if( pred( obj1, obj2 ) ) {
+        return -1;
+    } else if ( pred( obj2, obj1 ) ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+// like lexicographical_compare_3way but also transforms the output
+// of each iterator.  This allows us to compare heterogeneous sequences that need
+// to be transformed into the same type of object.
+// Maybe this should go in a more general header file so other places can use it.
+template< typename Iterator1, typename Iterator2, typename Transform1, typename Transform2, typename Pred >
+int lexicographical_transform_and_compare_3way
+( Iterator1 iter1, Iterator1 iter1end,
+  Iterator2 iter2, Iterator2 iter2end,
+  Transform1 transform1, Transform2 transform2, 
+  Pred pred )
+{
+    for( ; iter1 != iter1end && iter2 != iter2end ; ++iter1, ++iter2 ) {
+        int comparison = pred_to_comparison( transform1(*iter1), transform2(*iter2), pred );
+        if( comparison != 0 ) {
+            return comparison;
+        }
+    }
+
+    // finally, shorter sequence first
+
+    if( iter1 == iter1end ) {
+        if( iter2 == iter2end ) {
+            return 0;
+        } else {
+            return -1;
+        }
+    } else {
+        return 1;
+    }
+}
+
+// Transform a CRef< CSeq_loc > into a COpenRange< TSeqPos >, which
+// will be its total range.
+class CRefSeqLocToOpenRange {
+public:
+    COpenRange< TSeqPos > operator() ( CRef< CSeq_loc > loc_ref ) 
+    {
+        try {
+            return (*loc_ref).GetTotalRange();
+        }
+        catch ( CException& /*ignored*/ ) {
+            // assume empty
+            return COpenRange<TSeqPos>();
+        }
+    }
+};
+
+// Transform a CRef< CSeq_interval > into a COpenRange< TSeqPos >, which
+// will be its total range.
+class CRefSeqIntervalToOpenRange {
+public:
+    COpenRange< TSeqPos > operator() ( CRef< CSeq_interval > interval_ref ) 
+    {
+        return COpenRange< TSeqPos >( interval_ref->GetFrom(), interval_ref->GetTo() );
+    }
+};
+
+// Compare two COpenRange< TSeqPos >
+class COpenRangeLess {
+public:
+    COpenRangeLess( bool minus ) : m_Minus(minus) { }
+
+    bool operator() ( const COpenRange< TSeqPos > &x_rng, const COpenRange< TSeqPos > &y_rng ) const {
+
+
+
+        if ( m_Minus ) {
+
+            // This is backwards for compatibliity with C (the >'s and <'s are reversed )
+            // TODO: might want to change it to match what's conceptually correct
+
+            // largest right extreme first
+            if ( x_rng.GetToOpen() != y_rng.GetToOpen() ) {
+                return x_rng.GetToOpen() < y_rng.GetToOpen();
+            }
+            // longest first
+            if ( x_rng.GetFrom() != y_rng.GetFrom() ) {
+                return x_rng.GetFrom() > y_rng.GetFrom();
+            }
+        }
+        else {
+            // smallest left extreme first
+            if ( x_rng.GetFrom() != y_rng.GetFrom() ) {
+                return x_rng.GetFrom() < y_rng.GetFrom();
+            }
+            // longest first
+            if ( x_rng.GetToOpen() != y_rng.GetToOpen() ) {
+                return x_rng.GetToOpen() > y_rng.GetToOpen();
+            }
+        }
+        return false;
+    }
+
+private:
+    const bool m_Minus;
+};
 
 bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
                                        const CAnnotObject_Ref& y) const
@@ -797,71 +907,59 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         }
         
         // compare mix locations
-        const CSeq_loc_mix* x_mix = x_create.GetMix(x, x_info, m_ByProduct);
-        const CSeq_loc_mix* y_mix = y_create.GetMix(y, y_info, m_ByProduct);
-        
-        if ( x_mix ) {
-            if ( !y_mix ) {
+        const CSeq_loc* x_loc = x_create.GetLoc(x, x_info, m_ByProduct);
+        const CSeq_loc* y_loc = y_create.GetLoc(y, y_info, m_ByProduct);
+
+        if( x_loc && ! x_loc->IsMix() && ! x_loc->IsPacked_int() ) {
+            x_loc = NULL;
+        }
+        if( y_loc && ! y_loc->IsMix() && ! y_loc->IsPacked_int() ) {
+            y_loc = NULL;
+        }
+
+        if ( x_loc ) {
+            if ( !y_loc ) {
                 // mix is last on plus strand, and first on minus strand
                 return x_minus;
             }
-            const CSeq_loc_mix::Tdata& x_l = x_mix->Get();
-            const CSeq_loc_mix::Tdata& y_l = y_mix->Get();
-            CSeq_loc_mix::Tdata::const_iterator x_it = x_l.begin();
-            CSeq_loc_mix::Tdata::const_iterator y_it = y_l.begin();
-            for ( ; ; ++x_it, ++y_it) {
-                if ( x_it == x_l.end() ) {
-                    if ( y_it == y_l.end() ) {
-                        // equal
-                        break;
-                    }
-                    else {
-                        // x loc is shorter
-                        return true;
-                    }
-                }
-                if ( y_it == y_l.end() ) {
-                    // y loc is shorter
-                    return false;
-                }
-                        
-                COpenRange<TSeqPos> x_r, y_r;
-                try {
-                    x_r = (*x_it)->GetTotalRange();
-                }
-                catch ( CException& /*ignored*/ ) {
-                    // assume empty
-                }
-                try {
-                    y_r = (*y_it)->GetTotalRange();
-                }
-                catch ( CException& /*ignored*/ ) {
-                    // assume empty
-                }
-                if ( x_minus ) {
-                    // largest right extreme first
-                    if ( x_r.GetToOpen() != y_r.GetToOpen() ) {
-                        return x_r.GetToOpen() > y_r.GetToOpen();
-                    }
-                    // longest first
-                    if ( x_r.GetFrom() != y_r.GetFrom() ) {
-                        return x_r.GetFrom() < y_r.GetFrom();
-                    }
-                }
-                else {
-                    // smallest left extreme first
-                    if ( x_r.GetFrom() != y_r.GetFrom() ) {
-                        return x_r.GetFrom() < y_r.GetFrom();
-                    }
-                    // longest first
-                    if ( x_r.GetToOpen() != y_r.GetToOpen() ) {
-                        return x_r.GetToOpen() > y_r.GetToOpen();
-                    }
-                }
+
+            // now we have to consider the 4 possibilities of (mix,mix), (mix,pkd_int), 
+            // (pkd_int,mix) and (pkd_int,pkd_int) 
+            // Note: "pkd_int" means "packed_int".
+            int comparison = 0;
+            if( x_loc->IsMix() && y_loc->IsMix() ) {
+                comparison = lexicographical_transform_and_compare_3way(
+                    x_loc->GetMix().Get().begin(), x_loc->GetMix().Get().end(), 
+                    y_loc->GetMix().Get().begin(), y_loc->GetMix().Get().end(), 
+                    CRefSeqLocToOpenRange(), CRefSeqLocToOpenRange(),
+                    COpenRangeLess(x_minus) );
+            } else if( x_loc->IsMix() && y_loc->IsPacked_int() ) {
+                comparison = lexicographical_transform_and_compare_3way(
+                    x_loc->GetMix().Get().begin(), x_loc->GetMix().Get().end(), 
+                    y_loc->GetPacked_int().Get().begin(), y_loc->GetPacked_int().Get().end(), 
+                    CRefSeqLocToOpenRange(), CRefSeqIntervalToOpenRange(),
+                    COpenRangeLess(x_minus) );
+            } else if( x_loc->IsPacked_int() && y_loc->IsMix() ) {
+                comparison = lexicographical_transform_and_compare_3way(
+                    x_loc->GetPacked_int().Get().begin(), x_loc->GetPacked_int().Get().end(), 
+                    y_loc->GetMix().Get().begin(), y_loc->GetMix().Get().end(), 
+                    CRefSeqIntervalToOpenRange(), CRefSeqLocToOpenRange(),
+                    COpenRangeLess(x_minus) );
+            } else if( x_loc->IsPacked_int() && y_loc->IsPacked_int() ) {
+                comparison = lexicographical_transform_and_compare_3way(
+                    x_loc->GetPacked_int().Get().begin(), x_loc->GetPacked_int().Get().end(), 
+                    y_loc->GetPacked_int().Get().begin(), y_loc->GetPacked_int().Get().end(), 
+                    CRefSeqIntervalToOpenRange(), CRefSeqIntervalToOpenRange(),
+                    COpenRangeLess(x_minus) );
+            }
+            if( comparison < 0 ) {
+                return true;
+            } else if( comparison > 0 ) {
+                return false;
             }
         }
         else {
-            if ( y_mix ) {
+            if ( y_loc ) {
                 // mix is last on plus strand, and first on minus strand
                 return !x_minus;
             }

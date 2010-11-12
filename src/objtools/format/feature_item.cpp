@@ -1050,6 +1050,7 @@ bool CFeatureItem::x_ExceptionIsLegalForFeature() const
     case CSeqFeatData::eSubtype_gene:
     case CSeqFeatData::eSubtype_cdregion:
     case CSeqFeatData::eSubtype_mRNA:
+    case CSeqFeatData::eSubtype_ncRNA:
     case CSeqFeatData::eSubtype_tRNA:
     case CSeqFeatData::eSubtype_preRNA:
     case CSeqFeatData::eSubtype_otherRNA:
