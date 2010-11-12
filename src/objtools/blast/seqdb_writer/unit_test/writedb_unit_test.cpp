@@ -2410,7 +2410,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathWindows)
 {
     CTmpFile tmpfile;
     CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
-    const string kOutput("Y:\\DUMMY");
+    const string kOutput("nul:");
     CRef<CBuildDatabase> bd;
     BOOST_REQUIRE_THROW(
         bd.Reset(new CBuildDatabase(kOutput, "foo", true, 
