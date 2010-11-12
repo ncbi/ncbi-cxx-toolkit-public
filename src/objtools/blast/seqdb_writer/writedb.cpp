@@ -464,7 +464,7 @@ CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files,
     ofstream out(kSeqDBGroupAliasFileName.c_str());
     out << "# Alias file index for " << CDir::GetCwd() << endl;
     out << "# Generated on " << CTime(CTime::eCurrent).AsString() << " by " 
-        << __FUNCTION__ << endl;
+        << NCBI_CURRENT_FUNCTION << endl;
     out << "#" << endl;
 
     ITERATE(list<string>, itr, alias_files) {
