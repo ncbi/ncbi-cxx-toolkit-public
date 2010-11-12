@@ -3958,20 +3958,22 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
 {
     CTmpFile gilist_tmpfile;
     CTmpFile alias_file_tmpfile;
+    string gilist_name = gilist_tmpfile.GetFileName();
     string blastdb_name = alias_file_tmpfile.GetFileName() + ".pal";
+    CFileDeleteAtExit::Add(gilist_name);
     CFileDeleteAtExit::Add(blastdb_name);
     const int kGiIncluded = 129295;
 
     {{
-        CNcbiOstream& stream =
-            gilist_tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+        ofstream stream(gilist_name.c_str());
         stream << kGiIncluded << endl;
+        stream.close();
     }}
     {{
         ofstream stream(blastdb_name.c_str());
         stream << "TITLE test for 129295 JIRA SB-646" << endl;
         stream << "DBLIST nr" << endl;
-        stream << "GILIST " << gilist_tmpfile.GetFileName() << endl;
+        stream << "GILIST " << gilist_name << endl;
         stream.close();
     }}
 
