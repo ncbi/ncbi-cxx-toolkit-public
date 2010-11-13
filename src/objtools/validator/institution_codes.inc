@@ -5736,7 +5736,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UCC<IRL>	s	University College Cork",
 "UCCC	s	Universidad de Concepcion, Museo de Zoologia",
 "UCCM	c	University of Calabar Collection of Microorganisms",
-"UCD	s	University of California, Davis",
+"UCD	sc	University of California, Davis",
 "UCDBA	s	University of Chicago",
 "UCFC	s	University of Central Florida",
 "UCGC	s	University of Colorado, Geological Museum",
