@@ -40,6 +40,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 
 // generated classes
 
@@ -134,9 +135,13 @@ CReadSharedObjectIdHookBase::GetSharedObject_id(int id)
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(s_SharedIdMutex);
+
+
 CObject_id&
 CReadSharedObjectIdHookBase::ReadSharedObject_id(CObjectIStream& in)
 {
+    CFastMutexGuard guard(s_SharedIdMutex);
     in.ReadObject(&m_Temp, m_Temp.GetTypeInfo());
     return GetSharedObject_id(m_Temp);
 }
