@@ -240,3 +240,10 @@ CBlastFormattingMatrix* CCmdLineBlastXMLReportData::GetMatrix(void) const
     return new CBlastFormattingMatrix((int **)m_Matrix,
                                       kMatrixCols, kMatrixCols); 
 }
+
+int CCmdLineBlastXMLReportData::GetLengthAdjustment(int query_index ) const {
+    if (m_NoHitsFound || query_index >= (int)m_AncillaryData.size()) {
+        return 0;
+    }
+    return (int)m_AncillaryData[query_index]->GetLengthAdjustment();
+}

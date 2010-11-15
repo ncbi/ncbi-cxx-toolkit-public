@@ -69,7 +69,7 @@ CBlastAncillaryData::CBlastAncillaryData(EBlastProgramType program_type,
                     const BlastScoreBlk *sbp,
                     const BlastQueryInfo *query_info)
 : m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
-  m_PsiGappedKarlinBlk(0), m_SearchSpace(0)
+  m_PsiGappedKarlinBlk(0), m_SearchSpace(0), m_LengthAdjustment(0)
 {
     int i;
     int context_per_query = BLAST_GetNumberOfContexts(program_type);
@@ -80,6 +80,7 @@ CBlastAncillaryData::CBlastAncillaryData(EBlastProgramType program_type,
                                 query_number * context_per_query + i;
         if (ctx->is_valid) {
             m_SearchSpace = ctx->eff_searchsp;
+	    m_LengthAdjustment = ctx->length_adjustment;
             break;
         }
     }

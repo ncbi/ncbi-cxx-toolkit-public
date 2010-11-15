@@ -161,11 +161,7 @@ public:
     }
 
     /// @inheritDoc
-    int GetLengthAdjustment(int /*query_index*/) const {
-        /// @todo FIXME no way to retrieve this
-        /// given the data available
-        return 0;
-    }
+    int GetLengthAdjustment(int /*query_index*/) const;
 
     /// @inheritDoc
     Int8 GetEffectiveSearchSpace(int query_index) const {

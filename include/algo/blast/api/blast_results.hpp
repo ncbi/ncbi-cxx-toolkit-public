@@ -118,7 +118,10 @@ public:
     Int8 GetSearchSpace() const { 
         return m_SearchSpace; 
     }
-
+    /// Retrieve the length adjustment for boundary conditions
+    Int8 GetLengthAdjustment() const { 
+        return m_LengthAdjustment; 
+    }
 private:
     /// Ungapped Karlin parameters for one query
     Blast_KarlinBlk *m_UngappedKarlinBlk;
@@ -135,6 +138,9 @@ private:
     /// Search space used when calculating e-values for one query
 
     Int8 m_SearchSpace;
+
+    /// Length adjustment for boundary conditions
+    Int8 m_LengthAdjustment;
 
     /// Workhorse for copy constructor and assignment operator
     /// @param other object to copy [in]
