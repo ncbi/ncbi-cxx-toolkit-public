@@ -83,6 +83,7 @@ CNetServProtoParserBase::x_GetToken(const char** str,
         ttype = eNSTT_Str;
     }
     else {
+        quote_char = '\0';
         ttype = eNSTT_Int;
         if (*s == '-') {
             ++s;
