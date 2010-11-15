@@ -212,6 +212,8 @@ public:
 
     /// Create the database. If the LDS2 database already exists all data will
     /// be cleaned up.
+    /// NOTE: The function may fail if the db has been accessed from other
+    /// threads and some of the threads are still alive.
     void Create(void);
 
     /// Open LDS2 database. If the database does not exist, throws exception.
@@ -220,8 +222,9 @@ public:
     /// Get database file name.
     const string& GetDbFile(void) const { return m_DbFile; }
 
-    /// Get/set SQLite flags, see CSQLITE_Connection::TOperationFlags
+    /// Get SQLite flags, see CSQLITE_Connection::TOperationFlags.
     int GetSQLiteFlags(void) const { return m_DbFlags; }
+    /// Set SQLite flags. This funtion resets the db connection.
     void SetSQLiteFlags(int flags);
 
     typedef set<string> TStringSet;
@@ -308,27 +311,94 @@ public:
                    SLDS2_Chunk&      chunk_info,
                    Int8              stream_pos);
 
-    /// Analyze the database indices. This can make queries about
-    /// 10-100 times faster. The method should be called after any
-    /// updates.
+    /// Prepare to update the DB. Starts a new transaction.
+    void BeginUpdate(void);
+
+    /// End update transaction, commit the changes.
+    void EndUpdate(void);
+
+    /// Cancel the update, rollback the changes.
+    void CancelUpdate(void);
+
+    /// Start reading transaction, lock the db.
+    void BeginRead(void);
+
+    /// End reading transaction, release the lock.
+    void EndRead(void);
+
+    /// Analyze the DB.
     void Analyze(void);
 
 private:
     CLDS2_Database(const CLDS2_Database&);
     CLDS2_Database& operator=(const CLDS2_Database&);
 
-    // Access database connection.
-    CSQLITE_Connection& x_GetConn(void) const;
-
+    // Execute multiple sql queries.
+    void x_ExecuteSqls(const char* sqls[], size_t len);
+    // Initialize 'get bioseqs' sql statement for the id handle.
+    CSQLITE_Statement& x_InitGetBioseqsSql(const CSeq_id_Handle& idh) const;
     // Return lds-id for the seq-id. Adds new lds-id if necessary.
     Int8 x_GetLdsSeqId(const CSeq_id_Handle& id);
 
-    void x_InitGetBioseqsSql(const CSeq_id_Handle& idh,
-                             CSQLITE_Statement&    st) const;
+    // Prepared statements
+    enum EStatement {
+        eSt_GetFileNames = 0,
+        eSt_GetFileInfoByName,
+        eSt_GetFileInfoById,
+        eSt_GetLdsSeqIdForIntId,
+        eSt_GetLdsSeqIdForTxtId,
+        eSt_GetBioseqIdForIntId,
+        eSt_GetBioseqIdForTxtId,
+        eSt_GetSynonyms,
+        eSt_GetBlobInfo,
+        eSt_GetBioseqForIntId,
+        eSt_GetBioseqForTxtId,
+        eSt_GetAnnotBlobsByIntId,
+        eSt_GetAnnotBlobsAllByIntId,
+        eSt_GetAnnotBlobsByTxtId,
+        eSt_GetAnnotBlobsAllByTxtId,
+        eSt_AddFile,
+        eSt_AddLdsSeqId,
+        eSt_AddBlob,
+        eSt_AddBioseqToBlob,
+        eSt_AddBioseqIds,
+        eSt_AddAnnotToBlob,
+        eSt_AddAnnotIds,
+        eSt_DeleteFileByName,
+        eSt_DeleteFileById,
+        eSt_AddChunk,
+        eSt_FindChunk,
+        eSt_StatementsCount
+    };
+    typedef vector< AutoPtr<CSQLITE_Statement> > TStatements;
 
-    string                               m_DbFile;
-    int                                  m_DbFlags;
-    mutable auto_ptr<CSQLITE_Connection> m_Conn;
+    // Structure to hold per-thread connection and all statements.
+    struct SLDS2_DbConnection {
+        auto_ptr<CSQLITE_Connection> Connection;
+        TStatements                  Statements;
+
+        SLDS2_DbConnection(void);
+    };
+    typedef CTls<SLDS2_DbConnection> TDbConnectionsTls;
+
+    // TLS cleanup function.
+    static void sx_DbConn_Cleanup(SLDS2_DbConnection* value,
+                                  void* cleanup_data);
+
+    // Get SLDS2_DbConnection for the current thread (create one
+    // if necessary).
+    SLDS2_DbConnection& x_GetDbConnection(void) const;
+    // Access database connection for the current thread.
+    CSQLITE_Connection& x_GetConn(void) const;
+    // Reset connection and clear statements cache.
+    void x_ResetDbConnection(void);
+    // Get the requested statement, prepare it if necessary.
+    CSQLITE_Statement& x_GetStatement(EStatement st) const;
+
+    string                          m_DbFile;
+    int                             m_DbFlags;
+    // Connections and prepared statements are per-thread.
+    mutable CRef<TDbConnectionsTls> m_DbConn;
 };
 
 

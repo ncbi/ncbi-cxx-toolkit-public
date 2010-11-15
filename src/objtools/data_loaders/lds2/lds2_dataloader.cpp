@@ -186,11 +186,17 @@ CLDS2_DataLoader::CLDS2_DataLoader(const string&        dl_name,
     // Initialize default handlers
     RegisterUrlHandler(new CLDS2_UrlHandler_File);
     RegisterUrlHandler(new CLDS2_UrlHandler_GZipFile);
+    if ( m_Db ) {
+        m_Db->BeginRead();
+    }
 }
 
 
 CLDS2_DataLoader::~CLDS2_DataLoader()
 {
+    if ( m_Db ) {
+        m_Db->EndRead();
+    }
 }
 
 

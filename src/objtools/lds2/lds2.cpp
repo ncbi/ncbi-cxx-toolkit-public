@@ -950,6 +950,7 @@ void CLDS2_Manager::UpdateData(void)
     // Add all known files from the DB
     m_Db->GetFileNames(m_Files);
 
+    m_Db->BeginUpdate();
     ITERATE(TFiles, it, m_Files) {
         CRef<CLDS2_UrlHandler_Base> handler;
         SLDS2_File file_info = x_GetFileInfo(*it, handler);
@@ -989,9 +990,7 @@ void CLDS2_Manager::UpdateData(void)
             }
         }
     }
-    // Update statistics - this makes queries up to 100 times faster
-    // in big databases.
-    m_Db->Analyze();
+    m_Db->EndUpdate();
 }
 
 

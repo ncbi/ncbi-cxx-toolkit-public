@@ -40,6 +40,7 @@
 #define NCBI_USE_ERRCODE_X Objtools_LDS2
 
 BEGIN_NCBI_SCOPE
+
 BEGIN_SCOPE(objects)
 
 
@@ -52,30 +53,6 @@ CLDS2_Database::CLDS2_Database(const string& db_file)
 
 CLDS2_Database::~CLDS2_Database(void)
 {
-}
-
-
-DEFINE_STATIC_FAST_MUTEX(sx_LDS2_DB_Lock);
-#define LDS2_DB_GUARD() CFastMutexGuard guard(sx_LDS2_DB_Lock)
-
-
-CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
-{
-    if ( !m_Conn.get() ) {
-        LDS2_DB_GUARD();
-        if ( !m_Conn.get() ) {
-            if ( m_DbFile.empty() ) {
-                LDS2_THROW(eInvalidDbFile, "Empty database file name.");
-            }
-            m_Conn.reset(new CSQLITE_Connection(m_DbFile,
-                CSQLITE_Connection::eDefaultFlags |
-                CSQLITE_Connection::fVacuumManual |
-                CSQLITE_Connection::fJournalMemory |
-                CSQLITE_Connection::fSyncOff
-                ));
-        }
-    }
-    return *m_Conn;
 }
 
 
@@ -93,8 +70,6 @@ const char* kLDS2_CreateDB[] = {
     "`file_size` integer(8)," \
     "`file_time` integer(8)," \
     "`file_crc` integer(4));",
-    // index files by name, prevents duplicate names
-    "create unique index `idx_filename` on `file` (`file_name`);",
 
     // chunks
     "create table `chunk` (" \
@@ -103,33 +78,22 @@ const char* kLDS2_CreateDB[] = {
     "`stream_pos` integer(8) not null," \
     "`data_size` inteter not null," \
     "`data` blob default null);",
-    // index by stream_pos
-    "create index `idx_stream_pos` on `chunk` (`stream_pos`);",
 
     // seq-id vs lds-id
     "create table `seq_id` (" \
     "`lds_id` integer primary key on conflict abort autoincrement," \
     "`txt_id` varchar(100) not null," \
     "`int_id` integer(8) default null);",
-    // index for reverse lookup, prevents duplicate ids
-    "create unique index `idx_int_id` on `seq_id` (`int_id`);",
-    "create unique index `idx_txt_id` on `seq_id` (`txt_id`);",
 
     // bioseqs by blob
     "create table `bioseq` (" \
     "`bioseq_id` integer primary key on conflict abort autoincrement," \
     "`blob_id` integer(8) not null);",
-    // reverse index
-    "create index `idx_blob_id` on `bioseq` (`blob_id`);",
 
     // bioseqs by lds_id
     "create table `bioseq_id` (" \
     "`bioseq_id` integer(8) not null," \
     "`lds_id` integer(8) not null);",
-    // index by bioseq_id
-    "create index `idx_bioseq_id` on `bioseq_id` (`bioseq_id`);",
-    // index by lds_id
-    "create index `idx_bioseq_lds_id` on `bioseq_id` (`lds_id`);",
 
     // blobs
     "create table `blob` (" \
@@ -137,28 +101,18 @@ const char* kLDS2_CreateDB[] = {
     "`blob_type` integer not null," \
     "`file_id` integer(8) not null," \
     "`file_pos` integer(8));",
-    // index by file_id
-    "create index `idx_blob_file_id` on `blob` (`file_id`);",
 
     // annotations
     "create table `annot` (" \
     "`annot_id` integer primary key on conflict abort autoincrement," \
     "`annot_type` integer not null," \
     "`blob_id` integer(8) not null);",
-    // index by blob_id
-    "create index `idx_annot_blob_id` on `annot` (`blob_id`);",
 
     // annotations by lds_id
     "create table `annot_id` (" \
     "`annot_id` integer(8) not null," \
     "`lds_id` integer(8) not null," \
     "`external` boolean);",
-    // index by annot_id
-    "create index `idx_annot_id` on `annot_id` (`annot_id`);",
-    // index by lds_id
-    "create index `idx_annot_lds_id` on `annot_id` (`lds_id`);",
-    // index 'external' column
-    "create index `idx_external` on `annot_id` (`external`);",
 
     // delete files - cascade to blobls and chunks
     "create trigger `delete_file` before delete on `file` begin " \
@@ -181,34 +135,260 @@ const char* kLDS2_CreateDB[] = {
 };
 
 
+// Create the indexes.
+const char* kLDS2_CreateDBIdx[] = {
+    // files
+    // index files by name, prevents duplicate names
+    "create unique index `idx_filename` on `file` (`file_name`);",
+
+    // chunks
+    // index by stream_pos
+    "create index `idx_stream_pos` on `chunk` (`stream_pos`);",
+
+    // seq-id vs lds-id
+    // index for reverse lookup, prevents duplicate ids
+    "create unique index `idx_int_id` on `seq_id` (`int_id`);",
+    "create unique index `idx_txt_id` on `seq_id` (`txt_id`);",
+
+    // bioseqs by blob
+    // reverse index
+    "create index `idx_blob_id` on `bioseq` (`blob_id`);",
+
+    // bioseqs by lds_id
+    // index by bioseq_id
+    "create index `idx_bioseq_id` on `bioseq_id` (`bioseq_id`);",
+    // index by lds_id
+    "create index `idx_bioseq_lds_id` on `bioseq_id` (`lds_id`);",
+
+    // blobs
+    // index by file_id
+    "create index `idx_blob_file_id` on `blob` (`file_id`);",
+
+    // annotations
+    // index by blob_id
+    "create index `idx_annot_blob_id` on `annot` (`blob_id`);",
+
+    // annotations by lds_id
+    // index by annot_id
+    "create index `idx_annot_id` on `annot_id` (`annot_id`);",
+    // index by lds_id
+    "create index `idx_annot_lds_id` on `annot_id` (`lds_id`);",
+    // index 'external' column
+    "create index `idx_external` on `annot_id` (`external`);"
+};
+
+
+// Drop the indexes.
+const char* kLDS2_DropDBIdx[] = {
+    "drop index if exists `idx_filename`;",
+    "drop index if exists `idx_stream_pos`;",
+    "drop index if exists `idx_int_id`;",
+    "drop index if exists `idx_txt_id`;",
+    "drop index if exists `idx_blob_id`;",
+    "drop index if exists `idx_bioseq_id`;",
+    "drop index if exists `idx_bioseq_lds_id`;",
+    "drop index if exists `idx_blob_file_id`;",
+    "drop index if exists `idx_annot_blob_id`;",
+    "drop index if exists `idx_annot_id`;",
+    "drop index if exists `idx_annot_lds_id`;",
+    "drop index if exists `idx_external`;"
+};
+
+
+static const char* s_LDS2_SQL[] = {
+    // eSt_GetFileNames
+    "select `file_name` from `file`;",
+    // eSt_GetFileInfoByName
+    "select `file_id`, `file_format`, `file_handler`, `file_size`, "
+    "`file_time`, `file_crc` from `file` where `file_name`=?1;",
+    // eSt_GetFileInfoById
+    "select `file_name`, `file_format`, `file_handler`, `file_size`, "
+    "`file_time`, `file_crc` from `file` where `file_id`=?1;",
+    // eSt_GetLdsSeqIdForIntId
+    "select `lds_id` from `seq_id` where `int_id`=?1;",
+    // eSt_GetLdsSeqIdForTxtId
+    "select `lds_id` from `seq_id` where `txt_id`=?1;",
+    // eSt_GetBioseqIdForIntId
+    "select `bioseq_id`.`bioseq_id` from `seq_id` "
+    "inner join `bioseq_id` using(`lds_id`) where `seq_id`.`int_id`=?1;",
+    // eSt_GetBioseqIdForTxtId
+    "select `bioseq_id`.`bioseq_id` from `seq_id` "
+    "inner join `bioseq_id` using(`lds_id`) where `seq_id`.`txt_id`=?1;",
+    // eSt_GetSynonyms
+    "select distinct `lds_id` from `bioseq_id` where `bioseq_id`=?1;",
+    // eSt_GetBlobInfo
+    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
+    "from `blob` where `blob_id`=?1;",
+    // eSt_GetBioseqForIntId
+    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
+    "from `blob` inner join `bioseq` using(`blob_id`) "
+    "inner join `bioseq_id` using(`bioseq_id`) "
+    "inner join `seq_id` using(`lds_id`) where `seq_id`.`int_id`=?1;",
+    // eSt_GetBioseqForTxtId
+    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
+    "from `blob` inner join `bioseq` using(`blob_id`) "
+    "inner join `bioseq_id` using(`bioseq_id`) "
+    "inner join `seq_id` using(`lds_id`) where `seq_id`.`txt_id`=?1;",
+    // eSt_GetAnnotBlobsByIntId
+    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
+    "from `blob` inner join `annot` using(`blob_id`) "
+    "inner join `annot_id` using(`annot_id`) "
+    "inner join `seq_id` using(`lds_id`) where "
+    "`annot_id`.`external`=?2 and `seq_id`.`int_id`=?1;",
+    // eSt_GetAnnotBlobsAllByIntId
+    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
+    "from `blob` inner join `annot` using(`blob_id`) "
+    "inner join `annot_id` using(`annot_id`) "
+    "inner join `seq_id` using(`lds_id`) where "
+    "`seq_id`.`int_id`=?1;",
+    // eSt_GetAnnotBlobsByTxtId
+    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
+    "from `blob` inner join `annot` using(`blob_id`) "
+    "inner join `annot_id` using(`annot_id`) "
+    "inner join `seq_id` using(`lds_id`) where "
+    "`annot_id`.`external`=?2 and `seq_id`.`txt_id`=?1;",
+    // eSt_GetAnnotBlobsAllByTxtId
+    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
+    "from `blob` inner join `annot` using(`blob_id`) "
+    "inner join `annot_id` using(`annot_id`) "
+    "inner join `seq_id` using(`lds_id`) where "
+    "`seq_id`.`txt_id`=?1;",
+
+    // eSt_AddFile
+    "insert into `file` "
+    "(`file_name`, `file_format`, `file_handler`, `file_size`, "
+    "`file_time`, `file_crc`) values (?1, ?2, ?3, ?4, ?5, ?6);",
+    // eSt_AddLdsId
+    "insert into `seq_id` (`txt_id`, `int_id`) values (?1, ?2);",
+    // eSt_AddBlob
+    "insert into `blob` (`blob_type`, `file_id`, `file_pos`) "
+    "values (?1, ?2, ?3);",
+    // eSt_AddBioseqToBlob
+    "insert into `bioseq` (`blob_id`) values (?1);",
+    // eSt_AddBioseqIds
+    "insert into `bioseq_id` (`bioseq_id`, `lds_id`) values (?1, ?2);",
+    // eSt_AddAnnotToBlob
+    "insert into `annot` (`annot_type`, `blob_id`) values (?1, ?2);",
+    // eSt_AddAnnotIds
+    "insert into `annot_id` (`annot_id`, `lds_id`, `external`) "
+    "values (?1, ?2, ?3);",
+    // eSt_DeleteFileByName
+    "delete from `file` where `file_name`=?1;",
+    // eSt_DeleteFileById
+    "delete from `file` where `file_id`=?1;",
+
+    // eSt_AddChunk
+    "insert into `chunk` "
+    "(`file_id`, `raw_pos`, `stream_pos`, `data_size`, `data`) "
+    "values (?1, ?2, ?3, ?4, ?5);",
+    // eSt_FindChunk
+    "select `raw_pos`, `stream_pos`, `data_size`, `data` from `chunk` "
+    "where `file_id`=?1 and `stream_pos`<=?2 order by `stream_pos` desc "
+    "limit 1;"
+};
+
+
+void CLDS2_Database::sx_DbConn_Cleanup(SLDS2_DbConnection* value,
+                                       void* /*cleanup_data*/)
+{
+    delete value;
+}
+
+
+CLDS2_Database::SLDS2_DbConnection::SLDS2_DbConnection(void)
+    : Statements(CLDS2_Database::eSt_StatementsCount)
+{
+}
+
+
+CLDS2_Database::SLDS2_DbConnection&
+CLDS2_Database::x_GetDbConnection(void) const
+{
+    if ( !m_DbConn ) {
+        m_DbConn.Reset(new TDbConnectionsTls);
+    }
+    SLDS2_DbConnection* db_conn = m_DbConn->GetValue();
+    if ( !db_conn ) {
+        auto_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection);
+        db_conn = conn_ptr.get();
+        m_DbConn->SetValue(conn_ptr.release(), sx_DbConn_Cleanup, 0);
+    }
+    return *db_conn;
+}
+
+
+void CLDS2_Database::x_ResetDbConnection(void)
+{
+    m_DbConn.Reset();
+}
+
+
+CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
+{
+    SLDS2_DbConnection& db_conn = x_GetDbConnection();
+    if ( !db_conn.Connection.get() ) {
+        if ( m_DbFile.empty() ) {
+            LDS2_THROW(eInvalidDbFile, "Empty database file name.");
+        }
+        db_conn.Connection.reset(new CSQLITE_Connection(m_DbFile,
+            CSQLITE_Connection::fExternalMT |
+            CSQLITE_Connection::eDefaultFlags |
+            CSQLITE_Connection::fVacuumManual |
+            CSQLITE_Connection::fJournalMemory |
+            CSQLITE_Connection::fSyncOff
+            ));
+    }
+    return *db_conn.Connection;
+}
+
+
+CSQLITE_Statement& CLDS2_Database::x_GetStatement(EStatement st) const
+{
+    SLDS2_DbConnection& db_conn = x_GetDbConnection();
+    _ASSERT((size_t)st < db_conn.Statements.size());
+    AutoPtr<CSQLITE_Statement>& ptr = db_conn.Statements[st];
+    if ( !ptr.get() ) {
+        ptr.reset(new CSQLITE_Statement(&x_GetConn(), s_LDS2_SQL[st]));
+    }
+    else {
+        ptr->Reset();
+    }
+    return *ptr;
+}
+
+
+void CLDS2_Database::x_ExecuteSqls(const char* sqls[], size_t len)
+{
+    CSQLITE_Connection& conn = x_GetConn();
+    for (size_t i = 0; i < len; i++) {
+        conn.ExecuteSql(sqls[i]);
+    }
+}
+
+
 void CLDS2_Database::Create(void)
 {
     LOG_POST_X(1, Info << "LDS2: Creating database " <<  m_DbFile);
 
     // Close the connection if any
-    m_Conn.reset();
+    x_ResetDbConnection();
 
-    // Delete the file
+    // Delete all data
     CFile dbf(m_DbFile);
     if ( dbf.Exists() ) {
         dbf.Remove();
     }
 
-    // Create new db file and open connection
-    CSQLITE_Connection& conn = x_GetConn();
-
-    // Create tables:
-
-    for (size_t i = 0; i < sizeof(kLDS2_CreateDB)/sizeof(kLDS2_CreateDB[0]); i++) {
-        conn.ExecuteSql(kLDS2_CreateDB[i]);
-    }
+    // Initialize connection and create tables:
+    x_ExecuteSqls(kLDS2_CreateDB,
+        sizeof(kLDS2_CreateDB)/sizeof(kLDS2_CreateDB[0]));
 }
 
 
 void CLDS2_Database::SetSQLiteFlags(int flags)
 {
     m_DbFlags = flags;
-    m_Conn.reset();
+    x_ResetDbConnection();
 }
 
 
@@ -220,43 +400,18 @@ void CLDS2_Database::Open(void)
 
 void CLDS2_Database::GetFileNames(TStringSet& files) const
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn, "select `file_name` from `file`;");
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetFileNames);
     while ( st.Step() ) {
         files.insert(st.GetString(0));
     }
-}
-
-
-SLDS2_File CLDS2_Database::GetFileInfo(const string& file_name) const
-{
-    SLDS2_File info(file_name);
-
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "select `file_id`, `file_format`, `file_handler`, `file_size`, " \
-        "`file_time`, `file_crc` from `file` where `file_name`=?1;");
-    st.Bind(1, file_name);
-    if ( st.Step() ) {
-        info.id = st.GetInt8(0);
-        info.format = SLDS2_File::TFormat(st.GetInt(1));
-        info.handler = st.GetString(2);
-        info.size = st.GetInt8(3);
-        info.time = st.GetInt8(4);
-        info.crc = st.GetInt(5);
-    }
-    return info;
+    st.Reset();
 }
 
 
 void CLDS2_Database::AddFile(SLDS2_File& info)
 {
     LOG_POST_X(2, Info << "LDS2: Adding file " << info.name);
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "insert into `file` " \
-        "(`file_name`, `file_format`, `file_handler`, `file_size`, " \
-        "`file_time`, `file_crc`) values (?1, ?2, ?3, ?4, ?5, ?6);");
+    CSQLITE_Statement& st = x_GetStatement(eSt_AddFile);
     st.Bind(1, info.name);
     st.Bind(2, info.format);
     st.Bind(3, info.handler);
@@ -265,6 +420,7 @@ void CLDS2_Database::AddFile(SLDS2_File& info)
     st.Bind(6, info.crc);
     st.Execute();
     info.id = st.GetLastInsertedRowid();
+    st.Reset();
 }
 
 
@@ -279,53 +435,56 @@ void CLDS2_Database::UpdateFile(SLDS2_File& info)
 void CLDS2_Database::DeleteFile(const string& file_name)
 {
     LOG_POST_X(4, Info << "LDS2: Deleting file " << file_name);
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn, "delete from `file` where `file_name`=?1;");
+    CSQLITE_Statement& st = x_GetStatement(eSt_DeleteFileByName);
     st.Bind(1, file_name);
     st.Execute();
+    st.Reset();
 }
 
 
 void CLDS2_Database::DeleteFile(Int8 file_id)
 {
     LOG_POST_X(4, Info << "LDS2: Deleting file " << file_id);
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn, "delete from `file` where `file_id`=?1;");
+    CSQLITE_Statement& st = x_GetStatement(eSt_DeleteFileById);
     st.Bind(1, file_id);
     st.Execute();
+    st.Reset();
 }
 
 
 Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id)
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
+    CSQLITE_Statement* st = NULL;
     if ( id.IsGi() ) {
         // Try to use integer index
-        st.SetSql(
-            "select `lds_id` from `seq_id` where `int_id`=?1;");
-        st.Bind(1, id.GetGi());
+        st = &x_GetStatement(eSt_GetLdsSeqIdForIntId);
+        st->Bind(1, id.GetGi());
     }
     else {
         // Use text index
-        st.SetSql(
-            "select `lds_id` from `seq_id` where `txt_id`=?1;");
-        st.Bind(1, id.AsString());
+        st = &x_GetStatement(eSt_GetLdsSeqIdForTxtId);
+        st->Bind(1, id.AsString());
     }
-    if ( st.Step() ) {
-        return st.GetInt8(0);
+    if ( st->Step() ) {
+        Int8 ret = st->GetInt8(0);
+        st->Reset();
+        return ret;
     }
 
     // Id not in the database yet -- add new entry.
-    st.SetSql(
-        "insert into `seq_id` (`txt_id`, `int_id`) " \
-        "values (?1, ?2);");
-    st.Bind(1, id.AsString());
+    st = &x_GetStatement(eSt_AddLdsSeqId);
+    st->Bind(1, id.AsString());
     if ( id.IsGi() ) {
-        st.Bind(2, id.GetGi());
+        st->Bind(2, id.GetGi());
     }
-    st.Execute();
-    return st.GetLastInsertedRowid();
+    else {
+        // HACK: reset GI to null if not available.
+        st->Bind(2, (void*)NULL, 0);
+    }
+    st->Execute();
+    Int8 ret = st->GetLastInsertedRowid();
+    st->Reset();
+    return ret;
 }
 
 
@@ -333,16 +492,13 @@ Int8 CLDS2_Database::AddBlob(Int8                   file_id,
                              SLDS2_Blob::EBlobType  blob_type,
                              Int8                   file_pos)
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "insert into `blob` " \
-        "(`blob_type`, `file_id`, `file_pos`) " \
-        "values (?1, ?2, ?3);");
+    CSQLITE_Statement& st = x_GetStatement(eSt_AddBlob);
     st.Bind(1, blob_type);
     st.Bind(2, file_id);
     st.Bind(3, file_pos);
     st.Execute();
     Int8 blob_id = st.GetLastInsertedRowid();
+    st.Reset();
     return blob_id;
 }
 
@@ -359,25 +515,22 @@ Int8 CLDS2_Database::AddBioseq(Int8 blob_id, const TSeqIdSet& ids)
         lds_ids.push_back(lds_id);
     }
 
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
+    CSQLITE_Statement& st1 = x_GetStatement(eSt_AddBioseqToBlob);
 
     // Create new bioseq
-    st.SetSql("insert into `bioseq` (`blob_id`) values (?1);");
-    st.Bind(1, blob_id);
-    st.Execute();
-    Int8 bioseq_id = st.GetLastInsertedRowid();
+    st1.SetSql("insert into `bioseq` (`blob_id`) values (?1);");
+    st1.Bind(1, blob_id);
+    st1.Execute();
+    Int8 bioseq_id = st1.GetLastInsertedRowid();
+    st1.Reset();
 
     // Link bioseq to its seq-ids
-    st.SetSql(
-        "insert into `bioseq_id` " \
-        "(`bioseq_id`, `lds_id`) " \
-        "values (?1, ?2);");
+    CSQLITE_Statement& st2 = x_GetStatement(eSt_AddBioseqIds);
     ITERATE(TLdsIds, lds_id, lds_ids) {
-        st.Bind(1, bioseq_id);
-        st.Bind(2, *lds_id);
-        st.Execute();
-        st.Reset();
+        st2.Bind(1, bioseq_id);
+        st2.Bind(2, *lds_id);
+        st2.Execute();
+        st2.Reset();
     }
 
     return bioseq_id;
@@ -398,30 +551,23 @@ Int8 CLDS2_Database::AddAnnot(Int8                      blob_id,
         lds_refs.push_back(TLdsAnnotRef(lds_id, ref->second));
     }
 
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
+    CSQLITE_Statement& st1 = x_GetStatement(eSt_AddAnnotToBlob);
 
     // Create new bioseq
-    st.SetSql(
-        "insert into `annot` " \
-        "(`annot_type`, `blob_id`) " \
-        "values (?1, ?2);");
-    st.Bind(1, annot_type);
-    st.Bind(2, blob_id);
-    st.Execute();
-    Int8 annot_id = st.GetLastInsertedRowid();
+    st1.Bind(1, annot_type);
+    st1.Bind(2, blob_id);
+    st1.Execute();
+    Int8 annot_id = st1.GetLastInsertedRowid();
+    st1.Reset();
 
     // Link annot to its seq-ids
-    st.SetSql(
-        "insert into `annot_id` " \
-        "(`annot_id`, `lds_id`, `external`) " \
-        "values (?1, ?2, ?3);");
+    CSQLITE_Statement& st2 = x_GetStatement(eSt_AddAnnotIds);
     ITERATE(TLdsAnnotRefSet, ref, lds_refs) {
-        st.Bind(1, annot_id);
-        st.Bind(2, ref->first);
-        st.Bind(3, ref->second);
-        st.Execute();
-        st.Reset();
+        st2.Bind(1, annot_id);
+        st2.Bind(2, ref->first);
+        st2.Bind(3, ref->second);
+        st2.Execute();
+        st2.Reset();
     }
 
     return annot_id;
@@ -430,32 +576,27 @@ Int8 CLDS2_Database::AddAnnot(Int8                      blob_id,
 
 Int8 CLDS2_Database::GetBioseqId(const CSeq_id_Handle& idh) const
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
+    CSQLITE_Statement* st = NULL;
     if ( idh.IsGi() ) {
-        st.SetSql(
-            "select `bioseq_id`.`bioseq_id` from `seq_id` " \
-            "inner join `bioseq_id` using(`lds_id`) " \
-            "where `seq_id`.`int_id`=?1;");
-        st.Bind(1, idh.GetGi());
+        st = &x_GetStatement(eSt_GetBioseqIdForIntId);
+        st->Bind(1, idh.GetGi());
     }
     else {
-        st.SetSql(
-            "select `bioseq_id`.`bioseq_id` from `seq_id` " \
-            "inner join `bioseq_id` using(`lds_id`) " \
-            "where `seq_id`.`txt_id`=?1;");
-        st.Bind(1, idh.AsString());
+        st = &x_GetStatement(eSt_GetBioseqIdForTxtId);
+        st->Bind(1, idh.AsString());
     }
     Int8 bioseq_id = 0;
-    if ( !st.Step() )
+    if ( !st->Step() )
     {
+        st->Reset();
         return 0;
     }
-    bioseq_id = st.GetInt8(0);
+    bioseq_id = st->GetInt8(0);
     // Reset on conflict
-    if ( st.Step() ) {
+    if ( st->Step() ) {
         bioseq_id = -1;
     }
+    st->Reset();
     return bioseq_id;
 }
 
@@ -467,44 +608,37 @@ void CLDS2_Database::GetSynonyms(const CSeq_id_Handle& idh, TLdsIdSet& ids)
         // No such id or conflict
         return;
     }
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "select distinct `lds_id` from `bioseq_id` " \
-        "where `bioseq_id`=?1;");
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetSynonyms);
     st.Bind(1, bioseq_id);
     while ( st.Step() ) {
         ids.insert(st.GetInt8(0));
     }
+    st.Reset();
 }
 
 
-void CLDS2_Database::x_InitGetBioseqsSql(const CSeq_id_Handle& idh,
-                                         CSQLITE_Statement&    st) const
+CSQLITE_Statement&
+CLDS2_Database::x_InitGetBioseqsSql(const CSeq_id_Handle& idh) const
 {
-    string sql =
-        "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` " \
-        "from `blob` " \
-        "inner join `bioseq` using(`blob_id`) " \
-        "inner join `bioseq_id` using(`bioseq_id`) " \
-        "inner join `seq_id` using(`lds_id`) " \
-        "where ";
+    CSQLITE_Statement* st = NULL;
     if ( idh.IsGi() ) {
-        st.SetSql(sql + "`seq_id`.`int_id`=?1;");
-        st.Bind(1, idh.GetGi());
+        st = &x_GetStatement(eSt_GetBioseqForIntId);
+        st->Bind(1, idh.GetGi());
     }
     else {
-        st.SetSql(sql + "`seq_id`.`txt_id`=?1;");
-        st.Bind(1, idh.AsString());
+        st = &x_GetStatement(eSt_GetBioseqForTxtId);
+        st->Bind(1, idh.AsString());
     }
+    _ASSERT(st);
+    return *st;
 }
 
 
 SLDS2_Blob CLDS2_Database::GetBlobInfo(const CSeq_id_Handle& idh)
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
-    x_InitGetBioseqsSql(idh, st);
+    CSQLITE_Statement& st = x_InitGetBioseqsSql(idh);
     if ( !st.Step() ) {
+        st.Reset();
         return SLDS2_Blob();
     }
     SLDS2_Blob info;
@@ -513,9 +647,11 @@ SLDS2_Blob CLDS2_Database::GetBlobInfo(const CSeq_id_Handle& idh)
     info.file_id = st.GetInt8(2);
     info.file_pos = st.GetInt8(3);
     if ( st.Step() ) {
+        st.Reset();
         // Conflict - return empty blob
         return SLDS2_Blob();
     }
+    st.Reset();
     return info;
 }
 
@@ -526,10 +662,7 @@ SLDS2_Blob CLDS2_Database::GetBlobInfo(Int8 blob_id)
     if (blob_id <= 0) {
         return info;
     }
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` " \
-        "from `blob` where `blob_id`=?1;");
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetBlobInfo);
     st.Bind(1, blob_id);
     if ( !st.Step() ) {
         return info;
@@ -539,6 +672,26 @@ SLDS2_Blob CLDS2_Database::GetBlobInfo(Int8 blob_id)
     info.file_id = st.GetInt8(2);
     info.file_pos = st.GetInt8(3);
     _ASSERT( !st.Step() );
+    st.Reset();
+    return info;
+}
+
+
+SLDS2_File CLDS2_Database::GetFileInfo(const string& file_name) const
+{
+    SLDS2_File info(file_name);
+
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetFileInfoByName);
+    st.Bind(1, file_name);
+    if ( st.Step() ) {
+        info.id = st.GetInt8(0);
+        info.format = SLDS2_File::TFormat(st.GetInt(1));
+        info.handler = st.GetString(2);
+        info.size = st.GetInt8(3);
+        info.time = st.GetInt8(4);
+        info.crc = st.GetInt(5);
+    }
+    st.Reset();
     return info;
 }
 
@@ -549,10 +702,7 @@ SLDS2_File CLDS2_Database::GetFileInfo(Int8 file_id)
     if (file_id <= 0) {
         return info;
     }
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "select `file_name`, `file_format`, `file_handler`, `file_size`, " \
-        "`file_time`, `file_crc` from `file` where `file_id`=?1;");
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetFileInfoById);
     st.Bind(1, file_id);
     if ( st.Step() ) {
         info.id = file_id;
@@ -563,6 +713,7 @@ SLDS2_File CLDS2_Database::GetFileInfo(Int8 file_id)
         info.time = st.GetInt8(4);
         info.crc = st.GetInt(5);
     }
+    st.Reset();
     return info;
 }
 
@@ -570,9 +721,7 @@ SLDS2_File CLDS2_Database::GetFileInfo(Int8 file_id)
 void CLDS2_Database::GetBioseqBlobs(const CSeq_id_Handle& idh,
                                     TBlobSet&             blobs)
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
-    x_InitGetBioseqsSql(idh, st);
+    CSQLITE_Statement& st = x_InitGetBioseqsSql(idh);
     while ( st.Step() ) {
         SLDS2_Blob info;
         info.id = st.GetInt8(0);
@@ -581,6 +730,7 @@ void CLDS2_Database::GetBioseqBlobs(const CSeq_id_Handle& idh,
         info.file_pos = st.GetInt8(3);
         blobs.push_back(info);
     }
+    st.Reset();
 }
 
 
@@ -588,59 +738,45 @@ void CLDS2_Database::GetAnnotBlobs(const CSeq_id_Handle& idh,
                                    TAnnotChoice          choice,
                                    TBlobSet&             blobs)
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
-
-    string sql =
-        "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` " \
-        "from `blob` " \
-        "inner join `annot` using(`blob_id`) " \
-        "inner join `annot_id` using(`annot_id`) " \
-        "inner join `seq_id` using(`lds_id`) " \
-        "where ";
-
-    if (choice != fAnnot_All) {
-        sql += "`annot_id`.`external`=?2 and ";
-    }
-
+    CSQLITE_Statement* st = NULL;
     if ( idh.IsGi() ) {
-        st.SetSql(sql + "`seq_id`.`int_id`=?1;");
-        st.Bind(1, idh.GetGi());
+        st = &x_GetStatement(choice != fAnnot_All
+            ? eSt_GetAnnotBlobsByIntId : eSt_GetAnnotBlobsAllByIntId);
+        st->Bind(1, idh.GetGi());
     }
     else {
-        st.SetSql(sql + "`seq_id`.`txt_id`=?1;");
-        st.Bind(1, idh.AsString());
+        st = &x_GetStatement(choice != fAnnot_All
+            ? eSt_GetAnnotBlobsByTxtId : eSt_GetAnnotBlobsAllByTxtId);
+        st->Bind(1, idh.AsString());
     }
 
     if (choice != fAnnot_All) {
-        st.Bind(2, (choice & fAnnot_External) != 0);
+        st->Bind(2, (choice & fAnnot_External) != 0);
     }
 
-    while ( st.Step() ) {
+    while ( st->Step() ) {
         SLDS2_Blob info;
-        info.id = st.GetInt8(0);
-        info.type = SLDS2_Blob::EBlobType(st.GetInt(1));
-        info.file_id = st.GetInt8(2);
-        info.file_pos = st.GetInt8(3);
+        info.id = st->GetInt8(0);
+        info.type = SLDS2_Blob::EBlobType(st->GetInt(1));
+        info.file_id = st->GetInt8(2);
+        info.file_pos = st->GetInt8(3);
         blobs.push_back(info);
     }
+    st->Reset();
 }
 
 
 void CLDS2_Database::AddChunk(const SLDS2_File&  file_info,
                               const SLDS2_Chunk& chunk_info)
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "insert into `chunk` " \
-        "(`file_id`, `raw_pos`, `stream_pos`, `data_size`, `data`) " \
-        "values (?1, ?2, ?3, ?4, ?5);");
+    CSQLITE_Statement& st = x_GetStatement(eSt_AddChunk);
     st.Bind(1, file_info.id);
     st.Bind(2, chunk_info.raw_pos);
     st.Bind(3, chunk_info.stream_pos);
     st.Bind(4, chunk_info.data_size);
     st.Bind(5, chunk_info.data, chunk_info.data_size);
     st.Execute();
+    st.Reset();
 }
 
 
@@ -648,14 +784,13 @@ bool CLDS2_Database::FindChunk(const SLDS2_File& file_info,
                                SLDS2_Chunk&      chunk_info,
                                Int8              stream_pos)
 {
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn,
-        "select `raw_pos`, `stream_pos`, `data_size`, `data` from `chunk` " \
-        "where `file_id`=?1 and `stream_pos`<=?2 order by `stream_pos` desc " \
-        "limit 1;");
+    CSQLITE_Statement& st = x_GetStatement(eSt_FindChunk);
     st.Bind(1, file_info.id);
     st.Bind(2, stream_pos);
-    if ( !st.Step() ) return false;
+    if ( !st.Step() ) {
+        st.Reset();
+        return false;
+    }
     chunk_info.raw_pos = st.GetInt8(0);
     chunk_info.stream_pos = st.GetInt8(1);
     chunk_info.DeleteData(); // just in case someone reuses the same object
@@ -665,15 +800,58 @@ bool CLDS2_Database::FindChunk(const SLDS2_File& file_info,
         chunk_info.data_size =
             st.GetBlob(3, chunk_info.data, chunk_info.data_size);
     }
+    st.Reset();
     return true;
+}
+
+
+void CLDS2_Database::BeginUpdate(void)
+{
+    x_ExecuteSqls(kLDS2_DropDBIdx,
+        sizeof(kLDS2_DropDBIdx)/sizeof(kLDS2_DropDBIdx[0]));
+    CSQLITE_Connection& conn = x_GetConn();
+    conn.ExecuteSql("begin transaction;");
+}
+
+
+void CLDS2_Database::EndUpdate(void)
+{
+    CSQLITE_Connection& conn = x_GetConn();
+    conn.ExecuteSql("end transaction;");
+    x_ExecuteSqls(kLDS2_CreateDBIdx,
+        sizeof(kLDS2_CreateDBIdx)/sizeof(kLDS2_CreateDBIdx[0]));
+    Analyze();
+}
+
+
+void CLDS2_Database::CancelUpdate(void)
+{
+    CSQLITE_Connection& conn = x_GetConn();
+    conn.ExecuteSql("rollback transaction;");
+    x_ExecuteSqls(kLDS2_CreateDBIdx,
+        sizeof(kLDS2_CreateDBIdx)/sizeof(kLDS2_CreateDBIdx[0]));
 }
 
 
 void CLDS2_Database::Analyze(void)
 {
     CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn, "analyze;");
-    st.Execute();
+    // Analyze the database indices. This can make queries about
+    // 10-100 times faster. The method should be called after any
+    // updates.
+    conn.ExecuteSql("analyze;");
+}
+
+
+void CLDS2_Database::BeginRead(void)
+{
+    x_GetConn().ExecuteSql("begin transaction;");
+}
+
+
+void CLDS2_Database::EndRead(void)
+{
+    x_GetConn().ExecuteSql("end transaction;");
 }
 
 
