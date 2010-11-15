@@ -1086,7 +1086,7 @@ void CGenbankFormatter::FormatContig
     if (assembly.empty()) {
         assembly = "join()";
     }
-    if( assembly.substr( 0, 5 ) != "join(" ) {
+    if( ! NStr::StartsWith( assembly, "join(" ) ) {
         assembly = "join(" + assembly + ")";  // example where needed: accession NG_005477.4
     }
 

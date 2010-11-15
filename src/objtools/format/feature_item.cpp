@@ -5146,6 +5146,9 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
             break;
         }
     }
+
+    // TODO: once we've done heavy testing, we should be able to confirm that
+    // we can remove this commented-out code.
  
     //  ------------------------------------------------------------------------
     //  PCR primer rules:

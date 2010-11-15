@@ -66,8 +66,8 @@ BEGIN_SCOPE(objects)
 
 // static members
 const string CFlatItemFormatter::s_GenbankMol[] = {
-    "    ", "DNA ", "RNA ", "mRNA", "rRNA", "tRNA", "RNA",
-    "scRNA", " AA ", "DNA ", "DNA ", "cRNA", "snoRNA", "RNA "
+    "    ", "DNA ", "RNA ", "mRNA", "rRNA", "tRNA", /* "snRNA" */ "RNA", /* "scRNA" */ "RNA",
+    " AA ", "DNA ", "DNA ", "cRNA ", /* "snoRNA" */ "RNA", "RNA ", "RNA ", "tmRNA "
 };
 
 // static members
@@ -482,6 +482,10 @@ static void s_FixPages( string& pages )
         if ( it == pages.end() ) {
             pages  = firstNumber;
             pages += firstText;
+            return;
+        }
+        if( it != pages.end() && ::isalnum(*it) ) {
+            // E.g. NM_002638
             return;
         }
         if ( it != pages.end() && *it != '-' ) {
