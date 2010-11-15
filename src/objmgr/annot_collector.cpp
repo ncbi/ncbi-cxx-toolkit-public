@@ -718,7 +718,7 @@ const CSeq_loc* CCreateFeat::GetLoc(const CAnnotObject_Ref& ref,
 // This just exists so that lexicographical_transform_and_compare_3way doesn't
 // have to call the transform functions extra times
 template< typename T1, typename T2, typename Pred >
-int pred_to_comparison( const T1 &obj1, const T2 &obj2, Pred pred ) 
+inline int pred_to_comparison( const T1 &obj1, const T2 &obj2, Pred pred ) 
 {
     if( pred( obj1, obj2 ) ) {
         return -1;
@@ -764,7 +764,7 @@ int lexicographical_transform_and_compare_3way
 // will be its total range.
 class CRefSeqLocToOpenRange {
 public:
-    COpenRange< TSeqPos > operator() ( CRef< CSeq_loc > loc_ref ) 
+    COpenRange< TSeqPos > operator() ( const CRef< CSeq_loc >& loc_ref ) 
     {
         try {
             return (*loc_ref).GetTotalRange();
@@ -780,9 +780,9 @@ public:
 // will be its total range.
 class CRefSeqIntervalToOpenRange {
 public:
-    COpenRange< TSeqPos > operator() ( CRef< CSeq_interval > interval_ref ) 
+    COpenRange< TSeqPos > operator() ( const CRef< CSeq_interval >& interval_ref ) 
     {
-        return COpenRange< TSeqPos >( interval_ref->GetFrom(), interval_ref->GetTo() );
+        return COpenRange< TSeqPos >( interval_ref->GetFrom(), interval_ref->GetTo()+1 );
     }
 };
 
