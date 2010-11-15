@@ -49,4 +49,7 @@ Fixed handling of default values of long and double element types.
 Corrected initialization of wrapper class objects.
 Corrected code generation for elements of type vector<char> with attributes.
 
+November 15, 2010
+version 2.3.1
+Optimized working with program registry when parsing data specification.
 
