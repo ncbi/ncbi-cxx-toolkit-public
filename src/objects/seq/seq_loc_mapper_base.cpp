@@ -1814,6 +1814,10 @@ void CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id,
 {
     _ASSERT(m_SeqInfo);
     m_SeqInfo->CollectSynonyms(id, synonyms);
+    if ( synonyms.empty() ) {
+        // Add at least the original id
+        synonyms.insert(id);
+    }
 }
 
 
