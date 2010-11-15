@@ -1248,10 +1248,14 @@ namespace {
         int d_child = sx_GetRootDistance(child);
         int d_parent = sx_GetRootDistance(parent);
         if ( d_parent <= d_child ) {
+            // parent candidate is higher than child
+            // return value <= kSameTypeParentQuality
             return kSameTypeParentQuality - (d_child - d_parent);
         }
         else {
-            return kWorseTypeParentQuality + (d_child - d_parent);
+            // parent candidate is not higher than child
+            // return value <= kWorseTypeParentQuality
+            return kWorseTypeParentQuality - (d_parent - d_child);
         }
     }
 
@@ -1615,8 +1619,11 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
     if ( ret.first > kByLocusParentQuality ) {
         return ret;
     }
-    if ( parent_type == CSeqFeatData::eSubtype_gene ||
-         parent_type == CSeqFeatData::eSubtype_any ) {
+    if ( (parent_type == CSeqFeatData::eSubtype_gene ||
+          parent_type == CSeqFeatData::eSubtype_any) &&
+         sx_IsParentType(CSeqFeatData::eSubtype_gene,
+                         info.m_Feat.GetFeatSubtype()) ) {
+        // assign non-genes to genes by Gene-ref
         ITERATE ( CSeq_feat::TXref, xit, xrefs ) {
             const CSeqFeatXref& xref = **xit;
             if ( xref.IsSetData() ) {
@@ -1642,28 +1649,33 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
 
 bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
 {
+    _ASSERT(m_FeatIdMode != eFeatId_ignore);
     pair<int, CFeatInfo*> parent =
         x_LookupParentByRef(info, CSeqFeatData::eSubtype_any);
     if ( !parent.second ) {
         return false;
     }
-    if ( m_FeatIdMode != eFeatId_always &&
-         parent.first < kWorseTypeParentQuality ) {
-        // found reference is of worse type
-        return false;
-    }
-        
-    if ( parent.second->IsSetParent() &&
-         parent.second->m_Parent == &info ) {
-        // circular reference, keep existing parent
-        return false;
-    }
-    pair<int, CFeatInfo*> grand_parent =
-        x_LookupParentByRef(*parent.second, CSeqFeatData::eSubtype_any);
-    if ( grand_parent.second == &info ) {
-        // new circular reference, choose by quality
-        if ( parent.first < grand_parent.first ) {
+    if ( parent.first <= kWorseTypeParentQuality ||
+         parent.first == kSameTypeParentQuality ) {
+        // found reference is of the same or worse type
+        if ( m_FeatIdMode == eFeatId_by_type ) {
+            // eFeatId_by_type limits parents to regular tree order
             return false;
+        }
+        _ASSERT(m_FeatIdMode == eFeatId_always);
+        // otherwise check for circular references
+        if ( parent.second->IsSetParent() &&
+             parent.second->m_Parent == &info ) {
+            // two features cycle, keep existing parent
+            return false;
+        }
+        pair<int, CFeatInfo*> grand_parent =
+            x_LookupParentByRef(*parent.second, CSeqFeatData::eSubtype_any);
+        if ( grand_parent.second == &info ) {
+            // new circular reference, choose by quality
+            if ( parent.first < grand_parent.first ) {
+                return false;
+            }
         }
     }
     x_SetParent(info, *parent.second);
@@ -1975,7 +1987,7 @@ void CFeatTree::x_AssignParents(void)
         if ( info.IsSetParent() ) {
             continue;
         }
-        if ( x_AssignParentByRef(info) ) {
+        if ( m_FeatIdMode != eFeatId_ignore && x_AssignParentByRef(info) ) {
             continue;
         }
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
@@ -2007,12 +2019,6 @@ void CFeatTree::x_AssignParents(void)
             continue;
         }
         for ( STypeLink link(feat_set.m_FeatType); link; ++link ) {
-            if ( false && m_FeatIdMode == eFeatId_by_type ) {
-                x_AssignParentsByRef(feat_set.m_New, link);
-                if ( feat_set.m_New.empty() ) {
-                    break;
-                }
-            }
             if ( !pinfo_map[link.m_ParentType].m_CollectedAll ) {
                 pinfo_map[link.m_ParentType].m_NeedAll = true;
                 x_CollectNeeded(pinfo_map);
