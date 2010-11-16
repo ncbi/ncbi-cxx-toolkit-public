@@ -790,9 +790,57 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
     }
 }
 
+static 
+string s_GetStrForStructuredComment( const CUser_object::TData &data )
+{
+    CNcbiOstrstream result;
+    result << left;
+    result << endl;
+    result << "##Metadata-START##" << endl;
+
+    // First, figure out the longest label so we know how to format it
+    int longest_label_len = 1;
+    ITERATE( CUser_object::TData, it_for_len, data ) {
+        if( (*it_for_len)->GetLabel().IsStr() && 
+                (*it_for_len)->GetData().IsStr() && ! (*it_for_len)->GetData().GetStr().empty() ) {
+            const int label_len = (*it_for_len)->GetLabel().GetStr().length();
+            if( (label_len > longest_label_len) && (label_len <= 45) ) {
+                longest_label_len = label_len;
+            }
+        }
+    }
+
+    ITERATE( CUser_object::TData, it, data ) {
+        
+        // skip if no label
+        if( ! (*it)->GetLabel().IsStr() || (*it)->GetLabel().GetStr().empty() ) {
+            continue;
+        }
+
+        // skip if no data
+        if( ! (*it)->GetData().IsStr() || (*it)->GetData().GetStr().empty() ) {
+            continue;
+        }
+
+        // special fields are skipped
+        if( (*it)->GetLabel().GetStr() == "StructuredCommentPrefix" || 
+                (*it)->GetLabel().GetStr() == "StructuredCommentSuffix" ) {
+            continue;
+        }
+
+        result << setw(longest_label_len) << (*it)->GetLabel().GetStr() << 
+            " :: " << (*it)->GetData().GetStr() << endl;
+    }
+
+    result << "##Metadata-END##" << endl;
+    return CNcbiOstrstreamToString(result);
+}
 
 void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
 {
+    // true for most desc infos
+    bool can_add_period = true;
+
     string prefix, str, suffix;
     switch ( desc.Which() ) {
     case CSeqdesc::e_Comment:
@@ -840,6 +888,20 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
         }}
         break;
 
+    case CSeqdesc::e_User:
+        {{
+            const CSeqdesc_Base::TUser &userObject = desc.GetUser();
+
+            // make sure the user object is really of type StructuredComment
+            const CUser_object::TType &type = userObject.GetType();
+            if( type.IsStr() && type.GetStr() == "StructuredComment" ) {
+                str = s_GetStrForStructuredComment( userObject.GetData() );
+                SetNeedPeriod( false );
+                can_add_period = false;
+            }
+        }}
+        break;
+
     default:
         break;
     }
@@ -847,7 +909,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
     if (str.empty()  ||  str == ".") {
         return;
     }
-    x_SetCommentWithURLlinks(prefix, str, suffix);
+    x_SetCommentWithURLlinks(prefix, str, suffix, can_add_period);
     
 }
 
@@ -860,7 +922,7 @@ void CCommentItem::x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx)
         return;
     }
 
-    x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr);
+    x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr, true);
 }
 
 
@@ -881,7 +943,8 @@ void CCommentItem::x_SetComment(const string& comment)
 void CCommentItem::x_SetCommentWithURLlinks
 (const string& prefix,
  const string& str,
- const string& suffix)
+ const string& suffix,
+ const bool can_add_period)
 {
     // !!! test for html - find links within the comment string
     string comment = prefix;
@@ -893,12 +956,14 @@ void CCommentItem::x_SetCommentWithURLlinks
         return;
     }
 
-    size_t pos = comment.find_last_not_of(" \n\t\r.~");
-    if (pos != comment.length() - 1) {
-        size_t period = comment.find_last_of('.');
-        bool add_period = period > pos;
-        if (add_period  &&  !NStr::EndsWith(str, "...")) {
-            ncbi::objects::AddPeriod(comment);
+    if( can_add_period ) {
+        size_t pos = comment.find_last_not_of(" \n\t\r.~");
+        if (pos != comment.length() - 1) {
+            size_t period = comment.find_last_of('.');
+            bool add_period = period > pos;
+            if (add_period  &&  !NStr::EndsWith(str, "...")) {
+                ncbi::objects::AddPeriod(comment);
+            }
         }
     }
     

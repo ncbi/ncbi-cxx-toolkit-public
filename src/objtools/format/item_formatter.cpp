@@ -519,8 +519,22 @@ static void s_FixPages( string& pages )
             }
             ++it;
         }
+
+        const bool firstNumberEmpty = (firstNumber[0]   == '\0');
+        const bool firstTextEmpty = (firstText[0]   == '\0');
+        const bool lastNumberEmpty = (lastNumber[0]   == '\0');
+        const bool lastTextEmpty = (lastText[0]   == '\0');
         
+        if( (lastNumberEmpty  && firstTextEmpty) ||
+            (firstNumberEmpty && lastTextEmpty) ) {
+            return;
+        }
+
         if ( it != pages.end() ) {
+            if( *it == '?' ) {
+                lastNumber = firstNumber;
+                lastText = firstText;
+            }
             pages = firstNumber + firstText + string( "-" ) + lastNumber + lastText;
             return;
         }

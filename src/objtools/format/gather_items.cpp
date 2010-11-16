@@ -621,6 +621,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_MaplocComments(ctx);
     x_RegionComments(ctx);
     x_NameComments(ctx);
+    x_StructuredComments(ctx);
     x_HTGSComments(ctx);
 //    x_FeatComments(ctx);
 
@@ -909,6 +910,12 @@ void CFlatGatherer::x_NameComments(CBioseqContext& ctx) const
     }
 }
 
+void CFlatGatherer::x_StructuredComments(CBioseqContext& ctx) const
+{
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
+        x_AddComment(new CCommentItem(*it, ctx));
+    }
+}
 
 void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
 {

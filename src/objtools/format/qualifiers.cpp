@@ -387,7 +387,14 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     ETildeStyle tilde_style = s_TildeStyleFromName( name );
     ExpandTildes(m_Value, tilde_style);
                 
-    TFlatQual qual = x_AddFQ(q, (s_IsNote(flags, ctx) ? "note" : name), m_Value, m_Style);
+    const bool is_note = s_IsNote(flags, ctx);
+
+    // e.g. CP001398
+    if( ! is_note ) {
+        ConvertQuotes( m_Value );
+    }
+
+    TFlatQual qual = x_AddFQ(q, (is_note ? "note" : name), m_Value, m_Style);
     if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
     }

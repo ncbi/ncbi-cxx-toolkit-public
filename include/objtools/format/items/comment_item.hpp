@@ -135,7 +135,7 @@ protected:
 
     void x_SetComment(const string& comment);
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,
-        const string& suffix);
+        const string& suffix, const bool can_add_period );
     string& x_GetComment(void) { return m_Comment; }
     void x_SetSkip(void);
 

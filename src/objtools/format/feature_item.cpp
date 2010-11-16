@@ -1233,6 +1233,27 @@ void CFeatureItem::x_AddQualExpInv(
     }
 }
 
+static
+bool s_TransSplicingFeatureAllowed(
+    const CSeqFeatData& data )
+{
+    switch( data.GetSubtype() ) {
+        case CSeqFeatData::eSubtype_gene:
+        case CSeqFeatData::eSubtype_cdregion:
+        case CSeqFeatData::eSubtype_mRNA:
+        case CSeqFeatData::eSubtype_tRNA:
+        case CSeqFeatData::eSubtype_preRNA:
+        case CSeqFeatData::eSubtype_otherRNA:
+        case CSeqFeatData::eSubtype_3clip:
+        case CSeqFeatData::eSubtype_3UTR:
+        case CSeqFeatData::eSubtype_5clip:
+        case CSeqFeatData::eSubtype_5UTR:
+            return true;
+        default:
+            return false;
+    }
+}
+
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualExceptions( 
     CBioseqContext& ctx )
@@ -1283,11 +1304,19 @@ void CFeatureItem::x_AddQualExceptions(
         //
         else {
             if ( cur == "ribosomal slippage" ) {
-                x_AddQual( eFQ_ribosomal_slippage, new CFlatBoolQVal( true ) );
+                if( data.IsCdregion() ) {
+                    x_AddQual( eFQ_ribosomal_slippage, new CFlatBoolQVal( true ) );
+                } else {
+                    output_notes.push_back( cur );
+                }
                 continue;
             }
             if ( cur == "trans-splicing" ) {
-                x_AddQual( eFQ_trans_splicing, new CFlatBoolQVal( true ) );
+                if( s_TransSplicingFeatureAllowed( data ) ) {
+                    x_AddQual( eFQ_trans_splicing, new CFlatBoolQVal( true ) );
+                } else {
+                    output_notes.push_back( cur );
+                }
                 continue;
             }
             if ( cur == "nonconsensus splice site" ) {
@@ -1303,12 +1332,22 @@ void CFeatureItem::x_AddQualExceptions(
                 }
                 continue;
             }
+            const bool is_cds_or_mrna = ( data.IsCdregion() || 
+                data.GetSubtype() == CSeqFeatData::eSubtype_mRNA );
             if( cur == "artificial location" ) {
-                x_AddQual( eFQ_artificial_location, new CFlatBoolQVal( true ) );
+                if( is_cds_or_mrna ) {
+                    x_AddQual( eFQ_artificial_location, new CFlatBoolQVal( true ) );
+                } else {
+                    output_notes.push_back( cur );
+                }
                 continue;
             }
             if( cur == "heterogeneous population sequenced" || cur == "low-quality sequence region" ) {
-                x_AddQual( eFQ_artificial_location, new CFlatStringQVal( cur ) );
+                if( is_cds_or_mrna ) {
+                    x_AddQual( eFQ_artificial_location, new CFlatStringQVal( cur ) );
+                } else {
+                    output_notes.push_back( cur );
+                }
                 continue;
             }
             if ( s_IsValidExceptionText( cur ) ) {
@@ -2034,6 +2073,10 @@ void CFeatureItem::x_AddQualsRna(
                         }
                     }
                 }
+            }
+            if ( ext.IsGen()  &&  ext.GetGen().IsSetProduct() ) {
+                x_AddQual( eFQ_product, 
+                    new CFlatStringQVal( ext.GetGen().GetProduct() ) );
             }
             break;
         }
