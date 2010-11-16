@@ -579,9 +579,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     throw; }  while (0)
 
 /// Generate a report on the exception.
-#define NCBI_REPORT_EXCEPTION(title,ex) \
+#define NCBI_REPORT_EXCEPTION(title, ex) \
     NCBI_NS_NCBI::CExceptionReporter::ReportDefault \
-        (DIAG_COMPILE_INFO,title,ex,eDPF_Default)
+        (DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
 
 /// Generate a report on the exception with default error code and
 /// given subcode.
@@ -594,7 +594,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     NCBI_CHECK_ERR_SUBCODE_X_NAME(err_name, err_subcode);            \
     NCBI_NS_NCBI::CExceptionReporter::ReportDefaultEx(               \
                 NCBI_ERRCODE_X_NAME(err_name), err_subcode,          \
-                DIAG_COMPILE_INFO, title, ex, eDPF_Default)
+                DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
 
 
 
