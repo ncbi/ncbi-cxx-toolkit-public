@@ -50,6 +50,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/format/blastxml_format.hpp>
 #include <algo/blast/format/data4xmlformat.hpp>       /* NCBI_FAKE_WARNING */
 #include <algo/blast/format/build_archive.hpp>
+#include <serial/objostrxml.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -906,7 +907,12 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
                                                m_IsRemoteSearch);
         objects::CBlastOutput xml_output;
         BlastXML_FormatReport(xml_output, &report_data);
-        m_Outfile << MSerial_Xml << xml_output;
+
+	CObjectOStreamXml l_xml_stream( m_Outfile, false );
+	l_xml_stream.SetDefaultDTDFilePrefix("http://www.ncbi.nlm.nih.gov/dtd/");
+	l_xml_stream.WriteFileHeader(ObjectType( xml_output ));
+        l_xml_stream.WriteObject( ObjectInfo( xml_output ));
+
         m_AccumulatedResults.clear();
         m_AccumulatedQueries->clear();
         return;
