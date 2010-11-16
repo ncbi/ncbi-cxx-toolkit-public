@@ -186,8 +186,8 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///   LOG_POST_EX, LOG_POST_X
 #define LOG_POST(message)                          \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,   \
-      eDiag_Error,                                 \
-      eDPF_Log | eDPF_IsMessage).GetRef()          \
+      NCBI_NS_NCBI::eDiag_Error,                                        \
+      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsMessage).GetRef()   \
       << message                                   \
       << NCBI_NS_NCBI::Endm )
 
@@ -215,8 +215,8 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///   LOG_POST, LOG_POST_X
 #define LOG_POST_EX(err_code, err_subcode, message)         \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,            \
-      eDiag_Error,                                          \
-      eDPF_Log | eDPF_IsMessage).GetRef()                   \
+      NCBI_NS_NCBI::eDiag_Error,                                          \
+      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsMessage).GetRef()     \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message << NCBI_NS_NCBI::Endm )
 
