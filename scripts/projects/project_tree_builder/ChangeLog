@@ -131,4 +131,7 @@ Fixed to mark implied projects as expendable if everything that depends on them 
 Added support of optional user requests (macro definitions).
 Corrected project that generates C++ code to remove unneeded specifications.
 
+November 16, 2010
+version 3.1.1
+Corrected to exclude configurable defines from list of libraries.
 
