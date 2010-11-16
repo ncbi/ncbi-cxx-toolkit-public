@@ -2820,6 +2820,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KIT	c	Laboratorium voor Tropische Hygiene",
 "KIUJ	s	Kyusu University",
 "KIZ	s	Kunming Institute of Zoology, Chinese Academy of Sciences",
+"KKFC<THA>	s	Kasetsart  University Kamphaengsaen campus Fungus Collection",
 "KKM	s	Kirkleatham Museum",
 "KKU	s	Herbarium, Department of Biology, Khon Kaen University",
 "KKUA	s	Khon Kaen University",
