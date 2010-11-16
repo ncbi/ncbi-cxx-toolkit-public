@@ -60,6 +60,7 @@ bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
                         (r1.first > r2.first  &&  r1.second < r2.second);
     }
 
+    /**
     cerr << "("
         << r1.first << ", "
         << r1.second
@@ -71,6 +72,7 @@ bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
         << ": is_consistent = "
         << (is_consistent ? "true" : "false")
         << endl;
+        **/
 
     return is_consistent;
 }
@@ -320,6 +322,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                 best_compart->insert(*it);
             }
 
+            /**
             cerr << "compartments: found " << compartments.size() << endl;
             size_t count = 0;
             ITERATE (list< multiset<TAlignRange> >, it, compartments) {
@@ -334,8 +337,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                         << endl;
                 }
             }
+            **/
         }
 
+        /**
         {{
              cerr << "found " << compartments.size() << endl;
              size_t count = 0;
@@ -352,6 +357,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                  }
              }
          }}
+         **/
 
         // pack into seq-align-sets
         ITERATE (list< multiset<TAlignRange> >, it, compartments) {
@@ -368,124 +374,6 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
             TCompartScore sc(sum, sas);
             scored_compartments.push_back(sc);
         }
-
-#if 0
-        //
-        // scan
-        // for each hit, find the next consistent hit that minimizes diff
-        //
-        {{
-             cerr << "  ------------" << endl;
-             vector<TAlignRange>::const_iterator curr = align_ranges.begin();
-             for ( ;  curr != align_ranges.end(); ) {
-                 TSeqPos best_diff = kMax_Int;
-                 vector<TAlignRange>::const_iterator best = align_ranges.end();
-                 vector<TAlignRange>::const_iterator next = curr;
-                 for (++next;  next != align_ranges.end();  ++next) {
-                     if ( !IsConsistent(curr->first, next->first,
-                                        q_strand, s_strand) ) {
-                         continue;
-                     }
-
-                     TSeqPos this_diff = Difference(curr->first, next->first,
-                                                    q_strand, s_strand);
-                     if (this_diff < best_diff) {
-                         best = next;
-                         best_diff = this_diff;
-                     }
-                 }
-
-                 cerr << "  ("
-                     << curr->first.first << ", "
-                     << curr->first.second << ")"
-                     << " [" << curr->first.first.GetLength()
-                     << ", " << curr->first.second.GetLength() << "]";
-
-                 if (best == align_ranges.end()) {
-                     cerr << "  island";
-                     ++curr;
-                 } else {
-                     curr = next;
-                 }
-                 cerr << endl;
-             }
-         }}
-#endif
-
-#if 0
-
-        // sort by position
-        std::sort(align_ranges.begin(), align_ranges.end());
-
-        //
-        // compart should be a straight iteration now
-        //
-        typedef set<TRange> TRangeCollection;
-        typedef pair<TRangeCollection, list< CRef<CSeq_align> > > TRanges;
-        list<TRanges> compartments;
-        ITERATE (vector<TAlignRange>, it, align_ranges) {
-            list<TRanges>::iterator best = compartments.end();
-            NON_CONST_ITERATE (list<TRanges>, i, compartments) {
-                // everything is sorted - we now only need to check the last
-                // element!
-                if ((options & fCompart_AllowIntersections) == 0) {
-                    if (IsIntersecting(*i->first.rbegin(), it->first)) {
-                        continue;
-                    }
-                }
-                if (IsConsistent(*i->first.rbegin(), it->first,
-                                 q_strand, s_strand)) {
-                    best = i;
-                    break;
-                }
-            }
-
-            if (best == compartments.end()) {
-                TRanges ranges;
-                ranges.first.insert(it->first);
-                ranges.second.push_back(it->second);
-                compartments.push_back(ranges);
-            }
-            else {
-                best->first.insert(it->first);
-                best->second.push_back(it->second);
-            }
-        }
-
-        /**
-        LOG_POST(Error
-                 << align_it->first.first.first << " x "
-                 << align_it->first.second.first << ": "
-                 << "found " << compartments.size() << " compartments");
-                 **/
-
-        ITERATE (list<TRanges>, it, compartments) {
-            /**
-            cerr << "  [";
-            ITERATE (TRangeCollection, i, it->first) {
-                cerr << " ("
-                    << i->first.GetFrom() << "-" << i->first.GetTo()
-                    << ", "
-                    << i->second.GetFrom() << "-" << i->second.GetTo()
-                    << ")";
-            }
-            cerr << " ]: ";
-            cerr << it->second.size() << " alignments" << endl;
-            **/
-
-            CRef<CSeq_align_set> sas(new CSeq_align_set);
-            sas->Set() = it->second;
-
-            TSeqPos sum = 0;
-            ITERATE (CSeq_align_set::Tdata, it, sas->Get()) {
-                sum += (*it)->GetAlignLength();
-            }
-
-            TCompartScore sc(sum, sas);
-            scored_compartments.push_back(sc);
-
-        }
-#endif
     }
 
     //
