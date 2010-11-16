@@ -1032,7 +1032,7 @@ void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
 
 #if (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 340)  ||  defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COMPILER_MIPSPRO)
 
-#define ArraySize(array) sizeof(array)/sizeof((array)[0])
+#define ArraySize(array)  (sizeof(array)/sizeof((array)[0]))
 
 #else
 
