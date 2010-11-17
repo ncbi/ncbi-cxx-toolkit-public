@@ -320,8 +320,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
  const char*   val
  );
 
-/* delete one (first) argument from the list of arguments in "info" */
-extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteArg
+/* delete one (first) argument from the list of arguments in "info",
+ * return zero if no such arg was found, non-zero if found and deleted */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_DeleteArg
 (SConnNetInfo* info,
  const char*   arg
  );
