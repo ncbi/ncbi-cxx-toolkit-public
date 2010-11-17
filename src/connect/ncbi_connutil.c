@@ -335,7 +335,11 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
 extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 {
-    const char *s, *a;
+    /* URL elements and their parsed lengths as passed */
+    const char *user,    *pass,   *host,   *path,   *args;
+    size_t     userlen, passlen, hostlen, pathlen, argslen;
+    unsigned short port;
+    const char* s;
     size_t len;
     char* p;
 
@@ -353,147 +357,140 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             return 0/*failure*/;
         if (s) {
             int n;
-            unsigned short port;
-            if (sscanf(++s, "%hu%n", &port, &n) < 1  ||  s[n])
+            if (sscanf(++s, "%hu%n", &port, &n) < 1  ||  s[n]  ||  !port)
                 return 0/*failure*/;
             info->port = port;
         }
         if (len)
-            strncpy0(info->host, url, len);
+            memcpy(info->host, url, ++len);
         return 1/*success*/;
     }
 
     /* "user:pass@host:port" first [any optional] */
     if ((s = strstr(url, "://")) != 0) {
-        const char* h = s + 3; /*host starts here*/
-
         len = (size_t)(s - url);
         if ((info->scheme = s_ParseScheme(url, len)) == eURL_Unspec)
             return 0/*failure*/;
 
-        /* find the end of host */
-        len = strcspn(h, "/?#");
-        s = h + len;
+        host    = s + 3;
+        hostlen = strcspn(host, "/?#");
+        path    = host + hostlen;
 
         /* username:password */
-        if (!(a = (const char*) memchr(h, '@', len))) {
-            info->user[0] = '\0';
-            info->pass[0] = '\0';
+        if (!(s = (const char*) memchr(host, '@', hostlen))) {
+            user    = pass    = "";
+            userlen = passlen = 0;
         } else {
-            size_t   ulen = (size_t)(a - h);
-            const char* t = (const char*) memchr(h, ':', ulen);
-            if (t)
-                ulen = (size_t)(t - h);
-            if (ulen < sizeof(info->user)) {
-                memcpy(info->user, h, ulen);
-                info->user[ulen] = '\0';
+            user    = host;
+            userlen = (size_t)(s - user);
+            host    = ++s;
+            hostlen = (size_t)(path - s);
+            if (!(s = (const char*) memchr(user, ':', userlen))) {
+                pass    = "";
+                passlen = 0;
             } else {
-                memcpy(info->user, h, sizeof(info->user) - 1);
-                info->user[sizeof(info->user) - 1] = '\0';
+                userlen = (size_t)(s++ - user);
+                pass    = s++;
+                passlen = (size_t)(host - s);
             }
-            if (t  &&  ulen) {
-                /* take pass only if user non-empty */
-                ulen = (size_t)(a - ++t);
-                if (ulen < sizeof(info->pass)) {
-                    memcpy(info->pass, t, ulen);
-                    info->pass[ulen] = '\0';
-                } else {
-                    memcpy(info->pass, t, sizeof(info->pass) - 1);
-                    info->pass[sizeof(info->pass) - 1] = '\0';
-                }
-            } else
-                info->pass[0] = '\0';
-            h = ++a;
-            len = (size_t)(s - h);
         }
 
-        /* host ends at "s" here */
-        if (!(a = (const char*) memchr(h, ':', len))) {
-            info->port = 0/*default*/;
-            /*len remains unchanged*/
-        } else if (isdigit((unsigned char) a[1])) {
-            unsigned short port;
+        /* port, if any */
+        if ((s = (const char*) memchr(host, ':', hostlen)) != 0) {
             int n;
-            if (sscanf(a, ":%hu%n", &port, &n) < 1  ||  a + n != s  ||  !port)
+            hostlen = (size_t)(s - host);
+            if (sscanf(++s, "%hu%n", &port, &n) < 1
+                ||  s + n != path  ||  !port) {
                 return 0/*failure*/;
-            info->port = port;
-            len = (size_t)(a - h);
+            }
         } else
+            port = 0/*default*/;
+
+        if (userlen >= sizeof(info->user)  ||
+            passlen >= sizeof(info->pass)  ||
+            hostlen >= sizeof(info->host)) {
             return 0/*failure*/;
-        if (len < sizeof(info->host)) {
-            memcpy(info->host, h, len);
-            info->host[len] = '\0';
-        } else {
-            memcpy(info->host, h, sizeof(info->host) - 1);
-            info->host[sizeof(info->host) - 1] = '\0';
         }
-    } else
-        s = url;
+    } else {
+        user    = pass    = host    = 0;
+        userlen = passlen = hostlen = 0;
+        path    = url;
+        port    = 0;
+    }
 
-    a = s + strcspn(s, "?#");
-    len = (size_t)(a - s);
+    pathlen = strcspn(path, "?#");
+    args    = path + pathlen;
 
-    /* path (NB: can be relative); "len" holds the path length */
-    if (s != url  ||  *s == '/'  ||  !(p = strrchr(info->path, '/'))) {
+    if (path != url  ||  *path == '/') {
         /* absolute path */
         p = info->path;
-        if (!len) {
-            s = "/";   /* in case of an empty path we take the root '/' */
-            len = 1;
+        len = 0;
+        if (!pathlen) {
+            path    = "/";
+            pathlen = 1;
         }
-    } else
-        p++;
-    if (len < sizeof(info->path) - (size_t)(p - info->path)) {
-        memcpy(p, s, len);
-        p[len] = '\0';
     } else {
-        memcpy(p, s, sizeof(info->path) - (size_t)(p - info->path) - 1);
-        info->path[sizeof(info->path) - 1] = '\0';
+        /* relative path */
+        if (!(p = strrchr(info->path, '/'))) {
+            p = info->path;
+            len = 0;
+        } else
+            len = (size_t)(++p - info->path);
+        if (!pathlen)
+            path = 0;
     }
+    if (pathlen + len >= sizeof(info->path))
+        return 0/*failure*/;
 
     /* arguments and fragment */
-    if (*a) {
-        if (*a == '#') {
-            len = 0/*unused*/;
-            s = a;
-        } else if (!(s = strchr(++a/*NB: *a=='?'*/, '#'))) {
-            len = strlen(a);
-            s = a + len;
-        } else
-            len = (size_t)(s - a);
-        /* "len" holds the length of new args("a", w/o the leading "?") */
-        assert(!*s  ||  *s == '#');
-        assert(*a != '?');
+    if (*args) {
+        const char* frag;
+        argslen = strlen(args);
+        if (*args == '#')
+            frag = args;
+        else if (!(frag = strchr(++args/*NB: *args=='?'*/, '#')))
+            frag = args + --argslen;
+        else
+            argslen--;
+        assert(!*frag  ||  *frag == '#');
 
-        if (*s) {
+        if (*frag) {
             /* if there is a new fragment, the entire args get overridden */
-            if (!s[1]) {
-                /* don't store the empty fragment # */
-                len = (size_t)(s - a);
-                if (len > sizeof(info->args) - 1)
-                    len = sizeof(info->args) - 1;
-            } else
-                len = sizeof(info->args) - 1;
-            strncpy0(info->args, a, len);
-        } else if (!(p = strchr(info->args, '#'))
-                   ||  len >= sizeof(info->args) - 1) {
-            /* there is no new fragment and: either there is no old fragment,
-             * or the old one will not fit -- in both cases, replace */
-            strncpy0(info->args, a, sizeof(info->args) - 1);
-        } else {
-            /* there is no new fragment, but there was an old one -- keep it */
-            size_t move = strlen(p);
-            if (move > sizeof(info->args) - 1 - len)
-                move = sizeof(info->args) - 1 - len;
-            memmove(info->args + len, p, move);
-            memcpy (info->args,       a, len);
-            info->args[len + move] = '\0';
+            len = 0;
+            if (!frag[1])
+                argslen--; /* don't store the empty fragment # */
+            if (argslen >= sizeof(info->args))
+                return 0/*failure*/;
+        } else if ((s = strchr(info->args, '#')) != 0) {
+            /* there is no new fragment, but there was the old one: keep it */
+            len = strlen(s);
+            if (argslen + len >= sizeof(info->args))
+                return 0/*failure*/;
+            memmove(info->args + argslen, s, len);
         }
-    } else if ((p = strchr(info->args, '#')) != 0) {
+        memcpy(info->args, args, argslen);
+        info->args[argslen + len] = '\0';
+    } else if (!(args = strchr(info->args, '#'))) {
         /* keep the old fragment, if any, but drop all args */
-        memmove(info->args, p, strlen(p) + 1);
+        info->args[0] = '\0';
+    } else
+        memmove(info->args, args, strlen(args) + 1);
+    if (path) {
+        memcpy(p, path, pathlen);
+        p[pathlen] = '\0';
     }
-
+    if (host) {
+        memcpy(info->host, host, hostlen);
+        info->host[hostlen] = '\0';
+        info->port = port;
+    }
+    if (user) {
+        assert(pass);
+        memcpy(info->user, user, userlen);
+        info->user[userlen] = '\0';
+        memcpy(info->pass, pass, passlen);
+        info->pass[passlen] = '\0';
+    }
     return 1/*success*/;
 }
 
@@ -792,56 +789,55 @@ extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
 }
 
 
-extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
-                                  const char*   arg)
+extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
+                                         const char*   arg)
 {
+    int/*bool*/ deleted;
     size_t argnamelen;
     size_t arglen;
     char*  a;
 
     if (!arg || !(argnamelen = strcspn(arg, "=&")))
-        return;
+        return 0/*false*/;
+    deleted = 0/*false*/;
     for (a = info->args; *a; a += arglen) {
         if (*a == '&')
             a++;
         arglen = strcspn(a, "&");
-        if (arglen < argnamelen  ||  strncasecmp(a, arg, argnamelen) != 0  ||
-            (a[argnamelen] && a[argnamelen] != '=' && a[argnamelen] != '&'))
+        if (arglen < argnamelen || strncasecmp(a, arg, argnamelen) != 0 ||
+            (a[argnamelen] && a[argnamelen] != '=' && a[argnamelen] != '&')) {
             continue;
-        if (a[arglen]) {
-            arglen++;     /* for intermediary args, eat '&' separator, too */
-            memmove(a, a + arglen, strlen(a + arglen) + 1);
-        } else if (a != info->args) {
-            *--a = '\0';  /* last argument in a list: remove trailing '&' */
-        } else {
-            *a = '\0';    /* last and the only argument removed */
         }
+        if (!a[arglen]) {
+            if (a == info->args)
+                *a = '\0';    /* the only argument removed */
+            else
+                *--a = '\0';  /* last argument: also remove trailing '&' */
+            return 1/*true*/;
+        }
+        arglen++;  /* for intermediary args, eat the following '&' separator */
+        memmove(a, a + arglen, strlen(a + arglen) + 1);
+        deleted = 1/*true*/;
         arglen = 0;
     }
+    return deleted;
 }
 
 
 extern void ConnNetInfo_DeleteAllArgs(SConnNetInfo* info,
                                       const char*   args)
 {
-    char* temp;
-    char* arg;
-    if (!args || !*args || !(temp = strdup(args))) {
-        if (args && *args)
-            *info->args = '\0';
+    if (!args)
         return;
-    }
-    arg = temp;
-    while (*arg) {
-        char* end = strchr(arg, '&');
-        if (!end)
-            end = arg + strlen(arg);
+    while (*args) {
+        const char* a = strchr(args, '&');
+        if (!a)
+            a = args + strlen(args);
         else
-            *end++ = '\0';
-        ConnNetInfo_DeleteArg(info, arg);
-        arg = end;
+            a++;
+        ConnNetInfo_DeleteArg(info, args);
+        args = a;
     }
-    free(temp);
 }
 
 
@@ -869,7 +865,7 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
 
 static int/*bool*/ s_IsSufficientAddress(const char* addr)
 {
-    const char*c;
+    const char* c;
     return (SOCK_isip(addr)  ||
             ((c = strchr(addr, '.'))  != 0  &&  c[1]  &&
              (c = strchr(c + 2, '.')) != 0  &&  c[1]));

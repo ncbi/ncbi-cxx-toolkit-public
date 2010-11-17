@@ -33,7 +33,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
@@ -258,6 +257,14 @@ static void x_SetupUserAgent(SConnNetInfo* net_info)
 }
 
 
+template<>
+struct Deleter<SConnNetInfo>
+{
+    static void Delete(SConnNetInfo* net_info)
+    { ConnNetInfo_Destroy(net_info); }
+};
+
+
 static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
                                         const char*          url,
                                         const char*          host,
@@ -272,32 +279,54 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
                                         THCC_Flags           flags,
                                         const STimeout*      timeout)
 {
-    SConnNetInfo* net_info = a_net_info
-        ? ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0);
-    if (!net_info)
-        return 0;
-    if (url  &&  !ConnNetInfo_ParseURL(net_info, url))
-        return 0;
+    size_t len;
+    AutoPtr<SConnNetInfo>
+        net_info(a_net_info
+                 ? ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0));
+    if (!net_info.get()) {
+        NCBI_THROW(CIO_Exception, eUnknown,
+                   "CConn_HttpStream::CConn_HttpStream():  Out of memory");
+    }
+    if (url  &&  !ConnNetInfo_ParseURL(net_info.get(), url)) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_HttpStream::CConn_HttpStream():  Bad URL");
+    }
     if (host) {
-        strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
+        if ((len = *host ? strlen(host) : 0) >= sizeof(net_info->host)) {
+            NCBI_THROW(CIO_Exception, eInvalidArg,
+                       "CConn_HttpStream::CConn_HttpStream():  Host too long");
+        }
+        memcpy(net_info->host, host, ++len);
         net_info->port = port;
     }
-    if (path)
-        strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
-    if (args)
-        strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
+    if (path) {
+        if ((len = *path ? strlen(path) : 0) >= sizeof(net_info->path)) {
+            NCBI_THROW(CIO_Exception, eInvalidArg,
+                       "CConn_HttpStream::CConn_HttpStream():  Path too long");
+        }
+        memcpy(net_info->path, path, ++len);
+    }
+    if (args) {
+        if ((len = *args ? strlen(args) : 0) >= sizeof(net_info->args)) {
+            NCBI_THROW(CIO_Exception, eInvalidArg,
+                       "CConn_HttpStream::CConn_HttpStream():  Args too long");
+        }
+        memcpy(net_info->args, args, ++len);
+    }
     if (user_header)
-        ConnNetInfo_OverrideUserHeader(net_info, user_header);
-    x_SetupUserAgent(net_info);
+        ConnNetInfo_OverrideUserHeader(net_info.get(), user_header);
+    x_SetupUserAgent(net_info.get());
     if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
         net_info->timeout = 0;
-    CONNECTOR c = HTTP_CreateConnectorEx(net_info, flags,
-        parse_header, adjust_net_info, adjust_data, adjust_cleanup);
-    ConnNetInfo_Destroy(net_info);
-    return c;
+    return HTTP_CreateConnectorEx(net_info.get(),
+                                  flags,
+                                  parse_header,
+                                  adjust_net_info,
+                                  adjust_data,
+                                  adjust_cleanup);
 }
 
 
@@ -410,22 +439,26 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                                            const SSERVICE_Extra* params,
                                            const STimeout*       timeout)
 {
-    SConnNetInfo* net_info = a_net_info ?
-        ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(service);
-    if (!net_info)
-        return 0;
-    x_SetupUserAgent(net_info);
+    AutoPtr<SConnNetInfo>
+        net_info(a_net_info ?
+                 ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(service));
+    if (!net_info.get()) {
+        NCBI_THROW(CIO_Exception, eUnknown,
+                   "CConn_ServiceStream::CConn_ServiceStream(): "
+                   " Out of memory");
+    }
+    x_SetupUserAgent(net_info.get());
     if (timeout && timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
         net_info->timeout = 0;
-    CONNECTOR c = SERVICE_CreateConnectorEx(service, types, net_info, params);
+    CONNECTOR c = SERVICE_CreateConnectorEx(service, types,
+                                            net_info.get(), params);
     if (!c) {
         ERR_POST_X(1,
                    Error << "Cannot connect to service \"" << service << '\"');
     }
-    ConnNetInfo_Destroy(net_info);
     return c;
 }
 
@@ -513,7 +546,7 @@ char* CConn_MemoryStream::ToCStr(void)
     char* str = new char[size + 1];
     if (!str) {
         NCBI_THROW(CIO_Exception, eUnknown,
-                   "CConn_MemoryStream::ToCStr() cannot allocate buffer");
+                   "CConn_MemoryStream::ToCStr():  Out of memory");
     }
     if (sb) {
         streamsize s = sb->sgetn(str, size);

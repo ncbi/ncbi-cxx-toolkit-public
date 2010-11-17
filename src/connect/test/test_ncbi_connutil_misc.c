@@ -262,31 +262,32 @@ static void TEST_ConnNetInfo(void)
 
     assert(ConnNetInfo_ParseURL(net_info, "https://www/path"
                                 "?arg:arg@arg#frag"));
-    assert(       net_info->scheme           == eURL_Https);
-    assert(      *net_info->user                      == 0);
-    assert(      *net_info->pass                      == 0);
-    assert(strcmp(net_info->host, "www")              == 0);
-    assert(       net_info->port                      == 0);
-    assert(strcmp(net_info->path, "/path")            == 0);
-    assert(strcmp(net_info->args, "arg:arg@arg#frag") == 0);
+    assert(       net_info->scheme            == eURL_Https);
+    assert(      *net_info->user                       == 0);
+    assert(      *net_info->pass                       == 0);
+    assert(strcmp(net_info->host, "www")               == 0);
+    assert(       net_info->port                       == 0);
+    assert(strcmp(net_info->path, "/path")             == 0);
+    assert(strcmp(net_info->args, "arg:arg@arg#frag")  == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "/path1?arg1#frag2"));
-    assert(strcmp(net_info->args, "arg1#frag2")       == 0);
+    assert(strcmp(net_info->args, "arg1#frag2")        == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "path0/0"));
-    assert(strcmp(net_info->path, "/path0/0")         == 0);
-    assert(strcmp(net_info->args, "#frag2")           == 0);
+    assert(strcmp(net_info->path, "/path0/0")          == 0);
+    assert(strcmp(net_info->args, "#frag2")            == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "#frag3"));
-    assert(strcmp(net_info->args, "#frag3")           == 0);
+    assert(strcmp(net_info->path, "/path0/0")          == 0);
+    assert(strcmp(net_info->args, "#frag3")            == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "path2"));
-    assert(strcmp(net_info->path, "/path0/path2")     == 0);
-    assert(strcmp(net_info->args, "#frag3")           == 0);
+    assert(strcmp(net_info->path, "/path0/path2")      == 0);
+    assert(strcmp(net_info->args, "#frag3")            == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "/path3?arg3"));
-    assert(strcmp(net_info->path, "/path3")           == 0);
-    assert(strcmp(net_info->args, "arg3#frag3")       == 0);
+    assert(strcmp(net_info->path, "/path3")            == 0);
+    assert(strcmp(net_info->args, "arg3#frag3")        == 0);
 
     strcpy(net_info->user, "user");
     strcpy(net_info->pass, "pass");
@@ -294,6 +295,16 @@ static void TEST_ConnNetInfo(void)
     assert(str);
     assert(strcmp(str, "https://www/path3?arg3#frag3") == 0);
     free(str);
+
+    assert(ConnNetInfo_ParseURL(net_info, "path4/path5?arg4#"));
+    assert(strcmp(net_info->user, "user")              == 0);
+    assert(strcmp(net_info->pass, "pass")              == 0);
+    assert(strcmp(net_info->path, "/path4/path5")      == 0);
+    assert(strcmp(net_info->args, "arg4")              == 0);
+
+    assert(ConnNetInfo_ParseURL(net_info, "../path6"));
+    assert(strcmp(net_info->path, "/path4/../path6")   == 0);
+    assert(strcmp(net_info->args, "")                  == 0);
 
     ConnNetInfo_SetUserHeader(net_info, "");
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
