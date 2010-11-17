@@ -5868,6 +5868,11 @@ CPPFLAGS="$orig_CPPFLAGS"
 ### --------------------------------------------
 
 
+## SRA SDK
+if test -f $real_srcdir/src/internal/sra/sdk/Makefile.in ; then
+   NCBI_FEATURE(SRAT-internal) # For compatibility with Windows builds.
+fi
+
 ## `local_lbsm' support
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
