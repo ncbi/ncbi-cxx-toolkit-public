@@ -55,16 +55,21 @@ class IFormatter;
 class NCBI_FORMAT_EXPORT CGenomeProjectItem : public CFlatItem
 {
 public:
+    typedef string TDBLinkLine;
+    typedef vector< TDBLinkLine > TDBLinkLineVec;
+
     CGenomeProjectItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     int GetProjectNumber(void) const;
+    const TDBLinkLineVec & GetDBLinkLines(void) const;
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     int m_ProjectNumber;
+    TDBLinkLineVec m_DBLinkLines;
 };
 
 

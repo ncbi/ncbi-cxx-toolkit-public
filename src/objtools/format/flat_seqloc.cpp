@@ -479,7 +479,10 @@ void CFlatSeqLoc::x_AddID
 
     CConstRef<CSeq_id> idp;
     try {
-        idp = GetId(id, ctx.GetScope(), eGetId_ForceAcc).GetSeqId();
+        CSeq_id_Handle handle = GetId(id, ctx.GetScope(), eGetId_ForceAcc);
+        if( handle ) {
+            idp = handle.GetSeqId();
+        }
     } catch (CException&) {
         idp.Reset();
     }

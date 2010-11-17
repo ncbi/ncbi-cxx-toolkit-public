@@ -164,6 +164,9 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     case CMolInfo::eTech_est:
         tech = eEST;
         x_AddKeyword("EST");
+        if (is_env_sample) {
+            x_AddKeyword("ENV");
+        }
         break;
         
     case CMolInfo::eTech_sts:
@@ -174,6 +177,9 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     case CMolInfo::eTech_survey:
         tech = eGSS;
         x_AddKeyword("GSS");
+        if (is_env_sample) {
+            x_AddKeyword("ENV");
+        }
         break;
         
     case CMolInfo::eTech_htgs_0:

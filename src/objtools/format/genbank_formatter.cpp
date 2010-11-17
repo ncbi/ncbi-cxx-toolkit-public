@@ -282,6 +282,9 @@ void CGenbankFormatter::FormatGenomeProject(
     CNcbiOstrstream project_line;
     project_line << "Project: " << gp.GetProjectNumber();
     Wrap(l, GetWidth(), "DBLINK", CNcbiOstrstreamToString(project_line));
+    ITERATE( CGenomeProjectItem::TDBLinkLineVec, it, gp.GetDBLinkLines() ) {
+        Wrap(l, GetWidth(), kEmptyStr, *it );
+    }
     text_os.AddParagraph(l, gp.GetObject());
 }
 
@@ -688,7 +691,7 @@ void CGenbankFormatter::FormatComment
  IFlatTextOStream& text_os)
 {
     string strComment( comment.GetComment() ); 
-    replace( strComment.begin(), strComment.end(), '\"', '\'' );
+    ConvertQuotes( strComment );
     bool bHtml = GetContext().GetConfig().DoHTML();
     if ( bHtml ) {
         s_GenerateWeblinks( "http", strComment );

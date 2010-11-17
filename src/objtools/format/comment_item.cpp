@@ -791,24 +791,39 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 }
 
 static 
-string s_GetStrForStructuredComment( const CUser_object::TData &data )
+string s_GetStrForStructuredComment( 
+    const CUser_object::TData &data, 
+    const bool is_first )
 {
-    CNcbiOstrstream result;
-    result << left;
-    result << endl;
-    result << "##Metadata-START##" << endl;
+    const char* prefix = "##Metadata-START##";
+    const char* suffix = "##Metadata-END##";
 
     // First, figure out the longest label so we know how to format it
     int longest_label_len = 1;
     ITERATE( CUser_object::TData, it_for_len, data ) {
         if( (*it_for_len)->GetLabel().IsStr() && 
                 (*it_for_len)->GetData().IsStr() && ! (*it_for_len)->GetData().GetStr().empty() ) {
-            const int label_len = (*it_for_len)->GetLabel().GetStr().length();
-            if( (label_len > longest_label_len) && (label_len <= 45) ) {
-                longest_label_len = label_len;
+            const string &label = (*it_for_len)->GetLabel().GetStr();
+
+            if( label == "StructuredCommentPrefix" ) {
+                prefix = (*it_for_len)->GetData().GetStr().c_str();
+            } else if( label == "StructuredCommentSuffix" ) {
+                suffix = (*it_for_len)->GetData().GetStr().c_str();
+            } else {
+                const int label_len = label.length();
+                if( (label_len > longest_label_len) && (label_len <= 45) ) {
+                    longest_label_len = label_len;
+                }
             }
         }
     }
+
+    CNcbiOstrstream result;
+    result << left;
+    if( ! is_first ) {
+        result << endl;
+    }
+    result << prefix << endl;
 
     ITERATE( CUser_object::TData, it, data ) {
         
@@ -832,7 +847,7 @@ string s_GetStrForStructuredComment( const CUser_object::TData &data )
             " :: " << (*it)->GetData().GetStr() << endl;
     }
 
-    result << "##Metadata-END##" << endl;
+    result << suffix << endl;
     return CNcbiOstrstreamToString(result);
 }
 
@@ -895,7 +910,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
             // make sure the user object is really of type StructuredComment
             const CUser_object::TType &type = userObject.GetType();
             if( type.IsStr() && type.GetStr() == "StructuredComment" ) {
-                str = s_GetStrForStructuredComment( userObject.GetData() );
+                str = s_GetStrForStructuredComment( userObject.GetData(), IsFirst() );
                 SetNeedPeriod( false );
                 can_add_period = false;
             }

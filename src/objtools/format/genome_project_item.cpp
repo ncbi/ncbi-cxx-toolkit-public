@@ -42,7 +42,6 @@
 #include <objtools/format/items/genome_project_item.hpp>
 #include <objtools/format/context.hpp>
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -66,6 +65,11 @@ void CGenomeProjectItem::Format
 int CGenomeProjectItem::GetProjectNumber() const {
     return m_ProjectNumber;
 }
+
+const CGenomeProjectItem::TDBLinkLineVec & CGenomeProjectItem::GetDBLinkLines() const {
+    return m_DBLinkLines;
+}
+
 /***************************************************************************/
 /*                                  PRIVATE                                */
 /***************************************************************************/
@@ -80,14 +84,27 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
             continue;
         }
         string strHeader = uo.GetType().GetStr();
-        if ( 0 == NStr::CompareNocase(uo.GetType().GetStr(), "GenomeProjectsDB")) {
+        if ( NStr::EqualNocase(strHeader, "GenomeProjectsDB")) {
             ITERATE (CUser_object::TData, uf_it, uo.GetData()) {
                 const CUser_field& field = **uf_it;
                 if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
                     const string& label = field.GetLabel().GetStr();
-                    if ( 0 == NStr::CompareNocase(label, "ProjectID")) {
+                    if ( NStr::EqualNocase(label, "ProjectID")) {
                         m_ProjectNumber = field.GetData().GetInt();
                     }
+                }
+            }
+        } else if( NStr::EqualNocase( strHeader, "DBLink" ) ) {
+            ITERATE (CUser_object::TData, uf_it, uo.GetData()) {
+                const CUser_field& field = **uf_it;
+                if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && 
+                     field.CanGetData() && field.GetData().IsStrs() ) {
+                        const string& label = field.GetLabel().GetStr();
+                        if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
+                            const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
+                            m_DBLinkLines.push_back( "Sequence Read Archive: " + 
+                                NStr::Join( field.GetData().GetStrs(), ", " ) );
+                        }
                 }
             }
         }
