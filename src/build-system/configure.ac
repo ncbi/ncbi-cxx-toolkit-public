@@ -6112,17 +6112,12 @@ fi
 
 ## Genome Workbench
 
-if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
+if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    reason=""
    sep=
    if test -d "$real_srcdir/src/gui/packages"; then
      if test "$with_wxwidgets" = "no"; then
        reason="$reason${sep}wxWidgets"
-       sep=", "
-     fi
-   elif test -d "$real_srcdir/src/gui/plugins"; then
-     if test "$with_fltk" = "no"; then
-       reason="$reason${sep}FLTK"
        sep=", "
      fi
    else
