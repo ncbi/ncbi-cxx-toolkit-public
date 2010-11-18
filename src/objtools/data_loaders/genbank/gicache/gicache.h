@@ -20,9 +20,10 @@ int         GICache_PopulateAccessions(char *server, const char *cache_prefix,
                                        const char *temptable);
 
 /* Initializes the cache. If cache_prefix argument is not provided, default name
- * is used. If local cache is not available, use default path and prefix. 
+ * is used. If local cache is not available, use default path and prefix.
+ * Return value: 0 on success, 1 on failure. 
  */
-void        GICache_ReadData(const char *cache_prefix);
+int         GICache_ReadData(const char *cache_prefix);
 /* Remaps cache files */
 void        GICache_ReMap(int delay_in_sec);
 /* Retrieves accession.version by gi.
