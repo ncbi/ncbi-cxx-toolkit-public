@@ -1851,28 +1851,24 @@ CBlastAppArgs::SetCommandLine()
 CRef<CBlastOptionsHandle>
 CBlastAppArgs::SetOptions(const CArgs& args)
 {
-    // We're recovering from a saved strategy, so we need to still extract
+    // We're recovering from a saved strategy or combining
+    // CBlastOptions/CBlastOptionsHandle with command line options (in GBench,
+    // see GB-1116), so we need to still extract
     // certain options from the command line, include overriding query
     // and/or database
     if (m_OptsHandle.NotEmpty()) {
         CBlastOptions& opts = m_OptsHandle->SetOptions();
-        // invoke ExtractAlgorithmOptions on certain argument classes
-        m_QueryOptsArgs->ExtractAlgorithmOptions(args, opts);
-        m_StdCmdLineArgs->ExtractAlgorithmOptions(args, opts);
-        m_RemoteArgs->ExtractAlgorithmOptions(args, opts);
-        m_DebugArgs->ExtractAlgorithmOptions(args, opts);
-        m_FormattingArgs->ExtractAlgorithmOptions(args, opts);
-        if (CBlastDatabaseArgs::HasBeenSet(args)) {
-            m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
-        }
-        if (CMbIndexArgs::HasBeenSet(args)) {
-            NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
-                if (dynamic_cast<CMbIndexArgs*>(arg->GetPointer()) != NULL) {
-                    (*arg)->ExtractAlgorithmOptions(args, opts);
-                }
+        const bool mbidxargs_set = CMbIndexArgs::HasBeenSet(args);
+        const bool dbargs_set = CBlastDatabaseArgs::HasBeenSet(args);
+        NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
+            if (dynamic_cast<CMbIndexArgs*>(&**arg) && mbidxargs_set) {
+                (*arg)->ExtractAlgorithmOptions(args, opts);
+            } else if (dynamic_cast<CBlastDatabaseArgs*>(&**arg) && dbargs_set) {
+                m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
+            } else {
+                (*arg)->ExtractAlgorithmOptions(args, opts);
             }
         }
-        m_HspFilteringArgs->ExtractAlgorithmOptions(args, opts);
         m_IsUngapped = !opts.GetGappedMode();
         try { m_OptsHandle->Validate(); }
         catch (const CBlastException& e) {
