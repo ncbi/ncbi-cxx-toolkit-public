@@ -400,7 +400,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,1,1) );
+    SetVersion( CVersionInfo(3,1,2) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1538,6 +1538,10 @@ void CProjBulderApp::ParseArguments(void)
     m_Subtree        = args["subtree"].AsString();
     if (m_Subtree == "\"\"") {
         m_Subtree = "";
+    }
+    if (CDirEntry::IsAbsolutePath(m_Subtree)) {
+        m_Subtree = CDirEntry::NormalizePath(
+                        CDirEntry::CreateRelativePath(m_Root, m_Subtree));
     }
     m_Solution       = CDirEntry::NormalizePath(args["solution"].AsString());
     if (m_Solution == "\"\"") {
