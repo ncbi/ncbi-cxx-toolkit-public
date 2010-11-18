@@ -4282,7 +4282,8 @@ static EIO_Status s_CreateListening(const char*    path,
          *    same address being in-use by a living process (if SOCK_STREAM).
          * 3) MS-Win treats SO_REUSEADDR completely differently in (as always)
          *    their own twisted way:  it *allows* to bind() to an already
-         *    listening socket, which is why we jump the hoops above.
+         *    listening socket, which is why we jump the hoops above (also,
+         *    note that SO_EXCLUSIVEADDRUSE == ~SO_REUSEADDR on MS-Win).
          */
         if (!s_SetReuseAddress(x_lsock, 1/*true*/))
             failed = "REUSEADDR";
