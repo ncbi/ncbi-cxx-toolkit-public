@@ -1,0 +1,13 @@
+#
+# Makefile:  Makefile.hgvs_parser.lib
+#
+#
+
+LIB = hgvs
+SRC = hgvs_parser
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
+REQUIRES = Boost.Spirit
+
+WATCHERS = astashya

@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+##################################
+
+APP_PROJ = test_hgvs_parser
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
