@@ -1316,7 +1316,6 @@ static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 static int/*bool*/ s_SetReuseAddress(TSOCK_Handle x_sock, int/*bool*/ on_off)
 {
 #if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
-    /* setsockopt() is not implemented for MAC (in MIT socket emulation lib) */
 #  ifdef NCBI_OS_MSWIN
     BOOL reuse_addr = on_off ? TRUE : FALSE;
 #  else
@@ -1325,6 +1324,7 @@ static int/*bool*/ s_SetReuseAddress(TSOCK_Handle x_sock, int/*bool*/ on_off)
     return setsockopt(x_sock, SOL_SOCKET, SO_REUSEADDR, 
                       (char*) &reuse_addr, sizeof(reuse_addr)) == 0;
 #else
+    /* setsockopt() is not implemented for MAC (in MIT socket emulation lib) */
     return 1;
 #endif /*NCBI_OS_UNIX || NCBI_OS_MSWIN*/
 }
@@ -2495,7 +2495,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 /* Read as many as "size" bytes of data from the socket.  Return eIO_Success
  * if at least one byte has been read or EOF has been reached (0 bytes read).
  * Otherwise (nothing read), return an error code to indicate the problem.
- * NOTE: This call is for stream sockets only.  Also, it can return the
+ * NOTE:  This call is for stream sockets only.  Also, it can return the
  * above mentioned EOF indicator only once, with all successive calls to
  * return an error (usually, eIO_Closed).
  */
@@ -4264,15 +4264,29 @@ static EIO_Status s_CreateListening(const char*    path,
         return eIO_Unknown;
     }
 
+
     if (!path) {
+        const char* failed = 0;
+#if defined(NCBI_OS_MSWIN)  &&  defined(SO_EXCLUSIVEADDRUSE)
+        BOOL excl = TRUE;
+        if (setsockopt(x_lsock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+                       (const char*) &excl, sizeof(excl)) != 0) {
+            failed = "EXCLUSIVEADDRUSE";
+        }
+#endif /*NCBI_OS_MSWIN && SO_EXCLUSIVEADDRUSE*/
         /*
          * It was confirmed(?) that at least on Solaris 2.5 this precaution:
          * 1) makes the address released immediately upon the process
          *    termination;
          * 2) still issues EADDRINUSE error on the attempt to bind() to the
          *    same address being in-use by a living process (if SOCK_STREAM).
+         * 3) MS-Win treats SO_REUSEADDR completely differently in (as always)
+         *    their own twisted way:  it *allows* to bind() to an already
+         *    listening socket, which is why we jump the hoops above.
          */
-        if (!s_SetReuseAddress(x_lsock, 1/*true*/)) {
+        if (!failed  &&  !s_SetReuseAddress(x_lsock, 1/*true*/))
+            failed = "REUSEADDR";
+        if (failed) {
             x_error = SOCK_ERRNO;
             if (port)
                 sprintf(_id, "%hu", port);
@@ -4281,8 +4295,8 @@ static EIO_Status s_CreateListening(const char*    path,
             CORE_LOGF_ERRNO_EXX(35, eLOG_Error,
                                 x_error, SOCK_STRERROR(x_error),
                                 ("LSOCK#%u[%u]@:%s: [LSOCK::Create] "
-                                 " Failed setsockopt(REUSEADDR)",
-                                 x_id, (unsigned int) x_lsock, _id));
+                                 " Failed setsockopt(%s)", x_id,
+                                 (unsigned int) x_lsock, _id, failed));
             SOCK_CLOSE(x_lsock);
             return eIO_Unknown;
         }
