@@ -320,11 +320,24 @@ public:
     }
     virtual string AdditionalOptions(void) const
     {
+#if 0
 	    return m_AdditionalOptions + " " +
                GetLinkerOpt(m_MsvcMetaMakefile,
                             m_MsvcProjectMakefile,
                             "AdditionalOptions", 
                             m_Config );
+#else
+        string options(m_AdditionalOptions);
+        string add = m_MsvcMetaMakefile.GetLinkerOpt("AdditionalOptions", m_Config);
+        if (!add.empty()) {
+            options += " " + add;
+        }
+        add = m_MsvcProjectMakefile.GetLinkerOpt("AdditionalOptions", m_Config);
+        if (!add.empty()) {
+            options += " " + add;
+        }
+        return options;
+#endif
     }
     virtual string OutputFile(void) const
     {
