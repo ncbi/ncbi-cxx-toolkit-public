@@ -4267,13 +4267,13 @@ static EIO_Status s_CreateListening(const char*    path,
 
     if (!path) {
         const char* failed = 0;
-#if defined(NCBI_OS_MSWIN)  &&  defined(SO_EXCLUSIVEADDRUSE)
+#if    defined(NCBI_OS_MSWIN)  &&  defined(SO_EXCLUSIVEADDRUSE)
         BOOL excl = TRUE;
         if (setsockopt(x_lsock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
                        (const char*) &excl, sizeof(excl)) != 0) {
             failed = "EXCLUSIVEADDRUSE";
         }
-#endif /*NCBI_OS_MSWIN && SO_EXCLUSIVEADDRUSE*/
+#elif !defined(NCBI_OS_MSWIN)
         /*
          * It was confirmed(?) that at least on Solaris 2.5 this precaution:
          * 1) makes the address released immediately upon the process
@@ -4284,8 +4284,9 @@ static EIO_Status s_CreateListening(const char*    path,
          *    their own twisted way:  it *allows* to bind() to an already
          *    listening socket, which is why we jump the hoops above.
          */
-        if (!failed  &&  !s_SetReuseAddress(x_lsock, 1/*true*/))
+        if (!s_SetReuseAddress(x_lsock, 1/*true*/))
             failed = "REUSEADDR";
+#endif /*NCBI_OS_MSWIN && SO_EXCLUSIVEADDRUSE*/
         if (failed) {
             x_error = SOCK_ERRNO;
             if (port)
