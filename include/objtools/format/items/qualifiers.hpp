@@ -109,9 +109,10 @@ class NCBI_FORMAT_EXPORT IFlatQVal : public CObject
 {
 public:
     enum EFlags {
-        fIsNote      = 0x1,
-        fIsSource    = 0x2,
-        fAddPeriod   = 0x4
+        fIsNote         = 0x1,
+        fIsSource       = 0x2,
+        fAddPeriod      = 0x4,
+        fPrependNewline = 0x8
     };
     typedef int TFlags; // binary OR of EFlags
 
@@ -624,9 +625,12 @@ public:
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
+    const CProt_ref::TName& GetValue(void) const { return m_Value; }
+    CProt_ref::TName& SetValue(void) { return m_Value; }
+
 private:
-    const CProt_ref::TName& m_Value;
-    const string&           m_Gene; 
+    CProt_ref::TName m_Value;
+    string           m_Gene; 
 };
 
 // ...

@@ -833,8 +833,10 @@ static void s_SplitCommaSeparatedStringInParens( vector<string> &output_vec, con
 }
 
 static const string sc_ValidExceptionText[] = {
-  "RNA editing",
-  "reasons given in citation"
+    "RNA editing",
+    "annotated by transcript or proteomic data",
+    "rearrangement required for product",
+    "reasons given in citation"
 };
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegatExceptText, sc_ValidExceptionText);
 
@@ -845,20 +847,21 @@ static bool s_IsValidExceptionText(const string& text)
 
 
 static const string sc_ValidRefSeqExceptionText[] = {
-    "RNA editing",
+    "adjusted for low-quality genome",
     "alternative processing",
     "alternative start codon",
     "artificial frameshift",
+    "dicistronic gene",
     "mismatches in transcription",
     "mismatches in translation",
     "modified codon recognition",
     "nonconsensus splice site",
-    "rearrangement required for product",
-    "reasons given in citation",
-    "ribosomal slippage",
-    "trans-splicing",
+    "transcribed product replaced",
+    "transcribed pseudogene",
+    "translated product replaced",
     "unclassified transcription discrepancy",
-    "unclassified translation discrepancy"
+    "unclassified translation discrepancy",
+    "unextendable partial coding region"
 };
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegalRefSeqExceptText, sc_ValidRefSeqExceptionText);
 
@@ -3342,6 +3345,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(codon),
         DO_IMPORT(compare),
         DO_IMPORT(cons_splice),
+        DO_IMPORT(cyt_map),
         DO_IMPORT(direction),
         DO_IMPORT(EC_number),
         DO_IMPORT(estimated_length),
@@ -3349,7 +3353,9 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(experiment),
         DO_IMPORT(frequency),
         DO_IMPORT(function),
+        DO_IMPORT(gen_map),
         DO_IMPORT(inference),
+        DO_IMPORT(insertion_seq),
         DO_IMPORT(label),
         DO_IMPORT(map),
         DO_IMPORT(mobile_element),
@@ -3363,6 +3369,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(PCR_conditions),
         DO_IMPORT(phenotype),
         DO_IMPORT(product),
+        DO_IMPORT(rad_map),
         DO_IMPORT(replace),
         DO_IMPORT(ribosomal_slippage),
         DO_IMPORT(rpt_family),
@@ -3374,6 +3381,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(standard_name),
         DO_IMPORT(tag_peptide),
         DO_IMPORT(trans_splicing),
+        DO_IMPORT(transposon),
         DO_IMPORT(UniProtKB_evidence),
         DO_IMPORT(usedin)
 #undef DO_IMPORT
@@ -3696,7 +3704,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(frequency);
     DO_QUAL(EC_number);
     x_FormatQual(eFQ_gene_map, "map", qvec);
-    // cyt_map
+    x_FormatQual(eFQ_cyt_map,  "map", qvec);
     // gen_map
     // rad_map
     DO_QUAL(estimated_length);
@@ -3788,6 +3796,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     CFlatFeature::TQuals qvec;
 
 #define DO_NOTE(x) x_FormatNoteQual(eFQ_##x, #x, qvec)
+#define DO_NOTE_PREPEND_NEWLINE(x) x_FormatNoteQual(eFQ_##x, #x, qvec, IFlatQVal::fPrependNewline )
     x_FormatNoteQual(eFQ_transcript_id_note, "tscpt_id_note", qvec);
     DO_NOTE(gene_desc);
 
@@ -3803,7 +3812,6 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE(prot_conflict);
     DO_NOTE(prot_missing);
     DO_NOTE(seqfeat_note);
-    DO_NOTE(exception_note);
     DO_NOTE(region);
 //    DO_NOTE(selenocysteine_note);
     DO_NOTE(prot_names);
@@ -3815,7 +3823,9 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE(modelev);
 //     DO_NOTE(cdd_definition);
 //    DO_NOTE(tag_peptide);
+    DO_NOTE_PREPEND_NEWLINE(exception_note);
 #undef DO_NOTE
+#undef DO_NOTE_PREPEND_NEWLINE
 
     string notestr;
     string suffix = kEmptyStr;
@@ -3960,6 +3970,15 @@ CFlatStringListQVal* CFeatureItem::x_GetStringListQual(EFeatureQualifier slot) c
     return dynamic_cast<CFlatStringListQVal*>(qual);
 }
 
+CFlatProductNamesQVal * CFeatureItem::x_GetFlatProductNamesQual(EFeatureQualifier slot) const
+{
+    IFlatQVal* qual = 0;
+    if (x_HasQual(slot)) {
+        qual = const_cast<IFlatQVal*>(&*m_Quals.Find(slot)->second);
+    }
+    return dynamic_cast<CFlatProductNamesQVal*>(qual);
+}
+
 // maps each valid mobile_element_type prefix to whether it
 // must have more info after the prefix
 typedef pair <const char *, bool> TMobileElemTypeKey;
@@ -4010,6 +4029,20 @@ bool s_ValidateMobileElementType( const string & mobile_element_type_value )
     return true; 
 }
 
+class CPredInString
+{
+public:
+    explicit CPredInString( const string &comparisonString )
+        : m_ComparisonString( comparisonString ) 
+    { }
+
+    bool operator()( const string &arg ) {
+        return NStr::Find( m_ComparisonString, arg ) != NPOS;
+    }
+private:
+    const string &m_ComparisonString;
+};
+
 void CFeatureItem::x_CleanQuals(
     const CGene_ref* gene_ref )
 { 
@@ -4025,7 +4058,7 @@ void CFeatureItem::x_CleanQuals(
         x_DropIllegalQuals();
     }
 
-    CFlatStringListQVal* prod_names = x_GetStringListQual(eFQ_prot_names);
+    CFlatProductNamesQVal * prot_names = x_GetFlatProductNamesQual(eFQ_prot_names);
     const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
     const CFlatStringQVal* prot_desc = x_GetStringQual(eFQ_prot_desc);
     const CFlatStringQVal* standard_name = x_GetStringQual(eFQ_standard_name);
@@ -4049,16 +4082,17 @@ void CFeatureItem::x_CleanQuals(
         }
 
         // remove prot name if equals gene
-        if (prod_names != NULL) {
-            NON_CONST_ITERATE(CFlatStringListQVal::TValue, it, prod_names->SetValue()) {
-                if (NStr::Equal(gene_name, *it)) {
-                    it = prod_names->SetValue().erase(it);
-                    it--;
-                }
-            }
-            if (prod_names->GetValue().empty()) {
+        if (prot_names != NULL) {
+
+            CProt_ref::TName::iterator remove_start = prot_names->SetValue().begin();
+            ++remove_start; // The "++" is because the first one shouldn't be erased since it's used for the product
+            CProt_ref::TName::iterator new_end = 
+                remove( remove_start, prot_names->SetValue().end(), gene_name );
+            prot_names->SetValue().erase( new_end, prot_names->SetValue().end() );
+                
+            if (prot_names->GetValue().empty()) {
                 x_RemoveQuals(eFQ_prot_names);
-                prod_names = NULL;
+                prot_names = NULL;
             }
         }
     }
@@ -4068,16 +4102,17 @@ void CFeatureItem::x_CleanQuals(
         const string& pdesc = prot_desc->GetValue();
 
         // remove prot name if in prot_desc
-        if (prod_names != NULL) {
-            NON_CONST_ITERATE(CFlatStringListQVal::TValue, it, prod_names->SetValue()) {
-                if (NStr::Find(pdesc, *it) != NPOS) {
-                    it = prod_names->SetValue().erase(it);
-                    it--;
-                }
-            }
-            if (prod_names->GetValue().empty()) {
+        if (prot_names != NULL) {
+            CProt_ref::TName::iterator remove_start = prot_names->SetValue().begin();
+            ++remove_start; // The "++" is because the first one shouldn't be erased since it's used for the product
+            CProt_ref::TName::iterator new_end = 
+                remove_if( remove_start, prot_names->SetValue().end(),
+                    CPredInString(pdesc) );
+            prot_names->SetValue().erase( new_end, prot_names->SetValue().end() );
+
+            if (prot_names->GetValue().empty()) {
                 x_RemoveQuals(eFQ_prot_names);
-                prod_names = NULL;
+                prot_names = NULL;
             }
         }
         // remove protein description that equals the cds product, case sensitive
@@ -4203,6 +4238,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_codon_start, CSeqFeatData::eQual_codon_start),
     TQualPair(eFQ_compare, CSeqFeatData::eQual_compare),
     TQualPair(eFQ_cons_splice, CSeqFeatData::eQual_cons_splice),
+    TQualPair(eFQ_cyt_map, CSeqFeatData::eQual_map),
     TQualPair(eFQ_db_xref, CSeqFeatData::eQual_db_xref),
     TQualPair(eFQ_derived_from, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_direction, CSeqFeatData::eQual_direction),

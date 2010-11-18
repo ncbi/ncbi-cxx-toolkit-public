@@ -238,6 +238,7 @@ protected:
     void x_CleanQuals( const CGene_ref* );
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
+    CFlatProductNamesQVal * x_GetFlatProductNamesQual(EFeatureQualifier slot) const;
     // feature table quals
     typedef vector< CRef<CFormatQual> > TQualVec;
     void x_AddFTableQuals(CBioseqContext& ctx);

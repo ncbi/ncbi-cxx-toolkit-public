@@ -394,7 +394,11 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
         ConvertQuotes( m_Value );
     }
 
-    TFlatQual qual = x_AddFQ(q, (is_note ? "note" : name), m_Value, m_Style);
+    const bool prependNewline = (flags & fPrependNewline) && ! q.empty();
+    TFlatQual qual = x_AddFQ(q, (is_note ? "note" : name), 
+        (  prependNewline ? "\n" + m_Value : m_Value ), 
+        m_Style);
+    
     if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
     }
