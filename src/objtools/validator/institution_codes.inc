@@ -1920,6 +1920,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GNHM	s	Goulandris Natural History Museum",
 "GNHNA	s	Gallery of Natural History and Native Art",
 "GNHS	s	Guildford Natural History Society",
+"GNM<SWE>	s	Gothenburg Museum of Natural History (Goteborgs Naturhistoriska Museum)",
 "GNU	s	Guangxi Normal University, Biology Department",
 "GNUB	s	Guizhou Normal University, Biology Department",
 "GNUC	s	Gyeongsang National University, Biology Department",
