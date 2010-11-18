@@ -2419,15 +2419,12 @@ START_SUBTYPE(mobile_element)
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(insertion_seq);
-    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(mobile_element_type);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
-    ADD_QUAL(rpt_unit);
-    ADD_QUAL(rpt_unit_seq);
     ADD_QUAL(satellite);
     ADD_QUAL(standard_name);
     ADD_QUAL(transposon);
