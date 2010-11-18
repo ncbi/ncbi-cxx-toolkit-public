@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbistre.hpp>
 #include <db/sqlite/sqlitewrapp.hpp>
 #include <objtools/error_codes.hpp>
 #include <objtools/lds2/lds2_expt.hpp>
@@ -83,7 +84,14 @@ const char* kLDS2_CreateDB[] = {
     "create table `seq_id` (" \
     "`lds_id` integer primary key on conflict abort autoincrement," \
     "`txt_id` varchar(100) not null," \
-    "`int_id` integer(8) default null);",
+    "`int_id` integer(8) default null," \
+    "`blob_size` integer(8)," \
+    "`blob_data` blob not null);",
+    // seq-id vs lds-id
+    // index for reverse lookup, prevents duplicate ids
+    // must exist during indexing to improve performance
+    "create unique index if not exists `idx_int_id` on `seq_id` (`int_id`);",
+    "create unique index if not exists `idx_txt_id` on `seq_id` (`txt_id`);",
 
     // bioseqs by blob
     "create table `bioseq` (" \
@@ -139,42 +147,37 @@ const char* kLDS2_CreateDB[] = {
 const char* kLDS2_CreateDBIdx[] = {
     // files
     // index files by name, prevents duplicate names
-    "create unique index `idx_filename` on `file` (`file_name`);",
+    "create unique index if not exists `idx_filename` on `file` (`file_name`);",
 
     // chunks
     // index by stream_pos
-    "create index `idx_stream_pos` on `chunk` (`stream_pos`);",
-
-    // seq-id vs lds-id
-    // index for reverse lookup, prevents duplicate ids
-    "create unique index `idx_int_id` on `seq_id` (`int_id`);",
-    "create unique index `idx_txt_id` on `seq_id` (`txt_id`);",
+    "create index if not exists `idx_stream_pos` on `chunk` (`stream_pos`);",
 
     // bioseqs by blob
     // reverse index
-    "create index `idx_blob_id` on `bioseq` (`blob_id`);",
+    "create index if not exists `idx_blob_id` on `bioseq` (`blob_id`);",
 
     // bioseqs by lds_id
     // index by bioseq_id
-    "create index `idx_bioseq_id` on `bioseq_id` (`bioseq_id`);",
+    "create index if not exists `idx_bioseq_id` on `bioseq_id` (`bioseq_id`);",
     // index by lds_id
-    "create index `idx_bioseq_lds_id` on `bioseq_id` (`lds_id`);",
+    "create index if not exists `idx_bioseq_lds_id` on `bioseq_id` (`lds_id`);",
 
     // blobs
     // index by file_id
-    "create index `idx_blob_file_id` on `blob` (`file_id`);",
+    "create index if not exists `idx_blob_file_id` on `blob` (`file_id`);",
 
     // annotations
     // index by blob_id
-    "create index `idx_annot_blob_id` on `annot` (`blob_id`);",
+    "create index if not exists `idx_annot_blob_id` on `annot` (`blob_id`);",
 
     // annotations by lds_id
     // index by annot_id
-    "create index `idx_annot_id` on `annot_id` (`annot_id`);",
+    "create index if not exists `idx_annot_id` on `annot_id` (`annot_id`);",
     // index by lds_id
-    "create index `idx_annot_lds_id` on `annot_id` (`lds_id`);",
+    "create index if not exists `idx_annot_lds_id` on `annot_id` (`lds_id`);",
     // index 'external' column
-    "create index `idx_external` on `annot_id` (`external`);"
+    "create index if not exists `idx_external` on `annot_id` (`external`);"
 };
 
 
@@ -182,8 +185,6 @@ const char* kLDS2_CreateDBIdx[] = {
 const char* kLDS2_DropDBIdx[] = {
     "drop index if exists `idx_filename`;",
     "drop index if exists `idx_stream_pos`;",
-    "drop index if exists `idx_int_id`;",
-    "drop index if exists `idx_txt_id`;",
     "drop index if exists `idx_blob_id`;",
     "drop index if exists `idx_bioseq_id`;",
     "drop index if exists `idx_bioseq_lds_id`;",
@@ -258,8 +259,9 @@ static const char* s_LDS2_SQL[] = {
     "insert into `file` "
     "(`file_name`, `file_format`, `file_handler`, `file_size`, "
     "`file_time`, `file_crc`) values (?1, ?2, ?3, ?4, ?5, ?6);",
-    // eSt_AddLdsId
-    "insert into `seq_id` (`txt_id`, `int_id`) values (?1, ?2);",
+    // eSt_AddLdsSeqId
+    "insert into `seq_id` (`txt_id`, `int_id`, `blob_size`, `blob_data`) "
+    "values (?1, ?2, ?3, ?4);",
     // eSt_AddBlob
     "insert into `blob` (`blob_type`, `file_id`, `file_pos`) "
     "values (?1, ?2, ?3);",
@@ -284,7 +286,13 @@ static const char* s_LDS2_SQL[] = {
     // eSt_FindChunk
     "select `raw_pos`, `stream_pos`, `data_size`, `data` from `chunk` "
     "where `file_id`=?1 and `stream_pos`<=?2 order by `stream_pos` desc "
-    "limit 1;"
+    "limit 1;",
+
+    // eSt_GetSeq_idForLdsSeqId
+    "select `blob_size`, `blob_data` from `seq_id` where `lds_id`=?1;",
+    // eSt_GetSeq_id_Synonyms
+    "select `blob_size`, `blob_data` from `seq_id` inner join `bioseq_id` "
+    "using(`lds_id`) where `bioseq_id`=?1;"
 };
 
 
@@ -334,7 +342,7 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
             CSQLITE_Connection::fExternalMT |
             CSQLITE_Connection::eDefaultFlags |
             CSQLITE_Connection::fVacuumManual |
-            CSQLITE_Connection::fJournalMemory |
+            CSQLITE_Connection::fJournalOff |
             CSQLITE_Connection::fSyncOff
             ));
     }
@@ -481,6 +489,12 @@ Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id)
         // HACK: reset GI to null if not available.
         st->Bind(2, (void*)NULL, 0);
     }
+    CNcbiOstrstream out;
+    out << MSerial_AsnBinary << *id.GetSeqId();
+    string buf = CNcbiOstrstreamToString(out);
+    st->Bind(3, buf.size());
+    st->Bind(4, buf.data(), buf.size());
+
     st->Execute();
     Int8 ret = st->GetLastInsertedRowid();
     st->Reset();
@@ -518,7 +532,6 @@ Int8 CLDS2_Database::AddBioseq(Int8 blob_id, const TSeqIdSet& ids)
     CSQLITE_Statement& st1 = x_GetStatement(eSt_AddBioseqToBlob);
 
     // Create new bioseq
-    st1.SetSql("insert into `bioseq` (`blob_id`) values (?1);");
     st1.Bind(1, blob_id);
     st1.Execute();
     Int8 bioseq_id = st1.GetLastInsertedRowid();
@@ -612,6 +625,25 @@ void CLDS2_Database::GetSynonyms(const CSeq_id_Handle& idh, TLdsIdSet& ids)
     st.Bind(1, bioseq_id);
     while ( st.Step() ) {
         ids.insert(st.GetInt8(0));
+    }
+    st.Reset();
+}
+
+
+void CLDS2_Database::GetSynonyms(const CSeq_id_Handle& idh, TSeqIds& ids)
+{
+    Int8 bioseq_id = GetBioseqId(idh);
+    if (bioseq_id <= 0) {
+        // No such id or conflict
+        return;
+    }
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetSeq_idSynonyms);
+    st.Bind(1, bioseq_id);
+    while ( st.Step() ) {
+        CRef<CSeq_id> id = x_BlobToSeq_id(st, 0, 1);
+        if ( id ) {
+            ids.push_back(CSeq_id_Handle::GetHandle(*id));
+        }
     }
     st.Reset();
 }
@@ -805,31 +837,53 @@ bool CLDS2_Database::FindChunk(const SLDS2_File& file_info,
 }
 
 
+CRef<CSeq_id> CLDS2_Database::x_BlobToSeq_id(CSQLITE_Statement& st,
+                                             int size_idx,
+                                             int data_idx) const
+{
+    CRef<CSeq_id> ret;
+    size_t sz = st.GetInt(size_idx);
+    if (sz != 0) {
+        ret.Reset(new CSeq_id);
+        AutoPtr<char, ArrayDeleter<char> > data(new char[sz]);
+        st.GetBlob(data_idx, data.get(), sz);
+        CNcbiIstrstream in(data.get(), sz);
+        ret.Reset(new CSeq_id);
+        in >> MSerial_AsnBinary >> *ret;
+    }
+    return ret;
+}
+
+
+CRef<CSeq_id> CLDS2_Database::GetSeq_idForLdsSeqId(int lds_id)
+{
+    CRef<CSeq_id> id;
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetSeq_idForLdsSeqId);
+    st.Bind(1, lds_id);
+    if ( st.Step() ) {
+        id = x_BlobToSeq_id(st, 0, 1);
+    }
+    st.Reset();
+    return id;
+}
+
+
 void CLDS2_Database::BeginUpdate(void)
 {
-    x_ExecuteSqls(kLDS2_DropDBIdx,
-        sizeof(kLDS2_DropDBIdx)/sizeof(kLDS2_DropDBIdx[0]));
     CSQLITE_Connection& conn = x_GetConn();
     conn.ExecuteSql("begin transaction;");
+    x_ExecuteSqls(kLDS2_DropDBIdx,
+        sizeof(kLDS2_DropDBIdx)/sizeof(kLDS2_DropDBIdx[0]));
 }
 
 
 void CLDS2_Database::EndUpdate(void)
 {
     CSQLITE_Connection& conn = x_GetConn();
+    x_ExecuteSqls(kLDS2_CreateDBIdx,
+        sizeof(kLDS2_CreateDBIdx)/sizeof(kLDS2_CreateDBIdx[0]));
     conn.ExecuteSql("end transaction;");
-    x_ExecuteSqls(kLDS2_CreateDBIdx,
-        sizeof(kLDS2_CreateDBIdx)/sizeof(kLDS2_CreateDBIdx[0]));
     Analyze();
-}
-
-
-void CLDS2_Database::CancelUpdate(void)
-{
-    CSQLITE_Connection& conn = x_GetConn();
-    conn.ExecuteSql("rollback transaction;");
-    x_ExecuteSqls(kLDS2_CreateDBIdx,
-        sizeof(kLDS2_CreateDBIdx)/sizeof(kLDS2_CreateDBIdx[0]));
 }
 
 

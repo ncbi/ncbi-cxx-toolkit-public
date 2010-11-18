@@ -265,11 +265,17 @@ public:
 
     /// List of ids (blob_id, bioseq_id, lds_id etc.)
     typedef set<Int8> TLdsIdSet;
+    /// List of seq-ids.
+    typedef vector<CSeq_id_Handle> TSeqIds;
 
     /// Get all lds-id synonyms for the seq-id (including lds-id
     /// for the seq-id itself). Return empty set if there is a
     /// conflict.
     void GetSynonyms(const CSeq_id_Handle& idh, TLdsIdSet& ids);
+
+    /// Get all synonyms for the seq-id (including the original seq-id).
+    /// Return empty set on conflict.
+    void GetSynonyms(const CSeq_id_Handle& idh, TSeqIds& ids);
 
     /// Find blob containing the requested bioseq. Return empty info if
     /// the seq-id is unknown or there are multiple bioseqs with the same id.
@@ -311,7 +317,14 @@ public:
                    SLDS2_Chunk&      chunk_info,
                    Int8              stream_pos);
 
-    /// Prepare to update the DB. Starts a new transaction.
+    /// Get seq-id for the given lds-id.
+    CRef<CSeq_id> GetSeq_idForLdsSeqId(int lds_id);
+
+    /// Prepare to update the DB. Drop most indexes.
+    /// To rebuild the indexes call Analyze.
+    void PrepareUpdate(void);
+
+    /// Start update transaction.
     void BeginUpdate(void);
 
     /// End update transaction, commit the changes.
@@ -337,9 +350,14 @@ private:
     void x_ExecuteSqls(const char* sqls[], size_t len);
     // Initialize 'get bioseqs' sql statement for the id handle.
     CSQLITE_Statement& x_InitGetBioseqsSql(const CSeq_id_Handle& idh) const;
+
     // Return lds-id for the seq-id. Adds new lds-id if necessary.
     Int8 x_GetLdsSeqId(const CSeq_id_Handle& id);
 
+    // Load seq-id from the blob.
+    CRef<CSeq_id> x_BlobToSeq_id(CSQLITE_Statement& st,
+                                 int size_idx,
+                                 int data_idx) const;
     // Prepared statements
     enum EStatement {
         eSt_GetFileNames = 0,
@@ -368,6 +386,8 @@ private:
         eSt_DeleteFileById,
         eSt_AddChunk,
         eSt_FindChunk,
+        eSt_GetSeq_idForLdsSeqId,
+        eSt_GetSeq_idSynonyms,
         eSt_StatementsCount
     };
     typedef vector< AutoPtr<CSQLITE_Statement> > TStatements;

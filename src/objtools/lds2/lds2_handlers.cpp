@@ -202,7 +202,7 @@ CLDS2_UrlHandler_GZipFile::OpenStream(const SLDS2_File& file_info,
         *in.release(),
         new CZipStreamDecompressor(CZipCompression::fGZip),
         CCompressionStream::fOwnAll));
-    zin->ignore(stream_pos);
+    zin->ignore(NcbiInt8ToStreampos(stream_pos));
     return zin.release();
 }
 
