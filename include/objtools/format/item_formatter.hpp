@@ -140,7 +140,7 @@ protected:
     virtual list<string>& Wrap(list<string>& l, SIZE_TYPE width, 
         const string& tag, const string& body, EPadContext where = ePara, bool htmlaware = false) const;
     virtual list<string>& Wrap(list<string>& l, const string& tag,
-        const string& body, EPadContext where = ePara, bool htmlaware = false) const;
+        const string& body, EPadContext where = ePara, bool htmlaware = false, int internalIndent = 0 ) const;
 
     void x_FormatRefLocation(CNcbiOstrstream& os, const CSeq_loc& loc,
         const string& to, const string& delim,

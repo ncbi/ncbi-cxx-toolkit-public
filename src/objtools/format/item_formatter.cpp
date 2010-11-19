@@ -274,10 +274,11 @@ list<string>& CFlatItemFormatter::Wrap
  const string& tag,
  const string& body,
  EPadContext where,
- bool htmlaware) const
+ bool htmlaware,
+ int internalIndentation ) const
 {
-    string tag2;
-    Pad(tag, tag2, where);
+    string padded_tag;
+    Pad(tag, padded_tag, where);
     const string* indent = &m_Indent;  // default
     if (where == eFeat) {
         indent = &m_FeatIndent;
@@ -290,9 +291,15 @@ list<string>& CFlatItemFormatter::Wrap
         flags |= NStr::fWrap_HTMLPre;
     }
     if (body.empty()) {
-        l.push_back(tag2);
+        l.push_back(padded_tag);
     } else {
-        NStr::Wrap(body, GetWidth(), l, flags, *indent, tag2);
+        if( internalIndentation >  0 ) {
+            string padded_indent = *indent;
+            padded_indent.resize( padded_indent.size() + internalIndentation, ' ');
+            NStr::Wrap(body, GetWidth(), l, flags, padded_indent, padded_tag );
+        } else {
+            NStr::Wrap(body, GetWidth(), l, flags, *indent, padded_tag );
+        }
     }
     NON_CONST_ITERATE (list<string>, it, l) {
         TrimSpaces(*it, indent->length());

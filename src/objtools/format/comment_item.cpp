@@ -71,7 +71,8 @@ static const string kRefSeqLink = "<a href=http://www.ncbi.nlm.nih.gov/RefSeq/>R
 //  CCommentItem
 
 CCommentItem::CCommentItem(CBioseqContext& ctx, bool need_period) :
-    CFlatItem(&ctx), m_First(false), m_NeedPeriod(need_period)
+    CFlatItem(&ctx), m_First(false), m_NeedPeriod(need_period),
+    m_CommentInternalIndent(0)
 {
     swap(m_First, sm_FirstComment);
 }
@@ -81,10 +82,12 @@ CCommentItem::CCommentItem
 (const string& comment,
  CBioseqContext& ctx,
  const CSerialObject* obj) :
-    CFlatItem(&ctx), m_Comment(comment),
-    m_First(false), m_NeedPeriod(true)
+    CFlatItem(&ctx),
+    m_First(false), m_NeedPeriod(true),
+    m_CommentInternalIndent(0)
 {
-    ExpandTildes(m_Comment, eTilde_comment);
+    m_Comment.push_back( comment );
+    ExpandTildes(m_Comment.back(), eTilde_comment);
     swap(m_First, sm_FirstComment);
     if ( obj != 0 ) {
         x_SetObject(*obj);
@@ -93,25 +96,29 @@ CCommentItem::CCommentItem
 
     
 CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true)
+    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true),
+    m_CommentInternalIndent(0)
 {
     swap(m_First, sm_FirstComment);
     x_SetObject(desc);
     x_GatherInfo(ctx);
-    if ( m_Comment.empty() ) {
+    if ( x_IsCommentEmpty() ) {
         x_SetSkip();
     }
 }
 
 
 CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true)
+    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true),
+    m_CommentInternalIndent(0)
 {
     swap(m_First, sm_FirstComment);
     x_SetObject(feat);
     x_GatherInfo(ctx);
-    TrimSpacesAndJunkFromEnds(m_Comment);
-    if (m_Comment.empty()) {
+    NON_CONST_ITERATE( list<string>, it, m_Comment ) {
+        TrimSpacesAndJunkFromEnds( *it );
+    }
+    if ( x_IsCommentEmpty() ) {
         x_SetSkip();
     }       
 }
@@ -127,7 +134,9 @@ void CCommentItem::Format
 
 void CCommentItem::AddPeriod(void)
 {
-    ncbi::objects::AddPeriod(m_Comment);
+    if( ! m_Comment.empty() ) {
+        ncbi::objects::AddPeriod(m_Comment.back());
+    }
 }
 
 
@@ -790,16 +799,23 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
     }
 }
 
+// turns data into comment lines (not line-wrapped)
+// result in out_lines
+// out_prefix_len holds the length of the part up to the space after the double-colon
 static 
-string s_GetStrForStructuredComment( 
+void s_GetStrForStructuredComment( 
     const CUser_object::TData &data, 
+    list<string> &out_lines,
+    int &out_prefix_len,
     const bool is_first )
 {
+    // default prefix and suffix
     const char* prefix = "##Metadata-START##";
     const char* suffix = "##Metadata-END##";
 
     // First, figure out the longest label so we know how to format it
-    int longest_label_len = 1;
+    // (and set the prefix and suffix while we're at it)
+    string::size_type longest_label_len = 1;
     ITERATE( CUser_object::TData, it_for_len, data ) {
         if( (*it_for_len)->GetLabel().IsStr() && 
                 (*it_for_len)->GetData().IsStr() && ! (*it_for_len)->GetData().GetStr().empty() ) {
@@ -810,20 +826,20 @@ string s_GetStrForStructuredComment(
             } else if( label == "StructuredCommentSuffix" ) {
                 suffix = (*it_for_len)->GetData().GetStr().c_str();
             } else {
-                const int label_len = label.length();
+                const string::size_type label_len = label.length();
                 if( (label_len > longest_label_len) && (label_len <= 45) ) {
                     longest_label_len = label_len;
                 }
             }
         }
     }
+    out_prefix_len = (longest_label_len + 4); // "+4" because we add " :: " after the prefix
 
-    CNcbiOstrstream result;
-    result << left;
     if( ! is_first ) {
-        result << endl;
+        out_lines.push_back( "\n" );
     }
-    result << prefix << endl;
+    out_lines.push_back( prefix );
+    out_lines.back().append( "\n" );
 
     ITERATE( CUser_object::TData, it, data ) {
         
@@ -843,12 +859,20 @@ string s_GetStrForStructuredComment(
             continue;
         }
 
-        result << setw(longest_label_len) << (*it)->GetLabel().GetStr() << 
-            " :: " << (*it)->GetData().GetStr() << endl;
+        // crate the next line that we're going to set the contents of
+        out_lines.push_back( (*it)->GetLabel().GetStr() );
+        string &next_line = out_lines.back();
+
+        next_line.resize( max( next_line.size(), longest_label_len), ' ' );
+        next_line.append( " :: " );
+        next_line.append( (*it)->GetData().GetStr() );
+        next_line.append( "\n" );
+
+        ExpandTildes(next_line, eTilde_comment);
     }
 
-    result << suffix << endl;
-    return CNcbiOstrstreamToString(result);
+    out_lines.push_back( suffix );
+    out_lines.back().append( "\n" );
 }
 
 void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
@@ -910,9 +934,11 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
             // make sure the user object is really of type StructuredComment
             const CUser_object::TType &type = userObject.GetType();
             if( type.IsStr() && type.GetStr() == "StructuredComment" ) {
-                str = s_GetStrForStructuredComment( userObject.GetData(), IsFirst() );
+                s_GetStrForStructuredComment( userObject.GetData(),  
+                    m_Comment, m_CommentInternalIndent, IsFirst() );
                 SetNeedPeriod( false );
                 can_add_period = false;
+                return; // special case because multiple lines
             }
         }}
         break;
@@ -950,8 +976,9 @@ void CCommentItem::x_SetSkip(void)
 
 void CCommentItem::x_SetComment(const string& comment)
 {
-    m_Comment = comment;
-    ExpandTildes(m_Comment, eTilde_comment);;
+    m_Comment.clear();
+    m_Comment.push_back( comment );
+    ExpandTildes(m_Comment.back(), eTilde_comment);;
 }
 
 
@@ -982,9 +1009,19 @@ void CCommentItem::x_SetCommentWithURLlinks
         }
     }
     
-    m_Comment = comment;
+    m_Comment.clear();
+    m_Comment.push_back( comment );
 }
 
+bool CCommentItem::x_IsCommentEmpty(void) const
+{
+    ITERATE(list<string>, it, m_Comment) {
+        if( ! m_Comment.empty() ) {
+            return false;
+        }
+    }
+    return true;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //

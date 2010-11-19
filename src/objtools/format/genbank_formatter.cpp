@@ -690,23 +690,31 @@ void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
  IFlatTextOStream& text_os)
 {
-    string strComment( comment.GetComment() ); 
-    ConvertQuotes( strComment );
-    bool bHtml = GetContext().GetConfig().DoHTML();
-    if ( bHtml ) {
-        s_GenerateWeblinks( "http", strComment );
-    }
+    list<string> strComment( comment.GetComment() );
+    const int internalIndent = comment.GetCommentInternalIndent();
+
+    bool is_first = comment.IsFirst();
 
     list<string> l;
-    if (!comment.IsFirst()) {
-        Wrap(l, kEmptyStr, strComment, eSubp, bHtml);
-    } else {
-        Wrap(l, "COMMENT", strComment, ePara, bHtml );
+    NON_CONST_ITERATE( list<string>, comment_it, strComment ) {
+        ConvertQuotes( *comment_it );
+        bool bHtml = GetContext().GetConfig().DoHTML();
+        if ( bHtml ) {
+            s_GenerateWeblinks( "http", *comment_it );
+        }
+
+        if (!is_first) {
+            Wrap(l, kEmptyStr, *comment_it, eSubp, bHtml, internalIndent);
+        } else {
+            Wrap(l, "COMMENT", *comment_it, ePara, bHtml, internalIndent);
+        }
+
+        is_first = false;
     }
 
-//    if ( bHtml ) {
-//        s_FixLineBrokenWeblinks( l );
-//    }
+    //    if ( bHtml ) {
+    //        s_FixLineBrokenWeblinks( l );
+    //    }
     text_os.AddParagraph(l, comment.GetObject());
 }
 

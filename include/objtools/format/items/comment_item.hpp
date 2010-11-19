@@ -97,7 +97,8 @@ public:
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     bool IsFirst(void) const;
-    const string& GetComment(void) const;
+    const list<string>& GetComment(void) const;
+    int GetCommentInternalIndent(void) const;
 
     bool NeedPeriod(void) const;
     void SetNeedPeriod(bool val);
@@ -136,15 +137,18 @@ protected:
     void x_SetComment(const string& comment);
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,
         const string& suffix, const bool can_add_period );
-    string& x_GetComment(void) { return m_Comment; }
+    list<string>& x_GetComment(void) { return m_Comment; }
     void x_SetSkip(void);
 
 private:
+    bool x_IsCommentEmpty(void) const;
+
     static bool sm_FirstComment; 
 
-    string  m_Comment;
-    bool    m_First;
-    bool    m_NeedPeriod;
+    list<string>  m_Comment;
+    int           m_CommentInternalIndent;
+    bool          m_First;
+    bool          m_NeedPeriod;
 };
 
 
@@ -217,7 +221,6 @@ private:
     CConstRef<CObject_id> m_Oid;
 };
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  inline methods
 
@@ -229,9 +232,15 @@ bool CCommentItem::IsFirst(void) const
 
 
 inline
-const string& CCommentItem::GetComment(void) const
+const list<string>& CCommentItem::GetComment(void) const
 {
     return m_Comment;
+}
+
+inline
+int CCommentItem::GetCommentInternalIndent(void) const
+{
+    return m_CommentInternalIndent;
 }
 
 

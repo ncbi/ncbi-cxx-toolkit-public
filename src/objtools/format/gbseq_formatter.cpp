@@ -406,7 +406,7 @@ void CGBSeqFormatter::FormatComment
 (const CCommentItem& comment,
  IFlatTextOStream&)
 {
-    string str = comment.GetComment();
+    string str = NStr::Join( comment.GetComment(), "\n" );
     s_GBSeqStringCleanup(str);
     
     if ( !m_GBSeq->IsSetComment() ) {

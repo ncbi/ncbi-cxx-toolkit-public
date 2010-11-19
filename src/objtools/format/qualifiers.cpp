@@ -175,18 +175,21 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
     } else { 
         if (go_id != NULL) {
             go_text = string( "GO:" ) + *go_id;
-            if ( text_string != 0 ) {
-                go_text += string( " - " ) + *text_string;
-            }
-            if ( evidence != 0 ) {
-                go_text += string( " [Evidence " ) + *evidence + string( "]" );
-            }
-            if ( pmid != 0 ) {
-                go_text += string( " [PMID " ) + NStr::IntToString(pmid) + string( "]" );
-            }
-            if ( go_ref != 0 ) {
-                go_text += string( " [GO Ref " ) + *go_ref + string( "]" );
-            }
+        } else {
+            go_text.clear();
+        }
+        if ( text_string != 0 ) {
+            // Yes, we have the dash here even if there's no go_id (compatibility with C)
+            go_text += string( " - " ) + *text_string;
+        }
+        if ( evidence != 0 ) {
+            go_text += string( " [Evidence " ) + *evidence + string( "]" );
+        }
+        if ( pmid != 0 ) {
+            go_text += string( " [PMID " ) + NStr::IntToString(pmid) + string( "]" );
+        }
+        if ( go_ref != 0 ) {
+            go_text += string( " [GO Ref " ) + *go_ref + string( "]" );
         }
     }
     NStr::TruncateSpacesInPlace(go_text);

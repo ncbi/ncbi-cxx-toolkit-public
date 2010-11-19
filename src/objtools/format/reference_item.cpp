@@ -525,25 +525,29 @@ bool CReferenceItem::Matches(const CPub& pub) const
     default:
         // compare based on unique string
         {{
-            x_CreateUniqueStr();
-            const string& uniquestr = m_UniqueStr;
+            // you can only compare on unique string if the reference
+            // does not have a pmid or muid (example accession: L40362.1)
+            if( GetMUID() == 0 && GetPMID() == 0 ) {
+                x_CreateUniqueStr();
+                const string& uniquestr = m_UniqueStr;
 
-            string pub_unique;
-            pub.GetLabel(&pub_unique, CPub::eContent, true);
+                string pub_unique;
+                pub.GetLabel(&pub_unique, CPub::eContent, true);
 
-            size_t len = pub_unique.length();
-            if (len > 0  &&  pub_unique[len - 1] == '>') {
-                --len;
-            }
-            len = min(len , uniquestr.length());
-            pub_unique.resize(len);
-            if (!NStr::IsBlank(uniquestr)  &&  !NStr::IsBlank(pub_unique)) {
-                if (NStr::StartsWith(uniquestr, pub_unique, NStr::eNocase)) {
-                    return true;
+                size_t len = pub_unique.length();
+                if (len > 0  &&  pub_unique[len - 1] == '>') {
+                    --len;
+                }
+                len = min(len , uniquestr.length());
+                pub_unique.resize(len);
+                if (!NStr::IsBlank(uniquestr)  &&  !NStr::IsBlank(pub_unique)) {
+                    if (NStr::StartsWith(uniquestr, pub_unique, NStr::eNocase)) {
+                        return true;
+                    }
                 }
             }
-        break;
         }}
+        break;
     }
 
     return false;
