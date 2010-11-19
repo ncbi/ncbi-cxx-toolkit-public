@@ -852,7 +852,7 @@ public:
 
     static bool IsMixedDatabase(const objects::CSeq_align_set& alnset, 
                                 objects::CScope& scope); 
-
+    static bool IsMixedDatabase(CCgiContext& ctx);
     static list<string> GetLinkoutUrl(int linkout, const objects::CBioseq::TId& ids, 
                                       const string& rid, 
                                       const string& cdd_rid, 
