@@ -78,6 +78,14 @@ CStdRequest* CServer_ControlConnection::CreateRequest(
     return NULL;
 }
 
+static void CheckIOStatus(EIO_Status io_status, const char* step)
+{
+    if (io_status != eIO_Success) {
+        NCBI_THROW_FMT(CConnException, eConn,
+            "Cannot create signaling socket for internal use: " <<
+                step << ": " << IO_StatusStr(io_status));
+    }
+}
 
 //
 CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
@@ -85,19 +93,17 @@ CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
 {
     // Create internal signaling connection from m_ControlSocket to
     // m_ControlSocketForPoll
-    unsigned short port;
     CListeningSocket listener;
     static const STimeout kTimeout = { 10, 500000 }; // 500 ms // DEBUG
-    for (port = 2049; port < 65535; ++port) {
-        if (eIO_Success == listener.Listen(port, 5, fSOCK_BindLocal))
-            break;
-    }
-    m_ControlSocket.Connect("127.0.0.1", port);
+    CheckIOStatus(listener.Listen(0, 5, fSOCK_BindLocal), "Listen/Bind");
+    CheckIOStatus(m_ControlSocket.Connect("127.0.0.1",
+        listener.GetPort(eNH_HostByteOrder)), "Connect");
     m_ControlSocket.DisableOSSendDelay();
     // Set a (modest) timeout to prevent SetConnType from blocking forever
     // with m_Mutex held, which could deadlock the whole server.
-    m_ControlSocket.SetTimeout(eIO_Write, &kTimeout);
-    listener.Accept(dynamic_cast<CSocket&>(m_ControlSocketForPoll));
+    CheckIOStatus(m_ControlSocket.SetTimeout(eIO_Write,
+        &kTimeout), "SetTimeout");
+    CheckIOStatus(listener.Accept(m_ControlSocketForPoll), "Accept");
 }
 
 CServer_ConnectionPool::~CServer_ConnectionPool()
