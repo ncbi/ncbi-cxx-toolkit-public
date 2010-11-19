@@ -1870,6 +1870,17 @@ bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset,
 
 }
 
+bool CAlignFormatUtil::IsMixedDatabase(CCgiContext& ctx)
+{
+    bool formatAsMixedDbs = false;
+    string mixedDbs = ctx.GetRequestValue("MIXED_DATABASE").GetValue();
+    if(!mixedDbs.empty()) {    
+        mixedDbs = NStr::ToLower(mixedDbs);
+        formatAsMixedDbs = (mixedDbs == "on" || mixedDbs == "true" || mixedDbs == "yes") ? true : false;
+    }
+    return formatAsMixedDbs;
+}
+
 
 static string s_MapLinkoutGenParam(string &url_link_tmpl,
                                    const string& rid,                                             

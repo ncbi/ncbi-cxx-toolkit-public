@@ -1075,8 +1075,8 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
     bool is_first = true;
     // Mixed db is genomic + transcript and this does not apply to proteins.
     bool is_mixed_database = false;
-    if (m_IsDbNa == true)
-       is_mixed_database = CAlignFormatUtil::IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef);
+    if (m_IsDbNa == true)       
+       is_mixed_database = CAlignFormatUtil::IsMixedDatabase(*m_Ctx);
 
     map< string, string> parameters_to_change;
     string query_buf;
@@ -1469,7 +1469,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     bool is_first = true;
 
     // Mixed db is genomic + transcript and this does not apply to proteins.    
-    bool is_mixed_database = (m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef) : false;
+    bool is_mixed_database = (m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_Ctx): false;    
     
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
