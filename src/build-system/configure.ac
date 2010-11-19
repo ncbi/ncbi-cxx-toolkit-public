@@ -519,7 +519,7 @@ done
 
 
 if test "$with_gbench" = "yes" ; then
-   m4_foreach(OPT, [dll,mt,gui,exe,sqlite3,serial,objects,algo],
+   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo],
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
@@ -6115,13 +6115,12 @@ fi
 if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    reason=""
    sep=
-   if test -d "$real_srcdir/src/gui/packages"; then
-     if test "$with_wxwidgets" = "no"; then
-       reason="$reason${sep}wxWidgets"
-       sep=", "
-     fi
-   else
-     reason="$reason${sep}plugins or packages"
+   if test "$with_wxwidgets" = "no"; then
+     reason="$reason${sep}wxWidgets"
+     sep=", "
+   fi
+   if test ! -d "$real_srcdir/src/gui/packages"; then
+     reason="$reason${sep}internal packages"
      sep=", "
    fi
    if test "$with_opengl" = "no"; then

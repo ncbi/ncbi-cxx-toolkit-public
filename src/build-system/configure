@@ -2903,13 +2903,6 @@ echo "$as_me: error: incompatible options: --without-exe but --with-gbench" >&2;
       else
          with_exe=yes
       fi
-     if test "$with_sqlite3" = "no"; then
-         { { echo "$as_me:$LINENO: error: incompatible options: --without-sqlite3 but --with-gbench" >&5
-echo "$as_me: error: incompatible options: --without-sqlite3 but --with-gbench" >&2;}
-   { (exit 1); exit 1; }; }
-      else
-         with_sqlite3=yes
-      fi
      if test "$with_serial" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-serial but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-serial but --with-gbench" >&2;}
@@ -32405,13 +32398,12 @@ fi
 if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    reason=""
    sep=
-   if test -d "$real_srcdir/src/gui/packages"; then
-     if test "$with_wxwidgets" = "no"; then
-       reason="$reason${sep}wxWidgets"
-       sep=", "
-     fi
-   else
-     reason="$reason${sep}plugins or packages"
+   if test "$with_wxwidgets" = "no"; then
+     reason="$reason${sep}wxWidgets"
+     sep=", "
+   fi
+   if test ! -d "$real_srcdir/src/gui/packages"; then
+     reason="$reason${sep}internal packages"
      sep=", "
    fi
    if test "$with_opengl" = "no"; then
