@@ -87,6 +87,7 @@ CDefaultConnectPolicy::MakeDBConnection(
         if (validator.Validate(*conn) != IConnValidator::eValidConn) {
             return NULL;
         }
+        conn->FinishOpening();
     }
     return conn.release();
 }
