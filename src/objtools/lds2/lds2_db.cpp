@@ -331,6 +331,12 @@ void CLDS2_Database::x_ResetDbConnection(void)
 }
 
 
+NCBI_PARAM_DECL(int, LDS2, SQLiteCacheSize);
+NCBI_PARAM_DEF_EX(int, LDS2, SQLiteCacheSize, 2000, eParam_NoThread,
+                  LDS2_SQLITE_CACHE_SIZE);
+typedef NCBI_PARAM_TYPE(LDS2, SQLiteCacheSize) TSQLiteCacheSize;
+
+
 CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
 {
     SLDS2_DbConnection& db_conn = x_GetDbConnection();
@@ -345,6 +351,8 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
             CSQLITE_Connection::fJournalOff |
             CSQLITE_Connection::fSyncOff
             ));
+        db_conn.Connection->SetCacheSize(
+            (unsigned int)TSQLiteCacheSize::GetDefault());
     }
     return *db_conn.Connection;
 }
