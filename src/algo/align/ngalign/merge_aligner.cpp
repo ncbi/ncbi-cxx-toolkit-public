@@ -55,6 +55,7 @@
 
 
 #include <algo/sequence/align_cleanup.hpp>
+#include <algo/align/util/genomic_compart.hpp>
 
 BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
@@ -95,42 +96,62 @@ CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
     CAlignCleanup Cleaner(Scope);
     Cleaner.FillUnaligned(true);
 
-    NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryAligns.Get()) {
-    NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {  
-    //NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+    NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter,
+                      QueryAligns.Get()) {
+        NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter,
+                          AssemIter->second) {  
 
-        CRef<CSeq_align_set> Set = SubjectIter->second;
+            CRef<CSeq_align_set> Set = SubjectIter->second;
 
-        CRef<CSeq_align_set> Pluses(new CSeq_align_set),
-                             Minuses(new CSeq_align_set);
+#if 1
+            list< CRef<CSeq_align_set> > compartments;
+            FindCompartments(Set->Get(), compartments,
+                             fCompart_AllowIntersections);
 
-        ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
-            if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_plus)
-                Pluses->Set().push_back(*AlignIter);
-            else if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_minus)
-                Minuses->Set().push_back(*AlignIter);
+            ITERATE (list< CRef<CSeq_align_set> >, cit, compartments) {
+                CRef<CSeq_align_set> sas = *cit;
+                x_SortAlignSet(*sas);
+                CRef<CSeq_align_set> out = x_MergeSeqAlignSet(*sas, Scope);
+                if( out  &&  !out->Set().empty() ) {
+                    ITERATE(CSeq_align_set::Tdata, AlignIter, out->Set()) {
+                        Merged->Set().push_back(*AlignIter);
+                    }
+                }
+            }
+#endif
+
+#if 0
+            CRef<CSeq_align_set> Pluses(new CSeq_align_set),
+                Minuses(new CSeq_align_set);
+
+            ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
+                if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_plus)
+                    Pluses->Set().push_back(*AlignIter);
+                else if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_minus)
+                    Minuses->Set().push_back(*AlignIter);
+            }
+
+            CRef<CSeq_align_set> PlusOut, MinusOut;
+
+            if(!Pluses->Set().empty()) {
+                x_SortAlignSet(*Pluses);
+                PlusOut = x_MergeSeqAlignSet(*Pluses, Scope);
+            }
+            if(!Minuses->Set().empty()) {
+                x_SortAlignSet(*Minuses);
+                MinusOut = x_MergeSeqAlignSet(*Minuses, Scope);
+            }
+
+            if(!PlusOut.IsNull())
+                ITERATE(CSeq_align_set::Tdata, AlignIter, PlusOut->Set()) {
+                    Merged->Set().push_back(*AlignIter);
+                }
+            if(!MinusOut.IsNull())
+                ITERATE(CSeq_align_set::Tdata, AlignIter, MinusOut->Set()) {
+                    Merged->Set().push_back(*AlignIter);
+                }
+#endif
         }
-
-        CRef<CSeq_align_set> PlusOut, MinusOut;
-
-        if(!Pluses->Set().empty()) {
-            x_SortAlignSet(*Pluses);
-            PlusOut = x_MergeSeqAlignSet(*Pluses, Scope);
-        }
-        if(!Minuses->Set().empty()) {
-            x_SortAlignSet(*Minuses);
-            MinusOut = x_MergeSeqAlignSet(*Minuses, Scope);
-        }
-
-        if(!PlusOut.IsNull())
-        ITERATE(CSeq_align_set::Tdata, AlignIter, PlusOut->Set()) {
-            Merged->Set().push_back(*AlignIter);
-        }
-        if(!MinusOut.IsNull())
-        ITERATE(CSeq_align_set::Tdata, AlignIter, MinusOut->Set()) {
-            Merged->Set().push_back(*AlignIter);
-        }
-    }
     }
 
     return Merged;
