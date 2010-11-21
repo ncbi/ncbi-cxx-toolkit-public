@@ -140,13 +140,14 @@ TAlignSetRef CNgAligner::x_Align_Impl()
     //Results = AccumResults->ToSeqAlignSet();
 
     if(!Results.IsNull()) {
+        CDiagContext_Extra extra = GetDiagContext().Extra();
         ITERATE(CSeq_align_set::Tdata, AlignIter, Results->Get()) {
             const CSeq_align& Align = **AlignIter;
             string FastaId = Align.GetSeq_id(0).AsFastaString();
             ITERATE(TFactories, FactoryIter, m_Aligners) {
                 int Value;
                 if(Align.GetNamedScore((*FactoryIter)->GetName(), Value)) {
-                    GetDiagContext().Extra().Print((*FactoryIter)->GetName(), FastaId);
+                    extra.Print((*FactoryIter)->GetName(), FastaId);
                 }
             }
         }
