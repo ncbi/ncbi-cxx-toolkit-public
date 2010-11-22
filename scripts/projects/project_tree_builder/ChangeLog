@@ -135,3 +135,9 @@ November 16, 2010
 version 3.1.1
 Corrected to exclude configurable defines from list of libraries.
 
+November 22, 2010
+version 3.1.2
+Enable absolute path when specifying subtree.
+Changed the way Linker AdditionalOptions are handled.
+
+
