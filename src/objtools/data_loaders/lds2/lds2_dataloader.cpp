@@ -499,6 +499,12 @@ CLDS2_DataLoader::GetBlobById(const TBlobId& blob_id)
 }
 
 
+void CLDS2_DataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
+{
+    m_Db->GetSynonyms(idh, ids);
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================

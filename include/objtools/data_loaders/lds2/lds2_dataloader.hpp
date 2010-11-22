@@ -91,7 +91,7 @@ public:
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice               choice);
-    
+
     virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
 
     virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
@@ -105,6 +105,8 @@ public:
     virtual bool CanGetBlobById(void) const;
 
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
+
+    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
     typedef CSimpleLoaderMaker<CLDS2_DataLoader>                 TSimpleMaker;
     typedef CParamLoaderMaker<CLDS2_DataLoader, CLDS2_Database&> TDbMaker;
