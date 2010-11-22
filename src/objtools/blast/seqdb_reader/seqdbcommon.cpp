@@ -1574,7 +1574,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
         list_i++;
 
         int last_gi = gis[gis_i];
-        do { gis_i++; } while (gis[gis_i] == last_gi && gis_i < gis_n);
+        do { gis_i++; } while (gis_i < gis_n && gis[gis_i] == last_gi);
     }
 
     // push all the remaining vector gi's if any left
