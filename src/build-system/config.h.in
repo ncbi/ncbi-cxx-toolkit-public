@@ -369,6 +369,9 @@
 /* Define to 1 if `min'/`max' templates are not implemented. */
 #undef HAVE_NO_MINMAX_TEMPLATE
 
+/* Define to 1 if your C++ compiler supports the C++0x `nullptr' keyword. */
+#undef HAVE_NULLPTR
+
 /* Define to 1 if ODBC libraries are available. */
 #undef HAVE_ODBC
 

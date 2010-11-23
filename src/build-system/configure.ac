@@ -3299,6 +3299,14 @@ if test "$ncbi_cv_sys_unaligned_reads" = yes; then
               unaligned addresses.])
 fi
 
+AC_CACHE_CHECK([whether $CXX supports C++0x nullptr], ncbi_cv_cxx_nullptr,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[void * p = nullptr;]])],
+       [ncbi_cv_cxx_nullptr=yes], [ncbi_cv_cxx_nullptr=no])])
+if test "$ncbi_cv_cxx_nullptr" = yes; then
+   AC_DEFINE(HAVE_NULLPTR, 1,
+      [Define to 1 if your C++ compiler supports the C++0x `nullptr' keyword.])
+fi
+
 ### Check for the availability of other packages
 ### --------------------------------------------
 
