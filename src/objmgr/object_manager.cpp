@@ -401,7 +401,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
 
     // if already registered
     pair<TMapNameToLoader::iterator, bool> ins =
-        m_mapNameToLoader.insert(TMapNameToLoader::value_type(loader_name,0));
+        m_mapNameToLoader.insert(TMapNameToLoader::value_type(loader_name,nullptr));
     if ( !ins.second ) {
         if ( ins.first->second != &loader ) {
             NCBI_THROW(CObjMgrException, eRegisterError,
