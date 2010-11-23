@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -31,10 +31,10 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements. 
+ *       API and functionality requirements.
  */
 
 #include "utility.hpp"
@@ -42,6 +42,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <iostream>
+
+// libxml2 includes
+#include <libxml/xmlsave.h>
+
+// xmlwrapp includes
+#include <misc/xmlwrapp/xml_save.hpp>
+
 
 // hack to pull in vsnprintf for MSVC
 #if defined(_MSC_VER) || (defined(__COMO__) && defined(__WIN32__))
@@ -107,6 +115,34 @@ namespace impl {
             return nspace->is_void();
 
         return strcmp(nspace->get_prefix(), reinterpret_cast<const char*>(dat->prefix)) == 0;
+    }
+    //####################################################################
+    int convert_to_libxml2_save_options (int options) {
+        int libxml2_options = 0;
+
+        // The if statements below are to avoid problems if the libxml2
+        // enumeration values are extended or change their positions
+        if ((options & save_op_no_format) == 0)   libxml2_options |= XML_SAVE_FORMAT;
+        if (options & save_op_no_decl)            libxml2_options |= XML_SAVE_NO_DECL;
+        if (options & save_op_no_empty)           libxml2_options |= XML_SAVE_NO_EMPTY;
+        if (options & save_op_no_xhtml)           libxml2_options |= XML_SAVE_NO_XHTML;
+        if (options & save_op_xhtml)              libxml2_options |= XML_SAVE_XHTML;
+        if ((options & save_op_not_as_xml) == 0)  libxml2_options |= XML_SAVE_AS_XML;
+        if (options & save_op_as_html)            libxml2_options |= XML_SAVE_AS_HTML;
+
+        return libxml2_options;
+    }
+    //####################################################################
+    int save_to_stream_cb (void *ctx, const char *buf, int len) {
+        std::ostream *dst = reinterpret_cast<std::ostream*>(ctx);
+        dst->write(buf, len);
+        return len;
+    }
+    //####################################################################
+    int save_to_string_cb (void *ctx, const char *buf, int len) {
+        std::string *dst = reinterpret_cast<std::string*>(ctx);
+        dst->append(buf, len);
+        return len;
     }
     //####################################################################
 

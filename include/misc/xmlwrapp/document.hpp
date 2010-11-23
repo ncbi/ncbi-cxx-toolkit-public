@@ -51,6 +51,7 @@
 #include <misc/xmlwrapp/xml_init.hpp>
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/errors.hpp>
+#include <misc/xmlwrapp/xml_save.hpp>
 
 // standard includes
 #include <iosfwd>
@@ -564,10 +565,16 @@ public:
      * the given string.
      *
      * @param s The string to place the XML text data.
-     * @author Peter Jones
+     * @param flags
+     *        Bitwise mask of the save options. Does not affect XSLT result.
+     *        documents.
+     * @see xml::save_option
+     * @note compression part of the options is currently ignored.
+     * @author Peter Jones and Sergey Satskiy, NCBI
     **/
     //####################################################################
-    void save_to_string (std::string &s) const;
+    void save_to_string (std::string &s,
+                         save_option_flags flags=save_op_default) const;
 
     //####################################################################
     /**
@@ -575,13 +582,35 @@ public:
      * the given filename.
      *
      * @param filename The name of the file to place the XML text data into.
-     * @param compression_level 0 is no compression, 1-9 allowed, where 1 is for better speed, and 9 is for smaller size
+     * @param flags
+     *        Bitwise mask of the save options. Does not affect XSLT result
+     *        documents.
+     * @see xml::save_option
+     * @note compression part of the options is currently ignored.
      * @return True if the data was saved successfully.
      * @return False otherwise.
-     * @author Peter Jones
+     * @author Peter Jones and Sergey Satskiy, NCBI
     **/
     //####################################################################
-    bool save_to_file (const char *filename, int compression_level=0) const;
+    bool save_to_file (const char *filename,
+                       save_option_flags flags=save_op_default) const;
+
+    //####################################################################
+    /**
+     * Convert the XML document tree into XML text data and then insert it
+     * into the given stream.
+     *
+     * @param stream The stream to insert the XML into.
+     * @param flags
+     *        Bitwise mask of the save options. Does not affect XSLT result
+     *        documents.
+     * @note compression part of the options is currently ignored.
+     * @see xml::save_option
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    void save_to_stream (std::ostream &stream,
+                         save_option_flags flags=save_op_default) const;
 
     //####################################################################
     /**

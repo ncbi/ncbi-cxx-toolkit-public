@@ -81,6 +81,16 @@ namespace impl {
         static bool default_attr_ns_match (xmlAttribute *dat, const ns *nspace);
     };
 
+    /*
+     * Converts xmlwrapp xml save options to libxml2
+     * save options. This is required because the meaning of some bits is
+     * opposite in the libraries.
+     */
+    int convert_to_libxml2_save_options (int options);
+
+    // Callbacks for saving a document
+    int save_to_stream_cb (void *ctx, const char *buf, int len);
+    int save_to_string_cb (void *ctx, const char *buf, int len);
 } // end impl namespace
 
 } // end xml namespace

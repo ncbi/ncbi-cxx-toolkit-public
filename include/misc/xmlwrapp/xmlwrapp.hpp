@@ -54,5 +54,6 @@
 #include <misc/xmlwrapp/dtd.hpp>
 #include <misc/xmlwrapp/exception.hpp>
 #include <misc/xmlwrapp/errors.hpp>
+#include <misc/xmlwrapp/xml_save.hpp>
 
 #endif

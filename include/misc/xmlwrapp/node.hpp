@@ -53,6 +53,7 @@
 #include <misc/xmlwrapp/xml_init.hpp>
 #include <misc/xmlwrapp/namespace.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/xml_save.hpp>
 
 // hidden stuff
 #include <misc/xmlwrapp/impl/_cbfo.hpp>
@@ -1187,10 +1188,16 @@ public:
      * string to that text.
      *
      * @param xml The string to set the node's XML data to.
-     * @author Peter Jones
+     * @param flags
+     *        Bitwise mask of the save options. Does not affect XSLT result.
+     *        documents.
+     * @see xml::save_option
+     * @note compression part of the options is currently ignored.
+     * @author Peter Jones and Sergey Satskiy, NCBI
     **/
     //####################################################################
-    void node_to_string (std::string &xml) const;
+    void node_to_string (std::string &xml,
+                         save_option_flags flags=save_op_default) const;
 
     //####################################################################
     /**

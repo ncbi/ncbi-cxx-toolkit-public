@@ -63,6 +63,7 @@
 // libxml includes
 #include <libxml/tree.h>
 #include <libxml/xinclude.h>
+#include <libxml/xmlsave.h>
 
 // bring in private libxslt stuff (see bug #1927398)
 #include "result.hpp"
@@ -283,18 +284,25 @@ xml::node::const_iterator xml::document::end (void) const {
 }
 //####################################################################
 void xml::document::push_back (const node &child) {
-    if (child.get_type() == node::type_element) throw xml::exception("xml::document::push_back can't take element type nodes");
-    xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0, static_cast<xmlNodePtr>(const_cast<node&>(child).get_node_data()));
+    if (child.get_type() == node::type_element)
+        throw xml::exception("xml::document::push_back can't take element type nodes");
+    xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0,
+                           static_cast<xmlNodePtr>(const_cast<node&>(child).get_node_data()));
 }
 //####################################################################
 xml::node::iterator xml::document::insert (const node &n) {
-    if (n.get_type() == node::type_element) throw xml::exception("xml::document::insert can't take element type nodes");
-    return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0, static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
+    if (n.get_type() == node::type_element)
+        throw xml::exception("xml::document::insert can't take element type nodes");
+    return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0,
+                                                 static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
 }
 //####################################################################
 xml::node::iterator xml::document::insert (node::iterator position, const node &n) {
-    if (n.get_type() == node::type_element) throw xml::exception("xml::document::insert can't take element type nodes");
-    return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), static_cast<xmlNodePtr>(position.get_raw_node()), static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
+    if (n.get_type() == node::type_element)
+        throw xml::exception("xml::document::insert can't take element type nodes");
+    return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_),
+                                                 static_cast<xmlNodePtr>(position.get_raw_node()),
+                                                 static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
 }
 //####################################################################
 xml::node::iterator xml::document::replace (node::iterator old_node, const node &new_node) {
@@ -302,11 +310,13 @@ xml::node::iterator xml::document::replace (node::iterator old_node, const node 
         throw xml::exception("xml::document::replace can't replace element type nodes");
     }
 
-    return node::iterator(xml::impl::node_replace(static_cast<xmlNodePtr>(old_node.get_raw_node()), static_cast<xmlNodePtr>(const_cast<node&>(new_node).get_node_data())));
+    return node::iterator(xml::impl::node_replace(static_cast<xmlNodePtr>(old_node.get_raw_node()),
+                                                  static_cast<xmlNodePtr>(const_cast<node&>(new_node).get_node_data())));
 }
 //####################################################################
 xml::node::iterator xml::document::erase (node::iterator to_erase) {
-    if (to_erase->get_type() == node::type_element) throw xml::exception("xml::document::erase can't erase element type nodes");
+    if (to_erase->get_type() == node::type_element)
+        throw xml::exception("xml::document::erase can't erase element type nodes");
     return node::iterator(xml::impl::node_erase(static_cast<xmlNodePtr>(to_erase.get_raw_node())));
 }
 //####################################################################
@@ -315,24 +325,68 @@ xml::node::iterator xml::document::erase (node::iterator first, node::iterator l
     return first;
 }
 //####################################################################
-void xml::document::save_to_string (std::string &s) const {
-    xmlChar *xml_string;
-    int xml_string_length;
+void xml::document::save_to_string (std::string &s,
+                                    save_option_flags flags) const {
+    int compression_level = flags & 0xFFFF;
+
+    // Compression level is currently not analyzed by libxml2
+    // So this might work in the future implementations but is ignored now.
+    std::swap(pimpl_->doc_->compression, compression_level);
 
     if (pimpl_->xslt_result_ != 0) {
         pimpl_->xslt_result_->save_to_string(s);
-
+        std::swap(pimpl_->doc_->compression, compression_level);
         return;
     }
 
+    int libxml2_options = convert_to_libxml2_save_options(flags);
     const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
-    xmlDocDumpFormatMemoryEnc(pimpl_->doc_, &xml_string, &xml_string_length, enc, 1);
+    xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_string_cb, NULL, &s,
+                                       enc, libxml2_options);
 
-    xmlchar_helper helper(xml_string);
-    if (xml_string_length) s.assign(helper.get(), xml_string_length);
+    if (ctxt) {
+        xmlSaveDoc(ctxt, pimpl_->doc_);
+        xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
+    }
+    std::swap(pimpl_->doc_->compression, compression_level);
+    return;
 }
 //####################################################################
-bool xml::document::save_to_file (const char *filename, int compression_level) const {
+void xml::document::save_to_stream (std::ostream &stream,
+                                    save_option_flags flags) const {
+    int compression_level = flags & 0xFFFF;
+
+    // Compression level is currently not analyzed by libxml2
+    // So this might work in the future implementations but is ignored now.
+    std::swap(pimpl_->doc_->compression, compression_level);
+
+    if (pimpl_->xslt_result_ != 0) {
+        std::string s;
+        pimpl_->xslt_result_->save_to_string(s);
+        stream << s;
+        std::swap(pimpl_->doc_->compression, compression_level);
+        return;
+    }
+
+    int libxml2_options = convert_to_libxml2_save_options(flags);
+    const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
+    xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_stream_cb, NULL, &stream,
+                                       enc, libxml2_options);
+
+    if (ctxt) {
+        xmlSaveDoc(ctxt, pimpl_->doc_);
+        xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
+    }
+    std::swap(pimpl_->doc_->compression, compression_level);
+    return;
+}
+//####################################################################
+bool xml::document::save_to_file (const char *filename,
+                                  save_option_flags flags) const {
+    int compression_level = flags & 0xFFFF;
+
+    // Compression level is currently not analyzed by libxml2
+    // So this might work in the future implementations but is ignored now.
     std::swap(pimpl_->doc_->compression, compression_level);
 
     if (pimpl_->xslt_result_ != 0) {
@@ -342,11 +396,21 @@ bool xml::document::save_to_file (const char *filename, int compression_level) c
         return rc;
     }
 
+    int libxml2_options = convert_to_libxml2_save_options(flags);
     const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
-    bool rc = xmlSaveFormatFileEnc(filename, pimpl_->doc_, enc, 1) > 0;
-    std::swap(pimpl_->doc_->compression, compression_level);
+    xmlSaveCtxtPtr  ctxt = xmlSaveToFilename(filename,
+                                             enc, libxml2_options);
 
-    return rc;
+    if (!ctxt) {
+        std::swap(pimpl_->doc_->compression, compression_level);
+        return false;
+    }
+
+    long rc = xmlSaveDoc(ctxt, pimpl_->doc_);
+    xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
+
+    std::swap(pimpl_->doc_->compression, compression_level);
+    return (rc != -1);
 }
 //####################################################################
 void xml::document::set_doc_data (void *data) {
@@ -377,9 +441,7 @@ void* xml::document::release_doc_data (void) {
 }
 //####################################################################
 std::ostream& xml::operator<< (std::ostream &stream, const xml::document &doc) {
-    std::string xmldata;
-    doc.save_to_string(xmldata);
-    stream << xmldata;
+    doc.save_to_stream(stream, save_op_default);
     return stream;
 }
 //####################################################################

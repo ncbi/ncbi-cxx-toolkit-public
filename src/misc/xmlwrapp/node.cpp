@@ -72,6 +72,7 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
+#include <libxml/xmlsave.h>
 
 // Workshop compiler define
 #include <ncbiconf.h>
@@ -973,24 +974,40 @@ void xml::node::sort_fo (cbfo_node_compare &cb) {
     std::for_each(node_list.begin(), node_list.end(), insert_node(pimpl_->xmlnode_));
 }
 //####################################################################
-void xml::node::node_to_string (std::string &xml) const {
+void xml::node::node_to_string (std::string &xml,
+                                save_option_flags flags) const {
+    int compression_level = flags & 0xFFFF;
     node2doc n2d(pimpl_->xmlnode_);
     xmlDocPtr doc = n2d.get_doc();
 
-    xmlChar *xml_string;
-    int xml_string_length;
+    // Compression level is currently not analyzed by libxml2
+    // So this might work in the future implementations but is ignored now.
+    doc->compression = compression_level;
 
-    xmlDocDumpFormatMemory(doc, &xml_string, &xml_string_length, 1);
+    int libxml2_options = convert_to_libxml2_save_options(flags);
+    xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_string_cb, NULL, &xml,
+                                       NULL, libxml2_options);
 
-    xmlchar_helper helper(xml_string);
-    if (xml_string_length) xml.assign(helper.get(), xml_string_length);
+    if (ctxt) {
+        xmlSaveDoc(ctxt, doc);
+        xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
+    }
+    return;
 }
 //####################################################################
 namespace xml {
     std::ostream& operator<< (std::ostream &stream, const xml::node &n) {
-        std::string xmldata;
-        n.node_to_string(xmldata);
-        stream << xmldata;
+        node2doc n2d(n.pimpl_->xmlnode_);
+        xmlDocPtr doc = n2d.get_doc();
+
+        int libxml2_options = convert_to_libxml2_save_options(save_op_default);
+        xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_stream_cb, NULL, &stream,
+                                           NULL, libxml2_options);
+
+        if (ctxt) {
+            xmlSaveDoc(ctxt, doc);
+            xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
+        }
         return stream;
     }
 }
