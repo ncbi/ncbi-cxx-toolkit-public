@@ -47,6 +47,9 @@
 #  include <ctype.h>
 #endif
 
+#if !HAVE_NULLPTR
+#  define nullptr NULL
+#endif
 
 #if defined(_DEBUG)  &&  !defined(NCBI_NO_STRICT_CTYPE_ARGS)
 #  define NCBI_STRICT_CTYPE_ARGS
