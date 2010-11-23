@@ -134,6 +134,12 @@ typedef   int   ssize_t;
 
 #endif
 
+#if _MSC_VER >= 1600
+#  define HAVE_NULLPTR  1
+#else
+#  define HAVE_NULLPTR  0
+#endif
+
 /* Windows 2000 and above */
 #define _WIN32_WINNT 0x0500
 
