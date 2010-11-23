@@ -451,6 +451,8 @@ static const string kHInvDbHIT = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servl
 static const string kHInvDbHIX = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";
 static const string kDictyPrim = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";
 static const string kMiRBaseMat = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc=";
+static const string kMaizeGDBInt = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
+static const string kMaizeGDBStr = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?term=";
 
 // mapping of DB to its URL; please sort these by tag name (mostly in
 // case-sensitive ASCII-betical order as above)
@@ -504,7 +506,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_LocusID, "http://www.ncbi.nlm.nih.gov/gene/"),
     TDbtUrl(CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/searches/accession_report.cgi?id=MGI:"),
     TDbtUrl(CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/omim/"),
-    TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id="),
+    TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?"),
     TDbtUrl(CDbtag::eDbtagType_MycoBank, "http://www.mycobank.org/MycoTaxo.aspx?Link=T&Rec="),
     TDbtUrl(CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id="),
@@ -614,6 +616,13 @@ string CDbtag::GetUrl(void) const
             break;
 
         case eDbtagType_MaizeGDB:
+            if (GetTag().IsId()) {
+                prefix = &kMaizeGDBInt;
+            } else if (GetTag().IsStr()) {
+                prefix = &kMaizeGDBStr;
+            }
+            break;
+
         case eDbtagType_IFO:
             tag.erase();
             break;
