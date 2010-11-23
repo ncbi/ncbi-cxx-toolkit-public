@@ -206,9 +206,9 @@ class NCBI_DBAPIDRIVER_EXPORT CDBUniversalMapper : public CDBServiceMapperCoR
 public:
     typedef pair<string, TFactory> TMapperConf;
 
-    CDBUniversalMapper(const IRegistry* registry = NULL,
+    CDBUniversalMapper(const IRegistry* registry = nullptr,
                        const TMapperConf& ext_mapper
-                       = TMapperConf(kEmptyStr, NULL));
+                       = TMapperConf(kEmptyStr, nullptr));
     virtual ~CDBUniversalMapper(void);
 
     virtual void Configure(const IRegistry* registry = NULL);
