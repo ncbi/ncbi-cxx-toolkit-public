@@ -495,7 +495,7 @@ pair<BlockModel*, bool> BlockModel::operator+(const DeltaBlockModel& delta) cons
 		if (dt->objectBlockID < 0 || dt->objectBlockID >= m_blocks.size())
 		{
 			delete result;
-			return pair<BlockModel*, bool>(0, false);
+			return pair<BlockModel*, bool>(nullptr, false);
 		}
 		const Block& srcBlock = m_blocks[dt->objectBlockID];
 		Block block = srcBlock + (*dt);
