@@ -355,7 +355,7 @@ CSeq_id_Handle CSeq_id_int_Tree::FindOrCreate(const CSeq_id& id)
 
     TWriteLockGuard guard(m_TreeLock);
     pair<TIntMap::iterator, bool> ins =
-        m_IntMap.insert(TIntMap::value_type(value, 0));
+        m_IntMap.insert(TIntMap::value_type(value, nullptr));
     if ( ins.second ) {
         ins.first->second = CreateInfo(id);
     }
