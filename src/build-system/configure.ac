@@ -5036,7 +5036,7 @@ else
    case "`"$wxconf" $wxcfflags --version`" in
       2.[[89]].* | 2.[[0-9]][[0-9]]* )
          NCBI_PACKAGE(wx2.8)
-         wxlibs=std,richtext
+         wxlibs=std,richtext,aui
          ;;
       *)
          wxlibs=std

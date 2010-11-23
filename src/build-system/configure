@@ -27570,7 +27570,7 @@ else
    case "`"$wxconf" $wxcfflags --version`" in
       2.[89].* | 2.[0-9][0-9]* )
                    WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" "
-         wxlibs=std,richtext
+         wxlibs=std,richtext,aui
          ;;
       *)
          wxlibs=std
