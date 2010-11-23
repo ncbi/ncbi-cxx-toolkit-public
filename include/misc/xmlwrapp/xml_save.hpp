@@ -60,9 +60,9 @@ namespace xml {
         save_op_no_decl     = 1 << 17,  ///< Drop the xml declaration
         save_op_no_empty    = 1 << 18,  ///< No empty tags
         save_op_no_xhtml    = 1 << 19,  ///< Disable XHTML1 specific rules
-        save_op_xhtml       = 1 << 20,  ///< Force XHTML1 specific rules
-        save_op_not_as_xml  = 1 << 21,  ///< Do not force XML serialization on HTML doc
-        save_op_as_html     = 1 << 22,  ///< Force HTML serialization on XML doc
+        save_op_xhtml       = 1 << 20,  ///< Force XHTML1 specific rules. Ignored if libxml2 version is < 2.7.2
+        save_op_not_as_xml  = 1 << 21,  ///< Do not force XML serialization on HTML doc. Ignored if libxml2 version is < 2.7.2
+        save_op_as_html     = 1 << 22,  ///< Force HTML serialization on XML doc. Ignored if libxml2 version is < 2.7.2
 
         save_op_default     = 0         ///< Default is:
                                         ///< - no compression

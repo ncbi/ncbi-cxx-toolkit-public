@@ -45,6 +45,7 @@
 #include <iostream>
 
 // libxml2 includes
+#include <libxml/xmlversion.h>
 #include <libxml/xmlsave.h>
 
 // xmlwrapp includes
@@ -126,9 +127,12 @@ namespace impl {
         if (options & save_op_no_decl)            libxml2_options |= XML_SAVE_NO_DECL;
         if (options & save_op_no_empty)           libxml2_options |= XML_SAVE_NO_EMPTY;
         if (options & save_op_no_xhtml)           libxml2_options |= XML_SAVE_NO_XHTML;
+
+        #if LIBXML_VERSION >= 20702
         if (options & save_op_xhtml)              libxml2_options |= XML_SAVE_XHTML;
         if ((options & save_op_not_as_xml) == 0)  libxml2_options |= XML_SAVE_AS_XML;
         if (options & save_op_as_html)            libxml2_options |= XML_SAVE_AS_HTML;
+        #endif
 
         return libxml2_options;
     }
