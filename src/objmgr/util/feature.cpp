@@ -1585,7 +1585,7 @@ pair<int, CFeatTree::CFeatInfo*>
 CFeatTree::x_LookupParentByRef(CFeatInfo& info,
                                CSeqFeatData::ESubtype parent_type)
 {
-    pair<int, CFeatInfo*> ret(0, 0);
+    pair<int, CFeatInfo*> ret(0, nullptr);
     if ( !info.m_Feat.IsSetXref() ) {
         return ret;
     }
