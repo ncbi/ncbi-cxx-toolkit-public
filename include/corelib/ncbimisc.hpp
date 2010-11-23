@@ -47,7 +47,7 @@
 #  include <ctype.h>
 #endif
 
-#if !HAVE_NULLPTR
+#if !defined(HAVE_NULLPTR)
 #  define nullptr NULL
 #endif
 
