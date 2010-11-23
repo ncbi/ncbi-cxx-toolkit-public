@@ -136,8 +136,6 @@ typedef   int   ssize_t;
 
 #if _MSC_VER >= 1600
 #  define HAVE_NULLPTR  1
-#else
-#  define HAVE_NULLPTR  0
 #endif
 
 /* Windows 2000 and above */

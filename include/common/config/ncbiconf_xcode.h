@@ -601,7 +601,7 @@
 /* #undef HAVE_WXWINDOWS */
 
 /* Define to 1 if nullptr keyword is available. */
-#define HAVE_NULLPTR 0
+/* #undef HAVE_NULLPTR */
 
 /* Define as const if the declaration of iconv() needs const. */
 #define ICONV_CONST const
