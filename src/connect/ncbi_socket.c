@@ -1444,14 +1444,14 @@ static EIO_Status s_Select_(size_t                n,
     struct timeval x_tv;
     size_t         i;
 
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
     if (!n) {
         DWORD ms =
             tv ? tv->tv_sec * 1000 + (tv->tv_usec + 500) / 1000 : INFINITE;
         Sleep(ms);
         return eIO_Success;
     }
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
 
     if (tv)
         x_tv = *tv;
@@ -1713,7 +1713,7 @@ static EIO_Status s_Select_(size_t                n,
 #  if defined(NCBI_OS_UNIX)  &&  defined(HAVE_POLL_H)
 
 
-#    define NPOLLS ((3 * sizeof(fd_set)) / sizeof(struct pollfd))
+#    define NPOLLS  ((3 * sizeof(fd_set)) / sizeof(struct pollfd))
 
 
 static unsigned int s_CountPolls(size_t n, SSOCK_Poll polls[])
@@ -1774,11 +1774,11 @@ static EIO_Status s_Poll_(size_t                n,
     if (s_IOWaitSysAPI != eSOCK_IOWaitSysAPIAuto)
         m = (unsigned int) n;
     else
-#ifdef FD_SETSIZE
+#    ifdef FD_SETSIZE
     if (n > FD_SETSIZE)
         m = (unsigned int) n;
     else
-#endif /*FD_SETSIZE*/
+#    endif /*FD_SETSIZE*/
     if (!(m = s_CountPolls(n, polls)))
         return s_Select_(n, polls, tv, asis);
 
@@ -2004,7 +2004,7 @@ static EIO_Status s_Poll_(size_t                n,
 }
 
 
-#endif /*NCBI_OS_UNIX && HAVE_POLL_H*/
+#  endif /*NCBI_OS_UNIX && HAVE_POLL_H*/
 
 
 #endif /*!NCBI_OS_MSWIN || !NCBI_CXX_TOOLKIT*/
@@ -2560,8 +2560,7 @@ static EIO_Status s_Recv(SOCK    sock,
             }
             sock->r_status = eIO_Success;
             break;
-        } else if (flag < 0)
-            break;
+        }
 
         if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN) {
             /* blocked -- wait for data to come;  return if timeout/error */
@@ -2630,7 +2629,9 @@ static EIO_Status s_Read(SOCK    sock,
                          int     peek)
 {
     char xx_buf[SOCK_BUF_CHUNK_SIZE];
+    struct timeval* r_timeout;
     EIO_Status status;
+    int/*bool*/ done;
 
     if (sock->type != eDatagram) {
         *n_read = 0;
@@ -2664,11 +2665,14 @@ static EIO_Status s_Read(SOCK    sock,
         return eIO_Closed;
     }
 
+    done = 0/*false*/;
+    r_timeout = sock->r_timeout;
     assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !(buf  ||  size)));
     do {
-        char*  x_buf;
-        size_t n_todo;
+        static const struct timeval kZeroRTimeout = { 0 };
         size_t x_read;
+        size_t n_todo;
+        char*  x_buf;
 
         if (!buf/*internal upread/skipping*/  ||
             ((n_todo = size - *n_read) < sizeof(xx_buf))) {
@@ -2676,6 +2680,8 @@ static EIO_Status s_Read(SOCK    sock,
             x_buf    =        xx_buf;
         } else
             x_buf    = (char*) buf + *n_read;
+        if (*n_read)
+            sock->r_timeout = &kZeroRTimeout;
 
         if (sock->session) {
             int x_error;
@@ -2703,7 +2709,7 @@ static EIO_Status s_Read(SOCK    sock,
             }
         } else {
             x_read = 0;
-            status = s_Recv(sock, x_buf, n_todo, &x_read, peek < 0 ? -1 : 0);
+            status = s_Recv(sock, x_buf, n_todo, &x_read, 0);
             assert(status == eIO_Success  ||  !x_read);
         }
         if (status != eIO_Success)
@@ -2714,25 +2720,22 @@ static EIO_Status s_Read(SOCK    sock,
         }
         assert(status == eIO_Success  &&  0 < x_read  &&  x_read <= n_todo);
 
+        if (x_read < n_todo)
+            done = 1/*true*/;
         if (buf  ||  size) {
             n_todo = size - *n_read;
-            if (n_todo > (size_t) x_read)
-                n_todo = (size_t) x_read;
+            if (n_todo > x_read)
+                n_todo = x_read;
             if (buf  &&  x_buf == xx_buf)
                 memcpy((char*) buf + *n_read, x_buf, n_todo);
         } else
             n_todo = x_read;
 
-        if (peek  ||  (size_t) x_read > n_todo) {
-            /* store the newly read data in the internal input buffer */
-            int/*bool*/ error = !BUF_Write(&sock->r_buf,               peek
-                                           ? x_buf
-                                           : x_buf           + n_todo, peek
-                                           ? (size_t) x_read
-                                           : (size_t) x_read - n_todo);
-            if ((size_t) x_read > n_todo)
-                x_read = n_todo;
-            if (error) {
+        if (peek  ||  x_read > n_todo) {
+            /* store the newly read/excess data in the internal input buffer */
+            if (!BUF_Write(&sock->r_buf,
+                           peek ? x_buf  : x_buf  + n_todo,
+                           peek ? x_read : x_read - n_todo)) {
                 CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                   ("%s[SOCK::Read] "
                                    " Cannot store data in peek buffer",
@@ -2741,13 +2744,15 @@ static EIO_Status s_Read(SOCK    sock,
                 sock->r_status = eIO_Closed;
                 status = eIO_Unknown;
             }
+            if (x_read > n_todo)
+                x_read = n_todo;
         }
-
         *n_read += x_read;
-        if (status != eIO_Success)
-            break;
 
+        if (status != eIO_Success  ||  done)
+            break;
     } while (peek < 0  ||  (!buf  &&  *n_read < size));
+    sock->r_timeout = r_timeout;
 
     return *n_read ? eIO_Success : status;
 }
@@ -3116,7 +3121,7 @@ static EIO_Status s_WriteData(SOCK        sock,
         EIO_Status status;
         FSSLWrite sslwrite = s_SSL ? s_SSL->Write : 0;
         assert(sock->session != SESSION_INVALID);
-        if (!sslwrite)
+        if (!sslwrite  ||  oob)
             return eIO_NotSupported;
         status = sslwrite(sock->session, data, size, n_written, &x_error);
         assert((status == eIO_Success) == (*n_written > 0));
@@ -4268,6 +4273,14 @@ static EIO_Status s_CreateListening(const char*    path,
     if (!path) {
         const char* failed = 0;
 #if    defined(NCBI_OS_MSWIN)  &&  defined(SO_EXCLUSIVEADDRUSE)
+        /* The use of this option comes with caveats, but it is better
+         * to use it rather than having (or leaving) a chance for another
+         * process (which uses SO_REUSEADDR, maliciously or not) be able
+         * to bind to the same port number and snatch incoming connections.
+         * Until a connection exists originated from the port with this
+         * option set, the port (even if the listening instance was closed)
+         * cannot be re-bound (important for service restarts!).  See MSDN.
+         */
         BOOL excl = TRUE;
         if (setsockopt(x_lsock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
                        (const char*) &excl, sizeof(excl)) != 0) {
@@ -4287,7 +4300,7 @@ static EIO_Status s_CreateListening(const char*    path,
          */
         if (!s_SetReuseAddress(x_lsock, 1/*true*/))
             failed = "REUSEADDR";
-#endif /*NCBI_OS_MSWIN && SO_EXCLUSIVEADDRUSE*/
+#endif /*NCBI_OS_MSWIN...*/
         if (failed) {
             x_error = SOCK_ERRNO;
             if (port)
