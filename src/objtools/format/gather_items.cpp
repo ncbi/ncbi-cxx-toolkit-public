@@ -439,8 +439,21 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
         return;
     }
 
-    // gather references from descriptors
+    // gather references from descriptors (top-level first)
+    // (Since CSeqdesc_CI doesn't currently support bottom-to-top iteration,
+    //  we approximate this by iterating over top-level, then non-top-level seqs )
+    for (CSeqdesc_CI it(seq.GetTopLevelEntry(), CSeqdesc::e_Pub); it; ++it) {
+        const CPubdesc& pubdesc = it->GetPub();
+        if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+            continue;
+        }
+        refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
+    }
     for (CSeqdesc_CI it(seq, CSeqdesc::e_Pub); it; ++it) {
+        // check for dups from last for-loop
+        if( ! it.GetSeq_entry_Handle().HasParentEntry() ) {
+            continue;
+        }
         const CPubdesc& pubdesc = it->GetPub();
         if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
             continue;

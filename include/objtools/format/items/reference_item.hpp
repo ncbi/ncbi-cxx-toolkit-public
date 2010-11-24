@@ -147,6 +147,9 @@ public:
     const string&     GetRemark    (void) const { return m_Remark;     }
 
     void SetLoc(const CConstRef<CSeq_loc>& loc);
+    void SetRemark( const CPubdesc::TFig* new_fig,
+        const CPubdesc::TMaploc *new_maploc,
+        const CPubdesc::TPoly_a *new_poly_a );
 
     // test if matches publication(s)
     bool Matches(const CPub_set& ps) const;

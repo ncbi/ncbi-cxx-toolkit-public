@@ -90,7 +90,7 @@ private:
     bool x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp);
     bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
-        bool html = false);
+        TType type, bool html = false);
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type);
 

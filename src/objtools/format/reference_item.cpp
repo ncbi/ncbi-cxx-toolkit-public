@@ -242,15 +242,53 @@ void CReferenceItem::SetLoc(const CConstRef<CSeq_loc>& loc)
     m_Loc = loc;
 }
 
-static bool s_ShouldRemoveRef
-(const CReferenceItem& curr_ref,
- const CReferenceItem& prev_ref)
+void CReferenceItem::SetRemark( const CPubdesc::TFig* new_fig,
+    const CPubdesc::TMaploc *new_maploc,
+    const CPubdesc::TPoly_a *new_poly_a ) 
 {
-    // all tests at least require overlap
-    const bool currPrevOverlap = ( prev_ref.GetLoc().GetStop(eExtreme_Biological) + 1 >= curr_ref.GetLoc().GetStart(eExtreme_Biological) );
-    if( ! currPrevOverlap ) {
-        return false;
+    _ASSERT( m_Pubdesc.NotEmpty() && GetContext() );
+
+    CRef<CPubdesc> new_pubdesc( new CPubdesc() );
+    new_pubdesc->Assign( *m_Pubdesc );
+
+    if( new_fig ) {
+        new_pubdesc->SetFig( *new_fig );
     }
+    if( new_maploc ) {
+        new_pubdesc->SetMaploc( *new_maploc );
+    }
+    if( new_poly_a ) {
+        new_pubdesc->SetPoly_a( *new_poly_a );
+    }
+
+    m_Pubdesc.Reset( new_pubdesc );
+
+    // The above changes only affect m_Remark, so
+    // there's less to do than otherwise expected
+    // for a change to m_Pubdesc
+    x_GatherRemark( *GetContext() );
+}
+
+static bool s_ShouldRemoveRef
+(const CReferenceItem& prev_ref,
+ const CReferenceItem& curr_ref)
+{
+    // to remove, the references must overlap (or at least abut)
+    {{
+        // they overlap (or at least abut)
+        if( ! prev_ref.GetLoc().IsWhole() && ! curr_ref.GetLoc().IsWhole() ) {
+            const TSeqPos prev_stop = prev_ref.GetLoc().GetStop(eExtreme_Positional);
+            const TSeqPos curr_start = curr_ref.GetLoc().GetStart(eExtreme_Positional);
+            if( (prev_stop == kInvalidSeqPos) || (curr_start == kInvalidSeqPos) ) {
+                // invalid start/stop
+                return false;
+            }
+
+            if( ! ( prev_stop + 1 >= curr_start ) ) {
+                return false;
+            }
+        }
+    }}
 
     // same PMID ( and overlap )
     if( curr_ref.GetPMID() != 0 && prev_ref.GetPMID() != 0 ) {
@@ -272,8 +310,11 @@ static bool s_ShouldRemoveRef
     }
     const bool authorsSame = NStr::EqualNocase(auth1, auth2);
 
-    if( NStr::EqualNocase( curr_ref.GetUniqueStr(), prev_ref.GetUniqueStr() ) &&
-        curr_ref.GetLoc().Equals( prev_ref.GetLoc() ) &&
+    const string& curr_unique_str = curr_ref.GetUniqueStr();
+    const string& prev_unique_str = prev_ref.GetUniqueStr();
+    const bool locationsEqual = curr_ref.GetLoc().Equals( prev_ref.GetLoc() );
+    if( NStr::EqualNocase( curr_unique_str, prev_unique_str ) &&
+        locationsEqual &&
         authorsSame ) {
             return true;
     }
@@ -281,6 +322,52 @@ static bool s_ShouldRemoveRef
     return false;
 }
 
+static void s_CombineRefs
+( CReferenceItem& prev_ref,
+  CReferenceItem& curr_ref)
+{
+    // merge locations
+    {{
+        CConstRef<CSeq_loc> prev_loc( &prev_ref.GetLoc() );
+        CConstRef<CSeq_loc> curr_loc( &curr_ref.GetLoc() );
+
+        CConstRef<CSeq_id> prev_id( prev_loc->GetId() );
+        CConstRef<CSeq_id> curr_id( curr_loc->GetId() );
+
+        CRef<CSeq_loc> new_loc = Seq_loc_Add( *prev_loc, *curr_loc,
+            CSeq_loc::fMerge_All, &prev_ref.GetContext()->GetScope() );
+
+        // save the old id because sometimes the merging changes it
+        // We check for sameness to make sure it's reasonable to do this.
+        if( prev_id && curr_id && prev_id->Equals( *curr_id ) ) {
+            new_loc->SetId( *prev_id );
+        }
+
+        prev_ref.SetLoc( new_loc );
+    }}
+
+    // most merging ops are only done if muid or pmid match
+    const bool same_muid = ( curr_ref.GetMUID() != 0 && (prev_ref.GetMUID() == curr_ref.GetMUID()) );
+    const bool same_pmid = ( curr_ref.GetPMID() != 0 && (prev_ref.GetPMID() == curr_ref.GetPMID()) );
+    if( (same_muid || same_pmid) &&
+        ( prev_ref.GetRemark() != curr_ref.GetRemark() )  ) 
+    {
+        const CPubdesc& prev_pubdesc = prev_ref.GetPubdesc();
+        const CPubdesc& curr_pubdesc = curr_ref.GetPubdesc();
+
+        const CPubdesc::TFig* new_fig = ( (! prev_pubdesc.IsSetFig() && curr_pubdesc.IsSetFig()) ? &curr_pubdesc.GetFig() : NULL );
+        const CPubdesc::TMaploc *new_maploc = ( (! prev_pubdesc.IsSetMaploc() && curr_pubdesc.IsSetMaploc()) ? &curr_pubdesc.GetMaploc() : NULL );
+        // the "false" is arbitrary and won't get ever used
+        const CPubdesc::TPoly_a new_poly_a =
+            ( curr_pubdesc.IsSetPoly_a() ? curr_pubdesc.GetPoly_a() : false );
+
+        prev_ref.SetRemark(
+            new_fig,
+            new_maploc,
+            ( (! prev_pubdesc.IsSetPoly_a() && curr_pubdesc.IsSetPoly_a()) ? &new_poly_a : NULL )
+        );
+    }
+}
 
 static void s_MergeDuplicates
 (CReferenceItem::TReferences& refs,
@@ -361,8 +448,9 @@ static void s_MergeDuplicates
         _ASSERT(*curr);
 
         bool remove = false;
+        bool combine_allowed = true;
 
-        const CReferenceItem& curr_ref = **curr;
+        CReferenceItem& curr_ref = **curr;
         if ( curr_ref.IsJustUids() ) {
             remove = true;
         } else {
@@ -373,10 +461,12 @@ static void s_MergeDuplicates
                 // do not allow no author reference to appear by itself - U07000.1
                 if( !curr_ref.IsSetAuthors() ) {
                     remove = true;
+                    combine_allowed = false;
                 } else {
                     // GenPept RefSeq suppresses cit-subs
                     if( ctx.IsRefSeq() && ctx.IsProt() && curr_ref.GetCategory() == CReferenceItem::eSubmission ) {
                         remove = true;
+                        combine_allowed = false;
                     }
                 }
 
@@ -385,16 +475,17 @@ static void s_MergeDuplicates
 
         // check for duplicate references (if merging is allowed)
         if( curr != refs.begin() ) {
-            const CReferenceItem& prev_ref = **(curr-1);
+            CReferenceItem& prev_ref = **(curr-1);
 
-            // use less-than operator to check for equality
-            /* LessThan lessThan(false, ctx.IsRefSeq());
-            if( ! lessThan( *(curr-1), *curr ) && ! lessThan( *curr, *(curr-1) ) ) {
-                // they're equal (i.e., duplicates)
-                remove = true;
-            } */
+            if( prev_ref.GetReftype() == CPubdesc::eReftype_seq && 
+                    curr_ref.GetReftype() != CPubdesc::eReftype_seq ) {
+                combine_allowed = false;
+            }
 
-            if( s_ShouldRemoveRef( curr_ref, prev_ref ) ) {
+            if( s_ShouldRemoveRef( prev_ref, curr_ref ) ) {
+                if( combine_allowed ) {
+                    s_CombineRefs( prev_ref, curr_ref );
+                }
                 remove = true;
             }
         }
@@ -411,7 +502,7 @@ static void s_MergeDuplicates
 void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 {
     {{
-        sort(refs.begin(), refs.end(), LessThan(false, ctx.IsRefSeq()));
+        stable_sort(refs.begin(), refs.end(), LessThan(false, ctx.IsRefSeq()));
     }}
 
     {{
@@ -427,7 +518,7 @@ void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 
     {{
         // re-sort, take serial number into consideration.
-        sort(refs.begin(), refs.end(), LessThan(true, ctx.IsRefSeq()));
+        stable_sort(refs.begin(), refs.end(), LessThan(true, ctx.IsRefSeq()));
     }}
     
     // assign final serial numbers
@@ -675,7 +766,9 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
     m_Gen.Reset(&gen);
 
     // category
-    m_Category = eUnpublished;
+    if( m_Category == eUnknown ) {
+        m_Category = eUnpublished;
+    }
 
     // serial
     if (gen.IsSetSerial_number()  &&  gen.GetSerial_number() > 0  &&
@@ -693,7 +786,7 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
             !NStr::StartsWith(cit, "submitted")        &&
             !NStr::StartsWith(cit, "to be published")  &&
             !NStr::StartsWith(cit, "in press")         &&
-            !NStr::Find(cit, "Journal") == NPOS        &&
+            NStr::Find(cit, "Journal") == NPOS         &&
             gen.IsSetSerial_number()  &&  gen.GetSerial_number() == 0) {
             x_SetSkip();
             return;

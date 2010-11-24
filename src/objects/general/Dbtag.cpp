@@ -219,11 +219,11 @@ typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefType
 // case insensitive, per the C Toolkit
 typedef CStaticArraySet<const char*, PNocase_CStr> TDbxrefSet;
 
-DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedDb, kApprovedDbXrefs);
+DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedDb,       kApprovedDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedRefSeqDb, kApprovedRefSeqDbXrefs);
-DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedSrcDb, kApprovedSrcDbXrefs);
-DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedProbeDb, kApprovedProbeDbXrefs);
-DEFINE_STATIC_ARRAY_MAP(TDbxrefSet, sc_SkippableDbXrefs, kSkippableDbXrefs);
+DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedSrcDb,    kApprovedSrcDbXrefs);
+DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedProbeDb,  kApprovedProbeDbXrefs);
+DEFINE_STATIC_ARRAY_MAP(TDbxrefSet,     sc_SkippableDbXrefs, kSkippableDbXrefs);
 
 // destructor
 CDbtag::~CDbtag(void)
@@ -267,19 +267,26 @@ void CDbtag::GetLabel(string* label) const
 // Test if CDbtag.db is in the approved databases list.
 // NOTE: 'GenBank', 'EMBL', 'DDBJ' and 'REBASE' are approved only in 
 //        the context of a RefSeq record.
-bool CDbtag::IsApproved(bool refseq) const
+bool CDbtag::IsApproved(bool refseq, bool is_source) const
 {
     if ( !CanGetDb() ) {
         return false;
     }
     const string& db = GetDb();
 
-    return sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end()  ||
-        (refseq  &&  sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end());
+    if( refseq && sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end() ) {
+        return true;
+    }
+
+    if( is_source ) {
+        return sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end();
+    } else {
+        return sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end();
+    }
 }
 
 
-const char* CDbtag::IsApprovedNoCase(bool refseq) const
+const char* CDbtag::IsApprovedNoCase(bool refseq, bool is_source) const
 {
     if ( !CanGetDb() ) {
         return false;
@@ -287,12 +294,16 @@ const char* CDbtag::IsApprovedNoCase(bool refseq) const
     const string& db = GetDb();
     
     const char* retval = 0;
+    // This is *slow*.  Someone needs to replace this with a binary search or something
+    // Since this function isn't even used right now, I'm postponing fixing this.
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
             retval = it->first;
             break;
         }
     }
+    // This is *slow*.  Someone needs to replace this with a binary search or something
+    // Since this function isn't even used right now, I'm postponing fixing this.
     if ( retval == 0  &&  refseq ) {
         ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
             if ( NStr::EqualNocase(db, it->first) ) {

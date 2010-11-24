@@ -69,6 +69,10 @@ void COriginItem::x_GatherInfo(CBioseqContext& ctx)
         if ( gbb.CanGetOrigin() ) {
             x_SetObject(*gb);
             m_Origin = gbb.GetOrigin();
+            const string::size_type max_origin_len = 66;
+            if( m_Origin.length() > max_origin_len ) {
+                m_Origin.resize( max_origin_len );
+            }
         }
     }
 }

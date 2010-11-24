@@ -223,6 +223,7 @@ protected:
     void x_AddQualsProt( CBioseqContext&, bool );
     void x_AddQualsPsecStr( CBioseqContext& );
     void x_AddQualsHet( CBioseqContext& ctx );
+    void x_AddQualsVariation( CBioseqContext& ctx );
 
     void x_AddQuals( CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
     void x_AddQuals( CBioseqContext& ctx ) { x_AddQuals( ctx, CConstRef<CFeatureItem>() ); }

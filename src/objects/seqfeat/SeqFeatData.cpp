@@ -159,7 +159,7 @@ static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(Het, het, "Het", "Het"),
     FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source"),
     FEAT_INFO_PAIR(Clone, clone, "CloneRef", "misc_feature"),
-    FEAT_INFO_PAIR(Variation, variation_ref, "Variation", "misc_feature")
+    FEAT_INFO_PAIR(Variation, variation_ref, "Variation", "variation")
 };
 
 typedef CStaticArrayMap<CSeqFeatData::E_Choice,
@@ -2437,12 +2437,31 @@ END_SUBTYPE
 //START_SUBTYPE(clone)
 //END_SUBTYPE
 
-//START_SUBTYPE(variation_ref)
-//END_SUBTYPE
+START_SUBTYPE(variation_ref)
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(compare);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(experiment);
+    ADD_QUAL(frequency);
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(phenotype);
+    ADD_QUAL(product);
+    ADD_QUAL(replace);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
 
 #undef START_SUBTYPE
 #undef ADD_QUAL
-#undef END_SYBTYPE
+#undef END_SUBTYPE
 
     // sort for binary_search
     NON_CONST_ITERATE ( TFeatQuals, iter, table ) {

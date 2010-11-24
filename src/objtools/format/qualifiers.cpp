@@ -1547,12 +1547,20 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         }
 
         if (ctx.Config().DropBadDbxref()) {
-            if (!dbt.IsApproved(ctx.IsRefSeq())) {
-                continue;
+
+            // Special case for EST or GSS: we don't filter the dbtags as toughly
+            bool is_est_or_gss = false;
+            const CMolInfo* mol_info = ctx.GetMolinfo();
+            if( NULL != mol_info && mol_info->CanGetTech() ) {
+                if( mol_info->GetTech() == CMolInfo::eTech_est || mol_info->GetTech() == CMolInfo::eTech_survey ) {
+                    is_est_or_gss = true;
+                }
             }
-            if ( (flags & IFlatQVal::fIsSource) && db == "dbEST" ) {
-                // approved for features only
-                continue;
+
+            if( ! is_est_or_gss ) {
+                if (!dbt.IsApproved(ctx.IsRefSeq(), (flags & IFlatQVal::fIsSource) )) {
+                    continue;
+                }
             }
         }
 

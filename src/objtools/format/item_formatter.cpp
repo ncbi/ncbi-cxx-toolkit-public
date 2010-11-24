@@ -883,6 +883,7 @@ static void s_FormatCitGen
             pos += 9; // skip over the string part "Journal=\""
             if( cit.at( cit.length() - 1) == '"' ) { // There should be a double-quote at the end to complete the "Journal" entry
                 journal = cit.substr(pos, cit.length() - pos - 1 );
+                prefix = ' ';
             } else {
                 journal.erase(); // error: double-quote that completes journal was not there
             }

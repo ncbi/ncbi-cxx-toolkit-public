@@ -52,6 +52,8 @@
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -60,6 +62,7 @@
 #include <objects/seqfeat/PCRReaction.hpp>
 #include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seqfeat/Gene_nomenclature.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -71,6 +74,8 @@
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Variation_ref.hpp>
+#include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -1835,6 +1840,9 @@ void CFeatureItem::x_AddQuals(
     case CSeqFeatData::e_Het:
         x_AddQualsHet( ctx );
         break;
+    case CSeqFeatData::e_Variation:
+        x_AddQualsVariation( ctx );
+        break;
     default:
         break;
     }
@@ -2771,6 +2779,65 @@ void CFeatureItem::x_AddQualsHet(
     x_AddQual( eFQ_heterogen, new CFlatStringQVal( het.Get() ) );
 }
 
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsVariation( 
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT( m_Feat.GetData().IsVariation() );
+
+    const CSeqFeatData& data = m_Feat.GetData();
+    const CSeqFeatData_Base::TVariation& variation = data.GetVariation();
+
+    // Make the /db_xref qual
+    if( variation.CanGetId() ) {
+        const CVariation_ref_Base::TId& dbt = variation.GetId();
+        // the id tag is quite specific (e.g. db must be "dbSNP", etc.) or it won't print 
+        if ( dbt.IsSetDb()  &&  !dbt.GetDb().empty()  &&
+                dbt.IsSetTag() && dbt.GetTag().IsStr() ) {
+            const string &oid_str = dbt.GetTag().GetStr();
+            if( dbt.GetDb() == "dbSNP" && NStr::StartsWith(oid_str, "rs" ) ) {
+                x_AddQual(eFQ_db_xref,  new CFlatStringQVal( dbt.GetDb() + ":" + oid_str.substr( 2 ) ) );
+            }
+        }
+    }
+
+    // Make the /replace quals:
+    if( variation.CanGetData() && variation.GetData().IsInstance() && 
+            variation.GetData().GetInstance().CanGetDelta() ) {
+        const CVariation_inst_Base::TDelta& delta = variation.GetData().GetInstance().GetDelta();
+        ITERATE( CVariation_inst_Base::TDelta, delta_iter, delta ) {
+            if( *delta_iter && (*delta_iter)->CanGetSeq() ) {
+                const CDelta_item_Base::TSeq& seq = (*delta_iter)->GetSeq();
+                if( seq.IsLiteral() && seq.GetLiteral().CanGetSeq_data() ) {
+                    const CDelta_item_Base::C_Seq::TLiteral& seq_literal = seq.GetLiteral();
+                    const CSeq_literal_Base::TSeq_data& seq_data = seq_literal.GetSeq_data();
+
+                    // convert the data to the standard a,c,g,t
+                    CSeq_data iupacna_seq_data;
+                    CSeqportUtil::Convert( seq_data,
+                        &iupacna_seq_data,
+                        CSeq_data::e_Iupacna );
+                    string nucleotides = iupacna_seq_data.GetIupacna().Get();
+
+                    // if the specified length and the length of the data conflict,
+                    // use the smaller
+                    const string::size_type max_len_allowed = seq_literal.GetLength();
+                    if( nucleotides.size() > max_len_allowed ) {
+                        nucleotides.resize( max_len_allowed );
+                    }
+
+                    NStr::ToLower( nucleotides );
+
+                    if (!NStr::IsBlank(nucleotides)) {
+                        x_AddQual(eFQ_replace, new CFlatStringQVal(nucleotides));
+                    }
+                }
+            }
+        }
+    }
+}
+
 static const string& s_GetSiteName(CSeqFeatData::TSite site)
 {
     static const string kOther = "other";
@@ -3528,7 +3595,6 @@ void CFeatureItem::x_ImportQuals(
         case eFQ_replace:
             {{
                  string s(val);
-                 NStr::ToLower(s);
                  replace_quals.push_back(s);
              }}
             break;
@@ -4089,7 +4155,7 @@ void CFeatureItem::x_CleanQuals(
             CProt_ref::TName::iterator new_end = 
                 remove( remove_start, prot_names->SetValue().end(), gene_name );
             prot_names->SetValue().erase( new_end, prot_names->SetValue().end() );
-                
+ 
             if (prot_names->GetValue().empty()) {
                 x_RemoveQuals(eFQ_prot_names);
                 prot_names = NULL;
