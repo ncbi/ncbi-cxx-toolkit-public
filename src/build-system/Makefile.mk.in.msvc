@@ -87,7 +87,7 @@ IgnoreDefaultLibraryNames=
 FixedBaseAddress=0
 
 [Linker.1000]
-AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib
+AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 
 [Linker.x64]
 TargetMachine=17
