@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="Windows-1252"?>
 <!--    
                 This is the Current DTD for Entrez eLink
 $Id$
@@ -42,7 +41,6 @@ $Id$
 <!ELEMENT       SubjectType	(#PCDATA)>	<!-- .+ -->
 <!ELEMENT       Category	(#PCDATA)>	<!-- .+ -->
 <!ELEMENT       Attribute	(#PCDATA)>	<!-- .+ -->
-<!ELEMENT	    LinkName	(#PCDATA)>	<!-- \S+ -->
 <!ELEMENT       Name		(#PCDATA)>	<!-- .+ -->
 <!ELEMENT       NameAbbr	(#PCDATA)>	<!-- \S+ -->
 <!ELEMENT       SubProvider (#PCDATA)>
