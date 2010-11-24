@@ -109,20 +109,23 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
                                   char* line, size_t maxlinelen,
                                   FFTPReplyParser parser)
 {
-    EIO_Status status;
+    EIO_Status status = eIO_Success;
     size_t     lineno;
     size_t     len;
 
     assert(xxx->cntl);
     for (lineno = 0; ; lineno++) {
         const char* msg;
+        EIO_Status rdst;
         char buf[1024];
         int c, m;
 
         /* all FTP replies are at least '\n'-terminated, no ending with EOF */
-        status = SOCK_ReadLine(xxx->cntl, buf, sizeof(buf), &len);
-        if (status != eIO_Success)
+        rdst = SOCK_ReadLine(xxx->cntl, buf, sizeof(buf), &len);
+        if (rdst != eIO_Success) {
+            status = rdst;
             break;
+        }
         if (len == sizeof(buf)) {
             status = eIO_Unknown/*line too long*/;
             break;
@@ -152,11 +155,6 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
         }
         if (m)
             break;
-    }
-    if (SOCK_Wait(xxx->cntl, eIO_Read, &kZeroTimeout) == eIO_Success) {
-        SOCK_Read(xxx->cntl, 0, 1<<20, &len, eIO_ReadPlain);
-        if (status == eIO_Success  &&  len)
-            status = eIO_Unknown;
     }
     return status;
 }
@@ -458,6 +456,8 @@ static EIO_Status s_FTPLogin(SFTPConnector* xxx)
     status = s_FTPReply(xxx, &code, 0, 0, 0);
     if (status != eIO_Success)
         return status;
+    if (code == 503)
+        return eIO_Closed;
     if (code != 230)
         return eIO_Unknown;
     status = s_FTPFeatures(xxx);
@@ -1058,7 +1058,7 @@ static EIO_Status s_FTPXfer(SFTPConnector*  xxx,
                                      " @ :%hu (%s)", xxx->what,
                                      LSOCK_GetPort(lsock, eNH_HostByteOrder),
                                      IO_StatusStr(status)));
-                        /* though it may have been started at the server end */
+                        /* though it may have started at the server end */
                         code = 2/*force*/;
                     } else if (!(xxx->flag & fFTP_LogData))
                         SOCK_SetDataLogging(xxx->data, eDefault);
@@ -1073,10 +1073,14 @@ static EIO_Status s_FTPXfer(SFTPConnector*  xxx,
                     }
                     return eIO_Success;
                 }
-            } else if (dir == eFTP_In
-                       /* w/o data connection, user gets eIO_Closed on read */
-                       &&  code == 450/*no files*/  &&  (*cmd != 'N'/*NLST*/ ||
-                                                         *cmd != 'L'/*LIST*/)){
+            } else if (dir == eFTP_In  &&  code == 450/*no files*/
+                       &&  (*cmd == 'N'/*NLST*/  ||  *cmd == 'L'/*LIST*/)) {
+                /* NB: w/o data connection, user gets eIO_Closed on read */
+                assert(status == eIO_Success);
+                code = 1/*quick*/;
+            } else if (code == 450  ||  code == 550) {
+                /* file processing errors: not a file, not a dir, etc */
+                status = eIO_Closed;
                 code = 1/*quick*/;
             } else {
                 status = eIO_Unknown;
