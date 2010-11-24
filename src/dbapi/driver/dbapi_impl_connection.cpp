@@ -131,7 +131,7 @@ void CConnection::CheckCanOpen(void)
 
     // Check for maximum number of connections
     if (!CDbapiConnMgr::Instance().AddConnect()) {
-		const string conn_num = ConvertSafe(CDbapiConnMgr::Instance().GetMaxConnect()).operator std::string();
+		const string conn_num = ConvertSafe(CDbapiConnMgr::Instance().GetMaxConnect());
 		const string msg = 
 			string("Cannot create new connection: maximum connections amount (")
 			+ conn_num

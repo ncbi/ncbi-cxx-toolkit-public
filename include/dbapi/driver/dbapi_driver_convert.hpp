@@ -320,7 +320,7 @@ private:
             throw CInvalidConversionException();
         }
 
-        return Convert(db_obj.Value()).operator TO();
+        return Convert(db_obj.Value());
     }
 
     template <typename TO, typename FROM>
@@ -493,7 +493,7 @@ private:
             return TO();
         }
 
-        return Convert(db_obj.Value()).operator TO();
+        return Convert(db_obj.Value());
     }
 
     template <typename TO, typename FROM>
