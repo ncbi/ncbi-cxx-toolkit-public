@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="Windows-1252"?>
 <!--    
                 This is the Current DTD for Entrez eLink
 $Id$
@@ -33,13 +34,20 @@ $Id$
 
 <!-- cmd=llinks -->
 
-<!ELEMENT	Url		(#PCDATA)>	<!-- \S+ -->
-<!ELEMENT	IconUrl		(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    Url		    (#PCDATA)>	<!-- \S+ -->
+<!ATTLIST       Url     LNG     (DA|DE|EN|EL|ES|FR|IT|IW|JA|NL|NO|RU|SV|ZH)     "EN">
+<!ELEMENT       IconUrl		(#PCDATA)>	<!-- \S+ -->
+<!ATTLIST       IconUrl LNG     (DA|DE|EN|EL|ES|FR|IT|IW|JA|NL|NO|RU|SV|ZH)     "EN">
+
 <!ELEMENT       SubjectType	(#PCDATA)>	<!-- .+ -->
 <!ELEMENT       Category	(#PCDATA)>	<!-- .+ -->
-<!ELEMENT       Attribute               (#PCDATA)>	<!-- .+ -->
+<!ELEMENT       Attribute	(#PCDATA)>	<!-- .+ -->
+<!ELEMENT	    LinkName	(#PCDATA)>	<!-- \S+ -->
 <!ELEMENT       Name		(#PCDATA)>	<!-- .+ -->
 <!ELEMENT       NameAbbr	(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT       SubProvider (#PCDATA)>
+
+<!ELEMENT   FirstChar (#PCDATA)>
 
 <!ELEMENT	Provider (
 				Name,
@@ -49,23 +57,24 @@ $Id$
 				IconUrl?
 			)>
 
-
 <!ELEMENT	ObjUrl	(
 				Url,
 				IconUrl?,
 				LinkName?,
-                                SubjectType*,
-                                Category*,
-                                Attribute*,
-                               Provider			
+                SubjectType*,
+				Category*,
+                Attribute*,
+                Provider,
+                SubProvider?
 			)>
 
 <!ELEMENT	IdUrlSet	(Id,(ObjUrl+|Info))>
 
-<!ELEMENT	IdUrlList	(IdUrlSet*,ERROR?)>
+<!ELEMENT   FirstChars  (FirstChar*)>
 
 <!ELEMENT       LinkInfo        (DbTo, LinkName, MenuTag?, HtmlTag?, Url?, Priority)>
 <!ELEMENT       IdLinkSet       (Id, LinkInfo*)>
+<!ELEMENT		IdUrlList		(IdUrlSet* | FirstChars*)>
 
 <!-- cmd=ncheck & lcheck & acheck -->
 <!ELEMENT	IdCheckList	((Id|IdLinkSet)*,ERROR?)>
