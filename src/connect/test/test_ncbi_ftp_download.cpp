@@ -441,7 +441,7 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
 static void s_TryAskFtpFilesize(iostream& ios, const char* filename)
 {
     _DEBUG_ARG(size_t testval);
-    _VERIFY(ios << "SIZE " << filename << endl);
+    ios << "SIZE " << filename << endl;
     // If the SIZE command is not understood, the file size can
     // be captured at download start (RETR) if reported by the server
     // in a compatible format (there's the callback set for that, too).
@@ -475,8 +475,8 @@ int main(int argc, const char* argv[])
     typedef enum {
         fProcessor_Null   = 0,  // Discard read data
         fProcessor_List   = 4,  // List files line-by-line
-        fProcessor_Untar  = 1,  // Decompress then discard read data
-        fProcessor_Gunzip = 2   // Untar then discard read data
+        fProcessor_Untar  = 1,  // Untar then discard read data
+        fProcessor_Gunzip = 2   // Decompress then discard read data
     } FProcessor;
     typedef unsigned int TProcessor;
 
@@ -552,10 +552,11 @@ int main(int argc, const char* argv[])
                         kEmptyStr/*path*/,
                         net_info->port,
                         flags,
-                        &ftpcb);
+                        &ftpcb,
+                        net_info->timeout);
 
     TProcessor proc = fProcessor_Null;
-    if        (NStr::EndsWith(filename, ".tgz",    NStr::eNocase) ||
+    if        (NStr::EndsWith(filename, ".tgz",    NStr::eNocase)  ||
                NStr::EndsWith(filename, ".tar.gz", NStr::eNocase)) {
         proc |= fProcessor_Gunzip | fProcessor_Untar;
     } else if (NStr::EndsWith(filename, ".gz",     NStr::eNocase)) {
