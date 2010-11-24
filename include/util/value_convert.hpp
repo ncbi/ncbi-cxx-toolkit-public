@@ -1051,6 +1051,12 @@ public:
     }
 
 public:
+#if defined(NCBI_COMPILER_MSVC)
+    operator bool(void) const
+    { 
+        return m_Value != 0.0F;
+    }
+#endif
 #if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
     operator bool(void) const
     { 
@@ -1137,6 +1143,12 @@ public:
     }
 
 public:
+#if defined(NCBI_COMPILER_MSVC)
+    operator bool(void) const
+    { 
+        return m_Value != 0.0;
+    }
+#endif
 #if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
     operator bool(void) const
     { 

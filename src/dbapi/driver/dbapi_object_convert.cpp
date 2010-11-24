@@ -264,21 +264,21 @@ CValueConvert<SSafeCP, CDB_Object>::operator string(void) const
 
     switch (cur_type) {
         case eDB_Int:
-            return ConvertSafe(static_cast<const CDB_Int&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Int&>(m_Value).Value()).operator std::string();
         case eDB_SmallInt:
-            return ConvertSafe(static_cast<const CDB_SmallInt&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_SmallInt&>(m_Value).Value()).operator std::string();
         case eDB_TinyInt:
-            return ConvertSafe(static_cast<const CDB_TinyInt&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_TinyInt&>(m_Value).Value()).operator std::string();
         case eDB_BigInt:
-            return ConvertSafe(static_cast<const CDB_BigInt&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_BigInt&>(m_Value).Value()).operator std::string();
         case eDB_Bit:
-            return ConvertSafe(static_cast<const CDB_Bit&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Bit&>(m_Value).Value()).operator std::string();
         case eDB_Float:
-            return ConvertSafe(static_cast<const CDB_Float&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Float&>(m_Value).Value()).operator std::string();
         case eDB_Double:
-            return ConvertSafe(static_cast<const CDB_Double&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Double&>(m_Value).Value()).operator std::string();
         case eDB_Numeric:
-            return ConvertSafe(static_cast<const CDB_Numeric&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Numeric&>(m_Value).Value()).operator std::string();
         case eDB_Char:
         case eDB_VarChar:
         case eDB_LongChar:
@@ -313,9 +313,9 @@ CValueConvert<SSafeCP, CDB_Object>::operator string(void) const
             }
             break;
         case eDB_DateTime: 
-            return ConvertSafe(static_cast<const CDB_DateTime&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_DateTime&>(m_Value).Value()).operator std::string();
         case eDB_SmallDateTime: 
-            return ConvertSafe(static_cast<const CDB_SmallDateTime&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_SmallDateTime&>(m_Value).Value()).operator std::string();
         default:
             ReportTypeConvError(cur_type, "string");
             break;
@@ -527,21 +527,21 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
 
     switch (cur_type) {
         case eDB_Int:
-            return ConvertSafe(static_cast<const CDB_Int&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Int&>(m_Value).Value()).operator std::string();
         case eDB_SmallInt:
-            return ConvertSafe(static_cast<const CDB_SmallInt&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_SmallInt&>(m_Value).Value()).operator std::string();
         case eDB_TinyInt:
-            return ConvertSafe(static_cast<const CDB_TinyInt&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_TinyInt&>(m_Value).Value()).operator std::string();
         case eDB_BigInt:
-            return ConvertSafe(static_cast<const CDB_BigInt&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_BigInt&>(m_Value).Value()).operator std::string();
         case eDB_Bit:
-            return ConvertSafe(static_cast<const CDB_Bit&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Bit&>(m_Value).Value()).operator std::string();
         case eDB_Float:
-            return ConvertSafe(static_cast<const CDB_Float&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Float&>(m_Value).Value()).operator std::string();
         case eDB_Double:
-            return ConvertSafe(static_cast<const CDB_Double&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Double&>(m_Value).Value()).operator std::string();
         case eDB_Numeric:
-            return ConvertSafe(static_cast<const CDB_Numeric&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_Numeric&>(m_Value).Value()).operator std::string();
         case eDB_Char:
         case eDB_VarChar:
         case eDB_LongChar:
@@ -576,9 +576,9 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
             }
             break;
         case eDB_DateTime: 
-            return ConvertSafe(static_cast<const CDB_DateTime&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_DateTime&>(m_Value).Value()).operator std::string();
         case eDB_SmallDateTime: 
-            return ConvertSafe(static_cast<const CDB_SmallDateTime&>(m_Value).Value());
+            return ConvertSafe(static_cast<const CDB_SmallDateTime&>(m_Value).Value()).operator std::string();
         default:
             ReportTypeConvError(cur_type, "string");
             break;
@@ -622,21 +622,21 @@ TO Convert_CDB_Object(const CDB_Object& value)
 
     switch (cur_type) {
         case eDB_BigInt:
-            return Convert(static_cast<const CDB_BigInt&>(value).Value());
+            return Convert(static_cast<const CDB_BigInt&>(value).Value()).operator TO();
         case eDB_Int:
-            return Convert(static_cast<const CDB_Int&>(value).Value());
+            return Convert(static_cast<const CDB_Int&>(value).Value()).operator TO();
         case eDB_SmallInt:
-            return Convert(static_cast<const CDB_SmallInt&>(value).Value());
+            return Convert(static_cast<const CDB_SmallInt&>(value).Value()).operator TO();
         case eDB_TinyInt:
-            return Convert(static_cast<const CDB_TinyInt&>(value).Value());
+            return Convert(static_cast<const CDB_TinyInt&>(value).Value()).operator TO();
         case eDB_Bit:
-            return Convert(static_cast<const CDB_Bit&>(value).Value());
+            return Convert(static_cast<const CDB_Bit&>(value).Value()).operator TO();
         case eDB_Float:
-            return Convert(static_cast<const CDB_Float&>(value).Value());
+            return Convert(static_cast<const CDB_Float&>(value).Value()).operator TO();
         case eDB_Double:
-            return Convert(static_cast<const CDB_Double&>(value).Value());
+            return Convert(static_cast<const CDB_Double&>(value).Value()).operator TO();
         case eDB_Numeric:
-            return Convert(static_cast<const CDB_Numeric&>(value).Value());
+            return Convert(static_cast<const CDB_Numeric&>(value).Value()).operator TO();
         case eDB_Char:
         case eDB_VarChar:
         case eDB_LongChar:
@@ -688,9 +688,9 @@ TO Convert_CDB_Object_DT(const CDB_Object& value)
 
     switch (cur_type) {
         case eDB_DateTime:
-            return Convert(static_cast<const CDB_DateTime&>(value).Value());
+            return Convert(static_cast<const CDB_DateTime&>(value).Value()).operator TO();
         case eDB_SmallDateTime:
-            return Convert(static_cast<const CDB_SmallDateTime&>(value).Value());
+            return Convert(static_cast<const CDB_SmallDateTime&>(value).Value()).operator TO();
         default:
             ReportTypeConvError(cur_type, "bool");
     }
@@ -788,21 +788,21 @@ TO Convert_CDB_ObjectSql(const CDB_Object& value)
 
     switch (cur_type) {
         case eDB_BigInt:
-            return Convert(static_cast<const CDB_BigInt&>(value).Value());
+            return Convert(static_cast<const CDB_BigInt&>(value).Value()).operator TO();
         case eDB_Int:
-            return Convert(static_cast<const CDB_Int&>(value).Value());
+            return Convert(static_cast<const CDB_Int&>(value).Value()).operator TO();
         case eDB_SmallInt:
-            return Convert(static_cast<const CDB_SmallInt&>(value).Value());
+            return Convert(static_cast<const CDB_SmallInt&>(value).Value()).operator TO();
         case eDB_TinyInt:
-            return Convert(static_cast<const CDB_TinyInt&>(value).Value());
+            return Convert(static_cast<const CDB_TinyInt&>(value).Value()).operator TO();
         case eDB_Bit:
-            return Convert(static_cast<const CDB_Bit&>(value).Value());
+            return Convert(static_cast<const CDB_Bit&>(value).Value()).operator TO();
         case eDB_Float:
-            return Convert(static_cast<const CDB_Float&>(value).Value());
+            return Convert(static_cast<const CDB_Float&>(value).Value()).operator TO();
         case eDB_Double:
-            return Convert(static_cast<const CDB_Double&>(value).Value());
+            return Convert(static_cast<const CDB_Double&>(value).Value()).operator TO();
         case eDB_Numeric:
-            return Convert(static_cast<const CDB_Numeric&>(value).Value());
+            return Convert(static_cast<const CDB_Numeric&>(value).Value()).operator TO();
         case eDB_Char:
         case eDB_VarChar:
         case eDB_LongChar:
@@ -856,9 +856,9 @@ TO Convert_CDB_ObjectSql_DT(const CDB_Object& value)
 
     switch (cur_type) {
         case eDB_DateTime:
-            return Convert(static_cast<const CDB_DateTime&>(value).Value());
+            return Convert(static_cast<const CDB_DateTime&>(value).Value()).operator TO();
         case eDB_SmallDateTime:
-            return Convert(static_cast<const CDB_SmallDateTime&>(value).Value());
+            return Convert(static_cast<const CDB_SmallDateTime&>(value).Value()).operator TO();
         default:
             ReportTypeConvError(cur_type, "bool");
     }
