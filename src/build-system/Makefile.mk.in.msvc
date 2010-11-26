@@ -157,12 +157,14 @@ Compiler_WarningLevel_2            = Level2
 Compiler_WarningLevel_3            = Level3
 Compiler_WarningLevel_4            = Level4
 
+Linker_EnableCOMDATFolding_0 = -
 Linker_EnableCOMDATFolding_1 = false
 Linker_EnableCOMDATFolding_2 = true
 Linker_FixedBaseAddress_0    = false
 Linker_FixedBaseAddress_1    = true
 Linker_LinkIncremental_1     = false
 Linker_LinkIncremental_2     = true
+Linker_OptimizeReferences_0  = -
 Linker_OptimizeReferences_1  = false
 Linker_OptimizeReferences_2  = true
 Linker_SubSystem_1           = Console
