@@ -130,7 +130,7 @@ INSTALL_CMD = \
 	      for /f "delims=" %%i in ('dir /a-d/b "$*\*.%%e"') do @( \
 	        xcopy /Y /D /F "$*\%%i" "$(INSTALL_BINPATH)" ) \
 	    )) \
-	) else (echo ERROR:   "$*" not found)
+	) else (echo WARNING:   "$*" not found)
 
 CLEAN_CMD = \
 	@if exist "$*" ( for %%e in ($(EXTENSIONS)) do @( \
@@ -138,7 +138,7 @@ CLEAN_CMD = \
 	      for /f "delims=" %%i in ('dir /a-d/b "$*\*.%%e"') do @( \
 	        if exist "$(INSTALL_BINPATH)\%%i" ( \
 	          echo $(INSTALL_BINPATH)\%%i & del /F "$(INSTALL_BINPATH)\%%i" )))) \
-	) else (echo ERROR:   "$*" not found)
+	) else (echo WARNING:   "$*" not found)
 
 
 
