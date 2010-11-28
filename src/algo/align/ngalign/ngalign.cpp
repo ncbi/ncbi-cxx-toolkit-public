@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_signal.hpp>
 #include <math.h>
 #include <algo/align/ngalign/ngalign.hpp>
 
@@ -119,6 +120,10 @@ TAlignSetRef CNgAligner::x_Align_Impl()
                      AccumResults(new CAlignResultsSet(m_GenColl, m_AllowDupes));
 
     NON_CONST_ITERATE(TFactories, AlignIter, m_Aligners) {
+        if (CSignal::IsSignaled()) {
+            NCBI_THROW(CException, eUnknown, "trapped signal");
+        }
+
         TAlignResultsRef CurrResults;
         CurrResults = (*AlignIter)->GenerateAlignments(*m_Scope, m_Query, m_Subject,
                                                        AccumResults);

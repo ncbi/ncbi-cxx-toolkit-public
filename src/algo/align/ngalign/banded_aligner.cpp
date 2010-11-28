@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_signal.hpp>
 #include <math.h>
 #include <algo/align/ngalign/banded_aligner.hpp>
 //#include "align_instance.hpp"
@@ -181,6 +182,9 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
 
     CRef<CSeq_align> Result(new CSeq_align);
     ITERATE(vector<CRef<CInstance> >, InstIter, Instances) {
+        if (CSignal::IsSignaled()) {
+            NCBI_THROW(CException, eUnknown, "trapped signal");
+        }
 
         const CInstance& Inst = **InstIter;
 
