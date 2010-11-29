@@ -2629,7 +2629,7 @@ static EIO_Status s_Read(SOCK    sock,
                          int     peek)
 {
     char xx_buf[SOCK_BUF_CHUNK_SIZE];
-    struct timeval* r_timeout;
+    const struct timeval* r_timeout;
     EIO_Status status;
     int/*bool*/ done;
 
