@@ -406,7 +406,12 @@ public:
      * with the XML document. If the search comes to DTD and the namespace is
      * provided then the only namespace prefix is taken into account.
      *
-     * @param name The name of the attribute to find.
+     * @param name
+     *   The name of the attribute to find. The name could be given as a
+     *   qualified name, e.g. 'prefix:attr_name'. If the name is qualified then
+     *   the nspace argument must be NULL (otherwise an exception is
+     *   generated) and the attribute search is namespace aware with an
+     *   effective namespace identified by the given prefix.
      * @param nspace
      *   The namespace of the atrribute to find:
      *   - NULL matches any namespace
@@ -430,7 +435,12 @@ public:
      * with the XML document. If the search comes to DTD and the namespace is
      * provided then the only namespace prefix is taken into account.
      *
-     * @param name The name of the attribute to find.
+     * @param name
+     *   The name of the attribute to find. The name could be given as a
+     *   qualified name, e.g. 'prefix:attr_name'. If the name is qualified then
+     *   the nspace argument must be NULL (otherwise an exception is
+     *   generated) and the attribute search is namespace aware with an
+     *   effective namespace identified by the given prefix.
      * @param nspace
      *   The namespace of the atrribute to find:
      *   - NULL matches any namespace

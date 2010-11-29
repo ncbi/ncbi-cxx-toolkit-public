@@ -384,7 +384,12 @@ public:
     /**
      * Search for a node attribute.
      *
-     * @param name Name of the attribute to search.
+     * @param name
+     *   The name of the attribute to find. The name could be given as a
+     *   qualified name, e.g. 'prefix:attr_name'. If the name is qualified then
+     *   the nspace argument must be NULL (otherwise an exception is
+     *   generated) and the attribute search is namespace aware with an
+     *   effective namespace identified by the given prefix.
      * @param nspace
      *   The namespace of the atrribute to find:
      *   - NULL matches any namespace
@@ -403,7 +408,12 @@ public:
     /**
      * Search for a node attribute.
      *
-     * @param name Name of the attribute to search.
+     * @param name
+     *   The name of the attribute to find. The name could be given as a
+     *   qualified name, e.g. 'prefix:attr_name'. If the name is qualified then
+     *   the nspace argument must be NULL (otherwise an exception is
+     *   generated) and the attribute search is namespace aware with an
+     *   effective namespace identified by the given prefix.
      * @param nspace
      *   The namespace of the atrribute to find:
      *   - NULL matches any namespace

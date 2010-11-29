@@ -43,7 +43,7 @@ namespace xml {
         // Compression level part (16 bit reserved)
         // Only one value should be picked
         // Default is no compression
-        save_op_compress_level_1 = 1,
+        save_op_compress_level_1 = 1,   ///< better speed
         save_op_compress_level_2 = 2,
         save_op_compress_level_3 = 3,
         save_op_compress_level_4 = 4,
@@ -51,7 +51,7 @@ namespace xml {
         save_op_compress_level_6 = 6,
         save_op_compress_level_7 = 7,
         save_op_compress_level_8 = 8,
-        save_op_compress_level_9 = 9,
+        save_op_compress_level_9 = 9,   ///< smaller size
 
 
         // Document options part - any number of the options below could be
