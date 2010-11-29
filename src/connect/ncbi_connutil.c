@@ -1724,13 +1724,17 @@ extern int/*bool*/ URL_DecodeEx
         }
         case '%': {
             int i1, i2;
-            if (*src_read + 2 < src_size
-                &&  (i1 = s_HexChar(src[1])) != -1
-                &&  (i2 = s_HexChar(src[2])) != -1) {
-                *dst = (unsigned char)((i1 << 4) + i2);
-                *src_read += 2;
-                src       += 2;
-                break;
+            if (*src_read + 2 < src_size) {
+                if ((i1 = s_HexChar(src[1])) != -1  &&
+                    (i2 = s_HexChar(src[2])) != -1) {
+                    *dst = (unsigned char)((i1 << 4) + i2);
+                    *src_read += 2;
+                    src       += 2;
+                    break;
+                }
+            } else if (src != src_buf) {
+                assert(*dst_written);
+                return 1/*true*/;
             }
             if (!allow_symbols  ||  *allow_symbols)
                 return *dst_written ? 1/*true*/ : 0/*false*/;
