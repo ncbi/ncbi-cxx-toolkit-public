@@ -149,18 +149,36 @@ public:
     /// If application name is not specified a default of "ncbi" is used.
     /// Certain flags such as -logfile, -conffile and -version are special so
     /// AppMain() processes them separately.
+    /// @param argc
+    ///   Argument count [argc in a regular main(argc, argv)].
+    /// @param argv
+    ///   Argument vector [argv in a regular main(argc, argv)].
+    /// @param envp
+    ///   Environment pointer [envp in a regular main(argc, argv, envp)];
+    ///   a null pointer (the default) corresponds to the standard system
+    ///   array (environ on most Unix platforms).
+    /// @param diag
+    ///   Specify diagnostic stream.
+    /// @param conf
+    ///   Specify registry to load, as per LoadConfig().  The default is an
+    ///   empty string, requesting automatic detection; it is also possible
+    ///   to pass a specific name (optionally qualified) or a NULL pointer
+    ///   (disabling application-specific registry lookup altogether).
+    /// @param name
+    ///   Specify application name, used in diagnostics and automatic 
+    ///   registry searching.
     /// @return
     ///   Exit code from Run(). Can also return non-zero value if application
     ///   threw an exception.
     /// @sa
     ///   LoadConfig(), Init(), Run(), Exit()
     int AppMain
-    (int                argc,     ///< argc in a regular main(argc, argv, envp)
-     const char* const* argv,     ///< argv in a regular main(argc, argv, envp)
-     const char* const* envp = 0, ///< envp in a regular main(argc, argv, envp)
-     EAppDiagStream     diag = eDS_Default,     ///< Specify diagnostic stream
-     const char*        conf = NcbiEmptyCStr,   ///< Specify registry to load
-     const string&      name = NcbiEmptyString  ///< Specify application name
+    (int                argc,
+     const char* const* argv,
+     const char* const* envp = 0,
+     EAppDiagStream     diag = eDS_Default,
+     const char*        conf = NcbiEmptyCStr,
+     const string&      name = NcbiEmptyString
      );
 
     /// Initialize the application.
