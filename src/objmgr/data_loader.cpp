@@ -234,16 +234,9 @@ int CDataLoader::GetGi(const CSeq_id_Handle& idh)
 
 string CDataLoader::GetLabel(const CSeq_id_Handle& idh)
 {
-    string ret;
-    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
-    ITERATE(TTSE_LockSet, it, locks) {
-        CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
-        if ( bs_info ) {
-            ret = objects::GetLabel(bs_info->GetId());
-            break;
-        }
-    }
-    return ret;
+    TIds ids;
+    GetIds(idh, ids);
+    return objects::GetLabel(ids);
 }
 
 
@@ -301,21 +294,17 @@ void CDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
     int count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
+    TIds seq_ids;
     for ( int i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        
-        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
-        ITERATE(TTSE_LockSet, it, locks) {
-            CConstRef<CBioseq_Info> bs_info =
-                (*it)->FindMatchingBioseq(ids[i]);
-            if ( bs_info ) {
-                ret[i] = objects::GetLabel(bs_info->GetId());
-                break;
-            }
+        seq_ids.clear();
+        GetIds(ids[i], seq_ids);
+        if ( !seq_ids.empty() ) {
+            ret[i] = objects::GetLabel(seq_ids);
+            loaded[i] = true;
         }
-        loaded[i] = true;
     }
 }
 
