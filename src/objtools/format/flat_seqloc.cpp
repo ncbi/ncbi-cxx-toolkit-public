@@ -216,7 +216,7 @@ bool CFlatSeqLoc::x_Add
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
             const CInt_fuzz* fuzz = ppnt.CanGetFuzz() ? &ppnt.GetFuzz() : 0;
-            if (!x_Add(*it, fuzz, oss, type, ctx.Config().DoHTML())) {
+            if (!x_Add(*it, fuzz, oss, ctx.Config().DoHTML())) {
                 delim = "";
             } else {
                 delim = ", \b";
@@ -363,7 +363,7 @@ bool CFlatSeqLoc::x_Add
         from_fuzz = NULL;
     }
 
-    x_Add(from, from_fuzz, oss, type, do_html);
+    x_Add(from, from_fuzz, oss, do_html);
     if (to > 0  &&
         (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to() || type == eType_assembly)) {
         oss << "..";
@@ -373,7 +373,7 @@ bool CFlatSeqLoc::x_Add
             from_fuzz = NULL;
         }
 
-        x_Add(to, to_fuzz, oss, type, do_html);
+        x_Add(to, to_fuzz, oss, do_html);
     }
     if (comp) {
         oss << ')';
@@ -400,13 +400,13 @@ bool CFlatSeqLoc::x_Add
     x_AddID(pnt.GetId(), oss, ctx, type);
     if ( pnt.IsSetStrand()  &&  IsReverse(pnt.GetStrand())  &&  show_comp ) {
         oss << "complement(";
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, type, do_html);
+        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html, (eType_assembly == type) );
         oss << ')';
     } else if ( pnt.IsSetFuzz() && pnt.GetFuzz().Which() == CInt_fuzz::e_Range ) {
         oss << (pnt.GetFuzz().GetRange().GetMin() + 1)
             << '^' << (pnt.GetFuzz().GetRange().GetMax() + 1);
     } else {
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, type, do_html);
+        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html, (eType_assembly == type) );
     }
 
     return true;
@@ -417,8 +417,8 @@ bool CFlatSeqLoc::x_Add
 (TSeqPos pnt,
  const CInt_fuzz* fuzz,
  CNcbiOstrstream& oss,
- TType type,
- bool html)
+ bool html,
+ bool force_as_range)
 {
     // need to convert to 1-based coordinates
     pnt += 1;
@@ -462,8 +462,7 @@ bool CFlatSeqLoc::x_Add
                     break;
                 default:
                     oss << pnt;
-                    if( type == eType_assembly ) {
-                        // contigs must be ranges; single points not allowed
+                    if( force_as_range ) {
                         oss << ".." << pnt;
                     }
                     break;
@@ -473,8 +472,7 @@ bool CFlatSeqLoc::x_Add
         default:
             {
                 oss << pnt;
-                if( type == eType_assembly ) {
-                    // contigs must be ranges; single points not allowed
+                if( force_as_range ) {
                     oss << ".." << pnt;
                 }
                 break;
@@ -482,6 +480,9 @@ bool CFlatSeqLoc::x_Add
         } // end of switch statement
     } else {
         oss << pnt;
+        if( force_as_range ) {
+            oss << ".." << pnt;
+        }
     }
 
     return true;

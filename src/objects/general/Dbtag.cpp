@@ -267,7 +267,7 @@ void CDbtag::GetLabel(string* label) const
 // Test if CDbtag.db is in the approved databases list.
 // NOTE: 'GenBank', 'EMBL', 'DDBJ' and 'REBASE' are approved only in 
 //        the context of a RefSeq record.
-bool CDbtag::IsApproved(bool refseq, bool is_source) const
+bool CDbtag::IsApproved(bool refseq, bool is_source, bool is_est_or_gss) const
 {
     if ( !CanGetDb() ) {
         return false;
@@ -279,7 +279,12 @@ bool CDbtag::IsApproved(bool refseq, bool is_source) const
     }
 
     if( is_source ) {
-        return sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end();
+        bool found = ( sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end() );
+        if ( ! found && is_est_or_gss ) {
+            // special case: for EST or GSS, source features are allowed non-src dbxrefs
+            found = ( sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end() );
+        }
+        return found;
     } else {
         return sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end();
     }

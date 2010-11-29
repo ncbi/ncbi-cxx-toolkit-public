@@ -549,7 +549,7 @@ void CFlatGeneSynonymsQVal::Format
     }
 
     string qual = "gene_synonym";
-    list<string> synonyms = GetValue();
+    const list<string> &synonyms = GetValue();
     vector<string> sub;
     std::copy(synonyms.begin(), synonyms.end(),
               back_inserter(sub));
@@ -557,7 +557,7 @@ void CFlatGeneSynonymsQVal::Format
     // For compatibility with C, we use a slightly different sorting algo
     // In the future, we might go back to the other one for simplicity
     // std::sort(sub.begin(), sub.end(), PNocase());
-    std::sort(sub.begin(), sub.end(), CLessThanNoCaseViaUpper() );
+    stable_sort(sub.begin(), sub.end(), CLessThanNoCaseViaUpper() );
 
     if (ctx.IsRefSeq()) {
         x_AddFQ( q, qual, NStr::Join(sub, "; "), m_Style );
@@ -1557,10 +1557,8 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
                 }
             }
 
-            if( ! is_est_or_gss ) {
-                if (!dbt.IsApproved(ctx.IsRefSeq(), (flags & IFlatQVal::fIsSource) )) {
-                    continue;
-                }
+            if (!dbt.IsApproved(ctx.IsRefSeq(), (flags & IFlatQVal::fIsSource), is_est_or_gss )) {
+                continue;
             }
         }
 

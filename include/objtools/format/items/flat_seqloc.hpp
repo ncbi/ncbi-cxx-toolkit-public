@@ -76,7 +76,7 @@ public:
         eType_assembly      // Genome assembly
     };
     typedef EType     TType;
-    
+
     CFlatSeqLoc(const CSeq_loc& loc, CBioseqContext& ctx, 
         TType type = eType_location);
 
@@ -90,7 +90,7 @@ private:
     bool x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp);
     bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
-        TType type, bool html = false);
+        bool html, bool force_as_range = false );
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type);
 

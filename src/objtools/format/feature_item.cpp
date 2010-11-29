@@ -580,11 +580,65 @@ static bool s_SkipFeature(const CMappedFeat& feat,
     return false;
 }
 
+class BadECNumberChar {
+public:
+    bool operator()( const char ch ) 
+    {
+        return( ! isdigit(ch) && ch != '.' && ch != '-' );
+    }
+};
 
+// acceptable patterns are: (This might not be true anymore.  Check the code. )
+// num.num.num.num
+// num.num.num.-
+// num.num.-.-
+// num.-.-.-
+// -.-.-.-
+// (You can use "n" instead of "-" )
 static bool s_IsLegalECNumber(const string& ec_number)
 {
-    string::size_type pos = ec_number.find_first_not_of("0123456789.-");
-    return (pos == string::npos);
+  if ( ec_number.empty() ) return false;
+
+  //string::const_iterator start = find( ec_number.begin(), ec_number.end(), '\"' );
+  //if( start == ec_number.end() ) {
+  //    start = ec_number.begin();
+  //} else {
+  //    // skip the quote
+  //    ++start;
+  //}
+
+  //string::const_iterator end = find( start, ec_number.end(), '\"' );
+  //string::const_iterator first_bad_char = find_if( start, end, BadECNumberChar() );
+  //return ( first_bad_char == end );
+
+  bool is_ambig = false;
+  int numperiods = 0;
+  int numdigits = 0;
+  int numdashes = 0;
+
+  ITERATE( string, ec_iter, ec_number ) {
+    if ( isdigit(*ec_iter) ) {
+      numdigits++;
+      if (is_ambig) return false;
+    } else if (*ec_iter == '-' || *ec_iter == 'n') {
+      numdashes++;
+      is_ambig = true;
+    } else if (*ec_iter == '.') {
+      numperiods++;
+      if (numdigits > 0 && numdashes > 0) return false;
+      if (numdigits == 0 && numdashes == 0) return false;
+      if (numdashes > 1) return false;
+      numdigits = 0;
+      numdashes = 0;
+    }
+  }
+
+  if (numperiods == 3) {
+    if (numdigits > 0 && numdashes > 0) return false;
+    if (numdigits > 0 || numdashes == 1) return true;
+  }
+
+  return false;
 }
 
 

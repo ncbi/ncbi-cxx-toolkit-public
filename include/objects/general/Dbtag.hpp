@@ -207,7 +207,7 @@ public:
     // Test if DB is approved by the consortium.
     // 'GenBank', 'EMBL' and 'DDBJ' are approved only in the
     // context of a RefSeq record.
-    bool IsApproved(bool refseq = false, bool is_source = false ) const;
+    bool IsApproved(bool refseq = false, bool is_source = false, bool is_est_or_gss = false ) const;
     // Test if DB is approved (case insensitive).
     // Returns the case sensetive DB name if approved, NULL otherwise.
     const char* IsApprovedNoCase(bool refseq = false, bool is_source = false) const;
