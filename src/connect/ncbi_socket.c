@@ -2667,6 +2667,7 @@ static EIO_Status s_Read(SOCK    sock,
 
     done = 0/*false*/;
     r_timeout = sock->r_timeout;
+    assert(!*n_read  ||  peek > 0);
     assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !(buf  ||  size)));
     do {
         static const struct timeval kZeroRTimeout = { 0 };
@@ -2680,8 +2681,6 @@ static EIO_Status s_Read(SOCK    sock,
             x_buf    =        xx_buf;
         } else
             x_buf    = (char*) buf + *n_read;
-        if (*n_read)
-            sock->r_timeout = &kZeroRTimeout;
 
         if (sock->session) {
             int x_error;
@@ -2751,6 +2750,7 @@ static EIO_Status s_Read(SOCK    sock,
 
         if (status != eIO_Success  ||  done)
             break;
+        sock->r_timeout = &kZeroRTimeout;
     } while (peek < 0  ||  (!buf  &&  *n_read < size));
     sock->r_timeout = r_timeout;
 
