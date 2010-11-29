@@ -1128,7 +1128,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         /* read and URL-decode */
         size_t n_peeked, n_decoded;
         size_t peek_size = 3 * size;
-        void*  peek_buf  = malloc(peek_size);
+        char*  peek_buf  = (char*) malloc(peek_size);
 
         /* peek the data */
         status= SOCK_Read(uuu->sock,peek_buf,peek_size,&n_peeked,eIO_ReadPeek);
@@ -1136,6 +1136,11 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             assert(!n_peeked);
             *n_read = 0;
         } else {
+            /* do not let incomplete URL-encoded seqs through unless at EOF */
+            if      (n_peeked > 2  &&  peek_buf[n_peeked - 2] == '%')
+                n_peeked -= 2;
+            else if (n_peeked > 1  &&  peek_buf[n_peeked - 1] == '%')
+                n_peeked--;
             if (URL_DecodeEx(peek_buf,n_peeked,&n_decoded,buf,size,n_read,"")){
                 /* decode, then discard successfully decoded data from input */
                 if (n_decoded) {
