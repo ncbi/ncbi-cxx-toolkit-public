@@ -88,9 +88,12 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
 
     /// BLOB cache subkeys:
     enum {
-        kMain_ChunkId = -1
+        kMain_ChunkId       = -1, // not a chunk, but main Seq-entry
+        kDelayedMain_ChunkId= kMax_Int // main Seq-entry with delayed ext annot
     };
-    static string GetBlobSubkey(int chunk_id = kMain_ChunkId);
+
+    static string GetBlobSubkey(CLoadLockBlob& blob,
+                                int chunk_id = kMain_ChunkId);
 
     typedef CTreePair<string, string> TParamPair;
     typedef TParamPair::TPairTreeNode TParams;

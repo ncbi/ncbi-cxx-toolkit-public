@@ -934,7 +934,7 @@ bool CId2ReaderBase::LoadChunk(CReaderRequestResult& result,
         if ( blob->GetBlobVersion() > 0 ) {
             req2.SetBlob_id().SetVersion(blob->GetBlobVersion());
         }
-        //req2.SetSplit_version(blob->GetSplitInfo().GetSplitVersion());
+        req2.SetSplit_version(blob->GetSplitInfo().GetSplitVersion());
         req2.SetChunks().push_back(CID2S_Chunk_Id(chunk_id));
         x_ProcessRequest(result, req, 0);
     }
@@ -964,6 +964,9 @@ bool CId2ReaderBase::LoadChunks(CReaderRequestResult& result,
                                 const CBlob_id& blob_id,
                                 const TChunkIds& chunk_ids)
 {
+    if ( chunk_ids.size() == 1 ) {
+        return LoadChunk(result, blob_id, chunk_ids[0]);
+    }
     size_t max_request_size = GetMaxChunksRequestSize();
     if ( SeparateChunksRequests(max_request_size) ) {
         return CReader::LoadChunks(result, blob_id, chunk_ids);
@@ -981,6 +984,7 @@ bool CId2ReaderBase::LoadChunks(CReaderRequestResult& result,
     if ( blob->GetBlobVersion() > 0 ) {
         get_chunks.SetBlob_id().SetVersion(blob->GetBlobVersion());
     }
+    get_chunks.SetSplit_version(blob->GetSplitInfo().GetSplitVersion());
     CID2S_Request_Get_Chunks::TChunks& chunks = get_chunks.SetChunks();
 
     vector< AutoPtr<CInitGuard> > guards;

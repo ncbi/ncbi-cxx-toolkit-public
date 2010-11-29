@@ -558,7 +558,7 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
         CRef<CBlobStream> stream
             (new CCacheBlobStream(m_BlobCache, GetBlobKey(blob_id),
                                   blob.GetBlobVersion(),
-                                  GetBlobSubkey(chunk_id)));
+                                  GetBlobSubkey(blob, chunk_id)));
         if ( !stream->CanWrite() ) {
             return null;
         }

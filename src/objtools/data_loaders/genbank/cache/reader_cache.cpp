@@ -174,12 +174,17 @@ const char* SCacheInfo::GetBlobVersionSubkey(void)
 }
 
 
-string SCacheInfo::GetBlobSubkey(int chunk_id)
+string SCacheInfo::GetBlobSubkey(CLoadLockBlob& blob, int chunk_id)
 {
     if ( chunk_id == kMain_ChunkId )
-        return kEmptyStr;
-    else
-        return NStr::IntToString(chunk_id);
+        return string();
+    else if ( chunk_id == kDelayedMain_ChunkId )
+        return "ext";
+    else {
+        CNcbiOstrstream oss;
+        oss << chunk_id << '/' << blob->GetSplitInfo().GetSplitVersion();
+        return CNcbiOstrstreamToString(oss);;
+    }
 }
 
 
@@ -759,7 +764,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     }
 
     string key = GetBlobKey(blob_id);
-    string subkey = GetBlobSubkey(chunk_id);
+    string subkey = GetBlobSubkey(blob, chunk_id);
     if ( !blob.IsSetBlobVersion() ) {
         {{
             CConn conn(result, this);
