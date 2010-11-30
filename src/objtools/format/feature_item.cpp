@@ -2744,9 +2744,12 @@ void CFeatureItem::x_AddQualsRegion(
             obj.GetType().GetStr() == "cddScoreData") {
             CConstRef<CUser_field> f = obj.GetFieldRef("definition");
             if (f) {
-                x_AddQual(eFQ_region,
-                          new CFlatStringQVal(f->GetData().GetStr()));
-                found = true;
+                const CUser_field_Base::C_Data::TStr& definition_str = f->GetData().GetStr();
+                if( definition_str != region ) {
+                    x_AddQual(eFQ_region,
+                        new CFlatStringQVal(definition_str));
+                    found = true;
+                }
                 break;
 
                 /**
@@ -4310,7 +4313,7 @@ void CFeatureItem::x_CleanQuals(
             note = NULL;
         }
     }
-    if (note != NULL  &&  gene_syn != NULL) {
+    if ( ! ctx.IsProt() && note != NULL  &&  gene_syn != NULL) {
         ITERATE (TGeneSyn, it, *gene_syn) {
             if (NStr::EqualNocase(note->GetValue(), *it)) {
                 x_RemoveQuals(eFQ_seqfeat_note);
