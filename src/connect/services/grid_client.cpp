@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "netschedule_api_impl.hpp"
+
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
 
@@ -43,11 +45,31 @@ BEGIN_NCBI_SCOPE
 CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                          IBlobStorage& storage,
                          ECleanUp cleanup,
+                         EProgressMsg progress_msg) :
+    m_NSClient(ns_client),
+    m_NetCacheAPI(
+        dynamic_cast<CBlobStorage_NetCache&>(storage).GetNetCacheAPI())
+{
+    Init(cleanup, progress_msg);
+}
+
+CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
+                         IBlobStorage& storage,
+                         ECleanUp cleanup,
                          EProgressMsg progress_msg,
-                         bool use_embedded_storage)
+                         bool /*unused*/)
     : m_NSClient(ns_client), m_NetCacheAPI(
-        dynamic_cast<CBlobStorage_NetCache&>(storage).GetNetCacheAPI()),
-      m_UseEmbeddedStorage(use_embedded_storage)
+        dynamic_cast<CBlobStorage_NetCache&>(storage).GetNetCacheAPI())
+{
+    Init(cleanup, progress_msg);
+}
+
+CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
+                         CNetCacheAPI::TInstance nc_client,
+                         ECleanUp cleanup,
+                         EProgressMsg progress_msg) :
+    m_NSClient(ns_client),
+    m_NetCacheAPI(nc_client)
 {
     Init(cleanup, progress_msg);
 }
@@ -56,9 +78,8 @@ CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                          CNetCacheAPI::TInstance nc_client,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg,
-                         bool use_embedded_storage)
-    : m_NSClient(ns_client), m_NetCacheAPI(nc_client),
-      m_UseEmbeddedStorage(use_embedded_storage)
+                         bool /*unused*/)
+    : m_NSClient(ns_client), m_NetCacheAPI(nc_client)
 {
     Init(cleanup, progress_msg);
 }
@@ -100,7 +121,8 @@ void CGridClient::RemoveDataBlob(const string& data_key)
 
 size_t CGridClient::GetMaxServerInputSize()
 {
-    return m_UseEmbeddedStorage ? m_NSClient.GetServerParams().max_input_size : 0;
+    return m_NSClient->m_API->m_UseEmbeddedStorage ?
+        m_NSClient.GetServerParams().max_input_size : 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////

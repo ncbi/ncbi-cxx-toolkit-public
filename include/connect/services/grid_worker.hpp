@@ -318,7 +318,7 @@ public:
 
     CNetScheduleAPI::TJobMask GetJobMask() const { return m_Job.mask; }
 
-    size_t GetMaxServerOutputSize() const;
+    size_t GetMaxServerOutputSize();
 
     unsigned int GetJobNumber() const  { return m_JobNumber; }
 
@@ -578,9 +578,8 @@ public:
 
     bool IsHostInAdminHostsList(const string& host) const;
 
-    bool IsEmeddedStorageUsed() const { return m_UseEmbeddedStorage; }
     unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
-    size_t GetServerOutputSize() const;
+    size_t GetServerOutputSize();
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -637,7 +636,6 @@ private:
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
-    bool                         m_UseEmbeddedStorage;
 
     CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 

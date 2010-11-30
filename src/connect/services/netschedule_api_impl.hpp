@@ -39,8 +39,6 @@
 #include <connect/services/error_codes.hpp>
 
 
-#define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
-
 BEGIN_NCBI_SCOPE
 
 
@@ -206,6 +204,8 @@ struct SNetScheduleAPIImpl : public CObject
     auto_ptr<CNetScheduleAPI::SServerParams> m_ServerParams;
     long m_ServerParamsAskCount;
     CFastMutex m_FastMutex;
+
+    bool m_UseEmbeddedStorage;
 };
 
 

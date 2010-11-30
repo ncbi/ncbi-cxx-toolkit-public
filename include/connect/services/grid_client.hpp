@@ -269,7 +269,7 @@ public:
     ///     NetSchedule client - an instance of CNetScheduleSubmitter.
     /// @param storage
     ///     NetSchedule storage
-    /// @param auto_cleanup
+    /// @param cleanup
     ///     if true the grid client will automatically remove
     ///     a job's input data from a storage when the job is
     ///     done or canceled
@@ -277,8 +277,14 @@ public:
     CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                 IBlobStorage& storage,
                 ECleanUp cleanup,
+                EProgressMsg progress_msg);
+
+    NCBI_DEPRECATED_CTOR(
+    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
+                IBlobStorage& storage,
+                ECleanUp cleanup,
                 EProgressMsg progress_msg,
-                bool use_embedded_storage = false);
+                bool unused));
 
     /// Constructor
     ///
@@ -286,7 +292,7 @@ public:
     ///     NetSchedule client - an instance of CNetScheduleSubmitter.
     /// @param nc_client
     ///     NetCache client - an instance of CNetCacheAPI.
-    /// @param auto_cleanup
+    /// @param cleanup
     ///     if true the grid client will automatically remove
     ///     a job's input data from a storage when the job is
     ///     done or canceled
@@ -294,8 +300,14 @@ public:
     CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                 CNetCacheAPI::TInstance nc_client,
                 ECleanUp cleanup,
+                EProgressMsg progress_msg);
+
+    NCBI_DEPRECATED_CTOR(
+    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
+                CNetCacheAPI::TInstance nc_client,
+                ECleanUp cleanup,
                 EProgressMsg progress_msg,
-                bool use_embedded_storage = false);
+                bool unused));
 
     /// Get a job submitter
     ///
@@ -340,8 +352,6 @@ private:
     auto_ptr<CGridJobSubmitter> m_JobSubmitter;
     auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
     auto_ptr<CGridJobStatus> m_JobStatus;
-
-    bool         m_UseEmbeddedStorage;
 
     /// The copy constructor and the assignment operator
     /// are prohibited

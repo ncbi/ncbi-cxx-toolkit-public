@@ -33,8 +33,7 @@
 
 #include "grid_thread_context.hpp"
 #include "grid_debug_context.hpp"
-#include "netservice_params.hpp"
-#include "balancing.hpp"
+#include "netschedule_api_impl.hpp"
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/error_codes.hpp>
@@ -288,7 +287,7 @@ void CWorkerNodeJobContext::RequestExclusiveMode()
     }
 }
 
-size_t CWorkerNodeJobContext::GetMaxServerOutputSize() const
+size_t CWorkerNodeJobContext::GetMaxServerOutputSize()
 {
     return m_WorkerNode.GetServerOutputSize();
 }
@@ -868,7 +867,6 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
     m_CheckStatusPeriod(2),
     m_ExclusiveJobSemaphore(1, 1),
     m_IsProcessingExclusiveJob(false),
-    m_UseEmbeddedStorage(false),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
     m_Listener(new CGridWorkerNodeApp_Listener()),
     m_App(app),
@@ -1008,15 +1006,6 @@ int CGridWorkerNode::Run()
             "Use [" << kNetScheduleAPIDriverName <<
             "] \"communication_timeout\" parameter instead.");
     }
-
-    if (reg.HasEntry(kNetScheduleAPIDriverName, "use_embedded_storage"))
-        m_UseEmbeddedStorage = reg.
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0,
-                    CNcbiRegistry::eReturn);
-    else
-        m_UseEmbeddedStorage = reg.
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
-                    CNcbiRegistry::eReturn);
 
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
     string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
@@ -1349,10 +1338,10 @@ void CGridWorkerNode::x_FailJob(const string& job_key, const string& reason)
     }
 }
 
-size_t CGridWorkerNode::GetServerOutputSize() const
+size_t CGridWorkerNode::GetServerOutputSize()
 {
-    return IsEmeddedStorageUsed() ?
-        GetNetScheduleAPI().GetServerParams().max_output_size : 0;
+    return m_NetScheduleAPI->m_UseEmbeddedStorage ?
+        m_NetScheduleAPI.GetServerParams().max_output_size : 0;
 }
 
 bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const

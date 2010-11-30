@@ -195,15 +195,6 @@ void CGridCgiApplication::InitGridClient()
     }
     if (!m_NetCacheAPI)
         m_NetCacheAPI = CNetCacheAPI(GetConfig());
-    bool use_embedded_input = false;
-    if (!GetConfig().Get(kNetScheduleAPIDriverName, "use_embedded_storage").empty())
-        use_embedded_input = GetConfig().
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0, 
-                    CNcbiRegistry::eReturn);
-    else
-        use_embedded_input = GetConfig().
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
-                    CNcbiRegistry::eReturn);
 
     m_GridClient.reset(new CGridClient(m_NSClient.GetSubmitter(), m_NetCacheAPI,
                                        automatic_cleanup? 
@@ -211,8 +202,7 @@ void CGridCgiApplication::InitGridClient()
                                             CGridClient::eManualCleanup,
                                        use_progress? 
                                             CGridClient::eProgressMsgOn :
-                                            CGridClient::eProgressMsgOff,
-                                       use_embedded_input));
+                                            CGridClient::eProgressMsgOff));
 
 }
 

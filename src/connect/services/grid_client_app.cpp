@@ -52,23 +52,13 @@ void CGridClientApp::Init(void)
         CGridClient::eProgressMsgOn :
         CGridClient::eProgressMsgOff;
 
-    bool use_embedded_input = false;
-    if (!GetConfig().Get(kNetScheduleAPIDriverName, "use_embedded_storage").empty())
-        use_embedded_input = GetConfig().
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0,
-                    CNcbiRegistry::eReturn);
-    else
-        use_embedded_input = GetConfig().
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
-                    CNcbiRegistry::eReturn);
-
     CNetScheduleAPI ns_api(GetConfig());
     ns_api.SetProgramVersion(GetProgramVersion());
 
     CNetCacheAPI nc_api(GetConfig());
 
     m_GridClient.reset(new CGridClient(ns_api.GetSubmitter(),
-        nc_api, cleanup, pmsg, use_embedded_input));
+        nc_api, cleanup, pmsg));
 }
 
 bool CGridClientApp::UseProgressMessage() const

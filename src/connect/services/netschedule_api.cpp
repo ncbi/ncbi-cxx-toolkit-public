@@ -93,6 +93,14 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
         }
         ns_impl->m_Queue = config->GetString(config_section,
             "queue_name", CConfig::eErr_Throw, "noname");
+        try {
+            ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
+                "use_embedded_storage", CConfig::eErr_Throw, false);
+        }
+        catch (...) {
+            ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
+                "use_embedded_input", CConfig::eErr_NoThrow, false);
+        }
     }
 
     SetAuthString(ns_impl);

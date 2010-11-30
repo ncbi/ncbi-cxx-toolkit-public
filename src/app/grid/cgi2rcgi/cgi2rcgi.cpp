@@ -396,12 +396,7 @@ void CCgi2RCgiApp::Init()
                 CGridClient::eAutomaticCleanup : CGridClient::eManualCleanup,
         config.GetBool(grid_cgi_section, "use_progress",
             true, IRegistry::eReturn) ?
-                CGridClient::eProgressMsgOn : CGridClient::eProgressMsgOff,
-        config.GetBool(kNetScheduleAPIDriverName,
-            !config.Get(kNetScheduleAPIDriverName,
-                "use_embedded_storage").empty() ?
-                    "use_embedded_storage" : "use_embedded_input",
-                        false, 0, CNcbiRegistry::eReturn)));
+                CGridClient::eProgressMsgOn : CGridClient::eProgressMsgOff));
 
     // Allows CGI client to put the diagnostics to:
     //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
