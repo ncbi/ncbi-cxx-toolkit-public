@@ -1852,8 +1852,10 @@ bool s_CanAdd(const T1& obj1, const T2& obj2)
     {{
         const CSeq_id* id1 = obj1.CanGetId() ? &obj1.GetId() : 0;
         const CSeq_id* id2 = obj2.CanGetId() ? &obj2.GetId() : 0;
-        if ( ((id1 != id2)  &&  (id1 == 0  ||  id2 == 0))  ||
-             !id1->Match(*id2) ) {
+        // both null - ok to add (this will probably never happen)
+        if (id1 == 0  &&  id2 == 0) return true;
+        // ids are different (one may be null)
+        if (id1 == 0  ||  id2 == 0  ||  !id1->Match(*id2) ) {
             return false;
         }
     }}
@@ -1862,8 +1864,10 @@ bool s_CanAdd(const T1& obj1, const T2& obj2)
     {{
         const CInt_fuzz* f1 = obj1.CanGetFuzz() ? &obj1.GetFuzz() : 0;
         const CInt_fuzz* f2 = obj2.CanGetFuzz() ? &obj2.GetFuzz() : 0;
-        if ( ((f1 != f2)  &&  (f1 == 0  ||  f2 == 0))  ||
-             !f1->Equals(*f2) ) {
+        // both null - ok to add
+        if (f1 == 0  &&  f2 == 0) return true;
+        // fuzzes are different (one may be null)
+        if (f1 == 0  ||  f2 == 0  ||  !f1->Equals(*f2)) {
             return false;
         }
     }}
