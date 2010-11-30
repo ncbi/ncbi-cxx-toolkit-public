@@ -250,6 +250,7 @@ EXPORTS Variation-ref, Variation-inst;
 
 IMPORTS Int-fuzz, User-object, Object-id, Dbtag FROM NCBI-General
         Seq-literal FROM NCBI-Sequence
+        SubSource FROM NCBI-BioSource
         Seq-loc FROM NCBI-Seqloc
         Pub FROM NCBI-Pub;
 
@@ -966,7 +967,7 @@ END
 NCBI-BioSource DEFINITIONS ::=
 BEGIN
 
-EXPORTS BioSource;
+EXPORTS BioSource, SubSource;
 
 IMPORTS Org-ref FROM NCBI-Organism;
 
