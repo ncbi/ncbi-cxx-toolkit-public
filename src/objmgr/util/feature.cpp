@@ -1739,6 +1739,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
     
     bool check_genes = false;
     if ( tree->GetGeneCheckMode() == tree->eGeneCheck_match &&
+         link.m_ParentType != CSeqFeatData::eSubtype_gene &&
          link.CanHaveCommonGene() ) {
         // tree uses common gene information
         tree->GetBestGene(features[0]->m_Feat, tree->eBestGene_OverlappedOnly);
