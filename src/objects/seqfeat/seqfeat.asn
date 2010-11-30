@@ -496,20 +496,23 @@ Variation-ref ::= SEQUENCE {
     clinical-test SET OF Dbtag OPTIONAL,
 
     -- origin of this allele, if known
+    -- note that these are powers-of-two, and represent bits; thus, we can
+    -- represent more than one state simultaneously through a bitwise OR
     allele-origin INTEGER {
         unknown         (0),
         germline        (1),
         somatic         (2),
-        inherited       (3),
-        paternal        (4),
-        maternal        (5),
-        de-novo         (6),
-        biparental      (7),
-        uniparental     (8),
-        not-tested      (9),
-        tested-inconclusive (10),
+        inherited       (4),
+        paternal        (8),
+        maternal        (16),
+        de-novo         (32),
+        biparental      (64),
+        uniparental     (128),
+        not-tested      (256),
+        tested-inconclusive (512),
 
-        other           (255)
+        -- stopper - 2^31
+        other           (1073741824)
     } OPTIONAL,
 
     -- observed allele state, if known
@@ -604,7 +607,18 @@ Variation-ref ::= SEQUENCE {
     -- reference other locs, e.g. mapped source
     ext-locs SET OF Ext-loc OPTIONAL,
 
-    ext             User-object OPTIONAL
+    ext             User-object OPTIONAL,
+
+    somatic-origin SET OF SEQUENCE {
+        -- description of the somatic origin itself
+        source SubSource OPTIONAL,
+        -- condition related to this origin's type
+        condition SEQUENCE {
+            description VisibleString OPTIONAL,
+            -- reference to BioTerm / other descriptive database
+            object-id SET OF Dbtag OPTIONAL
+        } OPTIONAL
+    } OPTIONAL
 
 }
 
@@ -1062,6 +1076,7 @@ SubSource ::= SEQUENCE {
         linkage-group (39) ,
         haplogroup (40) ,
         whole-replicon (41) ,
+        phenotype (42) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
