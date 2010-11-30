@@ -366,8 +366,14 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  EGCAssemblyAlias    to_alias,
                                  CScope*             scope)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
-      m_Scope(scope)
+      m_Scope(new CScope(*CObjectManager::GetInstance()))
 {
+    // While parsing GC-Assembly the mapper will need to add virtual
+    // bioseqs to the scope. To keep the original scope clean of them,
+    // create a new scope and add the original one as a child.
+    if ( scope ) {
+        m_Scope.GetScope().AddScope(*scope);
+    }
     x_InitGCAssembly(gc_assembly, to_alias);
 }
 
@@ -377,12 +383,13 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  SSeqMapSelector     selector,
                                  CScope*             scope)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
-      m_Scope(scope)
+      m_Scope(new CScope(*CObjectManager::GetInstance()))
 {
-    // In case of GC-Assembly we need a scope to store virtual bioseqs
-    // and build seq-maps.
-    if ( !m_Scope ) {
-        m_Scope.Set(new CScope(*CObjectManager::GetInstance()));
+    // While parsing GC-Assembly the mapper will need to add virtual
+    // bioseqs to the scope. To keep the original scope clean of them,
+    // create a new scope and add the original one as a child.
+    if ( scope ) {
+        m_Scope.GetScope().AddScope(*scope);
     }
     x_InitGCAssembly(gc_assembly, direction, selector);
 }
@@ -797,7 +804,6 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             const_cast<CDelta_ext&>(gc_seq.GetStructure()));
         bh = m_Scope.GetScope().AddBioseq(*bioseq);
     }
-
     if ( gc_seq.IsSetSequences() ) {
         ITERATE(CGC_Sequence::TSequences, seq, gc_seq.GetSequences()) {
             ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
@@ -815,7 +821,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             }
         }
     }
-    if (gc_seq.IsSetStructure()  &&  !parent_seq) {
+    if (gc_seq.IsSetStructure()  /*&&  !parent_seq*/) {
         // This is a top-level sequence, create CSeqMap.
         SSeqMapSelector sel = selector;
         sel.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved).
