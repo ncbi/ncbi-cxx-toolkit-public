@@ -54,10 +54,25 @@ class CConfigurationImpl : public IConfiguration
 {
 public:
     CConfigurationImpl(	const string& output_directory, 
-                        const string& configuration_name )
+                        const string& configuration_name,
+                        const IMsvcMetaMakefile& project_makefile,
+                        const IMsvcMetaMakefile& meta_makefile,
+                        const SConfigInfo&       config )
                         :m_OutputDirectory  (output_directory),
-                         m_ConfigurationName(configuration_name)
+                         m_ConfigurationName(configuration_name),
+                         m_MsvcProjectMakefile         (project_makefile),
+                         m_MsvcMetaMakefile            (meta_makefile),
+                         m_Config                      (config)
     {
+    }
+
+#define SUPPORT_CONFIGURATION_OPTION(opt) \
+    virtual string opt(void) const \
+    { \
+        return GetConfigurationOpt(m_MsvcMetaMakefile, \
+                              m_MsvcProjectMakefile, \
+                              #opt, \
+                              m_Config ); \
     }
 
     virtual string Name(void) const
@@ -78,10 +93,20 @@ public:
 	    return CMsvcMetaMakefile::TranslateOpt(
 	        ConfTrait::ConfigurationType(),"Configuration","ConfigurationType");
     }
+#if 1
     virtual string CharacterSet(void) const
     {
-        return CMsvcMetaMakefile::TranslateOpt("2","Configuration","CharacterSet");
+        string val = GetConfigurationOpt(
+            m_MsvcMetaMakefile, m_MsvcProjectMakefile,
+            "CharacterSet",m_Config );
+        if (val.empty()) {
+            val = CMsvcMetaMakefile::TranslateOpt("2","Configuration","CharacterSet");
+        }
+        return val;
     }
+#else
+    SUPPORT_CONFIGURATION_OPTION(CharacterSet)
+#endif
     virtual string BuildLogFile(void) const
     {
 	    return "$(IntDir)BuildLog_$(TargetName).htm";
@@ -91,6 +116,9 @@ public:
 private:
     string m_OutputDirectory;
     string m_ConfigurationName;
+    const IMsvcMetaMakefile& m_MsvcProjectMakefile;
+    const IMsvcMetaMakefile& m_MsvcMetaMakefile;
+    SConfigInfo              m_Config;
 
     CConfigurationImpl(void);
     CConfigurationImpl(const CConfigurationImpl&);

@@ -1074,22 +1074,34 @@ s_CreateConfiguration(const CMsvcPrjGeneralContext& general_context,
     if ( s_IsExe(general_context, project_context) )
 	    return new CConfigurationImpl<SApp>
                        (general_context.OutputDirectory(), 
-                        general_context.ConfigurationName());
+                        general_context.ConfigurationName(),
+                        project_context.GetMsvcProjectMakefile(),
+                        general_context.GetMsvcMetaMakefile(),
+                        general_context.m_Config );
 
     if ( s_IsLib(general_context, project_context) )
 	    return new CConfigurationImpl<SLib>
                         (general_context.OutputDirectory(), 
-                         general_context.ConfigurationName());
+                         general_context.ConfigurationName(),
+                         project_context.GetMsvcProjectMakefile(),
+                         general_context.GetMsvcMetaMakefile(),
+                         general_context.m_Config );
 
     if ( s_IsUtility(general_context, project_context) )
 	    return new CConfigurationImpl<SUtility>
                         (general_context.OutputDirectory(), 
-                         general_context.ConfigurationName());
+                         general_context.ConfigurationName(),
+                         project_context.GetMsvcProjectMakefile(),
+                         general_context.GetMsvcMetaMakefile(),
+                         general_context.m_Config );
 
     if ( s_IsDll(general_context, project_context) )
 	    return new CConfigurationImpl<SDll>
                         (general_context.OutputDirectory(), 
-                         general_context.ConfigurationName());
+                         general_context.ConfigurationName(),
+                         project_context.GetMsvcProjectMakefile(),
+                         general_context.GetMsvcMetaMakefile(),
+                         general_context.m_Config );
     return NULL;
 }
 

@@ -104,6 +104,12 @@ string CMsvcMetaMakefile::TranslateCommand(const string& value)
     return data;
 }
 
+string CMsvcMetaMakefile::GetConfigurationOpt(const string& opt, 
+                                         const SConfigInfo& config) const
+{
+    string sec("Configuration");
+    return TranslateOpt( GetOpt(m_MakeFile, sec, opt, config), sec, opt);
+}
 
 string CMsvcMetaMakefile::GetCompilerOpt(const string& opt, 
                                          const SConfigInfo& config) const
@@ -619,6 +625,7 @@ string CMsvcCombinedProjectMakefile::X(const string&       opt,               \
 }                                                                          
 
 
+IMPLEMENT_COMBINED_MAKEFILE_OPT(GetConfigurationOpt)
 IMPLEMENT_COMBINED_MAKEFILE_OPT(GetCompilerOpt)
 IMPLEMENT_COMBINED_MAKEFILE_OPT(GetLinkerOpt)
 IMPLEMENT_COMBINED_MAKEFILE_OPT(GetLibrarianOpt)
@@ -728,6 +735,21 @@ void CMsvcCombinedProjectMakefile::GetCustomScriptInfo
 
 
 //-----------------------------------------------------------------------------
+string GetConfigurationOpt(const IMsvcMetaMakefile&    meta_file, 
+                      const IMsvcMetaMakefile& project_file,
+                      const string&               opt,
+                      const SConfigInfo&          config)
+{
+    string val = project_file.GetConfigurationOpt(opt, config);
+    if ( val.empty() ) {
+        val = meta_file.GetConfigurationOpt(opt, config);
+    }
+    if (val == "-") {
+        return kEmptyStr;
+    }
+    return val;
+}
+
 string GetCompilerOpt(const IMsvcMetaMakefile&    meta_file, 
                       const IMsvcMetaMakefile& project_file,
                       const string&               opt,

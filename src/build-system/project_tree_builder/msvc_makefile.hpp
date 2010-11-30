@@ -42,6 +42,10 @@ class IMsvcMetaMakefile
 {
 public:
     virtual ~IMsvcMetaMakefile() {}
+
+    virtual string GetConfigurationOpt (const string&       opt, 
+                                   const SConfigInfo&  config)   const = 0;
+
     virtual string GetCompilerOpt (const string&       opt, 
                                    const SConfigInfo&  config)   const = 0;
 
@@ -132,6 +136,9 @@ public:
     static string TranslateOpt(const string& value, const string& section, const string& opt);
     static string TranslateCommand(const string& value);
     // IMsvcMetaMakefile
+    virtual string GetConfigurationOpt (const string&       opt, 
+                                   const SConfigInfo&  config)   const;
+
     virtual string GetCompilerOpt (const string&       opt, 
                                    const SConfigInfo&  config) const;
 
@@ -295,6 +302,9 @@ public:
     virtual ~CMsvcCombinedProjectMakefile(void);
     
     // IMsvcMetaMakefile
+    virtual string GetConfigurationOpt (const string&       opt, 
+                                   const SConfigInfo&  config)   const;
+
     virtual string GetCompilerOpt (const string&       opt, 
                                    const SConfigInfo&  config) const;
 
@@ -371,6 +381,12 @@ string CreateMsvcProjectMakefileName(const CProjItem& project);
 
 
 /// Get option with taking into account 2 makefiles : matafile and project_file
+
+/// Configuration
+string GetConfigurationOpt   (const IMsvcMetaMakefile& meta_file,
+                              const IMsvcMetaMakefile& project_file,
+                              const string&            opt,
+                              const SConfigInfo&       config);
 
 /// Compiler
 string GetCompilerOpt        (const IMsvcMetaMakefile& meta_file,
