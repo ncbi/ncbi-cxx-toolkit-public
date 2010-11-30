@@ -960,10 +960,11 @@ struct STypeLink
     }
 
     bool CanHaveGeneParent(void) const;
+    bool CanHaveCommonGene(void) const;
 
-    CSeqFeatData::ESubtype m_StartType;
-    CSeqFeatData::ESubtype m_CurrentType;
-    CSeqFeatData::ESubtype m_ParentType;
+    CSeqFeatData::ESubtype m_StartType;   // initial feature type
+    CSeqFeatData::ESubtype m_CurrentType; // current link child type
+    CSeqFeatData::ESubtype m_ParentType;  // current link parent type
     bool                   m_ByProduct;
 };
 
@@ -1008,9 +1009,15 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
 }
 
 
-bool STypeLink::CanHaveGeneParent(void) const
+inline bool STypeLink::CanHaveGeneParent(void) const
 {
     return *this && m_CurrentType != CSeqFeatData::eSubtype_gene;
+}
+
+
+inline bool STypeLink::CanHaveCommonGene(void) const
+{
+    return *this;
 }
 
 
@@ -1201,7 +1208,7 @@ namespace {
             overlap_type = eOverlap_CheckIntervals;
         }
         if ( link.m_ParentType == CSeqFeatData::eSubtype_gene &&
-             sx_IsIrregularLocation(loc, circular_length) ) {
+             (true || sx_IsIrregularLocation(loc, circular_length)) ) {
             // LOCATION_SUBSET if bad order or mixed strand
             // otherwise CONTAINED_WITHIN
             overlap_type = eOverlap_Subset;
@@ -1376,6 +1383,8 @@ CFeatTree::CFeatTree(void)
     : m_AssignedParents(0),
       m_AssignedGenes(0),
       m_FeatIdMode(eFeatId_by_type),
+      m_BestGeneFeatIdMode(eBestGeneFeatId_always),
+      m_GeneCheckMode(eGeneCheck_match),
       m_SNPStrandMode(eSNPStrand_both)
 {
 }
@@ -1385,6 +1394,8 @@ CFeatTree::CFeatTree(CFeat_CI it)
     : m_AssignedParents(0),
       m_AssignedGenes(0),
       m_FeatIdMode(eFeatId_by_type),
+      m_BestGeneFeatIdMode(eBestGeneFeatId_always),
+      m_GeneCheckMode(eGeneCheck_match),
       m_SNPStrandMode(eSNPStrand_both)
 {
     AddFeatures(it);
@@ -1399,6 +1410,12 @@ CFeatTree::~CFeatTree(void)
 void CFeatTree::SetFeatIdMode(EFeatIdMode mode)
 {
     m_FeatIdMode = mode;
+}
+
+
+void CFeatTree::SetGeneCheckMode(EGeneCheckMode mode)
+{
+    m_GeneCheckMode = mode;
 }
 
 
@@ -1712,7 +1729,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                                   TBestArray& bests,
                                   const STypeLink& link,
                                   CFeatTree::TFeatArray& parents,
-                                  const CFeatTree* tree)
+                                  CFeatTree* tree)
 {
     _ASSERT(!features.empty());
     _ASSERT(!parents.empty());
@@ -1720,6 +1737,14 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
     typedef vector<SFeatRangeInfo> TRangeArray;
     TRangeArray pp, cc;
     
+    bool check_genes = false;
+    if ( tree->GetGeneCheckMode() == tree->eGeneCheck_match &&
+         link.CanHaveCommonGene() ) {
+        // tree uses common gene information
+        tree->GetBestGene(features[0]->m_Feat, tree->eBestGene_OverlappedOnly);
+        check_genes = true;
+    }
+
     // collect parents parameters
     ITERATE ( CFeatTree::TFeatArray, it, parents ) {
         CFeatTree::CFeatInfo& feat_info = **it;
@@ -1817,6 +1842,14 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                       ++pc ) {
                     if ( !pc->m_Range.IntersectingWith(ci->m_Range) ) {
                         continue;
+                    }
+                    if ( check_genes ) {
+                        const CFeatTree::CFeatInfo* p_gene =
+                            link.m_ParentType == CSeqFeatData::eSubtype_gene?
+                            pc->m_Info: pc->m_Info->m_Gene;
+                        if ( info.m_Gene != p_gene ) {
+                            continue;
+                        }
                     }
                     const CMappedFeat& p_feat = pc->m_Info->m_Feat;
                     const CSeq_loc& p_loc =
@@ -1941,30 +1974,29 @@ void CFeatTree::x_AssignGenes(void)
         return;
     }
 
-    TFeatArray genes;
-    // collect all genes and assign them to their children
-    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
-        CFeatInfo& info = it->second;
-        if ( info.m_Feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene ) {
-            //x_AssignGeneToChildren(info, info);
-            genes.push_back(&info);
-        }
-    }
-    if ( genes.empty() ) {
-        return;
-    }
-    TFeatArray feats;
-    // collect all features without assigned gene
+    TFeatArray genes, feats;
+    // collect genes and other features
     NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
         CFeatInfo& info = it->second;
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
-        if ( feat_type != CSeqFeatData::eSubtype_gene &&
-             !info.m_Gene &&
-             STypeLink(feat_type) ) {
+        if ( feat_type == CSeqFeatData::eSubtype_gene ) {
+            genes.push_back(&info);
+        }
+        else if ( !info.m_Gene && STypeLink(feat_type) ) {
+            if ( m_BestGeneFeatIdMode == eBestGeneFeatId_always ) {
+                CFeatInfo* gene =
+                    x_LookupParentByRef(info,
+                                        CSeqFeatData::eSubtype_gene).second;
+                if ( gene ) {
+                    info.m_Gene = gene;
+                    continue;
+                }
+            }
             feats.push_back(&info);
         }
     }
-    if ( feats.empty() ) {
+    if ( genes.empty() || feats.empty() ) {
+        m_AssignedGenes = m_InfoMap.size();
         return;
     }
     x_AssignGenesByOverlap(feats, genes);
@@ -1978,7 +2010,7 @@ void CFeatTree::x_AssignParents(void)
     if ( m_AssignedParents >= m_InfoMap.size() ) {
         return;
     }
-    
+
     // collect all features without assigned parent
     TParentInfoMap pinfo_map(CSeqFeatData::eSubtype_max+1);
     size_t new_count = 0;
@@ -2169,7 +2201,8 @@ CMappedFeat CFeatTree::GetBestGene(const CMappedFeat& feat,
                                    EBestGeneType lookup_type)
 {
     CMappedFeat ret;
-    if ( lookup_type != eBestGene_OverlappedOnly ) {
+    if ( lookup_type == eBestGene_TreeOnly ||
+         lookup_type == eBestGene_AllowOverlapped ) {
         ret = GetParent(feat, CSeqFeatData::eSubtype_gene);
     }
     if ( !ret && lookup_type != eBestGene_TreeOnly ) {

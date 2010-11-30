@@ -186,6 +186,28 @@ public:
         return m_FeatIdMode;
     }
     void SetFeatIdMode(EFeatIdMode mode);
+
+    /// Mode of processing feature ids
+    enum EBestGeneFeatIdMode {
+        eBestGeneFeatId_ignore,
+        eBestGeneFeatId_always // default
+    };
+    EBestGeneFeatIdMode GetBestGeneFeatIdMode(void) const {
+        return m_BestGeneFeatIdMode;
+    }
+    void SetBestGeneFeatIdMode(EBestGeneFeatIdMode mode);
+
+    /// Mode for taking into account best gene
+    ///   eGeneCheck_match will try to match a parent feature only
+    ///   if they both match to the same gene
+    enum EGeneCheckMode {
+        eGeneCheck_ignore,
+        eGeneCheck_match // default
+    };
+    EGeneCheckMode GetGeneCheckMode(void) const {
+        return m_GeneCheckMode;
+    }
+    void SetGeneCheckMode(EGeneCheckMode mode);
     
     /// Mode of processing SNP strands
     enum ESNPStrandMode {
@@ -270,9 +292,9 @@ public:
     void GetChildrenTo(const CMappedFeat& feat, vector<CMappedFeat>& children);
 
     enum EBestGeneType {
-        eBestGene_TreeOnly,
-        eBestGene_AllowOverlapped,
-        eBestGene_OverlappedOnly
+        eBestGene_TreeOnly,        // determined by feature position in tree
+        eBestGene_AllowOverlapped, // get gene from tree, then by overlapping
+        eBestGene_OverlappedOnly   // get gene by overlapping only
     };
 
     /// Return parent gene if exists or best overlapping gene
@@ -358,6 +380,8 @@ protected:
     TInfoMap m_InfoMap;
     CFeatInfo m_RootInfo;
     EFeatIdMode m_FeatIdMode;
+    EBestGeneFeatIdMode m_BestGeneFeatIdMode;
+    EGeneCheckMode m_GeneCheckMode;
     ESNPStrandMode m_SNPStrandMode;
 };
 
