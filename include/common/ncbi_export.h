@@ -132,6 +132,7 @@
 /* Definitions for NCBI_SEQEXT.DLL
  */
 #ifdef NCBI_SEQEXT_EXPORTS
+#  define NCBI_SNPUTIL_EXPORTS
 #  define NCBI_ID1_EXPORTS
 #  define NCBI_ID2_EXPORTS
 #  define NCBI_ID2_SPLIT_EXPORTS
@@ -505,6 +506,14 @@
 #  define NCBI_GENOME_COLLECTION_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_GENOME_COLLECTION_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library snputil
+ */
+#ifdef NCBI_SNPUTIL_EXPORTS
+#  define NCBI_SNPUTIL_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_SNPUTIL_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library id1
