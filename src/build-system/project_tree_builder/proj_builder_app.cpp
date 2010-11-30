@@ -400,7 +400,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,1,2) );
+    SetVersion( CVersionInfo(3,1,3) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1740,6 +1740,12 @@ void CProjBulderApp::ParseArguments(void)
         m_CustomConfiguration.AddDefinition("__arg_ide", NStr::IntToString(m_Ide));
         m_CustomConfiguration.AddDefinition("__arg_arch", m_Arch);
 #endif
+        // this replaces path separators in entry[j] with a native one
+        for (int j=0; !entry[j].empty(); ++j) {
+            if (m_CustomConfiguration.GetPathValue(entry[j], v)) {
+                m_CustomConfiguration.AddDefinition(entry[j], v);
+            }
+        }
     }
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         string v;
@@ -1761,6 +1767,7 @@ void CProjBulderApp::ParseArguments(void)
 void CProjBulderApp::VerifyArguments(void)
 {
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
+    NStr::ToLower(m_Root);
 
     m_IncDir = GetProjectTreeInfo().m_Compilers;
     m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
