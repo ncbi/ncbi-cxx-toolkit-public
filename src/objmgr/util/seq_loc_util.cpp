@@ -2620,7 +2620,11 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
     case eOverlap_Subset:
         {
             // loc1 should contain loc2
-            if ( Compare(*ploc1, *ploc2, scope) != eContains ) {
+            ECompare cmp = Compare(*ploc1, *ploc2, scope);
+            if ( cmp == eSame ) {
+                return 0;
+            }
+            if ( cmp != eContains ) {
                 return -1;
             }
             return Int8(GetCoverage(*ploc1, scope)) -
