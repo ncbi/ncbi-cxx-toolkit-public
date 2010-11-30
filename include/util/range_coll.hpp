@@ -151,6 +151,18 @@ public:
             return rbegin()->GetToOpen() - From;
        } else return 0;
     }
+    ///
+    /// Returns total length covered by ranges in this collection, i.e.
+    /// sum of lengths of ranges
+    ///
+    position_type   GetCoveredLength (void) const
+    {
+        position_type length = 0;
+        ITERATE(typename TThisType, it, m_vRanges)   {
+            length += it->GetLength();
+        }
+        return length;
+    }
     TRange          GetLimits() const
     {
         if(! m_vRanges.empty())  {
@@ -294,8 +306,8 @@ protected:
         if(it_left != end_nc()) {        
             if(it_left->GetFrom() < pos_from)    
                 it_left->SetFrom(pos_from);
-            m_vRanges.erase(begin_nc(), it_left); //erase ranges to the left
         }
+        m_vRanges.erase(begin_nc(), it_left); //erase ranges to the left
     }
 
     // returns iterator to the range representing result of combination
@@ -357,9 +369,20 @@ protected:
     }
     void    x_IntersectWith(const TThisType &c)
     {
-        ITERATE(typename TThisType, it, c)   {
-            x_IntersectWith(*it);
+        TRangeVector intersection_ranges;
+        const_iterator my_iterator = begin(),
+                       c_iterator = c.begin();
+        while(my_iterator != end() && c_iterator != c.end())
+        {
+	    TRange intersection = my_iterator->IntersectionWith(*c_iterator);
+            if(intersection.NotEmpty())
+                intersection_ranges.push_back(intersection);
+            if(my_iterator->GetTo() < c_iterator->GetTo())
+                ++my_iterator;
+            else
+                ++c_iterator;
         }
+        m_vRanges = intersection_ranges;
     }
     void    x_CombineWith(const TThisType &c)
     {

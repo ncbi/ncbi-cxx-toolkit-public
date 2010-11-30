@@ -198,6 +198,51 @@ BOOST_AUTO_TEST_CASE(TestRangeIntersection)
     BOOST_CHECK(coll.IntersectingWith(TSeqRange(58, 65)) == true);
     BOOST_CHECK(coll.IntersectingWith(TSeqRange(75, 80)) == true);
     BOOST_CHECK(coll.IntersectingWith(TSeqRange(85, 90)) == false);
+
+    CRangeCollection<TSeqPos> coll2 = coll;
+
+    coll &= TSeqRange(80,90);
+    BOOST_CHECK_EQUAL(coll.size(), 0);
+
+    it = coll.begin();
+    BOOST_CHECK(it == coll.end());
+
+    BOOST_CHECK_EQUAL(coll2.size(), 3);
+
+    coll2 &= TSeqRange(10,20);
+    BOOST_CHECK_EQUAL(coll2.size(), 0);
+
+    it = coll2.begin();
+    BOOST_CHECK(it == coll2.end());
+}
+
+BOOST_AUTO_TEST_CASE(TestRangeCollIntersection)
+{
+    CRangeCollection<TSeqPos> coll, coll2;
+
+    for (TSeqPos p = 10;  p < 100;  p += 20) {
+        coll += TSeqRange(p, p + 10);
+    }
+
+    for (TSeqPos p = 45;  p < 150;  p += 20) {
+        coll2 += TSeqRange(p, p + 10);
+    }
+    BOOST_CHECK_EQUAL(coll.size(), 5);
+
+    coll &= coll2;
+    BOOST_CHECK_EQUAL(coll.size(), 3);
+
+    CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
+    BOOST_CHECK(it != coll.end());
+    BOOST_CHECK(*it == TSeqRange(50, 55));
+
+    ++it;
+    BOOST_CHECK(it != coll.end());
+    BOOST_CHECK(*it == TSeqRange(70, 75));
+
+    ++it;
+    BOOST_CHECK(it != coll.end());
+    BOOST_CHECK(*it == TSeqRange(90, 95));
 }
 
 
