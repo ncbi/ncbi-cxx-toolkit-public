@@ -48,10 +48,10 @@
 
 USING_NCBI_SCOPE;
 
-class CNSRemoveJobControlApp : public CNcbiApplication
+class CNSRemoteJobControlApp : public CNcbiApplication
 {
 public:
-    CNSRemoveJobControlApp() {
+    CNSRemoteJobControlApp() {
         SetVersion(CVersionInfo(
             REMOTEJOBCTL_VERSION_MAJOR,
             REMOTEJOBCTL_VERSION_MINOR,
@@ -64,7 +64,7 @@ public:
 protected:
 };
 
-void CNSRemoveJobControlApp::Init(void)
+void CNSRemoteJobControlApp::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -204,7 +204,7 @@ static void DumpStdStreams(const CArgValue& arg,
     }
 }
 
-int CNSRemoveJobControlApp::Run(void)
+int CNSRemoteJobControlApp::Run(void)
 {
 
     const CArgs& args = GetArgs();
@@ -374,5 +374,5 @@ int CNSRemoveJobControlApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CNSRemoveJobControlApp().AppMain(argc, argv);
+    return CNSRemoteJobControlApp().AppMain(argc, argv);
 }
