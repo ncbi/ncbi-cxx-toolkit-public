@@ -821,8 +821,10 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             }
         }
     }
-    if (gc_seq.IsSetStructure()  /*&&  !parent_seq*/) {
-        // This is a top-level sequence, create CSeqMap.
+    if (gc_seq.IsSetStructure()  &&
+        (!parent_seq  ||  direction == eSeqMap_Down)) {
+        // This is a top-level sequence or we are mapping down,
+        // create CSeqMap.
         SSeqMapSelector sel = selector;
         sel.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved).
             SetLinkUsedTSE();
