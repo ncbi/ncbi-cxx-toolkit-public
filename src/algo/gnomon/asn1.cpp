@@ -246,6 +246,8 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
 
     CRef<CSeq_feat> mrna_feat = feature_generator->ConvertAlignToAnnot(*align, *gnomon_models_annot, model_products->SetSet(), model.GeneID(), cds_feat_ptr);
 
+    DumpEvidence(md);
+
     CRef< CUser_object > user_obj = create_ModelEvidence_user_object(model);
     mrna_feat->SetExts().push_back(user_obj);
 
@@ -822,7 +824,7 @@ void RestoreModelReadingFrame(const CSeq_feat_Handle& feat, CAlignModel& model)
     if (feat && feat.GetFeatType() == CSeqFeatData::e_Cdregion) {
         TSeqRange cds_range = feat.GetLocation().GetTotalRange();
         TSignedSeqRange rf = TSignedSeqRange(cds_range.GetFrom(), cds_range.GetTo());
-        if (feat.GetLocation().GetId() != CIdHandler::GnomonMRNA(model.ID())) {
+        if (!feat.GetLocation().GetId()->Match(*CIdHandler::GnomonMRNA(model.ID()))) {
             rf =  model.GetAlignMap().MapRangeOrigToEdited(rf, false);
         }
 
