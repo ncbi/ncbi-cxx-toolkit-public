@@ -113,13 +113,13 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
             if (m_JobContext->m_Job.progress_msg.empty() ) {
                 m_NetScheduleExecuter.GetProgressMsg(m_JobContext->m_Job);
             }
-            if (!m_JobContext->m_Job.progress_msg.empty() && m_NetCacheAPI) {
+            if (m_NetCacheAPI) {
+                bool first_message = m_JobContext->m_Job.progress_msg.empty();
                 auto_ptr<CNcbiOstream> os(m_NetCacheAPI.CreateOStream(
                     m_JobContext->m_Job.progress_msg));
                 *os << msg;
-            }
-            else {
-                //ERR_POST_X(5, "Couldn't send a progress message.");
+                if (first_message)
+                    m_NetScheduleExecuter.PutProgressMsg(m_JobContext->m_Job);
             }
         }
         if (debug_context) {

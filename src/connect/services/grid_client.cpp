@@ -183,8 +183,7 @@ string CGridJobSubmitter::Submit(const string& affinity)
     if (!affinity.empty() && m_Job.affinity.empty())
         m_Job.affinity = affinity;
     if (m_UseProgress)
-        m_Job.progress_msg =
-            m_GridClient.GetNetCacheAPI().PutData((const void*) NULL, 0);
+        m_Job.progress_msg = kEmptyStr;
     string job_key = m_GridClient.GetNSClient().SubmitJob(m_Job);
     m_Job.Reset();
     return job_key;
