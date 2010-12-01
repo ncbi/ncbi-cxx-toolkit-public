@@ -2489,8 +2489,8 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                 strand2 == eNa_strand_other ) {
                 return x_TestForOverlap_MultiStrand(*ploc1, *ploc2, type, scope);
             }
-            return -1;
         }
+        return -1;
     }
     switch (type) {
     case eOverlap_Simple:
