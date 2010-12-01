@@ -270,6 +270,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     }
 
     /// This method is for use by the netschedule_control utility only.
+    /// @internal
     void EnableWorkerNodeCompatMode();
 };
 
@@ -674,19 +675,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         const string& qname,
         const string& qclass,
         const string& comment = kEmptyStr);
-
-    /// Create queue of given queue class
-    /// @param qname
-    ///    Name of the queue to create
-    /// @param qclass
-    ///    Parameter set described in config file in qclass_* section
-    /// @deprecated The flags parameter was a mistake.
-    NCBI_DEPRECATED
-    void CreateQueue(
-        const string& qname,
-        const string& qclass,
-        const string& comment,
-        ECreateQueueFlags flags);
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method

@@ -97,20 +97,6 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
 }
 
 
-void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
-                                    const string& comment, ECreateQueueFlags flags)
-{
-    try {
-        CreateQueue(qname, qclass, comment);
-    }
-    catch (CNetScheduleException& ex) {
-        if (flags != eIgnoreDuplicateName &&
-                ex.GetErrCode() == CNetScheduleException::eDuplicateName)
-            throw;
-    }
-}
-
-
 void CNetScheduleAdmin::DeleteQueue(const string& qname)
 {
     string cmd = "QDEL " + qname;
