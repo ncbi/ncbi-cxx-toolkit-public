@@ -317,7 +317,13 @@ VariantProperties ::= SEQUENCE {
                             -- (0x10)
         down-regulator(32), -- the variant causes decreased transcription
                             -- (0x20)
-        methylation(64)
+        methylation   (64),
+        stop-gain     (128), -- reference codon is not stop codon, but the snp
+                             -- variant allele changes the codon to a
+                             -- terminating codon.
+        stop-loss     (256)  -- reverse of STOP-GAIN: reference codon is a
+                             -- stop codon, but a snp variant allele changes
+                             -- the codon to a non-terminating codon.
     } OPTIONAL,
 
     mapping INTEGER {
