@@ -94,7 +94,7 @@ public:
     TInterruptFnPtr SetInterruptCallback(TInterruptFnPtr fnptr,
                                          void* user_data = NULL) {
         _ASSERT(m_PrelimSearch);
-        m_PrelimSearch->SetInterruptCallback(fnptr, user_data);
+        return m_PrelimSearch->SetInterruptCallback(fnptr, user_data);
     }
   
 private:
