@@ -99,9 +99,9 @@ RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
 ///Geo
 // .ncbirc alias: GEO
-const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=<@gi@>[gi]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/geoprofiles/?term=<@gi@>[gi]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
-const string kGeoImg = "<img border=0 height=16 width=16 src=\"images/E.gif\" alt=\"Geo info linked to <@label@>\">";
+const string kGeoImg = "<img border=0 height=16 width=16 src=\"images/E.gif\" alt=\"GEO profiles info linked to <@label@>\">";
 
 ///Gene
 // .ncbirc alias: GENE
@@ -141,9 +141,7 @@ const string kEntrezSubseqTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?rep
 
 ///Bl2seq 
 // .ncbirc alias: BL2SEQ
-const string kBl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/\
-blast/bl2seq/wblast2.cgi?PROGRAM=tblastx&WORD=3&RID=%s&ONE=%s&TWO=%s\">Get \
-TBLASTX alignments</a>";
+const string kBl2seqUrl = "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&EXPECT=10&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>";
 
 
 // .ncbirc alias: GETSEQ_SUB_FRM_0
