@@ -913,8 +913,17 @@ LDFLAGS="$MT_FLAG $LDFLAGS"
 APP_LDFLAGS=
 DLL_LDFLAGS=
 
-case "$compiler" in
-   GCC | ICC )
+case "$host_os:$compiler" in
+   darwin*:GCC )
+      AC_CACHE_CHECK([whether $CC supports -Wl,-rpath],
+         ncbi_cv_prog_cc_wl_rpath,
+         [orig_LDFLAGS=$LDFLAGS
+          LDFLAGS="-Wl,-rpath,. $LDFLAGS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+             [ncbi_cv_prog_cc_wl_rpath=yes], [ncbi_cv_prog_cc_wl_rpath=no])
+          LDFLAGS=$orig_LDFLAGS])
+      ;;
+   *:GCC | *:ICC )
       AC_CACHE_CHECK([whether $CC supports -Wl,-E], ncbi_cv_prog_cc_wl_e,
          [orig_LDFLAGS=$LDFLAGS
           LDFLAGS="-Wl,-E $LDFLAGS"
@@ -1439,10 +1448,14 @@ if test -z "$CONF_f_runpath" ; then
     irix*:* | linux*:KCC | *:Compaq )
       CONF_f_runpath="-rpath "
       ;;
+    darwin* )
+      test "$ncbi_cv_prog_cc_wl_rpath" = no  ||  CONF_f_runpath="-Wl,-rpath,"
+      ;;
    esac
 fi
-case "$host_os" in
+case "$host_os:$ncbi_cv_prog_cc_wl_rpath" in
     linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath'\$\$ORIGIN'" ;;
+    darwin*:yes     ) RUNPATH_ORIGIN="$CONF_f_runpath@executable_path" ;;
     * )               RUNPATH_ORIGIN="-DNCBI_RPO_SUFFIX_EATER=" ;;
 esac
 

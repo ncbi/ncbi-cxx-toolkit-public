@@ -4854,10 +4854,69 @@ LDFLAGS="$MT_FLAG $LDFLAGS"
 APP_LDFLAGS=
 DLL_LDFLAGS=
 
-case "$compiler" in
-   GCC | ICC )
+case "$host_os:$compiler" in
+   darwin*:GCC )
 
-echo "$as_me:$LINENO: checking whether $CC supports -Wl,-E" >&5
+echo "$as_me:$LINENO: checking whether $CC supports -Wl,-rpath" >&5
+echo $ECHO_N "checking whether $CC supports -Wl,-rpath... $ECHO_C" >&6
+if test "${ncbi_cv_prog_cc_wl_rpath+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  orig_LDFLAGS=$LDFLAGS
+          LDFLAGS="-Wl,-rpath,. $LDFLAGS"
+          cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_prog_cc_wl_rpath=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_prog_cc_wl_rpath=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+          LDFLAGS=$orig_LDFLAGS
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_cc_wl_rpath" >&5
+echo "${ECHO_T}$ncbi_cv_prog_cc_wl_rpath" >&6
+      ;;
+   *:GCC | *:ICC )
+      echo "$as_me:$LINENO: checking whether $CC supports -Wl,-E" >&5
 echo $ECHO_N "checking whether $CC supports -Wl,-E... $ECHO_C" >&6
 if test "${ncbi_cv_prog_cc_wl_e+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -5507,10 +5566,14 @@ if test -z "$CONF_f_runpath" ; then
     irix*:* | linux*:KCC | *:Compaq )
       CONF_f_runpath="-rpath "
       ;;
+    darwin* )
+      test "$ncbi_cv_prog_cc_wl_rpath" = no  ||  CONF_f_runpath="-Wl,-rpath,"
+      ;;
    esac
 fi
-case "$host_os" in
+case "$host_os:$ncbi_cv_prog_cc_wl_rpath" in
     linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath'\$\$ORIGIN'" ;;
+    darwin*:yes     ) RUNPATH_ORIGIN="$CONF_f_runpath@executable_path" ;;
     * )               RUNPATH_ORIGIN="-DNCBI_RPO_SUFFIX_EATER=" ;;
 esac
 
