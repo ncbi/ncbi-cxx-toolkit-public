@@ -1362,6 +1362,25 @@ Blast_RunTracebackSearch(EBlastProgramType program,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
    SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results)
 {
+   return Blast_RunTracebackSearchWithInterrupt(program,
+          query, query_info, seq_src, score_options, ext_options,
+          hit_options, eff_len_options, db_options, psi_options, sbp,
+          hsp_stream, rps_info, pattern_blk, results, NULL, NULL);
+}
+
+Int2 
+Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program, 
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   const BlastSeqSrc* seq_src, const BlastScoringOptions* score_options,
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingOptions* hit_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const BlastDatabaseOptions* db_options, 
+   const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
+   BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
+   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results,
+   TInterruptFnPtr interrupt_search,  SBlastProgress* progress_info)
+{
    Int2 status = 0;
    BlastScoringParameters* score_params = NULL; /**< Scoring parameters */
    BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
@@ -1385,7 +1404,7 @@ Blast_RunTracebackSearch(EBlastProgramType program,
       BLAST_ComputeTraceback(program, hsp_stream, query, query_info,
                              seq_src, gap_align, score_params, ext_params, 
                              hit_params, eff_len_params, db_options, psi_options,
-                             rps_info, pattern_blk, results, 0, 0);
+                             rps_info, pattern_blk, results, interrupt_search, progress_info);
 
    /* Do not destruct score block here */
    gap_align->sbp = NULL;

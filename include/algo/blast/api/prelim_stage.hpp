@@ -81,6 +81,11 @@ public:
     /** @inheritDoc */
     virtual void SetNumberOfThreads(size_t nthreads);
 
+    /// Set a function callback to be invoked by the CORE of BLAST to allow
+    /// interrupting a BLAST search in progress
+    TInterruptFnPtr SetInterruptCallback(TInterruptFnPtr fnptr,
+                                         void* user_data = NULL);
+
     /// Checks that internal data is valid.  Used to know whether or not
     /// run should proceed or just print statistics for user.  This
     /// would most often be called if the problems in constructor are not bad enough to throw
@@ -144,6 +149,14 @@ inline TSeqLocInfoVector
 CBlastPrelimSearch::GetFilteredQueryRegions() const
 {
     return m_MasksForAllQueries;
+}
+
+inline TInterruptFnPtr
+CBlastPrelimSearch::SetInterruptCallback(TInterruptFnPtr fnptr, void* user_data)
+{
+    swap(m_InternalData->m_FnInterrupt, fnptr);
+    m_InternalData->m_ProgressMonitor.Reset(new CSBlastProgress(SBlastProgressNew(user_data)));
+    return fnptr;
 }
 
 END_SCOPE(BLAST)

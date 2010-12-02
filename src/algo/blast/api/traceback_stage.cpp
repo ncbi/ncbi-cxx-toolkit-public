@@ -77,6 +77,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
 {
     x_Init(qf, opts, pssm, BlastSeqSrcGetName(seqsrc), hsps);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
+    m_InternalData->m_FnInterrupt = NULL;
+    m_InternalData->m_ProgressMonitor.Reset(new CSBlastProgress(NULL));
 }
 
 CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
@@ -371,7 +373,7 @@ CBlastTracebackSearch::Run()
     
     BlastHSPResults * hsp_results(0);
     int status =
-        Blast_RunTracebackSearch(m_OptsMemento->m_ProgramType,
+        Blast_RunTracebackSearchWithInterrupt(m_OptsMemento->m_ProgramType,
                                  m_InternalData->m_Queries,
                                  m_InternalData->m_QueryInfo,
                                  m_InternalData->m_SeqSrc->GetPointer(),
@@ -386,7 +388,9 @@ CBlastTracebackSearch::Run()
                                  m_InternalData->m_RpsData ?
                                  (*m_InternalData->m_RpsData)() : 0,
                                  phi_lookup_table,
-                                 & hsp_results);
+                                 & hsp_results,
+                                 m_InternalData->m_FnInterrupt,
+                                 m_InternalData->m_ProgressMonitor->Get());
     if (status) {
         NCBI_THROW(CBlastException, eCoreBlastError, "Traceback failed"); 
     }

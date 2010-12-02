@@ -250,6 +250,13 @@ SplitQuery_CreateChunkData(CRef<IQueryFactory> qf,
                                                BlastSeqSrcFree));
     
     _ASSERT(setup_data->m_QuerySplitter->IsQuerySplit() == false);
+
+    if (full_data->m_ProgressMonitor->Get()) {
+        setup_data->m_InternalData->m_FnInterrupt = full_data->m_FnInterrupt;
+        SBlastProgress* bp =
+             SBlastProgressNew(full_data->m_ProgressMonitor->Get()->user_data);
+        setup_data->m_InternalData->m_ProgressMonitor.Reset(new CSBlastProgress(bp));
+    }
     return setup_data->m_InternalData;
 }
 

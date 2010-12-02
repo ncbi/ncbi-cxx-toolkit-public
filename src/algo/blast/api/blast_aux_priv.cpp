@@ -236,8 +236,12 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
         query_data->FlushSequenceData();        
         retval->m_InternalData->m_Queries = NULL;
     }
+
+    retval->m_InternalData->m_FnInterrupt = NULL;
+    retval->m_InternalData->m_ProgressMonitor.Reset(new CSBlastProgress(NULL));
     return retval;
 }
+
 
 void
 BuildBlastAncillaryData(EBlastProgramType program,

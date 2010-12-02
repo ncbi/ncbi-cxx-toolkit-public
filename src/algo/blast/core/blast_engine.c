@@ -1235,7 +1235,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
     return status;
 }
 
-Int2 
+Int2
 Blast_RunPreliminarySearch(EBlastProgramType program, 
     BLAST_SequenceBlk* query, 
     BlastQueryInfo* query_info, 
@@ -1250,7 +1250,31 @@ Blast_RunPreliminarySearch(EBlastProgramType program,
     const PSIBlastOptions* psi_options, 
     const BlastDatabaseOptions* db_options, 
     BlastHSPStream* hsp_stream, 
-    BlastDiagnostics* diagnostics)
+    BlastDiagnostics* diagnostics) 
+{
+    return Blast_RunPreliminarySearchWithInterrupt(program,
+           query, query_info, seq_src, score_options, sbp, lookup_wrap,
+           word_options, ext_options, hit_options, eff_len_options,
+           psi_options, db_options, hsp_stream, diagnostics, NULL, NULL);
+}
+
+Int2 
+Blast_RunPreliminarySearchWithInterrupt(EBlastProgramType program, 
+    BLAST_SequenceBlk* query, 
+    BlastQueryInfo* query_info, 
+    const BlastSeqSrc* seq_src, 
+    const BlastScoringOptions* score_options,
+    BlastScoreBlk* sbp, 
+    LookupTableWrap* lookup_wrap,
+    const BlastInitialWordOptions* word_options, 
+    const BlastExtensionOptions* ext_options,
+    const BlastHitSavingOptions* hit_options,
+    const BlastEffectiveLengthsOptions* eff_len_options,
+    const PSIBlastOptions* psi_options, 
+    const BlastDatabaseOptions* db_options, 
+    BlastHSPStream* hsp_stream, 
+    BlastDiagnostics* diagnostics,
+    TInterruptFnPtr interrupt_search, SBlastProgress* progress_info)
 {
     Int2 status = 0;
     BlastScoringParameters* score_params = NULL;/**< Scoring parameters */
@@ -1279,7 +1303,8 @@ Blast_RunPreliminarySearch(EBlastProgramType program,
                                       lookup_wrap, word_options, 
                                       ext_params, hit_params, eff_len_params,
                                       psi_options, db_options, hsp_stream, 
-                                      local_diagnostics, 0, 0)) != 0)
+                                      local_diagnostics, interrupt_search, 
+                                      progress_info)) != 0) 
       return status;
 
     /* Do not destruct score block here */

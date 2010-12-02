@@ -67,7 +67,8 @@ public:
         _ASSERT(m_InternalData.m_ScoreBlk);
         _ASSERT(m_InternalData.m_LookupTable);
         _ASSERT(m_InternalData.m_HspStream);
-        Int2 retval = Blast_RunPreliminarySearch(m_OptsMemento->m_ProgramType,
+        SBlastProgressReset(m_InternalData.m_ProgressMonitor->Get());
+        Int2 retval = Blast_RunPreliminarySearchWithInterrupt(m_OptsMemento->m_ProgramType,
                                  m_InternalData.m_Queries,
                                  m_InternalData.m_QueryInfo,
                                  m_InternalData.m_SeqSrc->GetPointer(),
@@ -81,7 +82,9 @@ public:
                                  m_OptsMemento->m_PSIBlastOpts,
                                  m_OptsMemento->m_DbOpts,
                                  m_InternalData.m_HspStream->GetPointer(),
-                                 m_InternalData.m_Diagnostics->GetPointer());
+                                 m_InternalData.m_Diagnostics->GetPointer(),
+                                 m_InternalData.m_FnInterrupt,
+                                 m_InternalData.m_ProgressMonitor->Get());
         return static_cast<int>(retval);
     }
 
@@ -113,6 +116,12 @@ public:
             BlastSeqSrcCopy(m_InternalData.m_SeqSrc->GetPointer());
         m_InternalData.m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 
                                                        BlastSeqSrcFree));
+        // The progress field must be copied to ensure MT-safety
+        if (m_InternalData.m_ProgressMonitor->Get()) {
+            SBlastProgress* bp = 
+                SBlastProgressNew(m_InternalData.m_ProgressMonitor->Get()->user_data);
+            m_InternalData.m_ProgressMonitor.Reset(new CSBlastProgress(bp));
+        }
     }
 
 protected:

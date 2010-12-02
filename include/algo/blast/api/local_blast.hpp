@@ -84,6 +84,19 @@ public:
     /// Executes the search
     CRef<CSearchResultSet> Run();
     
+    /// Set a function callback to be invoked by the CORE of BLAST to allow
+    /// interrupting a BLAST search in progress.
+    /// @param fnptr pointer to callback function [in]
+    /// @param user_data user data to be attached to SBlastProgress structure 
+    /// [in]
+    /// @return the previously set TInterruptFnPtr (NULL if none was 
+    /// provided before)
+    TInterruptFnPtr SetInterruptCallback(TInterruptFnPtr fnptr,
+                                         void* user_data = NULL) {
+        _ASSERT(m_PrelimSearch);
+        m_PrelimSearch->SetInterruptCallback(fnptr, user_data);
+    }
+  
 private:
     /// Query factory from which to obtain the query sequence data
     CRef<IQueryFactory> m_QueryFactory;

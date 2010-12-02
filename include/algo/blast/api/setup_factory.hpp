@@ -301,6 +301,7 @@ typedef CStructWrapper<BlastDiagnostics>        TBlastDiagnostics;
 typedef CStructWrapper<BlastHSPStream>          TBlastHSPStream;
 typedef CStructWrapper<BlastSeqSrc>             TBlastSeqSrc;
 typedef CStructWrapper<SPHIPatternSearchBlk>    TSPHIPatternSearchBlk;
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 /// Lightweight wrapper to enclose C structures needed for running the
@@ -334,6 +335,12 @@ struct NCBI_XBLAST_EXPORT SInternalData : public CObject
 
     /// The RPS-BLAST related data
     CRef<CBlastRPSInfo> m_RpsData;
+
+    /// The interrupt callback
+    TInterruptFnPtr m_FnInterrupt;
+
+    /// The user data structure to aid in progress monitoring
+    CRef<CSBlastProgress> m_ProgressMonitor;
 };
 
 /// Structure to hold results of the preliminary (databases scanning phase)
