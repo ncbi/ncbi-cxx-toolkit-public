@@ -38,6 +38,7 @@
 #include <util/static_map.hpp>
 #include <serial/enumvalues.hpp>
 
+#include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/pub/Pub.hpp>
@@ -55,6 +56,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/submit/Submit_block.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -260,6 +262,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
 {
     const SMod* mod;
 
+    // top[ology]
     if ((mod = FindMod("topology", "top")) != NULL) {
         if (NStr::EqualNocase(mod->value, "linear")) {
             seq.SetInst().SetTopology(CSeq_inst::eTopology_linear);
@@ -270,15 +273,45 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         }
     }
 
-    // mol[ecule], strand
-}
+    // mol[ecule]
+    if ((mod = FindMod("molecule", "mol")) != NULL) {
+        if (NStr::EqualNocase(mod->value, "dna")) {
+            seq.SetInst().SetMol( CSeq_inst::eMol_dna );
+        } else if (NStr::EqualNocase(mod->value, "rna")) {
+            seq.SetInst().SetMol( CSeq_inst::eMol_rna );
+        } else {
+            // TODO: should we handle "na" and "aa"?
+            x_HandleBadModValue(*mod);
+        }
+    }
 
+    // strand
+    if ((mod = FindMod("strand")) != NULL) {
+        if (NStr::EqualNocase(mod->value, "single")) {
+            seq.SetInst().SetStrand( CSeq_inst::eStrand_ss );
+        } else if (NStr::EqualNocase(mod->value, "double")) {
+            seq.SetInst().SetStrand( CSeq_inst::eStrand_ds );
+        } else if (NStr::EqualNocase(mod->value, "mixed")) {
+            seq.SetInst().SetStrand( CSeq_inst::eStrand_mixed );
+        } else {
+            x_HandleBadModValue(*mod);
+        }
+    }
+
+    // comment
+    if ((mod = FindMod("comment")) != NULL) {
+        CRef<CSeqdesc> desc(new CSeqdesc);
+        desc->SetComment( mod->value );
+        seq.SetDescr().Set().push_back(desc);
+    }
+}
 
 void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
                                    CTempString organism)
 {
     const SMod* mod;
 
+    // org[anism]
     if (((mod = FindMod("organism", "org")) != NULL)  &&  organism.empty()) {
         organism = mod->value;
     }
@@ -290,6 +323,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
         bsrc->SetOrg().SetTaxname(organism);
     }
 
+    // location
     if ((mod = FindMod("location")) != NULL) {
         if (NStr::EqualNocase(mod->value, "mitochondrial")) {
             bsrc->SetGenome(CBioSource::eGenome_mitochondrion);
@@ -305,6 +339,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
         }
     }
 
+    // origin
     if ((mod = FindMod("origin")) != NULL) {
         try {
             bsrc->SetOrigin(CBioSource::GetTypeInfo_enum_EOrigin()
@@ -380,7 +415,71 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
         }
     }}
 
-    // db_xref, div[ision], lineage, [m|p]gcode, note[s], focus
+    // db_xref
+    TModsRange db_xref_mods_range = FindAllMods( "db_xref" );
+    for( TModsCI db_xref_iter = db_xref_mods_range.first; 
+            db_xref_iter != db_xref_mods_range.second; 
+            ++db_xref_iter ) {
+        CRef< CDbtag > new_db( new CDbtag );
+
+        const string &db_xref_str = db_xref_iter->value;
+        string::size_type colon_location = db_xref_str.find( ":" );
+        if( colon_location == string::npos ) {
+            // no colon: it's just tag, and db is unknown
+            colon_location = -1; // we imagine the colon to be just before the start of the string
+            new_db->SetDb( "?" );
+        } else {
+            // there's a colon, so db and tag are both known
+            new_db->SetDb( db_xref_str.substr( 0, colon_location ) );
+        }
+        
+        CRef<CObject_id> object_id( new CObject_id );
+        object_id->SetStr( db_xref_str.substr( colon_location + 1 ) );
+        new_db->SetTag( *object_id );
+
+        bsrc->SetOrg().SetDb().push_back( new_db );
+    }
+
+    // div[ision]
+    if ((mod = FindMod("division", "div")) != NULL) {
+        bsrc->SetOrg().SetOrgname().SetDiv( mod->value );
+    }
+    
+    // lineage
+    if ((mod = FindMod("lineage")) != NULL) {
+        bsrc->SetOrg().SetOrgname().SetLineage( mod->value );
+    }
+    
+    // gcode
+    if ((mod = FindMod("gcode")) != NULL) {
+        bsrc->SetOrg().SetOrgname().SetGcode( NStr::StringToInt(mod->value) );
+    }
+
+    // mgcode
+    if ((mod = FindMod("mgcode")) != NULL) {
+        bsrc->SetOrg().SetOrgname().SetMgcode( NStr::StringToInt(mod->value) );
+    }
+
+    // pgcode
+    if ((mod = FindMod("pgcode")) != NULL) {
+        bsrc->SetOrg().SetOrgname().SetPgcode( NStr::StringToInt(mod->value) );
+    }
+
+    // note[s]
+    if ((mod = FindMod("note", "notes")) != NULL) {
+        CRef< CSubSource > new_subsource( new CSubSource );
+        new_subsource->SetSubtype( CSubSource::eSubtype_other );
+        new_subsource->SetName( mod->value );
+        bsrc->SetSubtype().push_back( new_subsource );
+    }
+
+    // focus
+    if ((mod = FindMod("focus")) != NULL) {
+        if( NStr::EqualNocase( mod->value, "TRUE" ) ) {
+            bsrc->SetIs_focus();
+        }
+    }
+
     // delegate to CFeatureTableReader in any cases?
 }
 
@@ -408,10 +507,58 @@ typedef CStaticArrayMap<const char*, CMolInfo::TBiomol,
                         CSourceModParser::PKeyCompare>  TBiomolMap;
 DEFINE_STATIC_ARRAY_MAP(TBiomolMap, sc_BiomolMap, sc_BiomolArray);
 
+typedef pair<const char*, CMolInfo::TTech> TTechMapEntry;
+static const TTechMapEntry sc_TechArray[] = {
+    TTechMapEntry("?",                  CMolInfo::eTech_unknown),
+    TTechMapEntry("barcode",            CMolInfo::eTech_barcode),
+    TTechMapEntry("both",               CMolInfo::eTech_both),
+    TTechMapEntry("composite-wgs-htgs", CMolInfo::eTech_composite_wgs_htgs),
+    TTechMapEntry("concept-trans",      CMolInfo::eTech_concept_trans),
+    TTechMapEntry("concept-trans-a",    CMolInfo::eTech_concept_trans_a),
+    TTechMapEntry("derived",            CMolInfo::eTech_derived),
+    TTechMapEntry("EST",                CMolInfo::eTech_est),
+    TTechMapEntry("fli cDNA",           CMolInfo::eTech_fli_cdna),
+    TTechMapEntry("genetic map",        CMolInfo::eTech_genemap),
+    TTechMapEntry("htc",                CMolInfo::eTech_htc),
+    TTechMapEntry("htgs 0",             CMolInfo::eTech_htgs_0),
+    TTechMapEntry("htgs 1",             CMolInfo::eTech_htgs_1),
+    TTechMapEntry("htgs 2",             CMolInfo::eTech_htgs_2),
+    TTechMapEntry("htgs 3",             CMolInfo::eTech_htgs_3),
+    TTechMapEntry("physical map",       CMolInfo::eTech_physmap),
+    TTechMapEntry("seq-pept",           CMolInfo::eTech_seq_pept),
+    TTechMapEntry("seq-pept-homol",     CMolInfo::eTech_seq_pept_homol),
+    TTechMapEntry("seq-pept-overlap",   CMolInfo::eTech_seq_pept_overlap),
+    TTechMapEntry("standard",           CMolInfo::eTech_standard),
+    TTechMapEntry("STS",                CMolInfo::eTech_sts),
+    TTechMapEntry("survey",             CMolInfo::eTech_survey),
+    TTechMapEntry("tsa",                CMolInfo::eTech_tsa),
+    TTechMapEntry("wgs",                CMolInfo::eTech_wgs)
+    // TODO: is "other" allowed?
+};
+typedef CStaticArrayMap<const char*, CMolInfo::TTech,
+CSourceModParser::PKeyCompare>  TTechMap;
+DEFINE_STATIC_ARRAY_MAP(TTechMap, sc_TechMap, sc_TechArray);
+
+typedef pair<const char*, CMolInfo::TCompleteness> TCompletenessMapEntry;
+static const TCompletenessMapEntry sc_CompletenessArray[] = {
+    TCompletenessMapEntry("complete",  CMolInfo::eCompleteness_complete ),
+    TCompletenessMapEntry("has-left",  CMolInfo::eCompleteness_has_left ),
+    TCompletenessMapEntry("has-right", CMolInfo::eCompleteness_has_right ),
+    TCompletenessMapEntry("no-ends",   CMolInfo::eCompleteness_no_ends ),
+    TCompletenessMapEntry("no-left",   CMolInfo::eCompleteness_no_left ),
+    TCompletenessMapEntry("no-right",  CMolInfo::eCompleteness_no_right ),
+    TCompletenessMapEntry("partial",   CMolInfo::eCompleteness_partial )
+    // TODO: is other allowed?
+};
+typedef CStaticArrayMap<const char*, CMolInfo::TCompleteness,
+CSourceModParser::PKeyCompare>  TCompletenessMap;
+DEFINE_STATIC_ARRAY_MAP(TCompletenessMap, sc_CompletenessMap, sc_CompletenessArray);
+
 void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
 {
     const SMod* mod;
 
+    // mol[-]type
     if ((mod = FindMod("moltype", "mol-type")) != NULL) {
         TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
         if (it == sc_BiomolMap.end()) {
@@ -421,19 +568,51 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
         }
     }
 
-    // tech, complete[d]ness
+    // tech
+    if ((mod = FindMod("tech")) != NULL) {
+        TTechMap::const_iterator it = sc_TechMap.find(mod->value.c_str());
+        if (it == sc_TechMap.end()) {
+            x_HandleBadModValue(*mod);
+        } else {
+            mi->SetTech(it->second);
+        }
+    }
+
+    // complete[d]ness
+    if ((mod = FindMod("completeness", "completedness")) != NULL) {
+        TTechMap::const_iterator it = sc_CompletenessMap.find(mod->value.c_str());
+        if (it == sc_CompletenessMap.end()) {
+            x_HandleBadModValue(*mod);
+        } else {
+            mi->SetCompleteness(it->second);
+        }
+    }
 }
 
 
 void CSourceModParser::x_ApplyMods(CAutoInitRef<CGene_ref>& gene)
 {
-    const SMod* mod;
+    const SMod* mod = NULL;
 
+    // gene
     if ((mod = FindMod("gene")) != NULL) {
         gene->SetLocus(mod->value);
     }
 
-    // allele, gene_syn[onym], locus_tag
+    // allele
+    if ((mod = FindMod("allele")) != NULL) {
+        gene->SetAllele( mod->value );
+    }
+
+    // gene_syn[onym]
+    if ((mod = FindMod("gene_syn", "gene_synonym")) != NULL) {
+        gene->SetSyn().push_back( mod->value );
+    }
+    
+    // locus_tag
+    if ((mod = FindMod("locus_tag")) != NULL) {
+        gene->SetLocus_tag( mod->value );
+    }
 }
 
 
@@ -441,11 +620,25 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CProt_ref>& prot)
 {
     const SMod* mod;
 
+    // prot[ein]
     if ((mod = FindMod("protein", "prot")) != NULL) {
         prot->SetName().push_back(mod->value);
     }
 
-    // prot_desc, EC_number, activity/function
+    // prot_desc
+    if ((mod = FindMod("prot_desc")) != NULL) {
+        prot->SetDesc( mod->value );
+    }
+    
+    // EC_number 
+    if ((mod = FindMod("EC_number")) != NULL) {
+        prot->SetEc().push_back( mod->value );
+    }
+
+    // activity/function
+    if ((mod = FindMod("activity", "function")) != NULL) {
+        prot->SetActivity().push_back( mod->value );
+    }
 }
 
 
@@ -453,6 +646,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CGB_block>& gbb)
 {
     const SMod* mod;
 
+    // secondary-accession[s]
     if ((mod = FindMod("secondary-accession", "secondary-accessions")) != NULL)
     {
         list<CTempString> ranges;
@@ -471,6 +665,15 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CGB_block>& gbb)
     }
 
     // keyword[s]
+    if ((mod = FindMod("keyword", "keywords")) != NULL) {
+        list<string> keywordList;
+        NStr::Split( mod->value, ",;", keywordList );
+        // trim every string and push it into the real keyword list
+        NON_CONST_ITERATE( list<string>, keyword_iter, keywordList ) {
+            NStr::TruncateSpacesInPlace( *keyword_iter );
+            gbb->SetKeywords().push_back( *keyword_iter );
+        }
+    }
 }
 
 
@@ -478,6 +681,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
 {
     const SMod* mod;
 
+    // secondary-accession[s]
     if ((mod = FindMod("secondary-accession", "secondary-accessions")) != NULL)
     {
         list<CTempString> ranges;
@@ -499,8 +703,30 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
 }
 
 
-// void CSourceModParser::x_ApplyMods(CAutoInitRef<CSubmit_block>& sb) { }
-//   hup
+//void CSourceModParser::x_ApplyMods(CAutoInitRef<CSubmit_block>& sb) { 
+//
+//    //   hup
+//    if ((mod = FindMod("hup")) != NULL) {
+//        sb->SetHup( false );
+//        sb->ResetReldate();
+//        if( ! mod->value.empty() ) {
+//            if( NStr::EqualNocase( mod->value, "y" ) ) {
+//                sb->SetHup( true );
+//                // by default, release in a year
+//                CDate releaseDate( CTime(CTime::eCurrent) );
+//                _ASSERT(releaseDate.IsStd());
+//                releaseDate.GetStd().SetYear( releaseDate.GetStd().GetYear() + 1 );
+//                sb->SetReldate( releaseDate );
+//            } else {
+//                // parse string as date
+//                throw 8;
+//            }
+//        }
+//    }
+//    
+//        // TODO: someone somewhere needs to call this function
+//        throw 7;
+//}
 
 
 static
@@ -522,6 +748,7 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
 {
     const SMod* mod;
 
+    // primary[_accessions]
     if ((mod = FindMod("primary", "primary_accessions")) != NULL) {
         CUser_object::TData data;
         list<CTempString> accns;
@@ -547,6 +774,7 @@ CSourceModParser::x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb)
 {
     const SMod* mod;
 
+    // project[s]
     if ((mod = FindMod("project", "projects")) != NULL) {
         CUser_object::TData data;
         list<CTempString> ids;
@@ -616,12 +844,17 @@ CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 
 
 const CSourceModParser::SMod* CSourceModParser::FindMod(const CTempString& key,
-                                                        CTempString alt_key)
+                                                        CTempString alt_key )
 {
+    cout << "key: " << key << endl;
+    if( ! alt_key.empty() ) {
+        cout << "key: " << alt_key << endl;
+    }
+
     SMod mod;
 
     for (int tries = 0;  tries < 2;  ++tries) {
-        mod.key = tries ? alt_key : key;
+        mod.key = ( tries == 0 ? key : alt_key );
         mod.pos = 0;
         if ( !mod.key.empty() ) {
             TModsCI it = m_Mods.lower_bound(mod);
@@ -639,6 +872,8 @@ const CSourceModParser::SMod* CSourceModParser::FindMod(const CTempString& key,
 CSourceModParser::TModsRange
 CSourceModParser::FindAllMods(const CTempString& key)
 {
+    cout << "multi-key: " << key << endl;
+
     SMod mod;
     mod.key = key;
     mod.pos = 0;
