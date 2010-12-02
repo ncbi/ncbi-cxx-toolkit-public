@@ -134,7 +134,7 @@
             var usage_str;
             //usage_str  = "Usage:\n";
             //usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
-            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v]\n";
+            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v] [-nomap]\n";
             usage_str += "SYNOPSIS:\n";
             usage_str += "    Create new MSVC application project from sample template:\n";
             usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
@@ -173,6 +173,10 @@
             usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
             usage_str += "    [-i]        -- enter the data interactively\n";
+            usage_str += "    [-nomap]    -- do not map network drive\n";
+            usage_str += "        Generated solution uses libraries from a network location: " + GetDefaultLibFolder() + "\n";
+            usage_str += "        To be able to debug, it is required that this location is mapped to drive S:\n";
+            usage_str += "        The scripts creates this mapping for you, unless you ask to not to.\n";
             usage_str += "EXAMPLES:\n";
             usage_str += "    cscript new_project.wsf my_app app/basic\n";
             usage_str += "    cscript new_project.wsf my_app app/basic -dll -v\n";
@@ -198,6 +202,7 @@
                 } else {
                     this.CopyDlls    = false;
                 }
+                this.MapDrive = !GetFlagValue(oArgs, "-nomap", false);
                 toolkit_path     = GetOptionalPositionalValue(oArgs, 2, 
                     GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
             } else {
@@ -312,6 +317,7 @@
             WScript.Echo("ToolkitSrcPath  = " + oTask.ToolkitSrcPath);
             WScript.Echo("DllBuild        = " + oTask.DllBuild.toString());
             WScript.Echo("CopyDlls        = " + oTask.CopyDlls.toString());
+            WScript.Echo("MapDrive        = " + oTask.MapDrive.toString());
         }
         
         // Fill local tree
@@ -766,6 +772,9 @@
         // Open generated solution in  MSVC IDE
         function LoadSolution(oShell, oTree, oTask)
         {
+            if (oTask.MapDrive) {
+                MapNetworkDrive();
+            }
             var sln_path = " \"";
             if ( oTask.DllBuild ) {
                 sln_path += oTree.CompilersBranchDll;
@@ -774,6 +783,7 @@
             }
             sln_path += "\\build\\" + oTask.ProjectName + ".sln\"";
 
+            WScript.Echo("Generated solution: " + sln_path);
             execute(oShell, "start \"\" " + sln_path);
         }
         

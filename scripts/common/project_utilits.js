@@ -619,6 +619,10 @@ function GetDefaultPtbRelease(oFso)
     }
     return root + GetDefaultSuffix() + "\\project_tree_builder.RELEASE";
 }
+function GetDefaultLibFolder()
+{
+    return "\\\\snowman\\win-coremake\\Lib";
+}
 function GetDefaultCXX_ToolkitSubFolder()
 {
     return "cxx.current";
@@ -851,4 +855,21 @@ function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     execute(oShell, "svn checkout " + cvs_path + " temp");
 	execute(oShell, "xcopy temp \"" + target_abs_dir + "\" /S /E /Y /C");
     RemoveFolder(oShell, oFso, "temp");
+}
+
+function MapNetworkDrive()
+{
+    var driveS = "S:";
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    if (oFso.DriveExists(driveS)) {
+        VerboseEcho("Drive " + driveS + " exists");
+        return;
+    }
+    var oNetwork = WScript.CreateObject("WScript.Network");
+    oNetwork.MapNetworkDrive (driveS, GetDefaultLibFolder());
+    if (oFso.DriveExists(driveS)) {
+        VerboseEcho("Drive " + driveS + " created: mapped to " + GetDefaultLibFolder());
+    } else {
+        VerboseEcho("Failed to map network drive to " + GetDefaultLibFolder());
+    }
 }
