@@ -3065,16 +3065,10 @@ void CDisplaySeqalign::x_DisplayBl2SeqLink(CNcbiOstream& out)
     int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
     int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
     
-    char buffer[512];
+    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",query_gi);        
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"subject",subject_gi);        
     
-    sprintf(buffer, kBl2seqUrl.c_str(), m_Rid.c_str(), 
-            query_gi > 0 ? 
-            NStr::IntToString(query_gi).c_str():query_seqid.    \
-            GetSeqId()->AsFastaString().c_str(),
-            subject_gi > 0 ? 
-            NStr::IntToString(subject_gi).c_str():subject_seqid. \
-            GetSeqId()->AsFastaString().c_str()); 
-    out << buffer << "\n";
+    out << url_link << "\n";
 }
 
 void CDisplaySeqalign::x_DisplayMpvAnchor(CNcbiOstream& out,SAlnInfo* aln_vec_info)
