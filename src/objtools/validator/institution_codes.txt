@@ -1252,6 +1252,7 @@ DBKKU2	c	Department of Biology, Faculty of Science
 DBKKU3	c	Department of Biology, Faculty of Science
 DBM	c	Department of Biochemistry and Microbiology
 DBMU	c	Department of Biotechnology, Faculty of Science, Mahidol University
+DBMU	c	Department of Biotechnology, Faculty of Science, Mahidol University
 DBN	s	National Botanic Gardens
 DBS	c	Department of Biological Culture Collection
 DBSE	s	Universidade Federale Sergipe
@@ -3766,6 +3767,7 @@ MVN	s	Public Library
 MVNP	s	Mesa Verde National Park
 MVP	s	Museum of Vicotria
 MVSC	s	Millersville University, Biology Department
+MVUP	s	Museo de Vertebrados de la Universidad de Panama
 MVUP	s	Museo de Vertebrados, Universidad de Panama
 MVZ	s	Museum of Vertebrate Zoology, University of California at Berkeley
 MVZ:Bird	s	Museum of Vertebrate Zoology, University of California at Berkeley, Bird Collection
@@ -4962,6 +4964,7 @@ SCR	s	Scripps Institution of Oceanography, University of California
 SCS	s	Agriculture and Agri-Food Canada, Semiarid Prairie
 SCSC	s	Saint Cloud State University
 SCSFRI	s	South China Sea Fisheries Research Institute
+SCSIO	s	South China Sea Institute of Oceanology, Academia Sinica
 SCSM	s	South Carolina State Museum
 SCT	s	Friend's School
 SCU	s	Shandong Christian University
@@ -5198,6 +5201,7 @@ SNMBR	s	Staatliches Naturhistorisches Museum in Braunschweig
 SNMC	s	Slovenske Narodne Muzeum
 SNMG	s	Staatliches Museum fuer Naturkunde
 SNMNH	s	Saudi Arabian National Museum of Natural History
+SNOMNH	s	Sam Nobel Oklahoma Museum of Natural History
 SNP<MYS>	s	Sabah Parks, Botany Section
 SNPH	s	Sehlabathebe National Park
 SNU	s	Seoul National University, School of Biological Sciences
