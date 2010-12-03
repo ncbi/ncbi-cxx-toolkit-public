@@ -42,8 +42,25 @@ BEGIN_SCOPE(objects)
 bool IsIntersecting(const pair<TSeqRange, TSeqRange>& r1,
                     const pair<TSeqRange, TSeqRange>& r2)
 {
-    return (r1.first.IntersectingWith(r2.first)  ||
-            r1.second.IntersectingWith(r2.second));
+    bool is_intersecting =
+        (r1.first.IntersectingWith(r2.first)  ||
+         r1.second.IntersectingWith(r2.second));
+
+    /**
+    cerr << "("
+        << r1.first << ", "
+        << r1.second
+        << ")"
+        << " x ("
+        << r2.first << ", "
+        << r2.second
+        << ")"
+        << ": is_intersecting = "
+        << (is_intersecting ? "true" : "false")
+        << endl;
+        **/
+
+    return is_intersecting;
 }
 
 bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
@@ -53,11 +70,11 @@ bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
     bool is_consistent = false;
     if (s1 == s2) {
         is_consistent = (r1.first < r2.first  &&  r1.second < r2.second)  ||
-                        (r1.first > r2.first  &&  r1.second > r2.second);
+                        (r2.first < r1.first  &&  r2.second < r1.second);
     }
     else {
-        is_consistent = (r1.first < r2.first  &&  r1.second > r2.second)  ||
-                        (r1.first > r2.first  &&  r1.second < r2.second);
+        is_consistent = (r1.first < r2.first  &&  r2.second < r1.second)  ||
+                        (r2.first < r1.first  &&  r1.second < r2.second);
     }
 
     /**
@@ -304,9 +321,9 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     }
                 }
 
-                if (is_consistent  &&
-                    ( (options & fCompart_AllowIntersections)  ||
-                      !is_intersecting )  &&
+                if ((is_consistent  ||
+                    ( (options & fCompart_AllowIntersections)  &&
+                      is_intersecting ))  &&
                     diff < best_diff) {
                     best_compart = compart_it;
                     best_diff = diff;
