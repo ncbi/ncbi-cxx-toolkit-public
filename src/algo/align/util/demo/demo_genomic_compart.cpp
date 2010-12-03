@@ -125,13 +125,30 @@ int CTestCompartApplication::Run(void)
         opts |= fCompart_AllowIntersections;
     }
 
-    size_t count = 0;
     list< CRef<CSeq_align_set> > compartments;
     FindCompartments(aligns, compartments, opts);
 
-    ITERATE (list< CRef<CSeq_align_set> >, i, compartments) {
+    LOG_POST(Error << "input alignments: " << aligns.size());
+    LOG_POST(Error << "output compartments: " << compartments.size());
+
+    size_t count = 0;
+    NON_CONST_ITERATE (list< CRef<CSeq_align_set> >, i, compartments) {
+        ++count;
+        CSeq_align align;
+        align.SetSegs().SetDisc(**i);
+
+        TSeqRange r1 = align.GetSeqRange(0);
+        TSeqRange r2 = align.GetSeqRange(1);
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+
+        LOG_POST(Error << "compartment " << count << ":");
+        LOG_POST(Error << "  query   = " << id1 << " (" << r1.GetFrom() + 1 << ".." << r1.GetTo() + 1 << ")");
+        LOG_POST(Error << "  subject = " << id2 << " (" << r2.GetFrom() + 1 << ".." << r2.GetTo() + 1 << ")");
+        LOG_POST(Error << "  alignments = " << (*i)->Get().size());
+
         string title("Compartment ");
-        title += NStr::IntToString(++count);
+        title += NStr::IntToString(count);
         CSeq_annot annot;
         annot.AddName(title);
         annot.SetTitle(title);
