@@ -631,9 +631,9 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
     } else if (GetMsvcVersion() == eMsvc800) {
         return "9.00";
     } else if (GetMsvcVersion() == eMsvc900) {
-        return "10.00";
+        return "10.00\n# Visual Studio 2008";
     } else if (GetMsvcVersion() == eMsvc1000) {
-        return "11.00";
+        return "11.00\n# Visual Studio 2010";
     }
     return "";
 }
