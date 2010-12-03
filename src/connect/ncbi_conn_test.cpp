@@ -573,15 +573,25 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             CConn_SocketStream* fw = new CConn_SocketStream(*net_info,
                                                             "\r\n"/*data*/,
                                                             2/*size*/, flags);
-            CONN_Wait(fw->GetCONN(), eIO_Read, &kZeroTimeout);
-
-            v.push_back(make_pair(&*cp, fw));
+            if (!fw->GetCONN()) {
+                v.push_back(make_pair(&*cp,
+                                      static_cast<CConn_SocketStream*>(NULL)));
+                delete fw;
+            } else {
+                CONN_Wait(fw->GetCONN(), eIO_Read, &kZeroTimeout);
+                v.push_back(make_pair(&*cp, fw));
+            }
         }
 
         // Check results in random order
         random_shuffle(v.begin(), v.end());
         ITERATE(vector<CFWCheck>, ck, v) {
             CConn_IOStream* is = ck->second;
+            if (!is) {
+                ck->first->okay = false;
+                status = eIO_Timeout;
+                continue;
+            }
             if (status == eIO_Success) {
                 char line[sizeof(kFWSign) + 2/*\r+EOS*/];
                 if (!is->getline(line, sizeof(line)))
