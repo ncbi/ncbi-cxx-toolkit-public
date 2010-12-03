@@ -857,19 +857,41 @@ function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     RemoveFolder(oShell, oFso, "temp");
 }
 
+function CheckNetworkDrive()
+{
+    var driveS = "s:";
+    var url = GetDefaultLibFolder().toLowerCase();
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    if (oFso.DriveExists(driveS)) {
+        var oNetwork = WScript.CreateObject("WScript.Network");
+        var oDrives = oNetwork.EnumNetworkDrives();
+        for(i = 0; i < oDrives.length; i += 2) {
+            var drive = oDrives.Item(i).toLowerCase();
+            if (drive == driveS) {
+                var loc = oDrives.Item(i + 1).toLowerCase();
+                if (loc == url) {
+                    return "ok";
+                }
+            }
+        }
+        return "wrong";
+    }
+    return "absent";
+}
+
 function MapNetworkDrive()
 {
     var driveS = "S:";
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
     if (oFso.DriveExists(driveS)) {
-        VerboseEcho("Drive " + driveS + " exists");
+        WScript.Echo("Drive " + driveS + " exists");
         return;
     }
     var oNetwork = WScript.CreateObject("WScript.Network");
     oNetwork.MapNetworkDrive (driveS, GetDefaultLibFolder());
     if (oFso.DriveExists(driveS)) {
-        VerboseEcho("Drive " + driveS + " created: mapped to " + GetDefaultLibFolder());
+        WScript.Echo("Drive " + driveS + " created: mapped to " + GetDefaultLibFolder());
     } else {
-        VerboseEcho("Failed to map network drive to " + GetDefaultLibFolder());
+        WScript.Echo("ERROR: Failed to map network drive to " + GetDefaultLibFolder());
     }
 }

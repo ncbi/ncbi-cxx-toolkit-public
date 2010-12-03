@@ -27,6 +27,12 @@
                 VbAskQuestionYN = "no"
             End If
         End Function
+
+        Function VbInfoMessage(prompt, title)
+            Dim reply
+            reply = MsgBox(prompt, vbOKOnly, title)
+            VbInfoMessage = "ok"
+        End Function
         </script>
 
         <script language="JScript" src="project_utilits.js">
@@ -58,6 +64,11 @@
                 WScript.Quit(1);
             }
             return answer == "yes";
+        }
+        function ShowMessage(prompt)
+        {
+            var answer = VbInfoMessage(prompt, WScript.ScriptFullName);
+            return answer == "ok";
         }
         // Verify command line arguments
         function VerifyArguments(oArgs)
@@ -134,7 +145,7 @@
             var usage_str;
             //usage_str  = "Usage:\n";
             //usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
-            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v] [-nomap]\n";
+            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v] [-ams yes|no]\n";
             usage_str += "SYNOPSIS:\n";
             usage_str += "    Create new MSVC application project from sample template:\n";
             usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
@@ -173,10 +184,10 @@
             usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
             usage_str += "    [-i]        -- enter the data interactively\n";
-            usage_str += "    [-nomap]    -- do not map network drive\n";
-            usage_str += "        Generated solution uses libraries from a network location: " + GetDefaultLibFolder() + "\n";
-            usage_str += "        To be able to debug, it is required that this location is mapped to drive S:\n";
-            usage_str += "        The scripts creates this mapping for you, unless you ask to not to.\n";
+            usage_str += "    [-ams yes|no]  -- automatically map network drive S:\n";
+            usage_str += "        Generated solution uses libraries from a network location:\n";
+            usage_str += "            " + GetDefaultLibFolder() + "\n";
+            usage_str += "        It is recommended that this location is mapped to drive S:\n";
             usage_str += "EXAMPLES:\n";
             usage_str += "    cscript new_project.wsf my_app app/basic\n";
             usage_str += "    cscript new_project.wsf my_app app/basic -dll -v\n";
@@ -202,10 +213,11 @@
                 } else {
                     this.CopyDlls    = false;
                 }
-                this.MapDrive = !GetFlagValue(oArgs, "-nomap", false);
+                this.AutoMapS = GetFlaggedValue(oArgs, "-ams", "ask")
                 toolkit_path     = GetOptionalPositionalValue(oArgs, 2, 
                     GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
             } else {
+                this.AutoMapS = "ask";
                 WScript.Echo(Usage());
                 if (!run_interactive) {
                     var oFso = new ActiveXObject("Scripting.FileSystemObject");
@@ -317,7 +329,7 @@
             WScript.Echo("ToolkitSrcPath  = " + oTask.ToolkitSrcPath);
             WScript.Echo("DllBuild        = " + oTask.DllBuild.toString());
             WScript.Echo("CopyDlls        = " + oTask.CopyDlls.toString());
-            WScript.Echo("MapDrive        = " + oTask.MapDrive.toString());
+            WScript.Echo("AutoMapS        = " + oTask.AutoMapS);
         }
         
         // Fill local tree
@@ -769,12 +781,42 @@
             }
 */
         }
+        function AutoMountS(oTask)
+        {
+            var check = CheckNetworkDrive();
+            if (check == "ok") {
+                return;
+            }
+            var message = "\n";
+            message += "Generated solution uses libraries from a network location:\n";
+            message += "        " + GetDefaultLibFolder() + "\n";
+            message += "It is recommended that this location is mapped to drive S:\n";
+            if (check == "wrong") {
+                message += "\nDisk S: is now mapped to a wrong location!\n";
+                if (oTask.AutoMapS == "ask") {
+                    ShowMessage(message);
+                } else {
+                    WScript.Echo(message);
+                }
+                return;
+            }
+            if (oTask.AutoMapS == "ask") {
+                message += "\nDo you want to map the network drive?\n";
+                if (InputFlagYN(message)) {
+                    MapNetworkDrive();
+                }
+            } else {
+                if (oTask.AutoMapS == "yes") {
+                    MapNetworkDrive();
+                } else {
+                    WScript.Echo(message);
+                }
+            }
+        }
         // Open generated solution in  MSVC IDE
         function LoadSolution(oShell, oTree, oTask)
         {
-            if (oTask.MapDrive) {
-                MapNetworkDrive();
-            }
+            AutoMountS(oTask);
             var sln_path = " \"";
             if ( oTask.DllBuild ) {
                 sln_path += oTree.CompilersBranchDll;
