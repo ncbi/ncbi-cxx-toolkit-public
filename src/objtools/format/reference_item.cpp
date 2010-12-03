@@ -1135,7 +1135,7 @@ void CReferenceItem::FormatAuthors(const CAuth_list& alp, string& auth)
         // It's here to make the diffs match.
         if( (it != authors.end()) && 
             ( NStr::StartsWith(*it, "et al", NStr::eNocase) || NStr::StartsWith(*it, "et,al", NStr::eNocase) ) ) {
-                separator = " ";
+                separator = ", ";
         } else if (it == last) {
             separator = " and ";
         } else {
