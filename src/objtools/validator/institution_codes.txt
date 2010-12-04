@@ -4939,6 +4939,7 @@ SBSC	s	Robert A. Vines Environmental Science Center
 SBSFU	c	School of Biological Sciences
 SBT	s	Bergius Foundation
 SBU	s	Saint Bonaventure University, Biology Department
+SBUG<DEU>	c	Department of Biology of the University of Greifswald
 SBY	s	Salisbury and South Wiltshire Museum
 SC	s	Salem College, Biology Department
 SCA	s	Limbe Botanical & Zoological Gardens
@@ -5668,6 +5669,7 @@ UAM:Herp	s	University of Alaska, Museum of the North, Amphibian and Reptile Coll
 UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection
 UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection
+UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria
 UAM<USA-AR>	s	University of Arkansas at Monticello
 UAM<VEN>	s	Universidad de los Andes, Facultad de Ciencias
 UAMH	scb	University of Alberta Microfungus Collection and Herbarium
