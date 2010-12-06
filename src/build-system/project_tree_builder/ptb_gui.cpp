@@ -64,15 +64,15 @@ BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)
     if (bGet) {
         char szBuf[MAX_PATH];
 
-        GetDlgItemText( hDlg,IDC_EDIT_ROOT,    szBuf, sizeof(szBuf)); pApp->m_Root      = szBuf;
-        GetDlgItemText( hDlg,IDC_EDIT_SUBTREE, szBuf, sizeof(szBuf)); pApp->m_Subtree   = szBuf;
-        GetDlgItemText( hDlg,IDC_EDIT_SLN,     szBuf, sizeof(szBuf)); pApp->m_Solution  = szBuf;
-        GetDlgItemText( hDlg,IDC_EDIT_EXTROOT, szBuf, sizeof(szBuf)); pApp->m_BuildRoot = szBuf;
-        GetDlgItemText( hDlg,IDC_EDIT_PROJTAG, szBuf, sizeof(szBuf)); pApp->m_ProjTags  = szBuf;
+        GetDlgItemTextA( hDlg,IDC_EDIT_ROOT,    szBuf, sizeof(szBuf)); pApp->m_Root      = szBuf;
+        GetDlgItemTextA( hDlg,IDC_EDIT_SUBTREE, szBuf, sizeof(szBuf)); pApp->m_Subtree   = szBuf;
+        GetDlgItemTextA( hDlg,IDC_EDIT_SLN,     szBuf, sizeof(szBuf)); pApp->m_Solution  = szBuf;
+        GetDlgItemTextA( hDlg,IDC_EDIT_EXTROOT, szBuf, sizeof(szBuf)); pApp->m_BuildRoot = szBuf;
+        GetDlgItemTextA( hDlg,IDC_EDIT_PROJTAG, szBuf, sizeof(szBuf)); pApp->m_ProjTags  = szBuf;
 
-        GetDlgItemText( hDlg,IDC_EDIT_3PARTY, szBuf, sizeof(szBuf));
+        GetDlgItemTextA( hDlg,IDC_EDIT_3PARTY, szBuf, sizeof(szBuf));
         pApp->m_CustomConfiguration.AddDefinition("ThirdPartyBasePath", szBuf);
-        GetDlgItemText( hDlg,IDC_EDIT_CNCBI,  szBuf, sizeof(szBuf));
+        GetDlgItemTextA( hDlg,IDC_EDIT_CNCBI,  szBuf, sizeof(szBuf));
         pApp->m_CustomConfiguration.AddDefinition("ThirdParty_C_ncbi", szBuf);
 
         pApp->m_Dll            = IsDlgButtonChecked(hDlg,IDC_CHECK_DLL)   == BST_CHECKED;
@@ -83,19 +83,19 @@ BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)
         pApp->m_TweakVTuneD    = IsDlgButtonChecked(hDlg,IDC_CHECK_VTUNED) == BST_CHECKED;
     } else {
 
-        SetDlgItemText( hDlg,IDC_EDIT_ROOT,    pApp->m_Root.c_str());
-        SetDlgItemText( hDlg,IDC_EDIT_SUBTREE, pApp->m_Subtree.c_str());
-        SetDlgItemText( hDlg,IDC_EDIT_SLN,     pApp->m_Solution.c_str());
-        SetDlgItemText( hDlg,IDC_EDIT_EXTROOT, pApp->m_BuildRoot.c_str());
-        SetDlgItemText( hDlg,IDC_EDIT_PROJTAG, pApp->m_ProjTags.c_str());
+        SetDlgItemTextA( hDlg,IDC_EDIT_ROOT,    pApp->m_Root.c_str());
+        SetDlgItemTextA( hDlg,IDC_EDIT_SUBTREE, pApp->m_Subtree.c_str());
+        SetDlgItemTextA( hDlg,IDC_EDIT_SLN,     pApp->m_Solution.c_str());
+        SetDlgItemTextA( hDlg,IDC_EDIT_EXTROOT, pApp->m_BuildRoot.c_str());
+        SetDlgItemTextA( hDlg,IDC_EDIT_PROJTAG, pApp->m_ProjTags.c_str());
 
-        SetDlgItemText( hDlg,IDC_EDIT_PTBINI2, pApp->m_CustomConfFile.c_str());
+        SetDlgItemTextA( hDlg,IDC_EDIT_PTBINI2, pApp->m_CustomConfFile.c_str());
         string v;
         if (pApp->m_CustomConfiguration.GetValue("ThirdPartyBasePath", v)) {
-            SetDlgItemText( hDlg,IDC_EDIT_3PARTY, v.c_str());
+            SetDlgItemTextA( hDlg,IDC_EDIT_3PARTY, v.c_str());
         }
         if (pApp->m_CustomConfiguration.GetValue("ThirdParty_C_ncbi", v)) {
-            SetDlgItemText( hDlg,IDC_EDIT_CNCBI, v.c_str());
+            SetDlgItemTextA( hDlg,IDC_EDIT_CNCBI, v.c_str());
         }
 
         CheckDlgButton( hDlg,IDC_CHECK_DLL,    pApp->m_Dll);
