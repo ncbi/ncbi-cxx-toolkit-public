@@ -786,6 +786,9 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                                        SSeqMapSelector     selector,
                                        const CGC_Sequence* parent_seq)
 {
+    // Prepare to setup a new sequence info which will handle synonyms.
+    CRef<IMapper_Sequence_Info> saved_seq_info(m_SeqInfo);
+
     CBioseq_Handle bh;
     CRef<CSeq_id> id;
     if ( gc_seq.IsSetStructure() ) {
@@ -795,7 +798,45 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
         id.Reset(new CSeq_id);
         id->Assign(gc_seq.GetSeq_id());
         bioseq->SetId().push_back(id);
-        //### Also add synonyms if any
+
+        // Add synonyms if any.
+        if ( gc_seq.IsSetSeq_id_synonyms() ) {
+            CRef<CGCSeq_Mapper_Sequence_Info> seq_info(
+                new CGCSeq_Mapper_Sequence_Info(*m_SeqInfo));
+            m_SeqInfo = seq_info;
+            seq_info->AddSynonym(*id);
+            ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
+                // Add conversion for each synonym which can be used
+                // as a source id.
+                const CGC_TypedSeqId& id = **it;
+                switch ( id.Which() ) {
+                case CGC_TypedSeqId::e_Genbank:
+                    seq_info->AddSynonym(id.GetGenbank().GetPublic());
+                    seq_info->AddSynonym(id.GetGenbank().GetGi());
+                    if ( id.GetGenbank().IsSetGpipe() ) {
+                        seq_info->AddSynonym(id.GetGenbank().GetGpipe());
+                    }
+                    break;
+                case CGC_TypedSeqId::e_Refseq:
+                    seq_info->AddSynonym(id.GetRefseq().GetPublic());
+                    seq_info->AddSynonym(id.GetRefseq().GetGi());
+                    if ( id.GetRefseq().IsSetGpipe() ) {
+                        seq_info->AddSynonym(id.GetRefseq().GetGpipe());
+                    }
+                    break;
+                case CGC_TypedSeqId::e_Private:
+                    seq_info->AddSynonym(id.GetPrivate());
+                    break;
+                case CGC_TypedSeqId::e_External:
+                    seq_info->AddSynonym(id.GetExternal().GetId());
+                    break;
+                default:
+                    NCBI_THROW(CAnnotMapperException, eOtherError,
+                               "Unsupported alias type in GC-Sequence synonyms");
+                    break;
+                }
+            }
+        }
 
         bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
         bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
@@ -836,9 +877,13 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             m_DstRanges[0].clear();
             m_DstRanges[0][CSeq_id_Handle::GetHandle(*id)]
                 .push_back(TRange::GetWhole());
+            x_PreserveDestinationLocs();
         }
-        x_PreserveDestinationLocs();
+        else {
+            m_DstRanges.clear();
+        }
     }
+    m_SeqInfo = saved_seq_info;
 }
 
 
