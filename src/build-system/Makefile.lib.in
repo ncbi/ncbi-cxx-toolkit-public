@@ -42,7 +42,7 @@ XOLD_DLLS   = $(LIB:%=@lib_pre@%@dll_ext@) $(LIB:%=@lib_pre@%@loadable_ext@)
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB) .$(XLIB).stamp
-	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XOBJ) | @TSORT@` $(AR_FILTER)
+	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XOBJ) $(AR_FILTER)
 	@$(RANLIB) $(XLIB)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)

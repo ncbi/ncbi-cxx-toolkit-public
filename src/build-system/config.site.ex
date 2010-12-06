@@ -123,8 +123,6 @@
 # AR="ar"
 # RANLIB="ranlib"
 # STRIP="strip"
-# LORDER="lorder"
-# TSORT="tsort"
 
 
 ### Set special flags (normally not needed)

@@ -1185,11 +1185,6 @@ if test "${with_universal-no}" != "no" ; then
    AC_DEFINE(NCBI_UNIVERSAL_BUILD, 1,
              [Define to 1 if building universal (multi-architecture) binaries.])
    with_distcc=no
-   # These tools produce bogus '(for' entries when processing universal
-   # binaries on 10.6, and are of sufficiently marginal use nowadays that it
-   # makes more sense to bypass them altogether than to filter the entries out.
-   LORDER=echo
-   TSORT=cat
 elif test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
@@ -1782,22 +1777,6 @@ if test "$with_strip" = yes; then
 else
    STRIP=@:
 fi
-case "$host_os" in
-   irix* | aix5.[2-9]* )
-     # lorder and tsort exist but don't work.
-     LORDER=echo
-     TSORT=cat
-     ;;
-   * )
-     AC_CHECK_PROG(LORDER, lorder, lorder, echo)
-     AC_CHECK_PROG(TSORT, tsort, tsort, cat)
-     if test "$LORDER" = echo -o "$TSORT" = cat ; then
-       # We need a matched pair...either lorder:tsort or echo:cat.
-       LORDER=echo
-       TSORT=cat
-     fi
-     ;;
-esac
 
 
 # When using ccache and distcc together, ccache needs to be primary,
