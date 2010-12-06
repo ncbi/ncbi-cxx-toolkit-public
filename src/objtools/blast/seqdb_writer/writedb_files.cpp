@@ -283,6 +283,11 @@ void CWriteDB_IndexFile::x_Flush()
     if (m_Amb.size()) {
         s_WriteInt4(F, m_Seq.back());
     }
+
+    vector<int> tmp1, tmp2, tmp3;
+    m_Hdr.swap(tmp1);
+    m_Seq.swap(tmp2);
+    m_Amb.swap(tmp3);
 }
 
 CWriteDB_HeaderFile::CWriteDB_HeaderFile(const string & dbname,

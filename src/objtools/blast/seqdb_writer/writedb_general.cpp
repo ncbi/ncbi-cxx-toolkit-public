@@ -51,6 +51,7 @@ void CWriteDB_PackedSemiTree::Sort()
 
 void CWriteDB_PackedSemiTree::Clear()
 {
+    m_Buffer.Clear();
     m_Size = 0;
     TPackedMap empty;
     m_Packed.swap(empty);

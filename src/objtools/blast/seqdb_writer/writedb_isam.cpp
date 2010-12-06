@@ -820,7 +820,8 @@ bool CWriteDB_IsamIndex::CanFit(int num)
 void CWriteDB_IsamIndex::x_Free()
 {
     m_StringSort.Clear();
-    m_NumberTable.clear();
+    vector<SIdOid> tmp;
+    m_NumberTable.swap(tmp);
 }
 
 void CWriteDB_Isam::ListFiles(vector<string> & files) const

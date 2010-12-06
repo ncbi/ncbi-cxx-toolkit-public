@@ -319,8 +319,8 @@ void CWriteDB_Volume::Close()
             if (m_HashIsam.NotEmpty()) {
                 m_HashIsam->Close();
             }
+            m_IdSet.clear();
         }
-        m_IdSet.clear();
     }
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \

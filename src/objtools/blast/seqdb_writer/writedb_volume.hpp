@@ -86,6 +86,9 @@ private:
         for (Int4 i=0; i<nGi; i++) {
             WriteInt4(m_Gi[i]);
         }
+
+        vector<Int4> tmp;
+        m_Gi.swap(tmp);
     }
 
     static const int kVersion = 1;

@@ -196,6 +196,8 @@ public:
     /// Destructor
     ~CWriteDB_PackedStrings()
     {
+        vector<const char *> tmp;
+        m_KeyLoc.swap(tmp);
     }
     
     /// Insert string data - must be null terminated.
