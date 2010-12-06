@@ -35,7 +35,8 @@
 */
 
 /* Maximum number of simultaneous connection */
-#define NCBI_GBLOADER_READER_PARAM_NUM_CONN "no_conn"
+#define NCBI_GBLOADER_READER_PARAM_NUM_CONN "max_number_of_connections"
+#define NCBI_GBLOADER_READER_PARAM2_NUM_CONN "no_conn"
 /* Whether to open first connection immediately or not (default: true) */
 #define NCBI_GBLOADER_READER_PARAM_PREOPEN "preopen"
 /* Number of retries on errors */

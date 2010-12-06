@@ -39,10 +39,13 @@
 /* Timeout of network connections in seconds while opening and initializing */
 #define NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT "open_timeout"
 /* Open timeout multiplier in case of errors */
-#define NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MULTIPLIER "open_multiplier"
+#define NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MULTIPLIER "open_timeout_multiplier"
+#define NCBI_GBLOADER_READER_PARAM2_OPEN_TIMEOUT_MULTIPLIER "open_multiplier"
 /* Open timeout increment in case of errors */
-#define NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_INCREMENT "open_increment"
+#define NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_INCREMENT "open_timeout_increment"
+#define NCBI_GBLOADER_READER_PARAM2_OPEN_TIMEOUT_INCREMENT "open_increment"
 /* Maximal open timeout of network connections in seconds */
-#define NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MAX "open_max"
+#define NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MAX "open_timeout_max"
+#define NCBI_GBLOADER_READER_PARAM2_OPEN_TIMEOUT_MAX "open_max"
 
 #endif

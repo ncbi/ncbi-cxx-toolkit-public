@@ -41,31 +41,38 @@ BEGIN_SCOPE(objects)
 class NCBI_XREADER_EXPORT CIncreasingTime
 {
 public:
-    CIncreasingTime(double init_time,
-                    double max_time,
-                    double multiplier,
-                    double increment)
-        : m_InitTime(init_time),
-          m_MaxTime(max_time),
-          m_Multiplier(multiplier),
-          m_Increment(increment)
+    struct SParam
+    {
+        const char* m_ParamName;  // primary param name
+        const char* m_ParamName2; // optional secondary param name
+        double m_DefaultValue;    // default param value
+    };
+    struct SAllParams
+    {
+        SParam m_Initial;
+        SParam m_Maximal;
+        SParam m_Multiplier;
+        SParam m_Increment;
+    };
+
+    CIncreasingTime(const SAllParams& params)
+        : m_InitTime(params.m_Initial.m_DefaultValue),
+          m_MaxTime(params.m_Maximal.m_DefaultValue),
+          m_Multiplier(params.m_Multiplier.m_DefaultValue),
+          m_Increment(params.m_Increment.m_DefaultValue)
         {
         }
 
     void Init(CConfig& conf,
               const string& driver_name,
-              const char* init_param,
-              const char* max_param,
-              const char* mul_param,
-              const char* incr_param);
+              const SAllParams& params);
 
     double GetTime(int step) const;
 
 protected:
     static double x_GetDoubleParam(CConfig& conf,
                                    const string& driver_name,
-                                   const char* param_name,
-                                   double default_value);
+                                   const SParam& param);
     
 private:
     double m_InitTime, m_MaxTime, m_Multiplier, m_Increment;

@@ -42,35 +42,33 @@ BEGIN_SCOPE(objects)
 
 void CIncreasingTime::Init(CConfig& conf,
                            const string& driver_name,
-                           const char* init_param,
-                           const char* max_param,
-                           const char* mul_param,
-                           const char* incr_param)
+                           const SAllParams& params)
 {
-    m_InitTime =
-        x_GetDoubleParam(conf, driver_name, init_param, m_InitTime);
-    m_MaxTime =
-        x_GetDoubleParam(conf, driver_name, max_param, m_MaxTime);
-    m_Multiplier =
-        x_GetDoubleParam(conf, driver_name, mul_param, m_Multiplier);
-    m_Increment =
-        x_GetDoubleParam(conf, driver_name, incr_param, m_Increment);
+    m_InitTime = x_GetDoubleParam(conf, driver_name, params.m_Initial);
+    m_MaxTime = x_GetDoubleParam(conf, driver_name, params.m_Maximal);
+    m_Multiplier = x_GetDoubleParam(conf, driver_name, params.m_Multiplier);
+    m_Increment = x_GetDoubleParam(conf, driver_name, params.m_Increment);
 }
 
 
 double CIncreasingTime::x_GetDoubleParam(CConfig& conf,
                                          const string& driver_name,
-                                         const char* param_name,
-                                         double default_value)
+                                         const SParam& param)
 {
     string value = conf.GetString(driver_name,
-                                  param_name,
+                                  param.m_ParamName,
                                   CConfig::eErr_NoThrow,
                                   "");
-    if ( value.empty() ) {
-        return default_value;
+    if ( value.empty() && param.m_ParamName2 ) {
+        value = conf.GetString(driver_name,
+                               param.m_ParamName2,
+                               CConfig::eErr_NoThrow,
+                                  "");
     }
-    return NStr::StringToDouble(value);
+    if ( value.empty() ) {
+        return param.m_DefaultValue;
+    }
+    return NStr::StringToDouble(value, NStr::fDecimalPosixOrLocal);
 }
 
 

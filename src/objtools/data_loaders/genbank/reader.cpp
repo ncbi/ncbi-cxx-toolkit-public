@@ -55,8 +55,31 @@ BEGIN_SCOPE(objects)
 #define DEFAULT_WAIT_TIME_ERRORS 2
 #define DEFAULT_WAIT_TIME 1
 #define DEFAULT_WAIT_TIME_MULTIPLIER 1.5
-#define DEFAULT_WAIT_TIME_INCREASE 1
+#define DEFAULT_WAIT_TIME_INCREMENT 1
 #define DEFAULT_WAIT_TIME_MAX 30
+
+static CIncreasingTime::SAllParams s_WaitTimeParams = {
+    {
+        NCBI_GBLOADER_READER_PARAM_WAIT_TIME,
+        0,
+        DEFAULT_WAIT_TIME
+    },
+    {
+        NCBI_GBLOADER_READER_PARAM_WAIT_TIME_MAX,
+        0,
+        DEFAULT_WAIT_TIME_MAX
+    },
+    {
+        NCBI_GBLOADER_READER_PARAM_WAIT_TIME_MULTIPLIER,
+        0,
+        DEFAULT_WAIT_TIME_MULTIPLIER
+    },
+    {
+        NCBI_GBLOADER_READER_PARAM_WAIT_TIME_INCREMENT,
+        0,
+        DEFAULT_WAIT_TIME_INCREMENT
+    }
+};
 
 CReader::CReader(void)
     : m_Dispatcher(0),
@@ -67,10 +90,7 @@ CReader::CReader(void)
       m_MaximumRetryCount(3),
       m_ConnectFailCount(0),
       m_WaitTimeErrors(DEFAULT_WAIT_TIME_ERRORS),
-      m_WaitTime(DEFAULT_WAIT_TIME,
-                 DEFAULT_WAIT_TIME_MAX,
-                 DEFAULT_WAIT_TIME_MULTIPLIER,
-                 DEFAULT_WAIT_TIME_INCREASE)
+      m_WaitTime(s_WaitTimeParams)
       
 {
 }
@@ -101,17 +121,18 @@ void CReader::InitParams(CConfig& conf,
                     NCBI_GBLOADER_READER_PARAM_WAIT_TIME_ERRORS,
                     CConfig::eErr_NoThrow,
                     DEFAULT_WAIT_TIME_ERRORS);
-    m_WaitTime.Init(conf, driver_name,
-                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME,
-                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME_MAX,
-                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME_MULTIPLIER,
-                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME_INCREMENT);
+    m_WaitTime.Init(conf, driver_name, s_WaitTimeParams);
 
-    TConn max_connections =
-        conf.GetInt(driver_name,
-                    NCBI_GBLOADER_READER_PARAM_NUM_CONN,
-                    CConfig::eErr_NoThrow,
-                    default_max_conn);
+    TConn max_connections = conf.GetInt(driver_name,
+                                        NCBI_GBLOADER_READER_PARAM_NUM_CONN,
+                                        CConfig::eErr_NoThrow,
+                                        -1);
+    if ( max_connections == -1 ) {
+        max_connections = conf.GetInt(driver_name,
+                                      NCBI_GBLOADER_READER_PARAM2_NUM_CONN,
+                                      CConfig::eErr_NoThrow,
+                                      default_max_conn);
+    }
     SetMaximumConnections(max_connections, default_max_conn);
 }
 

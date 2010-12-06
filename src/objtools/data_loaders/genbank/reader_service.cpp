@@ -49,6 +49,28 @@ class CReader;
 #define DEFAULT_OPEN_TIMEOUT_MULTIPLIER  1.5
 #define DEFAULT_OPEN_TIMEOUT_INCREMENT  0
 
+static CIncreasingTime::SAllParams s_OpenTimeoutParams = {
+    {
+        NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT,
+        0,
+        DEFAULT_OPEN_TIMEOUT
+    },
+    {
+        NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MAX,
+        NCBI_GBLOADER_READER_PARAM2_OPEN_TIMEOUT_MAX,
+        DEFAULT_OPEN_TIMEOUT_MAX
+    },
+    {
+        NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MULTIPLIER,
+        NCBI_GBLOADER_READER_PARAM2_OPEN_TIMEOUT_MULTIPLIER,
+        DEFAULT_OPEN_TIMEOUT_MULTIPLIER
+    },
+    {
+        NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_INCREMENT,
+        NCBI_GBLOADER_READER_PARAM2_OPEN_TIMEOUT_INCREMENT,
+        DEFAULT_OPEN_TIMEOUT_INCREMENT
+    }
+};
 
 typedef CId2ReaderBase::CDebugPrinter CDebugPrinter;
 
@@ -253,10 +275,7 @@ string CReaderServiceConnector::GetConnDescription(CConn_IOStream& stream) const
 
 CReaderServiceConnector::CReaderServiceConnector(void)
     : m_Timeout(DEFAULT_TIMEOUT),
-      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT,
-                    DEFAULT_OPEN_TIMEOUT_MAX,
-                    DEFAULT_OPEN_TIMEOUT_MULTIPLIER,
-                    DEFAULT_OPEN_TIMEOUT_INCREMENT)
+      m_OpenTimeout(s_OpenTimeoutParams)
 {
 }
 
@@ -264,10 +283,7 @@ CReaderServiceConnector::CReaderServiceConnector(void)
 CReaderServiceConnector::CReaderServiceConnector(const string& service_name)
     : m_ServiceName(service_name),
       m_Timeout(DEFAULT_TIMEOUT),
-      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT,
-                    DEFAULT_OPEN_TIMEOUT_MAX,
-                    DEFAULT_OPEN_TIMEOUT_MULTIPLIER,
-                    DEFAULT_OPEN_TIMEOUT_INCREMENT)
+      m_OpenTimeout(s_OpenTimeoutParams)
 {
 }
 
@@ -291,11 +307,7 @@ void CReaderServiceConnector::InitTimeouts(CConfig& conf,
                             NCBI_GBLOADER_READER_PARAM_TIMEOUT,
                             CConfig::eErr_NoThrow,
                             DEFAULT_TIMEOUT);
-    m_OpenTimeout.Init(conf, driver_name,
-                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT,
-                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MAX,
-                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MULTIPLIER,
-                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_INCREMENT);
+    m_OpenTimeout.Init(conf, driver_name, s_OpenTimeoutParams);
 }
 
 
