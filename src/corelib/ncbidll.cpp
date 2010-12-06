@@ -165,7 +165,7 @@ void CDll::Load(void)
     _TRACE("Loading dll: "<<m_Name);
 #if defined(NCBI_OS_MSWIN)
     UINT errMode = SetErrorMode(SEM_FAILCRITICALERRORS);
-    HMODULE handle = LoadLibrary(m_Name.c_str());
+    HMODULE handle = LoadLibraryA(m_Name.c_str());
     SetErrorMode(errMode);
 #elif defined(NCBI_OS_UNIX)
 #  ifdef HAVE_DLFCN_H
@@ -371,11 +371,11 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 #if defined(NCBI_OS_MSWIN)
         // Get Windows system directories
         char buf[MAX_PATH+1];
-        UINT len = GetSystemDirectory(buf, MAX_PATH+1);
+        UINT len = GetSystemDirectoryA(buf, MAX_PATH+1);
         if (len>0  &&  len<=MAX_PATH) {
             paths.push_back(buf);
         }
-        len = GetWindowsDirectory(buf, MAX_PATH+1);
+        len = GetWindowsDirectoryA(buf, MAX_PATH+1);
         if (len>0  &&  len<=MAX_PATH) {
             paths.push_back(buf);
         }

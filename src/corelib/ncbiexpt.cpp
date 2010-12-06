@@ -360,7 +360,7 @@ void CException::x_ReportToDebugger(void) const
         GetMsg() << "\" ";
     ReportExtra(os);
     os << '\n';
-    ::OutputDebugString(((string)CNcbiOstrstreamToString(os)).c_str());
+    ::OutputDebugStringA(((string)CNcbiOstrstreamToString(os)).c_str());
 #endif
     DoThrowTraceAbort();
 }

@@ -255,7 +255,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
 
 #elif defined(NCBI_OS_MSWIN)
 
-    HANDLE  handle  = ::CreateMutex(NULL, TRUE, m_SystemName.c_str());
+    HANDLE  handle  = ::CreateMutexA(NULL, TRUE, m_SystemName.c_str());
     errno_t errcode = ::GetLastError();
     if (handle == kInvalidLockHandle) {
         switch(errcode) {

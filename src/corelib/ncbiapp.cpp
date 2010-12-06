@@ -1001,7 +1001,7 @@ string CNcbiApplication::FindProgramExecutablePath
                                    &module, sizeof(HMODULE), &needed) ) {
             if ( needed  &&  module ) {
                 char buf[MAX_PATH + 1];
-                DWORD ncount = GetModuleFileName(module, buf, MAX_PATH);
+                DWORD ncount = GetModuleFileNameA(module, buf, MAX_PATH);
                 if (ncount > 0) {
                     ret_val.assign(buf, ncount);
                     if (real_path) {

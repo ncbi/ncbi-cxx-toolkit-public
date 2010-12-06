@@ -528,14 +528,14 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     // This is Microsoft extention, and some compilers do not it.
     _flushall();
 #  endif
-    STARTUPINFO         StartupInfo;
+    STARTUPINFOA         StartupInfo;
     PROCESS_INFORMATION ProcessInfo;
     const int           kMaxCmdLength = 4096;
     string              cmdline;
 
     // Set startup info
     memset(&StartupInfo, 0, sizeof(StartupInfo));
-    StartupInfo.cb          = sizeof(STARTUPINFO);
+    StartupInfo.cb          = sizeof(STARTUPINFOA);
     StartupInfo.dwFlags     = STARTF_USESHOWWINDOW;
     StartupInfo.wShowWindow = SW_HIDE;
     DWORD dwCreateFlags     = (mode == eDetach) ? 
@@ -565,7 +565,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     s_GetRealMode(mode);
 
     // Run program
-    if (CreateProcess(NULL, (LPSTR)cmdline.c_str(), NULL, NULL, FALSE,
+    if (CreateProcessA(NULL, (LPSTR)cmdline.c_str(), NULL, NULL, FALSE,
                       dwCreateFlags, NULL, NULL, &StartupInfo, &ProcessInfo))
     {
         if (mode == eOverlay) {

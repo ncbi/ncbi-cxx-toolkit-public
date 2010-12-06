@@ -1296,10 +1296,10 @@ bool CDirEntry::GetTime(CTime* modification,
 {
 #ifdef NCBI_OS_MSWIN
     HANDLE handle;
-    WIN32_FIND_DATA buf;
+    WIN32_FIND_DATAA buf;
 
     // Get file times using FindFile
-    handle = FindFirstFile(GetPath().c_str(), &buf);
+    handle = FindFirstFileA(GetPath().c_str(), &buf);
     if ( handle == INVALID_HANDLE_VALUE ) {
         //LOG_ERROR_AND_RETURN("CDirEntry::GetTime():"
         //" Cannot find " << GetPath());
@@ -1383,7 +1383,7 @@ bool CDirEntry::SetTime(CTime* modification,
     }
 
     // Change times
-    HANDLE h = CreateFile(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
+    HANDLE h = CreateFileA(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
                           FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
     if ( h == INVALID_HANDLE_VALUE ) {
@@ -1518,7 +1518,7 @@ bool CDirEntry::SetTimeT(time_t* modification,
     }
 
     // Change times
-    HANDLE h = CreateFile(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
+    HANDLE h = CreateFileA(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
                           FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
     if ( h == INVALID_HANDLE_VALUE ) {
@@ -2481,13 +2481,13 @@ static bool s_CopyAttrs(const char* from, const char* to,
     CDirEntry efrom(from), eto(to);
 
     WIN32_FILE_ATTRIBUTE_DATA attr;
-    if ( !::GetFileAttributesEx(from, GetFileExInfoStandard, &attr) ) {
+    if ( !::GetFileAttributesExA(from, GetFileExInfoStandard, &attr) ) {
         return false;
     }
 
     // Date/time
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
-        HANDLE h = CreateFile(to, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL,
+        HANDLE h = CreateFileA(to, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL,
                               OPEN_EXISTING,
                               FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
         if ( h == INVALID_HANDLE_VALUE ) {
@@ -2505,7 +2505,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
 
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
-        if ( !::SetFileAttributes(to, attr.dwFileAttributes) ) {
+        if ( !::SetFileAttributesA(to, attr.dwFileAttributes) ) {
             LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttrs():"
                                  " Cannot change pemissions for " << to);
         }
@@ -2726,7 +2726,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
 
     // Copy
 #if defined(NCBI_OS_MSWIN)
-    if ( !::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) ) {
+    if ( !::CopyFileA(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) ) {
         LOG_ERROR_AND_RETURN("CFile::Copy():"
                              " Cannot copy "
                              << src.GetPath() << " to " << dst.GetPath());
@@ -3132,7 +3132,7 @@ void s_SetFindFileError(void)
        (::strcmp(entry.cFileName, "..") == 0)) )
 
 void s_AddEntry(CDir::TEntries* contents, const string& base_path,
-                const WIN32_FIND_DATA& entry, CDir::TGetEntriesFlags flags)
+                const WIN32_FIND_DATAA& entry, CDir::TGetEntriesFlags flags)
 {
     const string name = (flags & CDir::fIgnorePath) ?
                          entry.cFileName :
@@ -3233,10 +3233,10 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
     // Append to the "path" mask for all files in directory
     string pattern = base_path + string("*");
 
-    WIN32_FIND_DATA entry;
+    WIN32_FIND_DATAA entry;
     HANDLE          handle;
 
-    handle = FindFirstFile(pattern.c_str(), &entry);
+    handle = FindFirstFileA(pattern.c_str(), &entry);
     if (handle != INVALID_HANDLE_VALUE) {
         // Check all masks
         do {
@@ -3250,7 +3250,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
                     }                
                 }
             }
-        } while (FindNextFile(handle, &entry));
+        } while (FindNextFileA(handle, &entry));
         FindClose(handle);
     } else {
         s_SetFindFileError();
@@ -3298,17 +3298,17 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
     // Append to the "path" mask for all files in directory
     string pattern = base_path + "*";
 
-    WIN32_FIND_DATA entry;
+    WIN32_FIND_DATAA entry;
     HANDLE          handle;
 
-    handle = FindFirstFile(pattern.c_str(), &entry);
+    handle = FindFirstFileA(pattern.c_str(), &entry);
     if (handle != INVALID_HANDLE_VALUE) {
         do {
             if ( !IS_RECURSIVE_ENTRY  &&
                  masks.Match(entry.cFileName, use_case) ) {
                 s_AddEntry(contents, base_path, entry, flags);
             }
-        } while ( FindNextFile(handle, &entry) );
+        } while ( FindNextFileA(handle, &entry) );
         FindClose(handle);
     } else {
         s_SetFindFileError();
@@ -3817,7 +3817,7 @@ void s_GetFileSystemInfo(const string&               path,
         DWORD filename_max;
         DWORD fs_flags;
 
-        if ( !::GetVolumeInformation(xpath.c_str(),
+        if ( !::GetVolumeInformationA(xpath.c_str(),
                                     NULL, 0, // Name of the specified volume
                                     NULL,    // Volume serial number
                                     &filename_max,
@@ -3831,7 +3831,7 @@ void s_GetFileSystemInfo(const string&               path,
         
     // Get disk spaces
     if (flags & fFSI_DiskSpace) {
-        if ( !::GetDiskFreeSpaceEx(xpath.c_str(),
+        if ( !::GetDiskFreeSpaceExA(xpath.c_str(),
                                 (PULARGE_INTEGER)&info->free_space,
                                 (PULARGE_INTEGER)&info->total_space, 0) ) {
             NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
@@ -3842,7 +3842,7 @@ void s_GetFileSystemInfo(const string&               path,
     if (flags & fFSI_BlockSize) {
         DWORD dwSectPerClust; 
         DWORD dwBytesPerSect;
-        if ( !::GetDiskFreeSpace(xpath.c_str(),
+        if ( !::GetDiskFreeSpaceA(xpath.c_str(),
                                  &dwSectPerClust, &dwBytesPerSect,
                                  NULL, NULL) ) {
             NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
@@ -4610,7 +4610,7 @@ void CMemoryFileMap::x_Open(void)
 
         // If failed to attach to an existing file-mapping object then
         // create a new one (based on the specified file)
-        HANDLE hMap = OpenFileMapping(m_Attrs->map_access, false,
+        HANDLE hMap = OpenFileMappingA(m_Attrs->map_access, false,
                                       m_FileName.c_str());
         if ( !hMap ) { 
 
@@ -4624,12 +4624,12 @@ void CMemoryFileMap::x_Open(void)
             DWORD x_file_access = GENERIC_READ | GENERIC_WRITE;
             DWORD x_map_protect = PAGE_READWRITE;
 
-            hFile = CreateFile(m_FileName.c_str(), x_file_access, 
+            hFile = CreateFileA(m_FileName.c_str(), x_file_access, 
                                m_Attrs->file_share, NULL,
                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if ( (hFile == INVALID_HANDLE_VALUE)  &&
                  (m_Attrs->file_access != x_file_access) ) {
-                hFile = CreateFile(m_FileName.c_str(), m_Attrs->file_access, 
+                hFile = CreateFileA(m_FileName.c_str(), m_Attrs->file_access, 
                                    m_Attrs->file_share, NULL,
                                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,NULL);
                 x_map_protect = m_Attrs->map_protect;
@@ -4641,12 +4641,12 @@ void CMemoryFileMap::x_Open(void)
 
             // Create mapping
 
-            hMap = CreateFileMapping(hFile, NULL,
+            hMap = CreateFileMappingA(hFile, NULL,
                                      x_map_protect,
                                      0, 0, m_FileName.c_str());
             if ( !hMap  &&
                  (m_Attrs->map_protect != x_map_protect) ) {
-                hMap = CreateFileMapping(hFile, NULL,
+                hMap = CreateFileMappingA(hFile, NULL,
                                          m_Attrs->map_protect,
                                          0, 0, m_FileName.c_str());
             }
@@ -5088,7 +5088,7 @@ void CFileIO::Open(const string& filename,
             _TROUBLE;
     }
 
-    m_Handle = CreateFile(filename.c_str(), dwAccessMode,
+    m_Handle = CreateFileA(filename.c_str(), dwAccessMode,
                           dwShareMode, NULL, dwOpenMode,
                           FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -5196,7 +5196,7 @@ void CFileIO::CreateTemporary(const string& dir,
     while (ofs < numeric_limits<unsigned long>::max()) {
         _ultoa((unsigned long)ofs, buffer, 24);
         m_Pathname = x_dir + prefix + buffer;
-        m_Handle = CreateFile(m_Pathname.c_str(), GENERIC_ALL, 0, NULL,
+        m_Handle = CreateFileA(m_Pathname.c_str(), GENERIC_ALL, 0, NULL,
                             CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
         if (m_Handle != INVALID_HANDLE_VALUE ||
                 ::GetLastError() != ERROR_FILE_EXISTS)
@@ -5800,7 +5800,7 @@ void CFileLock::x_Init(const char* filename, EType type, off_t offset, size_t le
     // Open file
     if (filename) {
 #if defined(NCBI_OS_MSWIN)
-        m_Handle = CreateFile(filename, GENERIC_READ,
+        m_Handle = CreateFileA(filename, GENERIC_READ,
                               FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 #elif defined(NCBI_OS_UNIX)
         m_Handle = open(filename, O_RDWR);

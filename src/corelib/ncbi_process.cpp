@@ -584,7 +584,7 @@ bool CProcess::Kill(unsigned long timeout) const
     // Safe process termination
     if ( safe  &&  enable_sync ) {
         // (kernel32.dll loaded at same address in each process)
-        FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
+        FARPROC exitproc = GetProcAddress(GetModuleHandleA("KERNEL32.DLL"),
                                           "ExitProcess");
         if ( exitproc ) {
             hThread = CreateRemoteThread(hProcess, NULL, 0,
@@ -736,7 +736,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
 
         if ( s_TryGetProcessId  &&  !s_GetProcessId ) {
             s_GetProcessId  = (LPFN_GETPROCESSID)GetProcAddress(
-                                    GetModuleHandle("KERNEL32.DLL"),
+                                    GetModuleHandleA("KERNEL32.DLL"),
                                     "GetProcessId");
             s_TryGetProcessId = false;
         }

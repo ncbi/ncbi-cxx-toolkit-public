@@ -391,7 +391,7 @@ static inline void s_ReleaseInitMutexHandle(TSystemMutex _DEBUG_ARG(mutex))
 
 static inline HANDLE s_GetInitMutexHandle(void)
 {
-    HANDLE init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
+    HANDLE init_mutex = CreateMutexA(NULL, FALSE, kInitMutexName);
     xncbi_Verify(init_mutex);
     return init_mutex;
 }

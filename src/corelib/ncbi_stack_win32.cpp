@@ -325,7 +325,7 @@ CSymbolGuard::CSymbolGuard(void)
         string search_path(CDir::GetCwd());
         string tmp;
         tmp.resize(2048);
-        if (GetModuleFileName(0, const_cast<char*>(tmp.data()),
+        if (GetModuleFileNameA(0, const_cast<char*>(tmp.data()),
             tmp.length())) {
             string::size_type pos = tmp.find_last_of("\\/");
             if (pos != string::npos) {
