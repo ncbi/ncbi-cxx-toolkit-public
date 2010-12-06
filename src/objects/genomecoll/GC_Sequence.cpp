@@ -148,6 +148,8 @@ CConstRef<CSeq_id> CGC_Sequence::GetSynonymSeq_id( CGC_TypedSeqId::E_Choice syn_
             if( seq_id_alias->IsSetGi() )
                 ret = CConstRef<CSeq_id>( &seq_id_alias->GetGi() );
             break;
+        default:
+            NCBI_THROW(CException, eUnknown, "unhandled alias type");
         }
         
     }

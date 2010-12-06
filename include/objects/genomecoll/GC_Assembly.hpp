@@ -39,6 +39,7 @@
 #ifndef INTERNAL_GPIPE_OBJECTS_GENOMECOLL_GC_ASSEMBLY_HPP
 #define INTERNAL_GPIPE_OBJECTS_GENOMECOLL_GC_ASSEMBLY_HPP
 
+#include <corelib/ncbimtx.hpp>
 
 // generated includes
 #include <objects/genomecoll/GC_Assembly_.hpp>
@@ -93,8 +94,10 @@ public:
     /// Is this assembly a GenBank assembly?
     bool IsGenBank() const;
 
+    /// Generate the internal up-pointers
+    void CreateHierarchy();
 
-    /// Generate the internal object index
+    /// Generate the Seq-id index
     void CreateIndex();
 
     enum ESubset {
@@ -136,6 +139,7 @@ private:
     CGC_Assembly(const CGC_Assembly& value);
     CGC_Assembly& operator=(const CGC_Assembly& value);
 
+    CMutex m_Mutex;
     typedef map<CSeq_id_Handle, TSequenceList> TSequenceIndex;
     TSequenceIndex m_SequenceMap;
 

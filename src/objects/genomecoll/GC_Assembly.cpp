@@ -289,6 +289,9 @@ CGC_Assembly::TFullAssemblies CGC_Assembly::GetFullAssemblies() const
 
 CConstRef<CGC_Sequence> CGC_Assembly::Find(const CSeq_id_Handle& id) const
 {
+    if (m_SequenceMap.empty()) {
+        const_cast<CGC_Assembly&>(*this).CreateIndex();
+    }
     TSequenceIndex::const_iterator it = m_SequenceMap.find(id);
     if (it == m_SequenceMap.end()  ||  it->second.size() == 0) {
         return CConstRef<CGC_Sequence>();
@@ -304,6 +307,9 @@ CConstRef<CGC_Sequence> CGC_Assembly::Find(const CSeq_id_Handle& id) const
 void CGC_Assembly::Find(const CSeq_id_Handle& id,
                         TSequenceList& sequences) const
 {
+    if (m_SequenceMap.empty()) {
+        const_cast<CGC_Assembly&>(*this).CreateIndex();
+    }
     sequences.clear();
     TSequenceIndex::const_iterator it = m_SequenceMap.find(id);
     if (it != m_SequenceMap.end()) {
@@ -319,14 +325,12 @@ void CGC_Assembly::PreWrite() const
 
 void CGC_Assembly::PostRead()
 {
-    CreateIndex();
+    CreateHierarchy();
 }
 
 
-void CGC_Assembly::CreateIndex()
+void CGC_Assembly::CreateHierarchy()
 {
-    m_SequenceMap.clear();
-
     ///
     /// generate the up-links as needed
     ///
@@ -363,12 +367,43 @@ void CGC_Assembly::CreateIndex()
                        "unknown assembly set type");
         }
     }
+}
 
+
+//////////////////////////////////////////////////////////////////////////////
+
+void CGC_Assembly::CreateIndex()
+{
     if (m_SequenceMap.empty()) {
-        CTypeConstIterator<CGC_Sequence> seq_it(*this);
-        for ( ;  seq_it;  ++seq_it) {
-            m_SequenceMap[CSeq_id_Handle::GetHandle(seq_it->GetSeq_id())]
-                .push_back(CConstRef<CGC_Sequence>(&*seq_it));
+        CMutexGuard LOCK(m_Mutex);
+        if (m_SequenceMap.empty()) {
+            CTypeConstIterator<CGC_Sequence> seq_it(*this);
+            for ( ;  seq_it;  ++seq_it) {
+                const CGC_Sequence& this_seq = *seq_it;
+                CConstRef<CGC_Replicon> repl = this_seq.GetReplicon();
+
+                /// bizarre pattern: the sequence is a single placed sequence
+                /// with itself as the only scaffold.  if this is the case,
+                /// don't index the scaffold
+                if (repl  &&
+                    repl->GetSequence().IsSingle()  &&
+                    &repl->GetSequence().GetSingle() != &this_seq) {
+                    const CGC_Sequence& repl_seq =
+                        repl->GetSequence().GetSingle();
+                    if (repl_seq.IsSetSequences()  &&
+                        repl_seq.GetSequences().size() == 1  &&
+                        repl_seq.GetSequences().front()->GetState() == CGC_TaggedSequences::eState_placed  &&
+                        repl_seq.GetSequences().front()->GetSeqs().size() == 1  &&
+                        repl_seq.GetSequences().front()->GetSeqs().front() == &this_seq  &&
+                        repl->GetSequence().GetSingle().GetSeq_id()
+                        .Match(this_seq.GetSeq_id())) {
+                        continue;
+                    }
+                }
+
+                m_SequenceMap[CSeq_id_Handle::GetHandle(seq_it->GetSeq_id())]
+                    .push_back(CConstRef<CGC_Sequence>(&*seq_it));
+            }
         }
     }
 }
