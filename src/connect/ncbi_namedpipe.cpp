@@ -240,7 +240,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         for (;;) {
             // Open existing pipe
-            m_Pipe = ::CreateFile
+            m_Pipe = ::CreateFileA
                 (m_PipeName.c_str(),
                  GENERIC_READ | GENERIC_WRITE,
                  FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -295,7 +295,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         attr.lpSecurityDescriptor = NULL;
 
         // Create pipe
-        m_Pipe = ::CreateNamedPipe
+        m_Pipe = ::CreateNamedPipeA
             (m_PipeName.c_str(),            // pipe name 
              PIPE_ACCESS_DUPLEX,            // read/write access 
              PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, nonblocking mode 

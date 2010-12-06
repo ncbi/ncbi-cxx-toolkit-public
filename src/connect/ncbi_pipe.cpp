@@ -388,7 +388,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
         // Create child process
         PROCESS_INFORMATION pinfo;
-        STARTUPINFO sinfo;
+        STARTUPINFOA sinfo;
         ::ZeroMemory(&pinfo, sizeof(PROCESS_INFORMATION));
         ::ZeroMemory(&sinfo, sizeof(STARTUPINFO));
         sinfo.cb = sizeof(sinfo);
@@ -397,7 +397,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         sinfo.hStdInput  = child_stdin;
         sinfo.dwFlags   |= STARTF_USESTDHANDLES;
 
-        if ( !::CreateProcess(NULL,
+        if ( !::CreateProcessA(NULL,
                               const_cast<char*> (cmd_line.c_str()),
                               NULL, NULL, TRUE, 0,
                               env_block.get(),
