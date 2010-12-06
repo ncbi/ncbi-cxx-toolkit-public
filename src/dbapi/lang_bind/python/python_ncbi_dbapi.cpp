@@ -1027,7 +1027,7 @@ string RetrieveModuleFileName(void)
 
 //     if ( mh = GetModuleHandle( module_name ) ) {
     if (mh) {
-        if ( cur_size = GetModuleFileName( mh, buff, buff_size ) ) {
+        if ( cur_size = GetModuleFileNameA( mh, buff, buff_size ) ) {
             if ( cur_size < buff_size ) {
                 file_name = buff;
             }

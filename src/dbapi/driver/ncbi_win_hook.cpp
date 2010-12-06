@@ -50,6 +50,17 @@
 
 BEGIN_NCBI_SCOPE
 
+// Microsoft does not define MODULEENTRY32A and PROCESSENTRY32A
+// so, we define here our own mapping to ANSI variants
+
+typedef struct tagMODULEENTRY32 MODULEENTRY32_A;
+typedef MODULEENTRY32_A *  PMODULEENTRY32_A;
+typedef MODULEENTRY32_A *  LPMODULEENTRY32_A;
+
+typedef struct tagPROCESSENTRY32 PROCESSENTRY32_A;
+typedef PROCESSENTRY32_A *  PPROCESSENTRY32_A;
+typedef PROCESSENTRY32_A *  LPPROCESSENTRY32_A;
+
 namespace NWinHook
 {
 
@@ -155,19 +166,19 @@ namespace NWinHook
                                                          );
 
     typedef BOOL (WINAPI * FProcess32First) (HANDLE hSnapshot,
-                                             LPPROCESSENTRY32 lppe
+                                             LPPROCESSENTRY32_A lppe
                                              );
 
     typedef BOOL (WINAPI * FProcess32Next) (HANDLE hSnapshot,
-                                            LPPROCESSENTRY32 lppe
+                                            LPPROCESSENTRY32_A lppe
                                             );
 
     typedef BOOL (WINAPI * FModule32First) (HANDLE hSnapshot,
-                                            LPMODULEENTRY32 lpme
+                                            LPMODULEENTRY32_A lpme
                                             );
 
     typedef BOOL (WINAPI * FModule32Next) (HANDLE hSnapshot,
-                                           LPMODULEENTRY32 lpme
+                                           LPMODULEENTRY32_A lpme
                                            );
 
 
@@ -186,10 +197,10 @@ namespace NWinHook
         virtual BOOL PopulateProcess(DWORD dwProcessId, BOOL bPopulateModules);
 
     private:
-        BOOL ModuleFirst(HANDLE hSnapshot, PMODULEENTRY32 pme) const;
-        BOOL ModuleNext(HANDLE hSnapshot, PMODULEENTRY32 pme) const;
-        BOOL ProcessFirst(HANDLE hSnapshot, PROCESSENTRY32* pe32) const;
-        BOOL ProcessNext(HANDLE hSnapshot, PROCESSENTRY32* pe32) const;
+        BOOL ModuleFirst(HANDLE hSnapshot, PMODULEENTRY32_A pme) const;
+        BOOL ModuleNext(HANDLE hSnapshot, PMODULEENTRY32_A pme) const;
+        BOOL ProcessFirst(HANDLE hSnapshot, PROCESSENTRY32_A* pe32) const;
+        BOOL ProcessNext(HANDLE hSnapshot, PROCESSENTRY32_A* pe32) const;
 
         // ToolHelp function pointers
         FCreateToolHelp32Snapshot m_pfnCreateToolhelp32Snapshot;
@@ -300,10 +311,10 @@ namespace NWinHook
     ////////////////////////////////////////////////////////////////////////////
     // Version of the function, which was found at initialization time ...
     static FGetProcAddress g_FGetProcAddress = reinterpret_cast<FGetProcAddress>
-        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "GetProcAddress"));
+        (::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "GetProcAddress"));
     // Version of the function, which was found at initialization time ...
     static FLoadLibraryA g_LoadLibraryA = reinterpret_cast<FLoadLibraryA>
-        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryA"));
+        (::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "LoadLibraryA"));
 
     ////////////////////////////////////////////////////////////////////////////
     class CKernell32
@@ -363,7 +374,7 @@ namespace NWinHook
 
     CKernell32::CKernell32()
     {
-        m_ModuleKenell32 = ::GetModuleHandle("kernel32.dll");
+        m_ModuleKenell32 = ::GetModuleHandleA("kernel32.dll");
 
         // Retrieve original procedure address ...
         //
@@ -1095,7 +1106,7 @@ namespace NWinHook
             TH32CS_SNAPMODULE,
             static_cast<CExeModuleInstance*>(pProcess)->GetProcessId());
 
-        MODULEENTRY32 me = { sizeof(me)};
+        MODULEENTRY32_A me = { sizeof(me)};
 
         for (BOOL bOk = ModuleFirst(hSnapshot, &me); bOk; bOk = ModuleNext(hSnapshot, &me)) {
             // We don't need to add to the list the process itself.
@@ -1119,22 +1130,22 @@ namespace NWinHook
         return bResult;
     }
 
-    BOOL CToolhelpHandler::ModuleFirst(HANDLE hSnapshot, PMODULEENTRY32 pme) const
+    BOOL CToolhelpHandler::ModuleFirst(HANDLE hSnapshot, PMODULEENTRY32_A pme) const
     {
         return (m_pfnModule32First(hSnapshot, pme));
     }
 
-    BOOL CToolhelpHandler::ModuleNext(HANDLE hSnapshot, PMODULEENTRY32 pme) const
+    BOOL CToolhelpHandler::ModuleNext(HANDLE hSnapshot, PMODULEENTRY32_A pme) const
     {
         return (m_pfnModule32Next(hSnapshot, pme));
     }
 
-    BOOL CToolhelpHandler::ProcessFirst(HANDLE hSnapshot, PROCESSENTRY32* pe32) const
+    BOOL CToolhelpHandler::ProcessFirst(HANDLE hSnapshot, PROCESSENTRY32_A* pe32) const
     {
         return (m_pfnProcess32First(hSnapshot, pe32));
     }
 
-    BOOL CToolhelpHandler::ProcessNext(HANDLE hSnapshot, PROCESSENTRY32* pe32) const
+    BOOL CToolhelpHandler::ProcessNext(HANDLE hSnapshot, PROCESSENTRY32_A* pe32) const
     {
         return (m_pfnProcess32Next(hSnapshot, pe32));
     }
@@ -1148,7 +1159,7 @@ namespace NWinHook
         if (Initialize() == TRUE) {
             hSnapshot = m_pfnCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, dwProcessId);
 
-            PROCESSENTRY32 pe32 = { sizeof(pe32)};
+            PROCESSENTRY32_A pe32 = { sizeof(pe32)};
 
             for (BOOL bOk = ProcessFirst(hSnapshot, &pe32);
                 bOk;
@@ -1264,7 +1275,7 @@ namespace NWinHook
         strcpy(m_szCalleeModName, pszCalleeModName);
         strcpy(m_szFuncName, pszFuncName);
 
-        m_CalleeModHandle = ::GetModuleHandle(m_szCalleeModName);
+        m_CalleeModHandle = ::GetModuleHandleA(m_szCalleeModName);
 
         if (sm_pvMaxAppAddr == NULL) {
             // Functions with address above lpMaximumApplicationAddress require
@@ -1665,7 +1676,7 @@ namespace NWinHook
         PSTR    pszFuncName
         ) const
     {
-        HMODULE hmodOriginal = ::GetModuleHandle(pszCalleeModName);
+        HMODULE hmodOriginal = ::GetModuleHandleA(pszCalleeModName);
 
         // Take the name from the export section of the DLL
         x_GetFunctionNameFromExportSection(
