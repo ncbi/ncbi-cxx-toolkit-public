@@ -163,7 +163,6 @@
             usage_str += "                   app/cgi           a CGI application\n";
             usage_str += "                   app/dbapi         a DBAPI application\n";
             usage_str += "                   app/eutils        an eUtils client application\n";
-            usage_str += "                   app/gui           a FLTK application\n";
             usage_str += "                   app/lds           an application that uses local data store\n";
             usage_str += "                   app/netcache      an application that uses NetCache\n";
             usage_str += "                   app/netschedule   an NCBI GRID (NetSchedule) application\n";
@@ -247,7 +246,6 @@
                 prompt += "\tapp/cgi\n";
                 prompt += "\tapp/dbapi\n";
                 prompt += "\tapp/eutils\n";
-                prompt += "\tapp/gui\n";
                 prompt += "\tapp/lds\n";
                 prompt += "\tapp/netcache\n";
                 prompt += "\tapp/netschedule\n";
@@ -283,7 +281,6 @@
             this.TemplatesDict.Add("app/cgi",     "sample/app/cgi");
             this.TemplatesDict.Add("app/dbapi",   "sample/app/dbapi");
             this.TemplatesDict.Add("app/eutils",  "sample/app/eutils");
-            this.TemplatesDict.Add("app/gui",     "sample/app/gui");
             this.TemplatesDict.Add("app/lds",     "sample/app/lds");
             this.TemplatesDict.Add("app/netcache",    "sample/app/netcache");
             this.TemplatesDict.Add("app/netschedule", "sample/app/netschedule");
