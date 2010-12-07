@@ -80,6 +80,8 @@ int CConfigTestApplication::Run(void)
     CConfig::TParamTree params( CConfig::TParamTree::TValueType(kSection, kEmptyStr));
     params.AddNode(CConfig::TParamTree::TValueType("int_value", "10"));
     params.AddNode(CConfig::TParamTree::TValueType("int1_value", "15"));
+    params.AddNode(CConfig::TParamTree::TValueType("bool_value", "false"));
+    params.AddNode(CConfig::TParamTree::TValueType("double_value", "1.2345e4"));
 
     CConfig cfg(&params, eNoOwnership);
     int i = cfg.GetInt(kSection, "int_value", CConfig::eErr_Throw, 4);
@@ -99,6 +101,14 @@ int CConfigTestApplication::Run(void)
 
     i = cfg.GetInt(kSection, "int_value", CConfig::eErr_NoThrow, 4, &int_synonyms);
     assert( i == 4 );
+
+    bool b = cfg.GetBool(kSection, "bool_value", CConfig::eErr_NoThrow, true);
+    assert( !b );
+
+    double d = cfg.GetDouble(kSection, "double_value", CConfig::eErr_NoThrow, 4.32);
+    assert( d == 12345. );
+    d = cfg.GetDouble(kSection, "double2_value", CConfig::eErr_NoThrow, 4.32);
+    assert( d == 4.32 );
     
     return 0;
 }

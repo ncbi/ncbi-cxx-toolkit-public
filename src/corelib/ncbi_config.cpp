@@ -610,6 +610,46 @@ bool CConfig::GetBool(const string&  driver_name,
     return default_value;
 }
 
+double CConfig::GetDouble(const string&  driver_name,
+                          const string&  param_name, 
+                          EErrAction     on_error,
+                          double         default_value,
+                          const list<string>* synonyms)
+{
+    const string& param = GetString(driver_name, param_name, on_error, synonyms);
+
+    if (param.empty()) {
+        if (on_error == eErr_Throw) {
+            string msg = "Cannot init " + driver_name +
+                         ", empty parameter:" + param_name;
+            NCBI_THROW(CConfigException, eParameterMissing, msg);
+        } else {
+            return default_value;
+        }
+    }
+
+    try {
+        return NStr::StringToDouble(param, NStr::fDecimalPosixOrLocal);
+    }
+    catch (CStringException& ex)
+    {
+        if (on_error == eErr_Throw) {
+            string msg = "Cannot init " + driver_name +
+                          ", incorrect parameter format:" +
+                          param_name  + " : " + param +
+                          " " + ex.what();
+            NCBI_THROW(CConfigException, eParameterMissing, msg);
+        } else {
+            string msg = "Configuration error " + driver_name +
+                          ", incorrect parameter format:" +
+                          param_name  + " : " + param +
+                          " " + ex.what() + ". Default value is used";
+            ERR_POST_X_ONCE(5, msg);
+        }
+    }
+    return default_value;
+}
+
 const char* CConfigException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {

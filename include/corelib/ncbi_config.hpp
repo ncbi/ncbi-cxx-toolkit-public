@@ -190,6 +190,27 @@ public:
                  bool           default_value,
                  const list<string>* synonyms = NULL);
 
+    /// Utility function to get a double element of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the default value)
+    ///
+    /// @param driver_name
+    ///    Name of the module requesting parameter (used in diagnostics)
+    /// @param params
+    ///    Parameters tree
+    /// @param param_name
+    ///    Name of the parameter
+    /// @param mandatory
+    ///    Error action
+    /// @param default_value
+    ///    Default value for missing parameters
+    /// @sa ParamTree_GetString
+    double GetDouble(const string&  driver_name,
+                     const string&  param_name, 
+                     EErrAction     on_error,
+                     double         default_value,
+                     const list<string>* synonyms = NULL);
+
     const TParamTree* GetTree() const { return m_ParamTree.get(); }
 
     /// Reconstruct param tree from the application registry
