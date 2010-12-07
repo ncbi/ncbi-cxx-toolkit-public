@@ -742,6 +742,7 @@ CCCIEB	c	Culture Collections of Microorgansisms of Center of Genetic Engineering
 CCCM	c	Canadian Center for the Culture of Microorganisms
 CCCryo<DEU>	c	Culture Collection of Cryophilic Algae
 CCCZ	s	University of Malawi
+CCDB<BRA>	s	Crustacean Collection of the Department of Biology
 CCDM<CHN>	c	Culture Collection of Department of Microbiology
 CCDM<CZH>	c	Culture Collection of Dairy Microorganisms Laktoflora
 CCDMBI	c	Culture Collection, Department of Microbiology
@@ -2483,7 +2484,9 @@ INIP	s	Instituto Nacional de Investigacao das Pescas
 INIR	s	Coleccion de Termitas Mexicanas
 INLA	s	INIA Subestacion Experimental Control Biologico La Cruz
 INMI	c	Institute of Microbiology, Russian Academy of Sciences
-INPA	c	Laboratorio de Micologia Medica Divisao de Microbiologia e Nutricao
+INPA	s	Instituto Nacional de Pesquisas da Amazonia
+INPA:CR	s	Instituto Nacional de Pesquisas da Amazonia, Crustacea Collection
+INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia Medica Divisao de Microbiologia e Nutricao
 INPC	s	National Pusa Collections
 INRA	c	Microbiologie des Sols
 INRA<FRA>	b	Institut National de la Recherche Agronomique
@@ -3823,6 +3826,7 @@ MZUB	s	Museo di Zoologia
 MZUC<CHL>	s	Museo de Zoologia, Universidad de Concepcion
 MZUC<ITA>	s	Universita di Cagliari
 MZUCR	s	Universidad de Costa Rica, Museo de Zoologia
+MZUESC<BRA>	s	Museu de Zoologia da Universidade Estadual de Santa Cruz
 MZUF	s	Museo Zoologico La Specola, Universita di Firenze
 MZUN	s	Museo Zoologico di Universita degli Studi
 MZUP<ITA-Padova>	s	Museo Zoologia
