@@ -185,6 +185,35 @@ CNcbiOstream& CArg_NoValue::AsOutputFile(void) const { THROW_CArg_NoValue; }
 void          CArg_NoValue::CloseFile   (void) const { THROW_CArg_NoValue; }
 
 
+///////////////////////////////////////////////////////
+//  CArg_ExcludedValue::
+
+inline CArg_ExcludedValue::CArg_ExcludedValue(const string& name)
+    : CArgValue(name)
+{
+    return;
+}
+
+
+bool CArg_ExcludedValue::HasValue(void) const
+{
+    return false;
+}
+
+
+#define THROW_CArg_ExcludedValue \
+    NCBI_THROW(CArgException,eExcludedValue, s_ArgExptMsg(GetName(), \
+        "The value is excluded by other arguments.", ""));
+
+const string& CArg_ExcludedValue::AsString    (void) const { THROW_CArg_ExcludedValue; }
+Int8          CArg_ExcludedValue::AsInt8      (void) const { THROW_CArg_ExcludedValue; }
+int           CArg_ExcludedValue::AsInteger   (void) const { THROW_CArg_ExcludedValue; }
+double        CArg_ExcludedValue::AsDouble    (void) const { THROW_CArg_ExcludedValue; }
+bool          CArg_ExcludedValue::AsBoolean   (void) const { THROW_CArg_ExcludedValue; }
+CNcbiIstream& CArg_ExcludedValue::AsInputFile (void) const { THROW_CArg_ExcludedValue; }
+CNcbiOstream& CArg_ExcludedValue::AsOutputFile(void) const { THROW_CArg_ExcludedValue; }
+void          CArg_ExcludedValue::CloseFile   (void) const { THROW_CArg_ExcludedValue; }
+
 
 ///////////////////////////////////////////////////////
 //  CArg_String::
@@ -2289,9 +2318,10 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         }
 
         if (exclude.find(arg.GetName()) != exclude.end()) {
-            CRef<CArg_NoValue> arg_novalue(new CArg_NoValue(arg.GetName()));
-            // Add the no-value argument to "args"
-            args.Add(arg_novalue);
+            CRef<CArg_ExcludedValue> arg_exvalue(
+                new CArg_ExcludedValue(arg.GetName()));
+            // Add the excluded-value argument to "args"
+            args.Add(arg_exvalue);
             continue;
         }
         // Use default argument value
@@ -3214,6 +3244,7 @@ const char* CArgException::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case eInvalidArg: return "eInvalidArg";
     case eNoValue:    return "eNoValue";
+    case eExcludedValue: return "eExcludedValue";
     case eWrongCast:  return "eWrongCast";
     case eConvert:    return "eConvert";
     case eNoFile:     return "eNoFile";

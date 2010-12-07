@@ -123,6 +123,7 @@ public:
     enum EErrCode {
         eInvalidArg,    ///< Invalid argument
         eNoValue,       ///< Expecting an argument value
+        eExcludedValue, ///< The value is excluded by another argument
         eWrongCast,     ///< Incorrect cast for an argument
         eConvert,       ///< Conversion problem
         eNoFile,        ///< Expecting a file

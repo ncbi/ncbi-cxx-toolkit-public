@@ -77,6 +77,24 @@ public:
 };
 
 
+// Generates error (like CArg_NoValue) for excluded arguments.
+class CArg_ExcludedValue : public CArgValue
+{
+public:
+    CArg_ExcludedValue(const string& name);
+    virtual bool HasValue(void) const;
+
+    virtual const string&  AsString (void) const;
+    virtual Int8           AsInt8   (void) const;
+    virtual int            AsInteger(void) const;
+    virtual double         AsDouble (void) const;
+    virtual bool           AsBoolean(void) const;
+
+    virtual CNcbiIstream&  AsInputFile (void) const;
+    virtual CNcbiOstream&  AsOutputFile(void) const;
+    virtual void           CloseFile   (void) const;
+};
+
 
 class CArg_String : public CArgValue
 {
@@ -186,8 +204,6 @@ private:
     mutable bool               m_DeleteFlag;
     mutable CFastMutex m_AccessMutex;
 };
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////
