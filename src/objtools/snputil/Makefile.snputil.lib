@@ -1,0 +1,13 @@
+#
+# Makefile:  Makefile.snputil.lib
+#
+#
+
+LIB = snputil
+SRC = snp_utils snp_bitfield \
+        snp_bitfield_1_2 snp_bitfield_2 snp_bitfield_3 snp_bitfield_4 snp_bitfield_5 snp_bitfield_factory
+
+CPPFLAGS = $(ORIG_CPPFLAGS)
+
+WATCHERS = rudnev
+
