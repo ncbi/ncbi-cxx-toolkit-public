@@ -163,7 +163,7 @@ void CMsvcConfigure::CreateConfH(
     _TRACE("*** Creating local ncbiconf headers ***");
     const CBuildType& build_type(GetApp().GetBuildType());
     ITERATE(list<SConfigInfo>, p, configs) {
-        if (!p->m_VTuneAddon && !p->m_Unicode) {
+        /*if (!p->m_VTuneAddon && !p->m_Unicode)*/ {
             AnalyzeDefines( site, root_dir, *p, build_type);
         }
     }
@@ -234,7 +234,8 @@ void CMsvcConfigure::AnalyzeDefines(
     CMsvcSite& site, const string& root_dir,
     const SConfigInfo& config, const CBuildType&  build_type)
 {
-    string cfg_root_inc = NStr::Replace(root_dir,CMsvc7RegSettings::GetConfigNameKeyword(),config.m_Name);
+    string cfg_root_inc = NStr::Replace(root_dir,
+        CMsvc7RegSettings::GetConfigNameKeyword(),config.GetConfigFullName());
     string filename =
         CDirEntry::ConcatPath(cfg_root_inc, m_ConfigureDefinesPath);
     string dir;
@@ -265,7 +266,7 @@ void CMsvcConfigure::AnalyzeDefines(
     }
     signature += "_";
     signature += CMsvc7RegSettings::GetMsvcVersionName();
-    signature += "-" + config.m_Name;
+    signature += "-" + config.GetConfigFullName();
 #ifdef NCBI_XCODE_BUILD
     string tmp = CMsvc7RegSettings::GetRequestedArchs();
     NStr::ReplaceInPlace(tmp, " ", "_");
