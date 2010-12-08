@@ -389,8 +389,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Create child process
         PROCESS_INFORMATION pinfo;
         STARTUPINFOA sinfo;
-        ::ZeroMemory(&pinfo, sizeof(PROCESS_INFORMATION));
-        ::ZeroMemory(&sinfo, sizeof(STARTUPINFO));
+        ::ZeroMemory(&pinfo, sizeof(pinfo));
+        ::ZeroMemory(&sinfo, sizeof(sinfo));
         sinfo.cb = sizeof(sinfo);
         sinfo.hStdError  = child_stderr;
         sinfo.hStdOutput = child_stdout;
@@ -398,11 +398,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         sinfo.dwFlags   |= STARTF_USESTDHANDLES;
 
         if ( !::CreateProcessA(NULL,
-                              const_cast<char*> (cmd_line.c_str()),
-                              NULL, NULL, TRUE, 0,
-                              env_block.get(),
-                              current_dir.empty() ? 0 : current_dir.c_str(),
-                              &sinfo, &pinfo) ) {
+                               const_cast<char*> (cmd_line.c_str()),
+                               NULL, NULL, TRUE, 0,
+                               env_block.get(),
+                               current_dir.empty() ? 0 : current_dir.c_str(),
+                               &sinfo, &pinfo) ) {
             status = eIO_Closed;
             PIPE_THROW(::GetLastError(),
                        "CreateProcess(\"" + cmd_line + "\") failed");
