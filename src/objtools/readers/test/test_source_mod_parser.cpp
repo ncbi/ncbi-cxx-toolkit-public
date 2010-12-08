@@ -81,24 +81,34 @@ void CSourceModParserTestApp::Init(void)
 
 
 static
-void s_Visit(CSeq_entry& entry, CObjectOStream& oos, const string& org)
+void s_Visit(CSeq_entry& entry, CObjectOStream& oos /*, const string& org */ )
 {
+    //if (entry.IsSet()) {
+    //    NON_CONST_ITERATE (CBioseq_set::TSeq_set, it,
+    //                       entry.SetSet().SetSeq_set()) {
+    //        s_Visit(**it, oos, org);
+    //    }
+    //} else {
+    //    CBioseq&         seq = entry.SetSeq();
+    //    CSourceModParser smp;
+    //    CConstRef<CSeqdesc> title_desc
+    //        = seq.GetClosestDescriptor(CSeqdesc::e_Title);
+    //    if (title_desc) {
+    //        string& title(const_cast<string&>(title_desc->GetTitle()));
+    //        title = smp.ParseTitle(title);
+    //        smp.ApplyAllMods(seq, org);
+    //        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
+    //    }
+    //    oos << seq;
+    //    oos.Flush();
+    //}
     if (entry.IsSet()) {
         NON_CONST_ITERATE (CBioseq_set::TSeq_set, it,
                            entry.SetSet().SetSeq_set()) {
-            s_Visit(**it, oos, org);
+            s_Visit(**it, oos);
         }
     } else {
         CBioseq&         seq = entry.SetSeq();
-        CSourceModParser smp;
-        CConstRef<CSeqdesc> title_desc
-            = seq.GetClosestDescriptor(CSeqdesc::e_Title);
-        if (title_desc) {
-            string& title(const_cast<string&>(title_desc->GetTitle()));
-            title = smp.ParseTitle(title);
-            smp.ApplyAllMods(seq, org);
-            smp.GetLabel(&title, CSourceModParser::fUnusedMods);
-        }
         oos << seq;
         oos.Flush();
     }
@@ -108,12 +118,11 @@ void s_Visit(CSeq_entry& entry, CObjectOStream& oos, const string& org)
 int CSourceModParserTestApp::Run(void)
 {
     const CArgs&      args = GetArgs();
-    CFastaReader      reader(args["in"].AsString());
+    CFastaReader      reader( args["in"].AsString(), CFastaReader::fAddMods );
     CRef<CSeq_entry>  entry(reader.ReadSet());
     CObjectOStreamAsn oos(args["out"].AsOutputFile());
 
-    entry->Parentize();
-    s_Visit(*entry, oos, args["org"].AsString());
+    s_Visit(*entry, oos /*, args["org"].AsString() */ );
 
     return 0;
 }

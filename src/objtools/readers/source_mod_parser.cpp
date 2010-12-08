@@ -370,9 +370,19 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
 
     // handle orgmods
     {{
+        // create lookup set for finding discouraged tags
+        static const char * kDeprecatedSubtypes_arr[] = {
+            "dosage", "old-lineage", "old-name"
+        };
+        const int kDeprecatedSubtypes_arr_len = sizeof(kDeprecatedSubtypes_arr) / sizeof(kDeprecatedSubtypes_arr[0]);
+        const set<const char*, CSourceModParser::PKeyCompare> kDeprecatedSubtypes( 
+            kDeprecatedSubtypes_arr, kDeprecatedSubtypes_arr + kDeprecatedSubtypes_arr_len);
+
         const CEnumeratedTypeValues* etv = COrgMod::GetTypeInfo_enum_ESubtype();
         ITERATE (CEnumeratedTypeValues::TValues, it, etv->GetValues()) {
-            if ((mod = FindMod(it->first)) != NULL) {
+            if( kDeprecatedSubtypes.find(it->first.c_str()) != kDeprecatedSubtypes.end() ) {
+                // skip this bad tag
+            } else if ((mod = FindMod(it->first)) != NULL) {
                 CRef<COrgMod> org_mod(new COrgMod);
                 org_mod->SetSubtype(it->second);
                 org_mod->SetSubname(mod->value);
@@ -412,6 +422,11 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
                 case CSubSource::eSubtype_fwd_primer_name:
                 case CSubSource::eSubtype_rev_primer_name:
                     // skip; we'll handle these below
+                    break;
+                case CSubSource::eSubtype_transposon_name:
+                case CSubSource::eSubtype_plastid_name:
+                case CSubSource::eSubtype_insertion_seq_name:
+                    // skip these deprecated tags
                     break;
                 default:
                     if ((mod = FindMod(it->first)) != NULL) {
@@ -984,9 +999,12 @@ void CSourceModParser::GetLabel(string* s, TWhichMods which) const
 
 void CSourceModParser::x_HandleBadModValue(const SMod& mod)
 {
-    // Ignore per the C Toolkit; 
-    // but at least print a warning
-    cerr << "Warning: Bad modifier: [" << mod.key << "=" << mod.value << "]" << endl;
+    // Ignore, per the C Toolkit
+    //
+    // If we later change our mind and want to print out warnings, here's
+    // some reasonable code:
+    //
+    // cerr << "Warning: Bad modifier: [" << mod.key << "=" << mod.value << "]" << endl;
 }
 
 

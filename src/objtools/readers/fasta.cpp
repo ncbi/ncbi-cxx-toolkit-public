@@ -36,6 +36,7 @@
 #include <objtools/readers/fasta.hpp>
 #include "fasta_aln_builder.hpp"
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/source_mod_parser.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <corelib/ncbiutil.hpp>
@@ -316,6 +317,10 @@ CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs)
                 throw;
             }
         }
+    }
+    if(TestFlag(fAddMods)) {
+        entry->Parentize();
+        x_RecursiveApplyAllMods( *entry );
     }
     if (entry->IsSet()  &&  entry->GetSet().GetSeq_set().size() == 1) {
         return entry->SetSet().SetSeq_set().front();
@@ -1590,6 +1595,27 @@ CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
     return entry;
 }
 
+
+void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
+{
+    if (entry.IsSet()) {
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it,
+                           entry.SetSet().SetSeq_set()) {
+            x_RecursiveApplyAllMods(**it);
+        }
+    } else {
+        CBioseq&         seq = entry.SetSeq();
+        CSourceModParser smp;
+        CConstRef<CSeqdesc> title_desc
+            = seq.GetClosestDescriptor(CSeqdesc::e_Title);
+        if (title_desc) {
+            string& title(const_cast<string&>(title_desc->GetTitle()));
+            title = smp.ParseTitle(title);
+            smp.ApplyAllMods(seq);
+            smp.GetLabel(&title, CSourceModParser::fUnusedMods);
+        }
+    }
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

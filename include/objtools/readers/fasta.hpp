@@ -86,7 +86,8 @@ public:
         fValidate    = 1<<13, ///< Check (alphabetic) residue validity
         fUniqueIDs   = 1<<14, ///< Forbid duplicate IDs
         fStrictGuess = 1<<15, ///< Assume no typos when guessing sequence type
-        fLaxGuess    = 1<<16  ///< Use legacy heuristic for guessing seq. type
+        fLaxGuess    = 1<<16, ///< Use legacy heuristic for guessing seq. type
+        fAddMods     = 1<<17  ///< Parse defline mods and add to SeqEntry
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -198,6 +199,7 @@ protected:
     };
     TSeqPos GetCurrentPos(EPosType pos_type);
 
+    void x_RecursiveApplyAllMods( CSeq_entry& entry );
 private:
     struct SGap {
         TSeqPos pos; // 0-based, and NOT counting previous gaps
@@ -370,7 +372,6 @@ TSeqPos CFastaReader::GetCurrentPos(EPosType pos_type)
         return kInvalidSeqPos;
     }
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
