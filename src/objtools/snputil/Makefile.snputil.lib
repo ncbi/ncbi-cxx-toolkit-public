@@ -6,6 +6,8 @@ SRC = snp_utils snp_bitfield \
       snp_bitfield_1_2 snp_bitfield_2 snp_bitfield_3 snp_bitfield_4 \
       snp_bitfield_5 snp_bitfield_factory
 
+ASN_DEP = seqset
+
 WATCHERS = rudnev
 
 # Temporarily -- until it gets included into NCBI_SEQEXT.DLL
