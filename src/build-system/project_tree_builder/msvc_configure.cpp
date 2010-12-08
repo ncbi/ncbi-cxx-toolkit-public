@@ -163,7 +163,7 @@ void CMsvcConfigure::CreateConfH(
     _TRACE("*** Creating local ncbiconf headers ***");
     const CBuildType& build_type(GetApp().GetBuildType());
     ITERATE(list<SConfigInfo>, p, configs) {
-        if (!p->m_VTuneAddon) {
+        if (!p->m_VTuneAddon && !p->m_Unicode) {
             AnalyzeDefines( site, root_dir, *p, build_type);
         }
     }

@@ -122,6 +122,7 @@ public:
     bool m_ScanWholeTree;
     bool m_TweakVTuneR;
     bool m_TweakVTuneD;
+    bool m_AddUnicode;
     string m_BuildRoot;
     string m_ExtSrcRoot;
     string m_ProjTags;

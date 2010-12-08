@@ -96,6 +96,9 @@ public:
 #if 1
     virtual string CharacterSet(void) const
     {
+        if (m_Config.m_Unicode) {
+            return CMsvcMetaMakefile::TranslateOpt("1","Configuration","CharacterSet");
+        }
         string val = GetConfigurationOpt(
             m_MsvcMetaMakefile, m_MsvcProjectMakefile,
             "CharacterSet",m_Config );

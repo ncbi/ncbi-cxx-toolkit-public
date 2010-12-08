@@ -156,6 +156,7 @@ struct SConfigInfo
     string m_RuntimeLibrary;
     bool   m_Debug;
     bool   m_VTuneAddon;
+    bool   m_Unicode;
     enum {
         rtMultiThreaded = 0,
         rtMultiThreadedDebug = 1,

@@ -381,7 +381,7 @@ string SourceFileExt(const string& file_path)
 
 //-----------------------------------------------------------------------------
 SConfigInfo::SConfigInfo(void)
-    :m_Debug(false), m_VTuneAddon(false), m_rtType(rtUnknown)
+    :m_Debug(false), m_VTuneAddon(false), m_Unicode(false), m_rtType(rtUnknown)
 {
 }
 
@@ -424,6 +424,8 @@ string SConfigInfo::GetConfigFullName(void) const
 {
     if (m_VTuneAddon) {
         return string("VTune_") + m_Name;
+    } else if (m_Unicode) {
+        return string("Unicode_") + m_Name;
     } else {
         return m_Name;
     }
@@ -448,6 +450,10 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
             (!config.m_Debug && GetApp().m_TweakVTuneR))
         {
             config.m_VTuneAddon = true;
+            configs->push_back(config);
+        }
+        if (GetApp().m_AddUnicode) {
+            config.m_Unicode = true;
             configs->push_back(config);
         }
     }

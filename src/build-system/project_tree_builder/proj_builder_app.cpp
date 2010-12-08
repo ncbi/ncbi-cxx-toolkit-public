@@ -407,6 +407,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_ScanWholeTree  = true;
     m_TweakVTuneR = false;
     m_TweakVTuneD = false;
+    m_AddUnicode = false;
     m_CurrentBuildTree = 0;
     m_IncompleteBuildTree = 0;
     m_ConfirmCfg = false;
@@ -1755,6 +1756,8 @@ void CProjBulderApp::ParseArguments(void)
         if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
             m_TweakVTuneD = NStr::StringToBool(v);
         }
+        m_AddUnicode = m_CustomConfiguration.DoesValueContain(
+                "__EnabledUserRequests", "Ncbi-Unicode", false);
     }
     tmp = GetConfig().Get("Configure", "UserRequests");
     if (!tmp.empty()) {
