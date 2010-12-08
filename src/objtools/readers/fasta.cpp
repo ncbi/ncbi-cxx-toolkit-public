@@ -238,6 +238,12 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
     AssembleSeq();
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(*m_CurrentSeq);
+
+    if(TestFlag(fAddMods)) {
+        entry->Parentize();
+        x_RecursiveApplyAllMods( *entry );
+    }
+
     return entry;
 }
 
@@ -836,6 +842,12 @@ CRef<CSeq_entry> CFastaReader::ReadAlignedSet(int reference_row)
         x_AddMultiwayAlignment(*annot, ids);
     }
     entry->SetSet().SetAnnot().push_back(annot);
+
+    if(TestFlag(fAddMods)) {
+        entry->Parentize();
+        x_RecursiveApplyAllMods( *entry );
+    }
+
     return entry;
 }
 
