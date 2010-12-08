@@ -12,6 +12,9 @@
 # Build configuration name
 INTDIR = $(INTDIR:.\=)
 ALTDIR = $(INTDIR:VTune_=)
+!IF ("$(INTDIR)"=="$(ALTDIR)")
+ALTDIR = $(INTDIR:Unicode_=)
+!ENDIF
 
 # Extensions of files to copy
 EXTENSIONS         = dll pdb manifest
