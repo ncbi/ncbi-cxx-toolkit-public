@@ -510,11 +510,12 @@
 
 /* Export specifier for library snputil
  */
-#ifdef NCBI_SNPUTIL_EXPORTS
-#  define NCBI_SNPUTIL_EXPORT NCBI_DLL_EXPORT
-#else
-#  define NCBI_SNPUTIL_EXPORT NCBI_DLL_IMPORT
-#endif
+//#ifdef NCBI_SNPUTIL_EXPORTS
+//#  define NCBI_SNPUTIL_EXPORT NCBI_DLL_EXPORT
+//#else
+//#  define NCBI_SNPUTIL_EXPORT NCBI_DLL_IMPORT
+//#endif
+#define NCBI_SNPUTIL_EXPORT
 
 /* Export specifier for library id1
  */
