@@ -1,13 +1,12 @@
-#
-# Makefile:  Makefile.snputil.lib
-#
-#
+# $Id$
 
 LIB = snputil
-SRC = snp_utils snp_bitfield \
-        snp_bitfield_1_2 snp_bitfield_2 snp_bitfield_3 snp_bitfield_4 snp_bitfield_5 snp_bitfield_factory
 
-CPPFLAGS = $(ORIG_CPPFLAGS)
+SRC = snp_utils snp_bitfield \
+      snp_bitfield_1_2 snp_bitfield_2 snp_bitfield_3 snp_bitfield_4 \
+      snp_bitfield_5 snp_bitfield_factory
 
 WATCHERS = rudnev
 
+# Temporarily -- until it gets included into NCBI_SEQEXT.DLL
+LIB_OR_DLL = lib
