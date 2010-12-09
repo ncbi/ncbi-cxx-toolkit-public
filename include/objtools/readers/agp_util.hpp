@@ -128,7 +128,8 @@ public:
     }
     static bool GapValidAtObjectEnd(EGap gap_type)
     {
-        return gap_type==eGapCentromere || gap_type==eGapTelomere || gap_type==eGapShort_arm;
+        return gap_type==eGapCentromere || gap_type==eGapTelomere ||
+               gap_type==eGapShort_arm  || gap_type==eGapHeterochromatin;
     }
 
 
@@ -348,6 +349,7 @@ public:
 
         E_ObjBegNePrevEndPlus1, // CAgpReader
         E_NoValidLines,         // CAgpReader     (Make it a warning?)
+        E_SameConseqGaps,
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.

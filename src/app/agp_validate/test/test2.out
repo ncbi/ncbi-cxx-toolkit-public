@@ -64,9 +64,9 @@ test/bad_test.agp:123:chrY	8451473	8469374	117	W	AADB02037609.1	17902	1	+
 
 test/bad_test.agp:132:chrY	8534243	8534387	126	N	145	fragment	yes	
 test/bad_test.agp:133:chrY	8534388	8535698	127	N	1311	fragment	yes	
-	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+	ERROR: consequtive gaps lines with the same type and linkage
 test/bad_test.agp:134:chrY	8535699	8535938	128	N	240	fragment	yes	
-	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+	ERROR: consequtive gaps lines with the same type and linkage
 
 test/bad_test.agp:147:chrY	9307071	9315045	141	W	AADB02037621.1	1	7975	-
 test/bad_test.agp:148:chrY	9315045	9322053	142	N	7009	fragment	yes	
@@ -189,7 +189,7 @@ test/bad_test.agp:236:
 test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
 	WARNING: gap at the end of object scaffold_0
 
-48 errors, 28 warnings; 12 not printed.
+50 errors, 26 warnings; 12 not printed.
   Count Code  Description
       2  e01  expecting 9 tab-separated columns
       8  e02  column X is empty
@@ -207,8 +207,8 @@ test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
       1  e14  part number (column 4) != previous part number + 1
       1  e15  0 or na component orientation may only be used in a singleton scaffold
       5  e16  object_beg != previous object_end + 1
+      2  e18  consequtive gaps lines with the same type and linkage
       2  w21  gap at the end of object 
-      2  w23  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
       1  w24  no components in object
       4  w25  the span overlaps a previous span for this component
       2  w26  component span appears out of order

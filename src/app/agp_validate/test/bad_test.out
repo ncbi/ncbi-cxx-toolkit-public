@@ -64,9 +64,9 @@
 
 132:chrY	8534243	8534387	126	N	145	fragment	yes	
 133:chrY	8534388	8535698	127	N	1311	fragment	yes	
-	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+	ERROR: consequtive gaps lines with the same type and linkage
 134:chrY	8535699	8535938	128	N	240	fragment	yes	
-	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+	ERROR: consequtive gaps lines with the same type and linkage
 
 147:chrY	9307071	9315045	141	W	AADB02037621.1	1	7975	-
 148:chrY	9315045	9322053	142	N	7009	fragment	yes	
@@ -186,7 +186,7 @@
 236:
 	ERROR, line skipped: empty line
 
-48 errors, 17 warnings; 2 not printed.
+50 errors, 15 warnings; 2 not printed.
   Count Code  Description
       2  e01  expecting 9 tab-separated columns
       8  e02  column X is empty
@@ -204,8 +204,8 @@
       1  e14  part number (column 4) != previous part number + 1
       1  e15  0 or na component orientation may only be used in a singleton scaffold
       5  e16  object_beg != previous object_end + 1
+      2  e18  consequtive gaps lines with the same type and linkage
       1  w21  gap at the end of object 
-      2  w23  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
       1  w24  no components in object
       4  w25  the span overlaps a previous span for this component
       2  w26  component span appears out of order

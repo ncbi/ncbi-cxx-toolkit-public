@@ -60,8 +60,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
 
     "object_beg != previous object_end + 1",
     "no valid AGP lines",
+    "consequtive gaps lines with the same type and linkage",
     kEmptyCStr, // E_Last
-    kEmptyCStr,
     kEmptyCStr,
 
     // Content Warnings
@@ -571,11 +571,16 @@ bool CAgpReader::ProcessThisRow()
 
     if(this_row->is_gap) {
         if(!m_prev_line_skipped) {
-            if( m_new_obj && !this_row->GapValidAtObjectEnd() ) {
-                m_AgpErr->Msg(CAgpErr::W_GapObjBegin, this_row->GetObject()); // , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine
+            if( m_new_obj ) {
+	        if( !this_row->GapValidAtObjectEnd() ) {
+                    m_AgpErr->Msg(CAgpErr::W_GapObjBegin, this_row->GetObject()); // , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine
+                }
             }
             else if(prev_row->is_gap && !m_at_beg) {
-                m_AgpErr->Msg(CAgpErr::W_ConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+                if( prev_row->gap_type == this_row->gap_type &&
+                    prev_row->linkage  == this_row->linkage
+                  )  m_AgpErr->Msg( CAgpErr::E_SameConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+                else m_AgpErr->Msg( CAgpErr::W_ConseqGaps    , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
             }
         }
         if(!m_new_obj) {
