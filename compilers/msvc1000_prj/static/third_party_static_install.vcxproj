@@ -33,6 +33,38 @@
       <Configuration>ReleaseMT</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_DebugDLL|Win32">
+      <Configuration>Unicode_DebugDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_DebugDLL|x64">
+      <Configuration>Unicode_DebugDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_DebugMT|Win32">
+      <Configuration>Unicode_DebugMT</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_DebugMT|x64">
+      <Configuration>Unicode_DebugMT</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_ReleaseDLL|Win32">
+      <Configuration>Unicode_ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_ReleaseDLL|x64">
+      <Configuration>Unicode_ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_ReleaseMT|Win32">
+      <Configuration>Unicode_ReleaseMT</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_ReleaseMT|x64">
+      <Configuration>Unicode_ReleaseMT</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="VTune_DebugDLL|Win32">
       <Configuration>VTune_DebugDLL</Configuration>
       <Platform>Win32</Platform>
@@ -71,6 +103,18 @@
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
   </PropertyGroup>
@@ -93,6 +137,18 @@
     <ConfigurationType>Makefile</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'" Label="Configuration">
@@ -122,6 +178,18 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -144,6 +212,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'" Label="PropertySheets">
@@ -221,6 +301,54 @@
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">dlls-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">dlls-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">dlls-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">dlls-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" rebuild IntDir=$(IntDir)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" clean IntDir=$(IntDir)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">$(Configuration)\</IntDir>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" all IntDir=$(IntDir)</NMakeBuildCommandLine>
