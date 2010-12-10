@@ -101,10 +101,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
     tree->m_RootSrc = root_src;
 
     string dataspec = GetApp().GetDataspecProjId();
-    string utility_projects_dir = CDirEntry(GetApp().m_Solution).GetDir();
-    utility_projects_dir = GetApp().GetProjectTreeInfo().m_Src;
-    utility_projects_dir = 
-        CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
+    string utility_projects_dir = GetApp().GetUtilityProjectsSrcDir();
     SLibProjectT::DoCreateDataSpec(
         utility_projects_dir, dataspec, dataspec, tree, eMakeType_Undefined);
 

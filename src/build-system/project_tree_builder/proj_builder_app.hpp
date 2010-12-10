@@ -194,6 +194,9 @@ public:
         const string& project, const string& dir,  const string& watcher);
     void ExcludeProjectsByTag(CProjectItemsTree& tree) const;
     void ExcludeUnrequestedProjects(CProjectItemsTree& tree) const;
+
+    string GetUtilityProjectsDir(void) const;
+    string GetUtilityProjectsSrcDir(void);
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);

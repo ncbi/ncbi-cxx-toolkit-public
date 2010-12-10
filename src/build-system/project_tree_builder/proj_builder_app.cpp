@@ -741,11 +741,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     }
 
     //Utility projects dir
-    string utility_projects_dir = CDirEntry(m_Solution).GetDir();
-    utility_projects_dir = 
-        CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
-    utility_projects_dir = 
-        CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
+    string utility_projects_dir = GetApp().GetUtilityProjectsDir();
 
     // MasterProject
     CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
@@ -802,7 +798,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         build_all_guid = xmlprj.GetAttlist().GetProjectGUID();
         build_all_name = xmlprj.GetAttlist().GetName();
     } else {
-        string prj_dir =  CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
+        string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
         CProjItem prj_item = CreateUtilityProjectItem(prj_dir, "-BUILD-ALL-");
         prj_gen.Generate(prj_item);
         build_all_guid = prj_item.m_GUID;
@@ -820,7 +816,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         asn_all_guid = xmlprj.GetAttlist().GetProjectGUID();
         asn_all_name = xmlprj.GetAttlist().GetName();
     } else {
-        string prj_dir =  CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
+        string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
         CProjItem prj_item( CreateUtilityProjectItem(prj_dir, "-DATASPEC-ALL-"));
         prj_gen.Generate(prj_item);
         asn_all_guid = prj_item.m_GUID;
@@ -838,7 +834,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         libs_all_guid = xmlprj.GetAttlist().GetProjectGUID();
         libs_all_name = xmlprj.GetAttlist().GetName();
     } else {
-        string prj_dir =  CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
+        string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
         CProjItem prj_item = CreateUtilityProjectItem(prj_dir, "-LIBS-ALL-");
         prj_gen.Generate(prj_item);
         libs_all_guid = prj_item.m_GUID;
@@ -1548,6 +1544,9 @@ void CProjBulderApp::ParseArguments(void)
     if (m_Solution == "\"\"") {
         m_Solution = "";
     }
+    if (!m_Solution.empty() && !CDirEntry::IsAbsolutePath(m_Solution)) {
+        m_Solution = CDirEntry::ConcatPath( CDir::GetCwd(), m_Solution);
+    }
 
     if (argfile) {
         string v;
@@ -2193,6 +2192,31 @@ void CProjBulderApp::ExcludeProjectsByTag(CProjectItemsTree& tree) const
 void CProjBulderApp::ExcludeUnrequestedProjects(CProjectItemsTree& tree) const
 {
     EraseIf(tree.m_Projects, PIsExcludedByUser());
+}
+
+string CProjBulderApp::GetUtilityProjectsDir(void) const
+{
+    string utility_projects_dir = CDirEntry(m_Solution).GetDir();
+    utility_projects_dir = 
+        CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
+    utility_projects_dir = 
+        CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
+    return utility_projects_dir;
+}
+
+string CProjBulderApp::GetUtilityProjectsSrcDir(void)
+{
+    string prj = GetProjectTreeInfo().m_Compilers;
+    prj = CDirEntry::ConcatPath(prj, GetRegSettings().m_CompilersSubdir);
+    prj = CDirEntry::ConcatPath(prj, GetBuildType().GetTypeStr());
+    prj = CDirEntry::ConcatPath(prj, GetRegSettings().m_ProjectsSubdir);
+
+    string sln = CDirEntry(m_Solution).GetDir();
+    prj = CDirEntry::CreateRelativePath( prj, sln);
+    prj = CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, prj);
+    prj = CDirEntry::ConcatPath(prj, "UtilityProjects");
+    prj = CDirEntry::AddTrailingPathSeparator(prj);
+    return prj;
 }
 
 CProjBulderApp& GetApp(void)

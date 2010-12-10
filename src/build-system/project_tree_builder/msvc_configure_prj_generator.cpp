@@ -111,8 +111,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     }
     if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
 
-        string prj_dir =  CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Src, "UtilityProjects");
-
+        string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
         SCustomBuildInfo build_info;
 
         m_Prj = CreateUtilityProjectItem(prj_dir, m_Name);
