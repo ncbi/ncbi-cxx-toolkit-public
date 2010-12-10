@@ -593,7 +593,7 @@ bool CGBDataLoader::x_CreateReaders(const string& str,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "no reader available from "+str);
     }
-    return reader_count > 1;
+    return reader_count > 1 || str_list.size() > 1;
 }
 
 
@@ -652,38 +652,46 @@ CRef<CPluginManager<CWriter> > CGBDataLoader::x_GetWriterManager(void)
 }
 
 
-static bool s_ForceDriver(const string& names)
+static bool s_ForceDriver(const string& name)
 {
-    return !names.empty() && names[names.size()-1] != ':';
+    return !name.empty() && name[name.size()-1] != ':';
 }
 
 
-CReader* CGBDataLoader::x_CreateReader(const string& names,
+CReader* CGBDataLoader::x_CreateReader(const string& name,
                                        const TParamTree* params)
 {
     CRef<TReaderManager> manager = x_GetReaderManager();
-    CReader* ret = manager->CreateInstanceFromList(params, names);
-    if ( !ret && s_ForceDriver(names) ) {
-        // reader is required at this slot
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "no reader available from "+names);
+    CReader* ret = manager->CreateInstanceFromList(params, name);
+    if ( !ret ) {
+        if ( s_ForceDriver(name) ) {
+            // reader is required at this slot
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "no reader available from "+name);
+        }
     }
-    ret->InitializeCache(m_CacheManager, params);
+    else {
+        ret->InitializeCache(m_CacheManager, params);
+    }
     return ret;
 }
 
 
-CWriter* CGBDataLoader::x_CreateWriter(const string& names,
+CWriter* CGBDataLoader::x_CreateWriter(const string& name,
                                        const TParamTree* params)
 {
     CRef<TWriterManager> manager = x_GetWriterManager();
-    CWriter* ret = manager->CreateInstanceFromList(params, names);
-    if ( !ret && s_ForceDriver(names) ) {
-        // writer is required at this slot
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "no writer available from "+names);
+    CWriter* ret = manager->CreateInstanceFromList(params, name);
+    if ( !ret ) {
+        if ( s_ForceDriver(name) ) {
+            // writer is required at this slot
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "no writer available from "+name);
+        }
     }
-    ret->InitializeCache(m_CacheManager, params);
+    else {
+        ret->InitializeCache(m_CacheManager, params);
+    }
     return ret;
 }
 
