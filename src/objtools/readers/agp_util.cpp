@@ -76,7 +76,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "duplicate component with non-draft type",
     "line with component_type X appears to be a gap line and not a component line",
     "line with component_type X appears to be a component line and not a gap line",
-    "extra <TAB> character at the end of line",
+    "extra tab or space at the end of line",
 
     "gap line missing column 9 (null)",
     "missing line separator at the end of file",
@@ -226,6 +226,7 @@ int CAgpRow::FromString(const string& line)
     pcomment = NStr::Find(line, "#");
 
     bool tabsStripped=false;
+    bool extraTabOrSpace=false;
     if( pcomment != NPOS  ) {
         // Strip whitespace before "#"
         while( pcomment>0 && (line[pcomment-1]==' ' || line[pcomment-1]=='\t') ) {
@@ -236,17 +237,29 @@ int CAgpRow::FromString(const string& line)
         NStr::Tokenize(line.substr(0, pcomment), "\t", cols);
     }
     else {
-        NStr::Tokenize(line, "\t", cols);
+      int pos=line.size();
+      if(pos == 0) {
+          m_AgpErr->Msg(CAgpErr::E_EmptyLine);
+          return CAgpErr::E_EmptyLine;
+      }
+
+      if(line[pos-1]==' ') {
+        do {
+          pos--;
+        } while(pos>0 && line[pos-1]==' ');
+        NStr::Tokenize(line.substr(0, pos), "\t", cols);
+        m_AgpErr->Msg(CAgpErr::W_ExtraTab);
+        extraTabOrSpace=true;
+        pcomment=pos;
+      }
+      else NStr::Tokenize(line, "\t", cols);
     }
 
-    if(line.size() == 0) {
-        m_AgpErr->Msg(CAgpErr::E_EmptyLine);
-        return CAgpErr::E_EmptyLine;
-    }
+
 
     // Column count
     if( cols.size()==10 && cols[9]=="") {
-        m_AgpErr->Msg(CAgpErr::W_ExtraTab);
+        if(!extraTabOrSpace) m_AgpErr->Msg(CAgpErr::W_ExtraTab);
     }
     else if( cols.size() < 8 || cols.size() > 9 ) {
         // skip this entire line, report an error
@@ -256,7 +269,8 @@ int CAgpRow::FromString(const string& line)
     }
 
     // No spaces allowed (except in comments)
-    if( NPOS != NStr::Find(line, " ", 0, pcomment) ) {
+    SIZE_TYPE p_space=line.find(' ');
+    if( NPOS != p_space && p_space<pcomment ) {
         m_AgpErr->Msg( CAgpErr::E_ColumnCount, ", found space characters" );
         return CAgpErr::E_ColumnCount;
     }
@@ -842,6 +856,7 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
     memset(m_MustSkip , 0, sizeof(m_MustSkip ));
     // errors that are "silenced" by default (only the count is printed)
     m_MustSkip[W_GapLineMissingCol9]=true;
+    m_MustSkip[W_ExtraTab          ]=true;
     m_MustSkip[W_CompIsWgsTypeIsNot]=true;
     m_MustSkip[W_CompIsNotWgsTypeIs]=true;
 

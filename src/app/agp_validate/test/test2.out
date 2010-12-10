@@ -143,9 +143,6 @@ test/bad_test.agp:208:chrA	8001	9000	9	W	AADB02037656.1	1	1000
 test/bad_test.agp:210:chrA	10001	11000	11	W	AADB02037658.1	1	1000
 	ERROR, line skipped: expecting 9 tab-separated columns, found 8
 
-test/bad_test.agp:211:chrA	11001	12000	12	W	AADB02037659.1	1	1000	+	
-	WARNING: extra <TAB> character at the end of line
-
 test/bad_test.agp:212:chrA	12001	13000	13	W	AADB02037660.1	1	1000	+		
 	ERROR, line skipped: expecting 9 tab-separated columns, found 11
 
@@ -189,7 +186,7 @@ test/bad_test.agp:236:
 test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
 	WARNING: gap at the end of object scaffold_0
 
-50 errors, 26 warnings; 12 not printed.
+50 errors, 26 warnings; 13 not printed.
   Count Code  Description
       2  e01  expecting 9 tab-separated columns
       8  e02  column X is empty
@@ -213,7 +210,7 @@ test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
       4  w25  the span overlaps a previous span for this component
       2  w26  component span appears out of order
       4  w27  duplicate component with non-draft type
-      1  w30  extra <TAB> character at the end of line
+      1  w30  extra tab or space at the end of line
      10  w31  gap line missing column 9 (null)
       2  w35  component_id looks like a WGS accession, component_type is not W
          (Use -g to print lines with WGS component_id/component_type mismatch.)
