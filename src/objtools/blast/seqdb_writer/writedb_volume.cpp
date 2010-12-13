@@ -219,14 +219,15 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     // check the uniqueness of id
     if (m_Indices != CWriteDB::eNoIndex) {
         ITERATE(TIdList, iter, idlist) {
-            CSeq_id_Handle id = CSeq_id_Handle::GetHandle(**iter);
-            if (m_IdSet.find(id) != m_IdSet.end() ) {
+            string id = (*iter)->AsFastaString();
+            string id_u = NStr::ToUpper(id);
+            if (m_IdSet.find(id_u) != m_IdSet.end() ) {
                 CNcbiOstrstream msg;
                 msg << "Error: Duplicate seq_ids are found: " << endl
-                    << MSerial_AsnText << **iter;
+                    << id_u << endl;
                 NCBI_THROW(CWriteDBException, eArgErr, CNcbiOstrstreamToString(msg));
             }
-            m_IdSet.insert(id);
+            m_IdSet.insert(id_u);
         }
     }
 

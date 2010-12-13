@@ -272,7 +272,7 @@ private:
 #endif
 
     /// Included Seq_ids
-    set<CSeq_id_Handle> m_IdSet;
+    set<string> m_IdSet;
     
     // Functions
     
