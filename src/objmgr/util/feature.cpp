@@ -2197,250 +2197,6 @@ void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
     }
 }
 
-static
-bool s_LocationNeedsGeneSearchNormalization(
-    const CBioseq_Handle &bioseq_handle,
-    const CSeq_loc& loc )
-{
-    if( loc.GetStrand() == eNa_strand_other ) {
-        return true;
-    }
-
-    if( ! bioseq_handle ) {
-        return false; // don't normalize if we can't check if we have a  badseqlocsortorder
-    }
-
-    if( BadSeqLocSortOrder( bioseq_handle, loc ) ) {
-        return true;
-    }
-    
-    return false;
-}
-
-static
-void s_CopyAndSetStrandOnCopy( CConstRef<CSeq_loc> &loc, ENa_strand new_strand )
-{
-    CRef<CSeq_loc> new_loc( new CSeq_loc );
-    CSeq_loc_CI loc_iter( *loc ); // skips gaps by default
-    for( ; loc_iter; ++loc_iter ) {
-        new_loc->Add( loc_iter.GetSeq_loc() );
-    }
-    new_loc->SetStrand( new_strand );
-    new_loc = new_loc->Merge( CSeq_loc::fSortAndMerge_All, NULL );
-    loc = new_loc;
-}
-
-static
-sequence::EOverlapType 
-s_OverlapTypeGeneSearchNormalization( sequence::EOverlapType overlap_type )
-{
-    switch( overlap_type ) {
-    case sequence::eOverlap_Contained:
-        return sequence::eOverlap_Subset;
-        break;
-    case sequence::eOverlap_Contains:
-        return sequence::eOverlap_SubsetRev;
-        break;
-    default:
-        // do nothing in the other cases
-        return overlap_type;
-    }
-}
-                    
-
-typedef pair<Int8, CMappedFeat> TMappedFeatScore;
-typedef vector<TMappedFeatScore> TMappedFeatScores;
-
-// TODO: This function appears to have been copy-pasted from
-// sequence.cpp, then modified.
-// If we could find a way to roll it into the sequence.cpp
-// version, that would make the code a little cleaner.
-static
-void GetOverlappingFeatures(CScope& scope, const CSeq_loc& loc,
-                            CSeqFeatData::E_Choice feat_type,
-                            CSeqFeatData::ESubtype feat_subtype,
-                            sequence::EOverlapType overlap_type,
-                            TMappedFeatScores& feats,
-                            const SAnnotSelector* base_sel,
-                            const TBestFeatOpts opts )
-{
-    bool revert_locations = false;
-    SAnnotSelector::EOverlapType annot_overlap_type;
-    switch (overlap_type) {
-    case eOverlap_Simple:
-    case eOverlap_Contained:
-    case eOverlap_Contains:
-        // Require total range overlap
-        annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
-        break;
-    case eOverlap_Subset:
-    case eOverlap_SubsetRev:
-    case eOverlap_CheckIntervals:
-    case eOverlap_Interval:
-    case eOverlap_CheckIntRev:
-        revert_locations = true;
-        // there's no break here - proceed to "default"
-    default:
-        // Require intervals overlap
-        annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
-        break;
-    }
-
-    CConstRef<CSeq_feat> feat_ref;
-
-    CBioseq_Handle h;
-    CRange<TSeqPos> range;
-    ENa_strand strand = eNa_strand_unknown;
-    if ( loc.IsWhole() ) {
-        h = scope.GetBioseqHandle(loc.GetWhole());
-        range = range.GetWhole();
-    }
-    else if ( loc.IsInt() ) {
-        const CSeq_interval& interval = loc.GetInt();
-        h = scope.GetBioseqHandle(interval.GetId());
-        range.SetFrom(interval.GetFrom());
-        range.SetTo(interval.GetTo());
-        if ( interval.IsSetStrand() ) {
-            strand = interval.GetStrand();
-        }
-    }
-    else {
-        range = range.GetEmpty();
-    }
-
-    // Check if the sequence is circular
-    TSeqPos circular_length = kInvalidSeqPos;
-    if ( h ) {
-        if ( h.IsSetInst_Topology() &&
-             h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-            circular_length = h.GetBioseqLength();
-        }
-    }
-    else {
-        try {
-            const CSeq_id* single_id = 0;
-            try {
-                loc.CheckId(single_id);
-            }
-            catch (CException&) {
-                single_id = 0;
-            }
-            if ( single_id ) {
-                CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
-                if ( h && h.IsSetInst_Topology() &&
-                     h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-                    circular_length = h.GetBioseqLength();
-                }
-            }
-        }
-        catch (CException& _DEBUG_ARG(e)) {
-            _TRACE("test for circularity failed: " << e.GetMsg());
-        }
-    }
-
-    try {
-        SAnnotSelector sel;
-        if ( base_sel ) {
-            sel = *base_sel;
-        }
-        else {
-            sel.SetResolveAll().SetAdaptiveDepth();
-        }
-        sel.SetFeatSubtype(feat_subtype).SetOverlapType(annot_overlap_type);
-        if ( h ) {
-            const bool locNeedsGeneSearchNormalization = s_LocationNeedsGeneSearchNormalization( h, loc );
-
-            CFeat_CI feat_it(h, range, strand, sel);
-            for ( ;  feat_it;  ++feat_it) {
-                CConstRef<CSeq_loc> loc_this_iteration( &loc );
-                CConstRef<CSeq_loc> feat_loc_this_iteration( &feat_it->GetLocation() ); 
-                sequence::EOverlapType overlap_type_this_iteration = overlap_type;
-
-                // need to adjust how we check for overlap for bad feat locations
-                // in the special "gene search normalization" mode
-                const bool needGeneSearchNormalization = (opts & fBestFeat_GeneSearchNormalization ) &&
-                    ( locNeedsGeneSearchNormalization || 
-                      s_LocationNeedsGeneSearchNormalization( h, feat_it->GetLocation() ) );
-                if( needGeneSearchNormalization ) {
-                    // disregard strands by setting both to the same strand
-                    s_CopyAndSetStrandOnCopy( loc_this_iteration,      eNa_strand_plus ); // The plus is arbitrary
-                    s_CopyAndSetStrandOnCopy( feat_loc_this_iteration, eNa_strand_plus ); // The plus is arbitrary
-                    overlap_type_this_iteration = 
-                        s_OverlapTypeGeneSearchNormalization( overlap_type_this_iteration );
-                }
-
-                // treat subset as a special case
-                Int8 cur_diff = ( !revert_locations ) ?
-                    TestForOverlap64(*feat_loc_this_iteration,
-                                     *loc_this_iteration,
-                                     overlap_type_this_iteration,
-                                     circular_length,
-                                     &scope) :
-                    TestForOverlap64(*loc_this_iteration,
-                                     *feat_loc_this_iteration,             
-                                     overlap_type_this_iteration,
-                                     circular_length,
-                                     &scope);
-                if (cur_diff < 0) {
-                    continue;
-                }
-
-                TMappedFeatScore sc(cur_diff, *feat_it);
-                feats.push_back(sc);
-            }
-        }
-        else {
-            CFeat_CI feat_it(scope, loc, sel);
-            for ( ;  feat_it;  ++feat_it) {
-                // treat subset as a special case
-                Int8 cur_diff = ( !revert_locations ) ?
-                    TestForOverlap64(feat_it->GetLocation(),
-                                     loc,
-                                     overlap_type,
-                                     circular_length,
-                                     &scope) :
-                    TestForOverlap64(loc,
-                                     feat_it->GetLocation(),
-                                     overlap_type,
-                                     circular_length,
-                                     &scope);
-                if (cur_diff < 0) {
-                    continue;
-                }
-
-                TMappedFeatScore sc(cur_diff, *feat_it);
-                feats.push_back(sc);
-            }
-        }
-    }
-    catch (CException&) {
-        _TRACE("GetOverlappingFeatures(): error: feature iterator failed");
-    }
-}
-
-static
-CMappedFeat GetBestOverlappingFeat(CScope& scope,
-                                   const CSeq_loc& loc,
-                                   CSeqFeatData::ESubtype feat_subtype,
-                                   sequence::EOverlapType overlap_type,
-                                   TBestFeatOpts opts,
-                                   const SAnnotSelector* base_sel)
-{
-    TMappedFeatScores scores;
-    GetOverlappingFeatures(scope, loc,
-        CSeqFeatData::GetTypeFromSubtype(feat_subtype), feat_subtype,
-        overlap_type, scores, base_sel, opts);
-
-    if ( !scores.empty() ) {
-        if (opts & fBestFeat_FavorLonger) {
-            return max_element(scores.begin(), scores.end())->second;
-        }
-        else {
-            return min_element(scores.begin(), scores.end())->second;
-        }
-    }
-    return CMappedFeat();
-}
 
 CMappedFeat CFeatTree::GetBestGene(const CMappedFeat& feat,
                                    EBestGeneType lookup_type)
@@ -2783,6 +2539,179 @@ GetBestParentForFeat(const CMappedFeat& feat,
     }
     return feat_tree->GetParent(feat, parent_type);
 }
+
+
+typedef pair<Int8, CMappedFeat> TMappedFeatScore;
+typedef vector<TMappedFeatScore> TMappedFeatScores;
+
+static
+void GetOverlappingFeatures(CScope& scope, const CSeq_loc& loc,
+                            CSeqFeatData::E_Choice feat_type,
+                            CSeqFeatData::ESubtype feat_subtype,
+                            sequence::EOverlapType overlap_type,
+                            TMappedFeatScores& feats,
+                            const SAnnotSelector* base_sel)
+{
+    bool revert_locations = false;
+    SAnnotSelector::EOverlapType annot_overlap_type;
+    switch (overlap_type) {
+    case eOverlap_Simple:
+    case eOverlap_Contained:
+    case eOverlap_Contains:
+        // Require total range overlap
+        annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
+        break;
+    case eOverlap_Subset:
+    case eOverlap_SubsetRev:
+    case eOverlap_CheckIntervals:
+    case eOverlap_Interval:
+    case eOverlap_CheckIntRev:
+        revert_locations = true;
+        // there's no break here - proceed to "default"
+    default:
+        // Require intervals overlap
+        annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
+        break;
+    }
+
+    CConstRef<CSeq_feat> feat_ref;
+
+    CBioseq_Handle h;
+    CRange<TSeqPos> range;
+    ENa_strand strand = eNa_strand_unknown;
+    if ( loc.IsWhole() ) {
+        h = scope.GetBioseqHandle(loc.GetWhole());
+        range = range.GetWhole();
+    }
+    else if ( loc.IsInt() ) {
+        const CSeq_interval& interval = loc.GetInt();
+        h = scope.GetBioseqHandle(interval.GetId());
+        range.SetFrom(interval.GetFrom());
+        range.SetTo(interval.GetTo());
+        if ( interval.IsSetStrand() ) {
+            strand = interval.GetStrand();
+        }
+    }
+    else {
+        range = range.GetEmpty();
+    }
+
+    // Check if the sequence is circular
+    TSeqPos circular_length = kInvalidSeqPos;
+    if ( h ) {
+        if ( h.IsSetInst_Topology() &&
+             h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+            circular_length = h.GetBioseqLength();
+        }
+    }
+    else {
+        try {
+            const CSeq_id* single_id = 0;
+            try {
+                loc.CheckId(single_id);
+            }
+            catch (CException&) {
+                single_id = 0;
+            }
+            if ( single_id ) {
+                CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
+                if ( h && h.IsSetInst_Topology() &&
+                     h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                    circular_length = h.GetBioseqLength();
+                }
+            }
+        }
+        catch (CException& _DEBUG_ARG(e)) {
+            _TRACE("test for circularity failed: " << e.GetMsg());
+        }
+    }
+
+    try {
+        SAnnotSelector sel;
+        if ( base_sel ) {
+            sel = *base_sel;
+        }
+        else {
+            sel.SetResolveAll().SetAdaptiveDepth();
+        }
+        sel.SetFeatSubtype(feat_subtype).SetOverlapType(annot_overlap_type);
+        if ( h ) {
+            CFeat_CI feat_it(h, range, strand, sel);
+            for ( ;  feat_it;  ++feat_it) {
+                // treat subset as a special case
+                Int8 cur_diff = ( !revert_locations ) ?
+                    TestForOverlap64(feat_it->GetLocation(),
+                                     loc,
+                                     overlap_type,
+                                     circular_length,
+                                     &scope) :
+                    TestForOverlap64(loc,
+                                     feat_it->GetLocation(),
+                                     overlap_type,
+                                     circular_length,
+                                     &scope);
+                if (cur_diff < 0) {
+                    continue;
+                }
+
+                TMappedFeatScore sc(cur_diff, *feat_it);
+                feats.push_back(sc);
+            }
+        }
+        else {
+            CFeat_CI feat_it(scope, loc, sel);
+            for ( ;  feat_it;  ++feat_it) {
+                // treat subset as a special case
+                Int8 cur_diff = ( !revert_locations ) ?
+                    TestForOverlap64(feat_it->GetLocation(),
+                                     loc,
+                                     overlap_type,
+                                     circular_length,
+                                     &scope) :
+                    TestForOverlap64(loc,
+                                     feat_it->GetLocation(),
+                                     overlap_type,
+                                     circular_length,
+                                     &scope);
+                if (cur_diff < 0) {
+                    continue;
+                }
+
+                TMappedFeatScore sc(cur_diff, *feat_it);
+                feats.push_back(sc);
+            }
+        }
+    }
+    catch (CException&) {
+        _TRACE("GetOverlappingFeatures(): error: feature iterator failed");
+    }
+}
+
+
+static
+CMappedFeat GetBestOverlappingFeat(CScope& scope,
+                                   const CSeq_loc& loc,
+                                   CSeqFeatData::ESubtype feat_subtype,
+                                   sequence::EOverlapType overlap_type,
+                                   TBestFeatOpts opts,
+                                   const SAnnotSelector* base_sel)
+{
+    TMappedFeatScores scores;
+    GetOverlappingFeatures(scope, loc,
+        CSeqFeatData::GetTypeFromSubtype(feat_subtype), feat_subtype,
+        overlap_type, scores, base_sel);
+
+    if ( !scores.empty() ) {
+        if (opts & fBestFeat_FavorLonger) {
+            return max_element(scores.begin(), scores.end())->second;
+        }
+        else {
+            return min_element(scores.begin(), scores.end())->second;
+        }
+    }
+    return CMappedFeat();
+}
+
 
 CMappedFeat
 GetBestOverlappingFeat(const CMappedFeat& feat,

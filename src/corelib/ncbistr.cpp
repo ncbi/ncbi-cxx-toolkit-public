@@ -53,7 +53,7 @@
 BEGIN_NCBI_SCOPE
 
 
-// Hex symbols (up to base 36)
+// Hex symbols (upt ot base 36)
 static const char s_Hex[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 

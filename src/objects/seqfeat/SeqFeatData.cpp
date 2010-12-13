@@ -2338,6 +2338,7 @@ START_SUBTYPE(site)  //  same as misc_feature
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
@@ -2408,6 +2409,7 @@ START_SUBTYPE(het)  //  same as misc_feature
 END_SUBTYPE
 
 START_SUBTYPE(mobile_element)
+    ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);

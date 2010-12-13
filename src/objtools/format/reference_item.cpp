@@ -1133,10 +1133,9 @@ void CReferenceItem::FormatAuthors(const CAuth_list& alp, string& auth)
         ++it;
         // TODO: might want to remove "et al" detection once we've moved over to the C++ toolkit.
         // It's here to make the diffs match.
-        if( (it == last) &&
-            ( it->length() <= 6 ) &&
+        if( (it != authors.end()) && 
             ( NStr::StartsWith(*it, "et al", NStr::eNocase) || NStr::StartsWith(*it, "et,al", NStr::eNocase) ) ) {
-                separator = " ";
+                separator = ", ";
         } else if (it == last) {
             separator = " and ";
         } else {
@@ -1183,21 +1182,6 @@ void CReferenceItem::x_CleanData(void)
     ExpandTildes(m_Remark, eTilde_newline);
 }
 
-// Unfortunately, some compilers won't let us pass
-// islower straight to STL algorithms
-class CIsLowercase {
-public:
-    bool operator()( const char ch ) {
-        return islower(ch);
-    }
-};
-
-static
-bool s_ContainsNoLowercase( const string &str ) 
-{
-    return ( find_if( str.begin(), str.end(), CIsLowercase() ) == str.end() );
-}
-
 void CReferenceItem::x_CapitalizeTitleIfNecessary()
 {
     if( ! GetPubdesc().CanGetPub() ) {
@@ -1214,15 +1198,8 @@ void CReferenceItem::x_CapitalizeTitleIfNecessary()
         switch( pub.Which() ) {
             case CPub::e_Proc:
             case CPub::e_Man:
-                if(  m_Title.length() > 3 ) {
-                    // capitalize the title before checking for all caps
-                    m_Title[0] = toupper( m_Title[0] );
-                    if( s_ContainsNoLowercase(m_Title) ) {
-                        NStr::ToLower( m_Title );
-                        // we undid the earlier uppercasing step.  Slightly slower, but
-                        // the code is a little cleaner
-                        m_Title[0] = toupper( m_Title[0] );
-                    }
+                if(  ! m_Title.empty() ) {
+                    m_Title[0] = toupper( m_Title[0] ); // capitalize the title
                     return;
                 }
                 break;
@@ -1295,7 +1272,6 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
             if (!NStr::EndsWith(l.back(), '.')) {
                 AddPeriod(l.back());
             }
-            NStr::ReplaceInPlace( l.back(), "\"", "\'" );
         }
 
         // Poly_a
@@ -1327,8 +1303,6 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                 if (ret.IsSetExp()  &&
                                     !ret.GetExp().empty() ) {
                                     l.push_back("Erratum:[" + ret.GetExp() + "]");
-                                } else {
-                                    l.push_back("Erratum");
                                 }
                                 break;
 
@@ -1336,8 +1310,6 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                 if (ret.IsSetExp()  &&
                                     !ret.GetExp().empty() ) {
                                     l.push_back("Retracted:[" + ret.GetExp() + "]");
-                                } else {
-                                    l.push_back("Retracted");
                                 }
                                 break;
 
@@ -1345,8 +1317,6 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                 if (ret.IsSetExp()  &&
                                     !ret.GetExp().empty() ) {
                                     l.push_back("Correction to:[" + ret.GetExp() + "]");
-                                } else {
-                                    l.push_back("Correction");
                                 }
                                 break;
 
@@ -1554,21 +1524,9 @@ bool LessThan::operator()
     string auth1, auth2;
     if (ref1->IsSetAuthors()) {
         CReferenceItem::FormatAuthors(ref1->GetAuthors(), auth1);
-        if( ! ref1->GetConsortium().empty() ) {
-            if( ! auth1.empty() ) {
-                auth1 += "; ";
-            }
-            auth1 += ref1->GetConsortium();
-        }
     }
     if (ref2->IsSetAuthors()) {
         CReferenceItem::FormatAuthors(ref2->GetAuthors(), auth2);
-        if( ! ref2->GetConsortium().empty() ) {
-            if( ! auth2.empty() ) {
-                auth2 += "; ";
-            }
-            auth2 += ref2->GetConsortium();
-        }
     }
     int comp = NStr::CompareNocase(auth1, auth2);
     if ( comp != 0 ) {
