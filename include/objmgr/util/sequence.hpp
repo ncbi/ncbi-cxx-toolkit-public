@@ -319,11 +319,6 @@ enum EBestFeatOpts {
     /// favor longer features over shorter features
     fBestFeat_FavorLonger = 0x04,
 
-    /// when comparing locations, if either location is mixed or in a bad
-    /// order, sort the location and ignore strands when comparing,
-    /// and convert subset matching to extremes matching.
-    fBestFeat_GeneSearchNormalization = 0x08,
-
     /// default options: do everything
     fBestFeat_Defaults = 0
 };
@@ -343,8 +338,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                             CSeqFeatData::ESubtype feat_subtype,
                             EOverlapType overlap_type,
                             TFeatScores& feats,
-                            CScope& scope,
-                            const TBestFeatOpts opts = 0 );
+                            CScope& scope);
 
 
 /// overlap_type defines how the location must be related to the feature.
