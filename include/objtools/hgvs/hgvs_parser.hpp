@@ -82,8 +82,8 @@ USING_SCOPE(objects);
 class CHgvsParser : public CObject
 {
 public:
-    CHgvsParser(CRef<CScope> scope)
-       : m_scope(scope)
+    CHgvsParser(CScope& scope)
+       : m_scope(&scope)
     {}
 
     CRef<CSeq_feat> AsVariationFeat(const string& hgvs_expression);

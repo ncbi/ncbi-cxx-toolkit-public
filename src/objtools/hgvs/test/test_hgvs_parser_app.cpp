@@ -173,7 +173,7 @@ NCBITEST_INIT_TREE()
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
     scope->AddDefaults();
-    CRef<CHgvsParser> parser(new CHgvsParser(scope));
+    CRef<CHgvsParser> parser(new CHgvsParser(*scope));
     CException::SetStackTraceLevel(eDiag_Trace);
 
     LOG_POST("Initialized...");
