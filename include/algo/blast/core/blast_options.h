@@ -119,7 +119,7 @@ extern "C" {
                                          based gapped extensions) */
 #define BLAST_GAP_X_DROPOFF_NUCL 30 /**< default dropoff for non-greedy
                                          nucleotide gapped extensions */
-#define BLAST_GAP_X_DROPOFF_GREEDY 30 /**< default dropoff for greedy
+#define BLAST_GAP_X_DROPOFF_GREEDY 25 /**< default dropoff for greedy
                                          nucleotide gapped extensions */
 #define BLAST_GAP_X_DROPOFF_TBLASTX 0 /**< default dropoff for tblastx */
 

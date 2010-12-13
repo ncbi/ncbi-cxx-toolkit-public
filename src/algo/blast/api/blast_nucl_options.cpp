@@ -155,7 +155,7 @@ CBlastNucleotideOptionsHandle::SetGappedExtensionDefaults()
 void
 CBlastNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
 {
-    SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
+    SetGapXDropoff(BLAST_GAP_X_DROPOFF_GREEDY);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
     SetGapExtnAlgorithm(eGreedyScoreOnly);
