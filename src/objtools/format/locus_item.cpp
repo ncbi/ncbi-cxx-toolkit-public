@@ -100,6 +100,11 @@ void CLocusItem::x_GatherInfo(CBioseqContext& ctx)
 
     // NB: order of execution is important, as some values depend on others
     x_SetName(ctx);
+    // !!!!!!!!!!!!!!!!!!!!!!!!!
+    // TODO: remove this line before committing
+    if( m_Name == "AAO41580" ) {
+        cerr << "";
+    }
     x_SetLength(ctx);
     x_SetBiomol(ctx);   // must come befoer x_SetStrand
     x_SetStrand(ctx);

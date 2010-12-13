@@ -513,7 +513,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
         CRef< CDbtag > new_db( new CDbtag );
 
         const string &db_xref_str = db_xref_iter->value;
-        string::size_type colon_location = db_xref_str.find( ":" );
+        int colon_location = db_xref_str.find( ":" );
         if( colon_location == string::npos ) {
             // no colon: it's just tag, and db is unknown
             colon_location = -1; // we imagine the colon to be just before the start of the string

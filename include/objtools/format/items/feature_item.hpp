@@ -175,7 +175,8 @@ protected:
 
     bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
-        CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem );
+        CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem ) const;
+    bool x_CanUseExtremesToFindGene( CBioseqContext& ctx ) const;
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );

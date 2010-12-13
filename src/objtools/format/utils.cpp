@@ -175,7 +175,7 @@ void ExpandTildes(string& s, ETildeStyle style)
             } else {
                 // plain "~" expands to ";\n", unless it's after a space or semi-colon, in
                 // which case it becomes a plain "\n"
-                char prevChar = ( tilde - 1 >= 0 ? s[tilde - 1] : '\0' );
+                char prevChar = ( tilde >= 1 ? s[tilde - 1] : '\0' );
 
                 if( ' ' == prevChar || ';' == prevChar ) {
                     result += '\n';
@@ -344,6 +344,7 @@ void TrimSpaces(string& str, int indent)
     }
 }
 
+// needed because not all compilers will just let you pass "isgraph" to STL find_if
 class CIsGraph
 {
 public:
@@ -417,56 +418,142 @@ string &CompressSpaces( string& str, const bool trim_beginning, const bool trim_
 
 void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 {
-    if (str.empty()) {
+    // TODO: This commented out code represents how ellipsis trimming
+    // should work.  However, for compatibility with C, we're using a
+    // (in my opinion) suboptimal algorithm.  We can switch over later.
+
+    //if (str.empty()) {
+    //    return;
+    //}
+
+    //size_t strlen = str.length();
+    //size_t begin = 0;
+
+    //// trim unprintable characters (and space) off the beginning
+    //while (begin != strlen) {
+    //    unsigned char ch = str[begin];
+    //    if (ch > ' ') {
+    //        break;
+    //    } else {
+    //        ++begin;
+    //    }
+    //}
+
+    //// we're done if we trimmed the string to nothing
+    //if (begin == strlen) {
+    //    str.erase();
+    //    return;
+    //}
+
+    //// trim junk off the end (while we're at it, record whether we're chopping off a period)
+    //size_t end = strlen - 1;
+    //bool has_period = false;
+    //while (end > begin) {
+    //    unsigned char ch = str[end];
+    //    if (ch <= ' '  ||  ch == '.'  ||  ch ==  ','  ||  ch == '~'  ||  ch == ';') {
+    //        has_period = (has_period  ||  ch == '.');
+    //        --end;
+    //    } else {
+    //        break;
+    //    }
+    //}
+
+    //// check whether we're about to chop off an ellipsis, so we remember to add it back
+    //// TODO: There's got to be a more efficient way of doing this
+    //const bool weChoppedOffAnEllipsis = ( NPOS != NStr::Find(str, "...", end) );
+
+    //// do the actual chopping here
+    //str = str.substr( begin, end + 1 );
+
+    //// restore chopped off ellipsis or period, if any
+    //if ( allow_ellipsis && weChoppedOffAnEllipsis ) {
+    //    str += "...";
+    //} else if (has_period) {
+    //    // re-add any periods if we had one before
+    //    str += '.';
+    //}
+
+    // This is based on the C function TrimSpacesAndJunkFromEnds.
+    // Although it's updated to use iterators and such, it should
+    // have the same output.
+
+    if ( str.empty() ) {
         return;
     }
 
-    size_t strlen = str.length();
-    size_t begin = 0;
+    // build the output here
+    string result;
 
-    // trim unprintable characters (and space) off the beginning
-    while (begin != strlen) {
-        unsigned char ch = str[begin];
-        if (ch > ' ') {
-            break;
+    // we will read from input_iter and write to result_insert_iter
+    
+
+    // if input starts with space, copy the part after the initial space to the destination
+    if ( result[0] <= ' ') {
+        string::iterator input_iter = str.begin();
+        while ( input_iter != str.end() && *input_iter <= ' ') {
+            input_iter++;
+        }
+        copy( input_iter, str.end(), back_inserter(result) );
+    }
+
+    // make start_of_junk_pos hold the beginning of the "junk" at the end
+    // (where junk is defined as one of several characters)
+    // while we're at it, also check if the junk contains a tilde and/or period
+    bool isPeriod = false;
+    bool isTilde = false;
+    int start_of_junk_pos = result.length() - 1;
+    for( ; start_of_junk_pos >= 0 ; --start_of_junk_pos ) {
+        const char ch = result[start_of_junk_pos];
+        if (ch <= ' ' || ch == '.' || ch == ',' || ch == '~' || ch == ';') {
+            // found junk character
+
+            // also, keep track if the junk includes a period and/or tilde
+            isPeriod = (isPeriod || ch == '.');
+            isTilde = (isTilde || ch == '~');
         } else {
-            ++begin;
+            // found non-junk character.  Last junk character is just after this
+            ++start_of_junk_pos;
+            break;
+        }
+    }
+    // special case of the whole string being junk
+    if( start_of_junk_pos < 0 ) {
+        start_of_junk_pos = 0;
+    }
+
+    // if there's junk, chop it off (but leave period/tildes/ellipsis as appropriate)
+    if ( start_of_junk_pos < (int)result.length() ) {
+
+        // holds the suffix to add after we remove the junk
+        const char * suffix = ""; // by default, just remove junk
+
+        const int chars_in_junk = ( result.length() - start_of_junk_pos );
+        _ASSERT( chars_in_junk >= 1 );
+        // allow one period at end
+        if (isPeriod) {
+            // check if we should put an ellipsis, or just a period
+            const bool putEllipsis = ( allow_ellipsis && (chars_in_junk >= 3) && 
+                result[chars_in_junk+1] == '.' && result[chars_in_junk+2] == '.' );
+
+            if( putEllipsis ) {
+                suffix = "...";
+            } else {
+                suffix = ".";
+            }
+        } else if (isTilde && (chars_in_junk >= 2) ) {
+            // allow double tilde at end
+            if ( result[chars_in_junk] == '~' && result[chars_in_junk+1] == '~' ) {
+                suffix = "~~";
+            }
+        }
+        result.erase( start_of_junk_pos );
+        if( suffix[0] != '\0' ) {
+            result += suffix;
         }
     }
 
-    // we're done if we trimmed the string to nothing
-    if (begin == strlen) {
-        str.erase();
-        return;
-    }
-
-    // trim junk off the end (while we're at it, record whether we're chopping off a period)
-    size_t end = strlen - 1;
-    bool has_period = false;
-    while (end > begin) {
-        unsigned char ch = str[end];
-        if (ch <= ' '  ||  ch == '.'  ||  ch ==  ','  ||  ch == '~'  ||  ch == ';') {
-            has_period = (has_period  ||  ch == '.');
-            --end;
-        } else {
-            break;
-        }
-    }
-
-    // check whether we're about to chop off an ellipsis, so we remember to add it back
-    // TODO: There's got to be a more efficient way of doing this
-    const bool weChoppedOffAnEllipsis = ( NPOS != NStr::Find(str, "...", end) );
-
-    // do the actual chopping here
-    str = str.substr( begin, end + 1 );
-
-    // restore chopped off ellipsis or period, if any
-    if ( allow_ellipsis && weChoppedOffAnEllipsis ) {
-        str += "...";
-    } else if (has_period) {
-        // re-add any periods if we had one before
-        str += '.';
-    }
+    // set the output to the correct result
+    str.swap( result );
 }
 
 

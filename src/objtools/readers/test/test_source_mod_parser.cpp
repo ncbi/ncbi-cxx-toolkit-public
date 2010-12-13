@@ -45,6 +45,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 
 #include <common/test_assert.h>
@@ -65,7 +66,11 @@ void CSourceModParserTestApp::Init(void)
                               "Simple test of CSourceModParser");
 
     arg_desc->AddDefaultKey
-        ("in", "InputFile", "Location of (FASTA-format) input",
+        ("fasta", "InputFile", "Location of (FASTA-format) input",
+         CArgDescriptions::eInputFile, "-");
+
+    arg_desc->AddDefaultKey
+        ("feattbl", "InputFile", "Location of (5-column feature table) input",
          CArgDescriptions::eInputFile, "-");
 
     arg_desc->AddDefaultKey
@@ -73,7 +78,7 @@ void CSourceModParserTestApp::Init(void)
          CArgDescriptions::eOutputFile, "-");
 
     arg_desc->AddDefaultKey
-        ("org", "Organism", "Organism name to use by defaulte",
+        ("org", "Organism", "Organism name to use by default",
          CArgDescriptions::eString, "");
 
     SetupArgDescriptions(arg_desc.release());
@@ -118,10 +123,13 @@ void s_Visit(CSeq_entry& entry, CObjectOStream& oos /*, const string& org */ )
 int CSourceModParserTestApp::Run(void)
 {
     const CArgs&      args = GetArgs();
-    CFastaReader      reader( args["in"].AsString(), CFastaReader::fAddMods );
+    CFastaReader      reader( args["fasta"].AsString(), CFastaReader::fAddMods );
     CRef<CSeq_entry>  entry(reader.ReadSet());
     CObjectOStreamAsn oos(args["out"].AsOutputFile());
 
+    CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry );
+
+    // print out result
     s_Visit(*entry, oos /*, args["org"].AsString() */ );
 
     return 0;

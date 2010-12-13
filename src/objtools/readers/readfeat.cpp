@@ -54,6 +54,9 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/seq/Pubdesc.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -158,6 +161,7 @@ public:
         eQual_rpt_unit,
         eQual_rpt_unit_range,
         eQual_rpt_unit_seq,
+        eQual_satellite,
         eQual_sec_str_type,
         eQual_secondary_accession,
         eQual_sequence,
@@ -406,6 +410,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "gene",                 CFeature_table_reader_imp::eQual_gene                 ),
     TQualKey ( "gene_desc",            CFeature_table_reader_imp::eQual_gene_desc            ),
     TQualKey ( "gene_syn",             CFeature_table_reader_imp::eQual_gene_syn             ),
+    TQualKey ( "gene_synonym",         CFeature_table_reader_imp::eQual_gene_syn             ),
     TQualKey ( "go_component",         CFeature_table_reader_imp::eQual_go_component         ),
     TQualKey ( "go_function",          CFeature_table_reader_imp::eQual_go_function          ),
     TQualKey ( "go_process",           CFeature_table_reader_imp::eQual_go_process           ),
@@ -434,6 +439,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "prot_note",            CFeature_table_reader_imp::eQual_prot_note            ),
     TQualKey ( "protein_id",           CFeature_table_reader_imp::eQual_protein_id           ),
     TQualKey ( "pseudo",               CFeature_table_reader_imp::eQual_pseudo               ),
+    TQualKey ( "PubMed",               CFeature_table_reader_imp::eQual_PubMed               ),
     TQualKey ( "replace",              CFeature_table_reader_imp::eQual_replace              ),
     TQualKey ( "ribosomal_slippage",   CFeature_table_reader_imp::eQual_ribosomal_slippage   ),
     TQualKey ( "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family           ),
@@ -441,6 +447,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "rpt_unit",             CFeature_table_reader_imp::eQual_rpt_unit             ),
     TQualKey ( "rpt_unit_range",       CFeature_table_reader_imp::eQual_rpt_unit_range       ),
     TQualKey ( "rpt_unit_seq",         CFeature_table_reader_imp::eQual_rpt_unit_seq         ),
+    TQualKey ( "satellite",            CFeature_table_reader_imp::eQual_satellite            ),
     TQualKey ( "sec_str_type",         CFeature_table_reader_imp::eQual_sec_str_type         ),
     TQualKey ( "secondary_accession",  CFeature_table_reader_imp::eQual_secondary_accession  ),
     TQualKey ( "secondary_accessions", CFeature_table_reader_imp::eQual_secondary_accession  ),
@@ -1053,6 +1060,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
 )
 
 {
+    const char *str = NULL;
+
     CSeqFeatData::ESubtype subtype = sfdata.GetSubtype ();
     switch (subtype) {
         case CSeqFeatData::eSubtype_variation:
@@ -1069,15 +1078,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
                     case eQual_snp_maxrate:
                     case eQual_snp_valid:
                     case eQual_weight:
-                        {
-                            CSeq_feat::TExt& ext = sfp->SetExt ();
-                            CObject_id& obj = ext.SetType ();
-                            if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
-                                obj.SetStr ("dbSnpSynonymyData");
-                            }
-                            ext.AddField (qual, val, CUser_object::eParse_Number);
-                            return true;
-                        }
+                        str = "dbSnpSynonymyData";
+                        break;
                     default:
                         break;
                 }
@@ -1088,15 +1090,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
                     case eQual_sts_aliases:
                     case eQual_sts_dsegs:
                     case eQual_weight:
-                        {
-                            CSeq_feat::TExt& ext = sfp->SetExt ();
-                            CObject_id& obj = ext.SetType ();
-                            if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
-                                obj.SetStr ("stsUserObject");
-                            }
-                            ext.AddField (qual, val, CUser_object::eParse_Number);
-                            return true;
-                        }
+                        str = "stsUserObject";
+                        break;
                     default:
                         break;
                 }
@@ -1110,21 +1105,24 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
                     case eQual_sequence:
                     case eQual_STS:
                     case eQual_weight:
-                        {
-                            CSeq_feat::TExt& ext = sfp->SetExt ();
-                            CObject_id& obj = ext.SetType ();
-                            if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
-                                obj.SetStr ("cloneUserObject");
-                            }
-                            ext.AddField (qual, val, CUser_object::eParse_Number);
-                            return true;
-                        }
+                        str = "cloneUserObject";
+                        break;
                     default:
                         break;
                 }
             }
         default:
             break;
+    }
+
+    if( NULL != str ) {
+        CSeq_feat::TExt& ext = sfp->SetExt ();
+        CObject_id& obj = ext.SetType ();
+        if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
+            obj.SetStr ();
+        }
+        ext.AddField (qual, val, CUser_object::eParse_Number);
+        return true;
     }
 
     return false;
@@ -1325,10 +1323,33 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case CSeqFeatData::e_Site:
                     if (qtype == eQual_site_type) {
                         CSeqFeatData::ESite styp = CSeqFeatData::eSite_other;
-                        if (CSeqFeatData::GetSiteList()->IsSiteName(val.c_str(), styp)) {
+                        if (CSeqFeatData::GetSiteList()->IsSiteName( val.c_str(), styp)) {
                             sfdata.SetSite (styp);
                             return true;
                         }
+                    }
+                    break;
+                case CSeqFeatData::e_Pub:
+                    if( qtype == eQual_PubMed ) {
+                        CRef<CPub> new_pub( new CPub );
+                        new_pub->SetPmid( CPubMedId( NStr::StringToInt(val) ) );
+                        sfdata.SetPub().SetPub().Set().push_back( new_pub );
+                        return true;
+                    }
+                    break;
+                case CSeqFeatData::e_Prot:
+                    switch( qtype ) {
+                    case eQual_product:
+                        sfdata.SetProt().SetName().push_back( val );
+                        return true;
+                    case eQual_function:
+                        sfdata.SetProt().SetActivity().push_back( val );
+                        return true;
+                    case eQual_EC_number:
+                        sfdata.SetProt().SetEc().push_back( val );
+                        return true;
+                    default:
+                        break;
                     }
                     break;
                 default:
@@ -1374,9 +1395,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     }
                 case eQual_inference:
                     {
-						string prefix = "", remainder = "";
-						CInferencePrefixList::GetPrefixAndRemainder (val, prefix, remainder);
-						if (!NStr::IsBlank(prefix) && NStr::StartsWith (val, prefix, NStr::eNocase)) {
+                        string prefix = "", remainder = "";
+                        CInferencePrefixList::GetPrefixAndRemainder (val, prefix, remainder);
+                        if (!NStr::IsBlank(prefix) && NStr::StartsWith (val, prefix, NStr::eNocase)) {
                             x_AddGBQualToFeature (sfp, qual, val);
                             return true;
                         }
@@ -1404,6 +1425,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_phenotype:
                 case eQual_product:
                 case eQual_protein_id:
+                case eQual_satellite:
                 case eQual_replace:
                 case eQual_rpt_family:
                 case eQual_rpt_type:
@@ -1646,6 +1668,11 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
                 
             } else if (typ == CSeqFeatData::e_Site) {
                 sfdata.SetSite (CSeqFeatData::eSite_other);
+            } else if (typ == CSeqFeatData::e_Prot ) {
+                CProt_ref &prot_ref = sfdata.SetProt();
+                if( sbtyp == CSeqFeatData::eSubtype_mat_peptide_aa ) {
+                    prot_ref.SetProcessed( CProt_ref::eProcessed_mature );
+                }
             }
 
             return true;
@@ -1758,6 +1785,12 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                         CRef<CSeq_loc> location (new CSeq_loc);
                         sfp->SetLocation (*location);
+
+                        // see if location has to be adjusted (e.g. to convert from nuc to prot or whatever)
+                        if( sfp->CanGetData() && sfp->GetData().IsProt() ) {
+                            start /= 3;
+                            stop = (stop - 2) / 3;
+                        }
 
                         // and add first interval
                         x_AddIntervalToFeature (sfp, location->SetMix(), 
