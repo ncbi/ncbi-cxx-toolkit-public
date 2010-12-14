@@ -3558,8 +3558,8 @@ static EIO_Status s_Close(SOCK sock, int abort)
 
 
 /* Connect the (pre-allocated) socket to the specified "host:port"/"file" peer.
- * HINT: if "host" is NULL then connect to the same host;
- *       the same is for zero "port".
+ * HINT: if "host" is NULL then keep the original host;
+ *       likewise for zero "port".
  * NOTE: Client-side stream sockets only.
  */
 static EIO_Status s_Connect(SOCK            sock,
@@ -3631,8 +3631,7 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif /*NCBI_OS_UNIX*/
     {
         /* get address of the remote host (assume the same host if NULL) */
-        if (host  &&  *host
-            &&  !(sock->host = s_gethostbyname(host, (ESwitch) sock->log))) {
+        if (host && !(sock->host = s_gethostbyname(host, (ESwitch)sock->log))){
             CORE_LOGF_X(22, eLOG_Error,
                         ("%s[SOCK::Connect] "
                          " Failed SOCK_gethostbyname(\"%.64s\")",
@@ -5255,15 +5254,13 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
         assert(0);
         return eIO_InvalidArg;
     }
-    if (host  &&  !*host)
-        host = 0;
 
 #ifdef NCBI_OS_UNIX
     if (sock->path[0]  &&  (host  ||  port)) {
         CORE_LOGF_X(53, eLOG_Error,
                     ("%s[SOCK::Reconnect] "
                      " Unable to reconnect UNIX socket as INET at \"%s:%hu\"",
-                     s_ID(sock, _id), host, port));
+                     s_ID(sock, _id), host ? host : "", port));
         assert(0);
         return eIO_InvalidArg;
     }
