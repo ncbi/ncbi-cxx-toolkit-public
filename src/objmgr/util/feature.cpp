@@ -1379,93 +1379,9 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
 }
 
 
-CFeatTree::CFeatTree(void)
-    : m_AssignedParents(0),
-      m_AssignedGenes(0),
-      m_FeatIdMode(eFeatId_by_type),
-      m_BestGeneFeatIdMode(eBestGeneFeatId_always),
-      m_GeneCheckMode(eGeneCheck_match),
-      m_SNPStrandMode(eSNPStrand_both)
-{
-}
-
-
-CFeatTree::CFeatTree(CFeat_CI it)
-    : m_AssignedParents(0),
-      m_AssignedGenes(0),
-      m_FeatIdMode(eFeatId_by_type),
-      m_BestGeneFeatIdMode(eBestGeneFeatId_always),
-      m_GeneCheckMode(eGeneCheck_match),
-      m_SNPStrandMode(eSNPStrand_both)
-{
-    AddFeatures(it);
-}
-
-
-CFeatTree::~CFeatTree(void)
-{
-}
-
-
-void CFeatTree::SetFeatIdMode(EFeatIdMode mode)
-{
-    m_FeatIdMode = mode;
-}
-
-
-void CFeatTree::SetGeneCheckMode(EGeneCheckMode mode)
-{
-    m_GeneCheckMode = mode;
-}
-
-
-void CFeatTree::SetSNPStrandMode(ESNPStrandMode mode)
-{
-    m_SNPStrandMode = mode;
-}
-
-
-void CFeatTree::AddFeatures(CFeat_CI it)
-{
-    for ( ; it; ++it ) {
-        AddFeature(*it);
-    }
-}
-
-
-void CFeatTree::AddFeature(const CMappedFeat& feat)
-{
-    CFeatInfo& info = m_InfoMap[feat.GetSeq_feat_Handle()];
-    info.m_Feat = feat;
-    info.m_TranscriptId = sx_GetTranscriptId(feat);
-}
-
-
-CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CMappedFeat& feat)
-{
-    return x_GetInfo(feat.GetSeq_feat_Handle());
-}
-
-
-CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CSeq_feat_Handle& feat)
-{
-    TInfoMap::iterator it = m_InfoMap.find(feat);
-    if ( it == m_InfoMap.end() ) {
-        NCBI_THROW(CObjMgrException, eFindFailed,
-                   "CFeatTree: feature not found");
-    }
-    return it->second;
-}
-
-
-CFeatTree::CFeatInfo* CFeatTree::x_FindInfo(const CSeq_feat_Handle& feat)
-{
-    TInfoMap::iterator it = m_InfoMap.find(feat);
-    if ( it == m_InfoMap.end() ) {
-        return 0;
-    }
-    return &it->second;
-}
+/////////////////////////////////////////////////////////////////////////////
+// CFeatTreeIndex
+/////////////////////////////////////////////////////////////////////////////
 
 
 namespace {
@@ -1566,35 +1482,213 @@ namespace {
     }
 
     typedef vector<SBestInfo> TBestArray;
+    typedef vector<SFeatRangeInfo> TRangeArray;
+    typedef vector<CFeatTree::CFeatInfo*> TInfoArray;
 
     inline
     Int1 s_GetParentQuality(const CFeatTree::CFeatInfo& feat,
-                             const CFeatTree::CFeatInfo& parent)
+                            const CFeatTree::CFeatInfo& parent)
     {
         return sx_GetTranscriptIdMatch(feat.m_TranscriptId,
                                        parent.m_TranscriptId);
     }
+
+    class CFeatTreeParentTypeIndex : public CObject
+    {
+    public:
+        CFeatTreeParentTypeIndex(CSeqFeatData::ESubtype type,
+                                 bool by_product)
+            : m_Type(type),
+              m_ByProduct(by_product),
+              m_IndexedParents(0)
+            {
+            }
+
+        TRangeArray& GetIndex(const TInfoArray& feats) {
+            if ( m_IndexedParents == feats.size() ) {
+                return m_Index;
+            }
+            for ( size_t ind = m_IndexedParents; ind < feats.size(); ++ind ) {
+                CFeatTree::CFeatInfo& feat_info = *feats[ind];
+                if ( feat_info.m_AddIndex < m_IndexedParents ||
+                     feat_info.m_Feat.GetFeatSubtype() != m_Type ||
+                     (m_ByProduct && !feat_info.m_Feat.IsSetProduct()) ) {
+                    continue;
+                }
+                SFeatRangeInfo range_info(feat_info, 0, m_ByProduct);
+                if ( range_info.m_Id ) {
+                    m_Index.push_back(range_info);
+                }
+                else {
+                    s_AddRanges(m_Index, feat_info, 0,
+                                m_ByProduct?
+                                feat_info.m_Feat.GetProduct():
+                                feat_info.m_Feat.GetLocation());
+                }
+            }
+            sort(m_Index.begin(), m_Index.end(), PLessByEnd());
+            m_IndexedParents = feats.size();
+            return m_Index;
+        }
+        
+    private:
+        CSeqFeatData::ESubtype m_Type;
+        bool m_ByProduct;
+        size_t m_IndexedParents;
+        TRangeArray m_Index;
+    };
 }
 
 
-void CFeatTree::x_CollectNeeded(TParentInfoMap& pinfo_map)
+class CFeatTreeIndex : public CObject
 {
-    // collect all necessary parent candidates
-    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
-        CFeatInfo& info = it->second;
-        CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
-        SFeatSet& feat_set = pinfo_map[feat_type];
-        if ( feat_set.m_NeedAll && !feat_set.m_CollectedAll ) {
-            feat_set.m_All.push_back(&info);
+public:
+    typedef pair<CSeqFeatData::ESubtype, bool> TParentKey;
+    typedef map<TParentKey, CRef<CFeatTreeParentTypeIndex> > TIndex;
+
+    TRangeArray& GetIndex(CSeqFeatData::ESubtype type,
+                          bool by_product,
+                          const TInfoArray& feats) {
+        CRef<CFeatTreeParentTypeIndex>& index =
+            m_Index[TParentKey(type, by_product)];
+        if ( !index ) {
+            index = new CFeatTreeParentTypeIndex(type, by_product);
+        }
+        return index->GetIndex(feats);
+    }
+
+    TRangeArray& GetIndex(const STypeLink& link, const TInfoArray& feats) {
+        return GetIndex(link.m_ParentType, link.m_ByProduct, feats);
+    }
+
+private:
+    TIndex m_Index;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CFeatTree
+/////////////////////////////////////////////////////////////////////////////
+
+CFeatTree::CFeatTree(void)
+{
+    x_Init();
+}
+
+
+CFeatTree::CFeatTree(CFeat_CI it)
+{
+    x_Init();
+    AddFeatures(it);
+}
+
+
+CFeatTree::~CFeatTree(void)
+{
+}
+
+
+CFeatTree::CFeatTree(const CFeatTree& ft)
+{
+    *this = ft;
+}
+
+
+CFeatTree& CFeatTree::operator=(const CFeatTree& ft)
+{
+    if ( this != &ft ) {
+        m_AssignedParents = 0;
+        m_AssignedGenes = 0;
+        m_InfoMap.clear();
+        m_InfoArray.clear();
+        m_RootInfo = CFeatInfo();
+        m_FeatIdMode = ft.m_FeatIdMode;
+        m_BestGeneFeatIdMode = ft.m_BestGeneFeatIdMode;
+        m_GeneCheckMode = ft.m_GeneCheckMode;
+        m_SNPStrandMode = ft.m_SNPStrandMode;
+        m_Index = null;
+        m_InfoArray.reserve(ft.m_InfoArray.size());
+        ITERATE ( TInfoArray, it, ft.m_InfoArray ) {
+            AddFeature((*it)->m_Feat);
         }
     }
-    // mark collected 
-    NON_CONST_ITERATE ( TParentInfoMap, it, pinfo_map ) {
-        SFeatSet& feat_set = *it;
-        if ( feat_set.m_NeedAll && !feat_set.m_CollectedAll ) {
-            feat_set.m_CollectedAll = true;
-        }
+    return *this;
+}
+
+
+void CFeatTree::x_Init(void)
+{
+    m_AssignedParents = 0;
+    m_AssignedGenes = 0;
+    m_FeatIdMode = eFeatId_by_type;
+    m_BestGeneFeatIdMode = eBestGeneFeatId_always;
+    m_GeneCheckMode = eGeneCheck_match;
+    m_SNPStrandMode = eSNPStrand_both;
+}
+
+
+void CFeatTree::SetFeatIdMode(EFeatIdMode mode)
+{
+    m_FeatIdMode = mode;
+}
+
+
+void CFeatTree::SetGeneCheckMode(EGeneCheckMode mode)
+{
+    m_GeneCheckMode = mode;
+}
+
+
+void CFeatTree::SetSNPStrandMode(ESNPStrandMode mode)
+{
+    m_SNPStrandMode = mode;
+}
+
+
+void CFeatTree::AddFeatures(CFeat_CI it)
+{
+    for ( ; it; ++it ) {
+        AddFeature(*it);
     }
+}
+
+
+void CFeatTree::AddFeature(const CMappedFeat& feat)
+{
+    _ASSERT(m_InfoMap.size() == m_InfoArray.size());
+    size_t index = m_InfoMap.size();
+    CFeatInfo& info = m_InfoMap[feat.GetSeq_feat_Handle()];
+    m_InfoArray.push_back(&info);
+    info.m_AddIndex = index;
+    info.m_Feat = feat;
+    info.m_TranscriptId = sx_GetTranscriptId(feat);
+}
+
+
+CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CMappedFeat& feat)
+{
+    return x_GetInfo(feat.GetSeq_feat_Handle());
+}
+
+
+CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CSeq_feat_Handle& feat)
+{
+    TInfoMap::iterator it = m_InfoMap.find(feat);
+    if ( it == m_InfoMap.end() ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CFeatTree: feature not found");
+    }
+    return it->second;
+}
+
+
+CFeatTree::CFeatInfo* CFeatTree::x_FindInfo(const CSeq_feat_Handle& feat)
+{
+    TInfoMap::iterator it = m_InfoMap.find(feat);
+    if ( it == m_InfoMap.end() ) {
+        return 0;
+    }
+    return &it->second;
 }
 
 
@@ -1728,14 +1822,11 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
 static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                                   TBestArray& bests,
                                   const STypeLink& link,
-                                  CFeatTree::TFeatArray& parents,
+                                  TRangeArray& pp,
                                   CFeatTree* tree)
 {
     _ASSERT(!features.empty());
-    _ASSERT(!parents.empty());
-    
-    typedef vector<SFeatRangeInfo> TRangeArray;
-    TRangeArray pp, cc;
+    _ASSERT(!pp.empty());
     
     bool check_genes = false;
     if ( tree->GetGeneCheckMode() == tree->eGeneCheck_match &&
@@ -1746,25 +1837,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
         check_genes = true;
     }
 
-    // collect parents parameters
-    ITERATE ( CFeatTree::TFeatArray, it, parents ) {
-        CFeatTree::CFeatInfo& feat_info = **it;
-        if ( link.m_ByProduct && !feat_info.m_Feat.IsSetProduct() ) {
-            continue;
-        }
-        SFeatRangeInfo range_info(feat_info, 0, link.m_ByProduct);
-        if ( range_info.m_Id ) {
-            pp.push_back(range_info);
-        }
-        else {
-            s_AddRanges(pp, feat_info, 0,
-                        link.m_ByProduct?
-                        feat_info.m_Feat.GetProduct():
-                        feat_info.m_Feat.GetLocation());
-        }
-    }
-    sort(pp.begin(), pp.end(), PLessByEnd());
-
+    TRangeArray cc;
     // collect children parameters
     size_t cnt = features.size();
     bests.resize(cnt);
@@ -1902,10 +1975,16 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
 
 
 void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
-                                         const STypeLink& link,
-                                         TFeatArray& parents)
+                                         const STypeLink& link)
 {
-    if ( features.empty() || parents.empty() ) {
+    if ( features.empty() ) {
+        return;
+    }
+    if ( !m_Index ) {
+        m_Index = new CFeatTreeIndex;
+    }
+    TRangeArray& parents = m_Index->GetIndex(link, m_InfoArray);
+    if ( parents.empty() ) {
         return;
     }
     TBestArray bests;
@@ -1933,10 +2012,17 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
 }
 
 
-void CFeatTree::x_AssignGenesByOverlap(TFeatArray& features,
-                                       TFeatArray& genes)
+void CFeatTree::x_AssignGenesByOverlap(TFeatArray& features)
 {
-    if ( features.empty() || genes.empty() ) {
+    if ( features.empty() ) {
+        return;
+    }
+    if ( !m_Index ) {
+        m_Index = new CFeatTreeIndex;
+    }
+    TRangeArray& genes =
+        m_Index->GetIndex(CSeqFeatData::eSubtype_gene, false, m_InfoArray);
+    if ( genes.empty() ) {
         return;
     }
     TBestArray bests;
@@ -1971,17 +2057,20 @@ void CFeatTree::x_AssignGeneToChildren(CFeatInfo& parent_feat,
 
 void CFeatTree::x_AssignGenes(void)
 {
-    if ( m_AssignedGenes >= m_InfoMap.size() ) {
+    if ( m_AssignedGenes >= m_InfoArray.size() ) {
         return;
     }
 
-    TFeatArray genes, feats;
+    bool has_genes = false;
+    TFeatArray old_feats, new_feats;
     // collect genes and other features
-    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
-        CFeatInfo& info = it->second;
+    for ( size_t ind = m_AssignedGenes; ind < m_InfoArray.size(); ++ind ) {
+        CFeatInfo& info = *m_InfoArray[ind];
+        TFeatArray* arr = 0;
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
         if ( feat_type == CSeqFeatData::eSubtype_gene ) {
-            genes.push_back(&info);
+            has_genes = true;
+            continue;
         }
         else if ( !info.m_Gene && STypeLink(feat_type) ) {
             if ( m_BestGeneFeatIdMode == eBestGeneFeatId_always ) {
@@ -1993,30 +2082,38 @@ void CFeatTree::x_AssignGenes(void)
                     continue;
                 }
             }
-            feats.push_back(&info);
+            arr = info.m_AddIndex >= m_AssignedGenes? &new_feats: &old_feats;
         }
+        else {
+            continue;
+        }
+        arr->push_back(&info);
     }
-    if ( genes.empty() || feats.empty() ) {
-        m_AssignedGenes = m_InfoMap.size();
-        return;
+    if ( !old_feats.empty() ) {
+        old_feats.insert(old_feats.end(),
+                         new_feats.begin(), new_feats.end());
+        swap(old_feats, new_feats);
+        old_feats.clear();
     }
-    x_AssignGenesByOverlap(feats, genes);
-
-    m_AssignedGenes = m_InfoMap.size();
+    if ( has_genes && !new_feats.empty() ) {
+        x_AssignGenesByOverlap(new_feats);
+    }
+    m_AssignedGenes = m_InfoArray.size();
 }
 
 
 void CFeatTree::x_AssignParents(void)
 {
-    if ( m_AssignedParents >= m_InfoMap.size() ) {
+    if ( m_AssignedParents >= m_InfoArray.size() ) {
         return;
     }
 
     // collect all features without assigned parent
-    TParentInfoMap pinfo_map(CSeqFeatData::eSubtype_max+1);
+    vector<TFeatArray> feats_by_type;
+    feats_by_type.reserve(CSeqFeatData::eSubtype_max+1);
     size_t new_count = 0;
-    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
-        CFeatInfo& info = it->second;
+    for ( size_t ind = m_AssignedParents; ind < m_InfoArray.size(); ++ind ) {
+        CFeatInfo& info = *m_InfoArray[ind];
         if ( info.IsSetParent() ) {
             continue;
         }
@@ -2030,52 +2127,44 @@ void CFeatTree::x_AssignParents(void)
             x_SetNoParent(info);
         }
         else {
-            SFeatSet& feat_set = pinfo_map[feat_type];
-            if ( feat_set.m_New.empty() ) {
-                feat_set.m_FeatType = feat_type;
-                pinfo_map[link.m_ParentType].m_NeedAll = true;
+            size_t index = feat_type;
+            if ( index >= feats_by_type.size() ) {
+                feats_by_type.resize(index+1);
             }
-            feat_set.m_New.push_back(&info);
+            feats_by_type[feat_type].push_back(&info);
             ++new_count;
         }
     }
     if ( new_count == 0 ) { // no work to do
         return;
     }
-    // collect all necessary parent candidates
-    x_CollectNeeded(pinfo_map);
     // assign parents for each parent type
-    NON_CONST_ITERATE ( TParentInfoMap, it1, pinfo_map ) {
-        SFeatSet& feat_set = *it1;
-        if ( feat_set.m_New.empty() ) {
+    for ( size_t type = 0; type < feats_by_type.size(); ++type ) {
+        TFeatArray& feats = feats_by_type[type];
+        if ( feats.empty() ) {
             // no work to do
             continue;
         }
-        for ( STypeLink link(feat_set.m_FeatType); link; ++link ) {
-            if ( !pinfo_map[link.m_ParentType].m_CollectedAll ) {
-                pinfo_map[link.m_ParentType].m_NeedAll = true;
-                x_CollectNeeded(pinfo_map);
-            }
-            _ASSERT(pinfo_map[link.m_ParentType].m_CollectedAll);
-            x_AssignParentsByOverlap(feat_set.m_New, link,
-                                     pinfo_map[link.m_ParentType].m_All);
-            if ( feat_set.m_New.empty() ) {
+        for ( STypeLink link((CSeqFeatData::ESubtype)type); link; ++link ) {
+            x_AssignParentsByOverlap(feats, link);
+            if ( feats.empty() ) {
                 break;
             }
         }
         // all remaining features are without parent
-        ITERATE ( TFeatArray, it, feat_set.m_New ) {
+        ITERATE ( TFeatArray, it, feats ) {
             x_SetNoParent(**it);
         }
     }
 
     if ( m_FeatIdMode == eFeatId_always ) {
-        NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
-            x_VerifyLinkedToRoot(it->second);
+        for ( size_t ind=m_AssignedParents; ind<m_InfoArray.size(); ++ind ) {
+            CFeatInfo& info = *m_InfoArray[ind];
+            x_VerifyLinkedToRoot(info);
         }
     }
 
-    m_AssignedParents = m_InfoMap.size();
+    m_AssignedParents = m_InfoArray.size();
 }
 
 
@@ -2218,7 +2307,8 @@ CMappedFeat CFeatTree::GetBestGene(const CMappedFeat& feat,
 
 
 CFeatTree::CFeatInfo::CFeatInfo(void)
-    : m_IsSetParent(false),
+    : m_AddIndex(0),
+      m_IsSetParent(false),
       m_IsSetChildren(false),
       m_IsLinkedToRoot(eIsLinkedToRoot_unknown),
       m_Parent(0),
