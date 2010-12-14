@@ -2978,18 +2978,18 @@ static const char s_ExtraEncodeChars[256][4] = {
     "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
     "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
     "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-    "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-    "%28", "%29", "%2A", "%2B", "%2C", "%2D", ".", "%2F",
+    "+",   "!",   "\"",  "#",   "$",   "%25", "%26", "'",
+    "(",   ")",   "*",   "%2B", ",",   "-",   ".",   "/",
     "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-    "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-    "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+    "8",   "9",   ":",   ";",   "<",   "%3D", ">",   "?",
+    "@",   "A",   "B",   "C",   "D",   "E",   "F",   "G",
     "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
     "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-    "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
-    "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+    "X",   "Y",   "Z",   "[",   "\\",  "]",   "^",   "_",
+    "`",   "a",   "b",   "c",   "d",   "e",   "f",   "g",
     "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
     "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-    "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+    "x",   "y",   "z",   "{",   "|",   "}",   "~",   "%7F",
     "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
     "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
     "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
@@ -3033,15 +3033,10 @@ string CExtraDecoder::Decode(const CTempString& src, EStringType stype) const
             "Empty name in extra-arg", 0);
     }
 
-    // Do not use default URL-decoder since it does not check invalid chars
     size_t dst = 0;
     for (size_t p = 0;  p < len;  dst++) {
         switch ( str[p] ) {
         case '%': {
-            if ( stype == eName ) {
-                NCBI_THROW2(CStringException, eFormat,
-                    "Inavild char in extra arg name", p);
-            }
             if (p + 2 > len) {
                 NCBI_THROW2(CStringException, eFormat,
                     "Inavild char in extra arg", p);
@@ -3056,15 +3051,10 @@ string CExtraDecoder::Decode(const CTempString& src, EStringType stype) const
             p += 3;
             break;
         }
-        case '+': {
-            if ( stype == eName ) {
-                NCBI_THROW2(CStringException, eFormat,
-                    "Inavild char in extra arg name", p);
-            }
+        case '+':
             str[dst] = ' ';
             p++;
             break;
-        }
         default:
             str[dst] = str[p++];
             if ( x_IsEncodableChar(str[dst]) ) {
