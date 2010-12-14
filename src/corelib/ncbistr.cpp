@@ -3474,6 +3474,53 @@ bool s_IsIPAddress(const char* str, size_t size)
     _ASSERT(str[size] == '\0');
 
     const char* c = str;
+
+    // IPv6?
+    if ( strchr(str, ':') ) {
+        int colons = 0;
+        bool have_group = false;
+        const char* prev_colon = NULL;
+        int digits = 0;
+        // Continue until
+        for (; c  &&  c - str < (int)size  &&  *c != '%'; c++) {
+            if (*c == ':') {
+                colons++;
+                if (colons > 7) {
+                    // Too many separators
+                    return false;
+                }
+                if (prev_colon  &&  c - prev_colon  == 1) {
+                    // A group of zeroes found
+                    if (have_group) {
+                        // Only one group is allowed
+                        return false;
+                    }
+                    have_group = true;
+                }
+                prev_colon = c;
+                digits = 0;
+                continue;
+            }
+            digits++;
+            if (digits > 4) {
+                // Too many digits between colons
+                return false;
+            }
+            char d = toupper(*c);
+            if (d < '0'  ||  d > 'F') {
+                // Invalid digit
+                return false;
+            }
+        }
+        // Check if zone index is present
+        if (*c == '%') {
+            // It's not clear yet what zone index may look like.
+            // Ignore it.
+        }
+        // Make sure there was at least one colon.
+        return colons > 1;
+    }
+
     unsigned long val;
     int dots = 0;
 

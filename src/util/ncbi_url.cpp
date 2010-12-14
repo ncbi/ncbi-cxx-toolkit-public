@@ -378,7 +378,7 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
     bool skip_host = false;
     bool skip_path = false;
     SIZE_TYPE beg = 0;
-    SIZE_TYPE pos = url.find_first_of(":@/?");
+    SIZE_TYPE pos = url.find_first_of(":@/?[");
 
     while ( beg < url.size() ) {
         if (pos == NPOS) {
@@ -394,6 +394,17 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
             break;
         }
         switch ( url[pos] ) {
+        case '[': // IPv6 address
+            {
+                SIZE_TYPE closing = url.find(']', pos);
+                if (closing == NPOS) {
+                    NCBI_THROW2(CUrlParserException, eFormat,
+                        "Unmatched '[' in the URL: \"" + url + "\"", pos);
+                }
+                beg = pos;
+                pos = url.find_first_of(":/?", closing);
+                break;
+            }
         case ':': // scheme: || user:password || host:port
             {
                 if (url.substr(pos, 3) == "://") {
@@ -407,18 +418,18 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
                         x_SetPath(url.substr(beg), *encoder);
                         return;
                     }
-                    pos = url.find_first_of(":@/?", beg);
+                    pos = url.find_first_of(":@/?[", beg);
                     break;
                 }
                 // user:password@ || host:port...
-                SIZE_TYPE next = url.find_first_of("@/?", pos + 1);
+                SIZE_TYPE next = url.find_first_of("@/?[", pos + 1);
                 if (m_IsGeneric  &&  next != NPOS  &&  url[next] == '@') {
                     // user:password@
                     x_SetUser(url.substr(beg, pos - beg), *encoder);
                     beg = pos + 1;
                     x_SetPassword(url.substr(beg, next - beg), *encoder);
                     beg = next + 1;
-                    pos = url.find_first_of(":/?", beg);
+                    pos = url.find_first_of(":/?[", beg);
                     break;
                 }
                 // host:port || host:port/path || host:port?args
@@ -429,7 +440,9 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
                 }
                 try {
                     x_SetPort(url.substr(beg, next - beg), *encoder);
-                    x_SetHost(host, *encoder);
+                    if ( !skip_host ) {
+                        x_SetHost(host, *encoder);
+                    }
                 }
                 catch (CStringException) {
                     if ( !m_IsGeneric ) {
@@ -458,13 +471,15 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
             {
                 x_SetUser(url.substr(beg, pos - beg), *encoder);
                 beg = pos + 1;
-                pos = url.find_first_of(":/?", beg);
+                pos = url.find_first_of(":/?[", beg);
                 break;
             }
         case '/': // host/path
             {
-                x_SetHost(url.substr(beg, pos - beg), *encoder);
-                skip_host = true;
+                if ( !skip_host ) {
+                    x_SetHost(url.substr(beg, pos - beg), *encoder);
+                    skip_host = true;
+                }
                 beg = pos;
                 pos = url.find_first_of("?", beg);
                 break;
