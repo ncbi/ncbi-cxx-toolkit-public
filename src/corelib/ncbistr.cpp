@@ -3477,6 +3477,11 @@ bool s_IsIPAddress(const char* str, size_t size)
 
     // IPv6?
     if ( strchr(str, ':') ) {
+        if (NStr::CompareNocase(str, 0, 7, "::ffff:") == 0) {
+            // Mapped IPv4 address
+            return size > 7  &&  s_IsIPAddress(str + 7, size - 7);
+        }
+
         int colons = 0;
         bool have_group = false;
         const char* prev_colon = NULL;
