@@ -232,7 +232,7 @@ public:
     CConn_SocketStream
     (const string&   host,         /* host to connect to  */
      unsigned short  port,         /* ... and port number */
-     unsigned int    max_try,      /* number of attempts  */
+     unsigned short  max_try,      /* number of attempts  */
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -260,7 +260,7 @@ public:
      const void*     data     = 0,                /* initial data block      */
      size_t          size     = 0,                /* size of the data block  */
      TSOCK_Flags     flags    = fSOCK_LogDefault, /* see ncbi_socket.h       */
-     unsigned int    max_try  = 3,                /* number of attempts      */
+     unsigned short  max_try  = 3,                /* number of attempts      */
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -316,7 +316,7 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
-    /// This variant uses existing CSocket to build the stream upon it.
+    /// This variant uses existing CSocket to build a stream upon it.
     /// NOTE:  it revokes all ownership of the "socket"'s internals
     /// (effectively leaving the CSocket empty);  CIO_Exception(eInvalidArg)
     /// is thrown if the internal SOCK is not owned by the passed CSocket.

@@ -121,7 +121,7 @@ void CConn_IOStream::x_Cleanup(void)
 
 CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
-                                       unsigned int    max_try,
+                                       unsigned short  max_try,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
     : CConn_IOStream(SOCK_CreateConnector(host.c_str(), port, max_try),
@@ -136,7 +136,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        const void*     data,
                                        size_t          size,
                                        TSOCK_Flags     flags,
-                                       unsigned int    max_try,
+                                       unsigned short  max_try,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
     : CConn_IOStream(SOCK_CreateConnectorEx(host.c_str(), port, max_try,
@@ -191,15 +191,11 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
                             ? net_info->proxy_host : net_info->host);
         status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
                                init_data, init_size, flags);
-        if (status != eIO_Success) {
-            _ASSERT(!sock);
-            return 0;
-        }
-        _ASSERT(sock);
+        _ASSERT(!sock ^ !(status != eIO_Success));
     }
     string hostport(net_info->host + string(":")
                     + NStr::UIntToString(net_info->port));
-    return SOCK_CreateConnectorOnTopEx(sock, 1, hostport.c_str());
+    return SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport.c_str());
 }
 
 
