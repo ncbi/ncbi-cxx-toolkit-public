@@ -42,6 +42,7 @@ const string   kStrParam_Default  = "StrParam Default";
 const bool     kBoolParam_Default = false;
 const unsigned kUIntParam_Default = 123;
 const string   kStaticStr_Default  = "StaticStringParam";
+const double   kDoubleParam_Default = 123.456;
 
 NCBI_PARAM_DECL(int, ParamTest, ThreadIdx);
 NCBI_PARAM_DECL(string, ParamTest, StrParam);
@@ -50,6 +51,7 @@ NCBI_PARAM_DECL(unsigned int, ParamTest, UIntParam);
 NCBI_PARAM_DECL(string, ParamTest, StaticStr);
 NCBI_PARAM_DECL(int, ParamTest, NoThreadParam);
 NCBI_PARAM_DECL(int, ParamTest, NoLoadParam);
+NCBI_PARAM_DECL(double, ParamTest, DoubleParam);
 
 NCBI_PARAM_DEF(int, ParamTest, ThreadIdx, 0);
 NCBI_PARAM_DEF(string, ParamTest, StrParam, kStrParam_Default);
@@ -58,6 +60,7 @@ NCBI_PARAM_DEF(unsigned int, ParamTest, UIntParam, kUIntParam_Default);
 NCBI_PARAM_DEF(string, ParamTest, StaticStr, kStaticStr_Default);
 NCBI_PARAM_DEF_EX(int, ParamTest, NoThreadParam, 0, eParam_NoThread, 0);
 NCBI_PARAM_DEF_EX(int, ParamTest, NoLoadParam, 0, eParam_NoLoad, 0);
+NCBI_PARAM_DEF(double, ParamTest, DoubleParam, kDoubleParam_Default);
 
 
 // User-defined type
@@ -106,6 +109,7 @@ private:
     typedef NCBI_PARAM_TYPE(ParamTest, Struct) TParam_Struct;
     typedef NCBI_PARAM_TYPE(ParamTest, NoThreadParam) TParam_NoThread;
     typedef NCBI_PARAM_TYPE(ParamTest, NoLoadParam) TParam_NoLoad;
+    typedef NCBI_PARAM_TYPE(ParamTest, DoubleParam) TParam_DoubleParam;
 };
 
 
@@ -189,6 +193,9 @@ bool CTestParamApp::Thread_Run(int idx)
 
     // Thread default value should not change
     _ASSERT(TParam_ThreadIdx::GetThreadDefault() == idx);
+
+    double dbl = TParam_DoubleParam::GetDefault();
+    _ASSERT(dbl == kDoubleParam_Default);
     return true;
 }
 

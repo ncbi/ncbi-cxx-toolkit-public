@@ -203,6 +203,30 @@ CParamParser< SParamDescription<bool> >::ValueToString(const bool& val,
     return NStr::BoolToString(val);
 }
 
+// CParamParser for double
+
+EMPTY_TEMPLATE
+inline
+CParamParser< SParamDescription<double> >::TValueType
+CParamParser< SParamDescription<double> >::StringToValue(const string& str,
+                                                         const TParamDesc&)
+{
+    return NStr::StringToDouble(str,
+        NStr::fDecimalPosixOrLocal |
+        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+}
+
+
+EMPTY_TEMPLATE
+inline
+string
+CParamParser< SParamDescription<double> >::ValueToString(const double& val,
+                                                         const TParamDesc&)
+{
+    return NStr::DoubleToString(val, DBL_DIG,
+        NStr::fDoubleGeneral | NStr::fDoublePosix);
+}
+
 
 // CParamParser for enums
 
