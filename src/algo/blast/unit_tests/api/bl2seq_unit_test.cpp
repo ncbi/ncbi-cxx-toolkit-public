@@ -262,7 +262,7 @@ void testRawCutoffs(CBl2Seq& blaster, EProgram program,
     case eMegablast:
         BOOST_CHECK_EQUAL(x_drop_ungapped, 
                              raw_cutoffs->x_drop_ungapped);
-        BOOST_CHECK_EQUAL(16, raw_cutoffs->x_drop_gap);
+        BOOST_CHECK_EQUAL(13, raw_cutoffs->x_drop_gap);
         // CC changed 08/07/08
         //BOOST_CHECK_EQUAL(27, raw_cutoffs->x_drop_gap_final);
         BOOST_CHECK_EQUAL(54, raw_cutoffs->x_drop_gap_final);
