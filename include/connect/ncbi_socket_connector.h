@@ -51,15 +51,6 @@ extern "C" {
 #endif
 
 
-/* Equivalent to SOCK_CreateConnectorEx(host, port, max_try, 0, 0, 0)
- */
-extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnector
-(const char*    host,      /* host to connect to                             */
- unsigned short port,      /* port to connect to                             */
- unsigned int   max_try    /* max.number of attempts to establish connection */
- );
-
-
 /* Create new CONNECTOR, which handles connection to a network socket.
  * Make up to "max_try" attempts to connect to "host:port" before giving up.
  * On successful connect, send the first "init_size" bytes from buffer
@@ -71,18 +62,19 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnector
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorEx
 (const char*    host,      /* host to connect to                             */
  unsigned short port,      /* port to connect to                             */
- unsigned int   max_try,   /* max.number of attempts to establish connection */
+ unsigned short max_try,   /* max.number of attempts to establish connection */
  const void*    init_data, /* data to send to server on connect              */
  size_t         init_size, /* size of the "init_data" buffer                 */
  TSOCK_Flags    flags      /* bitwise OR of additional socket flags          */
  );
 
 
-/* Equivalent to SOCK_CreateConnectorOnTopEx(sock, own_sock, 0)
+/* Equivalent to SOCK_CreateConnectorEx(host, port, max_try, 0, 0, 0)
  */
-extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
-(SOCK                 sock,    /* existing socket handle (may not be NULL)   */
- unsigned int/*bool*/ own_sock /* non-zero if connector will own "sock"      */
+extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnector
+(const char*    host,      /* host to connect to                             */
+ unsigned short port,      /* port to connect to                             */
+ unsigned short max_try    /* max.number of attempts to establish connection */
  );
 
 
@@ -93,11 +85,21 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
  * is used in the CONN_Create() call.
  * Non-owned socket will not be closed when the connection gets closed;
  * and may further be used, as necessary (including closing it explicitly).
+ * Note that this call can build a (dysfunctional) connector on top of a NULL
+ * sock, and that the delayed connection open will always result in eIO_Closed.
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
-(SOCK                 sock,    /* existing socket handle (may not be NULL)   */
- unsigned int/*bool*/ own_sock,/* non-zero if connector will own "sock"      */
- const char*          hostport /* connection point name taken verbatim       */
+(SOCK                   sock,    /* existing socket handle (may not be NULL) */
+ unsigned short/*bool*/ own_sock,/* non-zero if connector will own "sock"    */
+ const char*            hostport /* connection point name taken verbatim     */
+ );
+
+
+/* Equivalent to SOCK_CreateConnectorOnTopEx(sock, own_sock, 0)
+ */
+extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
+(SOCK                   sock,    /* existing socket handle (may not be NULL) */
+ unsigned short/*bool*/ own_sock /* non-zero if connector will own "sock"    */
  );
 
 
