@@ -287,20 +287,6 @@ CParam<TDescription>::CParam(EParamCacheFlag cache_flag)
 
 
 template<class TDescription>
-inline
-CParam<TDescription>::CParam(const string& section, const string& name)
-{
-    if ( !sx_IsSetFlag(eParam_NoLoad) ) {
-        string str = g_GetConfigString
-            (section, name,
-            TParamParser::ValueToString(GetThreadDefault()));
-        m_Value = TParamParser::StringToValue(str);
-        m_ValueSet = true;
-    }
-}
-
-
-template<class TDescription>
 typename CParam<TDescription>::TValueType&
 CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
