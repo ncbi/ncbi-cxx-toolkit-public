@@ -36,6 +36,7 @@
 
 #include <algo/gnomon/chainer.hpp>
 #include <algo/gnomon/id_handler.hpp>
+#include <algo/gnomon/gnomon_exception.hpp>
 
 #include <util/sequtil/sequtil_manip.hpp>
 
@@ -46,6 +47,7 @@
 #include <sstream>
 
 #include <objects/general/Object_id.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/feat_ci.hpp>
 
 BEGIN_SCOPE(ncbi)
@@ -1212,10 +1214,36 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
     if((Status()&determinant) == 0) {
         AddComment("lost"+name);
     }
-}        
+}
+
+pair<bool,bool> ProteinPartialness(map<string, pair<bool,bool> >& prot_complet, const CAlignModel& align, CScope& scope)
+{
+    string accession = align.TargetAccession();
+    map<string, pair<bool,bool> >::iterator iter = prot_complet.find(accession);
+    if (iter == prot_complet.end()) {
+        iter = prot_complet.insert(make_pair(accession, make_pair(true, true))).first;
+        CSeqVector protein_seqvec(scope.GetBioseqHandle(*align.GetTargetId()), CBioseq_Handle::eCoding_Iupac);
+        CSeqVector_CI protein_ci(protein_seqvec);
+        iter->second.first = *protein_ci == 'M';
+    }
+    return iter->second;
+}
+
+bool LeftPartialProtein(map<string, pair<bool,bool> >& prot_complet, const CAlignModel& align, CScope& scope)
+{
+    return !ProteinPartialness(prot_complet, align, scope).first;
+}
+
+bool RightPartialProtein(map<string, pair<bool,bool> >& prot_complet, const CAlignModel& align, CScope& scope)
+{
+    return !ProteinPartialness(prot_complet, align, scope).second;
+}
 
 void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor)
 {
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+
     CAlignMap mrnamap = GetAlignMap();
     ITERATE(vector<CGeneModel*>, i, m_members) {
         CAlignModel* orig_align = orig_aligns[(*i)->ID()];
@@ -1223,7 +1251,7 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
         if((orig_align->Type() & CGeneModel::eProt) == 0 || orig_align->TargetLen() == 0)   // not a protein or not known length
             continue;
 
-        if(!ConfirmedStart() && HasStart() && prot_complet[orig_align->TargetAccession()].first && Include(Limits(),(*i)->Limits())) {  // protein has start
+        if(!ConfirmedStart() && HasStart() && !LeftPartialProtein(prot_complet, *orig_align, scope) && Include(Limits(),(*i)->Limits())) {  // protein has start
             TSignedSeqPos not_aligned =  orig_align->GetAlignMap().MapRangeOrigToEdited(orig_align->Limits(),false).GetFrom()-1;
             if(not_aligned <= (1.-minscor.m_minprotfrac)*orig_align->TargetLen()) {                                                         // well aligned
                 TSignedSeqPos extra_length = mrnamap.MapRangeOrigToEdited(orig_align->Limits(),false).GetFrom()-
@@ -1238,7 +1266,7 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
             }
         }
 
-        if(!ConfirmedStop() && HasStop() && prot_complet[orig_align->TargetAccession()].second && Include(Limits(),(*i)->Limits())) {  // protein has stop
+        if(!ConfirmedStop() && HasStop() && !RightPartialProtein(prot_complet, *orig_align, scope) && Include(Limits(),(*i)->Limits())) {  // protein has stop
             TSignedSeqPos not_aligned = orig_align->TargetLen()-orig_align->GetAlignMap().MapRangeOrigToEdited(orig_align->Limits(),false).GetTo();
             if(not_aligned <= (1.-minscor.m_minprotfrac)*orig_align->TargetLen()) {                                                         // well aligned
                 TSignedSeqPos extra_length = mrnamap.MapRangeOrigToEdited(GetCdsInfo().Stop(),false).GetTo()-
@@ -2320,6 +2348,8 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
             mrnaCDS[args["mrnaCDS"].AsString()] = TSignedSeqRange();
         } else {
             CNcbiIfstream cdsfile(args["mrnaCDS"].AsString().c_str());
+            if (!cdsfile)
+                NCBI_THROW(CGnomonException, eGenericError, "Cannot open file " + args["mrnaCDS"].AsString());
             string accession, tmp;
             int a, b;
             while(cdsfile >> accession >> a >> b) {
@@ -2334,6 +2364,8 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     map<string, pair<bool,bool> >& prot_complet = chainer->SetProtComplet();
     if(args["pinfo"]) {
         CNcbiIfstream protfile(args["pinfo"].AsString().c_str());
+            if (!protfile)
+                NCBI_THROW(CGnomonException, eGenericError, "Cannot open file " + args["pinfo"].AsString());
         string seqid_str;
         bool fivep;
         bool threep; 
