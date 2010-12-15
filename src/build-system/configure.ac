@@ -4679,6 +4679,8 @@ if test "$with_opengl" != "no"; then
                           [ ]$X_LIBS)
          elif test -f /usr/lib/mesa/libGL.so; then
             NCBI_RPATHIFY(OPENGL_LIBPATH, /usr/lib/mesa, [ ]$X_LIBS)
+         else
+            OPENGL_LIBPATH=$X_LIBS
          fi
          OPENGL_LIBS="$OPENGL_LIBPATH -lGLU -lGL $X_ALL_LIBS"
          ;;

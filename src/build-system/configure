@@ -26535,6 +26535,8 @@ fi
     done
     OPENGL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $X_LIBS"
  fi
+         else
+            OPENGL_LIBPATH=$X_LIBS
          fi
          OPENGL_LIBS="$OPENGL_LIBPATH -lGLU -lGL $X_ALL_LIBS"
          ;;
