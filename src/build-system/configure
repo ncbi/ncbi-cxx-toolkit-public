@@ -26493,7 +26493,7 @@ fi
          else
             OPENGL_INCLUDE=$X_CFLAGS
          fi
-         if test -d "$OPENGL_PATH/lib${bit64_sfx}"; then
+         if test -n "$OPENGL_PATH" -a -d "$OPENGL_PATH/lib${bit64_sfx}"; then
             ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -26506,6 +26506,27 @@ fi
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $OPENGL_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENGL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $X_LIBS"
+ fi
+         elif test -f /usr/lib/mesa/libGL.so; then
+            ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in /usr/lib/mesa; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENGL_LIBPATH="${ncbi_rp_L_flags} $X_LIBS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in /usr/lib/mesa; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
