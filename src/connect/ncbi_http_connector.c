@@ -1747,7 +1747,7 @@ extern EIO_Status HTTP_CreateTunnelEx
         code = 0;
     }
     s_DestroyHttpConnector(uuu);
-    return code == 403 ? eIO_NotSupported : code == 503 ? eIO_Closed : status;
+    return code == 503 ? eIO_NotSupported : code == 403 ? eIO_Closed : status;
 }
 
 
