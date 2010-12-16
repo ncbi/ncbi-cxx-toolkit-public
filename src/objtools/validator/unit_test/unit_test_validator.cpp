@@ -8748,7 +8748,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("sequencing_meth");
 
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatMissingField",
+        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStructuredCommentFormatMissingField",
                                   "Required field " + *it + " is missing"));
     }
 
@@ -8916,7 +8916,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword",
                                                  "Structured Comment is non-compliant, keyword should be removed"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatMissingField",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStructuredCommentFormatMissingField",
                                                  "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
