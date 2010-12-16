@@ -2119,7 +2119,7 @@ void CFeature_table_reader::AddFeatQual (
 )
 
 {
-    x_GetImplementation ().AddFeatQual (sfp, qual, val, flags, container);
+    x_GetImplementation ().AddFeatQual (sfp, qual, val, flags, container) ;
 }
 
 
