@@ -110,8 +110,8 @@ typedef enum {
 /** I/O event (or direction).
  * @par <b>NOTE:</b>
  *  Internally, these constants are used as bit-values,
- *  and thus should not be changed in this header.  However, user code
- *  should not rely on the values of these constants.
+ *  and thus should not be changed in this header.  On the other hand,
+ *  user code should not rely on the values of these constants, either.
  * @sa
  *  SOCK_Wait, SOCK_Poll, CONN_Wait, SOCK_SetTimeout, CONN_SetTimeout
  */
@@ -127,13 +127,12 @@ typedef enum {
 /** I/O status.
  */
 typedef enum {
-    eIO_Success = 0,  /**< everything is fine, no errors occurred            */
+    eIO_Success = 0,  /**< everything is fine, no error occurred             */
     eIO_Timeout,      /**< timeout expired before any I/O succeeded          */
     eIO_Closed,       /**< peer has closed the connection                    */
-    eIO_Interrupt,    /**< signal received while an I/O was in progress      */
+    eIO_Interrupt,    /**< signal received while I/O was in progress         */
     eIO_InvalidArg,   /**< bad argument value(s)                             */
     eIO_NotSupported, /**< the requested operation is not supported          */
-
     eIO_Unknown       /**< unknown (most probably -- fatal) error            */
 } EIO_Status;
 
@@ -264,7 +263,7 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
  * @sa
  *  MT_LOCK_Create, FMT_LOCK_Handler, EMT_Lock
  */
-#define MT_LOCK_Do(lk, how)  (lk ? MT_LOCK_DoInternal(lk, how) : -1)
+#define MT_LOCK_Do(lk, how)  ((lk) ? MT_LOCK_DoInternal((lk), (how)) : -1)
 extern NCBI_XCONNECT_EXPORT int/*bool*/ MT_LOCK_DoInternal
 (MT_LOCK  lk,
  EMT_Lock how
