@@ -58,7 +58,7 @@ typedef struct SServiceConnectorTag {
     unsigned short  port;               /*                       ... (h.b.o) */
     ticket_t        ticket;             /* Network byte order (none if zero) */
     SSERVICE_Extra  params;
-    const char      service[1];         /* Untranslated service name         */
+    const char      service[1];         /* Untranslated (orig.) service name */
 } SServiceConnector;
 
 
@@ -69,17 +69,17 @@ typedef struct SServiceConnectorTag {
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-    static const char* s_VT_GetType (CONNECTOR       connector);
-    static char*       s_VT_Descr   (CONNECTOR       connector);
-    static EIO_Status  s_VT_Open    (CONNECTOR       connector,
-                                     const STimeout* timeout);
-    static EIO_Status  s_VT_Status  (CONNECTOR       connector,
-                                     EIO_Event       dir);
-    static EIO_Status  s_VT_Close   (CONNECTOR       connector,
-                                     const STimeout* timeout);
-    static void        s_Setup      (SMetaConnector* meta,
-                                     CONNECTOR       connector);
-    static void        s_Destroy    (CONNECTOR       connector);
+    static const char* s_VT_GetType(CONNECTOR       connector);
+    static char*       s_VT_Descr  (CONNECTOR       connector);
+    static EIO_Status  s_VT_Open   (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Status (CONNECTOR       connector,
+                                    EIO_Event       dir);
+    static EIO_Status  s_VT_Close  (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static void        s_Setup     (SMetaConnector* meta,
+                                    CONNECTOR       connector);
+    static void        s_Destroy   (CONNECTOR       connector);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
@@ -446,7 +446,10 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
         }
         assert(!sock);
     }
-    return SOCK_CreateConnectorEx(net_info->host, net_info->port,
+    return SOCK_CreateConnectorEx(net_info->firewall
+                                  &&  *net_info->proxy_host
+                                  ? net_info->proxy_host
+                                  : net_info->host, net_info->port,
                                   1/*max.try*/, init_data, init_size,
                                   net_info->debug_printout
                                   == eDebugPrintout_Data
