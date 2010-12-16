@@ -2911,6 +2911,14 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         bool unknown_length = false;
         size_t pos = (i * 3) + frame;
 
+        if (start.HasZeroGapBefore()) {
+            // create new segment for gap
+            CRef<CDelta_seq> new_seg(new CDelta_seq());
+            new_seg->SetLiteral().SetSeq_data().SetGap();
+            new_seg->SetLiteral().SetLength(0);
+            prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+        }
+
         // loop through one codon at a time
         for (k = 0;  k < 3;  ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
@@ -2952,7 +2960,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             }
         } else {
             if ((!last->SetLiteral().IsSetSeq_data() || last->SetLiteral().GetSeq_data().IsGap())
-                && last->SetLiteral().GetLength() > 0) {
+                && !first_time) {
                 // transitioning from gap to non-gap, need new seg
                 CRef<CDelta_seq> new_seg(new CDelta_seq());
                 new_seg->SetLiteral().SetLength(0);

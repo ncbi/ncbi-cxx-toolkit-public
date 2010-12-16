@@ -88,6 +88,7 @@ extern const char* sc_TestEntry_GapInSeq1;
 extern const char* sc_TestEntry_GapInSeq2;
 extern const char* sc_TestEntry_GapInSeq3;
 extern const char* sc_TestEntry_GapInSeq4;
+extern const char* sc_TestEntry_GapInSeq5;
 extern const char* sc_TestEntry_CodeBreakForStopCodon;
 
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
@@ -1003,15 +1004,24 @@ static void CheckTranslatedBioseq (CRef<CBioseq> bioseq, string seg1, bool mid_f
             BOOST_CHECK_EQUAL(seg1, p1);
 
             ++seg_it;
-            seg = *seg_it;       
-            BOOST_CHECK_EQUAL(true, seg->SetLiteral().SetSeq_data().IsGap());
-            BOOST_CHECK_EQUAL(mid_fuzz, seg->GetLiteral().IsSetFuzz());
+            if (seg_it != bioseq->SetInst().SetExt().SetDelta().Set().end()) {
+                seg = *seg_it;   
+                
+                BOOST_CHECK_EQUAL(true, seg->GetLiteral().GetSeq_data().IsGap());
+                BOOST_CHECK_EQUAL(mid_fuzz, seg->GetLiteral().IsSetFuzz());
+                ++seg_it;
+            } else {
+                BOOST_CHECK_EQUAL("Missing segment", "Missing segment in Bioseq");
+            }
 
-            ++seg_it;
-            seg = *seg_it;       
-            const CSeq_literal& lit2 = seg->GetLiteral();
-            string p2 = lit2.GetSeq_data().GetIupacaa().Get();
-            BOOST_CHECK_EQUAL(seg2, p2);
+            if (seg_it != bioseq->SetInst().SetExt().SetDelta().Set().end()) {
+                seg = *seg_it;       
+                const CSeq_literal& lit2 = seg->GetLiteral();
+                string p2 = lit2.GetSeq_data().GetIupacaa().Get();
+                BOOST_CHECK_EQUAL(seg2, p2);
+            } else {
+                BOOST_CHECK_EQUAL("Missing segment", "Missing segment in Bioseq");
+            }
         } else {
             BOOST_CHECK_EQUAL("Expected delta seq", "Result not delta seq");
         }
@@ -1121,6 +1131,32 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_GapInSeq)
 
     CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*feat, scope);
     CheckTranslatedBioseq (bioseq, "MPKPK"); 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_ZeroGap)
+{
+    // try with coding region that has zero-length gap
+
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry_GapInSeq5);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_feat> feat (new CSeq_feat());
+    feat->SetData().SetCdregion();
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("GapInSeq5");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(17);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    entry.SetSeq().SetAnnot().push_back(annot);
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+
+    CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*feat, scope);
+    CheckTranslatedBioseq (bioseq, "MPK", false, "PK");
 }
 
 
@@ -2310,6 +2346,32 @@ Seq-entry ::= seq {\
                 iupacna \"CCCAAATAA\" } } } } \
 ";
 
+
+const char *sc_TestEntry_GapInSeq5 = "\
+Seq-entry ::= seq {\
+      id {\
+        local\
+          str \"GapInSeq5\" } ,\
+      descr {\
+        molinfo {\
+          biomol genomic } } ,\
+      inst {\
+        repr delta ,\
+        mol dna ,\
+        length 18 ,\
+        ext \
+          delta { \
+            literal { \
+            length 9 , \
+              seq-data \
+                iupacna \"ATGCCCAAA\" } , \
+            literal { \
+              length 0 } , \
+            literal { \
+              length 9 , \
+              seq-data \
+                iupacna \"CCCAAATAA\" } } } } \
+";
 
 const char* sc_TestEntry_CodeBreakForStopCodon = "\
 Seq-entry ::= set {\
