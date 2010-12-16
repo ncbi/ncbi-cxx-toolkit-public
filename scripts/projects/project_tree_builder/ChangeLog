@@ -140,4 +140,12 @@ version 3.1.2
 Enable absolute path when specifying subtree.
 Changed the way Linker AdditionalOptions are handled.
 
+December 16, 2010
+version 3.2.0
+Added possibility of defining CharacterSet in makefiles.
+Added support of Unicode build configurations.
+Corrected generation of configuration header files.
+Corrected location of generated Utility projects for MSVC2010.
+
+
 
