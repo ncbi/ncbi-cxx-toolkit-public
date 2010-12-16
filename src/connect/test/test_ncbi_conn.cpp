@@ -148,15 +148,15 @@ int CTest::Run(void)
 
     if (status != eIO_Success) {
         list<string> msg;
-        NStr::Justify("Check " + CDirEntry::CreateAbsolutePath(kLogfile)
-                      + " for more information.", PAGE_WIDTH, msg);
+        NStr::Justify("Detailed transaction log has been saved in:",
+                      PAGE_WIDTH, msg);
+        msg.push_back('"' + CDirEntry::CreateAbsolutePath(kLogfile) + "\".");
         msg.push_back(kEmptyStr);
-        NStr::Justify("If you choose to make its contents available to"
-                      " NCBI, please keep in mind that the log can"
-                      " contain authorization credentials, which you may"
-                      " want to delete from the file prior to actually"
-                      " submitting it for review.", PAGE_WIDTH, msg,
-                      "      ", "NOTE: ");
+        NStr::Justify("Should you choose to make its contents available to"
+                      " NCBI, please keep in mind that the log can contain"
+                      " authorization credentials, which you may want to"
+                      " delete from the file prior to actually submitting"
+                      " it for review.", PAGE_WIDTH, msg, "      ", "NOTE: ");
         ITERATE(list<string>, line, msg) {
             m_Tee << NcbiEndl << *line;
         }
