@@ -112,7 +112,7 @@ protected:
     /// as well as turned "false" at a later stage when the actual
     /// connection attempt (to use the otherwise okay CP) failed.
     ///
-    /// m_Fwd holds the current list of CPs sorted by the port number.
+    /// m_Fwd holds the list of CPs sorted by the port number.
     ///
     struct CFWConnPoint {
         unsigned int   host;  ///< Network byte order
@@ -190,7 +190,7 @@ protected:
     /// Also, it sets the m_CheckPoint member to contain the connection
     /// description if available (retrievable with GetCheckPoint()).
     ///
-    virtual EIO_Status ConnStatus(bool failure, CConn_IOStream& io);
+    virtual EIO_Status ConnStatus(bool failure, CConn_IOStream* io);
 
     /// Extended info of the last step IO
     const string&      GetCheckPoint(void) const { return m_CheckPoint; }
