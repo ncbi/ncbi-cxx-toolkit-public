@@ -36,8 +36,7 @@ Linux64-Suse    : ICC   : ICC.sh         --without-debug --without-mt --with-sta
 Linux64-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : GCC   : GCC.sh 4.4.2   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
-# FreeBSD32       : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-FreeBSD32-v80   : GCC   : GCC.sh 4.2.1   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+FreeBSD32       : GCC   : GCC.sh 4.2.1   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 SunOSx86        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSx86        : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc      : WS64  : WorkShop.sh 64 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile

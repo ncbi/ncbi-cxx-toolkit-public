@@ -33,8 +33,7 @@ Linux64-Suse    : gcc     : GCC.sh           --without-debug --without-mt --with
 
 Linux64-Centos : gcc : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-# FreeBSD32  : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-FreeBSD32-v80   : plain   : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+FreeBSD32  : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 SunOSx86   : gcc     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : w55     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile

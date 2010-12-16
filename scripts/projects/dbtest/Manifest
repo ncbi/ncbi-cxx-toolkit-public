@@ -31,8 +31,7 @@ Linux32-Suse    : plain : GCC.sh           --without-debug --without-mt --with-s
 
 Linux64-Suse    : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 
-# FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
-FreeBSD32-v80   : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
+FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 
 SunOSx86   : plain : WorkShop.sh 32   --without-debug --without-mt --with-static --with-flat-makefile
 
