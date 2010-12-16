@@ -285,46 +285,64 @@ typedef pair <const char *, const CSeqFeatData::ESubtype> TFeatKey;
 static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "-10_signal",         CSeqFeatData::eSubtype_10_signal          ),
     TFeatKey ( "-35_signal",         CSeqFeatData::eSubtype_35_signal          ),
-    TFeatKey ( "3'clip",             CSeqFeatData::eSubtype_3clip              ),
     TFeatKey ( "3'UTR",              CSeqFeatData::eSubtype_3UTR               ),
-    TFeatKey ( "5'clip",             CSeqFeatData::eSubtype_5clip              ),
+    TFeatKey ( "3'clip",             CSeqFeatData::eSubtype_3clip              ),
     TFeatKey ( "5'UTR",              CSeqFeatData::eSubtype_5UTR               ),
-    TFeatKey ( "attenuator",         CSeqFeatData::eSubtype_attenuator         ),
+    TFeatKey ( "5'clip",             CSeqFeatData::eSubtype_5clip              ),
     TFeatKey ( "Bond",               CSeqFeatData::eSubtype_bond               ),
-    TFeatKey ( "C_region",           CSeqFeatData::eSubtype_C_region           ),
     TFeatKey ( "CAAT_signal",        CSeqFeatData::eSubtype_CAAT_signal        ),
     TFeatKey ( "CDS",                CSeqFeatData::eSubtype_cdregion           ),
+    TFeatKey ( "C_region",           CSeqFeatData::eSubtype_C_region           ),
     TFeatKey ( "Cit",                CSeqFeatData::eSubtype_pub                ),
     TFeatKey ( "CloneRef",           CSeqFeatData::eSubtype_clone              ),
     TFeatKey ( "Comment",            CSeqFeatData::eSubtype_comment            ),
-    TFeatKey ( "conflict",           CSeqFeatData::eSubtype_conflict           ),
     TFeatKey ( "D-loop",             CSeqFeatData::eSubtype_D_loop             ),
     TFeatKey ( "D_segment",          CSeqFeatData::eSubtype_D_segment          ),
+    TFeatKey ( "GC_signal",          CSeqFeatData::eSubtype_GC_signal          ),
+    TFeatKey ( "Het",                CSeqFeatData::eSubtype_het                ),
+    TFeatKey ( "J_segment",          CSeqFeatData::eSubtype_J_segment          ),
+    TFeatKey ( "LTR",                CSeqFeatData::eSubtype_LTR                ),
+    TFeatKey ( "N_region",           CSeqFeatData::eSubtype_N_region           ),
+    TFeatKey ( "NonStdRes",          CSeqFeatData::eSubtype_non_std_residue    ),
+    TFeatKey ( "Num",                CSeqFeatData::eSubtype_num                ),
+    TFeatKey ( "Protein",            CSeqFeatData::eSubtype_prot               ),
+    TFeatKey ( "RBS",                CSeqFeatData::eSubtype_RBS                ),
+    TFeatKey ( "REFERENCE",          CSeqFeatData::eSubtype_pub                ),
+    TFeatKey ( "Region",             CSeqFeatData::eSubtype_region             ),
+    TFeatKey ( "Rsite",              CSeqFeatData::eSubtype_rsite              ),
+    TFeatKey ( "STS",                CSeqFeatData::eSubtype_STS                ),
+    TFeatKey ( "S_region",           CSeqFeatData::eSubtype_S_region           ),
+    TFeatKey ( "SecStr",             CSeqFeatData::eSubtype_psec_str           ),
+    TFeatKey ( "Site",               CSeqFeatData::eSubtype_site               ),
+    TFeatKey ( "Site-ref",           CSeqFeatData::eSubtype_site_ref           ),
+    TFeatKey ( "Src",                CSeqFeatData::eSubtype_biosrc             ),
+    TFeatKey ( "TATA_signal",        CSeqFeatData::eSubtype_TATA_signal        ),
+    TFeatKey ( "TxInit",             CSeqFeatData::eSubtype_txinit             ),
+    TFeatKey ( "User",               CSeqFeatData::eSubtype_user               ),
+    TFeatKey ( "V_region",           CSeqFeatData::eSubtype_V_region           ),
+    TFeatKey ( "V_segment",          CSeqFeatData::eSubtype_V_segment          ),
+    TFeatKey ( "VariationRef",       CSeqFeatData::eSubtype_variation_ref      ),
+    TFeatKey ( "Xref",               CSeqFeatData::eSubtype_seq                ),
+    TFeatKey ( "attenuator",         CSeqFeatData::eSubtype_attenuator         ),
+    TFeatKey ( "conflict",           CSeqFeatData::eSubtype_conflict           ),
     TFeatKey ( "enhancer",           CSeqFeatData::eSubtype_enhancer           ),
     TFeatKey ( "exon",               CSeqFeatData::eSubtype_exon               ),
     TFeatKey ( "gap",                CSeqFeatData::eSubtype_gap                ),
-    TFeatKey ( "GC_signal",          CSeqFeatData::eSubtype_GC_signal          ),
     TFeatKey ( "gene",               CSeqFeatData::eSubtype_gene               ),
-    TFeatKey ( "Het",                CSeqFeatData::eSubtype_het                ),
     TFeatKey ( "iDNA",               CSeqFeatData::eSubtype_iDNA               ),
     TFeatKey ( "intron",             CSeqFeatData::eSubtype_intron             ),
-    TFeatKey ( "J_segment",          CSeqFeatData::eSubtype_J_segment          ),
-    TFeatKey ( "LTR",                CSeqFeatData::eSubtype_LTR                ),
+    TFeatKey ( "mRNA",               CSeqFeatData::eSubtype_mRNA               ),
     TFeatKey ( "mat_peptide",        CSeqFeatData::eSubtype_mat_peptide_aa     ),
     TFeatKey ( "mat_peptide_nt",     CSeqFeatData::eSubtype_mat_peptide        ),
+    TFeatKey ( "misc_RNA",           CSeqFeatData::eSubtype_otherRNA           ),
     TFeatKey ( "misc_binding",       CSeqFeatData::eSubtype_misc_binding       ),
     TFeatKey ( "misc_difference",    CSeqFeatData::eSubtype_misc_difference    ),
     TFeatKey ( "misc_feature",       CSeqFeatData::eSubtype_misc_feature       ),
     TFeatKey ( "misc_recomb",        CSeqFeatData::eSubtype_misc_recomb        ),
-    TFeatKey ( "misc_RNA",           CSeqFeatData::eSubtype_otherRNA           ),
     TFeatKey ( "misc_signal",        CSeqFeatData::eSubtype_misc_signal        ),
     TFeatKey ( "misc_structure",     CSeqFeatData::eSubtype_misc_structure     ),
     TFeatKey ( "modified_base",      CSeqFeatData::eSubtype_modified_base      ),
-    TFeatKey ( "mRNA",               CSeqFeatData::eSubtype_mRNA               ),
-    TFeatKey ( "N_region",           CSeqFeatData::eSubtype_N_region           ),
     TFeatKey ( "ncRNA",              CSeqFeatData::eSubtype_ncRNA              ),
-    TFeatKey ( "NonStdRes",          CSeqFeatData::eSubtype_non_std_residue    ),
-    TFeatKey ( "Num",                CSeqFeatData::eSubtype_num                ),
     TFeatKey ( "old_sequence",       CSeqFeatData::eSubtype_old_sequence       ),
     TFeatKey ( "operon",             CSeqFeatData::eSubtype_operon             ),
     TFeatKey ( "oriT",               CSeqFeatData::eSubtype_oriT               ),
@@ -336,54 +354,40 @@ static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript    ),
     TFeatKey ( "primer_bind",        CSeqFeatData::eSubtype_primer_bind        ),
     TFeatKey ( "promoter",           CSeqFeatData::eSubtype_promoter           ),
-    TFeatKey ( "Protein",            CSeqFeatData::eSubtype_prot               ),
     TFeatKey ( "protein_bind",       CSeqFeatData::eSubtype_protein_bind       ),
-    TFeatKey ( "RBS",                CSeqFeatData::eSubtype_RBS                ),
-    TFeatKey ( "REFERENCE",          CSeqFeatData::eSubtype_pub                ),
-    TFeatKey ( "Region",             CSeqFeatData::eSubtype_region             ),
+    TFeatKey ( "rRNA",               CSeqFeatData::eSubtype_rRNA               ),
     TFeatKey ( "rep_origin",         CSeqFeatData::eSubtype_rep_origin         ),
     TFeatKey ( "repeat_region",      CSeqFeatData::eSubtype_repeat_region      ),
     TFeatKey ( "repeat_unit",        CSeqFeatData::eSubtype_repeat_unit        ),
-    TFeatKey ( "rRNA",               CSeqFeatData::eSubtype_rRNA               ),
-    TFeatKey ( "Rsite",              CSeqFeatData::eSubtype_rsite              ),
-    TFeatKey ( "S_region",           CSeqFeatData::eSubtype_S_region           ),
     TFeatKey ( "satellite",          CSeqFeatData::eSubtype_satellite          ),
     TFeatKey ( "scRNA",              CSeqFeatData::eSubtype_scRNA              ),
-    TFeatKey ( "SecStr",             CSeqFeatData::eSubtype_psec_str           ),
     TFeatKey ( "sig_peptide",        CSeqFeatData::eSubtype_sig_peptide_aa     ),
     TFeatKey ( "sig_peptide_nt",     CSeqFeatData::eSubtype_sig_peptide        ),
-    TFeatKey ( "Site",               CSeqFeatData::eSubtype_site               ),
-    TFeatKey ( "Site-ref",           CSeqFeatData::eSubtype_site_ref           ),
-    TFeatKey ( "snoRNA",             CSeqFeatData::eSubtype_snoRNA             ),
     TFeatKey ( "snRNA",              CSeqFeatData::eSubtype_snRNA              ),
+    TFeatKey ( "snoRNA",             CSeqFeatData::eSubtype_snoRNA             ),
     TFeatKey ( "source",             CSeqFeatData::eSubtype_biosrc             ),
-    TFeatKey ( "Src",                CSeqFeatData::eSubtype_biosrc             ),
     TFeatKey ( "stem_loop",          CSeqFeatData::eSubtype_stem_loop          ),
-    TFeatKey ( "STS",                CSeqFeatData::eSubtype_STS                ),
-    TFeatKey ( "TATA_signal",        CSeqFeatData::eSubtype_TATA_signal        ),
+    TFeatKey ( "tRNA",               CSeqFeatData::eSubtype_tRNA               ),
     TFeatKey ( "terminator",         CSeqFeatData::eSubtype_terminator         ),
     TFeatKey ( "tmRNA",              CSeqFeatData::eSubtype_tmRNA              ),
     TFeatKey ( "transit_peptide",    CSeqFeatData::eSubtype_transit_peptide_aa ),
     TFeatKey ( "transit_peptide_nt", CSeqFeatData::eSubtype_transit_peptide    ),
-    TFeatKey ( "tRNA",               CSeqFeatData::eSubtype_tRNA               ),
-    TFeatKey ( "TxInit",             CSeqFeatData::eSubtype_txinit             ),
     TFeatKey ( "unsure",             CSeqFeatData::eSubtype_unsure             ),
-    TFeatKey ( "User",               CSeqFeatData::eSubtype_user               ),
-    TFeatKey ( "V_region",           CSeqFeatData::eSubtype_V_region           ),
-    TFeatKey ( "V_segment",          CSeqFeatData::eSubtype_V_segment          ),
     TFeatKey ( "variation",          CSeqFeatData::eSubtype_variation          ),
-    TFeatKey ( "VariationRef",       CSeqFeatData::eSubtype_variation_ref      ),
-    TFeatKey ( "virion",             CSeqFeatData::eSubtype_virion             ),
-    TFeatKey ( "Xref",               CSeqFeatData::eSubtype_seq                )
+    TFeatKey ( "virion",             CSeqFeatData::eSubtype_virion             )
 };
 
-typedef CStaticArrayMap <const char*, const CSeqFeatData::ESubtype, PNocase_CStr> TFeatMap;
+typedef CStaticArrayMap <const char*, const CSeqFeatData::ESubtype, PCase_CStr> TFeatMap;
 DEFINE_STATIC_ARRAY_MAP(TFeatMap, sm_FeatKeys, feat_key_to_subtype);
 
 
 typedef pair <const char *, const CFeature_table_reader_imp::EQual> TQualKey;
 
 static const TQualKey qual_key_to_subtype [] = {
+    TQualKey ( "EC_number",            CFeature_table_reader_imp::eQual_EC_number            ),
+    TQualKey ( "PCR_conditions",       CFeature_table_reader_imp::eQual_PCR_conditions       ),
+    TQualKey ( "PubMed",               CFeature_table_reader_imp::eQual_PubMed               ),
+    TQualKey ( "STS",                  CFeature_table_reader_imp::eQual_STS                  ),
     TQualKey ( "allele",               CFeature_table_reader_imp::eQual_allele               ),
     TQualKey ( "anticodon",            CFeature_table_reader_imp::eQual_anticodon            ),
     TQualKey ( "bac_ends",             CFeature_table_reader_imp::eQual_bac_ends             ),
@@ -401,7 +405,6 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "ctgcnt",               CFeature_table_reader_imp::eQual_ctgcnt               ),
     TQualKey ( "db_xref",              CFeature_table_reader_imp::eQual_db_xref              ),
     TQualKey ( "direction",            CFeature_table_reader_imp::eQual_direction            ),
-    TQualKey ( "EC_number",            CFeature_table_reader_imp::eQual_EC_number            ),
     TQualKey ( "evidence",             CFeature_table_reader_imp::eQual_evidence             ),
     TQualKey ( "exception",            CFeature_table_reader_imp::eQual_exception            ),
     TQualKey ( "experiment",           CFeature_table_reader_imp::eQual_experiment           ),
@@ -432,14 +435,12 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "operon",               CFeature_table_reader_imp::eQual_operon               ),
     TQualKey ( "organism",             CFeature_table_reader_imp::eQual_organism             ),
     TQualKey ( "partial",              CFeature_table_reader_imp::eQual_partial              ),
-    TQualKey ( "PCR_conditions",       CFeature_table_reader_imp::eQual_PCR_conditions       ),
     TQualKey ( "phenotype",            CFeature_table_reader_imp::eQual_phenotype            ),
     TQualKey ( "product",              CFeature_table_reader_imp::eQual_product              ),
     TQualKey ( "prot_desc",            CFeature_table_reader_imp::eQual_prot_desc            ),
     TQualKey ( "prot_note",            CFeature_table_reader_imp::eQual_prot_note            ),
     TQualKey ( "protein_id",           CFeature_table_reader_imp::eQual_protein_id           ),
     TQualKey ( "pseudo",               CFeature_table_reader_imp::eQual_pseudo               ),
-    TQualKey ( "PubMed",               CFeature_table_reader_imp::eQual_PubMed               ),
     TQualKey ( "replace",              CFeature_table_reader_imp::eQual_replace              ),
     TQualKey ( "ribosomal_slippage",   CFeature_table_reader_imp::eQual_ribosomal_slippage   ),
     TQualKey ( "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family           ),
@@ -461,7 +462,6 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "snp_maxrate",          CFeature_table_reader_imp::eQual_snp_maxrate          ),
     TQualKey ( "snp_valid",            CFeature_table_reader_imp::eQual_snp_valid            ),
     TQualKey ( "standard_name",        CFeature_table_reader_imp::eQual_standard_name        ),
-    TQualKey ( "STS",                  CFeature_table_reader_imp::eQual_STS                  ),
     TQualKey ( "sts_aliases",          CFeature_table_reader_imp::eQual_sts_aliases          ),
     TQualKey ( "sts_dsegs",            CFeature_table_reader_imp::eQual_sts_dsegs            ),
     TQualKey ( "tag_peptide",          CFeature_table_reader_imp::eQual_tag_peptide          ),
@@ -476,7 +476,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "weight",               CFeature_table_reader_imp::eQual_weight               )
 };
 
-typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EQual, PNocase_CStr> TQualMap;
+typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EQual, PCase_CStr> TQualMap;
 DEFINE_STATIC_ARRAY_MAP(TQualMap, sm_QualKeys, qual_key_to_subtype);
 
 
@@ -491,7 +491,7 @@ static const TOrgRefKey orgref_key_to_subtype [] = {
     TOrgRefKey ( "organism",   CFeature_table_reader_imp::eOrgRef_organism  )
 };
 
-typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EOrgRef, PNocase_CStr> TOrgRefMap;
+typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EOrgRef, PCase_CStr> TOrgRefMap;
 DEFINE_STATIC_ARRAY_MAP(TOrgRefMap, sm_OrgRefKeys, orgref_key_to_subtype);
 
 
@@ -530,7 +530,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
     TGenomeKey ( "virion",                    CBioSource::eGenome_virion           )
 };
 
-typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
+typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PCase_CStr> TGenomeMap;
 DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 
 
@@ -576,7 +576,7 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
     TSubSrcKey ( "transposon",           CSubSource::eSubtype_transposon_name       )
 };
 
-typedef CStaticArrayMap <const char*, const CSubSource::ESubtype, PNocase_CStr> TSubSrcMap;
+typedef CStaticArrayMap <const char*, const CSubSource::ESubtype, PCase_CStr> TSubSrcMap;
 DEFINE_STATIC_ARRAY_MAP(TSubSrcMap, sm_SubSrcKeys, subsrc_key_to_subtype);
 
 
@@ -626,7 +626,7 @@ static const TOrgModKey orgmod_key_to_subtype [] = {
     TOrgModKey ( "variety",            COrgMod::eSubtype_variety            )
 };
 
-typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PNocase_CStr> TOrgModMap;
+typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PCase_CStr> TOrgModMap;
 DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sm_OrgModKeys, orgmod_key_to_subtype);
 
 
@@ -646,7 +646,6 @@ static const TTrnaKey trna_key_to_subtype [] = {
     TTrnaKey ( "Asx",            'B' ),
     TTrnaKey ( "Cys",            'C' ),
     TTrnaKey ( "Cysteine",       'C' ),
-    TTrnaKey ( "fMet",           'M' ),
     TTrnaKey ( "Gln",            'Q' ),
     TTrnaKey ( "Glu",            'E' ),
     TTrnaKey ( "Glu or Gln",     'Z' ),
@@ -678,8 +677,8 @@ static const TTrnaKey trna_key_to_subtype [] = {
     TTrnaKey ( "Selenocysteine", 'U' ),
     TTrnaKey ( "Ser",            'S' ),
     TTrnaKey ( "Serine",         'S' ),
-    TTrnaKey ( "Ter",            '*' ),
     TTrnaKey ( "TERM",           '*' ),
+    TTrnaKey ( "Ter",            '*' ),
     TTrnaKey ( "Termination",    '*' ),
     TTrnaKey ( "Thr",            'T' ),
     TTrnaKey ( "Threonine",      'T' ),
@@ -690,10 +689,11 @@ static const TTrnaKey trna_key_to_subtype [] = {
     TTrnaKey ( "Val",            'V' ),
     TTrnaKey ( "Valine",         'V' ),
     TTrnaKey ( "Xle",            'J' ),
-    TTrnaKey ( "Xxx",            'X' )
+    TTrnaKey ( "Xxx",            'X' ),
+    TTrnaKey ( "fMet",           'M' )
 };
 
-typedef CStaticArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
+typedef CStaticArrayMap <const char*, const int, PCase_CStr> TTrnaMap;
 DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 
 
@@ -709,7 +709,7 @@ static const char * const single_key_list [] = {
     "transgenic"
 };
 
-typedef CStaticArraySet <const char*, PNocase_CStr> TSingleSet;
+typedef CStaticArraySet <const char*, PCase_CStr> TSingleSet;
 DEFINE_STATIC_ARRAY_MAP(TSingleSet, sc_SingleKeys, single_key_list);
 
 
@@ -1397,7 +1397,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     {
                         string prefix = "", remainder = "";
                         CInferencePrefixList::GetPrefixAndRemainder (val, prefix, remainder);
-                        if (!NStr::IsBlank(prefix) && NStr::StartsWith (val, prefix, NStr::eNocase)) {
+                        if (!NStr::IsBlank(prefix) && NStr::StartsWith (val, prefix)) {
                             x_AddGBQualToFeature (sfp, qual, val);
                             return true;
                         }
@@ -1734,7 +1734,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 {
     string feat, qual, val;
     Int4 start, stop;
-    bool partial5, partial3, ispoint, isminus, ignore = false;
+    bool partial5, partial3, ispoint, isminus, ignore_until_next_feature_key = false;
     Int4 offset = 0;
     CRef<CSeq_annot> sap(new CSeq_annot);
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
@@ -1796,16 +1796,16 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         x_AddIntervalToFeature (sfp, location->SetMix(), 
                                                 seqid, start, stop, partial5, partial3, ispoint, isminus);
 
-                        ignore = false;
+                        ignore_until_next_feature_key = false;
 
                     } else {
 
                         // bad feature, set ignore flag
 
-                        ignore = true;
+                        ignore_until_next_feature_key = true;
                     }
 
-                } else if (ignore) {
+                } else if (ignore_until_next_feature_key) {
 
                     // bad feature, ignore qualifiers until next feature key
 
