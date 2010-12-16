@@ -29,7 +29,7 @@ Linux64-Suse : GCC412  : GCC.sh 4.1.2 --with-distcc
 Linux64-Suse : GCC423  : GCC.sh 4.2.3 --without-debug --with-mt --with-distcc
 Linux64-Suse : ICC     : ICC.sh       --with-mt  <ENV>NCBI=</ENV>
 
-FreeBSD32 : GCC : GCC.sh --without-debug
+# FreeBSD32 : GCC : GCC.sh --without-debug
 
 SunOSx86 : WS64 : WorkShop59.sh 64 --with-debug --with-dll --with-mt
 

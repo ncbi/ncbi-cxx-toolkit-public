@@ -35,8 +35,8 @@ Linux32-Suse : Release : GCC.sh --without-debug --with-optimization --with-mt --
 Linux32-Suse : Debug : GCC.sh --with-debug --with-mt --without-bdb
 Linux64-Suse : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
 Linux64-Suse : Debug : GCC.sh --with-debug --with-mt --without-bdb
-FreeBSD32 : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
-FreeBSD32 : Debug : GCC.sh --with-debug --with-mt --without-bdb
+# FreeBSD32 : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
+# FreeBSD32 : Debug : GCC.sh --with-debug --with-mt --without-bdb
 FreeBSD32-v80 : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
 FreeBSD32-v80 : Debug : GCC.sh --with-debug --with-mt --without-bdb
 IntelMAC : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
