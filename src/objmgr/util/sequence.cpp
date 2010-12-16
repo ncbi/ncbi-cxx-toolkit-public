@@ -2878,6 +2878,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     prot->SetInst().SetRepr(CSeq_inst::eRepr_delta);
     prot->SetInst().SetMol(CSeq_inst::eMol_aa);
     prot->SetInst().SetLength(0);
+    prot->SetInst().SetTopology(CSeq_inst::eTopology_linear);
 
     CRef<CDelta_seq> seg(new CDelta_seq());
     seg->SetLiteral().SetLength(0);
@@ -2914,7 +2915,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         if (start.HasZeroGapBefore()) {
             // create new segment for gap
             CRef<CDelta_seq> new_seg(new CDelta_seq());
-            new_seg->SetLiteral().SetSeq_data().SetGap();
+            new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
             new_seg->SetLiteral().SetLength(0);
             prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
         }
@@ -2951,7 +2952,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             } else {
                 // create new segment for gap
                 CRef<CDelta_seq> new_seg(new CDelta_seq());
-                new_seg->SetLiteral().SetSeq_data().SetGap();
+                new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
                 new_seg->SetLiteral().SetLength(1);
                 if (unknown_length) {
                     new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
@@ -3016,7 +3017,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             } else {
                 // create new segment for gap
                 CRef<CDelta_seq> new_seg(new CDelta_seq());
-                new_seg->SetLiteral().SetSeq_data().SetGap();
+                new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
                 new_seg->SetLiteral().SetLength(1);
                 if (unknown_length) {
                     new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
