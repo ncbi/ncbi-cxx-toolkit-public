@@ -166,6 +166,7 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
     SOCK sock = 0;
     EIO_Status status;
 
+    _ASSERT(net_info);
     if (*net_info->http_proxy_host) {
         SOCK s = 0;
         status = HTTP_CreateTunnel(net_info, fHCC_DetachableTunnel
@@ -203,10 +204,9 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        const void*         data,
                                        size_t              size,
                                        TSOCK_Flags         flags,
-                                       const STimeout*     timeout,
                                        streamsize          buf_size)
     : CConn_IOStream(s_TunneledSocketConnector(&net_info, data, size, flags),
-                     timeout, buf_size)
+                     net_info.timeout, buf_size)
 {
     return;
 }
