@@ -166,9 +166,7 @@ static void x_Callback(CONN conn, ECONN_Callback type)
 }
 
 
-static EIO_Status x_ReInit
-(CONN      conn,
- CONNECTOR connector)
+static EIO_Status x_ReInit(CONN conn, CONNECTOR connector)
 {
     CONNECTOR       x_conn;
     EIO_Status      status;
@@ -250,8 +248,7 @@ static EIO_Status x_ReInit
 }
 
 
-static EIO_Status s_Open
-(CONN conn)
+static EIO_Status s_Open(CONN conn)
 {
     const STimeout* timeout;
     EIO_Status      status;
