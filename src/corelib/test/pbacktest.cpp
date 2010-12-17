@@ -59,13 +59,13 @@ static const size_t kBufferSize = 512*1024;
 /* NOTE about MSVC compiler and its C++ std. library:
  *
  * The C++ standard is very confusing on the stream's ability to do
- * pushback() and unget(); it says nothing about the case whether
+ * pushback() and unget();  it says nothing about the case whether
  * they are guaranteed, and if so, under what circumstances.
  * The only clear message is seen in "The C++ Programming Language",
  * 3rd ed. by B.Stroustrup, p.644, which reads "what is guaranteed
  * is that you can back up one character after a successful read."
  *
- * Most implementation obey this; but there are some that do not.
+ * Most implementation obey this;  but there are some that do not.
  *
  * A bug or not a bug, we had to put putback and unget tests to only
  * follow a first pushback operation, which (internally) changes the
@@ -379,15 +379,20 @@ extern int TEST_StreamPushback(iostream&    ios,
                      nread << " out of " << kBufferSize << ", " <<
                      npback << " pending");
         }
+        if (rand() % 1000 == 789) {
+            ERR_POST(Info << "Leaving early, checking destructor chain");
+            npback = 0;
+            break;
+        }
     }
-    
+
     ERR_POST(Info << nread << " byte" << &"s"[nread==1]           <<
              " obtained in " << k << " iteration" << &"s"[k == 1] <<
              (ios.eof() ? " (EOF)" : ""));
     data[nread] = '\0';
     _ASSERT(!npback);
 
-    for (i = 0;  i < kBufferSize;  i++) {
+    for (i = 0;  i < nread;  i++) {
         if (!data[i]) {
             ERR_POST("Zero byte encountered @ " << i);
             return 1;
@@ -405,27 +410,31 @@ extern int TEST_StreamPushback(iostream&    ios,
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << nread);
         return 1;
     }
+    if (rand() & 1) {
+        ERR_POST(Info << "Post I/O position checks");
+        CT_POS_TYPE posp = ios.tellp();
+        CT_OFF_TYPE offp = (CT_OFF_TYPE)(posp
+                                         - (CT_POS_TYPE)((CT_OFF_TYPE)(0)));
+        _ASSERT(Int8(offp) == NcbiStreamposToInt8(posp));
+        _ASSERT(NcbiInt8ToStreampos(Int8(offp)) == posp);
 
-    CT_POS_TYPE posp = ios.tellp();
-    CT_OFF_TYPE offp = (CT_OFF_TYPE)(posp
-                                     - (CT_POS_TYPE)((CT_OFF_TYPE)(0)));
-    _ASSERT(Int8(offp) == NcbiStreamposToInt8(posp));
-    _ASSERT(NcbiInt8ToStreampos(Int8(offp)) == posp);
+        CT_POS_TYPE posg = ios.tellg();
+        CT_OFF_TYPE offg = (CT_OFF_TYPE)(posg
+                                         - (CT_POS_TYPE)((CT_OFF_TYPE)(0)));
+        _ASSERT(Int8(offg) == NcbiStreamposToInt8(posg));
+        _ASSERT(NcbiInt8ToStreampos(Int8(offg)) == posg);
 
-    CT_POS_TYPE posg = ios.tellg();
-    CT_OFF_TYPE offg = (CT_OFF_TYPE)(posg
-                                     - (CT_POS_TYPE)((CT_OFF_TYPE)(0)));
-    _ASSERT(Int8(offg) == NcbiStreamposToInt8(posg));
-    _ASSERT(NcbiInt8ToStreampos(Int8(offg)) == posg);
-
-    if (posp != posg  ||  offp != offg) {
-        ERR_POST("Off PUT("
-                 << NStr::Int8ToString(Int8(offp)) << ") != "
-                 "Off GET("
-                 << NStr::Int8ToString(Int8(offg)) << ')');
-        return 1;
+        if (nread == kBufferSize) {
+            ERR_POST(Info << "Additional completeness check");
+            if (posp != posg  ||  offp != offg) {
+                ERR_POST("Off PUT("
+                         << NStr::Int8ToString(Int8(offp)) << ") != "
+                         "Off GET("
+                         << NStr::Int8ToString(Int8(offg)) << ')');
+                return 1;
+            }
+        }
     }
-
     ERR_POST(Info << "Test passed");
 
     delete[] orig;

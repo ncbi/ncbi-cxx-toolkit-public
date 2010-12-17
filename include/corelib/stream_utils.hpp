@@ -66,8 +66,8 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
 // from the outside until all of the passed data is read out from the stream.
 // NOTE 1:  It's okay to pushback arbitrary data (i.e. not necessarily
 //          just what has been last read from the stream).
-// NOTE 2:  Data does not go to the original streambuf of "is".
-// NOTE 3:  It's okay if "is" is actually a duplex stream (iostream).
+// NOTE 2:  Data does not actually go to the original streambuf of "is".
+// NOTE 3:  It's okay if "is" is a full-duplex stream (iostream).
 // NOTE 4:  Data pushed back regardless of the current stream state, so it is
 //          the caller's responsibility to check and possibly clear stream
 //          state that can prevent further reading (e.g. an EOF condition

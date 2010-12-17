@@ -137,7 +137,11 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Sb = m_Is.rdbuf(this);
 #ifdef HAVE_GOOD_IOS_CALLBACKS
-    try {
+    CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
+    if (sb) {
+        m_Index             = sb->m_Index;
+        m_Is.pword(m_Index) = this;
+    } else try {
         m_Index             = m_Is.xalloc();
         m_Is.pword(m_Index) = this;
         m_Is.register_callback(x_Callback, m_Index);
@@ -150,7 +154,8 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
 CPushback_Streambuf::~CPushback_Streambuf()
 {
 #ifdef HAVE_GOOD_IOS_CALLBACKS
-    m_Is.pword(m_Index) = 0;
+    if (m_Is.pword(m_Index) == this)
+        m_Is.pword(m_Index) = 0;
 #endif //HAVE_GOOD_IOS_CALLBACKS
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
     if (m_Sb) {
@@ -229,8 +234,8 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     while (m) {
         if (gptr() < egptr()) {
             size_t n       = (size_t) m;
-            size_t n_avail = (size_t) (egptr() - gptr());
-            size_t n_read  = (n <= n_avail) ? n : n_avail;
+            size_t n_avail = (size_t)(egptr() - gptr());
+            size_t n_read  = n < n_avail ? n : n_avail;
             if (buf != gptr()) // either equal or non-overlapping
                 memcpy(buf, gptr(), n_read);
             gbump((int) n_read);
@@ -258,7 +263,7 @@ streamsize CPushback_Streambuf::showmanyc(void)
 
 CT_INT_TYPE CPushback_Streambuf::pbackfail(CT_INT_TYPE /*c*/)
 {
-    /* We always maintain "usual backup condition" (27.5.2.4.3.13) after
+    /* We always maintain "usual backup condition" (27.5.2.4.3.13) after an
      * underflow(), i.e. 1 byte backup after a good read is always possible.
      * That is, this function gets called only if the user tries to
      * back up more than once (although, some attempts may be successful,
@@ -306,6 +311,7 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
         sb->m_DelPtr = 0;
         setg(sb->gptr(), sb->gptr(), sb->egptr());
         delete sb;
+        return;
     } else {
         CT_CHAR_TYPE* bp = 0;
         streamsize buf_size = m_DelPtr
@@ -318,7 +324,7 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
                                    min(buf_size, max_size));
         if (n <= 0) {
             // NB: For unknown reasons WorkShop6 can return -1 from sgetn :-/
-            delete bp;
+            delete[] bp;
             return;
         }
         if (bp) {
@@ -335,7 +341,7 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
 void CPushback_Streambuf::x_DropBuffer(void)
 {
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
-    if (sb) {
+    if ( sb ) {
         m_Sb     = sb->m_Sb;
         sb->m_Sb = 0;
         delete sb;
