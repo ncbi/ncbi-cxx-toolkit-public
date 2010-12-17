@@ -1769,7 +1769,9 @@ void CProjBulderApp::ParseArguments(void)
 void CProjBulderApp::VerifyArguments(void)
 {
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
-    NStr::ToLower(m_Root);
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        NStr::ToLower(m_Root);
+    }
 
     m_IncDir = GetProjectTreeInfo().m_Compilers;
     m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
