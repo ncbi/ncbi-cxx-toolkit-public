@@ -87,16 +87,16 @@ public:
     CTrigger(ESwitch log = eDefault);
     virtual ~CTrigger();
 
+    EIO_Status GetStatus(void) const;
+
     EIO_Status Set(void);
     EIO_Status IsSet(void);
     EIO_Status Reset(void);
 
-    EIO_Status GetStatus(void) const;
+    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
     // Access to the underlying "TRIGGER" and the system-specific handle.
-    TRIGGER            GetTRIGGER (void) const;
-
-    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
+    TRIGGER GetTRIGGER(void) const;
 
 protected:
     TRIGGER    m_Trigger;
@@ -309,16 +309,6 @@ public:
     ///  Textual string representing the (parts of) peer's address
     string GetPeerAddress(ESOCK_AddressFormat format = eSAF_Full) const;
 
-    /// Specify if this "CSocket" is to own the underlying "SOCK".
-    /// @return
-    ///  Previous ownership mode.
-    /// @param if_to_own
-    ///
-    EOwnership SetOwnership(EOwnership if_to_own);
-
-    // Access to the underlying "SOCK" and the system-specific socket handle.
-    SOCK               GetSOCK    (void) const;
-
     /// @param handle_buf
     ///
     /// @param handle_size
@@ -332,13 +322,6 @@ public:
     /// @param read_on_write
     ///
     ESwitch SetReadOnWrite(ESwitch read_on_write = eOn);
-
-    /// @li <b>NOTE:</b>  use CSocketAPI::SetDataLogging() to set the default
-    /// value
-    ///
-    /// @param log
-    ///
-    ESwitch SetDataLogging(ESwitch log = eOn);
 
     /// @li <b>NOTE:</b>  use CSocketAPI::SetInterruptOnSignal() to set the
     /// default value
@@ -361,11 +344,23 @@ public:
     ///
     void    DisableOSSendDelay(bool on_off = true);
 
+    /// @li <b>NOTE:</b>  use CSocketAPI::SetDataLogging() to set the default
+    /// value
+    ///
+    /// @param log
+    ///
+    ESwitch SetDataLogging(ESwitch log = eOn);
+
+    bool IsDatagram  (void) const;
     bool IsClientSide(void) const;
     bool IsServerSide(void) const;
-    bool IsDatagram  (void) const;
     bool IsUNIX      (void) const;
     bool IsSecure    (void) const;
+
+    /// Positions and stats (direction is either eIO_Read or eIO_Write)
+    TNCBI_BigCount GetPosition  (EIO_Event direction) const;
+    TNCBI_BigCount GetCount     (EIO_Event direction) const;
+    TNCBI_BigCount GetTotalCount(EIO_Event direction) const;
 
     /// Close the current underlying "SOCK" (if any, and if owned),
     /// and from now on use "sock" as the underlying "SOCK" instead.
@@ -379,10 +374,15 @@ public:
     ///
     void Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence);
 
-    /// Positions and stats (direction is either eIO_Read or eIO_Write)
-    TNCBI_BigCount GetPosition  (EIO_Event direction) const;
-    TNCBI_BigCount GetCount     (EIO_Event direction) const;
-    TNCBI_BigCount GetTotalCount(EIO_Event direction) const;
+    /// Specify if this "CSocket" is to own the underlying "SOCK".
+    /// @return
+    ///  Previous ownership mode.
+    /// @param if_to_own
+    ///
+    EOwnership SetOwnership(EOwnership if_to_own);
+
+    // Access to the underlying "SOCK" and the system-specific socket handle.
+    SOCK GetSOCK(void) const;
 
 protected:
     SOCK       m_Socket;
@@ -490,6 +490,8 @@ public:
                     size_t          maxmsglen   = 0);
 
     /// @param direction
+    /// @sa
+    ///   DSOCK_WipeMsg()
     ///
     EIO_Status Clear(EIO_Event direction);
 
@@ -551,9 +553,6 @@ public:
     /// Call Close(), then self-destruct
     virtual ~CListeningSocket(void);
 
-    /// Return port which the server listens on
-    unsigned short GetPort(ENH_ByteOrder byte_order) const;
-
     /// Return eIO_Closed if not yet bound or Close()'d.
     EIO_Status GetStatus(void) const;
 
@@ -592,6 +591,15 @@ public:
     ///
     EIO_Status Close(void);
 
+    /// @param handle_buf
+    ///
+    /// @param handle_size
+    ///
+    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
+
+    /// Return port which the server listens on
+    unsigned short GetPort(ENH_ByteOrder byte_order) const;
+
     /// Specify if this "CListeningSocket" is to own the underlying "LSOCK".
     /// @param if_to_own
     ///
@@ -601,13 +609,7 @@ public:
 
     /// Access to the underlying "LSOCK" and the system-specific socket
     /// handle
-    LSOCK              GetLSOCK   (void) const;
-
-    /// @param handle_buf
-    ///
-    /// @param handle_size
-    ///
-    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
+    LSOCK GetLSOCK(void) const;
 
 protected:
     LSOCK      m_Socket;
@@ -636,22 +638,22 @@ class NCBI_XCONNECT_EXPORT CSocketAPI
 public:
     /// Generic
     ///
-    static const STimeout* SetSelectInternalRestartTimeout(const STimeout* t);
-    static void         AllowSigPipe(void);
     static EIO_Status   Initialize  (void);
     static EIO_Status   Shutdown    (void);
+    static void         AllowSigPipe(void);
+    static size_t       OSHandleSize(void);
 
-    /// Get OS handle size for sockets
-    static size_t OSHandleSize(void);
+    /// Utility
+    ///
+    static const STimeout*    SetSelectInternalRestartTimeout
+                                    (const STimeout*    timeout);
+    static ESOCK_IOWaitSysAPI SetIOWaitSysAPI
+                                    (ESOCK_IOWaitSysAPI api);
 
     /// Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
     /// @param read_on_write
     ///
     static ESwitch SetReadOnWrite(ESwitch read_on_write);
-
-    /// @param log
-    ///
-    static ESwitch SetDataLogging(ESwitch log);
 
     /// @param interrupt
     ///
@@ -660,6 +662,10 @@ public:
     /// @param reuse
     ///
     static ESwitch SetReuseAddress(ESwitch reuse);
+
+    /// @param log
+    ///
+    static ESwitch SetDataLogging(ESwitch log);
 
     /// @li <b>NOTE:</b>  use CSocket::Wait() to wait for I/O event(s) on a
     /// single socket
@@ -683,37 +689,38 @@ public:
                            const STimeout* timeout,
                            size_t*         n_ready = 0);
 
-    /// Misc  (mostly BSD-like); "host" ought to be in network byte order
-    /// empty str on err
-    static string gethostname(ESwitch log = eOff);
+    /// BSD-like API.  NB: when int, "host" must be in network byte order
 
     static string ntoa(unsigned int  host);
-    static bool   isip(const string& host);
-
-    /// empty str on err
-    static string       gethostbyaddr(unsigned int  host, ESwitch log = eOff);
-    /// 0 on error
-    static unsigned int gethostbyname(const string& host, ESwitch log = eOff);
+    static bool   isip(const string& host, bool fullquad = false);
 
     static unsigned int   HostToNetLong (unsigned int   value);
     static unsigned int   NetToHostLong (unsigned int   value);
     static unsigned short HostToNetShort(unsigned short value);
     static unsigned short NetToHostShort(unsigned short value);
 
+    /// Return empty string on error
+    static string       gethostname(ESwitch log = eOff);
+
+    /// Return empty string on error
+    static string       gethostbyaddr(unsigned int  host, ESwitch log = eOff);
+    /// 0 on error
+    static unsigned int gethostbyname(const string& host, ESwitch log = eOff);
+
     /// Loopback address gets returned in network byte order
-    static unsigned int   GetLoopbackAddress(void);
+    static unsigned int GetLoopbackAddress(void);
 
     /// Local host address in network byte order (cached for faster retrieval)
-    static unsigned int   GetLocalHostAddress(ESwitch reget = eDefault);
+    static unsigned int GetLocalHostAddress(ESwitch reget = eDefault);
 
     /// See SOCK_HostPortToString()
-    static string         HostPortToString(unsigned int   host,
-                                           unsigned short port);
+    static string       HostPortToString(unsigned int   host,
+                                         unsigned short port);
 
     /// Return position past the end of parsed portion, NPOS on error
-    static SIZE_TYPE      StringToHostPort(const string&   str,
-                                           unsigned int*   host,
-                                           unsigned short* port);
+    static SIZE_TYPE    StringToHostPort(const string&   str,
+                                         unsigned int*   host,
+                                         unsigned short* port);
 };
 
 
@@ -756,15 +763,15 @@ inline EIO_Status CTrigger::Reset(void)
 }
 
 
-inline TRIGGER    CTrigger::GetTRIGGER(void) const
-{
-    return m_Trigger;
-}
-
-
 inline EIO_Status CTrigger::GetOSHandle(void*, size_t) const
 {
     return m_Trigger ? eIO_NotSupported : eIO_Closed;
+}
+
+
+inline TRIGGER    CTrigger::GetTRIGGER(void) const
+{
+    return m_Trigger;
 }
 
 
@@ -772,6 +779,12 @@ inline EIO_Status CTrigger::GetOSHandle(void*, size_t) const
 /////////////////////////////////////////////////////////////////////////////
 /// CSocket::
 ///
+
+inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
+{
+    return m_Socket ? SOCK_Status(m_Socket, direction) : eIO_Closed;
+}
+
 
 inline EIO_Status CSocket::Shutdown(EIO_Event how)
 {
@@ -822,26 +835,6 @@ inline unsigned short CSocket::GetRemotePort(ENH_ByteOrder byte_order) const
 }
 
 
-inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
-{
-    return m_Socket ? SOCK_Status(m_Socket, direction) : eIO_Closed;
-}
-
-
-inline EOwnership CSocket::SetOwnership(EOwnership if_to_own)
-{
-    EOwnership prev_ownership = m_IsOwned;
-    m_IsOwned                 = if_to_own;
-    return prev_ownership;
-}
-
-
-inline SOCK CSocket::GetSOCK(void) const
-{
-    return m_Socket;
-}
-
-
 inline EIO_Status CSocket::GetOSHandle(void* hnd_buf, size_t hnd_siz) const
 {
     return m_Socket? SOCK_GetOSHandle(m_Socket, hnd_buf, hnd_siz) : eIO_Closed;
@@ -851,12 +844,6 @@ inline EIO_Status CSocket::GetOSHandle(void* hnd_buf, size_t hnd_siz) const
 inline ESwitch CSocket::SetReadOnWrite(ESwitch read_on_write)
 {
     return m_Socket? SOCK_SetReadOnWrite(m_Socket, read_on_write) : eDefault;
-}
-
-
-inline ESwitch CSocket::SetDataLogging(ESwitch log)
-{
-    return m_Socket? SOCK_SetDataLogging(m_Socket, log) : eDefault;
 }
 
 
@@ -880,6 +867,18 @@ inline void CSocket::DisableOSSendDelay(bool on_off)
 }
 
 
+inline ESwitch CSocket::SetDataLogging(ESwitch log)
+{
+    return m_Socket? SOCK_SetDataLogging(m_Socket, log) : eDefault;
+}
+
+
+inline bool CSocket::IsDatagram(void) const
+{
+    return m_Socket && SOCK_IsDatagram(m_Socket) ? true : false;
+}
+
+
 inline bool CSocket::IsClientSide(void) const
 {
     return m_Socket && SOCK_IsClientSide(m_Socket) ? true : false;
@@ -889,12 +888,6 @@ inline bool CSocket::IsClientSide(void) const
 inline bool CSocket::IsServerSide(void) const
 {
     return m_Socket && SOCK_IsServerSide(m_Socket) ? true : false;
-}
-
-
-inline bool CSocket::IsDatagram(void) const
-{
-    return m_Socket && SOCK_IsDatagram(m_Socket) ? true : false;
 }
 
 
@@ -928,10 +921,38 @@ inline TNCBI_BigCount CSocket::GetTotalCount(EIO_Event direction) const
 }
 
 
+inline EOwnership CSocket::SetOwnership(EOwnership if_to_own)
+{
+    EOwnership prev_ownership = m_IsOwned;
+    m_IsOwned                 = if_to_own;
+    return prev_ownership;
+}
+
+
+inline SOCK CSocket::GetSOCK(void) const
+{
+    return m_Socket;
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CDatagramSocket::
 ///
+
+
+inline EIO_Status CDatagramSocket::Bind(unsigned short port)
+{
+    return m_Socket ? DSOCK_Bind(m_Socket, port) : eIO_Closed;
+}
+
+
+inline EIO_Status CDatagramSocket::Connect(const string&  host,
+                                    unsigned short port)
+{
+    return m_Socket ? DSOCK_Connect(m_Socket, host.c_str(), port) : eIO_Closed;
+}
+
 
 inline EIO_Status CDatagramSocket::Wait(const STimeout* timeout)
 {
@@ -962,15 +983,23 @@ inline TNCBI_BigCount CDatagramSocket::GetMessageCount(EIO_Event dir) const
 ///  CListeningSocket::
 ///
 
-inline unsigned short CListeningSocket::GetPort(ENH_ByteOrder byte_order) const
-{
-    return m_Socket ? LSOCK_GetPort(m_Socket, byte_order) : 0;
-}
-
-
 inline EIO_Status CListeningSocket::GetStatus(void) const
 {
     return m_Socket ? eIO_Success : eIO_Closed;
+}
+
+
+inline EIO_Status CListeningSocket::GetOSHandle(void*  handle_buf,
+                                                size_t handle_size) const
+{
+    return m_Socket
+        ? LSOCK_GetOSHandle(m_Socket, handle_buf, handle_size) : eIO_Closed;
+}
+
+
+inline unsigned short CListeningSocket::GetPort(ENH_ByteOrder byte_order) const
+{
+    return m_Socket ? LSOCK_GetPort(m_Socket, byte_order) : 0;
 }
 
 
@@ -988,31 +1017,10 @@ inline LSOCK CListeningSocket::GetLSOCK(void) const
 }
 
 
-inline EIO_Status CListeningSocket::GetOSHandle(void*  handle_buf,
-                                                size_t handle_size) const
-{
-    return m_Socket
-        ? LSOCK_GetOSHandle(m_Socket, handle_buf, handle_size) : eIO_Closed;
-}
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CSocketAPI::
 ///
-
-inline void CSocketAPI::AllowSigPipe(void)
-{
-    SOCK_AllowSigPipeAPI();
-}
-
-
-inline const STimeout* CSocketAPI::SetSelectInternalRestartTimeout
-(const STimeout* tmo)
-{
-    return SOCK_SetSelectInternalRestartTimeout(tmo);
-}
-
 
 inline EIO_Status CSocketAPI::Initialize(void)
 {
@@ -1026,21 +1034,35 @@ inline EIO_Status CSocketAPI::Shutdown(void)
 }
 
 
+inline void CSocketAPI::AllowSigPipe(void)
+{
+    SOCK_AllowSigPipeAPI();
+}
+
+
 inline size_t CSocketAPI::OSHandleSize(void)
 {
     return SOCK_OSHandleSize();
 }
 
 
-inline ESwitch CSocketAPI::SetReadOnWrite(ESwitch read_on_write)
+inline const STimeout* CSocketAPI::SetSelectInternalRestartTimeout
+(const STimeout* timeslice)
 {
-    return SOCK_SetReadOnWriteAPI(read_on_write);
+    return SOCK_SetSelectInternalRestartTimeout(timeslice);
 }
 
 
-inline ESwitch CSocketAPI::SetDataLogging(ESwitch log)
+inline ESOCK_IOWaitSysAPI CSocketAPI::SetIOWaitSysAPI
+(ESOCK_IOWaitSysAPI api)
 {
-    return SOCK_SetDataLoggingAPI(log);
+    return SOCK_SetIOWaitSysAPI(api);
+}
+
+
+inline ESwitch CSocketAPI::SetReadOnWrite(ESwitch read_on_write)
+{
+    return SOCK_SetReadOnWriteAPI(read_on_write);
 }
 
 
@@ -1056,9 +1078,15 @@ inline ESwitch CSocketAPI::SetReuseAddress(ESwitch reuse)
 }
 
 
-inline bool CSocketAPI::isip(const string& host)
+inline ESwitch CSocketAPI::SetDataLogging(ESwitch log)
 {
-    return SOCK_isip(host.c_str()) ? true : false;
+    return SOCK_SetDataLoggingAPI(log);
+}
+
+
+inline bool CSocketAPI::isip(const string& host, bool fullquad)
+{
+    return SOCK_isipEx(host.c_str(), fullquad ? 1 : 0) ? true : false;
 }
 
 

@@ -176,7 +176,7 @@ typedef int	       SOCK_socklen_t;
 
 
 /******************************************************************************
- *  GLOBALS
+ *  STATIC GLOBALS
  */
 
 
@@ -411,22 +411,6 @@ static char* s_WinStrerror(DWORD error)
  */
 
 
-static unsigned short s_GetLocalPort(TSOCK_Handle fd)
-{
-    struct sockaddr_in sin;
-    SOCK_socklen_t sinlen = (SOCK_socklen_t) sizeof(sin);
-    memset(&sin, 0, sizeof(sin));
-#ifdef HAVE_SIN_LEN
-    sin.sin_len = sinlen;
-#endif /*HAVE_SIN_LEN*/
-    if (getsockname(fd, (struct sockaddr*) &sin, &sinlen) == 0
-        &&  sin.sin_family == AF_INET) {
-        return ntohs(sin.sin_port);
-    }
-    return 0;
-}
-
-
 static const char* s_CP(unsigned int host, unsigned short port,
                         const char* path, char* buf, size_t bufsize)
 {
@@ -503,6 +487,22 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
     } else
         sprintf(buf, "%s#%u[?]: ",  sname, sock->id);
     return buf;
+}
+
+
+static unsigned short s_GetLocalPort(TSOCK_Handle fd)
+{
+    struct sockaddr_in sin;
+    SOCK_socklen_t sinlen = (SOCK_socklen_t) sizeof(sin);
+    memset(&sin, 0, sizeof(sin));
+#ifdef HAVE_SIN_LEN
+    sin.sin_len = sinlen;
+#endif /*HAVE_SIN_LEN*/
+    if (getsockname(fd, (struct sockaddr*) &sin, &sinlen) == 0
+        &&  sin.sin_family == AF_INET) {
+        return ntohs(sin.sin_port);
+    }
+    return 0;
 }
 
 
@@ -654,36 +654,39 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
 }
 
 
-extern ESwitch SOCK_SetDataLoggingAPI(ESwitch log)
+
+/******************************************************************************
+ *  STimeout <--> struct timeval  conversions
+ */
+
+
+static STimeout*       s_tv2to(const struct timeval* tv, STimeout* to)
 {
-    ESwitch old = s_Log;
-    if (log != eDefault)
-        s_Log = log;
-    return old;
+    if (!tv)
+        return 0;
+
+    to->sec  = (unsigned int) tv->tv_sec;
+    to->usec = (unsigned int) tv->tv_usec;
+    return to;
 }
 
 
-extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
+static struct timeval* s_to2tv(const STimeout* to,       struct timeval* tv)
 {
-    ESwitch old = (ESwitch) sock->log;
-    sock->log = log;
-    return old;
+    if (!to)
+        return 0;
+
+    tv->tv_sec  = to->usec / 1000000 + to->sec;
+    tv->tv_usec = to->usec % 1000000;
+    return tv;
 }
 
 
 
 /******************************************************************************
- *  API Initialization and Shutdown/Cleanup
+ *  API Initialization, Shutdown/Cleanup, and Utility
  */
 
-
-extern void SOCK_AllowSigPipeAPI(void)
-{
-#ifdef NCBI_OS_UNIX
-    s_AllowSigPipe = 1/*true - API will not mask SIGPIPE out at init*/;
-#endif /*NCBI_OS_UNIX*/
-    return;
-}
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
 #  if !defined(__GNUC__)  &&  !defined(offsetof)
@@ -807,20 +810,6 @@ static void s_ShowDataLayout(void)
 }
 
 #endif /*SOCK_HAVE_SHOWDATALAYOUT*/
-
-
-extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
-{
-    ESOCK_IOWaitSysAPI retval = s_IOWaitSysAPI;
-#if !defined(NCBI_OS_UNIX)  ||  !defined(HAVE_POLL_H)
-    if (api == eSOCK_IOWaitSysAPIPoll) {
-        CORE_LOG_X(149, eLOG_Critical, "[SOCK::SetIOWaitSysAPI] "
-                   " Poll API requested but not supported on this platform");
-    } else
-#endif /*!NCBI_OS_UNIX || !HAVE_POLL_H*/
-        s_IOWaitSysAPI = api;
-    return retval;
-}
 
 
 extern EIO_Status SOCK_InitializeAPI(void)
@@ -972,6 +961,49 @@ extern EIO_Status SOCK_ShutdownAPI(void)
 
     CORE_TRACE("[SOCK::ShutdownAPI]  End");
     return eIO_Success;
+}
+
+
+extern void SOCK_AllowSigPipeAPI(void)
+{
+#ifdef NCBI_OS_UNIX
+    s_AllowSigPipe = 1/*true - API will not mask SIGPIPE out at init*/;
+#endif /*NCBI_OS_UNIX*/
+    return;
+}
+
+
+extern size_t SOCK_OSHandleSize(void)
+{
+    return sizeof(TSOCK_Handle);
+}
+
+
+
+extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
+{
+    static struct timeval s_NewTmo;
+    static STimeout       s_OldTmo;
+    const  STimeout*      retval;
+    CORE_LOCK_WRITE;
+    retval          = s_tv2to(s_SelectTimeout, &s_OldTmo);
+    s_SelectTimeout = s_to2tv(t,               &s_NewTmo);
+    CORE_UNLOCK;
+    return retval;
+}
+
+
+extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
+{
+    ESOCK_IOWaitSysAPI retval = s_IOWaitSysAPI;
+#if !defined(NCBI_OS_UNIX)  ||  !defined(HAVE_POLL_H)
+    if (api == eSOCK_IOWaitSysAPIPoll) {
+        CORE_LOG_X(149, eLOG_Critical, "[SOCK::SetIOWaitSysAPI] "
+                   " Poll API requested but not supported on this platform");
+    } else
+#endif /*!NCBI_OS_UNIX || !HAVE_POLL_H*/
+        s_IOWaitSysAPI = api;
+    return retval;
 }
 
 
@@ -1249,32 +1281,8 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 
 
 /******************************************************************************
- *  LSOCK & SOCK AUXILIARIES
+ *  SOCKET STATIC HELPERS
  */
-
-
-/* STimeout <--> struct timeval  conversions
- */
-static STimeout *s_tv2to(const struct timeval* tv, STimeout* to)
-{
-    if (!tv)
-        return 0;
-
-    to->sec  = (unsigned int) tv->tv_sec;
-    to->usec = (unsigned int) tv->tv_usec;
-    return to;
-}
-
-
-static struct timeval* s_to2tv(const STimeout* to, struct timeval* tv)
-{
-    if (!to)
-        return 0;
-
-    tv->tv_sec  = to->usec / 1000000 + to->sec;
-    tv->tv_usec = to->usec % 1000000;
-    return tv;
-}
 
 
 /* Switch the specified socket I/O between blocking and non-blocking mode
@@ -3900,29 +3908,6 @@ static EIO_Status s_Create(const char*     hostpath,
 
 
 /******************************************************************************
- *  UTILITY
- */
-
-extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
-{
-    static struct timeval s_NewTmo;
-    static STimeout       s_OldTmo;
-    const  STimeout*      retval;
-    CORE_LOCK_WRITE;
-    retval          = s_tv2to(s_SelectTimeout, &s_OldTmo);
-    s_SelectTimeout = s_to2tv(t,               &s_NewTmo);
-    CORE_UNLOCK;
-    return retval;
-}
-
-
-extern size_t SOCK_OSHandleSize(void)
-{
-    return sizeof(TSOCK_Handle);
-}
-
-
-/******************************************************************************
  *  TRIGGER
  */
 
@@ -4191,6 +4176,7 @@ extern EIO_Status TRIGGER_Reset(TRIGGER trigger)
 /******************************************************************************
  *  LISTENING SOCKET
  */
+
 
 static EIO_Status s_CreateListening(const char*    path,
                                     unsigned short port,
@@ -4542,15 +4528,6 @@ extern EIO_Status LSOCK_CreateUNIX(const char*    path,
     if (!path  ||  !*path)
         return eIO_InvalidArg;
     return s_CreateListening(path, 0, backlog, lsock, flags);
-}
-
-
-extern unsigned short LSOCK_GetPort(LSOCK         lsock,
-                                    ENH_ByteOrder byte_order)
-{
-    unsigned short port;
-    port = lsock->sock != SOCK_INVALID ? lsock->port : 0;
-    return byte_order == eNH_HostByteOrder ? port : htons(port);
 }
 
 
@@ -4948,10 +4925,20 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
 }
 
 
+extern unsigned short LSOCK_GetPort(LSOCK         lsock,
+                                    ENH_ByteOrder byte_order)
+{
+    unsigned short port;
+    port = lsock->sock != SOCK_INVALID ? lsock->port : 0;
+    return byte_order == eNH_HostByteOrder ? port : htons(port);
+}
+
+
 
 /******************************************************************************
  *  SOCKET
  */
+
 
 extern EIO_Status SOCK_Create(const char*     host,
                               unsigned short  port, 
@@ -4992,6 +4979,14 @@ extern EIO_Status SOCK_CreateUNIX(const char*     path,
 #else
     return eIO_NotSupported;
 #endif /*NCBI_OS_UNIX*/
+}
+
+
+extern EIO_Status SOCK_CreateOnTop(const void* handle,
+                                   size_t      handle_size,
+                                   SOCK*       sock)
+{
+    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
 }
 
 
@@ -5231,14 +5226,6 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 }
 
 
-extern EIO_Status SOCK_CreateOnTop(const void* handle,
-                                   size_t      handle_size,
-                                   SOCK*       sock)
-{
-    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
-}
-
-
 extern EIO_Status SOCK_Reconnect(SOCK            sock,
                                  const char*     host,
                                  unsigned short  port,
@@ -5324,6 +5311,12 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 }
 
 
+extern EIO_Status SOCK_Close(SOCK sock)
+{
+    return SOCK_CloseEx(sock, 1/*destroy*/);
+}
+
+
 extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
 {
     EIO_Status status;
@@ -5343,12 +5336,6 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
         free(sock);
     }
     return status;
-}
-
-
-extern EIO_Status SOCK_Close(SOCK sock)
-{
-    return SOCK_CloseEx(sock, 1/*destroy*/);
 }
 
 
@@ -5507,57 +5494,6 @@ extern EIO_Status SOCK_Poll(size_t          n,
     }
 
     return s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
-}
-
-
-extern EIO_Status POLLABLE_Poll(size_t          n,
-                                SPOLLABLE_Poll  polls[],
-                                const STimeout* timeout,
-                                size_t*         n_ready)
-{
-    return SOCK_Poll(n, (SSOCK_Poll*) polls, timeout, n_ready);
-}
-
-
-extern POLLABLE POLLABLE_FromTRIGGER(TRIGGER trigger)
-{
-    assert(!trigger  ||  trigger->type == eTrigger);
-    return (POLLABLE) trigger;
-}
-
-
-extern POLLABLE POLLABLE_FromLSOCK(LSOCK lsock)
-{
-    assert(!lsock  ||  lsock->type == eListening);
-    return (POLLABLE) lsock;
-}
-
-
-extern POLLABLE POLLABLE_FromSOCK(SOCK sock)
-{
-    assert(!sock  ||  sock->type == eSocket);
-    return (POLLABLE) sock;
-}
-
-
-extern TRIGGER POLLABLE_ToTRIGGER(POLLABLE poll)
-{
-    TRIGGER trigger = (TRIGGER) poll;
-    return !trigger  ||  trigger->type == eTrigger ? trigger : 0;
-}
-
-
-extern LSOCK POLLABLE_ToLSOCK(POLLABLE poll)
-{
-    LSOCK lsock = (LSOCK) poll;
-    return !lsock  ||  lsock->type == eListening ? lsock : 0;
-}
-
-
-extern SOCK  POLLABLE_ToSOCK(POLLABLE poll)
-{
-    SOCK sock = (SOCK) poll;
-    return !sock  ||  sock->type == eSocket ? sock : 0;
 }
 
 
@@ -5803,6 +5739,29 @@ extern EIO_Status SOCK_PushBack(SOCK        sock,
 }
 
 
+extern EIO_Status SOCK_Status(SOCK      sock,
+                              EIO_Event direction)
+{
+    if (!sock)
+        return eIO_InvalidArg;
+    switch (direction) {
+    case eIO_Open:
+    case eIO_Read:
+    case eIO_Write:
+        if (sock->sock == SOCK_INVALID)
+            return eIO_Closed;
+        if (sock->pending)
+            return eIO_Timeout;
+        if (direction == eIO_Open)
+            return eIO_Success;
+        break;
+    default:
+        return eIO_InvalidArg;
+    }
+    return s_Status(sock, direction);
+}
+
+
 extern EIO_Status SOCK_Write(SOCK            sock,
                              const void*     buf,
                              size_t          size,
@@ -5895,29 +5854,6 @@ extern EIO_Status SOCK_Abort(SOCK sock)
 }
 
 
-extern EIO_Status SOCK_Status(SOCK      sock,
-                              EIO_Event direction)
-{
-    if (!sock)
-        return eIO_InvalidArg;
-    switch (direction) {
-    case eIO_Open:
-    case eIO_Read:
-    case eIO_Write:
-        if (sock->sock == SOCK_INVALID)
-            return eIO_Closed;
-        if (sock->pending)
-            return eIO_Timeout;
-        if (direction == eIO_Open)
-            return eIO_Success;
-        break;
-    default:
-        return eIO_InvalidArg;
-    }
-    return s_Status(sock, direction);
-}
-
-
 extern unsigned short SOCK_GetLocalPortEx(SOCK          sock,
                                           int/*bool*/   trueport,
                                           ENH_ByteOrder byte_order)
@@ -5949,15 +5885,6 @@ extern unsigned short SOCK_GetLocalPort(SOCK          sock,
 }
 
 
-extern unsigned short SOCK_GetRemotePort(SOCK          sock,
-                                         ENH_ByteOrder byte_order)
-{
-    unsigned short port;
-    SOCK_GetPeerAddress(sock, 0, &port, byte_order);
-    return port;
-}
-
-
 extern void SOCK_GetPeerAddress(SOCK            sock,
                                 unsigned int*   host,
                                 unsigned short* port,
@@ -5976,6 +5903,15 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
         *host = byte_order == eNH_HostByteOrder ? ntohl(x_host) : x_host;
     if (port)
         *port = byte_order == eNH_HostByteOrder ? x_port : ntohs(x_port);
+}
+
+
+extern unsigned short SOCK_GetRemotePort(SOCK          sock,
+                                         ENH_ByteOrder byte_order)
+{
+    unsigned short port;
+    SOCK_GetPeerAddress(sock, 0, &port, byte_order);
+    return port;
 }
 
 
@@ -6073,46 +6009,6 @@ extern ESwitch SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
 }
 
 
-extern ESwitch SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
-{
-    ESwitch old = s_InterruptOnSignal;
-    if (on_off != eDefault)
-        s_InterruptOnSignal = on_off;
-    return old;
-}
-
-
-extern ESwitch SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
-{
-    ESwitch old = (ESwitch) sock->i_on_sig;
-    sock->i_on_sig = on_off;
-    return old;
-}
-
-
-extern ESwitch SOCK_SetReuseAddressAPI(ESwitch on_off)
-{
-    ESwitch old = s_ReuseAddress;
-    if (on_off != eDefault)
-        s_ReuseAddress = on_off;
-    return old;
-}
-
-
-extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
-{
-    if (sock->sock != SOCK_INVALID && !s_SetReuseAddress(sock->sock, on_off)) {
-        int x_error = SOCK_ERRNO;
-        char _id[MAXIDLEN];
-        CORE_LOGF_ERRNO_EXX(74, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
-                            ("%s[SOCK::SetReuseAddress] "
-                             " Failed setsockopt(%sREUSEADDR)",
-                             s_ID(sock, _id), on_off ? "" : "NO"));
-    }
-}
-
-
 /*ARGSUSED*/
 extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
 {
@@ -6132,6 +6028,12 @@ extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
     }
 #endif /*TCP_NODELAY*/
 }
+
+
+
+/******************************************************************************
+ *  DATAGRAM SOCKET
+ */
 
 
 extern EIO_Status DSOCK_Create(SOCK* sock)
@@ -6397,6 +6299,41 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     sock->host = host;
     sock->port = port;
     return eIO_Success;
+}
+
+
+extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
+{
+    char           _id[MAXIDLEN];
+    EIO_Status     status;
+    SSOCK_Poll     poll;
+    struct timeval tv;
+
+    if (sock->type != eDatagram) {
+        CORE_LOGF_X(95, eLOG_Error,
+                    ("%s[DSOCK::WaitMsg] "
+                     " Not a datagram socket",
+                     s_ID(sock, _id)));
+        assert(0);
+        return eIO_InvalidArg;
+    }
+    if (sock->sock == SOCK_INVALID) {
+        CORE_LOGF_X(96, eLOG_Error,
+                    ("%s[DSOCK::WaitMsg] "
+                     " Invalid socket",
+                     s_ID(sock, _id)));
+        return eIO_Closed;
+    }
+
+    poll.sock   = sock;
+    poll.event  = eIO_Read;
+    poll.revent = eIO_Open;
+    status = s_Select(1, &poll, s_to2tv(timeout, &tv), 1/*asis*/);
+    assert(poll.event == eIO_Read);
+    if (status != eIO_Success  ||  poll.revent == eIO_Read)
+        return status;
+    assert(poll.revent == eIO_Close);
+    return eIO_Unknown;
 }
 
 
@@ -6705,41 +6642,6 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
 }
 
 
-extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
-{
-    char           _id[MAXIDLEN];
-    EIO_Status     status;
-    SSOCK_Poll     poll;
-    struct timeval tv;
-
-    if (sock->type != eDatagram) {
-        CORE_LOGF_X(95, eLOG_Error,
-                    ("%s[DSOCK::WaitMsg] "
-                     " Not a datagram socket",
-                     s_ID(sock, _id)));
-        assert(0);
-        return eIO_InvalidArg;
-    }
-    if (sock->sock == SOCK_INVALID) {
-        CORE_LOGF_X(96, eLOG_Error,
-                    ("%s[DSOCK::WaitMsg] "
-                     " Invalid socket",
-                     s_ID(sock, _id)));
-        return eIO_Closed;
-    }
-
-    poll.sock   = sock;
-    poll.event  = eIO_Read;
-    poll.revent = eIO_Open;
-    status = s_Select(1, &poll, s_to2tv(timeout, &tv), 1/*asis*/);
-    assert(poll.event == eIO_Read);
-    if (status != eIO_Success  ||  poll.revent == eIO_Read)
-        return status;
-    assert(poll.revent == eIO_Close);
-    return eIO_Unknown;
-}
-
-
 extern EIO_Status DSOCK_WipeMsg(SOCK sock, EIO_Event direction)
 {
     char _id[MAXIDLEN];
@@ -6844,6 +6746,12 @@ extern TNCBI_BigCount DSOCK_GetMessageCount(SOCK sock, EIO_Event direction)
 }
 
 
+
+/******************************************************************************
+ *  CLASSIFICATION & STATS
+ */
+
+
 extern int/*bool*/ SOCK_IsDatagram(SOCK sock)
 {
     return sock &&  sock->sock != SOCK_INVALID  &&  sock->type == eDatagram;
@@ -6862,12 +6770,6 @@ extern int/*bool*/ SOCK_IsServerSide(SOCK sock)
 }
 
 
-extern int/*bool*/ SOCK_IsSecure(SOCK sock)
-{
-    return sock &&  sock->sock != SOCK_INVALID  &&  sock->session;
-}
-
-
 extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 {
 #ifdef NCBI_OS_UNIX
@@ -6875,6 +6777,12 @@ extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 #else
     return 0/*false*/;
 #endif /*NCBI_OS_UNIX*/
+}
+
+
+extern int/*bool*/ SOCK_IsSecure(SOCK sock)
+{
+    return sock &&  sock->sock != SOCK_INVALID  &&  sock->session;
 }
 
 
@@ -6930,16 +6838,130 @@ extern TNCBI_BigCount SOCK_GetTotalCount(SOCK sock, EIO_Event direction)
 }
 
 
-extern int SOCK_gethostname(char* name, size_t namelen)
+
+/******************************************************************************
+ *  SOCKET SETTINGS
+ */
+
+
+extern ESwitch SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
 {
-    return s_gethostname(name, namelen, s_Log);
+    ESwitch old = s_InterruptOnSignal;
+    if (on_off != eDefault)
+        s_InterruptOnSignal = on_off;
+    return old;
 }
 
 
-extern int SOCK_gethostnameEx(char* name, size_t namelen, ESwitch log)
+extern ESwitch SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
 {
-    return s_gethostname(name, namelen, log);
+    ESwitch old = (ESwitch) sock->i_on_sig;
+    sock->i_on_sig = on_off;
+    return old;
 }
+
+
+extern ESwitch SOCK_SetReuseAddressAPI(ESwitch on_off)
+{
+    ESwitch old = s_ReuseAddress;
+    if (on_off != eDefault)
+        s_ReuseAddress = on_off;
+    return old;
+}
+
+
+extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
+{
+    if (sock->sock != SOCK_INVALID && !s_SetReuseAddress(sock->sock, on_off)) {
+        int x_error = SOCK_ERRNO;
+        char _id[MAXIDLEN];
+        CORE_LOGF_ERRNO_EXX(74, eLOG_Warning,
+                            x_error, SOCK_STRERROR(x_error),
+                            ("%s[SOCK::SetReuseAddress] "
+                             " Failed setsockopt(%sREUSEADDR)",
+                             s_ID(sock, _id), on_off ? "" : "NO"));
+    }
+}
+
+
+extern ESwitch SOCK_SetDataLoggingAPI(ESwitch log)
+{
+    ESwitch old = s_Log;
+    if (log != eDefault)
+        s_Log = log;
+    return old;
+}
+
+
+extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
+{
+    ESwitch old = (ESwitch) sock->log;
+    sock->log = log;
+    return old;
+}
+
+
+
+/******************************************************************************
+ *  GENERIC POLLABLE API
+ */
+
+
+extern EIO_Status POLLABLE_Poll(size_t          n,
+                                SPOLLABLE_Poll  polls[],
+                                const STimeout* timeout,
+                                size_t*         n_ready)
+{
+    return SOCK_Poll(n, (SSOCK_Poll*) polls, timeout, n_ready);
+}
+
+
+extern POLLABLE POLLABLE_FromTRIGGER(TRIGGER trigger)
+{
+    assert(!trigger  ||  trigger->type == eTrigger);
+    return (POLLABLE) trigger;
+}
+
+
+extern POLLABLE POLLABLE_FromLSOCK(LSOCK lsock)
+{
+    assert(!lsock  ||  lsock->type == eListening);
+    return (POLLABLE) lsock;
+}
+
+
+extern POLLABLE POLLABLE_FromSOCK(SOCK sock)
+{
+    assert(!sock  ||  sock->type == eSocket);
+    return (POLLABLE) sock;
+}
+
+
+extern TRIGGER POLLABLE_ToTRIGGER(POLLABLE poll)
+{
+    TRIGGER trigger = (TRIGGER) poll;
+    return !trigger  ||  trigger->type == eTrigger ? trigger : 0;
+}
+
+
+extern LSOCK POLLABLE_ToLSOCK(POLLABLE poll)
+{
+    LSOCK lsock = (LSOCK) poll;
+    return !lsock  ||  lsock->type == eListening ? lsock : 0;
+}
+
+
+extern SOCK  POLLABLE_ToSOCK(POLLABLE poll)
+{
+    SOCK sock = (SOCK) poll;
+    return !sock  ||  sock->type == eSocket ? sock : 0;
+}
+
+
+
+/******************************************************************************
+ *  BSD-LIKE INTERFACE
+ */
 
 
 extern int SOCK_ntoa(unsigned int host,
@@ -7023,9 +7045,15 @@ extern unsigned short SOCK_htons(unsigned short value)
 }
 
 
-extern unsigned int SOCK_gethostbyname(const char* hostname)
+extern int SOCK_gethostnameEx(char* name, size_t namelen, ESwitch log)
 {
-    return s_gethostbyname(hostname, s_Log);
+    return s_gethostname(name, namelen, log);
+}
+
+
+extern int SOCK_gethostname(char* name, size_t namelen)
+{
+    return s_gethostname(name, namelen, s_Log);
 }
 
 
@@ -7036,11 +7064,9 @@ extern unsigned int SOCK_gethostbynameEx(const char* hostname,
 }
 
 
-extern char* SOCK_gethostbyaddr(unsigned int host,
-                                char*        name,
-                                size_t       namelen)
+extern unsigned int SOCK_gethostbyname(const char* hostname)
 {
-    return s_gethostbyaddr(host, name, namelen, s_Log);
+    return s_gethostbyname(hostname, s_Log);
 }
 
 
@@ -7050,6 +7076,14 @@ extern char* SOCK_gethostbyaddrEx(unsigned int host,
                                   ESwitch      log)
 {
     return s_gethostbyaddr(host, name, namelen, log);
+}
+
+
+extern char* SOCK_gethostbyaddr(unsigned int host,
+                                char*        name,
+                                size_t       namelen)
+{
+    return s_gethostbyaddr(host, name, namelen, s_Log);
 }
 
 
@@ -7141,6 +7175,12 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
     buf[n] = '\0';
     return n;
 }
+
+
+
+/******************************************************************************
+ *  SECURE SOCKET LAYER
+ */
 
 
 extern void SOCK_SetupSSL(FSSLSetup setup)

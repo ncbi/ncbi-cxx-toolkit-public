@@ -38,24 +38,26 @@
  *********************************
  * Generic:
  *
- *  SOCK_AllowSigPipeAPI
- *
  *  SOCK_InitializeAPI
  *  SOCK_ShutdownAPI
+ *  SOCK_AllowSigPipeAPI
+ *  SOCK_OSHandleSize
  *
  * Event trigger (handle TRIGGER):
  *
  *  TRIGGER_Create
+ *  TRIGGER_Close
  *  TRIGGER_Set
  *  TRIGGER_IsSet
  *  TRIGGER_Reset
- *  TRIGGER_Close
  *
  * Listening socket (handle LSOCK):
  *
- *  LSOCK_Create
- *  LSOCK_Accept
+ *  LSOCK_Create[Ex]
+ *  LSOCK_Accept[Ex]
  *  LSOCK_Close
+ *  LSOCK_GetOSHandle
+ *  LSOCK_GetPort
  *  
  * I/O Socket (handle SOCK):
  *
@@ -63,12 +65,11 @@
  *  SOCK_CreateOnTop[Ex]
  *  SOCK_Reconnect
  *  SOCK_Shutdown
- *  SOCK_Close
+ *  SOCK_Close[Ex]
  *  SOCK_Wait
  *  SOCK_Poll
  *  SOCK_SetTimeout
- *  SOCK_GetReadTimeout
- *  SOCK_GetWriteTimeout
+ *  SOCK_GetTimeout
  *  SOCK_Read (including "peek" and "persistent read")
  *  SOCK_ReadLine
  *  SOCK_PushBack
@@ -77,14 +78,11 @@
  *  SOCK_Abort
  *  SOCK_GetLocalPort[Ex]
  *  SOCK_GetPeerAddress
- *  SOCK_GetPeerAddressString
- *
+ *  SOCK_GetRemotePort
+ *  SOCK_GetPeerAddressString[Ex]
+ *  SOCK_GetOSHandle
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
- *  SOCK_SetInterruptOnSignalAPI
- *  SOCK_SetInterruptOnSignal
- *  SOCK_SetReuseAddressAPI
- *  SOCK_SetReuseAddress
  *  SOCK_DisableOSSendDelay
  *
  * Datagram Socket:
@@ -105,9 +103,17 @@
  *  SOCK_IsClientSide
  *  SOCK_IsServerSide
  *  SOCK_IsUNIX
+ *  SOCK_IsSecure
  *  SOCK_GetPosition
  *  SOCK_GetCount
  *  SOCK_GetTotalCount
+ *
+ * Settings:
+ *
+ *  SOCK_SetInterruptOnSignalAPI
+ *  SOCK_SetInterruptOnSignal
+ *  SOCK_SetReuseAddressAPI
+ *  SOCK_SetReuseAddress
  *
  * Data logging:
  *
@@ -116,27 +122,26 @@
  *
  * Auxiliary:
  *
- *  SOCK_gethostname[Ex]
  *  SOCK_ntoa
- *  SOCK_isip
- *  SOCK_isipEx
+ *  SOCK_isip[Ex]
  *  SOCK_HostToNetShort
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
  *  SOCK_NetToHostLong
+ *  SOCK_gethostname[Ex]
  *  SOCK_gethostbyname[Ex]
  *  SOCK_gethostbyaddr[Ex]
  *  SOCK_GetLoopbackAddress
+ *  SOCK_GetLocalHostAddress
  *  SOCK_StringToHostPort
  *  SOCK_HostPortToString
- *  SOCK_OSHandleSize
  *
  * Utility:
  *
  *  SOCK_SetSelectInternalRestartTimeout
  *  SOCK_SetIOWaitSysAPI
  *
- * Secure:
+ * Secure Socket Layer:
  *
  *  SOCK_SetupSSL
  *
@@ -174,23 +179,21 @@ typedef enum {
 
 
 /** Forward declarations of the hidden socket internal structures, and
- * their upper-level handles to use by the LSOCK_*() and SOCK_*() API
+ *  their upper-level handles to use by the LSOCK_*() and SOCK_*() API
  */
 struct LSOCK_tag;                /* listening socket:  internal storage */
-typedef struct LSOCK_tag* LSOCK; /* listening socket:  handle           */
+typedef struct LSOCK_tag* LSOCK; /* listening socket:  handle, opaque   */
 
 struct SOCK_tag;                 /* socket:  internal storage           */
-typedef struct SOCK_tag*  SOCK;  /* socket:  handle                     */
+typedef struct SOCK_tag*  SOCK;  /* socket:  handle, opaque             */
 
 struct TRIGGER_tag;
 typedef struct TRIGGER_tag* TRIGGER;
 
 
-extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
-
 
 /******************************************************************************
- * Multi-Thread safety
+ *                       Multi-Thread safety NOTICE
  *
  * If you are using this API in a multi-threaded application, and there is
  * more than one thread using this API, it is safe to call SOCK_InitializeAPI()
@@ -213,173 +216,8 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
 
 
 /******************************************************************************
- *  Error & Data Logging
- *
- * @li <b>NOTE:</b>  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
- *
- * @sa
- *  CORE_SetLOG
+ *  API Initialization, Shutdown/Cleanup, and Utility
  */
-
-/** By default data are not logged.
- * @param log
- *  To start logging the data, call this func with "log" == eOn.
- *  To stop  logging the data, call this func with "log" == eOff.
- *  To get current log switch, call this func with "log" == eDefault.
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetDataLogging
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLoggingAPI
-(ESwitch log
- );
-
-
-/** Control the data logging for socket "sock" individually.
- * @param sock
- *  [in]  socket handle
- * @param log
- *  [in]  requested data logging
- *  To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
- *  call this function with "log" == eDefault.
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetDataLoggingAPI, SOCK_Create, DSOCK_Create
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
-(SOCK    sock,
- ESwitch log
- );
-
-
-
-/******************************************************************************
- *   I/O restart on signals
- */
-
-/** Control restartability of I/O interrupted by signals.
- * By default I/O is restartable if interrupted.
- * Pass "on_off" as eDefault to get the current setting.
- * @param on_off
- *  [in]  eOn to cancel I/O on signals;  eOff to restart
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetInterruptOnSignal
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignalAPI
-(ESwitch on_off
- );
-
-
-/** Control restartability of I/O interrupted by signals on a per-socket basis.
- * eDefault causes the use of global API flag.
- * @param sock
- *  [in]  socket handle
- * @param on_off
- *  [in]  per-socket I/O restart behavior on signals
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetInterruptOnSignalAPI, SOCK_Create, DSOCK_Create
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
-(SOCK    sock,
- ESwitch on_off
- );
-
-
-
-/******************************************************************************
- *   Address reuse: EXPERIMENTAL and may be removed in the upcoming releases!
- */
-
-/** Control address reuse for socket addresses taken by the API.
- * By default address is not marked for reuse in SOCK,
- * but is always reused for LSOCK.
- * Pass "on_off" as eDefault to get the current setting.
- * @param on_off
- *  [in]  whether to turn on (eOn), turn off (eOff) or get current (eDefault)
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetReuseAddress
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
-(ESwitch on_off
- );
-
-
-/** Control reuse of socket addresses on per-socket basis
- * Note: only a boolean parameter value is can be used here.
- * @param sock
- *  [in]  socket handle
- * @param on_off
- *  [in]  whether to reuse the address (true, non-zero) or not (false, zero)
- * @sa
- *  SOCK_SetReuseAddressAPI, SOCK_Create, DSOCK_Create
- */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
-(SOCK         sock,
- int/**bool*/ on_off);
-
-
-
-/******************************************************************************
- *  API Initialization and Shutdown/Cleanup
- */
-
-/** This is a helper call that can improve I/O behavior.
- * @param timeout
- *  [in]  Break down long waits on I/O into smaller chunks of at most "timeout"
- *  duration each.  This can help recover "hanging" sockets from indefinite
- *  wait and allow them to report an exceptional I/O condition.
- * @return
- *   Previous value of the timeout
- * @sa
- *  SOCK_Wait, SOCK_Poll
- */
-extern NCBI_XCONNECT_EXPORT const STimeout*
-SOCK_SetSelectInternalRestartTimeout
-(const STimeout* timeout);
-
-
-/** Selector of I/O wait system API:  auto, poll(), or select().
- * @sa
- *  SOCK_SetIOWaitSysAPI
- */
-typedef enum {
-    eSOCK_IOWaitSysAPIAuto,   /** default; use some euristics to choose API */
-    eSOCK_IOWaitSysAPIPoll,   /** always use poll()                         */
-    eSOCK_IOWaitSysAPISelect  /** always use select()                       */
-} ESOCK_IOWaitSysAPI;
-
-/** This is a helper call that can improve I/O behavior (ignored for Windows).
- * @param api
- *  [in]  Default behavior is to wait on I/O such a way that accomodates the
- *  requested sockets accordingly.  There is a known limitation of select()
- *  API that requires all sockets to have low-level IO descriptors less than
- *  1024, but works faster than poll() API that does not have limits on the
- *  numeric values of the descriptors.  Either API can be enforced here.
- * @return
- *  Previous value of the API selector
- * @sa
- *  SOCK_Wait, SOCK_Poll
- */
-extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI
-SOCK_SetIOWaitSysAPI
-(ESOCK_IOWaitSysAPI api);
-
-
-/** By default (on UNIX platforms) the SOCK API functions automagically call
- * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature,
- * you must call SOCK_AllowSigPipeAPI() before you call any other
- * function from the SOCK API.
- */
-extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
-
 
 /** Initialize all internal/system data & resources to be used by the SOCK API.
  * @li <b>NOTE:</b>
@@ -409,6 +247,66 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
  *  SOCK_InitializeAPI
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
+
+
+/** By default (on UNIX platforms) the SOCK API functions automagically call
+ * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature,
+ * you must call SOCK_AllowSigPipeAPI() before you call any other
+ * function from the SOCK API.
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
+
+
+/**
+ * Get size of OS-dependent native socket handle
+ * @return
+ *  OS-dependent handle size or 0 in case of an error
+ * @sa
+ *  SOCK_GetOSHandle
+ */
+extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
+
+
+/** This is a helper call that can improve I/O behavior.
+ * @param timeslice
+ *  [in]  Break down long waits on I/O into smaller intervals of at most
+ *  "timeslice" duration each.  This can help recover "hanging" sockets from
+ *  indefinite wait and allow them to report an exceptional I/O condition.
+ * @return
+ *  Previous value of the timeslice
+ * @sa
+ *  SOCK_Wait, SOCK_Poll
+ */
+extern NCBI_XCONNECT_EXPORT const STimeout*
+SOCK_SetSelectInternalRestartTimeout
+(const STimeout* timeslice);
+
+
+/** Selector of I/O wait system API:  auto, poll(), or select().
+ * @sa
+ *  SOCK_SetIOWaitSysAPI
+ */
+typedef enum {
+    eSOCK_IOWaitSysAPIAuto,   /** default; use some euristics to choose API */
+    eSOCK_IOWaitSysAPIPoll,   /** always use poll()                         */
+    eSOCK_IOWaitSysAPISelect  /** always use select()                       */
+} ESOCK_IOWaitSysAPI;
+
+/** This is a helper call that can improve I/O behavior (ignored for Windows).
+ * @param api
+ *  [in]  Default behavior is to wait on I/O such a way that accomodates the
+ *  requested sockets accordingly.  There is a known limitation of select()
+ *  API that requires all sockets to have low-level IO descriptors less than
+ *  1024, but works faster than poll() API that does not have limits on the
+ *  numeric values of the descriptors.  Either API can be enforced here.
+ * @return
+ *  Previous value of the API selector
+ * @sa
+ *  SOCK_Wait, SOCK_Poll
+ */
+extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI
+SOCK_SetIOWaitSysAPI
+(ESOCK_IOWaitSysAPI api);
 
 
 
@@ -639,7 +537,7 @@ extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
 
 
 /******************************************************************************
- *  SOCKET
+ *  SOCKET (connection-oriented)
  */
 
 /** [CLIENT-side]  Connect client to another(server-side, listening) socket
@@ -922,48 +820,6 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
  const STimeout* timeout,   
  size_t*         n_ready    
  );
-
-
-
-/** GENERIC POLLABLE INTERFACE, please see above for explanations
- */
-struct SPOLLABLE_tag;
-typedef struct SPOLLABLE_tag* POLLABLE;
-
-typedef struct {
-    POLLABLE  poll;
-    EIO_Event event;
-    EIO_Event revent;
-} SPOLLABLE_Poll;
-
-/**
- * @param n
- *
- * @param polls[]
- *
- * @param timeout
- *
- * @param n_ready
- *
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
-(size_t          n,
- SPOLLABLE_Poll  polls[],
- const STimeout* timeout,
- size_t*         n_ready
- );
-
-
-/**
- * @return
- *  Return 0 if conversion cannot be made; otherwise converted handle
- */
-extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK   (SOCK);
-extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK  (LSOCK);
-extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromTRIGGER(TRIGGER);
-extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
-extern NCBI_XCONNECT_EXPORT LSOCK    POLLABLE_ToLSOCK  (POLLABLE);
-extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
 
 
 /** Specify timeout for the connection i/o (see SOCK_[Read|Write|Close] funcs).
@@ -1397,7 +1253,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
 
 
 /******************************************************************************
- *  Connectionless (datagram) sockets
+ *  DATAGRAM SOCKETS (connectionless)
  *
  *  How the datagram exchange API works:
  *
@@ -1438,13 +1294,6 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
  *  buffers correspondingly.
  */
 
-/**
- * @param sock
- *  [out] socket created
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
-(SOCK*           sock                                
- );
 
 /**
  * @param sock
@@ -1457,6 +1306,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
  TSOCK_Flags     flags
  );
 
+
+/** Same as DSOCK_CreateEx(, fSOCK_LogDefault)
+ * @param sock
+ *  [out] socket created
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
+(SOCK*           sock                                
+ );
+
+
 /**
  * @param sock
  *  [in] SOCK from DSOCK_Create[Ex]()
@@ -1467,6 +1326,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
 (SOCK            sock,                  
  unsigned short  port                  
  );
+
 
 /**
  * @param sock
@@ -1482,6 +1342,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Connect
  unsigned short  port                   
  );
 
+
 /**
  * @param sock
  *  [in] SOCK from DSOCK_Create[Ex]()
@@ -1492,6 +1353,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
 (SOCK            sock,                 
  const STimeout* timeout            
  );
+
 
 /**
  * @param sock
@@ -1512,6 +1374,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
  const void*     data,                 
  size_t          datalen               
  );
+
 
 /**
  * @param sock
@@ -1538,6 +1401,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
  unsigned int*   sender_addr,           
  unsigned short* sender_port            
 );
+
 
 /**
  * @param sock
@@ -1676,40 +1540,168 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
  );
 
 
+/******************************************************************************
+ *   I/O restart on signals
+ */
+
+/** Control restartability of I/O interrupted by signals.
+ * By default I/O is restartable if interrupted.
+ * Pass "on_off" as eDefault to get the current setting.
+ * @param on_off
+ *  [in]  eOn to cancel I/O on signals;  eOff to restart
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetInterruptOnSignal
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignalAPI
+(ESwitch on_off
+ );
+
+
+/** Control restartability of I/O interrupted by signals on a per-socket basis.
+ * eDefault causes the use of global API flag.
+ * @param sock
+ *  [in]  socket handle
+ * @param on_off
+ *  [in]  per-socket I/O restart behavior on signals
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetInterruptOnSignalAPI, SOCK_Create, DSOCK_Create
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
+(SOCK    sock,
+ ESwitch on_off
+ );
+
 
 /******************************************************************************
- *  AUXILIARY network-specific functions (added for the portability reasons)
+ *   Address reuse: EXPERIMENTAL and may be removed in the upcoming releases!
  */
 
-
-/**
- * @param name
- *  [out] (guaranteed to be '\0'-terminated)
- * @param namelen
- *  [in]  max # of bytes allowed to put to "name" 
- * @param log
- *  [in]  whether to log failures
+/** Control address reuse for socket addresses taken by the API.
+ * By default address is not marked for reuse in SOCK,
+ * but is always reused for LSOCK.
+ * Pass "on_off" as eDefault to get the current setting.
+ * @param on_off
+ *  [in]  whether to turn on (eOn), turn off (eOff) or get current (eDefault)
  * @return
- *  Zero on success, non-zero on error.  See BSD gethostname().
- *  On error "name" returned emptied (name[0] == '\0').
+ *  Prior setting
  * @sa
- *  SOCK_gethostname
+ *  SOCK_SetReuseAddress
  */
-extern NCBI_XCONNECT_EXPORT int SOCK_gethostnameEx
-(char*   name,
- size_t  namelen,
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
+(ESwitch on_off
+ );
+
+
+/** Control reuse of socket addresses on per-socket basis
+ * Note: only a boolean parameter value is can be used here.
+ * @param sock
+ *  [in]  socket handle
+ * @param on_off
+ *  [in]  whether to reuse the address (true, non-zero) or not (false, zero)
+ * @sa
+ *  SOCK_SetReuseAddressAPI, SOCK_Create, DSOCK_Create
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
+(SOCK         sock,
+ int/**bool*/ on_off);
+
+
+/******************************************************************************
+ *  Error & Data Logging
+ *
+ * @li <b>NOTE:</b>  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
+ *
+ * @sa
+ *  CORE_SetLOG
+ */
+
+/** By default data are not logged.
+ * @param log
+ *  To start logging the data, call this func with "log" == eOn.
+ *  To stop  logging the data, call this func with "log" == eOff.
+ *  To get current log switch, call this func with "log" == eDefault.
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetDataLogging
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLoggingAPI
+(ESwitch log
+ );
+
+
+/** Control the data logging for socket "sock" individually.
+ * @param sock
+ *  [in]  socket handle
+ * @param log
+ *  [in]  requested data logging
+ *  To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
+ *  call this function with "log" == eDefault.
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetDataLoggingAPI, SOCK_Create, DSOCK_Create
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
+(SOCK    sock,
  ESwitch log
  );
 
 
-/** Same as SOCK_gethostnameEx(,,eOff)
- * @sa
- *  SOCK_gethostnameEx
+
+/******************************************************************************
+ * GENERIC POLLABLE INTERFACE, please see SOCK_Poll() above for explanations
  */
-extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
-(char*  name,
- size_t namelen
+
+
+/*fwdecl; opaque*/
+struct SPOLLABLE_tag;
+typedef struct SPOLLABLE_tag* POLLABLE;
+
+typedef struct {
+    POLLABLE  poll;
+    EIO_Event event;
+    EIO_Event revent;
+} SPOLLABLE_Poll;
+
+/**
+ * @param n
+ *
+ * @param polls[]
+ *
+ * @param timeout
+ *
+ * @param n_ready
+ *
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
+(size_t          n,
+ SPOLLABLE_Poll  polls[],
+ const STimeout* timeout,
+ size_t*         n_ready
  );
+
+
+/**
+ * @return
+ *  Return 0 if conversion cannot be made; otherwise the converted handle
+ */
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK   (SOCK);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK  (LSOCK);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromTRIGGER(TRIGGER);
+extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
+extern NCBI_XCONNECT_EXPORT LSOCK    POLLABLE_ToLSOCK  (POLLABLE);
+extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
+
+
+
+/******************************************************************************
+ *  AUXILIARY network-specific functions (added for the portability reasons)
+ */
 
 
 /**
@@ -1788,6 +1780,36 @@ unsigned int   SOCK_htonl(unsigned int);
 extern NCBI_XCONNECT_EXPORT NCBI_SOCK_DEPRECATED
 unsigned short SOCK_htons(unsigned short);
 #define        SOCK_ntohs SOCK_htons
+
+
+/**
+ * @param name
+ *  [out] (guaranteed to be '\0'-terminated)
+ * @param namelen
+ *  [in]  max # of bytes allowed to put to "name" 
+ * @param log
+ *  [in]  whether to log failures
+ * @return
+ *  Zero on success, non-zero on error.  See BSD gethostname().
+ *  On error "name" returned emptied (name[0] == '\0').
+ * @sa
+ *  SOCK_gethostname
+ */
+extern NCBI_XCONNECT_EXPORT int SOCK_gethostnameEx
+(char*   name,
+ size_t  namelen,
+ ESwitch log
+ );
+
+
+/** Same as SOCK_gethostnameEx(,,eOff)
+ * @sa
+ *  SOCK_gethostnameEx
+ */
+extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
+(char*  name,
+ size_t namelen
+ );
 
 
 /** 

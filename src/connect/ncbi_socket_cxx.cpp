@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 //  CTrigger::
 //
 
+
 CTrigger::CTrigger(ESwitch log)
     : m_Trigger(0)
 {
@@ -65,6 +66,7 @@ CTrigger::~CTrigger()
 /////////////////////////////////////////////////////////////////////////////
 //  CSocket::
 //
+
 
 CSocket::CSocket(void)
     : m_Socket(0),
@@ -136,43 +138,6 @@ CSocket::~CSocket()
 {
     if (m_Socket  &&  m_IsOwned != eNoOwnership)
         SOCK_Close(m_Socket);
-}
-
-
-void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
-{
-    if (m_Socket  &&  m_IsOwned != eNoOwnership)
-        SOCK_Close(m_Socket);
-    m_Socket  = sock;
-    m_IsOwned = if_to_own;
-    if (whence == eCopyTimeoutsFromSOCK) {
-        if ( sock ) {
-            const STimeout* timeout;
-            timeout = SOCK_GetTimeout(sock, eIO_Read);
-            if ( timeout ) {
-                rr_timeout = *timeout;
-                r_timeout  = &rr_timeout;
-            } else
-                r_timeout  = 0;
-            timeout = SOCK_GetTimeout(sock, eIO_Write);
-            if ( timeout ) {
-                ww_timeout = *timeout;
-                w_timeout  = &ww_timeout;
-            } else
-                w_timeout  = 0;
-            timeout = SOCK_GetTimeout(sock, eIO_Close);
-            if ( timeout ) {
-                cc_timeout = *timeout;
-                c_timeout  = &cc_timeout;
-            } else
-                c_timeout  = 0;
-        } else
-            r_timeout = w_timeout = c_timeout = 0;
-    } else if ( sock ) {
-        SOCK_SetTimeout(sock, eIO_Read,  r_timeout);
-        SOCK_SetTimeout(sock, eIO_Write, w_timeout);
-        SOCK_SetTimeout(sock, eIO_Close, c_timeout);
-    }
 }
 
 
@@ -404,27 +369,53 @@ string CSocket::GetPeerAddress(ESOCK_AddressFormat format) const
 }
 
 
+void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
+{
+    if (m_Socket  &&  m_IsOwned != eNoOwnership)
+        SOCK_Close(m_Socket);
+    m_Socket  = sock;
+    m_IsOwned = if_to_own;
+    if (whence == eCopyTimeoutsFromSOCK) {
+        if ( sock ) {
+            const STimeout* timeout;
+            timeout = SOCK_GetTimeout(sock, eIO_Read);
+            if ( timeout ) {
+                rr_timeout = *timeout;
+                r_timeout  = &rr_timeout;
+            } else
+                r_timeout  = 0;
+            timeout = SOCK_GetTimeout(sock, eIO_Write);
+            if ( timeout ) {
+                ww_timeout = *timeout;
+                w_timeout  = &ww_timeout;
+            } else
+                w_timeout  = 0;
+            timeout = SOCK_GetTimeout(sock, eIO_Close);
+            if ( timeout ) {
+                cc_timeout = *timeout;
+                c_timeout  = &cc_timeout;
+            } else
+                c_timeout  = 0;
+        } else
+            r_timeout = w_timeout = c_timeout = 0;
+    } else if ( sock ) {
+        SOCK_SetTimeout(sock, eIO_Read,  r_timeout);
+        SOCK_SetTimeout(sock, eIO_Write, w_timeout);
+        SOCK_SetTimeout(sock, eIO_Close, c_timeout);
+    }
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CDatagramSocket::
 //
+
 
 CDatagramSocket::CDatagramSocket(TSOCK_Flags flags)
 {
     if (DSOCK_CreateEx(&m_Socket, flags) != eIO_Success)
         m_Socket = 0;
-}
-
-
-EIO_Status CDatagramSocket::Bind(unsigned short port)
-{
-    return m_Socket ? DSOCK_Bind(m_Socket, port) : eIO_Closed;
-}
-
-
-EIO_Status CDatagramSocket::Connect(const string&  host,
-                                    unsigned short port)
-{
-    return m_Socket ? DSOCK_Connect(m_Socket, host.c_str(), port) : eIO_Closed;
 }
 
 
@@ -476,6 +467,7 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
 //  CListeningSocket::
 //
 
+
 CListeningSocket::CListeningSocket(void)
     : m_Socket(0),
       m_IsOwned(eTakeOwnership)
@@ -490,9 +482,8 @@ CListeningSocket::CListeningSocket(unsigned short port,
     : m_Socket(0),
       m_IsOwned(eTakeOwnership)
 {
-    if (LSOCK_CreateEx(port, backlog, &m_Socket, flags) != eIO_Success) {
+    if (LSOCK_CreateEx(port, backlog, &m_Socket, flags) != eIO_Success)
         m_Socket = 0;
-    }
 }
 
 
@@ -520,7 +511,6 @@ EIO_Status CListeningSocket::Listen(unsigned short port,
 {
     if ( m_Socket )
         return eIO_Unknown;
-
     EIO_Status status = LSOCK_CreateEx(port, backlog, &m_Socket, flags);
     if (status != eIO_Success)
         m_Socket = 0;
@@ -598,38 +588,6 @@ EIO_Status CListeningSocket::Close(void)
 //  CSocketAPI::
 //
 
-string CSocketAPI::gethostname(ESwitch log)
-{
-    char hostname[256];
-    if (SOCK_gethostnameEx(hostname, sizeof(hostname), log) != 0)
-        *hostname = 0;
-    return string(hostname);
-}
-
-
-string CSocketAPI::ntoa(unsigned int host)
-{
-    char ipaddr[64];
-    if (SOCK_ntoa(host, ipaddr, sizeof(ipaddr)) != 0)
-        *ipaddr = 0;
-    return string(ipaddr);
-}
-
-
-string CSocketAPI::gethostbyaddr(unsigned int host, ESwitch log)
-{
-    char hostname[256];
-    if (!SOCK_gethostbyaddrEx(host, hostname, sizeof(hostname), log))
-        *hostname = 0;
-    return string(hostname);
-}
-
-
-unsigned int CSocketAPI::gethostbyname(const string& host, ESwitch log)
-{
-    return SOCK_gethostbynameEx(host == kEmptyStr ? 0 : host.c_str(), log);
-}
-
 
 EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                             const STimeout* timeout,
@@ -677,6 +635,39 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
 
     delete[] x_polls;
     return status;
+}
+
+
+string CSocketAPI::ntoa(unsigned int host)
+{
+    char ipaddr[64];
+    if (SOCK_ntoa(host, ipaddr, sizeof(ipaddr)) != 0)
+        *ipaddr = 0;
+    return string(ipaddr);
+}
+
+
+string CSocketAPI::gethostname(ESwitch log)
+{
+    char hostname[256];
+    if (SOCK_gethostnameEx(hostname, sizeof(hostname), log) != 0)
+        *hostname = 0;
+    return string(hostname);
+}
+
+
+string CSocketAPI::gethostbyaddr(unsigned int host, ESwitch log)
+{
+    char hostname[256];
+    if (!SOCK_gethostbyaddrEx(host, hostname, sizeof(hostname), log))
+        *hostname = 0;
+    return string(hostname);
+}
+
+
+unsigned int CSocketAPI::gethostbyname(const string& host, ESwitch log)
+{
+    return SOCK_gethostbynameEx(host == kEmptyStr ? 0 : host.c_str(), log);
 }
 
 
