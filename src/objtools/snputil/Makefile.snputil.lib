@@ -9,6 +9,3 @@ SRC = snp_utils snp_bitfield \
 ASN_DEP = seqset
 
 WATCHERS = rudnev
-
-# Temporarily -- until it gets included into NCBI_SEQEXT.DLL
-LIB_OR_DLL = lib

@@ -24,9 +24,10 @@ HOSTED_LIBS    = xalnmgr   \
                  xcleanup  \
                  valerr    \
                  blast_services \
-                 blastdb_format
+                 blastdb_format \
+                 snputil
 
-DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
+DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
 
 CPPFLAGS = -DNCBI_SEQEXT_EXPORTS
 
