@@ -98,13 +98,13 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
             ITERATE (CUser_object::TData, uf_it, uo.GetData()) {
                 const CUser_field& field = **uf_it;
                 if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && 
-                        field.CanGetData() && field.GetData().IsStrs() ) {
-                    const string& label = field.GetLabel().GetStr();
-                    if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
-                        const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
-                        m_DBLinkLines.push_back( "Sequence Read Archive: " + 
-                            NStr::Join( strs, ", " ) );
-                    }
+                     field.CanGetData() && field.GetData().IsStrs() ) {
+                        const string& label = field.GetLabel().GetStr();
+                        if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
+                            const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
+                            m_DBLinkLines.push_back( "Sequence Read Archive: " + 
+                                NStr::Join( field.GetData().GetStrs(), ", " ) );
+                        }
                 }
             }
         }
