@@ -2128,10 +2128,10 @@ vector<CTempString>& NStr::TokenizePattern(const CTempString&   str,
 
 bool NStr::SplitInTwo(const CTempString& str, 
                       const CTempString& delim,
-                      string& str1, string& str2)
+                      string& str1, string& str2, EMergeDelims merge)
 {
     CTempString ts1, ts2;
-    bool result = SplitInTwo(str, delim, ts1, ts2);
+    bool result = SplitInTwo(str, delim, ts1, ts2, merge);
     str1 = ts1;
     str2 = ts2;
     return result;
@@ -2139,18 +2139,26 @@ bool NStr::SplitInTwo(const CTempString& str,
 
 bool NStr::SplitInTwo(const CTempString& str, 
                       const CTempString& delim,
-                      CTempString& str1, CTempString& str2)
+                      CTempString& str1, CTempString& str2, EMergeDelims merge)
 {
     SIZE_TYPE delim_pos = str.find_first_of(delim);
-    if (NPOS == delim_pos) {   // only one piece.
+    if (NPOS == delim_pos) {
+        // only one piece
         str1 = str;
         str2 = kEmptyStr;
         return false;
     }
     str1.assign(str.data(), 0, delim_pos);
-    // skip only one delimiter character.
-    str2.assign(str.data(), delim_pos + 1, str.length() - delim_pos - 1);
-    
+
+    // Skip merged delimeters if needed
+    SIZE_TYPE next_pos = (merge == eMergeDelims
+                          ? str.find_first_not_of(delim, delim_pos + 1)
+                          : delim_pos + 1);
+    if (next_pos == NPOS) {
+        str2 = kEmptyStr;
+    } else {
+        str2.assign(str.data(), next_pos, str.length() - next_pos);
+    }
     return true;
 }
 

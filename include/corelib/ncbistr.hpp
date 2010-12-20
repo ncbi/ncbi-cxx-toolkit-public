@@ -1574,6 +1574,10 @@ public:
     ///   with the first "delim" character.
     ///   If a CTempString object itself, any changes to the string
     ///   underlying "str" will invalidate it (and "str1").
+    /// @param merge
+    ///   Whether to merge the delimiters or not. The default setting of
+    ///   eNoMergeDelims means that delimiters that immediately follow each
+    ///   other are treated as separate delimiters.
     /// @return
     ///   true if a symbol from "delim" was found in "str", false if not.
     ///   This lets you distinguish when there were no delimiters and when
@@ -1583,12 +1587,14 @@ public:
     static bool SplitInTwo(const CTempString& str, 
                            const CTempString& delim,
                            string&            str1,
-                           string&            str2);
+                           string&            str2,
+                           EMergeDelims merge = eNoMergeDelims);
 
     static bool SplitInTwo(const CTempString& str, 
                            const CTempString& delim,
                            CTempString&       str1,
-                           CTempString&       str2);
+                           CTempString&       str2,
+                           EMergeDelims merge = eNoMergeDelims);
 
 
     /// Join strings using the specified delimiter.

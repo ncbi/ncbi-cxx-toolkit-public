@@ -1307,23 +1307,28 @@ BOOST_AUTO_TEST_CASE(s_Tokenize)
 //----------------------------------------------------------------------------
 
 struct SSplitInTwo {
-    const char* str;
-    const char* delim;
-    const char* expected_str1;
-    const char* expected_str2;
-    bool        expected_ret;
+    const char*  str;
+    const char*  delim;
+    NStr::EMergeDelims merge;
+    const char*  expected_str1;
+    const char*  expected_str2;
+    bool         expected_ret;
 };
     
 static const SSplitInTwo s_SplitInTwoTest[] = {
-    { "ab+cd+ef", "+", "ab", "cd+ef", true },
-    { "aaAAabBbbb", "AB", "aa", "AabBbbb", true },
-    { "aaCAabBCbbb", "ABC", "aa", "AabBCbbb", true },
-    { "-beg-delim-", "-", "", "beg-delim-", true },
-    { "end-delim:", ":", "end-delim", "", true },
-    { "nodelim", ".,:;-+", "nodelim", "", false },
-    { "emptydelim", "", "emptydelim", "", false },
-    { "", "emtpystring", "", "", false },
-    { "", "", "", "", false }
+    { "ab+cd+ef",    "+",      NStr::eNoMergeDelims, "ab", "cd+ef",     true },
+    { "ab+cd+ef",    "+",      NStr::eMergeDelims,   "ab", "cd+ef",     true },
+    { "ab+++cd+ef",  "+",      NStr::eMergeDelims,   "ab", "cd+ef",     true },
+    { "ab+++",       "+",      NStr::eMergeDelims,   "ab", "",          true },
+    { "aaAAabBbbb",  "AB",     NStr::eNoMergeDelims, "aa", "AabBbbb",   true },
+    { "aaABAabBbbb", "AB",     NStr::eMergeDelims,   "aa", "abBbbb",    true },
+    { "aaCAabBCbbb", "ABC",    NStr::eNoMergeDelims, "aa", "AabBCbbb",  true },
+    { "-beg-delim-", "-",      NStr::eNoMergeDelims, "",   "beg-delim-",true },
+    { "end-delim:",  ":",      NStr::eNoMergeDelims, "end-delim",  "",  true },
+    { "nodelim",     ".,:;-+", NStr::eNoMergeDelims, "nodelim",    "",  false },
+    { "emptydelim",  "",       NStr::eNoMergeDelims, "emptydelim", "",  false },
+    { "", "emtpystring", NStr::eNoMergeDelims, "", "", false },
+    { "", "", NStr::eNoMergeDelims, "", "", false }
 };
 
 BOOST_AUTO_TEST_CASE(s_SplitInTwo)
@@ -1337,7 +1342,7 @@ BOOST_AUTO_TEST_CASE(s_SplitInTwo)
     for (size_t i = 0; i < count; i++) {
         result = NStr::SplitInTwo(s_SplitInTwoTest[i].str,
                                   s_SplitInTwoTest[i].delim,
-                                  string1, string2);
+                                  string1, string2, s_SplitInTwoTest[i].merge);
         BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_ret, result);
         BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_str1, string1);
         BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_str2, string2);
