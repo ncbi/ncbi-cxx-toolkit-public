@@ -17,7 +17,7 @@ NCBI-Biblio DEFINITIONS ::=
 BEGIN
 
 EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
-        Cit-proc, Cit-sub, Title, Author, PubMedId;
+        Cit-proc, Cit-sub, Title, Author, PubMedId, DOI;
 
 IMPORTS Person-id, Date, Dbtag FROM NCBI-General;
 
