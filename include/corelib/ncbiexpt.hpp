@@ -547,7 +547,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// the given error message and error code 'eUnknown'.
 /// This macro is intended for use only in stand-alone applications.
 /// Library APIs should properly declare their specific exception types.
-#define NCBI_USER_THROW(exception_class, err_code, message) \
+#define NCBI_USER_THROW(message) \
     NCBI_THROW(NCBI_NS_NCBI::CException, eUnknown, message)
 
 /// The same as NCBI_THROW but with message processed as output to ostream.
