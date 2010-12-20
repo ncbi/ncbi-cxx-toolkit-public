@@ -595,6 +595,16 @@ public:
     virtual IReader* GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey);
+
+    virtual IReader* GetReadStream(const string&  key,
+                                   const string&  subkey,
+                                   int*           version,
+                                   EBlobValidity* validity);
+
+    virtual void SetBlobVersionAsValid(const string&  key,
+                                       const string&  subkey,
+                                       int            version);
+
     virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,

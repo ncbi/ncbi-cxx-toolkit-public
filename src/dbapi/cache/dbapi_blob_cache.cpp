@@ -562,6 +562,7 @@ const char* CDBAPI_ICacheException::GetErrCodeString(void) const
     case eCannotCreateBLOB:  return "eCannotCreateBLOB";
     case eCannotReadBLOB:    return "eCannotReadBLOB";
     case eTempFileIOError:   return "eTempFileIOError";
+    case eNotImplemented:    return "eNotImplemented";
     default:                 return  CException::GetErrCodeString();
     }
 }
@@ -855,6 +856,28 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
 
     return rdr.release();
 }
+
+
+IReader* CDBAPI_Cache::GetReadStream(const string&  /* key */,
+                                     const string&  /* subkey */,
+                                     int*           /* version */,
+                                     ICache::EBlobValidity* /* validity */)
+{
+    NCBI_THROW(CSQLITE3_ICacheException, eNotImplemented,
+        "CDBAPI_Cache::GetReadStream(key, subkey, &version, &validity) "
+        "is not implemented");
+}
+
+
+void CDBAPI_Cache::SetBlobVersionAsValid(const string&  /* key */,
+                                         const string&  /* subkey */,
+                                         int            /* version */)
+{
+    NCBI_THROW(CSQLITE3_ICacheException, eNotImplemented,
+        "CDBAPI_Cache::SetBlobVersionAsValid(key, subkey, version) "
+        "is not implemented");
+}
+
 
 void CDBAPI_Cache::GetBlobAccess(const string&     /* key */,
                                  int               /* version */,

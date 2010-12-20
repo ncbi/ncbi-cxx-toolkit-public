@@ -40,6 +40,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 #include <connect/server_monitor.hpp>
 
@@ -2809,6 +2810,25 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     return new CBDB_CacheIReader(*this, buffer.release());
 */
 }
+
+IReader* CBDB_Cache::GetReadStream(const string&  /* key */,
+                                   const string&  /* subkey */,
+                                   int*           /* version */,
+                                   ICache::EBlobValidity* /* validity */)
+{
+    NCBI_USER_THROW("CBDB_Cache::GetReadStream("
+        "key, subkey, &version, &validity) is not implemented");
+}
+
+
+void CBDB_Cache::SetBlobVersionAsValid(const string&  /* key */,
+                                       const string&  /* subkey */,
+                                       int            /* version */)
+{
+    NCBI_USER_THROW("CBDB_Cache::GetReadStream("
+        "key, subkey, version) is not implemented");
+}
+
 
 void CBDB_Cache::GetBlobAccess(const string&     key,
                                int               version,
