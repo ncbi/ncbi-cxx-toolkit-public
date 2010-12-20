@@ -2844,6 +2844,57 @@ void x_Translate(const Container& seq,
 }
 
 
+static void AddAAToDeltaSeq (CRef<CBioseq> prot, char residue)
+{
+    if (prot->SetInst().SetExt().SetDelta().Set().empty()
+        || prot->GetInst().GetExt().GetDelta().Get().back()->GetLiteral().GetSeq_data().IsGap()) {
+        // either first seg or transitioning from gap, need new seg
+        CRef<CDelta_seq> seg(new CDelta_seq());
+        seg->SetLiteral().SetLength(0);
+        prot->SetInst().SetExt().SetDelta().Set().push_back(seg);
+    } 
+       
+    CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
+
+    last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, residue);
+    size_t len = last->GetLiteral().GetLength();
+    last->SetLiteral().SetLength(len + 1);
+}
+
+
+static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, size_t add_len)
+{
+    if (prot->SetInst().SetExt().SetDelta().Set().empty()) {
+        // create new segment for gap
+        CRef<CDelta_seq> new_seg(new CDelta_seq());
+        new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
+        new_seg->SetLiteral().SetLength(add_len);
+        if (unknown_length) {
+            new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+        }
+        prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+    } else {
+        CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
+        if (last->SetLiteral().GetSeq_data().IsGap()
+            && ((unknown_length && last->SetLiteral().IsSetFuzz()) 
+                 || (!unknown_length && !last->SetLiteral().IsSetFuzz()))) {
+            // ok, already creating gap segment with correct fuzz
+            size_t len = prot->GetInst().GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
+            prot->SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetLength(len + add_len);
+        } else {
+            // create new segment for gap
+            CRef<CDelta_seq> new_seg(new CDelta_seq());
+            new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
+            new_seg->SetLiteral().SetLength(add_len);
+            if (unknown_length) {
+                new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            }
+            prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+        }
+    }
+}
+
+
 CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
                                                    CScope& scope)
 {
@@ -2880,10 +2931,6 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     prot->SetInst().SetLength(0);
     prot->SetInst().SetTopology(CSeq_inst::eTopology_linear);
 
-    CRef<CDelta_seq> seg(new CDelta_seq());
-    seg->SetLiteral().SetLength(0);
-    prot->SetInst().SetExt().SetDelta().Set().push_back(seg);
-
     // reserve our space
     const size_t usable_size = seq.size() - frame;
     const size_t mod = usable_size % 3;
@@ -2913,11 +2960,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         size_t pos = (i * 3) + frame;
 
         if (start.HasZeroGapBefore()) {
-            // create new segment for gap
-            CRef<CDelta_seq> new_seg(new CDelta_seq());
-            new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
-            new_seg->SetLiteral().SetLength(0);
-            prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+            AddGapToDeltaSeq (prot, true, 0);
         }
 
         // loop through one codon at a time
@@ -2940,46 +2983,18 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             start_state = state;
         }
 
-        CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
         if (is_gap) {
-            if ((!last->SetLiteral().IsSetSeq_data()
-                 || last->SetLiteral().GetSeq_data().IsGap())
-                && ((unknown_length && last->SetLiteral().IsSetFuzz()) 
-                    || (!unknown_length && !last->SetLiteral().IsSetFuzz()))) {
-                // ok, already creating gap segment with correct fuzz
-                size_t len = prot->GetInst().GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
-                prot->SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetLength(len + 1);
-            } else {
-                // create new segment for gap
-                CRef<CDelta_seq> new_seg(new CDelta_seq());
-                new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
-                new_seg->SetLiteral().SetLength(1);
-                if (unknown_length) {
-                    new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-                }
-                prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
-            }
+            AddGapToDeltaSeq (prot, unknown_length, 1);
         } else {
-            if ((!last->SetLiteral().IsSetSeq_data() || last->SetLiteral().GetSeq_data().IsGap())
-                && !first_time) {
-                // transitioning from gap to non-gap, need new seg
-                CRef<CDelta_seq> new_seg(new CDelta_seq());
-                new_seg->SetLiteral().SetLength(0);
-                prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
-                last = prot->SetInst().SetExt().SetDelta().Set().back();
-            }
-
             // save translated amino acid
             if (first_time  &&  check_start) { 
-                last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetStartResidue(state));
+                AddAAToDeltaSeq(prot, tbl.GetStartResidue(state));
             } else {
-                last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetCodonResidue(state));
+                AddAAToDeltaSeq(prot, tbl.GetCodonResidue(state));
             }
-            size_t len = last->GetLiteral().GetLength();
-            last->SetLiteral().SetLength(len + 1);
+
         }
 
-        prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
         first_time = false;
     }
 
@@ -3008,23 +3023,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
         CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
         if (is_gap) {
-            if ((!last->SetLiteral().IsSetSeq_data() || last->GetLiteral().GetSeq_data().IsGap())
-                && ((unknown_length && last->SetLiteral().IsSetFuzz()) 
-                    || (!unknown_length && !last->SetLiteral().IsSetFuzz()))) {
-                // ok, already creating gap segment with correct fuzz
-                size_t len = last->GetLiteral().GetLength();
-                last->SetLiteral().SetLength(len + 1);
-            } else {
-                // create new segment for gap
-                CRef<CDelta_seq> new_seg(new CDelta_seq());
-                new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
-                new_seg->SetLiteral().SetLength(1);
-                if (unknown_length) {
-                    new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-                }
-                prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
-            }
-            prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
+            AddGapToDeltaSeq (prot, unknown_length, 1);
         } else {
             for ( ;  k < 3;  ++k) {
                 state = tbl.NextCodonState(state, 'N');
@@ -3037,22 +3036,54 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             // save translated amino acid
             char c = tbl.GetCodonResidue(state);
             if (c != 'X') {
-                if ((!last->SetLiteral().IsSetSeq_data() || last->GetLiteral().GetSeq_data().IsGap())
-                    && last->SetLiteral().GetLength() > 0) {
-                    // transitioning from gap to non-gap, need new seg
-                    CRef<CDelta_seq> new_seg(new CDelta_seq());
-                    prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
-                    last = prot->SetInst().SetExt().SetDelta().Set().back();
-                }
-                if (first_time  &&  check_start) {
-                    last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetStartResidue(state));
+                if (first_time  &&  check_start) { 
+                    AddAAToDeltaSeq(prot, tbl.GetStartResidue(state));
                 } else {
-                    // if padding was needed, trim ambiguous last residue
-                    last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetCodonResidue(state));
+                    AddAAToDeltaSeq(prot, tbl.GetCodonResidue(state));
                 }
-                size_t len = last->GetLiteral().GetLength();
-                last->SetLiteral().SetLength(len + 1);
-                prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
+            }
+        }
+    }
+
+    int prot_len = 0;
+    ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
+        prot_len += (*seg_it)->GetLiteral().GetLength();
+    }
+
+    // code break substitution
+    if (cds.GetData().IsCdregion()  &&
+        cds.GetData().GetCdregion().IsSetCode_break()) {
+        const CCdregion& cdr = cds.GetData().GetCdregion();
+        ITERATE (CCdregion::TCode_break, code_break, cdr.GetCode_break()) {
+            const CRef <CCode_break> brk = *code_break;
+            const CSeq_loc& cbk_loc = brk->GetLoc();
+            TSeqPos seq_pos =
+                sequence::LocationOffset(cds.GetLocation(), cbk_loc,
+                                         sequence::eOffset_FromStart,
+                                         &scope);
+            seq_pos -= frame;
+            string::size_type i = seq_pos / 3;
+            if (i < prot_len) {
+                const CCode_break::C_Aa& c_aa = brk->GetAa ();
+                if (c_aa.IsNcbieaa ()) {
+                    CDelta_ext::Tdata::iterator seg_it = prot->SetInst().SetExt().SetDelta().Set().begin();
+                    string::size_type offset = 0;
+                    while (seg_it != prot->SetInst().SetExt().SetDelta().Set().end()
+                           && offset + (*seg_it)->GetLiteral().GetLength() < i) {
+                        offset += (*seg_it)->GetLiteral().GetLength();
+                        ++seg_it;
+                    }
+                    if (seg_it != prot->SetInst().SetExt().SetDelta().Set().end()
+                        && !(*seg_it)->GetLiteral().GetSeq_data().IsGap()) {
+                        (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set()[i - offset] = c_aa.GetNcbieaa ();
+                    }
+                }
+            } else if (i == prot_len) {
+                // add terminal exception
+                const CCode_break::C_Aa& c_aa = brk->GetAa ();
+                if (c_aa.IsNcbieaa () && c_aa.GetNcbieaa () == 42) {
+                    AddAAToDeltaSeq(prot, c_aa.GetNcbieaa ());
+                }
             }
         }
     }
@@ -3064,9 +3095,16 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         if (NStr::EndsWith(last_seg, "*")) {
             last_seg = last_seg.substr(0, last_seg.length() - 1);
             end->SetLiteral().SetLength(last_seg.length());
-            prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
         }
     }
+
+    // recalculate protein length - may have been altered by removal of stop codon/transl_except
+    prot_len = 0;
+    ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
+        prot_len += (*seg_it)->GetLiteral().GetLength();
+    }
+    prot->SetInst().SetLength(prot_len);
+
 
     if (prot->SetInst().SetExt().SetDelta().Set().size() == 1
         && prot->SetInst().SetExt().SetDelta().Set().front()->IsLiteral()
