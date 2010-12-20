@@ -10,7 +10,7 @@
 NCBI-Seqfeat DEFINITIONS ::=
 BEGIN
 
-EXPORTS Seq-feat, Feat-id, Genetic-code;
+EXPORTS Seq-feat, Feat-id, Genetic-code, ModelEvidenceSupport;
 
 IMPORTS Gene-ref FROM NCBI-Gene
         Prot-ref FROM NCBI-Protein
@@ -18,10 +18,11 @@ IMPORTS Gene-ref FROM NCBI-Gene
         Variation-ref FROM NCBI-Variation
         BioSource FROM NCBI-BioSource
         RNA-ref FROM NCBI-RNA
-        Seq-loc, Giimport-id FROM NCBI-Seqloc
+        Seq-id, Seq-loc, Giimport-id FROM NCBI-Seqloc
         Pubdesc, Numbering, Heterogen FROM NCBI-Sequence
         Rsite-ref FROM NCBI-Rsite
         Txinit FROM NCBI-TxInit
+        DOI, PubMedId FROM NCBI-Biblio
         Pub-set FROM NCBI-Pub
         Object-id, Dbtag, User-object FROM NCBI-General;
 
@@ -57,7 +58,9 @@ Seq-feat ::= SEQUENCE {
     pseudo BOOLEAN OPTIONAL ,     -- annotated on pseudogene?
     except-text VisibleString OPTIONAL , -- explain if except=TRUE
     ids SET OF Feat-id OPTIONAL ,       -- set of Ids; will replace 'id' field
-    exts SET OF User-object OPTIONAL }  -- set of extensions; will replace 'ext' field
+    exts SET OF User-object OPTIONAL , -- set of extensions; will replace 'ext' field
+    support SeqFeatSupport OPTIONAL  -- will replace /experiment, /inference, model-evidence
+}
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
@@ -122,6 +125,82 @@ SeqFeatData ::= CHOICE {
 SeqFeatXref ::= SEQUENCE {       -- both optional because can have one or both
     id Feat-id OPTIONAL ,        -- the feature copied
     data SeqFeatData OPTIONAL }  -- the specific data
+
+SeqFeatSupport ::= SEQUENCE {
+  experiment SET OF ExperimentSupport OPTIONAL ,
+  inference SET OF InferenceSupport OPTIONAL ,
+  model-evidence SET OF ModelEvidenceSupport OPTIONAL
+}
+
+EvidenceCategory ::= INTEGER {
+  not-set (0) ,
+  coordinates (1) ,
+  description (2) ,
+  existence (3)
+}
+
+ExperimentSupport ::= SEQUENCE {
+  category EvidenceCategory OPTIONAL ,
+  explanation VisibleString ,
+  pmids SET OF PubMedId OPTIONAL ,
+  dois SET OF DOI OPTIONAL
+}
+
+Program-id ::= SEQUENCE {
+  name VisibleString ,
+  version VisibleString OPTIONAL
+}
+
+EvidenceBasis ::= SEQUENCE {
+  programs SET OF Program-id OPTIONAL ,
+  accessions SET OF Seq-id OPTIONAL
+}
+
+InferenceSupport ::= SEQUENCE {
+  category EvidenceCategory OPTIONAL ,
+  type INTEGER {
+    not-set (0) ,
+    similar-to-sequence (1) ,
+    similar-to-aa (2) ,
+    similar-to-dna (3) ,
+    similar-to-rna (4) ,
+    similar-to-mrna (5) ,
+    similiar-to-est (6) ,
+    similar-to-other-rna (7) ,
+    profile (8) ,
+    nucleotide-motif (9) ,
+    protein-motif (10) ,
+    ab-initio-prediction (11) ,
+    alignment (12) ,
+    other (255)
+  } DEFAULT not-set ,
+  other-type VisibleString OPTIONAL ,
+  same-species BOOLEAN DEFAULT FALSE ,
+  basis EvidenceBasis ,
+  pmids SET OF PubMedId OPTIONAL ,
+  dois SET OF DOI OPTIONAL
+}
+
+ModelEvidenceItem ::= SEQUENCE {
+  id Seq-id ,
+  exon-count INTEGER OPTIONAL ,
+  exon-length INTEGER OPTIONAL ,
+  full-length BOOLEAN DEFAULT FALSE ,
+  supports-all-exon-combo BOOLEAN DEFAULT FALSE
+}
+
+ModelEvidenceSupport ::= SEQUENCE {
+  method VisibleString OPTIONAL ,
+  mrna SET OF ModelEvidenceItem OPTIONAL ,
+  est SET OF ModelEvidenceItem OPTIONAL ,
+  protein SET OF ModelEvidenceItem OPTIONAL ,
+  identification Seq-id OPTIONAL ,
+  dbxref SET OF Dbtag OPTIONAL ,
+  exon-count INTEGER OPTIONAL ,
+  exon-length INTEGER OPTIONAL ,
+  full-length BOOLEAN DEFAULT FALSE ,
+  supports-all-exon-combo BOOLEAN DEFAULT FALSE
+}
 
 --*** CdRegion ***********************************************
 --*
