@@ -149,6 +149,17 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode);
 
+    virtual IReader* GetReadStream(
+        const string& key,
+        const string& subkey,
+        int* version,
+        EBlobValidity* validity);
+
+    virtual void SetBlobVersionAsValid(
+        const string& key,
+        const string& subkey,
+        int version);
+
     IReader* GetReadStreamPart(
         const string& key,
         int version,

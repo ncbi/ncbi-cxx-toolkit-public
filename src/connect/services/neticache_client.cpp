@@ -91,11 +91,14 @@ static void CheckAndAppendKeyVersionSubkey(string* outstr,
     }
 
     outstr->append(encoded_key);
-    outstr->append("\" ", 2);
 
-    outstr->append(NStr::UIntToString(version));
+    if (version >= 0) {
+        outstr->append("\" ", 2);
+        outstr->append(NStr::UIntToString(version));
+        outstr->append(" \"", 2);
+    } else
+        outstr->append("\" \"", 3);
 
-    outstr->append(" \"", 2);
     outstr->append(encoded_subkey);
     outstr->push_back('"');
 }
@@ -556,6 +559,64 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
 {
     return GetReadStream(key, version, subkey,
         NULL, CNetCacheAPI::eCaching_AppDefault);
+}
+
+IReader* CNetICacheClient::GetReadStream(const string& key,
+        const string& subkey, int* version, ICache::EBlobValidity* validity)
+{
+    try {
+        CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(
+            m_Impl->MakeStdCmd("READLAST", key, -1, subkey)));
+
+        string::size_type pos = exec_result.response.find("VER=");
+
+        if (pos == string::npos) {
+            NCBI_THROW(CNetCacheException, eInvalidServerResponse,
+                "No VER field in READLAST output");
+        }
+
+        *version = (int) NStr::StringToUInt(
+            exec_result.response.c_str() + pos + sizeof("VER=") - 1,
+            NStr::fAllowTrailingSymbols);
+
+        pos = exec_result.response.find("VALID=");
+
+        if (pos == string::npos) {
+            NCBI_THROW(CNetCacheException, eInvalidServerResponse,
+                "No VALID field in READLAST output");
+        }
+
+        switch (exec_result.response[pos + sizeof("VALID=") - 1]) {
+        case 't': case 'T': case 'y': case 'Y':
+            *validity = eValid;
+            break;
+        case 'f': case 'F': case 'n': case 'N':
+            *validity = eExpired;
+            break;
+        default:
+            NCBI_THROW(CNetCacheException, eInvalidServerResponse,
+                "Invalid format of the VALID field in READLAST output");
+        }
+
+        return new CNetCacheReader(m_Impl, exec_result,
+            NULL, CNetCacheAPI::eCaching_AppDefault);
+    } catch (CNetCacheException& e) {
+        if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
+            throw;
+        return NULL;
+    }
+}
+
+void CNetICacheClient::SetBlobVersionAsValid(const string& key,
+        const string& subkey, int version)
+{
+    CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(
+        m_Impl->MakeStdCmd("SETVALID", key, version, subkey)));
+
+    if (!exec_result.response.empty()) {
+        ERR_POST("SetBlobVersionAsValid(\"" << key << "\", " <<
+            version << ", \"" << subkey << "\"): " << exec_result.response);
+    }
 }
 
 string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,

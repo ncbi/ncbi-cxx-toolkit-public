@@ -236,6 +236,53 @@ public:
                                    int            version,
                                    const string&  subkey) = 0;
 
+    /// Whether a BLOB is valid from the point of view of underlying cache.
+    ///
+    /// The underlying cache implementation can expire blobs without actually
+    /// deleting them. Then, the blob can still be read from the cache, and its
+    /// validity confirmed (or not) against the original data source, and then
+    /// usually validated (or invalidated) in the cache accordingly.
+    /// @sa  SetBlobVersionAsValid(), GetReadStream()
+    enum EBlobValidity {
+        eValid,    ///< BLOB is considered valid
+        eExpired   ///< BLOB is considered expired
+    };
+
+    /// Request the latest version of a BLOB.
+    ///
+    /// @param[in] key
+    ///    BLOB identification key
+    /// @param[in] subkey
+    ///    BLOB identification subkey
+    /// @param[out] version
+    ///    BLOB version (current)
+    /// @param[out] validity
+    ///    BLOB validity (whether the blob has expired)
+    /// @return
+    ///    Sequential stream interface to read BLOB data.
+    ///    Return NULL if BLOB does not exist.
+    /// @sa  SetBlobVersionAsValid()
+    virtual IReader* GetReadStream(const string&  key,
+                                   const string&  subkey,
+                                   int*           version,
+                                   EBlobValidity* validity) = 0;
+
+    /// Set current version for a BLOB.
+    ///
+    /// @param[in] key
+    ///    BLOB identification key
+    /// @param[in] subkey
+    ///    BLOB identification subkey
+    /// @param[in] version
+    ///    BLOB version which must be considered valid from now on
+    /// @note Throw in case of communication errors or if the underlying cache
+    ///       cannot process this command. If the BLOB doesn't exist, then no
+    ///       exception should be thrown.
+    /// @sa  GetReadStream()
+    virtual void SetBlobVersionAsValid(const string&  key,
+                                       const string&  subkey,
+                                       int            version) = 0;
+
     /// BLOB access descriptor
     struct SBlobAccessDescr
     {

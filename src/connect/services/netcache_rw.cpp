@@ -65,7 +65,8 @@ CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
     }
 
     m_BlobBytesToRead = NStr::StringToUInt8(
-        exec_result.response.c_str() + pos + sizeof("SIZE=") - 1);
+        exec_result.response.c_str() + pos + sizeof("SIZE=") - 1,
+        NStr::fAllowTrailingSymbols);
 
     if (blob_size_ptr != NULL) {
         *blob_size_ptr = CheckBlobSize(m_BlobBytesToRead);
