@@ -16,7 +16,7 @@ EXPORTS Annotdesc, Annot-descr, Bioseq, GIBB-mol, Heterogen, MolInfo,
 
 IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Seq-align FROM NCBI-Seqalign
-        Seq-feat FROM NCBI-Seqfeat
+        Seq-feat, ModelEvidenceSupport FROM NCBI-Seqfeat
         Seq-graph FROM NCBI-Seqres
         Pub-equiv FROM NCBI-Pub
         Org-ref FROM NCBI-Organism
@@ -68,7 +68,9 @@ Seqdesc ::= CHOICE {
     pdb PDB-block ,              -- PDB specific information
     het Heterogen ,              -- cofactor, etc associated but not bound
     source BioSource ,           -- source of materials, includes Org-ref
-    molinfo MolInfo }            -- info on the molecule and techniques
+    molinfo MolInfo ,            -- info on the molecule and techniques
+    modelev ModelEvidenceSupport -- model evidence for XM records
+}
 
 --******* NOTE:
 --*       mol-type, modif, method, and org are consolidated and expanded
