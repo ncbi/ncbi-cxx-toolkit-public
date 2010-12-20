@@ -91,6 +91,7 @@ s_BuildArchiveAll(CRef<CRemoteBlast> rmt_blast,
         archive->SetRequest(*net_request);
 
         CRef<CSeq_align_set> seqalign_set(new CSeq_align_set);
+         _ASSERT(seqalign_set.NotEmpty());
 
         CRef<objects::CBlast4_get_search_results_reply> net_results(new objects::CBlast4_get_search_results_reply());
 
@@ -103,9 +104,11 @@ s_BuildArchiveAll(CRef<CRemoteBlast> rmt_blast,
         ITERATE(CSearchResultSet, result, results) {
              CConstRef<CSeq_align_set> result_set =
                         (*result)->GetSeqAlign();
-             seqalign_set->Set().insert(seqalign_set->Set().end(),
-                                               result_set->Get().begin(),
-                                               result_set->Get().end());
+             if (result_set.NotEmpty() && !result_set->IsEmpty()) {
+                 seqalign_set->Set().insert(seqalign_set->Set().end(),
+                                                   result_set->Get().begin(),
+                                                   result_set->Get().end());
+             }
              if (first_time)
              {
                     CRef<CBlastAncillaryData> ancill_data = (*result)->GetAncillaryData();
