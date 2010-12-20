@@ -269,6 +269,89 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
 }
 
 
+double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
+                                           const char* variable,
+                                           const char* env_var_name,
+                                           double default_value)
+{
+    if ( section  &&  *section ) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app  &&  app->HasLoadedConfig() ) {
+            const string& str = app->GetConfig().Get(section, variable);
+            if ( !str.empty() ) {
+                try {
+                    double value = NStr::StringToDouble(str,
+                        NStr::fDecimalPosixOrLocal |
+                        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+#ifdef _DEBUG
+                    if ( config_dump ) {
+                        LOG_POST_X(10, "NCBI_CONFIG: double variable"
+                                       " [" << section << "]"
+                                       " " << variable <<
+                                       " = " << value <<
+                                       " from registry");
+                    }
+#endif
+                    return value;
+                }
+                catch ( ... ) {
+                    // ignored
+                }
+            }
+        }
+    }
+    const char* str = GetEnv(section, variable, env_var_name);
+    if ( str && *str ) {
+        try {
+            double value = NStr::StringToDouble(str,
+                NStr::fDecimalPosixOrLocal |
+                NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+#ifdef _DEBUG
+            if ( config_dump ) {
+                if ( section  &&  *section ) {
+                    LOG_POST_X(11, "NCBI_CONFIG: double variable"
+                                   " [" << section << "]"
+                                   " " << variable <<
+                                   " = " << value <<
+                                   " from env var " <<
+                                   GetEnvVarName(section, variable, env_var_name));
+                }
+                else {
+                    LOG_POST_X(12, "NCBI_CONFIG: double variable "
+                                   " " << variable <<
+                                   " = " << value <<
+                                   " from env var");
+                }
+            }
+#endif
+            return value;
+        }
+        catch ( ... ) {
+            // ignored
+        }
+    }
+    double value = default_value;
+#ifdef _DEBUG
+    if ( config_dump ) {
+        if ( section  &&  *section ) {
+            LOG_POST_X(13, "NCBI_CONFIG: double variable"
+                           " [" << section << "]"
+                           " " << variable <<
+                           " = " << value <<
+                           " by default");
+        }
+        else {
+            LOG_POST_X(14, "NCBI_CONFIG: int variable"
+                           " " << variable <<
+                           " = " << value <<
+                           " by default");
+        }
+    }
+#endif
+    return value;
+}
+
+
 string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* variable,
                                            const char* env_var_name,

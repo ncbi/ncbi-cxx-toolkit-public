@@ -158,6 +158,29 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                        bool        default_value);
 
 
+/// Get double configuration value.
+///
+/// @param section
+///   Check application configuration named section first if not null.
+/// @param variable
+///   Variable name within application section.
+///   If no value found in configuration file, environment variable with
+///   name NCBI_CONFIG__section__variable or NCBI_CONFIG__variable will be
+///   checked, depending on wether section is null.
+/// @param env_var_name
+///   If not empty, overrides the default NCBI_CONFIG__section__name
+///   name of the environment variable.
+/// @param default_value
+///   If no value found neither in configuration file nor in environment,
+///   this value will be returned.
+/// @return
+///   double configuration value.
+/// @sa g_GetConfigString(), g_GetConfigInt()
+double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
+                                           const char* variable,
+                                           const char* env_var_name,
+                                           double  default_value);
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Parameter declaration and definition macros
