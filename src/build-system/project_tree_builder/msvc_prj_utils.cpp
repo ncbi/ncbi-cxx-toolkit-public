@@ -702,12 +702,20 @@ string GetOpt(const CPtbRegistry& registry,
     const string& platform = CMsvc7RegSettings::GetMsvcPlatformName();
     string build = GetApp().GetBuildType().GetTypeStr();
     string spec = config.m_Debug ? "debug": "release";
+    string cfgName(config.m_Name), cfgFullName(config.GetConfigFullName());
     string value, s;
 
-    s.assign(section).append(1,'.').append(build).append(1,'.').append(spec).append(1,'.').append(config.m_Name);
+    if (cfgName != cfgFullName) {
+        s.assign(section).append(1,'.').append(build).append(1,'.').append(spec).append(1,'.').append(cfgFullName);
+        value = registry.Get(s, opt); if (!value.empty()) { return value;}
+
+        s.assign(section).append(1,'.').append(spec).append(1,'.').append(cfgFullName);
+        value = registry.Get(s, opt); if (!value.empty()) { return value;}
+    }
+    s.assign(section).append(1,'.').append(build).append(1,'.').append(spec).append(1,'.').append(cfgName);
     value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
-    s.assign(section).append(1,'.').append(spec).append(1,'.').append(config.m_Name);
+    s.assign(section).append(1,'.').append(spec).append(1,'.').append(cfgName);
     value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(build).append(1,'.').append(spec);

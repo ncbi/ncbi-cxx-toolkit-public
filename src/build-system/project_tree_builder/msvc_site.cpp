@@ -260,7 +260,7 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
 void CMsvcSite::GetLibInfo(const string& lib, 
                            const SConfigInfo& config, SLibInfo* libinfo) const
 {
-    string libinfokey(lib + config.m_Name);
+    string libinfokey(lib + config.GetConfigFullName());
     map<string,SLibInfo>::const_iterator li;
     li = m_AllLibInfo.find(libinfokey);
     if (li != m_AllLibInfo.end()) {
