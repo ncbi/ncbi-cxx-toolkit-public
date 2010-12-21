@@ -399,7 +399,9 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'W':
-        if (B4Param_WindowSize.Match(p)) {
+        if (B4Param_WindowMaskerTaxId.Match(p)) {
+            opts.SetOptions().SetWindowMaskerTaxId(v.GetInteger());
+        } else if (B4Param_WindowSize.Match(p)) {
             opts.SetWindowSize(v.GetInteger());
         } else if (B4Param_WordSize.Match(p)) {
             bo.SetWordSize(v.GetInteger());
