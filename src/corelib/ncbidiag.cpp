@@ -3588,15 +3588,6 @@ CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
 {
     CNcbiOstream& res =
         x_IsSetOldFormat() ? x_OldWrite(os, flags) : x_NewWrite(os, flags);
-    // Copy to STDERR
-    if ( TTeeToStderr::GetDefault() ) {
-        bool visible = CompareDiagPostLevel(m_Severity,
-            TTeeMinSeverity::GetDefault()) >= 0;
-        if ( visible ) {
-            // Reset flags - STDERR does not need to skip prefix or merge lines
-            x_OldWrite(cerr, fNone);
-        }
-    }
     return res;
 }
 
@@ -4262,6 +4253,61 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 }
 
 
+// Special diag handler for duplicating error log messages on stderr.
+class CTeeDiagHandler : public CDiagHandler
+{
+public:
+    CTeeDiagHandler(CDiagHandler* orig, bool own_orig);
+    virtual void Post(const SDiagMessage& mess);
+    virtual string GetLogName(void)
+    {
+        return m_OrigHandler.get() ?
+            m_OrigHandler->GetLogName() : "STDERR-TEE";
+    }
+    virtual void Reopen(TReopenFlags flags)
+    {
+        if ( m_OrigHandler.get() ) {
+            m_OrigHandler->Reopen(flags);
+        }
+    }
+
+private:
+    EDiagSev              m_MinSev;
+    AutoPtr<CDiagHandler> m_OrigHandler;
+};
+
+
+CTeeDiagHandler::CTeeDiagHandler(CDiagHandler* orig, bool own_orig)
+    : m_MinSev(TTeeMinSeverity::GetDefault()),
+      m_OrigHandler(orig, own_orig ? eTakeOwnership : eNoOwnership)
+{
+    // Prevent recursion
+    CTeeDiagHandler* tee = dynamic_cast<CTeeDiagHandler*>(m_OrigHandler.get());
+    if ( tee ) {
+        m_OrigHandler = tee->m_OrigHandler;
+    }
+}
+
+
+void CTeeDiagHandler::Post(const SDiagMessage& mess)
+{
+    if ( m_OrigHandler.get() ) {
+        m_OrigHandler->Post(mess);
+    }
+    // Ignore posts below the min severity and applog messages
+    if ((mess.m_Flags & eDPF_AppLog)  ||
+        CompareDiagPostLevel(mess.m_Severity, m_MinSev) < 0) {
+        return;
+    }
+
+    CNcbiOstrstream str_os;
+    mess.x_OldWrite(str_os);
+    cerr.write(str_os.str(), str_os.pcount());
+    str_os.rdbuf()->freeze(false);
+    cerr << NcbiFlush;
+}
+
+
 extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
 {
     CMutexGuard LOCK(s_DiagMutex);
@@ -4277,16 +4323,19 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
         new_name = handler->GetLogName();
         if (report_switch  &&  new_name != old_name) {
             ctx.Extra().Print("switch_diag_to", new_name);
-            // ctx.PrintExtra("Switching diagnostics to " + new_name);
         }
     }
     if ( CDiagBuffer::sm_CanDeleteHandler )
         delete CDiagBuffer::sm_Handler;
+    if (TTeeToStderr::GetDefault()  &&  handler->GetLogName() != "STDERR") {
+        // Need to tee?
+        handler = new CTeeDiagHandler(handler, can_delete);
+        can_delete = true;
+    }
     CDiagBuffer::sm_Handler          = handler;
     CDiagBuffer::sm_CanDeleteHandler = can_delete;
     if (report_switch  &&  !old_name.empty()  &&  new_name != old_name) {
         ctx.Extra().Print("switch_diag_from", old_name);
-        // ctx.PrintExtra("Switched diagnostics from " + old_name);
     }
 }
 
