@@ -222,8 +222,9 @@ private:
 
 size_t CNullProcessor::Run(void)
 {
-    if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata)
+    if (!m_Stream  ||  !m_Stream->good()  ||  !m_Dlcbdata) {
         return 0;
+    }
 
     Uint8 filesize = 0;
     do {
@@ -248,8 +249,9 @@ size_t CListProcessor::Run(void)
     do {
         string line;
         getline(*m_Stream, line);
-        if (!line.empty()  &&  NStr::EndsWith(line, '\r'))
+        if (!line.empty()  &&  NStr::EndsWith(line, '\r')) {
             line.resize(line.size() - 1);
+        }
         if (!line.empty()) {
             cerr.flush();
             cout << left << setw(60) << line << endl;
@@ -298,9 +300,8 @@ size_t CUntarProcessor::Run(void)
     }
 
     auto_ptr<CTar::TEntries> filelist;
-    try {
-        // NB: CTar *loves* exceptions, for some weird reason :-/
-        filelist = m_Tar->List();  // can be tar.Extract() as well
+    try {  // NB: CTar *loves* exceptions, for some weird reason :-/
+        filelist = m_Tar->List();  // NB: can be tar.Extract() as well
     } NCBI_CATCH_ALL("TAR Error");
     return filelist.get() ? filelist->size() : 0;
 }
@@ -455,6 +456,9 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& s,
                                    const STimeout* timeout)
 {
     // RETR must be understood by all FTP implementations
+    // LIST command obtains non-machine readable output
+    // NLST command obtains a filename per line output (having the filelist,
+    ///     one can use SIZE and MDTM on each entry to get details about it)
     const char* cmd = NStr::EndsWith(name, '/') ? "LIST " : "RETR ";
     s << cmd << name << endl;
     EIO_Status status = CONN_Wait(s.GetCONN(), eIO_Read, timeout);
