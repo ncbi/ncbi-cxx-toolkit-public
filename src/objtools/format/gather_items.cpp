@@ -554,12 +554,24 @@ void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
 
     CScope& scope = m_Current->GetScope();
 
+    CBioseq_Handle cds_seq = GetBioseqFromSeqLoc(cds_loc, scope);
+    if (!cds_seq) {
+        return;
+    }
+
     for (CFeat_CI it(m_Current->GetScope(), cds_loc, CSeqFeatData::e_Pub); it; ++it) {
         const CSeq_feat& feat = it->GetOriginalFeature();
-        if (TestForOverlap(cds_loc, feat.GetLocation(), eOverlap_Contains, kInvalidSeqPos, &scope) > 0) {
+        if (TestForOverlap(cds_loc, feat.GetLocation(), eOverlap_SubsetRev, kInvalidSeqPos, &scope) >= 0) {
             CBioseqContext::TRef ref(new CReferenceItem(feat, *m_Current, &cds_prod));
             refs.push_back(ref);
         }
+    }
+    for (CSeqdesc_CI it(cds_seq, CSeqdesc::e_Pub, 1); it; ++it) {
+        const CPubdesc& pubdesc = it->GetPub();
+        if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+            continue;
+        }
+        refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
     }
 }
 
@@ -575,7 +587,7 @@ void CFlatGatherer::x_GatherReferences(void) const
         x_GatherCDSReferences(refs);
     }
 
-    // re-sort references
+    // re-sort references and merge/remove duplicates
     CReferenceItem::Rearrange(refs, *m_Current);
 
     CConstRef<IFlatItem> item;
