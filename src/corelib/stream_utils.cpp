@@ -37,6 +37,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/stream_utils.hpp>
 #include <corelib/error_codes.hpp>
@@ -105,12 +106,15 @@ private:
     void*               m_DelPtr;
 
 #ifdef HAVE_GOOD_IOS_CALLBACKS
-    int                 m_Index;
+    static volatile int sm_Index;
     static void         x_Callback(IOS_BASE::event, IOS_BASE&, int);
 #endif //HAVE_GOOD_IOS_CALLBACKS
 
     static const streamsize kMinBufSize;
 };
+
+
+volatile int CPushback_Streambuf::sm_Index = -1;  // uninited
 
 
 const streamsize CPushback_Streambuf::kMinBufSize = 4096;
@@ -121,8 +125,10 @@ void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
                                      IOS_BASE&       ios,
                                      int             index)
 {
-    if (event == IOS_BASE::erase_event)
+    if (event == IOS_BASE::erase_event) {
+        _ASSERT(index == sm_Index);
         delete static_cast<streambuf*> (ios.pword(index));
+    }
 }
 #endif //HAVE_GOOD_IOS_CALLBACKS
 
@@ -130,23 +136,29 @@ void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
 CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                                          CT_CHAR_TYPE* buf,
                                          streamsize    buf_size,
-                                         void*         del_ptr) :
-    m_Is(is), m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
+                                         void*         del_ptr)
+    : m_Is(is), m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
 {
     setp(0, 0); // unbuffered output at this level of streambuf's hierarchy
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Sb = m_Is.rdbuf(this);
 #ifdef HAVE_GOOD_IOS_CALLBACKS
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
-    if (sb) {
-        m_Index             = sb->m_Index;
-        m_Is.pword(m_Index) = this;
-    } else try {
-        m_Index             = m_Is.xalloc();
-        m_Is.pword(m_Index) = this;
-        m_Is.register_callback(x_Callback, m_Index);
+    try {
+        if (!sb) {
+            if (sm_Index == -1) {
+                DEFINE_STATIC_FAST_MUTEX(s_PushbackMutex);
+                CFastMutexGuard guard(s_PushbackMutex);
+                if (sm_Index == -1) {
+                    sm_Index = IOS_BASE::xalloc();
+                }
+            }
+            m_Is.register_callback(x_Callback, sm_Index);
+        }
+        m_Is.pword(sm_Index) = this;
     }
-    STD_CATCH_ALL_X(1, "CPushback_Streambuf::CPushback_Streambuf");
+    STD_CATCH_ALL_X(1, (m_Is.clear(NcbiBadbit),
+                        "CPushback_Streambuf::CPushback_Streambuf"));
 #endif //HAVE_GOOD_IOS_CALLBACKS
 }
 
@@ -154,14 +166,16 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
 CPushback_Streambuf::~CPushback_Streambuf()
 {
 #ifdef HAVE_GOOD_IOS_CALLBACKS
-    if (m_Is.pword(m_Index) == this)
-        m_Is.pword(m_Index) = 0;
+    if (m_Is.pword(sm_Index) == this) {
+        m_Is.pword(sm_Index) =  0;
+    }
 #endif //HAVE_GOOD_IOS_CALLBACKS
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
     if (m_Sb) {
         m_Is.rdbuf(m_Sb);
-        if (dynamic_cast<CPushback_Streambuf*> (m_Sb))
+        if (dynamic_cast<CPushback_Streambuf*> (m_Sb)) {
             delete m_Sb;
+        }
     }
 }
 

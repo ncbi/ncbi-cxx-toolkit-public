@@ -77,45 +77,21 @@ static const size_t kBufferSize = 512*1024;
  * standard means, as the latter may be broken.
  */
 
-extern int TEST_StreamPushback(iostream&    ios,
-                               unsigned int seed_in,
-                               bool         rewind)
+
+static int s_StreamPushback(iostream&   ios,
+                            const char* orig,
+                            size_t      size,
+                            bool        rewind,
+                            size_t&     it)
 {
-    size_t i, j, k;
-    vector<CT_CHAR_TYPE*> v;
+    AutoPtr<char, ArrayDeleter<char> > dptr(new char[size + 2]);
+    char* data = dptr.get();
+    memset(data, '\xFF', size + 1);
+    data[size + 1] = '\0';
 
-    // Warnings, errors, etc
-    GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err,
-                                      CRequestRateControl::kNoLimit);
-    // Infos and traces only
-    GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Trace,
-                                      CRequestRateControl::kNoLimit);
+    vector< AutoPtr <char, ArrayDeleter<char> > > v;
 
-    unsigned int seed = seed_in ? seed_in : (unsigned int) time(0);
-    ERR_POST(Info << "Seed = " << seed);
-    srand(seed);
-
-    ERR_POST(Info << "Generating array of random data");
-    char* orig = new char[kBufferSize + 1];
-    char* data = new char[kBufferSize + 2];
-    for (j = 0; j < kBufferSize/1024; j++) {
-        for (i = 0; i < 1024 - 1; i++)
-            orig[j*1024 + i] = "0123456789"[rand() % 10];
-        orig[j*1024 + 1024 - 1] = '\n';
-    }
-    orig[kBufferSize    ] = '\0';
-    memset(data, '\xFF', kBufferSize + 1);
-    data[kBufferSize + 1] = '\0';
-
-    ERR_POST(Info << "Sending data down the stream");
-    if (!(ios << orig)) {
-        ERR_POST("Cannot send data");
-        return 1;
-    }
-    if (rewind)
-        ios.seekg(0);
-
-    ERR_POST(Info << "Doing random reads and {push|step}backs of the reply");
+    size_t i, j;
 
     int d = 0;
     size_t nbusy = 0;
@@ -125,15 +101,39 @@ extern int TEST_StreamPushback(iostream&    ios,
 #ifdef NCBI_COMPILER_MSVC
     bool   first_pushback_done = false;
 #endif
-    for (k = 0;  nread < kBufferSize;  k++) {
-        size_t navail = kBufferSize + 1 - nread;
-        if (navail >= 10)
-            navail /= 10;
-        i = rand() % navail + 1;
+    for (it = 0;  nread < size;  it++) {
+        if (1 < nread  &&  nread <= (size >> 1)  &&  rand() % 100 == 91) {
+            i = rand() % nread + 1;
+            j = (nread - i) >> 1;
+            char savech = data[j + i];
+            data[j + i] = '\0';
+            // We don't use "app" actually, but w/o it we can't read
+            strstream str(data + j, i,
+                          IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
+            PushDiagPostPrefix("-");
+            ERR_POST(Info << "Sub-streaming "
+                     << NStr::UInt8ToString((Uint8) i)
+                     << " byte" << &"s"[i == 1] << " @ "
+                     << NStr::UInt8ToString((Uint8) j));
+            size_t k = 0;
+            int rv = s_StreamPushback(str, data + j, i, true, k);
+            it += k;
+            PopDiagPostPrefix();
+            if (rv)
+                return rv;
+            data[j + i] = savech;
+        }
 
-        if (nread + i > kBufferSize + 1)
-            i = kBufferSize + 1 - nread;
-        else if (!((j = npback ? rand() & 7 : 3) & ~1)  &&  (++d % 10) < 5) {
+        // Estimate how many bytes going to be read
+        j = size + 1 - nread;
+        if (j >= 10)
+            j /= 10;
+        i = rand() % j + 1;
+
+        j = rand() % 3;
+        if (nread + i > size + 1)
+            i = size + 1 - nread;
+        else if (npback > 1  &&  (++d % 10) < 5) {
             i %= npback;
             i++;
         }
@@ -141,24 +141,29 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         bool   putback = false;
         string eol(1, (char)(rand() & 0x1F) + ' ');
-        char*  end = (char*)(j & ~1 ? 0 : memchr(orig + nread, eol[0], i));
-        ERR_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s") <<
-                 (j & ~1 ? "" : string(" with ") +
-                  (j ? "get('" +NStr::PrintableString(eol)+ "')" +
-                   (end ? ", expecting " + NStr::UInt8ToString
-                    ((Uint8)(end - (orig + nread))) : "")
-                   : "read()")));
+        char*  end = (char*)(j != 1 ? 0 : memchr(orig + nread, eol[0], i));
+        ERR_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s")
+                 << " with " << (j == 0 ? "read()" :
+                                 j == 1 ? "get("   : "Readsome()")
+                 << (j == 1
+                     ? '\'' + NStr::PrintableString(eol) + "')"
+                     : kEmptyStr)
+                 << (end
+                     ? ", expecting "
+                     + NStr::UInt8ToString((Uint8)(end - (orig + nread)))
+                     : kEmptyStr));
 
-        // Force at least minimal blocking, since Readsome might not
-        // block at all, and accepting 0-sized reads could lead to spinning.
+        // Force at least minimal blocking, since Readsome() may not block
+        // at all, and accepting 0-sized reads can lead to spinning.
         ios.peek();
         switch (j) {
         case 0:
             ios.read(data + nread, i);
             j = ios.gcount();
+            _ASSERT(nread + j <= size);
             if (!ios.good()) {
                 _ASSERT(ios.rdstate() & NcbiEofbit);
-                _ASSERT(nread + j == kBufferSize);
+                _ASSERT(nread + j == size);
                 ios.clear();
             }
             break;
@@ -166,7 +171,10 @@ extern int TEST_StreamPushback(iostream&    ios,
             ios.get(data + nread, i + 1/*EOL*/, eol[0]);
             j = ios.gcount();
             _ASSERT(!data[nread + j]);
-            data[nread + j] = orig[nread + j]; // undo '\0' side effect mess
+            if (nread + j < size)
+                data[nread + j] = orig[nread + j]; // undo '\0' side effect
+            else
+                _ASSERT(nread + j == size);
             if (!j) {
                 _ASSERT(ios.rdstate() & NcbiFailbit);
                 ios.clear();
@@ -175,7 +183,7 @@ extern int TEST_StreamPushback(iostream&    ios,
             } else {
                 if (!ios.good()) {
                     _ASSERT(ios.rdstate() == NcbiEofbit);
-                    _ASSERT(nread + j == kBufferSize);
+                    _ASSERT(nread + j == size);
                     ios.clear();
                 } else if (j < i)
                     _ASSERT(orig[nread + j] == eol[0]);
@@ -184,14 +192,19 @@ extern int TEST_StreamPushback(iostream&    ios,
             break;
         default:
             j = CStreamUtils::Readsome(ios, data + nread, i);
+            _ASSERT(nread + j <= size);
             break;
         }
 
         if (!ios.good()  ||  !j) {
-            if (ios.good())
-                ERR_POST("Nothing received");
-            else
-                ERR_POST("Cannot receive data");
+            if (!ios.good()) {
+                ERR_POST("Cannot read data" << (ios.eof()
+                                                ? ": EOF"
+                                                : ios.bad()
+                                                ? ": BAD"
+                                                : kEmptyStr));
+            } else
+                ERR_POST("Nothing read");
             return 2;
         }
 
@@ -227,11 +240,11 @@ extern int TEST_StreamPushback(iostream&    ios,
         nread += j;
  
         ERR_POST(Info << "Obtained so far " <<
-                 nread << " out of " << kBufferSize << ", " <<
+                 nread << " out of " << size << ", " <<
                  npback << " pending");
         bool update = false;
 
-        if (rewind  &&  rand() % 7 == 0  &&  nread < kBufferSize) {
+        if (rewind  &&  rand() % 7 == 0  &&  nread < size) {
             if (rand() & 1) {
                 ERR_POST(Info << "Testing pre-seekg(" << nread <<
                          ", " << STR(IOS_BASE) "::beg)");
@@ -274,7 +287,7 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         if (update) {
             ERR_POST(Info << "Obtained so far " <<
-                     nread << " out of " << kBufferSize << ", " <<
+                     nread << " out of " << size << ", " <<
                      npback << " pending");
             update = false;
         }
@@ -284,7 +297,7 @@ extern int TEST_StreamPushback(iostream&    ios,
         else
             i = rand() % j     + 1;
 
-        if ((i != nread  &&  i != j)  ||  --i) {
+        if ((i != nread  &&  i != j)  ||  --i/*i>1*/) {
             int how = rand() & 0x0F;
             int pushback = how & 0x01;
             int longform = how & 0x02;
@@ -329,7 +342,7 @@ extern int TEST_StreamPushback(iostream&    ios,
             case 3:
                 CStreamUtils::Pushback(ios, p + slack, i, passthru ? p : 0);
                 if (!original  &&  !passthru)
-                    v.push_back(p);
+                    v.push_back(AutoPtr<char, ArrayDeleter<char> >(p));
                 break;
             }
             pbackch = data[nread];
@@ -349,11 +362,11 @@ extern int TEST_StreamPushback(iostream&    ios,
             first_pushback_done = true;
 #endif
             ERR_POST(Info << "Obtained so far " <<
-                     nread << " out of " << kBufferSize << ", " <<
+                     nread << " out of " << size << ", " <<
                      npback << " pending");
         }
 
-        if (rewind  &&  rand() % 9 == 0  &&  nread < kBufferSize) {
+        if (rewind  &&  rand() % 9 == 0  &&  nread < size) {
             if (putback  &&  pbackch) {
                 data[nread++] = pbackch;
                 pbackch = '\0';
@@ -376,10 +389,10 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         if (update) {
             ERR_POST(Info << "Obtained so far " <<
-                     nread << " out of " << kBufferSize << ", " <<
+                     nread << " out of " << size << ", " <<
                      npback << " pending");
         }
-        if (rand() % 1000 == 789) {
+        if (rand() % 10000 == 5679) {
             ERR_POST(Info << "Leaving early, checking destructor chain");
             npback = 0;
             break;
@@ -387,7 +400,7 @@ extern int TEST_StreamPushback(iostream&    ios,
     }
 
     ERR_POST(Info << nread << " byte" << &"s"[nread==1]           <<
-             " obtained in " << k << " iteration" << &"s"[k == 1] <<
+             " obtained in " << it << " iteration" << &"s"[it == 1] <<
              (ios.eof() ? " (EOF)" : ""));
     data[nread] = '\0';
     _ASSERT(!npback);
@@ -406,8 +419,8 @@ extern int TEST_StreamPushback(iostream&    ios,
             return 1;
         }
     }
-    if (nread > kBufferSize) {
-        ERR_POST("Sent: " << kBufferSize << ", bounced: " << nread);
+    if (nread > size) {
+        ERR_POST("Sent: " << size << ", bounced: " << nread);
         return 1;
     }
     if (rand() & 1) {
@@ -424,7 +437,7 @@ extern int TEST_StreamPushback(iostream&    ios,
         _ASSERT(Int8(offg) == NcbiStreamposToInt8(posg));
         _ASSERT(NcbiInt8ToStreampos(Int8(offg)) == posg);
 
-        if (nread == kBufferSize) {
+        if (nread == size) {
             ERR_POST(Info << "Additional completeness check");
             if (posp != posg  ||  offp != offg) {
                 ERR_POST("Off PUT("
@@ -437,13 +450,50 @@ extern int TEST_StreamPushback(iostream&    ios,
     }
     ERR_POST(Info << "Test passed");
 
-    delete[] orig;
-    delete[] data;
-
-    for (i = 0;  i < v.size();  i++)
-        delete[] v[i];
-
     return 0/*okay*/;
+}
+
+
+extern int TEST_StreamPushback(iostream&    ios,
+                               unsigned int seed_in,
+                               bool         rewind)
+{
+    // Warnings, errors, etc
+    GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err,
+                                      CRequestRateControl::kNoLimit);
+    // Infos and traces only
+    GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Trace,
+                                      CRequestRateControl::kNoLimit);
+
+    unsigned int seed = seed_in ? seed_in : (unsigned int) time(0);
+    ERR_POST(Info << "Seed = " << seed);
+    srand(seed);
+
+    ERR_POST(Info << "Generating array of random data");
+    char* orig = new char[kBufferSize + 1];
+    for (size_t j = 0; j < kBufferSize/1024; j++) {
+        for (size_t i = 0; i < 1024 - 1; i++)
+            orig[j*1024 + i] = "0123456789"[rand() % 10];
+        orig[j*1024 + 1024 - 1] = '\n';
+    }
+    orig[kBufferSize] = '\0';
+
+    ERR_POST(Info << "Sending data down the stream");
+    if (!(ios << orig)) {
+        ERR_POST("Cannot send data");
+        return 1;
+    }
+    if (rewind)
+        ios.seekg(0);
+
+    ERR_POST(Info << "Doing random reads and {push|step}backs of the reply");
+
+    size_t it = 0;
+    int retval = s_StreamPushback(ios, orig, kBufferSize, rewind, it);
+
+    delete[] orig;
+
+    return retval;
 }
 
 
