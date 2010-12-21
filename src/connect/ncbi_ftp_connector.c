@@ -744,6 +744,7 @@ static EIO_Status s_FTPPasv(SFTPConnector*  xxx,
     buf[sizeof(buf) - 1] = '\0';
     for (;;) {
         char* c;
+        size_t len;
         /* RFC 1123 4.1.2.6 says that ()'s in PASV reply MUST NOT be assumed */
         for (c = buf;  *c;  ++c) {
             if (isdigit((unsigned char)(*c)))
@@ -751,11 +752,19 @@ static EIO_Status s_FTPPasv(SFTPConnector*  xxx,
         }
         if (!*c)
             return eIO_Unknown;
-        if (sscanf(c, "%d,%d,%d,%d,%d,%d%n",
-                   &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &code) >= 6) {
-            break;
+        len = 0;
+        for (i = 0;  i < (unsigned int)(sizeof(o)/sizeof(o[0]));  i++) {
+            if (sscanf(c + len, ",%d%n" + !i, &o[i], &code) < 1)
+                break;
+            len += code;
         }
-        memmove(buf, c + code, strlen(c + code) + 1);
+        if (i >= (unsigned int)(sizeof(o)/sizeof(o[0])))
+            break;
+        if (!len) {
+            len = strspn(c, kDigits);
+            assert(len > 0);
+        }
+        memmove(buf, c + len, strlen(c + len) + 1);
     }
     for (i = 0;  i < (unsigned int)(sizeof(o)/sizeof(o[0]));  i++) {
         if (o[i] < 0  ||  o[i] > 255)
