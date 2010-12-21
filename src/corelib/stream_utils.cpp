@@ -114,7 +114,9 @@ private:
 };
 
 
+#ifdef HAVE_GOOD_IOS_CALLBACKS
 volatile int CPushback_Streambuf::sm_Index = -1;  // uninited
+#endif
 
 
 const streamsize CPushback_Streambuf::kMinBufSize = 4096;
