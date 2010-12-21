@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include <objects/cdd/Align_annot.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -117,6 +118,17 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit = TRUE, bool set_s
 #define ID_B_EDIT_OK 10025
 #define ID_B_EDIT_CANCEL 10026
 wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+
+#define ID_ST_TYPE 10027
+#define ID_C_TYPE 10028
+#define ID_CB_PUTATIVE 10029
+#define ID_ST_DESCR 10030
+#define ID_T_DESCR 10031
+#define ID_ST_DESCR2 10032
+#define ID_CMB_DESCR 10033
+#define ID_B_DESCR_OK 10034
+#define ID_B_DESCR_CANCEL 10035
+wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -392,14 +404,16 @@ void CDDAnnotateDialog::NewAnnotation(void)
         return;
     }
 
-    // get description from user
-    wxString descr = wxGetTextFromUser(
-        "Enter a description for the new annotation:", "Description");
-    if (descr.size() == 0) return;
-
-    // create a new annotation
     CRef < CAlign_annot > annot(new CAlign_annot());
-    annot->SetDescription(descr.c_str());
+    CDDTypedAnnotDialog dialog(this, *annot, "New Annotation Description");
+    int result = dialog.ShowModal();
+    if (result == wxCANCEL) return;
+
+    bool getDataResult = dialog.GetData(annot.GetPointer());
+
+    //  If there's no description, don't persist the annotation.
+    string descr = (annot->IsSetDescription()) ? annot->GetDescription() : kEmptyStr;
+    if (!getDataResult || descr.size() == 0) return;
 
     // fill out location
     if (intervals.size() == 1) {
@@ -484,14 +498,34 @@ void CDDAnnotateDialog::EditAnnotation(void)
         }
     }
 
-    // edit description
-    wxString initial;
-    if (selectedAnnot->IsSetDescription()) initial = selectedAnnot->GetDescription().c_str();
-    wxString descr = wxGetTextFromUser(
-        "Enter a description for the new annotation:", "Description", initial);
-    if (descr.size() > 0 && descr != selectedAnnot->GetDescription().c_str()) {
-        selectedAnnot->SetDescription(descr.c_str());
-        structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
+    // edit type or description
+    int initialType = wxNOT_FOUND, finalType = wxNOT_FOUND;
+    string initialDescr = kEmptyStr, finalDescr = kEmptyStr;
+    if (selectedAnnot->IsSetType()) initialType = selectedAnnot->GetType();
+    if (selectedAnnot->IsSetDescription()) initialDescr = selectedAnnot->GetDescription();
+
+    CDDTypedAnnotDialog dialog(this, *selectedAnnot, "Edit Annotation Description");
+    int result = dialog.ShowModal();
+    if (result == wxOK) {
+        bool getDataResult = dialog.GetData(selectedAnnot);
+
+        if (selectedAnnot->IsSetType()) finalType = selectedAnnot->GetType();
+        if (selectedAnnot->IsSetDescription()) finalDescr = selectedAnnot->GetDescription();
+        
+        if (finalDescr == kEmptyStr) {
+            if (initialType == wxNOT_FOUND) {
+                selectedAnnot->ResetType();
+            } else {
+                selectedAnnot->SetType(initialType);
+            }
+            selectedAnnot->SetDescription(initialDescr);
+            ERRORMSG("CDDAnnotateDialog::EditAnnotation() - edited annotation must have a non-empty description\nAnnotation is unchanged.");
+            return;
+        }
+
+        if (getDataResult && ((initialType != finalType) || (finalDescr != initialDescr))) {
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
+        }
     }
 
     // update GUI
@@ -1097,6 +1131,374 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
     return false;
 }
 
+
+///// CDDTypedAnnotDialog stuff /////
+
+BEGIN_EVENT_TABLE(CDDTypedAnnotDialog, wxDialog)
+    EVT_CLOSE       (       CDDTypedAnnotDialog::OnCloseWindow)
+    EVT_BUTTON      (-1,    CDDTypedAnnotDialog::OnButton)
+    EVT_CHOICE      (-1,    CDDTypedAnnotDialog::OnTypeChoice)
+    EVT_COMBOBOX    (-1,    CDDTypedAnnotDialog::OnChange)
+    EVT_TEXT        (-1,    CDDTypedAnnotDialog::OnChange)
+    EVT_TEXT_ENTER  (-1,    CDDTypedAnnotDialog::OnChange)
+END_EVENT_TABLE()
+
+const string CDDTypedAnnotDialog::typesNamesIniFile = "cdd_annot_types.ini";
+CDDTypedAnnotDialog::TPredefinedSites CDDTypedAnnotDialog::predefinedSites;
+
+CDDTypedAnnotDialog::CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::CAlign_annot& initial, const string& title) :
+    wxDialog(parent, -1, title.c_str(), wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
+    changed(false), isTypeDataRead(false)
+{
+    bool isPutative = false;
+    bool isPredefDescr = false;
+    int type = 0;
+    int predefType, predefTypeIndex;
+    wxString descr;
+
+    // construct the panel
+    wxSizer *topSizer = SetupTypedDescriptionDialog(this, false);
+
+    // call sizer stuff
+    topSizer->Fit(this);
+    topSizer->SetSizeHints(this);
+
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cType, ID_C_TYPE, wxChoice)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cmbDescr, ID_CMB_DESCR, wxComboBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cbPutative, ID_CB_PUTATIVE, wxCheckBox)
+
+    //  Load the pre-defined type categories and descriptions
+    if (predefinedSites.empty()) {
+        string typeFile = GetDataDir() + typesNamesIniFile;
+        LoadTypes(typeFile);
+    }
+
+    //  Populate the wxChoice element
+    if (!isTypeDataRead && predefinedSites.empty()) {
+        string message = "Predefined types & names are unavailable;\nonly annotations of type 'Other' may be created.\n\nCheck that the file '" + typesNamesIniFile + "' is present in the Cn3D 'data' directory.";
+        wxMessageBox(message.c_str(), "Predefined Types/Names Unavailable", wxICON_EXCLAMATION | wxCENTRE, this);
+    } else {
+        cType->Clear();
+        ITERATE (TPredefinedSites, cit, predefinedSites) {
+            cType->Append(cit->second.first);
+        }
+    }
+
+    // Determine values with which to initialize the widgets.
+    if (initial.IsSetType()) {
+        if (IsValidType(initial.GetType())) {
+            type = initial.GetType();
+        }
+    }
+    if (initial.IsSetDescription() && !initial.GetDescription().empty()) {
+
+        descr = wxString(initial.GetDescription().c_str());
+        isPutative = NStr::StartsWith(initial.GetDescription(), "putative", NStr::eNocase);
+        if (isPutative) {
+            //  remove the putative prefix for display in the widget
+            descr = descr.Mid(8);
+            descr.Trim(false);
+        }
+        isPredefDescr = IsPredefinedDescr(descr, predefType, predefTypeIndex);
+        if (isPredefDescr) {
+            if (initial.IsSetType() && (type != predefType)) {
+                WARNINGMSG("CDDTypedAnnotDialog::CDDTypedAnnotDialog() - stored type inconsistent with descriptions's designated type");
+            }
+            type = predefType;
+        }
+    }
+
+    //  Initialize the widgets.
+    cType->SetSelection(type);
+    AdjustComboboxForType(type);
+    cbPutative->SetValue(isPutative);
+    if (isPredefDescr) {
+        cmbDescr->SetSelection(predefTypeIndex);
+    } else if (descr.length() > 0) {
+        cmbDescr->SetValue(descr);
+    } else {
+        cmbDescr->SetSelection(wxNOT_FOUND);
+    }
+    cmbDescr->SetFocus();
+
+    SetupGUIControls();
+}
+
+void CDDTypedAnnotDialog::LoadTypes(const string& filename)
+{
+    static const string ID("id");
+    static const int DEFAULT_ID(-1);
+
+    int id;
+    int accessFlags = (IRegistry::fCaseFlags | IRegistry::fInternalSpaces);
+    int readFlags = (IRegistry::fCaseFlags | IRegistry::fInternalSpaces);
+    string value;
+    list<string> categories, names;
+    set<string> valuesInAlphaOrder;
+
+    //  Use CMemoryRegistry simply to leverage registry file format parser.
+    CMemoryRegistry dummyRegistry;
+    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(filename.c_str(), IOS_BASE::in | IOS_BASE::binary));
+    if (*iniIn) {
+
+        isTypeDataRead = true;
+
+        TRACEMSG("loading predefined annotation types " << filename);
+        dummyRegistry.Read(*iniIn, readFlags);
+        dummyRegistry.EnumerateSections(&categories, accessFlags);
+
+        //  Loop over all type categories
+        ITERATE (list<string>, cit, categories) {
+            if (*cit == kEmptyStr) continue;
+
+            //  'id' is assumed to be positive, and the id will be used to
+            //  define the position in the wxChoice element so it is important
+            //  the input file has consecutive id values starting from zero.
+            id = dummyRegistry.GetInt(*cit, ID, DEFAULT_ID, accessFlags, CMemoryRegistry::eReturn);
+            if (id > DEFAULT_ID) {
+                TTypeNamesPair& typeNamesPair = predefinedSites[id];
+                wxArrayString& values = typeNamesPair.second;
+                typeNamesPair.first = wxString(cit->c_str());
+
+                //  Get all named fields for this section.
+                dummyRegistry.EnumerateEntries(*cit, &names, accessFlags);
+
+                //  Get the value for each non-id named field; sort alphabetically
+                valuesInAlphaOrder.clear();
+                ITERATE (list<string>, eit, names) {
+                    if (*eit == ID || *eit == kEmptyStr) continue;
+                    value = dummyRegistry.GetString(*cit, *eit, kEmptyStr, accessFlags);
+                    if (value != kEmptyStr) {
+                        valuesInAlphaOrder.insert(value);
+                    }
+                }
+
+                ITERATE (set<string>, vit, valuesInAlphaOrder) {
+                    values.push_back(wxString(vit->c_str()));
+                }
+            }
+        }
+    }
+}
+
+void CDDTypedAnnotDialog::AdjustComboboxForType(int type)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cmbDescr, ID_CMB_DESCR, wxComboBox)
+    int sel = cmbDescr->GetSelection();
+    wxString existingDescr = cmbDescr->GetValue();
+
+    cmbDescr->Clear();
+    TPredefinedSites::const_iterator cit = predefinedSites.find(type);
+    if (cit != predefinedSites.end()) {
+        cmbDescr->Append(cit->second.second);
+    }
+
+    //  If there was free-form text displayed, keep displaying it.
+    //  Otherwise, make sure a pre-defined type name is *not* shown.
+    if (sel == wxNOT_FOUND) {
+        cmbDescr->SetValue(existingDescr);
+    } else {
+        cmbDescr->SetSelection(wxNOT_FOUND);
+    }
+}
+
+// same as hitting cancel button
+void CDDTypedAnnotDialog::OnCloseWindow(wxCloseEvent& event)
+{
+    EndModal(wxCANCEL);
+}
+
+void CDDTypedAnnotDialog::OnButton(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case ID_B_DESCR_OK: {
+            EndModal(wxOK);
+            break;
+        }
+        case ID_B_DESCR_CANCEL:
+            EndModal(wxCANCEL);
+            break;
+        default:
+            event.Skip();
+    }
+}
+
+void CDDTypedAnnotDialog::OnChange(wxCommandEvent& event)
+{
+    changed = true;
+    SetupGUIControls();
+}
+
+void CDDTypedAnnotDialog::OnTypeChoice(wxCommandEvent& event)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cType, ID_C_TYPE, wxChoice)
+
+    changed = true;
+    AdjustComboboxForType(cType->GetSelection());
+    SetupGUIControls();
+}
+
+bool CDDTypedAnnotDialog::GetData(ncbi::objects::CAlign_annot* alignAnnot)
+{
+    static const string ws(" \t\n\r");
+    static const string leading(" \t\n\r.,;:!@#$%^&\\|/?}])>");   //  no closing delimiter at start
+    static const string trailing(" \t\n\r.,;:!@#$%^&\\|/?{[(<");  //  no opening delimiter at end
+
+    bool result = false;
+    if (!alignAnnot) return result;
+
+    DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(cType, ID_C_TYPE, wxChoice)
+    DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(cmbDescr, ID_CMB_DESCR, wxComboBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(cbPutative, ID_CB_PUTATIVE, wxCheckBox)
+
+    bool isPredefDescr = false;
+    bool isPutative = cbPutative->GetValue();
+    int predefType, predefTypeIndex;
+    int type = cType->GetSelection();
+    int sel = cmbDescr->GetSelection();
+    string descr = string(cmbDescr->GetValue().c_str());
+
+
+    //  Remove disallowed leading/trailing characters.
+    SIZE_TYPE firstGoodChar = descr.find_first_not_of(leading);
+    if (firstGoodChar != NPOS && firstGoodChar > 0) {
+        descr = descr.substr(firstGoodChar);
+    }
+    SIZE_TYPE lastGoodChar = descr.find_last_not_of(trailing);
+    if (lastGoodChar != NPOS && lastGoodChar < descr.size() - 1) {
+        descr = descr.substr(0, lastGoodChar + 1);
+    }
+
+    //  Remove internal runs of whitespace.
+    vector<string> tokens;
+    NStr::Tokenize(descr, ws, tokens, NStr::eMergeDelims);
+    if (tokens.size() > 0) {
+        descr = tokens[0];
+        for (unsigned int i = 1; i < tokens.size(); ++i) {
+            descr += " " + tokens[i];
+        }
+    }    
+
+    //  If user typed 'putative' as a prefix in the description, that 
+    //  supercedes the checkbox state.  Also, strip that prefix from 
+    //  the string so it does not impact the predefined description check.  
+    if (NStr::StartsWith(descr, "putative", NStr::eNocase)) {
+        isPutative = true;  // override the checkbox
+        descr = descr.substr(8);
+    }
+    NStr::TruncateSpacesInPlace(descr);
+
+    //  Simple attempt to regularize capitalization for predefined descriptions.
+    //  This is tricky, though, since descriptions may contain capitalized
+    //  substrings by convention (e.g., 'DNA binding site' and 'Cu binding site'
+    //  are acceptible, but 'Active Site' should become 'active site').
+    wxString descrWx = wxString(descr.c_str());
+    predefType = wxNOT_FOUND;
+    if (IsPredefinedDescr(descrWx, predefType, predefTypeIndex)) {
+        isPredefDescr = true;
+    } else if (IsPredefinedDescr(descrWx.Lower(), predefType, predefTypeIndex)) {
+        NStr::ToLower(descr);
+        isPredefDescr = true;
+    }
+
+    //  If 'descr' corresponds to a predefined descriptions, ensure the 
+    //  predefined type was used (prevents a user from manually overriding 
+    //  the standard type/name mappings defined in 'cdd_annot_types.ini').
+    //  Force the type back to the standard type for the given description,
+    //  and provide a warning to the user.
+    if (isPredefDescr) {
+        if (type != predefType) {
+            wxString typeChosen = predefinedSites[type].first;
+            wxString predefTypeStr = predefinedSites[predefType].first;
+            wxString message;
+            message.Printf("The predefined description '%s' corresponds to type '%s' and will be changed from your chosen type '%s'.\n"
+                "Press 'OK' to reassign to the standard type '%s'.\nPress 'Cancel' to return and not create/edit the annotation.\n", 
+                cmbDescr->GetValue().c_str(), predefTypeStr.c_str(), typeChosen.c_str(), predefTypeStr.c_str());
+            int reply = wxMessageBox(message, "Inconsistent type", wxOK | wxCANCEL | wxCENTRE, this);
+            if (reply == wxOK) {
+                type = predefType;
+            } else {
+                descr.erase();
+            }
+        }
+    }
+
+    if (descr.length() > 0) {
+        //  add 'putative' prefix if needed and not already present
+        if (isPutative && !NStr::StartsWith(descr, "putative", NStr::eNocase)) {
+            descr = "putative " + descr;
+        }
+        alignAnnot->SetDescription(descr);
+        alignAnnot->SetType(type);
+        result = true;
+    }
+    return result;
+}
+
+void CDDTypedAnnotDialog::SetupGUIControls(void)
+{
+}
+
+unsigned int CDDTypedAnnotDialog::NumPredefinedDescrs(int type) const
+{
+    unsigned int n = 0;
+    TPredefinedSites::const_iterator cit = predefinedSites.find(type);
+    if (cit != predefinedSites.end()) {
+        n = cit->second.second.size();
+    }
+    return n;
+}
+
+bool CDDTypedAnnotDialog::IsValidType(int type) const
+{
+    TPredefinedSites::const_iterator cit = predefinedSites.find(type);
+    return (cit != predefinedSites.end());
+}
+
+bool CDDTypedAnnotDialog::IsPredefinedDescrForType(int type, const wxString& descr) const
+{
+    bool result = false;
+    TPredefinedSites::const_iterator cit = predefinedSites.find(type);
+    if (cit != predefinedSites.end()) {
+        const wxArrayString& as = cit->second.second;
+        for (wxArrayString::const_iterator asCit = as.begin(); asCit != as.end(); ++asCit) {
+            if (*asCit == descr) {
+                result = true;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+//  Return true if 'descr' is a predefined name for some type; return false otherwise.
+//  When found, 'type' is set to be the type code, and 'typeIndex' is its position
+//  in the corresponding wxArrayString.  When not found, 'type' and 'typeIndex' are
+//  set to wxNOT_FOUND.
+bool CDDTypedAnnotDialog::IsPredefinedDescr(const wxString& descr, int& type, int& typeIndex) const
+{
+    bool result = false;
+    int index;
+    TPredefinedSites::const_iterator pdsCit = predefinedSites.begin();
+    TPredefinedSites::const_iterator pdsEnd = predefinedSites.end();
+
+    type = wxNOT_FOUND;
+    typeIndex = wxNOT_FOUND;
+    for (; (pdsCit != pdsEnd) && !result; ++pdsCit) {
+        index = 0;
+        const wxArrayString& as = pdsCit->second.second;
+        for (wxArrayString::const_iterator asCit = as.begin(); asCit != as.end(); ++asCit, ++index) {
+            if (*asCit == descr) {
+                result = true;
+                type = pdsCit->first;
+                typeIndex = index;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
 END_SCOPE(Cn3D)
 
 
@@ -1274,3 +1676,76 @@ wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 
     return item0;
 }
+
+wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit, bool set_sizer )
+{
+    wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
+
+    wxStaticBox *item2 = new wxStaticBox( parent, -1, wxT("Typed Description") );
+    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
+
+    wxFlexGridSizer *item3 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item3->AddGrowableCol( 2 );
+
+    wxStaticText *item4 = new wxStaticText( parent, ID_ST_TYPE, wxT("Type:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item4, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5 );
+
+    item3->Add( 20, 20, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    wxString strs5[] = 
+    {
+        wxT("Other")
+    };
+    wxChoice *item5 = new wxChoice( parent, ID_C_TYPE, wxDefaultPosition, wxSize(100,-1), 1, strs5, 0 );
+    item3->Add( item5, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxCheckBox *item6 = new wxCheckBox( parent, ID_CB_PUTATIVE, wxT("Is Putative?"), wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item6, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item1->Add( item3, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxFlexGridSizer *item7 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item7->AddGrowableCol( 2 );
+
+    wxStaticText *item8 = new wxStaticText( parent, ID_ST_DESCR2, wxT("Description:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item7->Add( item8, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5 );
+
+    wxString strs9[] = 
+    {
+        wxT("ComboItem"), 
+        wxT("1Item"), 
+        wxT("222"), 
+        wxT("333"), 
+        wxT("444")
+    };
+    wxComboBox *item9 = new wxComboBox( parent, ID_CMB_DESCR, wxT(""), wxDefaultPosition, wxSize(200,-1), 5, strs9, wxCB_DROPDOWN );
+    item7->Add( item9, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    item1->Add( item7, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    wxStaticLine *item10 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
+    item1->Add( item10, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxFlexGridSizer *item11 = new wxFlexGridSizer( 1, 0, 0, 0 );
+
+    wxButton *item12 = new wxButton( parent, ID_B_DESCR_OK, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+    item12->SetDefault();
+    item11->Add( item12, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    wxButton *item13 = new wxButton( parent, ID_B_DESCR_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+    item11->Add( item13, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item1->Add( item11, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    item0->Add( item1, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    if (set_sizer)
+    {
+        parent->SetSizer( item0 );
+        if (call_fit)
+            item0->SetSizeHints( parent );
+    }
+    
+    return item0;
+}
+

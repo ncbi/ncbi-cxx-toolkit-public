@@ -122,6 +122,59 @@ public:
     bool GetData(ncbi::objects::CFeature_evidence *evidence);
 };
 
+class CDDTypedAnnotDialog : public wxDialog
+{
+public:
+    //  If 'initial' is non-NULL, it defines the initial state of the dialog.
+    CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::CAlign_annot& initial, const string& title);
+
+private:
+    bool changed;
+    bool isTypeDataRead;
+
+    static const string typesNamesIniFile;
+
+    //  This member is initialized from $CN3D_HOME/data/cdd_annot_types.ini, or if 
+    //  it is not present, a default hardcoded typeMap is used and no predefined 
+    //  site names are available to the user.
+    //  Each wxArrayString in TTypeNamesPair is ordered as it is to appear in pulldown widgets.
+    //  The key of TPredefinedSites corresponds to the 'type' field in the Align_annot ASN.1 spec
+    //  and is also used to define the position of the type in the wxChoice widget.
+    typedef pair<wxString, wxArrayString> TTypeNamesPair;
+    typedef map<unsigned int, TTypeNamesPair> TPredefinedSites;
+    static TPredefinedSites predefinedSites;
+
+    void LoadTypes(const string& filename);
+
+    //  Reconfigure the combobox with the predefined entries for type 'newType'.
+    void AdjustComboboxForType(int type);
+
+    // event callbacks
+    void OnCloseWindow(wxCloseEvent& event);
+    void OnButton(wxCommandEvent& event);
+    void OnChange(wxCommandEvent& event);
+    void OnTypeChoice(wxCommandEvent& event);
+
+    // utility functions
+    void SetupGUIControls(void);
+
+    DECLARE_EVENT_TABLE()
+
+public:
+    unsigned int NumPredefinedDescrs(int type) const;
+    bool IsValidType(int type) const;
+    bool IsPredefinedDescrForType(int type, const wxString& descr) const;
+    //  Return true if 'descr' is a predefined name for some type; return false otherwise.
+    //  When found, 'type' is set to be the type code, and 'typeIndex' is its position
+    //  in the corresponding wxArrayString.  When not found, 'type' and 'typeIndex' are
+    //  set to wxNOT_FOUND.
+    bool IsPredefinedDescr(const wxString& descr, int& type, int& typeIndex) const;
+    bool HasDataChanged(void) const { return changed; }
+
+    //  Returns true if data from the dialog was placed in 'alignAnnot'.
+    bool GetData(ncbi::objects::CAlign_annot* alignAnnot);
+};
+
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CDD_ANNOT_DIALOG__HPP
