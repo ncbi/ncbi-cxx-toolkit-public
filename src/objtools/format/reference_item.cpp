@@ -566,8 +566,8 @@ static bool s_IsOnlySerial(const CPub& pub)
 
     const CCit_gen& gen = pub.GetGen();
 
-    if (!gen.IsSetCit()  ||
-        !NStr::StartsWith(gen.GetCit(), "BackBone id_pub", NStr::eNocase)) {
+    if ( !gen.IsSetCit() ) 
+    {
         if (!gen.IsSetJournal()  &&  !gen.IsSetDate()  &&
             gen.IsSetSerial_number()  &&  gen.GetSerial_number() > 0) {
             return true;
