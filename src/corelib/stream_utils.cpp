@@ -101,7 +101,7 @@ private:
 
     istream&            m_Is;      // I/O stream this streambuf is attached to
     streambuf*          m_Sb;      // original streambuf
-    CT_CHAR_TYPE*       m_Buf;     // == 0 when the buffer has been emptied
+    CT_CHAR_TYPE*       m_Buf;
     streamsize          m_BufSize;
     void*               m_DelPtr;
 
@@ -114,15 +114,13 @@ private:
 };
 
 
-#ifdef HAVE_GOOD_IOS_CALLBACKS
-volatile int CPushback_Streambuf::sm_Index = -1;  // uninited
-#endif
-
-
 const streamsize CPushback_Streambuf::kMinBufSize = 4096;
 
 
 #ifdef HAVE_GOOD_IOS_CALLBACKS
+volatile int CPushback_Streambuf::sm_Index = -1;  // uninited
+
+
 void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
                                      IOS_BASE&       ios,
                                      int             index)
@@ -141,7 +139,8 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                                          void*         del_ptr)
     : m_Is(is), m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
 {
-    setp(0, 0); // unbuffered output at this level of streambuf's hierarchy
+    _ASSERT(m_Buf  &&  m_BufSize);
+    setp(0, 0);  // unbuffered output at this level of streambuf's hierarchy
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Sb = m_Is.rdbuf(this);
 #ifdef HAVE_GOOD_IOS_CALLBACKS
@@ -152,7 +151,7 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                 DEFINE_STATIC_FAST_MUTEX(s_PushbackMutex);
                 CFastMutexGuard guard(s_PushbackMutex);
                 if (sm_Index == -1) {
-                    sm_Index = IOS_BASE::xalloc();
+                    sm_Index =  IOS_BASE::xalloc();
                 }
             }
             m_Is.register_callback(x_Callback, sm_Index);
@@ -192,8 +191,9 @@ CT_POS_TYPE CPushback_Streambuf::seekoff(CT_OFF_TYPE off,
             CT_POS_TYPE ret = m_Sb->PUBSEEKOFF(0, ios::cur, ios::in);
             if (ret != (CT_POS_TYPE)((CT_OFF_TYPE)(-1))) {
                 off = (CT_OFF_TYPE)(egptr() - gptr());
-                if ((CT_OFF_TYPE) ret >= off)
+                if ((CT_OFF_TYPE) ret >= off) {
                     return ret - off;
+                }
             }
         }
         return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
@@ -216,7 +216,6 @@ CT_INT_TYPE CPushback_Streambuf::overflow(CT_INT_TYPE c)
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         return m_Sb->sputc(CT_TO_CHAR_TYPE(c));
     }
-
     return m_Sb->PUBSYNC() == 0 ? CT_NOT_EOF(CT_EOF) : CT_EOF;
 }
 
@@ -252,16 +251,18 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             size_t n       = (size_t) m;
             size_t n_avail = (size_t)(egptr() - gptr());
             size_t n_read  = n < n_avail ? n : n_avail;
-            if (buf != gptr()) // either equal or non-overlapping
+            if (buf != gptr()) {  // either equal or non-overlapping
                 memcpy(buf, gptr(), n_read);
+            }
             gbump((int) n_read);
             m       -= (streamsize) n_read;
             buf     += (streamsize) n_read;
             n_total += (streamsize) n_read;
         } else {
             x_FillBuffer(m);
-            if (gptr() >= egptr())
+            if (gptr() >= egptr()) {
                 break;
+            }
         }
     }
     return n_total;
@@ -272,7 +273,6 @@ streamsize CPushback_Streambuf::showmanyc(void)
 {
     // we are here because (according to the standard) gptr() >= egptr()
     _ASSERT(gptr()  &&  gptr() >= egptr());
-
     return m_Sb->in_avail();
 }
 
@@ -298,6 +298,7 @@ int CPushback_Streambuf::sync(void)
 streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                        streamsize    /*buf_size*/)
 {
+    m_Is.clear(NcbiBadbit);
     NCBI_THROW(CCoreException, eCore,
                "CPushback_Streambuf::setbuf: not allowed");
     /*NOTREACHED*/
@@ -308,27 +309,12 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
 {
     _ASSERT(m_Sb);
-    if ( !max_size )
+    if ( !max_size ) {
         ++max_size;
+    }
+
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
-    if ( sb ) {
-        _ASSERT(&m_Is == &sb->m_Is);
-        m_Sb     = sb->m_Sb;
-        sb->m_Sb = 0;
-        if (sb->gptr() >= sb->egptr()) {
-            delete sb;
-            x_FillBuffer(max_size);
-            return;
-        }
-        delete[] (CT_CHAR_TYPE*) m_DelPtr;
-        m_Buf        = sb->m_Buf;
-        m_BufSize    = sb->m_BufSize;
-        m_DelPtr     = sb->m_DelPtr;
-        sb->m_DelPtr = 0;
-        setg(sb->gptr(), sb->gptr(), sb->egptr());
-        delete sb;
-        return;
-    } else {
+    if ( !sb ) {
         CT_CHAR_TYPE* bp = 0;
         streamsize buf_size = m_DelPtr
             ? (streamsize)(m_Buf - (CT_CHAR_TYPE*) m_DelPtr) + m_BufSize : 0;
@@ -350,22 +336,40 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
         m_Buf = (CT_CHAR_TYPE*) m_DelPtr;
         m_BufSize = buf_size;
         setg(m_Buf, m_Buf, m_Buf + n);
+        return;
     }
+
+    _ASSERT(&m_Is == &sb->m_Is);
+    m_Sb     = sb->m_Sb;
+    sb->m_Sb = 0;
+    if (sb->gptr() >= sb->egptr()) {
+        delete sb;
+        x_FillBuffer(max_size);
+        return;
+    }
+    delete[] (CT_CHAR_TYPE*) m_DelPtr;
+    m_Buf        = sb->m_Buf;
+    m_BufSize    = sb->m_BufSize;
+    m_DelPtr     = sb->m_DelPtr;
+    sb->m_DelPtr = 0;
+    setg(sb->gptr(), sb->gptr(), sb->egptr());
+    delete sb;
 }
 
 
 void CPushback_Streambuf::x_DropBuffer(void)
 {
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
-    if ( sb ) {
-        m_Sb     = sb->m_Sb;
-        sb->m_Sb = 0;
-        delete sb;
-        x_DropBuffer();
+    if ( !sb ) {
+        // nothing in the buffer; no putback area as well
+        setg(m_Buf, m_Buf, m_Buf);
         return;
     }
-    // nothing in the buffer; no putback area as well
-    setg(m_Buf, m_Buf, m_Buf);
+
+    m_Sb     = sb->m_Sb;
+    sb->m_Sb = 0;
+    delete sb;
+    x_DropBuffer();
 }
 
 
@@ -407,14 +411,15 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
             if (take) {
                 bp -= take;
                 buf_size -= take;
-                if (how != ePushback_Stepback  &&  bp != buf + buf_size)
+                if (how != ePushback_Stepback  &&  bp != buf + buf_size) {
                     memmove(bp, buf + buf_size, take);
+                }
                 sb->setg(bp, bp, sb->egptr());
             }
         }
     }
 
-    if (!buf_size) {
+    if ( !buf_size ) {
         delete[] (CT_CHAR_TYPE*) del_ptr;
         return;
     }

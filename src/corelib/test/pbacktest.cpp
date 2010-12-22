@@ -89,7 +89,7 @@ static int s_StreamPushback(iostream&   ios,
     memset(data, '\xFF', size + 1);
     data[size + 1] = '\0';
 
-    vector< AutoPtr <char, ArrayDeleter<char> > > v;
+    vector<AutoPtr<char, ArrayDeleter<char> > > v;
 
     size_t i, j;
 
@@ -106,7 +106,7 @@ static int s_StreamPushback(iostream&   ios,
             i = rand() % nread + 1;
             j = (nread - i) >> 1;
             char savech = data[j + i];
-            data[j + i] = '\0';
+            data[j + i] = '\0';  // to prevent reading past "i" from strstream
             // We don't use "app" actually, but w/o it we can't read
             strstream str(data + j, i,
                           IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);

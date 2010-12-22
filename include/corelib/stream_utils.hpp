@@ -80,6 +80,8 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
 //          with reads in order to work properly.  That is especially
 //          important to keep in mind, when using both the standard
 //          putbacks and the pushbacks offered by this API.
+// NOTE 8:  Implementation is incomplete (but safe and stable) and may leak
+//          memory in Solaris WorkShop MT builds (due to a bug in C++ RTL).
     static void       Pushback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size,
@@ -88,12 +90,17 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
 
 // Acts just like its counterpart with 4 args (above), but this variant
 // always copies (if necessary) the "pushback data" into an internal buffer,
-// so "buf" is not required to remain read-only for the outer code.
+// so "buf" is not required to remain read-only in the outer code.
     static void       Pushback(CNcbiIstream&       is,
                                const CT_CHAR_TYPE* buf,
                                streamsize          buf_size)
     { x_Pushback(is, const_cast<CT_CHAR_TYPE*> (buf), buf_size); }
 
+// Unsafe but fast API that tries to backup "buf_size" bytes in the
+// internal stream buffer,but if that is not possible, will use
+// (perhaps, partially) "buf" and "del_ptr" to pushback as described above.
+// This call relies upon that the data in "buf" is exactly as it has been
+// read from the stream previously (otherwise, the behavior is undefined).
     static void       Stepback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size,
