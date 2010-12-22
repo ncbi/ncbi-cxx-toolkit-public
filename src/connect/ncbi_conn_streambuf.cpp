@@ -492,6 +492,7 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
                                      IOS_BASE::openmode which)
 {
     if (m_Conn  &&  off == 0  &&  whence == IOS_BASE::cur) {
+        // tellp()/tellg() support only
         switch (which) {
         case IOS_BASE::out:
             return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - pbase() : 0);
