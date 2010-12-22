@@ -40,6 +40,7 @@
 #include <html/page.hpp>
 
 #include <util/xregexp/regexp.hpp>
+#include <util/checksum.hpp>
 
 #include <connect/services/grid_client.hpp>
 
@@ -357,6 +358,7 @@ private:
 
     string m_AffinityName;
     int m_AffinitySource;
+    int m_AffinitySetLimit;
 
     string m_ContentType;
     bool m_UseHTML;
@@ -456,6 +458,7 @@ void CCgi2RCgiApp::Init()
     }
 
     m_AffinitySource = 0;
+    m_AffinitySetLimit = 0;
     m_AffinityName = config.GetString(cgi2rcgi_section,
         "affinity_name", kEmptyStr);
 
@@ -475,6 +478,8 @@ void CCgi2RCgiApp::Init()
                     "Invalid affinity_source value '" << *it << '\'');
             }
         }
+        m_AffinitySetLimit = config.GetInt(cgi2rcgi_section,
+            "narrow_affinity_set_to", 0);
     }
 
     // Disregard the case of CGI arguments
@@ -631,8 +636,15 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     if (affinity.empty() &&
                             m_AffinitySource & eUseRequestContent)
                         grid_ctx.GetRequestEntryValue(m_AffinityName, affinity);
-                    if (!affinity.empty())
+                    if (!affinity.empty()) {
+                        if (m_AffinitySetLimit > 0) {
+                            CChecksum crc32(CChecksum::eCRC32);
+                            crc32.AddChars(affinity.data(), affinity.length());
+                            affinity = NStr::UIntToString(
+                                crc32.GetChecksum() % m_AffinitySetLimit);
+                        }
                         submitter.SetJobAffinity(affinity);
+                    }
                 }
                 try {
                     // The job is ready to be sent to the queue.
