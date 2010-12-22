@@ -59,7 +59,7 @@ static const size_t kBufferSize = 512*1024;
 /* NOTE about MSVC compiler and its C++ std. library:
  *
  * The C++ standard is very confusing on the stream's ability to do
- * pushback() and unget();  it says nothing about the case whether
+ * putback() and unget();  it says nothing about the case whether
  * they are guaranteed, and if so, under what circumstances.
  * The only clear message is seen in "The C++ Programming Language",
  * 3rd ed. by B.Stroustrup, p.644, which reads "what is guaranteed
@@ -81,7 +81,8 @@ static const size_t kBufferSize = 512*1024;
 static int s_StreamPushback(iostream&   ios,
                             const char* orig,
                             size_t      size,
-                            bool        rewind,
+                            size_t      depth,
+                            bool        stl,
                             size_t&     it)
 {
     AutoPtr<char, ArrayDeleter<char> > dptr(new char[size + 2]);
@@ -107,7 +108,7 @@ static int s_StreamPushback(iostream&   ios,
             j = (nread - i) >> 1;
             char savech = data[j + i];
             data[j + i] = '\0';  // to prevent reading past "i" from strstream
-            // We don't use "app" actually, but w/o it we can't read
+            // We don't actually do any "app", but w/o it we can't read
             strstream str(data + j, i,
                           IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
             PushDiagPostPrefix("-");
@@ -116,7 +117,7 @@ static int s_StreamPushback(iostream&   ios,
                      << " byte" << &"s"[i == 1] << " @ "
                      << NStr::UInt8ToString((Uint8) j));
             size_t k = 0;
-            int rv = s_StreamPushback(str, data + j, i, true, k);
+            int rv = s_StreamPushback(str, data + j, i, depth + 1, true, k);
             it += k;
             PopDiagPostPrefix();
             if (rv)
@@ -244,7 +245,7 @@ static int s_StreamPushback(iostream&   ios,
                  npback << " pending");
         bool update = false;
 
-        if (rewind  &&  rand() % 7 == 0  &&  nread < size) {
+        if (stl  &&  rand() % 7 == 0  &&  nread < size) {
             if (rand() & 1) {
                 ERR_POST(Info << "Testing pre-seekg(" << nread <<
                          ", " << STR(IOS_BASE) "::beg)");
@@ -259,7 +260,7 @@ static int s_StreamPushback(iostream&   ios,
             }
         } else if (ios.good()  &&  rand() % 5 == 0  &&  j > 1  &&  !putback) {
 #ifdef NCBI_COMPILER_MSVC
-            if (!rewind  ||  first_pushback_done) {
+            if (!stl  ||  first_pushback_done) {
 #endif
                 j--;
                 npback++;
@@ -366,7 +367,7 @@ static int s_StreamPushback(iostream&   ios,
                      npback << " pending");
         }
 
-        if (rewind  &&  rand() % 9 == 0  &&  nread < size) {
+        if (stl  &&  rand() % 9 == 0  &&  nread < size) {
             if (putback  &&  pbackch) {
                 data[nread++] = pbackch;
                 pbackch = '\0';
@@ -437,8 +438,7 @@ static int s_StreamPushback(iostream&   ios,
         _ASSERT(Int8(offg) == NcbiStreamposToInt8(posg));
         _ASSERT(NcbiInt8ToStreampos(Int8(offg)) == posg);
 
-        if (nread == size) {
-            ERR_POST(Info << "Additional completeness check");
+        if (depth == 0  &&  nread == size) {
             if (posp != posg  ||  offp != offg) {
                 ERR_POST("Off PUT("
                          << NStr::Int8ToString(Int8(offp)) << ") != "
@@ -483,13 +483,14 @@ extern int TEST_StreamPushback(iostream&    ios,
         ERR_POST("Cannot send data");
         return 1;
     }
-    if (rewind)
+    if (rewind) {
         ios.seekg(0);
+    }
 
     ERR_POST(Info << "Doing random reads and {push|step}backs of the reply");
 
     size_t it = 0;
-    int retval = s_StreamPushback(ios, orig, kBufferSize, rewind, it);
+    int retval = s_StreamPushback(ios, orig, kBufferSize, 0, rewind, it);
 
     delete[] orig;
 
