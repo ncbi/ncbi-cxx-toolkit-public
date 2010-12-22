@@ -185,10 +185,10 @@ CT_POS_TYPE CPushback_Streambuf::seekoff(CT_OFF_TYPE off,
                                          IOS_BASE::seekdir whence,
                                          IOS_BASE::openmode which)
 {
-    if (whence == ios::cur  &&  (which & ios::in)) {
-        if (off == 0  &&  which == ios::in) {
+    if (whence == IOS_BASE::cur  &&  (which & IOS_BASE::in)) {
+        if (off == 0  &&  which == IOS_BASE::in) {
             // it's a call from tellg()
-            CT_POS_TYPE ret = m_Sb->PUBSEEKOFF(0, ios::cur, ios::in);
+            CT_POS_TYPE ret = m_Sb->PUBSEEKOFF(0, IOS_BASE::cur, IOS_BASE::in);
             if (ret != (CT_POS_TYPE)((CT_OFF_TYPE)(-1))) {
                 off = (CT_OFF_TYPE)(egptr() - gptr());
                 if ((CT_OFF_TYPE) ret >= off) {
