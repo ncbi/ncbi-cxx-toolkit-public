@@ -745,7 +745,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
         string dir;
         CDirEntry::SplitPath(*conf, &dir, 0, 0);
         if (dir.empty()) {
-            ERR_POST_X(11, Warning <<
+            ERR_POST_X(11, Info <<
                            "Registry file of application \"" << basename
                            << "\" is not found");
         } else {
