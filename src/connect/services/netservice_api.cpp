@@ -339,7 +339,7 @@ string SNetServiceImpl::MakeAuthString()
 
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app != NULL) {
-        auth += " app=\"";
+        auth += " client_path=\"";
         auth += app->GetProgramExecutablePath();
         auth += '\"';
     }
