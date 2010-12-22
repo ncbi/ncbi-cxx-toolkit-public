@@ -1156,7 +1156,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_ZeroGap)
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
 
     CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*feat, scope);
-    CheckTranslatedBioseq (bioseq, "MPK", false, "PK");
+    CheckTranslatedBioseq (bioseq, "MPK", true, "PK");
 }
 
 
