@@ -116,6 +116,8 @@ int CMSHdf5SpeedApplication::Run(void)
     
     random_shuffle(spectra.begin(), spectra.end());
 
+    msHdf5.Reset();
+
     CTime setupDone(CTime::eCurrent);
     double setupTime = setupDone.DiffNanoSecond(start) / kNanoSecondsPerSecond;
     
@@ -134,7 +136,9 @@ int CMSHdf5SpeedApplication::Run(void)
             CMsHdf5::TSpectrum spectrum;
             string scanXML;
             string msLevel(NStr::IntToString((*iSpecLoc).mapItem.msLevel));
-            msHdf5->getSpectrum(src, spectrum, scanXML, msLevel);
+
+            CMsHdf5 msHdf5_redux(inFilename, H5F_ACC_RDONLY);            
+            msHdf5_redux.getSpectrum(src, spectrum, scanXML, msLevel);
             
             bytes += scanXML.size() * sizeof(char);
             bytes += spectrum[0].size() * 2 * sizeof(float);

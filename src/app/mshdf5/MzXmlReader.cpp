@@ -51,7 +51,7 @@ MzXmlReader::MzXmlReader(CRef<CMsHdf5> msHdf5)
 }
 
 MzXmlReader::~MzXmlReader()
- {
+{
 }
 
 bool MzXmlReader::start_element(const string &name, const attrs_type &attrs)

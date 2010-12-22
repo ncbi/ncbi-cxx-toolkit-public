@@ -388,19 +388,7 @@ Contact information for the person responsible for the instrument.
     <xs:attribute name="msLevel" type="xs:integer" use="required"/>
     <xs:attribute name="peaksCount" type="xs:integer" use="required"/>
     <xs:attribute name="polarity" type="xs:string" use="optional"/>
-    <xs:attribute name="scanType" use="optional">
-      <xs:simpleType>
-        <xs:restriction base="xs:string">
-          <xs:enumeration value="Full"/>
-          <xs:enumeration value="zoom"/>
-          <xs:enumeration value="SIM"/>
-          <xs:enumeration value="SRM"/>
-          <xs:enumeration value="CRM"/>
-          <xs:enumeration value="Q1"/>
-          <xs:enumeration value="Q3"/>
-        </xs:restriction>
-      </xs:simpleType>
-    </xs:attribute>
+    <xs:attribute name="scanType" type="xs:string" use="optional"/>
     <xs:attribute name="filterLine" type="xs:string" use="optional"/>
     <xs:attribute name="centroided" type="xs:boolean" use="optional"/>
     <xs:attribute name="deisotoped" type="xs:boolean" use="optional"/>
