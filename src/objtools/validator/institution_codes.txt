@@ -2488,8 +2488,8 @@ INPA	s	Instituto Nacional de Pesquisas da Amazonia
 INPA:CR	s	Instituto Nacional de Pesquisas da Amazonia, Crustacea Collection
 INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia Medica Divisao de Microbiologia e Nutricao
 INPC	s	National Pusa Collections
-INRA	c	Microbiologie des Sols
 INRA<FRA>	b	Institut National de la Recherche Agronomique
+INRA<FRA>:CGAB	b	Institut National de la Recherche Agronomique, Collection of Germplasms of Agaricus bisporus
 INV	s	Inverness Museum and Art Gallery
 INVA	s	Invergordon Academy
 INVAM	c	International Culture Collection of (Vesicular) Arbuscular Mycorrhizal Fungi
