@@ -698,7 +698,8 @@ public:
             return ++num_failures;
         }
 
-        int oidlist, gilist, nseq, length, mem_bit, first_oid, last_oid, maxoid, maxlen;
+        Int8 length;
+        int oidlist, gilist, nseq, mem_bit, first_oid, last_oid, maxoid, maxlen;
         oidlist=gilist=nseq=length=mem_bit=first_oid=last_oid=maxoid=maxlen=-1;
 
         CNcbiIfstream is(name.c_str());
@@ -734,7 +735,7 @@ public:
             } else if (tokens[0] == "NSEQ") {
                 num_failures += x_CheckNumber(name, tokens, nseq);
             } else if (tokens[0] == "LENGTH") {
-                num_failures += x_CheckNumber(name, tokens, length);
+                num_failures += x_CheckNumber8(name, tokens, length);
             } else if (tokens[0] == "MEMB_BIT") {
                 num_failures += x_CheckNumber(name, tokens, mem_bit);
             } else if (tokens[0] == "FIRST_OID") {
@@ -845,6 +846,20 @@ private:
     {
         try {
             n = NStr::StringToInt(tokens[1]);
+            return 0;
+        } catch (...) {
+            Log(name, e_Brief) 
+                 << "  [ERROR] could not convert value to number for "
+                 << tokens[0] << endl;
+            n = -1;
+            return 1;
+        }
+    }
+
+    int x_CheckNumber8(const string &name, const vector<string> &tokens, Int8 &n)
+    {
+        try {
+            n = NStr::StringToInt8(tokens[1]);
             return 0;
         } catch (...) {
             Log(name, e_Brief) 
