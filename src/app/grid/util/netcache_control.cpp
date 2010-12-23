@@ -81,7 +81,8 @@ private:
     };
 
     void ParseICacheBlobAddress(const string& key,
-        SICacheBlobAddress* blob_address);
+        SICacheBlobAddress* blob_address,
+        bool* version_is_defined = NULL);
 };
 
 
@@ -148,7 +149,8 @@ void CNetCacheControl::Init()
 }
 
 void CNetCacheControl::ParseICacheBlobAddress(
-    const string& key, SICacheBlobAddress* blob_address)
+    const string& key, SICacheBlobAddress* blob_address,
+    bool* version_is_defined)
 {
     vector<string> key_parts;
 
@@ -158,7 +160,18 @@ void CNetCacheControl::ParseICacheBlobAddress(
             "Invalid ICache key specification \"" << key << "\" ("
                 "expected a comma-separated key,version,subkey triplet).");
     }
-    blob_address->version = NStr::StringToInt(key_parts[1]);
+    if (!key_parts[1].empty()) {
+        if (version_is_defined != NULL)
+            *version_is_defined = true;
+
+        blob_address->version = NStr::StringToInt(key_parts[1]);
+    } else {
+        if (version_is_defined != NULL)
+            *version_is_defined = false;
+
+        NCBI_THROW(CArgException, eNoValue,
+            "blob version parameter is missing");
+    }
     blob_address->key = key_parts.front();
     blob_address->subkey = key_parts.back();
 }
@@ -221,12 +234,19 @@ int CNetCacheControl::Run()
             }
         else {
             SICacheBlobAddress blob_address;
-            ParseICacheBlobAddress(key, &blob_address);
+            bool version_is_defined = true;
+            ParseICacheBlobAddress(key, &blob_address,
+                reader_select == 0 ? &version_is_defined : NULL);
+            int version = 0;
+            ICache::EBlobValidity validity;
             switch (reader_select) {
             case 0: /* no special case */
-                reader.reset(icache_client.GetReadStream(blob_address.key,
-                    blob_address.version, blob_address.subkey, NULL,
-                    CNetCacheAPI::eCaching_Disable));
+                reader.reset(version_is_defined ?
+                    icache_client.GetReadStream(blob_address.key,
+                        blob_address.version, blob_address.subkey, NULL,
+                        CNetCacheAPI::eCaching_Disable) :
+                    icache_client.GetReadStream(blob_address.key,
+                        blob_address.subkey, &version, &validity));
                 break;
             case 1: /* use offset */
                 reader.reset(icache_client.GetReadStreamPart(blob_address.key,
@@ -245,6 +265,10 @@ int CNetCacheControl::Run()
                     blob_address.key, blob_address.version, blob_address.subkey,
                     offset, part_size, NULL, CNetCacheAPI::eCaching_Disable));
             }
+            if (!version_is_defined)
+                NcbiCerr << "Blob version: " << version << NcbiEndl <<
+                    "Blob validity: " << (validity == ICache::eValid ?
+                        "valid" : "expired") << NcbiEndl;
         }
         if (!reader.get()) {
             NCBI_THROW(CNetCacheException, eBlobNotFound,
