@@ -599,6 +599,7 @@ int CProjBulderApp::Run(void)
         return 1;
     }
     VerifyArguments();
+    m_CustomConfiguration.Save(m_CustomConfFile);
 
     // Configure 
     CMsvcConfigure configure;
@@ -1755,14 +1756,16 @@ void CProjBulderApp::ParseArguments(void)
         if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
             m_TweakVTuneD = NStr::StringToBool(v);
         }
-        m_AddUnicode = m_CustomConfiguration.DoesValueContain(
-                "__EnabledUserRequests", "Ncbi-Unicode", false);
+        m_AddUnicode = GetSite().IsProvided("Ncbi-Unicode", false);
     }
     tmp = GetConfig().Get("Configure", "UserRequests");
     if (!tmp.empty()) {
         m_CustomConfiguration.AddDefinition("__UserRequests", tmp);
     } else {
         m_CustomConfiguration.RemoveDefinition("__UserRequests");
+    }
+    if ( m_MsvcRegSettings.get() ) {
+        GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
     }
 }
 

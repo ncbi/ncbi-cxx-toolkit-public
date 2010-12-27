@@ -166,8 +166,20 @@ bool CMsvcSite::IsProvided(const string& thing, bool deep) const
         return true;
     }
     if (!deep) {
+        string section("__EnabledUserRequests");
         if (GetApp().m_CustomConfiguration.DoesValueContain(
-                "__EnabledUserRequests", thing, false)) {
+                section, thing, false)) {
+            return true;
+        }
+        bool env = g_GetConfigFlag(section.c_str(), thing.c_str(), NULL, false);
+        if (env) {
+            string value;
+            GetApp().m_CustomConfiguration.GetValue(section, value);
+            if (!value.empty()) {
+                value += " ";
+            }
+            value += thing;            
+            GetApp().m_CustomConfiguration.AddDefinition(section, value);
             return true;
         }
         return false;

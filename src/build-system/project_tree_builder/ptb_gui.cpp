@@ -208,8 +208,7 @@ bool  CProjBulderApp::Gui_ConfirmConfiguration(void)
         if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
             m_TweakVTuneD = NStr::StringToBool(v);
         }
-        m_AddUnicode = m_CustomConfiguration.DoesValueContain(
-                "__EnabledUserRequests", "Ncbi-Unicode", false);
+        m_AddUnicode = GetSite().IsProvided("Ncbi-Unicode", false);
         if ( m_MsvcRegSettings.get() ) {
             GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
         }
