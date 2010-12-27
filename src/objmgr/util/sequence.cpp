@@ -2856,7 +2856,20 @@ static void AddAAToDeltaSeq (CRef<CBioseq> prot, char residue)
        
     CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
 
-    last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, residue);
+    if (residue == '*') {
+        if (last->IsLiteral() && last->GetLiteral().IsSetSeq_data() && last->GetLiteral().GetSeq_data().IsIupacaa()) {
+            // convert to ncbieaa
+            string current = last->GetLiteral().GetSeq_data().GetIupacaa().Get();
+            last->SetLiteral().SetSeq_data().SetNcbieaa().Set(current);
+        }
+        // add *
+        last->SetLiteral().SetSeq_data().SetNcbieaa().Set().append(1, residue);
+    } else if (last->IsLiteral() && last->GetLiteral().IsSetSeq_data() && last->GetLiteral().GetSeq_data().IsNcbieaa()) {
+        last->SetLiteral().SetSeq_data().SetNcbieaa().Set().append(1, residue);
+    } else {
+        last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, residue);
+    }
+        
     size_t len = last->GetLiteral().GetLength();
     last->SetLiteral().SetLength(len + 1);
 }
@@ -3075,7 +3088,11 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
                     }
                     if (seg_it != prot->SetInst().SetExt().SetDelta().Set().end()
                         && !(*seg_it)->GetLiteral().GetSeq_data().IsGap()) {
-                        (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set()[i - offset] = c_aa.GetNcbieaa ();
+                        if ((*seg_it)->GetLiteral().GetSeq_data().IsIupacaa()) {
+                            (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set()[i - offset] = c_aa.GetNcbieaa ();
+                        } else {
+                            (*seg_it)->SetLiteral().SetSeq_data().SetNcbieaa().Set()[i - offset] = c_aa.GetNcbieaa ();
+                        }
                     }
                 }
             } else if (i == prot_len) {
@@ -3090,32 +3107,52 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
     // remove stop codon from end
     CRef<CDelta_seq> end = prot->SetInst().SetExt().SetDelta().Set().back();
-    if (end->IsLiteral() && end->GetLiteral().IsSetSeq_data() && end->GetLiteral().GetSeq_data().IsIupacaa()) {
-        string& last_seg = end->SetLiteral().SetSeq_data().SetIupacaa().Set();
-        if (NStr::EndsWith(last_seg, "*")) {
-            last_seg = last_seg.substr(0, last_seg.length() - 1);
-            end->SetLiteral().SetLength(last_seg.length());
+    if (end->IsLiteral() && end->GetLiteral().IsSetSeq_data()) {
+        if (end->GetLiteral().GetSeq_data().IsIupacaa()) {
+            string& last_seg = end->SetLiteral().SetSeq_data().SetIupacaa().Set();
+            if (NStr::EndsWith(last_seg, "*")) {
+                last_seg = last_seg.substr(0, last_seg.length() - 1);
+                end->SetLiteral().SetLength(last_seg.length());
+            }
+        } else if (end->GetLiteral().GetSeq_data().IsNcbieaa()) {
+            string& last_seg = end->SetLiteral().SetSeq_data().SetNcbieaa().Set();
+            if (NStr::EndsWith(last_seg, "*")) {
+                last_seg = last_seg.substr(0, last_seg.length() - 1);
+                end->SetLiteral().SetLength(last_seg.length());
+            }
         }
     }
 
-    // recalculate protein length - may have been altered by removal of stop codon/transl_except
+    // recalculate protein length, check need for ncbieaa - may have been altered by removal of stop codon/transl_except
     prot_len = 0;
-    ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
+    NON_CONST_ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
         prot_len += (*seg_it)->GetLiteral().GetLength();
+        if ((*seg_it)->GetLiteral().IsSetSeq_data()
+            && (*seg_it)->GetLiteral().GetSeq_data().IsNcbieaa()) {
+            string current = (*seg_it)->GetLiteral().GetSeq_data().GetNcbieaa();
+            if (NStr::Find (current, "*") == string::npos) {
+                (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set(current);
+            }
+        }            
     }
     prot->SetInst().SetLength(prot_len);
 
 
     if (prot->SetInst().SetExt().SetDelta().Set().size() == 1
         && prot->SetInst().SetExt().SetDelta().Set().front()->IsLiteral()
-        && prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().IsSetSeq_data()
-        && prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().IsIupacaa()) {
+        && prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().IsSetSeq_data()) {
         // only one segment, should be raw rather than delta
-
-        string data = prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().GetIupacaa().Get();
-        prot->SetInst().ResetExt();
-        prot->SetInst().SetSeq_data().SetIupacaa().Set(data);
-        prot->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+        if (prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().IsIupacaa()) {
+            string data = prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().GetIupacaa().Get();
+            prot->SetInst().ResetExt();
+            prot->SetInst().SetSeq_data().SetIupacaa().Set(data);
+            prot->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+        } else if (prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().IsNcbieaa()) {
+            string data = prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().GetNcbieaa().Get();
+            prot->SetInst().ResetExt();
+            prot->SetInst().SetSeq_data().SetNcbieaa().Set(data);
+            prot->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+        }
     }
 
     return prot;
