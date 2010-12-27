@@ -2730,7 +2730,7 @@ void CScope_Impl::GetAccVers(TIds& ret,
             CPrefetchManager::IsActive();
             it->GetDataSource().GetAccVers(ids, loaded, ret);
 #ifdef NCBI_COMPILER_WORKSHOP
-	    std::count(loaded.begin(), loaded.end(), false, remaining);
+        std::count(loaded.begin(), loaded.end(), false, remaining);
 #else
             remaining = std::count(loaded.begin(), loaded.end(), false);
 #endif
@@ -2786,7 +2786,7 @@ void CScope_Impl::GetGis(TGIs& ret,
             CPrefetchManager::IsActive();
             it->GetDataSource().GetGis(ids, loaded, ret);
 #ifdef NCBI_COMPILER_WORKSHOP
-	    std::count(loaded.begin(), loaded.end(), false, remaining);
+        std::count(loaded.begin(), loaded.end(), false, remaining);
 #else
             remaining = std::count(loaded.begin(), loaded.end(), false);
 #endif
@@ -2842,7 +2842,7 @@ void CScope_Impl::GetLabels(TLabels& ret,
             CPrefetchManager::IsActive();
             it->GetDataSource().GetLabels(ids, loaded, ret);
 #ifdef NCBI_COMPILER_WORKSHOP
-	    std::count(loaded.begin(), loaded.end(), false, remaining);
+        std::count(loaded.begin(), loaded.end(), false, remaining);
 #else
             remaining = std::count(loaded.begin(), loaded.end(), false);
 #endif
@@ -2903,7 +2903,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
             CPrefetchManager::IsActive();
             it->GetDataSource().GetTaxIds(ids, loaded, ret);
 #ifdef NCBI_COMPILER_WORKSHOP
-	    std::count(loaded.begin(), loaded.end(), false, remaining);
+        std::count(loaded.begin(), loaded.end(), false, remaining);
 #else
             remaining = std::count(loaded.begin(), loaded.end(), false);
 #endif

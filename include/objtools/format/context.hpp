@@ -113,6 +113,7 @@ public:
     SIZE_TYPE GetPartNumber   (void) const { return m_PartNumber; }
     SIZE_TYPE GetTotalNumParts(void) const;
     CMasterContext& GetMaster (void) { return *m_Master; }
+    bool CanGetMaster         (void) const { return m_Master.NotNull(); }
     void SetMaster(CMasterContext& mctx);
 
     // delta sequence

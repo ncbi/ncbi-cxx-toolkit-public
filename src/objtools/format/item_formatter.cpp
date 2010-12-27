@@ -541,8 +541,10 @@ static void s_FixPages( string& pages )
             if( *it == '?' ) {
                 lastNumber = firstNumber;
                 lastText = firstText;
+                pages = firstNumber + firstText + "-" + lastNumber + lastText;
+            } else if( ! isalnum(*it) ) {
+                pages = firstNumber + firstText + "-" + lastNumber + lastText;
             }
-            pages = firstNumber + firstText + string( "-" ) + lastNumber + lastText;
             return;
         }
     }
@@ -1187,7 +1189,8 @@ static void s_FormatPatent
             // !!! add consortium
             
             if (std.IsSetAffil()  &&  !NStr::IsBlank(std.GetAffil())) {
-                jour << prefix << std.GetAffil() << ';';
+                // prefix not printed in order to match C toolkit's behavior
+                jour << std.GetAffil() << ';';
                 prefix = ' ';
             }
             if (std.IsSetStreet()  &&  !NStr::IsBlank(std.GetStreet())) {

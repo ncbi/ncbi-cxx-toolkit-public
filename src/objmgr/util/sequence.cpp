@@ -713,34 +713,38 @@ struct SPairLessBySecond
     }
 };
 
-static
-void s_GeneSearchNormalizeLoc( CConstRef<CSeq_loc> &loc, const TSeqPos circular_length )
+class COverlapPairLess
 {
-    CRef<CSeq_loc> new_loc( new CSeq_loc );
+public:
+    COverlapPairLess( CScope *scope_arg ) : scope(scope_arg) { }
 
-    // used so loc will not be mixed, if possible
-    ENa_strand new_strand = eNa_strand_other;
-
-    CSeq_loc_CI loc_iter( *loc ); // skips gaps by default
-    for( ; loc_iter; ++loc_iter ) {
-        if( new_strand == eNa_strand_other ) {
-            // strand should have strandedness of first part
-            new_strand = loc_iter.GetStrand();
+    bool operator()( const pair<Int8,CConstRef<CSeq_feat> >& gene1, 
+        const pair<Int8, CConstRef<CSeq_feat> >& gene2 )
+    {
+        // First, compare by overlap amount
+        if( gene1.first != gene2.first ) {
+            return gene1.first < gene2.first;
         }
-        new_loc->Add( *loc_iter.GetRangeAsSeq_loc() );
+
+        // If genes are at identical positions, we fall back on the label
+        if( sequence::Compare( gene1.second->GetLocation(), gene2.second->GetLocation(), scope ) == sequence::eSame ) {
+            if( gene1.second->IsSetData() && gene1.second->GetData().IsGene() && 
+                gene2.second->IsSetData() && gene2.second->GetData().IsGene() ) 
+            {
+                string gene1_label;
+                string gene2_label;
+
+                gene1.second->GetData().GetGene().GetLabel( &gene1_label );
+                gene2.second->GetData().GetGene().GetLabel( &gene2_label );
+                return gene1_label < gene2_label;
+            }
+        }
+
+        return false;
     }
-    // if we're not circular, sort and merge the location
-    if( circular_length == kInvalidSeqPos ) {
-        // must do BEFORE merge (seems to drop unknown-strand parts, otherwise)
-        new_loc->SetStrand( eNa_strand_plus );
-        new_loc = new_loc->Merge( CSeq_loc::fSortAndMerge_All, NULL );
-    }
-    // ...and, must do AFTER merge (since merge seems to change strand sometimes )
-    if( new_strand != eNa_strand_other ) {
-        new_loc->SetStrand( new_strand );
-    }
-    loc = new_loc;
-}
+private:
+    CScope *scope;
+};
 
 void GetOverlappingFeatures(const CSeq_loc& loc,
                             CSeqFeatData::E_Choice feat_type,
@@ -748,15 +752,16 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                             EOverlapType overlap_type,
                             TFeatScores& feats,
                             CScope& scope,
-                            const TBestFeatOpts opts )
+                            const TBestFeatOpts opts,
+                            CGetOverlappingFeaturesPlugin *plugin )
 {
-    bool revert_locations = false;
+    bool revert_locations = false; 
     SAnnotSelector::EOverlapType annot_overlap_type;
     switch (overlap_type) {
     case eOverlap_Simple:
     case eOverlap_Contained:
     case eOverlap_Contains:
-        // Require total range overlap
+        // Require total range overlap 
         annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
         break;
     case eOverlap_Subset:
@@ -774,17 +779,17 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
     CConstRef<CSeq_feat> feat_ref;
 
-    CBioseq_Handle h;
+    CBioseq_Handle bioseq_handle;
     CRange<TSeqPos> range;
     ENa_strand strand = eNa_strand_unknown;
     if ( loc.IsWhole() ) {
-        h = scope.GetBioseqHandle(loc.GetWhole());
+        bioseq_handle = scope.GetBioseqHandle(loc.GetWhole());
         range = range.GetWhole();
     }
     else if ( loc.IsInt() || loc.IsPnt() || loc.IsPacked_int() || loc.IsMix() || loc.IsPacked_pnt() ) {
         const CSeq_id* id = loc.GetId();
         if( NULL != id ) {
-            h = scope.GetBioseqHandle(*id);
+            bioseq_handle = scope.GetBioseqHandle(*id);
             range.SetFrom(loc.GetStart(eExtreme_Positional));
             range.SetTo(loc.GetStop(eExtreme_Positional));
             if ( loc.IsSetStrand() ) {
@@ -798,10 +803,10 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
     // Check if the sequence is circular
     TSeqPos circular_length = kInvalidSeqPos;
-    if ( h ) {
-        if ( h.IsSetInst_Topology() &&
-             h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-            circular_length = h.GetBioseqLength();
+    if ( bioseq_handle ) {
+        if ( bioseq_handle.IsSetInst_Topology() &&
+             bioseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+            circular_length = bioseq_handle.GetBioseqLength();
         }
     }
     else {
@@ -814,15 +819,15 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 single_id = 0;
             }
             if ( single_id ) {
-                CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
-                if ( h && h.IsSetInst_Topology() &&
-                     h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-                    circular_length = h.GetBioseqLength();
+                CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(*single_id);
+                if ( bioseq_handle && bioseq_handle.IsSetInst_Topology() &&
+                     bioseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                    circular_length = bioseq_handle.GetBioseqLength();
                 }
             }
         }
         catch (CException& _DEBUG_ARG(e)) {
-            _TRACE("test for circularity failed: " << e.GetMsg());
+            _TRACE("test for circularity failed: " << e.GetMsg()) ;
         }
     }
 
@@ -832,59 +837,67 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             .SetFeatSubtype(feat_subtype)
             .SetOverlapType(annot_overlap_type)
             .SetResolveTSE();
-        if( opts & fBestFeat_GeneSearchNormalization ) {
-            sel.SetIgnoreStrand();
+        if( plugin ) {
+            plugin->processSAnnotSelector( sel );
         }
 
         auto_ptr<CFeat_CI> feat_it_ptr;
-        if ( h ) {
-            if( (opts & fBestFeat_GeneSearchNormalization ) && 
-                    ( (annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) ||
-                      ( circular_length != kInvalidSeqPos ) )) {
-                // needed so we can detect overlaps that span segments but don't include
-                // the current segment.
-                // e.g. the exon at 217 to 418 in AAB59659 has an overlap with gene Igg
-                // Also, for circular segments, we could overlap anywhere on the segment.
-                // TODO: see if we should consider this a bug in the C++ toolkit and
-                // try to get it fixed so we don't have to do this.
-                range.SetFrom(0);
-                range.SetTo( kMax_Int );
-            }
-            feat_it_ptr.reset( new CFeat_CI(h, range, strand, sel) );
+        if( plugin ) {
+            plugin->setUpFeatureIterator( bioseq_handle, feat_it_ptr,
+                circular_length, range, loc, sel, scope, strand);
         } else {
-            feat_it_ptr.reset( new CFeat_CI(scope, loc, sel) );
+            if ( bioseq_handle ) {
+                feat_it_ptr.reset( new CFeat_CI(bioseq_handle, range, strand, sel) );
+            } else {
+                feat_it_ptr.reset( new CFeat_CI(scope, loc, sel) );
+            }
         }
         // convenience variable so we don't have to keep dereferencing the auto_ptr
         CFeat_CI &feat_it = *feat_it_ptr;
 
-        CConstRef<CSeq_loc> cleaned_loc( &loc );
-        if(opts & fBestFeat_GeneSearchNormalization ) {
-            s_GeneSearchNormalizeLoc( cleaned_loc, circular_length ); 
+        CRef<CSeq_loc> cleaned_loc( new CSeq_loc );
+        cleaned_loc->Assign( loc );
+        if( plugin ) {
+            plugin->processLoc( bioseq_handle, cleaned_loc, circular_length );
         }
 
         for ( ;  feat_it;  ++feat_it) {
-            CConstRef<CSeq_loc> candidate_feat_loc( &feat_it->GetOriginalFeature().GetLocation() ); 
+            CRef<CSeq_loc> candidate_feat_loc( new CSeq_loc ); 
+            candidate_feat_loc->Assign( feat_it->GetOriginalFeature().GetLocation() );
+            EOverlapType overlap_type_this_iteration = overlap_type;
+            bool revert_locations_this_iteration = revert_locations;
 
-            if( opts & fBestFeat_GeneSearchNormalization ) {
-                candidate_feat_loc = h.MapLocation( *candidate_feat_loc );
-                s_GeneSearchNormalizeLoc( candidate_feat_loc, circular_length );
+            if( plugin ) {
+                bool shouldContinueToNextIteration = false;
+                plugin->processMainLoop( 
+                    shouldContinueToNextIteration,
+                    candidate_feat_loc,
+                    overlap_type_this_iteration,
+                    revert_locations_this_iteration,
+                    bioseq_handle,
+                    *feat_it,
+                    circular_length,
+                    annot_overlap_type);
+                if( shouldContinueToNextIteration ) {
+                    continue;
+                }
             }
 
             // treat subset as a special case
-            Int8 cur_diff = ( !revert_locations ) ?
+            Int8 cur_diff = ( !revert_locations_this_iteration ) ?
                 TestForOverlap64(*candidate_feat_loc,
                 *cleaned_loc,
-                overlap_type,
+                overlap_type_this_iteration,
                 circular_length,
                 &scope) :
             TestForOverlap64(*cleaned_loc,
                 *candidate_feat_loc,
-                overlap_type,
+                overlap_type_this_iteration,
                 circular_length,
                 &scope);
             if (cur_diff < 0) {
-                continue;
-            }
+                     continue;
+             }
 
             TFeatScore sc(cur_diff,
                 ConstRef(&feat_it->GetMappedFeature()));
@@ -896,7 +909,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
     }
 
     std::stable_sort(feats.begin(), feats.end(),
-              SPairLessByFirst< Int8, CConstRef<CSeq_feat> >());
+        COverlapPairLess( &scope ) );
 }
 
 
@@ -904,12 +917,13 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,
                                             EOverlapType overlap_type,
                                             CScope& scope,
-                                            TBestFeatOpts opts)
+                                            TBestFeatOpts opts,
+                                            CGetOverlappingFeaturesPlugin *plugin )
 {
     TFeatScores scores;
     GetOverlappingFeatures(loc,
                            feat_type, CSeqFeatData::eSubtype_any,
-                           overlap_type, scores, scope, opts);
+                           overlap_type, scores, scope, opts, plugin );
     if (scores.size()) {
         if (opts & fBestFeat_FavorLonger) {
             return scores.back().second;
@@ -925,12 +939,13 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::ESubtype feat_type,
                                             EOverlapType overlap_type,
                                             CScope& scope,
-                                            TBestFeatOpts opts)
+                                            TBestFeatOpts opts,
+                                            CGetOverlappingFeaturesPlugin *plugin )
 {
     TFeatScores scores;
     GetOverlappingFeatures(loc,
         CSeqFeatData::GetTypeFromSubtype(feat_type), feat_type,
-        overlap_type, scores, scope, opts);
+        overlap_type, scores, scope, opts, plugin );
 
     if (scores.size()) {
         if (opts & fBestFeat_FavorLonger) {
@@ -1050,7 +1065,8 @@ CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope)
 
 CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                                        CScope& scope,
-                                       TBestFeatOpts opts)
+                                       TBestFeatOpts opts,
+                                       CGetOverlappingFeaturesPlugin *plugin )
 {
     _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
     CConstRef<CSeq_feat> mrna_feat;
@@ -1063,7 +1079,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                            CSeqFeatData::e_Rna,
                            CSeqFeatData::eSubtype_mRNA,
                            eOverlap_CheckIntRev,
-                           feats, scope, opts);
+                           feats, scope, opts, plugin );
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
         if (feats.size() == 1) {
@@ -1198,7 +1214,8 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
 CConstRef<CSeq_feat>
 GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                   CScope& scope,
-                  TBestFeatOpts opts)
+                  TBestFeatOpts opts,
+                  CGetOverlappingFeaturesPlugin *plugin )
 {
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> cds_feat;
@@ -1211,7 +1228,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                            CSeqFeatData::e_Cdregion,
                            CSeqFeatData::eSubtype_cdregion,
                            eOverlap_CheckIntervals,
-                           feats, scope, opts);
+                           feats, scope, opts, plugin );
 
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -1362,7 +1379,8 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
 
 CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                                           CScope& scope,
-                                          TBestFeatOpts opts)
+                                          TBestFeatOpts opts,
+                                          CGetOverlappingFeaturesPlugin *plugin )
 {
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> gene_feat;
@@ -1373,7 +1391,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                            CSeqFeatData::e_Gene,
                            CSeqFeatData::eSubtype_any,
                            eOverlap_Contained,
-                           feats, scope, opts);
+                           feats, scope, opts, plugin );
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
         if (feats.size() == 1) {
@@ -1449,7 +1467,8 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
 
 CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
                                          CScope& scope,
-                                         TBestFeatOpts opts)
+                                         TBestFeatOpts opts,
+                                         CGetOverlappingFeaturesPlugin *plugin )
 {
     _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
 
@@ -1461,7 +1480,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
                            CSeqFeatData::e_Gene,
                            CSeqFeatData::eSubtype_any,
                            eOverlap_Contained,
-                           feats, scope, opts);
+                           feats, scope, opts, plugin );
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
         if (feats.size() == 1) {
@@ -1518,7 +1537,8 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
 
 void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
                      list< CConstRef<CSeq_feat> >& mrna_feats,
-                     TBestFeatOpts opts)
+                     TBestFeatOpts opts,
+                     CGetOverlappingFeaturesPlugin *plugin )
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     SAnnotSelector sel;
@@ -1629,7 +1649,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
         sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
                                          CSeqFeatData::eSubtype_mRNA,
                                          sequence::eOverlap_Contains,
-                                         scope, opts);
+                                         scope, opts, plugin );
     if (feat) {
         mrna_feats.push_back(feat);
     }
@@ -1638,7 +1658,8 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
 
 void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
                     list< CConstRef<CSeq_feat> >& cds_feats,
-                    TBestFeatOpts opts)
+                    TBestFeatOpts opts,
+                    CGetOverlappingFeaturesPlugin *plugin )
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     list< CConstRef<CSeq_feat> > mrna_feats;
@@ -1655,7 +1676,7 @@ void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
             sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_cdregion,
                                              sequence::eOverlap_CheckIntervals,
-                                             scope, opts);
+                                             scope, opts, plugin );
         if (feat) {
             cds_feats.push_back(feat);
         }
@@ -1668,25 +1689,26 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
                        CSeqFeatData::E_Choice feat_type,
                        sequence::EOverlapType overlap_type,
                        CScope& scope,
-                       TBestFeatOpts opts)
+                       TBestFeatOpts opts,
+                       CGetOverlappingFeaturesPlugin *plugin )
 {
     CConstRef<CSeq_feat> feat_ref;
     switch (feat_type) {
     case CSeqFeatData::e_Gene:
         return GetBestOverlappingFeat(feat,
                                       CSeqFeatData::eSubtype_gene,
-                                      overlap_type, scope, opts);
+                                      overlap_type, scope, opts, plugin );
 
     case CSeqFeatData::e_Rna:
         feat_ref = GetBestOverlappingFeat(feat,
                                           CSeqFeatData::eSubtype_mRNA,
-                                          overlap_type, scope, opts);
+                                          overlap_type, scope, opts, plugin );
         break;
 
     case CSeqFeatData::e_Cdregion:
         return GetBestOverlappingFeat(feat,
                                       CSeqFeatData::eSubtype_cdregion,
-                                      overlap_type, scope, opts);
+                                      overlap_type, scope, opts, plugin );
 
     default:
         break;
@@ -1694,7 +1716,7 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
 
     if ( !feat_ref ) {
         feat_ref = sequence::GetBestOverlappingFeat
-            (feat.GetLocation(), feat_type, overlap_type, scope, opts);
+            (feat.GetLocation(), feat_type, overlap_type, scope, opts, plugin );
     }
 
     return feat_ref;
@@ -1706,7 +1728,8 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
                        CSeqFeatData::ESubtype subtype,
                        sequence::EOverlapType overlap_type,
                        CScope& scope,
-                       TBestFeatOpts opts)
+                       TBestFeatOpts opts,
+                       CGetOverlappingFeaturesPlugin *plugin )
 {
     CConstRef<CSeq_feat> feat_ref;
     switch (feat.GetData().GetSubtype()) {
@@ -1745,7 +1768,7 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
 
     if ( !feat_ref ) {
         feat_ref = GetBestOverlappingFeat
-            (feat.GetLocation(), subtype, overlap_type, scope, opts);
+            (feat.GetLocation(), subtype, overlap_type, scope, opts, plugin );
     }
 
     return feat_ref;

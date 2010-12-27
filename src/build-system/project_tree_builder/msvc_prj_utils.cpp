@@ -54,7 +54,7 @@ CVisualStudioProject* LoadFromXmlFile(const string& file_path)
                                                     file_path, 
                                                     eSerial_StdWhenAny));
     if ( in->fail() )
-	    NCBI_THROW(CProjBulderAppException, eFileOpen, file_path);
+        NCBI_THROW(CProjBulderAppException, eFileOpen, file_path);
     
     auto_ptr<CVisualStudioProject> prj(new CVisualStudioProject());
     in->Read(prj.get(), prj->GetThisTypeInfo());
@@ -75,7 +75,7 @@ void SaveToXmlFile(const string& file_path, const CSerialObject& project)
     CNcbiOfstream ofs(file_path.c_str(), 
                       IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs )
-	    NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
+        NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
     CObjectOStreamXml xs(ofs, false);
     if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {

@@ -45,6 +45,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <util/strsearch.hpp>
+#include <objmgr/feat_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -319,10 +320,6 @@ enum EBestFeatOpts {
     /// favor longer features over shorter features
     fBestFeat_FavorLonger = 0x04,
 
-    /// when comparing locations to find an overlapping gene, certain
-    /// extra logic must be performed.
-    fBestFeat_GeneSearchNormalization = 0x08,
-
     /// default options: do everything
     fBestFeat_Defaults = 0
 };
@@ -332,6 +329,39 @@ typedef int TBestFeatOpts;
 /// Storage for features and scores.
 typedef pair<Int8, CConstRef<CSeq_feat> > TFeatScore;
 typedef vector<TFeatScore> TFeatScores;
+
+// To avoid putting custom logic into the GetOverlappingFeatures
+// function, we allow plugins
+class CGetOverlappingFeaturesPlugin {
+public:
+    virtual void processSAnnotSelector( 
+        SAnnotSelector &sel ) = 0;
+
+    virtual void setUpFeatureIterator ( 
+        CBioseq_Handle &bioseq_handle,
+        auto_ptr<CFeat_CI> &feat_ci,
+        TSeqPos circular_length ,
+        CRange<TSeqPos> &range,
+        const CSeq_loc& loc,
+        SAnnotSelector &sel,
+        CScope &scope,
+        ENa_strand &strand ) = 0;
+
+    virtual void processLoc( 
+        CBioseq_Handle &bioseq_handle,
+        CRef<CSeq_loc> &loc,
+        TSeqPos circular_length ) = 0;
+
+    virtual void processMainLoop( 
+        bool &shouldContinueToNextIteration,
+        CRef<CSeq_loc> &candidate_feat_loc,
+        EOverlapType &overlap_type_this_iteration,
+        bool &revert_locations_this_iteration,
+        CBioseq_Handle &bioseq_handle,
+        const CMappedFeat &feat,
+        TSeqPos circular_length,
+        SAnnotSelector::EOverlapType annot_overlap_type ) = 0;
+};
 
 /// Find all features overlapping the location. Features and corresponding
 /// scores are stored in the 'feats' vector. The scores are calculated as
@@ -343,7 +373,8 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                             EOverlapType overlap_type,
                             TFeatScores& feats,
                             CScope& scope,
-                            const TBestFeatOpts opts = 0);
+                            const TBestFeatOpts opts = 0,
+                            CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 
 /// overlap_type defines how the location must be related to the feature.
@@ -357,49 +388,57 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,
                                             EOverlapType overlap_type,
                                             CScope& scope,
-                                            TBestFeatOpts opts = fBestFeat_Defaults);
+                                            TBestFeatOpts opts = fBestFeat_Defaults,
+                                            CGetOverlappingFeaturesPlugin *plugin = NULL );
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::ESubtype feat_type,
                                             EOverlapType overlap_type,
                                             CScope& scope,
-                                            TBestFeatOpts opts = fBestFeat_Defaults);
+                                            TBestFeatOpts opts = fBestFeat_Defaults,
+                                            CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                    CScope& scope,
-                   TBestFeatOpts opts = fBestFeat_Defaults);
+                   TBestFeatOpts opts = fBestFeat_Defaults,
+                   CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestGeneForCds(const CSeq_feat& cds_feat,
                   CScope& scope,
-                  TBestFeatOpts opts = fBestFeat_Defaults);
+                  TBestFeatOpts opts = fBestFeat_Defaults,
+                  CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestMrnaForCds(const CSeq_feat& cds_feat,
                   CScope& scope,
-                  TBestFeatOpts opts = fBestFeat_Defaults);
+                  TBestFeatOpts opts = fBestFeat_Defaults,
+                  CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                   CScope& scope,
-                  TBestFeatOpts opts = fBestFeat_Defaults);
+                  TBestFeatOpts opts = fBestFeat_Defaults,
+                  CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 void GetMrnasForGene(const CSeq_feat& gene_feat,
                      CScope& scope,
                      list< CConstRef<CSeq_feat> >& mrna_feats,
-                     TBestFeatOpts opts = fBestFeat_Defaults);
+                     TBestFeatOpts opts = fBestFeat_Defaults,
+                     CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 void GetCdssForGene(const CSeq_feat& gene_feat,
                     CScope& scope,
                     list< CConstRef<CSeq_feat> >& cds_feats,
-                    TBestFeatOpts opts = fBestFeat_Defaults);
+                    TBestFeatOpts opts = fBestFeat_Defaults,
+                    CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 /////////////////////////////////////////////////////////////////////////////
 // Versions of functions with lookup by feature id
@@ -407,37 +446,43 @@ NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                    const CTSE_Handle& tse,
-                   TBestFeatOpts opts = fBestFeat_Defaults);
+                   TBestFeatOpts opts = fBestFeat_Defaults,
+                   CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestGeneForCds(const CSeq_feat& cds_feat,
                   const CTSE_Handle& tse,
-                  TBestFeatOpts opts = fBestFeat_Defaults);
+                  TBestFeatOpts opts = fBestFeat_Defaults,
+                  CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestMrnaForCds(const CSeq_feat& cds_feat,
                   const CTSE_Handle& tse,
-                  TBestFeatOpts opts = fBestFeat_Defaults);
+                  TBestFeatOpts opts = fBestFeat_Defaults,
+                  CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                   const CTSE_Handle& tse,
-                  TBestFeatOpts opts = fBestFeat_Defaults);
+                  TBestFeatOpts opts = fBestFeat_Defaults,
+                  CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 void GetMrnasForGene(const CSeq_feat& gene_feat,
                      const CTSE_Handle& tse,
                      list< CConstRef<CSeq_feat> >& mrna_feats,
-                     TBestFeatOpts opts = fBestFeat_Defaults);
+                     TBestFeatOpts opts = fBestFeat_Defaults,
+                     CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 void GetCdssForGene(const CSeq_feat& gene_feat,
                     const CTSE_Handle& tse,
                     list< CConstRef<CSeq_feat> >& cds_feats,
-                    TBestFeatOpts opts = fBestFeat_Defaults);
+                    TBestFeatOpts opts = fBestFeat_Defaults,
+                    CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
@@ -445,7 +490,8 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
                        CSeqFeatData::E_Choice feat_type,
                        sequence::EOverlapType overlap_type,
                        CScope& scope,
-                       TBestFeatOpts opts = fBestFeat_Defaults);
+                       TBestFeatOpts opts = fBestFeat_Defaults,
+                       CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
@@ -453,7 +499,8 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
                        CSeqFeatData::ESubtype feat_type,
                        sequence::EOverlapType overlap_type,
                        CScope& scope,
-                       TBestFeatOpts opts = fBestFeat_Defaults);
+                       TBestFeatOpts opts = fBestFeat_Defaults,
+                       CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 /// Get the best overlapping feature for a SNP (variation) feature
 /// @param snp_feat

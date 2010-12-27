@@ -686,6 +686,42 @@ void s_GenerateWeblinks( const string& strProtocol, string& strText )
 //{
 //}
 
+static void
+s_FixListIfBadWrap( list<string> &l, list<string>::iterator l_old_last, 
+                   int indent )
+{
+    // point to the first added line
+    list<string>::iterator l_first_new_line;
+    if( l_old_last != l.end() ) {
+        l_first_new_line = l_old_last;
+        ++l_first_new_line;
+    } else {
+        l_first_new_line = l.begin();
+    }
+
+    // no lines were added
+    if( l_first_new_line == l.end() ) {
+        return;
+    }
+
+    // find the line after it
+    list<string>::iterator l_second_new_line = l_first_new_line;
+    ++l_second_new_line;
+
+    // only 1 new line added
+    if( l_second_new_line == l.end() ) {
+        return;
+    }
+
+    // if the first added line is too short, there must've been a problem,
+    // so we join the first two lines together
+    if( l_first_new_line->length() <= indent ) {
+        NStr::TruncateSpacesInPlace( *l_first_new_line, NStr::eTrunc_End );
+        *l_first_new_line += " " + NStr::TruncateSpaces( *l_second_new_line );
+        l.erase( l_second_new_line );
+    }
+}
+
 void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
  IFlatTextOStream& text_os)
@@ -697,16 +733,26 @@ void CGenbankFormatter::FormatComment
 
     list<string> l;
     NON_CONST_ITERATE( list<string>, comment_it, strComment ) {
-        ConvertQuotes( *comment_it );
         bool bHtml = GetContext().GetConfig().DoHTML();
         if ( bHtml ) {
             s_GenerateWeblinks( "http", *comment_it );
+        }
+
+        list<string>::iterator l_old_last = l.end();
+        if( ! l.empty() ) {
+            --l_old_last;
         }
 
         if (!is_first) {
             Wrap(l, kEmptyStr, *comment_it, eSubp, bHtml, internalIndent);
         } else {
             Wrap(l, "COMMENT", *comment_it, ePara, bHtml, internalIndent);
+        }
+
+        // Sometimes Wrap gets overzealous and wraps us right after the "::"
+        // for structured comments (e.g. FJ888345.1)
+        if( internalIndent > 0 ) {
+            s_FixListIfBadWrap( l, l_old_last, GetIndent().length() + internalIndent );
         }
 
         is_first = false;
@@ -933,8 +979,6 @@ void CGenbankFormatter::FormatSequence
 (const CSequenceItem& seq,
  IFlatTextOStream& text_os)
 {
-    list<string> l;
-
     const CSeqVector& vec = seq.GetSequence();
     TSeqPos from = seq.GetFrom();
     TSeqPos to = seq.GetTo();
@@ -974,7 +1018,7 @@ void CGenbankFormatter::FormatSequence
         base_count += kFullLineSize;
 
         *linep = 0;
-        l.push_back(line);
+        text_os.AddCLine( line, seq.GetObject() );
     }
     if ( total > 0 ) {
         char* linep = line + kSeqPosWidth;
@@ -986,10 +1030,8 @@ void CGenbankFormatter::FormatSequence
             }
         }
         *linep = 0;
-        l.push_back(line);
+        text_os.AddCLine( line, seq.GetObject() );
     }
-
-    text_os.AddParagraph(l, seq.GetObject());
 }
 
 

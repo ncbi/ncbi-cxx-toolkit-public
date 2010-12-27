@@ -175,7 +175,16 @@ protected:
 
     bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
-        CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem );
+        CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem ) const;
+    bool x_CanUseExtremesToFindGene( CBioseqContext& ctx ) const;
+    CConstRef<CSeq_feat> 
+        x_GetFeatViaSubsetThenExtremesIfPossible( 
+            CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
+            CSeqFeatData::ESubtype feat_subtype,
+            const CSeq_loc &location, CSeqFeatData::E_Choice sought_type ) const ;
+    CConstRef<CSeq_feat> 
+        x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
+            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type ) const;
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );
@@ -303,6 +312,8 @@ protected:
     mutable TQualVec               m_FTableQuals;
     EMapped                        m_Mapped;
     mutable string                 m_Gene;
+    // Note that this holds the gene xref as specified in the original
+    // ASN file.  It does NOT hold any genes found by overlap, etc.
     mutable CConstRef<CGene_ref>   m_GeneRef;
 };
 

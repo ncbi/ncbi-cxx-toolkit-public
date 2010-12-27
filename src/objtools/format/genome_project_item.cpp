@@ -77,6 +77,10 @@ const CGenomeProjectItem::TDBLinkLineVec & CGenomeProjectItem::GetDBLinkLines() 
 
 void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 {
+    const CUser_object *genome_projects_user_obje = NULL;
+    const CUser_object *dblink_user_obj = NULL;
+
+    // extract all the useful user objects
     for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
         const CUser_object& uo = desc->GetUser();
 
@@ -85,27 +89,37 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
         }
         string strHeader = uo.GetType().GetStr();
         if ( NStr::EqualNocase(strHeader, "GenomeProjectsDB")) {
-            ITERATE (CUser_object::TData, uf_it, uo.GetData()) {
-                const CUser_field& field = **uf_it;
-                if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
-                    const string& label = field.GetLabel().GetStr();
-                    if ( NStr::EqualNocase(label, "ProjectID")) {
-                        m_ProjectNumber = field.GetData().GetInt();
-                    }
+            genome_projects_user_obje = &uo;
+        } else if( NStr::EqualNocase( strHeader, "DBLink" ) ) {
+            dblink_user_obj = &uo;
+        }
+    }
+
+    // process GenomeProjectsDB
+    if( genome_projects_user_obje != NULL ) {
+        ITERATE (CUser_object::TData, uf_it, genome_projects_user_obje->GetData()) {
+            const CUser_field& field = **uf_it;
+            if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
+                const string& label = field.GetLabel().GetStr();
+                if ( NStr::EqualNocase(label, "ProjectID")) {
+                    m_ProjectNumber = field.GetData().GetInt();
                 }
             }
-        } else if( NStr::EqualNocase( strHeader, "DBLink" ) ) {
-            ITERATE (CUser_object::TData, uf_it, uo.GetData()) {
-                const CUser_field& field = **uf_it;
-                if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && 
-                        field.CanGetData() && field.GetData().IsStrs() ) {
+        }
+    }
+
+    // process DBLink
+    if( dblink_user_obj != NULL ) {
+        ITERATE (CUser_object::TData, uf_it, dblink_user_obj->GetData()) {
+            const CUser_field& field = **uf_it;
+            if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && 
+                field.CanGetData() && field.GetData().IsStrs() ) {
                     const string& label = field.GetLabel().GetStr();
                     if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
                         const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
                         m_DBLinkLines.push_back( "Sequence Read Archive: " + 
                             NStr::Join( strs, ", " ) );
                     }
-                }
             }
         }
     }

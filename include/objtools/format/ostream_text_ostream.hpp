@@ -60,6 +60,9 @@ public:
     virtual void AddLine( const string& line,
                           const CSerialObject* obj = 0);
 
+    virtual void AddCLine( const char *line,
+                           const CSerialObject* obj = 0);
+
 private:
     CNcbiOstream&   m_Ostream;
 };

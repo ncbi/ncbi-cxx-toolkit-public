@@ -1009,6 +1009,8 @@ void CCommentItem::x_SetCommentWithURLlinks
         }
     }
     
+    ConvertQuotes( comment );
+
     m_Comment.clear();
     m_Comment.push_back( comment );
 }
@@ -1184,7 +1186,6 @@ string s_CreateHistCommentString
 
     return CNcbiOstrstreamToString(text);
 }
-
 
 void CHistComment::x_GatherInfo(CBioseqContext& ctx)
 {

@@ -656,6 +656,11 @@ static void s_QualVectorToNote(
     string& punctuation,
     bool& addPeriod)
 {
+    // is there at least one note which is more than blank or a period?
+    bool hasSubstantiveNote = false;
+    // store this so we can chop off the extra stuff we added if there was no note of substance
+    const string::size_type original_length = note.length();
+
     string prefix;
     ITERATE (CFlatFeature::TQuals, it, qualVector) {
         const string& qual = (*it)->GetValue();
@@ -668,10 +673,20 @@ static void s_QualVectorToNote(
             }
         }
 
+        if( !qual.empty() && qual != "." ) {
+            hasSubstantiveNote = true;
+        }
+
         //LOG_POST(Error << "prefix=" << prefix << "  qual=" << qual << "  note=" << note);
         JoinString(note, prefix, qual, noRedundancy);
+
         addPeriod = (*it)->GetAddPeriod();
         punctuation = (*it)->GetSuffix();
+    }
+
+    // if there was no meaningful note, we clear it
+    if( ! hasSubstantiveNote ) {
+        note.resize( original_length );
     }
 }
 
@@ -699,24 +714,7 @@ static void s_NoteFinalize(
 static int s_GetOverlap(const CMappedFeat& feat ) 
 {
     if (feat) {
-
-        const CSeq_loc& location = feat.GetLocation();
-        switch( location.Which() ) {
-
-            case CSeq_loc::e_Int: {
-                const CSeq_interval& interval = location.GetInt();
-                if ( interval.IsSetFrom() && interval.IsSetTo() ) {
-                    return int(interval.GetTo() - interval.GetFrom() );
-                }
-                break;
-            }
-            case CSeq_loc_Base::e_Whole: {
-//                const CSeq_id& whole = location.GetWhole(); 
-                return numeric_limits<int>::max();
-            }
-            default:
-                break;
-        }
+        return feat.GetLocation().GetTotalRange().GetLength();
     }
     return 0;
 }
@@ -1249,6 +1247,7 @@ void CFeatureItem::x_AddQualSeqfeatNote()
         string comment = m_Feat.GetComment();
 
         if ( ! comment.empty() ) {
+            TrimSpacesAndJunkFromEnds( comment, true );
             bool bAddPeriod = RemovePeriodFromEnd( comment, true );
             ConvertQuotes(comment);
             CRef<CFlatStringQVal> seqfeat_note( new CFlatStringQVal( comment ) );
@@ -1413,17 +1412,26 @@ void CFeatureItem::x_AddQualExceptions(
                 continue;
             }
             if ( s_IsValidExceptionText( cur ) ) {
-                output_exceptions.push_back( cur );
+                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() || data.IsCdregion() ) {
+                    output_exceptions.push_back( cur );
+                } else {
+                    output_notes.push_back( cur );
+                }
             }
             else if ( ctx.IsRefSeq() && s_IsValidRefSeqExceptionText( cur ) ) {
-                output_exceptions.push_back( cur );
+                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() ) {
+                    output_exceptions.push_back( cur );
+                } else {
+                    output_notes.push_back( cur );
+                }
             }
             else {
-//                if ( cfg.DropIllegalQuals() ) {
-//                }
-//                else {
+                if ( cfg.DropIllegalQuals() ) {
                     output_notes.push_back( cur );
-//                }
+                }
+                else {
+                    output_exceptions.push_back( cur );
+                }
             }
         }
     }
@@ -1466,15 +1474,233 @@ static bool s_GeneMatchesXref
     return true;
 }
 
+// returns original strand (actually, just the strandedness of the first part,
+// if it were mixed )
+static
+ENa_strand s_GeneSearchNormalizeLoc( CRef<CSeq_loc> &loc, const TSeqPos circular_length )
+{
+    CRef<CSeq_loc> new_loc( new CSeq_loc );
+
+    ENa_strand original_strand = eNa_strand_other;
+
+    CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Positional );
+    for( ; loc_iter; ++loc_iter ) {
+        if( original_strand == eNa_strand_other ) {
+            // strand should have strandedness of first part
+            original_strand = loc_iter.GetStrand();
+        }
+        new_loc->Add( *loc_iter.GetRangeAsSeq_loc() );
+    }
+    new_loc->SetStrand( eNa_strand_plus );
+    loc = new_loc;
+
+    return original_strand;
+}
+
+// Some custom logic is required for gene searching, which we implement here
+class CGeneSearchPlugin : public sequence::CGetOverlappingFeaturesPlugin {
+public:
+    CGeneSearchPlugin() : loc_original_strand(eNa_strand_other) { }
+
+    void processSAnnotSelector( SAnnotSelector &sel ) 
+    {
+        sel.SetIgnoreStrand();
+    }
+
+    void setUpFeatureIterator ( 
+        CBioseq_Handle &bioseq_handle,
+        auto_ptr<CFeat_CI> &feat_ci,
+        TSeqPos circular_length,
+        CRange<TSeqPos> &range,
+        const CSeq_loc& loc,
+        SAnnotSelector &sel,
+        CScope &scope,
+        ENa_strand &strand )
+    {
+        if ( bioseq_handle ) {
+            // if we're circular, we may need to split our range into two pieces
+            if( ( circular_length != kInvalidSeqPos ) &&
+                ( range.GetFrom() > range.GetTo() )) 
+            {
+                // For circular locations, the "from" is greater than the "to", which
+                // would not work properly if given to CFeat_CI.
+                // So, as a work around, we transform the range
+                // into a mix location of the form "join(0..to, from..MAXINT)"
+
+                CRef<CSeq_loc> new_loc( new CSeq_loc );
+                new_loc->SetInt().SetFrom( 0 );
+                new_loc->SetInt().SetTo( range.GetTo() );
+
+                CRef<CSeq_loc> otherHalfOfRange( new CSeq_loc );
+                otherHalfOfRange->SetInt().SetFrom( range.GetFrom() );
+                otherHalfOfRange->SetInt().SetTo( kMax_Int );
+
+                new_loc->Add( *otherHalfOfRange );
+
+                new_loc->SetStrand( loc.GetStrand() );
+                new_loc->SetId( *loc.GetId() );
+
+                feat_ci.reset( new CFeat_CI(scope, *new_loc, sel) );
+            } else {            
+                feat_ci.reset( new CFeat_CI(bioseq_handle, range, strand, sel) );
+            }
+        } else {
+            feat_ci.reset( new CFeat_CI(scope, loc, sel) );
+        }
+    }
+
+    void processLoc( 
+        CBioseq_Handle &bioseq_handle,
+        CRef<CSeq_loc> &loc,
+        TSeqPos circular_length )
+    {
+        loc_original_strand = s_GeneSearchNormalizeLoc( loc, circular_length );
+    }
+
+    void processMainLoop( 
+        bool &shouldContinueToNextIteration,
+        CRef<CSeq_loc> &candidate_feat_loc,
+        EOverlapType &overlap_type_this_iteration,
+        bool &revert_locations_this_iteration,
+        CBioseq_Handle &bioseq_handle,
+        const CMappedFeat &feat,
+        TSeqPos circular_length,
+        SAnnotSelector::EOverlapType annot_overlap_type )
+    {
+        ENa_strand candidate_feat_original_strand = eNa_strand_other;
+
+        const bool candidate_feat_is_mixed = ( candidate_feat_loc->GetStrand() == eNa_strand_other );
+
+        // candidate_feat_loc = bioseq_handle.MapLocation( *candidate_feat_loc );
+        candidate_feat_original_strand = s_GeneSearchNormalizeLoc( candidate_feat_loc, circular_length ) ;
+
+        if( feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" &&
+            candidate_feat_is_mixed && annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) {
+                // force strand matching
+                candidate_feat_original_strand = loc_original_strand;
+                if( overlap_type_this_iteration == eOverlap_Contained ) {
+                    overlap_type_this_iteration = eOverlap_SubsetRev;
+                    revert_locations_this_iteration = true;
+                }
+        }
+
+        if( candidate_feat_original_strand == loc_original_strand
+            || ( candidate_feat_original_strand == eNa_strand_both && loc_original_strand != eNa_strand_minus )
+            || loc_original_strand            == eNa_strand_both
+            || (candidate_feat_original_strand == eNa_strand_unknown  && loc_original_strand  != eNa_strand_minus)
+            || (loc_original_strand == eNa_strand_unknown             && candidate_feat_original_strand != eNa_strand_minus) ) {
+                // okay
+        } else {
+            // mismatched strands
+            shouldContinueToNextIteration = true;
+        }
+    }
+
+private:
+    // Our algo does require a little bit of state.
+    ENa_strand loc_original_strand;
+};
+
+static
+CRef<CSeq_loc> s_RemoveEmpty( const CSeq_loc &src )
+{
+    CRef<CSeq_loc> new_loc( new CSeq_loc );
+    CSeq_loc_CI loc_iter( src ); // skips empty parts by default
+    for( ; loc_iter; ++loc_iter ) {
+        new_loc->Add( *loc_iter.GetRangeAsSeq_loc() );
+    }
+    return new_loc;
+}
+
+CConstRef<CSeq_feat> 
+CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible( 
+    CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
+    CSeqFeatData::ESubtype feat_subtype,
+    const CSeq_loc &location, CSeqFeatData::E_Choice sought_type ) const
+{
+    CRef<CSeq_loc> cleaned_location = s_RemoveEmpty( location );
+
+    // map to master sequence so we can catch genes that are on other segments
+    CScope *scope = &ctx.GetScope();
+    if( ctx.CanGetMaster() ) {
+        /* CScope *new_scope = &ctx.GetMaster().GetHandle().GetScope();
+        cleaned_location = ctx.GetMaster().GetHandle().MapLocation( *cleaned_location );
+        scope = new_scope; */
+    }
+
+    // special case for variation
+    if( feat_type == CSeqFeatData::e_Variation || 
+        ( feat_type == CSeqFeatData::e_Imp && 
+            ( feat_subtype == CSeqFeatData::eSubtype_variation ||
+              feat_subtype == CSeqFeatData::eSubtype_variation_ref ))) {
+
+        // try one strand first
+        cleaned_location->SetStrand( eNa_strand_plus );
+        CConstRef<CSeq_feat> feat;
+        CGeneSearchPlugin plugin;
+        feat = sequence::GetBestOverlappingFeat
+            ( *cleaned_location,
+            sought_type,
+            sequence::eOverlap_Contained,
+            *scope,
+            0,
+            &plugin );
+        if( feat ) {
+            return feat;
+        }
+
+        // if that fails, try the other strand
+        cleaned_location->SetStrand( eNa_strand_minus );
+        CGeneSearchPlugin plugin2;
+        return sequence::GetBestOverlappingFeat
+            ( *cleaned_location,
+            sought_type,
+            sequence::eOverlap_Contained,
+            *scope,
+            0,
+            &plugin2 );
+    }
+
+    // normal case
+    return x_GetFeatViaSubsetThenExtremesIfPossible_Helper( ctx, scope, *cleaned_location, sought_type );
+}
+
+CConstRef<CSeq_feat> 
+CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
+    CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type ) const
+{
+    CConstRef<CSeq_feat> feat;
+    CGeneSearchPlugin plugin;
+    feat = sequence::GetBestOverlappingFeat
+                    ( location,
+                     sought_type,
+                     sequence::eOverlap_SubsetRev,
+                     *scope,
+                     0,
+                     &plugin );
+    if( ! feat && x_CanUseExtremesToFindGene(ctx) && location.GetStrand() != eNa_strand_other ) {
+        CGeneSearchPlugin plugin2;
+        feat = sequence::GetBestOverlappingFeat
+            ( location,
+            sought_type,
+            sequence::eOverlap_Contained,
+            *scope,
+            0,
+            &plugin2 );
+    }
+
+    return feat;
+}
+
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_GetAssociatedGeneInfo(
     CBioseqContext& ctx,
     const CGene_ref*& g_ref,      //  out: gene ref
     CConstRef<CSeq_feat>& s_feat, //  out: gene seq feat
-    CConstRef<CFeatureItem> parentFeatureItem )
+    CConstRef<CFeatureItem> parentFeatureItem ) const
 //
 //  Find the feature's related gene information. The association is established
-//  through dbxref if it exists, and through best overlap otherwise.
+//  through dbxref if it exists and through best overlap otherwise.
 //
 //  Note: Any of the two outs may be invalid if the corresponding information
 //  could not be found.
@@ -1483,7 +1709,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     // This commented-out code is left here because it is very convenient
     // for debugging purposes.
     /* if( ! m_Loc.IsNull() && m_Loc->IsInt() && 
-        m_Loc->GetInt().GetFrom() == 29829 ) {
+        m_Loc->GetInt().GetFrom() == 29829 ) { // change the num
             cerr << "";
     } */
 
@@ -1496,6 +1722,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         ITERATE (CSeq_feat::TXref, it, m_Feat.GetXref()) {
             const CSeqFeatXref& xref = **it;
             if (xref.IsSetData() && xref.GetData().IsGene() ) {
+                m_GeneRef.Reset( &xref.GetData().GetGene() ) ;
                 if( xref.GetData().GetGene().IsSuppressed()) {
                     return;
                 }
@@ -1514,109 +1741,110 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         xref_g_ref = NULL;
     }
 
-    CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
-                                         sequence::eGetId_Canonical);
-    CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
-                                               &ctx.GetScope());
-
     CMappedFeat feat;
-    if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
-        feat = GetBestGeneForFeat(m_Feat, &ctx.GetFeatTree(), 
-                                  NULL,
-                                  feature::CFeatTree::eBestGene_OverlappedOnly );
-        if ( !feat ) {
-            feat = feature::GetBestOverlappingFeat
-                (m_Feat, CSeqFeatData::eSubtype_gene,
-                 sequence::eOverlap_Contains,
-                 &ctx.GetFeatTree());
-        }
-    }
-    else if (ctx.IsProt()  &&  m_Feat.GetData().IsCdregion()) {
-        /// genpept report; we need to do something different
-        CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
-        if (cds) {
-            SAnnotSelector sel = ctx.SetAnnotSelector();
-            sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                .IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-            CFeat_CI feat_it(ctx.GetScope(), cds.GetLocation(), sel);
-            feature::CFeatTree ft(feat_it);
-            feat = ft.GetParent(cds, CSeqFeatData::e_Gene);
-            if( ! feat ) {
-                s_feat =
-                    sequence::GetBestOverlappingFeat
-                    (cds.GetLocation(),
-                     CSeqFeatData::e_Gene,
-                     sequence::eOverlap_Contained,
-                     ctx.GetScope());
-            }
-        }
-    }
-    else {
-        CSeq_id_Handle id3 = sequence::GetIdHandle(*m_Loc,
-                                                   &ctx.GetScope());
-        if (sequence::IsSameBioseq(id2, id3, &ctx.GetScope())) {
-            /// slow path
-            SAnnotSelector sel = ctx.SetAnnotSelector();
-            sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
-            CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
-            feature::CFeatTree ft(feat_it);
-            feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
-            if( ! feat ) {
-                s_feat =
-                    sequence::GetBestOverlappingFeat
-                    (*m_Loc,
-                     CSeqFeatData::e_Gene,
-                     sequence::eOverlap_Contained,
-                     ctx.GetScope());
-            }
-        } else {
-            /// we must use a different call
-            s_feat =
-                sequence::GetBestOverlappingFeat
-                (*m_Loc,
-                 CSeqFeatData::e_Gene,
-                 sequence::eOverlap_Contained,
-                 ctx.GetScope());
-        }
-    }
 
-    // special cases for some subtypes
-    if( s_feat ) {
-        switch( m_Feat.GetFeatSubtype() ) {
-        case CSeqFeatData::eSubtype_mat_peptide_aa:
-            {{
-                // Priority order for finding the peptide's gene
-                // 1. Use parent CDS's gene xref (from the .asn)
-                // 2. Use the peptide's own gene but only 
-                //    if it *exactly* overlaps the peptide.
-                // 3. Use the parent CDS's gene (found via overlap)
+    // For primer_bind, we get genes only by xref, not by overlap
+    if( m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_primer_bind ) {
+        CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
+            sequence::eGetId_Canonical);
+        CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
+            &ctx.GetScope());
 
-                // remove mat_peptide's gene if bad match
-                const CSeq_loc &gene_loc = s_feat->GetLocation();
-                if( ! gene_loc.Equals( *m_Loc ) ) {
-                    s_feat.Reset();
+        if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
+            s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), m_Feat.GetLocation(), CSeqFeatData::e_Gene );
+        }
+        else if (ctx.IsProt()  &&  m_Feat.GetData().IsCdregion()) {
+            /// genpept report; we need to do something different
+            CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
+            if (cds) {
+                SAnnotSelector sel = ctx.SetAnnotSelector();
+                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                    .IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+                CFeat_CI feat_it(ctx.GetScope(), cds.GetLocation(), sel);
+                feature::CFeatTree ft(feat_it);
+                feat = ft.GetParent(cds, CSeqFeatData::e_Gene);
+                if( ! feat ) {
+                    s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                        ctx, cds.GetFeatType(), cds.GetFeatSubtype(), cds.GetLocation(), CSeqFeatData::e_Gene );
                 }
+            }
+        }
+        else {
+            CSeq_id_Handle id3 = sequence::GetIdHandle(*m_Loc,
+                &ctx.GetScope());
+            if (sequence::IsSameBioseq(id2, id3, &ctx.GetScope())) {
+                /// slow path
+                SAnnotSelector sel = ctx.SetAnnotSelector();
+                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                    .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
+                CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
+                feature::CFeatTree ft(feat_it);
+                feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
+                if( ! feat ) {
+                    s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                        ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Gene );
+                }
+            } else {
+                s_feat = x_GetFeatViaSubsetThenExtremesIfPossible(
+                    ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Gene );
+            }
+        }
 
-                // get its CDS
-                CConstRef<CSeq_feat> cds_feat =
-                    sequence::GetBestOverlappingFeat
-                    (*m_Loc,
-                    CSeqFeatData::e_Cdregion,
-                    sequence::eOverlap_Contained,
-                    ctx.GetScope());
-                if( cds_feat ) {
-                    const CGene_ref* cds_gene_xref = cds_feat->GetGeneXref();
-                    if( NULL != cds_gene_xref ) {
-                        xref_g_ref = cds_gene_xref;
-                        s_feat.Reset();
+        // special cases for some subtypes
+        switch( m_Feat.GetFeatSubtype() ) {
+        case CSeqFeatData::eSubtype_region:
+        case CSeqFeatData::eSubtype_site:
+        case CSeqFeatData::eSubtype_bond:
+        case CSeqFeatData::eSubtype_mat_peptide_aa:
+        case CSeqFeatData::eSubtype_sig_peptide_aa:
+        case CSeqFeatData::eSubtype_transit_peptide_aa:
+        case CSeqFeatData::eSubtype_preprotein:
+            {{
+                // remove gene if bad match
+                bool ownGeneIsOkay = false;
+                if( s_feat ) {
+                    const CSeq_loc &gene_loc = s_feat->GetLocation();
+                    /* if( ctx.CanGetMaster() ) {
+                        // gene_loc already mapped to master, if possible
+                        CRef<CSeq_loc> loc_on_master = ctx.GetMaster().GetHandle().MapLocation( *m_Loc );
+                        if( sequence::Compare(gene_loc, *loc_on_master, &ctx.GetScope()) == sequence::eSame ) {
+                            ownGeneIsOkay = true;
+                        }
+                    } else */ {
+                        if( sequence::Compare(gene_loc, *m_Loc, &ctx.GetScope()) == sequence::eSame ) {
+                            ownGeneIsOkay = true;
+                        }
                     }
                 }
 
-                // get the parent CDS's gene
-                if( ! s_feat && parentFeatureItem && parentFeatureItem->m_GeneRef ) {
+                // Priority order for finding the peptide's gene
+                // 1. Use parent CDS's gene xref (from the .asn)
+                // 2. Use the feature's own gene but only 
+                //    if it *exactly* overlaps it.
+                // 3. Use the parent CDS's gene (found via overlap)
+                if( parentFeatureItem && parentFeatureItem->m_GeneRef ) {
+                    // get the parent CDS's gene
                     s_feat.Reset();
-                    g_ref = parentFeatureItem->m_GeneRef;
+                    if( ! parentFeatureItem->m_GeneRef->IsSuppressed() ) {
+                        g_ref = parentFeatureItem->m_GeneRef;
+                    }
+                } else if( ownGeneIsOkay ) {
+                    // do nothing; it's already set
+                } else {
+                    if( parentFeatureItem ) {
+                        s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                            ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion, 
+                            parentFeatureItem->GetFeat().GetLocation(), CSeqFeatData::e_Gene );
+                    } else {
+                        CConstRef<CSeq_feat> cds_feat = x_GetFeatViaSubsetThenExtremesIfPossible(
+                            ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Cdregion );
+                        if( cds_feat ) {
+                            s_feat  = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                                ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion, 
+                                cds_feat->GetLocation(), CSeqFeatData::e_Gene )  ;
+                        } 
+                    }
                 }
             }}
             break;
@@ -1660,11 +1888,11 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             auto_ptr<CFeat_CI> feat_it;
 
             // if we can't get the total range (usually because we span multiple
-            // SeqIds, we fall back on the whole thing
+            // SeqIds), we fall back on the whole thing
             try {
                 CSeq_loc::TRange totalRange = m_Feat.GetLocation().GetTotalRange();
                 feat_it.reset( new CFeat_CI(ctx.GetHandle(), totalRange, sel ) );
-            } catch( const CException &e ) {
+            } catch( const CException & ) {
                 feat_it.reset( new CFeat_CI(ctx.GetHandle(), sel ) );
             }
 
@@ -1686,6 +1914,34 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             g_ref = xref_g_ref;
         }
     }
+}
+
+bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx ) const
+{
+    if( ctx.IsSegmented() || ctx.IsEMBL() || ctx.IsDDBJ() ) {
+        return true;
+    }
+
+    if( ctx.CanGetMaster() ) {
+        const bool isSegmented = (ctx.GetMaster().GetNumParts() > 1);
+        if( isSegmented ) {
+            return true;
+        }
+    }
+
+    // old-style accessions: 1 letter + 5 digits
+    // chop off the decimal point and anything after it, if necessary
+
+    string::size_type length_before_decimal_point = ctx.GetAccession().find( '.' );
+    if( length_before_decimal_point == string::npos ) {
+        // no decimal point
+        length_before_decimal_point = ctx.GetAccession().length();
+    }
+    if( length_before_decimal_point == 6 ) {
+        return true;
+    }
+
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1795,18 +2051,16 @@ void CFeatureItem::x_AddQuals(
 //  ----------------------------------------------------------------------------
 {
 //    /**fl**/
-//      if ( GetLoc().IsInt() ) {
-//          size_t uFrom = GetLoc().GetInt().GetFrom();
-//          size_t uTo = GetLoc().GetInt().GetTo();
-//          if ( uFrom == 75658 ) {
-//              cerr << "";
-//          }
-//      }
-//      if( GetLoc().IsPnt() ) {
-//          if( GetLoc().GetPnt().GetPoint() == 516 ) {
-//              cerr << "";
-//          }
-//      }
+    // leaving this here since it's so useful for debugging purposes.
+    //
+    /* if( 
+        GetLoc().GetStop(eExtreme_Biological) == 70022 ||
+        GetLoc().GetStop(eExtreme_Biological) == 70027 ||
+        GetLoc().GetStart(eExtreme_Biological) == 70022 ||
+        GetLoc().GetStart(eExtreme_Biological) == 70027
+        ) {
+        cerr << "";
+    } */
 //    /**fl**/
 
     if ( ctx.Config().IsFormatFTable() ) {
@@ -2351,7 +2605,15 @@ void CFeatureItem::x_AddQualProtComment(
     }   
     CSeqdesc_CI comm( protHandle, CSeqdesc::e_Comment, 1 );
     if ( comm && !comm->GetComment().empty() ) {
-        x_AddQual( eFQ_prot_comment, new CFlatStringQVal( comm->GetComment() ) );
+        string comment = comm->GetComment();
+
+        TrimSpacesAndJunkFromEnds( comment, true );
+        /* const bool bAddPeriod = */ RemovePeriodFromEnd( comment, true );
+        CFlatStringQVal *commentQVal = new CFlatStringQVal( comment );
+        /* if( bAddPeriod ) {
+            commentQVal->SetAddPeriod();
+        } */
+        x_AddQual( eFQ_prot_comment, commentQVal );
     }
 }
 
@@ -3036,9 +3298,6 @@ void CFeatureItem::x_AddQualsGene(
     const CSeqFeatData& data = m_Feat.GetData();
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
 
-    if ( subtype == CSeqFeatData::eSubtype_primer_bind ) {
-        return;
-    }
     if ( m_Feat.GetData().Which() == CSeqFeatData::e_Gene ) {
         gene_ref = &( m_Feat.GetData().GetGene() );
     }
@@ -3049,8 +3308,6 @@ void CFeatureItem::x_AddQualsGene(
     if ( ! gene_ref || gene_ref->IsSuppressed() ) {
         return;
     }
-
-    m_GeneRef = gene_ref;
 
     const bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
 
@@ -4152,10 +4409,10 @@ bool s_ValidateMobileElementType( const string & mobile_element_type_value )
     return true; 
 }
 
-class CPredInString
+class CInStringPred
 {
 public:
-    explicit CPredInString( const string &comparisonString )
+    explicit CInStringPred( const string &comparisonString )
         : m_ComparisonString( comparisonString ) 
     { }
 
@@ -4230,7 +4487,7 @@ void CFeatureItem::x_CleanQuals(
             ++remove_start; // The "++" is because the first one shouldn't be erased since it's used for the product
             CProt_ref::TName::iterator new_end = 
                 remove_if( remove_start, prot_names->SetValue().end(),
-                    CPredInString(pdesc) );
+                    CInStringPred(pdesc) );
             prot_names->SetValue().erase( new_end, prot_names->SetValue().end() );
 
             if (prot_names->GetValue().empty()) {
@@ -4303,6 +4560,11 @@ void CFeatureItem::x_CleanQuals(
                     x_RemoveQuals(eFQ_seqfeat_note);
                 }
             }
+        }
+
+        // provides no additional info (we already know this is a tRNA by other places)
+        if( feat_comment == "tRNA-" ) {
+            x_RemoveQuals(eFQ_seqfeat_note);
         }
     }
 
@@ -5584,6 +5846,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
     DO_NOTE(metagenomic);
     if ( GetContext()->Config().SrcQualsToNote() ) {
+        DO_NOTE(linkage_group);
         DO_NOTE(type);
         DO_NOTE(subtype);
         DO_NOTE(serogroup);

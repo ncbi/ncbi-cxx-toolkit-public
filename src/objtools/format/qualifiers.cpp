@@ -356,6 +356,7 @@ typedef pair<const char*, ETildeStyle> TNameTildeStylePair;
 typedef CStaticArrayMap<const char*, ETildeStyle, PCase_CStr > TNameTildeStyleMap;
 static const TNameTildeStylePair kNameTildeStyleMap[] = {
     TNameTildeStylePair("function",     eTilde_tilde),
+    TNameTildeStylePair("prot_desc",    eTilde_note),
     TNameTildeStylePair("seqfeat_note", eTilde_note)
 };
 DEFINE_STATIC_ARRAY_MAP(TNameTildeStyleMap, sc_NameTildeStyleMap, kNameTildeStyleMap);
@@ -363,7 +364,7 @@ DEFINE_STATIC_ARRAY_MAP(TNameTildeStyleMap, sc_NameTildeStyleMap, kNameTildeStyl
 // a few kinds don't use the default tilde style
 ETildeStyle s_TildeStyleFromName( const string &name )
 {
-    TNameTildeStyleMap::const_iterator result = sc_NameTildeStyleMap.find( name.c_str() );
+    TNameTildeStyleMap::const_iterator result = sc_NameTildeStyleMap.find( name.c_str() ); 
     if( sc_NameTildeStyleMap.end() == result ) {
         return eTilde_space;
     } else {
@@ -393,9 +394,9 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     const bool is_note = s_IsNote(flags, ctx);
 
     // e.g. CP001398
-    if( ! is_note ) {
-        ConvertQuotes( m_Value );
-    }
+    // if( ! is_note ) {
+    ConvertQuotes( m_Value );
+    // }
 
     const bool prependNewline = (flags & fPrependNewline) && ! q.empty();
     TFlatQual qual = x_AddFQ(q, (is_note ? "note" : name), 
@@ -1237,7 +1238,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
     
     if (s_IsNote(flags, ctx)) {
         bool add_period = RemovePeriodFromEnd(subname, true);
-        if (!subname.empty()) {
+        if (!subname.empty() || add_period ) {
             bool is_src_orgmod_note = 
                 (flags & IFlatQVal::fIsSource)  &&  (name == "orgmod_note");
             if (is_src_orgmod_note) {
@@ -1282,6 +1283,8 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
     case CBioSource::eGenome_mitochondrion: 
     case CBioSource::eGenome_plastid:
     case CBioSource::eGenome_nucleomorph:
+    case CBioSource::eGenome_hydrogenosome:
+    case CBioSource::eGenome_chromatophore:
         x_AddFQ(q, name, organelle);
         break;
 

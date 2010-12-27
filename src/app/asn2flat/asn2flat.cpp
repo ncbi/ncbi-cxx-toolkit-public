@@ -516,9 +516,6 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         return false;
     }
 
-    string label;
-    //se->GetLabel(&label, CSeq_entry::eBoth);
-
     // add entry to scope
     CSeq_entry_Handle entry = m_Scope->AddTopLevelSeqEntry(*se);
     if ( !entry ) {
@@ -526,10 +523,12 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     }
 
     bool ret = HandleSeqEntry(entry);
-    m_Scope->RemoveTopLevelSeqEntry(entry);
+    // Needed because we can really accumulate a lot of junk otherwise,
+    // and we end up with significant slowdown due to repeatedly doing
+    // linear scans on a growing CScope.
+    m_Scope.Reset( new CScope(*m_Objmgr) );
     return ret;
 }
-
 
 CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {

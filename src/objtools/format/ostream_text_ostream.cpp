@@ -73,6 +73,13 @@ void COStreamTextOStream::AddLine(
     m_Ostream << line.c_str() << '\n';
 }
 
+void COStreamTextOStream::AddCLine(
+    const char *line,
+    const CSerialObject* obj )
+{
+    m_Ostream << line << '\n';
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

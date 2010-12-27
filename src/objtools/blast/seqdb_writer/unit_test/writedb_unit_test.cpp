@@ -364,8 +364,8 @@ void s_RemoveFile(const string & f)
 {
     CDirEntry de(f);
     de.Remove(CDirEntry::eOnlyEmpty);
-	/// @todo the test below fails, leaking resources
-	/// BOOST_REQUIRE(de.Exists() == false);
+    /// @todo the test below fails, leaking resources
+    /// BOOST_REQUIRE(de.Exists() == false);
 }
 
 void s_RemoveFiles(const vector<string> & files)

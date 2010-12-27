@@ -467,11 +467,11 @@ void CProjBulderApp::Init(void)
 
     arg_desc->AddPositional("solution", 
                             "MSVC Solution to build.",
-						    CArgDescriptions::eString);
+                            CArgDescriptions::eString);
 
     arg_desc->AddFlag      ("dll", 
                             "Dll(s) will be built instead of static libraries.",
-						    true);
+                            true);
 
     arg_desc->AddFlag      ("nobuildptb", 
                             "Exclude \"build PTB\" step from CONFIGURE project.");
@@ -575,11 +575,11 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
 
 int CProjBulderApp::Run(void)
 {
-	// Set error posting and tracing on maximum.
-//	SetDiagTrace(eDT_Enable);
+    // Set error posting and tracing on maximum.
+//    SetDiagTrace(eDT_Enable);
     SetDiagPostAllFlags(eDPF_File | eDPF_LongFilename | eDPF_ErrCodeMessage);
 
-	SetDiagPostLevel(eDiag_Info);
+    SetDiagPostLevel(eDiag_Info);
     LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
     LOG_POST(Info << "Project tree builder version " + GetVersion().Print());
 
@@ -1009,8 +1009,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << endl << endl;
 
     ofs << "ptb_all :" << endl
-	    << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) ptb_all" << dotreal
-	    << " MTARGET=$(MTARGET)";
+        << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) ptb_all" << dotreal
+        << " MTARGET=$(MTARGET)";
     ofs << endl << endl;
     ofs << "ptb_all" << dotreal << " :" << " $(all_projects:%=%" << dotreal << ")";
     ofs << endl << endl;
@@ -1100,12 +1100,12 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 if (projects_tree.m_Projects.find(proj_key) ==
                     projects_tree.m_Projects.end()) {
                     bool depfound = false;
-	                string dll(GetDllHost(projects_tree, proj_key.Id()));
+                    string dll(GetDllHost(projects_tree, proj_key.Id()));
                     if (!dll.empty()) {
                         CProjKey id_alt(CProjKey::eDll,dll);
                         depfound = (projects_tree.m_Projects.find(id_alt) !=
                             projects_tree.m_Projects.end());
-	                }
+                    }
                     if (!depfound &&
                         !SMakeProjectT::IsConfigurableDefine(proj_key.Id())) {
                         error = "@echo ERROR: this project depends on missing " +
@@ -1201,28 +1201,28 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 // see CXX-950
 #if 0
             ofs << target << " : " << rel_path << "$(s)." << target << ".real";
-	    ofs << endl << endl;
-	    ofs << rel_path << "$(s)." << target << ".real" << " :" << endl
-	        << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << ".real" << " MTARGET=$(MTARGET) MARK=$(MARK)";
-	    ofs << endl << endl;
-	    ofs << target << ".real" << " :";
-	    ITERATE(list<string>, d, dependencies) {
-	        ofs << " " << *d;
-	    }
-	    ofs << endl << "\t";
-	    if (!error.empty()) {
-	        ofs << error << endl << "\t@exit 1" << endl << "\t";
-	    }
-	    ofs << "+";
-	    if (p->second.m_MakeType == eMakeType_Expendable) {
-	        ofs << "-";
+        ofs << endl << endl;
+        ofs << rel_path << "$(s)." << target << ".real" << " :" << endl
+            << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << ".real" << " MTARGET=$(MTARGET) MARK=$(MARK)";
+        ofs << endl << endl;
+        ofs << target << ".real" << " :";
+        ITERATE(list<string>, d, dependencies) {
+            ofs << " " << *d;
+        }
+        ofs << endl << "\t";
+        if (!error.empty()) {
+            ofs << error << endl << "\t@exit 1" << endl << "\t";
+        }
+        ofs << "+";
+        if (p->second.m_MakeType == eMakeType_Expendable) {
+            ofs << "-";
             }
-	    ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS_NR)"
-	        << " APP_PROJ=" << target_app
-		<< " LIB_PROJ=" << target_lib
-		<< " $(MTARGET)" << endl
-		<< "\t@" << "cd " << rel_path << "; $(sign)";
-	    ofs << endl << endl;
+        ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS_NR)"
+            << " APP_PROJ=" << target_app
+        << " LIB_PROJ=" << target_lib
+        << " $(MTARGET)" << endl
+        << "\t@" << "cd " << rel_path << "; $(sign)";
+        ofs << endl << endl;
 #else
         ofs << target << " :" << endl
             << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << dotreal
@@ -1233,7 +1233,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             if (m_Dtdep && !datatool_key.empty()) {
                 ofs << " " << datatool_key << dotreal;
             }
-	}
+    }
         ITERATE(list<string>, d, dependencies) {
             ofs << " " << *d << dotreal;
         }
@@ -1289,7 +1289,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 #else
             ofs << " " << NStr::Join( tt, dotreal + " ") << dotreal;
 #endif
-	ofs << endl << endl;
+    ofs << endl << endl;
         }
     }
 }
@@ -1514,7 +1514,7 @@ void CProjBulderApp::ParseArguments(void)
             argfile = true;
             m_CustomConfiguration.LoadFrom(argsfile,&m_CustomConfiguration);
         } else {
-	        NCBI_THROW(CProjBulderAppException, eFileOpen, 
+            NCBI_THROW(CProjBulderAppException, eFileOpen, 
                                     argsfile + " not found");
         }
     }
@@ -1786,7 +1786,7 @@ int CProjBulderApp::EnumOpt(const string& enum_name,
 {
     int opt = GetConfig().GetInt(enum_name, enum_val, -1);
     if (opt == -1) {
-	    NCBI_THROW(CProjBulderAppException, eEnumValue, 
+        NCBI_THROW(CProjBulderAppException, eEnumValue, 
                                 enum_name + "::" + enum_val);
     }
     return opt;
@@ -1794,18 +1794,18 @@ int CProjBulderApp::EnumOpt(const string& enum_name,
 
 
 void CProjBulderApp::DumpFiles(const TFiles& files, 
-							   const string& filename) const
+                               const string& filename) const
 {
     CNcbiOfstream  ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs ) {
-	    NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
+        NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
     }
 
     ITERATE(TFiles, p, files) {
-	    ofs << "+++++++++++++++++++++++++\n";
-	    ofs << p->first << endl;
-	    p->second.Dump(ofs);
-	    ofs << "-------------------------\n";
+        ofs << "+++++++++++++++++++++++++\n";
+        ofs << p->first << endl;
+        p->second.Dump(ofs);
+        ofs << "-------------------------\n";
     }
 }
 
@@ -2104,8 +2104,8 @@ bool CProjBulderApp::IsAllowedProjectTag(
 
     CExprParser parser;
     ITERATE( set<string>, p, m_RegisteredProjectTags) {
-    	parser.AddSymbol(p->c_str(),
-    	    find( tags.begin(), tags.end(), *p) != tags.end());
+        parser.AddSymbol(p->c_str(),
+            find( tags.begin(), tags.end(), *p) != tags.end());
     }
     parser.Parse(m_ProjTags.c_str());
     unmet = NStr::Join(tags,",");

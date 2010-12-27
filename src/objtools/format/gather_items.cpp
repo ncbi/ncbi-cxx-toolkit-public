@@ -844,6 +844,16 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx) const
     }
 }
 
+static bool
+s_GiInCSeq_hist_ids( const int gi, const CSeq_hist_rec_Base::TIds & ids )
+{
+    ITERATE( CSeq_hist_rec_Base::TIds, hist_iter, ids ) {
+        if( (*hist_iter) && (*hist_iter)->IsGi() && (*hist_iter)->GetGi() == gi ) {
+            return true;
+        }
+    }
+    return false;
+}
 
 void CFlatGatherer::x_HistoryComments(CBioseqContext& ctx) const
 {
@@ -856,7 +866,9 @@ void CFlatGatherer::x_HistoryComments(CBioseqContext& ctx) const
 
     if ( hist.CanGetReplaced_by() ) {
         const CSeq_hist::TReplaced_by& r = hist.GetReplaced_by();
-        if ( r.CanGetDate()  &&  !r.GetIds().empty() ) {
+        if ( r.CanGetDate()  &&  !r.GetIds().empty() && 
+            ! s_GiInCSeq_hist_ids( ctx.GetGI(), r.GetIds()  ) ) 
+        {
             x_AddComment(new CHistComment(CHistComment::eReplaced_by,
                 hist, ctx));
         }
@@ -864,7 +876,9 @@ void CFlatGatherer::x_HistoryComments(CBioseqContext& ctx) const
 
     if ( hist.IsSetReplaces()  &&  !ctx.Config().IsModeGBench() ) {
         const CSeq_hist::TReplaces& r = hist.GetReplaces();
-        if ( r.CanGetDate()  &&  !r.GetIds().empty() ) {
+        if ( r.CanGetDate()  &&  !r.GetIds().empty() &&
+            ! s_GiInCSeq_hist_ids( ctx.GetGI(), r.GetIds() ) ) 
+        {
             x_AddComment(new CHistComment(CHistComment::eReplaces,
                 hist, ctx));
         }
