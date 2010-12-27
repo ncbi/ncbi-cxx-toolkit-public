@@ -57,6 +57,7 @@
 #include <serial/serial.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <algorithm>
 #include <map>
@@ -118,6 +119,7 @@ protected:
     bool m_no_seq_map;
     bool m_no_snp;
     bool m_no_named;
+    string m_named_acc;
     bool m_adaptive;
     int  m_pass_count;
     bool m_no_reset;
@@ -283,9 +285,13 @@ bool CTestOM::Thread_Run(int idx)
     else if ( m_no_snp ) {
         sel.ExcludeNamedAnnots("SNP");
     }
+    if ( !m_named_acc.empty() ) {
+        sel.IncludeNamedAnnotAccession(m_named_acc);
+    }
     if ( m_adaptive ) {
         sel.SetAdaptiveDepth();
     }
+    sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
     if ( idx%2 == 0 ) {
         sel.SetOverlapType(sel.eOverlap_Intervals);
         sel.SetResolveMethod(sel.eResolve_All);
@@ -310,8 +316,8 @@ bool CTestOM::Thread_Run(int idx)
             CSeq_id_Handle sih = ids[i];
             CNcbiOstrstream out;
             if ( m_verbose ) {
-                out << CTime(CTime::eCurrent).AsString() << " " << i << ": "
-                    << sih.AsString();
+                out << CTime(CTime::eCurrent).AsString() << " T" << idx
+                    << ": " << i << ": " << sih.AsString();
             }
             TMapKey key(sih, rev);
             try {
@@ -557,6 +563,9 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                  "Do not keep any objects to check memory leaks");
     args.AddFlag("single_scope",
                  "Use single CScope obeject for all threads");
+    args.AddDefaultKey("named_acc", "NamedAcc",
+                       "Include named accessions",
+                       CArgDescriptions::eString, "");
     args.AddOptionalKey("lds", "lds",
                         "Use LDS data loader from dir",
                         CArgDescriptions::eString);
@@ -638,6 +647,7 @@ bool CTestOM::TestApp_Init(void)
     m_no_seq_map = args["no_seq_map"];
     m_no_snp = args["no_snp"];
     m_no_named = args["no_named"];
+    m_named_acc = args["named_acc"].AsString();
     m_adaptive = args["adaptive"];
     m_pass_count = args["pass_count"].AsInteger();
     m_no_reset = args["no_reset"];
