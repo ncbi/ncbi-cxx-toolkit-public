@@ -20,9 +20,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
-				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
-				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -32,9 +32,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
-				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
-				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -44,9 +44,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
-				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
-				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -56,9 +56,57 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
-				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
-				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+	        <Configuration
+			Name="Unicode_DebugDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="Unicode_DebugDLL|x64"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="Unicode_ReleaseDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9\9&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="Unicode_ReleaseDLL|x64"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
+				CleanCommandLine="nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc9.64\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 	</Configurations>
@@ -66,7 +114,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak">
+			RelativePath="..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak">
 		</File>
 	</Files>
 	<Globals>
