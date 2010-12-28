@@ -90,6 +90,11 @@ public:
     /// @throws CException derived classes on error
     void Write(CBlastDBSeqId& id);
 
+    /// Full database FASTA dump
+    /// This is an optimized version that does not support range and mask retrieval
+    /// @throws CExcpetion derived classes on error
+    void DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config = CSeqFormatterConfig());
+
 private:
     /// Stream to write output
     CNcbiOstream& m_Out;

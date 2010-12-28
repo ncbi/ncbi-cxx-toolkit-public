@@ -40,6 +40,8 @@ static char const rcsid[] =
 #include <objtools/blast/blastdb_format/seq_writer.hpp>
 #include <objtools/blast/blastdb_format/blastdb_dataextract.hpp>
 #include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <numeric>      // for std::accumulate
 
 BEGIN_NCBI_SCOPE
@@ -182,6 +184,34 @@ void CSeqFormatter::Write(CBlastDBSeqId& id)
     vector<string> data2write;
     x_Builder(data2write);
     m_Out << x_Replacer(data2write) << endl;
+}
+
+static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
+{
+    static const string kTarget(" >gi|");
+    static const string kCtrlA = string(1, '\001') + string("gi|");
+    NON_CONST_ITERATE(CSeq_descr::Tdata, desc, bioseq->SetDescr().Set()) {
+        if ((*desc)->Which() == CSeqdesc::e_Title) {
+            NStr::ReplaceInPlace((*desc)->SetTitle(), kTarget, kCtrlA);
+            break;
+        }
+    }
+}
+
+void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
+{
+    CFastaOstream fasta(m_Out);
+    fasta.SetWidth(config.m_LineWidth);
+    fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
+
+    CRef<CBioseq> bioseq;
+    for (int i=0; blastdb.CheckOrFindOID(i); i++) {
+         bioseq.Reset(blastdb.GetBioseq(i));
+         if (config.m_UseCtrlA) {
+             s_ReplaceCtrlAsInTitle(bioseq);
+         }
+         fasta.Write(*bioseq, 0, true);
+    }
 }
 
 /// Auxiliary functor to compute the length of a string

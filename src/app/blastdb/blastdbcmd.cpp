@@ -52,6 +52,7 @@ static char const rcsid[] =
 #include "../blast/blast_app_util.hpp"
 #include <iomanip>
 
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -359,6 +360,24 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
 
     bool errors_found = false;
     CSeqFormatter seq_fmt(outfmt, *m_BlastDb, out, conf);
+
+    /* Special case: full db dump when no range and mask data is specified */
+    if (m_FASTA && 
+        args["entry"].HasValue() && args["entry"].AsString() == "all" &&
+        ! args["mask_sequence_with"].HasValue() &&
+        ! args["range"].HasValue()) {
+
+        try {
+            seq_fmt.DumpAll(*m_BlastDb, conf);
+        } catch (const CException& e) {
+            ERR_POST(Error << e.GetMsg());
+            errors_found = true;
+        } catch (...) {
+            ERR_POST(Error << "Failed to retrieve requested item");
+            errors_found = true;
+        }
+        return errors_found ? 1 : 0;
+    }
 
     TQueries queries;
     errors_found = x_GetQueries(queries);
