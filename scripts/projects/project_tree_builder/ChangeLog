@@ -147,5 +147,11 @@ Added support of Unicode build configurations.
 Corrected generation of configuration header files.
 Corrected location of generated Utility projects for MSVC2010.
 
+December 20, 2010
+version 3.2.1
+Bug fix release
 
-
+December 28, 2010
+version 3.2.2
+Take into account Unicode settings when processing 3rd party libraries settings.
+Added possibility to add Unicode configurations by default.
