@@ -49,6 +49,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
@@ -1301,21 +1302,15 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
     }
 }
 
-pair<string,int> GetAccVer(const string& ident)
+pair<string,int> GetAccVer(const CAlignModel& a, CScope& scope)
 {
-    istringstream istr(ident);
-    string accession;
-    int i = 0;
-    while(i < 4 && getline(istr,accession,'|')) 
-    {
-        if(!accession.empty()) ++i;
-    }
-    if(i < 4) accession = ident;
-    
+    string accession = sequence::GetAccessionForId(*a.GetTargetId(), scope);
+    if (accession.empty())
+        return make_pair(a.TargetAccession(), 0);
+
     string::size_type dot = accession.find('.');
     int version = 0;
-    if(dot != string::npos) 
-    {
+    if(dot != string::npos) {
         version = atoi(accession.substr(dot+1).c_str());
         accession = accession.substr(0,dot);
     }
@@ -1325,10 +1320,13 @@ pair<string,int> GetAccVer(const string& ident)
 
 static int s_ExonLen(const CGeneModel& a);
 
-static bool s_ByAccVerLen(const CAlignModel& a, const CAlignModel& b)
+struct s_ByAccVerLen {
+    s_ByAccVerLen(CScope& scope_) : scope(scope_) {}
+    CScope& scope;
+    bool operator()(const CAlignModel& a, const CAlignModel& b)
     {
-        pair<string,int> a_acc = GetAccVer(a.TargetAccession());
-        pair<string,int> b_acc = GetAccVer(b.TargetAccession());
+        pair<string,int> a_acc = GetAccVer(a, scope);
+        pair<string,int> b_acc = GetAccVer(b, scope);
         int acc_cmp = NStr::CompareCase(a_acc.first,b_acc.first);
         if (acc_cmp != 0)
             return acc_cmp<0;
@@ -1343,7 +1341,7 @@ static bool s_ByAccVerLen(const CAlignModel& a, const CAlignModel& b)
             return a.ConfirmedStart();
         return a.ID() < b.ID(); // to make sort deterministic
     }
-
+};
 static int s_ExonLen(const CGeneModel& a)
     {
         int len = 0;
@@ -1437,13 +1435,16 @@ OverlapsSameAccessionAlignment::OverlapsSameAccessionAlignment(TAlignModelList& 
     if (alignments.empty())
         return;
 
-    alignments.sort(s_ByAccVerLen);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+
+    alignments.sort(s_ByAccVerLen(scope));
 
     TAlignModelList::iterator first = alignments.begin();
-    pair<string,int> first_accver = GetAccVer(first->TargetAccession());
+    pair<string,int> first_accver = GetAccVer(*first, scope);
     TAlignModelList::iterator current = first; ++current;
     for (; current != alignments.end(); ++current) {
-        pair<string,int> current_accver = GetAccVer(current->TargetAccession());
+        pair<string,int> current_accver = GetAccVer(*current, scope);
         if (first_accver.first == current_accver.first) {
             if (current->Limits().IntersectingWith(first->Limits())) {
                 current->Status() |= CGeneModel::eSkipped;
