@@ -4309,11 +4309,11 @@ if test "$with_boost" != "no"; then
    fi
    if test -d "$BOOST_PATH"; then
       NCBI_FIX_DIR(BOOST_PATH)
+      : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    fi
-   : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
-   test -n "$BOOST_PATH"  ||  BOOST_LIBPATH_=/usr/lib
+   test -d "$BOOST_PATH"  ||  BOOST_LIBPATH_=/usr/lib
    boost_path_digits=`basename $BOOST_PATH | sed -e 's/.0$//' | tr -cd 0123456789`
    if test -n "$boost_path_digits"; then
       boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
@@ -4363,7 +4363,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          fi
          with_boost=no
          ;;
-      1_3[[5-9]] | 1_3[[5-9]]_* | 1_4[[01]] | 1_4[[01]]_* ) ;;
+      1_3[[5-9]] | 1_3[[5-9]]_* | 1_4[[0-5]] | 1_4[[0-5]]_* ) ;;
       * )
          AC_MSG_WARN(
             [Untested Boost version; may prove incompatible.])
@@ -4372,44 +4372,59 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          ;;
    esac
    AC_MSG_CHECKING([for Boost library name tag])
-   boost_compiler_version=`echo $compiler_version | cut -c1-2`
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
             darwin*:GCC) BOOST_TAG=""     ;;
-            *:GCC)       BOOST_TAG="-gcc$boost_compiler_version" ;;
+            *:GCC)       BOOST_TAG="-gcc" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
-            linux*:ICC)  BOOST_TAG="-il$boost_compiler_version" ;;
+            linux*:ICC)  BOOST_TAG="-il"  ;;
             *:WORKSHOP)  BOOST_TAG="-sw"  ;;
             *:MIPSPRO)   BOOST_TAG="-mp"  ;;
             *:VISUALAGE) BOOST_TAG="-xlc" ;;
             *:COMPAQ)    BOOST_TAG="-tru" ;;
             *:MSVC)      BOOST_TAG="-vc"  ;;
          esac
+         case "$BOOST_TAG" in
+            -gcc|-il ) boost_comp_vers=`echo $compiler_version | cut -c1-2` ;;
+            *        ) boost_comp_vers='' ;;
+         esac
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
          test "$with_debug" = "yes"  &&  BOOST_D=-d
          test "$bit64_sfx"  = "64"   &&  BOOST_64=-64
          found=no
-         for bvers in "-$ncbi_cv_lib_boost_version" ''; do
-            for b64 in $BOOST_64 ''; do
+         for base in "$BOOST_TAG$boost_comp_vers" "$BOOST_TAG" ''; do
+           for bvers in "-$ncbi_cv_lib_boost_version" ''; do
+             for b64 in $BOOST_64 ''; do
                for bmt in "$BOOST_MT" '-mt' ''; do
-                  for bd in "$BOOST_D" '' '-d'; do
-                     bsfx=$bmt$bd$bvers$b64
-                     if ls $BOOST_LIBPATH_/libboost*$BOOST_TAG$bsfx.* \
-                         >/dev/null 2>&1;
-                     then
-                        found=yes
-                        break
-                     fi
-                  done
-                  test "$found" = yes  &&  break
+                 for bd in "$BOOST_D" '' '-d'; do
+                   bsfx=$cvers$bmt$bd$bvers$b64
+                   if ls $BOOST_LIBPATH_/libboost*$base$bsfx.* >/dev/null 2>&1;
+                   then
+                     found=yes
+                     break
+                   fi
+                 done
+                 test "$found" = yes  &&  break
                done
                test "$found" = yes  &&  break
-            done
-            test "$found" = yes  &&  break
+             done
+             test "$found" = yes  &&  break
+           done
+           test "$found" = yes  &&  break
          done
 
-         BOOST_TAG=$BOOST_TAG$bsfx
+         if test "$found" = no; then
+            base=$BOOST_TAG
+            cvers=$boost_comp_vers
+            bvers=-$ncbi_cv_lib_boost_version
+            b64=$BOOST_64
+            bmt=$BOOST_MT
+            bd=$BOOST_D
+            bsfx=$cvers$bmt$bd$bvers$b64
+         fi
+
+         BOOST_TAG=$base$bsfx
          AC_MSG_RESULT([$BOOST_TAG (autodetected)])
          ;;
       no )
