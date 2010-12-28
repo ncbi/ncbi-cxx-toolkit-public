@@ -1323,23 +1323,23 @@ static int s_ExonLen(const CGeneModel& a);
 struct s_ByAccVerLen {
     s_ByAccVerLen(CScope& scope_) : scope(scope_) {}
     CScope& scope;
-    bool operator()(const CAlignModel& a, const CAlignModel& b)
+    bool operator()(const CAlignModel* a, const CAlignModel* b)
     {
-        pair<string,int> a_acc = GetAccVer(a, scope);
-        pair<string,int> b_acc = GetAccVer(b, scope);
+        pair<string,int> a_acc = GetAccVer(*a, scope);
+        pair<string,int> b_acc = GetAccVer(*b, scope);
         int acc_cmp = NStr::CompareCase(a_acc.first,b_acc.first);
         if (acc_cmp != 0)
             return acc_cmp<0;
         if (a_acc.second != b_acc.second)
             return a_acc.second > b_acc.second;
         
-        int a_len = s_ExonLen(a);
-        int b_len = s_ExonLen(b);
+        int a_len = s_ExonLen(*a);
+        int b_len = s_ExonLen(*b);
         if (a_len!=b_len)
             return a_len > b_len;
-        if (a.ConfirmedStart() != b.ConfirmedStart())
-            return a.ConfirmedStart();
-        return a.ID() < b.ID(); // to make sort deterministic
+        if (a->ConfirmedStart() != b->ConfirmedStart())
+            return a->ConfirmedStart();
+        return a->ID() < b->ID(); // to make sort deterministic
     }
 };
 static int s_ExonLen(const CGeneModel& a)
@@ -1438,16 +1438,20 @@ OverlapsSameAccessionAlignment::OverlapsSameAccessionAlignment(TAlignModelList& 
     CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
 
-    alignments.sort(s_ByAccVerLen(scope));
+    vector<CAlignModel*> alignment_ptrs;
+    NON_CONST_ITERATE(TAlignModelList, a, alignments) {
+        alignment_ptrs.push_back(&*a);
+    }
+    sort(alignment_ptrs.begin(), alignment_ptrs.end(), s_ByAccVerLen(scope));
 
-    TAlignModelList::iterator first = alignments.begin();
-    pair<string,int> first_accver = GetAccVer(*first, scope);
-    TAlignModelList::iterator current = first; ++current;
-    for (; current != alignments.end(); ++current) {
-        pair<string,int> current_accver = GetAccVer(*current, scope);
+    vector<CAlignModel*>::iterator first = alignment_ptrs.begin();
+    pair<string,int> first_accver = GetAccVer(**first, scope);
+    vector<CAlignModel*> ::iterator current = first; ++current;
+    for (; current != alignment_ptrs.end(); ++current) {
+        pair<string,int> current_accver = GetAccVer(**current, scope);
         if (first_accver.first == current_accver.first) {
-            if (current->Limits().IntersectingWith(first->Limits())) {
-                current->Status() |= CGeneModel::eSkipped;
+            if ((*current)->Limits().IntersectingWith((*first)->Limits())) {
+                (*current)->Status() |= CGeneModel::eSkipped;
             }
         } else {
             first=current;
