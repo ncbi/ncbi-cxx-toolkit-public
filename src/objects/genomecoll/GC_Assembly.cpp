@@ -666,11 +666,67 @@ static void s_Extract(const CGC_Sequence& seq,
     case CGC_Assembly::eScaffold:
         /// skip this sequence and go one level deeper
         if (seq.IsSetSequences()) {
-            ITERATE (CGC_Sequence::TSequences, it, seq.GetSequences()) {
-                ITERATE (CGC_TaggedSequences::TSeqs, i, (*it)->GetSeqs()) {
-                    molecules.push_back(*i);
+
+            // complex rules here, in lieu of explicit mark-up
+            set<CSeq_id_Handle> syns;
+            if (seq.IsSetSeq_id_synonyms()) {
+                ITERATE (CGC_Sequence::TSeq_id_synonyms, i,
+                         seq.GetSeq_id_synonyms()) {
+                    CTypeConstIterator<CSeq_id> id_it(**i);
+                    for ( ;  id_it;  ++id_it) {
+                        syns.insert(CSeq_id_Handle::GetHandle(*id_it));
+                    }
                 }
             }
+
+            ITERATE (CGC_Sequence::TSequences, it, seq.GetSequences()) {
+                switch ((*it)->GetState()) {
+                case CGC_TaggedSequences::eState_placed:
+                    {{
+                         bool is_syn = false;
+                         ITERATE (CGC_TaggedSequences::TSeqs, i,
+                                  (*it)->GetSeqs()) {
+                             // this sequence likely should be a scaffold
+                             // corner case: avoid adding a sequence that is
+                             // explicitly a synonym of the parent we still do
+                             // see some cases in which a sequence is reported
+                             // as being composed of a placed sequence that is
+                             // itself
+                             //
+                             // note that it is fine to include the self
+                             // reference if it is *NOT* a synonym...
+                             CSeq_id_Handle idh =
+                                 CSeq_id_Handle::GetHandle((*i)->GetSeq_id());
+                             if (syns.find(idh) != syns.end()) {
+                                 is_syn = true;
+                                 break;
+                             }
+                         }
+                         if (is_syn) {
+                             molecules.push_back(CConstRef<CGC_Sequence>(&seq));
+                         }
+                         else {
+                             ITERATE (CGC_TaggedSequences::TSeqs, i,
+                                      (*it)->GetSeqs()) {
+                                 // assumed to be scaffold
+                                 molecules.push_back(*i);
+                             }
+                         }
+                     }}
+                    break;
+
+                default:
+                    ITERATE (CGC_TaggedSequences::TSeqs, i, (*it)->GetSeqs()) {
+                        // assumed to be scaffold
+                        molecules.push_back(*i);
+                    }
+                    break;
+                }
+            }
+        }
+        else {
+            // only one level to consider; therefore, it's a scaffold
+            molecules.push_back(CConstRef<CGC_Sequence>(&seq));
         }
         break;
 
