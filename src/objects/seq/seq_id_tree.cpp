@@ -2196,7 +2196,7 @@ void CSeq_id_Patent_Tree::x_Unindex(const CSeq_id_Info* info)
         _ASSERT(seqid_it->second == info);
         app_it->second.erase(seqid_it);
         if ( app_it->second.empty() )
-            pats.m_ByNumber.erase(app_it);
+            pats.m_ByApp_number.erase(app_it);
     }
     if (country_it->second.m_ByNumber.empty()  &&
         country_it->second.m_ByApp_number.empty())
