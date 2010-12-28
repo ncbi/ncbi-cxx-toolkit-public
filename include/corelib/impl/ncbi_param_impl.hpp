@@ -41,6 +41,71 @@
 BEGIN_NCBI_SCOPE
 
 
+// std::string wrapper - prevents duplicate memory deallocation.
+class CSafeParamString
+{
+public:
+    CSafeParamString(void)
+        : m_Str(new string)
+    {}
+
+    CSafeParamString(const CSafeParamString& str)
+        : m_Str(new string)
+    {
+        if ( str.m_Str ) {
+            *m_Str = *str.m_Str;
+        }
+    }
+
+    CSafeParamString(const string& str)
+        : m_Str(new string(str))
+    {
+    }
+
+    CSafeParamString(const char* str)
+        : m_Str(new string(str))
+    {
+    }
+
+    ~CSafeParamString(void)
+    {
+        delete m_Str;
+        m_Str = 0;
+    }
+
+    operator const string&(void) const {
+        return m_Str ? *m_Str : kEmptyStr;
+    }
+
+    CSafeParamString& operator=(const CSafeParamString& str)
+    {
+        if ( m_Str ) {
+            *m_Str = *str.m_Str;
+        }
+        return *this;
+    }
+
+    CSafeParamString& operator=(const string& str)
+    {
+        if ( m_Str ) {
+            *m_Str = str;
+        }
+        return *this;
+    }
+
+    CSafeParamString& operator=(const char* str)
+    {
+        if ( m_Str ) {
+            *m_Str = str;
+        }
+        return *this;
+    }
+
+private:
+    string* m_Str;
+};
+
+
 // Internal structure describing parameter properties
 template<class TValue>
 struct SParamDescription
@@ -54,6 +119,24 @@ struct SParamDescription
     const char*           name;
     const char*           env_var_name;
     TValue                default_value;
+    FInitFunc             init_func;
+    TNcbiParamFlags       flags;
+};
+
+
+// SParamDescription specialization for string
+template<>
+struct SParamDescription<string>
+{
+    typedef string TValueType;
+    // Initialization function. The string returned is converted to
+    // the TValue type the same way as when loading from other sources.
+    typedef string (*FInitFunc)(void);
+
+    const char*           section;
+    const char*           name;
+    const char*           env_var_name;
+    CSafeParamString      default_value;
     FInitFunc             init_func;
     TNcbiParamFlags       flags;
 };
