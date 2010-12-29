@@ -654,6 +654,7 @@ START_SUBTYPE(gene)
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE

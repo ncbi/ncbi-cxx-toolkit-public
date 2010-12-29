@@ -2623,8 +2623,21 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
             return -1;
         }
     case eOverlap_SubsetRev:
-        swap(ploc1, ploc2);
-        // Go on to the next case
+        // can't just swap and fall through the "case:" because of subtle asymmetries of
+        // comparison (e.g. AAA36760)
+        // ( For example, the usage of s_RetA vs. s_RetB inside Compare is asymmetrical. )
+        {
+            // loc1 should contain loc2
+            ECompare cmp = Compare(*ploc1, *ploc2, scope);
+            if ( cmp == eSame ) {
+                return 0;
+            }
+            if ( cmp != eContained ) {
+                return -1;
+            }
+            return Int8(GetCoverage(*ploc2, scope)) -
+                Int8(GetCoverage(*ploc1, scope));
+        }
     case eOverlap_Subset:
         {
             // loc1 should contain loc2

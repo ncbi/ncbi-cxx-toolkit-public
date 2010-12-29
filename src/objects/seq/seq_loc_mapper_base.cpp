@@ -725,8 +725,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     TSeqPos dst_total_len = 0; // total length of the destination
     ESeqType src_type = eSeq_unknown; // source sequence type
     ESeqType dst_type = eSeq_unknown; // destination sequence type
-    // TSeqPos junk1 = GetSequenceLength( *source.GetId() ); // source.GetStop(objects::eExtreme_Biological);
-    // TSeqPos junk2 = GetSequenceLength( *target.GetId() ); // target.GetStop(objects::eExtreme_Biological);
     bool known_src_types = x_CheckSeqTypes(source, src_type, src_total_len);
     bool known_dst_types = x_CheckSeqTypes(target, dst_type, dst_total_len);
     // Check if all sequence types are known and there are no conflicts.

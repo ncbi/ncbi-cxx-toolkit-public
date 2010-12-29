@@ -517,6 +517,14 @@ void CGenbankFormatter::x_Authors
         /* supress AUTHOR line */
         return;
     }
+    // chop off extra periods at the end (e.g. AAA16431)
+    string::size_type last_periods = authors.find_last_not_of('.');
+    if( last_periods != string::npos ) {
+        last_periods += 2; // point to the first period that we should remove
+        if( last_periods < authors.length() ) {
+            authors.resize( last_periods );
+        }
+    }
     if (!NStr::EndsWith(authors, '.')) {
         authors += '.';
     }
