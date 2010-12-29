@@ -157,7 +157,7 @@ public:
     }
     bool EndOfData(void) const
     {
-        return !m_Input || m_Input->EndOfData();
+        return !m_Input ? (m_CurrentPos >= m_DataEndPos) : m_Input->EndOfData();
     }
 
 protected:
