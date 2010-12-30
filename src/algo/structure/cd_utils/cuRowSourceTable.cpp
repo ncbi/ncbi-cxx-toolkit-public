@@ -41,7 +41,7 @@ void RowSourceTable::removeEntriesForCD(vector<int>& rows, CCdCore* cd)
 	m_cdsOutofScope.erase(cd);
 	//vector<int> rows;
 	//getAllRowsForCD(cd, rows);
-	for ( int i = 0; i < rows.size(); i++)
+	for ( unsigned int i = 0; i < rows.size(); i++)
 	{
 		m_masters.erase(rows[i]);
 		pair<RowSourceMap::iterator, RowSourceMap::iterator> range = m_table.equal_range(rows[i]);
@@ -86,7 +86,7 @@ bool RowSourceTable::isRowInCD(int row, CCdCore* cd) const
 {
 	vector<RowSource> rss;
 	findEntries(row, rss);
-	for(int i = 0; i < rss.size(); i++)
+	for(unsigned int i = 0; i < rss.size(); i++)
 	{
 		if (rss[i].cd == cd)
 			return true;
@@ -203,7 +203,7 @@ string RowSourceTable::makeCDRowKey(CCdCore* cd, int row) const
 void RowSourceTable::convertFromCDRows(CCdCore* cd, const vector<int>& cdRows, set<int>& colRows)const
 {
 	string acc = cd->GetAccession();
-	for (int i = 0; i < cdRows.size(); i++)
+	for (unsigned int i = 0; i < cdRows.size(); i++)
 	{
 		CDRowIndexMap::const_iterator rowIt = m_cdRowIndexMap.find(makeCDRowKey(cd, cdRows[i]));
 		if (rowIt != m_cdRowIndexMap.end())
@@ -222,11 +222,11 @@ int RowSourceTable::convertFromCDRow(CCdCore* cd, int cdRow)const
 
 void RowSourceTable::convertToCDRows(const vector<int>& colRows, CDRowsMap& cdRows) const
 {
-	for (int i = 0; i < colRows.size(); i++)
+	for (unsigned int i = 0; i < colRows.size(); i++)
 	{
 		vector<RowSource> entries;
 		findEntries(colRows[i], entries);
-		for(int j = 0; j < entries.size(); j++)
+		for(unsigned int j = 0; j < entries.size(); j++)
 		{
 			int uniRow = entries[j].normal ? entries[j].rowInSrc : entries[j].rowInSrc + PENDING_ROW_START;
 			cdRows[entries[j].cd].push_back(uniRow);
