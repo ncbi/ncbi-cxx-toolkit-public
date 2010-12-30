@@ -714,7 +714,11 @@ static void s_NoteFinalize(
 static int s_GetOverlap(const CMappedFeat& feat ) 
 {
     if (feat) {
-        return feat.GetLocation().GetTotalRange().GetLength();
+        int total_length = 0;
+        ITERATE( CSeq_loc, loc_iter, feat.GetLocation() ) {
+            total_length += loc_iter.GetRange().GetLength();
+        }
+        return total_length;
     }
     return 0;
 }
@@ -2054,10 +2058,10 @@ void CFeatureItem::x_AddQuals(
     // leaving this here since it's so useful for debugging purposes.
     //
     /* if( 
-        GetLoc().GetStop(eExtreme_Biological) == 70022 ||
-        GetLoc().GetStop(eExtreme_Biological) == 70027 ||
-        GetLoc().GetStart(eExtreme_Biological) == 70022 ||
-        GetLoc().GetStart(eExtreme_Biological) == 70027
+        (GetLoc().GetStart(eExtreme_Biological) == 1355300 &&
+        GetLoc().GetStop(eExtreme_Biological) == 1356685) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 1355300 &&
+        GetLoc().GetStart(eExtreme_Biological) == 1356685)
         ) {
         cerr << "";
     } */

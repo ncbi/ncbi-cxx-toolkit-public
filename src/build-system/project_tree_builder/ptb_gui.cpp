@@ -49,14 +49,14 @@ INT_PTR CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 void CenterWindow(HWND hWnd)
 {
     RECT rcWnd;
-	GetWindowRect(hWnd, &rcWnd);
+    GetWindowRect(hWnd, &rcWnd);
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
-	GetMonitorInfo( MonitorFromWindow( hWnd, MONITOR_DEFAULTTOPRIMARY), &mi);
-	int xLeft = (mi.rcMonitor.left + mi.rcMonitor.right  - rcWnd.right  + rcWnd.left)/2;
-	int yTop  = (mi.rcMonitor.top  + mi.rcMonitor.bottom - rcWnd.bottom + rcWnd.top )/2;
-	SetWindowPos(hWnd, NULL, xLeft, yTop, -1, -1,
-		SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    GetMonitorInfo( MonitorFromWindow( hWnd, MONITOR_DEFAULTTOPRIMARY), &mi);
+    int xLeft = (mi.rcMonitor.left + mi.rcMonitor.right  - rcWnd.right  + rcWnd.left)/2;
+    int yTop  = (mi.rcMonitor.top  + mi.rcMonitor.bottom - rcWnd.bottom + rcWnd.top )/2;
+    SetWindowPos(hWnd, NULL, xLeft, yTop, -1, -1,
+        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)

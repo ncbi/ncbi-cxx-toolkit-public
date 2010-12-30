@@ -2568,20 +2568,19 @@ static SIZE_TYPE s_VisibleHtmlWidth(const string& str)
     return width;
 }
 
-
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                          list<string>& arr, NStr::TWrapFlags flags,
                          const string* prefix, const string* prefix1)
 {
     if (prefix == 0) {
-        prefix = &kEmptyStr;
+        prefix = &kEmptyStr ;
     }
 
     const string* pfx = prefix1 ? prefix1 : prefix;
     SIZE_TYPE     pos = 0, len = str.size(), nl_pos = 0;
     
-    bool          is_html  = flags & fWrap_HTMLPre ? true : false;
-    bool          do_flat = (flags & fWrap_FlatFile) != 0;
+    const bool          is_html  = flags & fWrap_HTMLPre ? true : false;
+    const bool          do_flat = (flags & fWrap_FlatFile) != 0;
 
     enum EScore { // worst to best
         eForced,
@@ -2608,11 +2607,16 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         if (column + (nl_pos-pos) <= width) {
             pos0 = nl_pos;
         }
+
+        // certain logic can be skipped if this part has no backspace,
+        // which is, by far, the most common case
+        bool thisPartHasBackspace = false;
+
         for (SIZE_TYPE pos2 = pos0;  pos2 < len  &&  column <= width;
              ++pos2, ++column) {
             EScore    score     = eForced;
             SIZE_TYPE score_pos = pos2;
-            char      c         = str[pos2];
+            const char      c         = str[pos2];
 
             if (c == '\n') {
                 best_pos   = pos2;
@@ -2621,34 +2625,42 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             } else if (isspace((unsigned char) c)) {
                 if ( !do_flat  &&  pos2 > 0  &&
                      isspace((unsigned char) str[pos2 - 1])) {
+                    if(pos2 < len - 1  &&  str[pos2 + 1] == '\b') {
+                        thisPartHasBackspace = true;
+                    }
                     continue; // take the first space of a group
                 }
                 score = eSpace;
-            } else if (is_html  &&  c == '<') {
+            } else if (is_html && c == '<') {
                 // treat tags as zero-width...
                 pos2 = s_EndOfTag(str, pos2);
                 --column;
-            } else if (is_html  &&  c == '&') {
+                if (pos2 == NPOS) {
+                    break;
+                }
+            } else if (is_html && c == '&') {
                 // ...and references as single characters
                 pos2 = s_EndOfReference(str, pos2);
-            } else if (c == ','  &&  score_pos < len - 1  &&  column < width) {
+                if (pos2 == NPOS) {
+                    break;
+                }
+            } else if ( c == ','  && column < width && score_pos < len - 1 ) {
                 score = eComma;
                 ++score_pos;
             } else if (do_flat ? c == '-' : ispunct((unsigned char) c)) {
                 // For flat files, only whitespace, hyphens and commas
                 // are special.
-                if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
-                    ||  c == '`') { // opening element
-                    score = ePunct;
-                } else if (score_pos < len - 1  &&  column < width) {
-                    // Prefer breaking *after* most types of punctuation.
-                    score = ePunct;
-                    ++score_pos;
+                switch(c) {
+                    case '(': case '[': case '{': case '<': case '`':
+                        score = ePunct;
+                        break;
+                    default:
+                        if( score_pos < len - 1  &&  column < width ) {
+                            score = ePunct;
+                            ++score_pos;
+                        }
+                        break;
                 }
-            }
-
-            if (pos2 == NPOS) {
-                break;
             }
 
             if (score >= best_score  &&  score_pos > pos0) {
@@ -2662,36 +2674,49 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 if (column > column0) {
                     --column;
                 }
+                thisPartHasBackspace = true;
             }
         }
 
         if ( best_score != eNewline  &&  column <= width ) {
-            // If the whole remaining text can fit, don't split it...
-            best_pos = len;
+            if( best_pos != len ) {
+                // If the whole remaining text can fit, don't split it...
+                best_pos = len;
+                // Force backspace checking, to play it safe
+                thisPartHasBackspace = true;
+            }
         } else if ( best_score == eForced  &&  (flags & fWrap_Hyphenate) ) {
             hyphen = true;
             --best_pos;
         }
-        arr.push_back(*pfx);
-        {{ // eat backspaces and the characters (if any) that precede them
+
+        arr.push_back("");
+        arr.back().reserve( width );
+        arr.back() = *pfx;
+
+        {{ 
             string::const_iterator begin = str.begin() + pos;
             string::const_iterator end = str.begin() + best_pos;
-            string::const_iterator bs; // position of next backspace
-            while ((bs = find(begin, end, '\b')) != end) {
-                if (bs != begin) {
-                    // add all except the last one
-                    arr.back().append(begin, bs - 1);
-                }
-                else {
-                    // The backspace is at the beginning of next substring,
-                    // so we should remove previously added symbol if any.
-                    SIZE_TYPE size = arr.back().size();
-                    if (size > pfx->size()) { // current size > prefix size
-                        arr.back().resize(size - 1);
+            if( thisPartHasBackspace ) {
+                // eat backspaces and the characters (if any) that precede them
+
+                string::const_iterator bs; // position of next backspace
+                while ((bs = find(begin, end, '\b')) != end) {
+                    if (bs != begin) {
+                        // add all except the last one
+                        arr.back().append(begin, bs - 1);
                     }
+                    else {
+                        // The backspace is at the beginning of next substring,
+                        // so we should remove previously added symbol if any.
+                        SIZE_TYPE size = arr.back().size();
+                        if (size > pfx->size()) { // current size > prefix size
+                            arr.back().resize(size - 1);
+                        }
+                    }
+                    // skip over backspace
+                    begin = bs + 1;
                 }
-                // skip over backspace
-                begin = bs + 1;
             }
             if (begin != end) {
                 // add remaining characters

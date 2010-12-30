@@ -53,6 +53,7 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/submit/Submit_block.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -391,10 +392,12 @@ static void s_MergeDuplicates
     bool sourcePubFuse = false;
     {{
         if( ctx.GetHandle().CanGetId() ) {
-            ITERATE( CBioseq_Handle::TId, it, ctx.GetHandle().GetId() ) {
-                CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
-                if( ! seqId.IsNull() ) {
-                    switch( seqId->Which() ) {
+            CBioseq_CI bioseq_iter( ctx.GetScope(), *ctx.GetTopLevelEntry().GetSeq_entryCore() );
+            for( ; bioseq_iter; ++bioseq_iter ) {
+                ITERATE( CBioseq_Handle::TId, it, bioseq_iter->GetId() )  { // old: ctx.GetHandle().GetId() , then .GetBioseqIds()
+                    CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
+                    if( ! seqId.IsNull() ) {
+                        switch( seqId->Which() ) {
                         case CSeq_id_Base::e_Gibbsq:
                         case CSeq_id_Base::e_Gibbmt:
                         case CSeq_id_Base::e_Embl:
@@ -427,6 +430,7 @@ static void s_MergeDuplicates
                             break;
                         default:
                             break;
+                        }
                     }
                 }
             }

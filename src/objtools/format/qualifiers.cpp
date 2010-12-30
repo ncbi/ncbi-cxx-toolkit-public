@@ -357,6 +357,7 @@ typedef CStaticArrayMap<const char*, ETildeStyle, PCase_CStr > TNameTildeStyleMa
 static const TNameTildeStylePair kNameTildeStyleMap[] = {
     TNameTildeStylePair("function",     eTilde_tilde),
     TNameTildeStylePair("prot_desc",    eTilde_note),
+    TNameTildeStylePair("prot_note",    eTilde_note),
     TNameTildeStylePair("seqfeat_note", eTilde_note)
 };
 DEFINE_STATIC_ARRAY_MAP(TNameTildeStyleMap, sc_NameTildeStyleMap, kNameTildeStyleMap);

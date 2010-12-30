@@ -559,6 +559,39 @@ void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
         return;
     }
 
+    // Used for, e.g., AAB59639
+    // Note: This code should NOT trigger for, e.g., AAA02896
+    if( m_Current->GetRepr() == CSeq_inst::eRepr_raw && 
+        cds_seq.GetParentBioseq_set().CanGetClass() && 
+        cds_seq.GetParentBioseq_set().GetClass() == CBioseq_set::eClass_parts ) {
+        CSeq_id* primary_seq_id = m_Current->GetPrimaryId();
+        if( primary_seq_id ) {
+            CBioseq_Handle potential_cds_seq = scope.GetBioseqHandle( *primary_seq_id );
+            if( potential_cds_seq ) {
+                cds_seq = potential_cds_seq;
+            }
+        }
+    }
+
+    // needed for, e.g., AAB59378
+    if( ! cds_seq.GetInitialSeqIdOrNull() ) {
+        CConstRef<CBioseq_set> coreBioseqSet = cds_seq.GetParentBioseq_set().GetBioseq_setCore();
+        if( coreBioseqSet && coreBioseqSet->CanGetSeq_set() ) {
+            ITERATE( CBioseq_set_Base::TSeq_set, coreSeqSet_iter, coreBioseqSet->GetSeq_set() ) {
+                if( (*coreSeqSet_iter)->IsSeq() ) {
+                    const CSeq_id* coreSeqId = (*coreSeqSet_iter)->GetSeq().GetFirstId();
+                    if( coreSeqId ) {
+                        CBioseq_Handle potential_cds_seq = scope.GetBioseqHandle( *coreSeqId );
+                        if( potential_cds_seq ) {
+                            cds_seq = potential_cds_seq;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     for (CFeat_CI it(m_Current->GetScope(), cds_loc, CSeqFeatData::e_Pub); it; ++it) {
         const CSeq_feat& feat = it->GetOriginalFeature();
         if (TestForOverlap(cds_loc, feat.GetLocation(), eOverlap_SubsetRev, kInvalidSeqPos, &scope) >= 0) {
@@ -566,7 +599,22 @@ void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
             refs.push_back(ref);
         }
     }
-    for (CSeqdesc_CI it(cds_seq, CSeqdesc::e_Pub, 1); it; ++it) {
+
+    // gather references from descriptors (top-level first)
+    // (Since CSeqdesc_CI doesn't currently support bottom-to-top iteration,
+    //  we approximate this by iterating over top-level, then non-top-level cds_seqs )
+    for (CSeqdesc_CI it(cds_seq.GetTopLevelEntry(), CSeqdesc::e_Pub); it; ++it) {
+        const CPubdesc& pubdesc = it->GetPub();
+        if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+            continue;
+        }
+        refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
+    }
+    for (CSeqdesc_CI it(cds_seq, CSeqdesc::e_Pub); it; ++it) {
+        // check for dups from last for-loop
+        if( ! it.GetSeq_entry_Handle().HasParentEntry() ) {
+            continue;
+        }
         const CPubdesc& pubdesc = it->GetPub();
         if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
             continue;
@@ -1944,6 +1992,18 @@ void CFlatGatherer::x_CopyCDSFromCDNA
     }
 }
 
+static bool
+s_ContainsGaps( const CSeq_loc &loc )
+{
+    CSeq_loc_CI it( loc, CSeq_loc_CI::eEmpty_Allow );
+    for( ; it; ++it ) {
+        if( it.IsEmpty() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void CFlatGatherer::x_GatherFeatures(void) const
 {
@@ -1999,7 +2059,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
         if ( seg_loc ) {
             // now go over each of the segments
             for ( CSeq_loc_CI it(*seg_loc); it; ++it ) {
-                x_GatherFeaturesOnLocation(it.GetSeq_loc(), *selp, ctx);
+                x_GatherFeaturesOnLocation(it.GetEmbeddingSeq_loc(), *selp, ctx);
             }
         }
     } else {
@@ -2012,11 +2072,47 @@ void CFlatGatherer::x_GatherFeatures(void) const
         // and Prot features (rare).
         
         // look for the Cdregion feature for this protein
-        CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
-        if (cds) {
+        CBioseq_Handle handle = ( ctx.CanGetMaster() ? ctx.GetMaster().GetHandle() : ctx.GetHandle() );
+        CFeat_CI feat_it(handle,
+            SAnnotSelector(CSeqFeatData::e_Cdregion)
+            .SetByProduct()
+            .SetResolveDepth(0) );
+        if (feat_it) {
+            CMappedFeat cds = *feat_it;
+
+            // map CDS location to its location on the product
+            CSeq_loc_Mapper mapper(*cds.GetOriginalSeq_feat(),
+                CSeq_loc_Mapper::eLocationToProduct,
+                &ctx.GetScope());
+            CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
+            cds_prod = cds_prod->Merge( CSeq_loc::fMerge_All, NULL );
+
+            // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
+            // In that case, we shrink the cds's location back one residue.
+            if( cds_prod->IsInt() && cds.GetProduct().IsWhole() ) {
+                CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( cds.GetProduct() );
+                if( prod_bioseq_handle ) {
+                    const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();
+                    if( cds_prod->GetInt().GetTo() >= bioseq_len ) {
+                        cds_prod->SetInt().SetTo( bioseq_len - 1 );
+                    }
+                }
+            }
+
+            // if there are any gaps in the location, we know that there was an issue with the mapping, so
+            // we fall back on the product.
+            if( s_ContainsGaps(*cds_prod) ) {
+                cds_prod->Assign( cds.GetProduct() );
+            }
+
+            // remove fuzz
+            cds_prod->SetPartialStart( false, eExtreme_Positional );
+            cds_prod->SetPartialStop ( false, eExtreme_Positional );
+
             item.Reset(
-                x_NewFeatureItem(cds, ctx, &cds.GetProduct(), 
+                x_NewFeatureItem(cds, ctx, &*cds_prod, 
                     CFeatureItem::eMapped_from_cdna) );
+
             out << item;
         }
 
