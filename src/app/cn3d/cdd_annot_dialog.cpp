@@ -1147,7 +1147,7 @@ const string CDDTypedAnnotDialog::typesNamesIniFile = "cdd_annot_types.ini";
 CDDTypedAnnotDialog::TPredefinedSites CDDTypedAnnotDialog::predefinedSites;
 
 CDDTypedAnnotDialog::CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::CAlign_annot& initial, const string& title) :
-    wxDialog(parent, -1, title.c_str(), wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
+    wxDialog(parent, -1, title.c_str(), wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
     changed(false), isTypeDataRead(false)
 {
     bool isPutative = false;
@@ -1696,8 +1696,10 @@ wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit, bool set_
     {
         wxT("Other")
     };
-    wxChoice *item5 = new wxChoice( parent, ID_C_TYPE, wxDefaultPosition, wxSize(100,-1), 1, strs5, 0 );
+    wxChoice *item5 = new wxChoice( parent, ID_C_TYPE, wxDefaultPosition, wxSize(150,-1), 1, strs5, 0 );
     item3->Add( item5, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item3->Add( 10, 20, 0, wxALIGN_CENTER|wxALL, 5 );
 
     wxCheckBox *item6 = new wxCheckBox( parent, ID_CB_PUTATIVE, wxT("Is Putative?"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item6, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -1705,7 +1707,7 @@ wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit, bool set_
     item1->Add( item3, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxFlexGridSizer *item7 = new wxFlexGridSizer( 1, 0, 0, 0 );
-    item7->AddGrowableCol( 2 );
+    item7->AddGrowableCol( 1 );
 
     wxStaticText *item8 = new wxStaticText( parent, ID_ST_DESCR2, wxT("Description:"), wxDefaultPosition, wxDefaultSize, 0 );
     item7->Add( item8, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5 );
@@ -1719,9 +1721,9 @@ wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit, bool set_
         wxT("444")
     };
     wxComboBox *item9 = new wxComboBox( parent, ID_CMB_DESCR, wxT(""), wxDefaultPosition, wxSize(200,-1), 5, strs9, wxCB_DROPDOWN );
-    item7->Add( item9, 0, wxALIGN_CENTER|wxALL, 5 );
+    item7->Add( item9, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    item1->Add( item7, 0, wxALIGN_CENTER|wxALL, 5 );
+    item1->Add( item7, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxStaticLine *item10 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
     item1->Add( item10, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -1735,9 +1737,9 @@ wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit, bool set_
     wxButton *item13 = new wxButton( parent, ID_B_DESCR_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
     item11->Add( item13, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    item1->Add( item11, 0, wxALIGN_CENTER|wxALL, 5 );
+    item1->Add( item11, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
 
-    item0->Add( item1, 0, wxALIGN_CENTER|wxALL, 5 );
+    item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -1748,4 +1750,3 @@ wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit, bool set_
     
     return item0;
 }
-
