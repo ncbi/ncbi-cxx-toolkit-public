@@ -501,7 +501,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             if (source.NotEmpty()) {
                 const char* orgnl = s_OrganelleName(source->GetGenome(),
                                                     fON_wgs);
-                if (orgnl[0]) {
+                if (orgnl[0]  &&  title.find(orgnl) == NPOS) {
                     suffix = string(1, ' ') + orgnl;
                 }
             }
@@ -808,7 +808,7 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
             if (source.NotEmpty()) {
                 const char* orgnl = s_OrganelleName(source->GetGenome(),
                                                     fON_wgs);
-                if (orgnl[0]) {
+                if (orgnl[0]  &&  title.find(orgnl) == NPOS) {
                     suffix = string(1, ' ') + orgnl;
                 }
             }
