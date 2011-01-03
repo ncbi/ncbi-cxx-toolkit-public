@@ -259,7 +259,8 @@ bool CFlatSeqLoc::x_Add
              // begin join in order, if necessary
              next_is_virtual = ( ! next || next.GetSeq_loc().IsNull() || s_IsVirtualLocation( next.GetSeq_loc(), seq ) );
              if( is_flat_order ) {
-                 if( this_loc.IsInt() && ! join_inside_order && ! this_is_virtual && ! next_is_virtual ) {
+                 if( ( this_loc.IsInt() || this_loc.IsPnt() ) && 
+                     ! join_inside_order && ! this_is_virtual && ! next_is_virtual ) {
                      oss << "join(";
                      join_inside_order = true;
                  }
