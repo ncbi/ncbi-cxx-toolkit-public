@@ -175,6 +175,7 @@ CBedReader::ReadSeqAnnots(
 //    CRef< CAnnot_descr > desc( new CAnnot_descr );
 //    annot->SetDesc( *desc );
 //    annots.push_back( annot );
+
     CRef< CSeq_annot > annot = x_AppendAnnot( annots );
 
     string line;
@@ -228,14 +229,21 @@ CBedReader::x_ParseTrackLine(
     CRef< CSeq_annot >& current )
 //  ----------------------------------------------------------------------------
 {
+    static bool bFirstTimeThrough = true;
+
     if ( ! NStr::StartsWith( strLine, "track" ) ) {
         return false;
     }
-    x_AddConversionInfo( current, &m_ErrorsPrivate );
-    
-    m_columncount = 0;
-    m_ErrorsPrivate.ClearAll();
-    current = x_AppendAnnot( annots );
+
+    if ( ! bFirstTimeThrough ) {
+        x_AddConversionInfo( current, &m_ErrorsPrivate );    
+        m_columncount = 0;
+        m_ErrorsPrivate.ClearAll();
+        current = x_AppendAnnot( annots );
+    }
+    else {
+        bFirstTimeThrough = false;
+    }
     return CReaderBase::x_ParseTrackLine( strLine, current );
 }
 
