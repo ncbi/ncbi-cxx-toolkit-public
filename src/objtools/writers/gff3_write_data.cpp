@@ -239,5 +239,13 @@ bool CGff3WriteRecord::AssignParent(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+void CGff3WriteRecord::ForceAttributeID(
+    const string& strId )
+//  ----------------------------------------------------------------------------
+{
+    m_Attributes[ "ID" ] = strId;
+}  
+
 END_objects_SCOPE
 END_NCBI_SCOPE

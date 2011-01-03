@@ -101,8 +101,12 @@ protected:
 protected:
     typedef map< CMappedFeat, CGff3WriteRecord* > TGeneMap;
     TGeneMap m_GeneMap;
+    unsigned int m_uPendingGeneId;
+
     typedef map< CMappedFeat, CGff3WriteRecord* > TMrnaMap;
     TMrnaMap m_MrnaMap;
+    unsigned int m_uPendingMrnaId;
+    unsigned int m_uPendingExonId;
 };
 
 END_objects_SCOPE

@@ -71,6 +71,9 @@ public:
     bool AssignParent(
         const CGff3WriteRecord& );
 
+    void ForceAttributeID(
+        const string& );
+
 protected:
     virtual bool x_AssignAttributesFromAsnCore(
         CMappedFeat );

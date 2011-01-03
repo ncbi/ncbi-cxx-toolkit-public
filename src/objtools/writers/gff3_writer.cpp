@@ -63,6 +63,9 @@ CGff3Writer::CGff3Writer(
 //  ----------------------------------------------------------------------------
     CGff2Writer( scope, ostr, uFlags )
 {
+    m_uPendingGeneId = 0;
+    m_uPendingMrnaId = 0;
+    m_uPendingExonId = 0;
 };
 
 //  ----------------------------------------------------------------------------
@@ -124,6 +127,13 @@ bool CGff3Writer::x_AssignObjectGene(
     if ( ! pGene->AssignFromAsn( mapped_feature ) ) {
         return false;
     }
+
+    string strId;
+    if ( ! pGene->GetAttribute( "ID", strId ) ) {
+        pGene->ForceAttributeID( 
+            string( "gene" ) + NStr::UIntToString( m_uPendingGeneId++ ) );
+    }
+
     set.AddRecord( pGene );
     m_GeneMap[ mapped_feature ] = pGene;
     return true;
@@ -150,6 +160,11 @@ bool CGff3Writer::x_AssignObjectMrna(
         pMrna->AssignParent( *(it->second) );
     }
 
+    string strId;
+    if ( ! pMrna->GetAttribute( "ID", strId ) ) {
+        pMrna->ForceAttributeID( 
+            string( "mrna" ) + NStr::UIntToString( m_uPendingMrnaId++ ) );
+    }
     set.AddRecord( pMrna );
     m_MrnaMap[ mapped_feature ] = pMrna;
 
@@ -169,6 +184,11 @@ bool CGff3Writer::x_AssignObjectMrna(
             pExon->AssignParent( *pMrna );
             pExon->AssignLocation( subint );
             pExon->AssignSequenceNumber( uSequenceNumber++, "E" );
+            string strId;
+            if ( ! pExon->GetAttribute( "ID", strId ) ) {
+                pExon->ForceAttributeID( 
+                    string( "exon" ) + NStr::UIntToString( m_uPendingExonId++ ) );
+            }
             set.AddRecord( pExon );
         }
         return true;
