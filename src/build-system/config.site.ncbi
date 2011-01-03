@@ -72,10 +72,10 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    FreeBSD32  ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8} ;;
-    Linux32    ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8} ;;
-    SunOSx86   ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi6} ;;
-    *          ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi9} ;;
+    FreeBSD32  ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8-OBSOLETE} ;;
+    Linux32    ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8-OBSOLETE} ;;
+    SunOSx86   ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi6-OBSOLETE} ;;
+    *          ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi9-OBSOLETE} ;;
 esac
 
 case "$ncbi_platform" in
