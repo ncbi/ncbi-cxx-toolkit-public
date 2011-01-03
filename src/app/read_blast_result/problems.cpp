@@ -743,15 +743,33 @@ int CReadBlastApp::RemoveInterim(CBioseq::TAnnot& annots)
      if ( (*annot)->GetData().IsFtable())
        {
        int dremoved=0;
+       CSeq_annot::C_Data::TFtable& table = (*annot)->SetData().SetFtable();
+       for(CSeq_annot::C_Data::TFtable::iterator feat=table.begin(), feat_end= table.end(); feat !=  feat_end; )
+         {
+         string test = "Genomic Location:"; 
+         if ((*feat)->IsSetData() && (*feat)->GetData().IsProt() && 
+              (*feat)->IsSetComment() && (*feat)->GetComment().substr(0, test.size()) == test  )
+           {
+           table.erase(feat++); dremoved++; 
+           nremoved++;
+           }
+         else
+           {
+           feat++;
+           }
+         }
+
 /* 
   this is really crappy way of doing it!
 */
+/*
        while( (*annot)->GetData().GetFtable().size()>1 )
          {
          (*annot)->SetData().SetFtable().pop_back();
          nremoved++;
          dremoved++;
          }
+*/
        if(PrintDetails()) NcbiCerr << "RemoveInterim(CBioseq::TAnnot& annots): dremoved = "
         << dremoved
         << ", left=" << (*annot)->GetData().GetFtable().size()

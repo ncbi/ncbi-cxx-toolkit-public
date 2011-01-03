@@ -42,6 +42,8 @@ int CReadBlastApp::short_proteins()
   NON_CONST_ITERATE(TSimpleSeqs, seq, seqs)
     {
     int len=0;
+    if(seq->type != "CDS") continue;
+    TSimpleSeq* debug_seq=&*seq;
     ITERATE(TSimplePairs, e2, seq->exons)
       {
       len+= e2->to - e2->from + 1;
