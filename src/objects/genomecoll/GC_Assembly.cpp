@@ -331,6 +331,8 @@ void CGC_Assembly::PostRead()
 
 void CGC_Assembly::CreateHierarchy()
 {
+    //LOG_POST(Error << "CGC_Assembly::CreateHierarchy()");
+
     ///
     /// generate the up-links as needed
     ///
@@ -411,6 +413,7 @@ void CGC_Assembly::CreateIndex()
 
 void CGC_Assembly::x_Index(CGC_Assembly& root)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_Assembly& root)");
     if (IsUnit()) {
         SetUnit().m_Assembly = &root;
         if (GetUnit().IsSetMols()) {
@@ -458,6 +461,7 @@ void CGC_Assembly::x_Index(CGC_Assembly& root)
 
 void CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Replicon& replicon)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Replicon& replicon)");
     replicon.m_Assembly = &assm;
 
     if (replicon.GetSequence().IsSingle()) {
@@ -475,6 +479,7 @@ void CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Replicon& replicon)
 
 void CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Sequence& seq)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Sequence& seq)");
     seq.m_Assembly = &assm;
     if (seq.IsSetSequences()) {
         NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {
@@ -489,16 +494,21 @@ void CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Sequence& seq)
 
 void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Replicon& replicon)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Replicon& replicon)");
     replicon.m_AssemblyUnit = &unit;
 
     if (replicon.GetSequence().IsSingle()) {
         CGC_Sequence& seq = replicon.SetSequence().SetSingle();
+        seq.m_ParentRel = CGC_TaggedSequences::eState_placed;
+
         x_Index(unit,     seq);
         x_Index(replicon, seq);
     } else {
         NON_CONST_ITERATE (CGC_Replicon::TSequence::TSet, it,
                            replicon.SetSequence().SetSet()) {
             CGC_Sequence& seq = **it;
+            seq.m_ParentRel = CGC_TaggedSequences::eState_placed;
+
             x_Index(unit,     seq);
             x_Index(replicon, seq);
         }
@@ -508,6 +518,7 @@ void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Replicon& replicon)
 
 void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Sequence& seq)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Sequence& seq)");
     seq.m_AssemblyUnit = &unit;
     if (seq.IsSetSequences()) {
         NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {
@@ -523,6 +534,7 @@ void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Sequence& seq)
 
 void CGC_Assembly::x_Index(CGC_Replicon& replicon, CGC_Sequence& seq)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_Replicon& replicon, CGC_Sequence& seq)");
     seq.m_Replicon = &replicon;
     if (seq.IsSetSequences()) {
         NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {
@@ -538,6 +550,7 @@ void CGC_Assembly::x_Index(CGC_Replicon& replicon, CGC_Sequence& seq)
 void CGC_Assembly::x_Index(CGC_Sequence& parent, CGC_Sequence& seq,
                            CGC_TaggedSequences::TState relation)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_Sequence& parent, CGC_Sequence& seq, CGC_TaggedSequences::TState relation)");
     seq.m_ParentSequence = &parent;
     seq.m_ParentRel = relation;
     if (seq.IsSetSequences()) {
@@ -553,6 +566,7 @@ void CGC_Assembly::x_Index(CGC_Sequence& parent, CGC_Sequence& seq,
 void CGC_Assembly::x_Index(CGC_Sequence& seq,
                            CGC_TaggedSequences::TState relation)
 {
+    //LOG_POST(Error << "CGC_Assembly::x_Index(CGC_Sequence& seq, CGC_TaggedSequences::TState relation)");
     seq.m_ParentSequence = NULL;
     seq.m_ParentRel = relation;
     if (seq.IsSetSequences()) {
