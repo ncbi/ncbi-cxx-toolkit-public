@@ -60,7 +60,7 @@ void CHdf2mzXMLApplication::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
-         "Convert a set of mzXML files to hdf5");
+         "Convert a hdf5 file to a set of mzXML files");
 
     // Describe the expected command-line arguments
     arg_desc->AddPositional

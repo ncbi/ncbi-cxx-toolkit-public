@@ -120,6 +120,8 @@ int CMSHdf5SpeedApplication::Run(void)
 
     CTime setupDone(CTime::eCurrent);
     double setupTime = setupDone.DiffNanoSecond(start) / kNanoSecondsPerSecond;
+    double openTime = 0.0;
+    double readTime = 0.0;
     
     cout << setupTime << " seconds." << endl;
 
@@ -137,8 +139,16 @@ int CMSHdf5SpeedApplication::Run(void)
             string scanXML;
             string msLevel(NStr::IntToString((*iSpecLoc).mapItem.msLevel));
 
+            CTime openStart(CTime::eCurrent);
             CMsHdf5 msHdf5_redux(inFilename, H5F_ACC_RDONLY);            
+            CTime openStop(CTime::eCurrent);
+            openTime += openStop.DiffNanoSecond(openStart) / kNanoSecondsPerSecond;
+
+
+            CTime readStart(CTime::eCurrent);
             msHdf5_redux.getSpectrum(src, spectrum, scanXML, msLevel);
+            CTime readStop(CTime::eCurrent);
+            readTime += readStop.DiffNanoSecond(readStart) / kNanoSecondsPerSecond;
             
             bytes += scanXML.size() * sizeof(char);
             bytes += spectrum[0].size() * 2 * sizeof(float);
@@ -158,6 +168,8 @@ int CMSHdf5SpeedApplication::Run(void)
          << mBytes << " MiBs in " 
          << tDiff << " seconds."
          << "(" << (mBytes/tDiff) << " MiB/sec)" << endl;
+    cout << "Time spent opening hdf5: " << openTime << " seconds." << endl;
+    cout << "Time spent reading data: " << readTime << " seconds." << endl;
 
     // Exit successfully
     return 0;
