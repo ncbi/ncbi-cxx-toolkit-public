@@ -1516,7 +1516,7 @@ static void s_Destroy(CONNECTOR connector)
 /* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
 static void x_AddAppNameRefererStripCAF(SConnNetInfo* net_info)
 {
-    const char* s = CORE_GetAppName();
+    const char* s = NULL /*CORE_GetAppName()*/;
     char* referer;
 
     if (s) {

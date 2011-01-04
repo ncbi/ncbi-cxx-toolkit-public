@@ -910,13 +910,14 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
 
     if (!info)
         return 0/*failed*/;
-
+/*
     str = CORE_GetAppName();
     if (str) {
         char user_agent[16+80];
         sprintf(user_agent, "User-Agent: %.80s\r\n", str);
         ConnNetInfo_ExtendUserHeader(info, user_agent);
     }
+*/
     /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
     if (!(str = CORE_GetPlatform())  ||  !*str)
         ConnNetInfo_DeleteArg(info, kPlatform);
