@@ -153,24 +153,28 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     // Get all the databases
     vector< CRef<CBlast4_database_info> > repeat_dbs =
         remote_svc.GetOrganismSpecificRepeatsDatabases();
-    const size_t kNumAvailableRepeatsDbs = 15;
+    const size_t kNumAvailableRepeatsDbs = 16;
     BOOST_REQUIRE_EQUAL(kNumAvailableRepeatsDbs, repeat_dbs.size());
 
     // Make sure these databases are present
+    // Obtained by running 'blastdbcmd -recursive -list $BLASTDB/repeat -list_outfmt %t'
     typedef map<string, bool> TFoundDbs;
     TFoundDbs repeat_dbs_found;
-    repeat_dbs_found["fugu"] = false;
-    repeat_dbs_found["thaliana"] = false;
-    repeat_dbs_found["fungi"] = false;
-    repeat_dbs_found["elegans"] = false;
-    repeat_dbs_found["melanogaster"] = false;
-    repeat_dbs_found["zebra fish"] = false;
     repeat_dbs_found["human"] = false;
     repeat_dbs_found["rodent"] = false;
+    repeat_dbs_found["thaliana"] = false;
+    repeat_dbs_found["sativa"] = false; // rice
+    repeat_dbs_found["mammal"] = false;
+    repeat_dbs_found["fungi"] = false;
+    repeat_dbs_found["elegans"] = false;
+    repeat_dbs_found["gambiae"] = false;
+    repeat_dbs_found["zebra fish"] = false;
+    repeat_dbs_found["melanogaster"] = false;
+    repeat_dbs_found["fugu"] = false;
 
     ITERATE(vector< CRef<CBlast4_database_info> >, db_info, repeat_dbs) {
         NON_CONST_ITERATE(TFoundDbs, itr, repeat_dbs_found) {
-            if ((*db_info)->GetDescription().find(itr->first) != NPOS) {
+            if (NStr::FindNoCase((*db_info)->GetDescription(), itr->first) != NPOS) {
                 itr->second = true;
                 break;
             }
