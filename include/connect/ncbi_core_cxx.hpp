@@ -33,6 +33,7 @@
  *     Registry
  *     Logging
  *     Locking
+ *     Appname
  *
  */
 
