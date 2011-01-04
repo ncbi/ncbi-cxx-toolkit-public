@@ -78,36 +78,38 @@ public:
     virtual ~CPushback_Streambuf();
 
 protected:
-    virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
-                                IOS_BASE::openmode which);
-    virtual CT_POS_TYPE seekpos(CT_POS_TYPE pos, IOS_BASE::openmode which);
+    virtual CT_POS_TYPE  seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+                                 IOS_BASE::openmode which);
+    virtual CT_POS_TYPE  seekpos(CT_POS_TYPE pos, IOS_BASE::openmode which);
 
-    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n);
-    virtual CT_INT_TYPE underflow(void);
-    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
-    virtual streamsize  showmanyc(void);
+    virtual CT_INT_TYPE  overflow(CT_INT_TYPE c);
+    virtual streamsize   xsputn(const CT_CHAR_TYPE* buf, streamsize n);
+    virtual CT_INT_TYPE  underflow(void);
+    virtual streamsize   xsgetn(CT_CHAR_TYPE* buf, streamsize n);
+    virtual streamsize   showmanyc(void);
 
-    virtual CT_INT_TYPE pbackfail(CT_INT_TYPE c = CT_EOF);
+    virtual CT_INT_TYPE  pbackfail(CT_INT_TYPE c = CT_EOF);
 
-    virtual int         sync(void);
+    virtual int          sync(void);
 
     // declared setbuf here to only throw an exception at run-time
-    virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
+    virtual streambuf*   setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
-    void                x_FillBuffer(streamsize max_size);
-    void                x_DropBuffer(void);
+    void                 x_FillBuffer(streamsize max_size);
+    void                 x_DropBuffer(void);
 
-    istream&            m_Is;      // I/O stream this streambuf is attached to
-    streambuf*          m_Sb;      // original streambuf
-    CT_CHAR_TYPE*       m_Buf;
-    streamsize          m_BufSize;
-    void*               m_DelPtr;
+    istream&             m_Is;      // I/O stream this streambuf is attached to
+    streambuf*           m_Sb;      // original streambuf
+    CPushback_Streambuf* m_Next;    // of the kin in the sb chain
+
+    CT_CHAR_TYPE*        m_Buf;
+    streamsize           m_BufSize;
+    void*                m_DelPtr;
 
 #ifdef HAVE_GOOD_IOS_CALLBACKS
-    static volatile int sm_Index;
-    static void         x_Callback(IOS_BASE::event, IOS_BASE&, int);
+    static volatile int  sm_Index;
+    static void          x_Callback(IOS_BASE::event, IOS_BASE&, int);
 #endif //HAVE_GOOD_IOS_CALLBACKS
 
     static const streamsize kMinBufSize;
@@ -137,7 +139,7 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                                          CT_CHAR_TYPE* buf,
                                          streamsize    buf_size,
                                          void*         del_ptr)
-    : m_Is(is), m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
+    : m_Is(is), m_Next(0), m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
 {
     _ASSERT(m_Buf  &&  m_BufSize);
     setp(0, 0);  // unbuffered output at this level of streambuf's hierarchy
@@ -156,6 +158,7 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
             }
             m_Is.register_callback(x_Callback, sm_Index);
         }
+        m_Next = static_cast<CPushback_Streambuf*> (m_Is.pword(sm_Index));
         m_Is.pword(sm_Index) = this;
     }
     STD_CATCH_ALL_X(1, (m_Is.clear(NcbiBadbit),
@@ -172,12 +175,7 @@ CPushback_Streambuf::~CPushback_Streambuf()
     }
 #endif //HAVE_GOOD_IOS_CALLBACKS
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
-    if (m_Sb) {
-        m_Is.rdbuf(m_Sb);
-        if (dynamic_cast<CPushback_Streambuf*> (m_Sb)) {
-            delete m_Sb;
-        }
-    }
+    delete m_Next;
 }
 
 
@@ -339,9 +337,12 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
         return;
     }
 
-    _ASSERT(&m_Is == &sb->m_Is);
-    m_Sb     = sb->m_Sb;
-    sb->m_Sb = 0;
+    _ASSERT(&m_Is  == &sb->m_Is);
+    _ASSERT(m_Next == sb);
+    m_Sb       = sb->m_Sb;
+    m_Next     = sb->m_Next;
+    sb->m_Sb   = 0;
+    sb->m_Next = 0;
     if (sb->gptr() >= sb->egptr()) {
         delete sb;
         x_FillBuffer(max_size);
@@ -366,8 +367,11 @@ void CPushback_Streambuf::x_DropBuffer(void)
         return;
     }
 
-    m_Sb     = sb->m_Sb;
-    sb->m_Sb = 0;
+    _ASSERT(m_Next == sb);
+    m_Sb       = sb->m_Sb;
+    m_Next     = sb->m_Next;
+    sb->m_Sb   = 0;
+    sb->m_Next = 0;
     delete sb;
     x_DropBuffer();
 }
