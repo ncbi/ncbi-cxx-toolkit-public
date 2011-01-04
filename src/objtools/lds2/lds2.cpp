@@ -76,7 +76,7 @@ public:
     ~CLDS2_ObjectParser(void) {}
 
     // Try to parse the next blob, return true on success
-    bool ParseNext(void);
+    bool ParseNext(SLDS2_Blob::EBlobType blob_type = SLDS2_Blob::eUnknown);
 
     void AddAnnot(SLDS2_Annot::EAnnotType annot_type,
                   const TSeqIdSet&        ids);
@@ -137,6 +137,7 @@ private:
     Int8                     m_CurBlobPos;
     Int8                     m_LastBlobPos; // count bytes already read
     SLDS2_Blob::EBlobType    m_BlobType;
+    SLDS2_Blob::EBlobType    m_LastBlobType;
 
     TSeqIdSet                m_BioseqIds;
     TAnnots                  m_Annots;
@@ -438,6 +439,7 @@ CLDS2_ObjectParser::CLDS2_ObjectParser(CLDS2_Manager&   mgr,
       m_CurBlobPos(0),
       m_LastBlobPos(0),
       m_BlobType(SLDS2_Blob::eUnknown),
+      m_LastBlobType(SLDS2_Blob::eUnknown),
       m_IsGBBioseqSet(false)
 {
     switch ( format ) {
@@ -659,12 +661,22 @@ void CLDS2_ObjectParser::EndBlob(SLDS2_Blob::EBlobType blob_type)
 }
 
 
-bool CLDS2_ObjectParser::ParseNext(void)
+bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
 {
     // Make sure it's a supported format
     if (m_Format == eSerial_None) return false;
 
-    m_BlobType = x_GetBlobType();
+    if (blob_type == SLDS2_Blob::eUnknown) {
+        if (m_LastBlobType != SLDS2_Blob::eUnknown) {
+            // Try the last known type.
+            if ( ParseNext(m_LastBlobType) ) {
+                return true;
+            }
+        }
+        // Peek the type if there's no last type or it is wrong.
+        blob_type = x_GetBlobType();
+    }
+    m_BlobType = blob_type;
     if (m_BlobType == SLDS2_Blob::eUnknown) {
         return false;
     }
@@ -738,6 +750,7 @@ bool CLDS2_ObjectParser::ParseNext(void)
             AddAnnot(SLDS2_Annot::eSeq_align, align_ids);
             align_ids.clear();
         }
+        m_LastBlobType = m_BlobType;
     }
     catch (CSerialException) {
         ResetBlob();
