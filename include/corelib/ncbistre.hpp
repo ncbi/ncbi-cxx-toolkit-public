@@ -336,16 +336,29 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 
 
 /// Copy entire contents of stream "is" into "os".
-/// Return "true" if the operation was successful, "is"
-/// was read entirely, and all its contents reached "os";
-/// "false" if either extraction from "is" or insertion
-/// into "os" had failed.
+/// @return
+/// "true" if the operation was successful, "is" was read entirely,
+/// and all of its contents had been written to "os";
+/// "false" if either extraction from "is" or insertion into "os" had failed.
+///
 /// Note that upon successful completion, is.eof() may not always be true.
-/// The call may throw exceptions only if they are enabled on
+/// The call may throw exceptions only if they are enabled on the
 /// respective stream(s).
+///
 /// Note that the call is an extension to the standard
-/// istream::operator<<(streambuf*), which severely
-/// lacks error checking (esp. for partial write failures).
+/// ostream& ostream::operator<<(streambuf*),
+/// which severely lacks error checking (esp. for partial write failures).
+///
+/// NOTE that the call (as well as the mentioned STL counterpart) provides
+/// only a mechanism of delivering data to the destination "os" stream(buf);
+/// and the successful result code does not, generally, guarantee that the
+/// data have yet reached the physical destination.  Other "os"-specific API
+/// must be performed to assure the data integrity at the receiving device;
+/// such as checking for errors after doing a "close()" on an ofstream "os".
+/// E.g. data uploading into the Toolkit FTP stream must be finalized with a
+/// read for the byte count delivered;  otherwise, it may not work correctly.
+/// @sa
+///   CConn_IOStream
 NCBI_XNCBI_EXPORT
 extern bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is);
 
