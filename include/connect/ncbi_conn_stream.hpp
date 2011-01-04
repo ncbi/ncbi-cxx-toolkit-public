@@ -427,8 +427,8 @@ private:
 /// to obtain the information from (details: <connect/ncbi_connutil.h>).
 ///
 /// Provided 'timeout' is set at connection level, and if different from
-/// CONN_DEFAULT_TIMEOUT, it overrides a value supplied by underlying
-/// connector (the latter value is kept in SConnNetInfo::timeout).
+/// kDefaultTimeout, it overrides the value supplied by underlying connector
+/// (the latter value is kept in SConnNetInfo::timeout).
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
