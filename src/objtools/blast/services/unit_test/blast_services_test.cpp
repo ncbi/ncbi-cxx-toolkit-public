@@ -153,8 +153,9 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     // Get all the databases
     vector< CRef<CBlast4_database_info> > repeat_dbs =
         remote_svc.GetOrganismSpecificRepeatsDatabases();
-    const size_t kNumAvailableRepeatsDbs = 16;
-    BOOST_REQUIRE_EQUAL(kNumAvailableRepeatsDbs, repeat_dbs.size());
+    // considered too fragile a test...
+    //const size_t kNumAvailableRepeatsDbs = 16;
+    //BOOST_REQUIRE_EQUAL(kNumAvailableRepeatsDbs, repeat_dbs.size());
 
     // Make sure these databases are present
     // Obtained by running 'blastdbcmd -recursive -list $BLASTDB/repeat -list_outfmt %t'
