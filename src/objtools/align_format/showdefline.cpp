@@ -289,12 +289,12 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     const CRef<CBlast_def_line_set> bdlRef = CAlignFormatUtil::GetBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
-    CRef<CSeq_id> wid;
+    CRef<CSeq_id> wid;    
     sdl->defline = NcbiEmptyString;
  
     sdl->gi = 0;
     sdl->id_url = NcbiEmptyString;
-    sdl->score_url = NcbiEmptyString;
+    sdl->score_url = NcbiEmptyString;	
     sdl->linkout = 0;
     sdl->is_new = false;
     sdl->was_checked = false;
@@ -320,8 +320,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 sdl->was_checked = true;
             }   
         }
-    }
-        
+    }        
     //get id (sdl->id, sdl-gi)
     if(bdl.empty()){
         wid = FindBestChoice(*ids, CSeq_id::WorstRank);
@@ -332,7 +331,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
             const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
-            int cur_gi =  FindGi(*cur_id);
+            int cur_gi =  FindGi(*cur_id);    
             wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
             if (!use_this_gi.empty()) {
                 ITERATE(list<int>, iter_gi, use_this_gi){
@@ -372,14 +371,16 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 					sdl->linkout = m_UseLinkoutDB
                         ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
                         : CAlignFormatUtil::GetLinkout((**iter));
-                    sdl->linkout_list =
-                        CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
+                    if (!m_AdvancedView)
+                        sdl->linkout_list =
+                            CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
                                            m_CddRid, 
                                            m_EntrezTerm, 
                                            handle.GetBioseqCore()->IsNa(),
                                            0, true, false,
-                                           blast_rank);
+                                           blast_rank);                    
+                    
                     break;
                 }
             } else {
@@ -388,14 +389,15 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                         sdl->linkout = m_UseLinkoutDB
                             ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
                             : CAlignFormatUtil::GetLinkout((**iter));
-                        sdl->linkout_list = 
-                           CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
+                        if (!m_AdvancedView)
+                            sdl->linkout_list = 
+                                CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
                                            m_CddRid, 
                                            m_EntrezTerm, 
                                            handle.GetBioseqCore()->IsNa(),
                                            0, true, false,
-                                           blast_rank);
+                                           blast_rank);                        
                         linkout_not_found = false;
                         break;
                     }
@@ -403,12 +405,12 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 if(!linkout_not_found){
                     break;
                 } 
-            }
-            
+            }            
         }
     }
+    
     //get score and id url
-    if(m_Option & eHtml){
+    if(m_Option & eHtml){      
         bool useTemplates = m_DeflineTemplates != NULL;
         string accession;
         sdl->id->GetLabel(&accession, CSeq_id::eContent);
@@ -417,16 +419,39 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             NStr::IntToString(sdl->gi);
         sdl->score_url += !useTemplates ? ">" : "";
 
-		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;
-        //add more report types like mapview, etc
-		sdl->urlReportType = (!user_url.empty() && user_url.find("report=graph") != string::npos && sdl->gi > 0)? "Nucleotide Graphics" : "";
+		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;		
 
-        CRange<TSeqPos> seqRange = ((int)m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
+		//blast_rank = num_align + 1
+		CRange<TSeqPos> seqRange = ((int)m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
         bool flip = ((int)m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;		
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
                                                  m_QueryNumber,sdl->gi, accession, sdl->linkout,
                                                  blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,flip); 
-        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef,useTemplates);
+        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef,useTemplates, m_AdvancedView);        
+        if (m_AdvancedView){
+            if (m_Option & eLinkout) {                    
+                    sdl->linkout_list = CAlignFormatUtil::GetFullLinkoutUrl(bdl,
+                                           m_Rid, 
+                                           m_CddRid, 
+                                           m_EntrezTerm, 
+                                           handle.GetBioseqCore()->IsNa(),
+                                           sdl->gi,
+                                           true, false,
+                                           blast_rank,
+                                           m_LinkoutOrder,
+                                           seqUrlInfo.taxid,
+                                           m_Database,
+                                           m_QueryNumber,                                                 
+                                           user_url);
+            }
+            //Links to GenBank,FASTA,Graphics
+            list <string> customLinksList = 
+            CAlignFormatUtil::GetCustomLinksList(&seqUrlInfo,
+                           aln_id,
+                           *m_ScopeRef,                                             
+                           CAlignFormatUtil::eLinkTypeSeqViewer);
+            sdl->linkout_list.splice(sdl->linkout_list.begin(),customLinksList);
+        }
     }
 
     //get defline
@@ -480,7 +505,8 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
                                      size_t line_length,
                                      size_t num_defline_to_show,
                                      bool translated_nuc_alignment,
-                                     CRange<TSeqPos>* master_range):
+                                     CRange<TSeqPos>* master_range,
+                                     bool advancedView):
     m_AlnSetRef(&seqalign), 
     m_ScopeRef(&scope),
     m_LineLen(line_length),
@@ -507,6 +533,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     }
     m_DeflineTemplates = NULL;
     m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
+    m_AdvancedView = advancedView;
 }
 
 CShowBlastDefline::~CShowBlastDefline()
@@ -519,10 +546,7 @@ CShowBlastDefline::~CShowBlastDefline()
 
 void CShowBlastDefline::Init(void)
 {
-	string descrTableFormat = m_Ctx ? m_Ctx->GetRequestValue("NEW_VIEW").GetValue() : kEmptyStr;
-    descrTableFormat = NStr::ToLower(descrTableFormat);
-    bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;        
-    if (formatAsTable) {
+	if (m_DeflineTemplates != NULL) {
         x_InitDeflineTable();        
     }
     else {        
@@ -533,23 +557,8 @@ void CShowBlastDefline::Init(void)
 
 void CShowBlastDefline::Display(CNcbiOstream & out)
 {
-    string descrTableFormat = m_Ctx ? m_Ctx->GetRequestValue("NEW_VIEW").GetValue() : kEmptyStr;
-    descrTableFormat = NStr::ToLower(descrTableFormat);
-    bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;
-
-    bool newDesign = false;
-    string oldBlastFormat = m_Ctx ? m_Ctx->GetRequestValue("OLD_BLAST").GetValue() : kEmptyStr;
-    if(!oldBlastFormat.empty() && m_Option & eHtml) {
-        oldBlastFormat = NStr::ToLower(oldBlastFormat);
-        newDesign = (oldBlastFormat == "on" || oldBlastFormat == "true" || oldBlastFormat == "yes") ? false : true;
-    }    
-    if (formatAsTable) {
-        if(newDesign) {
-            x_DisplayDeflineTableTemplate(out);
-        }
-        else {
-            x_DisplayDeflineTable(out); 
-        }
+    if (m_DeflineTemplates != NULL) {        
+        x_DisplayDeflineTableTemplate(out);        
     }
     else {        
         x_DisplayDefline(out);
@@ -896,7 +905,9 @@ void CShowBlastDefline::x_InitDeflineTable(void)
 
     if(m_Option & eHtml){
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
-        m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));  
+        m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));        
+        if(!m_BlastType.empty()) m_LinkoutOrder = m_Reg->Get(m_BlastType,"LINKOUT_ORDER");
+        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : kLinkoutOrderStr;
     }
 
     CSeq_align_set hit;
@@ -1342,9 +1353,9 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     score_info->raw_score_string = raw_score_buf;
     score_info->evalue_string = evalue_buf;
     score_info->id = &(aln.GetSeq_id(1));
-    score_info->blast_rank = blast_rank+1;
+    score_info->blast_rank = blast_rank+1;		
     score_info->subjRange = CRange<TSeqPos>(0,0);	
-	score_info->flip = false;
+    score_info->flip = false;
     return score_info.release();
 }
 
@@ -1372,6 +1383,7 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     int highest_identity = 0;
     list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.    
     score_info->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&score_info->master_covered_length,&score_info->flip);
+												
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
         int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, 
                                                         m_TranslatedNucAlignment);
@@ -1402,7 +1414,7 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     score_info->total_bit_string = total_bit_score_buf; 
     score_info->bit_string = bit_score_buf;
     score_info->evalue_string = evalue_buf;
-    score_info->hspNum = aln.Size();
+    score_info->hspNum = aln.Size();	
 
     return score_info;
 }
@@ -1451,9 +1463,8 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
             sdl->id->GetLabel(&accession, CSeq_id::eContent);
             CRange<TSeqPos> seqRange(0,0);
             CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,false,0);
-            sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,*m_ScopeRef);
-
+                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,false,"",0);
+            sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,*m_ScopeRef);			
             sdl->score_url = NcbiEmptyString;
         }
     }
@@ -1468,9 +1479,9 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     int prev_database_type = 0, cur_database_type = 0;
     bool is_first = true;
 
-    // Mixed db is genomic + transcript and this does not apply to proteins.    
+    // Mixed db is genomic + transcript and this does not apply to proteins.        
     bool is_mixed_database = (m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_Ctx): false;    
-    
+    string rowType = "odd";
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         cur_database_type = (sdl->linkout & eGenomicSeq);
@@ -1480,12 +1491,19 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
             subHeader = x_FormatSeqSetHeaders(cur_database_type, formatHeaderSort);            
         }                
         prev_database_type = cur_database_type;
-        is_first = false;
-                     
+                            
         string defLine = x_FormatDeflineTableLine(sdl,*iter,first_new);
+
+        string firstSeq = (is_first) ? "firstSeq" : "";
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"firstSeq",firstSeq); 
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"trtp",rowType); 
+
+        rowType = (rowType == "odd") ? "even" : "odd";
+        
         if(!subHeader.empty()) {
             defLine = subHeader + defLine;
         }
+        is_first = false;
         out << defLine;
         
         delete sdl;
@@ -1517,16 +1535,14 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){
             sdl->id->GetLabel(&seqid, CSeq_id::eContent);            
         }
-    }
-
-    if(sdl->id_url != NcbiEmptyString) {            
-        string seqInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->seqInfoTmpl,"dfln_url",sdl->id_url);
+    }	
+    if(sdl->id_url != NcbiEmptyString) {        
+		string seqInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->seqInfoTmpl,"dfln_url",sdl->id_url);
         string trgt = (m_Option & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "";
         seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"dfln_target",trgt);
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqInfo);        
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqInfo);        		
         defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_gi",dflGi);    
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_seqid",seqid);        
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"report_type",sdl->urlReportType);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_seqid",seqid);        		
     }
     else {        
         defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",dflGi + seqid);        
@@ -1542,8 +1558,20 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     }
     else {           
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);        
-    }     
-    
+    }
+    /*****************This block of code is for future use with AJAX begin***************************/ 
+    string deflId; 
+    if(sdl->gi == 0) {
+        string accession;
+        sdl->id->GetLabel(& deflId, CSeq_id::eContent);
+    }
+    else {        
+      deflId = NStr::IntToString(sdl->gi);
+    }
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_id",deflId);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum); 
+	/*****************This block of code is for future use with AJAX end***************************/ 
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
 		
@@ -1561,15 +1589,14 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     if(m_Option & eShowSumN){     
         defLine = CAlignFormatUtil::MapTemplate(defLine,"sum_n",NStr::IntToString(iter->sum_n));
     }
-	
-    if(m_Option & eLinkout){
-        string links;
-        ITERATE(list<string>, iter_linkout, sdl->linkout_list){        
-            links += *iter_linkout;
-        }
-                                
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"linkout",links);
-    }
+
+	string links;
+    //sdl->linkout_list may contain linkouts + mapview link + seqview link
+    ITERATE(list<string>, iter_linkout, sdl->linkout_list){        
+        links += *iter_linkout;
+    }                          
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"linkout",links);        
+    
     return defLine;
 }
 
