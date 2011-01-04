@@ -1514,11 +1514,16 @@ static void s_Destroy(CONNECTOR connector)
 
 
 /* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
-static void s_AddRefererStripCAF(SConnNetInfo* net_info)
+static void x_AddAppNameRefererStripCAF(SConnNetInfo* net_info)
 {
-    const char* s;
+    const char* s = CORE_GetAppName();
     char* referer;
 
+    if (s) {
+        char user_agent[16+80];
+        sprintf(user_agent, "User-Agent: %.80s\r\n", s);
+        ConnNetInfo_ExtendUserHeader(net_info, user_agent);
+    }
     if ((s = net_info->http_user_header) != 0) {
         int/*bool*/ found = 0/*false*/;
         int/*bool*/ first = 1/*true*/;
@@ -1556,6 +1561,7 @@ static void s_AddRefererStripCAF(SConnNetInfo* net_info)
 
 static EIO_Status s_CreateHttpConnector
 (const SConnNetInfo* net_info,
+ const char*         user_header,
  int/*bool*/         tunnel,
  THCC_Flags          flags,
  SHttpConnector**    http)
@@ -1578,6 +1584,7 @@ static EIO_Status s_CreateHttpConnector
     }
     if (xxx->scheme == eURL_Unspec)
         xxx->scheme =  eURL_Http;
+    ConnNetInfo_OverrideUserHeader(xxx, user_header);
     if (tunnel) {
         xxx->req_method = eReqMethod_Connect;
         *xxx->path = '\0';
@@ -1589,7 +1596,7 @@ static EIO_Status s_CreateHttpConnector
         ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
     } else if ((fff = strchr(xxx->args, '#')) != 0)
         *fff = '\0';
-    s_AddRefererStripCAF(xxx);
+    x_AddAppNameRefererStripCAF(xxx);
 
     if ((flags & fHCC_NoAutoRetry)  ||  !xxx->max_try)
         xxx->max_try = 1;
@@ -1643,7 +1650,7 @@ static CONNECTOR s_CreateConnector
     CONNECTOR       ccc;
     char            val[32];
 
-    if (s_CreateHttpConnector(net_info, 0/*regular*/,
+    if (s_CreateHttpConnector(net_info, user_header, 0/*regular*/,
                               flags, &uuu) != eIO_Success) {
         assert(!uuu);
         return 0;
@@ -1656,8 +1663,6 @@ static CONNECTOR s_CreateConnector
     }
 
     /* initialize additional internal data structure */
-    ConnNetInfo_OverrideUserHeader(uuu->net_info, user_header);
-
     uuu->parse_http_hdr  = parse_http_hdr;
     uuu->adjust_net_info = adjust_net_info;
     uuu->adjust_cleanup  = adjust_cleanup;
@@ -1699,7 +1704,7 @@ extern CONNECTOR HTTP_CreateConnectorEx
  void*                adjust_data,
  FHttpAdjustCleanup   adjust_cleanup)
 {
-    return s_CreateConnector(net_info, 0, flags, parse_http_hdr,
+    return s_CreateConnector(net_info, 0/*user_header*/, flags, parse_http_hdr,
                              adjust_net_info, adjust_data, adjust_cleanup);
 }
 
@@ -1719,7 +1724,7 @@ extern EIO_Status HTTP_CreateTunnelEx
         return eIO_InvalidArg;
     *sock = 0;
     
-    if ((status = s_CreateHttpConnector(net_info, 1/*tunnel*/,
+    if ((status = s_CreateHttpConnector(net_info,0/*user_header*/, 1/*tunnel*/,
                                         flags | fHCC_DropUnread, &uuu))
         != eIO_Success) {
         assert(!uuu);
