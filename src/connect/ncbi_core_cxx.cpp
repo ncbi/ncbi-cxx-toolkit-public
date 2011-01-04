@@ -52,9 +52,19 @@ BEGIN_NCBI_SCOPE
 
 
 /***********************************************************************
- *                              Registry                               *
+ *                              App Name                               *
  ***********************************************************************/
 
+extern const char* CORE_GetAppName(void)
+{
+    CNcbiApplication* theApp = CNcbiApplication::Instance();
+    return theApp ? theApp->GetProgramDisplayName().c_str() : 0;
+}
+
+
+/***********************************************************************
+ *                              Registry                               *
+ ***********************************************************************/
 
 extern "C" {
 static void s_REG_Get(void* user_data,
