@@ -738,7 +738,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
  * 0.0 <= pref <= 1.0
  * 0.0 <  gap  <= 1.0
  * n >= 2
- * Hence, the formula below always yields a value in the range [0.0 .. 1.0].
+ * Hence, the formula below always yields in a value from the range [0..1].
  */
 double SERV_Preference(double pref, double gap, size_t n)
 {
