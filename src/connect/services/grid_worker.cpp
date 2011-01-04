@@ -867,6 +867,7 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
     m_CheckStatusPeriod(2),
     m_ExclusiveJobSemaphore(1, 1),
     m_IsProcessingExclusiveJob(false),
+    m_TotalMemoryLimit(0),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
     m_Listener(new CGridWorkerNodeApp_Listener()),
     m_App(app),
@@ -969,6 +970,12 @@ int CGridWorkerNode::Run()
 
     bool is_daemon =
         reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eReturn);
+
+    m_TotalMemoryLimit = 
+        reg.GetInt(kServerSec,"total_memory_limit",0,0,IRegistry::eReturn);
+    if (m_TotalMemoryLimit < 100) {
+        m_TotalMemoryLimit *= 1073741824; // gigabytes
+    }
 
     vector<string> vhosts;
 

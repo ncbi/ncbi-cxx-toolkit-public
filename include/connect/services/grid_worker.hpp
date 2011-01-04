@@ -573,8 +573,12 @@ public:
     IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
 
     /// Get the maximum threads running simultaneously
-    //
+    ///
     unsigned int GetMaxThreads() const { return m_MaxThreads; }
+
+    /// Get total memory limit (automatic restart if node grows more than that)
+    ///
+    size_t GetTotalMemoryLimit() const { return m_TotalMemoryLimit; }
 
     bool IsHostInAdminHostsList(const string& host) const;
 
@@ -636,6 +640,7 @@ private:
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
+    size_t                       m_TotalMemoryLimit;
 
     CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 

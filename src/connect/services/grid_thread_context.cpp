@@ -41,6 +41,7 @@
 
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/ncbi_system.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
@@ -175,10 +176,27 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
             // Set PREV_JOB_WAS_EXCLUSIVE and reset OTHER_JOB_IS_EXCLUSIVE.
             decision_mask ^= PREV_JOB_WAS_EXCLUSIVE | OTHER_JOB_IS_EXCLUSIVE;
 
+        bool request_memory_shutdown = false;
+        size_t total_memory_limit = m_Worker.GetTotalMemoryLimit();
+        if (total_memory_limit) {  // memory check requested
+            size_t total_mem;
+            bool ok = GetMemoryUsage(&total_mem, 0, 0);
+            if (ok) {
+                if (total_mem > total_memory_limit) {
+                    request_memory_shutdown = true;
+                }
+            } else {
+                ERR_POST_X(9, "Could not check self memory usage" );
+            }
+        }
+
         if (CGridGlobals::GetInstance().IsShuttingDown() ||
-                m_Worker.IsTimeToRebalance() ||
+                m_Worker.IsTimeToRebalance() || request_memory_shutdown ||
                 decision_mask & OTHER_JOB_IS_EXCLUSIVE)
             m_NetScheduleExecuter.PutResult(m_JobContext->m_Job);
+            if (request_memory_shutdown) {
+                CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eNormalShutdown, 100);
+            }
         else {
             more_jobs = m_NetScheduleExecuter.PutResultGetJob(
                 m_JobContext->m_Job, new_job);
