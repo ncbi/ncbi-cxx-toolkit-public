@@ -815,7 +815,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "FIFO";
         break;
     case '7':
-        tname = "contiguous file";
+        tname = "contiguous";
         break;
     case 'g':
         tname = "global extended header";
@@ -1760,7 +1760,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         ERR_POST_ONCE(Critical << "CAUTION:"
                       " ***"
                       " This run-time may not support large TAR entries"
-                      " (have you built with --with-lfs?)"
+                      " (have you built it --with-lfs?)"
                       " ***");
     }
 
@@ -1803,8 +1803,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 
     // Entry type
     switch (h->typeflag[0]) {
-    case '\0':
+    case '7':
+        ERR_POST_ONCE(Critical << "CAUTION:"
+                      " *** Contiguous TAR entries processed as regular ones"
+                      " ***");
+        /*FALLTHRU*/
     case '0':
+    case '\0':
         if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/') {
@@ -1882,7 +1887,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 if (pax) {
                     TAR_POST(78, Warning,
                              "Double PAX header encountered,"
-                             " archive may be corrupted");
+                             " archive may be corrupt");
                 }
                 fmt = eTar_Posix;  // upgrade
                 m_Current.m_Type = CTarEntryInfo::ePAXHeader;
@@ -2526,7 +2531,7 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
                     // Do removal safely -- until extraction is confirmed
                     CDirEntry tmp(*dst);
                     pending.reset(new CDirEntry(CDirEntry::GetTmpNameEx
-                                                (dst->GetDir(), "XtArX")));
+                                                (dst->GetDir(), "xNCBItArX")));
                     errno = 0;
                     if (!tmp.Rename(pending->GetPath())  ||  dst->Exists()) {
                         // Security concern (not to attempt data extractions
