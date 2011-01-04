@@ -431,20 +431,20 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo*  net_info,
 
 static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                                            TSERV_Type            types,
-                                           const SConnNetInfo*   a_net_info,
+                                           const SConnNetInfo*   _net_info,
                                            const SSERVICE_Extra* params,
                                            const STimeout*       timeout)
 {
     AutoPtr<SConnNetInfo>
-        net_info(a_net_info ?
-                 ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(service));
+        net_info(_net_info ?
+                 ConnNetInfo_Clone(_net_info) : ConnNetInfo_Create(service));
     if (!net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
                    " Out of memory");
     }
     x_SetupUserAgent(net_info.get());
-    if (timeout && timeout != kDefaultTimeout) {
+    if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
