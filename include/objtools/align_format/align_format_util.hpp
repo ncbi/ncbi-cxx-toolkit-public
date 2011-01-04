@@ -41,6 +41,7 @@
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/align_format/format_flags.hpp>
 #include <util/math/matrix.hpp>
+#include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
 
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
@@ -80,7 +81,7 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
 // .ncbirc alias: UNIGEN
-const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=<@db@>&cmd=Display&dopt=<@dopt@>_unigene&from_uid=<@gi@>&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=<@db@>&cmd=Display&dopt=<@dopt@>_unigene&from_uid=<@gi@>&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 const string kUnigeneImg = "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">";
 
@@ -88,7 +89,7 @@ const string kUnigeneImg = "<img border=0 height=16 width=16 src=\"images/U.gif\
 ///structure
 // .ncbirc alias: STRUCTURE_URL
 const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=<@rid@>&blast_rep_gi=<@blast_rep_gi@>&hit=<@gi@>&blast_CD_RID=<@cd_rid@>\
-&blast_view=<@blast_view@>&hsp=0&taxname=<@taxname@>&client=blast&log$=structure<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+&blast_view=<@blast_view@>&hsp=0&taxname=<@taxname@>&client=blast&log$=structure<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 const string kStructureImg = "<img border=0 height=16 width=16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">";
 
@@ -99,32 +100,36 @@ RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
 ///Geo
 // .ncbirc alias: GEO
-const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/geoprofiles/?term=<@gi@>[gi]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/geoprofiles/?term=<@gi@>[gi]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 const string kGeoImg = "<img border=0 height=16 width=16 src=\"images/E.gif\" alt=\"GEO profiles info linked to <@label@>\">";
 
 ///Gene
 // .ncbirc alias: GENE
-const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=search&term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=search&term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 const string kGeneImg = "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">";
 
 ///Bioassay for proteins
 // .ncbirc alias: BIOASSAY_PROT
-const string kBioAssayProtURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[PigGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+const string kBioAssayProtURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[PigGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 const string kBioAssayProtImg = "<img border=0 height=16 width=16 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to <@label@>\">";
 
 ///Bioassay for nucleotides
 // .ncbirc alias: BIOASSAY_NUC
-const string kBioAssayNucURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[RNATargetGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+const string kBioAssayNucURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[RNATargetGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 const string kBioAssayNucImg = "<img border=0 height=16 width=16 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to <@label@>\">";
 
 ///mapviewer linkout
 // .ncbirc alias: MAPVIEWER
-const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=<@gi@>&THE_BLAST_RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"><@lnk_displ@></a>";
+const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=<@gi@>&THE_BLAST_RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 const string kMapviwerImg = "<img border=0 height=16 width=16 src=\"images/M.gif\" alt=\"Genome view with mapviewer linked to <@label@>\">";
+
+///mapviewer linkout
+//for used for NT/NW/NC
+const string kMapviewBlastHitUrl = "<a href=\"<@user_url@>&db=<@db@>&na=<@is_na@>&gnl=<@gnl@>&gi=<@gi@>&term=<@gi@>[gi]&taxid=<@taxid@>&RID=<@rid@>&QUERY_NUMBER=<@query_number@>&log$=nucl<@log@>\"<@lnkTitle@>><@lnk_displ@></a>";
 
 ///dumpgnl
 const string kDownloadUrl = "/blast/dumpgnl.cgi";
@@ -132,16 +137,29 @@ const string kDownloadLink = "<a href=\"<@download_url@>&segs=<@segs@>\"><@lnk_d
 //substitues <@lnk_displ@>
 const string kDownloadImg = "<img border=0 height=16 width=16 src=\"images/D.gif\" alt=\"Download subject sequence <@label@> spanning the HSP\">";
 
+const string kSeqViewerUrl = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&tracks=[key:gene_model_track],[key:alignment_track]&v=<@from@>:<@to@>";
+//to test ranges use:
+//const string kSeqViewerUrl = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&tracks=[key:gene_model_track],[key:alignment_track]&v=<@from@>:<@to@>,<@fromTest@>:<@toTest@>&flip=<@flip@>";
+
+const string kCustomLinkTemplate = "<a href=\"<@custom_url@>\" class=\"<@custom_cls@>\" title=\"<@custom_title@>\"><@custom_lnk_displ@></a>"; 
+const string kCustomLinkTitle="Show <@custom_report_type@> report for <@seqid@>";
 ///Sub-sequence
 // .ncbirc alias: ENTREZ_SUBSEQ
+
 const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>\">";
 
 // .ncbirc alias: ENTREZ_SUBSEQ_TM
 const string kEntrezSubseqTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>";
 
-///Bl2seq 
+///Default linkout order 
+//.ncbirc alias: LINKOUT_ORDER
+const string kLinkoutOrderStr = "G,U,M,E,S,B"; 
+
+///Bl2seq ************fix this and test titles Irena
 // .ncbirc alias: BL2SEQ
-const string kBl2seqUrl = "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&EXPECT=10&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>";
+//const string kBl2seqUrl = "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&EXPECT=10&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>";
+const string kBl2seqUrl = "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&PROGRAM=tblastx&EXPECT=10&CMD=request&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>";
+
 
 
 // .ncbirc alias: GETSEQ_SUB_FRM_0
@@ -199,7 +217,6 @@ const string kBl2SeqWBlastCgi = "http://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast
 const string kEntrezSitesCgi = "http://www.ncbi.nlm.nih.gov/sites/entrez";
 
 
-
 /// create map source of all static URL's using previously defined pairs
 /// this map should be in alphabetical order!!!
 typedef pair<string, string> TTagUrl;
@@ -213,7 +230,7 @@ static const TTagUrl s_TagUrls [] = {
   TTagUrl("ENTREZ_QUERY_CGI",  kEntrezQueryCgi),
   TTagUrl("ENTREZ_SITES_CGI",  kEntrezSitesCgi),
   TTagUrl("ENTREZ_SUBSEQ",  kEntrezSubseqUrl),
-  TTagUrl("ENTREZ_SUBSEQ_TM",  kEntrezSubseqTMUrl),
+  TTagUrl("ENTREZ_SUBSEQ_TM",  kEntrezSubseqTMUrl),  
   TTagUrl("ENTREZ_TM",  kEntrezTMUrl),  
   TTagUrl("ENTREZ_VIEWER_CGI",  kEntrezViewerCgi),
   TTagUrl("GENE",  kGeneUrl),
@@ -231,10 +248,11 @@ static const TTagUrl s_TagUrls [] = {
   TTagUrl("TRACE_CGI",  kTraceCgi),
   TTagUrl("TREEVIEW_CGI",  kGetTreeViewCgi),
   TTagUrl("TREEVIEW_FRM",  k_GetTreeViewForm),
-  TTagUrl("UNIGEN",  kUnigeneUrl),  
+  TTagUrl("UNIGEN",  kUnigeneUrl),    
 };
 typedef CStaticArrayMap<string, string> TTagUrlMap;
 DEFINE_STATIC_ARRAY_MAP(TTagUrlMap, sm_TagUrlMap, s_TagUrls);
+
 
 #ifndef DIM
 /// Calculates the dimensions of a static array
@@ -302,22 +320,26 @@ public:
         string rid;             ///< blast RID
         int queryNumber;        ///< the query number
         int gi;                 ///< gi to use
-	string accession;       ///< accession
+        string accession;       ///< accession
         int linkout;            ///< linkout flag
         int blast_rank;         ///< index of the current alignment
         bool isAlignLink;       ///< bool indicating if link is in alignment section
         bool new_win;           ///< bool indicating if click of the url will open a new window
-        CRange<TSeqPos> seqRange;///sequence range
-        bool flip;              ///flip sequence in case of opposite strands
+        CRange<TSeqPos> seqRange;///< sequence range
+        bool flip;              ///< flip sequence in case of opposite strands
+        string segs;            ///< string containing align segments in the the following format seg1Start-seg1End,seg2Start-seg2End
         int taxid;              ///< taxid
         bool addCssInfo;        ///< bool indicating that css info should be added
+        string seqUrl;          ///< sequence URL created
+		
+		
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false,int txid = -1,bool addCssInf = false) 
+                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false,string seqSegs = "", int txid = -1,bool addCssInf = false,string sUrl = "") 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
                     queryNumber(qn), gi(gi), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
-                    new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf){}
+                    new_win(nw),seqRange(range),flip(flp),segs(seqSegs),taxid (txid),addCssInfo(addCssInf),seqUrl(sUrl){}
 
     };
     
@@ -341,6 +363,12 @@ public:
         eQueryStart,
         eHspPercentIdentity,
         eSubjectStart
+    };
+
+    enum CustomLinkType {
+        eLinkTypeMapViewer = (1 << 0),
+        eLinkTypeSeqViewer = (1 << 1),
+        eDownLoadSeq = (1 << 2)
     };
 
     ///Output blast errors
@@ -765,7 +793,7 @@ public:
                                int hit_order,
                                int hsp_order);
 
-    /// function for calculating  percent match for an alignment.	
+	/// function for calculating  percent match for an alignment.	
 	///@param numerator
 	/// int numerator in percent identity calculation.
 	///@param denominator
@@ -785,7 +813,7 @@ public:
                                      double evalueLow,
                                      double evalueHigh);
 
-    ///function for Filtering seqalign by percent identity
+	///function for Filtering seqalign by percent identity
     ///@param source_aln
     /// CSeq_align_set original seqalign
     ///@param percentIdentLow
@@ -816,7 +844,6 @@ public:
 	                                                                 double evalueHigh,
 	                                                                 double percentIdentLow,
 	                                                                 double percentIdentHigh);
-
     ///function for Limitting seqalign by hsps number
     ///(by default results are not cut off within the query)
     ///@param source_aln
@@ -851,18 +878,74 @@ public:
     static bool IsMixedDatabase(const objects::CSeq_align_set& alnset, 
                                 objects::CScope& scope); 
     static bool IsMixedDatabase(CCgiContext& ctx);
-    static list<string> GetLinkoutUrl(int linkout, const objects::CBioseq::TId& ids, 
+
+    
+    ///Get the list of urls for linkouts
+    ///@param linkout: the membership value
+    ///@param ids: CBioseq::TId object    
+    ///@param rid: RID
+    ///@param cdd_rid: CDD RID
+    ///@param entrez_term: entrez query term
+    ///@param is_na: is this sequence nucleotide or not
+    ///@param first_gi: first gi in the list (used to contsruct structure url)
+    ///@param structure_linkout_as_group: bool used to contsruct structure url
+    ///@param for_alignment: bool indicating if link is located in alignment section
+    ///@param int cur_align: int current alignment/description number
+    ///@param bool textLink: bool indicating that if true link will be presented as text, otherwise as image
+    ///@return list of string containing all linkout urls for one seq 
+    static list<string> GetLinkoutUrl(int linkout, 
+                                      const objects::CBioseq::TId& ids, 
                                       const string& rid, 
                                       const string& cdd_rid, 
                                       const string& entrez_term,
                                       bool is_na, 
                                       int first_gi,
                                       bool structure_linkout_as_group,
-                                      bool for_alignment, int cur_align);
-
+                                      bool for_alignment, 
+                                      int cur_align,
+                                      bool textLink = false);
+    
+    ///Create map that holds all linkouts for the list of blast deflines and corresponding seqIDs
+    ///@param bdl: list of CRef<CBlast_def_line>
+    ///@param linkout_map: map that holds linkouts and corresponding CBioseq::TId for the whole list  of blast deflines  
+    ///
+    static void GetBdlLinkoutInfo(const list< CRef< objects::CBlast_def_line > > &bdl,
+                                  map<int, vector < objects::CBioseq::TId > >  &linkout_map);
+    ///Get linkout membership for for the list of blast deflines
+    ///@param bdl: list of CRef<CBlast_def_line>    
+    ///@param rid: blast rid
+    ///@param cdd_rid: blast cdd_rid
+    ///@param entrez_term: entrez_term for building url
+    ///@param is_na: bool indication if query is nucleotide
+    ///@param first_gi: first gi in the list (used to contsruct structure url)
+    ///@param structure_linkout_as_group: bool used to contsruct structure url
+    ///@param for_alignment: bool indicating tif link is locted in alignment section
+    ///@param int cur_align: int current alignment/description number
+    ///@param linkoutOrder: string of letters separated by comma specifing linkout order like "G,U,M,E,S,B"
+    ///@param taxid: int taxid
+    ///@param database: database name
+    ///@param query_number: query_number
+    ///@param user_url: url defined as TOOL_URL for blast_type in .ncbirc
+    ///@return list of string containing all linkout urls for all of the seqs in the list of blast deflines
+    ///
+    static list<string> GetFullLinkoutUrl(const list< CRef< objects::CBlast_def_line > > &bdl,                                             
+                                                 const string& rid,
+                                                 const string& cdd_rid, 
+                                                 const string& entrez_term,
+                                                 bool is_na,           
+                                                 int first_gi,
+                                                 bool structure_linkout_as_group,
+                                                 bool for_alignment, 
+                                                 int cur_align,
+                                                 string& linkoutOrder,
+                                                 int taxid,
+                                                 string &database,
+                                                 int query_number,                                                 
+                                                 string &user_url);
+                                   
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
-
-    static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
+	static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
+												
 
     ///retrieve URL from .ncbirc file combining host/port and format strings values.
     ///consult blastfmtutil.hpp
@@ -906,10 +989,12 @@ public:
     ///@param id: seqid CSeq_id
     ///@param scopeRef:scope to fetch sequence
     ///@param useTemplates:bool indicating if templates are used
+    ///@param advancedView:bool indicating advanced view design option
     static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
                            const objects::CSeq_id& id,
                            objects::CScope &scope,
-                           bool useTemplates = false);
+                           bool useTemplates = false,
+                           bool advancedView = false);
 
 	///Create URL for seqid 
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
@@ -917,7 +1002,8 @@ public:
     ///@param useTemplates:bool indicating if templates are used
     static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
                             const objects::CBioseq::TId* ids,                            
-                            bool useTemplates);
+                            bool useTemplates = false,
+                            bool advancedView = false);
 
 	///Create URL for seqid that goes to entrez or trace
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
@@ -935,8 +1021,24 @@ public:
     ///@param useTemplates:bool indicating if templates are used
 	static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const objects::CBioseq::TId* ids,bool useTemplates);
     
+
+    ///Create the list of string links for seqid that goes to mapviewer,seqviewer or download
+    ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
+    ///@param id: CSeq_id object    
+    ///@param scope: scope to fetch this sequence
+    ///@param customLinkTypes: types of links to be included in the list(mapviewer,seqviewer or download)
+    ///@param customLinksList: list of strings containing links
+    static list <string>  GetCustomLinksList(SSeqURLInfo *seqUrlInfo,
+                                   const objects::CSeq_id& id,
+                                   objects::CScope &scope,                                             
+                                   int customLinkTypes);    
+    ///Get Gene symobol for gi
+    ///@param  giForGeneLookup: gi
+    ///@return: string gene symbol
+    static string  GetGeneInfo(int giForGeneLookup);
     static CNcbiRegistry *m_Reg;
     static bool   m_geturl_debug_flag;
+    static auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;
 
 protected:
 

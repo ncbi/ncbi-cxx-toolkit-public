@@ -35,6 +35,7 @@
 #define OBJTOOLS_ALIGN_FORMAT___SHOWALIGN_HPP
 
 #include <corelib/ncbireg.hpp>
+#include <corelib/hash_set.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -105,7 +106,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         eNuc = 1,
         eProt = 2
     };
-
+	
     ///structure for store feature display info
     struct FeatureInfo : public CObject {
         CConstRef < objects::CSeq_loc > seqloc;  // must be seqloc int
@@ -212,7 +213,9 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     ///@param out: stream for display
     ///
     void DisplaySeqalign(CNcbiOstream & out);
-    
+
+    //Display pariwise seqalign for the set of seq IDS (for future use)
+    void DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs, bool checkGiFirst=true);
     //Data representing templates for defline display 
     struct SAlignTemplates {
         string alignHeaderTmpl; ///< Template for displaying header,deflines and gene info  - BLAST_ALIGN_HEADER
@@ -225,7 +228,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         string alignRowTmpl;    ///<Template for displayin actual pairwise alignment - BLAST_ALIGN_ROWS
 		string alignRowTmplLast; ///<Template for displayin actual last pairwise alignment - BLAST_ALIGN_ROWS_LST
     };
-    
+       
     /// Set functions
     /***The following functions are for all alignment display ****/
     
@@ -422,8 +425,9 @@ private:
         bool colorMismatch;
         int         rowNum;
     };
+
     
-    //Info used to display defline information
+	//Info used to display defline information
     struct SAlnDispParams: public CObject {
 		int gi;                         ///< gi used in defline
 		CRef<objects::CSeq_id> seqID;	///< seqID used in defline
@@ -474,6 +478,7 @@ private:
         int identity;
     };
 
+	
      /// Definition of std::map of objects::CSeq_ids to masks
     typedef map< SSeqIdKey, TMaskedQueryRegions > TSubjectMaskMap;
 
@@ -502,6 +507,7 @@ private:
     bool m_CanRetrieveSeq;
     string m_DbName;
     string m_BlastType;
+    string m_LinkoutOrder;
     string m_Rid;
     string m_CddRid;
     string m_EntrezTerm;
@@ -511,7 +517,8 @@ private:
     objects::CGetFeature* m_DynamicFeature;
     
     map < string, struct SAlnLinksParams > m_AlnLinksParams;
-       
+    list <string> m_CustomLinksList;
+
     CRef < objects::CObjectManager > m_FeatObj;  // used for fetching feature
     CRef < objects::CScope > m_featScope;        // used for fetching feature
     MiddleLineStyle m_MidLineStyle;
@@ -525,9 +532,13 @@ private:
     /// Current alignment index (added to the linkout and entrez URL's)
     mutable int m_cur_align;
 
-    int		m_NumBlastDefLines;///< Number of subjest sequence deflines 
+    int		m_NumBlastDefLines;///< Number of subject sequence deflines 
 
     int		m_currAlignHsp;///< Current HSP number for single alignmnet
+
+    int     m_currSeqTaxid;///< Current sequnce taxid
+
+    string  m_UserUrl;///< User URL for blast type
     
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
@@ -568,7 +579,7 @@ private:
     ///@param ids: id list    
     ///@param seqUrlInfo: struct containging params for URL    
     ///    
-    string x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<objects::CSeq_id> >& ids,bool useTemplates = false) const;
+    string x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<objects::CSeq_id> >& ids);
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list
@@ -779,7 +790,6 @@ private:
     ///
     SAlnRowInfo *x_PrepareRowData(void);
 
-
     string x_FormatSingleAlign(SAlnInfo* aln_vec_info);  
     string x_FormatAlignSortInfo(string id_label);
     string x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info);
@@ -796,18 +806,24 @@ private:
     void x_DisplayAlnvecInfoHead(CNcbiOstream& out, 
                                  SAlnInfo* aln_vec_info);
 
-    ///Setup scope for feature fetching and m_DynamicFeature
-    ///
-    void x_FeatSetup(objects::CSeq_align_set &actual_aln_list);    
-    SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
+    ///Inits align parameters for displaySetup scope for feature fetching and m_DynamicFeature
+    ///inits m_FeatObj,m_featScope,m_CanRetrieveSeq,m_ConfigFile,m_Reg,m_LinkoutOrder,m_DynamicFeature
+    void x_InitAlignParams(objects::CSeq_align_set &actual_aln_list);
+    
+	    
+    void x_PreProcessSingleAlign(objects::CSeq_align_set::Tdata::const_iterator currSeqAlignIter,
+                                 objects::CSeq_align_set &actual_aln_list,
+                                  bool multipleSeqs);
+	SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
 								   list<int>& use_this_gi,
 								   int firstGi,
 								   bool isNa,
-								  int seqLength);                                  
-    SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);    
-    string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle, SAlnInfo* aln_vec_info);
-	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);                                     
-    void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
+								  int seqLength);
+								  
+	SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);	
+	string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
+	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
+	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
 	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
     bool m_UseLinkoutDB; // temporary to determine whether to use LinkoutDB or not
 };

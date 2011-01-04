@@ -77,7 +77,8 @@ public:
                       size_t line_length = 65,
                       size_t deflines_to_show = kDfltArgNumDescriptions,
                       bool translated_nuc_alignment = false,
-                      CRange<TSeqPos>* master_range = NULL);
+                      CRange<TSeqPos>* master_range = NULL,
+                      bool advancedView = false);
     
     ~CShowBlastDefline();
     
@@ -102,8 +103,7 @@ public:
         string defline;                //defline
         list<string> linkout_list;     //linkout urls
         int linkout;                   //linkout membership
-        string id_url;                 //seqid url
-        string urlReportType;          //report type(mapview,seqview etc)
+        string id_url;                 //seqid url		
         string score_url;              //score url (quick jump to alignment)
         bool is_new;                   //is this sequence new (for psiblast)?
         bool was_checked;              //was this sequence checked before?
@@ -227,7 +227,7 @@ public:
     void SetDeflineTemplates (SDeflineTemplates *deflineTemplates) {
         m_DeflineTemplates = deflineTemplates;
     }
-
+    
     /// Creates a '|' delimited string, corresponding to a list of Seq-ids
     /// @param id List of Seq-ids [in]
     /// @param show_gi Should gi ids be shown or skipped?
@@ -312,7 +312,7 @@ protected:
         int blast_rank;                // "Rank" of defline.
         int hspNum;                    //hsp number
         CRange<TSeqPos> subjRange;     //subject sequence range
-        bool flip;                     //indicates opposite strands in the first seq align	
+        bool flip;					   //indicates opposite strands in the first seq align	
     };
 
     ///Seqalign 
@@ -338,6 +338,9 @@ protected:
 
     ///Blast type
     string m_BlastType;
+
+    ///Linkout order for display
+    string m_LinkoutOrder;
     
     ///Gif images path
     string  m_ImagePath;
@@ -388,6 +391,8 @@ protected:
 
     ///blast defline templates
     SDeflineTemplates *m_DeflineTemplates;
+
+    bool    m_AdvancedView;
     
     CCgiContext* m_Ctx;
 
