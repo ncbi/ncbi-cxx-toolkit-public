@@ -55,10 +55,12 @@ BEGIN_NCBI_SCOPE
  *                              App Name                               *
  ***********************************************************************/
 
+extern "C" {
 extern const char* CORE_GetAppName(void)
 {
     CNcbiApplication* theApp = CNcbiApplication::Instance();
     return theApp ? theApp->GetProgramDisplayName().c_str() : 0;
+}
 }
 
 
