@@ -285,7 +285,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         }
         // extend to the end, if necessary
         if( m_Dst_total_len != kInvalidSeqPos ) {
-            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from ;
+            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from;
             if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
                 ret.SetTo( dst_total_to );
             }
@@ -295,25 +295,17 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
     else {
         TRange ret(Map_Pos(to), Map_Pos(from));
 
-        // undo frameshift for reverse strand
-        // (I assume it's because frameshift applies only to the plus strand so makes
-        // no sense for the minus strand)
-        if( frame_shift > 0 ) {
-            ret.SetFrom( ret.GetFrom() - frame_shift );
-            ret.SetTo( ret.GetTo() - frame_shift );
-        }
-
-        // This part is just like for the "plus" strand except that we extend the opposite side
+        // extend to beginning if necessary (Note: reverse strand implies "beginning" is a higher number )
         if( m_Dst_total_len != kInvalidSeqPos ) {
-            if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
-                ret.SetFrom( m_Dst_from - frame_shift );
+            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from;
+            if ( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
+                ret.SetTo( dst_total_to + frame_shift );
             }
         }
-        if( m_Dst_total_len != kInvalidSeqPos ) {
-            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from ;
-            if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
-                ret.SetTo( dst_total_to );
-            }
+        // extend to the end, if necessary (Note: reverse strand implies "end" is a lower number )
+        // ( e.g. NZ_AAOJ01000043 )
+        if( m_ExtTo && partial_to && (to == m_Src_bioseq_len) ) {
+            ret.SetFrom( m_Dst_from );
         }
 
         return ret;
@@ -874,11 +866,15 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         // Shift start according to the frame.
         const int shift = frame - 1;
         if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos) {
-            src_start += shift;
+            if( ! source.IsReverseStrand() ) {
+                src_start += shift;
+            }
             src_len -= shift;
         }
         if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos) {
-            dst_start += shift;
+            if( ! target.IsReverseStrand() ) {
+                dst_start += shift;
+            }
             dst_len -= shift;
         }
     }
@@ -2224,6 +2220,41 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
 //   Mapping methods
 //
 
+void CSeq_loc_Mapper_Base::x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const
+{
+    // only process multi-interval locations
+    if( loc && ( (loc->Which() == CSeq_loc::e_Mix) || (loc->Which() == CSeq_loc::e_Packed_int) ) ) {
+        CRef<CSeq_loc> new_loc( new CSeq_loc );
+        bool is_first = true;
+        const ESeqLocExtremes extreme = eExtreme_Biological;
+
+        CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Allow );
+        for( ; loc_iter; ++loc_iter ) {
+            CConstRef<CSeq_loc> loc_piece( loc_iter.GetRangeAsSeq_loc() );
+            if( loc_piece && ( loc_piece->IsPartialStart(extreme) || loc_piece->IsPartialStop(extreme) ) ) {
+                const bool is_last = ( ++CSeq_loc_CI(loc_iter) == loc->end() );
+
+                CRef<CSeq_loc> new_loc_piece( new CSeq_loc );
+                new_loc_piece->Assign( *loc_piece );
+
+                if( ! is_first ) {
+                    new_loc_piece->SetPartialStart( false, extreme ) ;
+                }
+                if( ! is_last ) {
+                    new_loc_piece->SetPartialStop( false, extreme );
+                }
+                
+                new_loc->Add( *new_loc_piece );
+            } else {
+                new_loc->Add( *loc_piece );
+            }
+
+            is_first = false;
+        }
+
+        loc = new_loc;
+    }
+}
 
 // Check location type, optimize if possible (empty mix to NULL,
 // mix with a single element to this element etc.).
@@ -2359,48 +2390,52 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     // Adjust last mapped range end.
     *last_src_to = reverse ? left : right;
 
-    TRangeFuzz fuzz;
+    // TODO: This code was removed to match C, but it might make sense to
+    // reactivate it in the future, since we probably should indicate
+    // partialness if any kind of truncation occurs.
 
-    // Indicate partial ranges using fuzz.
-    if ( partial_left ) {
-        // Set fuzz-from if a range was skipped on the left.
-        fuzz.first.Reset(new CInt_fuzz);
-        fuzz.first->SetLim(CInt_fuzz::eLim_lt);
-    }
-    else {
-        if ( (!reverse  &&  cvt_idx == 0)  ||
-            (reverse  &&  cvt_idx == mappings.size() - 1) ) {
-            // Preserve fuzz-from on the left end if any.
-            fuzz.first = src_fuzz.first;
-        }
-    }
-    if ( partial_right ) {
-        // Set fuzz-to if a range will be skipped on the right.
-        fuzz.second.Reset(new CInt_fuzz);
-        fuzz.second->SetLim(CInt_fuzz::eLim_gt);
-    }
-    else {
-        if ( (reverse  &&  cvt_idx == 0)  ||
-            (!reverse  &&  cvt_idx == mappings.size() - 1) ) {
-            // Preserve fuzz-to on the right end if any.
-            fuzz.second = src_fuzz.second;
-        }
-    }
+    //TRangeFuzz fuzz;
+
+    //// Indicate partial ranges using fuzz.
+    //if ( partial_left ) {
+    //    // Set fuzz-from if a range was skipped on the left.
+    //    fuzz.first.Reset(new CInt_fuzz);
+    //    fuzz.first->SetLim(CInt_fuzz::eLim_lt);
+    //}
+    //else {
+    //    if ( (!reverse  &&  cvt_idx == 0)  ||
+    //        (reverse  &&  cvt_idx == mappings.size() - 1) ) {
+    //        // Preserve fuzz-from on the left end if any.
+    //        fuzz.first = src_fuzz.first;
+    //    }
+    //}
+    //if ( partial_right ) {
+    //    // Set fuzz-to if a range will be skipped on the right.
+    //    fuzz.second.Reset(new CInt_fuzz);
+    //    fuzz.second->SetLim(CInt_fuzz::eLim_gt);
+    //}
+    //else {
+    //    if ( (reverse  &&  cvt_idx == 0)  ||
+    //        (!reverse  &&  cvt_idx == mappings.size() - 1) ) {
+    //        // Preserve fuzz-to on the right end if any.
+    //        fuzz.second = src_fuzz.second;
+    //    }
+    //}
     // If the previous range could not be mapped and was removed,
     // indicate it using fuzz.
-    if ( m_LastTruncated ) {
-        if ( !fuzz.first ) {
-            // lim tl - always indicates left, regardless of the strand
-            fuzz.first.Reset(new CInt_fuzz);
-            fuzz.first->SetLim(CInt_fuzz::eLim_tl);
-        }
-        // Reset the flag - current range is mapped at least partially.
-        m_LastTruncated = false;
-    }
+    //if ( m_LastTruncated ) {
+    //    if ( !fuzz.first ) {
+    //        // lim tl - always indicates left, regardless of the strand
+    //        fuzz.first.Reset(new CInt_fuzz);
+    //        fuzz.first->SetLim(CInt_fuzz::eLim_tl);
+    //    }
+    //    // Reset the flag - current range is mapped at least partially.
+    //    m_LastTruncated = false;
+    //}
 
     // Map fuzz to the destination. This will also adjust fuzz lim value
     // (just set by truncation) when strand is reversed by the mapping.
-    TRangeFuzz mapped_fuzz = cvt.Map_Fuzz(fuzz);
+    TRangeFuzz mapped_fuzz = cvt.Map_Fuzz(src_fuzz); // cvt.Map_Fuzz(fuzz);
 
     // Map the range and the strand. Fuzz is required to extend mapped
     // range in case of cd-region - see CMappingRange::m_ExtTo.
@@ -2934,6 +2969,8 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::Map(const CSeq_loc& src_loc)
     x_MapSeq_loc(src_loc);
     // Push any remaining mapped ranges to the mapped location.
     x_PushRangesToDstMix();
+    // The mapping process can introduce extra, unneeded fuzz
+    x_StripExtraneousFuzz(m_Dst_loc);
     // Optimize mapped location.
     x_OptimizeSeq_loc(m_Dst_loc);
     // If source locations should be included, optimize them too and

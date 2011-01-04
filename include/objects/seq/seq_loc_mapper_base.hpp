@@ -702,6 +702,9 @@ private:
     // x_PushRangesToDstMix).
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
+    // For mix locations, we remove fuzz from in-between the parts.
+    void x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const;
+
     // Try to optimize the mapped location if it's a mix.
     // The allowed optimizations are:
     // - empty mix is converted to Null
