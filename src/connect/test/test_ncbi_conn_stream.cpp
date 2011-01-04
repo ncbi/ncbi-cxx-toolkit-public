@@ -267,7 +267,7 @@ int main(int argc, const char* argv[])
                       &dst[0], dst.size(), &n_written);
         dst.resize(n_written);
         CTempString user, pass;
-        NStr::SplitInTwo(dst, ':', user, pass);
+        NStr::SplitInTwo(dst, ":", user, pass);
         CTime  start(CTime::eCurrent);
         string filename("test_ncbi_conn_stream");
         filename += '-' + CSocketAPI::gethostname();
