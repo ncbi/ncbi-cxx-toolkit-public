@@ -384,6 +384,17 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 
 
+/** Obtain current application name (toolkit dependent).
+ * @return
+ *  Return 0 when the application name cannot be determined;
+ *  otherwise, return a NULL-terminated string
+ *
+ * NOTE that setting an application name concurrently with this
+ * call can cause undefined behavior or a stale pointer returned.
+ */
+extern NCBI_XCONNECT_EXPORT const char* CORE_GetAppName(void);
+
+
 /** Obtain and store current user's name in the buffer provided.
  * Note that resultant strlen(buf) is always guaranteed to be less
  * than "bufsize", extra non-fit characters discarded.
