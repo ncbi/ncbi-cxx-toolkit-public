@@ -192,6 +192,10 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
     // position is available for in_avail()) returns the number of bytes that
     // have been placed in the buffer, so it tries to read right off gptr()
     // that many bytes, causing bound conditions (ending up with SEGV).
+    // Note that this implementation here does not agree with the standard
+    // in that if insertion was not successful, the corresponding extraction
+    // would not be effected as have occurred.  Hopefully that's okay because
+    // GCC 3.3.0 is a very distant memory now.
     do {
         char buf[4096];
         is.read(buf, sizeof(buf));
