@@ -578,7 +578,7 @@ public:
 
     /// Get total memory limit (automatic restart if node grows more than that)
     ///
-    size_t GetTotalMemoryLimit() const { return m_TotalMemoryLimit; }
+    Uint8 GetTotalMemoryLimit() const { return m_TotalMemoryLimit; }
 
     bool IsHostInAdminHostsList(const string& host) const;
 
@@ -640,7 +640,7 @@ private:
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
-    size_t                       m_TotalMemoryLimit;
+    Uint8                        m_TotalMemoryLimit;
 
     CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 

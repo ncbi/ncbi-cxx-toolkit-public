@@ -971,11 +971,13 @@ int CGridWorkerNode::Run()
     bool is_daemon =
         reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eReturn);
 
-    m_TotalMemoryLimit = 
-        reg.GetInt(kServerSec,"total_memory_limit",0,0,IRegistry::eReturn);
-    if (m_TotalMemoryLimit < 100) {
-        m_TotalMemoryLimit *= 1073741824; // gigabytes
+    {{
+    string memlimitstr = 
+        reg.GetString(kServerSec,"total_memory_limit","",IRegistry::eReturn);
+    if (!memlimitstr.empty()) {
+        m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
     }
+    }}
 
     vector<string> vhosts;
 
@@ -1259,7 +1261,7 @@ int CGridWorkerNode::Run()
         ERR_POST_X(59, "Clean-up thread timed out");
     }
 
-    return 0;
+    return CGridGlobals::GetInstance().GetExitCode();
 }
 
 void CGridWorkerNode::RequestShutdown()

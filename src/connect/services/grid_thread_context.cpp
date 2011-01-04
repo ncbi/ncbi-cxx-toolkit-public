@@ -177,7 +177,7 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
             decision_mask ^= PREV_JOB_WAS_EXCLUSIVE | OTHER_JOB_IS_EXCLUSIVE;
 
         bool request_memory_shutdown = false;
-        size_t total_memory_limit = m_Worker.GetTotalMemoryLimit();
+        Uint8 total_memory_limit = m_Worker.GetTotalMemoryLimit();
         if (total_memory_limit) {  // memory check requested
             size_t total_mem;
             bool ok = GetMemoryUsage(&total_mem, 0, 0);

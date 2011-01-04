@@ -38,6 +38,7 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/grid_globals.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 
@@ -217,7 +218,7 @@ int CTestNetScheduleNode::Run(void)
         }
     }
 
-    return 0;
+    return CGridGlobals::GetInstance().GetExitCode();
 }
 
 END_NCBI_SCOPE
