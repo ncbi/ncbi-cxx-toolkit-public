@@ -266,12 +266,8 @@ int main(int argc, const char* argv[])
         BASE64_Decode(src.c_str(), src.size(), &n_read,
                       &dst[0], dst.size(), &n_written);
         dst.resize(n_written);
-        size_t cpos = dst.find_first_of(':');
-        string user, pass;
-        if (cpos != NPOS) {
-            user = dst.substr(0, cpos);
-            pass = dst.substr(cpos + 1);
-        }
+        CTempString user, pass;
+        NStr::SplitInTwo(dst, ':', user, pass);
         CTime  start(CTime::eCurrent);
         string filename("test_ncbi_conn_stream");
         filename += '-' + CSocketAPI::gethostname();
@@ -339,7 +335,7 @@ int main(int argc, const char* argv[])
                      val << " out of " << size << " byte(s) uploaded");
         } else if (delta >= 1800) {
             ERR_POST(Fatal << "Test 3 failed: " <<
-                     "file timezone miscalculated by " <<
+                     "file timezone is off by " <<
                      NStr::UIntToString((unsigned int) delta) <<
                      " seconds");
         }
