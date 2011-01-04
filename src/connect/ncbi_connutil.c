@@ -863,7 +863,7 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
 }
 
 
-static int/*bool*/ s_IsSufficientAddress(const char* addr)
+static int/*bool*/ x_IsSufficientAddress(const char* addr)
 {
     const char* c;
     return (SOCK_isip(addr)  ||
@@ -872,7 +872,7 @@ static int/*bool*/ s_IsSufficientAddress(const char* addr)
 }
 
 
-static const char* s_ClientAddress(const char* client_host,
+static const char* x_ClientAddress(const char* client_host,
                                    int/*bool*/ local_host)
 {
     const char* c = client_host;
@@ -884,7 +884,7 @@ static const char* s_ClientAddress(const char* client_host,
     strncpy0(addr, client_host, sizeof(addr) - 1);
     if (UTIL_NcbiLocalHostName(addr)  &&  (s = strdup(addr)) != 0)
         client_host = s;
-    if (s_IsSufficientAddress(client_host)                          ||
+    if (x_IsSufficientAddress(client_host)                          ||
         !(ip = *client_host  &&  !local_host
           ? SOCK_gethostbyname(client_host)
           : SOCK_GetLocalHostAddress(eDefault))                     ||
@@ -906,27 +906,33 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
     static const char kAddress[]  = "address";
     static const char kPlatform[] = "platform";
     int/*bool*/ local_host;
-    const char* arch;
-    const char* addr;
+    const char* str;
 
     if (!info)
         return 0/*failed*/;
+
+    str = CORE_GetAppName();
+    if (str) {
+        char user_agent[16+80];
+        sprintf(user_agent, "User-Agent: %.80s\r\n", str);
+        ConnNetInfo_ExtendUserHeader(info, user_agent);
+    }
     /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
-    if (!(arch = CORE_GetPlatform())  ||  !*arch)
+    if (!(str = CORE_GetPlatform())  ||  !*str)
         ConnNetInfo_DeleteArg(info, kPlatform);
     else
-        ConnNetInfo_PreOverrideArg(info, kPlatform, arch);
+        ConnNetInfo_PreOverrideArg(info, kPlatform, str);
     local_host = !info->client_host[0];
     if (local_host  &&
         !SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host))) {
         SOCK_gethostname(info->client_host, sizeof(info->client_host));
     }
-    if (!(addr = s_ClientAddress(info->client_host, local_host))  ||  !*addr)
+    if (!(str = x_ClientAddress(info->client_host, local_host))  ||  !*str)
         ConnNetInfo_DeleteArg(info, kAddress);
     else
-        ConnNetInfo_PreOverrideArg(info, kAddress, addr);
-    if (addr != info->client_host)
-        free((void*) addr);
+        ConnNetInfo_PreOverrideArg(info, kAddress, str);
+    if (str != info->client_host)
+        free((void*) str);
     if (service  &&  *service) {
         if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
             ConnNetInfo_DeleteArg(info, kPlatform);
