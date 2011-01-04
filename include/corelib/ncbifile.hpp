@@ -3378,7 +3378,7 @@ void CDirEntry::SetBackupSuffix(const char* suffix)
 inline
 CFile::CFile(void)
 {
-    return;
+    SetDefaultMode(eFile, fDefault, fDefault, fDefault);
 }
 
 
@@ -3406,7 +3406,7 @@ bool CFile::Exists(void) const
 inline
 CDir::CDir(void)
 {
-    return;
+    SetDefaultMode(eDir, fDefault, fDefault, fDefault);
 }
 
 inline
