@@ -573,6 +573,12 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing,
    TErrStrs( "StructuredCommentPrefixOrSuffixMissing",
 "Structured comments should have a prefix or suffix.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonWater,
+   TErrStrs( "LatLonWater",
+"The lat_lon coordinate map in a body of water.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonOffshore,
+   TErrStrs( "LatLonOffshore",
+"The lat_lon coordinate is probably in a minor or unnamed body of water.")),
 
 /* SEQ_GENERIC */
 

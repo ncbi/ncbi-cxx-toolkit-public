@@ -143,81 +143,104 @@ CValidError_imp::CValidError_imp
       m_ObjMgr(&objmgr),
       m_ErrRepository(errs)
 {
-      m_Scope = 0;
-      m_TSE = 0;
-      m_NonASCII = (options & CValidator::eVal_non_ascii) != 0;
-      m_SuppressContext = (options & CValidator::eVal_no_context) != 0;
-      m_ValidateAlignments = (options & CValidator::eVal_val_align) != 0;
-      m_ValidateExons = (options & CValidator::eVal_val_exons) != 0;
-      m_OvlPepErr = (options & CValidator::eVal_ovl_pep_err) != 0;
-      m_RequireTaxonID = (options & CValidator::eVal_need_taxid) != 0;
-      m_RequireISOJTA = (options & CValidator::eVal_need_isojta) != 0;
-      m_ValidateIdSet = (options & CValidator::eVal_validate_id_set) != 0;
-      m_RemoteFetch = (options & CValidator::eVal_remote_fetch) != 0;
-      m_FarFetchMRNAproducts = (options & CValidator::eVal_far_fetch_mrna_products) != 0;
-      m_FarFetchCDSproducts = (options & CValidator::eVal_far_fetch_cds_products) != 0;
-      m_LocusTagGeneralMatch = (options & CValidator::eVal_locus_tag_general_match) != 0;
-      m_DoRubiscoText = (options & CValidator::eVal_do_rubisco_test) != 0;
-      m_IndexerVersion = (options & CValidator::eVal_indexer_version) != 0;
-	  m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
-      m_ValidateInferenceAccessions = (options & CValidator::eVal_inference_accns) != 0;
-      m_IgnoreExceptions = (options & CValidator::eVal_ignore_exceptions) != 0;
-      m_ReportSpliceAsError = (options & CValidator::eVal_report_splice_as_error) != 0;
-      m_LatLonCheckState = (options & CValidator::eVal_latlon_check_state) != 0;
-      m_LatLonIgnoreWater = (options & CValidator::eVal_latlon_ignore_water) != 0;
-      m_IsStandaloneAnnot = false;
-      m_NoPubs = false;
-      m_NoBioSource = false;
-      m_IsGPS = false;
-      m_IsGED = false;
-      m_IsPDB = false;
-      m_IsPatent = false;
-      m_IsRefSeq = false;
-      m_IsEmbl = false;
-      m_IsDdbj = false;
-      m_IsNC = false;
-      m_IsNG = false;
-      m_IsNM = false;
-      m_IsNP = false;
-      m_IsNR = false;
-      m_IsNS  = false;
-      m_IsNT = false;
-      m_IsNW = false;
-      m_IsXR = false;
-      m_IsGI = false;
-      m_IsGB = false;
-      m_FeatLocHasGI = false;
-      m_ProductLocHasGI = false;
-      m_GeneHasLocusTag = false;
-      m_ProteinHasGeneralID = false;
-      m_IsINSDInSep = false;
-      m_PrgCallback = 0;
-      m_NumAlign = 0;
-      m_NumAnnot = 0;
-      m_NumBioseq = 0;
-      m_NumBioseq_set = 0;
-      m_NumDesc = 0;
-      m_NumDescr = 0;
-      m_NumFeat = 0;
-      m_NumGraph = 0;
-      m_NumMisplacedFeatures = 0;
-      m_NumMisplacedGraphs = 0;
-      m_NumGenes = 0;
-      m_NumGeneXrefs = 0;
-      m_NumTpaWithHistory = 0;
-      m_NumTpaWithoutHistory = 0;
-      m_IsTbl2Asn = false;
+    SetOptions(options);
+    Reset();
 
     if ( m_SourceQualTags.get() == 0 ) {
         InitializeSourceQualTags();
     }
-
+    if ( m_LatLonCountryMap.get() == 0 ) {
+        m_LatLonCountryMap.reset (new CLatLonCountryMap(false));
+    }
+    if ( m_LatLonWaterMap.get() == 0 ) {
+        m_LatLonWaterMap.reset (new CLatLonCountryMap(true));
+    }
 }
 
 
 // Destructor
 CValidError_imp::~CValidError_imp()
 {
+}
+
+
+void CValidError_imp::SetOptions(Uint4 options)
+{
+    m_NonASCII = (options & CValidator::eVal_non_ascii) != 0;
+    m_SuppressContext = (options & CValidator::eVal_no_context) != 0;
+    m_ValidateAlignments = (options & CValidator::eVal_val_align) != 0;
+    m_ValidateExons = (options & CValidator::eVal_val_exons) != 0;
+    m_OvlPepErr = (options & CValidator::eVal_ovl_pep_err) != 0;
+    m_RequireTaxonID = (options & CValidator::eVal_need_taxid) != 0;
+    m_RequireISOJTA = (options & CValidator::eVal_need_isojta) != 0;
+    m_ValidateIdSet = (options & CValidator::eVal_validate_id_set) != 0;
+    m_RemoteFetch = (options & CValidator::eVal_remote_fetch) != 0;
+    m_FarFetchMRNAproducts = (options & CValidator::eVal_far_fetch_mrna_products) != 0;
+    m_FarFetchCDSproducts = (options & CValidator::eVal_far_fetch_cds_products) != 0;
+    m_LocusTagGeneralMatch = (options & CValidator::eVal_locus_tag_general_match) != 0;
+    m_DoRubiscoText = (options & CValidator::eVal_do_rubisco_test) != 0;
+    m_IndexerVersion = (options & CValidator::eVal_indexer_version) != 0;
+    m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
+    m_ValidateInferenceAccessions = (options & CValidator::eVal_inference_accns) != 0;
+    m_IgnoreExceptions = (options & CValidator::eVal_ignore_exceptions) != 0;
+    m_ReportSpliceAsError = (options & CValidator::eVal_report_splice_as_error) != 0;
+    m_LatLonCheckState = (options & CValidator::eVal_latlon_check_state) != 0;
+    m_LatLonIgnoreWater = (options & CValidator::eVal_latlon_ignore_water) != 0;
+}
+
+
+void CValidError_imp::SetErrorRepository(CValidError* errors)
+{
+    m_ErrRepository = errors;
+}
+
+
+void CValidError_imp::Reset(void)
+{
+    m_Scope = 0;
+    m_TSE = 0;
+    m_IsStandaloneAnnot = false;
+    m_NoPubs = false;
+    m_NoBioSource = false;
+    m_IsGPS = false;
+    m_IsGED = false;
+    m_IsPDB = false;
+    m_IsPatent = false;
+    m_IsRefSeq = false;
+    m_IsEmbl = false;
+    m_IsDdbj = false;
+    m_IsNC = false;
+    m_IsNG = false;
+    m_IsNM = false;
+    m_IsNP = false;
+    m_IsNR = false;
+    m_IsNS  = false;
+    m_IsNT = false;
+    m_IsNW = false;
+    m_IsXR = false;
+    m_IsGI = false;
+    m_IsGB = false;
+    m_FeatLocHasGI = false;
+    m_ProductLocHasGI = false;
+    m_GeneHasLocusTag = false;
+    m_ProteinHasGeneralID = false;
+    m_IsINSDInSep = false;
+    m_PrgCallback = 0;
+    m_NumAlign = 0;
+    m_NumAnnot = 0;
+    m_NumBioseq = 0;
+    m_NumBioseq_set = 0;
+    m_NumDesc = 0;
+    m_NumDescr = 0;
+    m_NumFeat = 0;
+    m_NumGraph = 0;
+    m_NumMisplacedFeatures = 0;
+    m_NumMisplacedGraphs = 0;
+    m_NumGenes = 0;
+    m_NumGeneXrefs = 0;
+    m_NumTpaWithHistory = 0;
+    m_NumTpaWithoutHistory = 0;
+    m_IsTbl2Asn = false;
 }
 
 
@@ -1149,6 +1172,7 @@ bool CValidError_imp::Validate
     bool has_gi = false;
     // also want to know if there are any nucleotide sequences
     bool has_nucleotide_sequence = false;
+    bool something = false;
 
     for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); 
          bi && (!m_IsINSDInSep || !has_gi || !has_nucleotide_sequence);
@@ -1156,6 +1180,9 @@ bool CValidError_imp::Validate
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
             if ((*it)->IsGi()) {
                 has_gi = true;
+            }
+            if ((*it)->IsGenbank() && NStr::Equal((*it)->GetGenbank().GetAccession(), "EF115225")) {
+              something = true;
             }
         }
         if (bi->IsSetInst_Mol() && bi->IsNa()) {

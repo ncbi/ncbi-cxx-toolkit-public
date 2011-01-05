@@ -151,6 +151,7 @@ void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
 {
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
+
         try {
             m_GeneIt = new CFeat_CI(m_CurrentHandle, CSeqFeatData::e_Gene);
             m_AllFeatIt = new CFeat_CI(m_CurrentHandle);

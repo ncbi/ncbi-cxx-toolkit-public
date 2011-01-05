@@ -220,6 +220,8 @@ enum EErrType {
     eErr_SEQ_DESCR_MissingKeyword,
     eErr_SEQ_DESCR_FakeStructuredComment,
     eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing,
+    eErr_SEQ_DESCR_LatLonWater,
+    eErr_SEQ_DESCR_LatLonOffshore,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,

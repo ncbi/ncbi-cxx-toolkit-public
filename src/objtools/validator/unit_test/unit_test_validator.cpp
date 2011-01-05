@@ -1730,6 +1730,112 @@ static void SetErrorsAccessions (vector< CExpectedError *> & expected_errors, st
 
 
 // new case test ground
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonValue)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_country, "USA");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 S 80 W");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
+                              "Latitude should be set to N (northern hemisphere)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 N 80 E");
+    expected_errors[0]->SetErrMsg("Longitude should be set to W (western hemisphere)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_country, "");
+    SetSubSource(entry, CSubSource::eSubtype_country, "Madagascar");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 N 47 E");
+    expected_errors[0]->SetErrMsg("Latitude should be set to S (southern hemisphere)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 S 47 W");
+    expected_errors[0]->SetErrMsg("Longitude should be set to E (eastern hemisphere)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "15 N 47 E");
+    SetSubSource(entry, CSubSource::eSubtype_country, "");
+    SetSubSource(entry, CSubSource::eSubtype_country, "Austria");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
+                              "Latitude and longitude values appear to be exchanged"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_country, "Romania");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "46.5 N 20 E");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonCountry",
+                              "Lat_lon '46.5 N 20 E' maps to 'Hungary' instead of 'Romania' - claimed region 'Romania' is at distance 45 km"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "34 N 65 E");
+    expected_errors[0]->SetErrCode("LatLonCountry");
+    expected_errors[0]->SetErrMsg("Lat_lon '34 N 65 E' maps to 'Afghanistan' instead of 'Romania'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 E");
+    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 E' maps to 'Austria' instead of 'Romania'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 W");
+    expected_errors[0]->SetErrCode("LatLonWater");
+    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 W' is in water 'Atlantic Ocean'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonState)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_country, "USA: South Carolina");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "36 N 80 W");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonCountry",
+    "Lat_lon '36 N 80 W' maps to 'USA: North Carolina' instead of 'USA: South Carolina' - claimed region 'USA: South Carolina' is at distance 130 km"));
+    options |= CValidator::eVal_latlon_check_state;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadEcNumberValue)
@@ -7464,111 +7570,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonRange)
 
     SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
     SetSubSource(entry, CSubSource::eSubtype_lat_lon, "90.1 S 181 W");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Descr_LatLonValue)
-{
-    // prepare entry
-    CRef<CSeq_entry> entry = BuildGoodSeq();
-    SetSubSource(entry, CSubSource::eSubtype_country, "USA");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 S 80 W");
-    
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
-                              "Latitude should be set to N (northern hemisphere)"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 N 80 E");
-    expected_errors[0]->SetErrMsg("Longitude should be set to W (western hemisphere)");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    SetSubSource(entry, CSubSource::eSubtype_country, "");
-    SetSubSource(entry, CSubSource::eSubtype_country, "Madagascar");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 N 47 E");
-    expected_errors[0]->SetErrMsg("Latitude should be set to S (southern hemisphere)");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 S 47 W");
-    expected_errors[0]->SetErrMsg("Longitude should be set to E (eastern hemisphere)");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 N 47 E");
-    SetSubSource(entry, CSubSource::eSubtype_country, "");
-    SetSubSource(entry, CSubSource::eSubtype_country, "Romania");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
-                              "Latitude and longitude values appear to be exchanged"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
-{
-    // prepare entry
-    CRef<CSeq_entry> entry = BuildGoodSeq();
-    SetSubSource(entry, CSubSource::eSubtype_country, "Romania");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "46.5 N 20 E");
-    
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonAdjacent",
-                              "Lat_lon '46.5 N 20 E' MIGHT be in 'Hungary' instead of adjacent 'Romania'"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "34 N 65 E");
-    expected_errors[0]->SetErrCode("LatLonCountry");
-    expected_errors[0]->SetErrMsg("Lat_lon '34 N 65 E' does not map to 'Romania', but may be in 'Afghanistan'");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 E");
-    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 E' does not map to 'Romania', but may be in 'Austria'");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 W");
-    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 W' does not map to 'Romania'");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Descr_LatLonState)
-{
-    // prepare entry
-    CRef<CSeq_entry> entry = BuildGoodSeq();
-    SetSubSource(entry, CSubSource::eSubtype_country, "USA: South Carolina");
-    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "36 N 80 W");
-    
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonAdjacent",
-                              "Lat_lon '36 N 80 W' MIGHT be in 'USA' instead of adjacent 'USA: South Carolina'"));
-    options |= CValidator::eVal_latlon_check_state;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

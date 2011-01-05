@@ -111,15 +111,15 @@ class CCountryLatLonMap;
 class CCountryBlock
 {
 public:
-	CCountryBlock (string country_name, double min_x, double min_y, double max_x, double max_y);
-	~CCountryBlock (void);
+    CCountryBlock (string country_name, double min_x, double min_y, double max_x, double max_y);
+    ~CCountryBlock (void);
 
-	string GetCountry(void)            const { return m_CountryName; }
+    string GetCountry(void)            const { return m_CountryName; }
     double GetMinX(void)               const { return m_MinX; }
     double GetMinY(void)               const { return m_MinY; }
     double GetMaxX(void)               const { return m_MaxX; }
     double GetMaxY(void)               const { return m_MaxY; }
-	bool IsLatLonInCountryBlock (double x, double y);
+    bool IsLatLonInCountryBlock (double x, double y);
     bool DoesOverlap(const CCountryBlock* other_block) const;
 
 private:
@@ -136,13 +136,13 @@ private:
 class CCountryLatLonMap
 {
 public:
-	CCountryLatLonMap(void);
-	~CCountryLatLonMap(void);
+	  CCountryLatLonMap(void);
+	  ~CCountryLatLonMap(void);
 
-	bool IsCountryInLatLon(string country, double x, double y);
-	string GuessCountryForLatLon(double x, double y);
-	bool HaveLatLonForCountry (string country);
-	static bool DoesStringContainBodyOfWater(const string& country);
+	  bool IsCountryInLatLon(string country, double x, double y);
+	  string GuessCountryForLatLon(double x, double y);
+	  bool HaveLatLonForCountry (string country);
+	  static bool DoesStringContainBodyOfWater(const string& country);
     bool DoCountryBoxesOverlap (string country1, string country2);
 
 private:
@@ -156,6 +156,196 @@ private:
     TCountryBlockList m_CountryBlockList;
 
 	static const string sm_BodiesOfWater[];
+};
+
+class CCountryLine;
+
+class CCountryExtreme
+{
+public:
+    CCountryExtreme (string country_name, int min_x, int min_y, int max_x, int max_y);
+    ~CCountryExtreme (void);
+
+    string GetCountry(void)         const { return m_CountryName; }
+    string GetLevel0(void)         const { return m_Level0; }
+    string GetLevel1(void)         const { return m_Level1; }
+    int GetMinX(void)               const { return m_MinX; }
+    int GetMinY(void)               const { return m_MinY; }
+    int GetMaxX(void)               const { return m_MaxX; }
+    int GetMaxY(void)               const { return m_MaxY; }
+    int GetArea(void)               const { return m_Area; }
+    void AddLine(const CCountryLine* line);
+    bool SetMinX(int min_x);
+    bool SetMinY(int min_y);
+    bool SetMaxX(int max_x);
+    bool SetMaxY(int max_y);
+    bool DoesOverlap(const CCountryExtreme* other_block) const;
+    bool PreferTo(const CCountryExtreme* other_block, const string country, const string province, const bool prefer_new) const;
+
+private:
+    string m_CountryName;
+    string m_Level0;
+    string m_Level1;
+    int m_MinX;
+    int m_MinY;
+    int m_MaxX;
+    int m_MaxY;
+    int m_Area;
+};
+
+
+class CCountryLine
+{
+public:
+	CCountryLine (string country_name, double y, double min_x, double max_x, double scale);
+	~CCountryLine (void);
+
+	string GetCountry(void)            const { return m_CountryName; }
+  double GetLat(void)                const { return m_Y / m_Scale; }
+  double GetMinLon(void)             const { return m_MinX / m_Scale; }
+  double GetMaxLon(void)             const { return m_MaxX / m_Scale; }
+  int GetY(void)                  const { return m_Y; }
+  int GetMinX(void)               const { return m_MinX; }
+  int GetMaxX(void)               const { return m_MaxX; }
+
+  static int ConvertLat(double y, double scale);
+  static int ConvertLon(double x, double scale);
+
+  void SetBlock (CCountryExtreme *block) { m_Block = block; }
+  CCountryExtreme * GetBlock(void) const {return m_Block; }
+
+private:
+  int x_ConvertLat(double y);
+  int x_ConvertLon(double x);
+
+  CCountryExtreme *m_Block;
+	string m_CountryName;
+	int m_Y;
+	int m_MinX;
+	int m_MaxX;
+  double m_Scale;
+
+};
+
+
+class CLatLonCountryId
+{
+public:
+    CLatLonCountryId(float lat, float lon);
+    ~CLatLonCountryId(void);
+
+    float GetLat(void) const { return m_Lat; }
+    void  SetLat(float lat) { m_Lat = lat; }
+    float GetLon(void) const { return m_Lon; }
+    void  SetLon(float lon) { m_Lon = lon; }
+    string GetFullGuess(void) const { return m_FullGuess; }
+    void  SetFullGuess(string guess) { m_FullGuess = guess; }
+    string GetGuessCountry(void) const { return m_GuessCountry; }
+    void  SetGuessCountry(string guess) { m_GuessCountry = guess; }
+    string GetGuessProvince(void) const { return m_GuessProvince; }
+    void  SetGuessProvince(string guess) { m_GuessProvince = guess; }
+    string GetGuessWater(void) const { return m_GuessWater; }
+    void  SetGuessWater(string guess) { m_GuessWater = guess; }
+    string GetClosestFull(void) const { return m_ClosestFull; }
+    void  SetClosestFull(string closest) { m_ClosestFull = closest; }
+    string GetClosestCountry(void) const { return m_ClosestCountry; }
+    void  SetClosestCountry(string closest) { m_ClosestCountry = closest; }
+    string GetClosestProvince(void) const { return m_ClosestProvince; }
+    void  SetClosestProvince(string closest) { m_ClosestProvince = closest; }
+    string GetClosestWater(void) const { return m_ClosestWater; }
+    void  SetClosestWater(string closest) { m_ClosestWater = closest; }
+    string GetClaimedFull(void) const { return m_ClaimedFull; }
+    void  SetClaimedFull(string claimed) { m_ClaimedFull = claimed; }
+
+    int GetLandDistance(void) const { return m_LandDistance; }
+    void SetLandDistance (int dist) { m_LandDistance = dist; }
+    int GetWaterDistance(void) const { return m_WaterDistance; }
+    void SetWaterDistance (int dist) { m_WaterDistance = dist; }
+    int GetClaimedDistance(void) const { return m_ClaimedDistance; }
+    void SetClaimedDistance (int dist) { m_ClaimedDistance = dist; }
+
+
+    enum EClassificationFlags {
+        fCountryMatch    = (1),
+        fProvinceMatch   = (1 << 1),
+        fWaterMatch      = (1 << 2), 
+        fOverlap         = (1 << 3), 
+        fCountryClosest  = (1 << 4), 
+        fProvinceClosest = (1 << 5),
+        fWaterClosest    = (1 << 6)
+    };
+    typedef int TClassificationFlags;    ///< Bitwise OR of "EClassificationFlags"
+
+private:
+  float  m_Lat;
+  float  m_Lon;
+  string m_FullGuess;
+  string m_GuessCountry;
+  string m_GuessProvince;
+  string m_GuessWater;
+  string m_ClosestFull;
+  string m_ClosestCountry;
+  string m_ClosestProvince;
+  string m_ClosestWater;
+  string m_ClaimedFull;
+  int    m_LandDistance;
+  int    m_WaterDistance;
+  int    m_ClaimedDistance;
+};
+
+class CLatLonCountryMap
+{
+public:
+    CLatLonCountryMap(bool is_water);
+    ~CLatLonCountryMap(void);
+	  bool IsCountryInLatLon(string country, double lat, double lon);
+	  const CCountryExtreme * GuessRegionForLatLon(double lat, double lon, const string country = "", const string province = "");
+    CCountryExtreme * FindClosestToLatLon (double lat, double lon, double range, double &distance);
+    bool IsClosestToLatLon (string country, double lat, double lon, double range, double &distance);
+	  bool HaveLatLonForRegion (string country);
+    bool DoCountryBoxesOverlap (string country1, string country2);
+    CCountryExtreme * IsNearLatLon (double lat, double lon, double range, double &distance, const string country, const string province = "");
+    double GetScale (void) { return m_Scale; }
+    static int AdjustAndRoundDistance (double distance, double scale);
+    int AdjustAndRoundDistance (double distance);
+
+    enum ELatLonAdjustFlags {
+      fNone      = 0 ,
+      fFlip      = 1 ,
+      fNegateLat = (1 << 1),
+      fNegateLon = (1 << 2),
+    };
+    typedef int TLatLonAdjustFlags;    ///< Bitwise OR of "ELatLonAdjustFlags"
+
+
+private:
+    void x_InitFromDefaultList(const char **list, int num);
+    bool x_InitFromFile(string filename);
+    static bool s_CompareTwoLinesByCountry(const CCountryLine* line1,
+                                    const CCountryLine* line2);
+    static bool s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
+                                    const CCountryLine* line2);
+
+    int x_GetLatStartIndex (int y);
+    const CCountryExtreme * x_FindCountryExtreme (string country);
+
+
+    typedef vector <CCountryLine *> TCountryLineList;
+    typedef TCountryLineList::const_iterator TCountryLineList_iter; 
+
+    TCountryLineList m_CountryLineList;
+    TCountryLineList m_LatLonSortedList;
+    double m_Scale;
+
+    typedef vector <CCountryExtreme *> TCountryExtremeList;
+    typedef TCountryExtremeList::const_iterator TCountryExtremeList_iter; 
+    TCountryExtremeList m_CountryExtremes;
+
+
+	  static const string sm_BodiesOfWater[];
+
+
+
 };
 
 
@@ -175,6 +365,10 @@ public:
         Uint4 options = 0);
     virtual ~CValidError_imp(void);
 
+    void SetOptions (Uint4 options);
+    void SetErrorRepository (CValidError* errors);
+    void Reset(void);
+
     // Validation methods
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
         CScope* scope = 0);
@@ -182,9 +376,9 @@ public:
     void Validate(const CSeq_submit& ss, CScope* scope = 0);
     void Validate(const CSeq_annot_Handle& sa);
 
-	void Validate(const CSeq_feat& feat);
-	void Validate(const CBioSource& src);
-	void Validate(const CPubdesc& pubdesc);
+    void Validate(const CSeq_feat& feat);
+    void Validate(const CBioSource& src);
+    void Validate(const CPubdesc& pubdesc);
     void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
 
     void SetProgressCallback(CValidator::TProgressCallback callback,
@@ -234,25 +428,27 @@ public:
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateSubSource(const CSubSource& subsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-	void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
-	void ValidateOrgName(const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
-	void ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx);
-	void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
+    void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
+    void ValidateOrgName(const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
+    void ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx);
+    void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
+    void ValidateLatLonCountry(string countryname, string lat_lon, const CSerialObject& obj, const CSeq_entry *ctx);
+
     bool IsSyntheticConstruct (const CBioSource& src);
     bool IsArtificial (const CBioSource& src);
     bool IsOrganelle (int genome);
     bool IsOrganelle (CBioseq_Handle seq);
-	bool IsOtherDNA(const CBioseq_Handle& bsh) const;
+    bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
-        const string& prefix, const CSerialObject& obj);
+    const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
-        bool biosource = false, const CSeq_entry *ctx = 0);
+    bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
-        bool biosource = false, const CSeq_entry *ctx = 0);
+    bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-	void ValidateTaxonomy(const CSeq_entry& se);
-	void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
+    void ValidateTaxonomy(const CSeq_entry& se); 
+    void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
     void ValidateCitations (const CSeq_entry_Handle& seh);
 
@@ -275,8 +471,8 @@ public:
     bool IsLocusTagGeneralMatch(void) const { return m_LocusTagGeneralMatch; }
     bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
     bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
-	bool UseEntrez(void)              const { return m_UseEntrez; }
-	bool ValidateInferenceAccessions(void) const { return m_ValidateInferenceAccessions; }
+    bool UseEntrez(void)              const { return m_UseEntrez; }
+    bool ValidateInferenceAccessions(void) const { return m_ValidateInferenceAccessions; }
     bool IgnoreExceptions(void) const { return m_IgnoreExceptions; }
     bool ReportSpliceAsError(void) const { return m_ReportSpliceAsError; }
     bool IsLatLonCheckState(void)     const { return m_LatLonCheckState; }
@@ -401,6 +597,9 @@ private:
 
 	void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
 
+    CLatLonCountryId *x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
+    CLatLonCountryId::TClassificationFlags x_ClassifyLatLonId(CLatLonCountryId *id, string country, string province);
+
 
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
@@ -408,7 +607,9 @@ private:
     CSeq_entry_Handle       m_TSEH;
 
     // validation data read from external files
-	CCountryLatLonMap lat_lon_map;
+	  CCountryLatLonMap lat_lon_map;
+    static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;
+    static auto_ptr<CLatLonCountryMap> m_LatLonWaterMap;
     CRef<CComment_set> m_StructuredCommentRules;
 
     // error repoitory
@@ -431,7 +632,7 @@ private:
     bool m_LocusTagGeneralMatch;
     bool m_DoRubiscoText;
     bool m_IndexerVersion;
-	bool m_UseEntrez;
+	  bool m_UseEntrez;
     bool m_IgnoreExceptions;             // ignore exceptions when validating translation
     bool m_ValidateInferenceAccessions;  // check that accessions in inferences are valid
     bool m_ReportSpliceAsError;
