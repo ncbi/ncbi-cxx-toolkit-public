@@ -142,7 +142,7 @@ CShowBlastDefline::GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
     CRef<CSeq_id> best_id = FindBestChoice(id, CSeq_id::Score);
 
     if (show_gi) {
-    	ITERATE(list<CRef<CSeq_id> >, itr, id) {
+        ITERATE(list<CRef<CSeq_id> >, itr, id) {
              if ((*itr)->IsGi()) {
                 id_string += (*itr)->AsFastaString();
                 found_gi = true;
@@ -368,7 +368,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             int cur_gi =  FindGi(cur_id);            
             if(use_this_gi.empty()){
                 if(sdl->gi == cur_gi){                 
-					sdl->linkout = m_UseLinkoutDB
+                    sdl->linkout = m_UseLinkoutDB
                         ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
                         : CAlignFormatUtil::GetLinkout((**iter));
                     if (!m_AdvancedView)
@@ -423,7 +423,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 
 		//blast_rank = num_align + 1
 		CRange<TSeqPos> seqRange = ((int)m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
-        bool flip = ((int)m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;		
+        bool flip = ((int)m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;        
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
                                                  m_QueryNumber,sdl->gi, accession, sdl->linkout,
                                                  blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,flip); 
@@ -626,9 +626,9 @@ void CShowBlastDefline::x_InitDefline(void)
          iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
          iter++){
         if (is_first_aln) {
-			_ASSERT(m_ScopeRef);
-			CBioseq_Handle bh = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0));
-			_ASSERT(bh);
+            _ASSERT(m_ScopeRef);
+            CBioseq_Handle bh = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0));
+            _ASSERT(bh);
             master_is_na = bh.GetBioseqCore()->IsNa();
         }
         subid = &((*iter)->GetSeq_id(1));
@@ -861,13 +861,13 @@ static void s_DisplayDescrColumnHeader(CNcbiOstream & out,
                                        
 
 {
-    if (html) {				
+    if (html) {                
         if(currDisplaySort == columnDisplSort) {
-            out << "<th class=\"sel\">";		
+            out << "<th class=\"sel\">";        
         }
         else {
             out << "<th>";
-        }	
+        }    
         
         out << "<a href=\"Blast.cgi?"
             << "CMD=Get&" << query_buf 
@@ -996,7 +996,7 @@ void CShowBlastDefline::x_InitDeflineTable(void)
 
 void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 {
-    //This is max number of columns in the table - later should be probably put in enum DisplayOption	    
+    //This is max number of columns in the table - later should be probably put in enum DisplayOption        
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
 
@@ -1010,7 +1010,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                     out << kPsiblastCheckedBackgroundGif;
                 }
             }
-            //This is done instead of code displaying titles			
+            //This is done instead of code displaying titles            
             if(!(m_Option & eNoShowHeader)) {
                 
                 if(m_Option & eHtml){
@@ -1019,13 +1019,13 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                 }
                 out << kHeader << "\n";
                 if(m_Option & eHtml){
-                    out << "</b>";			
+                    out << "</b>";            
                     out << "(Click headers to sort columns)\n";
                 }
             }
             if(m_Option & eHtml){
                 out << "<div id=\"desctbl\">" << "<table id=\"descs\">" << "\n" << "<thead>" << "\n";
-                out << "<tr class=\"first\">" << "\n" << "<th>Accession</th>" << "\n" << "<th>Description</th>" << "\n";			
+                out << "<tr class=\"first\">" << "\n" << "<th>Accession</th>" << "\n" << "<th>Description</th>" << "\n";            
             }
             
             string query_buf; 
@@ -1064,16 +1064,16 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                 out << "</tr>\n";
                 out << "</thead>\n";
             }
-        }		
+        }        
     
-	if (m_Option & eHtml) {
-		out << "<tbody>\n";
-	}
+    if (m_Option & eHtml) {
+        out << "<tbody>\n";
+    }
     
     x_DisplayDeflineTableBody(out);
     
     if (m_Option & eHtml) {
-	out << "</tbody>\n</table></div>\n";
+    out << "</tbody>\n</table></div>\n";
     }
 }
 
@@ -1104,56 +1104,56 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
         string line_component;
         cur_database_type = (sdl->linkout & eGenomicSeq);
         if (is_mixed_database) {
-			if (is_first) {
+            if (is_first) {
                 if (m_Option & eHtml) {
-				    out << "<tr>\n<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
-			    }
+                    out << "<tr>\n<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
+                }
                 if (cur_database_type) {
                     out << "Genomic sequences";                    
                 } else {
                     out << "Transcripts";                    
                 }
-				if (!(m_Option & eHtml)) {					
-					out << ":\n";
-				}
+                if (!(m_Option & eHtml)) {                    
+                    out << ":\n";
+                }
                 if (m_Option & eHtml) {
-				    out << "</th></tr>\n";
-			    }
-            } else if (prev_database_type != cur_database_type) {				
+                    out << "</th></tr>\n";
+                }
+            } else if (prev_database_type != cur_database_type) {                
                 if (m_Option & eHtml) {
-				    out << "<tr>\n<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
-			    }
-				if (cur_database_type) {
-                    out << "Genomic sequences";					
-				} else {
+                    out << "<tr>\n<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
+                }
+                if (cur_database_type) {
+                    out << "Genomic sequences";                    
+                } else {
                     out << "Transcripts";
-				}                
-				if (m_Option & eHtml) {
-					out << "<span class=\"slink\">"
-						<< " [<a href=\"Blast.cgi?CMD=Get&"
-                        << query_buf 
-                        << "&DATABASE_SORT=";					
-					if (cur_database_type) {
-						out << CAlignFormatUtil::eGenomicFirst;				
-					} else {
-						out << CAlignFormatUtil::eNonGenomicFirst;
-					}
-					out << "#sort_mark\">show first</a>]</span>";
-				}
-				else {
-					out << ":\n";
-				}				
+                }                
                 if (m_Option & eHtml) {
-				    out << "</th></tr>\n";
-			    }
-            }			
+                    out << "<span class=\"slink\">"
+                        << " [<a href=\"Blast.cgi?CMD=Get&"
+                        << query_buf 
+                        << "&DATABASE_SORT=";                    
+                    if (cur_database_type) {
+                        out << CAlignFormatUtil::eGenomicFirst;                
+                    } else {
+                        out << CAlignFormatUtil::eNonGenomicFirst;
+                    }
+                    out << "#sort_mark\">show first</a>]</span>";
+                }
+                else {
+                    out << ":\n";
+                }                
+                if (m_Option & eHtml) {
+                    out << "</th></tr>\n";
+                }
+            }            
         }
         prev_database_type = cur_database_type;
         is_first = false;
-		if (m_Option & eHtml) {
-			out << "<tr>\n";
-			out << "<td class=\"l\">\n";
-		}
+        if (m_Option & eHtml) {
+            out << "<tr>\n";
+            out << "<td class=\"l\">\n";
+        }
         if ((m_Option & eHtml) && (sdl->gi > 0)){
             if((m_Option & eShowNewSeqGif)) { 
                 if (sdl->is_new) {
@@ -1207,20 +1207,20 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
             out << "</a>";
         }
-		if (m_Option & eHtml) {
-			out << "</td><td class=\"lim l\"><div class=\"lim\">";
-		}
+        if (m_Option & eHtml) {
+            out << "</td><td class=\"lim l\"><div class=\"lim\">";
+        }
         line_component = "  " + sdl->defline; 
         string actual_line_component;
         actual_line_component = line_component;
         
         if (m_Option & eHtml) {
             out << CHTMLHelper::HTMLEncode(actual_line_component);
-			out << "</div></td><td>";
+            out << "</div></td><td>";
         } else {
             out << actual_line_component; 
         }
-		
+        
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << sdl->score_url;
         }
@@ -1228,37 +1228,37 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
-		if(m_Option & eHtml) {
-			out << "</td>";
-			out << "<td>" << (*iter)->total_bit_string << "</td>";
-		}
-		if (!(m_Option & eHtml)) {
-			CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
+        if(m_Option & eHtml) {
+            out << "</td>";
+            out << "<td>" << (*iter)->total_bit_string << "</td>";
+        }
+        if (!(m_Option & eHtml)) {
+            CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
 
-			out << kTwoSpaceMargin << kOneSpaceMargin << (*iter)->total_bit_string;
-			CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - 
+            out << kTwoSpaceMargin << kOneSpaceMargin << (*iter)->total_bit_string;
+            CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - 
                                    (*iter)->total_bit_string.size());
-		}
-		
-                int percent_coverage = 100*(*iter)->master_covered_length/m_QueryLength;
-		if (m_Option & eHtml) {
-			out << "<td>" << percent_coverage << "%</td>";
-		}
-		else {
-			out << kTwoSpaceMargin << percent_coverage << "%";
+        }
         
-			//minus one due to % sign
-			CAlignFormatUtil::AddSpace(out, m_MaxQueryCoverLen - 
-			                           NStr::IntToString(percent_coverage).size() - 1);
-		}
+                int percent_coverage = 100*(*iter)->master_covered_length/m_QueryLength;
+        if (m_Option & eHtml) {
+            out << "<td>" << percent_coverage << "%</td>";
+        }
+        else {
+            out << kTwoSpaceMargin << percent_coverage << "%";
+        
+            //minus one due to % sign
+            CAlignFormatUtil::AddSpace(out, m_MaxQueryCoverLen - 
+                                       NStr::IntToString(percent_coverage).size() - 1);
+        }
 
-		if (m_Option & eHtml) {        
-			out << "<td>" << (*iter)->evalue_string << "</td>";
-		}
-		else {
-			out << kTwoSpaceMargin << (*iter)->evalue_string;
-			CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
-		}
+        if (m_Option & eHtml) {        
+            out << "<td>" << (*iter)->evalue_string << "</td>";
+        }
+        else {
+            out << kTwoSpaceMargin << (*iter)->evalue_string;
+            CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
+        }
         if(m_Option & eShowPercentIdent){
             percent_identity = 100*(*iter)->match/(*iter)->align_length;
             if (m_Option & eHtml) {        
@@ -1271,7 +1271,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
                                            NStr::IntToString(percent_identity).size());
             }
         }
-		//???
+        //???
         if(m_Option & eShowSumN){ 
             if (m_Option & eHtml) {
                 out << "<td>";
@@ -1284,7 +1284,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
                                            NStr::IntToString((*iter)->sum_n).size());
             }
         }
-	
+    
         if((m_Option & eLinkout) && (m_Option & eHtml)){
                
             out << "<td>";
@@ -1456,7 +1456,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
         }
         sdl->id = id;
         if(m_Option & eHtml){
-			_ASSERT(m_Reg.get());
+            _ASSERT(m_Reg.get());
 
             string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
             string accession;
@@ -1574,7 +1574,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
 	/*****************This block of code is for future use with AJAX end***************************/ 
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
-		
+        
     int percent_coverage = 100*iter->master_covered_length/m_QueryLength;
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString(percent_coverage));
@@ -1585,7 +1585,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         int percent_identity = 100*iter->match/iter->align_length;                                
         defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::IntToString(percent_identity));
     }
-		
+        
     if(m_Option & eShowSumN){     
         defLine = CAlignFormatUtil::MapTemplate(defLine,"sum_n",NStr::IntToString(iter->sum_n));
     }

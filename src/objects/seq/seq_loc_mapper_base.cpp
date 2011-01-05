@@ -254,24 +254,10 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
     // If we're partial on the left and we're not at the beginning only because of 
     // frame shift, we shift back to the beginning when mapping.
     // example accession: AJ237662.1
-    bool partial_from = false; // Are we fuzzy at the beginning?
-    if (!m_Reverse) {
-        partial_from = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
-            fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
-    } else {
-        partial_from = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
-            fuzz->first->GetLim() == CInt_fuzz::eLim_gt;
-    }
-
-    bool partial_to = false;
-    if (!m_Reverse) {
-        partial_to = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
-            fuzz->second->GetLim() == CInt_fuzz::eLim_gt;
-    }
-    else {
-        partial_to = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
-            fuzz->second->GetLim() == CInt_fuzz::eLim_lt;
-    }
+    const bool partial_from = fuzz  &&  fuzz->first  &&  fuzz->first->IsLim()  &&
+            ( fuzz->first->GetLim() == CInt_fuzz::eLim_lt || fuzz->first->GetLim() == CInt_fuzz::eLim_gt );
+    const bool partial_to = fuzz  &&  fuzz->second  &&  fuzz->second->IsLim()  &&
+            ( fuzz->second->GetLim() == CInt_fuzz::eLim_lt || fuzz->second->GetLim() == CInt_fuzz::eLim_gt );
 
     from = max(from, m_Src_from);
     to = min(to, m_Src_to);
@@ -369,6 +355,9 @@ void CMappingRange::x_Map_Fuzz(TFuzz& fuzz) const
         {
             // gt/lt are swapped when mapping to reverse strand.
             if ( m_Reverse ) {
+                CRef<CInt_fuzz> oldFuzz = fuzz;
+                fuzz.Reset( new CInt_fuzz ); // careful: other TRangeFuzz's may map to the same TFuzz
+                fuzz->Assign( *oldFuzz );
                 fuzz->SetLim(x_ReverseFuzzLim(fuzz->GetLim()));
             }
             break;
@@ -400,6 +389,9 @@ void CMappingRange::x_Map_Fuzz(TFuzz& fuzz) const
             if ( CanMap(rg.GetFrom(), rg.GetTo(), false, eNa_strand_unknown) ) {
                 rg = Map_Range(rg.GetFrom(), rg.GetTo());
                 if ( !rg.Empty() ) {
+                    CRef<CInt_fuzz> oldFuzz = fuzz;
+                    fuzz.Reset( new CInt_fuzz ); // careful: other TRangeFuzz's may map to the same TFuzz
+                    fuzz->Assign( *oldFuzz );
                     fuzz->SetRange().SetMin(rg.GetFrom());
                     fuzz->SetRange().SetMax(rg.GetTo());
                 }
@@ -2238,10 +2230,10 @@ void CSeq_loc_Mapper_Base::x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const
                 new_loc_piece->Assign( *loc_piece );
 
                 if( ! is_first ) {
-                    new_loc_piece->SetPartialStart( false, extreme ) ;
+                  new_loc_piece->SetPartialStart( false, extreme ) ;
                 }
                 if( ! is_last ) {
-                    new_loc_piece->SetPartialStop( false, extreme );
+                  new_loc_piece->SetPartialStop( false, extreme );
                 }
                 
                 new_loc->Add( *new_loc_piece );
@@ -2423,15 +2415,15 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     //}
     // If the previous range could not be mapped and was removed,
     // indicate it using fuzz.
-    //if ( m_LastTruncated ) {
-    //    if ( !fuzz.first ) {
-    //        // lim tl - always indicates left, regardless of the strand
-    //        fuzz.first.Reset(new CInt_fuzz);
-    //        fuzz.first->SetLim(CInt_fuzz::eLim_tl);
-    //    }
-    //    // Reset the flag - current range is mapped at least partially.
-    //    m_LastTruncated = false;
-    //}
+    if ( m_LastTruncated ) {
+        //if ( !fuzz.first ) {         // TODO: Consider uncommenting this "if" after we switch permanntly to C++
+        //    // lim tl - always indicates left, regardless of the strand
+        //    fuzz.first.Reset(new CInt_fuzz);
+        //    fuzz.first->SetLim(CInt_fuzz::eLim_tl);
+        //}
+        // Reset the flag - current range is mapped at least partially.
+        m_LastTruncated = false;
+    }
 
     // Map fuzz to the destination. This will also adjust fuzz lim value
     // (just set by truncation) when strand is reversed by the mapping.
