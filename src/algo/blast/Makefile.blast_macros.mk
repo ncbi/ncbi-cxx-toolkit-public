@@ -14,6 +14,9 @@ BLAST_DB_DATA_LOADER_LIBS = ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt
 BLAST_INPUT_LIBS = blastinput \
     $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_FORMATTER_MINIMAL_LIBS)
 
+# Libraries required to link against the internal BLAST SRA library
+BLAST_SRA_LIBS=blast_sra $(SRAXF_LIBS) vxf $(SRA_LIBS)
+
 # BLAST_FORMATTER_LIBS and BLAST_INPUT_LIBS need $BLAST_LIBS
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment \
 		xalgodustmask xalgowinmask seqmasks_io seqdb blast_services xobjutil \
