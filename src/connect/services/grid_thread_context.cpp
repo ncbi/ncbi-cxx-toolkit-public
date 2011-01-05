@@ -46,6 +46,8 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
+#define MEM_OVERUSE_EXIT_CODE 100
+
 
 BEGIN_NCBI_SCOPE
 
@@ -176,27 +178,28 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
             // Set PREV_JOB_WAS_EXCLUSIVE and reset OTHER_JOB_IS_EXCLUSIVE.
             decision_mask ^= PREV_JOB_WAS_EXCLUSIVE | OTHER_JOB_IS_EXCLUSIVE;
 
-        bool request_memory_shutdown = false;
         Uint8 total_memory_limit = m_Worker.GetTotalMemoryLimit();
         if (total_memory_limit) {  // memory check requested
             size_t total_mem;
-            bool ok = GetMemoryUsage(&total_mem, 0, 0);
-            if (ok) {
+            if (GetMemoryUsage(&total_mem, 0, 0)) {
                 if (total_mem > total_memory_limit) {
-                    request_memory_shutdown = true;
+                    ERR_POST(Warning << "Memory usage (" << total_mem <<
+                        ") is above the configured limit (" <<
+                        total_memory_limit << ")");
+
+                    CGridGlobals::GetInstance().RequestShutdown(
+                        CNetScheduleAdmin::eNormalShutdown,
+                            MEM_OVERUSE_EXIT_CODE);
                 }
             } else {
-                ERR_POST_X(9, "Could not check self memory usage" );
+                ERR_POST("Could not check self memory usage" );
             }
         }
 
         if (CGridGlobals::GetInstance().IsShuttingDown() ||
-                m_Worker.IsTimeToRebalance() || request_memory_shutdown ||
+                m_Worker.IsTimeToRebalance() ||
                 decision_mask & OTHER_JOB_IS_EXCLUSIVE)
             m_NetScheduleExecuter.PutResult(m_JobContext->m_Job);
-            if (request_memory_shutdown) {
-                CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eNormalShutdown, 100);
-            }
         else {
             more_jobs = m_NetScheduleExecuter.PutResultGetJob(
                 m_JobContext->m_Job, new_job);
