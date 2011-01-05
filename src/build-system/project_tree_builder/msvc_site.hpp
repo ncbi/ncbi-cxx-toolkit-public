@@ -217,6 +217,7 @@ public:
     string GetDefinesEntry(const string& entry) const;
     string GetPlatformInfo(const string& sysname,
         const string& type, const string& orig) const;
+    bool IsCppflagDescribed(const string& value) const;
 
 private:
     CPtbRegistry m_Registry;

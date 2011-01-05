@@ -182,6 +182,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                   TFiles& files,
                                   const set<string>& keys)
 {
+    const CMsvcSite& site = GetApp().GetSite();
     set<string> defs_unresolved;
     map<string,string> defs_resolved;
     NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
@@ -195,7 +196,10 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
             
             const string& key    = n->first;
             list<string>& values = n->second;
-		    if (keys.find(key) != keys.end()) {
+            bool cppflags = key == "CPPFLAGS";
+
+//		    if (keys.find(key) != keys.end())
+		    {
                 bool modified = false;
                 list<string> new_vals;
                 list<string>  redef_values;
@@ -204,7 +208,13 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
 //                NON_CONST_ITERATE(list<string>, k, values) {
                     //iterate all values and try to resolve 
                     const string& val = *k;
-                    if( !CSymResolver::HasDefine(val) ) {
+                    if (cppflags && site.IsCppflagDescribed(val)) {
+                        if (msvc_empty) {
+                            new_vals.push_back(val);
+                        } else {
+                            msvc_prj.Append(new_vals,val);
+                        }
+                    } else if( !CSymResolver::HasDefine(val) ) {
                         if (msvc_empty) {
                             new_vals.push_back(val);
                         } else {
@@ -225,7 +235,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                 if ( IsConfigurableDefine(define) ) {
                                     string stripped = StripConfigurableDefine(define);
                                     string resolved_def_str;
-                                    GetApp().GetSite().ResolveDefine(stripped, resolved_def_str);
+                                    site.ResolveDefine(stripped, resolved_def_str);
                                     if ( !resolved_def_str.empty() ) {
                                         defs_resolved[define] = resolved_def_str;
                                         list<string> resolved_defs;
@@ -242,7 +252,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                     } else {
 // configurable definitions could be described in terms of components
                                         list<string> components;
-                                        GetApp().GetSite().GetComponents(stripped, &components);
+                                        site.GetComponents(stripped, &components);
                                         if (!components.empty()) {
                                             defs_resolved[define] = "Component= " + NStr::Join( components, ", ");
                                         } else {
@@ -259,7 +269,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                     string raw = ExtractConfigurableDefine(define);
                                     string stripped = StripConfigurableDefine(raw);
                                     string resolved_def_str;
-                                    GetApp().GetSite().ResolveDefine(stripped, resolved_def_str);
+                                    site.ResolveDefine(stripped, resolved_def_str);
                                     if (resolved_def_str == " ") {
                                         resolved_def_str.erase();
                                     }
@@ -270,7 +280,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                     }
                                 } else {
                                     string stripped = CSymResolver::StripDefine(val_define);
-                                    if (GetApp().GetSite().GetMacros().HasDefinition(stripped)) {
+                                    if (site.GetMacros().HasDefinition(stripped)) {
                                         if (msvc_empty) {
                                             new_vals.push_back(string("@")+stripped+"@");
                                         } else {

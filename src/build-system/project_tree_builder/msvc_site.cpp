@@ -484,7 +484,7 @@ void CMsvcSite::GetLibChoiceIncludes(
 {
     abs_includes->clear();
 
-    const string& include_str = m_Registry.Get("LibChoicesIncludes", 
+    string include_str = m_Registry.Get("LibChoicesIncludes", 
                                                cpp_flags_define);
     if (!include_str.empty()) {
         abs_includes->push_back("$(" + cpp_flags_define + ")");
@@ -496,7 +496,7 @@ void CMsvcSite::GetLibChoiceIncludes(
     list<string>* abs_includes) const
 {
     abs_includes->clear();
-    const string& include_str = m_Registry.Get("LibChoicesIncludes", 
+    string include_str = m_Registry.Get("LibChoicesIncludes", 
                                                cpp_flags_define);
     //split on parts
     list<string> parts;
@@ -677,6 +677,27 @@ string CMsvcSite::GetPlatformInfo(const string& sysname,
     }
     return result;
 }
+
+bool CMsvcSite::IsCppflagDescribed(const string& raw_value) const
+{
+    if (NStr::StartsWith(raw_value, "-I")) {
+        return true;
+    }
+    if (!CSymResolver::IsDefine(raw_value)) {
+        return false;
+    }
+    string stripped = CSymResolver::StripDefine(FilterDefine(raw_value));
+    string tmp = m_Registry.Get("LibChoicesIncludes", stripped);
+    if (!tmp.empty()) {
+        return true;
+    }
+    tmp = x_GetDefinesEntry(stripped);
+    if (!tmp.empty()) {
+        return true;
+    }
+    return false;
+}
+
 
 bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent) const
 {
