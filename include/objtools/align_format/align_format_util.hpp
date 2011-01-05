@@ -294,7 +294,7 @@ public:
         string date;
         Int8   total_length;
         int    number_seqs;
-        bool   subset;    
+        bool   subset;	
         /// Filtering algorithm ID used in BLAST search
         string filt_algorithm_name;
         /// Filtering algorithm options used in BLAST search
@@ -331,8 +331,8 @@ public:
         int taxid;              ///< taxid
         bool addCssInfo;        ///< bool indicating that css info should be added
         string seqUrl;          ///< sequence URL created
-        
-        
+		
+		
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
@@ -503,7 +503,7 @@ public:
     ///@return the value representing the membership bits set
     ///
     static int GetLinkout(const objects::CBioseq_Handle& handle, const
-                          objects::CSeq_id& id);    
+                          objects::CSeq_id& id);	
     
     ///Extract score info from blast alingment
     ///@param aln: alignment to extract score info from
@@ -822,14 +822,14 @@ public:
     /// double max percent identity
     ///@return
     /// CRef<CSeq_align_set> - filtered seq align
-    static CRef<objects::CSeq_align_set> FilterSeqalignByPercentIdent(objects::CSeq_align_set& source_aln,
+	static CRef<objects::CSeq_align_set> FilterSeqalignByPercentIdent(objects::CSeq_align_set& source_aln,
                                                                       double percentIdentLow,
                                                                       double percentIdentHigh);
 
-    ///function for Filtering seqalign by expect value and percent identity
+	///function for Filtering seqalign by expect value and percent identity
     ///@param source_aln
     /// CSeq_align_set original seqalign
-    ///@param evalueLow 
+	///@param evalueLow 
     /// double min expect value
     ///@param evalueHigh 
     /// double max expect value
@@ -996,7 +996,7 @@ public:
                            bool useTemplates = false,
                            bool advancedView = false);
 
-    ///Create URL for seqid 
+	///Create URL for seqid 
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param ids: CBioseq::TId object    
     ///@param useTemplates:bool indicating if templates are used
@@ -1005,21 +1005,21 @@ public:
                             bool useTemplates = false,
                             bool advancedView = false);
 
-    ///Create URL for seqid that goes to entrez or trace
+	///Create URL for seqid that goes to entrez or trace
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param id: seqid CSeq_id
     ///@param scopeRef:scope to fetch sequence
     ///@param useTemplates:bool indicating if templates are used
-    static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,
-                              const objects::CSeq_id& id,
-                              objects::CScope &scope,
-                              bool useTemplates);
+	static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,
+							  const objects::CSeq_id& id,
+							  objects::CScope &scope,
+							  bool useTemplates);
 
-    ///Create URL for seqid that goes to entrez or trace
+	///Create URL for seqid that goes to entrez or trace
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param ids: CBioseq::TId object    
     ///@param useTemplates:bool indicating if templates are used
-    static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const objects::CBioseq::TId* ids,bool useTemplates);
+	static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const objects::CBioseq::TId* ids,bool useTemplates);
     
 
     ///Create the list of string links for seqid that goes to mapviewer,seqviewer or download

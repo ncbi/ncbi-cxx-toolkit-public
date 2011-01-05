@@ -707,7 +707,7 @@ void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
             s_GetBlastScore(seg.GetDenseg().GetScores(),  
                             score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
         }
-    }    
+    }	
 }
 
 string CAlignFormatUtil::GetGnlID(const CDbtag& dtg)
@@ -794,20 +794,20 @@ void CAlignFormatUtil::GetScoreString(double evalue,
         snprintf(bit_score_buf, sizeof(bit_score_buf), "%4.3le", bit_score);
     } else if (bit_score > 99.9){
         snprintf(bit_score_buf, sizeof(bit_score_buf), "%4.0ld", 
-            (long)bit_score);
+			(long)bit_score);
     } else {
         snprintf(bit_score_buf, sizeof(bit_score_buf), kBitScoreFormat.c_str(),
-            bit_score);
+			bit_score);
     }
     if (total_bit_score > 9999){
         snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.3le", 
-            total_bit_score);
+			total_bit_score);
     } else if (total_bit_score > 99.9){
         snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.0ld", 
-            (long)total_bit_score);
+			(long)total_bit_score);
     } else {
         snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.1lf",
-            total_bit_score);
+			total_bit_score);
     }
     evalue_str = evalue_buf;
     bit_score_str = bit_score_buf;
@@ -2292,8 +2292,8 @@ static bool s_ProcessAlignSet(const CSeq_align_set& alnset,
                               list<CRange<TSeqPos> > &query_list,
                               list<CRange<TSeqPos> > &subject_list)
 {
-    bool oppositeStrands = false;
-    bool isFirst = false;
+	bool oppositeStrands = false;
+	bool isFirst = false;
     ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) {
         CRange<TSeqPos> query_range = (*iter)->GetSeqRange(0);
         //for minus strand
@@ -2302,20 +2302,20 @@ static bool s_ProcessAlignSet(const CSeq_align_set& alnset,
         }
         query_list.push_back(query_range);
 
-        CRange<TSeqPos> subject_range = (*iter)->GetSeqRange(1);
+		CRange<TSeqPos> subject_range = (*iter)->GetSeqRange(1);
         //for minus strand
         if(subject_range.GetFrom() > subject_range.GetTo()){
             subject_range.Set(subject_range.GetTo(), subject_range.GetFrom());
         }
         subject_list.push_back(subject_range);
-        
-        oppositeStrands = (!isFirst) ? (*iter)->GetSeqStrand(0) != (*iter)->GetSeqStrand(1) : oppositeStrands;
-        isFirst = true;
+		
+		oppositeStrands = (!isFirst) ? (*iter)->GetSeqStrand(0) != (*iter)->GetSeqStrand(1) : oppositeStrands;
+		isFirst = true;
     }
     
-    query_list.sort(FromRangeAscendingSort);        
-    subject_list.sort(FromRangeAscendingSort);
-    return oppositeStrands;
+    query_list.sort(FromRangeAscendingSort);    	
+	subject_list.sort(FromRangeAscendingSort);
+	return oppositeStrands;
 }
 
 
@@ -2347,7 +2347,7 @@ static list<CRange<TSeqPos> > s_MergeRangeList(list<CRange<TSeqPos> > &source)
         }
        
     }
-    return merge_list;    
+	return merge_list;    
 }
 
 int CAlignFormatUtil::GetMasterCoverage(const CSeq_align_set& alnset) 
@@ -2379,15 +2379,15 @@ int CAlignFormatUtil::GetMasterCoverage(const CSeq_align_set& alnset)
     
 
 CRange<TSeqPos> CAlignFormatUtil::GetSeqAlignCoverageParams(const CSeq_align_set& alnset,int *master_covered_lenghth,bool *flip)
-                                                
+												
 {
 
     list<CRange<TSeqPos> > query_list;
-    list<CRange<TSeqPos> > subject_list;
+	list<CRange<TSeqPos> > subject_list;
 
-    *flip = s_ProcessAlignSet(alnset,query_list,subject_list);
-    query_list = s_MergeRangeList(query_list); 
-    subject_list = s_MergeRangeList(subject_list); 
+	*flip = s_ProcessAlignSet(alnset,query_list,subject_list);
+	query_list = s_MergeRangeList(query_list); 
+	subject_list = s_MergeRangeList(subject_list); 
 
      
     *master_covered_lenghth = 0;
@@ -2395,13 +2395,13 @@ CRange<TSeqPos> CAlignFormatUtil::GetSeqAlignCoverageParams(const CSeq_align_set
         *master_covered_lenghth += iter->GetLength();
     }
 
-    TSeqPos from = 0,to = 0;
-    ITERATE(list<CRange<TSeqPos> >, iter, subject_list) {        
-        from = (from == 0) ? iter->GetFrom() : min(from,iter->GetFrom());
-        to = max(to,iter->GetTo());
+	TSeqPos from = 0,to = 0;
+    ITERATE(list<CRange<TSeqPos> >, iter, subject_list) {		
+		from = (from == 0) ? iter->GetFrom() : min(from,iter->GetFrom());
+		to = max(to,iter->GetTo());
     }
-    //cerr << "from,to = " << from << "," << to << endl;
-    CRange<TSeqPos> subjectRange(from + 1, to + 1);
+	//cerr << "from,to = " << from << "," << to << endl;
+	CRange<TSeqPos> subjectRange(from + 1, to + 1);
     return subjectRange;
 }
 
@@ -2518,14 +2518,14 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByPercentIdent(CSeq_align_s
     
     ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
         CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue,
-                                       sum_n, num_ident, use_this_gi);        
-        int seqAlnLength = GetAlignmentLength(**iter, kTranslation);        
-        if(seqAlnLength > 0 && num_ident > 0) {
-            int alnPercentIdent = GetPercentMatch(num_ident, seqAlnLength);                        
-            if(alnPercentIdent >= percentIdentLow && alnPercentIdent <= percentIdentHigh) {                
-                new_aln->Set().push_back(*iter);
-            }
-        }
+                                       sum_n, num_ident, use_this_gi);		
+		int seqAlnLength = GetAlignmentLength(**iter, kTranslation);		
+		if(seqAlnLength > 0 && num_ident > 0) {
+			int alnPercentIdent = GetPercentMatch(num_ident, seqAlnLength);						
+			if(alnPercentIdent >= percentIdentLow && alnPercentIdent <= percentIdentHigh) {				
+				new_aln->Set().push_back(*iter);
+			}
+		}
     }   
     return new_aln;
 }
@@ -2669,7 +2669,7 @@ string CAlignFormatUtil::GetURLFromRegistry( const string url_name, int index){
     CFile  l_fchecker( l_cfg_file_name );
     if( (!l_fchecker.Exists()) && (!l_ncbi_env.empty()) ) {
       if( l_ncbi_env.rfind("/") != (l_ncbi_env.length() -1 ))  
-    l_ncbi_env.append("/");
+	l_ncbi_env.append("/");
       l_cfg_file_name = l_ncbi_env + l_cfg_file_name;
       CFile  l_fchecker2( l_cfg_file_name );
       if( !l_fchecker2.Exists() ) return GetURLDefault(url_name,index); // can't find  .ncbrc file
@@ -2805,17 +2805,17 @@ string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,strin
 
 string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* ids,bool useTemplates)
 {
-    string url_link = NcbiEmptyString;
+	string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
     
     string logstr_moltype,db;
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
-    string temp_class_info = kClassInfo + " ";
+	string temp_class_info = kClassInfo + " ";
     if (seqUrlInfo->gi > 0) {
-        if(seqUrlInfo->isDbNa) {                
-            db = "nucleotide";
+		if(seqUrlInfo->isDbNa) {                
+			db = "nucleotide";
             logstr_moltype = "nucl";
         } else {                
             db = "protein";
@@ -2830,19 +2830,19 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
         url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid); 
         if(!useTemplates) {
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession);                 
+			url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession);                 
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
             url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
         }	           
             
     } else {//seqid general, dbtag specified
-        if(wid->Which() == CSeq_id::e_General){
-            const CDbtag& dtg = wid->GetGeneral();
+		if(wid->Which() == CSeq_id::e_General){
+			const CDbtag& dtg = wid->GetGeneral();
             const string& dbname = dtg.GetDb();
             if(NStr::CompareNocase(dbname, "TI") == 0){
-                string actual_id = CAlignFormatUtil::GetGnlID(dtg);                    
+				string actual_id = CAlignFormatUtil::GetGnlID(dtg);                    
                 if(useTemplates) {
-                    string l_TraceUrl = CAlignFormatUtil::GetURLFromRegistry("TRACE_CGI");                    
+					string l_TraceUrl = CAlignFormatUtil::GetURLFromRegistry("TRACE_CGI");                    
                     url_link = l_TraceUrl + (string)"?cmd=retrieve&dopt=fasta&val=" + actual_id + "&RID=" + seqUrlInfo->rid;
                 }
                 else {                        
@@ -2862,7 +2862,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,o
     const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     
-    string url_link = GetIDUrlGen(seqUrlInfo,ids,useTemplates);
+	string url_link = GetIDUrlGen(seqUrlInfo,ids,useTemplates);
     return url_link;
 }
 
@@ -2907,7 +2907,7 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
     } 	
 	else { 
         //use entrez or dbtag specified             
-        url_link = GetIDUrlGen(seqUrlInfo,ids,useTemplates);
+		url_link = GetIDUrlGen(seqUrlInfo,ids,useTemplates);
     }
     seqUrlInfo->seqUrl = url_link;
     return url_link;

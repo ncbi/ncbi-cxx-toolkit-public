@@ -2022,14 +2022,6 @@ s_ContainsGaps( const CSeq_loc &loc )
     return false;
 }
 
-static bool
-s_IsCircularTopology(CBioseqContext &ctx)
-{
-    const CBioseq_Handle &handle = ctx.GetHandle();
-    return( handle && 
-        handle.CanGetInst_Topology() && 
-        handle.GetInst_Topology() == CSeq_inst::eTopology_circular );
-}
 
 void CFlatGatherer::x_GatherFeatures(void) const
 {
@@ -2107,11 +2099,11 @@ void CFlatGatherer::x_GatherFeatures(void) const
             CMappedFeat cds = *feat_it;
 
             // map CDS location to its location on the product
-            CSeq_loc_Mapper mapper(cds.GetMappedFeature(), //GetOriginalSeq_feat(),
+            CSeq_loc_Mapper mapper(*cds.GetOriginalSeq_feat(),
                 CSeq_loc_Mapper::eLocationToProduct,
                 &ctx.GetScope());
             CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
-            cds_prod = cds_prod->Merge( ( s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ), NULL );
+            cds_prod = cds_prod->Merge( CSeq_loc::fMerge_All, NULL );
 
             // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
             // In that case, we shrink the cds's location back one residue.
