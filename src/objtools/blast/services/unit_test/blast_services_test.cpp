@@ -146,8 +146,8 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     const string title = "Homo sapiens";
     BOOST_REQUIRE_EQUAL(title, dbinfo->GetDescription());
 
-    BOOST_REQUIRE_EQUAL((Int8)1015400, dbinfo->GetTotal_length());
-    BOOST_REQUIRE_EQUAL((Int8)651, dbinfo->GetNum_sequences());
+    BOOST_REQUIRE_EQUAL((Int8)1362371, dbinfo->GetTotal_length());
+    BOOST_REQUIRE_EQUAL((Int8)1267, dbinfo->GetNum_sequences());
 
     // Get all the databases
     vector< CRef<CBlast4_database_info> > repeat_dbs =
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     // Obtained by running 'blastdbcmd -recursive -list $BLASTDB/repeat -list_outfmt %t'
     typedef map<string, bool> TFoundDbs;
     TFoundDbs repeat_dbs_found;
-    repeat_dbs_found["human"] = false;
+    repeat_dbs_found["sapiens"] = false;
     repeat_dbs_found["rodent"] = false;
     repeat_dbs_found["thaliana"] = false;
     repeat_dbs_found["sativa"] = false; // rice
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     repeat_dbs_found["fungi"] = false;
     repeat_dbs_found["elegans"] = false;
     repeat_dbs_found["gambiae"] = false;
-    repeat_dbs_found["zebra fish"] = false;
+    repeat_dbs_found["danio"] = false;
     repeat_dbs_found["melanogaster"] = false;
     repeat_dbs_found["fugu"] = false;
 
