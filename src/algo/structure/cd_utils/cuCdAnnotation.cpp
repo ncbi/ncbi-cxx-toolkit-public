@@ -311,6 +311,30 @@ string GetAlignAnnotDescription(const CAlign_annot& feature) {
     return featureDesc;
 }
 
+CAlign_annot::TType GetAlignAnnotType(const CAlign_annot& feature) {
+    CAlign_annot::TType result = -1;
+    if (feature.IsSetType()) {
+        result = feature.GetType();
+    }
+    return result;
+}
+
+void SetAlignAnnotDescription(const string& descr, CAlign_annot& feature)
+{
+    feature.SetDescription(descr);
+}
+
+bool SetAlignAnnotType(CAlign_annot::TType type, CAlign_annot& feature)
+{
+    static const CAlign_annot::TType minType = 0;  // as per the ASN.1 spec
+    static const CAlign_annot::TType maxType = 6;  // as per the ASN.1 spec
+    bool result = (type >= minType && type <= maxType);
+    if (result) {
+        feature.SetType(type);
+    }
+    return result;
+}
+
 
 string CAlignAnnotToString(const CAlign_annot& feature, bool includeFromTo, bool includeEvidence, bool hyphenateFromTo) {
     static const string descrHeader = "Description:\n";

@@ -86,7 +86,18 @@ NCBI_CDUTILS_EXPORT
 bool IsSeqfeatEvidenceInAlignAnnot(const CAlign_annot& feature);    //  e_Seqfeat type evidence
 NCBI_CDUTILS_EXPORT
 string GetAlignAnnotDescription(const CAlign_annot& feature);
+//  If the 'type' is unset, return -1.
+NCBI_CDUTILS_EXPORT
+CAlign_annot::TType GetAlignAnnotType(const CAlign_annot& feature);
 
+//  Even if an empty string, 'descr' replaces an existing description.
+NCBI_CDUTILS_EXPORT
+void SetAlignAnnotDescription(const string& descr, CAlign_annot& feature);
+//  By the convention described in the Align-annot ASN.1 spec, only values in the interval [0,6] are allowed.
+//  Return true if the value of 'type' is allowed and the type was set; false if it not, and the type
+//  field was unchanged.
+NCBI_CDUTILS_EXPORT
+bool SetAlignAnnotType(CAlign_annot::TType type, CAlign_annot& feature);
 
 
 NCBI_CDUTILS_EXPORT

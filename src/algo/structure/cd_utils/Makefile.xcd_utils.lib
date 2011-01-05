@@ -13,58 +13,59 @@ LIB = xcd_utils
 
 SRC = \
     cuAlign \
-    cuBlock \
-    cuCD \
-    cuConsensusMaker \
-    cuPssmMaker \
-    cuResidueProfile \
-    cuSequence \
-    cuCdCore \
-    cuMatrix \
-    cuUtils \
-    cuSort  \
-    cuCdFamily \
     cuAlignedDM \
     cuAlignmentCollection \
     cuBaseClusterer \
+    cuBlast2Seq \
+    cuBlock \
     cuBlockExtender \
+    cuBlockFormater \
     cuBlockIntersector \
+    cuCD \
+    cuCdCore \
     cuCdAnnotation \
+    cuCdFamily \
+    cuCdFromFasta \
+    cuCdUpdater \
+    cuCdUpdateParameters \
+    cuConsensusMaker \
     cuDbPriority \
     cuDistmat \
     cuDmAlignedOptimalScore \
     cuDmAlignedscore \
+    cuDmBlastscore \
     cuDmIdentities \
+    cuFlexiDm \
+    cuHitsDistributor \
+    cuMatrix \
     cuNRCriteria \
-    cuRowSourceTable \
     cuPrefTaxNodes \
+    cuPssmMaker \
+    cuPssmScorer \
+    cuReadFastaWrapper \
+    cuResidueProfile \
+    cuRowSourceTable \
     cuScoringMatrix \
+    cuSeqAnnotFromFasta \
+    cuSeqSwapper \
     cuSeqtree \
     cuSeqTreeAlg \
+    cuSeqTreeAPI \
+    cuSeqTreeAsnizer \
     cuSeqTreeFactory \
     cuSeqTreeNj \
+    cuSeqTreeRootedLayout \
     cuSeqTreeSlc \
     cuSeqTreeStream \
+    cuSequence \
     cuSequenceTable \
+    cuSimpleB2SWrapper \
+    cuSort  \
+    cuStdAnnotTypes \
     cuTaxClient \
     cuTaxNRCriteria \
     cuTaxTree \
-    cuSeqTreeAsnizer \
-    cuSeqTreeRootedLayout \
-    cuSeqTreeAPI \
-    cuReadFastaWrapper \
-    cuSeqAnnotFromFasta \
-    cuCdFromFasta \
-    cuBlockFormater \
-    cuCdUpdater \
-    cuCdUpdateParameters \
-    cuDmBlastscore \
-    cuBlast2Seq \
-    cuSimpleB2SWrapper \
-    cuHitsDistributor \
-    cuSeqSwapper \
-    cuFlexiDm \
-    cuPssmScorer
+    cuUtils
 
 DLL_LIB = xobjread
 
