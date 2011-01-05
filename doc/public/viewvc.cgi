@@ -10,11 +10,31 @@ import urllib
 real_vvc = 'http://svn.ncbi.nlm.nih.gov/viewvc/'
 repos = 'https://svn.ncbi.nlm.nih.gov/repos/'
 base = repos + 'toolkit/trunk'
+public = True
 if 'internal' in os.environ['SCRIPT_NAME']:
     base += '/internal'
+    public = False
 base += '/c++'
 
-def resolve(stem, rest):
+# Use a hard-coded lookup table for public trees, both because
+# trunk/c++ is nominally self-contained rather than referring to the
+# gbench repository for the public gui trees and because www.ncbi has
+# no svn executable.  Other servers will also fall back on this table
+# in the absence of /usr/bin/svn, but shouldn't need to in practice.
+path_map = (
+    ('include/gui', 'gbench/branches/c++-toolkit-2.0/include/gui'),
+    ('src/gui',     'gbench/branches/c++-toolkit-2.0/src/gui')
+    )
+
+def resolve_via_map(base, path):
+    for x in path_map:
+        if path == x[0]:
+            return repos + x[1]
+        elif path.startswith(x[0] + '/'):
+            return repos + x[1] + path[len(x[0]):]
+    return base + '/' + path
+
+def resolve_via_svn(stem, rest):
     while True:
         # print >>sys.stderr, stem + ' / ' + rest
         svn = subprocess.Popen(['svn', 'pg', 'svn:externals', stem],
@@ -38,6 +58,12 @@ def resolve(stem, rest):
             except ValueError:
                 break
     return stem + '/' + rest
+
+def resolve(base, path):
+    if os.path.exists('/usr/bin/svn') and not public:
+        return resolve_via_svn(base, path)
+    else:
+        return resolve_via_map(base, path)
 
 form = cgi.FieldStorage()
 path = form.getfirst('p')
