@@ -112,7 +112,7 @@
 #include <util/line_reader.hpp>
 
 #include <algorithm>
-
+#include <math.h>
 
 #include <serial/iterator.hpp>
 
