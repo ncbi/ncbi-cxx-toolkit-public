@@ -53,6 +53,7 @@
 
 // For repeats and dust filtering only
 #include <algo/blast/api/repeats_filter.hpp>
+#include <algo/blast/api/windowmask_filter.hpp>
 #include "winmask_filter.hpp"
 #include "dust_filter.hpp"
 #include <objects/seqloc/Seq_interval.hpp>
@@ -2106,4 +2107,13 @@ BOOST_AUTO_TEST_CASE(TestBlastSeqLocListReverse)
 
     mask = BlastSeqLocFree(mask);
 }
+
+BOOST_AUTO_TEST_CASE(TestGetTaxIdWithWindowMaskerSupport) 
+{
+    set<int> taxids;
+    GetTaxIdWithWindowMaskerSupport(taxids);
+    BOOST_REQUIRE(taxids.empty() == false);
+    BOOST_REQUIRE(taxids.find(9606) != taxids.end());
+}
+
 BOOST_AUTO_TEST_SUITE_END()

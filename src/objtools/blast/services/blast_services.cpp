@@ -562,6 +562,27 @@ GetSequenceParts(const TSeqIntervalVector  & seqids,    // in
     s_GetPartsFromReply(reply, ids, seq_data, errors, warnings);
 }
 
+objects::CBlast4_get_windowmasked_taxids_reply::Tdata
+CBlastServices::GetTaxIdWithWindowMaskerSupport()
+{
+    if (m_WindowMaskedTaxIds.empty()) {
+        CBlast4Client client;
+        CRef<CBlast4_get_windowmasked_taxids_reply> reply;
+        try { 
+            reply = client.AskGet_windowmasked_taxids(); 
+            if (m_Verbose) {
+                NcbiCout << MSerial_AsnText << *reply << endl;
+            }
+            m_WindowMaskedTaxIds = reply->Set();
+        }
+        catch (const CEofException &) {
+            NCBI_THROW(CBlastServicesException, eRequestErr,
+                       "No response from server, cannot complete request.");
+        }
+    }
+    return m_WindowMaskedTaxIds;
+}
+
 END_NCBI_SCOPE
 
 /* @} */

@@ -74,7 +74,9 @@ Blast4-archive ::= SEQUENCE {
 
 Blast4-request-body ::= CHOICE {
     finish-params           Blast4-finish-params-request,
+    -- Get all available BLAST databases
     get-databases           NULL,
+    -- Get supported scoring matrices
     get-matrices            NULL,
     get-parameters          NULL,
     get-paramsets           NULL,
@@ -83,7 +85,8 @@ Blast4-request-body ::= CHOICE {
     get-sequences           Blast4-get-sequences-request,
     queue-search            Blast4-queue-search-request,
     get-request-info        Blast4-get-request-info-request,
-    get-sequence-parts      Blast4-get-seq-parts-request
+    get-sequence-parts      Blast4-get-seq-parts-request,
+    get-windowmasked-taxids NULL
 }
 
 Blast4-finish-params-request ::= SEQUENCE {
@@ -248,10 +251,13 @@ Blast4-reply-body ::= CHOICE {
     queue-search            Blast4-queue-search-reply,
     get-queries             Blast4-get-queries-reply,
     get-request-info        Blast4-get-request-info-reply,
-    get-sequence-parts      Blast4-get-seq-parts-reply
+    get-sequence-parts      Blast4-get-seq-parts-reply,
+    get-windowmasked-taxids Blast4-get-windowmasked-taxids-reply
 }
 
 Blast4-finish-params-reply ::= Blast4-parameters
+
+Blast4-get-windowmasked-taxids-reply ::= SEQUENCE OF INTEGER
 
 Blast4-get-databases-reply ::= SEQUENCE OF Blast4-database-info
 

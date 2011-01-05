@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/blast/services/blast_services.hpp>
+#include <corelib/ncbienv.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
 #include <serial/exception.hpp>
@@ -188,7 +189,21 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     }
 }
 
-
+BOOST_AUTO_TEST_CASE(GetWindowMaskedTaxIds)
+{
+    // Uncomment to redirect to test system
+    CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CBlastServices remote_svc;
+    //remote_svc.SetVerbose();
+    objects::CBlast4_get_windowmasked_taxids_reply::Tdata reply =
+        remote_svc.GetTaxIdWithWindowMaskerSupport();
+    BOOST_REQUIRE(reply.empty());
+    // FIXME: When the WINDOW_MASKER_PATH is set in the machines hosting the
+    // blast4 server, this test will be false. Make sure we have some key
+    // organisms
+    //BOOST_REQUIRE(!reply.empty());
+    //BOOST_REQUIRE(reply.find(9606) != reply.end());
+}
 
 BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
 {

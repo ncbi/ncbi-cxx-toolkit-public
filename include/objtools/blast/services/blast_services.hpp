@@ -104,7 +104,10 @@ class NCBI_XOBJREAD_EXPORT CBlastServices : public CObject
 {
 public:
     /// Default constructor
-    CBlastServices() {}
+    CBlastServices() { m_Verbose = false; }
+
+    /// Analogous to CRemoteBlast::SetVerbose
+    void SetVerbose(bool value = true) { m_Verbose = value; }
 
     /// Returns true if the BLAST database specified exists in the NCBI servers
     /// @param dbname BLAST database name [in]
@@ -137,6 +140,12 @@ public:
     /// Retrieve organism specific repeats databases
     vector< CRef<objects::CBlast4_database_info> >
     GetOrganismSpecificRepeatsDatabases();
+
+    /// Retrieve a list of NCBI taxonomy IDs for which there exists
+    /// windowmasker masking data to support an alternative organism specific
+    /// filtering
+    objects::CBlast4_get_windowmasked_taxids_reply::Tdata
+    GetTaxIdWithWindowMaskerSupport();
 
     /// Defines a std::vector of CRef<CSeq_id>
     typedef vector< CRef<objects::CSeq_id> > TSeqIdVector;
@@ -258,6 +267,10 @@ private:
     
     /// BLAST databases available to search
     objects::CBlast4_get_databases_reply::Tdata m_AvailableDatabases;
+    /// Taxonomy IDs for which there's windowmasker masking data at NCBI
+    objects::CBlast4_get_windowmasked_taxids_reply::Tdata m_WindowMaskedTaxIds;
+    /// Display verbose output to stdout?
+    bool m_Verbose;
 };
 
 END_NCBI_SCOPE

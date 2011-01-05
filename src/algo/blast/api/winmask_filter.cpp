@@ -55,7 +55,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
-#include <algo/blast/api/repeats_filter.hpp>
+#include <algo/blast/api/windowmask_filter.hpp>
 #include "blast_setup.hpp"
 
 #include <algo/blast/core/blast_seqsrc.h>
@@ -493,6 +493,29 @@ Blast_FindWindowMaskerLocTaxId(TSeqLocVector & queries, int taxid)
 {
     string db = s_WindowMaskerTaxidToDb(taxid);
     Blast_FindWindowMaskerLoc(queries, db);
+}
+
+void GetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids)
+{
+    supported_taxids.clear();
+    CNcbiOstrstream oss;
+    const string wmpath = s_FindPathToWM();
+    oss << wmpath << CFile::GetPathSeparator() << "*"
+        << CFile::GetPathSeparator() << "*.*"
+        << CFile::GetPathSeparator() << "wmasker.o*";
+    const string path = CNcbiOstrstreamToString(oss);
+    
+    list<string> builds;
+    FindFiles(path, builds, fFF_File);
+    NON_CONST_ITERATE(list<string>, path, builds) {
+        // remove the WindowMasker path and path separator
+        path->erase(0, wmpath.size() + 1);  
+        // then remove the remaining path
+        const size_t pos = path->find(CFile::GetPathSeparator());
+        path->erase(pos);
+        const int taxid = NStr::StringToInt(*path, NStr::fConvErr_NoThrow);
+        supported_taxids.insert(taxid);
+    }
 }
 
 END_SCOPE(blast)
