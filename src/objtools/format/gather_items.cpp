@@ -1608,33 +1608,13 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
 }
 
 
-static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx )
+static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, const CBioseq_Handle& seq)
 {
-    const bool showOutOfBoundsFeats = ctx.Config().ShowOutOfBoundsFeats();
-    const bool is_part = ctx.IsPart();
-
-    // check certain case(s) that let us skip some work
-    if( showOutOfBoundsFeats && ! is_part ) {
-        return true;
-    }
-
-    const CBioseq_Handle& seq = ctx.GetHandle();
-
     CSeq_loc_CI last;
     for ( CSeq_loc_CI it(loc); it; ++it ) {
         last = it;
     }
-    const bool endsOnThisBioseq = ( last  &&  seq.IsSynonym(last.GetSeq_id()) );
-    if( is_part ) {
-        return endsOnThisBioseq;
-    } else {
-        if( endsOnThisBioseq ) {
-            // if we're not partial, we also check that we're within range
-            return seq.GetBioseqLength() > last.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) ;
-        } else {
-            return true;
-        }
-    }
+    return (last  &&  seq.IsSynonym(last.GetSeq_id()));
 }
 
 /* gcc warning: "defined but not used"
@@ -1906,14 +1886,16 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             CConstRef<CSeq_loc> feat_loc(&it->GetLocation());
         
             // make sure location ends on the current bioseq
-            if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx) ) {
-                // may need to map sig_peptide on a different segment
-                if (feat.GetData().IsCdregion()) {
-                    if (!ctx.Config().IsFormatFTable()) {
-                        x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx);
+            if (ctx.IsPart()) {
+                if (!s_SeqLocEndsOnBioseq(*feat_loc, ctx.GetHandle())) {
+                    // may need to map sig_peptide on a different segment
+                    if (feat.GetData().IsCdregion()) {
+                        if (!ctx.Config().IsFormatFTable()) {
+                            x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx);
+                        }
                     }
+                    continue;
                 }
-                continue;
             }
 
             // handle gaps
@@ -2261,8 +2243,6 @@ void s_FixIntervalProtToCds(
 }
 
 //  ============================================================================
-
-//  ============================================================================
 void CFlatGatherer::x_GetFeatsOnCdsProduct(
     const CSeq_feat& feat,
     const CSeq_loc& mapped_loc,
@@ -2347,7 +2327,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         if (!loc  ||  loc->IsNull()) {
             continue;
         }
-        if ( !s_SeqLocEndsOnBioseq(*loc, ctx) ) {
+        if (ctx.IsPart()  &&  !s_SeqLocEndsOnBioseq(*loc, ctx.GetHandle())) {
             continue;
         }
 

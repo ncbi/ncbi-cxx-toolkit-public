@@ -85,14 +85,14 @@ const bool CFlatFileConfig::sm_ModeFlags[4][32] = {
     {
         false, false, false, false, false, false, false, true, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, true, false, true, false, 
+        false, false, false, false, false, false, true, false, false, false, 
         false, false
     },
     // Dump
     {
         false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, true, false, true, false, 
+        false, false, false, false, false, false, true, false, false, false, 
         false, false
     }
 };
@@ -131,7 +131,6 @@ MODE_FLAG_GET(ForGBRelease, 24);
 MODE_FLAG_GET(HideUnclassPartial, 25);
 // MODE_FLAG_GET(CodonRecognizedToNote, 26); // implementation below
 MODE_FLAG_GET(GoQualsEachMerge, 27);
-MODE_FLAG_GET(ShowOutOfBoundsFeats, 28);
 
 #undef MODE_FLAG_GET
 

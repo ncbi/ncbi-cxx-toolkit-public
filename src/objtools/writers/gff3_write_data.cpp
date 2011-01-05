@@ -187,7 +187,7 @@ string CGff3WriteRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
-    strAttributes.reserve(256);
+	strAttributes.reserve(256);
     CGff2WriteRecord::TAttributes attrs;
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGff2WriteRecord::TAttrIt it;
@@ -214,13 +214,13 @@ string CGff3WriteRecord::StrAttributes() const
         }
         strAttributes += strKey;
         strAttributes += "=";
-        
-        bool quote = x_NeedsQuoting(it->second);
-        if ( quote )
-            strAttributes += '\"';        
-        strAttributes += it->second;
-        if ( quote )
-            strAttributes += '\"';
+		
+		bool quote = x_NeedsQuoting(it->second);
+		if ( quote )
+			strAttributes += '\"';		
+		strAttributes += it->second;
+		if ( quote )
+			strAttributes += '\"';
     }
     return strAttributes;
 }

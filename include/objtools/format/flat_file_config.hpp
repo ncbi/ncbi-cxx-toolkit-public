@@ -272,7 +272,6 @@ public:
     bool HideUnclassPartial  (void) const;
     bool CodonRecognizedToNote(void) const;
     bool GoQualsEachMerge    (void) const;
-    bool ShowOutOfBoundsFeats(void) const;
     
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
