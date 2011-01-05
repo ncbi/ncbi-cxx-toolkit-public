@@ -143,8 +143,7 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     BOOST_REQUIRE(dbinfo.NotEmpty());
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
 
-    const string title =
-    "Reference collection of human repetitive elements. (Release 8.3.2)";
+    const string title = "Homo sapiens";
     BOOST_REQUIRE_EQUAL(title, dbinfo->GetDescription());
 
     BOOST_REQUIRE_EQUAL((Int8)1015400, dbinfo->GetTotal_length());
