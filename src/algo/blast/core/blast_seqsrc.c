@@ -412,6 +412,93 @@ BlastSeqSrcResetChunkIterator(BlastSeqSrc* seq_src)
     (*seq_src->ResetChunkIterator)(seq_src->DataStructure);
 }
 
+BlastSeqSrcSetRangesArg *
+BlastSeqSrcSetRAngesArgNew(Int4 num_ranges)
+{
+    BlastSeqSrcSetRangesArg * retv = (BlastSeqSrcSetRangesArg *)
+                          malloc(sizeof(BlastSeqSrcSetRangesArg));
+    retv->num_ranges = num_ranges;
+    retv->ranges = (Int4 *) malloc(2*num_ranges*sizeof(Int4));
+    return retv;
+}
+
+void
+BlastSeqSrcSetRangesArgFree(BlastSeqSrcSetRangesArg *arg)
+{
+    sfree(arg->ranges);
+    sfree(arg);
+}
+
+BlastHSPRangeList *
+BlastHSPRangeListNew(Int4 begin, Int4 end, BlastHSPRangeList *next) 
+{
+    BlastHSPRangeList *retv = (BlastHSPRangeList *)
+                          malloc(sizeof(BlastHSPRangeList));
+    retv->begin = begin;
+    retv->end = end;
+    retv->next = next;
+    return retv;
+}
+
+BlastHSPRangeList *
+BlastHSPRangeListAddRange(BlastHSPRangeList *list,
+                          Int4 begin, Int4 end) 
+{
+    BlastHSPRangeList *q, *p;
+    begin = MAX(0, begin - BLAST_SEQSRC_OVERHANG);
+    end += BLAST_SEQSRC_OVERHANG;
+
+    /* special case: an empty list, or insert from front */
+    if (!list  || begin <= list->begin) {
+        return BlastHSPRangeListNew(begin, end, list);
+    }
+
+    p = list;
+    q = p;
+    /* sorting in begin order */
+    while (p && begin > p->begin) {
+        q = p;
+        p = p->next;
+    }
+    q->next = BlastHSPRangeListNew(begin, end, p);
+    return list;
+}
+
+void
+BlastHSPRangeBuildSetRangesArg(BlastHSPRangeList *list,
+                               BlastSeqSrcSetRangesArg *arg)
+{
+    BlastHSPRangeList *p = list->next;
+    Int4 i=0;
+    ASSERT(arg);
+    arg->ranges[0] = list->begin;
+    arg->ranges[1] = list->end;
+    while (p) {
+        ASSERT(p->begin >= arg->ranges[2*i]);
+        if (p->begin > arg->ranges[2*i+1] + BLAST_SEQSRC_MINGAP) {
+            /* insert as a new range */
+            ++i;
+            arg->ranges[i*2] = p->begin;
+            arg->ranges[i*2+1] = p->end;
+        } else if (p->end > arg->ranges[2*i+1]) {
+            /* merge into the previous range */
+            arg->ranges[i*2+1] = p->end;
+        }
+        p = p->next;
+    }
+    arg->num_ranges = i+1;
+}
+
+void BlastHSPRangeListFree(BlastHSPRangeList *list)
+{
+    BlastHSPRangeList *p = list;
+    while(p) {
+        list = p->next;
+        sfree(p);
+        p = list;
+    }
+}
+
 /*****************************************************************************/
 
 /* The following macros implement the "member functions" of the BlastSeqSrc
