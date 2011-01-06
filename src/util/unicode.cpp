@@ -165,7 +165,7 @@ void CUnicodeToAsciiTranslation::x_Initialize(const string& name)
         ERR_POST_X(1, "UnicodeToAscii table not found: " << name);
         return;
     }
-    LOG_POST_X(2, "Loading UnicodeToAscii table at: " << name);
+    LOG_POST_X(2, Info << "Loading UnicodeToAscii table at: " << name);
 
 // estimate memory pool size
     size_t filelen = (size_t)CFile(name).GetLength();
