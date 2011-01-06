@@ -262,7 +262,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     log_access_violations  = reg.GetBool(sname, "log_access_violations", true,
         0, IRegistry::eReturn);
     log_job_state          = GetIntNoErr("log_job_state", 0);
-    delete_done = reg.GetBool(sname, "keep_affinity", false,
+    keep_affinity = reg.GetBool(sname, "keep_affinity", false,
         0, IRegistry::eReturn);
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
