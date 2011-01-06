@@ -55,6 +55,7 @@ BEGIN_NCBI_SCOPE
  *                              App Name                               *
  ***********************************************************************/
 
+#if 0
 extern "C" {
 extern const char* CORE_GetAppName(void)
 {
@@ -62,6 +63,7 @@ extern const char* CORE_GetAppName(void)
     return theApp ? theApp->GetProgramDisplayName().c_str() : 0;
 }
 }
+#endif
 
 
 /***********************************************************************

@@ -1516,14 +1516,17 @@ static void s_Destroy(CONNECTOR connector)
 /* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
 static void x_AddAppNameRefererStripCAF(SConnNetInfo* net_info)
 {
-    const char* s = NULL /*CORE_GetAppName()*/;
+    const char* s;
     char* referer;
 
+#if 0
+    s = CORE_GetAppName();
     if (s) {
         char user_agent[16+80];
         sprintf(user_agent, "User-Agent: %.80s\r\n", s);
         ConnNetInfo_ExtendUserHeader(net_info, user_agent);
     }
+#endif
     if ((s = net_info->http_user_header) != 0) {
         int/*bool*/ found = 0/*false*/;
         int/*bool*/ first = 1/*true*/;
