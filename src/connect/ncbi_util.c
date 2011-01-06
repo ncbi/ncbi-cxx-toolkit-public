@@ -626,7 +626,7 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 #ifndef NCBI_OS_UNIX
 
 #  ifdef NCBI_OS_MSWIN
-    if (GetUserName(loginbuf, &loginbufsize)) {
+    if (GetUserNameA(loginbuf, &loginbufsize)) {
         assert(loginbufsize < sizeof(loginbuf));
         loginbuf[loginbufsize] = '\0';
         strncpy0(buf, loginbuf, bufsize - 1);
