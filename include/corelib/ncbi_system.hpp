@@ -257,6 +257,12 @@ NCBI_XNCBI_EXPORT
 extern void DisableSuppressSystemMessageBox();
 
 
+/// Check if system message box has been suppressed for debug library.
+///
+/// NOTE: MS Windows-specific.
+NCBI_XNCBI_EXPORT
+extern bool IsSuppressedDebugSystemMessageBox();
+
 END_NCBI_SCOPE
 
 #endif  /* NCBI_SYSTEM__HPP */

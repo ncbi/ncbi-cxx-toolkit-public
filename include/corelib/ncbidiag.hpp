@@ -1083,6 +1083,13 @@ public:
                            const char* expression,
                            const char* message = NULL);
 
+    /// Same as DiagAssert but only if the system message box is suppressed.
+    NCBI_XNCBI_EXPORT
+    static void DiagAssertIfSuppressedSystemMessageBox(
+        const CDiagCompileInfo& info,
+        const char* expression,
+        const char* message = NULL);
+
     /// Display validation message.
     NCBI_XNCBI_EXPORT
     static void DiagValidate(const CDiagCompileInfo& info,

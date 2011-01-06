@@ -48,6 +48,7 @@
 #include <corelib/error_codes.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/request_control.hpp>
+#include <corelib/ncbi_system.hpp>
 #include "ncbidiag_p.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -5300,6 +5301,16 @@ void CNcbiDiag::DiagAssert(const CDiagCompileInfo& info,
         "Assertion failed: (" <<
         (expression ? expression : "") << ") " <<
         (message ? message : "") << Endm;
+}
+
+void CNcbiDiag::DiagAssertIfSuppressedSystemMessageBox(
+    const CDiagCompileInfo& info,
+    const char* expression,
+    const char* message)
+{
+    if ( IsSuppressedDebugSystemMessageBox() ) {
+        DiagAssert(info, expression, message);
+    }
 }
 
 void CNcbiDiag::DiagValidate(const CDiagCompileInfo& info,

@@ -99,6 +99,8 @@ BEGIN_NCBI_SCOPE
                   (#expr ? #expr : "") << ") " << \
                   (x_mess ? x_mess : "") << NCBI_NS_NCBI::Endm; \
               _ASSERT_BASE(x_expr, NULL); \
+              NCBI_NS_NCBI::CNcbiDiag::DiagAssertIfSuppressedSystemMessageBox( \
+                  DIAG_COMPILE_INFO, #expr, mess); \
           } \
       } while ( 0 )
 #  else  /* NCBI_COMPILER_MSVC */

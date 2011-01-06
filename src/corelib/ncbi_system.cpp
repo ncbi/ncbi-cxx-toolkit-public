@@ -717,6 +717,7 @@ void SleepSec(unsigned long sec, EInterruptOnSignal onsignal)
 
 static bool s_EnableSuppressSystemMessageBox = true;
 static bool s_DoneSuppressSystemMessageBox   = false;
+static bool s_SuppressedDebugSystemMessageBox = false;
 
 // Handler for "Unhandled" exceptions
 static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
@@ -750,6 +751,7 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
         _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
         _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+        s_SuppressedDebugSystemMessageBox = true;
     }
     // Exceptions
     if ( (mode & fSuppress_Exception) == fSuppress_Exception ) {
@@ -768,6 +770,17 @@ extern void DisableSuppressSystemMessageBox(void)
     }
     s_EnableSuppressSystemMessageBox = false;
 #endif //NCBI_OS_MSWIN
+}
+
+
+extern bool IsSuppressedDebugSystemMessageBox(void)
+{
+#ifdef NCBI_OS_MSWIN
+    return s_DoneSuppressSystemMessageBox  &&
+        s_SuppressedDebugSystemMessageBox;
+#else
+    return false;
+#endif
 }
 
 
