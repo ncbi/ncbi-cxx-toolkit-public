@@ -47,6 +47,8 @@ static char const rcsid[] =
 #include <objects/scoremat/PssmWithParameters.hpp>
 
 #include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/seq/Seq_descr.hpp>
+
 
 /** @addtogroup AlgoBlast
  *
@@ -114,6 +116,17 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
     opts->pseudo_count = opts_handle.GetPseudoCount();
     opts->inclusion_ethresh = opts_handle.GetInclusionThreshold();
 
+    string query_descr = NcbiEmptyString;
+ 
+    if (query.IsSetDescr()) {
+         const CBioseq::TDescr::Tdata& data = query.GetDescr().Get();
+         ITERATE(CBioseq::TDescr::Tdata, iter, data) {
+             if((*iter)->IsTitle()) {
+                 query_descr += (*iter)->GetTitle();
+             }
+         }
+    }
+
     CBlastQuerySourceBioseqSet query_source(query, true);
     string warnings;
     const SBlastSequence query_seq = 
@@ -129,7 +142,8 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
                              opts_handle.GetMatrixName(),
                              opts_handle.GetGapOpeningCost(),
                              opts_handle.GetGapExtensionCost(),
-                             diagnostics_request);
+                             diagnostics_request, 
+                             query_descr);
 
     CPssmEngine engine(&input);
     engine.SetUngappedStatisticalParams(ancillary_data);

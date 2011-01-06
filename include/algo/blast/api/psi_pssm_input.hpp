@@ -168,7 +168,8 @@ public:
                        const char* matrix_name = NULL,
                        int gap_existence = 0,
                        int gap_opening = 0,
-                       const PSIDiagnosticsRequest* diags = NULL);
+                       const PSIDiagnosticsRequest* diags = NULL,
+                       const string& query_title = "");
 
     /// virtual destructor
     virtual ~CPsiBlastInputData();
@@ -218,6 +219,8 @@ private:
 
     /// Pointer to query sequence
     unsigned char*                  m_Query;
+    /// Title of query
+    string                          m_QueryTitle;
     /// Scope where to retrieve the sequences in the aligment from
     CRef<objects::CScope>           m_Scope;
     /// Structure representing the multiple sequence alignment

@@ -56,6 +56,8 @@ static char const rcsid[] =
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/seqport_util.hpp>
 
 #include "psiblast_aux_priv.hpp"
@@ -84,7 +86,8 @@ CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
                                        const char* matrix_name,
                                        int gap_existence /* = 0 */,
                                        int gap_extension /* = 0 */,
-                                       const PSIDiagnosticsRequest* diags)
+                                       const PSIDiagnosticsRequest* diags,
+                                       const string& query_title)
     : m_GapExistence(gap_existence), m_GapExtension(gap_extension)
 {
     if ( !query ) {
@@ -98,6 +101,7 @@ CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
 
     m_Query = new Uint1[query_length];
     memcpy((void*) m_Query, (void*) query, query_length);
+    m_QueryTitle = query_title;
 
     m_Scope.Reset(scope);
     m_SeqAlignSet.Reset(sset);
@@ -152,6 +156,10 @@ CPsiBlastInputData::x_ExtractQueryForPssm()
         const_cast<CSeq_align_set*>(&*m_SeqAlignSet)->Set().front();
     CRef<CSeq_id> query_id(const_cast<CSeq_id*>(&aln->GetSeq_id(0)));
     m_QueryBioseq->SetId().push_back(query_id);
+
+    CRef<CSeqdesc> desc(new CSeqdesc);
+    desc->SetTitle(m_QueryTitle);
+    m_QueryBioseq->SetDescr().Set().push_back(desc);
 
     // set required Seq-inst fields
     m_QueryBioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);

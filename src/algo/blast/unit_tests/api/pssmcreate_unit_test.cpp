@@ -50,6 +50,8 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
+#include <objects/seq/Seq_descr.hpp>
+
 // ASN.1 definition for PSSM (scoremat)
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmParameters.hpp>
@@ -729,6 +731,8 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
         request.frequency_ratios = true;
         request.gapless_column_weights = false; // unsupported
 
+        const string kTitle("Test defline");
+
         CRef<IPssmInputData> pssm_strategy(
             new CPsiBlastInputData(seq.data.get()+1,
                                    seq.length-2, // don't count sentinels
@@ -737,9 +741,25 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
                                    "BLOSUM80",
                                    11,
                                    1,
-                                   &request));
+                                   &request,
+                                   kTitle));
         CRef<CPssmEngine> pssm_engine(new CPssmEngine(pssm_strategy));
         CRef<CPssmWithParameters> pssm = pssm_engine->Run();
+
+        CRef<CBioseq> bioseq = pssm_strategy->GetQueryForPssm();
+        BOOST_REQUIRE_EQUAL(bioseq->GetLength(), seq.length-2);
+
+        string query_descr = NcbiEmptyString;
+        if (bioseq->IsSetDescr()) {
+          const CBioseq::TDescr::Tdata& data = bioseq->GetDescr().Get();
+          ITERATE(CBioseq::TDescr::Tdata, iter, data) {
+             if((*iter)->IsTitle()) {
+                 query_descr += (*iter)->GetTitle();
+             }
+          }
+        }
+        BOOST_REQUIRE_EQUAL(query_descr, kTitle);
+        
 
         const size_t kNumElements = 
             pssm_strategy->GetQueryLength() * BLASTAA_SIZE;
