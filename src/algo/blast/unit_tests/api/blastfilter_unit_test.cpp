@@ -505,9 +505,9 @@ BOOST_AUTO_TEST_CASE(SegFilter) {
 }
     
 BOOST_AUTO_TEST_CASE(RepeatsFilter) {
-    const size_t kNumLocs = 5;
-    const TSeqPos kRepeatStarts[kNumLocs] = { 0, 380, 1014, 2851, 3113 };
-    const TSeqPos kRepeatEnds[kNumLocs] = { 212, 1003, 1297, 2953, 3730 };
+    const size_t kNumLocs = 4;
+    const TSeqPos kRepeatStarts[kNumLocs] = { 0, 380, 2851, 3113 };
+    const TSeqPos kRepeatEnds[kNumLocs] = { 212, 1297, 2953, 3764 };
     CSeq_id id("gi|1945388");
     auto_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
@@ -603,18 +603,20 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_OnSeqInterval) {
     masked_regions.push_back(TSeqRange(85028, 85528));
     masked_regions.push_back(TSeqRange(85539, 85736));
     masked_regions.push_back(TSeqRange(86334, 86461));
-    masked_regions.push_back(TSeqRange(86730, 87043));
+    masked_regions.push_back(TSeqRange(86487, 86585));
+    masked_regions.push_back(TSeqRange(86730, 87050));
     masked_regions.push_back(TSeqRange(87313, 87370));
     masked_regions.push_back(TSeqRange(88134, 88140));
-    masked_regions.push_back(TSeqRange(88171, 88247));
-    masked_regions.push_back(TSeqRange(88254, 88480));
+    masked_regions.push_back(TSeqRange(88171, 88483));
     masked_regions.push_back(TSeqRange(89032, 89152));
-    masked_regions.push_back(TSeqRange(91568, 91704));
-    masked_regions.push_back(TSeqRange(92355, 92545));
+    masked_regions.push_back(TSeqRange(91548, 91704));
+    masked_regions.push_back(TSeqRange(92355, 92539));
     masked_regions.push_back(TSeqRange(92550, 92973));
-    masked_regions.push_back(TSeqRange(92983, 93384));
+    masked_regions.push_back(TSeqRange(92983, 93283));
+    masked_regions.push_back(TSeqRange(93296, 93384));
     masked_regions.push_back(TSeqRange(93472, 93642));
-    masked_regions.push_back(TSeqRange(93702, 94026));
+    masked_regions.push_back(TSeqRange(93685, 94026));
+    masked_regions.push_back(TSeqRange(94435, 94545));
 
     CSeq_id id("gi|20196551");
     auto_ptr<SSeqLoc> qsl(
@@ -635,7 +637,7 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_OnSeqInterval) {
         query_v[0].mask->GetPacked_int().Get();
 
     size_t loc_index = 0;
-    // BOOST_REQUIRE_EQUAL(masked_regions.size(), seqinterval_list.size());
+    BOOST_REQUIRE_EQUAL(masked_regions.size(), seqinterval_list.size());
     ITERATE(CPacked_seqint::Tdata, itr,  seqinterval_list) {
         BOOST_REQUIRE_EQUAL(masked_regions[loc_index].GetFrom(), 
                             (*itr)->GetFrom());
@@ -1073,9 +1075,9 @@ BOOST_AUTO_TEST_CASE(CombineRepeatAndLowerCaseMask) {
     const int kLcaseEnds[kNumLcaseLocs] = 
         { 75, 208, 316, 685, 1004, 1122, 1298, 2952, 3409, 3733, 3916 };
 
-    const int kNumLocs = 7;
-    const int kStarts[kNumLocs] = { 0, 217, 380, 1014, 2817, 3084, 3782 };
-    const int kEnds[kNumLocs] = { 212, 316, 1004, 1298, 2953, 3733, 3916 };
+    const int kNumLocs = 6;
+    const int kStarts[kNumLocs] = { 0, 217, 380, 2817, 3084, 3782 };
+    const int kEnds[kNumLocs] = { 212, 316, 1298, 2953, 3764, 3916 };
     CSeq_id id("gi|1945388");
     auto_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
@@ -1100,7 +1102,7 @@ BOOST_AUTO_TEST_CASE(CombineRepeatAndLowerCaseMask) {
     int loc_index = 0;
 
     BOOST_REQUIRE(query_v[0].mask.NotEmpty());
-    ITERATE(list< CRef<CSeq_interval> >, itr, 
+    ITERATE(CPacked_seqint::Tdata, itr,  
             query_v[0].mask->GetPacked_int().Get()) {
         BOOST_REQUIRE_EQUAL(kStarts[loc_index], (int)(*itr)->GetFrom());
         BOOST_REQUIRE_EQUAL(kEnds[loc_index], (int)(*itr)->GetTo());
@@ -1111,13 +1113,13 @@ BOOST_AUTO_TEST_CASE(CombineRepeatAndLowerCaseMask) {
 }
 
 BOOST_AUTO_TEST_CASE(CombineRepeatAndDustFilter) {
-    const int kNumLocs = 14;
+    const int kNumLocs = 13;
     const int kStarts[kNumLocs] = 
-        { 0, 298, 380, 1014, 1449, 2851, 3113, 4704, 6364, 6512, 7600, 
+        { 0, 298, 380, 1449, 2851, 3113, 4704, 6364, 6512, 7600, 
           7766, 8873, 9114};
     const int kEnds[kNumLocs] = 
-        { 212, 305, 1003, 1297, 1479, 2953, 3730, 4710, 6373, 6573, 7672, 
-          7772, 8880 , 9179};
+        { 212, 305, 1297, 1479, 2953, 3764, 4710, 6373, 6573, 7672, 
+          7772, 8880, 9179};
     CSeq_id id("gi|1945388");
     auto_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
@@ -1133,7 +1135,7 @@ BOOST_AUTO_TEST_CASE(CombineRepeatAndDustFilter) {
     int loc_index = 0;
 
     BOOST_REQUIRE(query_v[0].mask.NotEmpty());
-    ITERATE(list< CRef<CSeq_interval> >, itr,
+    ITERATE(CPacked_seqint::Tdata, itr,  
             query_v[0].mask->GetPacked_int().Get()) {
         BOOST_REQUIRE_EQUAL(kStarts[loc_index], (int)(*itr)->GetFrom());
         BOOST_REQUIRE_EQUAL(kEnds[loc_index], (int)(*itr)->GetTo());
