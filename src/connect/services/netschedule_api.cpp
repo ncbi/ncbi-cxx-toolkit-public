@@ -333,13 +333,13 @@ CNetScheduleAPI::EJobStatus
         || status == eCanceled || status == eReturned
         || status == eReading || status == eConfirmed
         || status == eReadFailed) {
-        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {}
+        for ( ;*str && !isspace((unsigned char)(*str)); ++str) {}
 
         for ( ; *str && isspace((unsigned char)(*str)); ++str) {}
 
         job.ret_code = atoi(str);
 
-        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {}
+        for ( ;*str && !isspace((unsigned char)(*str)); ++str) {}
 
         job.output.erase();
 
@@ -397,15 +397,9 @@ CNetScheduleAPI::EJobStatus
 CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::x_GetJobStatus(
     const string& job_key, bool submitter)
 {
-    string cmd = "STATUS";
-    if (GetServerParams().fast_status) {
-        if (submitter)  cmd = "SST";
-        else cmd = "WST";
-    }
-    string resp = x_SendJobCmdWaitResponse(cmd, job_key);
-    const char* str = resp.c_str();
-    int st = atoi(str);
-    return (CNetScheduleAPI::EJobStatus) st;
+    return (CNetScheduleAPI::EJobStatus) atoi(x_SendJobCmdWaitResponse(
+        GetServerParams().fast_status ? submitter ? "SST" : "WST" : "STATUS",
+            job_key).c_str());
 }
 
 const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
