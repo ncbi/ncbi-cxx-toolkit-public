@@ -183,16 +183,26 @@ public:
                 context.GetJobInput());
         }
 
-        CCgiRequest request(context.GetIStream(),
-            CCgiRequest::fIgnoreQueryString | CCgiRequest::fDoNotParseContent);
+        auto_ptr<CCgiRequest> request;
 
-        CCgiEnvHolder env(m_RemoteAppLauncher, request.GetEnvironment(),
+        try {
+            request.reset(new CCgiRequest(context.GetIStream(),
+                CCgiRequest::fIgnoreQueryString |
+                CCgiRequest::fDoNotParseContent));
+        }
+        catch (...) {
+            context.CommitJobWithFailure(
+                "Error while parsing CGI request stream");
+            return -1;
+        }
+
+        CCgiEnvHolder env(m_RemoteAppLauncher, request->GetEnvironment(),
             context.GetJob().job_id);
         vector<string> args;
 
         CNcbiStrstream err;
         CNcbiStrstream str_in;
-        CNcbiIstream* in = request.GetInputStream();
+        CNcbiIstream* in = request->GetInputStream();
         if (!in)
             in = &str_in;
 
