@@ -124,6 +124,7 @@ struct SQueueParameters
     bool deny_access_violations;
     bool log_access_violations;
     unsigned log_job_state;
+    bool keep_affinity;
     string subm_hosts;
     string wnode_hosts;
     // This parameter is not reconfigurable
@@ -141,6 +142,7 @@ struct SQueueParameters
         deny_access_violations(false),
         log_access_violations(true),
         log_job_state(0),
+        keep_affinity(false),
         run_timeout_precision(3600)
     { }
     ///
@@ -262,6 +264,7 @@ public:
     bool GetDenyAccessViolations() const;
     bool GetLogAccessViolations() const;
     unsigned GetLogJobState() const;
+    bool GetKeepAffinity() const;
     bool IsVersionControl() const;
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
     bool IsSubmitAllowed(unsigned host) const;
@@ -416,7 +419,11 @@ public:
     /// Find the pending job.
     /// This method takes into account jobs available
     /// in the job status matrix and current
-    /// worker node affinity association
+    /// worker node affinity association. If keep_affinity is
+    /// true, node affinity will not be modified and in case
+    /// there is no suitable job, no new job assigned. It is required
+    /// for on-line use case when it is important that nodes will not
+    /// be promiscuous. See CXX-2077
     ///
     /// Sync.Locks: affinity map lock, main queue lock, status matrix
     ///
@@ -424,7 +431,7 @@ public:
     unsigned
     FindPendingJob(CWorkerNode* worker_node,
                    const list<string>& aff_list,
-                   time_t curr);
+                   time_t curr, bool keep_affinity);
 
     /// Calculate affinity preference string - a list
     /// of affinities accompanied by number of jobs belonging to
@@ -777,6 +784,9 @@ private:
     bool                         m_DenyAccessViolations;
     bool                         m_LogAccessViolations;
     unsigned                     m_LogJobState;
+    /// Keep the node affinity for a while even if there is no jobs with
+    /// such affinity. Helps on-line application.
+    bool                         m_KeepAffinity;
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -848,6 +858,10 @@ inline unsigned CQueue::GetLogJobState() const
 {
     return m_LogJobState;
 }
+inline bool CQueue::GetKeepAffinity() const
+{
+    return m_KeepAffinity;
+}
 inline bool CQueue::IsVersionControl() const
 {
     CReadLockGuard guard(m_ParamLock);
@@ -889,6 +903,7 @@ public:
     bool GetDenyAccessViolations() { return m_Queue.m_DenyAccessViolations; }
     bool GetLogAccessViolations() { return m_Queue.m_LogAccessViolations; }
     unsigned GetLogJobState() { return m_Queue.m_LogJobState; }
+    bool GetKeepAffinity() { return m_Queue.m_KeepAffinity; }
     const CQueueClientInfoList& GetProgramVersionList()
         { return m_Queue.m_ProgramVersionList; }
     const CNetSchedule_AccessList& GetSubmHosts()
@@ -897,7 +912,7 @@ public:
         { return m_Queue.m_WnodeHosts; }
 
     unsigned GetNumParams() const {
-        return 16;
+        return 17;
     }
     string GetParamName(unsigned n) const {
         switch (n) {
@@ -914,9 +929,10 @@ public:
         case 10: return "deny_access_violations";
         case 11: return "log_access_violations";
         case 12: return "log_job_state";
-        case 13: return "program";
-        case 14: return "subm_host";
-        case 15: return "wnode_host";
+        case 13: return "keep_affinity";
+        case 14: return "program";
+        case 15: return "subm_host";
+        case 16: return "wnode_host";
         default: return "";
         }
     }
@@ -935,9 +951,10 @@ public:
         case 10: return m_Queue.m_DenyAccessViolations ? "true" : "false";
         case 11: return m_Queue.m_LogAccessViolations ? "true" : "false";
         case 12: return NStr::IntToString(m_Queue.m_LogJobState);
-        case 13: return m_Queue.m_ProgramVersionList.Print();
-        case 14: return m_Queue.m_SubmHosts.Print();
-        case 15: return m_Queue.m_WnodeHosts.Print();
+        case 13: return m_Queue.m_KeepAffinity ? "true" : "false";
+        case 14: return m_Queue.m_ProgramVersionList.Print();
+        case 15: return m_Queue.m_SubmHosts.Print();
+        case 16: return m_Queue.m_WnodeHosts.Print();
         default: return "";
         }
     }

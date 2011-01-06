@@ -262,6 +262,8 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     log_access_violations  = reg.GetBool(sname, "log_access_violations", true,
         0, IRegistry::eReturn);
     log_job_state          = GetIntNoErr("log_job_state", 0);
+    delete_done = reg.GetBool(sname, "keep_affinity", false,
+        0, IRegistry::eReturn);
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
@@ -331,7 +333,8 @@ CQueue::CQueue(CRequestExecutor& executor,
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
     m_DenyAccessViolations(false),
     m_LogAccessViolations(true),
-    m_LogJobState(0)
+    m_LogJobState(0),
+    m_KeepAffinity(false)
 {
     _ASSERT(!queue_name.empty());
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
@@ -431,6 +434,7 @@ void CQueue::SetParameters(const SQueueParameters& params)
     m_DenyAccessViolations = params.deny_access_violations;
     m_LogAccessViolations  = params.log_access_violations;
     m_LogJobState          = params.log_job_state;
+    m_KeepAffinity         = params.keep_affinity;
     // program version control
     m_ProgramVersionList.Clear();
     if (!params.program_name.empty()) {
@@ -806,12 +810,13 @@ void CQueue::PutResultGetJob(
     _ASSERT(!done_job_id || output);
     _ASSERT(!new_job || (rec_ctx_f && aff_list));
 
-    bool delete_done;
+    bool delete_done, keep_node_affinity;
     unsigned max_output_size;
     unsigned run_timeout;
     {{
         CQueueParamAccessor qp(*this);
         delete_done = qp.GetDeleteDone();
+        keep_node_affinity = qp.GetKeepAffinity();
         max_output_size = qp.GetMaxOutputSize();
         run_timeout = qp.GetRunTimeout();
     }}
@@ -851,10 +856,15 @@ void CQueue::PutResultGetJob(
     // TODO: implement transaction wrapper (a la js_guard above)
     // for FindPendingJob
     // TODO: move affinity assignment there as well
+
+    // We request to not switch node affinity only if it is job exchange.
+    // After node comes for a job second time, we satisfy this request
+    // disregarding existing affinities so the queue is not to grow.
+    keep_node_affinity = keep_node_affinity && done_job_id;
     unsigned pending_job_id = 0;
     if (new_job)
         pending_job_id =
-            FindPendingJob(worker_node, *aff_list, curr);
+            FindPendingJob(worker_node, *aff_list, curr, keep_node_affinity);
     bool done_rec_updated = false;
     CJob job;
 
@@ -1907,7 +1917,7 @@ private:
 unsigned
 CQueue::FindPendingJob(CWorkerNode* worker_node,
                        const list<string>& aff_list,
-                       time_t curr)
+                       time_t curr, bool keep_affinity)
 {
     unsigned job_id = 0;
 
@@ -1942,7 +1952,10 @@ CQueue::FindPendingJob(CWorkerNode* worker_node,
         job_id = na.GetJobWithAffinities(effective_aff_ids,
                                          m_StatusTracker,
                                          affinity_resolver);
-        if (job_id == unsigned(-1) || (!job_id && is_specific_aff)) return 0;
+        if (job_id == unsigned(-1) ||
+            (!job_id && (is_specific_aff || keep_affinity))) {
+                return 0;
+        }
     }}
 
     // No affinity association or there are no more jobs with
