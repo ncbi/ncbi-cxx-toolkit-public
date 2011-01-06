@@ -105,7 +105,7 @@ void CheckExtra(const CNcbiResourceInfo& info, const string& ref)
 
 int CResInfoTest::Run(void)
 {
-    CFileDeleteAtExit file_guard;
+    CFileDeleteAtExit file_guard; /* NCBI_FAKE_WARNING */
     string enc_name = CFile::GetTmpName();
     _ASSERT(!enc_name.empty());
     file_guard.Add(enc_name);

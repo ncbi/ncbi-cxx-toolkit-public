@@ -94,6 +94,8 @@ public:
 
     virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
 
+    virtual TTSE_LockSet GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel);
     virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
                                                  const SAnnotSelector* sel);
 

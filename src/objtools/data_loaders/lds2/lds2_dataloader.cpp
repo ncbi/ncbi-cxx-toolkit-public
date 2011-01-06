@@ -429,6 +429,14 @@ CLDS2_DataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
 
 
 CLDS2_DataLoader::TTSE_LockSet
+CLDS2_DataLoader::GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                          const SAnnotSelector* /*sel*/)
+{
+    return GetRecords(idh, eExtAnnot);
+}
+
+
+CLDS2_DataLoader::TTSE_LockSet
 CLDS2_DataLoader::GetExternalAnnotRecords(const CBioseq_Info&   bioseq,
                                           const SAnnotSelector* /*sel*/)
 {
