@@ -110,6 +110,7 @@
 #include <objtools/error_codes.hpp>
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
+#include <util/util_misc.hpp>
 
 #include <algorithm>
 #include <math.h>
@@ -3586,25 +3587,12 @@ void CCountryLatLonMap::x_InitFromDefaultList()
 bool CCountryLatLonMap::x_InitFromFile()
 {
     // note - may want to do this initialization later, when needed
-    string dir;
-    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        dir = app->GetConfig().Get("NCBI", "Data");
-        if ( !dir.empty()  
-            && CFile(CDirEntry::MakePath(dir, "country_lat_lon.txt")).Exists()) {
-            dir = CDirEntry::AddTrailingPathSeparator(dir);
-        } else {
-            dir.erase();
-        }
-    }
-    if (dir.empty()) {
+    string file = g_FindDataFile("country_lat_lon.txt");
+    if (file.empty()) {
         return false;
     }
 
-    CRef<ILineReader> lr;
-    if ( !dir.empty() ) {
-        lr.Reset(ILineReader::New
-                 (CDirEntry::MakePath(dir, "country_lat_lon.txt")));
-    }
+    CRef<ILineReader> lr(ILineReader::New(file));
     if (lr.Empty()) {
         return false;
     } else {
@@ -10939,22 +10927,11 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
     if (s_InstitutionCollectionCodeMapInitialized) {
         return;
     }
-    string dir;
-    CRef<ILineReader> lr;
-    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        dir = app->GetConfig().Get("NCBI", "Data");
-        if ( !dir.empty()  
-            && CFile(CDirEntry::MakePath(dir, "institution_codes.txt")).Exists()) {
-            // file exists
-            lr.Reset(ILineReader::New
-                 (CDirEntry::MakePath(dir, "institution_codes.txt")));
-        } else {
-            dir.erase();
-        }
-    }
+    string file = g_FindDataFile("institution_codes.txt");
+    CRef<ILineReader> lr(ILineReader::New(file));
 
     if (lr.Empty()) {
-        ERR_POST_X(2, Info << "s_InitializeECNumberMaps: "
+        ERR_POST_X(2, Info << "s_InitializeInstitutionCollectionCodeMaps: "
                    "falling back on built-in data.");
         size_t num_codes = sizeof (kInstitutionCollectionCodeList) / sizeof (char *);
         for (size_t i = 0; i < num_codes; i++) {
@@ -10962,9 +10939,9 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
             s_ProcessInstitutionCollectionCodeLine(p);
         }
     } else {
-        for (++*lr; !lr->AtEOF(); ++*lr) {
-            s_ProcessInstitutionCollectionCodeLine(**lr);
-        }
+        do {
+            s_ProcessInstitutionCollectionCodeLine(*++*lr);
+        } while ( !lr->AtEOF() );
     }
 
     s_InstitutionCollectionCodeMapInitialized = true;
