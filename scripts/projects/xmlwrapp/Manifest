@@ -55,7 +55,6 @@ IntelMAC   : GCC           : GCC.sh           --without-debug --without-mt --wit
 #Win32      : 800-static-32 : msvc800_prj  static  32  ReleaseDLL
 #Win32_9    : 900-static-32 : msvc900_prj  static  32  ReleaseDLL
 Win64_9    : 900-static-64 : static  64  ReleaseDLL
-Win32_8    : 800-static-32 : static  32  ReleaseDLL
 Win32_9    : 900-static-32 : static  32  ReleaseDLL
 
 XCode      : plain      : Xcode.sh 30

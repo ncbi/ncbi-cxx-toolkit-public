@@ -12,7 +12,7 @@
 
 USE_COMPONENTS
 
-Win32_8    : MSVC8 : static  32  ReleaseDLL
+Win32_9    : MSVC8 : static  32  ReleaseDLL
 #Win64      : MSVC8 : msvc800_prj  dll     64  DebugDLL
 Win64_9    : MSVC9-32 : dll     32  DebugDLL
 Win64_9    : MSVC9-64 : static  64  ReleaseDLL
