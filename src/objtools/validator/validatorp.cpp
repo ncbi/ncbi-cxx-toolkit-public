@@ -117,6 +117,7 @@
 #include <objtools/error_codes.hpp>
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
+#include <util/util_misc.hpp>
 
 #include <algorithm>
 
@@ -2351,18 +2352,7 @@ CRef<CComment_set> CValidError_imp::GetStructuredCommentRules(void)
         return m_StructuredCommentRules;
     }
     // note - may want to do this initialization later, when needed
-    string dir;
-    string fname;
-    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        dir = app->GetConfig().Get("NCBI", "Data");
-        if ( !dir.empty()  
-            && CFile(CDirEntry::MakePath(dir, "validrules.prt")).Exists()) {
-            dir = CDirEntry::AddTrailingPathSeparator(dir);
-            fname = dir + "validrules.prt";
-        } else {
-            dir.erase();
-        }
-    }
+    string fname = g_FindDataFile("validrules.prt");
     if (fname.empty()) {
         ERR_POST_X(2, Info << "Unable to load structured comment rules.");
     } else {
