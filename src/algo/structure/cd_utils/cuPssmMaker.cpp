@@ -38,6 +38,7 @@
 #include <algo/blast/api/pssm_engine.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
+#include <algo/structure/cd_utils/cuPssmScorer.hpp>
 #include <algo/structure/cd_utils/cuScoringMatrix.hpp>
 #include <objects/scoremat/PssmFinalData.hpp>
 #include <objects/scoremat/PssmIntermediateData.hpp>
@@ -645,6 +646,35 @@ void PssmMaker::getPssmColumnResidues(map<unsigned int, string>& columnMap)
         }
         columnMap[j] = colResidues;
     }
+}
+
+int findHighestScoringRowByPssm(CCdCore* ccd)
+{
+	cd_utils::PssmMaker pm(ccd,true,true);   // 2rd param is useConsensus.  generally "true".
+	cd_utils::PssmMakerOptions config;
+	config.requestFrequencyRatios = false;
+	pm.setOptions(config);
+	CRef<CPssmWithParameters> pssm = pm.make();
+	const BlockModelPair& guide = pm.getGuideAlignment();
+	int max = 0;
+	int maxRow = 0;
+	PssmScorer ps(pssm);
+	CRef<CBioseq> bioseq;
+	for (int i = 0; i < ccd->GetNumRows(); i++)
+	{
+		ccd->GetBioseqForRow(i, bioseq);
+		BlockModelPair bmp(ccd->GetSeqAlign(i));
+		if (i==0) //score the master
+			bmp.getSlave() = bmp.getMaster();
+		bmp.remaster(guide);
+		int score = ps.score(bmp,bioseq);
+		if (score > max)
+		{
+			max = score;
+			maxRow = i;
+		}
+	}
+	return maxRow;
 }
 
 

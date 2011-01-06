@@ -154,8 +154,6 @@ NCBI_CDUTILS_EXPORT
 CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo = true);
 NCBI_CDUTILS_EXPORT 
 bool obeysParentTypeConstraints(const CCdCore* pCD);
-NCBI_CDUTILS_EXPORT 
-void calcDiversityRanking(CCdCore* pCD, list<int>& rankList);
 
 
 //   Remove consensus sequence from alignment and sequence list.
@@ -176,9 +174,6 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = tru
 //          'ccd' are altered due to modification of alignment blocks caused by IBM.
 NCBI_CDUTILS_EXPORT 
 int IntersectByMaster(CCdCore* ccd);
-
-NCBI_CDUTILS_EXPORT 
-int findHighestScoringRowByPssm(CCdCore* ccd);
 
 //return the number of PDBs fixed
 NCBI_CDUTILS_EXPORT

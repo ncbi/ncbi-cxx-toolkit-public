@@ -121,6 +121,10 @@ private:
 	void unalignLeadingTrailingGaps();
 };
 
+//  Moved from cuCD.hpp to avoid unnecessary Blast library dependencies for that module.
+NCBI_CDUTILS_EXPORT 
+int findHighestScoringRowByPssm(CCdCore* ccd);
+
 class NCBI_CDUTILS_EXPORT PssmMaker
 {
 public:
