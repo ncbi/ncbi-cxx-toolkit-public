@@ -1227,7 +1227,7 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclMinus) {
             query_v[0].mask->GetPacked_int().Get()) {
         BOOST_REQUIRE_EQUAL(kDustStarts[loc_index], (int)(*itr)->GetFrom());
         BOOST_REQUIRE_EQUAL(kDustEnds[loc_index], (int)(*itr)->GetTo());
-	reverse ? --loc_index : ++loc_index;
+    reverse ? --loc_index : ++loc_index;
     }
 
     // Check that we finished loop on reverse strand is that loc_index is -1.

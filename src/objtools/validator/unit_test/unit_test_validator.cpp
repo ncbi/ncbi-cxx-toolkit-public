@@ -2097,8 +2097,8 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
     // Set validator options
     unsigned int options = CValidator::eVal_need_isojta
                           | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+                          | CValidator::eVal_use_entrez;
 
     // list of expected errors
     vector< CExpectedError *> expected_errors;
@@ -2323,8 +2323,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidAlphabet)
     // Set validator options
     unsigned int options = CValidator::eVal_need_isojta
                           | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+                          | CValidator::eVal_use_entrez;
 
     // list of expected errors
     vector< CExpectedError *> expected_errors;
@@ -3408,8 +3408,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DuplicateSegmentReferences)
     // Set validator options
     unsigned int options = CValidator::eVal_need_isojta
                           | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+                          | CValidator::eVal_use_entrez;
 
     // list of expected errors
     vector< CExpectedError *> expected_errors;
@@ -9006,8 +9006,8 @@ BOOST_AUTO_TEST_CASE(Test_Generic_NonAsciiAsn)
     CValidator validator(*objmgr);
     unsigned int options = CValidator::eVal_need_isojta 
                           | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+                          | CValidator::eVal_use_entrez
                           | CValidator::eVal_non_ascii;
     vector< CExpectedError *> expected_errors;
 
@@ -13093,8 +13093,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     // Set validator options
     unsigned int options = CValidator::eVal_need_isojta
                           | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+                          | CValidator::eVal_use_entrez;
 
     // list of expected errors
     vector< CExpectedError *> expected_errors;

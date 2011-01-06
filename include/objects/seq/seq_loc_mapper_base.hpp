@@ -303,6 +303,14 @@ public:
         eSplicedRow_Gen  = 1
     };
 
+    enum EFuzzOption {
+        eFuzzOption_Normal = 0,
+        // used for backwards compatibility with C toolkit's output.
+        // TODO: we should remove this one day since the
+        // normal output is superior.
+        eFuzzOption_CStyle 
+    };
+
     /// Mapping through a pre-filled CMappipngRanges.
     /// @param mapping_ranges
     ///  CMappingRanges filled with the desired source and destination
@@ -345,6 +353,8 @@ public:
                          IMapper_Sequence_Info* seq_info = 0);
 
     ~CSeq_loc_Mapper_Base(void);
+
+    void SetFuzzOption( EFuzzOption newOption );
 
     /// Intervals' merging mode
     /// MergeNone and MergeAbutting do not change the order of ranges
@@ -702,6 +712,9 @@ private:
     // x_PushRangesToDstMix).
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
+    // For mix locations, we remove fuzz from in-between the parts.
+    void x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const;
+
     // Try to optimize the mapped location if it's a mix.
     // The allowed optimizations are:
     // - empty mix is converted to Null
@@ -759,6 +772,8 @@ protected:
     // Current mapping group. Incremented for each mapping sub-location
     // (e.g. exon).
     int                  m_CurrentGroup;
+    // Control how fuzz is generated and propagated
+    EFuzzOption          m_FuzzOption;
 
     // Sequence info provider
     mutable CRef<IMapper_Sequence_Info> m_SeqInfo;

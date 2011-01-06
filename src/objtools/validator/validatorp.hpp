@@ -123,11 +123,11 @@ public:
     bool DoesOverlap(const CCountryBlock* other_block) const;
 
 private:
-	string m_CountryName;
-	double m_MinX;
-	double m_MinY;
-	double m_MaxX;
-	double m_MaxY;
+    string m_CountryName;
+    double m_MinX;
+    double m_MinY;
+    double m_MaxX;
+    double m_MaxY;
 };
 
 
@@ -136,13 +136,13 @@ private:
 class CCountryLatLonMap
 {
 public:
-	  CCountryLatLonMap(void);
-	  ~CCountryLatLonMap(void);
+      CCountryLatLonMap(void);
+      ~CCountryLatLonMap(void);
 
-	  bool IsCountryInLatLon(string country, double x, double y);
-	  string GuessCountryForLatLon(double x, double y);
-	  bool HaveLatLonForCountry (string country);
-	  static bool DoesStringContainBodyOfWater(const string& country);
+      bool IsCountryInLatLon(string country, double x, double y);
+      string GuessCountryForLatLon(double x, double y);
+      bool HaveLatLonForCountry (string country);
+      static bool DoesStringContainBodyOfWater(const string& country);
     bool DoCountryBoxesOverlap (string country1, string country2);
 
 private:
@@ -155,7 +155,7 @@ private:
 
     TCountryBlockList m_CountryBlockList;
 
-	static const string sm_BodiesOfWater[];
+    static const string sm_BodiesOfWater[];
 };
 
 class CCountryLine;
@@ -197,10 +197,10 @@ private:
 class CCountryLine
 {
 public:
-	CCountryLine (string country_name, double y, double min_x, double max_x, double scale);
-	~CCountryLine (void);
+    CCountryLine (string country_name, double y, double min_x, double max_x, double scale);
+    ~CCountryLine (void);
 
-	string GetCountry(void)            const { return m_CountryName; }
+    string GetCountry(void)            const { return m_CountryName; }
   double GetLat(void)                const { return m_Y / m_Scale; }
   double GetMinLon(void)             const { return m_MinX / m_Scale; }
   double GetMaxLon(void)             const { return m_MaxX / m_Scale; }
@@ -219,10 +219,10 @@ private:
   int x_ConvertLon(double x);
 
   CCountryExtreme *m_Block;
-	string m_CountryName;
-	int m_Y;
-	int m_MinX;
-	int m_MaxX;
+    string m_CountryName;
+    int m_Y;
+    int m_MinX;
+    int m_MaxX;
   double m_Scale;
 
 };
@@ -298,11 +298,11 @@ class CLatLonCountryMap
 public:
     CLatLonCountryMap(bool is_water);
     ~CLatLonCountryMap(void);
-	  bool IsCountryInLatLon(string country, double lat, double lon);
-	  const CCountryExtreme * GuessRegionForLatLon(double lat, double lon, const string country = "", const string province = "");
+      bool IsCountryInLatLon(string country, double lat, double lon);
+      const CCountryExtreme * GuessRegionForLatLon(double lat, double lon, const string country = "", const string province = "");
     CCountryExtreme * FindClosestToLatLon (double lat, double lon, double range, double &distance);
     bool IsClosestToLatLon (string country, double lat, double lon, double range, double &distance);
-	  bool HaveLatLonForRegion (string country);
+      bool HaveLatLonForRegion (string country);
     bool DoCountryBoxesOverlap (string country1, string country2);
     CCountryExtreme * IsNearLatLon (double lat, double lon, double range, double &distance, const string country, const string province = "");
     double GetScale (void) { return m_Scale; }
@@ -342,7 +342,7 @@ private:
     TCountryExtremeList m_CountryExtremes;
 
 
-	  static const string sm_BodiesOfWater[];
+      static const string sm_BodiesOfWater[];
 
 
 
@@ -542,8 +542,8 @@ public:
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
     void AddProtWithoutFullRef(const CBioseq_Handle& seq);
-	static bool IsWGSIntermediate(const CBioseq& seq);
-	static bool IsWGSIntermediate(const CSeq_entry& se);
+    static bool IsWGSIntermediate(const CBioseq& seq);
+    static bool IsWGSIntermediate(const CSeq_entry& se);
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
 
@@ -595,7 +595,7 @@ private:
     void FindEmbeddedScript (const CSerialObject& obj);
     void FindCollidingSerialNumbers (const CSerialObject& obj);
 
-	void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
+    void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
 
     CLatLonCountryId *x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
     CLatLonCountryId::TClassificationFlags x_ClassifyLatLonId(CLatLonCountryId *id, string country, string province);
@@ -607,7 +607,7 @@ private:
     CSeq_entry_Handle       m_TSEH;
 
     // validation data read from external files
-	  CCountryLatLonMap lat_lon_map;
+      CCountryLatLonMap lat_lon_map;
     static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;
     static auto_ptr<CLatLonCountryMap> m_LatLonWaterMap;
     CRef<CComment_set> m_StructuredCommentRules;
@@ -632,7 +632,7 @@ private:
     bool m_LocusTagGeneralMatch;
     bool m_DoRubiscoText;
     bool m_IndexerVersion;
-	  bool m_UseEntrez;
+      bool m_UseEntrez;
     bool m_IgnoreExceptions;             // ignore exceptions when validating translation
     bool m_ValidateInferenceAccessions;  // check that accessions in inferences are valid
     bool m_ReportSpliceAsError;
@@ -1080,7 +1080,7 @@ private:
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
 
     void ValidateSeqDescContext(const CBioseq& seq);
-	void ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
+    void ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol, int& tech, int& completeness,
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolTypeContext(const EGIBB_mol& gibb, EGIBB_mol& seq_biomol,
@@ -1112,7 +1112,7 @@ private:
     void ValidateIDSetAgainstDb(const CBioseq& seq);
     void x_ValidateSourceFeatures(const CBioseq_Handle& bsh);
     void x_ValidatePubFeatures(const CBioseq_Handle& bsh);
-	void x_ReportDuplicatePubLabels (const CBioseq& seq, vector<string>& labels);
+    void x_ReportDuplicatePubLabels (const CBioseq& seq, vector<string>& labels);
     void x_ValidateMultiplePubs(const CBioseq_Handle& bsh);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
@@ -1225,43 +1225,43 @@ private:
 class CPCRSet
 {
 public:
-	CPCRSet(size_t pos);
-	virtual ~CPCRSet(void);
+    CPCRSet(size_t pos);
+    virtual ~CPCRSet(void);
 
     string GetFwdName(void)            const { return m_FwdName; }
     string GetFwdSeq(void)             const { return m_FwdSeq; }
     string GetRevName(void)            const { return m_RevName; }
     string GetRevSeq(void)             const { return m_RevSeq; }
-	size_t GetOrigPos(void)            const { return m_OrigPos; }
+    size_t GetOrigPos(void)            const { return m_OrigPos; }
 
-	void SetFwdName(string fwd_name) { m_FwdName = fwd_name; }
-	void SetFwdSeq(string fwd_seq)   { m_FwdSeq = fwd_seq; }
-	void SetRevName(string rev_name) { m_RevName = rev_name; }
-	void SetRevSeq(string rev_seq)   { m_RevSeq = rev_seq; }
+    void SetFwdName(string fwd_name) { m_FwdName = fwd_name; }
+    void SetFwdSeq(string fwd_seq)   { m_FwdSeq = fwd_seq; }
+    void SetRevName(string rev_name) { m_RevName = rev_name; }
+    void SetRevSeq(string rev_seq)   { m_RevSeq = rev_seq; }
 
 private:
-	string m_FwdName;
+    string m_FwdName;
     string m_FwdSeq;
-	string m_RevName;
-	string m_RevSeq;
-	size_t m_OrigPos;
+    string m_RevName;
+    string m_RevSeq;
+    size_t m_OrigPos;
 };
 
 class CPCRSetList
 {
 public:
-	CPCRSetList(void);
-	~CPCRSetList(void);
+    CPCRSetList(void);
+    ~CPCRSetList(void);
 
-	void AddFwdName (string name);
-	void AddRevName (string name);
-	void AddFwdSeq (string name);
-	void AddRevSeq (string name);
+    void AddFwdName (string name);
+    void AddRevName (string name);
+    void AddFwdSeq (string name);
+    void AddRevSeq (string name);
 
-	bool AreSetsUnique(void);
+    bool AreSetsUnique(void);
 
 private:
-	vector <CPCRSet *> m_SetList;
+    vector <CPCRSet *> m_SetList;
 };
 
 END_SCOPE(validator)

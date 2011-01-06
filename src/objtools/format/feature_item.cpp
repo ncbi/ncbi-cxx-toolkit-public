@@ -599,18 +599,6 @@ static bool s_IsLegalECNumber(const string& ec_number)
 {
   if ( ec_number.empty() ) return false;
 
-  //string::const_iterator start = find( ec_number.begin(), ec_number.end(), '\"' );
-  //if( start == ec_number.end() ) {
-  //    start = ec_number.begin();
-  //} else {
-  //    // skip the quote
-  //    ++start;
-  //}
-
-  //string::const_iterator end = find( start, ec_number.end(), '\"' );
-  //string::const_iterator first_bad_char = find_if( start, end, BadECNumberChar() );
-  //return ( first_bad_char == end );
-
   bool is_ambig = false;
   int numperiods = 0;
   int numdigits = 0;
@@ -2058,13 +2046,13 @@ void CFeatureItem::x_AddQuals(
     // leaving this here since it's so useful for debugging purposes.
     //
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 1355300 &&
-        GetLoc().GetStop(eExtreme_Biological) == 1356685) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 1355300 &&
-        GetLoc().GetStart(eExtreme_Biological) == 1356685)
+        (GetLoc().GetStart(eExtreme_Biological) == 365866 &&
+        GetLoc().GetStop(eExtreme_Biological) == 370428) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 365866 &&
+        GetLoc().GetStart(eExtreme_Biological) == 370428)
         ) {
         cerr << "";
-    } */
+        } */
 //    /**fl**/
 
     if ( ctx.Config().IsFormatFTable() ) {

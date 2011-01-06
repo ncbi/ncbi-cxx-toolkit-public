@@ -80,7 +80,7 @@ void CCit_gen::GetLabel(string* label, bool unique) const
     const string* pages = IsSetPages() ? &GetPages() : 0;
 
     if (IsSetCit()) {
-        if (GetCit().find("Unpublished") != string::npos) {
+        if ( NStr::EqualNocase( GetCit(), "Unpublished") ) {
             unpublished = true;
         } else if (!title) {
             title2 = &GetCit();

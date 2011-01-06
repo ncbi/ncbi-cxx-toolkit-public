@@ -220,13 +220,13 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     struct SAlignTemplates {
         string alignHeaderTmpl; ///< Template for displaying header,deflines and gene info  - BLAST_ALIGN_HEADER
         string sortInfoTmpl;    ///< Template for displaying  Sort by header - SORT_ALIGNS_SEQ
-        string alnDefLineTmpl;	///< Template for displaying one defline ALN_DEFLINE_ROW	
-		string alnSeqInfoTmpl;  ///< Template for displaying sequnce link in defline
+        string alnDefLineTmpl;    ///< Template for displaying one defline ALN_DEFLINE_ROW    
+        string alnSeqInfoTmpl;  ///< Template for displaying sequnce link in defline
         string alignInfoTmpl;   ///< Template for displaying singe align params - BLAST_ALIGN_PARAMS_NUC,BLAST_ALIGN_PARAMS_PROT
         string alignFeatureTmpl; ///< Template for displaying  align features -ALN_FEATURES 
-        string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK 		
+        string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK         
         string alignRowTmpl;    ///<Template for displayin actual pairwise alignment - BLAST_ALIGN_ROWS
-		string alignRowTmplLast; ///<Template for displayin actual last pairwise alignment - BLAST_ALIGN_ROWS_LST
+        string alignRowTmplLast; ///<Template for displayin actual last pairwise alignment - BLAST_ALIGN_ROWS_LST
     };
        
     /// Set functions
@@ -429,26 +429,26 @@ private:
     
 	//Info used to display defline information
     struct SAlnDispParams: public CObject {
-		int gi;                         ///< gi used in defline
-		CRef<objects::CSeq_id> seqID;	///< seqID used in defline
-		string label;                   ///< sequence label
-		string	id_url;                 ///< entrz, mapview etc id url
-		string linkoutStr;              ///< string containing all linkout urls
-		string dumpGnlUrl;              ///< download sequnce url
-		string title;                   ///< sequnce title
-	};
+        int gi;                         ///< gi used in defline
+        CRef<objects::CSeq_id> seqID;    ///< seqID used in defline
+        string label;                   ///< sequence label
+        string    id_url;                 ///< entrz, mapview etc id url
+        string linkoutStr;              ///< string containing all linkout urls
+        string dumpGnlUrl;              ///< download sequnce url
+        string title;                   ///< sequnce title
+    };
 
     ///Info used to contstruct seq url obtained from processing the whole seq align
     ///for particular subject sequnce
     struct SAlnLinksParams {
-		string segs;                    ///< seq align segments in the format seg1start-seg1end,seg2start-seg2end,
-		int  hspNumber;                 ///< hsp number  
-		CRange<TSeqPos> *subjRange;     ///< subject sequnce range
-		bool flip;                      ///< opposite starnds indicator
+        string segs;                    ///< seq align segments in the format seg1start-seg1end,seg2start-seg2end,
+        int  hspNumber;                 ///< hsp number  
+        CRange<TSeqPos> *subjRange;     ///< subject sequnce range
+        bool flip;                      ///< opposite starnds indicator
 
-		/// Constructor        
-		SAlnLinksParams(){hspNumber = 1;subjRange = NULL;flip = false;}
-	};
+        /// Constructor        
+        SAlnLinksParams(){hspNumber = 1;subjRange = NULL;flip = false;}
+    };
 
     /// store alnvec and score info
     struct SAlnInfo : public CObject {               
@@ -534,9 +534,9 @@ private:
 
     int		m_NumBlastDefLines;///< Number of subject sequence deflines 
 
-    int		m_currAlignHsp;///< Current HSP number for single alignmnet
+    int        m_currAlignHsp;///< Current HSP number for single alignmnet
 
-    int     m_currSeqTaxid;///< Current sequnce taxid
+    int     m_currSeqTaxid;///< Current sequence taxid
 
     string  m_UserUrl;///< User URL for blast type
     
@@ -824,7 +824,7 @@ private:
 	string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
 	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
-	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
+    void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
     bool m_UseLinkoutDB; // temporary to determine whether to use LinkoutDB or not
 };
 

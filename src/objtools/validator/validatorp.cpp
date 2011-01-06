@@ -620,8 +620,8 @@ void CValidError_imp::PostErr
                 desc += bc_label;
                 desc += "]";
             }
-		} catch (CException ) {
-		} catch (std::exception ) {
+        } catch (CException ) {
+        } catch (std::exception ) {
         };
     }
 
@@ -1190,10 +1190,10 @@ bool CValidError_imp::Validate
         }
     }
 
-	if (m_IsINSDInSep && IsRefSeq()) {
-		PostErr (eDiag_Error, eErr_SEQ_PKG_INSDRefSeqPackaging,
-		         "INSD and RefSeq records should not be present in the same set", *m_TSE);
-	}
+    if (m_IsINSDInSep && IsRefSeq()) {
+        PostErr (eDiag_Error, eErr_SEQ_PKG_INSDRefSeqPackaging,
+                 "INSD and RefSeq records should not be present in the same set", *m_TSE);
+    }
 
 #if 0
     // disabled for now
@@ -1267,28 +1267,28 @@ bool CValidError_imp::Validate
     }
 
     // look for mixed gps and non-gps sets
-	bool has_nongps = false;
-	bool has_gps = false;
+    bool has_nongps = false;
+    bool has_gps = false;
     
     for (CTypeConstIterator<CBioseq_set> si(*m_TSE); si && (!has_nongps || !has_gps); ++si) {
-		if (si->IsSetClass()) {
-			if (si->GetClass() == CBioseq_set::eClass_mut_set
-			    || si->GetClass() == CBioseq_set::eClass_pop_set
-			    || si->GetClass() == CBioseq_set::eClass_phy_set
-			    || si->GetClass() == CBioseq_set::eClass_eco_set
-			    || si->GetClass() == CBioseq_set::eClass_wgs_set) {
-			    has_nongps = true;
-			} else if (si->GetClass() == CBioseq_set::eClass_gen_prod_set) {
-				has_gps = true;
-			}
-		}
+        if (si->IsSetClass()) {
+            if (si->GetClass() == CBioseq_set::eClass_mut_set
+                || si->GetClass() == CBioseq_set::eClass_pop_set
+                || si->GetClass() == CBioseq_set::eClass_phy_set
+                || si->GetClass() == CBioseq_set::eClass_eco_set
+                || si->GetClass() == CBioseq_set::eClass_wgs_set) {
+                has_nongps = true;
+            } else if (si->GetClass() == CBioseq_set::eClass_gen_prod_set) {
+                has_gps = true;
+            }
+        }
     }
 
-	if (has_nongps && has_gps) {
-		PostErr(eDiag_Error, eErr_SEQ_PKG_GPSnonGPSPackaging,
-			"Genomic product set and mut/pop/phy/eco set records should not be present in the same set",
-			*m_TSE);
-	}
+    if (has_nongps && has_gps) {
+        PostErr(eDiag_Error, eErr_SEQ_PKG_GPSnonGPSPackaging,
+            "Genomic product set and mut/pop/phy/eco set records should not be present in the same set",
+            *m_TSE);
+    }
 
 
     // validate the main data
@@ -1374,9 +1374,9 @@ bool CValidError_imp::Validate
     FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
     FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
 
-	if (m_UseEntrez) {
-		ValidateTaxonomy(*(seh.GetCompleteSeq_entry()));
-	}
+    if (m_UseEntrez) {
+        ValidateTaxonomy(*(seh.GetCompleteSeq_entry()));
+    }
 
     // validate cit-sub
     if (cs) {
@@ -1504,97 +1504,97 @@ void CValidError_imp::ValidateDbxref
  bool biosource,
  const CSeq_entry *ctx)
 {
-	if (xref.IsSetTag() && xref.GetTag().IsStr()) {
-		if (ContainsSgml(xref.GetTag().GetStr())) {
+    if (xref.IsSetTag() && xref.GetTag().IsStr()) {
+        if (ContainsSgml(xref.GetTag().GetStr())) {
             PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
                 "dbxref value " + xref.GetTag().GetStr() + " has SGML",
-				obj, ctx);
-		}
-	}
+                obj, ctx);
+        }
+    }
 
     if ( !xref.CanGetDb() ) {
         return;
     }
     const string& db = xref.GetDb();
 
-	if (ContainsSgml(db)) {
+    if (ContainsSgml(db)) {
         PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
             "dbxref database " + db + " has SGML",
-			obj, ctx);
-	}
+            obj, ctx);
+    }
 
     CDbtag::EDbtagType db_type = xref.GetType();
 
     bool refseq = IsRefSeq();
 
-	bool src_db = false;
-	bool refseq_db = false;
-	string correct_caps = "";
+    bool src_db = false;
+    bool refseq_db = false;
+    string correct_caps = "";
 
-	if (xref.GetDBFlags (refseq_db, src_db, correct_caps)) {
-		if ( biosource) {
-			if (NStr::EqualCase(correct_caps, db)) {
-				if (src_db) {
-					// it's all good
-				} else if (refseq_db) {
-					if (refseq || IsGPS()) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-									"RefSeq-specific db_xref type " + db + " should not used on an OrgRef",
-									obj, ctx);
-					} else {
-						PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-									"RefSeq-specific db_xref type " + db + " should not used on a non-RefSeq OrgRef",
-									obj, ctx);
-					}
-				} else {
-					PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-								"db_xref type " + db + " should not used on an OrgRef",
-								obj, ctx);
-				}
-			} else {
-				// capitalization is bad
-				if (src_db) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-								"Illegal db_xref type " + db + ", legal capitalization is " + correct_caps,
-								obj, ctx);
-				} else {
-					PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-				                "Illegal db_xref type " + db + ", legal capitalization is " + correct_caps + ", but should not be used on an OrgRef",
-								obj, ctx);
-				}
-			}
-		} else {
-			if (NStr::EqualCase(correct_caps, db)) {
-				if (refseq_db) {
-					if (refseq || IsGPS()) {
+    if (xref.GetDBFlags (refseq_db, src_db, correct_caps)) {
+        if ( biosource) {
+            if (NStr::EqualCase(correct_caps, db)) {
+                if (src_db) {
+                    // it's all good
+                } else if (refseq_db) {
+                    if (refseq || IsGPS()) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
+                                    "RefSeq-specific db_xref type " + db + " should not used on an OrgRef",
+                                    obj, ctx);
+                    } else {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                                    "RefSeq-specific db_xref type " + db + " should not used on a non-RefSeq OrgRef",
+                                    obj, ctx);
+                    }
+                } else {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                                "db_xref type " + db + " should not used on an OrgRef",
+                                obj, ctx);
+                }
+            } else {
+                // capitalization is bad
+                if (src_db) {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
+                                "Illegal db_xref type " + db + ", legal capitalization is " + correct_caps,
+                                obj, ctx);
+                } else {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
+                                "Illegal db_xref type " + db + ", legal capitalization is " + correct_caps + ", but should not be used on an OrgRef",
+                                obj, ctx);
+                }
+            }
+        } else {
+            if (NStr::EqualCase(correct_caps, db)) {
+                if (refseq_db) {
+                    if (refseq || IsGPS()) {
                         // it's all good
-					} else {
-						PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-									"db_xref type " + db + " is only legal for RefSeq",
-									obj, ctx);
-					}
-				} else if (src_db && NStr::EqualNocase(db, "taxon")) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-								"db_xref type taxon should only be used on an OrgRef",
-								obj, ctx);
-				}
-			} else {
-				// capitalization is bad
-				if (src_db && NStr::EqualNocase(db, "taxon")) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-								"Illegal db_xref type " + db + ", legal capitalization is " + correct_caps + ", but should only be used on an OrgRef",
-								obj, ctx);
-				} else {
-					PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-								"Illegal db_xref type " + db + ", legal capitalization is " + correct_caps,
-								obj, ctx);
-				}
-			}
-		}
-	} else {
+                    } else {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
+                                    "db_xref type " + db + " is only legal for RefSeq",
+                                    obj, ctx);
+                    }
+                } else if (src_db && NStr::EqualNocase(db, "taxon")) {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                                "db_xref type taxon should only be used on an OrgRef",
+                                obj, ctx);
+                }
+            } else {
+                // capitalization is bad
+                if (src_db && NStr::EqualNocase(db, "taxon")) {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                                "Illegal db_xref type " + db + ", legal capitalization is " + correct_caps + ", but should only be used on an OrgRef",
+                                obj, ctx);
+                } else {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                                "Illegal db_xref type " + db + ", legal capitalization is " + correct_caps,
+                                obj, ctx);
+                }
+            }
+        }
+    } else {
         PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
             "Illegal db_xref type " + db, obj, ctx);
-	}
+    }
 
 }
 
@@ -1605,19 +1605,19 @@ void CValidError_imp::ValidateDbxref
  bool biosource,
  const CSeq_entry *ctx)
 {
-	string last_db = "";
+    string last_db = "";
 
     ITERATE( TDbtags, xref, xref_list) {
-		if (biosource
-			&& (*xref)->IsSetDb()) {
-			if (!NStr::IsBlank(last_db) 
-				&& NStr::EqualNocase((*xref)->GetDb(), last_db)) {
-				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceDbTagConflict, 
-							"BioSource uses db " + last_db + " multiple times",
-							obj, ctx);
-			}
-			last_db = (*xref)->GetDb();
-		}
+        if (biosource
+            && (*xref)->IsSetDb()) {
+            if (!NStr::IsBlank(last_db) 
+                && NStr::EqualNocase((*xref)->GetDb(), last_db)) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceDbTagConflict, 
+                            "BioSource uses db " + last_db + " multiple times",
+                            obj, ctx);
+            }
+            last_db = (*xref)->GetDb();
+        }
         ValidateDbxref(**xref, obj, biosource, ctx);
     }
 }
@@ -1904,54 +1904,54 @@ void CValidError_imp::AddProtWithoutFullRef(const CBioseq_Handle& seq)
 
 bool CValidError_imp::IsWGSIntermediate(const CBioseq& seq)
 {
-	bool wgs = false;
+    bool wgs = false;
 
-	FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
-		if ((*it)->IsMolinfo() && (*it)->GetMolinfo().IsSetTech()
-			&& (*it)->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
-			wgs = true;
-		    break;
-		}
-	}
-	if (!wgs) {
-		return false;
-	}
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
+        if ((*it)->IsMolinfo() && (*it)->GetMolinfo().IsSetTech()
+            && (*it)->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
+            wgs = true;
+            break;
+        }
+    }
+    if (!wgs) {
+        return false;
+    }
 
     bool is_other = false;
     bool has_gi = false;
 
-	FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
-		if ((*it)->IsOther()) {
-			is_other = true;
-			break;
-		} else if ((*it)->IsGi()) {
-			has_gi = true;
-			break;
-		}
-	}
+    FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
+        if ((*it)->IsOther()) {
+            is_other = true;
+            break;
+        } else if ((*it)->IsGi()) {
+            has_gi = true;
+            break;
+        }
+    }
     if (!is_other || has_gi) {
         return false;
     }
 
-	return true;
+    return true;
 }
 
 
 bool CValidError_imp::IsWGSIntermediate(const CSeq_entry& se)
 {
-	if (se.IsSeq()) {
-		return IsWGSIntermediate(se.GetSeq());
-	} else if (se.IsSet()) {
-		const CBioseq_set& set = se.GetSet();
-		FOR_EACH_SEQENTRY_ON_SEQSET (it, set) {
-			if ((*it)->IsSet()) {
+    if (se.IsSeq()) {
+        return IsWGSIntermediate(se.GetSeq());
+    } else if (se.IsSet()) {
+        const CBioseq_set& set = se.GetSet();
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, set) {
+            if ((*it)->IsSet()) {
                 return IsWGSIntermediate(**it);
-			} else if ((*it)->IsSeq() && (*it)->GetSeq().IsNa()) {
-				return IsWGSIntermediate((*it)->GetSeq());
-			}
-		}
-	}
-	return false;
+            } else if ((*it)->IsSeq() && (*it)->GetSeq().IsNa()) {
+                return IsWGSIntermediate((*it)->GetSeq());
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -2341,7 +2341,7 @@ static bool s_FieldRuleCompare (
 )
 
 {
-	return NStr::Compare(p1->GetField_name(), p2->GetField_name()) < 0;
+    return NStr::Compare(p1->GetField_name(), p2->GetField_name()) < 0;
 }
 
 
@@ -2350,7 +2350,7 @@ CRef<CComment_set> CValidError_imp::GetStructuredCommentRules(void)
     if (m_StructuredCommentRules) {
         return m_StructuredCommentRules;
     }
-	// note - may want to do this initialization later, when needed
+    // note - may want to do this initialization later, when needed
     string dir;
     string fname;
     if (CNcbiApplication* app = CNcbiApplication::Instance()) {
