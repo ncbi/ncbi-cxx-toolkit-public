@@ -188,8 +188,9 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
                         total_memory_limit << ")");
 
                     CGridGlobals::GetInstance().RequestShutdown(
-                        CNetScheduleAdmin::eNormalShutdown,
-                            MEM_OVERUSE_EXIT_CODE);
+                        CNetScheduleAdmin::eNormalShutdown);
+                    CGridGlobals::GetInstance().SetExitCode(
+                        MEM_OVERUSE_EXIT_CODE);
                 }
             } else {
                 ERR_POST("Could not check self memory usage" );

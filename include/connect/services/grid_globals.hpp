@@ -116,16 +116,17 @@ public:
 
 
     /// Request node shutdown
-    void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level, int exit_code = 0)
-                      { m_ExitCode = exit_code; m_ShutdownLevel = level; }
+    void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level)
+                      { m_ShutdownLevel = level; }
     bool IsShuttingDown();
 
     /// Check if shutdown was requested.
     ///
     CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void)
                       { return m_ShutdownLevel; }
-    int GetExitCode() const 
-                      { return m_ExitCode; }
+
+    void SetExitCode(int exit_code) { m_ExitCode = exit_code; }
+    int GetExitCode() const { return m_ExitCode; }
 
     CWNJobsWatcher& GetJobsWatcher();
 
