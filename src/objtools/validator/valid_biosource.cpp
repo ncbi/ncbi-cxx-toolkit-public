@@ -3399,7 +3399,7 @@ void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
               NStr::Tokenize(line, "\t", tokens);
             if (tokens.size() > 3) {
                 double x = NStr::StringToDouble(tokens[1]);
-                for (int j = 2; j < tokens.size() - 1; j++) {
+                for (int j = 2; j < tokens.size() - 1; j+=2) {
                     m_CountryLineList.push_back(new CCountryLine(current_country, x, NStr::StringToDouble(tokens[j]), NStr::StringToDouble(tokens[j + 1]), m_Scale));
                 }
             }
