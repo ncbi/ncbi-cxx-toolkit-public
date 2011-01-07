@@ -3981,7 +3981,12 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
         return;
     }
     string file = g_FindDataFile("institution_codes.txt");
-    CRef<ILineReader> lr(ILineReader::New(file));
+    CRef<ILineReader> lr;
+    if ( !file.empty() ) {
+        try {
+            lr = ILineReader::New(file);
+        } NCBI_CATCH("s_InitializeInstitutionCollectionCodeMaps")
+    }
 
     if (lr.Empty()) {
         ERR_POST_X(2, Info << "s_InitializeInstitutionCollectionCodeMaps: "
