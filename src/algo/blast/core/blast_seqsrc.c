@@ -68,6 +68,10 @@ struct BlastSeqSrc {
     GetBoolFnPtr      GetIsProt;      /**< Find if database is a protein or 
                                          nucleotide */
 
+   /* Functions that supports partial sequence fetching */
+    GetBoolFnPtr      GetSupportsPartialFetching; /**< Find if database supports partial fetching */
+    SetSeqRangeFnPtr  SetSeqRange;    /**< Setting ranges for partial fetching */
+
    /* Functions that deal with individual sequences */
     GetSeqBlkFnPtr    GetSequence;    /**< Retrieve individual sequence */
     GetInt4FnPtr      GetSeqLen;      /**< Retrieve given sequence length */
@@ -237,6 +241,26 @@ BlastSeqSrcGetIsProt(const BlastSeqSrc* seq_src)
     ASSERT(seq_src);
     ASSERT(seq_src->GetIsProt);
     return (*seq_src->GetIsProt)(seq_src->DataStructure, NULL);
+}
+
+Boolean
+BlastSeqSrcGetSupportsPartialFetching(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    if (seq_src->GetSupportsPartialFetching) {
+        return (*seq_src->GetSupportsPartialFetching)(seq_src->DataStructure, NULL);
+    }
+    return FALSE;
+}
+
+void
+BlastSeqSrcSetSeqRanges(const BlastSeqSrc* seq_src,
+                        BlastSeqSrcSetRangesArg* arg)
+{
+    ASSERT(seq_src);
+    if (seq_src->SetSeqRange) {
+        return (*seq_src->SetSeqRange)(seq_src->DataStructure, arg);
+    }
 }
 
 Int2
@@ -545,6 +569,9 @@ DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLenStats)
 
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetStrFnPtr, GetName)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt)
+
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetBoolFnPtr, GetSupportsPartialFetching)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(SetSeqRangeFnPtr, SetSeqRange)
 
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen)

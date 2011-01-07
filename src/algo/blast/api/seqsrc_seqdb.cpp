@@ -217,6 +217,55 @@ s_SeqDbGetIsProt(void* seqdb_handle, void*)
     return (seqdb.GetSequenceType() == CSeqDB::eProtein);
 }
 
+/// Determine if partial fetching should be enabled
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+static Boolean
+s_SeqDbGetSupportsPartialFetching(void* seqdb_handle, void*) 
+{
+    CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
+    
+    if (seqdb.GetSequenceType() != CSeqDB::eNucleotide) {
+       // don't bother doing this for proteins as the sequences are
+       // never long enough to cause performance degredation
+       return false;
+    }
+
+    // If longest sequence is below this we quit
+    static const int kMaxLengthCutoff = 5000;
+    if (seqdb.GetMaxLength() < kMaxLengthCutoff) {
+       return false;
+    }
+
+    // If average length is below this amount we quit
+    static const int kAvgLengthCutoff = 2048;
+    Int8 total_length = seqdb.GetTotalLength();
+    Int4 num_seqs = MAX(1, seqdb.GetNumSeqs());
+    if ((Int4)(total_length/num_seqs) < kAvgLengthCutoff) {
+       return false;
+    }
+
+    return true;
+}
+
+
+/// Set sequence ranges for partial fetching
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+/// @param args Pointer to BlastSeqSrcSetRangesArg structure [in]
+static void
+s_SeqDbSetRanges(void* seqdb_handle, BlastSeqSrcSetRangesArg* args)
+{
+    if (!seqdb_handle || !args) return;
+
+    CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
+        
+    CSeqDB::TRangeList ranges;
+    for (int i=0; i< args->num_ranges; ++i) {
+        ranges.insert(pair<int,int> (args->ranges[i*2], args->ranges[i*2+1]));
+    }
+
+    seqdb.SetOffsetRanges(args->oid, ranges, false, false);
+}
+
 /// Retrieves the sequence meeting the criteria defined by its second argument.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 /// @param args Pointer to BlastSeqSrcGetSeqArg structure [in]
@@ -571,6 +620,8 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, TSeqDBData * datap)
     _BlastSeqSrcImpl_SetGetTotLenStats(retval, & s_SeqDbGetTotLenStats);
     _BlastSeqSrcImpl_SetGetName       (retval, & s_SeqDbGetName);
     _BlastSeqSrcImpl_SetGetIsProt     (retval, & s_SeqDbGetIsProt);
+    _BlastSeqSrcImpl_SetGetSupportsPartialFetching (retval, & s_SeqDbGetSupportsPartialFetching);
+    _BlastSeqSrcImpl_SetSetSeqRange   (retval, & s_SeqDbSetRanges);
     _BlastSeqSrcImpl_SetGetSequence   (retval, & s_SeqDbGetSequence);
     _BlastSeqSrcImpl_SetGetSeqLen     (retval, & s_SeqDbGetSeqLen);
     _BlastSeqSrcImpl_SetIterNext      (retval, & s_SeqDbIteratorNext);
