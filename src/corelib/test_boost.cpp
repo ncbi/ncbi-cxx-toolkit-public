@@ -990,6 +990,132 @@ CNcbiTestApplication::x_ActualizeDeps(void)
 #define IS_FLAG_DEFINED_II_1()                                \
     BOOST_PP_NIL, true) BOOST_PP_TUPLE_EAT(2) (BOOST_PP_NIL
 
+/// List of features that will be converted to unittest variables
+/// (checking testsuite environment variable $FEATURES).
+/// If you would like to add some new veriables here, please
+/// see Unix configure utility and Project Tree Builder for full
+/// list of supported values.
+static const string s_NcbiFeatures[] = {
+    // Features 
+    "AIX",
+    "BSD",
+    "CompaqCompiler",
+    "Cygwin",
+    "CygwinMT",
+    "DLL",
+    "DLL_BUILD",
+    "Darwin",
+    "GCC",
+    "ICC",
+    "IRIX",
+    "KCC",
+    "Linux",
+    "MIPSpro",
+    "MSVC",
+    "MSWin",
+    "MT",
+    "MacOS",
+    "Ncbi-JNI",
+    "OSF",
+    "PubSeqOS",
+    "SRAT-internal",
+    "Solaris",
+    "VisualAge",
+    "WinMain",
+    "WorkShop",
+    "XCODE",
+    "in-house-resources",
+    "unix",
+
+    // Packages
+    "BZ2",
+    "BerkeleyDB",
+    "BerkeleyDB++",
+    "Boost.Regex",
+    "Boost.Spirit",
+    "Boost.Test",
+    "Boost.Test.Included",
+    "Boost.Threads",
+    "C-Toolkit",
+    "CPPUNIT",
+    "C_ncbi",
+    "DBLib",
+    "EXPAT",
+    "FLTK",
+    "FUSE",
+    "Fast-CGI",
+    "FreeTDS",
+    "FreeType",
+    "GIF",
+    "GLUT",
+    "GNUTLS",
+    "HDF5",
+    "ICU",
+    "JPEG",
+    "LIBXML",
+    "LIBXSLT",
+    "LZO",
+    "LocalBZ2",
+    "LocalMSGMAIL2",
+    "LocalNCBILS",
+    "LocalPCRE",
+    "LocalSSS",
+    "LocalZ",
+    "MAGIC",
+    "MESA",
+    "MUPARSER",
+    "MySQL",
+    "NCBILS2",
+    "ODBC",
+    "OECHEM",
+    "OPENSSL",
+    "ORBacus",
+    "OpenGL",
+    "PCRE",
+    "PNG",
+    "PYTHON",
+    "PYTHON23",
+    "PYTHON24",
+    "PYTHON25",
+    "SABLOT",
+    "SGE",
+    "SP",
+    "SQLITE",
+    "SQLITE3",
+    "SQLITE3ASYNC",
+    "SSSDB",
+    "SSSUTILS",
+    "Sybase",
+    "SybaseCTLIB",
+    "SybaseDBLIB",
+    "TIFF",
+    "UNGIF",
+    "UUID",
+    "XPM",
+    "Xalan",
+    "Xerces",
+    "Z",
+    "wx2.8",
+    "wxWidgets",
+    "wxWindows",
+
+    // Projects
+    "algo",
+    "app",
+    "bdb",
+    "cgi",
+    "connext",
+    "ctools",
+    "dbapi",
+    "gbench",
+    "gui",
+    "local_lbsm",
+    "ncbi_crypt",
+    "objects",
+    "serial"
+};
+
+
 inline void
 CNcbiTestApplication::x_InitCommonParserVars(void)
 {
@@ -1025,6 +1151,26 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
 
     m_IniParser->AddSymbol("BUILD_Debug",        IS_VAR_DEFINED(_DEBUG));
     m_IniParser->AddSymbol("BUILD_Release",     !IS_VAR_DEFINED(_DEBUG));
+
+    // Add variables based on testsuite environment variable $FEATURES
+    CNcbiEnvironment env;
+    string is_features = env.Get("FEATURES");
+    if (! is_features.empty()) {
+        list<string> features;
+        NStr::Split(is_features, " ", features);
+        for (size_t i = 0; i < sizeof(s_NcbiFeatures) / sizeof(s_NcbiFeatures[0]); i++) {
+            bool found = false;
+            ITERATE(list<string>, it, features) {
+                if (*it == s_NcbiFeatures[i]) {
+                    found = true;
+                    break;
+                }
+            }
+            string name("NCBI_FEATURE_");
+            name += s_NcbiFeatures[i];
+            m_IniParser->AddSymbol(name.c_str(), found);
+        }
+    }
 }
 
 inline bool
