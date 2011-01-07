@@ -259,7 +259,7 @@ BlastSeqSrcSetSeqRanges(const BlastSeqSrc* seq_src,
 {
     ASSERT(seq_src);
     if (seq_src->SetSeqRange) {
-        return (*seq_src->SetSeqRange)(seq_src->DataStructure, arg);
+        (*seq_src->SetSeqRange)(seq_src->DataStructure, arg);
     }
 }
 
@@ -437,7 +437,7 @@ BlastSeqSrcResetChunkIterator(BlastSeqSrc* seq_src)
 }
 
 BlastSeqSrcSetRangesArg *
-BlastSeqSrcSetRAngesArgNew(Int4 num_ranges)
+BlastSeqSrcSetRangesArgNew(Int4 num_ranges)
 {
     BlastSeqSrcSetRangesArg * retv = (BlastSeqSrcSetRangesArg *)
                           malloc(sizeof(BlastSeqSrcSetRangesArg));

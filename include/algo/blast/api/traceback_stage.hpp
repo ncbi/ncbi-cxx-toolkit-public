@@ -98,13 +98,6 @@ private:
     /// Prohibit assignment operator
     CBlastTracebackSearch & operator =(CBlastTracebackSearch &);
     
-    /// Sets up the underlying BLAST database object handle to retrieve subject
-    /// sequences partially during the traceback processing
-    void x_SetSubjectRangesForPartialFetching();
-
-    /// Determines if the search is suitable for partial fetching or not
-    bool x_IsSuitableForPartialFetching();
-
     // C++ data
     
     /// The query to search for.

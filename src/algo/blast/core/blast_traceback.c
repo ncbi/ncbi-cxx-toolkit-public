@@ -1181,10 +1181,11 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                   score_params, ext_params, hit_params, 
                                   psi_options, results);
    } else {
-      Int4 i;
+      Int4 i, j;
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
       Boolean perform_traceback = score_params->options->gapped_calculation;
+      Boolean perform_partial_fetch =  BlastSeqSrcGetSupportsPartialFetching(seq_src);
       const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
       BlastHSPStreamResultBatch *batch = 
                       Blast_HSPStreamResultBatchInit(query_info->num_queries);
@@ -1206,6 +1207,49 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
          /* traceback will require fetching the subject sequence */
 
          if (perform_traceback) {
+
+             /* set up partial fetching */
+             if (perform_partial_fetch) {
+
+                Int4 oid = batch->hsplist_array[0]->oid;
+                Int4 num_hsps = 0;
+                BlastHSPRangeList *range_list = NULL;
+    
+                /* iterate through the hsps and add ranges */
+                for (i = 0; i < batch->num_hsplists; i++) {
+                    hsp_list = batch->hsplist_array[i];
+                    num_hsps += hsp_list->hspcnt;
+
+                    for (j = 0; j < hsp_list->hspcnt; j++) {
+                        BlastHSP *hsp = hsp_list->hsp_array[j];
+                        Int4 begin = hsp->subject.offset;
+                        Int4 end = hsp->subject.end;
+
+                        if (Blast_SubjectIsTranslated(program_number)) {
+                            // increase the range to offset frame shift approximations
+                            begin = (begin -2) *CODON_LENGTH;
+                            end   = (end +2) *CODON_LENGTH;
+                            if (hsp->subject.frame < 0) {
+                                Int4 len = BlastSeqSrcGetSeqLen(seq_src, &oid);
+                                Int4 begin_new = len - end;
+                                end  = len - begin;
+                                begin = begin_new;
+                            }
+                        }
+
+                        range_list = BlastHSPRangeListAddRange(range_list, begin, end);
+                    }
+                }
+
+                BlastSeqSrcSetRangesArg *arg = BlastSeqSrcSetRangesArgNew(num_hsps);
+                arg->oid = oid;
+                
+                BlastHSPRangeBuildSetRangesArg(range_list, arg);
+                BlastSeqSrcSetSeqRanges(seq_src, arg);
+                BlastHSPRangeListFree(range_list);
+                BlastSeqSrcSetRangesArgFree(arg);
+            }
+
             seq_arg.oid = batch->hsplist_array[0]->oid;
             seq_arg.encoding = encoding;
             seq_arg.check_oid_exclusion = TRUE;

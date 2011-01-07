@@ -2057,6 +2057,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
        p-value is desired; value needs to be passed in eventually*/
     int compositionTestIndex = extendParams->options->unifiedP;
     Uint1* genetic_code_string = GenCodeSingletonFind(default_db_genetic_code);
+    Boolean perform_partial_fetch = BlastSeqSrcGetSupportsPartialFetching(seqSrc);
 
     ASSERT(program_number == eBlastTypeBlastp ||
            program_number == eBlastTypeTblastn ||
@@ -2195,6 +2196,35 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             break;
         }
         /* Get the sequence for this match */
+        if (perform_partial_fetch) {
+            
+            Int4 oid = thisMatch->oid;
+            Int4 i;
+            BlastHSPRangeList *range_list = NULL;
+
+            ASSERT(Blast_SubjectIsTranslated(program_number));
+            for (i=0; i<thisMatch->hspcnt; i++) {
+                BlastHSP *hsp = thisMatch->hsp_array[i];
+                Int4 begin = (hsp->subject.offset - 2) * CODON_LENGTH;
+                Int4 end = (hsp->subject.end + 2) * CODON_LENGTH;
+                if (hsp->subject.frame < 0) {
+                    Int4 len = BlastSeqSrcGetSeqLen(seqSrc, &oid);
+                    Int4 begin_new = len - end;
+                    end = len - begin;
+                    begin = begin_new;
+                }
+                range_list = BlastHSPRangeListAddRange(range_list, begin, end);
+            }
+
+            BlastSeqSrcSetRangesArg *arg = BlastSeqSrcSetRangesArgNew(thisMatch->hspcnt);
+            arg->oid = oid;
+            
+            BlastHSPRangeBuildSetRangesArg(range_list, arg);
+            BlastSeqSrcSetSeqRanges(seqSrc, arg);
+            BlastHSPRangeListFree(range_list);
+            BlastSeqSrcSetRangesArgFree(arg);
+        }
+
         status_code =
             s_MatchingSequenceInitialize(&matchingSeq, program_number,
                                          seqSrc, default_db_genetic_code,
