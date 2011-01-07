@@ -2215,7 +2215,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                 }
                 range_list = BlastHSPRangeListAddRange(range_list, begin, end);
             }
-
+            {{
             BlastSeqSrcSetRangesArg *arg = BlastSeqSrcSetRangesArgNew(thisMatch->hspcnt);
             arg->oid = oid;
             
@@ -2223,6 +2223,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             BlastSeqSrcSetSeqRanges(seqSrc, arg);
             BlastHSPRangeListFree(range_list);
             BlastSeqSrcSetRangesArgFree(arg);
+            }}
         }
 
         status_code =
