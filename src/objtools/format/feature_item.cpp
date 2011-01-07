@@ -3788,6 +3788,11 @@ void CFeatureItem::x_ImportQuals(
             continue;
         }
 
+        // only replace may have an empty value (e.g. M96433)
+        if( val.empty() && slot != eFQ_replace ) {
+            continue;
+        }
+
         switch (slot) {
         case eFQ_allele:
             // if /allele inherited from gene, suppress allele gbqual on feature
@@ -4434,6 +4439,7 @@ void CFeatureItem::x_CleanQuals(
     const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
     const CFlatStringQVal* prot_desc = x_GetStringQual(eFQ_prot_desc);
     const CFlatStringQVal* standard_name = x_GetStringQual(eFQ_standard_name);
+    const CFlatStringQVal* seqfeat_note = x_GetStringQual(eFQ_seqfeat_note);
 
     if (gene != NULL) {
         const string& gene_name = gene->GetValue();
@@ -4519,23 +4525,22 @@ void CFeatureItem::x_CleanQuals(
 
     // check if need to remove seqfeat_note
     // (This generally occurs when it's equal to (or, sometimes, contained in) another qual
-    if (m_Feat.IsSetComment()) {
-        const string& feat_comment = m_Feat.GetComment();
+    if (seqfeat_note) {
         const CFlatStringQVal* product     = x_GetStringQual(eFQ_product);
         const CFlatStringQVal* cds_product = x_GetStringQual(eFQ_cds_product);
 
         if (product != NULL) {
-            if (NStr::Equal(product->GetValue(), feat_comment)) {
+            if (NStr::EqualNocase(product->GetValue(), seqfeat_note->GetValue())) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
         if (cds_product != NULL) {
-            if ( NStr::Equal(cds_product->GetValue(), feat_comment) ) {
+            if ( NStr::Equal(cds_product->GetValue(), seqfeat_note->GetValue()) ) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
-        if( prot_desc != NULL ) { // e.g. L07143
-            if( NStr::Find(prot_desc->GetValue(), feat_comment) != NPOS ) {
+        if( prot_desc != NULL ) { // e.g. L07143, U28372
+            if( NStr::Find(prot_desc->GetValue(), seqfeat_note->GetValue()) != NPOS ) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
@@ -4548,14 +4553,14 @@ void CFeatureItem::x_CleanQuals(
         for (TQCI it = x_GetQual(eFQ_EC_number); it != m_Quals.end()  &&  it->first == eFQ_EC_number; ++it) {
             const CFlatStringQVal* ec = dynamic_cast<const CFlatStringQVal*>(it->second.GetPointerOrNull());
             if (ec != NULL) {
-                if (NStr::EqualNocase(feat_comment, ec->GetValue())) {
+                if (NStr::EqualNocase(seqfeat_note->GetValue(), ec->GetValue())) {
                     x_RemoveQuals(eFQ_seqfeat_note);
                 }
             }
         }
 
-        // provides no additional info (we already know this is a tRNA by other places)
-        if( feat_comment == "tRNA-" ) {
+        // this sort of note provides no additional info (we already know this is a tRNA by other places)
+        if( seqfeat_note->GetValue() == "tRNA-" ) {
             x_RemoveQuals(eFQ_seqfeat_note);
         }
     }
