@@ -226,9 +226,7 @@ void CValidError_desc::ValidateComment
         PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
                  "Comment descriptor needs text", *m_Ctx, desc);    
     } else {
-        if (NStr::FindCase (comment, "START") != string::npos 
-            || NStr::FindCase (comment, "END") != string::npos
-            || NStr::Find (comment, "#") != string::npos) {
+        if (NStr::Find (comment, "::") != string::npos) {
             PostErr (eDiag_Info, eErr_SEQ_DESCR_FakeStructuredComment, 
                      "Comment may be formatted to look like a structured comment.", *m_Ctx, desc);  
         }

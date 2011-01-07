@@ -58,6 +58,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -184,6 +185,17 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
     SetShouldNotHaveMolInfo(seqset);
     ValidateSetTitle(seqset);
     ValidateSetElements(seqset);
+
+    if (seqset.IsSetClass() 
+        && (seqset.GetClass() == CBioseq_set::eClass_pop_set
+            || seqset.GetClass() == CBioseq_set::eClass_mut_set
+            || seqset.GetClass() == CBioseq_set::eClass_phy_set
+            || seqset.GetClass() == CBioseq_set::eClass_eco_set
+            || seqset.GetClass() == CBioseq_set::eClass_wgs_set)) {
+        CheckForImproperlyNestedSets(seqset);
+    }
+
+
 
     // validate annots
     FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
@@ -753,6 +765,24 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
             }
         }
     } // for 
+}
+
+
+void CValidError_bioseqset::CheckForImproperlyNestedSets (const CBioseq_set& seqset)
+{
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, seqset) {
+        if ((*it)->IsSet()) {
+            if (!(*it)->GetSet().IsSetClass()
+                || ((*it)->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot
+                    && (*it)->GetSet().GetClass() != CBioseq_set::eClass_segset
+                    && (*it)->GetSet().GetClass() != CBioseq_set::eClass_parts)) {
+                PostErr(eDiag_Warning,
+                    eErr_SEQ_PKG_ImproperlyNestedSets,
+                    "Nested sets within Pop/Phy/Mut/Eco/Wgs set", (*it)->GetSet());
+            }
+            CheckForImproperlyNestedSets((*it)->GetSet());
+        }
+    }
 }
 
 

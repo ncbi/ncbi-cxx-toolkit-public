@@ -104,59 +104,8 @@ BEGIN_SCOPE(validator)
 // =============================================================================
 class CValidError_desc;
 class CValidError_descr;
-class CCountryBlock;
-class CCountryLatLonMap;
 
 // ==================== for validating lat-lon versus country ================
-class CCountryBlock
-{
-public:
-    CCountryBlock (string country_name, double min_x, double min_y, double max_x, double max_y);
-    ~CCountryBlock (void);
-
-    string GetCountry(void)            const { return m_CountryName; }
-    double GetMinX(void)               const { return m_MinX; }
-    double GetMinY(void)               const { return m_MinY; }
-    double GetMaxX(void)               const { return m_MaxX; }
-    double GetMaxY(void)               const { return m_MaxY; }
-    bool IsLatLonInCountryBlock (double x, double y);
-    bool DoesOverlap(const CCountryBlock* other_block) const;
-
-private:
-    string m_CountryName;
-    double m_MinX;
-    double m_MinY;
-    double m_MaxX;
-    double m_MaxY;
-};
-
-
-// note - once I get this working at a basic level, want to have sorted
-// indices for country name, for x then y, and for y then x
-class CCountryLatLonMap
-{
-public:
-      CCountryLatLonMap(void);
-      ~CCountryLatLonMap(void);
-
-      bool IsCountryInLatLon(string country, double x, double y);
-      string GuessCountryForLatLon(double x, double y);
-      bool HaveLatLonForCountry (string country);
-      static bool DoesStringContainBodyOfWater(const string& country);
-    bool DoCountryBoxesOverlap (string country1, string country2);
-
-private:
-    void x_AddBlocksFromLine (string line);
-    void x_InitFromDefaultList();
-    bool x_InitFromFile();
-
-    typedef vector <CCountryBlock *> TCountryBlockList;
-    typedef TCountryBlockList::const_iterator TCountryBlockList_iter; 
-
-    TCountryBlockList m_CountryBlockList;
-
-    static const string sm_BodiesOfWater[];
-};
 
 class CCountryLine;
 
@@ -319,7 +268,7 @@ public:
 
 
 private:
-    void x_InitFromDefaultList(const char **list, int num);
+    void x_InitFromDefaultList(const char * const *list, int num);
     bool x_InitFromFile(string filename);
     static bool s_CompareTwoLinesByCountry(const CCountryLine* line1,
                                     const CCountryLine* line2);
@@ -607,7 +556,6 @@ private:
     CSeq_entry_Handle       m_TSEH;
 
     // validation data read from external files
-      CCountryLatLonMap lat_lon_map;
     static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;
     static auto_ptr<CLatLonCountryMap> m_LatLonWaterMap;
     CRef<CComment_set> m_StructuredCommentRules;
@@ -1209,6 +1157,7 @@ private:
     void ValidateGenProdSet(const CBioseq_set& seqset);
     void CheckForInconsistentBiomols (const CBioseq_set& seqset);
     void SetShouldNotHaveMolInfo(const CBioseq_set& seqset);
+    void CheckForImproperlyNestedSets (const CBioseq_set& seqset);
 
     bool IsMrnaProductInGPS(const CBioseq& seq); 
     bool IsCDSProductInGPS(const CBioseq& seq, const CBioseq_set& gps); 

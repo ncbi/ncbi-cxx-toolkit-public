@@ -722,6 +722,9 @@ however be referenced remotely.")),
    TErrTypStrs ( eErr_SEQ_PKG_MisplacedMolInfo,
    TErrStrs ("MisplacedMolInfo",
 "Mol-info should not be on a pop/phy/mut/eco/wgs/genbank/genprod set.")),
+   TErrTypStrs ( eErr_SEQ_PKG_ImproperlyNestedSets,
+   TErrStrs ("ImproperlyNestedSets",
+"A pop/phy/mut/eco/wgs set has an unexpected internal set other than nuc-prot, seg-set, or parts set.")),
 
 /* SEQ_FEAT */
 

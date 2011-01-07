@@ -8952,7 +8952,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_FakeStructuredComment)
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> sdesc(new CSeqdesc());
-    sdesc->SetComment("This comment contains START");
+    sdesc->SetComment("This comment contains ::");
     entry->SetSeq().SetDescr().Set().push_back(sdesc);
 
     STANDARD_SETUP
@@ -8962,14 +8962,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_FakeStructuredComment)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
   
-    sdesc->SetComment("This comment contains END");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    sdesc->SetComment("This comment contains #");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
     CLEAR_ERRORS
 }
 
@@ -10506,15 +10498,16 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InternalGenBankSet)
                               "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
                               "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("", eDiag_Warning, "ImproperlyNestedSets",
+                                                 "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
 
     TESTPOPPHYMUTECO (seh, entry)
 
-    delete expected_errors[3];
-    expected_errors.pop_back();
-    delete expected_errors[2];
-    expected_errors.pop_back();
-    delete expected_errors[1];
-    expected_errors.pop_back();
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InternalGenBankSet",
+                                                 "Bioseq-set contains internal GenBank Bioseq-set"));
+    expected_errors.push_back(new CExpectedError("", eDiag_Warning, "ImproperlyNestedSets",
+                                                 "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
 
     TESTWGS (seh, entry);
 
@@ -10612,6 +10605,10 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
                               "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ComponentMissingTitle",
                               "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ImproperlyNestedSets",
+                                                 "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ImproperlyNestedSets",
+                                                 "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
 
 
     TESTPOPPHYMUTECO (seh, entry)
@@ -10627,6 +10624,10 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
                               "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InconsistentMolInfoBiomols",
                                                  "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ImproperlyNestedSets",
+                                                 "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ImproperlyNestedSets",
+                                                 "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
 
     TESTWGS (seh, entry);
 
@@ -10707,6 +10708,47 @@ BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
     entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("NC_123456");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_ImproperlyNestedSets)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+
+    STANDARD_SETUP
+
+    // no error first
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // insert nested set
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().SetSeq_set().clear();
+    entry->SetSet().SetSeq_set().push_back (BuildGoodEcoSet());
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "SingleItemSet",
+                              "Pop/Phy/Mut/Eco set has only one component and no alignments"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ImproperlyNestedSets",
+                                                 "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
