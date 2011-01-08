@@ -2534,7 +2534,7 @@ IPTB	s	Instituto de Pesquisas Tecnologicas
 IPUW	s	Institut fuer Palaeontologie der Universitaet Wien
 IPW	s	Instutut fuer Palaeontologie der Uinversitaet Wurzburg
 IRAG	s	Institut National de la Recherche Agronomique de Antilles et Guyane
-IRAN	s	Plant Pests and Diseases Research Institute, Botany Department
+IRAN	sc	Plant Pests and Diseases Research Institute, Botany Department
 IRBR	s	Universidad de Oriente, Departamento de Biologia
 IRCW	s	Madison, University of Wisconsin
 IRDA	s	Agriculture Department
