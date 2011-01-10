@@ -47,10 +47,24 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamBlastDB : public CSequenceIStream
 {
     public:
 
-        /** Object constructor.
-            @param dbname       [I]     name of the BLAST database
+        /** Report on supported subject filter algorithms.
+            @param dbname [I] name of the BLAST database
         */
-        CSequenceIStreamBlastDB( const string & dbname );
+        static string ShowSupportedFilters( const string & dbname )
+        {
+            CSeqDB db( dbname, CSeqDB::eNucleotide );
+            return db.GetAvailableMaskAlgorithmDescriptions();
+        }
+
+        /** Object constructor.
+            @param dbname         [I]     name of the BLAST database
+            @param use_filter     [I]     use/not use subject masking
+            @param filter_algo_id [I]     filtering algorithm
+        */
+        CSequenceIStreamBlastDB( 
+                const string & dbname, 
+                bool use_filter, 
+                int filter_algo_id = 0 );
 
         /** Object destructor. */
         virtual ~CSequenceIStreamBlastDB() {}
@@ -67,6 +81,8 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamBlastDB : public CSequenceIStream
 
         CRef< CSeqDB > seqdb_;  /**< BLAST database object. */
         CSeqDB::TOID oid_;      /**< Current OID (to be read). */
+        int filter_algo_id_;    /**< Filtering algorithm id. */
+        bool use_filter_;       /**< Whether to extract mask from database. */
 };
 
 END_SCOPE( blastdbindex )

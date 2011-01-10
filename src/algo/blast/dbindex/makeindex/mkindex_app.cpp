@@ -70,7 +70,7 @@ void CMkIndexApplication::Init()
     arg_desc->AddOptionalKey( 
             "input", "input_file_name", "input file name",
             CArgDescriptions::eString );
-    arg_desc->AddKey(
+    arg_desc->AddOptionalKey(
             "output", "output_file_name", "output file name",
             CArgDescriptions::eString );
     arg_desc->AddDefaultKey(
@@ -87,6 +87,15 @@ void CMkIndexApplication::Init()
             "idmap", "generate_idmap",
             "generate id map for the sequences in the index",
             CArgDescriptions::eBoolean, "false" );
+    arg_desc->AddOptionalKey(
+            "db_mask", "filtering_algorithm",
+            "use the specified filtering algorithm from BLAST DB",
+            CArgDescriptions::eInteger );
+    arg_desc->AddFlag(
+            "show_filters",
+            "show the info about available database filtering algorithms"
+            " and exit",
+            true );
     arg_desc->AddOptionalKey(
             "nmer", "nmer_size",
             "length of the indexed words",
@@ -125,6 +134,10 @@ void CMkIndexApplication::Init()
     arg_desc->SetConstraint(
             "nmer",
             new CArgAllow_Integers( 8, 15 ) );
+    arg_desc->SetDependency( 
+            "show_filters", CArgDescriptions::eExcludes, "output" );
+    arg_desc->SetDependency(
+            "db_mask", CArgDescriptions::eRequires, "input" );
     SetupArgDescriptions( arg_desc.release() );
 }
 
@@ -184,11 +197,17 @@ int CMkIndexApplication::Run()
     unsigned int vol_num = 0;
 
     CDbIndex::TSeqNum start, orig_stop( kMax_UI4 ), stop = 0;
-    string ofname_base = GetArgs()["output"].AsString();
+    string ofname_base = 
+        GetArgs()["show_filters"] ? "" : GetArgs()["output"].AsString();
     CSequenceIStream * seqstream = 0;
     string iformat = GetArgs()["iformat"].AsString();
 
     if( iformat == "fasta" ) {
+        if( GetArgs()["db_mask"] ) {
+            ERR_POST( Error << "-db_mask requires -iformat blastdb" );
+            exit( 1 );
+        }
+
         if( GetArgs()["input"] ) {
             seqstream = new CSequenceIStreamFasta( 
                     ( GetArgs()["input"].AsString() ) );
@@ -196,8 +215,21 @@ int CMkIndexApplication::Run()
         else seqstream = new CSequenceIStreamFasta( NcbiCin );
     }else if( iformat == "blastdb" ) {
         if( GetArgs()["input"] ) {
-            seqstream = new CSequenceIStreamBlastDB(
-                    ( GetArgs()["input"].AsString() ) );
+            if( GetArgs()["show_filters"] ) {
+                NcbiCout << CSequenceIStreamBlastDB::ShowSupportedFilters( 
+                        GetArgs()["input"].AsString() ) << endl;
+                return 0;
+            }
+
+            if( GetArgs()["db_mask"] ) {
+                seqstream = new CSequenceIStreamBlastDB( 
+                        GetArgs()["input"].AsString(), true,
+                        GetArgs()["db_mask"].AsInteger() );
+            }
+            else {
+                seqstream = new CSequenceIStreamBlastDB( 
+                        GetArgs()["input"].AsString(), false );
+            }
         }
         else {
             ERR_POST( Error << "input format 'blastdb' requires -input option" );
@@ -205,6 +237,13 @@ int CMkIndexApplication::Run()
         }
     }else {
         ASSERT( 0 );
+    }
+
+    if( iformat != "blastdb" && 
+            GetArgs()["db_mask"] && 
+            GetArgs()["db_mask"].AsString() != "" ) {
+        ERR_POST( Error << "option 'db_mask' requires input format 'blastdb'" );
+        exit( 1 );
     }
 
     do { 

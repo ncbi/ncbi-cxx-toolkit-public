@@ -42,8 +42,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
 
 //------------------------------------------------------------------------------
-CSequenceIStreamBlastDB::CSequenceIStreamBlastDB( const string & dbname )
-    : seqdb_( new CSeqDB( dbname, CSeqDB::eNucleotide ) ), oid_( 0 )
+CSequenceIStreamBlastDB::CSequenceIStreamBlastDB( 
+        const string & dbname, bool use_filter, int filter_algo_id )
+    : seqdb_( new CSeqDB( dbname, CSeqDB::eNucleotide ) ), oid_( 0 ),
+      filter_algo_id_( filter_algo_id ), use_filter_( use_filter )
 {
 }
 
@@ -51,15 +53,38 @@ CSequenceIStreamBlastDB::CSequenceIStreamBlastDB( const string & dbname )
 CRef< CSequenceIStream::TSeqData > CSequenceIStreamBlastDB::next()
 {
     CRef< CSeq_entry > entry( null );
+    TSeqData::TMask m;
 
     if( oid_ < seqdb_->GetNumOIDs() ) {
-        CRef< CBioseq > seq = seqdb_->GetBioseq( oid_++ );
+        CRef< CBioseq > seq = seqdb_->GetBioseq( oid_ );
         entry.Reset( new CSeq_entry );
         entry->SetSeq( *seq );
+
+        if( use_filter_ ) {
+            list< CRef< CSeq_id > > ids( seqdb_->GetSeqIDs( oid_ ) );
+            CSeqDB::TSequenceRanges r;
+            seqdb_->GetMaskData( oid_, filter_algo_id_, r );
+            CPacked_seqint::TRanges seqint_ranges;
+
+            for( CSeqDB::TSequenceRanges::const_iterator i( r.begin() );
+                    i != r.end(); ++i ) {
+                seqint_ranges.push_back( 
+                        CRange< TSeqPos >( i->first, i->second - 1 ) );
+            }
+
+            CRef< CPacked_seqint > seqint( 
+                    new CPacked_seqint( **ids.begin(), seqint_ranges ) );
+            CRef< CSeq_loc > sl( new CSeq_loc );
+            sl->SetPacked_int( *seqint );
+            m.push_back( sl );
+        }
+
+        ++oid_;
     }
 
     CRef< TSeqData > data( new TSeqData );
     data->seq_entry_ = entry;
+    if( use_filter_ ) data->mask_locs_ = m;
     return data;
 }
 
