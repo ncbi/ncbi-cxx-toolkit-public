@@ -995,7 +995,9 @@ CNcbiTestApplication::x_ActualizeDeps(void)
 /// If you would like to add some new veriables here, please
 /// see Unix configure utility and Project Tree Builder for full
 /// list of supported values.
-static const string s_NcbiFeatures[] = {
+/// @note
+///    All non alphanumeric charecters in the names replaced with "_" symbol.
+static const char* s_NcbiFeatures[] = {
     // Features 
     "AIX",
     "BSD",
@@ -1015,35 +1017,35 @@ static const string s_NcbiFeatures[] = {
     "MSWin",
     "MT",
     "MacOS",
-    "Ncbi-JNI",
+    "Ncbi_JNI",            // Ncbi-JNI
     "OSF",
     "PubSeqOS",
-    "SRAT-internal",
+    "SRAT_internal",       // SRAT-internal
     "Solaris",
     "VisualAge",
     "WinMain",
     "WorkShop",
     "XCODE",
-    "in-house-resources",
+    "in_house_resources",  // in-house-resources
     "unix",
 
     // Packages
     "BZ2",
     "BerkeleyDB",
-    "BerkeleyDB++",
-    "Boost.Regex",
-    "Boost.Spirit",
-    "Boost.Test",
-    "Boost.Test.Included",
-    "Boost.Threads",
-    "C-Toolkit",
+    "BerkeleyDB__",        // BerkeleyDB++
+    "Boost_Regex",         // Boost.Regex
+    "Boost_Spirit",        // Boost.Spirit
+    "Boost_Test",          // Boost.Test
+    "Boost_Test_Included", // Boost.Test.Included
+    "Boost_Threads",       // Boost.Threads
+    "C-Toolkit",           // C_Toolkit
     "CPPUNIT",
     "C_ncbi",
     "DBLib",
     "EXPAT",
     "FLTK",
     "FUSE",
-    "Fast-CGI",
+    "Fast-CGI",            // Fast_CGI
     "FreeTDS",
     "FreeType",
     "GIF",
@@ -1095,7 +1097,7 @@ static const string s_NcbiFeatures[] = {
     "Xalan",
     "Xerces",
     "Z",
-    "wx2.8",
+    "wx2_8",               // wx2.8
     "wxWidgets",
     "wxWindows",
 
@@ -1154,20 +1156,35 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
 
     // Add variables based on testsuite environment variable $FEATURES
     CNcbiEnvironment env;
-    string is_features = env.Get("FEATURES");
-    if (! is_features.empty()) {
-        list<string> features;
-        NStr::Split(is_features, " ", features);
-        for (size_t i = 0; i < sizeof(s_NcbiFeatures) / sizeof(s_NcbiFeatures[0]); i++) {
-            bool found = false;
-            ITERATE(list<string>, it, features) {
-                if (*it == s_NcbiFeatures[i]) {
-                    found = true;
-                    break;
+    string features_str = env.Get("FEATURES");
+    if (! features_str.empty()) {
+        // Split $FEATURES to tokens
+        list<string> features_list;
+        NStr::Split(features_str, " ", features_list);
+        // Convert list<> to set<> to speed up a search
+        typedef set<string> TFeatures;
+        TFeatures features;
+        // For all features
+        ITERATE(list<string>, it, features_list) {
+            // Replace all non alphanumeric charecters in the names with "_".
+            // Ignore negative futures (with first "-" characters)
+            string f = *it;
+            if (f[0] != '-') {
+                NON_CONST_ITERATE (string, fit, f) {
+                    if (!isalnum((unsigned char)(*fit))) {
+                        *fit = '_';
+                    }
                 }
+                // Add future name
+                features.insert(f);
             }
-            string name("NCBI_FEATURE_");
+        }
+        // Add FUTURE_* variables
+        for (size_t i = 0; i < sizeof(s_NcbiFeatures) / sizeof(s_NcbiFeatures[0]); i++) {
+            string name("FEATURE_");
             name += s_NcbiFeatures[i];
+            TFeatures::const_iterator it = features.find(s_NcbiFeatures[i]);
+            bool found = (it != features.end());
             m_IniParser->AddSymbol(name.c_str(), found);
         }
     }
