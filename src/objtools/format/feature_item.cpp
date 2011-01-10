@@ -2046,10 +2046,10 @@ void CFeatureItem::x_AddQuals(
     // leaving this here since it's so useful for debugging purposes.
     //
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 365866 &&
-        GetLoc().GetStop(eExtreme_Biological) == 370428) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 365866 &&
-        GetLoc().GetStart(eExtreme_Biological) == 370428)
+        (GetLoc().GetStart(eExtreme_Biological) == 59996 &&
+        GetLoc().GetStop(eExtreme_Biological) == 60232) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 59996 &&
+        GetLoc().GetStart(eExtreme_Biological) == 60232)
         ) {
         cerr << "";
         } */
@@ -2764,7 +2764,7 @@ void CFeatureItem::x_AddQualProtDesc(
     }
 
     string desc = protRef->GetDesc();
-    TrimSpacesAndJunkFromEnds( desc );
+    TrimSpacesAndJunkFromEnds( desc, true );
     bool add_period = RemovePeriodFromEnd( desc, true );
     CRef<CFlatStringQVal> prot_desc( new CFlatStringQVal( desc ) );
     if ( add_period ) {
@@ -3469,7 +3469,7 @@ void CFeatureItem::x_AddQualsProt(
         if ( pref.IsSetDesc()  &&  !pref.GetDesc().empty() ) {
             if ( !ctx.IsProt() ) {
                 string desc = pref.GetDesc();
-                TrimSpacesAndJunkFromEnds(desc);
+                TrimSpacesAndJunkFromEnds(desc, true);
                 bool add_period = RemovePeriodFromEnd(desc, true);
                 CRef<CFlatStringQVal> prot_desc(new CFlatStringQVal(desc));
                 if (add_period) {
@@ -3862,7 +3862,7 @@ void CFeatureItem::x_ImportQuals(
         case eFQ_product:
             if (!x_HasQual(eFQ_product)) {
                 x_AddQual(slot, new CFlatStringQVal(val));
-            } else if (!x_HasQual(eFQ_xtra_prod_quals)) {
+            } else {
                 const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
                 const string& gene_val =
                     gene != NULL ? gene->GetValue() : kEmptyStr;
@@ -4475,7 +4475,6 @@ void CFeatureItem::x_CleanQuals(
         }
     }
 
-    // remove prot name if in prot_desc
     if (prot_desc != NULL) {
         const string& pdesc = prot_desc->GetValue();
 
@@ -4525,22 +4524,18 @@ void CFeatureItem::x_CleanQuals(
 
     // check if need to remove seqfeat_note
     // (This generally occurs when it's equal to (or, sometimes, contained in) another qual
-    if (seqfeat_note) {
+    if (m_Feat.IsSetComment()) {
+        const string &feat_comment = m_Feat.GetComment();
         const CFlatStringQVal* product     = x_GetStringQual(eFQ_product);
         const CFlatStringQVal* cds_product = x_GetStringQual(eFQ_cds_product);
 
         if (product != NULL) {
-            if (NStr::EqualNocase(product->GetValue(), seqfeat_note->GetValue())) {
+            if (NStr::EqualNocase(product->GetValue(), feat_comment)) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
         if (cds_product != NULL) {
             if ( NStr::Equal(cds_product->GetValue(), seqfeat_note->GetValue()) ) {
-                x_RemoveQuals(eFQ_seqfeat_note);
-            }
-        }
-        if( prot_desc != NULL ) { // e.g. L07143, U28372
-            if( NStr::Find(prot_desc->GetValue(), seqfeat_note->GetValue()) != NPOS ) {
                 x_RemoveQuals(eFQ_seqfeat_note);
             }
         }
@@ -4560,7 +4555,7 @@ void CFeatureItem::x_CleanQuals(
         }
 
         // this sort of note provides no additional info (we already know this is a tRNA by other places)
-        if( seqfeat_note->GetValue() == "tRNA-" ) {
+        if( feat_comment == "tRNA-" ) {
             x_RemoveQuals(eFQ_seqfeat_note);
         }
     }
@@ -4579,6 +4574,12 @@ void CFeatureItem::x_CleanQuals(
                 note = NULL;
                 break;
             }
+        }
+    }
+    if( note != NULL && prot_desc != NULL ) { // e.g. L07143, U28372
+        if( NStr::Find(prot_desc->GetValue(), note->GetValue()) != NPOS ) {
+            x_RemoveQuals(eFQ_seqfeat_note);
+            note = NULL;
         }
     }
 

@@ -1811,12 +1811,12 @@ void CFlatAnticodonQVal::Format
  CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
-    if ( !m_Anticodon->IsInt()  ||  m_Aa.empty() ) {
+    if ( m_Aa.empty() ) {
         return;
     }
 
     // anticodons with complement, join, etc. ( e.g. L15362 ) are not supported in release mode, until collab approval
-    const string locationString = CFlatSeqLoc(*m_Anticodon, ctx).GetString();
+    string locationString = CFlatSeqLoc(*m_Anticodon, ctx).GetString();
     if( ctx.Config().IsModeRelease() ) {
         if( ! s_RangeStringIsPlainNumber(locationString) ) {
             return;
@@ -1829,9 +1829,10 @@ void CFlatAnticodonQVal::Format
         CSeq_loc::TRange range = m_Anticodon->GetTotalRange();
         text << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
     } else {
+        NStr::ReplaceInPlace( locationString, " \b", "" );
         text << locationString;
     }
-    text << ",aa:" << m_Aa << ')';
+    text << ",aa:" << m_Aa << ')' ;
 
     x_AddFQ(q, name, CNcbiOstrstreamToString(text), CFormatQual::eUnquoted);
 }
