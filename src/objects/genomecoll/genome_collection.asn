@@ -325,6 +325,14 @@ GC-TypedSeqId ::= CHOICE {
     external GC-External-Seqid
 }
 
+-- sequence-role: what role(s) does this sequence have in the assembly
+-- a sequence may have more than one role. e.g. a complete-sequence is all 4 roles
+GC-SequenceRole ::= INTEGER {
+        chromosome (2),
+        scaffold (3),
+        component(4),
+        top-level (10)
+}
 
 -- GC-Sequence:
 -- Used for scaffolds, scaffold-sets and components in Gencoll terminology.
@@ -386,7 +394,10 @@ GC-Sequence ::= SEQUENCE {
         fix(1),
         -- stopper
         other(255)
-    } OPTIONAL
+    } OPTIONAL,
+
+    -- sequence-role: what role(s) does this sequence have in the assembly
+    roles  SET OF GC-SequenceRole OPTIONAL
 }
 
 
