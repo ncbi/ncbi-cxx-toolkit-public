@@ -803,13 +803,13 @@ void CDiagContextThreadData::IncRequestId(void)
 }
 
 
-extern int GetDiagRequestId(void)
+extern Uint8 GetDiagRequestId(void)
 {
     return GetDiagContext().GetRequestContext().GetRequestID();
 }
 
 
-extern void SetDiagRequestId(int id)
+extern void SetDiagRequestId(Uint8 id)
 {
     GetDiagContext().GetRequestContext().SetRequestID(id);
 }
@@ -2909,16 +2909,16 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
 }
 
 
-int s_ParseInt(const string& message,
-               size_t&       pos,    // start position
-               size_t        width,  // fixed width or 0
-               char          sep)    // trailing separator (throw if not found)
+Uint8 s_ParseInt(const string& message,
+                 size_t&       pos,    // start position
+                 size_t        width,  // fixed width or 0
+                 char          sep)    // trailing separator (throw if not found)
 {
     if (pos >= message.length()) {
         NCBI_THROW(CException, eUnknown,
             "Failed to parse diagnostic message");
     }
-    int ret = 0;
+    Uint8 ret = 0;
     if (width > 0) {
         if (message[pos + width] != sep) {
             NCBI_THROW(CException, eUnknown,
@@ -2934,7 +2934,7 @@ int s_ParseInt(const string& message,
         width -= pos;
     }
 
-    ret = NStr::StringToInt(CTempString(message.c_str() + pos, width));
+    ret = NStr::StringToUInt8(CTempString(message.c_str() + pos, width));
     pos += width + 1;
     return ret;
 }
@@ -3369,7 +3369,7 @@ bool SDiagMessage::ParseMessage(const string& message)
                 return false;
             }
             pos += 7;
-            m_Line = s_ParseInt(message, pos, 0, ':');
+            m_Line = (size_t)s_ParseInt(message, pos, 0, ':');
             pos = message.find_first_not_of(' ', pos);
             if (pos == NPOS) {
                 pos = message.length();

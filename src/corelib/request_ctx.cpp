@@ -57,7 +57,7 @@ CRequestContext::~CRequestContext(void)
 }
 
 
-int CRequestContext::GetNextRequestID(void)
+CRequestContext::TCount CRequestContext::GetNextRequestID(void)
 {
     static CAtomicCounter s_RequestCount;
     return s_RequestCount.Add(1);

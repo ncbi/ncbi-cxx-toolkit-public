@@ -61,19 +61,21 @@ public:
     CRequestContext(void);
     virtual ~CRequestContext(void);
 
+    typedef SDiagMessage::TCount TCount;
+
     /// Get request ID (or zero if not set).
-    int  GetRequestID(void) const;
+    TCount GetRequestID(void) const;
     /// Set request ID.
-    void SetRequestID(int rid);
+    void SetRequestID(TCount rid);
     /// Check if request ID was assigned a value
     bool IsSetRequestID(void) const;
     /// Reset request ID
     void UnsetRequestID(void);
     /// Assign the next available request ID to this request.
-    int  SetRequestID(void);
+    TCount SetRequestID(void);
 
     /// Return the next available application-wide request ID.
-    static int GetNextRequestID(void);
+    static TCount GetNextRequestID(void);
 
     /// Application state
     EDiagAppState GetAppState(void) const;
@@ -194,7 +196,7 @@ private:
 
     static bool& sx_GetDefaultAutoIncRequestIDOnPost(void);
 
-    int            m_RequestID;
+    TCount         m_RequestID;
     EDiagAppState  m_AppState;
     string         m_ClientIP;
     CEncodedString m_SessionID;
@@ -211,20 +213,20 @@ private:
 
 
 inline
-int CRequestContext::GetRequestID(void) const
+CRequestContext::TCount CRequestContext::GetRequestID(void) const
 {
     return x_IsSetProp(eProp_RequestID) ? m_RequestID : 0;
 }
 
 inline
-void CRequestContext::SetRequestID(int rid)
+void CRequestContext::SetRequestID(TCount rid)
 {
     x_SetProp(eProp_RequestID);
     m_RequestID = rid;
 }
 
 inline
-int CRequestContext::SetRequestID(void)
+CRequestContext::TCount CRequestContext::SetRequestID(void)
 {
     SetRequestID(GetNextRequestID());
     return m_RequestID;

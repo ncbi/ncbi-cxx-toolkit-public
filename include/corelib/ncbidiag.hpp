@@ -1297,22 +1297,22 @@ extern void PopDiagPostPrefix(void);
 
 /// Get iteration number/request ID.
 NCBI_XNCBI_EXPORT
-extern int GetDiagRequestId(void);
+extern Uint8 GetDiagRequestId(void);
 
 /// Set iteration number/request ID.
 NCBI_XNCBI_EXPORT
-extern void SetDiagRequestId(int id);
+extern void SetDiagRequestId(Uint8 id);
 
 
 NCBI_DEPRECATED
-inline int GetFastCGIIteration(void)
+inline Uint8 GetFastCGIIteration(void)
 {
     return GetDiagRequestId();
 }
 
 
 NCBI_DEPRECATED
-inline void SetFastCGIIteration(int id)
+inline void SetFastCGIIteration(Uint8 id)
 {
     SetDiagRequestId(id);
 }
@@ -1486,7 +1486,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     typedef Int8  TUID;   ///< Unique process ID
 
     /// Generic type for counters (posts, requests etc.)
-    typedef Uint4 TCount;
+    typedef Uint8 TCount;
 
     /// Initialize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
