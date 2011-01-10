@@ -517,8 +517,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_SeqInfo(seqinfo ? seqinfo : new CDefault_Mapper_Sequence_Info),
-      m_FuzzOption(eFuzzOption_Normal)
+      m_FuzzOption(eFuzzOption_Normal),
+      m_SeqInfo(seqinfo ? seqinfo : new CDefault_Mapper_Sequence_Info)
 {
 }
 
@@ -534,8 +534,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
       m_LastTruncated(false),
       m_Mappings(mapping_ranges),
       m_CurrentGroup(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info),
-      m_FuzzOption(eFuzzOption_Normal)
+      m_FuzzOption(eFuzzOption_Normal),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
 }
 
@@ -552,8 +552,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info),
-      m_FuzzOption(eFuzzOption_Normal)
+      m_FuzzOption(eFuzzOption_Normal),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeFeat(map_feat, dir);
 }
@@ -571,8 +571,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info),
-      m_FuzzOption(eFuzzOption_Normal)
+      m_FuzzOption(eFuzzOption_Normal),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeLocs(source, target);
 }
@@ -591,8 +591,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info),
-      m_FuzzOption(eFuzzOption_Normal)
+      m_FuzzOption(eFuzzOption_Normal),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeAlign(map_align, to_id, opts);
 }
@@ -611,8 +611,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info),
-      m_FuzzOption(eFuzzOption_Normal)
+      m_FuzzOption(eFuzzOption_Normal),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeAlign(map_align, to_row, opts);
 }
