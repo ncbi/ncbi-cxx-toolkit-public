@@ -238,20 +238,16 @@ void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
     }
 }
 
-void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
+CRef<CSeq_id> s_ReplaceLocalId(const CBioseq_Handle& bh, CConstRef<CSeq_id> sid_in, bool parse_local)
 {
-    m_QueryId.clear();
 
-    // Create a new list of Seq-ids, substitute any local ids by new fake local 
-    // ids, with label set to the first token of this Bioseq's title.
-    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
-        CRef<CSeq_id> next_id(new CSeq_id());
+        CRef<CSeq_id> retval(new CSeq_id());
 
-        string id_token;
         // Local ids are usually fake. If a title exists, use the first token
         // of the title instead of the local id. If no title or if the local id
         // should be parsed, use the local id, but without the "lcl|" prefix.
-        if (itr->GetSeqId()->IsLocal()) {
+        if (sid_in->IsLocal()) {
+            string id_token;
             vector<string> title_tokens;
             title_tokens = 
                 NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens);
@@ -261,8 +257,8 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
                 id_token = title_tokens[0];
             }
             
-            if (id_token == NcbiEmptyString || m_ParseLocalIds) {
-                const CObject_id& obj_id = itr->GetSeqId()->GetLocal();
+            if (id_token == NcbiEmptyString || parse_local) {
+                const CObject_id& obj_id = sid_in->GetLocal();
                 if (obj_id.IsStr())
                     id_token = obj_id.GetStr();
                 else 
@@ -270,10 +266,22 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
             }
             CObject_id* obj_id = new CObject_id();
             obj_id->SetStr(id_token);
-            next_id->SetLocal(*obj_id);
+            retval->SetLocal(*obj_id);
         } else {
-            next_id->Assign(*itr->GetSeqId());
+            retval->Assign(*sid_in);
         }
+
+        return retval;
+}
+
+void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
+{
+    m_QueryId.clear();
+
+    // Create a new list of Seq-ids, substitute any local ids by new fake local 
+    // ids, with label set to the first token of this Bioseq's title.
+    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+        CRef<CSeq_id> next_id = s_ReplaceLocalId(bh, itr->GetSeqId(), m_ParseLocalIds);
         m_QueryId.push_back(next_id);
     }
 }
@@ -299,6 +307,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
                 original_seqids.push_back(*id);
             }
             list<CRef<objects::CSeq_id> > next_seqid_list;
+            // Next call replaces BL_ORD_ID if found.
             CShowBlastDefline::GetSeqIdList(bh,original_seqids,next_seqid_list);
             m_SubjectIds.push_back(next_seqid_list);
         }
@@ -306,9 +315,12 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
     else {
         // Blast-def-line is not filled, hence retrieve all Seq-ids directly 
         // from the Bioseq handle's Seq-id.
-        list<CRef<CSeq_id> > next_seqid_list;
-        CShowBlastDefline::GetSeqIdList(bh, next_seqid_list);
-        m_SubjectIds.push_back(next_seqid_list);
+        list<CRef<objects::CSeq_id> > subject_id_list;
+        ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+            CRef<CSeq_id> next_id = s_ReplaceLocalId(bh, itr->GetSeqId(), m_ParseLocalIds);
+            subject_id_list.push_back(next_id);
+        }
+        m_SubjectIds.push_back(subject_id_list);
     }
 }
 
