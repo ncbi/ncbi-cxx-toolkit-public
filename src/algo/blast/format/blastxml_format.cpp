@@ -705,7 +705,7 @@ s_BlastXMLGetStatistics(vector<CRef<CStatistics> >& stat_vec,
     for (unsigned int index = 0; index < data->GetNumQueries(); ++index) {
         CRef<CStatistics> stat(new CStatistics());
         stat->SetDb_num(db_numseq);
-        stat->SetDb_len((int)db_length);
+        stat->SetDb_len(db_length);
         stat->SetHsp_len(data->GetLengthAdjustment(index));
         stat->SetEff_space((double)data->GetEffectiveSearchSpace(index));
         stat->SetKappa(data->GetKappa(index));

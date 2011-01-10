@@ -302,10 +302,14 @@ CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
         if (kDbName.empty())
             continue;
 
-        if (is_remote)
+        if (is_remote) {
             success = s_FillDbInfoRemotely(kDbName, info);
-        else
+            if (info.total_length < 0) {
+                success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithm);
+            }
+        } else {
             success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithm);
+        }
 
         if (success) {
             retval.push_back(info);
