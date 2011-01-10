@@ -1154,39 +1154,42 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
     m_IniParser->AddSymbol("BUILD_Debug",        IS_VAR_DEFINED(_DEBUG));
     m_IniParser->AddSymbol("BUILD_Release",     !IS_VAR_DEFINED(_DEBUG));
 
+
     // Add variables based on testsuite environment variable $FEATURES
+
     CNcbiEnvironment env;
     string features_str = env.Get("FEATURES");
-    if (! features_str.empty()) {
-        // Split $FEATURES to tokens
-        list<string> features_list;
-        NStr::Split(features_str, " ", features_list);
-        // Convert list<> to set<> to speed up a search
-        typedef set<string> TFeatures;
-        TFeatures features;
-        // For all features
-        ITERATE(list<string>, it, features_list) {
-            // Replace all non alphanumeric charecters in the names with "_".
-            // Ignore negative futures (with first "-" characters)
-            string f = *it;
-            if (f[0] != '-') {
-                NON_CONST_ITERATE (string, fit, f) {
-                    if (!isalnum((unsigned char)(*fit))) {
-                        *fit = '_';
-                    }
+    if (features_str.empty()) {
+        return;
+    }
+    // Split $FEATURES to tokens
+    list<string> features_list;
+    NStr::Split(features_str, " ", features_list);
+    // Convert list<> to set<> to speed up a search
+    typedef set<string> TFeatures;
+    TFeatures features;
+    // For all features
+    ITERATE(list<string>, it, features_list) {
+        // Replace all non alphanumeric characters in the names with "_".
+        // Ignore negative features (with first "-" characters)
+        string f = *it;
+        if (f[0] != '-') {
+            NON_CONST_ITERATE (string, fit, f) {
+                if (!isalnum((unsigned char)(*fit))) {
+                    *fit = '_';
                 }
-                // Add future name
-                features.insert(f);
             }
+            // Add feature name
+            features.insert(f);
         }
-        // Add FUTURE_* variables
-        for (size_t i = 0; i < sizeof(s_NcbiFeatures) / sizeof(s_NcbiFeatures[0]); i++) {
-            string name("FEATURE_");
-            name += s_NcbiFeatures[i];
-            TFeatures::const_iterator it = features.find(s_NcbiFeatures[i]);
-            bool found = (it != features.end());
-            m_IniParser->AddSymbol(name.c_str(), found);
-        }
+    }
+    // Add FEATURE_* variables
+    for (size_t i = 0; i < sizeof(s_NcbiFeatures) / sizeof(s_NcbiFeatures[0]); i++) {
+        string name("FEATURE_");
+        name += s_NcbiFeatures[i];
+        TFeatures::const_iterator it = features.find(s_NcbiFeatures[i]);
+        bool found = (it != features.end());
+        m_IniParser->AddSymbol(name.c_str(), found);
     }
 }
 
