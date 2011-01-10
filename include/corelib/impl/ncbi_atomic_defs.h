@@ -192,7 +192,7 @@ extern "C" {
 }
 #  endif
 #elif defined(NCBI_OS_DARWIN)  &&  defined(NCBI_COMPILER_GCC)  &&  defined(__ppc__)  &&  defined(__OPTIMIZE__)  &&  NCBI_COMPILER_VERSION >= 420  &&  NCBI_COMPILER_VERSION < 430
-/* Work around a compiler bug by forcing use of AddAtomic. */
+/* Work around a compiler bug by forcing use of an alternate implementation. */
 #elif (defined(NCBI_COMPILER_GCC) && defined(__cplusplus)) || defined(__GLIBCPP__) || defined(__GLIBCXX__)
 #  if defined(__GLIBCXX__) && __GLIBCXX__ >= 20070514 /* 4.2 */
 #    include <ext/atomicity.h>
@@ -232,7 +232,7 @@ extern "C" {
 #  endif
 #  define NCBI_SWAP_POINTERS_CONDITIONALLY(loc, ov, nv) \
     (compare_and_swap((atomic_p)(loc), (int*)(&(ov)), (int)(nv)) != FALSE)
-#elif defined(NCBI_OS_DARWIN)
+#elif defined(NCBI_OS_DARWIN)  &&  0  /* even CarbonCore is deprecated */
 #  include <CarbonCore/DriverSynchronization.h>
 #  if !defined(NCBI_COUNTER_ADD)  &&  !defined(NCBI_COUNTER_USE_ASM)
      typedef SInt32 TNCBIAtomicValue;
