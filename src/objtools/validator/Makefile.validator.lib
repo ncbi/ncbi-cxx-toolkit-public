@@ -3,7 +3,8 @@
 # Build library "xobjutil"
 ###############################
 
-SRC = validator validatorp valid_biosource valid_pub validerror_align validerror_annot \
+SRC = lat_lon_country_map validator validatorp valid_biosource valid_pub \
+      validerror_align validerror_annot \
       validerror_bioseq  validerror_bioseqset validerror_desc validerror_descr \
       validerror_feat validerror_graph utilities valid_cmdargs
 LIB = xvalidate
@@ -11,3 +12,10 @@ LIB = xvalidate
 ASN_DEP = general biblio pub seq seqset submit taxon3 valerr valid
 
 WATCHERS = bollin
+
+# WorkShop's optimizer can't cope with the large lat_lon_* tables.
+# Conveniently, nothing else uses -xO*.
+NOOPT_CXX = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-xO%=)
+
+lat_lon_country_map.o: $(srcdir)/lat_lon_country_map.cpp
+	$(NOOPT_CXX) $(srcdir)/lat_lon_country_map.cpp -o $@ $(CXX_FILTER)
