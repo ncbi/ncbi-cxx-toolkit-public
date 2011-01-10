@@ -55,7 +55,11 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/misc/sequence_macros.hpp>
+/*
 #include <objtools/cleanup/cleanup.hpp>
+*/
+
+//#include <objtools/cleanup/new_cleanup.hpp>
 
 // Object Manager includes
 /*
@@ -69,6 +73,95 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 */
+
+// new_cleanup.hpp
+
+#ifndef __SEQUENCE_CLEANUP__HPP__
+#define __SEQUENCE_CLEANUP__HPP__
+
+#include <objects/misc/sequence_macros.hpp>
+#include <objmgr/scope.hpp>
+#include <objtools/cleanup/cleanup_change.hpp>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+class CSeq_entry;
+class CBioseq;
+class CBioseq_set;
+class CSeq_annot;
+class CSeq_feat;
+class CSeq_submit;
+
+class CSeq_entry_Handle;
+class CBioseq_Handle;
+class CBioseq_set_Handle;
+class CSeq_annot_Handle;
+class CSeq_feat_Handle;
+
+class CCleanupChange;
+
+class NCBI_CLEANUP_EXPORT CNewCleanup : public CObject 
+{
+public:
+
+    /// Constructor
+    CNewCleanup();
+
+    /// Destructor
+    ~CNewCleanup();
+
+   /// User-settable flags for tuning behavior
+    enum EValidOptions {
+        eClean_NoReporting = 0x1,
+        eClean_GpipeMode = 0x2
+    };
+
+    /// Main methods
+
+    CConstRef<CCleanupChange> BasicCleanup (
+        CSeq_entry& se,
+        Uint4 options = 0
+    );
+
+    CConstRef<CCleanupChange> BasicCleanup (
+        CSeq_submit& ss,
+        Uint4 options = 0
+    );
+
+    CConstRef<CCleanupChange> BasicCleanup (
+        CSeq_annot& sa,
+        Uint4 options = 0
+    );
+
+    CConstRef<CCleanupChange> ExtendedCleanup (
+        CSeq_entry& se,
+        Uint4 options = 0
+    );
+
+    CConstRef<CCleanupChange> ExtendedCleanup (
+        CSeq_submit& ss,
+        Uint4 options = 0
+    );
+
+    CConstRef<CCleanupChange> ExtendedCleanup (
+        CSeq_annot& sa,
+        Uint4 options = 0
+    );
+
+
+private:
+    // Prohibit copy constructor & assignment operator
+    CNewCleanup (const CNewCleanup&);
+    CNewCleanup& operator= (const CNewCleanup&);
+};
+
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+#endif  /* __SEQUENCE_CLEANUP__HPP__ */
 
 using namespace ncbi;
 using namespace objects;
@@ -115,10 +208,6 @@ private:
 
     size_t m_Level;
     size_t m_Reported;
-
-protected:
-    CRef<CObjectManager> m_objmgr;
-    CRef<CScope> m_scope;
 };
 
 
@@ -224,14 +313,9 @@ void CTest_cleanupApplication::ReadClassMember
                 i >> *se;
 
                 // BasicCleanup Seq-entry
-                CCleanup cleanup;
+                CNewCleanup cleanup;
                 CConstRef<CCleanupChange> changes;
                 if ( ! m_NoCleanup) {
-                    m_objmgr = CObjectManager::GetInstance();
-                    m_scope.Reset( new CScope( *m_objmgr ) );
-                    m_scope->AddTopLevelSeqEntry( *se );
-                    se->Parentize();
-                    cleanup.SetScope (m_scope);
                     changes = cleanup.BasicCleanup(*se, m_Options);
                 }
                 if ( changes->ChangeCount() > 0 ) {
@@ -286,16 +370,10 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
     CRef<CSeq_entry> se(ReadSeqEntry());
 
     // BasicCleanup Seq-entry
-    CCleanup cleanup;
+    CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        m_objmgr = CObjectManager::GetInstance();
-        m_scope.Reset( new CScope( *m_objmgr ) );
-        m_scope->AddTopLevelSeqEntry( *se );
-        se->Parentize();
-        cleanup.SetScope (m_scope);
-        CSeq_entry_Handle seh = m_scope->GetSeq_entryHandle(*se);
-        changes = cleanup.BasicCleanup(seh, m_Options);
+        changes = cleanup.BasicCleanup(*se, m_Options);
     }
     *m_Out << (*se);
     return changes;
@@ -310,18 +388,9 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
     m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
 
     // Validae Seq-submit
-    CCleanup cleanup;
+    CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        if (ss->IsEntrys()) {
-            m_objmgr = CObjectManager::GetInstance();
-            m_scope.Reset( new CScope( *m_objmgr ) );
-            EDIT_EACH_SEQENTRY_ON_SEQSUBMIT (it, *ss) {
-                m_scope->AddTopLevelSeqEntry(**it);
-                (*it)->Parentize();
-            }
-            cleanup.SetScope (m_scope);
-        }
         changes = cleanup.BasicCleanup(*ss, m_Options);
     }
     *m_Out << (*ss);
@@ -337,7 +406,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
     m_In->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
 
     // Validae Seq-annot
-    CCleanup cleanup;
+    CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
         changes = cleanup.BasicCleanup(*sa, m_Options);

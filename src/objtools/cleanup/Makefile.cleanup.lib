@@ -7,6 +7,7 @@ WATCHERS = bollin kans
 
 ASN_DEP = general biblio seq pub seqset submit
 SRC = cleanup cleanupp cleanup_feat cleanup_general cleanup_pub \
-      cleanup_utils cleanup_biosource cleanup_gbqual cleanup_desc
+      cleanup_utils cleanup_biosource cleanup_gbqual cleanup_desc \
+      newcleanup
       
 LIB = xcleanup
