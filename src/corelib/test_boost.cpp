@@ -1038,7 +1038,7 @@ static const char* s_NcbiFeatures[] = {
     "Boost_Test",          // Boost.Test
     "Boost_Test_Included", // Boost.Test.Included
     "Boost_Threads",       // Boost.Threads
-    "C-Toolkit",           // C_Toolkit
+    "C_Toolkit",           // C-Toolkit
     "CPPUNIT",
     "C_ncbi",
     "DBLib",
