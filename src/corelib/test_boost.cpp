@@ -1045,7 +1045,7 @@ static const char* s_NcbiFeatures[] = {
     "EXPAT",
     "FLTK",
     "FUSE",
-    "Fast-CGI",            // Fast_CGI
+    "Fast_CGI",            // Fast-CGI
     "FreeTDS",
     "FreeType",
     "GIF",
