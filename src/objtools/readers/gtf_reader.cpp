@@ -449,6 +449,7 @@ bool CGtfReader::x_UpdateAnnotStartCodon(
     CRef< CSeq_feat > pCds;
     if ( ! x_FindParentCds( gff, pCds ) ) {
         cerr << "start_codon sans parent CDS" << endl;
+        return false;
     }
     if ( ! pCds->IsSetPartial() || ! pCds->GetPartial() ) {
         return true;
