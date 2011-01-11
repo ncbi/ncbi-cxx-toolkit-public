@@ -1655,13 +1655,23 @@ void CFeatTree::AddFeatures(CFeat_CI it)
 
 void CFeatTree::AddFeature(const CMappedFeat& feat)
 {
+    if ( !feat ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CFeatTree: feature is null");
+    }
     _ASSERT(m_InfoMap.size() == m_InfoArray.size());
     size_t index = m_InfoMap.size();
     CFeatInfo& info = m_InfoMap[feat.GetSeq_feat_Handle()];
-    m_InfoArray.push_back(&info);
-    info.m_AddIndex = index;
-    info.m_Feat = feat;
-    info.m_TranscriptId = sx_GetTranscriptId(feat);
+    if ( !info.m_Feat ) {
+        _ASSERT(m_InfoMap.size() == m_InfoArray.size()+1);
+        m_InfoArray.push_back(&info);
+        info.m_AddIndex = index;
+        info.m_Feat = feat;
+        info.m_TranscriptId = sx_GetTranscriptId(feat);
+    }
+    else {
+        _ASSERT(m_InfoMap.size() == m_InfoArray.size());
+    }
 }
 
 
