@@ -2567,7 +2567,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IPUW	s	Institut fuer Palaeontologie der Universitaet Wien",
 "IPW	s	Instutut fuer Palaeontologie der Uinversitaet Wurzburg",
 "IRAG	s	Institut National de la Recherche Agronomique de Antilles et Guyane",
-"IRAN	sc	Plant Pests and Diseases Research Institute, Botany Department",
+"IRAN	sc	Iranian Research Institute of Plant Protection, Department of Botany",
 "IRBR	s	Universidad de Oriente, Departamento de Biologia",
 "IRCW	s	Madison, University of Wisconsin",
 "IRDA	s	Agriculture Department",
