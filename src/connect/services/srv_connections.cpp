@@ -486,14 +486,25 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
     }
 }
 
-IReader* CNetServer::ExecRead(const string& cmd)
+IReader* CNetServer::ExecRead(const string& cmd, string* response)
 {
-    return new CNetServerReader(ExecWithRetry(cmd));
+    SExecResult exec_result(ExecWithRetry(cmd));
+
+    if (response != NULL)
+        *response = exec_result.response;
+
+    return new CNetServerReader(exec_result);
 }
 
-IEmbeddedStreamWriter* CNetServer::ExecWrite(const string& cmd)
+IEmbeddedStreamWriter* CNetServer::ExecWrite(
+    const string& cmd, string* response)
 {
-    return new CNetServerWriter(ExecWithRetry(cmd));
+    SExecResult exec_result(ExecWithRetry(cmd));
+
+    if (response != NULL)
+        *response = exec_result.response;
+
+    return new CNetServerWriter(exec_result);
 }
 
 END_NCBI_SCOPE
