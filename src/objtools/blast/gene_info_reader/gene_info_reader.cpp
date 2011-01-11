@@ -393,7 +393,7 @@ CGeneInfoFileReader::CGeneInfoFileReader(const string& strGi2GeneFile,
 /// Find the path to the gene info files, first checking the environment
 /// variable GENE_INFO_PATH, then the section BLAST, label
 /// GENE_INFO_PATH in the NCBI configuration file. If not found in either
-/// location, try the $BLASTDB/features directory. If all fails return the
+/// location, try the $BLASTDB/gene_info directory. If all fails return the
 /// current working directory
 /// @sa s_FindPathToWM
 static string
@@ -414,7 +414,7 @@ s_FindPathToGeneInfoFiles(void)
     // Try the features subdirectory in the BLAST database storage location
     if (retval == kEmptyStr) {
         if ( (retval = reg->Get(kSection, "BLASTDB")) != kEmptyStr) {
-            retval = CDirEntry::ConcatPath(retval, "features");
+            retval = CDirEntry::ConcatPath(retval, "gene_info");
             if ( !CDir(retval).Exists() ) {
                 retval = kEmptyStr;
             }
