@@ -1214,7 +1214,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                 Int4 oid = batch->hsplist_array[0]->oid;
                 Int4 num_hsps = 0;
                 BlastHSPRangeList *range_list = NULL;
-                BlastSeqSrcSetRangesArg *arg;
+                BlastSeqSrcSetRangesArg *arg = NULL;
     
                 /* iterate through the hsps and add ranges */
                 for (i = 0; i < batch->num_hsplists; i++) {

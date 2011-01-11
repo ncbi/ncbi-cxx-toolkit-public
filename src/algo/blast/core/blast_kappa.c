@@ -2201,6 +2201,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             Int4 oid = thisMatch->oid;
             Int4 i;
             BlastHSPRangeList *range_list = NULL;
+            BlastSeqSrcSetRangesArg *arg = NULL;
 
             ASSERT(Blast_SubjectIsTranslated(program_number));
             for (i=0; i<thisMatch->hspcnt; i++) {
@@ -2215,15 +2216,13 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                 }
                 range_list = BlastHSPRangeListAddRange(range_list, begin, end);
             }
-            {{
-            BlastSeqSrcSetRangesArg *arg = BlastSeqSrcSetRangesArgNew(thisMatch->hspcnt);
+            arg = BlastSeqSrcSetRangesArgNew(thisMatch->hspcnt);
             arg->oid = oid;
             
             BlastHSPRangeBuildSetRangesArg(range_list, arg);
             BlastSeqSrcSetSeqRanges(seqSrc, arg);
             BlastHSPRangeListFree(range_list);
             BlastSeqSrcSetRangesArgFree(arg);
-            }}
         }
 
         status_code =

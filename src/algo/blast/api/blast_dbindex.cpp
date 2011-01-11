@@ -801,6 +801,8 @@ void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src )
     _BlastSeqSrcImpl_SetGetTotLenStats     ( dst, _BlastSeqSrcImpl_GetGetTotLenStats( src ) );
     _BlastSeqSrcImpl_SetGetName            ( dst, _BlastSeqSrcImpl_GetGetName( src ) );
     _BlastSeqSrcImpl_SetGetIsProt          ( dst, _BlastSeqSrcImpl_GetGetIsProt( src ) );
+    _BlastSeqSrcImpl_SetGetSupportsPartialFetching  ( dst, _BlastSeqSrcImpl_GetGetSupportsPartialFetching( src ) );
+    _BlastSeqSrcImpl_SetSetSeqRange        ( dst, _BlastSeqSrcImpl_GetSetSeqRange(src ) );
     _BlastSeqSrcImpl_SetGetSequence        ( dst, _BlastSeqSrcImpl_GetGetSequence( src ) );
     _BlastSeqSrcImpl_SetGetSeqLen          ( dst, _BlastSeqSrcImpl_GetGetSeqLen( src ) );
     _BlastSeqSrcImpl_SetIterNext           ( dst, _BlastSeqSrcImpl_GetIterNext( src ) );
