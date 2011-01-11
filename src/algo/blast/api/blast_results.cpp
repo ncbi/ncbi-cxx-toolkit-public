@@ -112,7 +112,7 @@ CBlastAncillaryData::CBlastAncillaryData(pair<double, double> lambda,
                                          Int8 effective_search_space,
                                          bool is_psiblast /* = false */)
 : m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
-  m_PsiGappedKarlinBlk(0), m_SearchSpace(0)
+  m_PsiGappedKarlinBlk(0), m_SearchSpace(0), m_LengthAdjustment(0)
 {
     if (is_psiblast) {
         m_PsiGappedKarlinBlk = Blast_KarlinBlkNew();
