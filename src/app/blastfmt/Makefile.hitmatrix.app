@@ -7,7 +7,7 @@ LIB_ = w_hit_matrix gui_glmesa w_gl w_wx w_data \
 	   gui_graph gui_opengl gui_print gui_objutils gui_utils \
 	   xalgoalignutil xalnmgr ximage xcgi xhtml \
 	   entrez2cli entrez2 valerr gbseq entrezgene biotree \
-	   xconnserv xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS)
+	   xconnserv xqueryparse snputil $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(OSMESA_LIBS) $(WXWIDGETS_LIBS) $(IMAGE_LIBS) $(CMPRS_LIBS) \
