@@ -1143,6 +1143,7 @@ esac
 C_LIBS=$LIBS
 
 
+ARCH_CPPFLAGS=
 #### architecture settings, and extra C++ LIBS
 if test "${with_universal-no}" != "no" ; then
    bit64_sfx= #"Univ"
@@ -1156,14 +1157,17 @@ if test "${with_universal-no}" != "no" ; then
              ;;
            yes:* )
              ARCH_CFLAGS="-arch ppc64 -arch x86_64"
+             ARCH_CPPFLAGS="-m64"
              ;;
            * )
              ARCH_CFLAGS="-arch ppc -arch i386"
+             ARCH_CPPFLAGS="-m32"
              ;;
           esac
           ;;
        * )
          ARCH_CFLAGS="-arch `echo $with_universal | sed -e 's/,/ -arch /g'`"
+         ARCH_CPPFLAGS="-arch `echo $with_universal | sed -e 's/,.*//'`"
          ;;
       esac
       case "$host" in
@@ -1213,6 +1217,7 @@ changequote([, ])dnl
     *:GCC )
       # May not work prior to GCC 3.1.
       ARCH_CFLAGS="-m64"
+      case $host_os in darwin*) ARCH_CPPFLAGS="-m64" ;; esac
       ;;
 
     mips-sgi-irix*:MIPSpro73 )
@@ -1241,6 +1246,7 @@ else
        *:GCC )
          # May not work prior to GCC 3.1.
          ARCH_CFLAGS="-m32"
+         case $host_os in darwin*) ARCH_CPPFLAGS="-m32" ;; esac
          ;;
 
        mips-sgi-irix*:MIPSpro73 )
@@ -1296,6 +1302,7 @@ case "$host_os:$host_cpu" in
       ;;
 esac
 
+CPPFLAGS="$ARCH_CPPFLAGS $CPPFLAGS"
 CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
@@ -4658,7 +4665,7 @@ if test "$with_opengl" != "no"; then
    fi
    case "$OSTYPE" in
       darwin) # Use native interface
-         OPENGL_LIBS="-framework Carbon -framework AGL -framework OpenGL"
+         OPENGL_LIBS="-framework AGL -framework OpenGL"
          ;;
       # cygwin) ... ;;
       *) # Default -- assume X-based
