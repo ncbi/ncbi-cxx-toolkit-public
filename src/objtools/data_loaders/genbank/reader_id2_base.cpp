@@ -1947,9 +1947,17 @@ void CId2ReaderBase::x_ProcessGetBlob(
         return;
     }
 
-    if ( reply.GetData().GetData().empty() ) {
+    const CID2_Reply_Data& data = reply.GetData();
+    if ( data.GetData().empty() ) {
+        if ( reply.GetSplit_version() != 0 &&
+             data.GetData_type() == data.eData_type_seq_entry ) {
+            // Skeleton Seq-entry could be attached to the split-info
+            ERR_POST_X(6, Warning << "CId2ReaderBase: ID2-Reply-Get-Blob: "
+                       "no data in reply: "<<blob_id);
+            return;
+        }
         ERR_POST_X(6, "CId2ReaderBase: ID2-Reply-Get-Blob: "
-                      "no data in reply: "<<blob_id);
+                   "no data in reply: "<<blob_id);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
         _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
         return;
@@ -1971,19 +1979,17 @@ void CId2ReaderBase::x_ProcessGetBlob(
     if ( reply.GetSplit_version() != 0 ) {
         // split info will follow
         // postpone parsing this blob
-        loaded_set.m_Skeletons[blob_id] = &reply.GetData();
+        loaded_set.m_Skeletons[blob_id] = &data;
         return;
     }
     if ( reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp ) {
         m_Dispatcher->GetProcessor(CProcessor::eType_Seq_entry_SNP)
-            .ProcessBlobFromID2Data(result, blob_id, chunk_id,
-                                    reply.GetData());
+            .ProcessBlobFromID2Data(result, blob_id, chunk_id, data);
     }
     else {
         dynamic_cast<const CProcessor_ID2&>
             (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))
-            .ProcessData(result, blob_id, blob_state, chunk_id,
-                         reply.GetData());
+            .ProcessData(result, blob_id, blob_state, chunk_id, data);
     }
     _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
 }
