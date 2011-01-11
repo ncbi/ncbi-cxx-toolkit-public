@@ -247,13 +247,20 @@ class CLatLonCountryMap
 public:
     CLatLonCountryMap(bool is_water);
     ~CLatLonCountryMap(void);
-      bool IsCountryInLatLon(string country, double lat, double lon);
-      const CCountryExtreme * GuessRegionForLatLon(double lat, double lon, const string country = "", const string province = "");
-    CCountryExtreme * FindClosestToLatLon (double lat, double lon, double range, double &distance);
-    bool IsClosestToLatLon (string country, double lat, double lon, double range, double &distance);
-      bool HaveLatLonForRegion (string country);
-    bool DoCountryBoxesOverlap (string country1, string country2);
-    CCountryExtreme * IsNearLatLon (double lat, double lon, double range, double &distance, const string country, const string province = "");
+    bool IsCountryInLatLon(const string& country, double lat, double lon);
+    const CCountryExtreme * GuessRegionForLatLon(double lat, double lon,
+                                            const string& country = kEmptyStr,
+                                            const string& province = kEmptyStr);
+    const CCountryExtreme * FindClosestToLatLon(double lat, double lon,
+                                                double range, double& distance);
+    bool IsClosestToLatLon(const string& country, double lat, double lon,
+                           double range, double& distance);
+    bool HaveLatLonForRegion(const string& country);
+    bool DoCountryBoxesOverlap(const string& country1, const string& country2);
+    const CCountryExtreme * IsNearLatLon(double lat, double lon, double range,
+                                         double& distance,
+                                         const string& country,
+                                         const string& province = kEmptyStr);
     double GetScale (void) { return m_Scale; }
     static int AdjustAndRoundDistance (double distance, double scale);
     int AdjustAndRoundDistance (double distance);
@@ -269,14 +276,14 @@ public:
 
 private:
     void x_InitFromDefaultList(const char * const *list, int num);
-    bool x_InitFromFile(string filename);
+    bool x_InitFromFile(const string& filename);
     static bool s_CompareTwoLinesByCountry(const CCountryLine* line1,
                                     const CCountryLine* line2);
     static bool s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
                                     const CCountryLine* line2);
 
     int x_GetLatStartIndex (int y);
-    const CCountryExtreme * x_FindCountryExtreme (string country);
+    const CCountryExtreme * x_FindCountryExtreme (const string& country);
 
 
     typedef vector <CCountryLine *> TCountryLineList;

@@ -324,7 +324,7 @@ void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
 
 
 
-bool CLatLonCountryMap::x_InitFromFile(string filename)
+bool CLatLonCountryMap::x_InitFromFile(const string& filename)
 {
     string fname = g_FindDataFile (filename);
     if (NStr::IsBlank (fname)) {
@@ -471,7 +471,8 @@ CLatLonCountryMap::~CLatLonCountryMap (void)
 }
 
 
-bool CLatLonCountryMap::IsCountryInLatLon(string country, double lat, double lon)
+bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
+                                          double lon)
 {
     bool rval = true;
     int x = CCountryLine::ConvertLon(lon, m_Scale);
@@ -525,7 +526,8 @@ bool CLatLonCountryMap::IsCountryInLatLon(string country, double lat, double lon
 }
 
 
-const CCountryExtreme * CLatLonCountryMap::x_FindCountryExtreme (string country)
+const CCountryExtreme *
+CLatLonCountryMap::x_FindCountryExtreme(const string& country)
 {
     int L, R, mid;
 
@@ -551,7 +553,7 @@ const CCountryExtreme * CLatLonCountryMap::x_FindCountryExtreme (string country)
 }
 
 
-bool CLatLonCountryMap::HaveLatLonForRegion(string region)
+bool CLatLonCountryMap::HaveLatLonForRegion(const string& region)
 {
     if (x_FindCountryExtreme(region) == NULL) {
         return false;
@@ -587,7 +589,10 @@ int CLatLonCountryMap::x_GetLatStartIndex (int y)
 }
 
 
-const CCountryExtreme * CLatLonCountryMap::GuessRegionForLatLon(double lat, double lon, string country, string province)
+const CCountryExtreme *
+CLatLonCountryMap::GuessRegionForLatLon(double lat, double lon,
+                                        const string& country,
+                                        const string& province)
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -655,7 +660,10 @@ static double DistanceOnGlobe (
 }
 
 
-CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon (double lat, double lon, double range, double &distance)
+const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
+                                                               double lon,
+                                                               double range,
+                                                               double &distance)
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -702,7 +710,9 @@ CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon (double lat, double lon
 }
 
 
-bool CLatLonCountryMap::IsClosestToLatLon (string comp_country, double lat, double lon, double range, double &distance)
+bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
+                                          double lat, double lon,
+                                          double range, double &distance)
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -760,7 +770,11 @@ bool CLatLonCountryMap::IsClosestToLatLon (string comp_country, double lat, doub
 }
 
 
-CCountryExtreme *CLatLonCountryMap::IsNearLatLon (double lat, double lon, double range, double &distance, const string country, const string province)
+const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
+                                                        double range,
+                                                        double &distance,
+                                                        const string& country,
+                                                        const string& province)
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLat(lat, m_Scale);
@@ -807,7 +821,8 @@ CCountryExtreme *CLatLonCountryMap::IsNearLatLon (double lat, double lon, double
 
 
 
-bool CLatLonCountryMap::DoCountryBoxesOverlap(string country1, string country2)
+bool CLatLonCountryMap::DoCountryBoxesOverlap(const string& country1,
+                                              const string& country2)
 {
     if (NStr::IsBlank (country1) || NStr::IsBlank(country2)) return false;
 
