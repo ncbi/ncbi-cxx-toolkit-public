@@ -35,6 +35,8 @@
 #include <connect/services/util.hpp>
 
 #include <connect/ncbi_socket.hpp>
+
+#include <corelib/reader_writer.hpp>
 #include <corelib/ncbi_config.hpp>
 
 
@@ -76,10 +78,19 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
 {
     NCBI_NET_COMPONENT(NetServerConnection);
 
-    // Execute remote command 'cmd', check if the reply
-    // starts with 'OK:', and return the remaining
-    // characters of the reply as a string.
+    /// Execute remote command 'cmd', wait for the reply,
+    /// check that it starts with 'OK:', and return the
+    /// remaining characters of the reply as a string.
     string Exec(const string& cmd);
+};
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+class NCBI_XCONNECT_EXPORT IEmbeddedStreamWriter : public IWriter
+{
+public:
+    virtual void Close() = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -98,13 +109,19 @@ class NCBI_XCONNECT_EXPORT CNetServer
         CNetServerConnection conn;
     };
 
-    // Execute remote command 'cmd', check if the reply
-    // starts with 'OK:', and return the remaining
-    // characters of the reply as a string. This method
-    // makes as many as TServConn_ConnMaxRetries attempts
-    // to connect to the server and execute the specified
-    // command.
+    /// Execute remote command 'cmd', wait for the reply,
+    /// check if it starts with 'OK:', and return the
+    /// remaining characters of the reply as a string.
+    /// This method makes as many as TServConn_ConnMaxRetries
+    /// attempts to connect to the server and execute
+    /// the specified command.
     SExecResult ExecWithRetry(const string& cmd);
+
+    /// Execute a command that is expected to return a binary stream.
+    IReader* ExecRead(const string& cmd);
+
+    /// Execute a command that expects an input binary stream.
+    IEmbeddedStreamWriter* ExecWrite(const string& cmd);
 };
 
 ///////////////////////////////////////////////////////////////////////////

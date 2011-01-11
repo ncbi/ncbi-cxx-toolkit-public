@@ -37,11 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-enum ENetCacheResponseType {
-    eNetCache_Wait,
-    eICache_NoWait,
-};
-
 class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
     public INetServerConnectionListener
 {
@@ -54,8 +49,6 @@ protected:
 private:
     string m_Auth;
 };
-
-class CNetCacheWriter;
 
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 {

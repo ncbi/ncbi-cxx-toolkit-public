@@ -38,15 +38,13 @@
 ///
 
 #include "netcache_admin.hpp"
-
-#include <connect/services/netservice_api.hpp>
-#include <connect/services/netcache_api_expt.hpp>
-#include <connect/services/netcache_key.hpp>
+#include "netservice_api.hpp"
+#include "netcache_api_expt.hpp"
+#include "netcache_key.hpp"
 
 #include <util/simple_buffer.hpp>
 
 #include <corelib/plugin_manager.hpp>
-#include <corelib/reader_writer.hpp>
 #include <corelib/blob_storage.hpp>
 
 
@@ -57,12 +55,6 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
-
-class NCBI_XCONNECT_EXPORT IEmbeddedStreamWriter : public IWriter
-{
-public:
-    virtual void Close() = 0;
-};
 
 struct SNetCacheAPIImpl;
 

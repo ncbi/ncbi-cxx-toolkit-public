@@ -1,5 +1,5 @@
-#ifndef CONN___NETCACHE_RW__HPP
-#define CONN___NETCACHE_RW__HPP
+#ifndef CONN___SRV_RW__HPP
+#define CONN___SRV_RW__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -37,8 +37,7 @@
 /// NetCache client specs.
 ///
 
-#include "srv_rw.hpp"
-#include "netcache_api_impl.hpp"
+#include "netservice_api_impl.hpp"
 
 #include <connect/ncbi_conn_reader_writer.hpp>
 
@@ -54,28 +53,14 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-#if SIZEOF_SIZE_T < 8
-inline size_t CheckBlobSize(Uint8 blob_size)
-{
-    if (blob_size > std::numeric_limits<std::size_t>::max()) {
-        NCBI_THROW(CNetCacheException, eBlobClipped, "Blob is too big");
-    }
-    return (size_t) blob_size;
-}
-#else
-#define CheckBlobSize(blob_size) ((size_t) (blob_size))
-#endif
+class CSocket;
 
-
-class NCBI_XCONNECT_EXPORT CNetCacheReader : public CNetServerReader
+class NCBI_XCONNECT_EXPORT CNetServerReader : public IReader
 {
 public:
-    CNetCacheReader(SNetCacheAPIImpl* impl,
-        const CNetServer::SExecResult& exec_result,
-        size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode);
+    CNetServerReader(const CNetServer::SExecResult& exec_result);
 
-    virtual ~CNetCacheReader();
+    virtual ~CNetServerReader();
 
     virtual ERW_Result Read(void* buf, size_t count,
         size_t* bytes_read_ptr = 0);
@@ -84,24 +69,28 @@ public:
 
     virtual void Close();
 
-private:
-    CFileIO m_CacheFile;
-    bool m_CachingEnabled;
+protected:
+    void SocketRead(void* buf, size_t count, size_t* bytes_read);
+    void ReportPrematureEOF();
+
+    CNetServerConnection m_Connection;
+    Uint8 m_BlobBytesToRead; // Remaining number of bytes to be read
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 
-class NCBI_XCONNECT_EXPORT CNetCacheWriter : public CNetServerWriter
+enum ENetCacheResponseType {
+    eNetCache_Wait,
+    eICache_NoWait,
+};
+
+class NCBI_XCONNECT_EXPORT CNetServerWriter : public IEmbeddedStreamWriter
 {
 public:
-    CNetCacheWriter(SNetCacheAPIImpl* impl,
-        string* blob_id,
-        unsigned time_to_live,
-        ENetCacheResponseType response_type,
-        CNetCacheAPI::ECachingMode caching_mode);
+    CNetServerWriter(const CNetServer::SExecResult& exec_result);
 
-    virtual ~CNetCacheWriter();
+    virtual ~CNetServerWriter();
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
@@ -112,20 +101,43 @@ public:
 
     virtual void Close();
 
-private:
-    void EstablishConnection();
-    void UploadCacheFile();
+    void WriteBufferAndClose(const char* buf_ptr, size_t buf_size);
 
-    CNetCacheAPI m_NetCacheAPI;
-    string m_BlobID;
-    unsigned m_TimeToLive;
-    CFileIO m_CacheFile;
-    bool m_CachingEnabled;
+protected:
+    CNetServerWriter(ENetCacheResponseType response_type);
+
+    bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }
+    void ResetWriters();
+    void AbortConnection();
+    void Transmit(const void* buf, size_t count, size_t* bytes_written);
+
+    CNetServerConnection m_Connection;
+    auto_ptr<CSocketReaderWriter> m_SocketReaderWriter;
+    auto_ptr<CTransmissionWriter> m_TransmissionWriter;
+    ENetCacheResponseType m_ResponseType;
 };
 
 /* @} */
 
+#define NETSERVERREADER_PREREAD() \
+    if (m_BlobBytesToRead == 0) { \
+        if (bytes_read_ptr != NULL) \
+            *bytes_read_ptr = 0; \
+        return eRW_Eof; \
+    } \
+    if (m_BlobBytesToRead < count) \
+        count = (size_t) m_BlobBytesToRead; \
+    size_t bytes_read = 0; \
+    if (count > 0) {
+
+#define NETSERVERREADER_POSTREAD() \
+        m_BlobBytesToRead -= bytes_read; \
+    } \
+    if (bytes_read_ptr != NULL) \
+        *bytes_read_ptr = bytes_read; \
+    return eRW_Success;
+
 
 END_NCBI_SCOPE
 
-#endif  /* CONN___NETCACHE_RW__HPP */
+#endif  /* CONN___SRV_RW__HPP */

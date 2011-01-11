@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Maxim Didenko
+ * Author: Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *   Implementation of net cache client.
@@ -53,21 +53,10 @@ CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
         const CNetServer::SExecResult& exec_result,
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode) :
-    m_Connection(exec_result.conn),
+    CNetServerReader(exec_result),
     m_CachingEnabled(caching_mode == CNetCacheAPI::eCaching_AppDefault ?
         impl->m_CacheInput : caching_mode == CNetCacheAPI::eCaching_Enable)
 {
-    string::size_type pos = exec_result.response.find("SIZE=");
-
-    if (pos == string::npos) {
-        NCBI_THROW(CNetCacheException, eInvalidServerResponse,
-            "No SIZE field in reply to the blob reading command");
-    }
-
-    m_BlobBytesToRead = NStr::StringToUInt8(
-        exec_result.response.c_str() + pos + sizeof("SIZE=") - 1,
-        NStr::fAllowTrailingSymbols);
-
     if (blob_size_ptr != NULL) {
         *blob_size_ptr = CheckBlobSize(m_BlobBytesToRead);
     }
@@ -109,38 +98,23 @@ void CNetCacheReader::Close()
 {
     if (m_CachingEnabled)
         m_CacheFile.Close();
-    else if (m_BlobBytesToRead != 0)
-        m_Connection->Abort();
+    else
+        CNetServerReader::Close();
 }
 
 ERW_Result CNetCacheReader::Read(void*   buf,
                                  size_t  count,
                                  size_t* bytes_read_ptr)
 {
-    if (m_BlobBytesToRead == 0) {
-        if (bytes_read_ptr != NULL)
-            *bytes_read_ptr = 0;
-        return eRW_Eof;
-    }
+    if (!m_CachingEnabled)
+        return CNetServerReader::Read(buf, count, bytes_read_ptr);
 
-    if (m_BlobBytesToRead < count)
-        count = (size_t) m_BlobBytesToRead;
+    NETSERVERREADER_PREREAD();
 
-    size_t bytes_read = 0;
+    if ((bytes_read = m_CacheFile.Read(buf, count)) == 0)
+        ReportPrematureEOF();
 
-    if (count > 0) {
-        if (!m_CachingEnabled)
-            SocketRead(buf, count, &bytes_read);
-        else if ((bytes_read = m_CacheFile.Read(buf, count)) == 0)
-            ReportPrematureEOF();
-
-        m_BlobBytesToRead -= bytes_read;
-    }
-
-    if (bytes_read_ptr != NULL)
-        *bytes_read_ptr = bytes_read;
-
-    return eRW_Success;
+    NETSERVERREADER_POSTREAD();
 }
 
 ERW_Result CNetCacheReader::PendingCount(size_t* count)
@@ -149,41 +123,8 @@ ERW_Result CNetCacheReader::PendingCount(size_t* count)
         *count = m_BlobBytesToRead < MAX_PENDING_COUNT ?
             (size_t) m_BlobBytesToRead : MAX_PENDING_COUNT;
         return eRW_Success;
-    } else {
-        return CSocketReaderWriter(&m_Connection->m_Socket).PendingCount(count);
-    }
-}
-
-void CNetCacheReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
-{
-    EIO_Status status = m_Connection->m_Socket.Read(buf, count, bytes_read);
-
-    switch (status) {
-    case eIO_Success:
-        break;
-
-    case eIO_Timeout:
-        NCBI_THROW(CNetServiceException, eTimeout,
-            "Timeout while reading blob contents");
-
-    case eIO_Closed:
-        if (count > *bytes_read)
-            ReportPrematureEOF();
-        break;
-
-    default:
-        NCBI_THROW_FMT(CNetServiceException, eCommunicationError,
-            "Error while reading blob: " << IO_StatusStr(status));
-    }
-}
-
-void CNetCacheReader::ReportPrematureEOF()
-{
-    m_BlobBytesToRead = 0;
-    NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
-        "Amount read is less than the expected blob size "
-        "(premature EOF while reading from " <<
-        m_Connection->m_Server->m_Address.AsString() << ")");
+    } else
+        return CNetServerReader::PendingCount(count);
 }
 
 /////////////////////////////////////////////////
@@ -192,10 +133,10 @@ CNetCacheWriter::CNetCacheWriter(SNetCacheAPIImpl* impl,
         unsigned time_to_live,
         ENetCacheResponseType response_type,
         CNetCacheAPI::ECachingMode caching_mode) :
+    CNetServerWriter(response_type),
     m_NetCacheAPI(impl),
     m_BlobID(*blob_id),
     m_TimeToLive(time_to_live),
-    m_ResponseType(response_type),
     m_CachingEnabled(caching_mode == CNetCacheAPI::eCaching_AppDefault ?
         impl->m_CacheOutput : caching_mode == CNetCacheAPI::eCaching_Enable)
 {
@@ -236,36 +177,9 @@ void CNetCacheWriter::Close()
 
             UploadCacheFile();
         }
-    } else if (!IsConnectionOpen())
-        return;
-
-    ERW_Result res = m_TransmissionWriter->Close();
-
-    if (res != eRW_Success) {
-        AbortConnection();
-        if (res == eRW_Timeout) {
-            NCBI_THROW(CNetServiceException, eTimeout,
-                "Timeout while sending EOF packet");
-        } else {
-            NCBI_THROW(CNetServiceException, eCommunicationError,
-                "IO error while sending EOF packet");
-        }
     }
 
-    if (m_ResponseType == eNetCache_Wait) {
-        try {
-            string dummy;
-            m_Connection->ReadCmdOutputLine(dummy);
-        }
-        catch (...) {
-            AbortConnection();
-            throw;
-        }
-    }
-
-    ResetWriters();
-
-    m_Connection = NULL;
+    CNetServerWriter::Close();
 }
 
 ERW_Result CNetCacheWriter::Write(const void* buf,
@@ -276,43 +190,18 @@ ERW_Result CNetCacheWriter::Write(const void* buf,
         size_t bytes_written = m_CacheFile.Write(buf, count);
         if (bytes_written_ptr != NULL)
             *bytes_written_ptr = bytes_written;
-    } else if (IsConnectionOpen())
-        Transmit(buf, count, bytes_written_ptr);
-    else
-        return eRW_Error;
 
-    return eRW_Success;
+        return eRW_Success;
+    } else
+        return CNetServerWriter::Write(buf, count, bytes_written_ptr);
 }
 
 ERW_Result CNetCacheWriter::Flush(void)
 {
-    if (!m_CachingEnabled && IsConnectionOpen())
-        m_TransmissionWriter->Flush();
+    if (!m_CachingEnabled)
+        CNetCacheWriter::Flush();
 
     return eRW_Success;
-}
-
-void CNetCacheWriter::WriteBufferAndClose(const char* buf_ptr, size_t buf_size)
-{
-    size_t bytes_written;
-
-    while (buf_size > 0) {
-        Write(buf_ptr, buf_size, &bytes_written);
-        buf_ptr += bytes_written;
-        buf_size -= bytes_written;
-    }
-
-    Close();
-}
-
-void CNetCacheWriter::ResetWriters()
-{
-    try {
-        m_TransmissionWriter.reset();
-        m_SocketReaderWriter.reset();
-    }
-    catch (...) {
-    }
 }
 
 void CNetCacheWriter::EstablishConnection()
@@ -327,57 +216,6 @@ void CNetCacheWriter::EstablishConnection()
     m_TransmissionWriter.reset(
         new CTransmissionWriter(m_SocketReaderWriter.get(),
             eNoOwnership, CTransmissionWriter::eSendEofPacket));
-}
-
-void CNetCacheWriter::AbortConnection()
-{
-    ResetWriters();
-
-    if (m_Connection->m_Socket.GetStatus(eIO_Open) != eIO_Closed)
-        m_Connection->Abort();
-
-    m_Connection = NULL;
-}
-
-void CNetCacheWriter::Transmit(const void* buf,
-    size_t count, size_t* bytes_written)
-{
-    ERW_Result res = m_TransmissionWriter->Write(buf, count, bytes_written);
-
-    try {
-        if (res != eRW_Success /*&& res != eRW_NotImplemented*/) {
-            NCBI_THROW(CNetServiceException, eCommunicationError,
-                g_RW_ResultToString(res));
-        }
-
-        STimeout to = {0, 0};
-        switch (m_Connection->m_Socket.Wait(eIO_Read, &to)) {
-            case eIO_Success:
-                {
-                    string msg;
-                    if (m_Connection->m_Socket.ReadLine(msg) != eIO_Closed) {
-                        if (msg.empty())
-                            break;
-                        if (msg.find("ERR:") == 0) {
-                            msg.erase(0, 4);
-                            msg = NStr::ParseEscapes(msg);
-                        }
-                        NCBI_THROW(CNetCacheException, eServerError, msg);
-                    } // else FALL THROUGH
-                }
-
-            case eIO_Closed:
-                NCBI_THROW(CNetServiceException, eCommunicationError,
-                    "Server closed communication channel (timeout?)");
-
-            default:
-                break;
-        }
-    }
-    catch (...) {
-        AbortConnection();
-        throw;
-    }
 }
 
 void CNetCacheWriter::UploadCacheFile()
