@@ -199,7 +199,7 @@ ERW_Result CNetCacheWriter::Write(const void* buf,
 ERW_Result CNetCacheWriter::Flush(void)
 {
     if (!m_CachingEnabled)
-        CNetCacheWriter::Flush();
+        CNetServerWriter::Flush();
 
     return eRW_Success;
 }
