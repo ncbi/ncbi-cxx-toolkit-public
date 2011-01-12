@@ -80,6 +80,24 @@ private:
     void SavePssmToFile(CRef<CPssmWithParameters> pssm, 
                         const CPsiBlastIterationState* itr = NULL);
 
+    /// Performs iteratiosn for either multiple queries or input PSSM
+    ///@param opts_hndl BLAST options to use [in]
+    ///@param query query sequence(s) [in]
+    ///@param pssm PSSM saved from another psi-blast run [in]
+    ///@param db_args database [in]
+    ///@param args args [in]
+    ///@param db_adapter more db infor [in] 
+    ///@param scope fetches sequences [in]
+    ///@param formatter formats results [in]
+    bool DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
+                           CRef<CBlastQueryVector> query,
+                           CRef<CPssmWithParameters> pssm,
+                           CRef<CBlastDatabaseArgs> db_args,
+                           const CArgs& args,
+                           CRef<CLocalDbAdapter> db_adapter,
+                           CRef<CScope> scope,
+                           CBlastFormat& formatter);
+
     CRef<CPssmWithParameters>
     ComputePssmForNextIteration(const CBioseq& bioseq,
                                 CConstRef<CSeq_align_set> sset,
@@ -161,127 +179,26 @@ s_ExtractAncillaryData(const CPssmWithParameters& pssm)
                                                              true));
 }
 
-void
-CPsiBlastApp::SavePssmToFile(CRef<CPssmWithParameters> pssm, 
-                             const CPsiBlastIterationState* itr)
+bool 
+CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
+                           CRef<CBlastQueryVector> query,
+                           CRef<CPssmWithParameters> pssm,
+                           CRef<CBlastDatabaseArgs> db_args,
+                           const CArgs& args,
+                           CRef<CLocalDbAdapter> db_adapter,
+                           CRef<CScope> scope,
+                           CBlastFormat& formatter)
 {
-    if (pssm.Empty()) {
-        return;
-    }
 
-    if (m_CmdLineArgs->SaveCheckpoint() &&
-        (itr == NULL || // this is true in the case of remote PSI-BLAST
-         itr->GetIterationNumber() >= 1)) {
-        *m_CmdLineArgs->GetCheckpointStream() << MSerial_AsnText << *pssm;
-    }
+        bool converged = false;
 
-    if (m_CmdLineArgs->SaveAsciiPssm() &&
-        (itr == NULL || // this is true in the case of remote PSI-BLAST
-         itr->GetIterationNumber() >= 1)) {
-        if (m_AncillaryData.Empty() && pssm.NotEmpty()) {
-            _ASSERT(itr->GetIterationNumber() == 1);
-            m_AncillaryData = s_ExtractAncillaryData(*pssm);
-        }
-        CBlastFormatUtil::PrintAsciiPssm(*pssm, 
-                                         m_AncillaryData,
-                                         *m_CmdLineArgs->GetAsciiPssmStream());
-    }
-}
-
-
-int CPsiBlastApp::Run(void)
-{
-    int status = BLAST_EXIT_SUCCESS;
-
-    try {
-
-        // Allow the fasta reader to complain on invalid sequence input
-        SetDiagPostLevel(eDiag_Warning);
-
-        const CArgs& args = GetArgs();
-        RecoverSearchStrategy(args, m_CmdLineArgs);
-
-        CRef<CQueryOptionsArgs> query_opts = 
-            m_CmdLineArgs->GetQueryOptionsArgs();
-
-        CRef<CBlastOptionsHandle> opts_hndl(m_CmdLineArgs->SetOptions(args));
-        const CBlastOptions& opt = opts_hndl->GetOptions();
-        const size_t kNumIterations = m_CmdLineArgs->GetNumberOfIterations();
-
-        /*** Get the query sequence(s) or PSSM (these two options are mutually
-         * exclusive) ***/
-        CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();
-        CRef<CBlastQueryVector> query;
-        CRef<CBlastFastaInputSource> fasta;
-        CRef<CBlastInput> input;
-        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
-        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
-        CRef<IQueryFactory> query_factory;  /* populated if no PSSM is given */
-
-        if (pssm.Empty()) {
-            CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
-                                         query_opts->UseLowercaseMasks(),
-                                         query_opts->GetParseDeflines(),
-                                         query_opts->GetRange(),
-                                         !m_CmdLineArgs->ExecuteRemotely());
-            iconfig.SetQueryLocalIdMode();
-            fasta.Reset(new CBlastFastaInputSource(
-                                         m_CmdLineArgs->GetInputStream(),
-                                         iconfig));
-            input.Reset(new CBlastInput(&*fasta,
-                                        m_CmdLineArgs->GetQueryBatchSize()));
-            query = input->GetAllSeqs(*scope);
-            if (query->Size() > 1 && kNumIterations > 1) {
-                ERR_POST(Warning << "Multiple queries provided and multiple "
-                         "iterations requested, only first query will be "
-                         "iterated");
-            }
-            query_factory.Reset(new CObjMgr_QueryFactory(*query));
-        } else {
-            _ASSERT(pssm->HasQuery());
-            _ASSERT(pssm->GetQuery().IsSeq());  // single query only!
-            query.Reset(new CBlastQueryVector());
-            scope->AddTopLevelSeqEntry(pssm->SetQuery());
-
-            CRef<CSeq_loc> sl(new CSeq_loc());
-            sl->SetWhole().Assign(*pssm->GetQuery().GetSeq().GetFirstId());
-
-            CRef<CBlastSearchQuery> q(new CBlastSearchQuery(*sl, *scope));
-            query->AddQuery(q);
-        }
-        _ASSERT( query.NotEmpty() );
-
-
-        /*** Initialize the database ***/
-        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CLocalDbAdapter> db_adapter;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         db_adapter, scope);
-        _ASSERT(db_adapter && scope);
-
-        /*** Get the formatting options ***/
-        CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
-        CNcbiOstream& out_stream = m_CmdLineArgs->GetOutputStream();
-        CBlastFormat formatter(opt, *db_adapter,
-                               fmt_args->GetFormattedOutputChoice(),
-                               query_opts->GetParseDeflines(),
-                               out_stream,
-                               fmt_args->GetNumDescriptions(),
-                               fmt_args->GetNumAlignments(),
-                               *scope,
-                               opt.GetMatrixName(),
-                               fmt_args->ShowGis(),
-                               fmt_args->DisplayHtmlOutput(),
-                               opt.GetQueryGeneticCode(),
-                               opt.GetDbGeneticCode(),
-                               opt.GetSumStatisticsMode(),
-                               m_CmdLineArgs->ExecuteRemotely(),
-                               db_adapter->GetFilteringAlgorithm(),
-                               fmt_args->GetCustomOutputFormatSpec());
-        formatter.PrintProlog();
+        CRef<IQueryFactory> query_factory;
+        if (pssm.Empty() && !query.Empty())
+       		query_factory.Reset(new CObjMgr_QueryFactory(*query));
 
         SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm);
+
+        const size_t kNumIterations = m_CmdLineArgs->GetNumberOfIterations();
 
         if (m_CmdLineArgs->ExecuteRemotely()) {
 
@@ -301,6 +218,8 @@ int CPsiBlastApp::Run(void)
             SavePssmToFile(rmt_psiblast->GetPSSM());
 
         } else {
+
+            const CBlastOptions& opt = opts_hndl->GetOptions();
 
             CPsiBlastIterationState itr(kNumIterations);
 
@@ -333,11 +252,10 @@ int CPsiBlastApp::Run(void)
             if (run_token & 2)
             {
                 _ASSERT(psi_opts.NotEmpty());
-                if (query_factory.NotEmpty()) {
-                    psiblast.Reset(new CPsiBlast(query_factory, db_adapter, psi_opts));
-                } else {
-                    _ASSERT(pssm.NotEmpty());
+                if (pssm.NotEmpty()) {
                     psiblast.Reset(new CPsiBlast(pssm, db_adapter, psi_opts));
+                } else {
+                    psiblast.Reset(new CPsiBlast(query_factory, db_adapter, psi_opts));
                 }
             	psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
             }
@@ -392,18 +310,169 @@ int CPsiBlastApp::Run(void)
                 else
                   break;
             }
+            if (itr.HasConverged())
+              converged = true;
+       }
+       return converged;
+}
 
-            if (itr.HasConverged() && !fmt_args->HasStructuredOutputFormat()) {
-                out_stream << NcbiEndl << "Search has CONVERGED!" << NcbiEndl;
-            }
+void
+CPsiBlastApp::SavePssmToFile(CRef<CPssmWithParameters> pssm, 
+                             const CPsiBlastIterationState* itr)
+{
+    if (pssm.Empty()) {
+        return;
+    }
+
+    if (m_CmdLineArgs->SaveCheckpoint() &&
+        (itr == NULL || // this is true in the case of remote PSI-BLAST
+         itr->GetIterationNumber() >= 1)) {
+        *m_CmdLineArgs->GetCheckpointStream() << MSerial_AsnText << *pssm;
+    }
+
+    if (m_CmdLineArgs->SaveAsciiPssm() &&
+        (itr == NULL || // this is true in the case of remote PSI-BLAST
+         itr->GetIterationNumber() >= 1)) {
+        if (m_AncillaryData.Empty() && pssm.NotEmpty()) {
+            _ASSERT(itr->GetIterationNumber() == 1);
+            m_AncillaryData = s_ExtractAncillaryData(*pssm);
+        }
+        CBlastFormatUtil::PrintAsciiPssm(*pssm, 
+                                         m_AncillaryData,
+                                         *m_CmdLineArgs->GetAsciiPssmStream());
+    }
+}
+
+
+int CPsiBlastApp::Run(void)
+{
+    int status = BLAST_EXIT_SUCCESS;
+
+    try {
+
+        // Allow the fasta reader to complain on invalid sequence input
+        SetDiagPostLevel(eDiag_Warning);
+
+        const CArgs& args = GetArgs();
+        RecoverSearchStrategy(args, m_CmdLineArgs);
+
+        CRef<CQueryOptionsArgs> query_opts = 
+            m_CmdLineArgs->GetQueryOptionsArgs();
+
+        CRef<CBlastOptionsHandle> opts_hndl(m_CmdLineArgs->SetOptions(args));
+        const CBlastOptions& opt = opts_hndl->GetOptions();
+
+        /*** Get the query sequence(s) or PSSM (these two options are mutually
+         * exclusive) ***/
+        CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();
+        CRef<CBlastInput> input;
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+
+        if (pssm.Empty()) {  // FASTA input
+      	    SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
+            dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+            CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
+                                         query_opts->UseLowercaseMasks(),
+                                         query_opts->GetParseDeflines(),
+                                         query_opts->GetRange(),
+                                         !m_CmdLineArgs->ExecuteRemotely());
+            iconfig.SetQueryLocalIdMode();
+            CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(
+                                         m_CmdLineArgs->GetInputStream(),
+                                         iconfig));
+            input.Reset(new CBlastInput(&*fasta, 1));
+        } 
+
+
+        /*** Initialize the database ***/
+        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
+        CRef<CLocalDbAdapter> db_adapter;
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         db_adapter, scope);
+        _ASSERT(db_adapter && scope);
+
+        /*** Get the formatting options ***/
+        CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
+        CNcbiOstream& out_stream = m_CmdLineArgs->GetOutputStream();
+        CBlastFormat formatter(opt, *db_adapter,
+                               fmt_args->GetFormattedOutputChoice(),
+                               query_opts->GetParseDeflines(),
+                               out_stream,
+                               fmt_args->GetNumDescriptions(),
+                               fmt_args->GetNumAlignments(),
+                               *scope,
+                               opt.GetMatrixName(),
+                               fmt_args->ShowGis(),
+                               fmt_args->DisplayHtmlOutput(),
+                               opt.GetQueryGeneticCode(),
+                               opt.GetDbGeneticCode(),
+                               opt.GetSumStatisticsMode(),
+                               m_CmdLineArgs->ExecuteRemotely(),
+                               db_adapter->GetFilteringAlgorithm(),
+                               fmt_args->GetCustomOutputFormatSpec());
+
+        formatter.PrintProlog();
+
+
+        if (pssm.Empty())
+        {   // Value may be modified for 2nd (PSSM) iteration, so save to reset for next query.
+            ECompoAdjustModes comp_stats_original = opts_hndl->GetOptions().GetCompositionBasedStats();
+
+            for (; !input->End(); formatter.ResetScopeHistory()) {
+
+		CRef<CBlastQueryVector> query_batch(input->GetNextSeqBatch(*scope));
+
+		bool retval = DoIterations(opts_hndl,
+                           query_batch,
+                           pssm,
+                           db_args,
+                           args,
+                           db_adapter,
+                           scope,
+                           formatter);
+
+                if (retval && !fmt_args->HasStructuredOutputFormat()) {
+                	out_stream << NcbiEndl << "Search has CONVERGED!" << NcbiEndl;
+            	}
+            	// Reset for next query sequence.
+            	m_AncillaryData.Reset();
+            	pssm.Reset();
+            	opts_hndl->SetOptions().SetCompositionBasedStats(comp_stats_original);
+  	   }
+        }
+        else
+        {
+		_ASSERT(pssm->HasQuery());
+		_ASSERT(pssm->GetQuery().IsSeq());  // single query only!
+		scope->AddTopLevelSeqEntry(pssm->SetQuery());
+
+		CRef<CSeq_loc> sl(new CSeq_loc());
+		sl->SetWhole().Assign(*pssm->GetQuery().GetSeq().GetFirstId());
+    
+		CRef<CBlastSearchQuery> q(new CBlastSearchQuery(*sl, *scope));
+		CRef<CBlastQueryVector> query(new CBlastQueryVector());
+		query->AddQuery(q);
+
+
+                // Searches with PSSM, only one query though
+		bool retval = DoIterations(opts_hndl,
+                           query,
+                           pssm,
+                           db_args,
+                           args,
+                           db_adapter,
+                           scope,
+                           formatter);
+
+                if (retval && !fmt_args->HasStructuredOutputFormat())
+                	out_stream << NcbiEndl << "Search has CONVERGED!" << NcbiEndl;
         }
 
         // finish up
         formatter.PrintEpilog(opt);
 
-        if (m_CmdLineArgs->ProduceDebugOutput()) {
+        if (m_CmdLineArgs->ProduceDebugOutput())
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
-        }
 
     } CATCH_ALL(status)
     return status;
