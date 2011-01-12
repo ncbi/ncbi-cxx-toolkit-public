@@ -213,7 +213,7 @@ private:
     string       m_UserName;   ///< User name
     string       m_GroupName;  ///< Group name (empty string for MSWin)
     streamsize   m_HeaderSize; ///< Total size of all headers for this entry
-    struct stat  m_Stat;       ///< Direntry-compatible info (as applicable)
+    TNcbiSys_stat m_Stat;      ///< Direntry-compatible info (as applicable)
     Uint8        m_Pos;        ///< Entry (not data!) position within archive
 
     friend class CTar;         // Setter
