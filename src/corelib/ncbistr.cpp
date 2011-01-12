@@ -3750,17 +3750,14 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 #endif
 
 #if defined(__NO_EXPORT_STRINGUTF8__)
-SIZE_TYPE CStringUTF8_Helper::GetSymbolCount( const CStringUTF8& self)
+SIZE_TYPE CStringUTF8_Helper::GetSymbolCount( const CTempString& str)
 #else
-SIZE_TYPE CStringUTF8::GetSymbolCount( void) const
+SIZE_TYPE CStringUTF8::GetSymbolCount( const CTempString& str)
 #endif
 {
-#if !defined(__NO_EXPORT_STRINGUTF8__)
-    const CStringUTF8& self(*this);
-#endif
     SIZE_TYPE count = 0;
-    CStringUTF8::const_iterator src = self.begin();
-    CStringUTF8::const_iterator to = self.end();
+    CTempString::const_iterator src = str.begin();
+    CTempString::const_iterator to = str.end();
     for (; src != to; ++src, ++count) {
         SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
@@ -3770,12 +3767,11 @@ SIZE_TYPE CStringUTF8::GetSymbolCount( void) const
         if ( !good ) {
             NCBI_THROW2(CStringException, eFormat,
                         "String is not in UTF8 format",
-                        (src - self.begin()));
+                        (src - str.begin()));
         }
     }
     return count;
 }
-
 
 SIZE_TYPE CStringUTF8_Helper::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
 {

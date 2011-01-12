@@ -100,6 +100,52 @@ typedef NCBI_NS_STD::string::size_type SIZE_TYPE;
 const SIZE_TYPE NPOS = static_cast<SIZE_TYPE>(-1);
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+// Unicode-related definitions and conversions
+
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+
+typedef wchar_t TXChar;
+typedef wstring TXString;
+
+#  if !defined(_T)
+#    define _T(x) L ## x
+#  endif
+
+#  if defined(_DEBUG)
+#    define _T_XSTRING(x) \
+    CStringUTF8::AsBasicString<TXChar>(x, NULL, CStringUTF8::eValidate)
+#  else
+#    define _T_XSTRING(x) \
+    CStringUTF8::AsBasicString<TXChar>(x, NULL, CStringUTF8::eNoValidate)
+
+#  endif
+#  define _T_STDSTRING(x)     CStringUTF8(x)
+#  define _T_XCSTRING(x)      _T_XSTRING(x).c_str()
+#  define _T_CSTRING(x)       _T_STDSTRING(x).c_str()
+
+#else
+
+typedef char   TXChar;
+typedef string TXString;
+
+#  if !defined(_T)
+#    define _T(x) x
+#  endif
+
+#  define _T_XSTRING(x)       (x)
+#  define _T_STDSTRING(x)     (x)
+#  define _T_XCSTRING(x)      g_ToCString(x)
+#  define _T_CSTRING(x)       (x)
+
+/*impl*/ inline const char* g_ToCString(const char*   s) { return s; }
+/*impl*/ inline const char* g_ToCString(const string& s) { return s.c_str(); }
+
+#endif
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// NStr --
@@ -2290,8 +2336,17 @@ public:
     ///
     /// @return
     ///   Number of symbols (code points)
-    SIZE_TYPE GetSymbolCount(void) const;
+    SIZE_TYPE GetSymbolCount(void) const
+    {
+        return GetSymbolCount(*this);
+    }
     
+    /// Get the number of symbols (code points) in the string
+    ///
+    /// @return
+    ///   Number of symbols (code points)
+    static SIZE_TYPE GetSymbolCount(const CTempString& src);
+
     /// Get the number of valid UTF-8 symbols (code points) in the buffer
     ///
     /// @param src
@@ -2379,6 +2434,14 @@ public:
     /// Conversion to basic_string with any base type we need
     template <typename TChar>
     basic_string<TChar> AsBasicString(const TChar* substitute_on_error) const;
+
+    /// Conversion to basic_string with any base type we need
+    template <typename TChar>
+    static
+    basic_string<TChar> AsBasicString(
+        const CTempString& src,
+        const TChar* substitute_on_error = 0,
+        EValidate validate = eNoValidate);
 
     /// Guess the encoding of the C/C++ string
     ///
@@ -2497,7 +2560,7 @@ public:
         eNoValidate =0,
         eValidate   =1
     };
-    static SIZE_TYPE GetSymbolCount(const CStringUTF8& self);
+    static SIZE_TYPE GetSymbolCount(const CTempString& src);
     static SIZE_TYPE GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size);
     static SIZE_TYPE GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size);
     static string AsSingleByteString(const CStringUTF8& self, EEncoding encoding, const char* substitute_on_error);
@@ -2517,9 +2580,9 @@ private:
 };
 
 inline
-SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
+SIZE_TYPE CStringUTF8::GetSymbolCount(const CTempString& src)
 {
-    return CStringUTF8_Helper::GetSymbolCount(*this);
+    return CStringUTF8_Helper::GetSymbolCount(src);
 }
 inline
 SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
@@ -3658,11 +3721,26 @@ template <typename TChar>
 basic_string<TChar> CStringUTF8::AsBasicString(
     const TChar* substitute_on_error) const
 {
+    return CStringUTF8::AsBasicString<TChar>(*this, substitute_on_error);
+}
+
+template <typename TChar>
+basic_string<TChar> CStringUTF8::AsBasicString(
+    const CTempString& str,
+    const TChar* substitute_on_error,
+    EValidate validate)
+{
+    if (validate == eValidate) {
+        if (!MatchEncoding(str, eEncoding_UTF8)) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "Source string is not in UTF8 format", 0);
+        }
+    }
     TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
     basic_string<TChar> result;
-    result.reserve( GetSymbolCount()+1 );
-    const_iterator src = begin();
-    const_iterator to = end();
+    result.reserve( CStringUTF8::GetSymbolCount(str)+1 );
+    CTempString::const_iterator src = str.begin();
+    CTempString::const_iterator to  = str.end();
     for (; src != to; ++src) {
         TUnicodeSymbol ch = Decode(src);
         if (ch > max_char) {
@@ -3672,7 +3750,7 @@ basic_string<TChar> CStringUTF8::AsBasicString(
             } else {
                 NCBI_THROW2(CStringException, eConvert,
                     "Failed to convert symbol to wide character",
-                    (src - begin()));
+                    (src - str.begin()));
             }
         }
         result.append(1, (TChar)ch);

@@ -1,5 +1,5 @@
-#ifndef CORELIB__NCBIFILE__HPP
-#define CORELIB__NCBIFILE__HPP
+#ifndef CORELIB___NCBIFILE__HPP
+#define CORELIB___NCBIFILE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -119,6 +119,13 @@ BEGIN_NCBI_SCOPE
 // Forward declaration of struct containing OS-specific lock storage.
 struct SLock;
 
+// TNcbiSys_stat type
+#if defined(NCBI_OS_MSWIN)
+typedef struct _stat64 TNcbiSys_stat;
+#else
+typedef struct stat    TNcbiSys_stat;
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -198,7 +205,6 @@ public:
     ///   return an error (EACCES).
     static void SetDeleteReadOnlyFiles(ESwitch on_off_default);
 };
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -661,7 +667,7 @@ public:
     /// are usually highly platform-dependent, and named differently
     /// in the underlying data structures on different systems.
     struct SStat {
-        struct stat orig;  ///< Original stat structure
+        TNcbiSys_stat orig;  ///< Original stat structure
         // Nanoseconds for dir entry times (if available)
         long  mtime_nsec;  ///< Nanoseconds for modification time
         long  ctime_nsec;  ///< Nanoseconds for creation time
@@ -699,7 +705,7 @@ public:
     ///   not exist, return "eUnknown".
     /// @sa
     ///   IsFile, IsDir, IsLink
-    static EType GetType(const struct stat& st);
+    static EType GetType(const TNcbiSys_stat& st);
 
     /// Check whether a directory entry is a file.
     /// @sa
@@ -3649,4 +3655,4 @@ bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise) const
 
 END_NCBI_SCOPE
 
-#endif  /* CORELIB__NCBIFILE__HPP */
+#endif  /* CORELIB___NCBIFILE__HPP */

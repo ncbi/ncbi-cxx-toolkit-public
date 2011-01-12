@@ -35,6 +35,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
+#include "ncbisys.hpp"
 
 #include <stdio.h>
 
@@ -835,8 +836,8 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
                         TMode* oth_mode, TSpecialModeBits* special) const
 {
-    struct stat st;
-    if (stat(GetPath().c_str(), &st) != 0) {
+    TNcbiSys_stat st;
+    if (NcbiSys_stat(_T_XCSTRING(GetPath()), &st) != 0) {
         LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetMode():"
                                    " stat() failed for " << GetPath());
     }
@@ -933,7 +934,7 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
     }
     mode_t mode = MakeModeT(user_mode, group_mode, other_mode, special);
 
-    if ( chmod(GetPath().c_str(), mode) != 0 ) {
+    if ( NcbiSys_chmod(_T_XCSTRING(GetPath()), mode) != 0 ) {
         LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetMode():"
                                    " chmod() failed for " << GetPath());
     }
@@ -1296,10 +1297,10 @@ bool CDirEntry::GetTime(CTime* modification,
 {
 #ifdef NCBI_OS_MSWIN
     HANDLE handle;
-    WIN32_FIND_DATAA buf;
+    WIN32_FIND_DATA buf;
 
     // Get file times using FindFile
-    handle = FindFirstFileA(GetPath().c_str(), &buf);
+    handle = FindFirstFile(_T_XCSTRING(GetPath()), &buf);
     if ( handle == INVALID_HANDLE_VALUE ) {
         //LOG_ERROR_AND_RETURN("CDirEntry::GetTime():"
         //" Cannot find " << GetPath());
@@ -1383,7 +1384,7 @@ bool CDirEntry::SetTime(CTime* modification,
     }
 
     // Change times
-    HANDLE h = CreateFileA(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
+    HANDLE h = CreateFile(_T_XCSTRING(GetPath()), FILE_WRITE_ATTRIBUTES,
                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
                           FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
     if ( h == INVALID_HANDLE_VALUE ) {
@@ -1473,8 +1474,8 @@ bool CDirEntry::GetTimeT(time_t* modification,
                          time_t* last_access,
                          time_t* creation) const
 {
-    struct stat st;
-    if (stat(GetPath().c_str(), &st) != 0) {
+    TNcbiSys_stat st;
+    if (NcbiSys_stat(_T_XCSTRING(GetPath()), &st) != 0) {
         LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetTimeT():"
                                    " stat() failed for " << GetPath());
     }
@@ -1518,7 +1519,7 @@ bool CDirEntry::SetTimeT(time_t* modification,
     }
 
     // Change times
-    HANDLE h = CreateFileA(GetPath().c_str(), FILE_WRITE_ATTRIBUTES,
+    HANDLE h = CreateFile(_T_XCSTRING(GetPath()), FILE_WRITE_ATTRIBUTES,
                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
                           FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
     if ( h == INVALID_HANDLE_VALUE ) {
@@ -1572,7 +1573,7 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 
     int errcode;
 #ifdef NCBI_OS_MSWIN
-    errcode = stat(GetPath().c_str(), &buffer->orig);
+    errcode = NcbiSys_stat(_T_XCSTRING(GetPath()), &buffer->orig);
 #else // NCBI_OS_UNIX
     if (follow_links == eFollowLinks) {
         errcode = stat(GetPath().c_str(), &buffer->orig);
@@ -1659,11 +1660,11 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 
 CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 {
-    struct stat st;
+    TNcbiSys_stat st;
     int errcode;
 
 #if defined(NCBI_OS_MSWIN)
-    errcode = stat(GetPath().c_str(), &st);
+    errcode = NcbiSys_stat(_T_XCSTRING(GetPath()), &st);
 #else // NCBI_OS_UNIX
     if (follow == eFollowLinks) {
         errcode = stat(GetPath().c_str(), &st);
@@ -1677,10 +1678,11 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
     return GetType(st);
 }
 
+
 /// Test macro for file types
 #define NCBI_IS_TYPE(mode, mask)  (((mode) & S_IFMT) == (mask))
 
-CDirEntry::EType CDirEntry::GetType(const struct stat& st)
+CDirEntry::EType CDirEntry::GetType(const TNcbiSys_stat& st)
 {
     unsigned int mode = (unsigned int)st.st_mode;
 
@@ -1920,18 +1922,17 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
                              " Destination path exists: " << GetPath());
     }
     // Rename
-    if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
 #ifdef NCBI_OS_MSWIN
-        if ( errno != EACCES ) {
-            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Rename():"
-                                       " rename() failed for " << GetPath());
-        }
+    int ok_code = EACCES;
 #else  // NCBI_OS_UNIX
-        if ( errno != EXDEV ) {
+    int ok_code = EXDEV;
+#endif // NCBI_OS_...
+    if ( NcbiSys_rename(_T_XCSTRING(src.GetPath()),
+                        _T_XCSTRING(dst.GetPath())) != 0 ) {
+        if ( errno != ok_code ) {
             LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Rename():"
                                        " rename() failed for " << GetPath());
         }
-#endif // NCBI_OS_...
         // Note that rename() fails in the case of cross-device renaming.
         // So, try to copy, instead, then remove the original.
         auto_ptr<CDirEntry>
@@ -1962,7 +1963,7 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
         return dir.Remove(mode);
     }
     // Other entries
-    if ( remove(GetPath().c_str()) != 0 ) {
+    if ( NcbiSys_remove(_T_XCSTRING(GetPath())) != 0) {
         switch (errno) {
         case ENOENT:
             if (mode == eRecursiveIgnoreMissing)
@@ -1974,7 +1975,7 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
             if (NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::GetDefault()) {
                 if (!SetMode(eDefault))
                     return false;
-                if (remove(GetPath().c_str()) == 0)
+                if (NcbiSys_remove(_T_XCSTRING(GetPath())) == 0)
                     return true;
             }
 #endif
@@ -2245,19 +2246,18 @@ string CDirEntry::GetTmpName(ETmpFileCreationMode mode)
                    "Temporary file cannot be auto-created on this platform,"
                    " so return its name only");
     }
-    char* filename = tempnam(0,0);
+    TXChar* filename = NcbiSys_tempnam(0,0);
     if ( !filename ) {
         return kEmptyStr;
     }
-    string res(filename);
+    string res(_T_CSTRING(filename));
     free(filename);
     return res;
 #endif
 }
 
 
-#if !defined(NCBI_OS_UNIX)
-
+#if !defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_MSWIN)
 static string s_StdGetTmpName(const char* dir, const char* prefix)
 {
     char* filename = tempnam(dir, prefix);
@@ -2268,7 +2268,6 @@ static string s_StdGetTmpName(const char* dir, const char* prefix)
     free(filename);
     return str;
 }
-
 #endif
 
 
@@ -2293,10 +2292,10 @@ public:
 
     CTmpStream(const char* s, IOS_BASE::openmode mode) : fstream(s, mode)
     {
-        m_FileName = s; 
+        m_FileName = s;
         // Try to remove file and OS will automatically delete it after
         // the last file descriptor to it is closed (works only on UNIXes)
-        CFile(s).Remove();
+        CFile(m_FileName).Remove();
     }
 
 #if defined(NCBI_OS_MSWIN)
@@ -2320,8 +2319,8 @@ protected:
 
 
 fstream* CDirEntry::CreateTmpFile(const string& filename, 
-                                  ETextBinary text_binary,
-                                  EAllowRead  allow_read)
+                                  ETextBinary   text_binary,
+                                  EAllowRead    allow_read)
 {
     string tmpname = filename.empty() ? GetTmpName(eTmpFileCreate) : filename;
     if ( tmpname.empty() ) {
@@ -2342,7 +2341,9 @@ fstream* CDirEntry::CreateTmpFile(const string& filename,
     if (text_binary != eBinary) {
         mode[4] = '\0';
     }
-    FILE* file = fopen(tmpname.c_str(), mode);
+    FILE* file = NcbiSys_fopen(_T_XCSTRING(tmpname),
+                               _T_XCSTRING(mode));
+
     if ( !file ) {
         return 0;
     }
@@ -2481,13 +2482,15 @@ static bool s_CopyAttrs(const char* from, const char* to,
     CDirEntry efrom(from), eto(to);
 
     WIN32_FILE_ATTRIBUTE_DATA attr;
-    if ( !::GetFileAttributesExA(from, GetFileExInfoStandard, &attr) ) {
+    if ( !::GetFileAttributesEx(_T_XCSTRING(from),
+                                GetFileExInfoStandard, &attr) ) {
         return false;
     }
 
     // Date/time
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
-        HANDLE h = CreateFileA(to, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL,
+        HANDLE h = CreateFile(_T_XCSTRING(to),
+                              FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL,
                               OPEN_EXISTING,
                               FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
         if ( h == INVALID_HANDLE_VALUE ) {
@@ -2505,7 +2508,8 @@ static bool s_CopyAttrs(const char* from, const char* to,
 
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
-        if ( !::SetFileAttributesA(to, attr.dwFileAttributes) ) {
+        if ( !::SetFileAttributes(_T_XCSTRING(to),
+                                  attr.dwFileAttributes) ) {
             LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttrs():"
                                  " Cannot change pemissions for " << to);
         }
@@ -2540,19 +2544,11 @@ CFile::~CFile(void)
 
 Int8 CFile::GetLength(void) const
 {
-#if defined(NCBI_OS_MSWIN)
-    struct __stat64 buf;
-    if ( _stat64(GetPath().c_str(), &buf) != 0 ) {
-        //LOG_ERROR("CFile:GetLength(): _stat64() failed for " << GetPath());
-        return -1;
-    }
-#else
-    struct stat buf;
-    if ( stat(GetPath().c_str(), &buf) != 0 ) {
+    TNcbiSys_stat buf;
+    if (NcbiSys_stat(_T_XCSTRING(GetPath()), &buf) != 0) {
         //LOG_ERROR("CFile:GetLength(): stat() failed for " << GetPath());
         return -1;
     }
-#endif
     return buf.st_size;
 }
 
@@ -2726,7 +2722,8 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
 
     // Copy
 #if defined(NCBI_OS_MSWIN)
-    if ( !::CopyFileA(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) ) {
+    if ( !::CopyFile(_T_XCSTRING(src.GetPath()),
+                     _T_XCSTRING(dst.GetPath()), FALSE) ) {
         LOG_ERROR_AND_RETURN("CFile::Copy():"
                              " Cannot copy "
                              << src.GetPath() << " to " << dst.GetPath());
@@ -2899,8 +2896,8 @@ char x_GetChar(CNcbiIfstream& f, CFile::ECompareText mode,
 bool CFile::CompareTextContents(const string& file, ECompareText mode,
                                 size_t buf_size) const
 {
-    CNcbiIfstream f1(GetPath().c_str(), IOS_BASE::in);
-    CNcbiIfstream f2(file.c_str(),      IOS_BASE::in);
+    CNcbiIfstream f1(_T_XCSTRING(GetPath()), IOS_BASE::in);
+    CNcbiIfstream f2(_T_XCSTRING(file),      IOS_BASE::in);
     if ( !buf_size ) {
         buf_size = kDefaultBufferSize;
     }
@@ -2945,10 +2942,10 @@ static bool s_GetHomeByUID(string& home)
 
 static bool s_GetHomeByLOGIN(string& home)
 {
-    char* ptr = 0;
+    const TXChar* ptr = 0;
     // Get user name
-    if ( !(ptr = getenv("USER")) ) {
-        if ( !(ptr = getenv("LOGNAME")) ) {
+    if ( !(ptr = NcbiSys_getenv(_T("USER"))) ) {
+        if ( !(ptr = NcbiSys_getenv(_T("LOGNAME"))) ) {
             if ( !(ptr = getlogin()) ) {
                 LOG_ERROR_AND_RETURN_ERRNO("s_GetHomeByLOGIN():"
                                            " Unable to get user name");
@@ -2970,25 +2967,24 @@ static bool s_GetHomeByLOGIN(string& home)
 
 string CDir::GetHome(void)
 {
-    char*  str;
     string home;
 
 #if defined(NCBI_OS_MSWIN)
     // Get home dir from environment variables
     // like - C:\Documents and Settings\user\Application Data
-    str = getenv("APPDATA");
+    const TXChar* str = NcbiSys_getenv(_T("APPDATA"));
     if ( str ) {
-        home = str;
+        home = _T_CSTRING(str);
     } else {
         // like - C:\Documents and Settings\user
-        str = getenv("USERPROFILE");
+        str = NcbiSys_getenv(_T("USERPROFILE"));
         if ( str ) {
-            home = str;
+            home = _T_CSTRING(str);
         }
     }
 #elif defined(NCBI_OS_UNIX)
     // Try get home dir from environment variable
-    str = getenv("HOME");
+    char*  str = NcbiSys_getenv("HOME");
     if ( str ) {
         home = str;
     } else {
@@ -3024,9 +3020,9 @@ string CDir::GetTmpDir(void)
 
 #elif defined(NCBI_OS_MSWIN)
 
-    char* tmpdir = getenv("TEMP");
+    const TXChar* tmpdir = NcbiSys_getenv(_T("TEMP"));
     if ( tmpdir ) {
-        tmp = tmpdir;
+        tmp = _T_CSTRING(tmpdir);
     } else  {
 #  if defined(P_tmpdir)
         tmp = P_tmpdir;
@@ -3043,33 +3039,18 @@ string CDir::GetTmpDir(void)
 
 string CDir::GetCwd()
 {
-    string cwd;
-
-#if defined(NCBI_OS_UNIX)
-    char buf[4096];
-    if ( getcwd(buf, sizeof(buf) - 1) ) {
-        cwd = buf;
+    TXChar buf[4096];
+    if ( NcbiSys_getcwd(buf, sizeof(buf)/sizeof(TXChar) - 1) ) {
+        return _T_CSTRING(buf);
     }
-#elif defined(NCBI_OS_MSWIN)
-    char buf[4096];
-    if ( _getcwd(buf, sizeof(buf) - 1) ) {
-        cwd = buf;
-    }
-#endif
-    return cwd;
+    return kEmptyCStr;
 }
 
 
 bool CDir::SetCwd(const string& dir)
 {
-#if defined(NCBI_OS_UNIX)
-    if ( chdir(dir.c_str()) != 0 ) {
-        LOG_ERROR_AND_RETURN_ERRNO("CDir::SetCwd():"
-                                   " Cannot change directory to " << dir);
-    }
-    return true;
-#elif defined(NCBI_OS_MSWIN)
-    if ( _chdir(dir.c_str()) != 0 ) {
+#if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
+    if ( NcbiSys_chdir(_T_XCSTRING(dir)) != 0 ) {
         LOG_ERROR_AND_RETURN_ERRNO("CDir::SetCwd():"
                                    " Cannot change directory to " << dir);
     }
@@ -3128,15 +3109,15 @@ void s_SetFindFileError(void)
 
 #  define IS_RECURSIVE_ENTRY                     \
     ( (flags & CDir::fIgnoreRecursive)  &&       \
-      ((::strcmp(entry.cFileName, ".")  == 0) || \
-       (::strcmp(entry.cFileName, "..") == 0)) )
+      ((NcbiSys_strcmp(entry.cFileName, _T("."))  == 0) ||  \
+       (NcbiSys_strcmp(entry.cFileName, _T("..")) == 0)) )
 
 void s_AddEntry(CDir::TEntries* contents, const string& base_path,
-                const WIN32_FIND_DATAA& entry, CDir::TGetEntriesFlags flags)
+                const WIN32_FIND_DATA& entry, CDir::TGetEntriesFlags flags)
 {
     const string name = (flags & CDir::fIgnorePath) ?
-                         entry.cFileName :
-                         base_path + entry.cFileName;
+                         _T_CSTRING(entry.cFileName) :
+                         base_path + _T_CSTRING(entry.cFileName);
         
     if (flags & CDir::fCreateObjects) {
         CDirEntry::EType type = (entry.dwFileAttributes &
@@ -3233,10 +3214,10 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
     // Append to the "path" mask for all files in directory
     string pattern = base_path + string("*");
 
-    WIN32_FIND_DATAA entry;
+    WIN32_FIND_DATA entry;
     HANDLE          handle;
 
-    handle = FindFirstFileA(pattern.c_str(), &entry);
+    handle = FindFirstFile(_T_XCSTRING(pattern), &entry);
     if (handle != INVALID_HANDLE_VALUE) {
         // Check all masks
         do {
@@ -3244,13 +3225,14 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
                 ITERATE(vector<string>, it, masks) {
                     const string& mask = *it;
                     if ( mask.empty()  ||
-                        MatchesMask(entry.cFileName, mask, use_case) ) {
+                         MatchesMask(_T_CSTRING(entry.cFileName), mask,
+                                     use_case) ) {
                         s_AddEntry(contents, base_path, entry, flags);
                         break;
                     }                
                 }
             }
-        } while (FindNextFileA(handle, &entry));
+        } while (FindNextFile(handle, &entry));
         FindClose(handle);
     } else {
         s_SetFindFileError();
@@ -3298,17 +3280,17 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
     // Append to the "path" mask for all files in directory
     string pattern = base_path + "*";
 
-    WIN32_FIND_DATAA entry;
+    WIN32_FIND_DATA entry;
     HANDLE          handle;
 
-    handle = FindFirstFileA(pattern.c_str(), &entry);
+    handle = FindFirstFile(_T_XCSTRING(pattern), &entry);
     if (handle != INVALID_HANDLE_VALUE) {
         do {
             if ( !IS_RECURSIVE_ENTRY  &&
-                 masks.Match(entry.cFileName, use_case) ) {
+                 masks.Match(_T_CSTRING(entry.cFileName), use_case) ) {
                 s_AddEntry(contents, base_path, entry, flags);
             }
-        } while ( FindNextFileA(handle, &entry) );
+        } while ( FindNextFile(handle, &entry) );
         FindClose(handle);
     } else {
         s_SetFindFileError();
@@ -3339,7 +3321,8 @@ bool CDir::Create(void) const
 
 #if defined(NCBI_OS_MSWIN)
     errno = 0;
-    if ( mkdir(GetPath().c_str()) != 0  &&  errno != EEXIST ) {
+    if ( NcbiSys_mkdir(_T_XCSTRING(GetPath())) != 0  &&
+         errno != EEXIST ) {
         LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
                                    " Cannot create directory " << GetPath());
     }
@@ -3347,13 +3330,13 @@ bool CDir::Create(void) const
 #elif defined(NCBI_OS_UNIX)
     errno = 0;
     // The permissions for the created directory are (mode & ~umask & 0777).
-    if ( mkdir(GetPath().c_str(), mode) != 0  &&  errno != EEXIST ) {
+    if ( NcbiSys_mkdir(GetPath().c_str(), mode) != 0  &&  errno != EEXIST ) {
         LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
                                    " Cannot create directory " << GetPath());
     }
     // so we need to call chmod() directly
 #endif
-    if ( chmod(GetPath().c_str(), mode) != 0 ) {
+    if ( NcbiSys_chmod(_T_XCSTRING(GetPath()), mode) != 0 ) {
         LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
                                    " Cannot set mode for directory "
                                    << GetPath());
@@ -3508,7 +3491,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
 {
     // Remove directory as empty
     if ( mode == eOnlyEmpty ) {
-        if ( rmdir(GetPath().c_str()) != 0 ) {
+        if ( NcbiSys_rmdir(_T_XCSTRING(GetPath())) != 0 ) {
             LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove():"
                                        " Cannot remove (by implication empty)"
                                        " directory " << GetPath());
@@ -3544,7 +3527,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
     }
 
     // Remove main directory
-    if ( rmdir(GetPath().c_str()) != 0 ) {
+    if ( NcbiSys_rmdir(_T_XCSTRING(GetPath())) != 0 ) {
         LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove():"
                                    " Cannot remove directory " << GetPath());
     }
@@ -3792,7 +3775,7 @@ void s_GetFileSystemInfo(const string&               path,
     }
     memset(info, 0, sizeof(*info));
     string msg = string("Cannot get system information for ") + path;
-    char* fs_name_ptr = 0;
+    const char* fs_name_ptr = 0;
 
 #if defined(NCBI_OS_MSWIN)
     // Try to get a root disk directory from given path
@@ -3812,28 +3795,31 @@ void s_GetFileSystemInfo(const string&               path,
     }
 
     // Get volume information
-    char  fs_name[MAX_PATH+1];
+    TXChar fs_name[MAX_PATH+1];
+    string ufs_name;
     if (flags & (fFSI_Type | fFSI_FileNameMax))  {
         DWORD filename_max;
         DWORD fs_flags;
 
-        if ( !::GetVolumeInformationA(xpath.c_str(),
-                                    NULL, 0, // Name of the specified volume
-                                    NULL,    // Volume serial number
-                                    &filename_max,
-                                    &fs_flags,
-                                    fs_name, sizeof(fs_name)) ) {
+        if ( !::GetVolumeInformation(_T_XCSTRING(xpath),
+                                     NULL, 0, // Name of the specified volume
+                                     NULL,    // Volume serial number
+                                     &filename_max,
+                                     &fs_flags,
+                                     fs_name,
+                                     sizeof(fs_name)/sizeof(fs_name[0])) ) {
             NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
         }
         info->filename_max = filename_max;
-        fs_name_ptr = fs_name;
+        ufs_name = _T_CSTRING(fs_name);
+        fs_name_ptr = ufs_name.c_str();
     }
         
     // Get disk spaces
     if (flags & fFSI_DiskSpace) {
-        if ( !::GetDiskFreeSpaceExA(xpath.c_str(),
-                                (PULARGE_INTEGER)&info->free_space,
-                                (PULARGE_INTEGER)&info->total_space, 0) ) {
+        if ( !::GetDiskFreeSpaceEx(_T_XCSTRING(xpath),
+                                   (PULARGE_INTEGER)&info->free_space,
+                                   (PULARGE_INTEGER)&info->total_space, 0) ) {
             NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
         }
     }
@@ -3842,7 +3828,7 @@ void s_GetFileSystemInfo(const string&               path,
     if (flags & fFSI_BlockSize) {
         DWORD dwSectPerClust; 
         DWORD dwBytesPerSect;
-        if ( !::GetDiskFreeSpaceA(xpath.c_str(),
+        if ( !::GetDiskFreeSpace(_T_XCSTRING(xpath),
                                  &dwSectPerClust, &dwBytesPerSect,
                                  NULL, NULL) ) {
             NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
@@ -4055,7 +4041,7 @@ CTmpFile::~CTmpFile()
 
     // Remove file if specified
     if (m_RemoveOnDestruction == eRemove) {
-        unlink(m_FileName.c_str());
+        NcbiSys_unlink(_T_XCSTRING(m_FileName));
     }
 }
 
@@ -4095,7 +4081,7 @@ CNcbiIstream& CTmpFile::AsInputFile(EIfExists if_exists,
         }
     }
     mode |= IOS_BASE::in;
-    m_InFile.reset(new CNcbiIfstream(m_FileName.c_str()));
+    m_InFile.reset(new CNcbiIfstream(_T_XCSTRING(m_FileName)));
     return *m_InFile;
 }
 
@@ -4118,7 +4104,7 @@ CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists,
         }
     }
     mode |= IOS_BASE::out;
-    m_OutFile.reset(new CNcbiOfstream(m_FileName.c_str()));
+    m_OutFile.reset(new CNcbiOfstream(_T_XCSTRING(m_FileName)));
     return *m_OutFile;
 }
 
@@ -4298,15 +4284,15 @@ bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
 #if defined(NCBI_OS_MSWIN)
 string s_LastErrorMessage(void)
 {
-    char* ptr = NULL;
+    TXChar* ptr = NULL;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                   FORMAT_MESSAGE_FROM_SYSTEM     |
                   FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                   FORMAT_MESSAGE_IGNORE_INSERTS,
                   "%0", GetLastError(), 
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  (LPTSTR)&ptr, 0, NULL);
-    string errmsg = ptr ? ptr : "Unknown reason";
+                  (TXChar*)(&ptr), 0, NULL);
+    string errmsg = ptr ? _T_CSTRING(ptr) : "Unknown reason";
     LocalFree(ptr);
     return errmsg;
 }
@@ -4607,11 +4593,12 @@ void CMemoryFileMap::x_Open(void)
 
 #if defined(NCBI_OS_MSWIN)
         errmsg = ": ";
-
+        TXString filename(_T_XSTRING(m_FileName));
+        
         // If failed to attach to an existing file-mapping object then
         // create a new one (based on the specified file)
-        HANDLE hMap = OpenFileMappingA(m_Attrs->map_access, false,
-                                      m_FileName.c_str());
+        HANDLE hMap = OpenFileMapping(m_Attrs->map_access, false,
+                                      filename.c_str());
         if ( !hMap ) { 
 
             // NOTE:
@@ -4624,12 +4611,12 @@ void CMemoryFileMap::x_Open(void)
             DWORD x_file_access = GENERIC_READ | GENERIC_WRITE;
             DWORD x_map_protect = PAGE_READWRITE;
 
-            hFile = CreateFileA(m_FileName.c_str(), x_file_access, 
+            hFile = CreateFile(filename.c_str(), x_file_access, 
                                m_Attrs->file_share, NULL,
                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if ( (hFile == INVALID_HANDLE_VALUE)  &&
                  (m_Attrs->file_access != x_file_access) ) {
-                hFile = CreateFileA(m_FileName.c_str(), m_Attrs->file_access, 
+                hFile = CreateFile(filename.c_str(), m_Attrs->file_access, 
                                    m_Attrs->file_share, NULL,
                                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,NULL);
                 x_map_protect = m_Attrs->map_protect;
@@ -4641,14 +4628,14 @@ void CMemoryFileMap::x_Open(void)
 
             // Create mapping
 
-            hMap = CreateFileMappingA(hFile, NULL,
+            hMap = CreateFileMapping(hFile, NULL,
                                      x_map_protect,
-                                     0, 0, m_FileName.c_str());
+                                     0, 0, filename.c_str());
             if ( !hMap  &&
                  (m_Attrs->map_protect != x_map_protect) ) {
-                hMap = CreateFileMappingA(hFile, NULL,
+                hMap = CreateFileMapping(hFile, NULL,
                                          m_Attrs->map_protect,
-                                         0, 0, m_FileName.c_str());
+                                         0, 0, filename.c_str());
             }
             CloseHandle(hFile);
             if ( !hMap ) {
@@ -4740,11 +4727,7 @@ void CMemoryFileMap::x_Create(Uint8 length)
         pmode |= S_IWRITE;
 
     // Create new file
-#ifdef NCBI_OS_MSWIN
-    int fd = _creat(m_FileName.c_str(), pmode);
-#else
-    int fd = creat(m_FileName.c_str(), pmode);
-#endif
+    int fd = NcbiSys_creat(_T_XCSTRING(m_FileName), pmode);
     if ( fd < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " Cannot create file \"" + m_FileName + '"');
@@ -4758,10 +4741,11 @@ void CMemoryFileMap::x_Extend(Uint8 length)
 {
     // Open file for append
 #if defined(NCBI_OS_MSWIN)
-    int fd = _open(m_FileName.c_str(), O_BINARY | O_APPEND | O_WRONLY, 0);
+    int oflags = O_APPEND | O_WRONLY | O_BINARY;
 #else
-    int fd = open(m_FileName.c_str(), O_APPEND | O_WRONLY, 0);
+    int oflags = O_APPEND | O_WRONLY;
 #endif
+    int fd = NcbiSys_open(_T_XCSTRING(m_FileName), oflags, 0);
     if ( fd < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " Cannot open file \"" + m_FileName +
@@ -5088,8 +5072,8 @@ void CFileIO::Open(const string& filename,
             _TROUBLE;
     }
 
-    m_Handle = CreateFileA(filename.c_str(), dwAccessMode,
-                          dwShareMode, NULL, dwOpenMode,
+    m_Handle = CreateFile(_T_XCSTRING(filename),
+                          dwAccessMode, dwShareMode, NULL, dwOpenMode,
                           FILE_ATTRIBUTE_NORMAL, NULL);
 
 #elif defined(NCBI_OS_UNIX)
@@ -5186,7 +5170,7 @@ void CFileIO::CreateTemporary(const string& dir,
     }
     m_Pathname = filename.get();
     if (auto_remove == eRemoveASAP)
-        remove(m_Pathname.c_str());
+        NcbiSys_remove(_T_XCSTRING(m_Pathname));
 
 #  elif defined(NCBI_OS_MSWIN)
     char buffer[MAX_PATH];
@@ -5196,8 +5180,9 @@ void CFileIO::CreateTemporary(const string& dir,
     while (ofs < numeric_limits<unsigned long>::max()) {
         _ultoa((unsigned long)ofs, buffer, 24);
         m_Pathname = x_dir + prefix + buffer;
-        m_Handle = CreateFileA(m_Pathname.c_str(), GENERIC_ALL, 0, NULL,
-                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
+        m_Handle = CreateFile(_T_XCSTRING(m_Pathname),
+                              GENERIC_ALL, 0, NULL,
+                              CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
         if (m_Handle != INVALID_HANDLE_VALUE ||
                 ::GetLastError() != ERROR_FILE_EXISTS)
             break;
@@ -5236,7 +5221,7 @@ void CFileIO::Close(void)
         m_Handle = kInvalidHandle;
 
         if (m_AutoRemove != eDoNotRemove)
-            remove(m_Pathname.c_str());
+            NcbiSys_remove(_T_XCSTRING(m_Pathname));
     }
 }
 
@@ -5791,7 +5776,8 @@ CFileLock::CFileLock(TFileHandle handle, TFlags flags, EType type,
 }
 
 
-void CFileLock::x_Init(const char* filename, EType type, off_t offset, size_t length)
+void CFileLock::x_Init(const char* filename, EType type,
+                       off_t offset, size_t length)
 {
     // Reset redundant flags
     F_CLEAN_REDUNDANT(fLockNow | fLockLater);
@@ -5800,7 +5786,7 @@ void CFileLock::x_Init(const char* filename, EType type, off_t offset, size_t le
     // Open file
     if (filename) {
 #if defined(NCBI_OS_MSWIN)
-        m_Handle = CreateFileA(filename, GENERIC_READ,
+        m_Handle = CreateFile(_T_XCSTRING(filename), GENERIC_READ,
                               FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 #elif defined(NCBI_OS_UNIX)
         m_Handle = open(filename, O_RDWR);
