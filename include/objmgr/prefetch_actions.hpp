@@ -35,7 +35,6 @@
 
 #include <objmgr/prefetch_manager.hpp>
 #include <objmgr/impl/heap_scope.hpp>
-#include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/feat_ci.hpp>
 

@@ -38,6 +38,7 @@
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>

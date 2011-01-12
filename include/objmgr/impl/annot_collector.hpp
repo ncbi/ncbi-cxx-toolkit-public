@@ -39,7 +39,7 @@
 #include <objmgr/tse_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
@@ -56,6 +56,8 @@ BEGIN_SCOPE(objects)
 class CHandleRangeMap;
 class CHandleRange;
 struct SAnnotObject_Index;
+class CSeq_entry_Info;
+class CSeq_annot_Info;
 class CSeq_annot_SNP_Info;
 struct SSNP_Info;
 struct SIdAnnotObjs;
