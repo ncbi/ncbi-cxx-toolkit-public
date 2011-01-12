@@ -34,6 +34,7 @@
 #include <objmgr/impl/seq_table_info.hpp>
 #include <objmgr/impl/seq_table_setters.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
