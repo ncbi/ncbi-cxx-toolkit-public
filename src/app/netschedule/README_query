@@ -52,7 +52,9 @@ run         - run number
 run_status  - end status of the run
 time_start  - start time of the run
 time_done   - end time of the run
-worker_node - the node, executed the run
+node_id     - the node id of the node executed the run
+node_addr   - its IP address (name)
+node_port   - its control port
 ret_code    - Unix return code of the run
 err_msg     - error message of the run
 
