@@ -136,11 +136,11 @@ typedef string TXString;
 
 #  define _T_XSTRING(x)       (x)
 #  define _T_STDSTRING(x)     (x)
-#  define _T_XCSTRING(x)      g_ToCString(x)
+#  define _T_XCSTRING(x)      impl_ToCString(x)
 #  define _T_CSTRING(x)       (x)
 
-/*impl*/ inline const char* g_ToCString(const char*   s) { return s; }
-/*impl*/ inline const char* g_ToCString(const string& s) { return s.c_str(); }
+inline const char* impl_ToCString(const char*   s) { return s; }
+inline const char* impl_ToCString(const string& s) { return s.c_str(); }
 
 #endif
 
