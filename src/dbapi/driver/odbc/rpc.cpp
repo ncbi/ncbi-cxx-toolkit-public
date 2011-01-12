@@ -245,7 +245,8 @@ CDB_Result* CODBC_RPCCmd::Result()
                                      0),
                      "SQLColAttribute failed", 420015);
 
-            if(util::strcmp(buffer, _T("STpROCrETURNsTATUS")) == 0) {//this is a status result
+            if(util::strcmp(buffer, _T_NCBI_ODBC("STpROCrETURNsTATUS")) == 0) {
+				//this is a status result
                 m_HasStatus = true;
                 m_Res = new CODBC_StatusResult(*this);
             }

@@ -232,7 +232,7 @@ void CODBC_Reporter::ReportErrors(void) const
 
             switch( rc ) {
             case SQL_SUCCESS:
-                if(util::strncmp(SqlState, _T("HYT"), 3) == 0) { // timeout
+                if(util::strncmp(SqlState, _T_NCBI_ODBC("HYT"), 3) == 0) { // timeout
 
                     CDB_TimeoutEx to(GetBlankCompileInfo(),
                                     0,
@@ -241,7 +241,8 @@ void CODBC_Reporter::ReportErrors(void) const
 
                     m_HStack->PostMsg(&to);
                 }
-                else if(util::strncmp(SqlState, _T("40001"), 5) == 0) { // deadlock
+				else if(util::strncmp(SqlState, _T_NCBI_ODBC("40001"), 5) == 0) {
+					// deadlock
                     CDB_DeadlockEx dl(GetBlankCompileInfo(),
                                     0,
                                     err_msg.c_str());

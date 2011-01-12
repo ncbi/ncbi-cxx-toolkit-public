@@ -103,18 +103,11 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 #if defined(UNICODE)
-#ifndef __T
-#  define __T(x)      L ## x
-#endif
+#  define _T_NCBI_ODBC(x) L ## x
 #else
-#ifndef __T
-#  define __T(x)      x
-#endif
+#  define _T_NCBI_ODBC(x) x
 #endif
 
-#ifndef _T
-#  define _T(x)       __T(x)
-#endif
 
 #ifdef HAVE_WSTRING
 inline
