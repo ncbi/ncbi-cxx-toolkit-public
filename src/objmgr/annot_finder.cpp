@@ -78,7 +78,7 @@ public:
 
     virtual void CollectRangeMaps( vector<CHandleRangeMap>& hrmaps) const
     {
-        CAnnotObject_Info::x_ProcessFeat(hrmaps, m_Feat);        
+        CAnnotObject_Info::x_ProcessFeat(hrmaps, m_Feat, 0);
     }
     virtual CAnnotType_Index::TIndexRange GetIndexRange() const
     {
@@ -107,7 +107,7 @@ public:
 
     virtual void CollectRangeMaps( vector<CHandleRangeMap>& hrmaps) const
     {
-        CAnnotObject_Info::x_ProcessAlign(hrmaps, m_Align);        
+        CAnnotObject_Info::x_ProcessAlign(hrmaps, m_Align, 0);
     }
     virtual CAnnotType_Index::TIndexRange GetIndexRange() const
     {
@@ -134,7 +134,7 @@ public:
 
     virtual void CollectRangeMaps( vector<CHandleRangeMap>& hrmaps) const
     {
-        CAnnotObject_Info::x_ProcessGraph(hrmaps, m_Graph);        
+        CAnnotObject_Info::x_ProcessGraph(hrmaps, m_Graph, 0);
     }
     virtual CAnnotType_Index::TIndexRange GetIndexRange() const
     {

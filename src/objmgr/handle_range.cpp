@@ -85,10 +85,12 @@ CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
         return ret;
     }
     if ( !m_IsCircular ) {
-        if ( !m_TotalRanges_plus.Empty() ) {
+        if ( !m_TotalRanges_plus.Empty() ||
+             x_IncludesPlus(m_Ranges.front().second) ) {
             ret |= eStrandPlus;
         }
-        if ( !m_TotalRanges_minus.Empty() ) {
+        if ( !m_TotalRanges_minus.Empty() ||
+             x_IncludesMinus(m_Ranges.front().second) ) {
             ret |= eStrandMinus;
         }
     }
@@ -168,14 +170,20 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand,
                     _ASSERT(!m_Ranges.empty());
                     //_ASSERT(more_before);
                     //_ASSERT(m_MoreAfter);
-                    m_MoreAfter = more_after;
+                    if ( more_after ) {
+                        m_MoreAfter = true;
+                    }
                 }
             }
         }
     }
     else {
-        m_MoreBefore = more_before;
-        m_MoreAfter = more_after;
+        if ( more_before ) {
+            m_MoreBefore = true;
+        }
+        if ( more_after ) {
+            m_MoreAfter = true;
+        }
     }
     m_Ranges.push_back(TRanges::value_type(range, strand));
     if ( !m_IsCircular ) {

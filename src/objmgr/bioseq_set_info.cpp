@@ -423,6 +423,7 @@ void CBioseq_set_Info::RemoveEntry(CRef<CSeq_entry_Info> info)
     obj_seq_set.erase(obj_it);
 }
 
+
 int CBioseq_set_Info::GetEntryIndex(const CSeq_entry_Info& info) const
 {
     CRef<CSeq_entry_Info> entry(const_cast<CSeq_entry_Info*>(&info));
@@ -434,6 +435,16 @@ int CBioseq_set_Info::GetEntryIndex(const CSeq_entry_Info& info) const
     }
     return -1;
 }
+
+
+CConstRef<CSeq_entry_Info> CBioseq_set_Info::GetFirstEntry(void) const
+{
+    if ( m_Seq_set.empty() ) {
+        return null;
+    }
+    return m_Seq_set.front();
+}
+
 
 void CBioseq_set_Info::x_AttachEntry(CRef<CSeq_entry_Info> entry)
 {
@@ -465,8 +476,8 @@ void CBioseq_set_Info::UpdateAnnotIndex(void) const
 void CBioseq_set_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
     TParent::x_UpdateAnnotIndexContents(tse);
-    NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
-        (*it)->x_UpdateAnnotIndex(tse);
+    for ( size_t i = 0; i < m_Seq_set.size(); ++i ) {
+        m_Seq_set[i]->x_UpdateAnnotIndex(tse);
     }
 }
 

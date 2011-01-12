@@ -130,6 +130,9 @@ public:
     const TSeq_set& GetSeq_set(void) const;
     TSeq_set& SetSeq_set(void);
 
+    // return first already loaded Seq-entry or null
+    CConstRef<CSeq_entry_Info> GetFirstEntry(void) const;
+
     CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1, 
                                    bool set_uniqid = false);
     void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1, 

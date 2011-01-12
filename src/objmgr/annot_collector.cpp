@@ -1505,7 +1505,8 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         x_AddPostMappings();
         x_Sort();
     }
-    catch (...) {
+    catch (const CException& exc) {
+        ERR_POST("CAnnot_Collector::x_Initialize: "<<exc);
         // clear all members - GCC 3.0.4 does not do it
         x_Clear();
         throw;
@@ -1565,7 +1566,8 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         x_AddPostMappings();
         x_Sort();
     }
-    catch (...) {
+    catch (const CException& exc) {
+        ERR_POST("CAnnot_Collector::x_Initialize: "<<exc);
         // clear all members - GCC 3.0.4 does not do it
         x_Clear();
         throw;
@@ -1901,7 +1903,8 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector)
         x_SearchAll();
         x_Sort();
     }
-    catch (...) {
+    catch (const CException& exc) {
+        ERR_POST("CAnnot_Collector::x_Initialize: "<<exc);
         // clear all members - GCC 3.0.4 does not do it
         x_Clear();
         throw;
@@ -2229,6 +2232,8 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
             return;
         }
         if ( sx_IsEmpty(*m_Selector) ) {
+            // no search for individual annotations
+            // just remember the name and leave
             m_AnnotNames->insert(annot_name);
             return;
         }
@@ -2342,6 +2347,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                 }
                 it->first->LoadChunks(it->second);
             }
+            tse.UpdateAnnotIndex(id);
 
             // Acquire the lock again:
             guard.Guard(tse.GetAnnotLock());
@@ -2911,6 +2917,15 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
 }
 
 
+#define NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "@@"
+
+static inline bool IsAnnotTrackZoomLevel(const CAnnotName& name)
+{
+    return name.IsNamed() &&
+        name.GetName().find(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX) != NPOS;
+}
+
+
 const CAnnot_Collector::TAnnotNames&
 CAnnot_Collector::x_GetAnnotNames(void) const
 {
@@ -2918,7 +2933,10 @@ CAnnot_Collector::x_GetAnnotNames(void) const
         TAnnotNames* names = new TAnnotNames;
         m_AnnotNames.reset(names);
         ITERATE ( TAnnotSet, it, m_AnnotSet ) {
-            names->insert(it->GetSeq_annot_Info().GetName());
+            const CAnnotName& name = it->GetSeq_annot_Info().GetName();
+            if ( !IsAnnotTrackZoomLevel(name) ) {
+                names->insert(name);
+            }
         }
     }
     return *m_AnnotNames;

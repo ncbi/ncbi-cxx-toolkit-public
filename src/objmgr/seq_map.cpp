@@ -303,7 +303,19 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
             length = x_GetSubSeqMap(seg, scope)->GetLength(scope);
         }
         else if ( seg.m_SegType == eSeqRef ) {
-            length = x_GetBioseqHandle(seg, scope).GetBioseqLength();
+            if ( m_Bioseq ) {
+                // first look directly into TSE
+                CSeq_id_Handle id =
+                    CSeq_id_Handle::GetHandle(x_GetRefSeqid(seg));
+                CConstRef<CBioseq_Info> seq =
+                    m_Bioseq->GetTSE_Info().FindMatchingBioseq(id);
+                if ( seq ) {
+                    length = seq->GetBioseqLength();
+                }
+            }
+            if ( length == kInvalidSeqPos ) {
+                length = x_GetBioseqHandle(seg, scope).GetBioseqLength();
+            }
         }
         if (length == kInvalidSeqPos) {
             NCBI_THROW(CSeqMapException, eDataError,

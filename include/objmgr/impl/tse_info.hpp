@@ -322,6 +322,8 @@ public:
     CConstRef<CBioseq_Info> FindMatchingBioseq(const CSeq_id_Handle& id) const;
     SSeqMatch_TSE GetSeqMatch(const CSeq_id_Handle& id) const;
 
+    CConstRef<CBioseq_Info> GetSegSetMaster(void) const;
+
     // fill ids with all Bioseqs Seq-ids from this TSE
     // the result will be sorted and contain no duplicates
     virtual void GetBioseqsIds(TSeqIds& ids) const;

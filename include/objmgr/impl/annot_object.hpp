@@ -52,6 +52,7 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 class CHandleRangeMap;
+class CMasterSeqSegments;
 struct SAnnotTypeSelector;
 class CSeq_align;
 class CSeq_graph;
@@ -191,7 +192,8 @@ public:
     const CSeq_loc& GetLocs(void) const;
     void GetLocsTypes(TTypeIndexSet& idx_set) const;
 
-    void GetMaps(vector<CHandleRangeMap>& hrmaps) const;
+    void GetMaps(vector<CHandleRangeMap>& hrmaps,
+                 const CMasterSeqSegments* master = 0) const;
 
     // split support
     const CTSE_Chunk_Info& GetChunk_Info(void) const;
@@ -206,11 +208,14 @@ public:
     const TLocs::iterator& x_GetLocsIter(void) const;
 
     static void x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
-                               const CSeq_align& align);
+                               const CSeq_align& align,
+                               const CMasterSeqSegments* master);
     static void x_ProcessFeat(vector<CHandleRangeMap>& hrmaps,
-                              const CSeq_feat& feat);
+                              const CSeq_feat& feat,
+                              const CMasterSeqSegments* master);
     static void x_ProcessGraph(vector<CHandleRangeMap>& hrmaps,
-                               const CSeq_graph& graph);
+                               const CSeq_graph& graph,
+                               const CMasterSeqSegments* master);
 
     bool HasSingleKey(void) const
         {

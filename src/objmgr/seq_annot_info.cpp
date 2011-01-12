@@ -37,6 +37,7 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/bioseq_base_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
@@ -653,6 +654,18 @@ void CSeq_annot_Info::x_UpdateObjectKeys(CAnnotObject_Info& info,
 }
 
 
+static
+CConstRef<CMasterSeqSegments> sx_GetMaster(const CTSE_Info& tse)
+{
+    //return null;
+    CConstRef<CBioseq_Info> master_seq = tse.GetSegSetMaster();
+    if ( master_seq ) {
+        return ConstRef(new CMasterSeqSegments(*master_seq));
+    }
+    return null;
+}
+
+
 void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
 {
     _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetFtable().size());
@@ -661,6 +674,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
+    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -674,7 +688,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
         size_t keys_begin = m_ObjectIndex.GetKeys().size();
         index.m_AnnotObject_Info = &info;
 
-        info.GetMaps(hrmaps);
+        info.GetMaps(hrmaps, master);
 
         index.m_AnnotLocationIndex = 0;
 
@@ -727,6 +741,7 @@ void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
+    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -740,7 +755,7 @@ void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
         size_t keys_begin = m_ObjectIndex.GetKeys().size();
         index.m_AnnotObject_Info = &info;
 
-        info.GetMaps(hrmaps);
+        info.GetMaps(hrmaps, master);
         index.m_AnnotLocationIndex = 0;
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
@@ -779,6 +794,7 @@ void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
+    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -792,7 +808,7 @@ void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
         size_t keys_begin = m_ObjectIndex.GetKeys().size();
         index.m_AnnotObject_Info = &info;
 
-        info.GetMaps(hrmaps);
+        info.GetMaps(hrmaps, master);
         index.m_AnnotLocationIndex = 0;
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
@@ -838,6 +854,7 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
+    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -845,7 +862,7 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
     size_t keys_begin = m_ObjectIndex.GetKeys().size();
     index.m_AnnotObject_Info = &info;
 
-    info.GetMaps(hrmaps);
+    info.GetMaps(hrmaps, master);
     index.m_AnnotLocationIndex = 0;
 
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
@@ -916,12 +933,15 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
     const CSeq_table& feat_table = m_Object->GetData().GetSeq_table();
     m_Table_Info = new CSeqTableInfo(feat_table);
     
+    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
+
     if ( !m_Table_Info->IsFeatTable() ) {
         // index whole Seq-table
         m_ObjectIndex.ReserveMapSize(1);
         SAnnotObject_Key key;
         SAnnotObject_Index index;
         CHandleRangeMap hrmap;
+        hrmap.SetMasterSeq(master);
         CTSEAnnotObjectMapper mapper(tse, GetName());
         CAnnotObject_Info& info = m_ObjectIndex.GetInfos().front();
         if ( info.IsRemoved() ) {
@@ -979,7 +999,6 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
-    vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
 
@@ -1004,6 +1023,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
             if ( loc.IsSet() ) { // if this Seq-loc field is set
                 if ( loc.IsRealLoc() ) { // full Seq-loc object
                     CHandleRangeMap hrmap;
+                    hrmap.SetMasterSeq(master);
                     hrmap.AddLocation(*loc.GetLoc(row));
                     bool multi_id = hrmap.GetMap().size() > 1;
                     ITERATE ( CHandleRangeMap, hrit, hrmap ) {
@@ -1158,13 +1178,14 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
+    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
 
     index.m_AnnotObject_Info = &info;
 
-    info.GetMaps(hrmaps);
+    info.GetMaps(hrmaps, master);
     index.m_AnnotLocationIndex = 0;
     size_t keys_begin = m_ObjectIndex.GetKeys().size();
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
@@ -1236,7 +1257,7 @@ void CSeq_annot_Info::x_RemapAnnotObject(CAnnotObject_Info& info)
 
     index.m_AnnotObject_Info = &info;
 
-    info.GetMaps(hrmaps);
+    info.GetMaps(hrmaps, master);
     index.m_AnnotLocationIndex = 0;
     size_t keys_begin = m_ObjectIndex.GetKeys().size();
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {

@@ -719,6 +719,27 @@ CTSE_Info::FindMatchingBioseq(const CSeq_id_Handle& id) const
 }
 
 
+CConstRef<CBioseq_Info>
+CTSE_Info::GetSegSetMaster(void) const
+{
+    for ( CConstRef<CSeq_entry_Info> entry(this); entry->IsSet(); ) {
+        const CBioseq_set_Info& seqset = entry->GetSet();
+        CConstRef<CSeq_entry_Info> first = seqset.GetFirstEntry();
+        if ( !first ) {
+            break;
+        }
+        if ( seqset.GetClass() == CBioseq_set::eClass_segset ) {
+            if ( first->IsSeq() ) {
+                return ConstRef(&first->GetSeq());
+            }
+            break;
+        }
+        entry = first;
+    }
+    return null;
+}
+
+
 SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
 {
     SSeqMatch_TSE ret;

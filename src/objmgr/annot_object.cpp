@@ -375,22 +375,23 @@ const CObject* CAnnotObject_Info::GetObjectPointer(void) const
 }
 
 
-void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
+void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps,
+                                const CMasterSeqSegments* master) const
 {
     _ASSERT(IsRegular());
     switch ( Which() ) {
     case C_Data::e_Ftable:
-        x_ProcessFeat(hrmaps, *GetFeatFast());
+        x_ProcessFeat(hrmaps, *GetFeatFast(), master);
         break;
     case C_Data::e_Graph:
-        x_ProcessGraph(hrmaps, *GetGraphFast());
+        x_ProcessGraph(hrmaps, *GetGraphFast(), master);
         break;
     case C_Data::e_Align:
     {
         const CSeq_align& align = GetAlign();
         // TODO: separate alignment locations
         hrmaps.clear();
-        x_ProcessAlign(hrmaps, align);
+        x_ProcessAlign(hrmaps, align, master);
         break;
     }
     case C_Data::e_Locs:
@@ -411,6 +412,7 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         if ( region ) {
             hrmaps.resize(1);
             hrmaps[0].clear();
+            hrmaps[0].SetMasterSeq(master);
             hrmaps[0].AddLocation(*region);
         }
         break;
@@ -422,22 +424,27 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
 
 /* static */
 void CAnnotObject_Info::x_ProcessFeat(vector<CHandleRangeMap>& hrmaps,
-                                      const CSeq_feat& feat) 
+                                      const CSeq_feat& feat,
+                                      const CMasterSeqSegments* master) 
 {
     hrmaps.resize(feat.IsSetProduct()? 2: 1);
     hrmaps[0].clear();
+    hrmaps[0].SetMasterSeq(master);
     hrmaps[0].AddLocation(feat.GetLocation());
     if ( feat.IsSetProduct() ) {
         hrmaps[1].clear();
+        hrmaps[1].SetMasterSeq(master);
         hrmaps[1].AddLocation(feat.GetProduct());
     }
 }
 /* static */
 void CAnnotObject_Info::x_ProcessGraph(vector<CHandleRangeMap>& hrmaps,
-                                      const CSeq_graph& graph) 
+                                       const CSeq_graph& graph,
+                                       const CMasterSeqSegments* master) 
 {
     hrmaps.resize(1);
     hrmaps[0].clear();
+    hrmaps[0].SetMasterSeq(master);
     hrmaps[0].AddLocation(graph.GetLoc());
 }
 
@@ -546,7 +553,8 @@ void CAnnotObject_Info::x_Locs_AddFeatSubtype(int ftype,
 
 /* static */
 void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
-                                       const CSeq_align& align)
+                                       const CSeq_align& align,
+                                       const CMasterSeqSegments* master)
 {
     //### Check the implementation.
     switch ( align.GetSegs().Which() ) {
@@ -586,6 +594,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     if ( (*it)->IsSetStrands() ) {
                         loc.SetInt().SetStrand((*it)->GetStrands()[row]);
                     }
+                    hrmaps[row].SetMasterSeq(master);
                     hrmaps[row].AddLocation(loc);
                 }
             }
@@ -631,6 +640,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     if ( denseg.IsSetStrands() ) {
                         loc.SetInt().SetStrand(denseg.GetStrands()[seg*dim + row]);
                     }
+                    hrmaps[row].SetMasterSeq(master);
                     hrmaps[row].AddLocation(loc);
                 }
             }
@@ -657,6 +667,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                         if ( row_it.GetStrand() != eNa_strand_unknown ) {
                             loc.SetInt().SetStrand(row_it.GetStrand());
                         }
+                        hrmaps[row].SetMasterSeq(master);
                         hrmaps[row].AddLocation(loc);
                     }
                 }
@@ -693,6 +704,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                         if ( packed.IsSetStrands() ) {
                             loc.SetInt().SetStrand(packed.GetStrands()[seg*dim + row]);
                         }
+                        hrmaps[row].SetMasterSeq(master);
                         hrmaps[row].AddLocation(loc);
                     }
                 }
@@ -704,7 +716,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             const CSeq_align::C_Segs::TDisc& disc =
                 align.GetSegs().GetDisc();
             ITERATE ( CSeq_align_set::Tdata, it, disc.Get() ) {
-                x_ProcessAlign(hrmaps, **it);
+                x_ProcessAlign(hrmaps, **it, master);
             }
             break;
         }
@@ -732,6 +744,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     else if ( spliced.IsSetGenomic_strand() ) {
                         loc.SetInt().SetStrand(spliced.GetGenomic_strand());
                     }
+                    hrmaps[1].SetMasterSeq(master);
                     hrmaps[1].AddLocation(loc);
                 }
                 const CSeq_id* ex_prod_id = ex.IsSetProduct_id() ?
@@ -751,6 +764,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     else if ( spliced.IsSetProduct_strand() ) {
                         loc.SetInt().SetStrand(spliced.GetProduct_strand());
                     }
+                    hrmaps[0].SetMasterSeq(master);
                     hrmaps[0].AddLocation(loc);
                 }
             }
@@ -796,6 +810,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     loc.SetInt().SetId().Assign(aln_row.GetFirst_id());
                     loc.SetInt().SetFrom(aln_row.GetFirst_starts()[seg]);
                     loc.SetInt().SetTo(aln_row.GetFirst_starts()[seg] + len - 1);
+                    hrmaps[row].SetMasterSeq(master);
                     hrmaps[row].AddLocation(loc);
                     loc.SetInt().SetId().Assign(aln_row.GetSecond_id());
                     loc.SetInt().SetFrom(aln_row.GetSecond_starts()[seg]);

@@ -41,7 +41,30 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_loc;
+class CSeqMap;
+class CBioseq_Info;
 
+class CMasterSeqSegments : public CObject {
+public:
+    CMasterSeqSegments(const CBioseq_Info& seq);
+    ~CMasterSeqSegments(void);
+
+    int FindSeg(const CSeq_id_Handle& h) const;
+    bool GetMinusStrand(int seg) const;
+    const CSeq_id_Handle& GetHandle(int seg) const;
+
+protected:
+    typedef pair<CSeq_id_Handle, bool> TSeg;
+    typedef vector<TSeg> TSegSet;
+    typedef map<CSeq_id_Handle, int> TId2Seg;
+
+    TSegSet m_SegSet;
+    TId2Seg m_Id2Seg;
+                       
+private:
+    CMasterSeqSegments(const CMasterSeqSegments&);
+    void operator=(const CMasterSeqSegments&);
+};
 
 // Seq_loc substitution for internal use by iterators and data sources
 class NCBI_XOBJMGR_EXPORT CHandleRangeMap
@@ -57,9 +80,17 @@ public:
 
     CHandleRangeMap& operator= (const CHandleRangeMap& rmap);
 
+    struct SAddState {
+        typedef CHandleRange::TRange TRange;
+
+        CSeq_id_Handle  m_PrevId;
+        ENa_strand      m_PrevStrand;
+        TRange          m_PrevRange;
+    };
+    
     // Add all ranges for each seq-id from a seq-loc
     void AddLocation(const CSeq_loc& loc);
-    void AddLocation(const CSeq_loc& loc, bool more_before, bool more_after);
+    void AddLocation(const CSeq_loc& loc, SAddState& state);
     // Add range substituting with handle "h"
     void AddRange(const CSeq_id_Handle& h,
                   const TRange& range, ENa_strand strand);
@@ -88,63 +119,28 @@ public:
                   ENa_strand strand = eNa_strand_unknown);
     void AddRange(const CSeq_id& id,
                   const TRange& range, ENa_strand strand = eNa_strand_unknown);
-
+    
     void AddRange(const CSeq_id_Handle& h,
                   const TRange& range, ENa_strand strand,
-                  bool more_before, bool more_after);
+                  SAddState& state);
     void AddRange(const CSeq_id& id,
                   const TRange& range, ENa_strand strand,
-                  bool more_before, bool more_after);
+                  SAddState& state);
     void AddRange(const CSeq_id& id,
                   TSeqPos from, TSeqPos to, ENa_strand strand,
-                  bool more_before, bool more_after);
+                  SAddState& state);
+
+    void SetMasterSeq(const CMasterSeqSegments* master_seq) {
+        m_MasterSeq = master_seq;
+    }
 
 private:
     // Split the location and add range lists to the locmap
     void x_ProcessLocation(const CSeq_loc& loc);
 
     TLocMap m_LocMap;
+    CConstRef<CMasterSeqSegments> m_MasterSeq;
 };
-
-
-inline
-void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
-                               const TRange& range, ENa_strand strand)
-{
-    AddRange(h, range, strand, false, false);
-}
-
-
-inline
-void CHandleRangeMap::AddRange(const CSeq_id& id,
-                               const TRange& range, ENa_strand strand)
-{
-    AddRange(id, range, strand, false, false);
-}
-
-
-inline
-void CHandleRangeMap::AddRange(const CSeq_id& id,
-                               TSeqPos from, TSeqPos to, ENa_strand strand,
-                               bool more_before, bool more_after)
-{
-    AddRange(id, TRange(from, to), strand, more_before, more_after);
-}
-
-
-inline
-void CHandleRangeMap::AddRange(const CSeq_id& id,
-                               TSeqPos from, TSeqPos to, ENa_strand strand)
-{
-    AddRange(id, from, to, strand, false, false);
-}
-
-
-inline
-void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
-{
-    AddLocation(loc, false, false);
-}
 
 
 END_SCOPE(objects)
