@@ -37,6 +37,7 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/hgvs/hgvs_parser.hpp>
+#include <objtools/hgvs/variation_util.hpp>
 
 #include <boost/test/parameterized_test.hpp>
 
@@ -57,6 +58,7 @@ public:
       : m_feat(NULL)
       , m_parser(parser)
       , m_out(out)
+      , m_convert_to_precursor(false)
     {
         LOG_POST("Creating test-case for expression");
         string s1("");
@@ -71,6 +73,11 @@ public:
         if(s1 != "_THROWS") {
             m_throw_str = "";
         }
+
+        if(s1 == "_CONVERT_TO_PRECURSOR") {
+            m_convert_to_precursor = true;
+        }
+
         NStr::TruncateSpacesInPlace(m_expr);
         NStr::TruncateSpacesInPlace(m_comment);
         NStr::TruncateSpacesInPlace(m_throw_str);
@@ -82,6 +89,7 @@ public:
       , m_feat(&feat)
       , m_parser(parser)
       , m_out(out)
+      , m_convert_to_precursor(false)
     {
         LOG_POST("Creating test-case for feature");
         m_expr = m_feat->GetData().GetVariation().GetName();
@@ -98,7 +106,13 @@ public:
         try {
             LOG_POST("Parsing " << m_expr);
             feat = m_parser->AsVariationFeat(m_expr);
-            LOG_POST("Parsed " << m_expr);
+
+            if(m_convert_to_precursor) {
+                LOG_POST("Converting to precursor");
+                CVariationUtil u(m_parser->SetScope());
+                feat = u.ProtToPrecursor(*feat);
+            }
+
             LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\t" << "OK");
 
             if(m_throw_str != "") {
@@ -107,7 +121,7 @@ public:
 
 
         } catch(CException& e) {
-            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\t" << e.GetMsg());
+            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\t" << "FAILED:" << e.GetMsg());
 
 
             if(m_throw_str != "") {
@@ -117,6 +131,8 @@ public:
                     BOOST_CHECK_MESSAGE(false, "Caught wrong exception");
                 }
             } else {
+                e.GetStackTrace()->Write(NcbiCerr);
+                NcbiCerr << "\n";
                 BOOST_REQUIRE_NO_THROW(NCBI_RETHROW_SAME(e, ""));
             }
         }
@@ -144,12 +160,10 @@ public:
     string m_expr;
     string m_comment;
     string m_throw_str;
-    bool m_do_remap;
-
     CConstRef<CSeq_feat> m_feat;
-    CRef<CScope> m_scope;
     CRef<CHgvsParser> m_parser;
     CNcbiOstream& m_out;
+    bool m_convert_to_precursor;
 };
 
 CRef<CSeq_loc> CreateLoc(const string& id, TSeqPos from = kInvalidSeqPos, TSeqPos to = kInvalidSeqPos, ENa_strand strand = eNa_strand_unknown)
@@ -168,6 +182,9 @@ CRef<CSeq_loc> CreateLoc(const string& id, TSeqPos from = kInvalidSeqPos, TSeqPo
 
 NCBITEST_INIT_TREE()
 {
+    CException::SetStackTraceLevel(eDiag_Error);
+    SetDiagPostLevel(eDiag_Warning);
+
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);

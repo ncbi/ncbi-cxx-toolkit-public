@@ -43,6 +43,7 @@
 #include <boost/spirit/include/classic_ast.hpp>
 #include <boost/spirit/include/classic_parse_tree.hpp>
 #include <boost/spirit/include/classic_tree_to_xml.hpp>
+
 using namespace BOOST_SPIRIT_CLASSIC_NS;
 #else
 //older boost
@@ -86,18 +87,21 @@ public:
        : m_scope(&scope)
     {}
 
-    CRef<CSeq_feat> AsVariationFeat(const string& hgvs_expression);
+    enum EOpFlags
+    {
+        fOpFlags_RelaxedAA = 1 << 0, ///< try assumbing all-uppercase three-letter AA representation
+        fOpFlags_Default = fOpFlags_RelaxedAA
+    };
+    typedef int TOpFlags;
+
+
+    CRef<CSeq_feat> AsVariationFeat(const string& hgvs_expression, TOpFlags = fOpFlags_Default);
     string AsHgvsExpression(const CSeq_feat& feat);
 
-    /*!
-     * Create remapped copy of the variation feat via given alignment
-     * The seq-locs that are
-     * in scope for remapping: feat.location, variation-ref.location
-     * and the recursive counterparts, Variation-inst.delta.seq.loc
-     * where the id of the loc is also represented in the location
-     * of the parent variation-ref.
-     */
-    CRef<CSeq_feat> Remap(const CSeq_feat& variation_feat, const CSeq_align& aln);
+    CScope& SetScope()
+    {
+        return *m_scope;
+    }
 
     class CHgvsParserException : public CException
     {
@@ -702,33 +706,11 @@ private:
     static CRef<CVariation_ref>  x_unwrap_iff_singleton(CVariation_ref& v);
 
 
-    /*!
-     * Calculate location of variation-sets as union of the members.
-     * If all members have the same location, their locations are reset
-     * (recorded only at the set level)
-     */
-    static void x_normalize_locs_in_place(CVariation_ref& v);
-    static void x_denormalize_locs_in_place(CVariation_ref& v);
-
-
-    /*!
-     * Apply offsets to the variation's location (variation must be inst)
-     * E.g. the original variation could be a transcript location with offsets specifying intronic location.
-     * After original transcript lociation is remapped, the offsets are to be applied to the remapped location
-     * to get absolute offset-free genomic location
-     */
-    static void x_resolve_intronic_offsets(CVariation_ref& v);
-
-
-    /*!
-     * If start|stop don't fall into an exon, adjust start|stop to the closest exon boundary and add offset to inst.
-     * This is to be applied before remapping a genomic variation to transcript coordinates
-     */
-    static void x_add_intronic_offsets(CVariation_ref& v, const CSpliced_seg& ss);
-
-
     ///Convert HGVS amino-acid code to ncbieaa
     static string s_hgvsaa2ncbieaa(const string& hgvsaa);
+
+    ///Convert non-HGVS compliant all-uppercase AAs to UpLow, e.g. ILECYS ->IleCys
+    static string s_hgvsUCaa2hgvsUL(const string& hgvsaa);
 
 private:
     //functions to create hgvs expression from a variation-ref
@@ -776,6 +758,9 @@ private:
 
     string x_SeqLiteralToStr(const CSeq_literal& literal, bool flip_strand);
 
+
+
+    static CRef<CVariation_ref> s_ProtToCdna(const CVariation_ref& vr, CScope& scope);
 
 private:
     CRef<CScope> m_scope;
