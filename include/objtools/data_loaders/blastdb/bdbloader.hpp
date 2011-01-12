@@ -38,7 +38,6 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objtools/data_loaders/blastdb/blastdb_adapter.hpp>
-#include <objmgr/impl/tse_chunk_info.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -164,7 +163,9 @@ public:
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 protected:
     /// TPlace is a Seq-id or an integer id, this data loader uses the former.
-    typedef CTSE_Chunk_Info::TPlace         TPlace;
+    typedef int TBioseq_setId;
+    typedef CSeq_id_Handle TBioseqId;
+    typedef pair<TBioseqId, TBioseq_setId> TPlace;
     
     typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;

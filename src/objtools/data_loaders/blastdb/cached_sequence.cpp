@@ -42,6 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

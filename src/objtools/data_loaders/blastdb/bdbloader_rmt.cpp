@@ -42,6 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <corelib/plugin_manager_impl.hpp>
 #include "remote_blastdb_adapter.hpp"
 #include <objects/seq/Seq_literal.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 
 //=======================================================================
 // BlastDbDataLoader Public interface 

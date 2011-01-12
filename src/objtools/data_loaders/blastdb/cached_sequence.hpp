@@ -39,6 +39,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CSeq_literal;
+
 /// Manages a TSE and its subordinate chunks for all implementations of
 /// the IBlastDbAdapter interface
 class CCachedSequence : public CObject {
