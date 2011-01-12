@@ -267,10 +267,12 @@ PC-AssayTargetInfo ::= SEQUENCE {
    name                    VisibleString,                     -- Molecular name of target
    mol-id                  INTEGER,                           -- NCBI database identifier of the target molecule
    molecule-type           INTEGER {                          -- Assay Target Type
-                               protein            (1),
-                               dna                (2),
-                               rna                (3),
-                               other-biopolymer   (4)
+                               protein            (1),        -- mol-id: NCBI Protein GI 
+                               dna                (2),        -- mol-id: NCBI Nucleotide GI
+                               rna                (3),        -- mol-id: NCBI Nucleotide GI
+                               gene               (4),        -- mol-id: NCBI Gene ID
+                               biosystem          (5),        -- mol-id: NCBI BioSystems ID
+                               other              (255)
                            }                DEFAULT protein,
    organism                BioSource               OPTIONAL,  -- Target Organism
    descr                   VisibleString           OPTIONAL,  -- Target Description  (e.g., cellular functionality and location)
@@ -391,8 +393,8 @@ PC-ResultType ::= SEQUENCE {
                            pmid  (1),                       -- PubMed ID
                            mmdb  (2),                       -- MMDB ID
                            url   (3),                       -- indicate  TID data is a url that provides supplementary information
-                           protein-gi (4),                  -- GenBank General ID for a Protein
-                           nucleotide-gi (5),               -- GenBank General ID for a Nucleotide 
+                           protein-gi (4),                  -- GenBank General ID (GI) for a Protein
+                           nucleotide-gi (5),               -- GenBank General ID (GI) for a Nucleotide 
                            taxonomy (6),                    -- Taxonomy ID for an Organism
                            mim(7),                          -- MIM, Mendelian Inheritance in Man, ID 
                            gene(8),                         -- Entrez Gene ID
@@ -400,12 +402,14 @@ PC-ResultType ::= SEQUENCE {
                            aid (10),                        -- PubChem BioAssay ID, may be used in 'Summary' assay
                            sid (11),                        -- PubChem Substance ID, may be used in 'Summary' assay 
                            cid (12),                        -- PubChem Compound ID 
-                           protein-target-gi (13),          -- GenBank General ID for a Protein target
-                           nucleotide-target-gi (14),       -- GenBank General ID for a Nucleotide target 
+                           protein-target-gi (13),          -- GenBank General ID (GI) for a Protein target
+                           biosystems-target-id (14),       -- NCBI BioSystems ID 
                            target-name (15),                -- target name
                            target-descr (16),               -- brief target description 
                            target-tax-id (17),              -- NCBI Taxonomy ID for target molecule 
-                           gene-target-id (18)              -- NCBI Gene ID for a gene target 
+                           gene-target-id (18),             -- NCBI Gene ID for a gene target 
+                           dna-nucleotide-target-gi (19),   -- GenBank General ID (GI) for a DNA Nucleotide target 
+                           rna-nucleotide-target-gi (20)    -- GenBank General ID (GI) for a RNA Nucleotide target 
                      }   OPTIONAL                           -- treat substance associated cross-reference as regular TID
                                                             -- web servers would make a link 
                                                             -- to the corresponding record in Entrez databases
