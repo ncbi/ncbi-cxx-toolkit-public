@@ -65,6 +65,10 @@ public:
     //  Remove all previously loaded type mappings.
     static void Reset() { m_stdAnnotTypeData.clear(); }
 
+    //  Return true if any standard types have been loaded.
+    static bool HasTypeData() { return (m_stdAnnotTypeData.size() > 0); }
+
+    static const TStandardTypesData& GetAllTypeData() { return m_stdAnnotTypeData;}
 
     //  Return true if 'type' is a key in m_stdAnnotTypeData.
     static bool IsValidType(int type);
