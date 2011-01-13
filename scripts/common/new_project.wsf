@@ -183,6 +183,7 @@
             usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
             usage_str += "    [-i]        -- enter the data interactively\n";
+            usage_str += "    [-noopen]   -- do not open generated solution in IDE\n";
             usage_str += "    [-ams yes|no]  -- automatically map network drive S:\n";
             usage_str += "        Generated solution uses libraries from a network location:\n";
             usage_str += "            " + GetDefaultLibFolder() + "\n";
@@ -814,6 +815,9 @@
         function LoadSolution(oShell, oTree, oTask)
         {
             AutoMountS(oTask);
+            if ( GetFlagValue(WScript.Arguments, "-noopen", false)) {
+                return;
+            }
             var sln_path = " \"";
             if ( oTask.DllBuild ) {
                 sln_path += oTree.CompilersBranchDll;
