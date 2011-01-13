@@ -4057,7 +4057,7 @@ void CDisplaySeqalign::x_PreProcessSingleAlign(CSeq_align_set::Tdata::const_iter
     CConstRef<CSeq_id> subid;
 
     string toolUrl;
-    if(multipleSeqs > 1 && (m_AlignOption & eHtml))  {
+    if(multipleSeqs && (m_AlignOption & eHtml))  {
         //actually this is needed for long sequences only
         toolUrl = m_Reg->Get(m_BlastType, "TOOL_URL");        
     }
