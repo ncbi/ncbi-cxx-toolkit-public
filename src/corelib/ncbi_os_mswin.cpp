@@ -40,32 +40,33 @@ BEGIN_NCBI_SCOPE
 
 string CWinSecurity::GetUserName(void)
 {
-    char  name[UNLEN + 1];
+    TXChar  name[UNLEN + 1];
     DWORD name_size = UNLEN + 1;
 
-    if ( !::GetUserNameA(name, &name_size) ) {
+    if ( !::GetUserName(name, &name_size) ) {
         return kEmptyStr;
     }
-    return name;
+    return _T_STDSTRING(name);
 }
 
 
 PSID CWinSecurity::GetUserSID(const string& username)
 {
-    string x_username = username.empty() ? GetUserName() : username;
-    if ( x_username.empty() ) {
+    string t_username = username.empty() ? GetUserName() : username;
+    if ( t_username.empty() ) {
         return NULL;
     }
+    TXString x_username( _T_XSTRING(t_username));
 
     PSID         sid         = NULL;
     DWORD        sid_size    = 0;
-    char*        domain      = NULL;
+    TXChar*      domain      = NULL;
     DWORD        domain_size = 0;
     SID_NAME_USE use         = SidTypeUnknown;
 
     try {
         // First call to LookupAccountName to get the buffer sizes
-        BOOL ret = LookupAccountNameA(NULL, x_username.c_str(),
+        BOOL ret = LookupAccountName(NULL, x_username.c_str(),
                                      sid, &sid_size,
                                      domain, &domain_size, &use);
         if ( !ret  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
@@ -73,12 +74,12 @@ PSID CWinSecurity::GetUserSID(const string& username)
         }
         // Reallocate memory for the buffers
         sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
-        domain = (char*)malloc(domain_size);
+        domain = (TXChar*)malloc(domain_size * sizeof(TXChar));
         if ( !sid  || !domain ) {
             throw(0);
         }
         // Second call to LookupAccountName to get the account info
-        ret = LookupAccountNameA(NULL, x_username.c_str(),
+        ret = LookupAccountName(NULL, x_username.c_str(),
                                 sid, &sid_size,
                                 domain, &domain_size, &use);
         if ( !ret ) {
@@ -111,13 +112,13 @@ bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
     // Accordingly MSDN max account name size is 20, domain name size is 256.
     #define MAX_ACCOUNT_LEN  256
 
-    char  account_name[MAX_ACCOUNT_LEN];
-    char  domain_name [MAX_ACCOUNT_LEN];
-    DWORD account_size = MAX_ACCOUNT_LEN;
-    DWORD domain_size  = MAX_ACCOUNT_LEN;
+    TXChar account_name[MAX_ACCOUNT_LEN];
+    TXChar domain_name [MAX_ACCOUNT_LEN];
+    DWORD  account_size = MAX_ACCOUNT_LEN;
+    DWORD  domain_size  = MAX_ACCOUNT_LEN;
     SID_NAME_USE use   = SidTypeUnknown;
 
-    if ( !LookupAccountSidA(NULL /*local computer*/, sid, 
+    if ( !LookupAccountSid(NULL /*local computer*/, sid, 
                             account_name, (LPDWORD)&account_size,
                             domain_name,  (LPDWORD)&domain_size,
                             &use) ) {
@@ -125,9 +126,9 @@ bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
     }
     // Save account information
     if ( account )
-        *account = account_name;
+        *account = _T_STDSTRING(account_name);
     if ( domain )
-        *domain = domain_name;
+        *domain = _T_STDSTRING(domain_name);
 
     return true;
 }
@@ -186,8 +187,8 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
     PSID sid_group;
     PSECURITY_DESCRIPTOR sd = NULL;
 
-    if ( GetNamedSecurityInfoA(
-            (LPSTR)objname.c_str(), objtype,
+    if ( GetNamedSecurityInfo(
+            (LPTSTR)(_T_XCSTRING(objname)), objtype,
             OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
             &sid_owner, &sid_group, NULL, NULL, &sd )
             != ERROR_SUCCESS ) {
@@ -230,9 +231,9 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
     s_EnablePrivilege(token, SE_RESTORE_NAME);
     s_EnablePrivilege(token, SE_BACKUP_NAME);
 
-    PSID  sid     = NULL;
-    char* domain  = NULL;
-    bool  success = true;
+    PSID    sid     = NULL;
+    TXChar* domain  = NULL;
+    bool    success = true;
 
     try {
 
@@ -245,7 +246,7 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
         DWORD        domain_size = 0;
         SID_NAME_USE use  = SidTypeUnknown;
         BOOL res;
-        res = LookupAccountNameA(NULL, owner.c_str(),
+        res = LookupAccountName(NULL, _T_XCSTRING(owner),
                                 NULL, &sid_size, 
                                 NULL, &domain_size, &use);
         if ( !res  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER )
@@ -253,13 +254,13 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
 
         // Reallocate memory for the buffers
         sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
-        domain = (char*)malloc(domain_size);
+        domain = (TXChar*)malloc(domain_size * sizeof(TXChar));
         if ( !sid  || !domain ) {
             throw(0);
         }
 
         // Second call to LookupAccountName to get the account info
-        if ( !LookupAccountNameA(NULL, owner.c_str(),
+        if ( !LookupAccountName(NULL, _T_XCSTRING(owner),
                                 sid, &sid_size, 
                                 domain, &domain_size, &use) ) {
             // Unknown local user
@@ -289,7 +290,7 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
             throw(0);
         }
         // Set new security information for the file object
-        if ( !SetFileSecurityA(filename.c_str(),
+        if ( !SetFileSecurity( _T_XCSTRING(filename),
                 (SECURITY_INFORMATION)(OWNER_SECURITY_INFORMATION), sd) ) {
             throw(0);
         }
@@ -322,7 +323,7 @@ PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)
     DWORD size               = 0;
     DWORD size_need          = 0;
 
-    if ( !GetFileSecurityA(path.c_str(), FILE_SECURITY_INFO,
+    if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
                           sid, size, &size_need) ) {
         if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
             return NULL;
@@ -333,7 +334,7 @@ PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)
             return NULL;
         }
         size = size_need;
-        if ( !GetFileSecurityA(path.c_str(), FILE_SECURITY_INFO,
+        if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
                               sid, size, &size_need) ) {
             return NULL;
         }
@@ -349,8 +350,8 @@ bool CWinSecurity::GetFileDACL(const string& strPath,
         return false;
     }
     DWORD dwRet = 0;
-    dwRet = GetNamedSecurityInfoA((LPSTR)strPath.c_str(), SE_FILE_OBJECT,
-                                 FILE_SECURITY_INFO,
+    dwRet = GetNamedSecurityInfo((LPTSTR)(_T_XCSTRING(strPath)),
+                                 SE_FILE_OBJECT, FILE_SECURITY_INFO,
                                  NULL, NULL, pDACL, NULL, pFileSD);
     if (dwRet != ERROR_SUCCESS) {
         pFileSD = NULL;
