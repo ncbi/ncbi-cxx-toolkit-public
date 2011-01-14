@@ -166,6 +166,8 @@ public:
         //< Composition-adjustment method from BLAST (comp_adjustment_method)
         eScore_CompAdjMethod,
 
+        //< percent coverage (0.0-100.0) of high quality region (high_quality_pct_coverage)
+        eScore_HighQualityPercentCoverage,
 
         //< generic percent identity is an alias for gapped percent identity
         //< (i.e., BLAST-style percent identity)
@@ -209,6 +211,11 @@ public:
     /// 'align_length'.  By default, this function computes an alignment length
     /// including all gap segments.
     TSeqPos         GetAlignLength(bool include_gaps = true) const;
+
+    /// Get the length of this alignment within a specified range
+    /// By default, this function computes an alignment length
+    /// including all gap segments.
+    TSeqPos         GetAlignLengthWithinRange(const TSeqRange &range, bool include_gaps = true) const;
 
     /// Get score
     bool GetNamedScore(const string& id, int &score) const;

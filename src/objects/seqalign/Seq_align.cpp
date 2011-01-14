@@ -51,6 +51,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <serial/iterator.hpp>
+#include <util/range_coll.hpp>
 
 // generated includes
 #include <objects/seqalign/Seq_align.hpp>
@@ -378,6 +379,7 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_PercentIdentity_Ungapped, "pct_identity_ungap"),
     TScoreNamePair(CSeq_align::eScore_PercentIdentity_GapOpeningOnly, "pct_identity_gapopen_only"),
     TScoreNamePair(CSeq_align::eScore_PercentCoverage, "pct_coverage"),
+    TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "high_quality_pct_coverage"),
     TScoreNamePair(CSeq_align::eScore_SumEValue,       "sum_e"),
     TScoreNamePair(CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method")
 };
@@ -1255,13 +1257,31 @@ TSeqPos CSeq_align::GetNumGapOpenings() const
     return s_GetGapCount(*this, false);
 }
 
+/// Get length of dense-seg alignment within range
+static inline TSeqPos s_DenseSegLength(const CDense_seg& ds,
+                                       CDense_seg::TNumseg seg,
+                                       const TSeqRange &range)
+{
+    if(range.IsWhole())
+        return ds.GetLens()[seg];
+
+    TSignedSeqPos start = ds.GetStarts()[seg * ds.GetDim()];
+    TSeqRange seg_range(start, start + ds.GetLens()[seg] - 1);
+    return seg_range.IntersectionWith(range).GetLength();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///
-/// calculate the length of our alignment
+/// calculate the length of our alignment within given range
 ///
 static size_t s_GetAlignmentLength(const CSeq_align& align,
+                                   const TSeqRange& range,
                                    bool ungapped)
 {
+    if(!ungapped && !range.IsWhole())
+        NCBI_THROW(CException, eUnknown,
+                "Can't calculate alignment length within a range including gaps");
+
     size_t len = 0;
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
@@ -1278,13 +1298,13 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                         }
                     }
                     if ( !is_gap_seg ) {
-                        len += ds.GetLens()[i];
+                        len += s_DenseSegLength(ds, i, range);
                     }
                 }
             } else {
                 for (size_t i = 0;  i < ds.GetLens().size();  ++i) {
-                    len += ds.GetLens()[i];
-                }
+                    len += s_DenseSegLength(ds, i, range);
+               }
             }
         }}
         break;
@@ -1292,12 +1312,17 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
     case CSeq_align::TSegs::e_Disc:
         ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter,
                  align.GetSegs().GetDisc().Get()) {
-            len += s_GetAlignmentLength(**iter, ungapped);
+            len += s_GetAlignmentLength(**iter, range, ungapped);
         }
         break;
 
     case CSeq_align::TSegs::e_Std:
         {{
+             if(!range.IsWhole())
+                 NCBI_THROW(CException, eUnknown,
+                            "Can't calculate alignment length within a range"
+                            "for standard seg representation");
+
              /// pass 1:
              /// find total ranges
              vector<TSeqPos> sizes;
@@ -1345,59 +1370,69 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
         ITERATE (CSpliced_seg::TExons, iter,
                  align.GetSegs().GetSpliced().GetExons()) {
             const CSpliced_exon& exon = **iter;
+            TSeqRange product_span;
+            if (exon.GetProduct_start().IsNucpos()) {
+                product_span.Set(exon.GetProduct_start().GetNucpos(),
+                                 exon.GetProduct_end().GetNucpos()-1);
+            } else if (exon.GetProduct_start().IsProtpos()) {
+                product_span.Set(exon.GetProduct_start().GetProtpos().GetAmin(),
+                                 exon.GetProduct_end().GetProtpos().GetAmin()-1);
+            } else {
+                NCBI_THROW(CException, eUnknown,
+                           "Spliced-exon is neirther nuc nor prot");
+            }
+            size_t exon_len;
             if (exon.IsSetParts()) {
+                CRangeCollection<TSeqPos> product_coverage;
+                TSeqPos part_start = product_span.GetFrom();
                 ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
                     const CSpliced_exon_chunk& chunk = **it;
+                    int part_len = 0;
+                    bool covered = false;
                     switch (chunk.Which()) {
                     case CSpliced_exon_chunk::e_Match:
-                        len += chunk.GetMatch();
+                        part_len = chunk.GetMatch();
+                        covered = true;
                         break;
 
                     case CSpliced_exon_chunk::e_Mismatch:
-                        len += chunk.GetMismatch();
+                        part_len = chunk.GetMismatch();
+                        covered = true;
                         break;
 
                     case CSpliced_exon_chunk::e_Diag:
-                        len += chunk.GetDiag();
+                        part_len = chunk.GetDiag();
+                        covered = true;
                         break;
 
                     case CSpliced_exon_chunk::e_Product_ins:
-                        if ( !ungapped ) {
-                            len += chunk.GetProduct_ins();
-                        }
+                        part_len = chunk.GetProduct_ins();
+                        covered = !ungapped;
                         break;
 
                     case CSpliced_exon_chunk::e_Genomic_ins:
-                        if ( !ungapped ) {
-                            len += chunk.GetGenomic_ins();
+                        if(!ungapped){
+                            part_len = chunk.GetGenomic_ins();
+                            covered = true;
                         }
                         break;
 
                     default:
                         break;
                     }
+                    if(covered)
+                        product_coverage += TSeqRange(part_start, part_start+part_len-1);
+                    part_start += part_len;
                 }
+                exon_len = product_coverage.IntersectWith(range).GetCoveredLength();
             } else {
-                size_t product_span = 0;
-                if (exon.GetProduct_start().IsNucpos()) {
-                    product_span =
-                        exon.GetProduct_end().GetNucpos() -
-                        exon.GetProduct_start().GetNucpos();
-                } else if (exon.GetProduct_start().IsProtpos()) {
-                    product_span =
-                        exon.GetProduct_end().GetProtpos().GetAmin() -
-                        exon.GetProduct_start().GetProtpos().GetAmin();
-                } else {
-                    NCBI_THROW(CException, eUnknown,
-                               "Spliced-exon is neirther nuc nor prot");
-                }
-
-                size_t genomic_span =
-                    exon.GetGenomic_end() - exon.GetGenomic_start();
-
-                len += max(genomic_span, product_span);
+                exon_len = product_span.IntersectWith(range).GetLength();
             }
+            len += exon_len;
         }
+        if(align.GetSegs().GetSpliced().GetProduct_type() == CSpliced_seg::eProduct_type_protein)
+            len *= 3;
+
         break;
 
     default:
@@ -1411,7 +1446,13 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
 
 TSeqPos CSeq_align::GetAlignLength(bool include_gaps) const
 {
-    return s_GetAlignmentLength(*this, !include_gaps );
+    return s_GetAlignmentLength(*this, TSeqRange::GetWhole(), !include_gaps );
+}
+
+
+TSeqPos CSeq_align::GetAlignLengthWithinRange(const TSeqRange &range, bool include_gaps) const
+{
+    return s_GetAlignmentLength(*this, range, !include_gaps );
 }
 
 

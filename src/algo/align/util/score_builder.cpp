@@ -44,6 +44,8 @@
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
@@ -494,49 +496,54 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
 /// calculate the percent coverage
 ///
 static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
-                                 double* pct_coverage)
+                                 const TSeqRange& range, double* pct_coverage)
 {
-    if (align.GetNamedScore(CSeq_align::eScore_PercentCoverage,
+    if (range.IsWhole() &&
+        align.GetNamedScore(CSeq_align::eScore_PercentCoverage,
                             *pct_coverage)) {
         return;
     }
 
-    size_t covered_bases = align.GetAlignLength(false /* don't include gaps */);
+    size_t covered_bases = align.GetAlignLengthWithinRange(range, false /* don't include gaps */);
     size_t seq_len = 0;
-    if (align.GetSegs().IsSpliced()  &&
-        align.GetSegs().GetSpliced().IsSetPoly_a()) {
-        seq_len = align.GetSegs().GetSpliced().GetPoly_a();
-
-        if (align.GetSegs().GetSpliced().IsSetProduct_strand()  &&
-            align.GetSegs().GetSpliced().GetProduct_strand() == eNa_strand_minus) {
-            if (align.GetSegs().GetSpliced().IsSetProduct_length()) {
-                seq_len = align.GetSegs().GetSpliced().GetProduct_length() - seq_len;
-            } else {
-                CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
-                seq_len = bsh.GetBioseqLength() - seq_len;
+    if(!range.IsWhole()){
+        seq_len = range.GetLength();
+    } else {
+        if (align.GetSegs().IsSpliced()  &&
+            align.GetSegs().GetSpliced().IsSetPoly_a()) {
+            seq_len = align.GetSegs().GetSpliced().GetPoly_a();
+    
+            if (align.GetSegs().GetSpliced().IsSetProduct_strand()  &&
+                align.GetSegs().GetSpliced().GetProduct_strand() == eNa_strand_minus) {
+                if (align.GetSegs().GetSpliced().IsSetProduct_length()) {
+                    seq_len = align.GetSegs().GetSpliced().GetProduct_length() - seq_len;
+                } else {
+                    CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
+                    seq_len = bsh.GetBioseqLength() - seq_len;
+                }
+            }
+    
+            if (align.GetSegs().GetSpliced().GetProduct_type() ==
+                CSpliced_seg::eProduct_type_protein) {
+                /// NOTE: alignment length is always reported in nucleotide
+                /// coordinates
+                seq_len *= 3;
             }
         }
-
-        if (align.GetSegs().GetSpliced().GetProduct_type() ==
-            CSpliced_seg::eProduct_type_protein) {
-            /// NOTE: alignment length is always reported in nucleotide
-            /// coordinates
-            seq_len *= 3;
-        }
-    }
-
-    if ( !seq_len ) {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
-        CBioseq_Handle subject_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
-        seq_len = bsh.GetBioseqLength();
-        if (bsh.IsAa() &&  !subject_bsh.IsAa() ) {
-            /// NOTE: alignment length is always reported in nucleotide
-            /// coordinates
-            seq_len *= 3;
-            if (align.GetSegs().IsStd()) {
-                /// odd corner case:
-                /// std-seg alignments of protein to nucleotide
-                covered_bases *= 3;
+    
+        if ( !seq_len ) {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
+            CBioseq_Handle subject_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
+            seq_len = bsh.GetBioseqLength();
+            if (bsh.IsAa() &&  !subject_bsh.IsAa() ) {
+                /// NOTE: alignment length is always reported in nucleotide
+                /// coordinates
+                seq_len *= 3;
+                if (align.GetSegs().IsStd()) {
+                    /// odd corner case:
+                    /// std-seg alignments of protein to nucleotide
+                    covered_bases *= 3;
+                }
             }
         }
     }
@@ -569,7 +576,17 @@ double CScoreBuilder::GetPercentCoverage(CScope& scope,
                                          const CSeq_align& align)
 {
     double pct_coverage = 0;
-    s_GetPercentCoverage(scope, align, &pct_coverage);
+    s_GetPercentCoverage(scope, align, TSeqRange::GetWhole(), &pct_coverage);
+    return pct_coverage;
+}
+
+
+double CScoreBuilder::GetPercentCoverage(CScope& scope,
+                                         const CSeq_align& align,
+                                         const TSeqRange& range)
+{
+    double pct_coverage = 0;
+    s_GetPercentCoverage(scope, align, range, &pct_coverage);
     return pct_coverage;
 }
 
@@ -924,8 +941,51 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
     case CSeq_align::eScore_PercentCoverage:
         {{
             double pct_coverage = 0;
-            s_GetPercentCoverage(scope, align, &pct_coverage);
+            s_GetPercentCoverage(scope, align, TSeqRange::GetWhole(), &pct_coverage);
             align.SetNamedScore("pct_coverage", pct_coverage);
+        }}
+        break;
+
+    case CSeq_align::eScore_HighQualityPercentCoverage:
+        {{
+            if(align.GetSegs().Which() == CSeq_align::TSegs::e_Std)
+                /// high-quality-coverage calculatino is not possbile for standard segs
+                break;
+
+            /// If we have annotation for a high-quality region, it is in a ftable named
+            /// "NCBI_GPIPE", containing a region Seq-feat named "alignable"
+            TSeqRange alignable_range;
+            CConstRef<CBioseq> query = scope.GetBioseqHandle(align.GetSeq_id(0)).GetCompleteBioseq();
+            if(query->CanGetAnnot())
+                ITERATE(CBioseq::TAnnot, annot_it, query->GetAnnot())
+                {
+                    if(!(*annot_it)->IsFtable())
+                        continue;
+
+                    string annot_name;
+                    if((*annot_it)->CanGetDesc())
+                        ITERATE(CSeq_annot::TDesc::Tdata, desc_it, (*annot_it)->GetDesc().Get())
+                            if((*desc_it)->IsName()){
+                                annot_name = (*desc_it)->GetName();
+                                break;
+                            }
+                    if(annot_name != "NCBI_GPIPE")
+                        continue;
+
+                    ITERATE(CSeq_annot::TData::TFtable, data_it, (*annot_it)->GetData().GetFtable())
+                        if((*data_it)->GetData().IsRegion() && (*data_it)->GetData().GetRegion() == "alignable")
+                        {
+                            alignable_range = (*data_it)->GetLocation().GetTotalRange();
+                            break;
+                        }
+
+                    if(alignable_range.NotEmpty()){
+                        double pct_coverage = 0;
+                        s_GetPercentCoverage(scope, align, alignable_range, &pct_coverage);
+                        align.SetNamedScore("high_quality_pct_coverage", pct_coverage);
+                        break;
+                    }
+                }
         }}
         break;
 
