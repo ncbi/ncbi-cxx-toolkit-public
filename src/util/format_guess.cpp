@@ -164,6 +164,46 @@ CFormatGuess::s_CheckOrder[] =
 };
 
 
+// This array must stay in sync with enum EFormat, but that's not
+// supposed to change in the middle anyway, so the explicit size
+// should suffice to avoid accidental skew.
+const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
+    "unknown",
+    "binary ASN.1",
+    "RepeatMasker",
+    "GFF/GTF",
+    "Glimmer3",
+    "AGP",
+    "XML",
+    "WIGGLE",
+    "BED",
+    "BED15",
+    "Newick",
+    "alignment",
+    "distance matrix",
+    "flat-file sequence",
+    "five-column feature table",
+    "SNP Markers",
+    "FASTA",
+    "text ASN.1",
+    "Taxplot",
+    "Phrap ACE",
+    "table"
+};
+
+inline const char*
+CFormatGuess::GetFormatName(EFormat format)
+{
+    unsigned int i = static_cast<unsigned int>(format);
+    if (i >= static_cast <unsigned int>(eFormat_max)) {
+        NCBI_THROW(CUtilException, eWrongData,
+                   "CFormatGuess::GetFormatName: out-of-range format value "
+                   + NStr::IntToString(i));
+    }
+    return sm_FormatNames[i];
+}
+
+
 //  ============================================================================
 //  Old style class interface:
 //  ============================================================================

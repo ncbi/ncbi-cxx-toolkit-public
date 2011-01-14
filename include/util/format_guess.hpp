@@ -142,6 +142,8 @@ public:
     static ESequenceType SequenceType(const char* str, unsigned length = 0,
                                       ESTStrictness strictness = eST_Default);
 
+    static const char* GetFormatName(EFormat format);
+
     //  ------------------------------------------------------------------------
     //  "Stateless" interface:
     //  Useful for checking for all formats in one simple call.
@@ -263,6 +265,7 @@ private:
     bool x_TestFormat(EFormat format, EMode mode);
 
     // data:
+    static const char* const sm_FormatNames[eFormat_max];
 protected:
     static int s_CheckOrder[];
     
