@@ -1861,10 +1861,12 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         const bool mbidxargs_set = CMbIndexArgs::HasBeenSet(args);
         const bool dbargs_set = CBlastDatabaseArgs::HasBeenSet(args);
         NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
-            if (dynamic_cast<CMbIndexArgs*>(&**arg) && mbidxargs_set) {
-                (*arg)->ExtractAlgorithmOptions(args, opts);
-            } else if (dynamic_cast<CBlastDatabaseArgs*>(&**arg) && dbargs_set) {
-                m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
+            if (dynamic_cast<CMbIndexArgs*>(&**arg)) {
+                if (mbidxargs_set)
+                    (*arg)->ExtractAlgorithmOptions(args, opts);
+            } else if (dynamic_cast<CBlastDatabaseArgs*>(&**arg)) {
+                if (dbargs_set)
+                    m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
             } else {
                 (*arg)->ExtractAlgorithmOptions(args, opts);
             }
