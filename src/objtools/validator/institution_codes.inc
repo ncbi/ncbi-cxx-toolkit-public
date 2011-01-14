@@ -6200,6 +6200,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VKM	c	All-Russian Collection of Microorganisms",
 "VKPM	c	Russian National Collection of Industrial Microorganisms",
 "VLA	s	Far Eastern Branch, Russian Academy of Sciences, Botany Department",
+"VLA<GBR>	s	Veterinary Laboratory Agency",
 "VM	s	Okresni vlastivedne muzeum",
 "VMIL	s	Virginia Military Institute, Biology Department",
 "VMKSC	s	Kearney State University, Vertebrate Museum",
