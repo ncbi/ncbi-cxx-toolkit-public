@@ -8697,9 +8697,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("Genome Coverage");
     required_fields.push_back("Sequencing Technology");
 
+    EDiagSev levels[] = { eDiag_Info, eDiag_Info, eDiag_Warning, eDiag_Warning, eDiag_Warning };
+
+    int i = 0;
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatMissingField",
+        expected_errors.push_back(new CExpectedError("good", levels[i], "BadStructuredCommentFormatMissingField",
                                   "Required field " + *it + " is missing"));
+        i++;
     }
 
     eval = validator.Validate(seh, options);
@@ -8719,11 +8723,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     size_t pos = 0;
     ITERATE(vector<string>, it, required_fields) {
         if (pos < required_fields.size() - 1) {
-            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatFieldOutOfOrder",
+            expected_errors.push_back(new CExpectedError("good", levels[pos], "BadStructuredCommentFormatFieldOutOfOrder",
                                       *it + " field is out of order"));
         }
         if (!NStr::Equal(*it, "Genome Coverage") && !NStr::Equal(*it, "Sequencing Technology")) {
-            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatInvalidFieldValue",
+            expected_errors.push_back(new CExpectedError("good", levels[pos], "BadStructuredCommentFormatInvalidFieldValue",
                                       "bad value is not a valid value for " + *it));
         }
         ++pos;
