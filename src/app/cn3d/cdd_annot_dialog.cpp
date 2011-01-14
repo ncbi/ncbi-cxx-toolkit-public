@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbireg.hpp>
 
 #include <objects/cdd/Align_annot.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -57,6 +56,8 @@
 #include <objects/cn3d/Cn3d_backbone_style.hpp>
 #include <objects/cn3d/Cn3d_general_style.hpp>
 #include <objects/cn3d/Cn3d_style_settings.hpp>
+
+#include <algo/structure/cd_utils/cuStdAnnotTypes.hpp>
 
 #include "remove_header_conflicts.hpp"
 
@@ -138,6 +139,12 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+
+//  This member is initialized from $CN3D_HOME/data/cdd_annot_types.ini; if 
+//  it is not present no predefined types or site names are available to the user. 
+static const string STD_ANNOT_TYPES_FILE = "cdd_annot_types.ini";
+
+
 // a "structure evidence" biostruc-annot-set has these qualities - basically, a specific
 // comment tag as the first entry in the set's description, and a 'name' descr in the feature set
 static const string STRUCTURE_EVIDENCE_COMMENT = "Used as Structure Evidence for CDD Annotation";
@@ -179,6 +186,7 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handl
     wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     dialogHandle(handle), structureSet(set), annotSet(set->GetCDDAnnotSet())
 {
+
     if (annotSet.Empty()) {
         Destroy();
         return;
@@ -191,6 +199,12 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handl
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
     SetClientSize(topSizer->GetMinSize());
+
+    //  Load the pre-defined type categories and descriptions
+    if (!ncbi::cd_utils::CStdAnnotTypes::HasTypeData()) {
+        string typeFile = GetDataDir() + STD_ANNOT_TYPES_FILE;
+        ncbi::cd_utils::CStdAnnotTypes::LoadTypes(typeFile);
+    }
 
     // set initial GUI state
     SetupGUIControls(0, 0);
@@ -331,16 +345,28 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
 
     // fill out annots listbox
+    string typeStr;
+    wxString descr;
     int pos = annots->GetScrollPos(wxVERTICAL);
     annots->Clear();
     CAlign_annot *selectedAnnot = NULL;
     CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end();
     for (a=annotSet->Set().begin(); a!=ae; ++a) {
-        if ((*a)->IsSetDescription())
-            annots->Append((*a)->GetDescription().c_str(), a->GetPointer());
-        else
-            annots->Append("(no description)", a->GetPointer());
+        descr = "(no description)";
+        if ((*a)->IsSetDescription() && (*a)->GetDescription().length() > 0) 
+            descr = (*a)->GetDescription().c_str();
+
+        //  The default type 0 ("other") is uninformative and not displayed.
+        if ((*a)->IsSetType() && ncbi::cd_utils::CStdAnnotTypes::GetTypeAsString((*a)->GetType(), typeStr)) {
+            if ((*a)->GetType() > 0) {
+                typeStr = "  [" + typeStr + " Site]";
+                descr += wxString(typeStr.c_str());
+            }
+        }
+
+        annots->Append(descr, a->GetPointer());
     }
+
     if (selectAnnot < (int) annots->GetCount())
         annots->SetSelection(selectAnnot);
     else if (annots->GetCount() > 0)
@@ -1143,7 +1169,6 @@ BEGIN_EVENT_TABLE(CDDTypedAnnotDialog, wxDialog)
     EVT_TEXT_ENTER  (-1,    CDDTypedAnnotDialog::OnChange)
 END_EVENT_TABLE()
 
-const string CDDTypedAnnotDialog::typesNamesIniFile = "cdd_annot_types.ini";
 CDDTypedAnnotDialog::TPredefinedSites CDDTypedAnnotDialog::predefinedSites;
 
 CDDTypedAnnotDialog::CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::CAlign_annot& initial, const string& title) :
@@ -1167,15 +1192,14 @@ CDDTypedAnnotDialog::CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cmbDescr, ID_CMB_DESCR, wxComboBox)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cbPutative, ID_CB_PUTATIVE, wxCheckBox)
 
-    //  Load the pre-defined type categories and descriptions
-    if (predefinedSites.empty()) {
-        string typeFile = GetDataDir() + typesNamesIniFile;
-        LoadTypes(typeFile);
+    //  For convenience, recast the standard annot type data as wxStrings
+    if (predefinedSites.empty() && ncbi::cd_utils::CStdAnnotTypes::HasTypeData()) {
+        PopulatePredefinedSitesMap();
     }
 
     //  Populate the wxChoice element
     if (!isTypeDataRead && predefinedSites.empty()) {
-        string message = "Predefined types & names are unavailable;\nonly annotations of type 'Other' may be created.\n\nCheck that the file '" + typesNamesIniFile + "' is present in the Cn3D 'data' directory.";
+        string message = "Predefined types & names are unavailable;\nonly annotations of type 'Other' may be created.\n\nCheck that the file '" + STD_ANNOT_TYPES_FILE + "' is present in the Cn3D 'data' directory.";
         wxMessageBox(message.c_str(), "Predefined Types/Names Unavailable", wxICON_EXCLAMATION | wxCENTRE, this);
     } else {
         cType->Clear();
@@ -1186,7 +1210,7 @@ CDDTypedAnnotDialog::CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::
 
     // Determine values with which to initialize the widgets.
     if (initial.IsSetType()) {
-        if (IsValidType(initial.GetType())) {
+        if (ncbi::cd_utils::CStdAnnotTypes::IsValidType(initial.GetType())) {
             type = initial.GetType();
         }
     }
@@ -1199,7 +1223,7 @@ CDDTypedAnnotDialog::CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::
             descr = descr.Mid(8);
             descr.Trim(false);
         }
-        isPredefDescr = IsPredefinedDescr(descr, predefType, predefTypeIndex);
+        isPredefDescr = ncbi::cd_utils::CStdAnnotTypes::IsPredefinedDescr(string(descr.c_str()), predefType, predefTypeIndex);
         if (isPredefDescr) {
             if (initial.IsSetType() && (type != predefType)) {
                 WARNINGMSG("CDDTypedAnnotDialog::CDDTypedAnnotDialog() - stored type inconsistent with descriptions's designated type");
@@ -1224,58 +1248,26 @@ CDDTypedAnnotDialog::CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::
     SetupGUIControls();
 }
 
-void CDDTypedAnnotDialog::LoadTypes(const string& filename)
+void CDDTypedAnnotDialog::PopulatePredefinedSitesMap()
 {
-    static const string ID("id");
-    static const int DEFAULT_ID(-1);
+    wxString typeName;
+    
+    const ncbi::cd_utils::TStandardTypesData& rawTypeData = ncbi::cd_utils::CStdAnnotTypes::GetAllTypeData();
+    ncbi::cd_utils::TStandardTypesData::const_iterator rtCit = rawTypeData.begin();
+    ncbi::cd_utils::TStandardTypesData::const_iterator rtCend = rawTypeData.end();
 
-    int id;
-    int accessFlags = (IRegistry::fCaseFlags | IRegistry::fInternalSpaces);
-    int readFlags = (IRegistry::fCaseFlags | IRegistry::fInternalSpaces);
-    string value;
-    list<string> categories, names;
-    set<string> valuesInAlphaOrder;
+    predefinedSites.clear();
+    for (; rtCit != rtCend; ++rtCit) {
+        typeName = wxString(rtCit->second.first.c_str());
+        const ncbi::cd_utils::TTypeNames& namesVector = rtCit->second.second;
 
-    //  Use CMemoryRegistry simply to leverage registry file format parser.
-    CMemoryRegistry dummyRegistry;
-    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(filename.c_str(), IOS_BASE::in | IOS_BASE::binary));
-    if (*iniIn) {
-
-        isTypeDataRead = true;
-
-        TRACEMSG("loading predefined annotation types " << filename);
-        dummyRegistry.Read(*iniIn, readFlags);
-        dummyRegistry.EnumerateSections(&categories, accessFlags);
-
-        //  Loop over all type categories
-        ITERATE (list<string>, cit, categories) {
-            if (*cit == kEmptyStr) continue;
-
-            //  'id' is assumed to be positive, and the id will be used to
-            //  define the position in the wxChoice element so it is important
-            //  the input file has consecutive id values starting from zero.
-            id = dummyRegistry.GetInt(*cit, ID, DEFAULT_ID, accessFlags, CMemoryRegistry::eReturn);
-            if (id > DEFAULT_ID) {
-                TTypeNamesPair& typeNamesPair = predefinedSites[id];
-                wxArrayString& values = typeNamesPair.second;
-                typeNamesPair.first = wxString(cit->c_str());
-
-                //  Get all named fields for this section.
-                dummyRegistry.EnumerateEntries(*cit, &names, accessFlags);
-
-                //  Get the value for each non-id named field; sort alphabetically
-                valuesInAlphaOrder.clear();
-                ITERATE (list<string>, eit, names) {
-                    if (*eit == ID || *eit == kEmptyStr) continue;
-                    value = dummyRegistry.GetString(*cit, *eit, kEmptyStr, accessFlags);
-                    if (value != kEmptyStr) {
-                        valuesInAlphaOrder.insert(value);
-                    }
-                }
-
-                ITERATE (set<string>, vit, valuesInAlphaOrder) {
-                    values.push_back(wxString(vit->c_str()));
-                }
+        if (rtCit->first == ncbi::cd_utils::CStdAnnotTypes::m_invalidType || rtCit->first < 0) {
+            WARNINGMSG("CDDTypedAnnotDialog::PopulatePredefinedSitesMap() - invalid code specified for type " << rtCit->second.first << "; skipped");
+        } else {
+            CDDTypedAnnotDialog::TTypeNamesPair& p = predefinedSites[rtCit->first];
+            p.first = typeName;
+            ITERATE (ncbi::cd_utils::TTypeNames, vit, namesVector) {
+                p.second.Add(vit->c_str());
             }
         }
     }
@@ -1392,13 +1384,16 @@ bool CDDTypedAnnotDialog::GetData(ncbi::objects::CAlign_annot* alignAnnot)
     //  This is tricky, though, since descriptions may contain capitalized
     //  substrings by convention (e.g., 'DNA binding site' and 'Cu binding site'
     //  are acceptible, but 'Active Site' should become 'active site').
-    wxString descrWx = wxString(descr.c_str());
     predefType = wxNOT_FOUND;
-    if (IsPredefinedDescr(descrWx, predefType, predefTypeIndex)) {
+    if (ncbi::cd_utils::CStdAnnotTypes::IsPredefinedDescr(descr, predefType, predefTypeIndex, true)) {
         isPredefDescr = true;
-    } else if (IsPredefinedDescr(descrWx.Lower(), predefType, predefTypeIndex)) {
-        NStr::ToLower(descr);
-        isPredefDescr = true;
+    } else if (ncbi::cd_utils::CStdAnnotTypes::IsPredefinedDescr(descr, predefType, predefTypeIndex, false)) {
+        //  For case-insensitive match, change 'descr' to have capitalization of the matched string.
+        ncbi::cd_utils::TTypeNames names;
+        if (ncbi::cd_utils::CStdAnnotTypes::GetTypeNames(predefType, names) && predefTypeIndex < (int) names.size()) {
+            descr = names[predefTypeIndex];
+            isPredefDescr = true;
+        }
     }
 
     //  If 'descr' corresponds to a predefined descriptions, ensure the 
@@ -1439,66 +1434,6 @@ void CDDTypedAnnotDialog::SetupGUIControls(void)
 {
 }
 
-unsigned int CDDTypedAnnotDialog::NumPredefinedDescrs(int type) const
-{
-    unsigned int n = 0;
-    TPredefinedSites::const_iterator cit = predefinedSites.find(type);
-    if (cit != predefinedSites.end()) {
-        n = cit->second.second.size();
-    }
-    return n;
-}
-
-bool CDDTypedAnnotDialog::IsValidType(int type) const
-{
-    TPredefinedSites::const_iterator cit = predefinedSites.find(type);
-    return (cit != predefinedSites.end());
-}
-
-bool CDDTypedAnnotDialog::IsPredefinedDescrForType(int type, const wxString& descr) const
-{
-    bool result = false;
-    TPredefinedSites::const_iterator cit = predefinedSites.find(type);
-    if (cit != predefinedSites.end()) {
-        const wxArrayString& as = cit->second.second;
-        for (wxArrayString::const_iterator asCit = as.begin(); asCit != as.end(); ++asCit) {
-            if (*asCit == descr) {
-                result = true;
-                break;
-            }
-        }
-    }
-    return result;
-}
-
-//  Return true if 'descr' is a predefined name for some type; return false otherwise.
-//  When found, 'type' is set to be the type code, and 'typeIndex' is its position
-//  in the corresponding wxArrayString.  When not found, 'type' and 'typeIndex' are
-//  set to wxNOT_FOUND.
-bool CDDTypedAnnotDialog::IsPredefinedDescr(const wxString& descr, int& type, int& typeIndex) const
-{
-    bool result = false;
-    int index;
-    TPredefinedSites::const_iterator pdsCit = predefinedSites.begin();
-    TPredefinedSites::const_iterator pdsEnd = predefinedSites.end();
-
-    type = wxNOT_FOUND;
-    typeIndex = wxNOT_FOUND;
-    for (; (pdsCit != pdsEnd) && !result; ++pdsCit) {
-        index = 0;
-        const wxArrayString& as = pdsCit->second.second;
-        for (wxArrayString::const_iterator asCit = as.begin(); asCit != as.end(); ++asCit, ++index) {
-            if (*asCit == descr) {
-                result = true;
-                type = pdsCit->first;
-                typeIndex = index;
-                break;
-            }
-        }
-    }
-    return result;
-}
-
 END_SCOPE(Cn3D)
 
 
@@ -1516,7 +1451,7 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     wxStaticBoxSizer *item2 = new wxStaticBoxSizer( item3, wxVERTICAL );
 
     wxString *strs4 = (wxString*) NULL;
-    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(200,100), 0, strs4, wxLB_SINGLE );
+    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(300,100), 0, strs4, wxLB_SINGLE|wxHSCROLL|wxLB_NEEDED_SB );
     item2->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxGridSizer *item5 = new wxGridSizer( 2, 0, 0, 0 );
