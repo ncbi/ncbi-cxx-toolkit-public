@@ -379,9 +379,9 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_PercentIdentity_Ungapped, "pct_identity_ungap"),
     TScoreNamePair(CSeq_align::eScore_PercentIdentity_GapOpeningOnly, "pct_identity_gapopen_only"),
     TScoreNamePair(CSeq_align::eScore_PercentCoverage, "pct_coverage"),
-    TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "high_quality_pct_coverage"),
     TScoreNamePair(CSeq_align::eScore_SumEValue,       "sum_e"),
-    TScoreNamePair(CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method")
+    TScoreNamePair(CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method"),
+    TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "high_quality_pct_coverage")
 };
 
 
