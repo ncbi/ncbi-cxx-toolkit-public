@@ -444,14 +444,14 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
 }
 
 
-static const CSeq_id& s_GetTargetId(const CSeq_id& id, CScope& scope)
+static CConstRef<CSeq_id> s_GetTargetId(const CSeq_id& id, CScope& scope)
 {
     try {
-        return *(sequence::GetId(id, scope, sequence::eGetId_ForceAcc).GetSeqId());
+        return sequence::GetId(id, scope, sequence::eGetId_ForceAcc).GetSeqId();
     }
     catch (CException&) {
     }
-    return id;
+    return CConstRef<CSeq_id>(&id);
 }
 
 
@@ -773,14 +773,15 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         // as well as two kinds of escapes for spaces, one with pluses,
         // and one with %09. Really. Read the GFF3 specs. :-/
         CNcbiOstrstream attrs;
-        const CSeq_id& tgt_id = s_GetTargetId(alnmap.GetSeqId(tgt_row), scope);
+        CConstRef<CSeq_id> tgt_id =
+            s_GetTargetId(alnmap.GetSeqId(tgt_row), scope);
         if ( config.GffGenerateIdTags() ) {
             attrs << "ID=" << m_CurrentId << ";";
         }
         attrs << "Target=";
         // GFF3 specs require %09 escape for spaces in the Target,
         // not + or any other!
-        x_AppendEncoded(attrs, tgt_id.GetSeqIdString(true), "%09");
+        x_AppendEncoded(attrs, tgt_id->GetSeqIdString(true), "%09");
         // We are allowed spaces here, so we'll make use of them.
         // It's more pleasing to the eye.
         attrs << ' ' << (tgt_range.GetFrom() + 1) << ' '
@@ -883,7 +884,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         // values 0, 1, 2, or -1 for undefined, which is not the same
         // as the frame in ASN.1. Confused? Convert as appropriate.
         x_AddFeature(l, loc, source,
-                     s_GetMatchType(ref_id, tgt_id, config.GffForFlybase()),
+                     s_GetMatchType(ref_id, *tgt_id, config.GffForFlybase()),
                      score_text,
                      config.GffForFlybase() ?
                         /* frame vs phase inverted for flybase! */
