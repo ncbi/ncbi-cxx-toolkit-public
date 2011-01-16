@@ -381,7 +381,7 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_PercentCoverage, "pct_coverage"),
     TScoreNamePair(CSeq_align::eScore_SumEValue,       "sum_e"),
     TScoreNamePair(CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method"),
-    TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "high_quality_pct_coverage")
+    TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "pct_coverage_hiqual")
 };
 
 
