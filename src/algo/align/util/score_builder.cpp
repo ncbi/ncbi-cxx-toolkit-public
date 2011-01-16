@@ -982,7 +982,7 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                     if(alignable_range.NotEmpty()){
                         double pct_coverage = 0;
                         s_GetPercentCoverage(scope, align, alignable_range, &pct_coverage);
-                        align.SetNamedScore("high_quality_pct_coverage", pct_coverage);
+                        align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, pct_coverage);
                         break;
                     }
                 }
