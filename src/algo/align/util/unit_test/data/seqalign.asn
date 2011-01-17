@@ -2737,3 +2737,707 @@ Seq-align ::= {
   }
 }
 
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      id str "matches",
+      value int 529
+    },
+    {
+      id str "identity",
+      value real { 7677793904209, 10, -13 }
+    },
+    {
+      id str "splices",
+      value int 0
+    },
+    {
+      id str "consensus_splices",
+      value int 0
+    },
+    {
+      id str "product_coverage",
+      value real { 907079646017699, 10, -15 }
+    },
+    {
+      id str "exon_identity",
+      value real { 845047923322684, 10, -15 }
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 845047923322684, 10, -13 }
+    },
+    {
+      id str "num_ident",
+      value int 529
+    },
+    {
+      id str "num_mismatch",
+      value int 81
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 867213114754098, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 8
+    },
+    {
+      id str "pct_coverage",
+      value real { 898379970544919, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 833723653395785, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 10029976,
+    genomic-id gi 157696528,
+    product-strand minus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 68,
+        product-end nucpos 682,
+        genomic-start 3057203,
+        genomic-end 3057823,
+        parts {
+          match 3,
+          mismatch 1,
+          match 7,
+          mismatch 2,
+          match 4,
+          product-ins 2,
+          match 3,
+          genomic-ins 1,
+          match 8,
+          mismatch 1,
+          match 4,
+          mismatch 2,
+          match 1,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 2,
+          mismatch 2,
+          match 8,
+          mismatch 2,
+          match 7,
+          mismatch 1,
+          match 2,
+          mismatch 2,
+          match 1,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 6,
+          mismatch 3,
+          match 3,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 28,
+          genomic-ins 1,
+          mismatch 1,
+          match 3,
+          product-ins 1,
+          match 8,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 15,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 16,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 7,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 12,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 6,
+          mismatch 2,
+          match 7,
+          mismatch 1,
+          match 13,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 53,
+          mismatch 1,
+          match 13,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 13,
+          mismatch 1,
+          match 17,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 14,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 19,
+          genomic-ins 5,
+          match 5,
+          mismatch 1,
+          match 22,
+          mismatch 1,
+          match 2,
+          mismatch 2,
+          match 8,
+          mismatch 1,
+          genomic-ins 1,
+          match 2,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 7,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 18,
+          mismatch 1,
+          match 12,
+          mismatch 1,
+          match 13,
+          mismatch 3,
+          match 1,
+          mismatch 1,
+          match 6,
+          mismatch 2,
+          match 1,
+          mismatch 1,
+          match 19,
+          product-ins 2,
+          match 1,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 3,
+          genomic-ins 3,
+          match 3
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 428005004882812, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 845047923322684, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "  "
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      }
+    },
+    poly-a 4,
+    product-length 683
+  },
+  id {
+    str "141fa2eb-95a3-4da2-8352-07140cdfbc3f"
+  },
+  ext {
+    {
+      type str "origin",
+      data {
+        {
+          label str "algo",
+          data str "Splign:1.39.8"
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      id str "matches",
+      value int 398
+    },
+    {
+      id str "identity",
+      value real { 839662447257384, 10, -15 }
+    },
+    {
+      id str "splices",
+      value int 0
+    },
+    {
+      id str "consensus_splices",
+      value int 0
+    },
+    {
+      id str "product_coverage",
+      value real { 993617021276596, 10, -15 }
+    },
+    {
+      id str "exon_identity",
+      value real { 845010615711253, 10, -15 }
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 845010615711253, 10, -13 }
+    },
+    {
+      id str "num_ident",
+      value int 398
+    },
+    {
+      id str "num_mismatch",
+      value int 45
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 898419864559819, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 6
+    },
+    {
+      id str "pct_coverage",
+      value real { 942553191489362, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 935406698564593, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 10030089,
+    genomic-id gi 157696688,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 3,
+        product-end nucpos 469,
+        genomic-start 1443509,
+        genomic-end 1443955,
+        parts {
+          match 3,
+          mismatch 1,
+          product-ins 1,
+          match 1,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 35,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          product-ins 1,
+          match 2,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 10,
+          mismatch 1,
+          match 13,
+          mismatch 1,
+          match 4,
+          mismatch 2,
+          match 4,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 4,
+          mismatch 2,
+          match 2,
+          mismatch 1,
+          match 15,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 5,
+          product-ins 22,
+          match 2,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 39,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 13,
+          mismatch 1,
+          match 9,
+          mismatch 1,
+          match 8,
+          genomic-ins 2,
+          match 2,
+          genomic-ins 1,
+          match 25,
+          mismatch 1,
+          match 9,
+          mismatch 1,
+          match 16,
+          mismatch 1,
+          match 7,
+          mismatch 1,
+          match 12,
+          mismatch 1,
+          match 5,
+          mismatch 2,
+          match 2,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 1,
+          genomic-ins 1,
+          match 14,
+          mismatch 2,
+          match 46,
+          mismatch 1,
+          match 3,
+          mismatch 2,
+          match 22,
+          mismatch 1,
+          match 7
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 330752990722656, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 845010615711253, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AT"
+        },
+        donor-after-exon {
+          bases "TA"
+        }
+      }
+    },
+    product-length 470
+  },
+  id {
+    str "671b4351-2e7a-4738-a711-7622d91cb838"
+  },
+  ext {
+    {
+      type str "origin",
+      data {
+        {
+          label str "algo",
+          data str "Splign:1.39.8"
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      id str "matches",
+      value int 390
+    },
+    {
+      id str "identity",
+      value real { 794297352342159, 10, -15 }
+    },
+    {
+      id str "splices",
+      value int 0
+    },
+    {
+      id str "consensus_splices",
+      value int 0
+    },
+    {
+      id str "product_coverage",
+      value real { 96734693877551, 10, -14 }
+    },
+    {
+      id str "exon_identity",
+      value real { 821052631578947, 10, -15 }
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 821052631578947, 10, -13 }
+    },
+    {
+      id str "num_ident",
+      value int 390
+    },
+    {
+      id str "num_mismatch",
+      value int 70
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 847826086956522, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 9
+    },
+    {
+      id str "pct_coverage",
+      value real { 938775510204082, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 968109339407745, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 10030090,
+    genomic-id gi 157811817,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 473,
+        genomic-start 12138941,
+        genomic-end 12139401,
+        parts {
+          match 7,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 3,
+          product-ins 1,
+          match 5,
+          genomic-ins 1,
+          match 8,
+          mismatch 1,
+          match 15,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 8,
+          mismatch 2,
+          match 1,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 12,
+          mismatch 1,
+          match 3,
+          product-ins 1,
+          match 2,
+          product-ins 1,
+          match 5,
+          mismatch 2,
+          match 4,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 7,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 8,
+          mismatch 2,
+          match 1,
+          mismatch 1,
+          match 2,
+          mismatch 2,
+          match 4,
+          mismatch 2,
+          match 1,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 9,
+          mismatch 1,
+          match 7,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 29,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 5,
+          mismatch 2,
+          match 2,
+          product-ins 1,
+          match 7,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 1,
+          mismatch 2,
+          match 2,
+          mismatch 1,
+          match 10,
+          mismatch 1,
+          match 11,
+          product-ins 3,
+          match 14,
+          mismatch 1,
+          match 2,
+          mismatch 1,
+          match 3,
+          mismatch 1,
+          match 21,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 12,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 9,
+          mismatch 1,
+          match 4,
+          mismatch 1,
+          match 13,
+          mismatch 2,
+          match 2,
+          mismatch 1,
+          match 2,
+          product-ins 1,
+          match 1,
+          mismatch 1,
+          match 6,
+          mismatch 1,
+          match 9,
+          product-ins 3,
+          match 2,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 5,
+          mismatch 1,
+          match 4,
+          product-ins 3,
+          match 3,
+          mismatch 1,
+          match 8,
+          mismatch 1,
+          match 6,
+          mismatch 2,
+          match 17
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 299130004882812, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 821052631578947, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "  "
+        },
+        donor-after-exon {
+          bases "GA"
+        }
+      }
+    },
+    product-length 490
+  },
+  id {
+    str "5c090d1f-26ab-4407-ae5d-6fa433782a72"
+  },
+  ext {
+    {
+      type str "origin",
+      data {
+        {
+          label str "algo",
+          data str "Splign:1.39.8"
+        }
+      }
+    }
+  }
+}
