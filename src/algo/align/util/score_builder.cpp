@@ -40,6 +40,8 @@
 #include <util/sequtil/sequtil_manip.hpp>
 
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/feat_ci.hpp>
+
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
@@ -555,7 +557,6 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
     }
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -580,7 +581,6 @@ double CScoreBuilder::GetPercentCoverage(CScope& scope,
     return pct_coverage;
 }
 
-
 double CScoreBuilder::GetPercentCoverage(CScope& scope,
                                          const CSeq_align& align,
                                          const TSeqRange& range)
@@ -589,7 +589,6 @@ double CScoreBuilder::GetPercentCoverage(CScope& scope,
     s_GetPercentCoverage(scope, align, range, &pct_coverage);
     return pct_coverage;
 }
-
 
 int CScoreBuilder::GetIdentityCount(CScope& scope, const CSeq_align& align)
 {
@@ -954,38 +953,20 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
 
             /// If we have annotation for a high-quality region, it is in a ftable named
             /// "NCBI_GPIPE", containing a region Seq-feat named "alignable"
-            TSeqRange alignable_range;
-            CConstRef<CBioseq> query = scope.GetBioseqHandle(align.GetSeq_id(0)).GetCompleteBioseq();
-            if(query->CanGetAnnot())
-                ITERATE(CBioseq::TAnnot, annot_it, query->GetAnnot())
+            CBioseq_Handle query = scope.GetBioseqHandle(align.GetSeq_id(0));
+            for(CFeat_CI feat_it(query, SAnnotSelector(CSeqFeatData::e_Region)); feat_it; ++feat_it)
+            {
+                if(feat_it->GetData().GetRegion() == "alignable" &&
+                   feat_it->GetAnnot().IsNamed() &&
+                   feat_it->GetAnnot().GetName() == "NCBI_GPIPE")
                 {
-                    if(!(*annot_it)->IsFtable())
-                        continue;
+                    double pct_coverage = 0;
+                    s_GetPercentCoverage(scope, align, feat_it->GetRange(), &pct_coverage);
+                    align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, pct_coverage);
 
-                    string annot_name;
-                    if((*annot_it)->CanGetDesc())
-                        ITERATE(CSeq_annot::TDesc::Tdata, desc_it, (*annot_it)->GetDesc().Get())
-                            if((*desc_it)->IsName()){
-                                annot_name = (*desc_it)->GetName();
-                                break;
-                            }
-                    if(annot_name != "NCBI_GPIPE")
-                        continue;
-
-                    ITERATE(CSeq_annot::TData::TFtable, data_it, (*annot_it)->GetData().GetFtable())
-                        if((*data_it)->GetData().IsRegion() && (*data_it)->GetData().GetRegion() == "alignable")
-                        {
-                            alignable_range = (*data_it)->GetLocation().GetTotalRange();
-                            break;
-                        }
-
-                    if(alignable_range.NotEmpty()){
-                        double pct_coverage = 0;
-                        s_GetPercentCoverage(scope, align, alignable_range, &pct_coverage);
-                        align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, pct_coverage);
-                        break;
-                    }
+                    break;
                 }
+            }
         }}
         break;
 
