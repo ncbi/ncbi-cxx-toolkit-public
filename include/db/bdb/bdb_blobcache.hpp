@@ -874,7 +874,7 @@ private:
 
 private:
     CBDB_Cache(const CBDB_Cache&);
-    CBDB_Cache& operator=(const CBDB_Cache);
+    CBDB_Cache& operator=(const CBDB_Cache&);
 
 public:
 
