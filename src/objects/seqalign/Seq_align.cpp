@@ -1386,7 +1386,7 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                 NCBI_THROW(CException, eUnknown,
                            "Spliced-exon is neirther nuc nor prot");
             }
-	    size_t exon_len = 0;
+            size_t exon_len = 0;
             if (exon.IsSetParts()) {
                 TSeqPos part_start = product_span.GetFrom();
                 ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
