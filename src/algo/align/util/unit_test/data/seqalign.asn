@@ -41,6 +41,10 @@ Seq-align ::= {
     {
       id str "pct_coverage",
       value real { 998716543223081, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 998716543223081, 10, -13 }
     }
   },
   segs denseg {
@@ -261,6 +265,10 @@ Seq-align ::= {
     },
     {
       id str "pct_coverage",
+      value real { 998708844415752, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
       value real { 998708844415752, 10, -13 }
     }
   },
@@ -977,6 +985,10 @@ Seq-align ::= {
     },
     {
       id str "pct_coverage",
+      value real { 1, 10, 2}
+    },
+    {
+      id str "pct_coverage_hiqual",
       value real { 1, 10, 2}
     }
   },
@@ -2134,6 +2146,10 @@ Seq-align ::= {
     {
       id str "pct_coverage",
       value real { 992920353982301, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 992920353982301, 10, -13 }
     }
   },
   segs spliced {
@@ -2224,6 +2240,10 @@ Seq-align ::= {
     },
     {
       id str "pct_coverage",
+      value real { 999654576856649, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
       value real { 999654576856649, 10, -13 }
     }
   },

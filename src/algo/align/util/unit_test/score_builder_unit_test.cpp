@@ -138,7 +138,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         ///
 
         int kExpectedIdentities = 0;
-        bool has_kExpectedIdentities = 
         alignment.GetNamedScore(CSeq_align::eScore_IdentityCount,
                                 kExpectedIdentities);
 
@@ -337,6 +336,7 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
          }}
 
         /// check high-quality percent coverage if data has it
+        try
         {{
              double actual;
              score_builder.AddScore(*scope, alignment, CSeq_align::eScore_HighQualityPercentCoverage);
@@ -358,6 +358,9 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
              cerr << MSerial_AsnText << score;
              **/
          }}
+         catch (CException &e) {
+             LOG_POST(Error << "Exception thrown when checking pct_coverage_hiqual: " << e.ReportThis());
+         }
 
         if (alignment.GetSegs().IsDenseg()) {
             ///

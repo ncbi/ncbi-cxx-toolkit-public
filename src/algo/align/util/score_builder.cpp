@@ -949,10 +949,13 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
         {{
             if(align.GetSegs().Which() == CSeq_align::TSegs::e_Std)
                 /// high-quality-coverage calculatino is not possbile for standard segs
-                break;
+                NCBI_THROW(CException, eUnknown,
+                            "High-quality percent coverage not supported "
+                            "for standard seg representation");
 
             /// If we have annotation for a high-quality region, it is in a ftable named
             /// "NCBI_GPIPE", containing a region Seq-feat named "alignable"
+            TSeqRange alignable_range = TSeqRange::GetWhole();
             CBioseq_Handle query = scope.GetBioseqHandle(align.GetSeq_id(0));
             for(CFeat_CI feat_it(query, SAnnotSelector(CSeqFeatData::e_Region)); feat_it; ++feat_it)
             {
@@ -960,13 +963,13 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                    feat_it->GetAnnot().IsNamed() &&
                    feat_it->GetAnnot().GetName() == "NCBI_GPIPE")
                 {
-                    double pct_coverage = 0;
-                    s_GetPercentCoverage(scope, align, feat_it->GetRange(), &pct_coverage);
-                    align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, pct_coverage);
-
+                    alignable_range = feat_it->GetRange();
                     break;
                 }
             }
+            double pct_coverage = 0;
+            s_GetPercentCoverage(scope, align, alignable_range, &pct_coverage);
+            align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, pct_coverage);
         }}
         break;
 
