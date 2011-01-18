@@ -284,14 +284,14 @@ void CValidError_bioseqset::ValidateNucProtSet
             const CBioseq& seq = (*se_list_it)->GetSeq();
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
             CBioseq_set_Handle gps = GetGenProdSetParent(bsh);
-			if (seq.IsNa()) {
+			      if (seq.IsNa()) {
                 if (gps  &&  !IsMrnaProductInGPS(seq) ) {
                     PostErr(eDiag_Warning,
                         eErr_SEQ_PKG_GenomicProductPackagingProblem,
                         "Nucleotide bioseq should be product of mRNA "
                         "feature on contig, but is not",
                         seq);
-				}
+				        }
             } else if ( seq.IsAa() ) {
                 if (gps && !IsCDSProductInGPS(seq, *(gps.GetCompleteBioseq_set())) ) {
                     PostErr(eDiag_Warning,
@@ -310,6 +310,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                     }
                 }
                 // look for instantiated protein titles that don't match
+
                 if (!NStr::IsBlank(instantiated)) {
                     const string & generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
                     if (!NStr::EqualNocase(instantiated, generated)) {

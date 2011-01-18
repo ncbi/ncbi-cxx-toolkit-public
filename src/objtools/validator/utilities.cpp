@@ -156,7 +156,7 @@ string GetSequenceStringFromLoc
     fasta_ostr.SetFlag(CFastaOstream::fAssembleParts);
     fasta_ostr.SetFlag(CFastaOstream::fInstantiateGaps);
     for (CSeq_loc_CI citer (loc); citer; ++citer) {
-        const CSeq_loc& part = citer.GetSeq_loc();
+        const CSeq_loc& part = citer.GetEmbeddingSeq_loc();
         CBioseq_Handle bsh = scope.GetBioseqHandle(part);
         fasta_ostr.WriteSequence (bsh, &part);
     }

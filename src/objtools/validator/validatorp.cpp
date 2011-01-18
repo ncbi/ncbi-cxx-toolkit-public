@@ -1173,7 +1173,6 @@ bool CValidError_imp::Validate
     bool has_gi = false;
     // also want to know if there are any nucleotide sequences
     bool has_nucleotide_sequence = false;
-    bool something = false;
 
     for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); 
          bi && (!m_IsINSDInSep || !has_gi || !has_nucleotide_sequence);
@@ -1181,9 +1180,6 @@ bool CValidError_imp::Validate
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
             if ((*it)->IsGi()) {
                 has_gi = true;
-            }
-            if ((*it)->IsGenbank() && NStr::Equal((*it)->GetGenbank().GetAccession(), "EF115225")) {
-              something = true;
             }
         }
         if (bi->IsSetInst_Mol() && bi->IsNa()) {

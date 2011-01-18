@@ -630,6 +630,9 @@ data.")),
    TErrTypStrs ( eErr_GENERIC_UnexpectedPubStatusComment,
    TErrStrs( "UnexpectedPubStatusComment",
 "An unexpected publication status exists for a print, online-only, or ahead-of-print article : Content-Of-Pubdesc.comment-String.")),
+   TErrTypStrs ( eErr_GENERIC_PastReleaseDate,
+   TErrStrs( "PastReleaseDate",
+"The record has is marked as hold-until-published, but the release anyway date has already passed.")),
 
 /* SEQ_PKG */
 

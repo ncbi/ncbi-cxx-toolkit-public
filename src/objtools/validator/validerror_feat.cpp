@@ -1152,7 +1152,7 @@ static bool s_IsLocDirSub (const CSeq_loc& loc, CScope& scope)
 {
     if (!loc.GetId()) {
         for ( CSeq_loc_CI si(loc); si; ++si ) {
-            if (!s_IsLocDirSub(si.GetSeq_loc(), scope)) {
+            if (!s_IsLocDirSub(si.GetEmbeddingSeq_loc(), scope)) {
                 return false;
             }
         }
@@ -2008,7 +2008,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 }
             }
         }
-        CBioseq_Handle bsh_si = m_Scope->GetBioseqHandle (si.GetSeq_loc());
+        CBioseq_Handle bsh_si = m_Scope->GetBioseqHandle (si.GetEmbeddingSeq_loc());
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh_si.GetCompleteBioseq())) {
             if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession()) {
                 relax_to_warning = true;
@@ -2052,7 +2052,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
         for ( CSeq_loc_CI si(loc); si; ++si, ++part_num ) {
             try {
-                const CSeq_loc& part = si.GetSeq_loc();
+                const CSeq_loc& part = si.GetEmbeddingSeq_loc();
                 CSeq_loc::TRange range = si.GetRange();
                 CBioseq_Handle bsh_si = m_Scope->GetBioseqHandle (part);
                 if (bsh_si) {
@@ -4032,7 +4032,7 @@ void CValidError_feat::ValidateImpGbquals
                         // if no point in location with fuzz, info if text matches sequence
                         bool has_fuzz = false;
                         for( objects::CSeq_loc_CI it(feat.GetLocation()); it && !has_fuzz; ++it) {
-                            if (it.IsPoint() && it.GetSeq_loc().GetPnt().IsSetFuzz()) {
+                            if (it.IsPoint() && it.GetEmbeddingSeq_loc().GetPnt().IsSetFuzz()) {
                                 has_fuzz = true;
                             }
                         }
@@ -4713,14 +4713,14 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
     }
 
     CSeq_loc_CI li(feat.GetLocation());
-    const CSeq_loc& start_loc = li.GetSeq_loc();
+    const CSeq_loc& start_loc = li.GetEmbeddingSeq_loc();
     TSeqPos last_start = start_loc.GetStart(eExtreme_Positional);
     TSeqPos last_stop = start_loc.GetStop(eExtreme_Positional);
 
     bool found_short = false;
     ++li;
     while (li && !found_short) {
-        const CSeq_loc& this_loc = li.GetSeq_loc();
+        const CSeq_loc& this_loc = li.GetEmbeddingSeq_loc();
         TSeqPos this_start = this_loc.GetStart(eExtreme_Positional);
         TSeqPos this_stop = this_loc.GetStop(eExtreme_Positional);
         if (abs ((int)this_start - (int)last_stop) < 11 || abs ((int)this_stop - (int)last_start) < 11) {
@@ -6467,13 +6467,13 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
 bool CValidError_feat::ArePartialsAtSpliceSitesOrGaps (const CSeq_loc& loc)
 {
     for ( CSeq_loc_CI si(loc); si; ++si ) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (si.GetSeq_loc());
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (si.GetEmbeddingSeq_loc());
         if (!bsh) {
             continue;
         }
         ENa_strand strand = loc.GetStrand();
         if (si.GetFuzzFrom() != 0) {
-            int end = si.GetSeq_loc().GetStart (eExtreme_Positional);
+            int end = si.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
             if (end > 0) {
                 CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
                 if (vec.IsInGap(end - 1)) {
@@ -6503,7 +6503,7 @@ bool CValidError_feat::ArePartialsAtSpliceSitesOrGaps (const CSeq_loc& loc)
             }
         }
         if (si.GetFuzzTo() != 0) {
-            int end = si.GetSeq_loc().GetStop (eExtreme_Positional);
+            int end = si.GetEmbeddingSeq_loc().GetStop (eExtreme_Positional);
             TSeqPos seq_len = bsh.GetBioseqLength();
             if (end < seq_len - 1) {
                 CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
@@ -6737,10 +6737,10 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     bool first = true;
 
                     for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
-                        CSeqVector vec = GetSequenceFromLoc (loc_it.GetSeq_loc(), *m_Scope);
+                        CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
                         if ( !vec.empty() ) {
-                            CBioseq_Handle ph = m_Scope->GetBioseqHandle (loc_it.GetSeq_loc());
-                            TSeqPos offset = loc_it.GetSeq_loc().GetStart (eExtreme_Positional);
+                            CBioseq_Handle ph = m_Scope->GetBioseqHandle (loc_it.GetEmbeddingSeq_loc());
+                            TSeqPos offset = loc_it.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
                             string vec_data;
                             vec.GetSeqData(0, vec.size(), vec_data);
 

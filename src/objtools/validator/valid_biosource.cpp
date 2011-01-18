@@ -444,12 +444,10 @@ bool CValidError_imp::IsOrganelle (CBioseq_Handle seq)
     return rval;
 }
 
-static double DistanceOnGlobe (
+double ErrorDistance (
   double latA,
   double lonA,
-  double latB,
-  double lonB
-);
+  double scale);
 
 CLatLonCountryId *CValidError_imp::x_CalculateLatLonId(float lat_value, float lon_value, string country, string province)
 {
@@ -523,8 +521,15 @@ CLatLonCountryId *CValidError_imp::x_CalculateLatLonId(float lat_value, float lo
         double distance = 0.0;
         guess = m_LatLonCountryMap->IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
         if (guess) {
-            id->SetClaimedFull(guess->GetCountry());
-            id->SetClaimedDistance(m_LatLonCountryMap->AdjustAndRoundDistance (distance));
+            if (distance < ErrorDistance(lat_value, lon_value, m_LatLonCountryMap->GetScale())) {
+                // close enough
+                id->SetGuessCountry(country);
+                id->SetGuessProvince(province);
+                id->SetFullGuess(guess->GetCountry());
+            } else {            
+                id->SetClaimedFull(guess->GetCountry());
+                id->SetClaimedDistance(m_LatLonCountryMap->AdjustAndRoundDistance (distance));
+            }
         } else if (NStr::IsBlank(province)) {
             guess = m_LatLonWaterMap->IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
             if (guess) {
@@ -756,7 +761,7 @@ void CValidError_imp::ValidateLatLonCountry
     } else if (flags & CLatLonCountryId::fWaterMatch) {
         // success!  nothing to report
     } else if (flags & CLatLonCountryId::fCountryMatch && NStr::IsBlank(province)) {
-        if (!IsIndexerVersion()) {
+        if (IsLatLonCheckState()) {
             PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
                         "Lat_lon " + lat_lon + " is in " + id->GetFullGuess()
                         + " (more specific than " + country + ")",
@@ -821,11 +826,17 @@ void CValidError_imp::ValidateLatLonCountry
                             + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km",
                             obj, ctx);
             } else {
-                PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry, 
-                            "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
-                            + countryname + "' - claimed region '" + id->GetClaimedFull() 
-                            + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km",
-                            obj, ctx);
+                EErrType et = eErr_SEQ_DESCR_LatLonCountry;
+                if (NStr::EqualNocase(id->GetGuessCountry(), country)) {
+                    et = eErr_SEQ_DESCR_LatLonState;
+                }
+                if (et == eErr_SEQ_DESCR_LatLonCountry || IsLatLonCheckState()) {
+                    PostObjErr (eDiag_Info, et, 
+                                "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
+                                + countryname + "' - claimed region '" + id->GetClaimedFull() 
+                                + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km",
+                                obj, ctx);
+                }
             }
         }
     } else if (!NStr::IsBlank(id->GetClosestCountry())) {

@@ -660,6 +660,31 @@ static double DistanceOnGlobe (
 }
 
 
+double ErrorDistance (
+  double latA,
+  double lonA,
+  double scale)
+{
+  double lat1, lon1, lat2, lon2;
+  double dLat, dLon, a, c;
+
+  lat1 = DegreesToRadians (latA);
+  lon1 = DegreesToRadians (lonA);
+  lat2 = DegreesToRadians (latA + (1.0 / scale));
+  lon2 = DegreesToRadians (lonA + (1.0 / scale));
+
+  dLat = lat2 - lat1;
+  dLon = lon2 - lon1;
+
+   a = sin (dLat / 2) * sin (dLat / 2) +
+       cos (lat1) * cos (lat2) * sin (dLon / 2) * sin (dLon / 2);
+   c = 2 * atan2 (sqrt (a), sqrt (1 - a));
+
+  return (double) (EARTH_RADIUS * c);
+  
+}
+
+
 const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
                                                                double lon,
                                                                double range,

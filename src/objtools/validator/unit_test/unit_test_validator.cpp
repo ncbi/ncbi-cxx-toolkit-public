@@ -1826,7 +1826,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonState)
     
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonCountry",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonState",
     "Lat_lon '36 N 80 W' maps to 'USA: North Carolina' instead of 'USA: South Carolina' - claimed region 'USA: South Carolina' is at distance 130 km"));
     options |= CValidator::eVal_latlon_check_state;
     eval = validator.Validate(seh, options);

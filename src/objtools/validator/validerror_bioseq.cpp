@@ -853,7 +853,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                         } 
                     }
                     if (!found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
-                        CBioseq_Handle part = m_Scope->GetBioseqHandle(loc_it.GetSeq_loc());
+                        CBioseq_Handle part = m_Scope->GetBioseqHandle(loc_it.GetEmbeddingSeq_loc());
                         if (part) {
                             CSeq_entry_Handle parent = part.GetParentEntry();
                             if (parent && parent.IsSeq()) {
@@ -1604,7 +1604,7 @@ size_t CValidError_bioseq::NumOfIntervals(const CSeq_loc& loc)
 {
     size_t counter = 0;
     for ( CSeq_loc_CI slit(loc); slit; ++slit ) {
-        if ( !m_Imp.IsFarLocation(slit.GetSeq_loc()) ) {
+        if ( !m_Imp.IsFarLocation(slit.GetEmbeddingSeq_loc()) ) {
             ++counter;
         }
     }
@@ -3988,6 +3988,23 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
 
 void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 {
+    // test
+    string accession = "";
+    FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
+        if ((*it)->IsGenbank()) {
+            accession = (*it)->GetGenbank().GetAccession();
+            break;
+        } else if ((*it)->IsDdbj()) {
+            accession = (*it)->GetDdbj().GetAccession();
+            break;
+        } else if ((*it)->IsGi()) {
+            accession = NStr::IntToString((*it)->GetGi());
+        }
+    }
+    if (NStr::Equal(accession, "AB060281")) {
+        bool mm = true;
+    }
+
     try {
         int            numgene = 0, nummrna = 0, num_pseudomrna = 0, numcds = 0, num_pseudocds = 0;
         vector< CConstRef < CSeq_id > > cds_products, mrna_products;
