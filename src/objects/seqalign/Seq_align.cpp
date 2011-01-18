@@ -1430,9 +1430,6 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
             }
             len += exon_len;
         }
-        if(align.GetSegs().GetSpliced().GetProduct_type() == CSpliced_seg::eProduct_type_protein)
-            len *= 3;
-
         break;
 
     default:
