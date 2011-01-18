@@ -51,7 +51,6 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <serial/iterator.hpp>
-#include <util/range_coll.hpp>
 
 // generated includes
 #include <objects/seqalign/Seq_align.hpp>
@@ -1320,7 +1319,7 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
         {{
              if(!range.IsWhole())
                  NCBI_THROW(CException, eUnknown,
-                            "Can't calculate alignment length within a range"
+                            "Can't calculate alignment length within a range "
                             "for standard seg representation");
 
              /// pass 1:
@@ -1375,15 +1374,20 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                 product_span.Set(exon.GetProduct_start().GetNucpos(),
                                  exon.GetProduct_end().GetNucpos()-1);
             } else if (exon.GetProduct_start().IsProtpos()) {
-                product_span.Set(exon.GetProduct_start().GetProtpos().GetAmin(),
-                                 exon.GetProduct_end().GetProtpos().GetAmin()-1);
+                TSeqPos start_frame = exon.GetProduct_start().GetProtpos().GetFrame();
+                if(start_frame > 0)
+                    --start_frame;
+                TSeqPos end_frame = exon.GetProduct_start().GetProtpos().GetFrame();
+                if(end_frame > 0)
+                    --end_frame;
+                product_span.Set(exon.GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
+                                 exon.GetProduct_end().GetProtpos().GetAmin()*3 + end_frame - 1);
             } else {
                 NCBI_THROW(CException, eUnknown,
                            "Spliced-exon is neirther nuc nor prot");
             }
-            size_t exon_len;
+	    size_t exon_len = 0;
             if (exon.IsSetParts()) {
-                CRangeCollection<TSeqPos> product_coverage;
                 TSeqPos part_start = product_span.GetFrom();
                 ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
                     const CSpliced_exon_chunk& chunk = **it;
@@ -1421,10 +1425,9 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                         break;
                     }
                     if(covered)
-                        product_coverage += TSeqRange(part_start, part_start+part_len-1);
+                        exon_len += TSeqRange(part_start, part_start+part_len-1).IntersectWith(range).GetLength();
                     part_start += part_len;
                 }
-                exon_len = product_coverage.IntersectWith(range).GetCoveredLength();
             } else {
                 exon_len = product_span.IntersectWith(range).GetLength();
             }
