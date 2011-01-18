@@ -143,52 +143,42 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
                                 kExpectedIdentities);
 
         int kExpectedMismatches = 0;
-        bool has_kExpectedMismatches = 
         alignment.GetNamedScore(CSeq_align::eScore_MismatchCount,
                                 kExpectedMismatches);
 
         int kExpectedGapOpen = 0;
-        bool has_kExpectedGapOpen = 
         alignment.GetNamedScore("gapopen",
                                 kExpectedGapOpen);
 
         int kExpectedGaps = 0;
-        bool has_kExpectedGaps = 
         alignment.GetNamedScore("gap_bases",
                                 kExpectedGaps);
 
         int kExpectedLength = 0;
-        bool has_kExpectedLength = 
         alignment.GetNamedScore("length",
                                 kExpectedLength);
 
         int kExpectedScore = 0;
-        bool has_kExpectedScore = 
         alignment.GetNamedScore(CSeq_align::eScore_Score,
                                 kExpectedScore);
 
         double kExpectedPctIdentity_Gapped = 0;
-        bool has_kExpectedPctIdentity_Gapped = 
         alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity_Gapped,
                                 kExpectedPctIdentity_Gapped);
 
         double kExpectedPctIdentity_Ungapped = 0;
-        bool has_kExpectedPctIdentity_Ungapped = 
         alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity_Ungapped,
                                 kExpectedPctIdentity_Ungapped);
 
         double kExpectedPctIdentity_GapOpeningOnly = 0;
-        bool has_kExpectedPctIdentity_GapOpeningOnly = 
         alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity_GapOpeningOnly,
                                 kExpectedPctIdentity_GapOpeningOnly);
 
         double kExpectedPctCoverage = 0;
-        bool has_kExpectedPctCoverage = 
         alignment.GetNamedScore(CSeq_align::eScore_PercentCoverage,
                                 kExpectedPctCoverage);
 
         double kExpectedHighQualityPctCoverage = 0;
-        bool has_kExpectedHighQualityPctCoverage = 
         alignment.GetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage,
                                 kExpectedHighQualityPctCoverage);
 
@@ -196,7 +186,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         alignment.ResetScore();
 
         /// check alignment length
-        if(has_kExpectedLength)
         {{
              int actual =
                  score_builder.GetAlignLength(alignment);
@@ -207,7 +196,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
         /// check identity count
         /// NB: not for std-segs!
-        if(has_kExpectedIdentities)
         if ( !alignment.GetSegs().IsStd() ) {
             int actual =
                 score_builder.GetIdentityCount(*scope, alignment);
@@ -217,7 +205,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         }
 
         /// check mismatch count
-        if(has_kExpectedMismatches)
         if ( !alignment.GetSegs().IsStd() ) {
             int actual =
                 score_builder.GetMismatchCount(*scope, alignment);
@@ -228,7 +215,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
         /// check uninitialized / wrongly initialized variables
         /// (CXX-1594 - GetMismatchCount() adds to incoming values blindly)
-        if(has_kExpectedMismatches || has_kExpectedIdentities)
         if ( !alignment.GetSegs().IsStd() ) {
             int mismatches = 1000;
             int identities = 1000;
@@ -239,7 +225,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         }
 
         /// check gap count (= gap openings)
-        if(has_kExpectedGapOpen)
         {{
              int actual =
                  score_builder.GetGapCount(alignment);
@@ -249,7 +234,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
          }}
 
         /// check gap base length (= sum of lengths of all gaps)
-        if(has_kExpectedGaps)
         {{
              int actual =
                  score_builder.GetGapBaseCount(alignment);
@@ -259,7 +243,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
          }}
 
         /// check percent identity (gapped)
-        if(has_kExpectedPctIdentity_Gapped)
         if ( !alignment.GetSegs().IsStd() ) {
             double actual =
                 score_builder.GetPercentIdentity(*scope, alignment,
@@ -284,7 +267,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         }
 
         /// check percent identity (ungapped)
-        if(has_kExpectedPctIdentity_Ungapped)
         if ( !alignment.GetSegs().IsStd() ) {
             double actual =
                 score_builder.GetPercentIdentity(*scope, alignment,
@@ -309,7 +291,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         }
 
         /// check percent identity (GapOpeningOnly-style)
-        if(has_kExpectedPctIdentity_GapOpeningOnly)
         if ( !alignment.GetSegs().IsStd() ) {
             double actual =
                 score_builder.GetPercentIdentity(*scope, alignment,
@@ -319,10 +300,10 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
             /// machine precision is a problem here
             /// we verify to 12 digits of precision
-            Uint8 int_pct_identity_gbdna =
+            Uint8 int_pct_identity_gapopen_only =
                 kExpectedPctIdentity_GapOpeningOnly * 1e12;
             Uint8 int_pct_identity_actual = actual * 1e12;
-            BOOST_CHECK_EQUAL(int_pct_identity_gbdna,
+            BOOST_CHECK_EQUAL(int_pct_identity_gapopen_only,
                               int_pct_identity_actual);
 
             /**
@@ -334,7 +315,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         }
 
         /// check percent coverage
-        if(has_kExpectedPctCoverage)
         {{
              double actual =
                  score_builder.GetPercentCoverage(*scope, alignment);
@@ -357,7 +337,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
          }}
 
         /// check high-quality percent coverage if data has it
-        if(has_kExpectedHighQualityPctCoverage)
         {{
              double actual;
              score_builder.AddScore(*scope, alignment, CSeq_align::eScore_HighQualityPercentCoverage);
@@ -380,7 +359,6 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
              **/
          }}
 
-        if(has_kExpectedScore)
         if (alignment.GetSegs().IsDenseg()) {
             ///
             /// our encoded dense-segs have a BLAST-style 'score'
@@ -406,77 +384,6 @@ Seq-entry ::= seq {\
       version 1\
     },\
     gi 10029976\
-  },\
-  descr {\
-    molinfo {\
-      biomol mRNA,\
-      tech est\
-    },\
-    title \"7e24e11.x1 NCI_CGAP_Lu24 Homo sapiens cDNA clone IMAGE:3283436 3'\
- similar to gb:U02368 PAIRED BOX PROTEIN PAX-3 (HUMAN);.\",\
-    create-date std {\
-      year 2000,\
-      month 9,\
-      day 8\
-    },\
-    update-date std {\
-      year 2011,\
-      month 1,\
-      day 8\
-    },\
-    source {\
-      org {\
-        taxname \"Homo sapiens\",\
-        common \"human\",\
-        db {\
-          {\
-            db \"taxon\",\
-            tag id 9606\
-          }\
-        },\
-        orgname {\
-          name binomial {\
-            genus \"Homo\",\
-            species \"sapiens\"\
-          },\
-          mod {\
-            {\
-              subtype other,\
-              subname \"Organ: lung; Vector: pT7T3D-PacI; Plasmid DNA from the\
- normalized library NCI_CGAP_Lu5 was prepared, and ss circles were made in\
- vitro. Following HAP purification, this DNA was used as tracer in a\
- subtractive hybridization reaction. The driver was PCR-amplified cDNAs from a\
- pool of 5,000 clones made from the same library (cloneIDs 1414920-1417991 and\
- 1520904-1522439). Subtraction by Bento Soares and M. Fatima Bonaldo.  \"\
-            }\
-          },\
-          lineage \"Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;\
- Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;\
- Catarrhini; Hominidae; Homo\",\
-          gcode 1,\
-          mgcode 2,\
-          div \"PRI\"\
-        }\
-      },\
-      subtype {\
-        {\
-          subtype clone,\
-          name \"IMAGE:3283436\"\
-        },\
-        {\
-          subtype clone-lib,\
-          name \"LIBEST_001611 NCI_CGAP_Lu24\"\
-        },\
-        {\
-          subtype tissue-type,\
-          name \"carcinoid\"\
-        },\
-        {\
-          subtype lab-host,\
-          name \"DH10B\"\
-        }\
-      }\
-    }\
   },\
   inst {\
     repr raw,\
@@ -520,77 +427,6 @@ Seq-entry ::= seq {\
     },\
     gi 10030089\
   },\
-  descr {\
-    molinfo {\
-      biomol mRNA,\
-      tech est\
-    },\
-    title \"7e14g09.x1 NCI_CGAP_Lu24 Homo sapiens cDNA clone IMAGE:3282496 3'\
- similar to SW:RL2B_HUMAN P29316 60S RIBOSOMAL PROTEIN L23A. ;.\",\
-    create-date std {\
-      year 2000,\
-      month 9,\
-      day 8\
-    },\
-    update-date std {\
-      year 2011,\
-      month 1,\
-      day 8\
-    },\
-    source {\
-      org {\
-        taxname \"Homo sapiens\",\
-        common \"human\",\
-        db {\
-          {\
-            db \"taxon\",\
-            tag id 9606\
-          }\
-        },\
-        orgname {\
-          name binomial {\
-            genus \"Homo\",\
-            species \"sapiens\"\
-          },\
-          mod {\
-            {\
-              subtype other,\
-              subname \"Organ: lung; Vector: pT7T3D-PacI; Plasmid DNA from the\
- normalized library NCI_CGAP_Lu5 was prepared, and ss circles were made in\
- vitro. Following HAP purification, this DNA was used as tracer in a\
- subtractive hybridization reaction. The driver was PCR-amplified cDNAs from a\
- pool of 5,000 clones made from the same library (cloneIDs 1414920-1417991 and\
- 1520904-1522439). Subtraction by Bento Soares and M. Fatima Bonaldo.  \"\
-            }\
-          },\
-          lineage \"Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;\
- Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;\
- Catarrhini; Hominidae; Homo\",\
-          gcode 1,\
-          mgcode 2,\
-          div \"PRI\"\
-        }\
-      },\
-      subtype {\
-        {\
-          subtype clone,\
-          name \"IMAGE:3282496\"\
-        },\
-        {\
-          subtype clone-lib,\
-          name \"LIBEST_001611 NCI_CGAP_Lu24\"\
-        },\
-        {\
-          subtype tissue-type,\
-          name \"carcinoid\"\
-        },\
-        {\
-          subtype lab-host,\
-          name \"DH10B\"\
-        }\
-      }\
-    }\
-  },\
   inst {\
     repr raw,\
     mol rna,\
@@ -631,77 +467,6 @@ Seq-entry ::= seq {\
       version 1\
     },\
     gi 10030090\
-  },\
-  descr {\
-    molinfo {\
-      biomol mRNA,\
-      tech est\
-    },\
-    title \"7e14h04.x1 NCI_CGAP_Lu24 Homo sapiens cDNA clone IMAGE:3282487 3'\
- similar to SW:RL2B_HUMAN P29316 60S RIBOSOMAL PROTEIN L23A. ;.\",\
-    create-date std {\
-      year 2000,\
-      month 9,\
-      day 8\
-    },\
-    update-date std {\
-      year 2011,\
-      month 1,\
-      day 8\
-    },\
-    source {\
-      org {\
-        taxname \"Homo sapiens\",\
-        common \"human\",\
-        db {\
-          {\
-            db \"taxon\",\
-            tag id 9606\
-          }\
-        },\
-        orgname {\
-          name binomial {\
-            genus \"Homo\",\
-            species \"sapiens\"\
-          },\
-          mod {\
-            {\
-              subtype other,\
-              subname \"Organ: lung; Vector: pT7T3D-PacI; Plasmid DNA from the\
- normalized library NCI_CGAP_Lu5 was prepared, and ss circles were made in\
- vitro. Following HAP purification, this DNA was used as tracer in a\
- subtractive hybridization reaction. The driver was PCR-amplified cDNAs from a\
- pool of 5,000 clones made from the same library (cloneIDs 1414920-1417991 and\
- 1520904-1522439). Subtraction by Bento Soares and M. Fatima Bonaldo.  \"\
-            }\
-          },\
-          lineage \"Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;\
- Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;\
- Catarrhini; Hominidae; Homo\",\
-          gcode 1,\
-          mgcode 2,\
-          div \"PRI\"\
-        }\
-      },\
-      subtype {\
-        {\
-          subtype clone,\
-          name \"IMAGE:3282487\"\
-        },\
-        {\
-          subtype clone-lib,\
-          name \"LIBEST_001611 NCI_CGAP_Lu24\"\
-        },\
-        {\
-          subtype tissue-type,\
-          name \"carcinoid\"\
-        },\
-        {\
-          subtype lab-host,\
-          name \"DH10B\"\
-        }\
-      }\
-    }\
   },\
   inst {\
     repr raw,\
