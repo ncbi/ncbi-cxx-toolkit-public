@@ -191,7 +191,7 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "table"
 };
 
-inline const char*
+const char*
 CFormatGuess::GetFormatName(EFormat format)
 {
     unsigned int i = static_cast<unsigned int>(format);
