@@ -78,6 +78,12 @@
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
+extern string WindowMaskerTaxidToDb(int taxid);
+END_SCOPE(blast)
+END_NCBI_SCOPE
+
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
@@ -1801,6 +1807,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidDb) {
     TSeqAlignVector sav(blaster.Run());
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
     BOOST_REQUIRE(sar.NotEmpty());
+    // find self hit, silently ignoring the failed filtering
     BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() == 1);
 }
 
@@ -1837,6 +1844,13 @@ BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_DbAndTaxid) {
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
     BOOST_REQUIRE(sar.NotEmpty());
     BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(ConvertTaxIdToWindowMaskerDb) {
+    string path;
+    BOOST_CHECK_NO_THROW(path = WindowMaskerTaxidToDb(9606));
+    BOOST_REQUIRE(NStr::EndsWith(path, "wmasker.obinary") ||
+                  NStr::EndsWith(path, "wmasker.oascii") );
 }
 
 // Bug report from Alex Astashyn

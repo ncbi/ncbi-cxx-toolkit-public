@@ -189,6 +189,7 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     }
 }
 
+// FIXME: enable once this feature is deployed in production
 #if 0
 BOOST_AUTO_TEST_CASE(GetWindowMaskedTaxIds)
 {
@@ -198,12 +199,8 @@ BOOST_AUTO_TEST_CASE(GetWindowMaskedTaxIds)
     //remote_svc.SetVerbose();
     objects::CBlast4_get_windowmasked_taxids_reply::Tdata reply =
         remote_svc.GetTaxIdWithWindowMaskerSupport();
-    BOOST_REQUIRE(reply.empty());
-    // FIXME: When the WINDOW_MASKER_PATH is set in the machines hosting the
-    // blast4 server, this test will be false. Make sure we have some key
-    // organisms
-    //BOOST_REQUIRE(!reply.empty());
-    //BOOST_REQUIRE(reply.find(9606) != reply.end());
+    BOOST_REQUIRE(!reply.empty());
+    BOOST_REQUIRE(reply.find(9606) != reply.end());
 }
 #endif
 

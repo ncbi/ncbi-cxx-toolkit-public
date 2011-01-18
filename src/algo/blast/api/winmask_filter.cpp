@@ -339,68 +339,6 @@ Blast_FindWindowMaskerLoc(TSeqLocVector & queries, const string & lstat)
     }
 }
 
-// This is a "Schwartzian transform" for comparing strings containing
-// version numbers.  A vector<int> is produced that sorts like the
-// string would, except that sequences of digits are transformed into
-// single entries that sort numerically.  If a number is greater than
-// around 2^31/1000, the outcome will be defined and repeatable, but
-// not useful; however the version number parts of the string should
-// not get this large, so even in this case it probably will not
-// affect the ordering of the strings, (only the reversibility of the
-// transformation, which is not needed by this code).
-//
-// This chained inequality shows the kind of ordering expected here:
-// X < X9 < X10 < Y < Z1.10 < Z1.20 < Z2.10 < Z9.999 < Z10.9 < Z10.10
-//
-// (Normally a Schwartzian transform is used to reduce the cost of
-// sorting a set when the comparison function is expensive, and so
-// elements are decorated with the transformed version, then sorted,
-// then undecorated.  In this instance, the only goal is to find the
-// maximum element, and N is expected to be small, so the transformed
-// vectors are not cached, and the transform is computed more often
-// than necessary.)
-
-static void s_VersionNumberTransform(const string & a, vector<int> & b)
-{
-    b.reserve(a.size());
-    
-    bool prev_dig = false;
-    
-    for(size_t i = 0; i < a.size(); i++) {
-        int ch = a[i];
-        bool dig = isdigit(ch) ? true : false;
-        
-        if (dig) {
-            int v = (ch - '0');
-            
-            if (prev_dig) {
-                b.back() *= 10;
-                b.back() += v;
-            } else {
-                b.push_back(v + 1000);
-            }
-        } else {
-            b.push_back(a[i] & 0xFF);
-        }
-        
-        prev_dig = dig;
-    }
-}
-
-// If working with large sets of values, the results of these
-// transforms should normally be cached in some way.  The standard
-// technique would be to build a vector of pair<vector<int>,string>
-// objects, sort, then extract the second field when the first field
-// (the sort key) is no longer needed.
-
-static bool s_VersionNumberLess(const string & a, const string & b)
-{
-    vector<int> one, two;
-    s_VersionNumberTransform(a, one);
-    s_VersionNumberTransform(b, two);
-    return one < two;
-}
-
 /// Find the path to the window masker files, first checking the environment
 /// variable WINDOW_MASKER_PATH, then the section WINDOW_MASKER, label
 /// WINDOW_MASKER_PATH in the NCBI configuration file. If not found in either
@@ -433,8 +371,78 @@ s_FindPathToWM(void)
     return retval;
 }
 
-static string
-s_WindowMaskerTaxidToDb(int taxid)
+/********* NOTE: The functions starting with s_Old* are preserved
+ * for backwards compatibility only. After Gbench clients update to the
+ * simplified directory layout in WINDOW_MASKER_PATH, this code can be removed
+ * as it doesn't work as expected given the renaming of the subdirectory names
+ * (e.g.: human 36.3 to human GRCh37)
+ * 01/18/11
+ */
+
+// This is a "Schwartzian transform" for comparing strings containing
+// version numbers.  A vector<int> is produced that sorts like the
+// string would, except that sequences of digits are transformed into
+// single entries that sort numerically.  If a number is greater than
+// around 2^31/1000, the outcome will be defined and repeatable, but
+// not useful; however the version number parts of the string should
+// not get this large, so even in this case it probably will not
+// affect the ordering of the strings, (only the reversibility of the
+// transformation, which is not needed by this code).
+//
+// This chained inequality shows the kind of ordering expected here:
+// X < X9 < X10 < Y < Z1.10 < Z1.20 < Z2.10 < Z9.999 < Z10.9 < Z10.10
+//
+// (Normally a Schwartzian transform is used to reduce the cost of
+// sorting a set when the comparison function is expensive, and so
+// elements are decorated with the transformed version, then sorted,
+// then undecorated.  In this instance, the only goal is to find the
+// maximum element, and N is expected to be small, so the transformed
+// vectors are not cached, and the transform is computed more often
+// than necessary.)
+
+
+static void s_OldVersionNumberTransform(const string & a, vector<int> & b)
+{
+    b.reserve(a.size());
+    
+    bool prev_dig = false;
+    
+    for(size_t i = 0; i < a.size(); i++) {
+        int ch = a[i];
+        bool dig = isdigit(ch) ? true : false;
+        
+        if (dig) {
+            int v = (ch - '0');
+            
+            if (prev_dig) {
+                b.back() *= 10;
+                b.back() += v;
+            } else {
+                b.push_back(v + 1000);
+            }
+        } else {
+            b.push_back(a[i] & 0xFF);
+        }
+        
+        prev_dig = dig;
+    }
+}
+
+// If working with large sets of values, the results of these
+// transforms should normally be cached in some way.  The standard
+// technique would be to build a vector of pair<vector<int>,string>
+// objects, sort, then extract the second field when the first field
+// (the sort key) is no longer needed.
+
+static bool s_OldVersionNumberLess(const string & a, const string & b)
+{
+    vector<int> one, two;
+    s_OldVersionNumberTransform(a, one);
+    s_OldVersionNumberTransform(b, two);
+    return one < two;
+}
+
+static string s_OldWindowMaskerTaxidToDb(int taxid)
 {
     string path = s_FindPathToWM();
     path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
@@ -471,31 +479,57 @@ s_WindowMaskerTaxidToDb(int taxid)
     string max_str;
     
     ITERATE(list<string>, iter, builds) {
-        if (s_VersionNumberLess(max_str, *iter)) {
+        if (s_OldVersionNumberLess(max_str, *iter)) {
             max_str = *iter;
         }
     }
     
     _ASSERT(max_str.size());
-    
     return max_str;
+}
+
+/* Unit test is in bl2seq_unit_test.cpp */
+string
+WindowMaskerTaxidToDb(int taxid)
+{
+    string path = s_FindPathToWM();
+    path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
+        + CFile::GetPathSeparator();
+    
+    const string binpath = path + "wmasker.obinary";
+    const string ascpath = path + "wmasker.oascii";
+    
+    string retval;
+    // Try the binary file first, as this is faster to process than the ASCII
+    // file
+    if (CFile(binpath).Exists()) {
+        retval = binpath;
+    } else if (CFile(ascpath).Exists()) {
+        retval = ascpath;
+    } else {
+        /* NOTE: this code branch can be replaced by the exception thrown in
+         * s_OldWindowMaskerTaxidToDb once the backwards compatibility code is
+         * removed */
+        retval = s_OldWindowMaskerTaxidToDb(taxid);
+    }
+    return retval;
 }
 
 void
 Blast_FindWindowMaskerLocTaxId(CBlastQueryVector & queries, int taxid)
 {
-    string db = s_WindowMaskerTaxidToDb(taxid);
+    string db = WindowMaskerTaxidToDb(taxid);
     Blast_FindWindowMaskerLoc(queries, db);
 }
 
 void
 Blast_FindWindowMaskerLocTaxId(TSeqLocVector & queries, int taxid)
 {
-    string db = s_WindowMaskerTaxidToDb(taxid);
+    string db = WindowMaskerTaxidToDb(taxid);
     Blast_FindWindowMaskerLoc(queries, db);
 }
 
-void GetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids)
+static void s_OldGetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids)
 {
     supported_taxids.clear();
     CNcbiOstrstream oss;
@@ -515,6 +549,32 @@ void GetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids)
         path->erase(pos);
         const int taxid = NStr::StringToInt(*path, NStr::fConvErr_NoThrow);
         supported_taxids.insert(taxid);
+    }
+}
+
+void GetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids)
+{
+    supported_taxids.clear();
+    CNcbiOstrstream oss;
+    const string wmpath = s_FindPathToWM();
+    oss << wmpath << CFile::GetPathSeparator() << "*"
+        << CFile::GetPathSeparator() << "wmasker.o*";
+    const string path = CNcbiOstrstreamToString(oss);
+    
+    list<string> builds;
+    FindFiles(path, builds, fFF_File);
+    NON_CONST_ITERATE(list<string>, path, builds) {
+        // remove the WindowMasker path and path separator
+        path->erase(0, wmpath.size() + 1);  
+        // then remove the remaining path
+        const size_t pos = path->find(CFile::GetPathSeparator());
+        path->erase(pos);
+        const int taxid = NStr::StringToInt(*path, NStr::fConvErr_NoThrow);
+        supported_taxids.insert(taxid);
+    }
+
+    if (supported_taxids.empty()) {
+        s_OldGetTaxIdWithWindowMaskerSupport(supported_taxids);
     }
 }
 
