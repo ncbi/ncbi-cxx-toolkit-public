@@ -75,6 +75,15 @@ public:
     /// Convenience typedef
     typedef CFormatGuess::EFormat TFormat;
     
+    enum ESupportedInputFormats {
+        eFasta,
+        eXml,
+        eBinaryASN,
+        eTextASN,
+        eBlastDb,
+        eUnsupported = 256
+    };
+    
     /** @inheritDoc */
     CMakeBlastDBApp()
         : m_LogFile(NULL),
@@ -91,7 +100,15 @@ private:
     /** @inheritDoc */
     virtual int Run();
     
-    void x_AddSequenceData(CNcbiIstream & input);
+    void x_AddSequenceData(CNcbiIstream & input, TFormat fmt);
+    
+    vector<ESupportedInputFormats>
+    x_GuessInputType(const vector<CTempString>& filenames, 
+                     vector<string>& blastdbs);
+    ESupportedInputFormats x_GetUserInputTypeHint(void);
+    TFormat x_ConvertToCFormatGuessType(ESupportedInputFormats fmt);
+    ESupportedInputFormats x_ConvertToSupportedType(TFormat fmt);
+    TFormat x_GuessFileType(CNcbiIstream & input);
     
     void x_BuildDatabase();
     
@@ -209,6 +226,14 @@ void CMakeBlastDBApp::Init()
     
     arg_desc->AddFlag("parse_seqids",
                       "Parse Seq-ids in FASTA input", true);
+    arg_desc->AddOptionalKey("input_type", "type",
+                             "Type of the data specified in input_file "
+                             "(if not specified it will be guessed)",
+                             CArgDescriptions::eString);
+    arg_desc->SetConstraint("input_type", &(*new CArgAllow_Strings, 
+                                            "fasta", "blastdb",
+                                            "xml", "asn1_bin",
+                                            "asn1_txt"));
     
     arg_desc->AddFlag("hash_index",
                       "Create index of sequence hash values.",
@@ -503,7 +528,94 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
     return true;
 }
 
-void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input)
+CMakeBlastDBApp::TFormat 
+CMakeBlastDBApp::x_ConvertToCFormatGuessType(CMakeBlastDBApp::ESupportedInputFormats
+                                             fmt)
+{
+    TFormat retval = CFormatGuess::eUnknown;
+    switch (fmt) {
+    case eFasta:        retval = CFormatGuess::eFasta; break;
+    case eXml:          retval = CFormatGuess::eXml; break;
+    case eBinaryASN:    retval = CFormatGuess::eBinaryASN; break;
+    case eTextASN:      retval = CFormatGuess::eTextASN; break;
+    default:            break;
+    }
+    return retval;
+}
+
+CMakeBlastDBApp::ESupportedInputFormats 
+CMakeBlastDBApp::x_ConvertToSupportedType(CMakeBlastDBApp::TFormat fmt)
+{
+    ESupportedInputFormats retval = eUnsupported;
+    switch (fmt) {
+    case CFormatGuess::eFasta:        retval = eFasta; break;
+    case CFormatGuess::eXml:          retval = eXml; break;
+    case CFormatGuess::eBinaryASN:    retval = eBinaryASN; break;
+    case CFormatGuess::eTextASN:      retval = eTextASN; break;
+    default:            break;
+    }
+    return retval;
+}
+
+CMakeBlastDBApp::ESupportedInputFormats
+CMakeBlastDBApp::x_GetUserInputTypeHint(void)
+{
+    ESupportedInputFormats retval = eUnsupported;
+    const CArgs& args = GetArgs();
+    if (args["input_type"].HasValue()) {
+        const string& input_type = args["input_type"].AsString();
+        if (input_type == "fasta") {
+            retval = eFasta;
+        } else if (input_type == "xml") {
+            retval = eXml;
+        } else if (input_type == "asn1_bin") {
+            retval = eBinaryASN;
+        } else if (input_type == "asn1_txt") {
+            retval = eTextASN;
+        } else if (input_type == "blastdb") {
+            retval = eBlastDb;
+        } else {
+            // need to add supported type to list of constraints!
+            _ASSERT(false); 
+        }
+    }
+    return retval;
+}
+
+vector<CMakeBlastDBApp::ESupportedInputFormats>
+CMakeBlastDBApp::x_GuessInputType(const vector<CTempString>& filenames,
+                                  vector<string>& blastdbs)
+{
+    vector<ESupportedInputFormats> retval(filenames.size(), eUnsupported);
+    // Guess the input data type
+    for (size_t i = 0; i < filenames.size(); i++) {
+        // input_file could be FASTA, ASN.1 or XML, or if it doesn't match
+        // exactly, a BLAST database
+        const string & seq_file = filenames[i];
+
+        if (seq_file == "-") {
+            retval[i] = x_ConvertToSupportedType(x_GuessFileType(cin));
+        } else {
+            CFile input_file(seq_file);
+            if ( !input_file.Exists() ) {
+                blastdbs.push_back(seq_file);
+                retval[i] = eBlastDb;
+                continue;
+            }
+            if (input_file.GetLength() == 0) {
+                ERR_POST(Error << "Ignoring sequence input file '"
+                               << seq_file << "' as it is empty.");
+                continue;
+            }
+            CNcbiIfstream f(seq_file.c_str(), ios::binary);
+            retval[i] = x_ConvertToSupportedType(x_GuessFileType(f));
+        }
+    }
+    return retval;
+}
+
+CMakeBlastDBApp::TFormat
+CMakeBlastDBApp::x_GuessFileType(CNcbiIstream & input)
 {
     CFormatGuess fg(input);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
@@ -511,9 +623,12 @@ void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input)
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     fg.GetFormatHints().DisableAllNonpreferred();
+    return fg.GuessFormat();
+}
 
-    TFormat fmt = fg.GuessFormat();
-    
+void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input,
+                                        CMakeBlastDBApp::TFormat fmt)
+{
     switch(fmt) {
     case CFormatGuess::eFasta:
         x_AddFasta(input);
@@ -618,23 +733,34 @@ void CMakeBlastDBApp::x_ProcessMaskData()
 void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                                          bool           is_protein)
 {
-    bool has_fasta_data = FALSE;
+    bool has_fasta_data = false;
     vector<CTempString> names;
     SeqDB_SplitQuoted(paths, names);
-
     vector<string> blastdb;
 
-    ITERATE(vector<CTempString>, file, names) {
+    vector<ESupportedInputFormats> input_types;
+    ESupportedInputFormats hint = eUnsupported;
+    if ( (hint = x_GetUserInputTypeHint()) != eUnsupported) {
+        input_types.assign(names.size(), hint);
+    } else {
+        input_types = x_GuessInputType(names, blastdb);
+    }
+    _ASSERT(input_types.size() == names.size());
+
+    for (size_t i = 0; i < names.size(); i++) {
         // input_file could be FASTA, ASN.1 or XML.
-        const string & seq_file = *file;
+        const string & seq_file = names[i];
 
         if (seq_file == "-") {
-            x_AddSequenceData(cin);
+            _ASSERT(input_types[i] != eBlastDb);
+            x_AddSequenceData(cin, x_ConvertToCFormatGuessType(input_types[i]));
             has_fasta_data = TRUE;
         } else {
             CFile input_file(seq_file);
             if ( !input_file.Exists() ) {
-                blastdb.push_back(seq_file);
+                // this is a BLAST database
+                _ASSERT(find(blastdb.begin(), blastdb.end(), seq_file) 
+                        != blastdb.end());
                 continue;
             }
             if (input_file.GetLength() == 0) {
@@ -643,7 +769,8 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                 continue;
             }
             CNcbiIfstream f(seq_file.c_str(), ios::binary);
-            x_AddSequenceData(f);
+            _ASSERT(input_types[i] != eBlastDb);
+            x_AddSequenceData(f, x_ConvertToCFormatGuessType(input_types[i]));
             has_fasta_data = TRUE;
         }
     }
