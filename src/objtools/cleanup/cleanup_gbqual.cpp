@@ -1065,7 +1065,7 @@ void CCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
     }
 }
 
-
+static
 bool s_HasUpper (string val)
 {
     bool rval = false;

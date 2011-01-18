@@ -102,7 +102,7 @@ static CSubSource* s_StringToSubSource (
         }
         NStr::TruncateSpacesInPlace(name);
         
-		if (CSubSource::NeedsNoText(val) ) {
+        if (CSubSource::NeedsNoText(val) ) {
             if (NStr::IsBlank(name)) {
                 name = " ";
             }
@@ -196,7 +196,7 @@ static bool s_SubsourceEqual (
     TSUBSOURCE_SUBTYPE chs2 = sbs2.GetSubtype();
 
     if (chs1 != chs2) return false;
-	if (CSubSource::NeedsNoText (chs2)) return true;
+    if (CSubSource::NeedsNoText (chs2)) return true;
 
     if (sbs1.IsSetName() && sbs2.IsSetName()) {
         if (NStr::CompareNocase (sbs1.GetName(), sbs2.GetName()) == 0) return true;
@@ -245,7 +245,7 @@ void CCleanup_imp::x_SubtypeCleanup (
         CSubSource& sbs = **it;
         if (sbs.IsSetName()) continue;
         TSUBSOURCE_SUBTYPE chs = sbs.GetSubtype();
-		if (CSubSource::NeedsNoText (chs)) continue;
+        if (CSubSource::NeedsNoText (chs)) continue;
         ERASE_SUBSOURCE_ON_BIOSOURCE (it, bs);
         ChangeMade (CCleanupChange::eCleanSubsource);
     }
@@ -280,7 +280,7 @@ void CCleanup_imp::x_SubtypeCleanup (
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
       CSubSource& ss = **it;
       TSUBSOURCE_SUBTYPE chs = ss.GetSubtype();
-	  if (CSubSource::NeedsNoText (chs) && ss.IsSetName() && NStr::EqualNocase(ss.GetName(), "TRUE")) {
+      if (CSubSource::NeedsNoText (chs) && ss.IsSetName() && NStr::EqualNocase(ss.GetName(), "TRUE")) {
           ss.ResetName();
           ss.SetName("");
           ChangeMade (CCleanupChange::eCleanSubsource);
@@ -299,10 +299,10 @@ void CCleanup_imp::x_SubtypeCleanup (
           SUBSOURCE_CHOICE_IS (ss, NCBI_SUBSOURCE(rev_primer_seq))) {
           string before = ss.GetName();
           NStr::ToLower (ss.SetName());
-		  ss.SetName (NStr::Replace(ss.GetName(), "<other>", "<OTHER>"));
+          ss.SetName (NStr::Replace(ss.GetName(), "<other>", "<OTHER>"));
           ss.SetName (NStr::Replace (ss.GetName(), " ", kEmptyStr));
-		  ss.SetName (NStr::Replace (ss.GetName(), "<galq>", "<gal q>"));
-		  ss.SetName (NStr::Replace (ss.GetName(), "<manq>", "<man q>"));
+          ss.SetName (NStr::Replace (ss.GetName(), "<galq>", "<gal q>"));
+          ss.SetName (NStr::Replace (ss.GetName(), "<manq>", "<man q>"));
           if (NStr::Equal (before, ss.GetName())) continue;
           ChangeMade (CCleanupChange::eCleanSubsource);
       }
@@ -826,7 +826,7 @@ bool CCleanup_imp::x_IsMergeableBioSource (
 
 
 // Two BioSources are mergeable if the following conditions are met:
-// 1)	For the following items, either the value for one or both BioSources 
+// 1)    For the following items, either the value for one or both BioSources 
 // is not set or the values are identical:
 // BioSource.genome
 // BioSource.origin
@@ -839,13 +839,13 @@ bool CCleanup_imp::x_IsMergeableBioSource (
 // BioSource.org.orgname.gcode
 // BioSource.org.orgname.mgcode
 // BioSource.org.orgname.div
-// 2)	For the following items, either one or both BioSources have empty lists
+// 2)    For the following items, either one or both BioSources have empty lists
 // or the lists for the two BioSources are identical:
 // BioSource.subtype
 // BioSource.org.syn
 // BioSource.org.orgname.mod
 // BioSource.org.mod
-// 3)	No Dbtag in the BioSource.org.db list from one BioSource can have the 
+// 3)    No Dbtag in the BioSource.org.db list from one BioSource can have the 
 // same db value as an item in the BioSource.org.db list from the other BioSource 
 // unless the two Dbtags have identical tag values.
 
@@ -1520,8 +1520,8 @@ bool Match (
 
 
 // Two BioSources are identical if all of the following criteria are met:
-// 1)	Both have non-blank BioSource.org.taxname values that are identical.
-// 2)	For the following items, either the value for both BioSources is not set or the values are identical:
+// 1)    Both have non-blank BioSource.org.taxname values that are identical.
+// 2)    For the following items, either the value for both BioSources is not set or the values are identical:
 // BioSource.genome
 // BioSource.origin
 // BioSource.is-focus
@@ -1532,7 +1532,7 @@ bool Match (
 // BioSource.org.orgname.gcode
 // BioSource.org.orgname.mgcode
 // BioSource.org.orgname.div
-// 3)	For the following items, either both BioSources have empty lists or both have identical lists (both in order and content):
+// 3)    For the following items, either both BioSources have empty lists or both have identical lists (both in order and content):
 // BioSource.subtype
 // BioSource.org.syn
 // BioSource.org.orgname.mod

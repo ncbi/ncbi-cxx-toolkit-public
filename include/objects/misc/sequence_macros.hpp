@@ -301,7 +301,8 @@ typedef CRNA_ref::C_Ext::E_Choice TRNAREF_EXT;
 
 //   Name     TRNA      Gen
 
-
+#define NCBI_PERSONID(Type) CPerson_id::e_##Type
+typedef CPerson_id::E_Choice TPERSONID_TYPE;
 
 /////////////////////////////////////////////////////////////////////////////
 /// Macros for obtaining closest specific CSeqdesc applying to a CBioseq
@@ -554,6 +555,22 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 
 #define ITEM_HAS(Base, Var) \
 (Base##_Test(Var))
+
+/// FIELD_IS_EMPTY base macro
+
+#define FIELD_IS_EMPTY(Base, Var) \
+    (Base##_Test(Var) && Base##_Get(Var).empty() )
+
+/// RESET_FIELD_IF_EMPTY base macro
+
+// (The do-while is just so the user has to put a semi-colon after it)
+#define REMOVE_IF_EMPTY_FIELD(Base, Var) \
+    do { if( FIELD_IS_EMPTY(Base, Var) ) { Base##_Reset(Var); ChangeMade(CCleanupChange::eChangeQualifiers); } } while(false)
+
+/// GET_STRING_OR_BLANK base macro
+
+#define GET_STRING_OR_BLANK(Base, Var) \
+    (Base##_Test(Var) ? Base##_Get(Var) : kEmptyStr )
 
 /// CHOICE_IS base macro
 
@@ -822,6 +839,11 @@ IS_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define UNIQUE_CHAR_IN_STRING(Var, Func) \
 DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
+/// CHAR_IN_STRING_IS_EMPTY
+
+#define CHAR_IN_STRING_IS_EMPTY(Var) \
+    FIELD_IS_EMPTY(CHAR_IN_STRING, Var, Func)
+
 
 ///
 /// Generic FIELD macros
@@ -867,6 +889,15 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define STRING_SET_MATCH(Var, Fld, Str) \
     ((Var).IsSet##Fld() && NStr::FindNoCase((Var).Get##Fld(), Str) != NULL)
 
+/// FIELD_OUT_OF_RANGE base macro
+
+#define FIELD_UNSET_OR_OUT_OF_RANGE(Var, Fld, Lower, Upper) \
+    (! (Var).IsSet##Fld() || (Var).Get##Fld() < (Lower) || (Var).Get##Fld() > (Upper) )
+
+/// FIELD_EQUALS base macro
+
+#define FIELD_EQUALS( Var, Fld, Value ) \
+    ( (Var).IsSet##Fld() && (Var).Get##Fld() == (Value) )
 
 ///
 /// CSeq_submit macros
@@ -2055,6 +2086,9 @@ EDIT_EACH (MOD_ON_ORGREF, Itr, Var)
 #define ERASE_MOD_ON_ORGREF(Itr, Var) \
 LIST_ERASE_ITEM (MOD_ON_ORGREF, Itr, Var)
 
+#define MOD_ON_ORGREF_IS_EMPTY(Var) \
+FIELD_IS_EMPTY( MOD_ON_ORGREF, Var )
+
 
 /// SYN_ON_ORGREF macros
 
@@ -2194,6 +2228,14 @@ CHOICE_IS (ORGMOD_CHOICE, Var, Chs)
 #define SWITCH_ON_ORGMOD_CHOICE(Var) \
 SWITCH_ON (ORGMOD_CHOICE, Var)
 
+/// ATTRIB_ON_ORGMOD macros
+
+#define ATTRIB_ON_ORGMOD_Test(Var) (Var).IsSetAttrib()
+#define ATTRIB_ON_ORGMOD_Get(Var)  (Var).GetAttrib()
+
+/// 
+#define GET_ATTRIB_OR_BLANK(Var) \
+    GET_STRING_OR_BLANK( ATTRIB_ON_ORGMOD, Var )
 
 ///
 /// CPubequiv macros
@@ -2300,6 +2342,27 @@ ADD_ITEM (AUTHOR_ON_PUB, Var, Ref)
 #define ERASE_AUTHOR_ON_PUB(Itr, Var) \
 LIST_ERASE_ITEM (AUTHOR_ON_PUB, Itr, Var)
 
+///
+/// CAuth_list macros
+
+#define AUTHOR_ON_AUTHLIST_Type      CAuth_list::C_Names::TStd
+#define AUTHOR_ON_AUTHLIST_Test(Var) (Var).IsSetNames() && \
+                                     (Var).GetNames().IsStd()
+#define AUTHOR_ON_AUTHLIST_Get(Var)  (Var).GetNames().GetStd()
+#define AUTHOR_ON_AUTHLIST_Set(Var)  (Var).SetNames().SetStd()
+
+#define EDIT_EACH_AUTHOR_ON_AUTHLIST(Itr, Var) \
+EDIT_EACH (AUTHOR_ON_AUTHLIST, Itr, Var)
+
+/// ERASE_AUTHOR_ON_AUTHLIST
+
+#define ERASE_AUTHOR_ON_AUTHLIST(Itr, Var) \
+LIST_ERASE_ITEM (AUTHOR_ON_AUTHLIST, Itr, Var)
+
+/// AUTHOR_ON_AUTHLIST_IS_EMPTY
+
+#define AUTHOR_ON_AUTHLIST_IS_EMPTY(Var) \
+    FIELD_IS_EMPTY( AUTHOR_ON_AUTHLIST, Var )
 
 ///
 /// CUser_object macros
@@ -2670,10 +2733,11 @@ SWITCH_ON (SEQFEAT_CHOICE, Var)
 
 /// GBQUAL_ON_SEQFEAT macros
 
-#define GBQUAL_ON_SEQFEAT_Type      CSeq_feat::TQual
-#define GBQUAL_ON_SEQFEAT_Test(Var) (Var).IsSetQual()
-#define GBQUAL_ON_SEQFEAT_Get(Var)  (Var).GetQual()
-#define GBQUAL_ON_SEQFEAT_Set(Var)  (Var).SetQual()
+#define GBQUAL_ON_SEQFEAT_Type       CSeq_feat::TQual
+#define GBQUAL_ON_SEQFEAT_Test(Var)  (Var).IsSetQual()
+#define GBQUAL_ON_SEQFEAT_Get(Var)   (Var).GetQual()
+#define GBQUAL_ON_SEQFEAT_Set(Var)   (Var).SetQual()
+#define GBQUAL_ON_SEQFEAT_Reset(Var) (Var).ResetQual()
 
 /// SEQFEAT_HAS_GBQUAL
 
@@ -2720,6 +2784,10 @@ IS_UNIQUE (GBQUAL_ON_SEQFEAT, Var, Func)
 #define UNIQUE_GBQUAL_ON_SEQFEAT(Var, Func) \
 DO_UNIQUE (GBQUAL_ON_SEQFEAT, Var, Func)
 
+/// RESET_GBQUAL_ON_SEQFEAT_IF_EMPTY
+#define REMOVE_IF_EMPTY_GBQUAL_ON_SEQFEAT(Var) \
+    REMOVE_IF_EMPTY_FIELD(GBQUAL_ON_SEQFEAT, Var)
+
 /// FEATURE_HAS_GBQUAL
 /// FOR_EACH_GBQUAL_ON_FEATURE
 /// EDIT_EACH_GBQUAL_ON_FEATURE
@@ -2743,10 +2811,11 @@ DO_UNIQUE (GBQUAL_ON_SEQFEAT, Var, Func)
 
 /// SEQFEATXREF_ON_SEQFEAT macros
 
-#define SEQFEATXREF_ON_SEQFEAT_Type      CSeq_feat::TXref
-#define SEQFEATXREF_ON_SEQFEAT_Test(Var) (Var).IsSetXref()
-#define SEQFEATXREF_ON_SEQFEAT_Get(Var)  (Var).GetXref()
-#define SEQFEATXREF_ON_SEQFEAT_Set(Var)  (Var).SetXref()
+#define SEQFEATXREF_ON_SEQFEAT_Type       CSeq_feat::TXref
+#define SEQFEATXREF_ON_SEQFEAT_Test(Var)  (Var).IsSetXref()
+#define SEQFEATXREF_ON_SEQFEAT_Get(Var)   (Var).GetXref()
+#define SEQFEATXREF_ON_SEQFEAT_Set(Var)   (Var).SetXref()
+#define SEQFEATXREF_ON_SEQFEAT_Reset(Var) (Var).ResetXref()
 
 /// SEQFEAT_HAS_SEQFEATXREF
 
@@ -2792,6 +2861,11 @@ IS_UNIQUE (SEQFEATXREF_ON_SEQFEAT, Var, Func)
 
 #define UNIQUE_SEQFEATXREF_ON_SEQFEAT(Var, Func) \
 DO_UNIQUE (SEQFEATXREF_ON_SEQFEAT, Var, Func)
+
+/// REMOVE_IF_EMPTY_GBQUAL_ON_SEQFEAT
+
+#define REMOVE_IF_EMPTY_SEQFEATXREF_ON_SEQFEAT(Var) \
+    REMOVE_IF_EMPTY_FIELD(SEQFEATXREF_ON_SEQFEAT, Var)
 
 /// FEATURE_HAS_SEQFEATXREF
 /// FOR_EACH_SEQFEATXREF_ON_FEATURE
@@ -3135,10 +3209,11 @@ DO_UNIQUE (CODEBREAK_ON_CDREGION, Var, Func)
 
 /// NAME_ON_PROTREF macros
 
-#define NAME_ON_PROTREF_Type      CProt_ref::TName
-#define NAME_ON_PROTREF_Test(Var) (Var).IsSetName()
-#define NAME_ON_PROTREF_Get(Var)  (Var).GetName()
-#define NAME_ON_PROTREF_Set(Var)  (Var).SetName()
+#define NAME_ON_PROTREF_Type       CProt_ref::TName
+#define NAME_ON_PROTREF_Test(Var)  (Var).IsSetName()
+#define NAME_ON_PROTREF_Get(Var)   (Var).GetName()
+#define NAME_ON_PROTREF_Set(Var)   (Var).SetName()
+#define NAME_ON_PROTREF_Reset(Var) (Var).ResetName()
 
 /// PROTREF_HAS_NAME
 
@@ -3184,6 +3259,12 @@ IS_UNIQUE (NAME_ON_PROTREF, Var, Func)
 
 #define UNIQUE_NAME_ON_PROTREF(Var, Func) \
 DO_UNIQUE (NAME_ON_PROTREF, Var, Func)
+
+#define REMOVE_IF_EMPTY_NAME_ON_PROTREF(Var) \
+    REMOVE_IF_EMPTY_FIELD(NAME_ON_PROTREF, Var)
+
+#define NAME_ON_PROTREF_IS_EMPTY(Var) \
+    FIELD_IS_EMPTY( NAME_ON_PROTREF, Var )    
 
 /// PROT_HAS_NAME
 /// FOR_EACH_NAME_ON_PROT
@@ -3486,10 +3567,11 @@ DO_UNIQUE (QUAL_ON_RNAGEN, Var, Func)
 
 /// QUAL_ON_RNAQSET macros
 
-#define QUAL_ON_RNAQSET_Type      CRNA_qual_set::Tdata
-#define QUAL_ON_RNAQSET_Test(Var) (Var).IsSet()
-#define QUAL_ON_RNAQSET_Get(Var)  (Var).Get()
-#define QUAL_ON_RNAQSET_Set(Var)  (Var).Set()
+#define QUAL_ON_RNAQSET_Type       CRNA_qual_set::Tdata
+#define QUAL_ON_RNAQSET_Test(Var)  (Var).IsSet()
+#define QUAL_ON_RNAQSET_Get(Var)   (Var).Get()
+#define QUAL_ON_RNAQSET_Set(Var)   (Var).Set()
+#define QUAL_ON_RNAQSET_Reset(Var) (Var).Reset()
 
 /// RNAQSET_HAS_QUAL
 
@@ -3536,7 +3618,14 @@ IS_UNIQUE (QUAL_ON_RNAQSET, Var, Func)
 #define UNIQUE_QUAL_ON_RNAQSET(Var, Func) \
 DO_UNIQUE (QUAL_ON_RNAQSET, Var, Func)
 
+/// QUAL_ON_RNAQSET_IS_EMPTY
 
+#define QUAL_ON_RNAQSET_IS_EMPTY(Var) \
+    FIELD_IS_EMPTY(QUAL_ON_RNAQSET, Var)
+
+/// REMOVE_IF_EMPTY_QUAL_ON_RNAQSET
+#define REMOVE_IF_EMPTY_QUAL_ON_RNAQSET(Var) \
+    REMOVE_IF_EMPTY_FIELD(QUAL_ON_RNAQSET, Var)
 
 ///
 /// @}

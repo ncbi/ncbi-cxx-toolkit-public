@@ -451,6 +451,7 @@ static bool s_IsEmpty(const CAuthor& auth)
 
 
 // when we reset author names, we need to put in a place holder - otherwise the ASN.1 becomes invalid
+static
 void s_ResetAuthorNames (CAuth_list::TNames& names) 
 {
     list< string > auth_list;
