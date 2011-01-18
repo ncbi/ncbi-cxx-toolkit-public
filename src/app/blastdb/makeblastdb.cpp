@@ -641,8 +641,10 @@ void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input,
         break;
         
     default:
-        NCBI_THROW(CInvalidDataException, eInvalidInput, 
-              "Input format not recognized");
+        string msg("Input format not supported (");
+        msg += string(CFormatGuess::GetFormatName(fmt)) + " format). ";
+        msg += "Use -input_type to specify the input type being used.";
+        NCBI_THROW(CInvalidDataException, eInvalidInput, msg);
     }
 }
 
