@@ -506,7 +506,8 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         return;
     }
 
-    size_t covered_bases = align.GetAlignLengthWithinRange(range, false /* don't include gaps */);
+    size_t covered_bases = align.GetAlignLengthWithinRange
+                               (range, false /* don't include gaps */);
     size_t seq_len = 0;
     if(!range.IsWhole()){
         seq_len = range.GetLength();
@@ -957,7 +958,8 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
             /// "NCBI_GPIPE", containing a region Seq-feat named "alignable"
             TSeqRange alignable_range = TSeqRange::GetWhole();
             CBioseq_Handle query = scope.GetBioseqHandle(align.GetSeq_id(0));
-            for(CFeat_CI feat_it(query, SAnnotSelector(CSeqFeatData::e_Region)); feat_it; ++feat_it)
+            for(CFeat_CI feat_it(query, SAnnotSelector(CSeqFeatData::e_Region));
+                    feat_it; ++feat_it)
             {
                 if(feat_it->GetData().GetRegion() == "alignable" &&
                    feat_it->GetAnnot().IsNamed() &&
@@ -969,7 +971,8 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
             }
             double pct_coverage = 0;
             s_GetPercentCoverage(scope, align, alignable_range, &pct_coverage);
-            align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, pct_coverage);
+            align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage,
+                                pct_coverage);
         }}
         break;
 

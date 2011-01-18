@@ -215,7 +215,8 @@ public:
     /// Get the length of this alignment within a specified range
     /// By default, this function computes an alignment length
     /// including all gap segments.
-    TSeqPos         GetAlignLengthWithinRange(const TSeqRange &range, bool include_gaps = true) const;
+    TSeqPos         GetAlignLengthWithinRange(const TSeqRange &range,
+                                              bool include_gaps = true) const;
 
     /// Get score
     bool GetNamedScore(const string& id, int &score) const;

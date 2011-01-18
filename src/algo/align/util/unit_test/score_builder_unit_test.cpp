@@ -339,7 +339,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         try
         {{
              double actual;
-             score_builder.AddScore(*scope, alignment, CSeq_align::eScore_HighQualityPercentCoverage);
+             score_builder.AddScore(*scope, alignment,
+                                    CSeq_align::eScore_HighQualityPercentCoverage);
              alignment.GetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, actual);
              LOG_POST(Error << "Verifying score: pct_coverage_hiqual: "
                       << kExpectedHighQualityPctCoverage << " == " << actual);
@@ -359,7 +360,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
              **/
          }}
          catch (CException &e) {
-             LOG_POST(Error << "Exception thrown when checking pct_coverage_hiqual: " << e.ReportThis());
+             LOG_POST(Error << "Exception thrown when checking pct_coverage_hiqual: "
+                            << e.ReportThis());
          }
 
         if (alignment.GetSegs().IsDenseg()) {

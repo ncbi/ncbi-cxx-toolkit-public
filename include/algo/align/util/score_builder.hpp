@@ -118,7 +118,8 @@ public:
     double GetPercentCoverage(CScope& scope, const CSeq_align& align);
 
     /// Compute percent coverage of the query within specified range (sequence 0) (range 0-100)
-    double GetPercentCoverage(CScope& scope, const CSeq_align& align, const TSeqRange &range);
+    double GetPercentCoverage(CScope& scope, const CSeq_align& align,
+                              const TSeqRange &range);
 
     /// Compute the number of identities in the alignment
     int GetIdentityCount  (CScope& scope, const CSeq_align& align);

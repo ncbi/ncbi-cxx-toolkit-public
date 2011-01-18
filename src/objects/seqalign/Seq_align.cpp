@@ -1374,14 +1374,17 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                 product_span.Set(exon.GetProduct_start().GetNucpos(),
                                  exon.GetProduct_end().GetNucpos()-1);
             } else if (exon.GetProduct_start().IsProtpos()) {
-                TSeqPos start_frame = exon.GetProduct_start().GetProtpos().GetFrame();
+                TSeqPos start_frame =
+                    exon.GetProduct_start().GetProtpos().GetFrame();
                 if(start_frame > 0)
                     --start_frame;
-                TSeqPos end_frame = exon.GetProduct_start().GetProtpos().GetFrame();
+                TSeqPos end_frame =
+                    exon.GetProduct_start().GetProtpos().GetFrame();
                 if(end_frame > 0)
                     --end_frame;
-                product_span.Set(exon.GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
-                                 exon.GetProduct_end().GetProtpos().GetAmin()*3 + end_frame - 1);
+                product_span.Set(
+                    exon.GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
+                    exon.GetProduct_end().GetProtpos().GetAmin()*3 + end_frame - 1);
             } else {
                 NCBI_THROW(CException, eUnknown,
                            "Spliced-exon is neirther nuc nor prot");
@@ -1425,7 +1428,9 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                         break;
                     }
                     if(covered)
-                        exon_len += TSeqRange(part_start, part_start+part_len-1).IntersectWith(range).GetLength();
+                        exon_len +=
+                            TSeqRange(part_start, part_start+part_len-1)
+                                . IntersectWith(range) . GetLength();
                     part_start += part_len;
                 }
             } else {
@@ -1450,7 +1455,8 @@ TSeqPos CSeq_align::GetAlignLength(bool include_gaps) const
 }
 
 
-TSeqPos CSeq_align::GetAlignLengthWithinRange(const TSeqRange &range, bool include_gaps) const
+TSeqPos CSeq_align::GetAlignLengthWithinRange(const TSeqRange &range,
+                                              bool include_gaps) const
 {
     return s_GetAlignmentLength(*this, range, !include_gaps );
 }
