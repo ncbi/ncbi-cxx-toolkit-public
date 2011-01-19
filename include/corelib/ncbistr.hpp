@@ -57,6 +57,10 @@ BEGIN_NCBI_SCOPE
 NCBI_XNCBI_EXPORT extern const char *const kEmptyCStr;
 #define NcbiEmptyCStr NCBI_NS_NCBI::kEmptyCStr
 
+#if defined(HAVE_WSTRING)
+NCBI_XNCBI_EXPORT extern const wchar_t *const kEmptyWCStr;
+#define NcbiEmptyWCStr NCBI_NS_NCBI::kEmptyWCStr
+#endif
 
 /// Empty "C++" string.
 #if defined(NCBI_OS_MSWIN) || ( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
@@ -125,6 +129,8 @@ typedef wstring TXString;
 #  define _T_XCSTRING(x)      _T_XSTRING(x).c_str()
 #  define _T_CSTRING(x)       _T_STDSTRING(x).c_str()
 
+#  define kEmptyXCStr kEmptyWCStr
+
 #else
 
 typedef char   TXChar;
@@ -138,6 +144,8 @@ typedef string TXString;
 #  define _T_STDSTRING(x)     (x)
 #  define _T_XCSTRING(x)      impl_ToCString(x)
 #  define _T_CSTRING(x)       (x)
+
+#  define kEmptyXCStr kEmptyCStr
 
 inline const char* impl_ToCString(const char*   s) { return s; }
 inline const char* impl_ToCString(const string& s) { return s.c_str(); }

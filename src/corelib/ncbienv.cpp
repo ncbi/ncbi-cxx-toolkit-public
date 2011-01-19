@@ -101,7 +101,7 @@ void CNcbiEnvironment::Reset(const char* const* envp)
             continue;
         }
         m_Cache[string(s, eq)]
-            = SEnvValue(eq + 1, const_cast<char*>(kEmptyCStr));
+            = SEnvValue(eq + 1, const_cast<TXChar*>(kEmptyXCStr));
     }
 }
 
@@ -129,7 +129,7 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
     CFastMutexGuard LOCK(m_CacheMutex);
     for (TCache::const_iterator it = m_Cache.lower_bound(prefix);
          it != m_Cache.end()  &&  NStr::StartsWith(it->first, prefix);  ++it) {
-        if ( !it->second.value.empty()  ||  it->second.ptr == kEmptyCStr) {
+        if ( !it->second.value.empty()  ||  it->second.ptr == kEmptyXCStr) {
             // ignore entries the app cleared out
             names.push_back(it->first);
         }
@@ -138,12 +138,12 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
 
 void CNcbiEnvironment::Set(const string& name, const string& value)
 {
-    char* str = strdup((name + "=" + value).c_str());
+    TXChar* str = NcbiSys_strdup(_T_XCSTRING(name + "=" + value));
     if ( !str ) {
         throw bad_alloc();
     }
 
-    if (NcbiSys_putenv((TXChar*)_T_XCSTRING(str)) != 0) {
+    if (NcbiSys_putenv(str) != 0) {
         free(str);
         NCBI_THROW(CErrnoTemplException<CCoreException>, eErrno,
                    "failed to set environment variable " + name);
@@ -151,9 +151,10 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
 
     CFastMutexGuard LOCK(m_CacheMutex);
     TCache::const_iterator i = m_Cache.find(name);
-    if (i != m_Cache.end()  &&  i->second.ptr != NULL
-        &&  i->second.ptr != kEmptyCStr) {
-        free(i->second.ptr);
+    if ( i != m_Cache.end() ) {
+        if (i->second.ptr != NULL && i->second.ptr != kEmptyXCStr) {
+            free(i->second.ptr);
+        }
     }
     m_Cache[name] = SEnvValue(value, str);
 }
@@ -178,7 +179,7 @@ void CNcbiEnvironment::Unset(const string& name)
     CFastMutexGuard LOCK(m_CacheMutex);
     TCache::iterator i = m_Cache.find(name);
     if ( i != m_Cache.end() ) {
-        if (i->second.ptr != NULL  &&  i->second.ptr != kEmptyCStr) {
+        if (i->second.ptr != NULL && i->second.ptr != kEmptyXCStr) {
             free(i->second.ptr);
         }
         m_Cache.erase(i);

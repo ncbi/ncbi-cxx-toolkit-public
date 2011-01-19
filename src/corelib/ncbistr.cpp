@@ -64,6 +64,10 @@ inline SIZE_TYPE s_DiffPtr(const char* end, const char* start)
 
 const char *const kEmptyCStr = "";
 
+#if defined(HAVE_WSTRING)
+const wchar_t *const kEmptyWCStr = L"";
+#endif
+
 
 extern const char* const kNcbiDevelopmentVersionString;
 const char* const kNcbiDevelopmentVersionString

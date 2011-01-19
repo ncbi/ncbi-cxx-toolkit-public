@@ -146,10 +146,10 @@ private:
     /// Cached environment <name,value> pair.
     struct SEnvValue {
         SEnvValue(void) : ptr(NULL) {}
-        SEnvValue(const string& v, char* p) : value(v), ptr(p) {}
+        SEnvValue(const string& v, TXChar* p) : value(v), ptr(p) {}
 
-        string value; // cached value
-        char*  ptr;   // string created by strdup() or NULL
+        string value;  // cached value
+        TXChar*  ptr;  // string created by strdup() or NULL
     };
     typedef map<string, SEnvValue> TCache;
     mutable TCache m_Cache;
