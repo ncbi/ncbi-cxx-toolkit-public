@@ -66,7 +66,6 @@ extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectSrandAddend(void);
  *  Multi-Thread SAFETY
  */
 
-
 #ifdef _DEBUG
 extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckLock  (void);
 extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckUnlock(void);
@@ -90,6 +89,13 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
 #define CORE_UNLOCK      verify(CORE_CHECK_UNLOCK  &&                   \
                                 MT_LOCK_Do(g_CORE_MT_Lock, eMT_Unlock  ))
 
+
+/******************************************************************************
+ *  App name support
+ */
+
+#define NCBI_CORE_APPNAME_MAXLEN 80
+extern NCBI_XCONNECT_EXPORT char g_CORE_AppName[NCBI_CORE_APPNAME_MAXLEN + 1];
 
 
 /******************************************************************************
@@ -246,7 +252,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_MetaConn,   302,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,      304,   2);
-NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,   5);
+NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,   6);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,    306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,       307,  18);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LB,         308,   0);
