@@ -899,6 +899,9 @@ static const char* x_ClientAddress(const char* client_host,
 }
 
 
+#define _STR(x)  #x
+#define  STR(x)  _STR(x)
+
 extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
                                                  const char*   service)
 {
@@ -906,34 +909,33 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
     static const char kAddress[]  = "address";
     static const char kPlatform[] = "platform";
     int/*bool*/ local_host;
-    const char* str;
+    const char* s;
 
     if (!info)
         return 0/*failed*/;
-#if 0
-    str = CORE_GetAppName();
-    if (str) {
-        char user_agent[16+80];
-        sprintf(user_agent, "User-Agent: %.80s\r\n", str);
-        ConnNetInfo_ExtendUserHeader(info, user_agent);
+
+    s = CORE_GetAppName();
+    if (s) {
+        char ua[16 + NCBI_CORE_APPNAME_MAXLEN];
+        sprintf(ua, "User-Agent: %." STR(NCBI_CORE_APPNAME_MAXLEN) "s\r\n", s);
+        ConnNetInfo_ExtendUserHeader(info, ua);
     }
-#endif
     /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
-    if (!(str = CORE_GetPlatform())  ||  !*str)
+    if (!(s = CORE_GetPlatform())  ||  !*s)
         ConnNetInfo_DeleteArg(info, kPlatform);
     else
-        ConnNetInfo_PreOverrideArg(info, kPlatform, str);
+        ConnNetInfo_PreOverrideArg(info, kPlatform, s);
     local_host = !info->client_host[0];
     if (local_host  &&
         !SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host))) {
         SOCK_gethostname(info->client_host, sizeof(info->client_host));
     }
-    if (!(str = x_ClientAddress(info->client_host, local_host))  ||  !*str)
+    if (!(s = x_ClientAddress(info->client_host, local_host))  ||  !*s)
         ConnNetInfo_DeleteArg(info, kAddress);
     else
-        ConnNetInfo_PreOverrideArg(info, kAddress, str);
-    if (str != info->client_host)
-        free((void*) str);
+        ConnNetInfo_PreOverrideArg(info, kAddress, s);
+    if (s != info->client_host)
+        free((void*) s);
     if (service  &&  *service) {
         if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
             ConnNetInfo_DeleteArg(info, kPlatform);
@@ -946,6 +948,9 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
     }
     return 1/*succeeded*/;
 }
+
+#undef  STR
+#undef _STR
 
 
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
