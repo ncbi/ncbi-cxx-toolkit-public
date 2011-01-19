@@ -1193,6 +1193,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
                         break;
                 }
             }
+            break;
         case CSeqFeatData::eSubtype_STS:
             {
                 switch (qtype) {
@@ -1205,6 +1206,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
                         break;
                 }
             }
+            break;
         case CSeqFeatData::eSubtype_misc_feature:
             {
                 switch (qtype) {
@@ -1220,6 +1222,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
                         break;
                 }
             }
+            break;
         default:
             break;
     }
@@ -1512,6 +1515,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         }
                         return false;
                     }
+                case eQual_replace:
+                    {
+                        string val_copy = val;
+                        NStr::ToLower( val_copy );
+                        x_AddGBQualToFeature (sfp, qual, val_copy );
+                        return true;
+                    }
                 case eQual_allele:
                 case eQual_bound_moiety:
                 case eQual_clone:
@@ -1535,7 +1545,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_product:
                 case eQual_protein_id:
                 case eQual_satellite:
-                case eQual_replace:
                 case eQual_rpt_family:
                 case eQual_rpt_type:
                 case eQual_rpt_unit:
@@ -1878,6 +1887,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                                                 &ispoint, &isminus, feat, qual, val, offset)) {
 
                 // process line in feature table
+
+                replace( val.begin(), val.end(), '\"', '\'' );
 
                 if ((! feat.empty ()) && start >= 0 && stop >= 0) {
 
