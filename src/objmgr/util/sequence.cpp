@@ -1227,7 +1227,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     GetOverlappingFeatures(mrna_feat.GetLocation(),
                            CSeqFeatData::e_Cdregion,
                            CSeqFeatData::eSubtype_cdregion,
-                           eOverlap_CheckIntervals,
+                           eOverlap_Subset,
                            feats, scope, opts, plugin );
 
     /// easy out: 0 or 1 possible features
