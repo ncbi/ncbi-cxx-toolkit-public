@@ -592,6 +592,17 @@ extern const char* CORE_GetPlatform(void)
 }
 
 
+/******************************************************************************
+ *  CORE_GetAppName
+ */
+
+char g_CORE_AppName[NCBI_CORE_APPNAME_MAXLEN + 1];
+
+extern const char* CORE_GetAppName(void)
+{
+    return *g_CORE_AppName ? g_CORE_AppName : 0;
+}
+
 
 /****************************************************************************
  * CORE_GetUsername
