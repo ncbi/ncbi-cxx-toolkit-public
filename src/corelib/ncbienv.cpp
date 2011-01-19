@@ -143,7 +143,7 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
         throw bad_alloc();
     }
 
-    if (NcbiSys_putenv(_T_XCSTRING(str)) != 0) {
+    if (NcbiSys_putenv((TXChar*)_T_XCSTRING(str)) != 0) {
         free(str);
         NCBI_THROW(CErrnoTemplException<CCoreException>, eErrno,
                    "failed to set environment variable " + name);
