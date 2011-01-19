@@ -136,6 +136,13 @@ extern NCBI_XCONNECT_EXPORT
 char* strncpy0(char* s1, const char* s2, size_t n);
 
 
+/* Copy not more than "n" characters from string "s2" into "s1" scanning
+ * backwards, and return the result, which is always null-terminated.
+ */
+extern NCBI_XCONNECT_EXPORT
+char* strrncpy0(char* s1, const char* s2, size_t n);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

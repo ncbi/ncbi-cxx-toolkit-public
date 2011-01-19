@@ -140,3 +140,17 @@ extern char* strncpy0(char* s1, const char* s2, size_t n)
     *s1 = '\0';
     return strncat(s1, s2, n);
 }
+
+
+extern char* strrncpy0(char* s1, const char* s2, size_t n)
+{
+    char* end = (char*) memchr(s2, '\0', n);
+    if (end)
+        n = (size_t)(end - s2);
+    s1 += n;
+    s2 += n;
+    *s1 = '\0';
+    while (n-- > 0)
+        *--s1 = *--s2;
+    return s1;
+}
