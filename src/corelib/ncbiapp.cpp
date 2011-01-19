@@ -39,6 +39,7 @@
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include "ncbisys.hpp"
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
@@ -1000,10 +1001,10 @@ string CNcbiApplication::FindProgramExecutablePath
         if ( dllEnumProcessModules(process,
                                    &module, sizeof(HMODULE), &needed) ) {
             if ( needed  &&  module ) {
-                char buf[MAX_PATH + 1];
-                DWORD ncount = GetModuleFileNameA(module, buf, MAX_PATH);
+                TXChar buf[MAX_PATH + 1];
+                DWORD ncount = GetModuleFileName(module, buf, MAX_PATH);
                 if (ncount > 0) {
-                    ret_val.assign(buf, ncount);
+                    ret_val = _T_STDSTRING(buf);
                     if (real_path) {
                         *real_path = CDirEntry::NormalizePath(ret_val,
                                                               eFollowLinks);
@@ -1071,7 +1072,7 @@ string CNcbiApplication::FindProgramExecutablePath
             if (instance) {
                 env_path = instance->GetEnvironment().Get("PATH");
             } else {
-                env_path = getenv("PATH");
+                env_path = _T_STDSTRING(NcbiSys_getenv(_T("PATH")));
             }
             list<string> split_path;
 #  ifdef NCBI_OS_MSWIN

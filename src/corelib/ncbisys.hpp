@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 #    define NcbiSys_getenv       _wgetenv
 #    define NcbiSys_mkdir        _wmkdir
 #    define NcbiSys_open         _wopen
+#    define NcbiSys_putenv       _wputenv
 #    define NcbiSys_remove       _wremove
 #    define NcbiSys_rename       _wrename
 #    define NcbiSys_rmdir        _wrmdir
@@ -66,6 +67,7 @@ BEGIN_NCBI_SCOPE
 #    define NcbiSys_getenv        getenv
 #    define NcbiSys_mkdir         mkdir
 #    define NcbiSys_open         _open
+#    define NcbiSys_putenv       _putenv
 #    define NcbiSys_remove        remove
 #    define NcbiSys_rename        rename
 #    define NcbiSys_rmdir         rmdir
@@ -86,6 +88,7 @@ BEGIN_NCBI_SCOPE
 #  define NcbiSys_getenv        getenv
 #  define NcbiSys_mkdir         mkdir
 #  define NcbiSys_open          open
+#  define NcbiSys_putenv        putenv
 #  define NcbiSys_remove        remove
 #  define NcbiSys_rename        rename
 #  define NcbiSys_rmdir         rmdir

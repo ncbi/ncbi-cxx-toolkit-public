@@ -39,6 +39,7 @@
 #include <corelib/error_codes.hpp>
 #include <algorithm>
 #include <stdarg.h>
+#include "ncbisys.hpp"
 
 #ifdef NCBI_OS_LINUX
 #  include <unistd.h>
@@ -137,16 +138,12 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
 
 void CNcbiEnvironment::Set(const string& name, const string& value)
 {
-#ifdef NCBI_OS_MSWIN
-#define putenv _putenv
-#endif
-
     char* str = strdup((name + "=" + value).c_str());
     if ( !str ) {
         throw bad_alloc();
     }
 
-    if (putenv(str) != 0) {
+    if (NcbiSys_putenv(_T_XCSTRING(str)) != 0) {
         free(str);
         NCBI_THROW(CErrnoTemplException<CCoreException>, eErrno,
                    "failed to set environment variable " + name);
@@ -159,10 +156,6 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
         free(i->second.ptr);
     }
     m_Cache[name] = SEnvValue(value, str);
-
-#ifdef NCBI_OS_MSWIN
-#undef putenv
-#endif
 }
 
 void CNcbiEnvironment::Unset(const string& name)
@@ -194,11 +187,11 @@ void CNcbiEnvironment::Unset(const string& name)
 
 string CNcbiEnvironment::Load(const string& name) const
 {
-    const char* s = getenv(name.c_str());
+    const TXChar* s = NcbiSys_getenv(_T_XCSTRING(name));
     if ( !s )
         return NcbiEmptyString;
     else
-        return s;
+        return _T_STDSTRING(s);
 }
 
 
@@ -265,7 +258,7 @@ void CEnvironmentCleaner::Clean(const string& name)
         app->SetEnvironment().Unset(name);
     } else {
 #ifdef NCBI_OS_MSWIN
-        ::SetEnvironmentVariableA(name.c_str(), NULL);
+        ::SetEnvironmentVariable(_T_XCSTRING(name), NULL);
 #elif defined(NCBI_OS_IRIX)
         char* p = getenv(name.c_str());
         if (p) {
