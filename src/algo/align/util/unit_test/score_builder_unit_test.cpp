@@ -251,11 +251,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
             /// machine precision is a problem here
             /// we verify to 12 digits of precision
-            Uint8 int_pct_identity_gapped =
-                kExpectedPctIdentity_Gapped * 1e12;
-            Uint8 int_pct_identity_actual = actual * 1e12;
-            BOOST_CHECK_EQUAL(int_pct_identity_gapped,
-                              int_pct_identity_actual);
+            BOOST_CHECK_CLOSE(kExpectedPctIdentity_Gapped,
+                              actual, 1e-12);
 
             /**
               CScore score;
@@ -275,11 +272,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
             /// machine precision is a problem here
             /// we verify to 12 digits of precision
-            Uint8 int_pct_identity_ungapped =
-                kExpectedPctIdentity_Ungapped * 1e12;
-            Uint8 int_pct_identity_actual = actual * 1e12;
-            BOOST_CHECK_EQUAL(int_pct_identity_ungapped,
-                              int_pct_identity_actual);
+            BOOST_CHECK_CLOSE(kExpectedPctIdentity_Ungapped,
+                              actual, 1e-12);
 
             /**
               CScore score;
@@ -299,11 +293,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
             /// machine precision is a problem here
             /// we verify to 12 digits of precision
-            Uint8 int_pct_identity_gapopen_only =
-                kExpectedPctIdentity_GapOpeningOnly * 1e12;
-            Uint8 int_pct_identity_actual = actual * 1e12;
-            BOOST_CHECK_EQUAL(int_pct_identity_gapopen_only,
-                              int_pct_identity_actual);
+            BOOST_CHECK_CLOSE(kExpectedPctIdentity_GapOpeningOnly,
+                              actual, 1e-12);
 
             /**
               CScore score;
@@ -322,10 +313,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
              /// machine precision is a problem here
              /// we verify to 12 digits of precision
-             Uint8 int_pct_coverage_expected = kExpectedPctCoverage * 1e12;
-             Uint8 int_pct_coverage_actual = actual * 1e12;
-             BOOST_CHECK_EQUAL(int_pct_coverage_expected,
-                               int_pct_coverage_actual);
+             BOOST_CHECK_CLOSE(kExpectedPctCoverage,
+                               actual, 1e-12);
 
              /**
              CScore score;
@@ -347,10 +336,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 
              /// machine precision is a problem here
              /// we verify to 12 digits of precision
-             Uint8 int_hq_pct_coverage_expected = kExpectedHighQualityPctCoverage * 1e12;
-             Uint8 int_hq_pct_coverage_actual = actual * 1e12;
-             BOOST_CHECK_EQUAL(int_hq_pct_coverage_expected,
-                               int_hq_pct_coverage_actual);
+             BOOST_CHECK_CLOSE(kExpectedHighQualityPctCoverage,
+                               actual, 1e-12);
 
              /**
              CScore score;
