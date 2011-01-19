@@ -49,6 +49,9 @@ public:
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;
 
+    CRef<CIgBlastArgs> GetIgBlastArgs() const { return m_IgBlastArgs;}
+
+
 protected:
     /// @inheritDoc
     virtual CRef<CBlastOptionsHandle>

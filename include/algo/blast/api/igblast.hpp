@@ -72,6 +72,22 @@ public:
     int m_FrameInfo[2];              // Frame number for V end and J start
     int m_DomainInfo[12];            // The start and end offset for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3 domains
+
+    /// Constructor
+    /// @param query List of query identifiers [in]
+    /// @param align alignments for a single query sequence [in]
+    /// @param errs error messages for this query sequence [in]
+    /// @param ancillary_data Miscellaneous output from the blast engine [in]
+    /// @param query_masks Mask locations for this query [in]
+    /// @param rid RID (if applicable, else empty string) [in]
+    CIgBlastResults(CConstRef<objects::CSeq_id>     query,
+                    CRef<objects::CSeq_align_set>   align,
+                    const TQueryMessages           &errs,
+                    CRef<CBlastAncillaryData>       ancillary_data,
+                    const TMaskedQueryRegions      *query_masks = NULL,
+                    const string                   &rid = kEmptyStr)
+           : CSearchResults(query, align, errs, ancillary_data, query_masks, rid) {}
+
 };
 
 class NCBI_XBLAST_EXPORT CIgBlast : public CObject
@@ -105,8 +121,8 @@ public:
              CConstRef<CIgBlastOptions> ig_options)
        : m_IsLocal(false),
          m_Query(query_factory),
-         m_RemoteDb(blastdb),
          m_Subject(subjects),
+         m_RemoteDb(blastdb),
          m_Options(options),
          m_IgOptions(ig_options) { }
 

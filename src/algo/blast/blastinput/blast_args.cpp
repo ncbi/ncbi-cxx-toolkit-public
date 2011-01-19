@@ -1150,8 +1150,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_IsProtein = (mol_type == CSearchDatabase::eBlastDbIsProtein);
     m_IgOptions->m_Origin = args[kArgGLOrigin].AsString();
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
-    m_IgOptions->m_FocusV = args[kArgGLFocusV].AsBoolean();
-    m_IgOptions->m_Translate = args[kArgTranslate].AsBoolean(); 
+    m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
+    m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
 
     const static string suffix = "VDJ";
     for (int i=0; i<3; ++i) {
