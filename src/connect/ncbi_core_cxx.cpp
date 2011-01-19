@@ -52,21 +52,6 @@ BEGIN_NCBI_SCOPE
 
 
 /***********************************************************************
- *                              App Name                               *
- ***********************************************************************/
-
-#if 0
-extern "C" {
-extern const char* CORE_GetAppName(void)
-{
-    CNcbiApplication* theApp = CNcbiApplication::Instance();
-    return theApp ? theApp->GetProgramDisplayName().c_str() : 0;
-}
-}
-#endif
-
-
-/***********************************************************************
  *                              Registry                               *
  ***********************************************************************/
 
@@ -284,7 +269,8 @@ static enum EConnectInit {
 
 
 /* NB: gets called under a lock */
-static void s_Init(IRWRegistry*      reg = 0,
+static void s_Init(CNcbiApplication* app = 0,
+                   IRWRegistry*      reg = 0,
                    CRWLock*          lock = 0,
                    FConnectInitFlags flags = 0,
                    EConnectInit      how = eConnectInit_Weak)
@@ -302,6 +288,14 @@ static void s_Init(IRWRegistry*      reg = 0,
         atexit(s_Fini);
     }
     s_ConnectInit = how;
+
+    /* replace app name now */
+    if (app) {
+        const char* appname = app->GetProgramDisplayName().c_str();
+        if (appname  &&  *appname) {
+            strrncpy0(g_CORE_AppName, appname, NCBI_CORE_APPNAME_MAXLEN);
+        }
+    }
 }
 
 
@@ -311,8 +305,8 @@ static void s_InitInternal(void)
     if (!g_CORE_Registry  &&  !g_CORE_Log  &&  !g_CORE_MT_Lock) {
         try {
             if (s_ConnectInit == eConnectInit_Intact) {
-                CNcbiApplication* theApp = CNcbiApplication::Instance();
-                s_Init(theApp ? &theApp->GetConfig() : 0);
+                CNcbiApplication* app = CNcbiApplication::Instance();
+                s_Init(app, app ? &app->GetConfig() : 0);
             }
         }
         NCBI_CATCH_ALL_X(7, "CONNECT_InitInternal() failed");
@@ -329,7 +323,8 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
-        s_Init(reg, lock, flags, eConnectInit_Explicit);
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        s_Init(app, reg, lock, flags, eConnectInit_Explicit);
     }
     NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
 }
