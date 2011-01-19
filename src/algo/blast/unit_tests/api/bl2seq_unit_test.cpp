@@ -59,6 +59,7 @@
 #include <algo/blast/api/objmgr_query_data.hpp> // for CObjMgr_QueryFactory
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
+#include <algo/blast/api/windowmask_filter.hpp>
 
 #include <objtools/simple/simple_om.hpp>        // for CSimpleOM
 #include <objtools/readers/fasta.hpp>           // for CFastaReader
@@ -77,12 +78,6 @@
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(blast)
-extern string WindowMaskerTaxidToDb(int taxid);
-END_SCOPE(blast)
-END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);

@@ -47,6 +47,11 @@ BEGIN_SCOPE(blast)
 NCBI_XBLAST_EXPORT
 void GetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids);
 
+/// Get the windowmasker file path for a given taxid
+/// @param taxid NCBI taxonomy ID to get windowmasker files for [in]
+/// @return empty string if not found
+NCBI_XBLAST_EXPORT string WindowMaskerTaxidToDb(int taxid);
+
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
 

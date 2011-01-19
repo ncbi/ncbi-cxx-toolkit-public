@@ -489,8 +489,7 @@ static string s_OldWindowMaskerTaxidToDb(int taxid)
 }
 
 /* Unit test is in bl2seq_unit_test.cpp */
-string
-WindowMaskerTaxidToDb(int taxid)
+string WindowMaskerTaxidToDb(int taxid)
 {
     string path = s_FindPathToWM();
     path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
