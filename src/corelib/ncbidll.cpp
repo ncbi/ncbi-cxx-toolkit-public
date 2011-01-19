@@ -35,6 +35,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/error_codes.hpp>
+#include "ncbisys.hpp"
 
 
 #if defined(NCBI_OS_MSWIN)
@@ -165,7 +166,7 @@ void CDll::Load(void)
     _TRACE("Loading dll: "<<m_Name);
 #if defined(NCBI_OS_MSWIN)
     UINT errMode = SetErrorMode(SEM_FAILCRITICALERRORS);
-    HMODULE handle = LoadLibraryA(m_Name.c_str());
+    HMODULE handle = LoadLibrary(_T_XCSTRING(m_Name));
     SetErrorMode(errMode);
 #elif defined(NCBI_OS_UNIX)
 #  ifdef HAVE_DLFCN_H
@@ -244,14 +245,14 @@ CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
 void CDll::x_ThrowException(const string& what)
 {
 #if defined(NCBI_OS_MSWIN)
-    char* ptr = NULL;
+    TXChar* ptr = NULL;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                   FORMAT_MESSAGE_FROM_SYSTEM |
                   FORMAT_MESSAGE_IGNORE_INSERTS,
                   NULL, GetLastError(),
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  (LPTSTR) &ptr, 0, NULL);
-    string errmsg = ptr ? ptr : "unknown reason";
+                  (TXChar*) &ptr, 0, NULL);
+    string errmsg = ptr ? _T_CSTRING(ptr) : "unknown reason";
     LocalFree(ptr);
 #elif defined(NCBI_OS_UNIX)
 #  ifdef HAVE_DLFCN_H
@@ -370,19 +371,19 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
     if ((which & fSystemDllPath) != 0) {
 #if defined(NCBI_OS_MSWIN)
         // Get Windows system directories
-        char buf[MAX_PATH+1];
-        UINT len = GetSystemDirectoryA(buf, MAX_PATH+1);
+        TXChar buf[MAX_PATH+1];
+        UINT len = GetSystemDirectory(buf, MAX_PATH+1);
         if (len>0  &&  len<=MAX_PATH) {
-            paths.push_back(buf);
+            paths.push_back(_T_STDSTRING(buf));
         }
-        len = GetWindowsDirectoryA(buf, MAX_PATH+1);
+        len = GetWindowsDirectory(buf, MAX_PATH+1);
         if (len>0  &&  len<=MAX_PATH) {
-            paths.push_back(buf);
+            paths.push_back(_T_STDSTRING(buf));
         }
         // Parse PATH environment variable
-        const char* env = getenv("PATH");
+        const TXChar* env = NcbiSys_getenv(_T("PATH"));
         if (env  &&  *env) {
-            NStr::Tokenize(env, ";", paths);
+            NStr::Tokenize(_T_STDSTRING(env), ";", paths);
         }
 
 #elif defined(NCBI_OS_UNIX)
