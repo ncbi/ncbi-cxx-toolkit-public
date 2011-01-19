@@ -224,6 +224,7 @@ public:
                       IErrorContainer* container);
 
 private:
+
     // Prohibit copy constructor and assignment operator
     CFeature_table_reader_imp(const CFeature_table_reader_imp& value);
     CFeature_table_reader_imp& operator=(const CFeature_table_reader_imp& value);
@@ -264,6 +265,9 @@ private:
     bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
                          const CFeature_table_reader::TFlags flags, IErrorContainer* container);
     void  x_ProcessMsg (EDiagSev severity, const string& msg, IErrorContainer* container); 
+
+    void x_TokenizeStrict( const string &line, vector<string> &out_tokens );
+    void x_TokenizeLenient( const string &line, vector<string> &out_tokens );
 
 };
 
@@ -758,7 +762,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     if (NStr::StartsWith (line, '[')) return false;
 
     tkns.clear ();
-    NStr::Tokenize (line, "\t", tkns);
+    x_TokenizeLenient(line, tkns);
     numtkns = tkns.size ();
 
     if (numtkns > 0) {
@@ -838,6 +842,111 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     valP = val;
 
     return true;
+}
+
+void CFeature_table_reader_imp::x_TokenizeStrict( 
+    const string &line, 
+    vector<string> &out_tokens )
+{
+    out_tokens.clear();
+
+    // each token has spaces before it and a tab or end-of-line after it
+    string::size_type startPosOfNextRoundOfTokenization = 0;
+    while ( startPosOfNextRoundOfTokenization < line.size() ) {
+        const string::size_type posAfterSpaces = line.find_first_not_of( ' ', startPosOfNextRoundOfTokenization );
+        if( posAfterSpaces == string::npos ) {
+            return;
+        }
+
+        string::size_type posOfTab = line.find( '\t', posAfterSpaces );
+        if( posOfTab == string::npos ) {
+            posOfTab = line.length();
+        }
+
+        // The next token is between the spaces and the tab (or end of string)
+        out_tokens.push_back(kEmptyStr);
+        string &new_token = out_tokens.back();
+        copy( line.begin() + posAfterSpaces, line.begin() + posOfTab, back_inserter(new_token) );
+        NStr::TruncateSpacesInPlace( new_token );
+
+        startPosOfNextRoundOfTokenization = ( posOfTab + 1 );
+    }
+}
+
+// since some compilers won't let me use isspace for find_if
+class CIsSpace {
+public:
+    bool operator()( char c ) { return isspace(c); }
+};
+
+class CIsNotSpace {
+public:
+    bool operator()( char c ) { return ! isspace(c); }
+};
+
+void CFeature_table_reader_imp::x_TokenizeLenient( 
+    const string &line, 
+    vector<string> &out_tokens )
+{
+    out_tokens.clear();
+
+    if( line.empty() ) {
+        return;
+    }
+
+    // if it starts with whitespace, it must be a qual line, else it's a feature line
+    if( isspace(line[0]) ) {
+        // In regex form, we're doing something like this:
+        // \s+(\S+)(\s+(\S.*))?
+        // Where the first is the qual, and the rest is the val
+        const string::const_iterator start_of_qual = find_if( line.begin(), line.end(), CIsNotSpace() );
+        if( start_of_qual == line.end() ) {
+            return;
+        }
+        const string::const_iterator start_of_whitespace_after_qual = find_if( start_of_qual, line.end(), CIsSpace() );
+        const string::const_iterator start_of_val = find_if( start_of_whitespace_after_qual, line.end(), CIsNotSpace() );
+
+        // first 3 are empty
+        out_tokens.push_back(kEmptyStr);
+        out_tokens.push_back(kEmptyStr);
+        out_tokens.push_back(kEmptyStr);
+
+        // then qual
+        out_tokens.push_back(kEmptyStr);
+        string &qual = out_tokens.back();
+        copy( start_of_qual, start_of_whitespace_after_qual, back_inserter(qual) );
+
+        // then val
+        if( start_of_val != line.end() ) {
+            out_tokens.push_back(kEmptyStr);
+            string &val = out_tokens.back();
+            copy( start_of_val, line.end(), back_inserter(val) );
+            NStr::TruncateSpacesInPlace( val );
+        }
+
+    } else {
+        // parse a feature line
+
+        // Since we're being lenient, we consider it to be 3 parts separated by whitespace
+        const string::const_iterator first_column_start = line.begin();
+        const string::const_iterator first_whitespace = find_if( first_column_start, line.end(), CIsSpace() );
+        const string::const_iterator second_column_start = find_if( first_whitespace, line.end(), CIsNotSpace() );
+        const string::const_iterator second_whitespace = find_if( second_column_start, line.end(), CIsSpace() );
+        const string::const_iterator third_column_start = find_if( second_whitespace, line.end(), CIsNotSpace() );
+        const string::const_iterator third_whitespace = find_if( third_column_start, line.end(), CIsSpace() );
+
+        out_tokens.push_back(kEmptyStr);
+        string &first = out_tokens.back();
+        copy( first_column_start, first_whitespace, back_inserter(first) );
+
+        out_tokens.push_back(kEmptyStr);
+        string &second = out_tokens.back();
+        copy( second_column_start, second_whitespace, back_inserter(second) );
+
+        out_tokens.push_back(kEmptyStr);
+        string &third = out_tokens.back();
+        copy( third_column_start, third_whitespace, back_inserter(third) );
+    }
 }
 
 
