@@ -36,6 +36,7 @@ static char const rcsid[] =
 /// Auxiliary setup functions for Blast objects interface.
 
 #include <ncbi_pch.hpp>
+#include <util/util_misc.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/metareg.hpp>
 #include <algo/blast/api/blast_options.hpp>
@@ -1217,102 +1218,44 @@ char* BlastFindMatrixPath(const char* matrix_name, Boolean is_prot)
     if (!matrix_name)
         return NULL;
 
-    try {
+    try{
+
        string mtx(matrix_name);
        mtx = NStr::ToUpper(mtx);
 
-       // Look for matrix file in local directory
-       string full_path = mtx;       // full path to matrix file
-       if (CFile(full_path).Exists()) {
-           string cwd = CDir::GetCwd();
-           cwd += CFile::GetPathSeparator();
-           return strdup(cwd.c_str());
+       // Try all the default directories
+       string full_path = g_FindDataFile(mtx);
+       if(!full_path.empty()){
+           return s_GetCStringOfMatrixPath(full_path, mtx);
        }
-    
-       string path("");
 
-       // Obtain the matrix path from the ncbi configuration file
-       try {
-           CMetaRegistry::SEntry sentry;
-           sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-           path = sentry.registry ? sentry.registry->Get("NCBI", "Data") : "";
-       } catch (const CRegistryException&) { /* ignore */ }
-    
-       full_path = CFile::MakePath(path, mtx);
-       if (CFile(full_path).Exists()) {
-           return s_GetCStringOfMatrixPath(full_path, mtx);
+       // Try env BLASTMAT directory
+       CNcbiApplication* app = CNcbiApplication::Instance();
+       if (!app) {
+           return NULL;
        }
-   
-       // Try appending "aa" or "nt" 
-       full_path = path;
-       full_path += CFile::GetPathSeparator();
-       full_path += is_prot ? "aa" : "nt";
-       full_path += CFile::GetPathSeparator();
-       full_path += mtx;
-       if (CFile(full_path).Exists()) {
-           return s_GetCStringOfMatrixPath(full_path, mtx);
+       const string& blastmat_env = app->GetEnvironment().Get("BLASTMAT");
+       if (CDir(blastmat_env).Exists()) {
+           full_path = blastmat_env;
+           full_path += CFile::GetPathSeparator();
+           full_path += mtx;
+           if (CFile(full_path).Exists()) {
+               return s_GetCStringOfMatrixPath(full_path, mtx);
+           }
        }
-   
-       // Try using local "data" directory
+
+       // Try local "data" directory
        full_path = "data";
        full_path += CFile::GetPathSeparator();
        full_path += mtx;
        if (CFile(full_path).Exists()) {
            return s_GetCStringOfMatrixPath(full_path, mtx);
        }
-   
-       CNcbiApplication* app = CNcbiApplication::Instance();
-       if (!app)
-       {
-           return NULL;
-       }
-   
-       const string& blastmat_env = app->GetEnvironment().Get("BLASTMAT");
-       if (CDir(blastmat_env).Exists()) {
-           full_path = blastmat_env;
-           full_path += CFile::GetPathSeparator();
-           full_path += is_prot ? "aa" : "nt";
-           full_path += CFile::GetPathSeparator();
-           full_path += mtx;
-           if (CFile(full_path).Exists()) {
-               return s_GetCStringOfMatrixPath(full_path, mtx);
-           }
-       }
-   
-#ifdef OS_UNIX
-       full_path = BLASTMAT_DIR;
-       full_path += CFile::GetPathSeparator();
-       full_path += is_prot ? "aa" : "nt";
-       full_path += CFile::GetPathSeparator();
-       full_path += mtx;
-       if (CFile(full_path).Exists()) {
-           return s_GetCStringOfMatrixPath(full_path, mtx);
-       }
-#endif
 
-       // Try again without the "aa" or "nt"
-       if (CDir(blastmat_env).Exists()) {
-           full_path = blastmat_env;
-           full_path += CFile::GetPathSeparator();
-           full_path += mtx;
-           if (CFile(full_path).Exists()) {
-               return s_GetCStringOfMatrixPath(full_path, mtx);
-           }
-       }
-
-#ifdef OS_UNIX
-       full_path = BLASTMAT_DIR;
-       full_path += CFile::GetPathSeparator();
-       full_path += mtx;
-       if (CFile(full_path).Exists()) {
-           return s_GetCStringOfMatrixPath(full_path, mtx);
-       }
-#endif
     } catch (...)  { } // Ignore all exceptions and return NULL.
 
     return NULL;
 }
-
 
 /// Checks if a BLAST database exists at a given file path: looks for 
 /// an alias file first, then for an index file

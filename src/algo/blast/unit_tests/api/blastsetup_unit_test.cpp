@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
+#include <util/util_misc.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <corelib/metareg.hpp>
@@ -334,31 +335,25 @@ BOOST_AUTO_TEST_CASE(FindMatrixPathSuccess) {
     sfree(matrix_path);
 }
 
-// Resets the meta-registry to force an empty return value
+//Test empty return value
 BOOST_AUTO_TEST_CASE(FindMatrixPathNoNcbiRcFile) {
     TAutoCharPtr input = strdup("blosum30");
-    CMetaRegistry::TSearchPath sp = CMetaRegistry::GetSearchPath();
-    CMetaRegistry::SetSearchPath().clear();
+    string	ignoreFile("BLOSUM30");
+    g_IgnoreDataFile(ignoreFile, true);
     char* matrix_path = BlastFindMatrixPath(input.get(), true);
+    g_IgnoreDataFile(ignoreFile, false);
     BOOST_REQUIRE(matrix_path == NULL);
     sfree(matrix_path);
-    CMetaRegistry::SetSearchPath() = sp;
 }
 
 BOOST_AUTO_TEST_CASE(FindMatrixPathTestBLASTMAT) {
-    {{
         CAutoEnvironmentVariable a("BLASTMAT", "data");
-        CMetaRegistry::TSearchPath sp = CMetaRegistry::GetSearchPath();
-        CMetaRegistry::SetSearchPath().clear();
-        TAutoCharPtr input = strdup("blosum62");
+        TAutoCharPtr input = strdup("BLOSUMTEST");
+        string	ignoreFile(input.get());
+        g_IgnoreDataFile(ignoreFile, true);
         char* matrix_path = BlastFindMatrixPath(input.get(), true);
-        BOOST_REQUIRE(matrix_path == NULL);
-        CMetaRegistry::SetSearchPath() = sp;
-    }}
-
-    TAutoCharPtr input = strdup("blosum62");
-    char* matrix_path = BlastFindMatrixPath(input.get(), true);
-    BOOST_REQUIRE(matrix_path != NULL);
+        g_IgnoreDataFile(ignoreFile, false);
+        BOOST_REQUIRE((matrix_path != NULL) && (strlen(matrix_path) > 0));
 }
 
 BOOST_AUTO_TEST_CASE(FindMatrixPathFailure) {
