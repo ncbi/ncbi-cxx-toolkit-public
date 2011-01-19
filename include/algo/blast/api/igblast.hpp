@@ -85,7 +85,12 @@ public:
     CIgBlast(CRef<IQueryFactory> query_factory,
              CRef<CLocalDbAdapter> blastdb,
              CConstRef<CBlastOptionsHandle> options,
-             CConstRef<CIgBlastOptions> ig_options);
+             CConstRef<CIgBlastOptions> ig_options)
+       : m_IsLocal(true),
+         m_Query(query_factory),
+         m_LocalDb(blastdb),
+         m_Options(options),
+         m_IgOptions(ig_options) { }
 
     /// Remote Igblast search API
     /// @param query_factory  Concatenated query sequences [in]
@@ -97,7 +102,13 @@ public:
              CRef<CSearchDatabase> blastdb,
              CRef<IQueryFactory>   subjects,
              CConstRef<CBlastOptionsHandle> options,
-             CConstRef<CIgBlastOptions> ig_options);
+             CConstRef<CIgBlastOptions> ig_options)
+       : m_IsLocal(false),
+         m_Query(query_factory),
+         m_RemoteDb(blastdb),
+         m_Subject(subjects),
+         m_Options(options),
+         m_IgOptions(ig_options) { }
 
     /// Destructor
     ~CIgBlast() {};
@@ -107,6 +118,7 @@ public:
 
 private:
 
+    bool m_IsLocal;
     CRef<IQueryFactory> m_Query;
     CRef<IQueryFactory> m_Subject;
     CRef<CLocalDbAdapter> m_LocalDb;

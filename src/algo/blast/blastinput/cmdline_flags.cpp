@@ -160,6 +160,14 @@ const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
 const string kArgPHIPatternFile("phi_pattern");
 
+const string kArgGLSubject("germline_sequence_");
+const string kArgGLDatabase("germline_db_");
+const string kArgGLOrigin("origin");
+const string kArgGLFuncClass("func_class");
+const string kArgGLDomainSystem("domain_system");
+const string kArgGLFocusV("focus_on_V_segment");
+const string kArgTranslate("show_translation");
+
 #if 0
 const string kArgMaxHSPsPerSubject("max_hsps_per_subject");
 const int kDfltArgMaxHSPsPerSubject = 0;

@@ -248,6 +248,21 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgPSIPseudocount;
 /// aligned sequences for PSSM constructions
 NCBI_BLASTINPUT_EXPORT extern const string kArgPSIInclusionEThreshold;
 
+/// Argument to specify the germline subject file for igblast
+NCBI_BLASTINPUT_EXPORT extern const string kArgGLSubject;
+/// Argument to specify the germline database name for igblast
+NCBI_BLASTINPUT_EXPORT extern const string kArgGLDatabase;
+/// Argument to specify the germline origin for igblast
+NCBI_BLASTINPUT_EXPORT extern const string kArgGLOrigin;
+/// Argument to specify the germline function class name for igblast
+NCBI_BLASTINPUT_EXPORT extern const string kArgGLFuncClass;
+/// Argument to specify the Ig domain system
+NCBI_BLASTINPUT_EXPORT extern const string kArgGLDomainSystem;
+/// Arugment to specify if Igblast alignment should restrict to V seg
+NCBI_BLASTINPUT_EXPORT extern const string kArgGLFocusV;
+/// Arugment to specify if Igblast alignment should be translated to protein
+NCBI_BLASTINPUT_EXPORT extern const string kArgTranslate;
+
 /// Argument to specify non-greedy dynamic programming extension
 NCBI_BLASTINPUT_EXPORT extern const string kArgNoGreedyExtension;
 /// Argument to specify the discontinuous megablast template type

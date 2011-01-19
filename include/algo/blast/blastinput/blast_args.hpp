@@ -40,6 +40,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/igblast.hpp>
 #include <algo/blast/api/setup_factory.hpp> // for CThreadable
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
@@ -662,7 +663,7 @@ public:
         return m_Subjects; 
     }
 
-private:
+protected:
     CRef<CSearchDatabase> m_SearchDb;/**< Description of the BLAST database */
     bool m_RequestMoleculeType;     /**< Determines whether the database's
                                       molecule type should be requested in the
@@ -675,6 +676,35 @@ private:
     CRef<objects::CScope> m_Scope;  /**< CScope object in which all subject
                                       sequences read are kept */
     bool m_SupportsDatabaseMasking; /**< true if it's supported */
+};
+
+/// Argument class to collect options specific to igBLAST
+class NCBI_BLASTINPUT_EXPORT CIgBlastArgs : public IBlastCmdLineArgs
+{
+public:
+    CIgBlastArgs() { };
+
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+
+    CRef<CIgBlastOptions> GetIgBlastOptions() { return m_IgOptions; }
+
+    void AddIgSequenceScope(objects::CScope* scope = NULL) {
+        if (scope && m_Scope.NotEmpty()) {
+            // Add the scope with a lower priority to avoid conflicts
+            scope->AddScope(*m_Scope, 
+                  CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+        }
+    }
+
+private:
+    /// Igblast options to fill
+    CRef<CIgBlastOptions> m_IgOptions;
+    /// scope to get sequences
+    CRef<objects::CScope> m_Scope;
 };
 
 /// Argument class to collect formatting options, use this to create a 

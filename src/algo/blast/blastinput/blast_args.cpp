@@ -1095,6 +1095,119 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
 }
 
 void
+CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Ig-BLAST options");
+    const static string suffix = "VDJ";
+    for (int i=0; i<3; ++i) {
+        // Subject sequence input
+        string arg_sub = kArgGLSubject;
+        arg_sub.push_back(suffix[i]);
+        arg_desc.AddOptionalKey(arg_sub , "filename",
+                            "Germline subject sequence to align",
+                            CArgDescriptions::eInputFile);
+        string arg_db = kArgGLDatabase;
+        arg_db.push_back(suffix[i]);
+        // Germline database file name
+        arg_desc.AddOptionalKey(arg_db, "germline_database_name",
+                            "Germline database name",
+                            CArgDescriptions::eString);
+        arg_desc.SetDependency(arg_db, CArgDescriptions::eExcludes, arg_sub);
+    }
+
+    arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
+                            "Origin of the species to be annotated",
+                            CArgDescriptions::eString, "Human");
+    arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "Human", "Mouse"));
+
+
+    arg_desc.AddDefaultKey(kArgGLDomainSystem, "domain_system",
+                            "Domain system to be used for segment annotation",
+                            CArgDescriptions::eString, "Igmt");
+    arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "Igmt", "Kabat"));
+
+    arg_desc.AddOptionalKey(kArgGLFuncClass, "func_class",
+                            "Restrict search of germline database to certain function class",
+                            CArgDescriptions::eInteger);
+
+    arg_desc.AddFlag(kArgGLFocusV, "Should the alignments focus only on V segment?", true);
+
+    arg_desc.AddFlag(kArgTranslate, "Show translated alignments (applicable to igblastn only)", true);
+
+    arg_desc.SetCurrentGroup("");
+}
+
+void
+CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                      CBlastOptions& opts)
+{
+    m_IgOptions.Reset(new CIgBlastOptions());
+    
+    CBlastDatabaseArgs::EMoleculeType mol_type = Blast_SubjectIsNucleotide(opts.GetProgramType())
+        ? CSearchDatabase::eBlastDbIsNucleotide
+        : CSearchDatabase::eBlastDbIsProtein;
+
+    m_IgOptions->m_IsProtein = (mol_type == CSearchDatabase::eBlastDbIsProtein);
+    m_IgOptions->m_Origin = args[kArgGLOrigin].AsString();
+    m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
+    m_IgOptions->m_FocusV = args[kArgGLFocusV].AsBoolean();
+    m_IgOptions->m_Translate = args[kArgTranslate].AsBoolean(); 
+
+    const static string suffix = "VDJ";
+    for (int i=0; i<3; ++i) {
+        string arg_sub = kArgGLSubject;
+        string arg_db = kArgGLDatabase;
+        arg_sub.push_back(suffix[i]);
+        arg_db.push_back(suffix[i]);
+
+        if (args.Exist(kArgGLSubject) && args[kArgGLSubject]) {
+            CNcbiIstream& subj_input_stream = args[kArgGLSubject].AsInputFile();
+            TSeqRange subj_range;
+
+            const bool parse_deflines = args.Exist(kArgParseDeflines) 
+                ? args[kArgParseDeflines]
+                : kDfltArgParseDeflines;
+            const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
+                ? args[kArgUseLCaseMasking]
+                : kDfltArgUseLCaseMasking;
+            CRef<blast::CBlastQueryVector> subjects;
+            CRef<CScope> scope = ReadSequencesToBlast(subj_input_stream, 
+                                       m_IgOptions->m_IsProtein,
+                                       subj_range, parse_deflines,
+                                       use_lcase_masks, subjects);
+            m_Scope->AddScope(*scope, 
+                        CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+            CRef<IQueryFactory> sub_seqs(
+                                new blast::CObjMgr_QueryFactory(*subjects));
+            //TODO test if this is ok:
+            CRef<CBlastOptionsHandle> opts_hndl;
+            if (m_IgOptions->m_IsProtein) {
+                opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastp));
+            } else {
+                opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastn));
+            }
+            m_IgOptions->m_Db[i].Reset(new CLocalDbAdapter(
+                                       sub_seqs, opts_hndl));
+        } else { 
+            string db_name = (args.Exist(kArgGLDatabase) 
+                           && args[kArgGLDatabase]) 
+                       ?  args[kArgGLDatabase].AsString() 
+                          // TODO the default gl db name
+                       :  "gl_" + m_IgOptions->m_Origin;
+            CRef<CSearchDatabase> db(new CSearchDatabase(db_name, mol_type));
+
+            // TODO does func_class only limit V?
+            if (i==0 && args.Exist(kArgGLFuncClass) && args[kArgGLFuncClass]) {
+                string fn(SeqDB_ResolveDbPath(args[kArgGLFuncClass].AsString()));
+                db->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
+                             CSeqDBFileGiList::eSiList)));
+            }
+            m_IgOptions->m_Db[i].Reset(new CLocalDbAdapter(*db));
+        }
+    }
+}
+
+void
 CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
 
@@ -1303,7 +1416,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         ? CSearchDatabase::eBlastDbIsNucleotide
         : CSearchDatabase::eBlastDbIsProtein;
     m_IsProtein = (mol_type == CSearchDatabase::eBlastDbIsProtein);
-    
+
     if (args.Exist(kArgDb) && args[kArgDb]) {
 
         m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(), 
