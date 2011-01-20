@@ -2573,6 +2573,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_metagenomic, "metagenomic"),
     TQualPair(CSeqFeatData::eQual_mitochondrion, "mitochondrion"),
     TQualPair(CSeqFeatData::eQual_mobile_element, "mobile_element"),
+    TQualPair(CSeqFeatData::eQual_mobile_element_type, "mobile_element_type"),
     TQualPair(CSeqFeatData::eQual_mod_base, "mod_base"),
     TQualPair(CSeqFeatData::eQual_mol_type, "mol_type"),
     TQualPair(CSeqFeatData::eQual_name, "name"),
