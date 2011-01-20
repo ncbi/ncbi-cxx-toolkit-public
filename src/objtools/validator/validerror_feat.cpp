@@ -3050,7 +3050,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     if (codon_values.size() > 0) {
         // check that codons predicted from anticodon can transfer indicated amino acid
         bool ok = false;
-        for (int i = 0; i < codon_values.size(); i++) {
+        for (size_t i = 0; i < codon_values.size(); i++) {
             if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
                 ok = true;
             }
@@ -3074,8 +3074,8 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     // check that codons recognized match codons predicted from anticodon
     if (codon_values.size() > 0 && recognized_codon_values.size() > 0) {
         bool ok = false;
-        for (int i = 0; i < codon_values.size() && !ok; i++) {
-            for (int j = 0; j < recognized_codon_values.size() && !ok; j++) {
+        for (size_t i = 0; i < codon_values.size() && !ok; i++) {
+            for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
                 if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
                     ok = true;
                 }
@@ -4032,7 +4032,7 @@ void CValidError_feat::ValidateImpGbquals
                         // if no point in location with fuzz, info if text matches sequence
                         bool has_fuzz = false;
                         for( objects::CSeq_loc_CI it(feat.GetLocation()); it && !has_fuzz; ++it) {
-                            if (it.IsPoint() && it.GetEmbeddingSeq_loc().GetPnt().IsSetFuzz()) {
+                            if (it.IsPoint() && (it.GetFuzzFrom() != NULL || it.GetFuzzTo() != NULL)) {
                                 has_fuzz = true;
                             }
                         }
@@ -5435,22 +5435,6 @@ bool CValidError_feat::ValidateCdRegionTranslation
 }
 
 
-static bool s_IsLocAt5End (const CSeq_loc& loc, CScope *scope)
-{
-    bool rval = false;
-
-    if (loc.GetStrand() == eNa_strand_minus) {
-        CBioseq_Handle bsh = scope->GetBioseqHandle(loc);
-        if (bsh && loc.GetStart(eExtreme_Biological) == bsh.GetBioseqLength() - 1) {
-            rval = true;
-        }
-    } else if (loc.GetStart(eExtreme_Biological) == 0) {
-        rval = true;
-    }
-    return rval;
-}
-
-
 void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 {
     // bail if not CDS
@@ -5531,7 +5515,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                 PostErr (sev, eErr_SEQ_FEAT_SuspiciousFrame, 
                          "Suspicious CDS location - frame > 1 but not 5' partial", feat);
             }
-        } else if ((part_loc & eSeqlocPartial_Start) && !s_IsLocAt5End(location, m_Scope) && !ArePartialsAtSpliceSitesOrGaps (location)) {
+        } else if ((part_loc & eSeqlocPartial_Start) && !Is5AtEndSpliceSiteOrGap (location)) {
             EDiagSev sev = eDiag_Info;
             if (s_LocIsNmAccession (location, *m_Scope)) {
                 sev = eDiag_Error;
@@ -6464,75 +6448,54 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
     }
 }
 
-bool CValidError_feat::ArePartialsAtSpliceSitesOrGaps (const CSeq_loc& loc)
+bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
 {
-    for ( CSeq_loc_CI si(loc); si; ++si ) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (si.GetEmbeddingSeq_loc());
-        if (!bsh) {
-            continue;
-        }
-        ENa_strand strand = loc.GetStrand();
-        if (si.GetFuzzFrom() != 0) {
-            int end = si.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
-            if (end > 0) {
-                CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-                if (vec.IsInGap(end - 1)) {
-                    if (vec.IsInGap (end)) {
-                        // not ok - location overlaps gap
-                        return false;
-                    } else {
-                        // ok, location abuts gap
-                    }
-                } else if (strand == eNa_strand_minus) {
-                    if (end > 1 && IsResidue (vec[end - 1]) && vec[end - 1] == 'C'
-                        && IsResidue(vec[end - 2]) && vec[end - 2] == 'A') {
-                        //it's ok, it's abutting the reverse complement of GU
-                    } else {
-                        return false;
-                    }
-                } else {
-                    if (end > 1 && IsResidue (vec[end - 1]) && vec[end - 1] == 'G'
-                        && IsResidue(vec[end - 2]) && vec[end - 2] == 'A') {
-                        //it's ok, it's abutting "AG"
-                    } else {
-                        return false;
-                    }
-                }
-            } else {
-                // it's ok, location endpoint is at the 5' end
-            }
-        }
-        if (si.GetFuzzTo() != 0) {
-            int end = si.GetEmbeddingSeq_loc().GetStop (eExtreme_Positional);
-            TSeqPos seq_len = bsh.GetBioseqLength();
-            if (end < seq_len - 1) {
-                CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-                if (vec.IsInGap(end + 1)) {
-                    if (vec.IsInGap (end)) {
-                        // not ok - location overlaps gap
-                        return false;
-                    } else {
-                        // ok, location abuts gap
-                    }
-                } else if (strand == eNa_strand_minus) {
-                    if (end < seq_len - 2 && IsResidue (vec[end + 1]) && vec[end + 1] == 'C'
-                        && IsResidue (vec[end + 2]) && vec[end + 2] == 'T') {
-                        // it's ok, it's abutting the reverse complement of AG
-                    } else {
-                        return false;
-                    }
-                } else {
-                    if (end < seq_len - 2 && IsResidue (vec[end + 1]) && vec[end + 1] == 'G'
-                        && IsResidue(vec[end + 2]) && (vec[end + 2] == 'T' || vec[end + 2] == 'U')) {
-                        // it's ok, it abuts GU
-                    } else {
-                        return false;
-                    }
-                }                        
-            } else {
-                // it's ok, location endpoint is at the 3' end
-            }
-        }
+    ENa_strand strand = loc.GetStrand();
+    if (strand == eNa_strand_minus) {
+          int end = loc.GetStop (eExtreme_Positional);
+          CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
+          TSeqPos seq_len = bsh.GetBioseqLength();
+          if (end < seq_len - 1) {
+              CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+              if (vec.IsInGap(end + 1)) {
+                  if (vec.IsInGap (end)) {
+                      // not ok - location overlaps gap
+                      return false;
+                  } else {
+                      // ok, location abuts gap
+                  }
+              } else if (end < seq_len - 2 && IsResidue (vec[end + 1]) && vec[end + 1] == 'C'
+                         && IsResidue (vec[end + 2]) && vec[end + 2] == 'T') {
+                  // it's ok, it's abutting the reverse complement of AG
+              } else {
+                  return false;
+              }
+          } else {
+              // it's ok, location endpoint is at the 3' end
+          }
+    } else {
+          int end = loc.GetStart (eExtreme_Positional);
+          if (end > 0) {
+              CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
+              CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+              if (vec.IsInGap(end - 1)) {
+                  if (vec.IsInGap (end)) {
+                      // not ok - location overlaps gap
+                      return false;
+                  } else {
+                      // ok, location abuts gap
+                  }
+              } else {
+                  if (end > 1 && IsResidue (vec[end - 1]) && vec[end - 1] == 'G'
+                      && IsResidue(vec[end - 2]) && vec[end - 2] == 'A') {
+                      //it's ok, it's abutting "AG"
+                  } else {
+                      return false;
+                  }
+              }
+          } else {
+              // it's ok, location endpoint is at the 5' end
+          }
     }   
     return true;
 }

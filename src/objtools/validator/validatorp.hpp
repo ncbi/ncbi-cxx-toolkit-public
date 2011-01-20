@@ -903,7 +903,7 @@ private:
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
-    bool ArePartialsAtSpliceSitesOrGaps(const CSeq_loc& loc);
+    bool Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc);
 
     int x_SeqIdToGiNumber(const string& seq_id, const string database_name );
 
@@ -1035,6 +1035,7 @@ private:
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
 
     void ValidateSeqDescContext(const CBioseq& seq);
+    void x_ValidateStructuredCommentContext(const CSeqdesc& desc, const CBioseq& seq);
     void ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol, int& tech, int& completeness,
         const CBioseq& seq, const CSeqdesc& desc);

@@ -4115,6 +4115,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("good");
     expected_errors[1]->SetAccession("good");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 52 percent Ns"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4126,6 +4127,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors[1]->SetSeverity(eDiag_Error);
+    expected_errors[2]->SetErrMsg ("Sequence contains 58 percent Ns");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4145,6 +4147,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("NC_123456");
     expected_errors[1]->SetAccession("NC_123456");
+    expected_errors[2]->SetAccession("NC_123456");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4155,6 +4158,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("USA1_1");
     expected_errors[1]->SetAccession("USA1_1");
+    delete expected_errors[2];
+    expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4691,22 +4696,27 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InternalNsInSeqRaw", "Run of 100 Ns in raw sequence starting at base 6"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 90 percent Ns"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 
-    // expect no error
+    // expect no InternalNsInSeqRaw error
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAANNNNNNNNNNNNNNNNNNNNTTTTT");
     entry->SetSeq().SetInst().SetLength(30);
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 66 percent Ns"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     // WGS has lower threshold
     SetTech (entry, CMolInfo::eTech_wgs);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InternalNsInSeqRaw", "Run of 20 Ns in raw sequence starting at base 6"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 66 percent Ns"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8701,7 +8711,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 
     int i = 0;
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", levels[i], "BadStructuredCommentFormatMissingField",
+        expected_errors.push_back(new CExpectedError("good", levels[i], "BadStrucCommMissingField",
                                   "Required field " + *it + " is missing"));
         i++;
     }
@@ -8723,11 +8733,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     size_t pos = 0;
     ITERATE(vector<string>, it, required_fields) {
         if (pos < required_fields.size() - 1) {
-            expected_errors.push_back(new CExpectedError("good", levels[pos], "BadStructuredCommentFormatFieldOutOfOrder",
+            expected_errors.push_back(new CExpectedError("good", levels[pos], "BadStrucCommFieldOutOfOrder",
                                       *it + " field is out of order"));
         }
         if (!NStr::Equal(*it, "Genome Coverage") && !NStr::Equal(*it, "Sequencing Technology")) {
-            expected_errors.push_back(new CExpectedError("good", levels[pos], "BadStructuredCommentFormatInvalidFieldValue",
+            expected_errors.push_back(new CExpectedError("good", levels[pos], "BadStrucCommInvalidFieldValue",
                                       "bad value is not a valid value for " + *it));
         }
         ++pos;
@@ -8753,7 +8763,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("sequencing_meth");
 
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStructuredCommentFormatMissingField",
+        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommMissingField",
                                   "Required field " + *it + " is missing"));
     }
 
@@ -8921,7 +8931,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword",
                                                  "Structured Comment is non-compliant, keyword should be removed"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStructuredCommentFormatMissingField",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommMissingField",
                                                  "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

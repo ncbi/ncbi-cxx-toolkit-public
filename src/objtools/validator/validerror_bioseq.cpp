@@ -2047,51 +2047,67 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                 }
             }
             
-            // if TSA, check for percentage of Ns and max stretch of Ns
-            if (seq.GetLength() > 0 && IsBioseqTSA(seq, m_Scope) && !SeqIsPatent(seq)) {
-                bool n5 = false;
-                bool n3 = false;
-                TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
-                for (size_t i = 0; i < vec.size(); i++) {
-                    if (vec[i] == 'N' && !vec.IsInGap(i)) {
-                        num_ns++;
-                        this_stretch++;
-                        if (this_stretch >= 5) {
-                            if (i < 24) {
-                                n5 = true;
-                            } 
-                            if (vec.size() < 20 || i > vec.size() - 20) {
-                                n3 = true;
+
+            if (seq.GetLength() > 0 && !SeqIsPatent(seq)) {
+                // if TSA, check for percentage of Ns and max stretch of Ns
+                if (IsBioseqTSA(seq, m_Scope)) {
+                    bool n5 = false;
+                    bool n3 = false;
+                    TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
+                    for (size_t i = 0; i < vec.size(); i++) {
+                        if (vec[i] == 'N' && !vec.IsInGap(i)) {
+                            num_ns++;
+                            this_stretch++;
+                            if (this_stretch >= 5) {
+                                if (i < 24) {
+                                    n5 = true;
+                                } 
+                                if (vec.size() < 20 || i > vec.size() - 20) {
+                                    n3 = true;
+                                }
                             }
+                        } else {
+                            if (max_stretch < this_stretch) {
+                                max_stretch = this_stretch;
+                            }
+                            this_stretch = 0;
                         }
+                    }
+                    if (max_stretch < this_stretch) {
+                        max_stretch = this_stretch;
+                    }
+
+                    int pct_n = (num_ns * 100) / seq.GetLength();
+                    if (pct_n > 10) {
+                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
+                                 "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
+                    }
+
+                    if (max_stretch > 15) {
+                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                                 "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
                     } else {
-                        if (max_stretch < this_stretch) {
-                            max_stretch = this_stretch;
+                        if (n5) {
+                            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                                     "Sequence has a stretch of at least 5 Ns within the first 20 bases", seq);
                         }
-                        this_stretch = 0;
+                        if (n3) {
+                            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                                     "Sequence has a stretch of at least 5 Ns within the last 20 bases", seq);
+                        }
                     }
-                }
-                if (max_stretch < this_stretch) {
-                    max_stretch = this_stretch;
-                }
-
-                int pct_n = (num_ns * 100) / seq.GetLength();
-                if (pct_n > 10) {
-                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
-                             "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
-                }
-
-                if (max_stretch > 15) {
-                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                             "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
                 } else {
-                    if (n5) {
-                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                                 "Sequence has a stretch of at least 5 Ns within the first 20 bases", seq);
+                    // not TSA, just check for really high N percent
+                    TSeqPos num_ns = 0;
+                    for (size_t i = 0; i < vec.size(); i++) {
+                        if (vec[i] == 'N' && !vec.IsInGap(i)) {
+                            num_ns++;
+                        }
                     }
-                    if (n3) {
-                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                                 "Sequence has a stretch of at least 5 Ns within the last 20 bases", seq);
+                    int pct_n = (num_ns * 100) / seq.GetLength();
+                    if (pct_n > 50) {
+                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
+                                 "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
                     }
                 }
             }
@@ -6296,7 +6312,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                               PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
                                       "RefGeneTracking object should only be in RefSeq record", 
                                       ctx, desc);
-                        } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
+                } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
                     string keyword = s_GetKeywordForStructuredComment(desc.GetUser());
                     if (!NStr::IsBlank(keyword)) {
                         // does sequence have keyword?
@@ -6322,6 +6338,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             }
                         }
                     }
+                    x_ValidateStructuredCommentContext(desc, seq);
                 }
             }
             break;
@@ -6478,6 +6495,39 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
     ValidateModifDescriptors (seq);
     ValidateMoltypeDescriptors (seq);
+}
+
+
+void CValidError_bioseq::x_ValidateStructuredCommentContext(const CSeqdesc& desc, const CBioseq& seq)
+{
+    if (!desc.IsUser() || !desc.GetUser().IsSetType() || !desc.GetUser().GetType().IsStr()
+        || !NStr::EqualCase(desc.GetUser().GetType().GetStr(), "StructuredComment")) {
+        return;
+    }
+
+    // Is a Barcode index number present?
+    ITERATE (CUser_object::TData, field, desc.GetUser().GetData()) {
+        if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()
+            && NStr::Equal((*field)->GetLabel().GetStr(), "Barcode Index Number")
+            && (*field)->IsSetData() && (*field)->GetData().IsStr()) {
+            string bin = (*field)->GetData().GetStr();
+
+            // only check if name contains "sp." or "bacterium"
+            CSeqdesc_CI di(m_CurrentHandle, CSeqdesc::e_Source);
+            if (di && di->GetSource().IsSetTaxname()) {
+                string taxname = di->GetSource().GetTaxname();
+                if ((NStr::Find(taxname, "sp. ") != string::npos 
+                     && !NStr::EndsWith(taxname, "sp. " + bin))
+                     || (NStr::Find(taxname, "bacterium ") != string::npos
+                         && !NStr::EndsWith(taxname, "bacterium " + bin))) {
+                    const CSeq_entry& ctx = *seq.GetParentEntry();
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
+                        "Organism name should end with sp. plus Barcode Index Number (" + bin + ")",
+                        ctx, desc);
+                }
+            }
+        }
+    }
 }
 
 
