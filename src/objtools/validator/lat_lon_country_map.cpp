@@ -313,7 +313,7 @@ void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
               NStr::Tokenize(line, "\t", tokens);
             if (tokens.size() > 3) {
                 double x = NStr::StringToDouble(tokens[1]);
-                for (int j = 2; j < tokens.size() - 1; j+=2) {
+                for (size_t j = 2; j < tokens.size() - 1; j+=2) {
                     m_CountryLineList.push_back(new CCountryLine(current_country, x, NStr::StringToDouble(tokens[j]), NStr::StringToDouble(tokens[j + 1]), m_Scale));
                 }
             }
@@ -350,7 +350,7 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
                   NStr::Tokenize(line, "\t", tokens);
                 if (tokens.size() > 3) {
                     double y = NStr::StringToDouble(tokens[1]);
-                    for (int j = 2; j < tokens.size() - 1; j+=2) {
+                    for (size_t j = 2; j < tokens.size() - 1; j+=2) {
                         m_CountryLineList.push_back(new CCountryLine(current_country, y, NStr::StringToDouble(tokens[j]), NStr::StringToDouble(tokens[j + 1]), m_Scale));
                     }
                 }
@@ -474,11 +474,10 @@ CLatLonCountryMap::~CLatLonCountryMap (void)
 bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
                                           double lon)
 {
-    bool rval = true;
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLat(lat, m_Scale);
 
-    int L, R, mid;
+    size_t L, R, mid;
 
     L = 0;
     R = m_CountryLineList.size() - 1;
@@ -597,11 +596,10 @@ CLatLonCountryMap::GuessRegionForLatLon(double lat, double lon,
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
 
-    int R = x_GetLatStartIndex(y);
+    size_t R = x_GetLatStartIndex(y);
 
     const CCountryExtreme *best = NULL;
 
-    int smallest_area = -1;
     while (R < m_LatLonSortedList.size() && m_LatLonSortedList[R]->GetY() == y) {
             if (m_LatLonSortedList[R]->GetMinX() <= x 
             && m_LatLonSortedList[R]->GetMaxX() >= x) {
@@ -700,7 +698,7 @@ const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
     int max_x = x + maxDelta;
 
     // binary search to lowest lat
-    int R = x_GetLatStartIndex(min_y);
+    size_t R = x_GetLatStartIndex(min_y);
 
     double closest = 0.0;
     CCountryExtreme *rval = NULL;
@@ -749,7 +747,7 @@ bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
     int max_x = x + maxDelta;
 
     // binary search to lowest lat
-    int R = x_GetLatStartIndex(min_y);
+    size_t R = x_GetLatStartIndex(min_y);
 
     string country = "";
     double closest = 0.0;
@@ -812,7 +810,7 @@ const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
     CCountryExtreme *ext = NULL;
 
     // binary search to lowest lat
-    int R = x_GetLatStartIndex(min_y);
+    size_t R = x_GetLatStartIndex(min_y);
 
     while (R < m_LatLonSortedList.size() && m_LatLonSortedList[R]->GetY() <= max_y) {
         if (m_LatLonSortedList[R]->GetMaxX() < min_x || m_LatLonSortedList[R]->GetMinX() > max_x) {
