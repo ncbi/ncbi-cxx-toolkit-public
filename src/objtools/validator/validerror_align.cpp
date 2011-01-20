@@ -183,7 +183,7 @@ static bool s_AmbiguousMatch (char a, char b)
 }
 
 
-static size_t s_GetNumIdsToUse (const CDense_seg& denseg)
+static int s_GetNumIdsToUse (const CDense_seg& denseg)
 {
     size_t dim     = denseg.GetDim();
     if (!denseg.IsSetIds()) {
@@ -197,7 +197,7 @@ static size_t s_GetNumIdsToUse (const CDense_seg& denseg)
 
 void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps)
 {
-    TSignedSeqPos col = 0;
+    TSeqPos col = 0;
     size_t num_match = 0;
     size_t match_25 = 0;
     bool   ids_missing = false;
@@ -209,7 +209,7 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
         // first, make sure this isn't a TPA alignment
         bool is_tpa = false;
-        size_t dim     = denseg.GetDim();
+        int dim     = denseg.GetDim();
         if (dim != s_GetNumIdsToUse(denseg)) {
             return;
         }
@@ -349,8 +349,8 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             }            
 
             vector <string> aln_rows;
-            vector <TSignedSeqPos> row_starts;
-            vector <TSignedSeqPos> row_stops;
+            vector <TSeqPos> row_starts;
+            vector <TSeqPos> row_stops;
 
             for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim() && !ids_missing;  ++row) {
                 try {
@@ -360,9 +360,6 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                          sequence,
                          sparse_aln.GetAlnRange());
                     aln_rows.push_back (sequence);
-                    TSignedSeqPos a = sparse_aln.GetSeqStart(row);
-                    TSignedSeqPos b = sparse_aln.GetAlnPosFromSeqPos(row, a);
-                    TSignedSeqPos c = sparse_aln.GetSeqPosFromAlnPos (row, a);
                     TSignedSeqPos aln_start = sparse_aln.GetSeqAlnStart(row);
                     TSignedSeqPos start = sparse_aln.GetSeqPosFromAlnPos(row, aln_start);
                     row_starts.push_back (start);
@@ -377,7 +374,7 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             }
 
             if (!ids_missing) {
-                TSignedSeqPos aln_len = sparse_aln.GetAlnRange().GetLength();
+                TSeqPos aln_len = sparse_aln.GetAlnRange().GetLength();
                 while (col < aln_len) {
                     string column;
                     bool match = true;
@@ -952,7 +949,7 @@ void CValidError_align::x_ValidateFastaLike
 
     vector<string> fasta_like;
 
-    for ( size_t id = 0; id < s_GetNumIdsToUse(denseg); ++id ) {
+    for ( int id = 0; id < s_GetNumIdsToUse(denseg); ++id ) {
         bool gap = false;
         
         const CDense_seg::TStarts& starts = denseg.GetStarts();
@@ -1042,7 +1039,7 @@ void CValidError_align::x_ValidateSegmentGap
                      + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
                      align);
         }
-        if (denseg.IsSetLens() && denseg.GetLens().size() > seg) {
+        if (denseg.IsSetLens() && denseg.GetLens().size() > (unsigned int) seg) {
             align_pos += denseg.GetLens()[seg];
         }
     }
