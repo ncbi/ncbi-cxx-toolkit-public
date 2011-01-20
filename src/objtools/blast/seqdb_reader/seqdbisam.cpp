@@ -1494,7 +1494,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
                       keys_out,
                       data_out);
         
-        x_Upper(keys_out.front());
+        x_Lower(keys_out.front());
         m_FirstKey.SetString(keys_out.front());
         
         
@@ -1535,7 +1535,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
                       keys_out,
                       data_out);
         
-        x_Upper(keys_out.front());
+        x_Lower(keys_out.front());
         m_LastKey.SetString(keys_out.front());
     }
 }
@@ -1575,7 +1575,7 @@ bool CSeqDBIsam::x_OutOfBounds(string key, CSeqDBLockHold & locked)
     
     _ASSERT(m_Type == eString);
     
-    x_Upper(key);
+    x_Lower(key);
     
     if (m_FirstKey.OutsideFirstBound(key)) {
         return true;

@@ -1131,11 +1131,11 @@ private:
     /// @param locked The lock holder object for this thread.
     bool x_OutOfBounds(string key, CSeqDBLockHold & locked);
     
-    /// Converts a string to upper case.
-    static void x_Upper(string & s)
+    /// Converts a string to lower case.
+    static void x_Lower(string & s)
     {
         for(size_t i = 0; i < s.size(); i++) {
-            s[i] = toupper(s[i]);
+            s[i] = tolower(s[i]);
         }
     }
     
