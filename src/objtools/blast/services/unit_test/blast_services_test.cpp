@@ -189,12 +189,10 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     }
 }
 
-// FIXME: enable once this feature is deployed in production
-#if 0
 BOOST_AUTO_TEST_CASE(GetWindowMaskedTaxIds)
 {
     // Uncomment to redirect to test system
-    CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     CBlastServices remote_svc;
     //remote_svc.SetVerbose();
     objects::CBlast4_get_windowmasked_taxids_reply::Tdata reply =
@@ -202,7 +200,6 @@ BOOST_AUTO_TEST_CASE(GetWindowMaskedTaxIds)
     BOOST_REQUIRE(!reply.empty());
     BOOST_REQUIRE(reply.find(9606) != reply.end());
 }
-#endif
 
 BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
 {
