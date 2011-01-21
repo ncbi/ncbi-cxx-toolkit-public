@@ -189,7 +189,6 @@ BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
     }
 }
 
-#if 0
 BOOST_AUTO_TEST_CASE(GetWindowMaskedTaxIds)
 {
     // Uncomment to redirect to test system
@@ -201,7 +200,6 @@ BOOST_AUTO_TEST_CASE(GetWindowMaskedTaxIds)
     BOOST_REQUIRE(!reply.empty());
     BOOST_REQUIRE(reply.find(9606) != reply.end());
 }
-#endif
 
 BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
 {
