@@ -1675,8 +1675,16 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
     else if (hitlist_size != 0) {
         opt.SetHitlistSize(hitlist_size);
+        // alignments and descriptions are set here so that limiting is done correctly for tabular output
+        m_NumDescriptions = MIN(m_NumDescriptions, opt.GetHitlistSize());
+        m_NumAlignments = MIN(m_NumAlignments, opt.GetHitlistSize());
     } else {
-        opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
+        if (m_OutputFormat <= eFlatQueryAnchoredNoIdentities)
+        	opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
+	else {
+                // These formats do not have sections just for descriptions or alignments.
+        	opt.SetHitlistSize(MIN(m_NumDescriptions, m_NumAlignments));
+        }
     }
 
     m_Html = static_cast<bool>(args[kArgProduceHtml]);
