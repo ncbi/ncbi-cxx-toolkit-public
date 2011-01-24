@@ -4644,7 +4644,7 @@ bool CValidError_bioseq::x_IsMrnaMissingForCDS (const CSeq_feat& cds_feat, const
                 }
             }
         }
-    } else if (have_cds_gene_mrna > 0 && !is_genbank) {
+    } else if (have_cds_gene_mrna && !is_genbank) {
         // only look for CDSs without mRNAs if not genbank
         bool pseudo = false;
         if (cds_feat.IsSetPseudo() && cds_feat.GetPseudo()) {
@@ -7117,6 +7117,8 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
     try {
         TStrFeatMap label_map;
         TStrFeatMap locus_tag_map;
+        TStrFeatMap locus_map;
+        TStrFeatMap syn_map;
 
         // Loop through genes and insert into multimap sorted by
         // gene label / locus_tag -- case insensitive
@@ -7131,15 +7133,42 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
                 label_map.insert(TStrFeatMap::value_type(label, &feat));
                 // record locus_tag
                 const CGene_ref& gene = feat.GetData().GetGene();
-                if ( gene.CanGetLocus_tag()  &&  !gene.GetLocus_tag().empty() ) {
+                if ( gene.IsSetLocus_tag()  &&  !NStr::IsBlank(gene.GetLocus_tag()) ) {
                     locus_tag_map.insert(TStrFeatMap::value_type(gene.GetLocus_tag(), &feat));
                 }
+                // record locus
+                if ( gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())) {
+                    locus_map.insert(TStrFeatMap::value_type(gene.GetLocus(), &feat));
+                }
+                // record synonyms
+                FOR_EACH_SYNONYM_ON_GENEREF (syn_it, gene) {
+                    syn_map.insert(TStrFeatMap::value_type((*syn_it), &feat));
+                }
             }
+            x_CompareStrings(label_map, "names", eErr_SEQ_FEAT_CollidingGeneNames,
+                eDiag_Warning);
+            x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
+                eDiag_Error);
+            // look for synonyms on genes that match locus of different genes
+            ITERATE (TStrFeatMap, syngene_it, syn_map) {
+                TStrFeatMap::iterator gene_it = locus_map.find(syngene_it->first);
+                if (gene_it != locus_map.end()) {
+                    bool found = false;
+                    FOR_EACH_SYNONYM_ON_GENEREF (syn_it, gene_it->second->GetData().GetGene()) {
+                        if (NStr::Equal (*syn_it, syngene_it->first)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_IdenticalGeneSymbolAndSynonym, 
+                                "gene synonym has same value (" + syngene_it->first + ") as locus of another gene feature",
+                                *syngene_it->second);
+                    }
+                }
+            }                
         }
-        x_CompareStrings(label_map, "names", eErr_SEQ_FEAT_CollidingGeneNames,
-            eDiag_Warning);
-        x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
-            eDiag_Error);
+
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,

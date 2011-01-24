@@ -1263,7 +1263,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     }
 
     if ( gene.IsSetLocus_tag()  &&  !NStr::IsBlank (gene.GetLocus_tag()) ) {
-		const string& locus_tag = gene.GetLocus_tag();
+		    const string& locus_tag = gene.GetLocus_tag();
 
         ITERATE (string, it, locus_tag ) {
             if ( isspace((unsigned char)(*it)) != 0 ) {
@@ -1274,12 +1274,12 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
             }
         }
 
-		if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
-			&& NStr::EqualNocase(locus_tag, gene.GetLocus())) {
-			PostErr (eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
-				     "Gene locus and locus_tag '" + locus_tag + "' match",
-					 feat);
-		}
+		    if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
+			      && NStr::EqualNocase(locus_tag, gene.GetLocus())) {
+			      PostErr (eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
+				             "Gene locus and locus_tag '" + locus_tag + "' match",
+					           feat);
+		    }
         if (feat.IsSetComment() && NStr::EqualCase (feat.GetComment(), locus_tag)) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
                      "Comment has same value as gene locus", feat);
@@ -1331,32 +1331,32 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
         ValidateCharactersInField (gene.GetLocus(), "Gene locus", feat);
     }
 
-	// check for SGML
-	if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
-        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-			     "gene locus " + gene.GetLocus() + " has SGML", feat);
-	}
-	if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
-        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-			     "gene locus_tag " + gene.GetLocus_tag() + " has SGML", feat);
-	}
-	if (gene.IsSetDesc()) {
-		string desc = gene.GetDesc();
-		if (ContainsSgml(desc)) {
-			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					 "gene description " + gene.GetDesc() + " has SGML", feat);
-		}
-		if (NStr::Find(desc, "..") != string::npos) {
-			PostErr (eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature, 
-				     "Possible location text (" + desc + ") on gene description", feat);
-		}
-	}
-	FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
-		if (ContainsSgml(*it)) {
-			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					 "gene synonym " + *it + " has SGML", feat);
-		}
-	}
+	  // check for SGML
+	  if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
+          PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+			       "gene locus " + gene.GetLocus() + " has SGML", feat);
+	  }
+	  if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
+          PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+			       "gene locus_tag " + gene.GetLocus_tag() + " has SGML", feat);
+	  }
+	  if (gene.IsSetDesc()) {
+		    string desc = gene.GetDesc();
+		    if (ContainsSgml(desc)) {
+			      PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					       "gene description " + gene.GetDesc() + " has SGML", feat);
+		    }
+		    if (NStr::Find(desc, "..") != string::npos) {
+			      PostErr (eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature, 
+				           "Possible location text (" + desc + ") on gene description", feat);
+		    }
+	  }
+	  FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
+		    if (ContainsSgml(*it)) {
+			      PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					       "gene synonym " + *it + " has SGML", feat);
+		    }
+	  }
 
 }
 
@@ -1607,13 +1607,10 @@ void CValidError_feat::ValidateCdConflict
     // translate the coding region
     string transl_prot;
     try {
-        CCdregion_translate::TranslateCdregion(
-            transl_prot, 
-            nuc, 
-            feat.GetLocation(), 
-            cdregion,
-            false,   // do not include stop codons
-            false);  // do not remove trailing X/B/Z
+        CSeqTranslator::Translate(feat, *m_Scope, transl_prot,
+                                  false,   // do not include stop codons
+                                  false);  // do not remove trailing X/B/Z
+
     } catch ( const runtime_error& ) {
     }
 
@@ -1623,12 +1620,12 @@ void CValidError_feat::ValidateCdConflict
     string prot_seq;
     prot_vec.GetSeqData(0, prot_vec.size(), prot_seq);
 
-    if ( transl_prot.empty()  ||  prot_seq.empty()  ||  transl_prot == prot_seq ) {
+    if ( transl_prot.empty()  ||  prot_seq.empty()  ||  NStr::Equal(transl_prot, prot_seq) ) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_BadConflictFlag,
-            "Coding region conflict flag should not be set", feat);
+                "Coding region conflict flag should not be set", feat);
     } else {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ConflictFlagSet,
-            "Coding region conflict flag is set", feat);
+                "Coding region conflict flag is set", feat);
     }
 }
 
@@ -2027,8 +2024,6 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
     // only check for errors if overlapping gene is not pseudo
     if (!IsOverlappingGenePseudo(feat)) {
-        TSeqPos cds_start = loc.GetStart(eExtreme_Biological);
-        TSeqPos cds_stop = loc.GetStop(eExtreme_Biological);
 
         // get overlapping mRNA - won't check endpoints if they coincide with
         // endpoints of mRNA
@@ -3479,7 +3474,7 @@ void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat)
 
 
 
-static bool s_RptUnitIsBaseRange (string str, int& from, int& to)
+static bool s_RptUnitIsBaseRange (string str, TSeqPos& from, TSeqPos& to)
 
 {
     if (str.length() > 25) {
@@ -3489,15 +3484,19 @@ static bool s_RptUnitIsBaseRange (string str, int& from, int& to)
     if (pos == string::npos) {
         return false;
     }
+
+    int tmp_from, tmp_to;
     try {
-        from = NStr::StringToInt (str.substr(0, pos));
-        to = NStr::StringToInt (str.substr (pos + 2));
-	} catch (CException ) {
-        return false;
-	} catch (std::exception ) {
+        tmp_from = NStr::StringToInt (str.substr(0, pos));
+        from = tmp_from;
+        tmp_to = NStr::StringToInt (str.substr (pos + 2));
+        to = tmp_to;
+	  } catch (CException ) {
+          return false;
+	  } catch (std::exception ) {
         return false;
     }
-    if (from < 0 || to < 0) {
+    if (tmp_from < 0 || tmp_to < 0) {
         return false;
     }
     return true;
@@ -3636,7 +3635,7 @@ void CValidError_feat::ValidateRptUnitSeqVal (const string& val, const string& k
 
 void CValidError_feat::ValidateRptUnitRangeVal (const string& val, const CSeq_feat& feat)
 {
-    int from, to;
+    TSeqPos from, to;
     if (!s_RptUnitIsBaseRange(val, from, to)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
                  "/rpt_unit_range is not a base range", feat);
@@ -5726,7 +5725,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     }
 
-    int num_mismatches = 0;
+    size_t num_mismatches = 0;
     int num_total = 0;
     size_t len = 0;
 
@@ -6452,7 +6451,7 @@ bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
 {
     ENa_strand strand = loc.GetStrand();
     if (strand == eNa_strand_minus) {
-          int end = loc.GetStop (eExtreme_Positional);
+          TSeqPos end = loc.GetStop (eExtreme_Positional);
           CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
           TSeqPos seq_len = bsh.GetBioseqLength();
           if (end < seq_len - 1) {

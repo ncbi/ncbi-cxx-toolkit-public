@@ -633,7 +633,6 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
 
 void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 {
-    const CBioSource*   biosrc  = 0;
     static const string sp = " sp. ";
 
 	  if (m_Imp.IsRefSeq()) {

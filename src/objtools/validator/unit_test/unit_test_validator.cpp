@@ -13276,3 +13276,71 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadConflictFlag)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds_feat = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds_feat->SetData().SetCdregion().SetConflict(true);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "BadConflictFlag",
+                              "Coding region conflict flag should not be set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ConflictFlagSet)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds_feat = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds_feat->SetData().SetCdregion().SetConflict(true);
+    CRef<CSeq_entry> prot = entry->SetSet().SetSeq_set().back();
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIXX");
+    prot->SetSeq().SetInst().SetLength(9);
+    CRef<CSeq_feat> prot_feat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    prot_feat->SetLocation().SetInt().SetTo(8);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ConflictFlagSet",
+                              "Coding region conflict flag is set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IdenticalGeneSymbolAndSynonym)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CSeq_feat> gene1 (new CSeq_feat());
+    gene1->SetData().SetGene().SetLocus("gene1");
+    gene1->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    gene1->SetLocation().SetInt().SetFrom(0);
+    gene1->SetLocation().SetInt().SetTo(3);
+    AddFeat (gene1, entry);
+
+    CRef<CSeq_feat> gene2 (new CSeq_feat());
+    gene2->SetData().SetGene().SetLocus("gene2");
+    gene2->SetData().SetGene().SetSyn().push_back("gene1");
+    gene2->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    gene2->SetLocation().SetInt().SetFrom(4);
+    gene2->SetLocation().SetInt().SetTo(entry->GetSeq().GetLength() - 1);
+    AddFeat (gene2, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IdenticalGeneSymbolAndSynonym",
+                              "gene synonym has same value (gene1) as locus of another gene feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}

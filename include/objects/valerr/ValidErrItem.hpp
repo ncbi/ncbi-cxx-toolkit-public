@@ -451,6 +451,7 @@ enum EErrType {
     eErr_SEQ_FEAT_GeneXrefStrandProblem,
     eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem,
     eErr_SEQ_FEAT_LocusCollidesWithLocusTag,
+    eErr_SEQ_FEAT_IdenticalGeneSymbolAndSynonym,
     eErr_SEQ_FEAT_SgmlPresentInText,
     eErr_SEQ_FEAT_MissingLocation,
     eErr_SEQ_FEAT_MultipleBioseqs,
