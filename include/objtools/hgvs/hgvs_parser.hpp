@@ -135,6 +135,107 @@ public:
 
 protected:
 
+    struct SFuzzyInt
+    {
+        SFuzzyInt()
+        {
+            Reset();
+        }
+
+        void Assign(const SFuzzyInt& other) {
+            value = other.value;
+            if(!other.fuzz) {
+                fuzz.Reset();
+            } else {
+                if(!fuzz) {
+                    fuzz.Reset(new CInt_fuzz);
+                }
+                fuzz->Assign(*other.fuzz);
+            }
+        }
+
+        void Reset()
+        {
+            value = 0;
+            fuzz.Reset();
+        }
+
+        long value;
+        CRef<CInt_fuzz> fuzz; //can be null;
+    };
+
+    struct SOffsetPoint
+    {
+        SOffsetPoint()
+        {
+            Reset();
+        }
+
+        bool IsOffset() const {
+            return offset.value || offset.fuzz;
+        }
+
+        void Reset()
+        {
+            pnt.Reset();
+            offset.Reset();
+        }
+
+        void Assign(const SOffsetPoint& other)
+        {
+            offset.Assign(other.offset);
+            if(!other.pnt) {
+                pnt.Reset();
+            } else {
+                if(!pnt) {
+                    pnt.Reset(new CSeq_point);
+                }
+                pnt->Assign(*other.pnt);
+            }
+        }
+
+        CRef<CSeq_point> pnt;
+        SFuzzyInt offset;
+    };
+
+    struct SOffsetLoc
+    {
+        SOffsetLoc()
+        {
+            Reset();
+        }
+
+        void Reset()
+        {
+            loc.Reset();
+            start_offset.Reset();
+            stop_offset.Reset();
+        }
+
+        void Assign(const SOffsetLoc& other)
+        {
+            start_offset.Assign(other.start_offset);
+            stop_offset.Assign(other.stop_offset);
+            if(!other.loc) {
+                loc.Reset();
+            } else {
+                if(!loc) {
+                    loc.Reset(new CSeq_loc);
+                }
+                loc->Assign(*other.loc);
+            }
+        }
+
+        bool IsOffset() const
+        {
+            return start_offset.value || start_offset.value || stop_offset.fuzz || stop_offset.fuzz;
+        }
+
+        CRef<CSeq_loc> loc;
+        SFuzzyInt start_offset;
+        SFuzzyInt stop_offset;
+    };
+
     /*!
      * CContext encapsulates sequence or location context for an hgvs sub-expression.
      * E.g. given an expression id:c.5_10delinsAT, when creating a variation-ref
@@ -184,23 +285,27 @@ protected:
          */
         void SetId(const CSeq_id& id, EMolType mol_type);
 
-        void Validate(const CSeq_literal& literal) const {
-            Validate(literal, GetLoc());
+        void Validate(const CSeq_literal& literal) const
+        {
+            if(!m_loc.IsOffset()) {
+                //Can only validate normal locs, as with offset loc the asserted
+                //allele does not correspond to the base loc.
+                Validate(literal, GetLoc());
+            } else {
+                //LOG_POST("Ignoring validation of literal due to offset location");
+            }
         }
 
         void Validate(const CSeq_literal& literal, const CSeq_loc& loc) const;
 
-        void SetLoc(const CSeq_loc& loc)
+        void SetLoc(const SOffsetLoc& loc)
         {
-            if(m_loc.IsNull()) {
-                m_loc.Reset(new CSeq_loc);
-            }
-            m_loc->Assign(loc);
+            m_loc.Assign(loc);
         }
 
         bool IsSetLoc() const
         {
-            return !m_loc.IsNull();
+            return !m_loc.loc.IsNull();
         }
 
         CScope& GetScope() const
@@ -210,19 +315,22 @@ protected:
 
         const CSeq_loc& GetLoc() const;
 
+        const SOffsetLoc& GetOffsetLoc() const;
+
         const CSeq_id& GetId() const;
 
         const CSeq_feat& GetCDS() const;
 
         EMolType GetMolType(bool check=true) const;
+
+
     private:
         CBioseq_Handle m_bsh;
         EMolType m_mol_type;
         CRef<CSeq_feat> m_cds;
         CRef<CSeq_id> m_seq_id;
-        CRef<CSeq_loc> m_loc;
+        SOffsetLoc m_loc;
         mutable CRef<CScope> m_scope;
-
     };
 
     struct SGrammar: public grammar<SGrammar>
@@ -641,34 +749,8 @@ private:
     typedef CVariation_inst::TDelta::value_type TDelta;
     typedef CVariation_ref::TData::TSet TVariationSet;
 
-    typedef pair<int, CRef<CInt_fuzz> > TIntFuzz;
-        //TIntFuzz::second will be NULL if there's no fuzz.
-        //TIntFuzz::second::alt will be {} if there's no value, e.g '?'
 
-    struct SOffsetPoint
-    {
-        CRef<CSeq_point> pnt;
-        TIntFuzz offset;
-        bool IsOffset() const {
-            return offset.first || offset.second;
-        }
-    };
-
-    struct SOffsetLoc
-    {
-        CRef<CSeq_loc> loc;
-        TIntFuzz start_offset;
-        TIntFuzz stop_offset;
-
-        bool IsOffset() const
-        {
-            return start_offset.first || start_offset.second || stop_offset.first || stop_offset.second;
-        }
-    };
-
-    typedef pair<CRef<CSeq_point>, TIntFuzz> TPointWOffset;
-
-    static TIntFuzz x_int_fuzz (TIterator const& i, const CContext& context);
+    static SFuzzyInt x_int_fuzz (TIterator const& i, const CContext& context);
 
     static CRef<CSeq_point>      x_abs_pos         (TIterator const& i, const CContext& context);
     static SOffsetPoint          x_general_pos     (TIterator const& i, const CContext& context);

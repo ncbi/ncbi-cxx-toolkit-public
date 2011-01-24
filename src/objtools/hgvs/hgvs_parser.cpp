@@ -83,10 +83,15 @@ CHgvsParser::SGrammar CHgvsParser::s_grammar;
 
 const CSeq_loc& CHgvsParser::CContext::GetLoc() const
 {
-    if(m_loc.IsNull()) {
+    if(m_loc.loc.IsNull()) {
         HGVS_THROW(eContext, "No seq-loc in context");
     }
-    return *m_loc;
+    return *m_loc.loc;
+}
+
+const CHgvsParser::SOffsetLoc& CHgvsParser::CContext::GetOffsetLoc() const
+{
+    return m_loc;
 }
 
 const CSeq_id& CHgvsParser::CContext::GetId() const
@@ -187,7 +192,7 @@ const string& CHgvsParser::SGrammar::s_GetRuleName(boost::spirit::classic::parse
 }
 
 
-CHgvsParser::TIntFuzz CHgvsParser::x_int_fuzz(TIterator const& i, const CContext& context)
+CHgvsParser::SFuzzyInt CHgvsParser::x_int_fuzz(TIterator const& i, const CContext& context)
 {
     HGVS_ASSERT_RULE(i, eID_int_fuzz);
     TIterator it = i->children.begin();
@@ -239,7 +244,10 @@ CHgvsParser::TIntFuzz CHgvsParser::x_int_fuzz(TIterator const& i, const CContext
         }
     }
 
-    return TIntFuzz(value, fuzz);
+    CHgvsParser::SFuzzyInt fuzzy_int;
+    fuzzy_int.value = value;
+    fuzzy_int.fuzz = fuzz;
+    return fuzzy_int;
 }
 
 CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& context)
@@ -275,8 +283,8 @@ CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& cont
         }
     }
 
-    TIntFuzz int_fuzz = x_int_fuzz(it, context);
-    if(int_fuzz.first > 0 && !is_relative_to_stop_codon) {
+    SFuzzyInt int_fuzz = x_int_fuzz(it, context);
+    if(int_fuzz.value > 0 && !is_relative_to_stop_codon) {
         /* In HGVS:
          * the nucleotide 3' of the translation stop codon is *1, the next *2, etc.
          * # there is no nucleotide 0
@@ -287,11 +295,11 @@ CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& cont
         offset--;
     }
 
-    if(int_fuzz.second.IsNull()) {
-        pnt->SetPoint(offset + int_fuzz.first);
+    if(int_fuzz.fuzz.IsNull()) {
+        pnt->SetPoint(offset + int_fuzz.value);
     } else {
-        pnt->SetPoint(offset + int_fuzz.first);
-        pnt->SetFuzz(*int_fuzz.second);
+        pnt->SetPoint(offset + int_fuzz.value);
+        pnt->SetFuzz(*int_fuzz.fuzz);
         if(pnt->GetFuzz().IsRange()) {
             pnt->SetFuzz().SetRange().SetMin() += offset;
             pnt->SetFuzz().SetRange().SetMax() += offset;
@@ -329,12 +337,12 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_general_pos(TIterator const& i, const C
         --it;
         string s_sign(it->value.begin(), it->value.end());
         int sign1 = s_sign == "-" ? -1 : 1;
-        ofpnt.offset.first *= sign1;
-        if(ofpnt.offset.second &&
-           ofpnt.offset.second->IsLim() &&
-           ofpnt.offset.second->GetLim() == CInt_fuzz::eLim_unk)
+        ofpnt.offset.value *= sign1;
+        if(ofpnt.offset.fuzz &&
+           ofpnt.offset.fuzz->IsLim() &&
+           ofpnt.offset.fuzz->GetLim() == CInt_fuzz::eLim_unk)
         {
-            ofpnt.offset.second->SetLim(sign1 < 0 ? CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt);
+            ofpnt.offset.fuzz->SetLim(sign1 < 0 ? CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt);
         }
 
 
@@ -404,17 +412,17 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_fuzzy_pos(TIterator const& i, const CCo
         pnt2.pnt->SetFuzz().SetLim(CInt_fuzz::eLim_tr);
     }
 
-    if((pnt1.offset.first != 0 || pnt2.offset.first != 0) && !pnt1.pnt->Equals(*pnt2.pnt)) {
+    if((pnt1.offset.value != 0 || pnt2.offset.value != 0) && !pnt1.pnt->Equals(*pnt2.pnt)) {
         HGVS_THROW(eSemantic, "Base-points in an intronic fuzzy position must be equal");
     }
 
     pnt.pnt = pnt1.pnt;
     pnt.offset = pnt1.offset;
 
-    if(pnt1.offset.first != pnt2.offset.first) {
-        pnt.offset.second.Reset(new CInt_fuzz);
-        pnt.offset.second->SetRange().SetMin(pnt1.offset.first);
-        pnt.offset.second->SetRange().SetMax(pnt2.offset.first);
+    if(pnt1.offset.value != pnt2.offset.value) {
+        pnt.offset.fuzz.Reset(new CInt_fuzz);
+        pnt.offset.fuzz->SetRange().SetMin(pnt1.offset.value);
+        pnt.offset.fuzz->SetRange().SetMax(pnt2.offset.value);
     }
 
     return pnt;
@@ -575,11 +583,14 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_prot_pos(TIterator const& i, const CCon
     ++it;
     SOffsetPoint pnt = x_pos_spec(it, context);
 
-    //Create temporary loc and validate against it, since at this point context does not
-    //have this loc set, since we are in the process of constructing it.
-    CRef<CSeq_loc> tmp_loc(new CSeq_loc);
-    tmp_loc->SetPnt(*pnt.pnt);
-    context.Validate(*prot_literal, *tmp_loc);
+    if(!pnt.IsOffset()) {
+        //Create temporary loc and validate against it, since at this point context does not
+        //have this loc set, since we are in the process of constructing it.
+        CRef<CSeq_loc> tmp_loc(new CSeq_loc);
+        tmp_loc->SetPnt(*pnt.pnt);
+        context.Validate(*prot_literal, *tmp_loc);
+    }
+
 
     return pnt;
 }
@@ -674,7 +685,7 @@ CRef<CSeq_loc> CHgvsParser::x_seq_loc(TIterator const& i, const CContext& contex
     if(flip_strand) {
         loc.loc->FlipStrand();
     }
-    if(loc.start_offset.first || loc.stop_offset.first) {
+    if(loc.start_offset.value || loc.stop_offset.value) {
         HGVS_THROW(eSemantic, "Intronic seq-locs are not supported in this context");
     }
 
@@ -702,15 +713,15 @@ CHgvsParser::TDelta CHgvsParser::x_seq_ref(TIterator const& i, const CContext& c
         delta->SetSeq().SetLiteral(*raw_seq);
     } else if(it->value.id() == SGrammar::eID_int_fuzz) {
         //known sequence length; may be approximate
-        TIntFuzz int_fuzz = x_int_fuzz(it, context);
-        delta->SetSeq().SetLiteral().SetLength(int_fuzz.first);
-        if(int_fuzz.second.IsNull()) {
+        SFuzzyInt int_fuzz = x_int_fuzz(it, context);
+        delta->SetSeq().SetLiteral().SetLength(int_fuzz.value);
+        if(int_fuzz.fuzz.IsNull()) {
             ;//no-fuzz;
-        } else if(int_fuzz.second->IsLim() && int_fuzz.second->GetLim() == CInt_fuzz::eLim_unk) {
+        } else if(int_fuzz.fuzz->IsLim() && int_fuzz.fuzz->GetLim() == CInt_fuzz::eLim_unk) {
             //unknown length (no value) - will represent as length=0 with gt fuzz
             delta->SetSeq().SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
         } else {
-            delta->SetSeq().SetLiteral().SetFuzz(*int_fuzz.second);
+            delta->SetSeq().SetLiteral().SetFuzz(*int_fuzz.fuzz);
         }
     } else {
         HGVS_ASSERT_RULE(it, eID_NONE);
@@ -1059,12 +1070,12 @@ CRef<CVariation_ref> CHgvsParser::x_ssr(TIterator const& i, const CContext& cont
         TDelta delta(new TDelta::TObjectType);
         delta->SetSeq().SetLoc().Assign(*loc);
 
-        TIntFuzz int_fuzz = x_int_fuzz(it, context);
-        delta->SetMultiplier(int_fuzz.first);
-        if(int_fuzz.second.IsNull()) {
+        SFuzzyInt int_fuzz = x_int_fuzz(it, context);
+        delta->SetMultiplier(int_fuzz.value);
+        if(int_fuzz.fuzz.IsNull()) {
             ;
         } else {
-            delta->SetMultiplier_fuzz(*int_fuzz.second);
+            delta->SetMultiplier_fuzz(*int_fuzz.fuzz);
         }
         vr->SetData().SetInstance().SetDelta().push_back(delta);
     }
@@ -1335,35 +1346,35 @@ CRef<CVariation_ref> CHgvsParser::x_expr2(TIterator const& i, const CContext& co
     } else if(it->value.id() == SGrammar::eID_location) {
         CContext local_context(context);
         SOffsetLoc ofloc = x_location(it, local_context);
-        local_context.SetLoc(*ofloc.loc);
+        local_context.SetLoc(ofloc);
         ++it;
         vr = x_expr3(it, local_context);
 
         CRef<CDelta_item> di1;
-        if(ofloc.start_offset.first || ofloc.start_offset.second) {
+        if(ofloc.start_offset.value || ofloc.start_offset.fuzz) {
             di1.Reset(new CDelta_item);
             di1->SetAction(CDelta_item::eAction_offset);
-            di1->SetSeq().SetLiteral().SetLength(abs(ofloc.start_offset.first));
-            if(ofloc.start_offset.first < 0) {
+            di1->SetSeq().SetLiteral().SetLength(abs(ofloc.start_offset.value));
+            if(ofloc.start_offset.value < 0) {
                 di1->SetMultiplier(-1);
             }
 
-            if(ofloc.start_offset.second) {
-                di1->SetSeq().SetLiteral().SetFuzz().Assign(*ofloc.start_offset.second);
+            if(ofloc.start_offset.fuzz) {
+                di1->SetSeq().SetLiteral().SetFuzz().Assign(*ofloc.start_offset.fuzz);
             }
         }
 
         CRef<CDelta_item> di2;
-        if(ofloc.stop_offset.first || ofloc.stop_offset.second) {
+        if(ofloc.stop_offset.value || ofloc.stop_offset.fuzz) {
             di2.Reset(new CDelta_item);
             di2->SetAction(CDelta_item::eAction_offset);
-            if(ofloc.stop_offset.first < 0) {
+            if(ofloc.stop_offset.value < 0) {
                 di2->SetMultiplier(-1);
             }
 
-            di2->SetSeq().SetLiteral().SetLength(abs(ofloc.stop_offset.first));
-            if(ofloc.stop_offset.second) {
-                di2->SetSeq().SetLiteral().SetFuzz().Assign(*ofloc.stop_offset.second);
+            di2->SetSeq().SetLiteral().SetLength(abs(ofloc.stop_offset.value));
+            if(ofloc.stop_offset.fuzz) {
+                di2->SetSeq().SetLiteral().SetFuzz().Assign(*ofloc.stop_offset.fuzz);
             }
         }
 
