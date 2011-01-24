@@ -77,16 +77,29 @@ public:
      */
     CRef<CSeq_feat> Remap(const CSeq_feat& variation_feat, const CSeq_align& aln);
 
-    /*!
-     * Convert protein-variation (single-AA missense/nonsense) to nuc-variation on the parent.
-     */
+
+    /// Convert protein-variation (single-AA missense/nonsense) to nuc-variation on the parent.
     CRef<CSeq_feat> ProtToPrecursor(const CSeq_feat& prot_variation_feat);
+
+    /// Convert to nuc-variation on the parent to protein-variation (single-AA missense/nonsense)
+    /// Only a subset of sequence edits is supported (mismatch, ins, del, indel)
+    /// The location must fall within annotated CDS
+    CRef<CSeq_feat> PrecursorToProt(const CSeq_feat& prot_variation_feat);
+
 
     /// todo: implement when schema captures asserted allele
     bool ValidateAllele(const CSeq_feat& variation_feat);
 
     /// todo: implement when decide on representation in the schema
     void FlipStrand(CSeq_feat& variation_feat);
+
+    /// Calculate upstream (first) and downstream(second) flanks for loc
+    struct SFlankLocs
+    {
+        CRef<CSeq_loc> upstream;
+        CRef<CSeq_loc> downstream;
+    };
+    SFlankLocs CreateFlankLocs(const CSeq_loc& loc, TSeqPos len);
 
     /*!
      * Calculate location of variation-sets as union of the members.
@@ -107,6 +120,8 @@ private:
             const string& codon_from, //codon on cDNA
             const string& prot_to,    //missense/nonsense AA
             vector<string>& codons_to);           //calculated variation-codon
+
+    string s_CollapseAmbiguities(const vector<string>& seqs);
 
     /*!
      * Apply offsets to the variation's location (variation must be inst)

@@ -371,39 +371,41 @@ CRef<CSeq_feat> CVariationUtil::Remap(const CSeq_feat& variation_feat, const CSe
 
 
 
-#if 0
-CRef<CSeq_loc> CVariationUtil::x_CreateFlankingLoc(const CSeq_loc& loc, TSeqPos len, bool upstream)
+CVariationUtil::SFlankLocs CVariationUtil::CreateFlankLocs(const CSeq_loc& loc, TSeqPos len)
 {
-    CRef<CSeq_loc> flank(new CSeq_loc);
-    flank->SetInt().SetId().Assign(sequence::GetId(loc, NULL));
-    flank->SetInt().SetStrand(sequence::GetStrand(loc, NULL));
+    TSignedSeqPos start = sequence::GetStart(loc, m_scope, eExtreme_Positional);
+    TSignedSeqPos stop = sequence::GetStop(loc, m_scope, eExtreme_Positional);
 
-    long start = sequence::GetStart(loc, NULL, eExtreme_Positional);
-    long stop = sequence::GetStop(loc, NULL, eExtreme_Positional);
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+    TSignedSeqPos max_pos = bsh.GetInst_Length() - 1;
 
-    CBioseq_Handle bsh = m_scope.GetBioseqHandle(flank->GetInt().GetId());
-    long max_pos = bsh.GetInst_Length() - 1;
+    SFlankLocs flanks;
+    flanks.upstream.Reset(new CSeq_loc);
+    flanks.upstream->SetInt().SetId().Assign(sequence::GetId(loc, NULL));
+    flanks.upstream->SetInt().SetStrand(sequence::GetStrand(loc, NULL));
+    flanks.upstream->SetInt().SetTo(min(max_pos, stop + (TSignedSeqPos)len));
+    flanks.upstream->SetInt().SetFrom(max((TSignedSeqPos)0, start - (TSignedSeqPos)len));
 
-    flank->SetInt().SetTo(min(max_pos, stop + len));
-    flank->SetInt().SetFrom(max((long)0, start - len));
+    flanks.downstream.Reset(new CSeq_loc);
+    flanks.downstream->Assign(*flanks.upstream);
 
-    if(upstream ^ (sequence::GetStrand(loc, NULL) == eNa_strand_minus)) {
-        if(start == 0) {
-            flank->SetEmpty().Assign(sequence::GetId(loc, NULL));
-        } else {
-            flank->SetInt().SetTo(start - 1);
-        }
+    CSeq_loc& second = sequence::GetStrand(loc, NULL) == eNa_strand_minus ? *flanks.upstream : *flanks.downstream;
+    CSeq_loc& first = sequence::GetStrand(loc, NULL) == eNa_strand_minus ? *flanks.downstream : *flanks.upstream;
+
+    if(start == 0) {
+        first.SetNull();
     } else {
-        if(stop == max_pos) {
-            flank->SetEmpty().Assign(sequence::GetId(loc, NULL));
-        } else {
-            flank->SetInt().SetFrom(stop + 1);
-        }
+        first.SetInt().SetTo(start - 1);
     }
 
-    return flank;
+    if(stop == max_pos) {
+        second.SetNull();
+    } else {
+        second.SetInt().SetFrom(stop + 1);
+    }
+
+    return flanks;
 }
-#endif
 
 
 
@@ -481,6 +483,40 @@ void CVariationUtil::s_CalcPrecursorVariationCodon(
     }
 }
 
+string CVariationUtil::s_CollapseAmbiguities(const vector<string>& seqs)
+{
+    string collapsed_seq;
+
+    vector<int> bits; //4-bit bitmask denoting whether a nucleotide occurs at this pos at any seq
+
+    typedef const vector<string> TConstStrs;
+    ITERATE(TConstStrs, it, seqs) {
+        const string& seq = *it;
+        if(seq.size() > bits.size()) {
+            bits.resize(seq.size());
+        }
+
+        for(size_t i= 0; i < seq.size(); i++) {
+            char nt = seq[i];
+            int m =    (nt == 'T' ? 1
+                      : nt == 'G' ? 2
+                      : nt == 'C' ? 4
+                      : nt == 'A' ? 8 : 0);
+            if(!m) {
+                NCBI_THROW(CException, eUnknown, "Expected [ACGT] alphabet");
+            }
+
+            bits[i] |= m;
+        }
+    }
+
+    static const string iupac_bases = "NTGKCYSBAWRDMHVN";
+    collapsed_seq.resize(bits.size());
+    for(size_t i = 0; i < collapsed_seq.size(); i++) {
+        collapsed_seq[i] = iupac_bases[bits[i]];
+    }
+    return collapsed_seq;
+}
 
 
 //vr must be a prot missense or nonsense (inst) with location set; inst must not have offsets.
@@ -544,11 +580,7 @@ CRef<CSeq_feat> CVariationUtil::ProtToPrecursor(const CSeq_feat& prot_variation_
     vector<string> variant_codons;
     s_CalcPrecursorVariationCodon(original_allele_codon, variant_prot_seq.GetIupacaa(), variant_codons);
 
-    if(variant_codons.size() != 1) {
-        NCBI_THROW(CException, CException::eInvalid, "Can't calculate unique variant codon for this variation: " + original_allele_codon + " -> " + NStr::Join(variant_codons, "|"));
-    }
-
-    string variant_codon = variant_codons.front();
+    string variant_codon = s_CollapseAmbiguities(variant_codons);
 
     //If the original and variant codons have terminal bases shared, we can truncate the variant codon and location accordingly.
     while(variant_codon.length() > 1 && variant_codon.at(0) == original_allele_codon.at(0)) {
@@ -588,6 +620,40 @@ CRef<CSeq_feat> CVariationUtil::ProtToPrecursor(const CSeq_feat& prot_variation_
 
     return feat;
 }
+
+#if 0
+CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_feat)
+{
+    if(!prot_variation_feat.GetData().IsVariation()) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-feature");
+    }
+
+    const CVariation_ref& vr = prot_variation_feat.GetData().GetVariation();
+    if(!vr.GetData().IsInstance()) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation.inst");
+    }
+
+    if(!vr.GetData().GetInstance().GetDelta().size() == 1) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+    }
+
+    const CDelta_item& delta = *vr.GetData().GetInstance().GetDelta().front();
+
+    if(delta.IsSetSeq() && !delta.GetSeq().IsLiteral()) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "A sequence in delta is specified, but not a literal");
+    }
+
+
+    CRef<CSeq_loc_Mapper> nuc2prot_mapper;
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+    for(CFeat_CI ci(*m_scope, nuc_variation_feat.GetLocation(), sel); ci; ++ci) {
+        nuc2prot_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eLocationToProduct, m_scope));
+        break;
+    }
+
+    CRef<CSeq_loc> prot_variation_feat;
+}
+#endif
 
 END_NCBI_SCOPE
 
