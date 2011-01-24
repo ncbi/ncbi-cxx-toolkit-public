@@ -491,14 +491,12 @@ void CValidError_bioseq::ValidateSeqIds
             if ( tsid ) {
 
                 if ( has_gi && !tsid->IsSetAccession() && tsid->IsSetName() ) {
-                    EDiagSev sev = eDiag_Critical;
-                    // Report ddbj segmented sequence missing accesions as 
-                    // warning, not critical.
                     if ( (*k)->IsDdbj()  &&  repr == CSeq_inst::eRepr_seg ) {
-                        sev = eDiag_Warning;
+                        // Don't report ddbj segmented sequence missing accessions 
+                    } else {
+                        PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                            "Missing accession for " + tsid->GetName(), seq);
                     }
-                    PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat,
-                        "Missing accession for " + tsid->GetName(), seq);
                 }
             }
             // Fall thru
@@ -4008,11 +4006,15 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     string accession = "";
     FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
         if ((*it)->IsGenbank()) {
-            accession = (*it)->GetGenbank().GetAccession();
-            break;
+            if ((*it)->GetGenbank().IsSetAccession()) {
+                accession = (*it)->GetGenbank().GetAccession();
+                break;
+            }
         } else if ((*it)->IsDdbj()) {
-            accession = (*it)->GetDdbj().GetAccession();
-            break;
+            if ((*it)->GetDdbj().IsSetAccession()) {
+                accession = (*it)->GetDdbj().GetAccession();
+                break;
+            }
         } else if ((*it)->IsGi()) {
             accession = NStr::IntToString((*it)->GetGi());
         }
