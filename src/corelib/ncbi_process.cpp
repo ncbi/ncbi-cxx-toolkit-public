@@ -89,20 +89,20 @@ CProcess::CExitInfo::CExitInfo(void)
 }
 
 
-bool CProcess::CExitInfo::IsPresent(void)
+bool CProcess::CExitInfo::IsPresent(void) const
 {
     return state != eExitInfo_Unknown;
 }
 
 
-bool CProcess::CExitInfo::IsAlive(void)
+bool CProcess::CExitInfo::IsAlive(void) const
 {
     EXIT_INFO_CHECK;
     return state == eExitInfo_Alive;
 }
 
 
-bool CProcess::CExitInfo::IsExited(void)
+bool CProcess::CExitInfo::IsExited(void) const
 {
     EXIT_INFO_CHECK;
     if (state != eExitInfo_Terminated) {
@@ -117,7 +117,7 @@ bool CProcess::CExitInfo::IsExited(void)
 }
 
 
-bool CProcess::CExitInfo::IsSignaled(void)
+bool CProcess::CExitInfo::IsSignaled(void) const
 {
     EXIT_INFO_CHECK;
     if (state != eExitInfo_Terminated) {
@@ -132,7 +132,7 @@ bool CProcess::CExitInfo::IsSignaled(void)
 }
 
 
-int CProcess::CExitInfo::GetExitCode(void)
+int CProcess::CExitInfo::GetExitCode(void) const
 {
     if ( !IsExited() ) {
         return -1;
@@ -145,7 +145,7 @@ int CProcess::CExitInfo::GetExitCode(void)
 }
 
 
-int CProcess::CExitInfo::GetSignal(void)
+int CProcess::CExitInfo::GetSignal(void) const
 {
     if ( !IsSignaled() ) {
         return -1;

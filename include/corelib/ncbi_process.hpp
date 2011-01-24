@@ -261,25 +261,25 @@ public:
         ///
         /// All other methods returns value only if this method returns
         /// TRUE, otherwise they trow an exception.
-        bool IsPresent(void);
+        bool IsPresent(void) const;
     
         /// TRUE if the process is still alive.
-        bool IsAlive(void);
+        bool IsAlive(void) const;
     
         /// TRUE if the process terminated normally.
-        bool IsExited(void);
+        bool IsExited(void) const;
        
         /// TRUE if the process terminated by signal (UNIX only).
-        bool IsSignaled(void);
+        bool IsSignaled(void) const;
 
         /// Get process exit code.
         /// Works only if IsExited() returns TRUE, otherwise return -1.
-        int GetExitCode(void);
+        int GetExitCode(void) const;
         
         /// Get the number of the signal that caused process to terminate.
         /// (UNIX only).
         /// Works only if IsSignaled() returns TRUE, otherwise return -1.
-        int GetSignal(void);
+        int GetSignal(void) const;
         
     private:
         int state;    ///< Process state (unknown/alive/terminated).
