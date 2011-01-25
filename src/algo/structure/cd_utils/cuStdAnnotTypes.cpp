@@ -98,8 +98,6 @@ bool CStdAnnotTypes::LoadTypes(const string& iniFile)
 
             }
         }
-    } else {
-        ERR_POST(ncbi::Error << "CStdAnnotTypes::LoadTypes():  error parsing file " << iniFile);
     }
 
     return result;
