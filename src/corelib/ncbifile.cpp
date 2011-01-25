@@ -159,7 +159,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
-            ERR_POST(log_message << ": " << strerror(saved_error)); \
+            ERR_POST(log_message << ": " << _T_STDSTRING(NcbiSys_strerror(saved_error))); \
         } \
         errno = saved_error; \
     }
@@ -176,7 +176,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
-            ERR_POST(log_message << ": " << strerror(saved_error)); \
+            ERR_POST(log_message << ": " << _T_STDSTRING(NcbiSys_strerror(saved_error))); \
         } \
         errno = saved_error; \
         return false; \
@@ -2916,8 +2916,9 @@ char x_GetChar(CNcbiIfstream& f, CFile::ECompareText mode,
 bool CFile::CompareTextContents(const string& file, ECompareText mode,
                                 size_t buf_size) const
 {
-    CNcbiIfstream f1(_T_XCSTRING(GetPath()), IOS_BASE::in);
-    CNcbiIfstream f2(_T_XCSTRING(file),      IOS_BASE::in);
+    CNcbiIfstream f1(GetPath().c_str(), IOS_BASE::in);
+    CNcbiIfstream f2(file.c_str(),      IOS_BASE::in);
+
     if ( !buf_size ) {
         buf_size = kDefaultBufferSize;
     }
@@ -4101,7 +4102,7 @@ CNcbiIstream& CTmpFile::AsInputFile(EIfExists if_exists,
         }
     }
     mode |= IOS_BASE::in;
-    m_InFile.reset(new CNcbiIfstream(_T_XCSTRING(m_FileName)));
+    m_InFile.reset(new CNcbiIfstream(m_FileName.c_str()));
     return *m_InFile;
 }
 
@@ -4124,7 +4125,7 @@ CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists,
         }
     }
     mode |= IOS_BASE::out;
-    m_OutFile.reset(new CNcbiOfstream(_T_XCSTRING(m_FileName)));
+    m_OutFile.reset(new CNcbiOfstream(m_FileName.c_str()));
     return *m_OutFile;
 }
 
@@ -4716,7 +4717,7 @@ void s_AppendZeros(int fd, Uint8 length)
                                           (unsigned int)length);
         if ( x_written < 0 ) {
             if (errno != EINTR) {
-                errmsg = strerror(errno);
+                errmsg = _T_STDSTRING(NcbiSys_strerror(errno));
                 break;
             }
             continue;

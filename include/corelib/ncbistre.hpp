@@ -164,7 +164,38 @@ typedef IO_PREFIX::strstream     CNcbiStrstream;
 /// Portable alias for filebuf.
 typedef IO_PREFIX::filebuf       CNcbiFilebuf;
 
-#ifdef NCBI_COMPILER_MSVC
+
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+class NCBI_XNCBI_EXPORT CNcbiIfstream : public IO_PREFIX::ifstream
+{
+public:
+    CNcbiIfstream( )
+    {
+    }
+    explicit CNcbiIfstream(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in,
+        int _Prot = (int)IOS_BASE::_Openprot
+    );
+    explicit CNcbiIfstream(
+        const wchar_t *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in,
+        int _Prot = (int)IOS_BASE::_Openprot
+    ) : IO_PREFIX::ifstream(_Filename,_Mode,_Prot)
+    {
+    }
+ 
+    void open(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in,
+        int _Prot = (int)IOS_BASE::_Openprot
+    );
+    void open(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode
+    );
+};
+#elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 class CNcbiIfstream : public IO_PREFIX::ifstream
 {
@@ -204,7 +235,37 @@ typedef IO_PREFIX::ifstream      CNcbiIfstream;
 typedef IO_PREFIX::ifstream      CNcbiIfstream;
 #endif
 
-#ifdef NCBI_COMPILER_MSVC
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+class NCBI_XNCBI_EXPORT CNcbiOfstream : public IO_PREFIX::ofstream
+{
+public:
+    CNcbiOfstream( )
+    {
+    }
+    explicit CNcbiOfstream(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    );
+    explicit CNcbiOfstream(
+        const wchar_t *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    ) : IO_PREFIX::ofstream(_Filename,_Mode,_Prot)
+    {
+    }
+ 
+    void open(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    );
+    void open(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode
+    );
+};
+#elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 class CNcbiOfstream : public IO_PREFIX::ofstream
 {

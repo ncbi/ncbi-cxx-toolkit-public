@@ -50,6 +50,7 @@
 #include <corelib/request_control.hpp>
 #include <corelib/ncbi_system.hpp>
 #include "ncbidiag_p.hpp"
+#include "ncbisys.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -1235,17 +1236,17 @@ const string& CDiagContext::GetHost(void) const
 
 #if defined(NCBI_OS_MSWIN)
     // MSWIN - use COMPUTERNAME
-    const char* compname = ::getenv("COMPUTERNAME");
+    const TXChar* compname = NcbiSys_getenv(_T("COMPUTERNAME"));
     if ( compname  &&  *compname ) {
-        m_Host->SetString(compname);
+        m_Host->SetString(_T_STDSTRING(compname));
         return m_Host->GetOriginalString();
     }
 #endif
 
     // Server env. - use SERVER_ADDR
-    const char* servaddr = ::getenv("SERVER_ADDR");
+    const TXChar* servaddr = NcbiSys_getenv(_T("SERVER_ADDR"));
     if ( servaddr  &&  *servaddr ) {
-        m_Host->SetString(servaddr);
+        m_Host->SetString(_T_STDSTRING(servaddr));
     }
     return m_Host->GetOriginalString();
 }
@@ -2029,8 +2030,8 @@ string GetDefaultLogLocation(CNcbiApplication& app)
     }
     // Could not find a valid web-dir entry, use /log/port or empty string
     // to try /log/srv later.
-    const char* port = ::getenv("SERVER_PORT");
-    return port ? log_path + string(port) : kEmptyStr;
+    const TXChar* port = NcbiSys_getenv(_T("SERVER_PORT"));
+    return port ? log_path + string(_T_CSTRING(port)) : kEmptyStr;
 }
 
 
@@ -2690,7 +2691,7 @@ void CDiagBuffer::Flush(void)
 bool CDiagBuffer::GetTraceEnabledFirstTime(void)
 {
     CMutexGuard LOCK(s_DiagMutex);
-    const char* str = ::getenv(DIAG_TRACE);
+    const TXChar* str = NcbiSys_getenv(_T_XCSTRING(DIAG_TRACE));
     if (str  &&  *str) {
         sm_TraceDefault = eDT_Enable;
     } else {
@@ -2707,9 +2708,9 @@ bool CDiagBuffer::GetSeverityChangeEnabledFirstTime(void)
     if ( sm_PostSeverityChange != eDiagSC_Unknown ) {
         return sm_PostSeverityChange == eDiagSC_Enable;
     }
-    const char* str = ::getenv(DIAG_POST_LEVEL);
+    const TXChar* str = NcbiSys_getenv(_T_XCSTRING(DIAG_POST_LEVEL));
     EDiagSev sev;
-    if (str  &&  *str  &&  CNcbiDiag::StrToSeverityLevel(str, sev)) {
+    if (str  &&  *str  &&  CNcbiDiag::StrToSeverityLevel(_T_CSTRING(str), sev)) {
         SetDiagFixedPostLevel(sev);
     } else {
         sm_PostSeverityChange = eDiagSC_Enable;
@@ -4474,8 +4475,9 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         CDirEntry::fRead | CDirEntry::fWrite,
         CDirEntry::fRead | CDirEntry::fWrite,
         0);
-    m_Handle = open(CFile::ConvertToOSPath(GetLogName()).c_str(),
-                    mode, perm);
+    m_Handle = NcbiSys_open(
+        _T_XCSTRING(CFile::ConvertToOSPath(GetLogName())),
+        mode, perm);
     m_ReopenTimer->Restart();
     if (m_Handle == -1) {
         string msg;
@@ -4700,7 +4702,8 @@ bool s_CanOpenLogFile(const string& file_name)
         CDirEntry::fRead | CDirEntry::fWrite,
         CDirEntry::fRead | CDirEntry::fWrite,
         0);
-    int h = open(CFile::ConvertToOSPath(abs_path).c_str(),
+    int h = NcbiSys_open(
+        _T_XCSTRING(CFile::ConvertToOSPath(abs_path)),
         mode, perm);
     if (h == -1) {
         return false;
@@ -5488,11 +5491,11 @@ extern void Abort(void)
     // If don't defined handler or application doesn't still terminated
 
     // Check environment variable for silent exit
-    const char* value = ::getenv("DIAG_SILENT_ABORT");
-    if (value  &&  (*value == 'Y'  ||  *value == 'y'  ||  *value == '1')) {
+    const TXChar* value = NcbiSys_getenv(_T("DIAG_SILENT_ABORT"));
+    if (value  &&  (*value == _T('Y')  ||  *value == _T('y')  ||  *value == _T('1'))) {
         ::exit(255);
     }
-    else if (value  &&  (*value == 'N'  ||  *value == 'n' || *value == '0')) {
+    else if (value  &&  (*value == _T('N')  ||  *value == _T('n') || *value == _T('0'))) {
         ::abort();
     }
     else

@@ -1051,6 +1051,9 @@ public:
 // Some implementations return char*, so strict compilers may refuse
 // to let them satisfy TErrorStr without a wrapper.  However, they
 // don't all agree on what form the wrapper should take. :-/
+NCBI_XNCBI_EXPORT
+extern const char*  Ncbi_strerror(int errnum);
+
 #ifdef NCBI_COMPILER_GCC
 inline int         NcbiErrnoCode(void)      { return errno; }
 inline const char* NcbiErrnoStr(int errnum) { return ::strerror(errnum); }
@@ -1064,13 +1067,7 @@ public:
         { return errno; }
     static const char* GetErrCodeString(int errnum) 
         {
-#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__
-            static char buf[128];
-            strerror_s(buf,sizeof(buf),errnum);
-            return buf;
-#else
-            return ::strerror(errnum);
-#endif
+            return Ncbi_strerror(errnum);
         }
 };
 #  define NCBI_ERRNO_CODE_WRAPPER NCBI_NS_NCBI::CErrnoAdapt::GetErrCode

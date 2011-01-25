@@ -42,6 +42,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/error_codes.hpp>
+#include "ncbisys.hpp"
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -69,7 +70,7 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace)
 extern void DoThrowTraceAbort(void)
 {
     if ( !s_DTTA_Initialized ) {
-        const char* str = getenv(ABORT_ON_THROW);
+        const TXChar* str = NcbiSys_getenv(_T_XCSTRING(ABORT_ON_THROW));
         if (str  &&  *str)
             s_DoThrowTraceAbort = true;
         s_DTTA_Initialized  = true;
@@ -628,6 +629,36 @@ const char* CCoreException::GetErrCodeString(void) const
     }
 }
 
+#if (defined(NCBI_OS_MSWIN) && defined(_UNICODE)) || \
+        (NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__)
+// MT: Store pointer to the strerror message in TLS
+static CStaticTls<char*> s_TlsStrerrorMessage;
+#endif
+
+extern const char*  Ncbi_strerror(int errnum)
+{
+#if (defined(NCBI_OS_MSWIN) && defined(_UNICODE)) || \
+        (NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__)
+    string tmp;
+#  if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__
+    TXChar xbuf[256];
+    NcbiSys_strerror_s(xbuf,sizeof(xbuf)/sizeof(TXChar),errnum);
+    tmp = _T_STDSTRING(xbuf);
+#  else
+    tmp = _T_STDSTRING( NcbiSys_strerror(errnum) );
+#  endif
+    char* ptr = new char[ tmp.size() + 1];
+    strcpy(ptr, tmp.c_str());
+    char** p = s_TlsStrerrorMessage.GetValue();
+    if (p && *p) {
+        delete [] *p;
+    }
+    s_TlsStrerrorMessage.SetValue(&ptr);
+    return ptr;
+#else
+    return NcbiSys_strerror(errnum);
+#endif
+}
 
 #if defined(NCBI_OS_MSWIN)
 
@@ -640,14 +671,22 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
     if (p && *p) {
         LocalFree(*p);
     }
-    char* ptr = NULL;
+    TXChar* xptr = NULL;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                   FORMAT_MESSAGE_FROM_SYSTEM     |
                   FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                   FORMAT_MESSAGE_IGNORE_INSERTS,
                   "%0", errnum,
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  (LPTSTR)&ptr, 0, NULL);
+                  (TXChar*)&xptr, 0, NULL);
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+    CStringUTF8 tmp(xptr);
+    char* ptr = (char*)LocalAlloc( LPTR, tmp.size() + 1);
+    strcpy(ptr, tmp.c_str());
+    LocalFree(xptr);
+#else
+    char* ptr = xptr;
+#endif
     // Remove trailing dots and spaces
     size_t pos = strlen(ptr);
     if ( pos ) {

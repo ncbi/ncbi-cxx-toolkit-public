@@ -35,6 +35,7 @@
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_system.hpp>
+#include "ncbisys.hpp"
 
 #if defined(NCBI_OS_UNIX)
 #  include <errno.h>
@@ -1026,7 +1027,7 @@ void CPIDGuard::Release(void)
                 if ( !out.good() ) {
                     NCBI_THROW(CPIDGuardException, eWrite,
                                "Unable to write into PID file " + m_Path +": "
-                               + strerror(errno));
+                               + _T_CSTRING(NcbiSys_strerror(errno)));
                 }
             } else {
                 // Remove the file
@@ -1085,7 +1086,7 @@ void CPIDGuard::UpdatePID(TPid pid)
     if ( !out.good() ) {
         NCBI_THROW(CPIDGuardException, eWrite,
                    "Unable to write into PID file " + m_Path + ": "
-                   + strerror(errno));
+                   + _T_CSTRING(NcbiSys_strerror(errno)));
     }
     // Save updated pid
     m_NewPID = pid;

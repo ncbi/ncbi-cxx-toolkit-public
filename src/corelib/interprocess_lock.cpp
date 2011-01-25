@@ -32,6 +32,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/interprocess_lock.hpp>
+#include "ncbisys.hpp"
 #include <map>
 
 #if defined(NCBI_OS_UNIX)
@@ -255,7 +256,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
 
 #elif defined(NCBI_OS_MSWIN)
 
-    HANDLE  handle  = ::CreateMutexA(NULL, TRUE, m_SystemName.c_str());
+    HANDLE  handle  = ::CreateMutex(NULL, TRUE, _T_XCSTRING(m_SystemName));
     errno_t errcode = ::GetLastError();
     if (handle == kInvalidLockHandle) {
         switch(errcode) {
@@ -375,7 +376,7 @@ void CInterProcessLock::Remove()
     if (m_Handle != kInvalidLockHandle) {
         Unlock();
     }
-    unlink(m_SystemName.c_str());
+    NcbiSys_unlink(_T_XCSTRING(m_SystemName));
 }
 
 

@@ -42,6 +42,43 @@
 
 BEGIN_NCBI_SCOPE
 
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+
+CNcbiIfstream::CNcbiIfstream(
+    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
+ : IO_PREFIX::ifstream(_T_XCSTRING(_Filename), _Mode, _Prot)
+{
+}
+void CNcbiIfstream::open(
+    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
+{
+    IO_PREFIX::ifstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
+}
+void CNcbiIfstream::open(
+    const char *_Filename, IOS_BASE::openmode _Mode)
+{
+    IO_PREFIX::ifstream::open(_T_XCSTRING(_Filename), _Mode);
+}
+
+
+CNcbiOfstream::CNcbiOfstream(
+    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
+ : IO_PREFIX::ofstream(_T_XCSTRING(_Filename), _Mode, _Prot)
+{
+}
+void CNcbiOfstream::open(
+    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
+{
+    IO_PREFIX::ofstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
+}
+void CNcbiOfstream::open(
+    const char *_Filename, IOS_BASE::openmode _Mode)
+{
+    IO_PREFIX::ofstream::open(_T_XCSTRING(_Filename), _Mode);
+}
+
+
+#endif
 
 CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 {

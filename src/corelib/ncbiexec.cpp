@@ -34,6 +34,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/error_codes.hpp>
+#include "ncbisys.hpp"
 
 #if defined(NCBI_OS_MSWIN)
 #  include <process.h>
@@ -310,7 +311,7 @@ TExitCode CExec::System(const char *cmdline)
     int status;
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = system(cmdline); 
+    status = NcbiSys_system(_T_XCSTRING(cmdline)); 
 #elif defined(NCBI_OS_UNIX)
     status = system(cmdline);
 #endif
@@ -667,11 +668,11 @@ string CExec::ResolvePath(const string& filename)
             // Try to find filename among the paths of the PATH
             // environment variable.
             if ( path.empty() ) {
-                const char* env = getenv("PATH");
+                const TXChar* env = NcbiSys_getenv(_T("PATH"));
                 if (env  &&  *env) {
                     list<string> split_path;
 #  ifdef NCBI_OS_MSWIN
-                    NStr::Split(env, ";", split_path);
+                    NStr::Split(_T_STDSTRING(env), ";", split_path);
 #  else
                     NStr::Split(env, ":", split_path);
 #  endif

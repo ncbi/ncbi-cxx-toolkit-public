@@ -40,6 +40,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/error_codes.hpp>
+#include "ncbisys.hpp"
 
 #include <algorithm>
 #include <set>
@@ -1342,8 +1343,9 @@ void CNcbiRegistry::x_Init(void)
     m_SysRegistry.Reset(new CTwoLayerRegistry(NULL, cf));
     x_Add(*m_SysRegistry, ePriority_Default - 1, sm_SysRegName);
 
-    const char* override_path = getenv("NCBI_CONFIG_OVERRIDES");
-    if (override_path  &&  *override_path) {
+    const TXChar* xoverride_path = NcbiSys_getenv(_T("NCBI_CONFIG_OVERRIDES"));
+    if (xoverride_path  &&  *xoverride_path) {
+        string override_path = _T_STDSTRING(xoverride_path);
         m_OverrideRegistry.Reset(new CCompoundRWRegistry(cf));
         CMetaRegistry::SEntry entry
             = CMetaRegistry::Load(override_path, CMetaRegistry::eName_AsIs,

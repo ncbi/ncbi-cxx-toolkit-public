@@ -36,6 +36,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include "ncbisys.hpp"
 
 // strstream (aka CNcbiStrstream) remains the default for historical
 // reasons; however, MIPSpro's implementation is buggy, yielding
@@ -306,13 +307,14 @@ bool CMetaRegistry::x_Reload(const string& path, IRWRegistry& reg,
 
 void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 {
-    const char* cfg_path = getenv("NCBI_CONFIG_PATH");
+
+    const TXChar* cfg_path = NcbiSys_getenv(_T("NCBI_CONFIG_PATH"));
     if (cfg_path) {
-        path.push_back(cfg_path);
+        path.push_back(_T_STDSTRING(cfg_path));
         return;
     }
 
-    if (getenv("NCBI_DONT_USE_LOCAL_CONFIG") == NULL) {
+    if (NcbiSys_getenv(_T("NCBI_DONT_USE_LOCAL_CONFIG")) == NULL) {
         path.push_back(".");
         string home = CDir::GetHome();
         if ( !home.empty() ) {
@@ -321,17 +323,17 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
     }
 
     {{
-        const char* ncbi = getenv("NCBI");
+        const TXChar* ncbi = NcbiSys_getenv(_T("NCBI"));
         if (ncbi  &&  *ncbi) {
-            path.push_back(ncbi);
+            path.push_back(_T_STDSTRING(ncbi));
         }
     }}
 
 #ifdef NCBI_OS_MSWIN
     {{
-        const char* sysroot = getenv("SYSTEMROOT");
+        const TXChar* sysroot = NcbiSys_getenv(_T("SYSTEMROOT"));
         if (sysroot  &&  *sysroot) {
-            path.push_back(sysroot);
+            path.push_back(_T_STDSTRING(sysroot));
         }
     }}
 #else

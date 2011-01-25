@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/error_codes.hpp>
+#include "ncbisys.hpp"
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Config
@@ -58,7 +59,7 @@ const char* kNcbiConfigPrefix = "NCBI_CONFIG__";
 // g_GetConfigXxx() functions
 
 namespace {
-    bool StringToBool(const string& value)
+    bool s_StringToBool(const string& value)
     {
         if ( !value.empty() && isdigit((unsigned char)value[0]) ) {
             return NStr::StringToInt(value) != 0;
@@ -68,7 +69,7 @@ namespace {
         }
     }
 
-    string GetEnvVarName(const char* section,
+    string s_GetEnvVarName(const char* section,
                          const char* variable,
                          const char* env_var_name)
     {
@@ -90,11 +91,12 @@ namespace {
         return env_var;
     }
 
-    const char* GetEnv(const char* section,
-                       const char* variable,
-                       const char* env_var_name)
+    const TXChar* s_GetEnv(const char* section,
+                         const char* variable,
+                         const char* env_var_name)
     {
-        return getenv(GetEnvVarName(section, variable, env_var_name).c_str());
+        return NcbiSys_getenv( _T_XCSTRING(
+            s_GetEnvVarName(section, variable, env_var_name).c_str() ));
     }
 
 #ifdef _DEBUG
@@ -122,7 +124,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
             const string& str = app->GetConfig().Get(section, variable);
             if ( !str.empty() ) {
                 try {
-                    bool value = StringToBool(str);
+                    bool value = s_StringToBool(str);
 #ifdef _DEBUG
                     if ( dump ) {
                         LOG_POST_X(5, "NCBI_CONFIG: bool variable"
@@ -140,10 +142,10 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
             }
         }
     }
-    const char* str = GetEnv(section, variable, env_var_name);
+    const TXChar* str = s_GetEnv(section, variable, env_var_name);
     if ( str && *str ) {
         try {
-            bool value = StringToBool(str);
+            bool value = s_StringToBool(_T_CSTRING(str));
 #ifdef _DEBUG
             if ( dump ) {
                 if ( section  &&  *section ) {
@@ -152,7 +154,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                   " " << variable <<
                                   " = " << value <<
                                   " from env var " <<
-                                  GetEnvVarName(section, variable, env_var_name));
+                                  s_GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
                     LOG_POST_X(7, "NCBI_CONFIG: bool variable "
@@ -219,10 +221,10 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
             }
         }
     }
-    const char* str = GetEnv(section, variable, env_var_name);
+    const TXChar* str = s_GetEnv(section, variable, env_var_name);
     if ( str && *str ) {
         try {
-            int value = NStr::StringToInt(str);
+            int value = NStr::StringToInt(_T_CSTRING(str));
 #ifdef _DEBUG
             if ( config_dump ) {
                 if ( section  &&  *section ) {
@@ -231,7 +233,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
                                    " " << variable <<
                                    " = " << value <<
                                    " from env var " <<
-                                   GetEnvVarName(section, variable, env_var_name));
+                                   s_GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
                     LOG_POST_X(12, "NCBI_CONFIG: int variable "
@@ -300,10 +302,10 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
             }
         }
     }
-    const char* str = GetEnv(section, variable, env_var_name);
+    const TXChar* str = s_GetEnv(section, variable, env_var_name);
     if ( str && *str ) {
         try {
-            double value = NStr::StringToDouble(str,
+            double value = NStr::StringToDouble(_T_CSTRING(str),
                 NStr::fDecimalPosixOrLocal |
                 NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
 #ifdef _DEBUG
@@ -314,7 +316,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
                                    " " << variable <<
                                    " = " << value <<
                                    " from env var " <<
-                                   GetEnvVarName(section, variable, env_var_name));
+                                   s_GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
                     LOG_POST_X(12, "NCBI_CONFIG: double variable "
@@ -375,7 +377,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
             }
         }
     }
-    const char* value = GetEnv(section, variable, env_var_name);
+    const TXChar* value = s_GetEnv(section, variable, env_var_name);
     if ( value ) {
 #ifdef _DEBUG
         if ( config_dump ) {
@@ -385,7 +387,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                " " << variable <<
                                " = \"" << value << "\""
                                " from env var " <<
-                               GetEnvVarName(section, variable, env_var_name));
+                               s_GetEnvVarName(section, variable, env_var_name));
             }
             else {
                 LOG_POST_X(17, "NCBI_CONFIG: str variable"
@@ -395,27 +397,27 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
             }
         }
 #endif
-        return value;
+        return _T_STDSTRING(value);
     }
-    value = default_value? default_value: "";
+    const char* dvalue = default_value? default_value: "";
 #ifdef _DEBUG
     if ( config_dump ) {
         if ( section  &&  *section ) {
             LOG_POST_X(18, "NCBI_CONFIG: str variable"
                            " [" << section << "]"
                            " " << variable <<
-                           " = \"" << value << "\""
+                           " = \"" << dvalue << "\""
                            " by default");
         }
         else {
             LOG_POST_X(19, "NCBI_CONFIG: str variable"
                            " " << variable <<
-                           " = \"" << value << "\""
+                           " = \"" << dvalue << "\""
                            " by default");
         }
     }
 #endif
-    return value;
+    return dvalue;
 }
 
 const char* CParamException::GetErrCodeString(void) const

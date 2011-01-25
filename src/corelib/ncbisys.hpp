@@ -33,8 +33,6 @@
  */
 
 
-BEGIN_NCBI_SCOPE
-
 #if defined(NCBI_OS_MSWIN)
 
 
@@ -55,6 +53,8 @@ BEGIN_NCBI_SCOPE
 #    define NcbiSys_stat         _wstat64
 #    define NcbiSys_strcmp        wcscmp
 #    define NcbiSys_strdup       _wcsdup
+#    define NcbiSys_strerror     _wcserror
+#    define NcbiSys_strerror_s   _wcserror_s
 #    define NcbiSys_system       _wsystem
 #    define NcbiSys_tempnam      _wtempnam
 #    define NcbiSys_unlink       _wunlink
@@ -76,6 +76,8 @@ BEGIN_NCBI_SCOPE
 #    define NcbiSys_stat         _stat64
 #    define NcbiSys_strcmp        strcmp
 #    define NcbiSys_strdup        strdup
+#    define NcbiSys_strerror      strerror
+#    define NcbiSys_strerror_s    strerror_s
 #    define NcbiSys_system        system
 #    define NcbiSys_tempnam       tempnam
 #    define NcbiSys_unlink        unlink
@@ -98,12 +100,11 @@ BEGIN_NCBI_SCOPE
 #  define NcbiSys_rmdir         rmdir
 #  define NcbiSys_stat          stat
 #  define NcbiSys_strdup        strdup
+#  define NcbiSys_strerror      strerror
 #  define NcbiSys_tempnam       tempnam
 #  define NcbiSys_unlink        unlink
 
 #endif // NCBI_OS_MSWIN
 
-
-END_NCBI_SCOPE
 
 #endif  /* CORELIB___NCBISYS__HPP */
