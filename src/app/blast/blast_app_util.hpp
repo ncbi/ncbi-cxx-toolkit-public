@@ -144,7 +144,10 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
     }                                                                       \
     catch (const blast::CBlastException& e) {                               \
         const string& msg = e.GetMsg();                                     \
-        if ((NStr::Find(msg, "Out of memory") != NPOS) ||                   \
+        if (e.GetErrCode() == CBlastException::eInvalidOptions) {           \
+            LOG_POST(Error << "BLAST options error: " << e.GetMsg());       \
+            exit_code = BLAST_INPUT_ERROR;                                  \
+        } else if ((NStr::Find(msg, "Out of memory") != NPOS) ||            \
             (NStr::Find(msg, "Failed to allocate") != NPOS)) {              \
             LOG_POST(Error << "BLAST ran out of memory: " << e.GetMsg());   \
             exit_code = BLAST_OUT_OF_MEMORY;                                \

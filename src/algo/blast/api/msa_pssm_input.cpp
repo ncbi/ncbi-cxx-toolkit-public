@@ -257,7 +257,7 @@ CPsiBlastInputClustalW::x_ValidateQueryInMsa()
     } else {
         string msg("No sequence in the multiple sequence alignment provided ");
         msg += "matches the query sequence";
-        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+        NCBI_THROW(CBlastException, eInvalidOptions, msg);
     }
 }
 
@@ -268,7 +268,7 @@ CPsiBlastInputClustalW::x_ExtractQueryFromMsa(unsigned int msa_master_idx/*=0*/)
         CNcbiOstrstream oss;
         oss << "Invalid master sequence index, please use a value between 1 "
             << "and " << m_AsciiMsa.size();
-        NCBI_THROW(CBlastException, eInvalidArgument,
+        NCBI_THROW(CBlastException, eInvalidOptions,
                    CNcbiOstrstreamToString(oss));
     }
     const string& kQuery = m_AsciiMsa.at(msa_master_idx);
