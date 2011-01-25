@@ -634,12 +634,16 @@ unsigned CQueue::Submit(CJob& job)
         // CNetScheduleAPI::EJobMask in file netschedule_api.hpp
     }
 
-    CNS_Transaction trans(this);
     unsigned affinity_id;
     {{
+        CNS_Transaction trans(this);
         CAffinityDictGuard aff_dict_guard(GetAffinityDict(), trans);
         job.CheckAffinityToken(aff_dict_guard);
         affinity_id = job.GetAffinityId();
+        trans.Commit();
+    }}
+    CNS_Transaction trans(this);
+    {{
         CQueueGuard guard(this, &trans);
 
         job.Flush(this);
