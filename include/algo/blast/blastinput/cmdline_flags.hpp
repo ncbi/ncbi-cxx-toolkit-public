@@ -234,6 +234,9 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgPSINumIterations;
 NCBI_BLASTINPUT_EXPORT extern const string kArgPSIInputChkPntFile;
 /// Argument to specify a multiple sequence alignment file to create a PSSM from
 NCBI_BLASTINPUT_EXPORT extern const string kArgMSAInputFile;
+/// Argument to specify the index (1-based) of the sequence in the multiple
+/// sequence alignment to use as a master sequence
+NCBI_BLASTINPUT_EXPORT extern const string kArgMSAMasterIndex;
 /// Argument to specify a 'checkpoint' file to write the PSSM
 NCBI_BLASTINPUT_EXPORT extern const string kArgPSIOutputChkPntFile;
 /// Argument to specify the file name for saving the ASCII representation of

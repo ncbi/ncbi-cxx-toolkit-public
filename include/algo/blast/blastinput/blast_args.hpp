@@ -522,6 +522,12 @@ private:
     CPsiBlastArgs(const CPsiBlastArgs& rhs);
     /// Prohibit assignment operator
     CPsiBlastArgs& operator=(const CPsiBlastArgs& rhs);
+
+    /// Auxiliary function to create a PSSM from a multiple sequence alignment
+    /// file
+    CRef<objects::CPssmWithParameters>
+    x_CreatePssmFromMsa(CNcbiIstream& input_stream, CBlastOptions& opt, 
+                        bool save_ascii_pssm, unsigned int msa_master_idx);
 };
 
 /// Argument class to collect options specific to PHI-BLAST

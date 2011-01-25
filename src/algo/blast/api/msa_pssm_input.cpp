@@ -76,7 +76,8 @@ CPsiBlastInputClustalW::CPsiBlastInputClustalW
          const unsigned char* query /* = NULL */,
          unsigned int query_length /* = 0 */,
          int gap_existence /* = 0 */,
-         int gap_extension /* = 0 */)
+         int gap_extension /* = 0 */,
+         unsigned int msa_master_idx /* = 0 */)
     : m_Query(0), m_GapExistence(gap_existence), m_GapExtension(gap_extension)
 {
     if (query) {
@@ -90,11 +91,10 @@ CPsiBlastInputClustalW::CPsiBlastInputClustalW
     m_Opts.ignore_unaligned_positions = true;
 
     x_ReadAsciiMsa(input_file);
-    if ( !m_Query ) {
-        x_ExtractQueryFromMsa();
-    } else {
-        x_ValidateQueryInMsa();
+    if ( !m_Query || msa_master_idx != 0) {
+        x_ExtractQueryFromMsa(msa_master_idx);
     }
+    x_ValidateQueryInMsa();
     _ASSERT(m_Query);
     _ASSERT(m_MsaDimensions.query_length);
     // query is included in m_AsciiMsa, so decrement it by 1
@@ -190,6 +190,8 @@ CPsiBlastInputClustalW::x_ExtractQueryForPssm()
             break;
         }
     }
+    // note that the title cannot be set because we're getting the query
+    // sequence from the multiple sequence alignment file via CAlnReader
 
     // Test our post-condition
     _ASSERT(m_QueryBioseq.NotEmpty());
@@ -260,9 +262,16 @@ CPsiBlastInputClustalW::x_ValidateQueryInMsa()
 }
 
 void
-CPsiBlastInputClustalW::x_ExtractQueryFromMsa()
+CPsiBlastInputClustalW::x_ExtractQueryFromMsa(unsigned int msa_master_idx/*=0*/)
 {
-    const string& kQuery = m_AsciiMsa.front();
+    if (msa_master_idx >= m_AsciiMsa.size()) {
+        CNcbiOstrstream oss;
+        oss << "Invalid master sequence index, please use a value between 1 "
+            << "and " << m_AsciiMsa.size();
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   CNcbiOstrstreamToString(oss));
+    }
+    const string& kQuery = m_AsciiMsa.at(msa_master_idx);
     size_t kNumGaps = 0;
     ITERATE(string, residue, kQuery) {
         if (*residue == kGapChar) {

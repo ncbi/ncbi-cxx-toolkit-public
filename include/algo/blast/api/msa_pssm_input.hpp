@@ -66,6 +66,9 @@ public:
     /// @param query_length length of the sequence above.
     /// @param gap_existence cost to open a gap, if zero default from IPssmInputData used.
     /// @param gap_extension cost to open a gap, if zero default from IPssmInputData used.
+    /// @param msa_master_idx 0-based index of the multiple sequence alignment
+    /// This is an alternative way to specify the query sequence to use (i.e.:
+    /// don't use query and query_length if this is provided) [in]
     CPsiBlastInputClustalW(CNcbiIstream& input_file,
                            const PSIBlastOptions& opts,
                            const char* matrix_name = NULL,
@@ -73,7 +76,8 @@ public:
                            const unsigned char* query = NULL,
                            unsigned int query_length = 0,
                            int gap_existence = 0,
-                           int gap_opening = 0);
+                           int gap_opening = 0,
+                           unsigned int msa_master_idx = 0);
 
     /// virtual destructor
     virtual ~CPsiBlastInputClustalW();
@@ -163,7 +167,7 @@ private:
     /// Extracts the query sequence from the multiple sequence alignment,
     /// assuming it's the first one, into m_Query
     /// @post m_Query is not NULL and m_MsaDimensions.query_length is assigned
-    void x_ExtractQueryFromMsa();
+    void x_ExtractQueryFromMsa(unsigned int msa_master_idx = 0);
     
     /// Searches the query sequence (m_Query) in the aligned sequences
     /// (m_AsciiMsa) and moves the first instance it finds to the front of this

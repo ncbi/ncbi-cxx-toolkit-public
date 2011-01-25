@@ -712,14 +712,13 @@ CBlastTabularInfo::PrintHeader(const string& program_version,
         m_Ostream << "# Iteration: " << iteration << "\n";
 
     const size_t kLineLength(0);
-    const bool kBelieveQuery(false);
     const bool kHtmlFormat(false);
     const bool kTabularFormat(true);
 
     // Print the query defline with no html; there is no need to set the 
     // line length restriction, since it's ignored for the tabular case.
     CAlignFormatUtil::AcknowledgeBlastQuery(bioseq, kLineLength, m_Ostream, 
-                                            kBelieveQuery, kHtmlFormat,
+                                            m_ParseLocalIds, kHtmlFormat,
                                             kTabularFormat, rid);
     
     if (dbname != kEmptyStr) {
@@ -728,7 +727,7 @@ CBlastTabularInfo::PrintHeader(const string& program_version,
         _ASSERT(subj_bioseq.NotEmpty());
         m_Ostream << "\n";
         CAlignFormatUtil::AcknowledgeBlastSubject(*subj_bioseq, kLineLength,
-                                                  m_Ostream, kBelieveQuery,
+                                                  m_Ostream, m_ParseLocalIds,
                                                   kHtmlFormat, kTabularFormat);
         m_Ostream << "\n";
     }

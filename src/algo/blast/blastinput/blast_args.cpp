@@ -41,7 +41,6 @@ static char const rcsid[] = "$Id$";
 #endif
 
 #include <ncbi_pch.hpp>
-#include <objmgr/seq_vector.hpp>
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 #include <algo/blast/api/blast_exception.hpp>
@@ -953,14 +952,39 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgAsciiPssmOutputFile, "ascii_mtx_file",
                                 "File name to store ASCII version of PSSM",
                                 CArgDescriptions::eOutputFile);
+
+        vector<string> msa_exclusions;
+        msa_exclusions.push_back(kArgPSIInputChkPntFile);
+        msa_exclusions.push_back(kArgQuery);
+        msa_exclusions.push_back(kArgQueryLocation);
+        // pattern and MSA is not supported
+        msa_exclusions.push_back(kArgPHIPatternFile);   
+
         // MSA restart file
         arg_desc.AddOptionalKey(kArgMSAInputFile, "align_restart",
                                 "File name of multiple sequence alignment to "
                                 "restart PSI-BLAST",
                                 CArgDescriptions::eInputFile);
-        arg_desc.SetDependency(kArgMSAInputFile,
-                               CArgDescriptions::eExcludes,
-                               kArgPSIInputChkPntFile);
+        ITERATE(vector<string>, exclusion, msa_exclusions) {
+            arg_desc.SetDependency(kArgMSAInputFile,
+                                   CArgDescriptions::eExcludes,
+                                   *exclusion);
+        }
+
+        arg_desc.AddOptionalKey(kArgMSAMasterIndex, "index",
+                                "Index (1-based) of sequence to use as a master"
+                                " in the multiple sequence alignment. If not "
+                                "provided, the first sequence in the multiple "
+                                "sequence alignment will be used",
+                                CArgDescriptions::eInteger);
+        arg_desc.SetConstraint(kArgMSAMasterIndex, 
+                               new CArgAllowValuesGreaterThanOrEqual(1));
+        ITERATE(vector<string>, exclusion, msa_exclusions) {
+            arg_desc.SetDependency(kArgMSAInputFile,
+                                   CArgDescriptions::eExcludes,
+                                   *exclusion);
+        }
+
         // PSI-BLAST checkpoint
         arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
                                 "PSI-BLAST checkpoint file",
@@ -970,67 +994,27 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgPSIInputChkPntFile,
                            CArgDescriptions::eExcludes,
                            kArgQuery);
+    arg_desc.SetDependency(kArgPSIInputChkPntFile,
+                           CArgDescriptions::eExcludes,
+                           kArgQueryLocation);
     arg_desc.SetCurrentGroup("");
 }
 
-/// Read the query sequence to provide it as an alternative from the default to
-/// CPsiBlastInputClustalW
-/// @param input_stream Input stream containing the query sequence [in]
-/// @param query Query sequence in ncbistdaa [out]
-/// @param query_length Length of the query sequence [out]
-/// @param args command line arguments [in]
-static void 
-s_ExtractQueryFromInputFile(CNcbiIstream* input_stream, unsigned char*& query, 
-                            unsigned int& query_length, const CArgs& args)
-{
-    _ASSERT(input_stream);
-    const bool is_prot(true);
-    const bool parse_deflines = args.Exist(kArgParseDeflines) 
-        ? args[kArgParseDeflines]
-        : kDfltArgParseDeflines;
-    const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
-        ? args[kArgUseLCaseMasking]
-        : kDfltArgUseLCaseMasking;
-    CRef<blast::CBlastQueryVector> queries;
-    CRef<CScope> scope = ReadSequencesToBlast(*input_stream, is_prot,
-                                              TSeqRange(), parse_deflines,
-                                              use_lcase_masks, queries);
-    _ASSERT(queries->Size() == 1);
-    CSeqVector sv(*queries->GetQuerySeqLoc(0), *scope);
-    _ASSERT(sv.IsProtein() == is_prot);
-    string buffer;
-    sv.GetSeqData(0, sv.size(), buffer);
-    _ASSERT(buffer.size() == sv.size());
-    if ( (query = (unsigned char*)malloc(sizeof(*query)*sv.size())) == NULL) {
-        throw bad_alloc();
-    }
-    query_length = buffer.size();
-    copy(buffer.begin(), buffer.end(), query);
-}
-
-/// Auxiliary function to create a PSSM from a multiple sequence alignment file
-static CRef<CPssmWithParameters>
-s_CreatePssmFromMsa(CNcbiIstream& input_stream, CBlastOptions& opt,
-                    bool save_ascii_pssm, const CArgs& args)
+CRef<CPssmWithParameters>
+CPsiBlastArgs::x_CreatePssmFromMsa(CNcbiIstream& input_stream, 
+                                   CBlastOptions& opt, bool save_ascii_pssm, 
+                                   unsigned int msa_master_idx)
 {
     // FIXME get these from CBlastOptions
     CPSIBlastOptions psiblast_opts;
     PSIBlastOptionsNew(&psiblast_opts); 
 
     CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNewEx(save_ascii_pssm));
-    unsigned char* query = NULL;
-    unsigned int query_length = 0;
-    // if query is provided, pass it in in ncbistdaa + query length!
-    if (args.Exist(kArgQuery) && args[kArgQuery].HasValue()) {
-        CNcbiIstream* input_stream = &args[kArgQuery].AsInputFile();
-        _ASSERT(input_stream->eof() == false);
-        s_ExtractQueryFromInputFile(input_stream, query, query_length, args);
-    }
     CPsiBlastInputClustalW pssm_input(input_stream, *psiblast_opts,
-                                      opt.GetMatrixName(), diags, query,
-                                      query_length,
+                                      opt.GetMatrixName(), diags, NULL, 0,
                                       opt.GetGapOpeningCost(),
-                                      opt.GetGapExtensionCost());
+                                      opt.GetGapExtensionCost(),
+                                      msa_master_idx);
     CPssmEngine pssm_engine(&pssm_input);
     return pssm_engine.Run();
 }
@@ -1057,7 +1041,12 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
         if (args[kArgMSAInputFile]) {
             CNcbiIstream& in = args[kArgMSAInputFile].AsInputFile();
-            m_Pssm = s_CreatePssmFromMsa(in, opt, kSaveAsciiPssm, args);
+            unsigned int msa_master_idx = 0;
+            if (args[kArgMSAMasterIndex]) {
+                msa_master_idx = args[kArgMSAMasterIndex].AsInteger() - 1;
+            }
+            m_Pssm = x_CreatePssmFromMsa(in, opt, kSaveAsciiPssm,
+                                         msa_master_idx);
         }
     }
 
@@ -1675,9 +1664,12 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
     else if (hitlist_size != 0) {
         opt.SetHitlistSize(hitlist_size);
-        // alignments and descriptions are set here so that limiting is done correctly for tabular output
-        m_NumDescriptions = MIN(m_NumDescriptions, opt.GetHitlistSize());
-        m_NumAlignments = MIN(m_NumAlignments, opt.GetHitlistSize());
+        // alignments and descriptions are set here so that limiting is done
+        // correctly for tabular output
+        m_NumDescriptions = MIN(m_NumDescriptions, 
+                                (TSeqPos)opt.GetHitlistSize());
+        m_NumAlignments = MIN(m_NumAlignments, 
+                              (TSeqPos)opt.GetHitlistSize());
     } else {
         if (m_OutputFormat <= eFlatQueryAnchoredNoIdentities)
         	opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
