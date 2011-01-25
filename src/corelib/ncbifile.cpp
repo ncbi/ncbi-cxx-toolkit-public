@@ -586,7 +586,7 @@ string CDirEntry::CreateRelativePath( const string& path_from,
 }
 
 
-string CDirEntry::CreateAbsolutePath(const string& path)
+string CDirEntry::CreateAbsolutePath(const string& path, ERelativeToWhat rtw)
 {
     if ( IsAbsolutePath(path) ) {
         return path;
@@ -602,8 +602,28 @@ string CDirEntry::CreateAbsolutePath(const string& path)
                    " on MS Windows: " + path);
     }
 #endif
-    string result = CDirEntry::ConcatPath(CDir::GetCwd(), path);
-    result = CDirEntry::NormalizePath(result);
+
+    string result;
+    switch (rtw) {
+    case eRelativeToCwd:
+        result = ConcatPath(CDir::GetCwd(), path);
+        break;
+    case eRelativeToExe:
+      {
+        string dir;
+        SplitPath(CNcbiApplication::GetAppName(CNcbiApplication::eFullName),
+                  &dir);
+        result = ConcatPath(dir, path);
+        if ( !CDirEntry(result).Exists() ) {
+            SplitPath(CNcbiApplication::GetAppName(CNcbiApplication::eRealName),
+                      &dir);
+            result = ConcatPath(dir, path);
+        }
+        break;
+      }
+    }
+
+    result = NormalizePath(result);
     return result;
 }
 
