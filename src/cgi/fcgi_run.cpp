@@ -307,7 +307,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Watcher file -- to allow for stopping the Fast-CGI loop "prematurely"
     auto_ptr<CCgiWatchFile> watcher(0);
     {{
-        const string& filename = reg.Get("FastCGI", "WatchFile.Name");
+        const string& orig_filename = reg.Get("FastCGI", "WatchFile.Name");
+        string filename = CDirEntry::CreateAbsolutePath
+            (orig_filename, CDirEntry::eRelativeToExe);
+        if (filename != orig_filename) {
+            _TRACE("Adjusted relative CGI watch file name " << orig_filename
+                   << " to " << filename);
+        }
         if ( !filename.empty() ) {
             int limit = reg.GetInt("FastCGI", "WatchFile.Limit", -1, 0,
                                    CNcbiRegistry::eErrPost);
