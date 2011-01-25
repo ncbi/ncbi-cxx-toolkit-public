@@ -203,7 +203,11 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handl
     //  Load the pre-defined type categories and descriptions
     if (!ncbi::cd_utils::CStdAnnotTypes::HasTypeData()) {
         string typeFile = GetDataDir() + STD_ANNOT_TYPES_FILE;
-        ncbi::cd_utils::CStdAnnotTypes::LoadTypes(typeFile);
+        if (!ncbi::cd_utils::CStdAnnotTypes::LoadTypes(typeFile)) {
+            wxMessageBox(wxString("Warning: error parsing standard annotation types from file\n") + wxString(typeFile.c_str()),
+                "Missing Annotation Type Definitions",
+                wxOK | wxCENTRE | wxICON_WARNING, this);
+        }
     }
 
     // set initial GUI state
