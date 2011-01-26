@@ -5582,7 +5582,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TNS	s	National Science Museum, Department of Botany",
 "TNSC<BEL>	s	Thierry Neef de Sainval",
 "TNSC<USA-NJ>	s	Trailside Nature and Science Center",
-"TNU	s	National Taiwan Normal University, Biology Department",
+"TNU	s	National Taiwan Normal University, Herbarium",
 "TNZ	s	Tianjin Nat. Hist. Mus.",
 "TO	s	Universita degli Studi di Torino, Dipartimento di Biologia Vegetale",
 "TOD	s	Todmorden Free Library",
