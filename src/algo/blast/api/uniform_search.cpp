@@ -160,6 +160,7 @@ CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm, int mask_ty
         m_FilteringAlgorithmString = filt_algorithm;
         m_NeedsFilteringTranslation = true;
     }
+    x_ValidateMaskingAlgorithm();
 }
 
 void 
@@ -174,6 +175,7 @@ CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id, int mask_type)
     m_FilteringAlgorithmId = filt_algorithm_id;
     m_MaskType = mask_type;
     m_NeedsFilteringTranslation = false;
+    x_ValidateMaskingAlgorithm();
 }
 
 int 
@@ -236,8 +238,31 @@ CSearchDatabase::x_InitializeDb() const
 
     }
       
+    x_ValidateMaskingAlgorithm();
     _ASSERT(m_SeqDb.NotEmpty());
     m_DbInitialized = true;
+}
+
+void 
+CSearchDatabase::x_ValidateMaskingAlgorithm() const
+{
+    if (m_FilteringAlgorithmId <= 0 || m_SeqDb.Empty()) {
+        return;
+    }
+
+    vector<int> supported_algorithms;
+    m_SeqDb->GetAvailableMaskAlgorithms(supported_algorithms);
+    if (find(supported_algorithms.begin(),
+             supported_algorithms.end(),
+             m_FilteringAlgorithmId) == supported_algorithms.end()) {
+        CNcbiOstrstream oss;
+        oss << "Masking algorithm ID " << m_FilteringAlgorithmId << " is "
+            << "not supported in " << 
+            (IsProtein() ? "protein" : "nucleotide") << " '" 
+            << GetDatabaseName() << "' BLAST database";
+        string msg = CNcbiOstrstreamToString(oss);
+        NCBI_THROW(CBlastException, eInvalidOptions, msg);
+    }
 }
 
 END_SCOPE(blast)

@@ -205,6 +205,10 @@ private:
     void x_TranslateFilteringAlgorithm() const;
     /// Initialize the database
     void x_InitializeDb() const;
+    /// Validates that the specified filtering algorithm ID is supported by the
+    /// specified BLAST database
+    /// @throws CBlastException if validation fails
+    void x_ValidateMaskingAlgorithm() const;
 };
 
 

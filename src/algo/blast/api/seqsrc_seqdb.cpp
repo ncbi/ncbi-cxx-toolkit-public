@@ -680,6 +680,24 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
         
         datap->mask_algo_id = seqdb_args->GetMaskAlgoId();
         datap->mask_type = seqdb_args->GetMaskType();
+
+        // Validate that the masking algorithm is supported
+        if (datap->mask_algo_id > 0) {
+            vector<int> supported_algorithms;
+            datap->seqdb->GetAvailableMaskAlgorithms(supported_algorithms);
+            if (find(supported_algorithms.begin(),
+                     supported_algorithms.end(),
+                     datap->mask_algo_id) == supported_algorithms.end()) {
+                CNcbiOstrstream oss;
+                oss << "Masking algorithm ID " << datap->mask_algo_id << " is "
+                    << "not supported in " << 
+                    (is_protein ? "protein" : "nucleotide") << " '" 
+                    << seqdb_args->GetDbName() << "' BLAST database";
+                string msg = CNcbiOstrstreamToString(oss);
+                throw runtime_error(msg);
+            }
+        }
+
     } catch (const ncbi::CException& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, 
                         strdup(e.ReportThis(eDPF_ErrCodeExplanation).c_str()));
@@ -710,7 +728,7 @@ SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
     CSeqDbSrcNewArgs seqdb_args(dbname, is_prot, first_seq, last_seq,
                                 mask_algo_id, mask_type);
 
-    bssn_info.constructor = &s_SeqDbSrcNew;
+    bssn_info.constructor = &s_SeqDbSrcNew; // FIXME: shouldn't this be s_SeqDbSrcSharedNew?
     bssn_info.ctor_argument = (void*) &seqdb_args;
     seq_src = BlastSeqSrcNew(&bssn_info);
     return seq_src;
