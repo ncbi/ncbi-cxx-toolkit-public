@@ -4,8 +4,8 @@
 
 APP = test_basic_cleanup
 SRC = test_basic_cleanup
-LIB = xcleanup xobjutil submit $(OBJMGR_LIBS)
+LIB = xcleanup xregexp xobjutil submit $(OBJMGR_LIBS) $(PCRE_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 WATCHERS = bollin

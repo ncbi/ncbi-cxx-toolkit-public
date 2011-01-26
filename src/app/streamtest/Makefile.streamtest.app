@@ -8,10 +8,10 @@
 
 APP = streamtest
 SRC = streamtest
-LIB = xobjutil xcleanup prosplign submit xalgoalignutil xqueryparse xalnmgr \
-      tables $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
+LIB = xobjutil xcleanup xregexp prosplign submit xalgoalignutil xqueryparse \
+      xalnmgr tables $(COMPRESS_LIBS) $(SOBJMGR_LIBS) $(PCRE_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects algo
 
