@@ -3228,7 +3228,7 @@ public:
     {
         int ii = 0;
         for( ; ii < num_keys; ++ii ) {
-            insert(pair<char, const char*>( keys[ii].second, keys[ii].first ));
+            insert(value_type( keys[ii].second, keys[ii].first ));
         }
     }
 };
@@ -4338,7 +4338,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
 }
 
 static
-bool s_CodonCompare( int codon1, int codon2 ) {
+bool s_CodonCompare( const int& codon1, const int& codon2 ) {
     return (codon1 < codon2);
 }
 
