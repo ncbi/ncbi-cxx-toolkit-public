@@ -148,9 +148,9 @@
 #    define SOCK_CLOSE(s)     close(s)	
 #  endif /*NCBI_OS_BEOS*/
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
-#  ifndef INADDR_NONE
+#  ifndef   INADDR_NONE
 #    define INADDR_NONE       ((unsigned int)(-1))
-#  endif /*INADDR_NONE*/
+#  endif  /*INADDR_NONE*/
 #  define SOCK_STRERROR(err)  s_StrError(0, err)
 /* NCBI_OS_UNIX */
 
@@ -173,6 +173,9 @@ typedef int	       SOCK_socklen_t;
 #if MAXIDLEN > SOCK_BUF_CHUNK_SIZE
 #  error "SOCK_BUF_CHUNK_SIZE too small"
 #endif /*MAXIDLEN<SOCK_BUF_CHUNK_SIZE*/
+
+
+#define SOCK_LOOPBACK         (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
 
 
 /******************************************************************************
@@ -1009,7 +1012,7 @@ extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
 
 
 /******************************************************************************
- *  gethost... wrappers
+ *  gethost...() wrappers
  */
 
 
@@ -1153,6 +1156,27 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 }
 
 
+/* a non-standard helper */
+static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
+{
+    static int s_Warning = 0;
+    /* cached IP address of the local host */
+    static unsigned int s_LocalHostAddress = 0;
+    if (reget == eOn  ||  (!s_LocalHostAddress  &&  reget != eOff))
+        s_LocalHostAddress = s_gethostbyname(0, log);
+    if (s_LocalHostAddress)
+        return s_LocalHostAddress;
+    if (!s_Warning  &&  reget != eOff) {
+        s_Warning = 1;
+        CORE_LOGF_X(157, eLOG_Warning,
+                    ("[SOCK::GetLocalHostAddress]: "
+                     " Cannot obtain local host address%s",
+                     reget == eDefault ? ", using loopback instead" : ""));
+    }
+    return reget == eDefault ? SOCK_LOOPBACK : 0;
+}
+
+
 static char* s_gethostbyaddr(unsigned int host, char* name,
                              size_t namelen, ESwitch log)
 {
@@ -1165,7 +1189,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
     }
 
     if (!host)
-        host = SOCK_GetLocalHostAddress(eDefault);
+        host = s_getlocalhostaddress(eDefault, log);
 
     CORE_TRACEF(("[SOCK::gethostbyaddr]  0x%08X", (unsigned int) ntohl(host)));
 
@@ -1194,7 +1218,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                 name = 0;
             }
             if (!name  &&  log) {
-                char addr[16];
+                char addr[40];
                 SOCK_ntoa(host, addr, sizeof(addr));
                 if (x_error == EAI_SYSTEM)
                     x_error = SOCK_ERRNO;
@@ -1256,7 +1280,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!name  &&  log) {
-            char addr[16];
+            char addr[40];
 #  ifdef NETDB_INTERNAL
             if (x_error == NETDB_INTERNAL + DNS_BASE)
                 x_error = SOCK_ERRNO;
@@ -4317,7 +4341,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #endif /*NCBI_OS_UNIX*/
     {
         unsigned int host =
-            htonl(flags & fSOCK_BindLocal ? INADDR_LOOPBACK : INADDR_ANY);
+            flags & fSOCK_BindLocal ? SOCK_LOOPBACK : htonl(INADDR_ANY);
         assert(addr.in.sin_family == AF_INET);
         addrlen = sizeof(addr.in);
 #ifdef HAVE_SIN_LEN
@@ -7060,13 +7084,27 @@ extern int SOCK_gethostname(char* name, size_t namelen)
 extern unsigned int SOCK_gethostbynameEx(const char* hostname,
                                          ESwitch log)
 {
-    return s_gethostbyname(hostname, log);
+    static int s_Warning = 0;
+    unsigned int retval = s_gethostbyname(hostname, log);
+    if (!s_Warning  &&  retval
+        &&  !hostname  &&  retval == SOCK_LOOPBACK) {
+        char addr[40];
+        s_Warning = 1;
+        if (SOCK_ntoa(retval, addr + 1, sizeof(addr) - 1) != 0)
+            addr[0] = '\0';
+        else
+            addr[0] = ' ';
+        CORE_LOGF_X(155, eLOG_Warning,
+                    ("[SOCK::gethostbyname]: "
+                     " Got loopback address%s for local host name", addr));
+    }
+    return retval;
 }
 
 
 extern unsigned int SOCK_gethostbyname(const char* hostname)
 {
-    return s_gethostbyname(hostname, s_Log);
+    return SOCK_gethostbynameEx(hostname, s_Log);
 }
 
 
@@ -7075,7 +7113,19 @@ extern char* SOCK_gethostbyaddrEx(unsigned int host,
                                   size_t       namelen,
                                   ESwitch      log)
 {
-    return s_gethostbyaddr(host, name, namelen, log);
+    static int s_Warning = 0;
+    char* retval = s_gethostbyaddr(host, name, namelen, log);
+    if (!s_Warning  &&  retval
+        &&  (( host == SOCK_LOOPBACK
+              &&  strncasecmp(retval, "localhost", 9) != 0)  ||
+             (!host
+              &&  strncasecmp(retval, "localhost", 9) == 0))) {
+        s_Warning = 1;
+        CORE_LOGF_X(156, eLOG_Warning,
+                    ("[SOCK::gethostbyaddr]: "
+                     " Got %s for local host address", retval));
+    }
+    return retval;
 }
 
 
@@ -7083,25 +7133,19 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
                                 char*        name,
                                 size_t       namelen)
 {
-    return s_gethostbyaddr(host, name, namelen, s_Log);
+    return SOCK_gethostbyaddrEx(host, name, namelen, s_Log);
 }
 
 
 extern unsigned int SOCK_GetLoopbackAddress(void)
 {
-    return htonl(INADDR_LOOPBACK);
+    return SOCK_LOOPBACK;
 }
 
 
 extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
 {
-    /* cached IP address of local host */
-    static unsigned int s_LocalHostAddress = 0;
-    if (reget == eOn  ||  (!s_LocalHostAddress  &&  reget != eOff))
-        s_LocalHostAddress = SOCK_gethostbyname(0);
-    if (s_LocalHostAddress)
-        return s_LocalHostAddress;
-    return reget == eDefault ? SOCK_GetLoopbackAddress() : 0;
+    return s_getlocalhostaddress(reget, s_Log);
 }
 
 

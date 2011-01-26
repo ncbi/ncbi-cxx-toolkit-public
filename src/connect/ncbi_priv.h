@@ -258,7 +258,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,       307,  18);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LB,         308,   0);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail,   309,  31);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,    310,   8);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,     311, 154);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,     311, 157);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,      312,   6);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet,   313,  11);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,      319,  16);
