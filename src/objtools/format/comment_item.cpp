@@ -1193,11 +1193,19 @@ void CHistComment::x_GatherInfo(CBioseqContext& ctx)
 
     switch ( m_Type ) {
     case eReplaced_by:
-        x_SetComment(s_CreateHistCommentString(
-            "[WARNING] On",
-            "this sequence was replaced by",
-            m_Hist->GetReplaced_by(),
-            ctx.Config().DoHTML()));
+        if( ctx.IsWGSMaster() ) {
+            x_SetComment(s_CreateHistCommentString(
+                "[WARNING] On",
+                "this project was updated. The new version is",
+                m_Hist->GetReplaced_by(),
+                ctx.Config().DoHTML()));
+        } else {
+            x_SetComment(s_CreateHistCommentString(
+                "[WARNING] On",
+                "this sequence was replaced by",
+                m_Hist->GetReplaced_by(),
+                ctx.Config().DoHTML()));
+        }
         break;
     case eReplaces:
         x_SetComment(s_CreateHistCommentString(

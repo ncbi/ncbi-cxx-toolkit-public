@@ -561,6 +561,11 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define FIELD_IS_EMPTY(Base, Var) \
     (Base##_Test(Var) && Base##_Get(Var).empty() )
 
+/// FIELD_IS_EMPTY_OR_UNSET base macro
+
+#define FIELD_IS_EMPTY_OR_UNSET(Base, Var) \
+    ( ! Base##_Test(Var) || Base##_Get(Var).empty() )
+
 /// RESET_FIELD_IF_EMPTY base macro
 
 // (The do-while is just so the user has to put a semi-colon after it)
@@ -656,6 +661,19 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
                                        Base##_Set(Var).end(), \
                                        Func); \
     it = Base##_Set(Var).erase(it, Base##_Set(Var).end()); \
+}
+
+#define UNIQUE_WITHOUT_SORT(Base, Var, FuncType) \
+{ \
+    set<Base##_Type::value_type, FuncType> valuesAlreadySeen; \
+    Base##_Type non_duplicate_items; \
+    FOR_EACH(Base, iter, Var ) { \
+        if( valuesAlreadySeen.find(*iter) == valuesAlreadySeen.end() ) { \
+            non_duplicate_items.push_back( *iter ); \
+            valuesAlreadySeen.insert( *iter ); \
+        } \
+    } \
+    Base##_Set(Var).swap( non_duplicate_items ); \
 }
 
 
@@ -857,6 +875,15 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 #define FIELD_IS_SET(Var, Fld) \
     ((Var).IsSet##Fld())
+
+/// FIELD_CHAIN_OF_5_IS_SET
+
+#define FIELD_CHAIN_OF_5_IS_SET(Var, Fld1, Fld2, Fld3, Fld4, Fld5) \
+    ( (Var).IsSet##Fld1() && \
+    (Var).Get##Fld1().IsSet##Fld2() && \
+    (Var).Get##Fld1().Get##Fld2().IsSet##Fld3() && \
+    (Var).Get##Fld1().Get##Fld2().Get##Fld3().IsSet##Fld4() && \
+    (Var).Get##Fld1().Get##Fld2().Get##Fld3().Get##Fld4().IsSet##Fld5() )
 
 /// GET_FIELD base macro
 
@@ -2890,10 +2917,11 @@ DO_UNIQUE (SEQFEATXREF_ON_SEQFEAT, Var, Func)
 
 /// DBXREF_ON_SEQFEAT macros
 
-#define DBXREF_ON_SEQFEAT_Type      CSeq_feat::TDbxref
-#define DBXREF_ON_SEQFEAT_Test(Var) (Var).IsSetDbxref()
-#define DBXREF_ON_SEQFEAT_Get(Var)  (Var).GetDbxref()
-#define DBXREF_ON_SEQFEAT_Set(Var)  (Var).SetDbxref()
+#define DBXREF_ON_SEQFEAT_Type       CSeq_feat::TDbxref
+#define DBXREF_ON_SEQFEAT_Test(Var)  (Var).IsSetDbxref()
+#define DBXREF_ON_SEQFEAT_Get(Var)   (Var).GetDbxref()
+#define DBXREF_ON_SEQFEAT_Set(Var)   (Var).SetDbxref()
+#define DBXREF_ON_SEQFEAT_Reset(Var) (Var).ResetDbxref()
 
 /// SEQFEAT_HAS_DBXREF
 
@@ -2939,6 +2967,11 @@ IS_UNIQUE (DBXREF_ON_SEQFEAT, Var, Func)
 
 #define UNIQUE_DBXREF_ON_SEQFEAT(Var, Func) \
 DO_UNIQUE (DBXREF_ON_SEQFEAT, Var, Func)
+
+/// REMOVE_IF_EMPTY_DBXREF_ON_SEQFEAT
+
+#define REMOVE_IF_EMPTY_DBXREF_ON_SEQFEAT(Var) \
+REMOVE_IF_EMPTY_FIELD(DBXREF_ON_SEQFEAT, Var)
 
 /// FEATURE_HAS_DBXREF
 /// FOR_EACH_DBXREF_ON_FEATURE
@@ -3362,10 +3395,11 @@ DO_UNIQUE (ECNUMBER_ON_PROTREF, Var, Func)
 
 /// ACTIVITY_ON_PROTREF macros
 
-#define ACTIVITY_ON_PROTREF_Type      CProt_ref::TActivity
-#define ACTIVITY_ON_PROTREF_Test(Var) (Var).IsSetActivity()
-#define ACTIVITY_ON_PROTREF_Get(Var)  (Var).GetActivity()
-#define ACTIVITY_ON_PROTREF_Set(Var)  (Var).SetActivity()
+#define ACTIVITY_ON_PROTREF_Type       CProt_ref::TActivity
+#define ACTIVITY_ON_PROTREF_Test(Var)  (Var).IsSetActivity()
+#define ACTIVITY_ON_PROTREF_Get(Var)   (Var).GetActivity()
+#define ACTIVITY_ON_PROTREF_Set(Var)   (Var).SetActivity()
+#define ACTIVITY_ON_PROTREF_Reset(Var) (Var).ResetActivity()
 
 /// PROTREF_HAS_ACTIVITY
 
@@ -3411,6 +3445,16 @@ IS_UNIQUE (ACTIVITY_ON_PROTREF, Var, Func)
 
 #define UNIQUE_ACTIVITY_ON_PROTREF(Var, Func) \
 DO_UNIQUE (ACTIVITY_ON_PROTREF, Var, Func)
+
+/// UNIQUE_WITHOUT_SORT_ACTIVITY_ON_PROTREF(Var, Func)
+
+#define UNIQUE_WITHOUT_SORT_ACTIVITY_ON_PROTREF(Var, FuncType ) \
+UNIQUE_WITHOUT_SORT( ACTIVITY_ON_PROTREF, Var, FuncType )
+
+/// REMOVE_IF_EMPTY_ACTIVITY_ON_PROTREF
+
+#define REMOVE_IF_EMPTY_ACTIVITY_ON_PROTREF(Var) \
+    REMOVE_IF_EMPTY_FIELD( ACTIVITY_ON_PROTREF, Var )
 
 /// PROT_HAS_ACTIVITY
 /// FOR_EACH_ACTIVITY_ON_PROT
@@ -3626,6 +3670,57 @@ DO_UNIQUE (QUAL_ON_RNAQSET, Var, Func)
 /// REMOVE_IF_EMPTY_QUAL_ON_RNAQSET
 #define REMOVE_IF_EMPTY_QUAL_ON_RNAQSET(Var) \
     REMOVE_IF_EMPTY_FIELD(QUAL_ON_RNAQSET, Var)
+
+///
+/// CTrna_ext macros
+
+#define CODON_ON_TRNAEXT_Type       CTrna_ext::TCodon
+#define CODON_ON_TRNAEXT_Test(Var)  (Var).IsSetCodon()
+#define CODON_ON_TRNAEXT_Get(Var)   (Var).GetCodon()
+#define CODON_ON_TRNAEXT_Set(Var)   (Var).SetCodon()
+#define CODON_ON_TRNAEXT_Reset(Var) (Var).ResetCodon()
+
+/// CODON_ON_TRNAEXT_IS_SORTED
+
+#define CODON_ON_TRNAEXT_IS_SORTED(Var, Func) \
+IS_SORTED (CODON_ON_TRNAEXT, Var, Func)
+
+/// SORT_CODON_ON_TRNAEXT
+
+#define SORT_CODON_ON_TRNAEXT(Var, Func) \
+DO_LIST_SORT (CODON_ON_TRNAEXT, Var, Func)
+
+/// CODON_ON_TRNAEXT_IS_UNIQUE
+
+#define CODON_ON_TRNAEXT_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (CODON_ON_TRNAEXT, Var, Func)
+
+/// UNIQUE_CODON_ON_TRNAEXT
+
+#define UNIQUE_CODON_ON_TRNAEXT(Var, Func) \
+DO_UNIQUE (CODON_ON_TRNAEXT, Var, Func)
+
+/// CODON_ON_TRNAEXT_IS_EMPTY_OR_UNSET
+
+#define CODON_ON_TRNAEXT_IS_EMPTY_OR_UNSET(Var) \
+    FIELD_IS_EMPTY_OR_UNSET(CODON_ON_TRNAEXT, Var)
+
+/// REMOVE_IF_EMPTY_CODON_ON_TRNAEXT
+
+#define REMOVE_IF_EMPTY_CODON_ON_TRNAEXT(Var) \
+    REMOVE_IF_EMPTY_FIELD(CODON_ON_TRNAEXT, Var)
+
+///
+/// CPCRParsedSet macros
+
+#define PCRPARSEDSET_IN_LIST_Type       list<CPCRParsedSet>
+#define PCRPARSEDSET_IN_LIST_Test(Var)  (Var).empty()
+#define PCRPARSEDSET_IN_LIST_Get(Var)   (Var)
+#define PCRPARSEDSET_IN_LIST_Set(Var)   (Var)
+#define PCRPARSEDSET_IN_LIST_Reset(Var) (Var).clear()
+
+#define FOR_EACH_PCRPARSEDSET_IN_LIST(Itr, Var) \
+    FOR_EACH (PCRPARSEDSET_IN_LIST, Itr, Var)
 
 ///
 /// @}

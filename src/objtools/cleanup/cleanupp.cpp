@@ -691,10 +691,6 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
             sl.SetStrand(eNa_strand_unknown);
             ChangeMade(CCleanupChange::eChangeSeqloc);
         }
-        if (bsh && bsh.IsProtein() && sl.Which() == CSeq_loc::e_Int) {
-            sl.SetStrand(eNa_strand_unknown);
-            ChangeMade(CCleanupChange::eChangeSeqloc);
-        }
     }
     
 }
@@ -1475,7 +1471,7 @@ void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
         if ((*it)->Which() == CSeq_entry::e_Set) {
             CheckNucProtSet(m_Scope->GetBioseq_setHandle((**it).GetSet()));
         }
-	  }
+      }
 }
 
 

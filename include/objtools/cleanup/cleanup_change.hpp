@@ -103,7 +103,7 @@ public:
         // set when descriptor is removed
         eRemoveDescriptor,
         // set when keyword is removed
-        eRemoveKeyword,
+        eRemoveKeyword, // 40
         eAddDescriptor,
         eMoveDescriptor,
         eConvertFeatureToDescriptor,
@@ -113,7 +113,7 @@ public:
         eConvertFeature,
         eRemoveComment,
         eAddOrgMod,
-        eAddSubSource,
+        eAddSubSource, // 50
         eChangeBioSourceGenome,
         eChangeBioSourceOrigin,
         eChangeBioSourceOther,
@@ -123,9 +123,12 @@ public:
         eCleanupDate,
         eChangeBioseqInst,
         eRemoveSeqId,
-        eAddProtXref,
+        eAddProtXref, // 60
         eChangePartial,
         eChangeProtNames,
+        eChangeProtActivities,
+        eChangeSite,
+
         // set when any other change is made.
         eChangeOther,
         
