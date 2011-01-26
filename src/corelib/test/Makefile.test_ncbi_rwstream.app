@@ -6,7 +6,6 @@ LIB = xncbi
 
 #LINK = purify $(ORIG_LINK)
 
-CHECK_CMD  = test_ncbi_rwstream
-CHECK_COPY = test_ncbi_rwstream
+CHECK_CMD =
 
 WATCHERS = lavr
