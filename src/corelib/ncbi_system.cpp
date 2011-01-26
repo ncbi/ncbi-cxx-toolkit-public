@@ -744,14 +744,16 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
         _set_error_mode(_OUT_TO_STDERR);
     }
     // Debug library
-    if ( (mode & fSuppress_Debug) == fSuppress_Debug ) {
-        _CrtSetReportFile(_CRT_WARN,   _CRTDBG_FILE_STDERR);
-        _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
-        _CrtSetReportFile(_CRT_ERROR,  _CRTDBG_FILE_STDERR);
-        _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
-        _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-        _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-        s_SuppressedDebugSystemMessageBox = true;
+    if ( !IsDebuggerPresent() ) {
+        if ( (mode & fSuppress_Debug) == fSuppress_Debug ) {
+            _CrtSetReportFile(_CRT_WARN,   _CRTDBG_FILE_STDERR);
+            _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
+            _CrtSetReportFile(_CRT_ERROR,  _CRTDBG_FILE_STDERR);
+            _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
+            _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+            _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+            s_SuppressedDebugSystemMessageBox = true;
+        }
     }
     // Exceptions
     if ( (mode & fSuppress_Exception) == fSuppress_Exception ) {
