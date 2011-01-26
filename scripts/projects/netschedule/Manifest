@@ -33,4 +33,4 @@ Linux64-Suse : Bdb4520-Debug   : GCC.sh 4.0.1 --with-debug    --with-mt --with-f
 Linux64-Centos : Bdb4520-Release : GCC.sh 4.0.1 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64-Centos : Bdb4520-Debug   : GCC.sh 4.0.1 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 
-# USE_COMPONENTS
+USE_COMPONENTS
