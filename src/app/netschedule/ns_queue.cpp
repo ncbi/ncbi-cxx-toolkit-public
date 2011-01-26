@@ -820,7 +820,7 @@ void CQueue::PutResultGetJob(
     {{
         CQueueParamAccessor qp(*this);
         delete_done = qp.GetDeleteDone();
-        keep_node_affinity = qp.GetKeepAffinity();
+        keep_node_affinity = qp.GetKeepAffinity() && done_job_id;
         max_output_size = qp.GetMaxOutputSize();
         run_timeout = qp.GetRunTimeout();
     }}
@@ -864,7 +864,6 @@ void CQueue::PutResultGetJob(
     // We request to not switch node affinity only if it is job exchange.
     // After node comes for a job second time, we satisfy this request
     // disregarding existing affinities so the queue is not to grow.
-    keep_node_affinity = keep_node_affinity && done_job_id;
     unsigned pending_job_id = 0;
     if (new_job)
         pending_job_id =
