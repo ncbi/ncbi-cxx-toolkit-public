@@ -2193,6 +2193,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         }
         if (BlastCompo_EarlyTermination(thisMatch->best_evalue,
                                         redoneMatches, numQueries)) {
+            Blast_HSPListFree(thisMatch);
             break;
         }
         /* Get the sequence for this match */
