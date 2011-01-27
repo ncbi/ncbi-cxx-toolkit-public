@@ -32,7 +32,7 @@
  *
  */
 
-#include "util.hpp"
+#include <connect/services/util.hpp>
 
 #include <connect/ncbi_socket.hpp>
 
