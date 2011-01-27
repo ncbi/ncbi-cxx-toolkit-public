@@ -64,13 +64,16 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
     _ASSERT( !m_Queries->Empty() );
 
     x_FillScoreMatrix(m_Options.GetMatrixName());
-    if (m_DbName.empty() ||
-        results.GetResultType() != eDatabaseSearch) {
-        NCBI_THROW(CBlastException, eNotSupported,
-                   "XML formatting is only supported for a database search");
+
+    if (m_DbName.empty()){
+    	CBlastFormatUtil::SDbInfo dummy;
+    	m_DbInfo.push_back(dummy);
     }
-    CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, db_is_aa,
-                               dbfilt_algorithm, is_remote);
+    else {
+    	CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, db_is_aa,
+    									dbfilt_algorithm, is_remote);
+    }
+
     /// @todo FIXME add means to specify masked database (SB-343)
     // Is this appropriate? What if it breaks parsers?
     //if (dbfilt_algorithm != -1) {
