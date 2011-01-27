@@ -3714,7 +3714,7 @@ DO_UNIQUE (CODON_ON_TRNAEXT, Var, Func)
 /// CPCRParsedSet macros
 
 #define PCRPARSEDSET_IN_LIST_Type       list<CPCRParsedSet>
-#define PCRPARSEDSET_IN_LIST_Test(Var)  (Var).empty()
+#define PCRPARSEDSET_IN_LIST_Test(Var)  (! (Var).empty())
 #define PCRPARSEDSET_IN_LIST_Get(Var)   (Var)
 #define PCRPARSEDSET_IN_LIST_Set(Var)   (Var)
 #define PCRPARSEDSET_IN_LIST_Reset(Var) (Var).clear()

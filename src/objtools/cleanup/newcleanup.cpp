@@ -1144,7 +1144,8 @@ void CNewCleanup_imp::BiosourceBC (
 )
 {
     if( FIELD_EQUALS( biosrc, Genome, CBioSource::eGenome_virion ) ) {
-        biosrc.SetGenome( CBioSource::eGenome_unknown ); // TODO: should we reset instead?
+        RESET_FIELD( biosrc, Genome );
+        ChangeMade ( CCleanupChange::eChangeBioSourceGenome );
     }
 
     // TODO: see 10585 of sqnutil1.c (Jan 25, 2011)
@@ -3228,7 +3229,7 @@ public:
     {
         int ii = 0;
         for( ; ii < num_keys; ++ii ) {
-            insert(value_type( keys[ii].second, keys[ii].first ));
+            insert(pair<char, const char*>( keys[ii].second, keys[ii].first ));
         }
     }
 };
@@ -4338,7 +4339,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
 }
 
 static
-bool s_CodonCompare( const int& codon1, const int& codon2 ) {
+bool s_CodonCompare( int codon1, int codon2 ) {
     return (codon1 < codon2);
 }
 
@@ -4471,7 +4472,7 @@ void s_ParsePCRComponent(vector<string> &out_list, const string *component)
     if ( component->empty() ) return;
 
     string component_copy = *component; //copy so we can modify it
-    // Remove enclosing parens
+    // Remove enclosing parens, if any
     const string::size_type len = component_copy.length();
     if ( len > 1 && component_copy[0] == '(' && component_copy[len - 1] == ')' && component_copy.find('(', 1) == string::npos ) {
         component_copy = component_copy.substr( 1, component_copy.length() - 2 );

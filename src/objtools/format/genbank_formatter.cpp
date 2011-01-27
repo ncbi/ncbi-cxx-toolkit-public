@@ -723,7 +723,7 @@ s_FixListIfBadWrap( list<string> &l, list<string>::iterator l_old_last,
 
     // if the first added line is too short, there must've been a problem,
     // so we join the first two lines together
-    if( l_first_new_line->length() <= indent ) {
+    if( (int)l_first_new_line->length() <= indent ) {
         NStr::TruncateSpacesInPlace( *l_first_new_line, NStr::eTrunc_End );
         *l_first_new_line += " " + NStr::TruncateSpaces( *l_second_new_line );
         l.erase( l_second_new_line );
@@ -734,7 +734,7 @@ void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
  IFlatTextOStream& text_os)
 {
-    list<string> strComment( comment.GetComment() );
+    list<string> strComment( comment.GetCommentList() );
     const int internalIndent = comment.GetCommentInternalIndent();
 
     bool is_first = comment.IsFirst();

@@ -267,20 +267,20 @@ void CDbtag::GetLabel(string* label) const
 // Test if CDbtag.db is in the approved databases list.
 // NOTE: 'GenBank', 'EMBL', 'DDBJ' and 'REBASE' are approved only in 
 //        the context of a RefSeq record.
-bool CDbtag::IsApproved(bool refseq, bool is_source, bool is_est_or_gss) const
+bool CDbtag::IsApproved( EIsRefseq refseq, EIsSource is_source, EIsEstOrGss is_est_or_gss ) const
 {
     if ( !CanGetDb() ) {
         return false;
     }
     const string& db = GetDb();
 
-    if( refseq && sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end() ) {
+    if( refseq == eIsRefseq_Yes && sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end() ) {
         return true;
     }
 
-    if( is_source ) {
+    if( is_source == eIsSource_Yes ) {
         bool found = ( sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end() );
-        if ( ! found && is_est_or_gss ) {
+        if ( ! found && (is_est_or_gss == eIsEstOrGss_Yes) ) {
             // special case: for EST or GSS, source features are allowed non-src dbxrefs
             found = ( sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end() );
         }
@@ -291,14 +291,14 @@ bool CDbtag::IsApproved(bool refseq, bool is_source, bool is_est_or_gss) const
 }
 
 
-const char* CDbtag::IsApprovedNoCase(bool refseq, bool is_source) const
+const char* CDbtag::IsApprovedNoCase(EIsRefseq refseq, EIsSource is_source ) const
 {
     if ( !CanGetDb() ) {
-        return false;
+        return NULL;
     }
     const string& db = GetDb();
     
-    const char* retval = 0;
+    const char* retval = NULL;
     // This is *slow*.  Someone needs to replace this with a binary search or something
     // Since this function isn't even used right now, I'm postponing fixing this.
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
@@ -309,7 +309,7 @@ const char* CDbtag::IsApprovedNoCase(bool refseq, bool is_source) const
     }
     // This is *slow*.  Someone needs to replace this with a binary search or something
     // Since this function isn't even used right now, I'm postponing fixing this.
-    if ( retval == 0  &&  refseq ) {
+    if ( retval == NULL  &&  (refseq == eIsRefseq_Yes) ) {
         ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
             if ( NStr::EqualNocase(db, it->first) ) {
                 retval = it->first;

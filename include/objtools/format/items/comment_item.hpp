@@ -96,8 +96,12 @@ public:
 
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
+    NCBI_DEPRECATED
+    const string GetComment(void) const;
+
+    const list<string> &GetCommentList(void) const;
+
     bool IsFirst(void) const;
-    const list<string>& GetComment(void) const;
     int GetCommentInternalIndent(void) const;
 
     bool NeedPeriod(void) const;
@@ -128,6 +132,12 @@ public:
     static void ResetFirst(void) { sm_FirstComment = true; }
 
 protected:
+
+    enum EPeriod {
+        ePeriod_Add,
+        ePeriod_NoAdd
+    };
+
     CCommentItem(CBioseqContext& ctx, bool need_period = true);
 
     void x_GatherInfo(CBioseqContext& ctx);
@@ -136,7 +146,7 @@ protected:
 
     void x_SetComment(const string& comment);
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,
-        const string& suffix, const bool can_add_period );
+        const string& suffix, const EPeriod can_add_period = ePeriod_Add );
     list<string>& x_GetComment(void) { return m_Comment; }
     void x_SetSkip(void);
 
@@ -231,8 +241,15 @@ bool CCommentItem::IsFirst(void) const
 }
 
 
+NCBI_DEPRECATED
 inline
-const list<string>& CCommentItem::GetComment(void) const
+const string CCommentItem::GetComment(void) const
+{
+    return NStr::Join( m_Comment, "\n" );
+}
+
+inline
+const list<string> &CCommentItem::GetCommentList(void) const
 {
     return m_Comment;
 }

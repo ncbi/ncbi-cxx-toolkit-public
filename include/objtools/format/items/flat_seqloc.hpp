@@ -83,6 +83,17 @@ public:
     const string&     GetString(void)    const { return m_String;    }
     
 private:
+
+    enum EHTML {
+        eHTML_None = 0,
+        eHTML_Yes
+    };
+
+    enum EForce {
+        eForce_None = 0,
+        eForce_ToRange
+    };
+
     bool x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp);
     bool x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
@@ -90,7 +101,7 @@ private:
     bool x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp);
     bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
-        bool html, bool force_as_range = false );
+        EHTML html, EForce force = eForce_None );
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type);
 

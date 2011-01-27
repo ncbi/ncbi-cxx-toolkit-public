@@ -207,10 +207,22 @@ public:
     // Test if DB is approved by the consortium.
     // 'GenBank', 'EMBL' and 'DDBJ' are approved only in the
     // context of a RefSeq record.
-    bool IsApproved(bool refseq = false, bool is_source = false, bool is_est_or_gss = false ) const;
+    enum EIsRefseq {
+        eIsRefseq_No = 0,
+        eIsRefseq_Yes
+    };
+    enum EIsSource {
+        eIsSource_No = 0,
+        eIsSource_Yes
+    };
+    enum EIsEstOrGss {
+        eIsEstOrGss_No = 0,
+        eIsEstOrGss_Yes,
+    };
+    bool IsApproved(EIsRefseq refseq = eIsRefseq_No, EIsSource is_source = eIsSource_No, EIsEstOrGss is_est_or_gss = eIsEstOrGss_No ) const;
     // Test if DB is approved (case insensitive).
     // Returns the case sensetive DB name if approved, NULL otherwise.
-    const char* IsApprovedNoCase(bool refseq = false, bool is_source = false) const;
+    const char* IsApprovedNoCase(EIsRefseq refseq = eIsRefseq_No, EIsSource is_source = eIsSource_No) const;
     // Extended version allows many DB categories
     bool IsApproved(TDbtagGroup group) const;
 

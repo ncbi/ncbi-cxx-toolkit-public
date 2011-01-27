@@ -878,7 +878,7 @@ void s_GetStrForStructuredComment(
 void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
 {
     // true for most desc infos
-    bool can_add_period = true;
+    EPeriod can_add_period = ePeriod_Add;
 
     string prefix, str, suffix;
     switch ( desc.Which() ) {
@@ -937,7 +937,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
                 s_GetStrForStructuredComment( userObject.GetData(),  
                     m_Comment, m_CommentInternalIndent, IsFirst() );
                 SetNeedPeriod( false );
-                can_add_period = false;
+                can_add_period = ePeriod_NoAdd;
                 return; // special case because multiple lines
             }
         }}
@@ -963,7 +963,7 @@ void CCommentItem::x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx)
         return;
     }
 
-    x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr, true);
+    x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr, ePeriod_Add);
 }
 
 
@@ -986,7 +986,7 @@ void CCommentItem::x_SetCommentWithURLlinks
 (const string& prefix,
  const string& str,
  const string& suffix,
- const bool can_add_period)
+ const EPeriod can_add_period)
 {
     // !!! test for html - find links within the comment string
     string comment = prefix;
@@ -998,7 +998,7 @@ void CCommentItem::x_SetCommentWithURLlinks
         return;
     }
 
-    if( can_add_period ) {
+    if( can_add_period == ePeriod_Add ) {
         size_t pos = comment.find_last_not_of(" \n\t\r.~");
         if (pos != comment.length() - 1) {
             size_t period = comment.find_last_of('.');

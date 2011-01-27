@@ -1553,15 +1553,17 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         if (ctx.Config().DropBadDbxref()) {
 
             // Special case for EST or GSS: we don't filter the dbtags as toughly
-            bool is_est_or_gss = false;
+            CDbtag::EIsEstOrGss is_est_or_gss = CDbtag::eIsEstOrGss_No;
             const CMolInfo* mol_info = ctx.GetMolinfo();
             if( NULL != mol_info && mol_info->CanGetTech() ) {
                 if( mol_info->GetTech() == CMolInfo::eTech_est || mol_info->GetTech() == CMolInfo::eTech_survey ) {
-                    is_est_or_gss = true;
+                    is_est_or_gss = CDbtag::eIsEstOrGss_Yes;
                 }
             }
 
-            if (!dbt.IsApproved(ctx.IsRefSeq(), (flags & IFlatQVal::fIsSource), is_est_or_gss )) {
+            const CDbtag::EIsRefseq is_refseq = ( ctx.IsRefSeq() ? CDbtag::eIsRefseq_Yes : CDbtag::eIsRefseq_No );
+            const CDbtag::EIsSource is_source = ( (flags & IFlatQVal::fIsSource) ? CDbtag::eIsSource_Yes : CDbtag::eIsSource_No );
+            if (!dbt.IsApproved( is_refseq, is_source, is_est_or_gss )) {
                 continue;
             }
         }

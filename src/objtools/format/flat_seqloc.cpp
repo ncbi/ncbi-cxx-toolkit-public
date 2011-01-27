@@ -216,7 +216,7 @@ bool CFlatSeqLoc::x_Add
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
             const CInt_fuzz* fuzz = ppnt.CanGetFuzz() ? &ppnt.GetFuzz() : 0;
-            if (!x_Add(*it, fuzz, oss, ctx.Config().DoHTML())) {
+            if (!x_Add(*it, fuzz, oss, ( ctx.Config().DoHTML() ? eHTML_Yes : eHTML_None ) )) {
                 delim = "";
             } else {
                 delim = ", \b";
@@ -364,7 +364,7 @@ bool CFlatSeqLoc::x_Add
         from_fuzz = NULL;
     }
 
-    x_Add(from, from_fuzz, oss, do_html);
+    x_Add(from, from_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
     if (to > 0  &&
         (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to() || type == eType_assembly)) {
         oss << "..";
@@ -374,7 +374,7 @@ bool CFlatSeqLoc::x_Add
             from_fuzz = NULL;
         }
 
-        x_Add(to, to_fuzz, oss, do_html);
+        x_Add(to, to_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
     }
     if (comp) {
         oss << ')';
@@ -401,13 +401,13 @@ bool CFlatSeqLoc::x_Add
     x_AddID(pnt.GetId(), oss, ctx, type);
     if ( pnt.IsSetStrand()  &&  IsReverse(pnt.GetStrand())  &&  show_comp ) {
         oss << "complement(";
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html, (eType_assembly == type) );
+        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ( do_html ? eHTML_Yes : eHTML_None ), ( (eType_assembly == type) ? eForce_ToRange : eForce_None ) );
         oss << ')';
     } else if ( pnt.IsSetFuzz() && pnt.GetFuzz().Which() == CInt_fuzz::e_Range ) {
         oss << (pnt.GetFuzz().GetRange().GetMin() + 1)
             << '^' << (pnt.GetFuzz().GetRange().GetMax() + 1);
     } else {
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html, (eType_assembly == type) );
+        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ( do_html ? eHTML_Yes : eHTML_None ), ( (eType_assembly == type) ? eForce_ToRange : eForce_None ) );
     }
 
     return true;
@@ -418,8 +418,8 @@ bool CFlatSeqLoc::x_Add
 (TSeqPos pnt,
  const CInt_fuzz* fuzz,
  CNcbiOstrstream& oss,
- bool html,
- bool force_as_range)
+ EHTML html,
+ EForce force)
 {
     // need to convert to 1-based coordinates
     pnt += 1;
@@ -450,10 +450,10 @@ bool CFlatSeqLoc::x_Add
             {
                 switch ( fuzz->GetLim() ) {
                 case CInt_fuzz::eLim_gt:
-                    oss << (html ? "&gt;" : ">") << pnt;
+                    oss << (html == eHTML_Yes ? "&gt;" : ">") << pnt;
                     break;
                 case CInt_fuzz::eLim_lt:
-                    oss << (html ? "&lt;" : "<") << pnt;
+                    oss << (html == eHTML_Yes ? "&lt;" : "<") << pnt;
                     break;
                 case CInt_fuzz::eLim_tr:
                     oss << pnt << '^' << pnt + 1;
@@ -463,7 +463,7 @@ bool CFlatSeqLoc::x_Add
                     break;
                 default:
                     oss << pnt;
-                    if( force_as_range ) {
+                    if( force == eForce_ToRange ) {
                         oss << ".." << pnt;
                     }
                     break;
@@ -473,7 +473,7 @@ bool CFlatSeqLoc::x_Add
         default:
             {
                 oss << pnt;
-                if( force_as_range ) {
+                if( force == eForce_ToRange ) {
                     oss << ".." << pnt;
                 }
                 break;
@@ -481,7 +481,7 @@ bool CFlatSeqLoc::x_Add
         } // end of switch statement
     } else {
         oss << pnt;
-        if( force_as_range ) {
+        if( force == eForce_ToRange ) {
             oss << ".." << pnt;
         }
     }
