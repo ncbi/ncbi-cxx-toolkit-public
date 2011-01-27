@@ -986,7 +986,7 @@ void CCommentItem::x_SetCommentWithURLlinks
 (const string& prefix,
  const string& str,
  const string& suffix,
- const EPeriod can_add_period)
+ EPeriod can_add_period)
 {
     // !!! test for html - find links within the comment string
     string comment = prefix;

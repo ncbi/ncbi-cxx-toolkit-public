@@ -99,7 +99,7 @@ public:
     NCBI_DEPRECATED
     const string GetComment(void) const;
 
-    const list<string> &GetCommentList(void) const;
+    const list<string>& GetCommentList(void) const;
 
     bool IsFirst(void) const;
     int GetCommentInternalIndent(void) const;
@@ -146,7 +146,7 @@ protected:
 
     void x_SetComment(const string& comment);
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,
-        const string& suffix, const EPeriod can_add_period = ePeriod_Add );
+        const string& suffix, EPeriod can_add_period = ePeriod_Add );
     list<string>& x_GetComment(void) { return m_Comment; }
     void x_SetSkip(void);
 
@@ -249,7 +249,7 @@ const string CCommentItem::GetComment(void) const
 }
 
 inline
-const list<string> &CCommentItem::GetCommentList(void) const
+const list<string>& CCommentItem::GetCommentList(void) const
 {
     return m_Comment;
 }
