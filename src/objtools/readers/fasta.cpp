@@ -610,6 +610,7 @@ void CFastaReader::ParseDataLine(const TStr& s)
             m_CurrentGapLength += pos2 - pos;
             pos = pos2 - 1;
         } else if (s_ASCII_IsAlpha(c)  ||  c == '-'  ||  c == '*') {
+            // Restrict further if specifically expecting nucleotide data?
             CloseGap();
             if (s_ASCII_IsLower(c)) {
                 m_SeqData[m_CurrentPos] = s_ASCII_ToUpper(c);
@@ -623,9 +624,17 @@ void CFastaReader::ParseDataLine(const TStr& s)
             // comment -- ignore rest of line
             break;
         } else if ( !isspace(c) ) {
-            ERR_POST_X(1, Warning << "CFastaReader: Ignoring invalid residue "
-                       << c << " at line " << LineNumber() << ", position "
-                       << pos);
+            if (TestFlag(fValidate)) {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            string("CFastaReader: Invalid residue ") + s[pos]
+                            + " at position " + NStr::UInt8ToString(pos),
+                            LineNumber());
+            } else {
+                ERR_POST_X(1, Warning
+                           << "CFastaReader: Ignoring invalid residue " << c
+                           << " at line " << LineNumber()
+                           << ", position " << pos);
+            }
         }
     }
     m_SeqData.resize(m_CurrentPos);
