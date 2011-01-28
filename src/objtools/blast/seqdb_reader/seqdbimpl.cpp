@@ -619,18 +619,19 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         SSeqRes res;
         const char * seq;
-        res.length = vol->GetSequence(vol_oid++, &seq, locked);
         Uint8 tot_length = m_Atlas.GetSliceSize();
 
-        while (res.length >= 0 && tot_length >= res.length) {
+        res.length = vol->GetSequence(vol_oid++, &seq, locked);
+        if (res.length < 0) return;
+        // must return at least one sequence
+        do {
             tot_length -= res.length;
             res.address = seq;
             buffer->results.push_back(res);
             res.length = vol->GetSequence(vol_oid++, &seq, locked);
-        } 
-        if (res.length >= 0) {
-            m_Atlas.RetRegion(seq);
-        }
+        } while (res.length >= 0 && tot_length >= res.length);
+
+        if (res.length >= 0)  m_Atlas.RetRegion(seq);
         return;
     } 
 
