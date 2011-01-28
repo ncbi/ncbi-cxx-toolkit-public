@@ -62,7 +62,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // constructors
 CSeq_loc::CSeq_loc(E_Choice index)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     switch ( index ) {
     case e_Null:
         {
@@ -128,14 +128,14 @@ CSeq_loc::CSeq_loc(E_Choice index)
 
 CSeq_loc::CSeq_loc(TId& id, TPoint point, TStrand strand)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     SetPnt(*new CSeq_point(id, point, strand));
 }
 
 
 CSeq_loc::CSeq_loc(TId& id, const TPoints& points, TStrand strand)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     if ( points.size() == 1 ) {
         SetPnt(*new CSeq_point(id, points.front(), strand));
     } else {
@@ -146,14 +146,14 @@ CSeq_loc::CSeq_loc(TId& id, const TPoints& points, TStrand strand)
 
 CSeq_loc::CSeq_loc(TId& id, TPoint from, TPoint to, TStrand strand)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     SetInt(*new CSeq_interval(id, from, to, strand));
 }
 
 
 CSeq_loc::CSeq_loc(TId& id, TRanges ranges, TStrand strand)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     if ( ranges.size() == 1 ) {
         SetInt(*new CSeq_interval(id,
             ranges.front().GetFrom(), ranges.front().GetTo(), strand));
@@ -317,7 +317,7 @@ void x_Assign(CSeq_loc_equiv& dst, const CSeq_loc_equiv& src)
 
 void CSeq_loc::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     if ( GetTypeInfo() == obj.GetThisTypeInfo() ) {
         const CSeq_loc& loc = static_cast<const CSeq_loc&>(obj);
         switch ( loc.Which() ) {
@@ -386,7 +386,9 @@ void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const
     if ( !total_id ) {
         total_id = id;
     } else if ( (id  &&  !total_id->Equals(*id))  ||  !id ) {
-        NCBI_THROW(CException, eUnknown, "CSeq_loc -- multiple seq-ids");
+        NCBI_THROW(CException, eUnknown,
+                   "CSeq_loc::GetTotalRange() is not defined "
+                   "for seq-loc with several different seq-ids");
     }
 }
 
@@ -503,6 +505,12 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
     }
 
     return total_range;
+}
+
+
+void CSeq_loc::PostRead(void) const
+{
+    InvalidateCache();
 }
 
 
@@ -1526,7 +1534,7 @@ void CSeq_loc::GetLabel(string* label) const
 // assign the 'id' field of each sub-interval to the supplied id
 void CSeq_loc::SetId(CSeq_id& id)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     switch (Which()) {
     case e_Null:
         break;
@@ -1915,7 +1923,7 @@ bool s_CanAdd(const CSeq_loc& loc1, const CSeq_loc& loc2)
 
 void CSeq_loc::Add(const CSeq_loc& other)
 {
-    x_InvalidateCache();
+    InvalidateCache();
     switch ( Which() ) {
     case e_not_set:
         {

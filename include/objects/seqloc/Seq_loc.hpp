@@ -105,7 +105,7 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     TRange GetTotalRange(void) const;
-    void InvalidateTotalRangeCache(void);
+    void InvalidateTotalRangeCache(void) const;
  
     /// Check if strand is set for any/all part(s) of the seq-loc
     /// depending on the flag.
@@ -172,12 +172,16 @@ public:
     /// as the specifies id.
     /// if the id parameter is NULL will return the location's id (if unique)
     void CheckId(const CSeq_id*& id) const;
-    void InvalidateIdCache(void);
+    void InvalidateIdCache(void) const;
 
     /// set the 'id' field in all parts of this location
     void SetId(CSeq_id& id); // stores id
     void SetId(const CSeq_id& id); // stores a new copy of id
 
+    /// Combine invalidation of all cached values
+    void InvalidateCache(void) const;
+
+    /// Override Assign() to incorporate cache invalidation.
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
 
@@ -203,6 +207,9 @@ public:
     TBond&       SetBond(void);
     void         SetFeat(TFeat& v);
     TFeat&       SetFeat(void);
+
+    /// Invalidate id/range cache after deserialization.
+    void PostRead(void) const;
 
     /// Compare locations if they are defined on the same single sequence
     /// or throw exception.
@@ -313,7 +320,6 @@ private:
     void x_ChangeToPackedInt(const CSeq_interval& other);
     void x_ChangeToPackedInt(const CSeq_loc& other);
     void x_ChangeToPackedPnt(const CSeq_loc& other);
-    void x_InvalidateCache(void);
 
     enum {
         kDirtyCache = -2,
@@ -465,21 +471,21 @@ private:
 /////////////////// CSeq_loc inline methods
 
 inline
-void CSeq_loc::InvalidateTotalRangeCache(void)
+void CSeq_loc::InvalidateTotalRangeCache(void) const
 {
     m_TotalRangeCache.SetFrom(TSeqPos(kDirtyCache));
 }
 
 
 inline 
-void CSeq_loc::InvalidateIdCache(void)
+void CSeq_loc::InvalidateIdCache(void) const
 {
     m_IdCache = NULL;
 }
 
 
 inline 
-void CSeq_loc::x_InvalidateCache(void)
+void CSeq_loc::InvalidateCache(void) const
 {
     InvalidateTotalRangeCache();
     InvalidateIdCache();
@@ -490,7 +496,7 @@ void CSeq_loc::x_InvalidateCache(void)
 inline
 CSeq_loc::CSeq_loc(void)
 {
-    x_InvalidateCache();
+    InvalidateCache();
 }
 
 
@@ -552,14 +558,14 @@ void CSeq_loc::SetNull(void)
 inline                                 \
 void CSeq_loc::Set##x(T##x& v)         \
 {                                      \
-    x_InvalidateCache();               \
+    InvalidateCache();                 \
     Tparent::Set##x(v);                \
 }                                      \
                                        \
 inline                                 \
 CSeq_loc::T##x& CSeq_loc::Set##x(void) \
 {                                      \
-    x_InvalidateCache();               \
+    InvalidateCache();                 \
     return Tparent::Set##x();          \
 }
 
@@ -710,6 +716,8 @@ void CSeq_loc_CI::Rewind(void)
 {
     m_Index = 0;
 }
+
+NCBISER_HAVE_POST_READ(CSeq_loc)
 
 /////////////////// end of CSeq_loc_CI inline methods
 
