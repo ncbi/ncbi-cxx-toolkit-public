@@ -1333,8 +1333,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                                  true,
                                                  (m_AlignOption & eNewTargetWindow) ? true : false,
                                                  range,
-                                                 flip,
-                                                 "",
+                                                 flip,                                                 
                                                  alnRoInfo->taxid[row],
                                                  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
 												 
@@ -1923,10 +1922,10 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
                                                  true,
                                                  (m_AlignOption & eNewTargetWindow) ? true : false,
                                                  range,
-                                                 flip,
-                                                 segs,
+                                                 flip,                                                 
                                                  taxid,
-                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);												 
+                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false,
+                                                 segs);												 
                         
 			alnDispParams->id_url =  x_GetUrl(&seqUrlInfo, ids);
             m_currSeqTaxid = seqUrlInfo.taxid;
@@ -1994,8 +1993,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
                                                  true,
                                                  (m_AlignOption & eNewTargetWindow) ? true : false,
                                                  range,
-                                                 flip,
-                                                 "",
+                                                 flip,                                         
                                                  0,
 												 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
 												 

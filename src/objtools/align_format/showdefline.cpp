@@ -1463,7 +1463,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
             sdl->id->GetLabel(&accession, CSeq_id::eContent);
             CRange<TSeqPos> seqRange(0,0);
             CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,false,"",0);
+                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,false,0);
             sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,*m_ScopeRef);			
             sdl->score_url = NcbiEmptyString;
         }
