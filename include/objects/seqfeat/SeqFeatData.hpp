@@ -213,7 +213,66 @@ public:
     ESubtype GetSubtype(void) const;
     
     /// Call after changes that could affect the subtype
-    void InvalidateSubtype(void);
+    void InvalidateSubtype(void) const;
+
+    /// Combine invalidation of all cached values
+    void InvalidateCache(void) const;
+
+    /// Override all setters to incorporate cache invalidation.
+#define DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS(x)  \
+    void Set##x(const T##x& v) {                \
+        InvalidateCache();                      \
+        Tparent::Set##x(v);                     \
+    }                                           \
+    T##x& Set##x(void) {                        \
+        InvalidateCache();                      \
+        return Tparent::Set##x();               \
+    }
+#define DEFINE_NCBI_SEQFEATDATA_SETTERS(x)      \
+    void Set##x(T##x& v) {                      \
+        InvalidateCache();                      \
+        Tparent::Set##x(v);                     \
+    }                                           \
+    T##x& Set##x(void) {                        \
+        InvalidateCache();                      \
+        return Tparent::Set##x();               \
+    }
+
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Gene)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Org)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Cdregion)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Prot)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Rna)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Pub)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Seq)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Imp)
+    DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS(Region)
+    void SetComment(void) {
+        InvalidateCache();
+        Tparent::SetComment();
+    }
+    DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS(Bond)
+    DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS(Site)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Rsite)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(User)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Txinit)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Num)
+    DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS(Psec_str)
+    DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS(Non_std_residue)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Het)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Biosrc)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Clone)
+    DEFINE_NCBI_SEQFEATDATA_SETTERS(Variation)
+        
+#undef DEFINE_NCBI_SEQFEATDATA_SETTERS
+#undef DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS
+        
+    /// Override Assign() to incorporate cache invalidation.
+    virtual void Assign(const CSerialObject& source,
+                        ESerialRecursionMode how = eRecursive);
+
+    /// Invalidate subtype cache after deserialization
+    void PostRead(void) const;
 
     static E_Choice GetTypeFromSubtype (ESubtype subtype);
 
@@ -419,9 +478,16 @@ CSeqFeatData::CSeqFeatData(void)
 
 
 inline
-void CSeqFeatData::InvalidateSubtype(void)
+void CSeqFeatData::InvalidateSubtype(void) const
 {
     m_FeatDataInfo.m_Subtype = eSubtype_any;
+}
+
+
+inline
+void CSeqFeatData::InvalidateCache(void) const
+{
+    InvalidateSubtype(); // it's enough to invalidate all cached values
 }
 
 
@@ -695,6 +761,7 @@ CSiteList::const_iterator CSiteList::end() const
     return sm_SiteKeys.end();
 }
 
+NCBISER_HAVE_POST_READ(CSeqFeatData)
 
 
 END_objects_SCOPE // namespace ncbi::objects::

@@ -335,7 +335,7 @@ CSeqFeatData::~CSeqFeatData(void)
 // ASCII representation of subtype (GenBank feature key, e.g.)
 string CSeqFeatData::GetKey(EVocabulary vocab) const
 {
-    if (m_FeatDataInfo.m_Key_gb.empty()  &&  m_FeatDataInfo.m_Key_full.empty()) {
+    if (m_FeatDataInfo.m_Subtype == eSubtype_any) {
         x_InitFeatDataInfo();
     }
     return (vocab == eVocabulary_genbank) ?
@@ -349,6 +349,20 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
         x_InitFeatDataInfo();
     }
     return m_FeatDataInfo.m_Subtype;
+}
+
+
+void CSeqFeatData::Assign(const CSerialObject& source,
+                          ESerialRecursionMode how)
+{
+    InvalidateCache();
+    Tparent::Assign(source, how);
+}
+
+
+void CSeqFeatData::PostRead(void) const
+{
+    InvalidateCache();
 }
 
 
