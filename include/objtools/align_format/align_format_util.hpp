@@ -327,19 +327,20 @@ public:
         bool new_win;           ///< bool indicating if click of the url will open a new window
         CRange<TSeqPos> seqRange;///< sequence range
         bool flip;              ///< flip sequence in case of opposite strands
-        string segs;            ///< string containing align segments in the the following format seg1Start-seg1End,seg2Start-seg2End
         int taxid;              ///< taxid
         bool addCssInfo;        ///< bool indicating that css info should be added
+        string segs;            ///< string containing align segments in the the following format seg1Start-seg1End,seg2Start-seg2End
+        string resourcesUrl;    ///< URL(s) to other resources from .ncbirc
         string seqUrl;          ///< sequence URL created
         
         
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false,string seqSegs = "", int txid = -1,bool addCssInf = false,string sUrl = "") 
+                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "") 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
                     queryNumber(qn), gi(gi), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
-                    new_win(nw),seqRange(range),flip(flp),segs(seqSegs),taxid (txid),addCssInfo(addCssInf),seqUrl(sUrl){}
+                    new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf),segs(seqSegs),resourcesUrl(resUrl){}
 
     };
     
