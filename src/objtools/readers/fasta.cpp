@@ -187,6 +187,15 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
                 need_defline = false;
                 continue;
             } else {
+                if (TestFlag(fParseGaps)) {
+                    CTempString next_line = *++GetLineReader();
+                    if (next_line.size() > 2  &&  next_line[1] == '?'
+                        &&  ParseGapLine(next_line) ) {
+                        continue;
+                    } else {
+                        GetLineReader().UngetLine();
+                    }
+                }
                 // start of the next sequence
                 break;
             }
@@ -678,6 +687,18 @@ void CFastaReader::x_CloseMask(void)
         (GetBestID(), m_MaskRangeStart, GetCurrentPos(ePosWithGapsAndSegs) - 1,
          eNa_strand_plus);
     m_MaskRangeStart = kInvalidSeqPos;
+}
+
+bool CFastaReader::ParseGapLine(const TStr& line)
+{
+    SGap gap = { GetCurrentPos(eRawPos),
+                 NStr::StringToUInt(line.substr(2), NStr::fConvErr_NoThrow) };
+    if (gap.len > 0  ||  line == ">?unk100") {
+        m_Gaps.push_back(gap);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void CFastaReader::AssembleSeq(void)

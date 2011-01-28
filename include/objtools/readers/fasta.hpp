@@ -157,6 +157,7 @@ protected:
     virtual void   x_CloseGap    (TSeqPos len);
     virtual void   x_OpenMask    (void);
     virtual void   x_CloseMask   (void);
+    virtual bool   ParseGapLine  (const TStr& s);
     virtual void   AssembleSeq   (void);
     virtual void   AssignMolType (void);
     virtual void   SaveSeqData   (CSeq_data& seq_data, const TStr& raw_string);
