@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-BEGIN_SCOPE()
+namespace {
 
 struct SExon {
     TSignedSeqPos prod_from;
@@ -54,7 +54,7 @@ struct SExon {
     TSignedSeqPos genomic_to;
 };
 
-END_SCOPE();
+}
 
 struct CFeatureGenerator::SImplementation {
     SImplementation(objects::CScope& scope);
