@@ -6324,6 +6324,7 @@ fi
 
 eval ncbi_runpath=`echo $pure_runpath`
 dnl AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath", [NCBI runpath])
+c_ncbi_runpath=`echo $ncbi_runpath | sed -e 's:\$\$:\$:g'`
 
 ### Template substitutions
 AC_SUBST(signature)
@@ -6338,6 +6339,7 @@ AC_SUBST(status_dir)
 AC_SUBST(builddir)
 AC_SUBST(runpath)
 AC_SUBST(ncbi_runpath)
+AC_SUBST(c_ncbi_runpath)
 
 AC_SUBST(CC)
 AC_SUBST(CPP)

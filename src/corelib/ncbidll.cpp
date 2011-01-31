@@ -342,6 +342,15 @@ bool CDllResolver::TryCandidate(const string& file_name,
     return true;
 }
 
+static inline
+string s_GetProgramPath(void)
+{
+    string dir;
+    CDirEntry::SplitPath
+        (CNcbiApplication::GetAppName(CNcbiApplication::eFullName), &dir);
+    return dir;
+}
+
 void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 {
     // Nothing to do
@@ -353,16 +362,9 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
     // Add program executable path
 
     if ((which & fProgramPath) != 0) {
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app ) {
-            string exe = app->GetProgramExecutablePath();
-            if ( !exe.empty() ) {
-                string dir;
-                CDirEntry::SplitPath(exe, &dir);
-                if ( !dir.empty() ) {
-                    paths.push_back(dir);
-                }
-            }
+        string dir = s_GetProgramPath();
+        if ( !dir.empty() ) {
+            paths.push_back(dir);
         }
     }
 
@@ -403,7 +405,19 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 #  if defined(NCBI_OS_MSWIN)
             NStr::Tokenize(runpath, ";", paths);
 #  elif defined(NCBI_OS_UNIX)
-            NStr::Tokenize(runpath, ":", paths);
+            vector<string> tokenized;
+            NStr::Tokenize(runpath, ":", tokenized);
+            ITERATE(vector<string>, i, tokenized) {
+                if (i->find("$ORIGIN") == NPOS) {
+                    paths.push_back(*i);
+                } else {
+                    string dir = s_GetProgramPath();
+                    if ( !dir.empty() ) {
+                        // Need to know the $ORIGIN else discard path.
+                        paths.push_back(NStr::Replace(*i, "$ORIGIN", dir));
+                    }
+                }
+            }
 #  else
             paths.push_back(runpath);
 #  endif

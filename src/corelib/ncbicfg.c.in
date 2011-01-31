@@ -49,7 +49,7 @@
 
 */
 
-static const char s_DefaultRunpath[] = "@ncbi_runpath@";
+static const char s_DefaultRunpath[] = "@c_ncbi_runpath@";
 static const char *s_Runpath         = s_DefaultRunpath;
 
 static const char s_DefaultSybaseLocalPath[] = "@SYBASE_LCL_PATH@";
