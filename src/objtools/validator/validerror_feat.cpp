@@ -2326,6 +2326,13 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
         x_ReportUninformativeNames (prot, feat);
     }
 
+    // only look for EC numbers in first protein name
+    if (prot.IsSetName() && prot.GetName().size() > 0
+        && HasECnumberPattern(prot.GetName().front())) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, 
+                     "Apparent EC number in protein title", feat);
+    }
+
     FOR_EACH_NAME_ON_PROTREF (it, prot) {
         if (NStr::EndsWith (*it, "]")) {
             bool report_name = true;
@@ -2375,11 +2382,6 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadProteinName, 
                      "Unknown or hypothetical protein should not have EC number",
                      feat);
-        }
-
-        if (HasECnumberPattern(*it)) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, 
-                     "Apparent EC number in protein title", feat);
         }
 
         if (m_Imp.DoRubiscoTest()) {
@@ -6095,6 +6097,32 @@ static bool s_LocationStrandsIncompatible (const CSeq_loc& loc1, const CSeq_loc&
 }
 
 
+static bool s_GeneRefsAreEquivalent (const CGene_ref& g1, const CGene_ref& g2, string& label)
+{
+    bool equivalent = false;
+    if (g1.IsSetLocus_tag()
+        && g2.IsSetLocus_tag()
+        && NStr::EqualNocase(g1.GetLocus_tag(),
+                             g2.GetLocus_tag())) {
+        label = g1.GetLocus_tag();
+        equivalent = true;
+    } else if (g1.IsSetLocus()
+               && g2.IsSetLocus()
+               && NStr::EqualNocase(g1.GetLocus(),
+                                    g2.GetLocus())) {
+        label = g1.GetLocus();
+        equivalent = true;
+    } else if (g1.IsSetSyn()
+               && g2.IsSetSyn()
+               && NStr::EqualNocase (g1.GetSyn().front(),
+                                     g2.GetSyn().front())) {
+        label = g1.GetSyn().front();
+        equivalent = true;
+    }                    
+    return equivalent;
+}
+
+
 // Check for redundant gene Xref
 // Do not call if feat is gene
 void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
@@ -6128,6 +6156,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         if (overlapping_genes.size() > 1) {
             unsigned int num_genes = 1;
             bool equivalent = false;
+            string label = "?";
             
             TFeatScores::iterator f1 = overlapping_genes.begin();
             size_t max = GetLength(f1->second->GetLocation(), m_Scope);
@@ -6141,22 +6170,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                     equivalent = false;
                     f1 = f2;
                 } else if (len == max) {
-                    if (f1->second->GetData().GetGene().IsSetLocus_tag()
-                        && f2->second->GetData().GetGene().IsSetLocus_tag()
-                        && NStr::EqualNocase(f1->second->GetData().GetGene().GetLocus_tag(),
-                                             f2->second->GetData().GetGene().GetLocus_tag())) {
-                        equivalent = true;
-                    } else if (f1->second->GetData().GetGene().IsSetLocus()
-                               && f2->second->GetData().GetGene().IsSetLocus()
-                               && NStr::EqualNocase(f1->second->GetData().GetGene().GetLocus(),
-                                                    f2->second->GetData().GetGene().GetLocus())) {
-                        equivalent = true;
-                    } else if (f1->second->GetData().GetGene().IsSetSyn()
-                               && f2->second->GetData().GetGene().IsSetSyn()
-                               && NStr::EqualNocase (f1->second->GetData().GetGene().GetSyn().front(),
-                                                     f2->second->GetData().GetGene().GetSyn().front())) {
-                        equivalent = true;
-                    }                    
+                    equivalent |= s_GeneRefsAreEquivalent(f1->second->GetData().GetGene(), f2->second->GetData().GetGene(), label);
                     num_genes++;
                 }
                 ++f2;
@@ -6204,28 +6218,14 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
         // compare gene xref to overlapping gene
         bool redundant_xref = false;
-        string label = "";
+        bool equivalent = false;
+        string label = "?";
 
         if (overlapping_genes.size() > 0) {
             TFeatScores::iterator f1 = overlapping_genes.begin();
             while (f1 != overlapping_genes.end() && !redundant_xref) {
-                if (gene_xref->IsSetLocus_tag()
-                    && f1->second->GetData().GetGene().IsSetLocus_tag()
-                    && NStr::EqualNocase(gene_xref->GetLocus_tag(),
-                                         f1->second->GetData().GetGene().GetLocus_tag())) {
+                if (s_GeneRefsAreEquivalent(*gene_xref, f1->second->GetData().GetGene(), label)) {
                     redundant_xref = true;
-                    label = gene_xref->GetLocus_tag();
-                } else if (gene_xref->IsSetLocus()
-                           && f1->second->GetData().GetGene().IsSetLocus()
-                           && NStr::EqualNocase(gene_xref->GetLocus(),
-                           f1->second->GetData().GetGene().GetLocus())) {
-                    redundant_xref = true;
-                    label = gene_xref->GetLocus();
-                } else if (gene_xref->IsSetSyn() && f1->second->GetData().GetGene().IsSetSyn()
-                           && NStr::EqualNocase (*(gene_xref->GetSyn().begin()),
-                                                 *(f1->second->GetData().GetGene().GetSyn().begin()))) {
-                    redundant_xref = true;
-                    label = *(gene_xref->GetSyn().begin());
                 } else {
                   ++f1;
                 }
@@ -6234,23 +6234,29 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         if (redundant_xref && overlapping_genes.size() > 1) {
             size_t num_at_min_length = 0;
             size_t min_length = 0;
-            string label_min = "";
+            bool found_shorter_nonmatch = false;
+            bool equivalent_genes = false;
             TFeatScores::iterator f1 = overlapping_genes.begin();
             while (f1 != overlapping_genes.end()) {
                 size_t len = GetLength (f1->second->GetLocation(), m_Scope);
                 if (num_at_min_length == 0 || len < min_length) {
                     num_at_min_length = 1;
                     min_length = len;
-                    label_min = "";
-                    f1->second->GetData().GetGene().GetLabel (&label_min);
-                } else if (len == min_length) {                    
+                    equivalent_genes = s_GeneRefsAreEquivalent(*gene_xref, f1->second->GetData().GetGene(), label);
+                    if (equivalent_genes) {
+                        found_shorter_nonmatch = false;
+                    } else {
+                        found_shorter_nonmatch = true;
+                    }
+                } else if (len == min_length) {
+                    equivalent_genes = s_GeneRefsAreEquivalent(*gene_xref, f1->second->GetData().GetGene(), label);
                     num_at_min_length++;
                 }
                 ++f1;
             }
             if (num_at_min_length > 1) {
                 redundant_xref = false;
-            } else if (num_at_min_length == 1 && !NStr::Equal (label_min, label)) {
+            } else if (found_shorter_nonmatch) {
                 redundant_xref = false;
             }
         }

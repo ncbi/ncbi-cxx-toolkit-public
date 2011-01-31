@@ -4019,7 +4019,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             accession = NStr::IntToString((*it)->GetGi());
         }
     }
-    if (NStr::Equal(accession, "AB060281")) {
+    if (NStr::Equal(accession, "AB083212")) {
         bool mm = true;
     }
 
@@ -4708,6 +4708,68 @@ bool CValidError_bioseq::x_IsMrnaMissingForCDS (const CSeq_feat& cds_feat, const
 }
 
 
+CMatchmRNA::CMatchmRNA(const CMappedFeat &mrna) : m_Mrna(mrna), m_AccountedFor(false)
+{
+}
+
+CMatchmRNA::~CMatchmRNA(void)
+{
+}
+
+
+void CMatchmRNA::SetCDS(CMappedFeat cds)
+{
+    m_Cds = cds;
+    m_AccountedFor = true;
+}
+
+
+CMatchCDS::CMatchCDS(const CMappedFeat &cds) 
+  : m_Cds(cds),
+    m_AssignedMrna (NULL),
+    m_XrefMatch (false)
+{
+}
+
+CMatchCDS::~CMatchCDS(void)
+{
+}
+
+
+void CMatchCDS::AssignFirstmRNA(void)
+{
+    vector < CMatchmRNA * >::iterator mrna_it = m_OverlappingmRNAs.begin();
+    while (mrna_it != m_OverlappingmRNAs.end()) {
+        if (!(*mrna_it)->IsAccountedFor()) {
+            m_AssignedMrna = *mrna_it;
+            (*mrna_it)->SetAccountedFor(true);
+            break;
+        }
+        ++mrna_it;
+    }
+}
+
+
+int CMatchCDS::GetNummRNA(bool &loc_unique)
+{
+    int num = 0;
+
+    if (HasmRNA()) {
+        // count the one assigned
+        num++;
+    }
+    vector < CMatchmRNA * >::iterator mrna_it = m_OverlappingmRNAs.begin();
+    while (mrna_it != m_OverlappingmRNAs.end()) {
+        if (!(*mrna_it)->IsAccountedFor()) {
+            // count overlapping unassigned mRNAS
+            num++;
+        }
+        ++mrna_it;
+    }
+    return num;
+}
+
+
 void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna)
 {
     // skip this step if this is a genbank record for a bacteria or a virus
@@ -4783,6 +4845,61 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
         }
     }
 
+#if 0
+    if (m_AllFeatIt != NULL) {
+        m_AllFeatIt->Rewind();
+        vector < CMatchCDS * > cds_list;
+        vector < CMatchmRNA * > mrna_list;
+        CFeat_CI it = *m_AllFeatIt;
+        for ( ; it; ++it) {
+            if (it->IsSetData()) {
+                if (it->GetData().IsCdregion()) {
+                    cds_list.push_back(new CMatchCDS(*it));
+                } else if (it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                    mrna_list.push_back(new CMatchmRNA(*it));
+                }
+            }
+        }
+
+        // set up xref pairs
+        vector < CMatchCDS * >::iterator cds_it = cds_list.begin();
+        while (cds_it != cds_list.end()) {
+            const CMappedFeat& cds = (*cds_it)->m_Cds;
+
+            EOverlapType overlap_type = eOverlap_CheckIntRev;
+            if ((*cds_it)->m_Cds.IsSetExcept_text()
+                && (NStr::FindNoCase (cds.GetExcept_text(), "ribosomal slippage") != string::npos
+                    || NStr::FindNoCase (cds.GetExcept_text(), "trans-splicing") != string::npos)) {
+                overlap_type = eOverlap_SubsetRev;
+            }
+            vector < CMatchmRNA * >::iterator mrna_it = mrna_list.begin();
+            while (mrna_it != mrna_list.end()) {
+                if (!(*mrna_it)->IsAccountedFor()) {
+                    const CMappedFeat& mrna = (*mrna_it)->m_Mrna;
+                    if (TestForOverlap (cds.GetLocation(), mrna.GetLocation(), overlap_type) >= 0) {
+                        (*cds_it)->AddmRNA(*mrna_it);                    
+                        if (x_IdXrefsAreReciprocal(*(cds.GetSeq_feat()), *(mrna.GetSeq_feat()))) {
+                            (*cds_it)->SetXrefMatch((*mrna_it));
+                            (*mrna_it)->SetAccountedFor(true);
+                        }
+                    }
+                }
+                ++mrna_it;
+            }
+            ++cds_it;
+        }
+        // allocate remaining pairs
+        cds_it = cds_list.begin();
+        while (cds_it != cds_list.end()) {
+            if (!(*cds_it)->HasmRNA()) {
+                (*cds_it)->AssignFirstmRNA();
+            }
+            ++cds_it;
+        }
+
+
+    }
+#else
     // save list of coding regions with no mRNA features
     vector < CConstRef < CSeq_feat > > cds_without_mrna;
     const CTSE_Handle& tse = seq.GetTSE_Handle ();
@@ -4795,7 +4912,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
         // make list of cds, mrna, repeat region features
         vector< CMappedFeat > cds_list;
         vector< CMappedFeat > mrna_list;
-        vector< CMappedFeat > repeat_region_list;
         CFeat_CI it = *m_AllFeatIt;
         for ( ; it; ++it) {
             if (it->IsSetData()) {
@@ -4803,8 +4919,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
                     cds_list.push_back(*it);
                 } else if (it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
                     mrna_list.push_back(*it);
-                } else if (it->GetData().GetSubtype() == CSeqFeatData::eSubtype_region) {
-                    repeat_region_list.push_back(*it);
                 }
             }
         }
@@ -4834,6 +4948,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
             }
         }
     }
+#endif
 }
 
 
@@ -7088,6 +7203,11 @@ void CValidError_bioseq::x_CompareStrings
 
         if (!NStr::IsBlank (message)
             && s_ReportableCollision(feat->GetData().GetGene(), it->second->GetData().GetGene())) {
+
+            if (NStr::Equal(it->first, "rRNA-5s")) {
+                bool mm = true;
+            }
+
             if (is_gene_locus && sequence::Compare(feat->GetLocation(),
                                                    (*it->second).GetLocation(),
                                                    m_Scope) == eSame) {

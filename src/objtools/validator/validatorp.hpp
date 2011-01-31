@@ -1221,6 +1221,48 @@ private:
     vector <CPCRSet *> m_SetList;
 };
 
+
+class CMatchmRNA
+{
+public:
+    CMatchmRNA(const CMappedFeat &mrna);
+    ~CMatchmRNA(void);
+
+    void SetCDS(CMappedFeat cds);
+    bool IsAccountedFor(void) { return m_AccountedFor; }
+    void SetAccountedFor (bool val) { m_AccountedFor = val; }
+
+    const CMappedFeat &m_Mrna;
+
+private:
+    CMappedFeat m_Cds;
+    bool m_AccountedFor;
+};
+
+
+class CMatchCDS
+{
+public:
+    CMatchCDS(const CMappedFeat &cds);
+    ~CMatchCDS(void);
+
+    void AddmRNA (CMatchmRNA * mrna) { m_OverlappingmRNAs.push_back (mrna); }
+    void SetXrefMatch (CMatchmRNA * mrna) { m_XrefMatch = true; m_AssignedMrna = mrna; }
+    bool IsXrefMatch (void) { return m_XrefMatch; }
+    bool HasmRNA(void) { return m_AssignedMrna != NULL; }
+
+    void AssignFirstmRNA (void);
+    int GetNummRNA(bool &loc_unique);
+
+    const CMappedFeat &m_Cds;
+
+private:
+    vector < CMatchmRNA * > m_OverlappingmRNAs;
+    CMatchmRNA * m_AssignedMrna;
+    bool m_XrefMatch;
+};
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

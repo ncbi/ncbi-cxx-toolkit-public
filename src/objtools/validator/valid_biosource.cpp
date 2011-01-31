@@ -769,37 +769,53 @@ void CValidError_imp::ValidateLatLonCountry
         }
     } else if (!NStr::IsBlank(id->GetGuessWater())) {
         if (flags & (CLatLonCountryId::fCountryClosest | CLatLonCountryId::fProvinceClosest)) {
+            bool suppress = false;
+            string reportregion;
+            string nosubphrase = "";
+            string desphrase = "designated subregion ";
+            string subphrase = "another subregion ";
+            string phrase = nosubphrase;
+            bool show_claimed = false;
+
+            if (id->GetLandDistance() < 22) {
+                // for now, will not report
+                // this is a policy decision
+                suppress = true;
+            } else if (NStr::Find(countryname, "Island") != string::npos) {
+                suppress = true;
+            }
+
+
             if (flags & CLatLonCountryId::fProvinceClosest) {
-                if (id->GetLandDistance() < 22) {
-                    if (! IsIndexerVersion()) {
-                        // acceptable for GenBank, but inform submitters 
-                        PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonOffshore, 
-                                    "Lat_lon '" + lat_lon + "' is closest to designated subregion '" + countryname
-                                    + "' at distance " + NStr::IntToString(id->GetLandDistance()) + " km, but in water '"
-                                    + id->GetGuessWater() + "'",
-                                    obj, ctx);
-                    }
+                reportregion = countryname;
+                phrase = desphrase;
+            } else {
+                // wasn't closest province, so must be closest country
+                if (!NStr::IsBlank(province) && IsLatLonCheckState()) {
+                  phrase = subphrase;
+                  reportregion = id->GetClosestFull();
                 } else {
-                    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonWater, 
-                                "Lat_lon '" + lat_lon + "' is closest to designated subregion '" + countryname
-                                + "' at distance " + NStr::IntToString(id->GetLandDistance()) + " km, but in water '"
-                                + id->GetGuessWater() + "'",
-                                obj, ctx);
+                  reportregion = id->GetClosestCountry();
                 }
-            } else if (flags & CLatLonCountryId::fCountryClosest) {
                 if (!NStr::IsBlank(id->GetClaimedFull())) {
+                  show_claimed = true;
+                }
+            }
+            if (!suppress) {
+                if (show_claimed) {
                     PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonWater, 
-                                "Lat_lon '" + lat_lon + "' is closest to another subregion '" + id->GetClosestFull()
-                                + "' at distance " + NStr::IntToString(id->GetLandDistance()) + " km, but in water '"
-                                + id->GetGuessWater() + "' - claimed region '" + id->GetClaimedFull() + "' is at distance "
-                                + NStr::IntToString(id->GetClaimedDistance()) + " km",
-                                obj, ctx);
+                            "Lat_lon '" + lat_lon + "' is closest to " + phrase + "'" + reportregion + "' at distance "
+                            + NStr::IntToString(id->GetLandDistance())
+                            + " km, but in water '" + id->GetGuessWater()
+                            + "' - claimed region '" + id->GetClaimedFull() 
+                            + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km",
+                            obj, ctx);
                 } else {
                     PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonWater, 
-                                "Lat_lon '" + lat_lon + "' is closest to another subregion '" + id->GetClosestFull()
-                                + "' at distance " + NStr::IntToString(id->GetLandDistance()) + " km, but in water '"
-                                + id->GetGuessWater() + "'",
-                                obj, ctx);
+                            "Lat_lon '" + lat_lon + "' is closest to " + phrase + "'" + reportregion
+                            + "' at distance " + NStr::IntToString(id->GetLandDistance()) + " km, but in water '"
+                            + id->GetGuessWater() + "'",
+                            obj, ctx);
                 }
             }
         } else if (neardist > 0.0) { 

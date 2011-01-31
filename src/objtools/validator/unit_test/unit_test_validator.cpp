@@ -12666,7 +12666,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateFeat)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryGeneXref)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
-    CRef<CSeq_feat> feat1 = AddMiscFeature (entry);
+    CRef<CSeq_feat> feat1 = AddMiscFeature (entry, 15);
     CRef<CSeq_feat> gene = AddMiscFeature (entry, 15);
     gene->SetData().SetGene().SetLocus("foo");
     feat1->SetGeneXref().SetLocus("foo");
@@ -12680,7 +12680,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryGeneXref)
 
     // now gene xref is necessary
     scope.RemoveTopLevelSeqEntry(seh);
-    CRef<CSeq_feat> gene2 = AddMiscFeature (entry);
+    CRef<CSeq_feat> gene2 = AddMiscFeature (entry, 15);
+    gene2->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    gene2->SetPartial(true);
     gene2->SetData().SetGene().SetLocus("bar");
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
