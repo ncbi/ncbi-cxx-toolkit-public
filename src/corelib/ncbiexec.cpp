@@ -46,8 +46,21 @@
 #  include <fcntl.h>
 #endif
 
-
 #define NCBI_USE_ERRCODE_X   Corelib_System
+
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#  define NcbiSys_spawnv    _wspawnv
+#  define NcbiSys_spawnve   _wspawnve
+#  define NcbiSys_spawnvp   _wspawnvp
+#  define NcbiSys_spawnve   _wspawnve
+#  define NcbiSys_spawnvpe  _wspawnvpe
+#else
+#  define NcbiSys_spawnv      spawnv
+#  define NcbiSys_spawnve     spawnve
+#  define NcbiSys_spawnvp     spawnvp
+#  define NcbiSys_spawnve     spawnve
+#  define NcbiSys_spawnvpe    spawnvpe
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -252,43 +265,152 @@ static void s_CheckExecArg(const char* arg)
 
 // Macros to get exec arguments
 
+typedef ArrayDeleter<const TXChar*> TXArgsDeleter;
+typedef AutoPtr<const TXChar*, TXArgsDeleter> TXArgsOrEnv;
+
 #if defined(NCBI_OS_MSWIN)
-#  define GET_ARGS_0 \
-    AutoPtr<string> p_cmdname; \
-    if ( strstr(cmdname, " ") ) { \
-        string* tmp = new string(string("\"") + cmdname + "\""); \
-        p_cmdname.reset(tmp); \
-        args[0] = tmp->c_str(); \
-    } else { \
-        args[0] = cmdname; \
+void s_Create_Args(
+    vector<TXString>& xargs, TXArgsOrEnv& t_args,
+    va_list& begin, const char* cmdname, const char* argv)
+{
+    va_list v_args = begin;
+    int xcnt = 2;
+    while ( va_arg(v_args, const char*) )
+        xcnt++;
+
+    const TXChar **args = new const TXChar*[xcnt+1];
+    if ( !args ) {
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+    }
+    t_args = args;
+
+    int i_arg=0;
+#if defined(NCBI_OS_MSWIN)
+    if (strstr(cmdname, " ")) {
+        xargs.push_back( TXString(_T("\"")) + _T_XSTRING(cmdname) + _T("\""));
+    } else {
+#if defined(_UNICODE)
+        xargs.push_back( _T_XSTRING(cmdname) );
+#else
+        args[i_arg] = cmdname;
+#endif
     }
 #else
-#  define GET_ARGS_0 \
-    args[0] = cmdname
+    args[i_arg] = cmdname;
+#endif
+    ++i_arg;
+
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+    xargs.push_back( _T_XSTRING(argv) );
+    ++i_arg;
+#else
+    args[i_arg++] = argv;
 #endif
 
-#define GET_EXEC_ARGS \
+    v_args = begin;
+    while ( i_arg < xcnt ) {
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+        xargs.push_back( _T_XSTRING(va_arg(v_args, const char*)) );
+        ++i_arg;
+#else
+        args[i_arg++] = va_arg(v_args, const char*);
+        s_CheckExecArg(args[i_arg-1]);
+#endif
+    }
+    args[i_arg++] = NULL;
+    for (size_t i=0; i < xargs.size(); ++i) {
+        args[i] = xargs[i].c_str();
+    }
+    va_arg(v_args, const char**);
+    begin = v_args;
+}
+
+void s_Create_Env(
+    vector<TXString>& xargs, TXArgsOrEnv& t_args, const char** begin)
+{
+    const char** envp = begin;
+    int xcnt = 0;
+    while ( *(envp++) )
+        xcnt++;
+
+    const TXChar **args = new const TXChar*[xcnt+1];
+    if ( !args ) {
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+    }
+    t_args = args;
+    
+    envp = begin;
+    int i_arg=0;
+    while ( i_arg < xcnt ) {
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+        xargs.push_back( _T_XSTRING(*(envp++)) );
+        ++i_arg;
+#else
+        args[i_arg++] = *(envp++);
+#endif
+    }
+    args[i_arg++] = NULL;
+    for (size_t i=0; i < xargs.size(); ++i) {
+        args[i] = xargs[i].c_str();
+    }
+}
+#endif //NCBI_OS_MSWIN
+
+#if defined(NCBI_OS_MSWIN)
+#define XGET_EXEC_ARGS(name, ptr) \
+    const TXChar * const * a_##name; \
+    vector<TXString> x_##name; \
+    TXArgsOrEnv t_##name; \
+    va_list vargs; \
+    va_start(vargs, ptr); \
+    s_Create_Args( x_##name, t_##name, vargs, cmdname, ptr); \
+    a_##name = t_##name.get();
+#else
+#define XGET_EXEC_ARGS(name, ptr) \
     int xcnt = 2; \
     va_list vargs; \
-    va_start(vargs, argv); \
+    va_start(vargs, ptr); \
     while ( va_arg(vargs, const char*) ) xcnt++; \
     va_end(vargs); \
-    const char **args = new const char*[xcnt+1]; \
-    typedef ArrayDeleter<const char*> TArgsDeleter; \
-    AutoPtr<const char*, TArgsDeleter> p_args(args); \
-    if ( !args ) \
+    const char ** a_##name = new const char*[xcnt+1]; \
+    if ( !a_##name ) \
         NCBI_THROW(CCoreException, eNullPtr, kEmptyStr); \
-    GET_ARGS_0; \
-    args[1] = argv; \
-    va_start(vargs, argv); \
+    TXArgsOrEnv t_##name(a_##name); \
+    a_##name[0] = cmdname; \
+    a_##name[1] = ptr; \
+    va_start(vargs, ptr); \
     int xi = 1; \
     while ( xi < xcnt ) { \
         xi++; \
-        args[xi] = va_arg(vargs, const char*); \
-        s_CheckExecArg(args[xi]); \
+        a_##name[xi] = va_arg(vargs, const char*); \
+        s_CheckExecArg(a_##name[xi]); \
     } \
-    args[xi] = (const char*)0
+    a_##name[xi] = (const char*)0
+#endif
 
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#  define XGET_EXEC_ENVP(name) \
+    const TXChar * const * a_##name; \
+    vector<TXString> x_##name; \
+    TXArgsOrEnv t_##name; \
+    s_Create_Env( x_##name, t_##name, va_arg(vargs, const char**)); \
+    a_##name = t_##name.get();
+#else
+#  define XGET_EXEC_ENVP(name) \
+    const char * const * a_##name = va_arg(vargs, const char**);
+#endif
+
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#  define XGET_PTR_ARGS(name, ptr) \
+    const TXChar * const * a_##name; \
+    vector<TXString> x_##name; \
+    TXArgsOrEnv t_##name; \
+    s_Create_Env( x_##name, t_##name, (const char**)ptr); \
+    a_##name = t_##name.get();
+#else
+#  define XGET_PTR_ARGS(name, ptr) \
+    const char * const * a_##name = ptr;
+#endif
 
 // Return result from Spawn method
 #define RETURN_RESULT(func) \
@@ -336,13 +458,13 @@ CExec::CResult
 CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
 {
     intptr_t status;
-    GET_EXEC_ARGS;
+    XGET_EXEC_ARGS(args, argv);
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnv(s_GetRealMode(mode), cmdname, args);
+    status = NcbiSys_spawnv(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eV, mode, cmdname, args);
+    status = s_SpawnUnix(eV, mode, cmdname, a_args);
 #endif
     RETURN_RESULT(SpawnL);
 }
@@ -352,13 +474,14 @@ CExec::CResult
 CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
 {
     intptr_t status;
-    GET_EXEC_ARGS;
-    char** envp = va_arg(vargs, char**);
+    XGET_EXEC_ARGS(args, argv);
+    XGET_EXEC_ENVP(envs);
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
+    status = NcbiSys_spawnve(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
+    status = s_SpawnUnix(eVE, mode, cmdname, a_args, a_envs);
 #endif
     RETURN_RESULT(SpawnLE);
 }
@@ -368,12 +491,13 @@ CExec::CResult
 CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
 {
     intptr_t status;
-    GET_EXEC_ARGS;
+    XGET_EXEC_ARGS(args, argv);
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnvp(s_GetRealMode(mode), cmdname, args);
+    status = NcbiSys_spawnvp(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVP, mode, cmdname, args);
+    status = s_SpawnUnix(eVP, mode, cmdname, a_args);
 #endif
     RETURN_RESULT(SpawnLP);
 }
@@ -383,13 +507,14 @@ CExec::CResult
 CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
 {
     intptr_t status;
-    GET_EXEC_ARGS;
-    char** envp = va_arg(vargs, char**);
+    XGET_EXEC_ARGS(args, argv);
+    XGET_EXEC_ENVP(envs);
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
+    status = NcbiSys_spawnve(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
+    status = s_SpawnUnix(eVPE, mode, cmdname, a_args, a_envs);
 #endif
     RETURN_RESULT(SpawnLPE);
 }
@@ -401,11 +526,13 @@ CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
     intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
+    XGET_PTR_ARGS(args, argv);
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnv(s_GetRealMode(mode), cmdname, argv);
+    status = NcbiSys_spawnv(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eV, mode, cmdname, argv);
+    status = s_SpawnUnix(eV, mode, cmdname, a_args);
 #endif
     RETURN_RESULT(SpawnV);
 }
@@ -418,11 +545,14 @@ CExec::SpawnVE(EMode mode, const char *cmdname,
     intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
+    XGET_PTR_ARGS(args, argv);
+    XGET_PTR_ARGS(envs, envp);
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnve(s_GetRealMode(mode), cmdname, argv, envp);
+    status = NcbiSys_spawnve(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVE, mode, cmdname, argv, envp);
+    status = s_SpawnUnix(eVE, mode, cmdname, a_args, a_envs);
 #endif
     RETURN_RESULT(SpawnVE);
 }
@@ -434,11 +564,13 @@ CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
     intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
+    XGET_PTR_ARGS(args, argv);
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnvp(s_GetRealMode(mode), cmdname, argv);
+    status = NcbiSys_spawnvp(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVP, mode, cmdname, argv);
+    status = s_SpawnUnix(eVP, mode, cmdname, a_args);
 #endif
     RETURN_RESULT(SpawnVP);
 }
@@ -451,11 +583,14 @@ CExec::SpawnVPE(EMode mode, const char *cmdname,
     intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
+    XGET_PTR_ARGS(args, argv);
+    XGET_PTR_ARGS(envs, envp);
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = spawnvpe(s_GetRealMode(mode), cmdname, argv, envp);
+    status = NcbiSys_spawnvpe(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVPE, mode, cmdname, argv, envp);
+    status = s_SpawnUnix(eVPE, mode, cmdname, a_args, a_envs);
 #endif
     RETURN_RESULT(SpawnVPE);
 }
@@ -529,10 +664,10 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     // This is Microsoft extention, and some compilers do not it.
     _flushall();
 #  endif
-    STARTUPINFOA         StartupInfo;
+    STARTUPINFO         StartupInfo;
     PROCESS_INFORMATION ProcessInfo;
     const int           kMaxCmdLength = 4096;
-    string              cmdline;
+    TXString            cmdline;
 
     // Set startup info
     memset(&StartupInfo, 0, sizeof(StartupInfo));
@@ -544,17 +679,17 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
 
     // Compose command line
     cmdline.reserve(kMaxCmdLength);
-    cmdline = cmdname;
+    cmdline = _T_XCSTRING(cmdname);
 
     if (argv) {
-        cmdline += " "; 
-        cmdline += argv;
+        cmdline += _T(" "); 
+        cmdline += _T_XCSTRING(argv);
         va_list vargs;
         va_start(vargs, argv);
         const char* p = NULL;
         while ( (p = va_arg(vargs, const char*)) ) {
-            cmdline += " "; 
-            cmdline += CExec::QuoteArg(p);
+            cmdline += _T(" "); 
+            cmdline += _T_XSTRING(CExec::QuoteArg(p));
         }
         va_end(vargs);
     }
@@ -566,7 +701,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     s_GetRealMode(mode);
 
     // Run program
-    if (CreateProcessA(NULL, (LPSTR)cmdline.c_str(), NULL, NULL, FALSE,
+    if (CreateProcess(NULL, (LPTSTR)cmdline.c_str(), NULL, NULL, FALSE,
                       dwCreateFlags, NULL, NULL, &StartupInfo, &ProcessInfo))
     {
         if (mode == eOverlay) {
@@ -595,8 +730,8 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     }
 
 #elif defined(NCBI_OS_UNIX)
-    GET_EXEC_ARGS;
-    status = s_SpawnUnix(eV, mode, cmdname, args);
+    XGET_EXEC_ARGS(args, argv);
+    status = s_SpawnUnix(eV, mode, cmdname, a_args);
 #endif
 
     RETURN_RESULT(RunSilent);
