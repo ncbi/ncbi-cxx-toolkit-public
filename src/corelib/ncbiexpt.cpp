@@ -632,7 +632,7 @@ const char* CCoreException::GetErrCodeString(void) const
 #if (defined(NCBI_OS_MSWIN) && defined(_UNICODE)) || \
         (NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__)
 // MT: Store pointer to the strerror message in TLS
-static CStaticTls<char*> s_TlsStrerrorMessage;
+static CStaticTls<char> s_TlsStrerrorMessage;
 #endif
 
 extern const char*  Ncbi_strerror(int errnum)
@@ -649,11 +649,11 @@ extern const char*  Ncbi_strerror(int errnum)
 #  endif
     char* ptr = new char[ tmp.size() + 1];
     strcpy(ptr, tmp.c_str());
-    char** p = s_TlsStrerrorMessage.GetValue();
-    if (p && *p) {
-        delete [] *p;
+    char* p = s_TlsStrerrorMessage.GetValue();
+    if (p) {
+        delete [] p;
     }
-    s_TlsStrerrorMessage.SetValue(&ptr);
+    s_TlsStrerrorMessage.SetValue(ptr);
     return ptr;
 #else
     return NcbiSys_strerror(errnum);
