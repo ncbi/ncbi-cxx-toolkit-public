@@ -57,9 +57,6 @@
 
 #define NCBI_USE_ERRCODE_X   Objtools_Fmt_GFF
 
-//#define GFF3_USE_ANCHOR_BUG
-
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
@@ -388,7 +385,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg(),
-        first, width_inverted);
+            first, width_inverted);
         break;
 
     case CSeq_align::TSegs::e_Spliced:
@@ -524,27 +521,20 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     TSeqPos ref_width =
             (static_cast<size_t>(ref_row) < ds.GetWidths().size()) ?
                         ds.GetWidths()[ref_row] : 1;
-#ifdef GFF3_USE_ANCHOR_BUG
-    alnmap.SetAnchor(ref_row);
-    TSeqPos ref_start = alnmap.GetSeqStart(ref_row);
-#else
+
     TSeqPos ref_start(0);
-#endif
     int     ref_sign  = alnmap.StrandSign(ref_row);
     for (TNumrow tgt_row = 0;  tgt_row < alnmap.GetNumRows();  ++tgt_row) {
         if (tgt_row == ref_row) {
             continue;
         }
         CNcbiOstrstream cigar;
-        char            last_type = 0;
-        TSeqPos         last_count = 0;
         TSeqPos         tgt_width =
                 (static_cast<size_t>(tgt_row) < ds.GetWidths().size()) ?
                                     ds.GetWidths()[tgt_row] : 1;
         int             tgt_sign = alnmap.StrandSign(tgt_row);
         TRange          ref_range, tgt_range;
         bool            trivial = true;
-        TSignedSeqPos   last_frameshift = 0;
         
         if (! width_inverted  &&  (ref_width != 1  ||  tgt_width != 1)) {
             // Supporting widths ONLY in the unamiguous case when we
@@ -577,22 +567,12 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         // (3, 1) for prot-nuc, and (3, 3) for prot-prot.
         TSeqPos         width = max(ref_width, tgt_width);
 
-#ifdef GFF3_USE_ANCHOR_BUG
-        CRef<CAlnMap::CAlnChunkVec> chunks
-            = alnmap.GetAlnChunks(tgt_row, alnmap.GetSeqAlnRange(tgt_row),
-                                  CAlnMap::fAddUnalignedChunks);
-        for (TNumchunk i0 = 0;  i0 < chunks->size();  ++i0) {
-            CConstRef<CAlnMap::CAlnChunk> chunk     = (*chunks)[i0];
-            TRange                        ref_piece = chunk->GetAlnRange();
-            TRange                        tgt_piece = chunk->GetRange();
-            CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
-#else
         for (TNumchunk i0 = 0;  i0 < alnmap.GetNumSegs();  ++i0) {
             TRange                        ref_piece = alnmap.GetRange(ref_row, i0);
             TRange                        tgt_piece = alnmap.GetRange(tgt_row, i0);
             CAlnMap::TSegTypeFlags        ref_flags = alnmap.GetSegType(ref_row, i0);
             CAlnMap::TSegTypeFlags        tgt_flags = alnmap.GetSegType(tgt_row, i0);
-#endif
+
             //The type and count are guaranteed set by one of the if/else cases below.  
             char                          type = 'X'; // Guaranteed set. Pacify compiler.
             TSeqPos                       count = 0;  // Guaranteed set. Pacify compiler.
@@ -602,12 +582,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             //      << " to " << tgt_piece.GetTo() << endl;
             // cerr << "REF    PIECE " << ref_piece.GetFrom() << " to " << ref_piece.GetTo()
             //       << " + " << ref_start << "\n" << endl;
-#ifdef GFF3_USE_ANCHOR_BUG
-            if ((flags & CAlnMap::fInsert) == CAlnMap::fInsert) {
-#else
+
             if (  (tgt_flags & CAlnMap::fSeq)  &&
                 ! (ref_flags & CAlnMap::fSeq)) {
-#endif
             // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
@@ -633,12 +610,10 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 tgt_piece.SetFrom(tgt_piece.GetFrom() / tgt_width);
                 tgt_piece.SetTo  (tgt_piece.GetTo()   / tgt_width);
                 tgt_range += tgt_piece;
-#ifdef GFF3_USE_ANCHOR_BUG
-            } else if ( !(flags & CAlnMap::fSeq) ) {
-#else
+
             } else if (! (tgt_flags & CAlnMap::fSeq)  &&
                          (ref_flags & CAlnMap::fSeq)) {
-#endif
+
                 // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
@@ -665,9 +640,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
                 ref_piece.SetTo  ((ref_piece.GetTo()   + ref_start) / ref_width);
                 ref_range += ref_piece;
-#ifdef GFF3_USE_ANCHOR_BUG
-            } else {
-#else
             } else if (  (tgt_flags & CAlnMap::fSeq)  &&
                          (ref_flags & CAlnMap::fSeq)) {
                 // Hanlde case when sequences aligned.
@@ -676,7 +648,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 // happen to have a multiple alignment, the remaining case
                 // would be one that aligns unrelated sequences, thus has
                 // no affect on the current GFF3 output.
-#endif
+
                 // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
@@ -748,24 +720,18 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 tgt_piece.SetTo  (tgt_piece.GetTo()   / tgt_width);
                 tgt_range += tgt_piece;
             }
-            if (type == last_type) {
-                last_count += count;
-                last_frameshift += frameshift;
-            } else {
-                if (last_type) {
-                    if (last_count) {
-                        trivial = false;
-                        cigar << last_type << last_count << '+';
-                    }
-                    if (last_frameshift) {
-                        trivial = false;
-                        cigar << (last_frameshift < 0 ? 'F' : 'R')
-                              << abs(last_frameshift) << '+';
-                    }
+            if (count) {
+                static bool first_time = true;
+                if ( !first_time ) {
+                    cigar << '+';
                 }
-                last_type  = type;
-                last_count = count;
-                last_frameshift = frameshift;
+                first_time = false;
+                cigar << type << count;
+                trivial = false;
+            }
+            if (frameshift) {
+                trivial = false;
+                cigar << (frameshift < 0 ? 'F' : 'R') << abs(frameshift) << '+';
             }
         }
         // We can't use x_FormatAttr because we seem to need a mix
@@ -815,8 +781,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             attrs << " -";
         }
 
-        if ( !trivial  ||  last_type != 'M' ) {
-            cigar << last_type << last_count;
+        if ( !trivial ) {
             string cigar_string = CNcbiOstrstreamToString(cigar);
             attrs << ";Gap=" << cigar_string;
         }
