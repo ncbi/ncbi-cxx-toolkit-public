@@ -11,7 +11,7 @@
 script="$0"
 builddir="$1"
 target="$2"
-compiler="${3:-msvc900}"
+compiler="${3:-msvc1000}"
 compiler="${compiler}_prj"
 
 # Real number of argument is 2.
