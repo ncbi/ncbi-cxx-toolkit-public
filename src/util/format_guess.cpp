@@ -508,7 +508,7 @@ CFormatGuess::EnsureStats()
     //   m_iStatsCountAlNumChars: number of characters that are letters or
     //     digits
     //   m_iStatsCountData: number of characters not part of a line starting
-    //     with '>'
+    //     with '>', ignoring whitespace
     //   m_iStatsCountDnaChars: number of characters counted in m_iStatsCountData
     //     from the DNA alphabet
     //   m_iStatsCountAaChars: number of characters counted in m_iStatsCountData
@@ -531,7 +531,9 @@ CFormatGuess::EnsureStats()
                 ++m_iStatsCountAlNumChars;
             }
             if ( !is_header ) {
-                ++m_iStatsCountData;
+                if ( !(type & fSpace) ) {
+                    ++m_iStatsCountData;
+                }
 
                 if ( type & fDNA_Main_Alphabet ) {
                     ++m_iStatsCountDnaChars;
