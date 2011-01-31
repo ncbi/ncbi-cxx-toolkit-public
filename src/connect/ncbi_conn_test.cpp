@@ -452,8 +452,9 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     if (m_Firewall) {
         temp += "This mode requires to have your firewall configured such a"
             " way that it allows outbound connections to the port range ["
-            _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX) "] inclusive"
-            " at the two fixed NCBI hosts, 130.14.29.112 and 165.112.7.12\n"
+            _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX)
+            "] (inclusive) at the two fixed NCBI hosts, 130.14.29.112"
+            " and 165.112.7.12\n"
             "In order to set that up that correctly, please have your network"
             " administrator read the following (if they have not yet done so):"
             " " NCBI_FW_URL "\n"
@@ -553,10 +554,10 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 
     PreCheck(eFirewallConnections, 0/*main*/,
              "Checking individual connection points..\n"
-             "NOTE that even though that not the entire port range can be"
-             " currently utilized and checked, in order for NCBI services"
-             " to work correctly, your network must support every port in"
-             " the range as documented above\n");
+             "NOTE that even though that not the entire port range may"
+             " currently be utilized and checked, in order for NCBI services"
+             " to work correctly and seamlessly, your network must support"
+             " all ports in the range as documented above\n");
 
     vector<CFWConnPoint>* fwd[] = { &m_Fwd, &m_FwdFB };
 
@@ -731,16 +732,20 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     }
 
     if (status != eIO_Success  ||  n) {
-        if (status != eIO_Success)
-            temp = "Firewall port check FAILED";
-        else
+        if (status != eIO_Success) {
+            temp = m_Firewall ? "Firewall port" : "Service entry";
+            temp += " check FAILED";
+        } else
             temp = "Firewall port check PASSED only with fallback port(s)";
         if (!url) {
             temp += "; you may want to read this link for more information: "
                 NCBI_FW_URL;
         }
-    } else
-        temp = "All firewall port(s) checked OK";
+    } else {
+        temp = "All " + string(m_Firewall
+                               ? "firewall port(s)"
+                               : "service entry point(s)") + " checked OK";
+    }
 
     PostCheck(eFirewallConnections, 0/*main*/, status, temp);
 
