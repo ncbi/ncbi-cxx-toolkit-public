@@ -51,9 +51,12 @@
 #ifdef    HAVE_GOOD_IOS_CALLBACKS
 #  undef  HAVE_GOOD_IOS_CALLBACKS
 #endif
+#define   HAVE_GOOD_IOS_CALLBACKS 1
+#if 0
 #if defined(HAVE_IOS_REGISTER_CALLBACK)  &&  \
   (!defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(_MT))
 #  define HAVE_GOOD_IOS_CALLBACKS 1
+#endif
 #endif
 
 
@@ -145,8 +148,8 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     setp(0, 0);  // unbuffered output at this level of streambuf's hierarchy
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Sb = m_Is.rdbuf(this);
-#ifdef HAVE_GOOD_IOS_CALLBACKS
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
+#ifdef HAVE_GOOD_IOS_CALLBACKS
     try {
         if (!sb) {
             if (sm_Index == -1) {
@@ -163,6 +166,8 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     }
     STD_CATCH_ALL_X(1, (m_Is.clear(NcbiBadbit),
                         "CPushback_Streambuf::CPushback_Streambuf"));
+#else
+    m_Next = sb;
 #endif //HAVE_GOOD_IOS_CALLBACKS
 }
 
