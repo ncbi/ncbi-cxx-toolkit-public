@@ -4228,7 +4228,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NTM<AUS>	s	Museum and Art Galleries of the Northern Territory",
 "NTM<FRA>	s	Museum d'Histoire Naturelle de Nantes",
 "NTN	s	Central Museum and Art Gallery",
-"NTNUB	s	National Taiwan Normal University",
+"NTNU	s	National Taiwan Normal University",
 "NTOU	c	Institute of Marine Biology, National Taiwan Ocean University",
 "NTS	s	Nevada Operations Office, U.S. Department of Energy",
 "NTSC	s	University of North Texas, Biological Sciences Department",
