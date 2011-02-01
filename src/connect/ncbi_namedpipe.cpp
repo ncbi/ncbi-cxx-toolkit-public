@@ -121,19 +121,19 @@ inline void s_AdjustPipeBufSize(size_t& bufsize)
 
 static string s_WinError(DWORD error, string& message)
 {
-    char* errstr = NULL;
+    TXChar* errstr = NULL;
 	DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                FORMAT_MESSAGE_FROM_SYSTEM     |
                                FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                                FORMAT_MESSAGE_IGNORE_INSERTS,
-                               NULL, error, 0, (LPTSTR) &errstr, 0, NULL);
+                               NULL, error, 0, (TXChar*) &errstr, 0, NULL);
 	if (!rv  &&  errstr) {
 		::LocalFree(errstr);
 		errstr = NULL;
 	}
     int dynamic = 0/*false*/;
     const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
-                                                (int) error, errstr);
+                                                (int) error, _T_CSTRING(errstr));
     if (errstr) {
         ::LocalFree(errstr);
     }
@@ -240,8 +240,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         for (;;) {
             // Open existing pipe
-            m_Pipe = ::CreateFileA
-                (m_PipeName.c_str(),
+            m_Pipe = ::CreateFile
+                (_T_XCSTRING(m_PipeName),
                  GENERIC_READ | GENERIC_WRITE,
                  FILE_SHARE_READ | FILE_SHARE_WRITE,
                  &attr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
@@ -295,8 +295,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         attr.lpSecurityDescriptor = NULL;
 
         // Create pipe
-        m_Pipe = ::CreateNamedPipeA
-            (m_PipeName.c_str(),            // pipe name 
+        m_Pipe = ::CreateNamedPipe
+            (_T_XCSTRING(m_PipeName),       // pipe name 
              PIPE_ACCESS_DUPLEX,            // read/write access 
              PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, nonblocking mode 
              1,                             // one instance only 

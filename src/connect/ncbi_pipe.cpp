@@ -165,19 +165,19 @@ static EIO_Status s_Close(const CProcess& process, CPipe::TCreateFlags flags,
 
 static string s_WinError(DWORD error, string& message)
 {
-    char* errstr = NULL;
+    TXChar* errstr = NULL;
 	DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                FORMAT_MESSAGE_FROM_SYSTEM     |
                                FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                                FORMAT_MESSAGE_IGNORE_INSERTS,
-                               NULL, error, 0, (LPTSTR) &errstr, 0, NULL);
+                               NULL, error, 0, (TXChar*) &errstr, 0, NULL);
 	if (!rv  &&  errstr) {
 		::LocalFree(errstr);
 		errstr = NULL;
 	}
     int dynamic = 0/*false*/;
     const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
-                                                (int) error, errstr);
+                                                (int) error, _T_CSTRING(errstr));
     if (errstr) {
         ::LocalFree(errstr);
     }
@@ -295,7 +295,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Convert environment array to block form
-        AutoPtr<char, ArrayDeleter<char> > env_block;
+        AutoPtr<TXChar, ArrayDeleter<TXChar> > env_block;
         if ( env ) {
             // Count block size.
             // It should have one zero byte at least.
@@ -305,18 +305,24 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 size += strlen(env[count++]) + 1 /*zero byte*/;
             }
             // Allocate memory
-            char* block = new char[size];
+            TXChar* block = new TXChar[size];
             if ( !block )  // NB: The standard implies "new" never returns NULL
                 NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
             env_block.reset(block);
 
             // Copy environment strings
             for (int i=0; i<count; i++) {
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+                TXString tmp = _T_XSTRING(env[i]);
+                size_t n = tmp.size() + 1;
+                memcpy(block, tmp.c_str(), n);
+#else
                 size_t n = strlen(env[i]) + 1;
                 memcpy(block, env[i], n);
+#endif
                 block += n;
             }
-            *block = '\0';
+            *block = _T('\0');
         }
 
         HANDLE stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
@@ -388,7 +394,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
         // Create child process
         PROCESS_INFORMATION pinfo;
-        STARTUPINFOA sinfo;
+        STARTUPINFO sinfo;
         ::ZeroMemory(&pinfo, sizeof(pinfo));
         ::ZeroMemory(&sinfo, sizeof(sinfo));
         sinfo.cb = sizeof(sinfo);
@@ -397,11 +403,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         sinfo.hStdInput  = child_stdin;
         sinfo.dwFlags   |= STARTF_USESTDHANDLES;
 
-        if ( !::CreateProcessA(NULL,
-                               const_cast<char*> (cmd_line.c_str()),
+        if ( !::CreateProcess(NULL,
+                               (LPTSTR)(_T_XCSTRING(cmd_line)),
                                NULL, NULL, TRUE, 0,
                                env_block.get(),
-                               current_dir.empty() ? 0 : current_dir.c_str(),
+                               current_dir.empty() ? 0 : _T_XCSTRING(current_dir),
                                &sinfo, &pinfo) ) {
             status = eIO_Closed;
             PIPE_THROW(::GetLastError(),
