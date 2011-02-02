@@ -162,10 +162,21 @@ private:
                              EFieldType    ftype,
                              const char*   banned_symbols,
                              const string* cookie_name = NULL);
+    static string x_EncodeCookie(const string& str,
+                                 EFieldType ftype,
+                                 NStr::EUrlEncode flag);
+
     static bool x_GetString(string* str, const string& val);
     // prohibit default assignment
     CCgiCookie& operator= (const CCgiCookie&);
     friend class CCgiCookies;
+
+public:
+    // Cookie encoding style - CParam needs this to be public
+    enum ECookieEncoding {
+        eCookieEnc_Url,     // use URL encode/decode
+        eCookieEnc_Quote    // use quoting (don't encode names)
+    };
 };  // CCgiCookie
 
 

@@ -89,6 +89,41 @@ NCBI_PARAM_ENUM_DEF_EX(EDiagSev, CGI, Cookie_Error_Severity,
 typedef NCBI_PARAM_TYPE(CGI, Cookie_Error_Severity) TCookieErrorSeverity;
 
 
+NCBI_PARAM_ENUM_DECL(CCgiCookie::ECookieEncoding, CGI, Cookie_Encoding);
+NCBI_PARAM_ENUM_ARRAY(CCgiCookie::ECookieEncoding, CGI, Cookie_Encoding)
+{
+    {"Url", CCgiCookie::eCookieEnc_Url},
+    {"Quote", CCgiCookie::eCookieEnc_Quote}
+};
+NCBI_PARAM_ENUM_DEF_EX(CCgiCookie::ECookieEncoding, CGI, Cookie_Encoding,
+                       CCgiCookie::eCookieEnc_Url,
+                       eParam_NoThread, CGI_COOKIE_ENCODING);
+typedef NCBI_PARAM_TYPE(CGI, Cookie_Encoding) TCookieEncoding;
+
+
+// Helper function for encoding cookie name/value
+string CCgiCookie::x_EncodeCookie(const string& str,
+                                  EFieldType ftype,
+                                  NStr::EUrlEncode flag)
+{
+    if (NStr::NeedsURLEncoding(str, flag)) {
+        switch (TCookieEncoding::GetDefault()) {
+        case eCookieEnc_Url:
+            return NStr::URLEncode(str, flag);
+        case eCookieEnc_Quote:
+            // don't encode names
+            if (ftype == eField_Name) {
+                return str;
+            }
+            // escape quotes, quote the value
+            string esc = NStr::Replace(str, "\"", "\\\"");
+            return "\"" + esc + "\"";
+        }
+    }
+    return str;
+}
+
+
 // auxiliary zero "tm" struct
 static const tm kZeroTime = { 0 };
 
@@ -197,10 +232,12 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
     }
     if (wmethod == eHTTPResponse) {
         os << "Set-Cookie: ";
-
-        os << NStr::URLEncode(m_Name, NStr::EUrlEncode(flag)).c_str() << '=';
-        if ( !m_Value.empty() )
-            os << NStr::URLEncode(m_Value, NStr::EUrlEncode(flag)).c_str();
+        os << x_EncodeCookie(m_Name, eField_Name,
+            NStr::EUrlEncode(flag)).c_str() << '=';
+        if ( !m_Value.empty() ) {
+            os << x_EncodeCookie(m_Value, eField_Value,
+                NStr::EUrlEncode(flag)).c_str();
+        }
 
         if ( !m_Domain.empty() )
             os << "; domain="  << m_Domain.c_str();
@@ -215,9 +252,12 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
         os << HTTP_EOL;
 
     } else {
-        os << NStr::URLEncode(m_Name, NStr::EUrlEncode(flag)).c_str() << '=';
-        if ( !m_Value.empty() )
-            os << NStr::URLEncode(m_Value, NStr::EUrlEncode(flag)).c_str();
+        os << x_EncodeCookie(m_Name, eField_Name,
+            NStr::EUrlEncode(flag)).c_str() << '=';
+        if ( !m_Value.empty() ) {
+            os << x_EncodeCookie(m_Value, eField_Value,
+                NStr::EUrlEncode(flag)).c_str();
+        }
     }
     return os;
 }
@@ -448,7 +488,8 @@ const char* s_GetCookieNameBannedSymbols(void)
 
 void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 {
-    bool need_decode = m_EncodeFlag != NStr::eUrlEnc_None;
+    bool need_decode = (m_EncodeFlag != NStr::eUrlEnc_None) &&
+        (TCookieEncoding::GetDefault() == CCgiCookie::eCookieEnc_Url);
     NStr::EUrlDecode dec_flag = m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
         NStr::eUrlDec_Percent : NStr::eUrlDec_All;
     const char* banned_symbols = s_GetCookieNameBannedSymbols();
@@ -506,7 +547,6 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             continue;
         }
         string name = str.substr(pos_beg, pos_mid - pos_beg);
-
         bool quoted_value = false;
         SIZE_TYPE pos_end = str.find(';', pos_mid);
         // Check for quoted value
@@ -518,30 +558,45 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             while (pos_q != NPOS  &&  str[pos_q - 1] == '\\') {
                 pos_q = str.find('"', pos_q + 1);
             }
-            if (pos_q != NPOS) {
+            bool valid_quotes = (pos_q != NPOS);
+            string msg;
+            if (valid_quotes) {
                 pos_end = str.find(';', pos_q + 1);
+                size_t val_end = pos_end;
+                if (val_end == NPOS) {
+                    val_end = str.size();
+                }
+                if (val_end > pos_q + 1) {
+                    // Make sure there are only spaces between the closing quote
+                    // and the semicolon.
+                    string extra = str.substr(pos_q + 1, val_end - pos_q - 1);
+                    if (extra.find_first_not_of(" \t\n") != NPOS) {
+                        valid_quotes = false;
+                        msg = "Unescaped quote in cookie value (name: " +
+                            name + "): " +
+                            NStr::PrintableString(str.substr(pos_mid + 1));
+                    }
+                }
             }
             else {
+                msg = "Missing closing quote in cookie value (name: " +
+                    name + "): " +
+                    NStr::PrintableString(str.substr(pos_mid + 1));
+            }
+            if (!valid_quotes) {
                 // Error - missing closing quote
                 switch ( on_bad_cookie ) {
                 case eOnBadCookie_ThrowException:
-                    NCBI_THROW2(CCgiCookieException, eValue,
-                        "Missing closing quote in cookie value (name: " +
-                        name + "): " +
-                        NStr::PrintableString(str.substr(pos_mid + 1)), pos_mid + 1);
+                    NCBI_THROW2(CCgiCookieException, eValue, msg, pos_mid + 1);
                 case eOnBadCookie_SkipAndError:
                     ERR_POST_X(9, Severity(TCookieErrorSeverity::GetDefault()) <<
-                        "Missing closing quote in cookie value (name: " +
-                        name + "): " +
-                        NStr::PrintableString(str.substr(pos_mid + 1)));
+                        msg);
                     // Do not break, proceed to the next case
                 case eOnBadCookie_Skip:
                     return;
                 case eOnBadCookie_StoreAndError:
                     ERR_POST_X(10, Severity(TCookieErrorSeverity::GetDefault()) <<
-                        "Missing closing quote in cookie value (name: " +
-                        name + "): " +
-                        NStr::PrintableString(str.substr(pos_mid + 1)));
+                        msg);
                     // Do not break, proceed to the next case
                 case eOnBadCookie_Store:
                     pos_end = NPOS; // Use the whole string
@@ -561,6 +616,12 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         }
         NStr::TruncateSpacesInPlace(name, NStr::eTrunc_End);
         string val = str.substr(pos_mid + 1, pos_end - pos_mid);
+        if (quoted_value) {
+            NStr::TruncateSpacesInPlace(val, NStr::eTrunc_End);
+            _ASSERT(val[0] == '"');
+            _ASSERT(val[val.size() - 1] == '"');
+            val = NStr::Replace(val.substr(1, val.size() - 2), "\\\"", "\"");
+        }
         ECheckResult valid_name = x_CheckField(name, CCgiCookie::eField_Name,
             banned_symbols, on_bad_cookie);
         ECheckResult valid_value = quoted_value ? eCheck_Valid :
