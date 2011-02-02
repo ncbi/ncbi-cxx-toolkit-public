@@ -666,19 +666,22 @@ void CModelFilters::FilterOutTandemOverlap(TGeneModelList&cls, double fraction, 
         if(!ai.TrustedmRNA().empty() || !ai.TrustedProt().empty() || ai.ReadingFrame().Empty())
             continue;
         int cds_len = ai.RealCdsLen();
-        bool alive = true;
-        for(TGeneModelList::iterator jt = cls.begin(); alive && jt != cls.end(); ++jt) {
+
+        vector<const CGeneModel*> candidates;
+        for(TGeneModelList::iterator jt = cls.begin(); jt != cls.end(); ++jt) {
             const CGeneModel& aj(*jt);
             if(aj.Score() < fraction/100*ai.Score() || aj.RealCdsLen() < fraction/100*cds_len || !CModelCompare::HaveCommonExonOrIntron(ai,aj)) 
                 continue;
-            for(TGeneModelList::iterator lt = cls.begin(); alive && lt != cls.end(); ++lt) {
-                const CGeneModel& al(*lt);
-                if(al.Score() < fraction/100*ai.Score() || al.RealCdsLen() < fraction/100*cds_len || !CModelCompare::HaveCommonExonOrIntron(ai,al)) 
-                    continue;
-                if(!aj.Limits().IntersectingWith(al.Limits())) {
+            candidates.push_back(&aj);
+        }
+
+        bool alive = true;
+        for (size_t i = 0; alive && i < candidates.size(); ++i) {
+            for (size_t j = i+1; alive && j < candidates.size(); ++j) {
+                if(!candidates[i]->Limits().IntersectingWith(candidates[j]->Limits())) {
                     CNcbiOstrstream ost;
                     it->Status() |= CGeneModel::eSkipped;
-                    ost << "Overlapping tandem " << jt->ID() << " " << lt->ID();
+                    ost << "Overlapping tandem " << candidates[i]->ID() << " " << candidates[j]->ID();
                     it->AddComment(CNcbiOstrstreamToString(ost));
                     bad_aligns.push_back(*it);
                     cls.erase(it);
