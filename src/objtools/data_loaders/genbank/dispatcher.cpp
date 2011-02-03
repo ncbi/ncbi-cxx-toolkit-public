@@ -1091,8 +1091,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
         CReader& reader = *rdr->second;
         command.GetResult().SetLevel(rdr->first);
         int retry_count = 0;
-        int max_retry_count =
-            reader.GetRetryCount()*reader.GetMaximumConnections();
+        int max_retry_count = reader.GetRetryCount();
         do {
             ++retry_count;
             try {
