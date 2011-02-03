@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 """ Various utilities/tools for BLAST """
 
-__all__ = [ "safe_exec", "update_blast_version", "MANUAL_URL" ]
+__all__ = [ "safe_exec", "update_blast_version" ]
 
 import os
 from subprocess import call
 from shutil import move
         
-# URL from the test Bookshelf server to download the User Manual
-MANUAL_URL = "http://www.ncbi.nlm.nih.gov/bookshelf/picrender.fcgi?"
-MANUAL_URL += "book=helpblast&part=CmdLineAppsManual&blobname=&blobtype=pdf"
-
 def safe_exec(cmd):
     """ Executes a command and checks its return value, throwing an
         exception if it fails.
