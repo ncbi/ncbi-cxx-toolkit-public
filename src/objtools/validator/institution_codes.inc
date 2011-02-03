@@ -2689,6 +2689,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "JAUM	s	Jardin Botanico Joaquin Antonio Uribe",
 "JAY	s	Fondation Cognacq-Jay",
 "JBAG	s	Jardin Botanico Atlantico, Ayuntamiento de Gijon",
+"JBC<MEX>	b	Francisco Javier Clavijero Botanic Garden",
 "JBG	s	Johannesburg Botanic Garden",
 "JBGP	s	Jardin Botanico Guillermo Pineres",
 "JBSD	s	Jardin Botanico Nacional Dr. Rafael M. Moscoso",
