@@ -1,3 +1,27 @@
+February 1, 2011
+* 2.2.25 release
+* Added support for hard-masking of BLAST databases
+* Enhanced documentation, available online exclusively at
+  http://www.ncbi.nlm.nih.gov/books/NBK1762
+* Improvements:
+    * Traceback stage performance (particularly in multi-threaded context)
+    * makeblastdb processing of large FASTA input and error checking
+    * BLAST-WindowMasker integration
+    * Enable Best Hit options and XML formatting for Blast2Sequences mode
+    * Allow multiple query sequences for psiblast
+    * Allow specification of any multiple sequence alignment sequence as the
+      master with the -in_msa psiblast argument
+    * Add an optional -input_type argument to makeblastdb
+    * Added support for query and subject length to tabular output
+    * Performance of -seqidlist argument
+* Bug fixes: 
+    * Parsing, storing, and retrieving sequence identifiers in makeblastdb and
+      blastdbcmd 
+    * XML output
+    * Missing query in tabular output
+    * Missing query in PSSM output
+    * blast_formatter ignoring -num_alignments and -num_descriptions
+
 October 30, 2010
 * 2.2.24 bug fix release
 * Improved makeblastdb performance and taxid_map option
