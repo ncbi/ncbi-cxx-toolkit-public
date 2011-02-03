@@ -540,6 +540,21 @@ BOOST_AUTO_TEST_CASE(SubmitNullQueries) {
                         CBlastException);
 }
 
+BOOST_AUTO_TEST_CASE_TIMEOUT(CheckPrimerBlastRID, 45);
+BOOST_AUTO_TEST_CASE(CheckPrimerBlastRID) {
+    // Permanent RID provided by Jian
+    const string rid("1295554329-7380-64666159365.BLASTQ3");
+    CRemoteBlast rmt_blaster(rid);
+    
+    BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
+    BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
+    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Done, rmt_blaster.CheckStatus());
+    
+    CRef<CSeq_align_set> sas = rmt_blaster.GetAlignments();
+    BOOST_REQUIRE(sas.GetPointer() != NULL);
+}
+
 BOOST_AUTO_TEST_CASE(CheckRID) {
     // Permanent RID provided by Yan
     const string rid("5VPB2NH1014");
