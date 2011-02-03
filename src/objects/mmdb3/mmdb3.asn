@@ -21,8 +21,9 @@ MMDB-Features DEFINITIONS ::=
 BEGIN
 
 EXPORTS Biostruc-feature-set, Chem-graph-pntrs, Atom-pntrs,
-	Chem-graph-alignment, Sphere, Cone, Cylinder, Brick, Transform,
-	Biostruc-feature-set-id, Biostruc-feature-id;
+	Chem-graph-alignment, Chem-graph-interaction, Sphere, 
+	Cone, Cylinder, Brick, Transform, Biostruc-feature-set-id, 
+	Biostruc-feature-id;
 
 IMPORTS Biostruc-id FROM MMDB
 	Molecule-id, Residue-id, Atom-id FROM MMDB-Chemical-graph
@@ -70,7 +71,8 @@ Biostruc-feature ::= SEQUENCE {
 				turn(4),
 				site(5),
 				footnote(6),
-				comment(7),      -- new 
+				comment(7),      -- new
+				interaction(8),  -- interaction Data
 				subgraph(100),   -- NCBI domain reserved
 				region(101), 
 				core(102),       -- user core definition
@@ -84,7 +86,7 @@ Biostruc-feature ::= SEQUENCE {
 				alignment(200),  -- VAST reserved 
 				similarity(201),
 				multalign(202),  -- multiple alignment
-                                indirect(203),   -- new
+                indirect(203),   -- new
 				cn3dstate(254),  -- Cn3D reserved
 				other(255) } OPTIONAL,
 	property	CHOICE { 
@@ -98,6 +100,7 @@ Biostruc-feature ::= SEQUENCE {
 				subgraph	Chem-graph-pntrs,
 				region		Region-pntrs,   
 				alignment	Chem-graph-alignment,
+				interaction     Chem-graph-interaction,
 				similarity	Region-similarity, 
 				indirect	Other-feature } OPTIONAL } -- new
 
@@ -120,6 +123,10 @@ Biostruc-feature-id ::= INTEGER
 -- feature onto a sequence-only representation. This addressing mode may also 
 -- be used to describe features to be associated with particular atoms, 
 -- as, for example, the chemical shift observed in an NMR experiment.
+
+Biostruc-molecule-pntr ::= SEQUENCE {
+	biostruc-id		Biostruc-id,
+	molecule-id		Molecule-id }
 
 Chem-graph-pntrs ::= CHOICE {
 	atoms			Atom-pntrs,
@@ -212,6 +219,23 @@ Chem-graph-alignment ::= SEQUENCE {
 	domain			SEQUENCE OF Chem-graph-pntrs OPTIONAL, 
 	transform		SEQUENCE OF Transform OPTIONAL,
 	aligndata		SEQUENCE OF Align-stats OPTIONAL }
+
+Chem-graph-interaction ::= SEQUENCE {
+	type	INTEGER {	protein-protein(1),
+				protein-dna(2),
+				protein-rna(3),
+				protein-chemical(4),
+				dna-dna(5),
+				dna-rna(6),
+				dna-chemical(7),     
+				rna-rna(8),  
+				rna-chemical(9), 
+				other(255) } OPTIONAL,
+	distance-threshold RealValue OPTIONAL,
+	interactors SEQUENCE OF Biostruc-molecule-pntr,
+	residue-contacts SEQUENCE OF Chem-graph-pntrs OPTIONAL,
+	atom-contacts SEQUENCE OF Chem-graph-pntrs OPTIONAL,
+	atom-distance SEQUENCE OF RealValue OPTIONAL}
 
 Align-stats ::= SEQUENCE {
 	descr		VisibleString OPTIONAL,
