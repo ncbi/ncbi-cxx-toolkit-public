@@ -1881,8 +1881,10 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     } else {
         feat.SetExcept(true);
 
+
         /// corner case:
         /// our exception may already be set
+        /**
         bool found = false;
         if (feat.IsSetExcept_text()) {
             list<string> toks;
@@ -1899,6 +1901,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                 }
             }
 
+
             if ( !found ) {
                 except_text += ", ";
                 except_text += feat.GetExcept_text();
@@ -1908,6 +1911,34 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         if ( !found ) {
             feat.SetExcept_text(except_text);
         }
+        **/
+
+        if (feat.IsSetExcept_text()) {
+            list<string> toks;
+            NStr::Split(feat.GetExcept_text(), ",", toks);
+
+            for (list<string>::iterator it = toks.begin();
+                 it != toks.end();  ) {
+                if (*it == "unclassified translation discrepancy"  ||
+                    *it == "mismatches in translation") {
+                    toks.erase(it++);
+                }
+                else if (*it == "ribosomal slippage") {
+                    except_text.clear();
+                    ++it;
+                }
+                else {
+                    ++it;
+                }
+            }
+            if ( !except_text.empty() ) {
+                toks.push_back(except_text);
+            }
+            except_text = NStr::Join(toks, ", ");
+        }
+
+        feat.SetExcept(true);
+        feat.SetExcept_text(except_text);
     }
 }
 
