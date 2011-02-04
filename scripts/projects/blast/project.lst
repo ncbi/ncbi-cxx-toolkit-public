@@ -6,6 +6,7 @@ algo$
 algo/blast
 algo/dustmask$
 algo/winmask$
+algo/segmask$
 algo/blast/api/unit_test
 algo/blast/blastinput/unit_test
 -algo/blast/blastinput/demo
