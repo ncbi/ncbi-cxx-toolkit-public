@@ -81,7 +81,7 @@ Section "DefaultSection" SecDflt
   File "blast_formatter.exe"
   
   SetOutPath "$INSTDIR\doc"
-  File "user_manual.pdf"
+  File "README.txt"
   
   ;Store installation folder
   WriteRegStr HKCU "Software\NCBI\blast-BLAST_VERSION+" "" $INSTDIR
@@ -120,7 +120,7 @@ Section "Uninstall"
   Delete "$INSTDIR\bin\convert2blastmask.exe"
   Delete "$INSTDIR\bin\blastdbcheck.exe"
   Delete "$INSTDIR\bin\blast_formatter.exe"
-  Delete "$INSTDIR\doc\user_manual.pdf"
+  Delete "$INSTDIR\doc\README.txt"
   RmDir "$INSTDIR\bin"
   RmDir "$INSTDIR\doc"
   RMDir "$INSTDIR"
