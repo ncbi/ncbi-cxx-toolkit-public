@@ -1490,7 +1490,7 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
     ///
 
     CConstRef<CSeq_align> al;
-    if (align->GetSegs().IsSpliced()) {
+    if (align  &&  align->GetSegs().IsSpliced()) {
         al.Reset(align);
     }
     if ( !al ) {
@@ -1576,6 +1576,7 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
 
         /**
         LOG_POST(Error << "  spliced-seg:"
+                 << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
                  << " has_mismatches=" << (has_mismatches ? "yes" : "no")
                  << " has_gaps=" << (has_gaps ? "yes" : "no")
                  << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
@@ -1587,6 +1588,11 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         /// we assume that the feature is otherwise aligned
 
         CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(feat.GetProduct());
+        if ( !prod_bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve bioseq for "
+                       + sequence::GetIdHandle(feat.GetProduct(), NULL).GetSeqId()->AsFastaString());
+        }
         CSeqVector nuc_vec(feat.GetLocation(), scope,
                            CBioseq_Handle::eCoding_Iupac);
 
@@ -1603,7 +1609,6 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
               ++prod_it, ++genomic_it) {
             if (*prod_it != *genomic_it) {
                 has_mismatches = true;
-                break;
             }
         }
 
@@ -1615,19 +1620,20 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
             }
         }
 
-        if (count_a >= tail_len * 0.8) {
+        if (tail_len  &&  count_a >= tail_len * 0.8) {
             has_polya_tail = true;
-            tail_len -= count_a;
         }
-        if (tail_len) {
+        else if (tail_len) {
             has_3prime_unaligned = true;
         }
 
         /**
         LOG_POST(Error << "  raw sequence:"
+                 << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
                  << " has_mismatches=" << (has_mismatches ? "yes" : "no")
                  << " has_gaps=" << (has_gaps ? "yes" : "no")
                  << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
+                 << " (tail-len=" << tail_len << " count_a=" << count_a << ")"
                  << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
                  << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no"));
                  **/
@@ -1667,28 +1673,26 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
 
         /// corner case:
         /// our exception may already be set
-        bool found = false;
         if (feat.IsSetExcept_text()) {
             list<string> toks;
             NStr::Split(feat.GetExcept_text(), ",", toks);
-            NON_CONST_ITERATE (list<string>, it, toks) {
-                NStr::TruncateSpacesInPlace(*it);
-                if (*it == except_text) {
-                    found = true;
-                    break;
+
+            for (list<string>::iterator it = toks.begin();
+                 it != toks.end();  ) {
+                if (*it == "unclassified transcription discrepancy"  ||
+                    *it == "mismatches in transcription") {
+                    toks.erase(it++);
+                }
+                else {
+                    ++it;
                 }
             }
-
-            if ( !found ) {
-                except_text += ", ";
-                except_text += feat.GetExcept_text();
-            }
+            toks.push_back(except_text);
+            except_text = NStr::Join(toks, ", ");
         }
 
         feat.SetExcept(true);
-        if ( !found ) {
-            feat.SetExcept_text(except_text);
-        }
+        feat.SetExcept_text(except_text);
     }
 }
 
