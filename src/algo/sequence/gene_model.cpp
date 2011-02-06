@@ -1164,12 +1164,8 @@ SImplementation::x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                                                  CSeq_loc::fSort,
                                                  NULL);
 
-                if (is_partial_5prime) {
-                    this_loc_mapped->SetPartialStart(true, eExtreme_Biological);
-                }
-                if (is_partial_3prime) {
-                    this_loc_mapped->SetPartialStop(true, eExtreme_Biological);
-                }
+                this_loc_mapped->SetPartialStart(is_partial_5prime, eExtreme_Biological);
+                this_loc_mapped->SetPartialStop(is_partial_3prime, eExtreme_Biological);
 
                 if ( !cds_loc ) {
                     cds_loc.Reset(new CSeq_loc);
@@ -1516,6 +1512,19 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
     bool has_polya_tail = false;
     bool has_mismatches = false;
     bool has_gaps = false;
+
+    CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(feat.GetProduct());
+    if ( !prod_bsh ) {
+        NCBI_THROW(CException, eUnknown,
+                   "failed to retrieve bioseq for "
+                   + sequence::GetIdHandle(feat.GetProduct(), NULL).GetSeqId()->AsFastaString());
+    }
+
+    TSeqPos loc_len = sequence::GetLength(feat.GetLocation(), &scope);
+    if (loc_len > prod_bsh.GetBioseqLength()) {
+        has_length_mismatch = true;
+    }
+
     if (al) {
         ///
         /// can do full comparison
@@ -1561,7 +1570,6 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         } else if (al->GetSegs().GetSpliced().IsSetProduct_length()) {
             max_align_len = al->GetSegs().GetSpliced().GetProduct_length();
         } else {
-            CBioseq_Handle prod_bsh = scope.GetBioseqHandle(feat.GetProduct());
             max_align_len = prod_bsh.GetBioseqLength();
         }
 
@@ -1573,26 +1581,10 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         if (al->GetSegs().GetSpliced().IsSetPoly_a()) {
             has_polya_tail = true;
         }
-
-        /**
-        LOG_POST(Error << "  spliced-seg:"
-                 << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
-                 << " has_mismatches=" << (has_mismatches ? "yes" : "no")
-                 << " has_gaps=" << (has_gaps ? "yes" : "no")
-                 << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
-                 << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
-                 << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no"));
-                 **/
     } else {
         /// only compare for mismatches and 3' unaligned
         /// we assume that the feature is otherwise aligned
 
-        CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(feat.GetProduct());
-        if ( !prod_bsh ) {
-            NCBI_THROW(CException, eUnknown,
-                       "failed to retrieve bioseq for "
-                       + sequence::GetIdHandle(feat.GetProduct(), NULL).GetSeqId()->AsFastaString());
-        }
         CSeqVector nuc_vec(feat.GetLocation(), scope,
                            CBioseq_Handle::eCoding_Iupac);
 
@@ -1626,17 +1618,6 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         else if (tail_len) {
             has_3prime_unaligned = true;
         }
-
-        /**
-        LOG_POST(Error << "  raw sequence:"
-                 << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
-                 << " has_mismatches=" << (has_mismatches ? "yes" : "no")
-                 << " has_gaps=" << (has_gaps ? "yes" : "no")
-                 << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
-                 << " (tail-len=" << tail_len << " count_a=" << count_a << ")"
-                 << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
-                 << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no"));
-                 **/
     }
 
     string except_text;
@@ -1649,48 +1630,56 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
     }
 
     /**
-    LOG_POST(Error << "    existing flag: "
-             << ((feat.IsSetExcept()  &&  feat.GetExcept()) ? "exception" : "no exception"));
-    LOG_POST(Error << "    existing text: "
-             << (feat.IsSetExcept_text() ? feat.GetExcept_text() : ""));
-             **/
+    LOG_POST(Error << "  " << (al ? "align:" : "sequence:")
+             << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
+             << " has_mismatches=" << (has_mismatches ? "yes" : "no")
+             << " has_gaps=" << (has_gaps ? "yes" : "no")
+             << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
+             << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
+             << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no")
+             << " has_length_mismatch=" << (has_length_mismatch ? "yes" : "no")
+             << " (loc=" << loc_len << " prod=" << prod_bsh.GetBioseqLength() << ")"
+             << " except=" << (except_text.empty() ? "no" : "yes")
+            );
+            **/
+
+    // there are some exceptions we don't account for
+    // we would like to set the exception state to whatever we compute above
+    // on the other hand, an annotated exception such as ribosomal slippage or
+    // rearrangement required for assembly trumps any computed values
+    // scan to see if it is set to an exception state we can account for
+
+    list<string> except_toks;
+    if (feat.IsSetExcept_text()) {
+        NStr::Split(feat.GetExcept_text(), ",", except_toks);
+
+        for (list<string>::iterator it = except_toks.begin();
+             it != except_toks.end();  ) {
+            NStr::TruncateSpacesInPlace(*it);
+            if (it->empty()  ||
+                *it == "unclassified transcription discrepancy"  ||
+                *it == "mismatches in transcription") {
+                except_toks.erase(it++);
+            }
+            else if (*it == "ribosomal slippage") {
+                except_text.clear();
+                ++it;
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    if ( !except_text.empty() ) {
+        except_toks.push_back(except_text);
+    }
+    except_text = NStr::Join(except_toks, ", ");
 
     if (except_text.empty()) {
-        /**
-        LOG_POST(Error << "    new flag:      no exception");
-        LOG_POST(Error << "    new text:      ");
-        **/
-
-        if ( !feat.IsSetExcept()  ||  !feat.GetExcept()) {
-            /// we simply make exception mark-up consistent
-            feat.ResetExcept_text();
-        }
+        // no exception; set states correctly
+        feat.ResetExcept_text();
+        feat.ResetExcept();
     } else {
-        /**
-        LOG_POST(Error << "    new flag:      exception");
-        LOG_POST(Error << "    new text:      " << except_text);
-        **/
-
-        /// corner case:
-        /// our exception may already be set
-        if (feat.IsSetExcept_text()) {
-            list<string> toks;
-            NStr::Split(feat.GetExcept_text(), ",", toks);
-
-            for (list<string>::iterator it = toks.begin();
-                 it != toks.end();  ) {
-                if (*it == "unclassified transcription discrepancy"  ||
-                    *it == "mismatches in transcription") {
-                    toks.erase(it++);
-                }
-                else {
-                    ++it;
-                }
-            }
-            toks.push_back(except_text);
-            except_text = NStr::Join(toks, ", ");
-        }
-
         feat.SetExcept(true);
         feat.SetExcept_text(except_text);
     }
@@ -1758,6 +1747,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     /// we compare the annotated product to the conceptual translation and
     /// report problems
     ///
+    bool has_start         = false;
     bool has_stop          = false;
     bool has_internal_stop = false;
     bool has_mismatches    = false;
@@ -1789,17 +1779,67 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         CSeqTranslator::Translate(mrna, xlate, CSeqTranslator::fIs5PrimePartial);
     } else {
         CSeqVector seq(feat.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
-        CSeqTranslator::Translate(seq, xlate, CSeqTranslator::fIs5PrimePartial);
+        CSeqTranslator::Translate(feat, scope, xlate);
     }
+
+    // deal with code breaks
+    // NB: these should be folded into the translation machinery instead...
+    if (feat.GetData().GetCdregion().IsSetCode_break()) {
+        CSeq_loc_Mapper mapper(feat, CSeq_loc_Mapper::eLocationToProduct);
+        ITERATE (CCdregion::TCode_break, it,
+                 feat.GetData().GetCdregion().GetCode_break()) {
+            CRef<CSeq_loc> mapped = mapper.Map((*it)->GetLoc());
+            if (mapped) {
+                TSeqRange r = mapped->GetTotalRange();
+                if (r.GetLength() == 1  &&  r.GetFrom() < xlate.size()) {
+                    string src;
+                    CSeqUtil::ECoding src_coding = CSeqUtil::e_Ncbieaa;
+
+                    switch ((*it)->GetAa().Which()) {
+                    case CCode_break::TAa::e_Ncbieaa:
+                        src += (char)(*it)->GetAa().GetNcbieaa();
+                        src_coding = CSeqUtil::e_Ncbieaa;
+                        break;
+
+                    case CCode_break::TAa::e_Ncbistdaa:
+                        src += (char)(*it)->GetAa().GetNcbistdaa();
+                        src_coding = CSeqUtil::e_Ncbistdaa;
+                        break;
+
+                    case CCode_break::TAa::e_Ncbi8aa:
+                        src += (char)(*it)->GetAa().GetNcbi8aa();
+                        src_coding = CSeqUtil::e_Ncbi8aa;
+                        break;
+
+                    default:
+                        break;
+                    }
+
+                    if (src.size()) {
+                        string dst;
+                        CSeqConvert::Convert(src, src_coding, 0, 1,
+                                             dst, CSeqUtil::e_Ncbieaa);
+                        xlate[r.GetFrom()] = dst[0];
+                    }
+                }
+            }
+        }
+    }
+
     if (xlate.size()  &&  xlate[xlate.size() - 1] == '*') {
         /// strip a terminal stop
         xlate.resize(xlate.size() - 1);
         has_stop = true;
+    }
+    else if (feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        has_stop = true;
     } else {
         has_stop = false;
     }
-    if (feat.GetData().IsCdregion() && feat.GetData().GetCdregion().IsSetCode_break()) {
-        NStr::ReplaceInPlace(xlate,"*","X");
+
+    if ( (xlate.size()  &&  xlate[0] == 'M')  ||
+         feat.GetLocation().IsPartialStart(eExtreme_Biological) ) {
+        has_start = true;
     }
 
     string actual;
@@ -1836,7 +1876,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string except_text;
 
     if (actual.size() != xlate.size()  ||
-        has_internal_stop  ||  has_gap || has_indel) {
+        has_internal_stop  ||  !has_stop  ||  !has_start  ||
+        has_gap || has_indel) {
         except_text = "unclassified translation discrepancy";
     }
     else if (has_mismatches) {
@@ -1844,99 +1885,58 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     }
 
     /**
-    if ((feat.IsSetExcept()  &&  feat.GetExcept()) != !except_text.empty()) {
-        LOG_POST(Error << "    existing flag: "
-                 << ((feat.IsSetExcept()  &&  feat.GetExcept()) ? "exception" : "no exception"));
-        LOG_POST(Error << "    existing text: "
-                 << (feat.IsSetExcept_text() ? feat.GetExcept_text() : ""));
-        LOG_POST(Error << "    new flag:      "
-                 << ( !except_text.empty() ? "exception" : "no exception"));
-        LOG_POST(Error << "    new text:      " << except_text);
-
-        LOG_POST(Error << "    has_internal_stop="
-                 << (has_internal_stop ? "yes" : "no"));
-        LOG_POST(Error << "    has_stop="
-                 << (has_stop ? "yes" : "no"));
-        LOG_POST(Error << "    has_gap="
-                 << (has_gap ? "yes" : "no"));
-        LOG_POST(Error << "    has_mismatches="
-                 << (has_mismatches ? "yes" : "no"));
-        LOG_POST(Error << "    size_match="
-                 << ((actual.size() == xlate.size()) ? "yes" : "no"));
-        LOG_POST(Error << "    actual: " << actual);
-        LOG_POST(Error << "    xlate:  " << xlate);
-    }
+    LOG_POST(Error << "  cds states:"
+             << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
+             << " has_start=" << (has_start ? "yes" : "no")
+             << " has_stop=" << (has_stop ? "yes" : "no")
+             << " has_internal_stop=" << (has_internal_stop ? "yes" : "no")
+             << " has_gap=" << (has_gap ? "yes" : "no")
+             << " has_indel=" << (has_indel ? "yes" : "no")
+             << " has_mismatches=" << (has_mismatches ? "yes" : "no")
+             << " size_match=" << ((actual.size() == xlate.size()) ? "yes" : "no")
+             << " except=" << (except_text.empty() ? "no" : "yes")
+            );
+    LOG_POST(Error << "    actual = " << actual);
+    LOG_POST(Error << "    xlate  = " << xlate);
     **/
 
-    /// there are some exceptions we don't account for
-    /// we would like to set the exception state to whatever we compute above
-    /// on the other hand, an annotated exception such as ribosomal slippage or
-    /// rearrangement required for assembly trumps any computed values
-    /// scan to see if it is set to an exception state we can account for
+    // there are some exceptions we don't account for
+    // we would like to set the exception state to whatever we compute above
+    // on the other hand, an annotated exception such as ribosomal slippage or
+    // rearrangement required for assembly trumps any computed values
+    // scan to see if it is set to an exception state we can account for
+
+    list<string> except_toks;
+    if (feat.IsSetExcept_text()) {
+        NStr::Split(feat.GetExcept_text(), ",", except_toks);
+
+        for (list<string>::iterator it = except_toks.begin();
+             it != except_toks.end();  ) {
+            NStr::TruncateSpacesInPlace(*it);
+            if (it->empty()  ||
+                *it == "unclassified translation discrepancy"  ||
+                *it == "mismatches in translation") {
+                except_toks.erase(it++);
+            }
+            else if (*it == "ribosomal slippage") {
+                except_text.clear();
+                ++it;
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    if ( !except_text.empty() ) {
+        except_toks.push_back(except_text);
+    }
+    except_text = NStr::Join(except_toks, ", ");
+
     if (except_text.empty()) {
-        if ( !feat.IsSetExcept()  ||  !feat.GetExcept()) {
-            /// we simply make exception mark-up consistent
-            feat.ResetExcept_text();
-        }
+        // no exception; set states correctly
+        feat.ResetExcept_text();
+        feat.ResetExcept();
     } else {
-        feat.SetExcept(true);
-
-
-        /// corner case:
-        /// our exception may already be set
-        /**
-        bool found = false;
-        if (feat.IsSetExcept_text()) {
-            list<string> toks;
-            NStr::Split(feat.GetExcept_text(), ",", toks);
-            NON_CONST_ITERATE (list<string>, it, toks) {
-                NStr::TruncateSpacesInPlace(*it);
-                if (*it == except_text) {
-                    found = true;
-                    break;
-                }
-                if (has_indel && *it == "ribosomal slippage"  &&  !has_gap) {
-                    found = true;
-                    break;
-                }
-            }
-
-
-            if ( !found ) {
-                except_text += ", ";
-                except_text += feat.GetExcept_text();
-            }
-        }
-
-        if ( !found ) {
-            feat.SetExcept_text(except_text);
-        }
-        **/
-
-        if (feat.IsSetExcept_text()) {
-            list<string> toks;
-            NStr::Split(feat.GetExcept_text(), ",", toks);
-
-            for (list<string>::iterator it = toks.begin();
-                 it != toks.end();  ) {
-                if (*it == "unclassified translation discrepancy"  ||
-                    *it == "mismatches in translation") {
-                    toks.erase(it++);
-                }
-                else if (*it == "ribosomal slippage") {
-                    except_text.clear();
-                    ++it;
-                }
-                else {
-                    ++it;
-                }
-            }
-            if ( !except_text.empty() ) {
-                toks.push_back(except_text);
-            }
-            except_text = NStr::Join(toks, ", ");
-        }
-
         feat.SetExcept(true);
         feat.SetExcept_text(except_text);
     }
