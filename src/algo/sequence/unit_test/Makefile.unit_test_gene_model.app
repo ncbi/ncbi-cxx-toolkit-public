@@ -13,7 +13,7 @@ REQUIRES = Boost.Test.Included
 
 # Uncomment if you do not want it to run automatically as part of
 # "make check".
-CHECK_CMD = unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn -seqdata-expected seqdata.asn
-CHECK_COPY = alignments.asn annotations.asn seqdata.asn
+CHECK_CMD = unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn -seqdata-expected seqdata.asn -combined-data-expected combined_annot.asn
+CHECK_COPY = alignments.asn annotations.asn seqdata.asn combined_annot.asn
 
-WATCHERS = dicuccio chetvern
+WATCHERS = dicuccio chetvern mozese2

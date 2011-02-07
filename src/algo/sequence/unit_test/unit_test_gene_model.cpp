@@ -72,105 +72,38 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     arg_desc->AddKey("seqdata-expected", "InputData",
                      "Expected bioseqs produced from input alignments",
                      CArgDescriptions::eString);
+    arg_desc->AddKey("combined-data-expected", "InputData",
+                     "Expected Single seq-annot produced from all input alignments",
+                     CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("data-out", "OutputData",
                      "Seq-annots produced from input alignments",
                      CArgDescriptions::eOutputFile);
     arg_desc->AddOptionalKey("seqdata-out", "OutputData",
                      "Bioseqss produced from input alignments",
                      CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("combined-data-out", "OutputData",
+                     "Single seq-annot produced from all input alignments",
+                     CArgDescriptions::eOutputFile);
 }
 
-BOOST_AUTO_TEST_CASE(TestUsingArg)
+/// Class to compare pointers of CRef objects by their referents
+template<class T>
+class CCompareReferents {
+public:
+    bool operator()(T ref1, T ref2)
+    { return *ref1 < *ref2; }
+};
+
+void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
+                      const CSeq_annot::TData::TFtable &expected)
 {
-    CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*om);
-    CScope scope(*om);
-    scope.AddDefaults();
-
-    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    CNcbiIstream& align_istr = args["data-in"].AsInputFile();
-    CNcbiIstream& annot_istr = args["data-expected"].AsInputFile();
-
-    auto_ptr<CObjectIStream> align_is(CObjectIStream::Open(eSerial_AsnText,
-                                                           align_istr));
-    auto_ptr<CObjectIStream> annot_is(CObjectIStream::Open(eSerial_AsnText,
-                                                           annot_istr));
-    auto_ptr<CObjectOStream> annot_os;
-    if (args["data-out"]) {
-        CNcbiOstream& annot_ostr = args["data-out"].AsOutputFile();
-        annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
-                                            annot_ostr));
-    }
-    output_test_stream seqdata_test_stream( args["seqdata-expected"].AsString(), true );
-    auto_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
-                                                                  seqdata_test_stream));
-    auto_ptr<CObjectOStream> seqdata_os;
-    if (args["seqdata-out"]) {
-        CNcbiOstream& seqdata_ostr = args["seqdata-out"].AsOutputFile();
-        seqdata_os.reset(CObjectOStream::Open(eSerial_AsnText,
-                                            seqdata_ostr));
-    }
-
-    int count = 0;
-
-    while (align_istr  &&  annot_istr) {
-
-        CSeq_align align;
-        CSeq_annot expected_annot;
-
-        /// we wrap the first serialization in try/catch
-        /// if this fails, we are at the end of the file, and we expect both to
-        /// be at the end of the file.
-        /// a failure in the second serialization is fatal
-        try {
-            *align_is >> align;
-        }
-        catch (CEofException&) {
-            try {
-                *annot_is >> expected_annot;
-            }
-            catch (CEofException&) {
-            }
-            break;
-        }
-
-        cerr << "Alignment "<< ++count <<  endl;
-
-        BOOST_CHECK_NO_THROW(align.Validate(true));
-
-        CBioseq_set seqs;
-        CSeq_annot actual_annot;
-        {
-            CFeatureGenerator generator(scope);
-            generator.SetFlags((CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
-                               CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna);
-
-            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
-            generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs);
-        }
-
-        *annot_is >> expected_annot;
-        if (annot_os.get() != NULL) {
-            *annot_os << actual_annot;
-        }
-        if (seqdata_os.get() != NULL) {
-            *seqdata_os << seqs;
-        }
-
-        *seqdata_test_os << seqs;
-        BOOST_CHECK( seqdata_test_stream.match_pattern() );
-
         CSeq_annot::TData::TFtable::const_iterator actual_iter =
-            actual_annot.GetData().GetFtable().begin();
-        CSeq_annot::TData::TFtable::const_iterator actual_end =
-            actual_annot.GetData().GetFtable().end();
+            actual.begin();
 
         CSeq_annot::TData::TFtable::const_iterator expected_iter =
-            expected_annot.GetData().GetFtable().begin();
-        CSeq_annot::TData::TFtable::const_iterator expected_end =
-            expected_annot.GetData().GetFtable().end();
+            expected.begin();
 
-        for ( ;  actual_iter != actual_end  &&  expected_iter != expected_end;
+        for ( ;  actual_iter != actual.end()  &&  expected_iter != expected.end();
               ++actual_iter, ++expected_iter) {
 
             bool display = false;
@@ -232,7 +165,130 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                 cerr << "got: " << MSerial_AsnText << f1;
             }
         }
+}
+
+BOOST_AUTO_TEST_CASE(TestUsingArg)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    CNcbiIstream& align_istr = args["data-in"].AsInputFile();
+    CNcbiIstream& annot_istr = args["data-expected"].AsInputFile();
+    CNcbiIstream& combined_annot_istr = args["combined-data-expected"].AsInputFile();
+
+    auto_ptr<CObjectIStream> align_is(CObjectIStream::Open(eSerial_AsnText,
+                                                           align_istr));
+    auto_ptr<CObjectIStream> annot_is(CObjectIStream::Open(eSerial_AsnText,
+                                                           annot_istr));
+    auto_ptr<CObjectIStream> combined_annot_is(CObjectIStream::Open(eSerial_AsnText,
+                                                           combined_annot_istr));
+    auto_ptr<CObjectOStream> annot_os;
+    if (args["data-out"]) {
+        CNcbiOstream& annot_ostr = args["data-out"].AsOutputFile();
+        annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            annot_ostr));
     }
+    auto_ptr<CObjectOStream> combined_annot_os;
+    if (args["combined-data-out"]) {
+        CNcbiOstream& combined_annot_ostr = args["combined-data-out"].AsOutputFile();
+        combined_annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            combined_annot_ostr));
+    }
+    output_test_stream seqdata_test_stream( args["seqdata-expected"].AsString(), true );
+    auto_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
+                                                                  seqdata_test_stream));
+    auto_ptr<CObjectOStream> seqdata_os;
+    if (args["seqdata-out"]) {
+        CNcbiOstream& seqdata_ostr = args["seqdata-out"].AsOutputFile();
+        seqdata_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            seqdata_ostr));
+    }
+
+    int count = 0;
+    CSeq_annot actual_combined_annot;
+    CSeq_annot::C_Data::TFtable &actual_combined_features = 
+            actual_combined_annot.SetData().SetFtable();
+    set< CRef<CSeq_feat>, CCompareReferents< CRef<CSeq_feat> > > unique_gene_feats;
+    CSeq_annot expected_combined_annot;
+    *combined_annot_is >> expected_combined_annot;
+    const CSeq_annot::C_Data::TFtable &expected_combined_features = 
+            expected_combined_annot.GetData().GetFtable();
+
+    CFeatureGenerator generator(scope);
+    generator.SetFlags((CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
+
+                       CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna);
+
+    for (int alignment = 0; align_istr  &&  annot_istr; ++alignment) {
+
+        CSeq_align align;
+        CSeq_annot expected_annot;
+
+        /// we wrap the first serialization in try/catch
+        /// if this fails, we are at the end of the file, and we expect both to
+        /// be at the end of the file.
+        /// a failure in the second serialization is fatal
+        try {
+            *align_is >> align;
+        }
+        catch (CEofException&) {
+            try {
+                *annot_is >> expected_annot;
+            }
+            catch (CEofException&) {
+            }
+            break;
+        }
+
+        cerr << "Alignment "<< ++count <<  endl;
+
+        BOOST_CHECK_NO_THROW(align.Validate(true));
+
+        CBioseq_set seqs;
+        CSeq_annot actual_annot;
+        const CSeq_annot::C_Data::TFtable &actual_features = 
+            actual_annot.SetData().SetFtable();
+        {
+            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+            generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs);
+            ITERATE(CSeq_annot::C_Data::TFtable, it, actual_features){
+                /// Add to combined annot, unless this is a gene feature that
+                /// was already added. Also, don't add the RNA feature from the
+                /// very first alignment (to test recomputation of the partial flag
+                /// for the gene)
+                if((!(*it)->GetData().IsGene() ||
+                   unique_gene_feats.insert(*it).second) &&
+                   (!(*it)->GetData().IsRna() || alignment > 0))
+                    actual_combined_features.push_back(*it);
+            }
+        }
+
+        *annot_is >> expected_annot;
+        const CSeq_annot::C_Data::TFtable &expected_features = 
+            expected_annot.GetData().GetFtable();
+
+        if (annot_os.get() != NULL) {
+            *annot_os << actual_annot;
+        }
+        if (seqdata_os.get() != NULL) {
+            *seqdata_os << seqs;
+        }
+
+        *seqdata_test_os << seqs;
+        BOOST_CHECK( seqdata_test_stream.match_pattern() );
+
+        s_CompareFtables(actual_features, expected_features);
+    }
+
+    generator.RecomputePartialFlags(actual_combined_annot);
+
+    if (combined_annot_os.get() != NULL) {
+        *combined_annot_os << actual_combined_annot;
+    }
+    s_CompareFtables(actual_combined_features, expected_combined_features);
 
     BOOST_CHECK(align_istr.eof());
     BOOST_CHECK(annot_istr.eof());

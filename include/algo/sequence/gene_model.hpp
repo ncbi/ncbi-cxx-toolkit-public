@@ -104,6 +104,9 @@ public:
                          CRef<objects::CSeq_feat> mrna_feat,
                          CRef<objects::CSeq_feat> cds_feat);
 
+    /// Recompute the correct partial states for all features in this annotation
+    void RecomputePartialFlags(objects::CSeq_annot& annot);
+
 private:
     struct SImplementation;
     auto_ptr<SImplementation> m_impl;
@@ -147,6 +150,10 @@ public:
                                 CRef<objects::CSeq_feat> gene_feat,
                                 CRef<objects::CSeq_feat> mrna_feat,
                                 CRef<objects::CSeq_feat> cds_feat);
+
+    NCBI_DEPRECATED
+    static void RecomputePartialFlags(objects::CScope& scope,
+                                      objects::CSeq_annot& annot);
 };
 
 END_NCBI_SCOPE

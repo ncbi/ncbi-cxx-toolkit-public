@@ -41,6 +41,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objmgr/seq_vector.hpp>
 
 #include <objects/general/Dbtag.hpp>
@@ -99,6 +100,12 @@ void CGeneModel::SetPartialFlags(CScope& scope,
     generator.SetPartialFlags(gene_feat, mrna_feat, cds_feat);
 }
 
+void CGeneModel::RecomputePartialFlags(CScope& scope,
+                                       CSeq_annot& annot)
+{
+    CFeatureGenerator generator(scope);
+    generator.RecomputePartialFlags(annot);
+}
 
 /////////////////////////////////////
 
@@ -186,6 +193,10 @@ void CFeatureGenerator::SetPartialFlags(CRef<objects::CSeq_feat> gene_feat,
     m_impl->SetPartialFlags(gene_feat, mrna_feat, cds_feat);
 }
 
+void CFeatureGenerator::RecomputePartialFlags(objects::CSeq_annot& annot)
+{
+    m_impl->RecomputePartialFlags(annot);
+}
 
 ///
 /// Return the mol-info object for a given sequence
@@ -970,14 +981,6 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
             mrna_feat->SetData().SetRna().SetExt().SetName(name);
 
         mrna_feat->SetLocation(*loc);
-
-        /// set the partial flag as needed
-        for (CSeq_loc_CI loc_it(*loc);  loc_it;  ++loc_it) {
-            if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
-                mrna_feat->SetPartial(true);
-                break;
-            }
-        }
     }
     return mrna_feat;
 }
@@ -1063,17 +1066,6 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
                     tag->Assign(**xref_it);
                     mrna_feat->SetDbxref().push_back(tag);
                 }
-            }
-
-            ///
-            /// set geen partialness if mRNA is partial
-            if (mrna_feat->GetLocation().IsPartialStart(eExtreme_Biological)) {
-                gene_feat->SetLocation().SetPartialStart
-                    (true, eExtreme_Biological);
-            }
-            if (mrna_feat->GetLocation().IsPartialStop(eExtreme_Biological)) {
-                gene_feat->SetLocation().SetPartialStop
-                    (true, eExtreme_Biological);
             }
         }
     }
@@ -1205,13 +1197,6 @@ SImplementation::x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                     cds_loc = cds_loc->SetMix().Set().front();
                 }
                 cds_feat->SetLocation(*cds_loc);
-
-                for (CSeq_loc_CI loc_it(*cds_loc);  loc_it;  ++loc_it) {
-                    if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
-                        cds_feat->SetPartial(true);
-                        break;
-                    }
-                }
 
                 /// make sure we set the CDS frame correctly
                 /// if we're 5' partial, we may need to adjust the frame
@@ -1355,32 +1340,54 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
                                  CRef<CSeq_feat> mrna_feat,
                                  CRef<CSeq_feat> cds_feat)
 {
+    if(cds_feat){
+        for (CSeq_loc_CI loc_it(cds_feat->GetLocation());  loc_it;  ++loc_it) {
+            if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
+                cds_feat->SetPartial(true);
+                if(gene_feat)
+                    gene_feat->SetPartial(true);
+                break;
+            }
+        }
+    }
+
     ///
     /// partial flags may require a global analysis - we may need to mark some
     /// locations partial even if they are not yet partial
     ///
-    if (mrna_feat  &&  cds_feat  &&
-        cds_feat->IsSetPartial()  &&  cds_feat->GetPartial()) {
-        mrna_feat->SetPartial(true);
-
+    if (mrna_feat  &&  cds_feat)
+    {
         /// in addition to marking the mrna feature partial, we must mark the
         /// location partial to match the partialness in the CDS
         CSeq_loc& cds_loc = cds_feat->SetLocation();
         CSeq_loc& mrna_loc = mrna_feat->SetLocation();
-        if (cds_loc.IsPartialStart(eExtreme_Biological)) {
+        if (cds_loc.IsPartialStart(eExtreme_Biological) &&
+            cds_loc.GetStart(eExtreme_Biological) ==
+            mrna_loc.GetStart(eExtreme_Biological)) {
             mrna_loc.SetPartialStart(true, eExtreme_Biological);
         }
-        if (cds_loc.IsPartialStop(eExtreme_Biological)) {
+        if (cds_loc.IsPartialStop(eExtreme_Biological) &&
+            cds_loc.GetStop(eExtreme_Biological) ==
+            mrna_loc.GetStop(eExtreme_Biological)) {
             mrna_loc.SetPartialStop(true, eExtreme_Biological);
         }
     }
 
-    if (gene_feat  &&  mrna_feat  &&
-        mrna_feat->IsSetPartial()  &&  mrna_feat->GetPartial()) {
-        gene_feat->SetPartial(true);
+    /// set the partial flag for mrna_feat if it has any fuzzy intervals
+    if(mrna_feat){
+        for (CSeq_loc_CI loc_it(mrna_feat->GetLocation());  loc_it;  ++loc_it) {
+            if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
+                mrna_feat->SetPartial(true);
+                if(gene_feat)
+                    gene_feat->SetPartial(true);
+                break;
+            }
+        }
+    }
 
-        /// in addition to marking the gene feature partial, we must mark the
-        /// location partial to match the partialness in the CDS
+    ///
+    /// set geen partialness if mRNA is partial
+    if (gene_feat  &&  mrna_feat){
         CSeq_loc& mrna_loc = mrna_feat->SetLocation();
         CSeq_loc& gene_loc = gene_feat->SetLocation();
         if (mrna_loc.IsPartialStart(eExtreme_Biological)) {
@@ -1391,6 +1398,82 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
         }
     }
 }
+
+void CFeatureGenerator::
+SImplementation::RecomputePartialFlags(objects::CSeq_annot& annot)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_annot_Handle sah = scope.AddSeq_annot(annot);
+    /// We're going to recalculate Partial flags for all features,
+    /// and fuzzy ends for gene features; reset them if they're currently set
+    for(CFeat_CI ci(sah); ci; ++ci){
+        CSeq_feat_EditHandle handle(*ci);
+        CRef<CSeq_feat> feat(const_cast<CSeq_feat*>(handle.GetSeq_feat().GetPointer()));
+        feat->ResetPartial();
+        if(feat->GetData().IsGene()){
+            feat->SetLocation().SetPartialStart(false, eExtreme_Biological);
+            feat->SetLocation().SetPartialStop(false, eExtreme_Biological);
+        }
+    }
+
+    feature::CFeatTree tree(sah);
+    vector<CMappedFeat> top_level_features = tree.GetChildren(CMappedFeat());
+
+    /// Sort top features (i.e. Seq_feat objects with no parent) by type
+    vector< vector<CMappedFeat> > top_level_features_by_type;
+    top_level_features_by_type.resize(CSeqFeatData::e_MaxChoice);
+
+    ITERATE(vector<CMappedFeat>, it, top_level_features)
+        top_level_features_by_type[it->GetData().Which()].push_back(*it);
+
+    /// Add null gene and rna features; this makes the programming easier for
+    /// dealing with top-level rnas and top-level cd regions
+    top_level_features_by_type[CSeqFeatData::e_Gene].push_back(CMappedFeat());
+    top_level_features_by_type[CSeqFeatData::e_Rna].push_back(CMappedFeat());
+
+    ITERATE(vector<CMappedFeat>, gene_it,
+            top_level_features_by_type[CSeqFeatData::e_Gene])
+    {
+        CRef<CSeq_feat> gene_feat;
+        if(*gene_it){
+            CSeq_feat_EditHandle gene_handle(*gene_it);
+            gene_feat.Reset(const_cast<CSeq_feat*>(gene_handle.GetSeq_feat().GetPointer()));
+        }
+        // Get gene's children; or, if we've reached the sentinel null gene
+        // feature, get top-level rnas.
+        vector<CMappedFeat> gene_children =
+                gene_feat ? tree.GetChildren(*gene_it)
+                          : top_level_features_by_type[CSeqFeatData::e_Rna];
+
+        ITERATE(vector<CMappedFeat>, child_it, gene_children){
+            CRef<CSeq_feat> child_feat;
+            if(*child_it){
+                CSeq_feat_EditHandle child_handle(*child_it);
+                child_feat.Reset(const_cast<CSeq_feat*>(child_handle.GetSeq_feat().GetPointer()));
+            }
+            if(child_feat && child_feat->GetData().IsCdregion()){
+                // We have gene and cds with no RNA feature
+                SetPartialFlags(gene_feat, CRef<CSeq_feat>(), child_feat);
+            } else if(!child_feat || child_feat->GetData().IsRna()){
+                vector<CMappedFeat> rna_cdss =
+                    child_feat ? tree.GetChildren(*child_it)
+                               : top_level_features_by_type[CSeqFeatData::e_Cdregion];
+                if(rna_cdss.empty()){
+                    // We have gene and RNA with no cds feature
+                    SetPartialFlags(gene_feat, child_feat, CRef<CSeq_feat>());
+                } else {
+                    ITERATE(vector<CMappedFeat>, cds_it, rna_cdss){
+                        CRef<CSeq_feat> cds_feat;
+                        CSeq_feat_EditHandle cds_handle(*cds_it);
+                        cds_feat.Reset(const_cast<CSeq_feat*>(cds_handle.GetSeq_feat().GetPointer()));
+                        SetPartialFlags(gene_feat, child_feat, cds_feat);
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 void CFeatureGenerator::SImplementation::x_CopyAdditionalFeatures(const CBioseq_Handle& handle, SMapper& mapper, CSeq_annot& annot)
 {

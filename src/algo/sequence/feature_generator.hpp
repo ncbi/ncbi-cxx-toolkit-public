@@ -81,6 +81,8 @@ struct CFeatureGenerator::SImplementation {
                          CRef<CSeq_feat> mrna_feat,
                          CRef<CSeq_feat> cds_feat);
 
+    void RecomputePartialFlags(objects::CSeq_annot& annot);
+
     TSignedSeqPos GetCdsStart(const objects::CSeq_id& seqid);
 
     void TrimLeftExon(int trim_amount,
