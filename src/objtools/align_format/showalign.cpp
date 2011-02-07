@@ -1060,20 +1060,87 @@ void CDisplaySeqalign::x_PrintFeatures(TSAlnFeatureInfoList& feature,
     
 }
 
-
-
-string CDisplaySeqalign::x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<CSeq_id> >& ids)
+string CDisplaySeqalign::x_GetUrl(int giToUse,string accession,int linkout,int taxid,const list<CRef<CSeq_id> >& ids)
 {
-    string urlLink = NcbiEmptyString;    
- 
-    seqUrlInfo->gi = (seqUrlInfo->gi == 0) ? s_GetGiForSeqIdList(ids):seqUrlInfo->gi;
-    seqUrlInfo->user_url= m_Reg->Get(m_BlastType, "TOOL_URL");    
-    m_UserUrl = seqUrlInfo->user_url;
-    urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids,m_AlignTemplates != NULL,m_AlignTemplates != NULL);
+    string urlLink = NcbiEmptyString;
+    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,accession,linkout,taxid,ids);     
+    urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids);
+    delete seqUrlInfo;
     return urlLink;
 }
 
+CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(int giToUse,string accession,int linkout,
+                                  int taxid,const list<CRef<CSeq_id> >& ids)
+{
+    string idString = m_AV->GetSeqId(1).GetSeqIdString();	            
+	CRange<TSeqPos> range = (m_AlnLinksParams.count(idString) > 0 && m_AlnLinksParams[idString].subjRange) ?
+	CRange<TSeqPos>(m_AlnLinksParams[idString].subjRange->GetFrom() + 1,m_AlnLinksParams[idString].subjRange->GetTo() + 1) :
+					CRange<TSeqPos>(0,0);					
+    bool flip = (m_AlnLinksParams.count(idString) > 0) ? m_AlnLinksParams[idString].flip : false;	
+	string user_url= (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "TOOL_URL") : "";        		
+    giToUse = (giToUse == 0) ? s_GetGiForSeqIdList(ids):giToUse;    
+	CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = new CAlignFormatUtil::SSeqURLInfo(user_url,m_BlastType,m_IsDbNa,m_DbName,m_Rid,
+                                             m_QueryNumber,
+                                             giToUse,
+	    			                         accession, 
+                                             linkout,
+                                             m_cur_align,
+                                             true,
+                                             (m_AlignOption & eNewTargetWindow) ? true : false,
+                                             range,
+                                             flip,                                             
+                                             taxid,
+                                             (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
+                                             
+    return seqUrlInfo;
+}
 
+string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,
+                                  int taxid,const list<CRef<CSeq_id> >& ids,int lnkDispParams)
+{
+    string urlLink = NcbiEmptyString;
+    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,accession,linkout,taxid,ids);     
+    seqUrlInfo->segs = (lnkDispParams & eDisplayDownloadLink) ?  x_GetSegs(1) : "";
+	seqUrlInfo->resourcesUrl = (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "RESOURCES_URL") : "";    
+    seqUrlInfo->advancedView = seqUrlInfo->useTemplates = m_AlignTemplates != NULL;
+    
+    urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids);
+
+    if(lnkDispParams & eDisplayResourcesLinks) {
+        int customLinkTypes = (lnkDispParams & eDisplayDownloadLink) ?  CAlignFormatUtil::eDownLoadSeq : CAlignFormatUtil::eLinkTypeDefault;        
+        CRef<objects::CSeq_id>  seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
+        m_CustomLinksList = CAlignFormatUtil::GetCustomLinksList(seqUrlInfo,
+                               *seqID,
+                               m_Scope,                                             
+                               customLinkTypes);                               
+
+        m_HSPLinksList = CAlignFormatUtil::GetGiLinksList(seqUrlInfo,true);                                                                      
+    
+        list<string>  linkoutStr;
+        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                    
+            const CRef<CBlast_def_line_set> bdlRef =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
+            const list< CRef< CBlast_def_line > >& bdl_list = bdlRef->Get();
+            linkoutStr = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,
+                                           m_Rid, 
+                                           m_CddRid, 
+                                           m_EntrezTerm, 
+                                           bsp_handle.GetBioseqCore()->IsNa(),
+                                           false,
+                                           true,
+                                           seqUrlInfo->gi,
+                                           m_cur_align,
+                                           m_LinkoutOrder,
+                                           seqUrlInfo->taxid,
+                                           m_DbName,
+                                           m_QueryNumber,                                                 
+                                           seqUrlInfo->user_url);			    
+        }
+        list<string> ::iterator it = m_CustomLinksList.end();
+        m_CustomLinksList.splice(it,linkoutStr);
+    }                 
+    delete seqUrlInfo;
+    return urlLink;
+}			
 
 void
 CDisplaySeqalign::SetSubjectMasks(const TSeqLocInfoVector& masks)
@@ -1316,31 +1383,11 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
 						
-                        string idString = m_AV->GetSeqId(row).GetSeqIdString();												
-                        CRange<TSeqPos> range = (m_AlnLinksParams.count(idString) > 0 && m_AlnLinksParams[idString].subjRange) ?
-								CRange<TSeqPos>(m_AlnLinksParams[idString].subjRange->GetFrom() + 1,m_AlnLinksParams[idString].subjRange->GetTo() + 1) :
-								CRange<TSeqPos>(0,0);					
-                        bool flip = (m_AlnLinksParams.count(idString) > 0) ? m_AlnLinksParams[idString].flip : false;
                         int linkout = m_UseLinkoutDB
                             ? CLinkoutDB::GetInstance().GetLinkout(m_AV->GetSeqId(row))
                             : CAlignFormatUtil::GetLinkout(m_AV->GetBioseqHandle(row),m_AV->GetSeqId(row));
-                        CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
-                                                 m_QueryNumber,
-                                                 gi,
-						                         alnRoInfo->seqidArray[row], 
-                                                 linkout,
-                                                 m_cur_align,
-                                                 true,
-                                                 (m_AlignOption & eNewTargetWindow) ? true : false,
-                                                 range,
-                                                 flip,                                                 
-                                                 alnRoInfo->taxid[row],
-                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
-												 
                         
-                        urlLink = x_GetUrl(&seqUrlInfo, m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());                        
-
-                        
+                        urlLink = x_GetUrl(gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
                         out << urlLink;            
                     }        
                 }
@@ -1869,13 +1916,16 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
     }  
 }
 
+
 CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CRef< CBlast_def_line > &bdl,
-								   list<int>& use_this_gi,
-								   int firstGi,
-								   bool isNa,
-								  int seqLength)
+                                                                        const CBioseq_Handle& bsp_handle,
+								                                        list<int>& use_this_gi,
+								                                        int firstGi)							   
 {
     SAlnDispParams *alnDispParams = NULL;
+
+    bool isNa = bsp_handle.GetBioseqCore()->IsNa();
+    int seqLength = (int)bsp_handle.GetBioseqLength();    
 
 	const list<CRef<CSeq_id> > ids = bdl->GetSeqid();
 	int gi =  s_GetGiForSeqIdList(ids);
@@ -1903,44 +1953,20 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
                             bdl->CanGetTaxid()){
 				taxid = bdl->GetTaxid();
 			}
-						
-			string idString = m_AV->GetSeqId(1).GetSeqIdString();	            
-			CRange<TSeqPos> range = (m_AlnLinksParams.count(idString) > 0 && m_AlnLinksParams[idString].subjRange) ?
-						CRange<TSeqPos>(m_AlnLinksParams[idString].subjRange->GetFrom() + 1,m_AlnLinksParams[idString].subjRange->GetTo() + 1) :
-						CRange<TSeqPos>(0,0);					
-            bool flip = (m_AlnLinksParams.count(idString) > 0) ? m_AlnLinksParams[idString].flip : false;            
-            string segs = (seqLength > k_GetSubseqThreshhold) ? x_GetSegs(1) : "";			
+            
             int linkout = m_UseLinkoutDB
                 ? CLinkoutDB::GetInstance().GetLinkout(gi) 
                 : CAlignFormatUtil::GetLinkout(*bdl);
-			CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
-                                                 m_QueryNumber,
-                                                 gi_in_use_this_gi, 
-						                         alnDispParams->label,
-                                                 linkout,
-                                                 m_cur_align,
-                                                 true,
-                                                 (m_AlignOption & eNewTargetWindow) ? true : false,
-                                                 range,
-                                                 flip,                                                 
-                                                 taxid,
-                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false,
-                                                 segs);												 
-                        
-			alnDispParams->id_url =  x_GetUrl(&seqUrlInfo, ids);
-            m_currSeqTaxid = seqUrlInfo.taxid;
-            //**********Get custom links only for the first gi
-            if(gi_in_use_this_gi == firstGi && m_AlignTemplates != NULL) {    
-                int customLinkTypes = CAlignFormatUtil::eLinkTypeSeqViewer;
-                if(seqLength > k_GetSubseqThreshhold){
-                    customLinkTypes += CAlignFormatUtil::eDownLoadSeq;
+            int linksDisplayOption = 0;
+
+            //Get custom links only for the first gi
+            if(gi_in_use_this_gi == firstGi && m_AlignTemplates != NULL){
+                linksDisplayOption += eDisplayResourcesLinks;
+                if(seqLength > k_GetSubseqThreshhold) {
+                    linksDisplayOption += eDisplayDownloadLink;
                 }
-            
-                m_CustomLinksList = CAlignFormatUtil::GetCustomLinksList(&seqUrlInfo,
-                               *alnDispParams->seqID,
-                               m_Scope,                                             
-                               customLinkTypes);                               
-            }
+            }                
+            alnDispParams->id_url =  x_GetUrl(bsp_handle,gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids,linksDisplayOption);            
 		}
 		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    
@@ -1978,44 +2004,11 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
 	alnDispParams->gi = FindGi(bsp_handle.GetBioseqCore()->GetId());
 	alnDispParams->seqID = FindBestChoice(bsp_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);
 	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
-	if(m_AlignOption&eHtml){           			
-			string idString = m_AV->GetSeqId(1).GetSeqIdString();			
-			CRange<TSeqPos> range = (m_AlnLinksParams.count(idString) > 0 && m_AlnLinksParams[idString].subjRange) ?
-						CRange<TSeqPos>(m_AlnLinksParams[idString].subjRange->GetFrom() + 1,m_AlnLinksParams[idString].subjRange->GetTo() + 1) :
-						CRange<TSeqPos>(0,0);					
-			bool flip = (m_AlnLinksParams.count(idString) > 0) ? m_AlnLinksParams[idString].flip : false;
-			CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
-                                                 m_QueryNumber,
-                                                 alnDispParams->gi, 
-						                         alnDispParams->label,
-                                                 0,
-                                                 m_cur_align,
-                                                 true,
-                                                 (m_AlignOption & eNewTargetWindow) ? true : false,
-                                                 range,
-                                                 flip,                                         
-                                                 0,
-												 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
-												 
-                        
-			alnDispParams->id_url = x_GetUrl(&seqUrlInfo, bsp_handle.GetBioseqCore()->GetId());
-            m_currSeqTaxid = seqUrlInfo.taxid;
-            if(m_AlignTemplates != NULL) {    
-                int customLinkTypes = CAlignFormatUtil::eLinkTypeMapViewer | CAlignFormatUtil::eLinkTypeSeqViewer;
-                int seqLength = (int)bsp_handle.GetBioseqLength();
-                if(seqLength > k_GetSubseqThreshhold){
-                    customLinkTypes += CAlignFormatUtil::eDownLoadSeq;
-                }                
-                m_CustomLinksList = CAlignFormatUtil::GetCustomLinksList(&seqUrlInfo,
-                               *alnDispParams->seqID,
-                               m_Scope,                                             
-                               customLinkTypes);                               
-            }
-            
-	}
-			
-	alnDispParams->title = GetTitle(bsp_handle);		
-	
+	if(m_AlignOption&eHtml){           	            
+        int linksDisplayOption = (m_AlignTemplates != NULL) ? eDisplayResourcesLinks : 0;            
+        alnDispParams->id_url =  x_GetUrl(bsp_handle,alnDispParams->gi,alnDispParams->label,0,0,bsp_handle.GetBioseqCore()->GetId(),linksDisplayOption);                        
+	}			
+	alnDispParams->title = GetTitle(bsp_handle);			
 	return alnDispParams;
 }
 
@@ -2093,7 +2086,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                              alnDispParams->title);     
                 
             out<<"\n";
-            delete alnDispParams;    
+            
         } else {
             //print each defline 
             bool bMultipleDeflines = false;
@@ -2102,10 +2095,10 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                     iter = bdl.begin(); iter != bdl.end(); iter++){
                 numBdl++;
 				SAlnDispParams *alnDispParams = x_FillAlnDispParams(*iter,
+                                                                    bsp_handle,
 																	aln_vec_info->use_this_gi,
-																	firstGi,
-																	bsp_handle.GetBioseqCore()->IsNa(), 
-																	(int)bsp_handle.GetBioseqLength());
+																	firstGi);
+																
 																	
 
                 if(alnDispParams) {
@@ -2180,7 +2173,6 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                     }
                     out<<"\n";
                     isFirst = false;
-                    delete alnDispParams;
                 }
             }
             if(m_AlignOption&eHtml && bMultipleDeflines) {
@@ -3350,7 +3342,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){
                 numBdl++;                
-				alnDispParams = x_FillAlnDispParams(*iter,use_this_gi,firstGi,bsp_handle.GetBioseqCore()->IsNa(),(int)bsp_handle.GetBioseqLength());                
+				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_gi,firstGi);                
 				if(alnDispParams) {
 					bool hideDefline = (int)(bdl.size()) > k_MaxDeflinesToShow && numBdl >= k_MinDeflinesToShow + 1;
 					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline);                    
@@ -3373,26 +3365,10 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 					delete alnDispParams;
                 }
             }            
-            if(m_AlignOption&eLinkout){     			                    
-                linkoutStr = CAlignFormatUtil::GetFullLinkoutUrl(bdl,
-                                           m_Rid, 
-                                           m_CddRid, 
-                                           m_EntrezTerm, 
-                                           bsp_handle.GetBioseqCore()->IsNa(),
-                                           false,
-                                           true,
-                                           firstGi,
-                                           m_cur_align,
-                                           m_LinkoutOrder,
-                                           m_currSeqTaxid,
-                                           m_DbName,
-                                           m_QueryNumber,                                                 
-                                           m_UserUrl);			    
-            }            
 			m_NumBlastDefLines = numBdl;            
         }
-        list<string> ::iterator it = m_CustomLinksList.end();
-        m_CustomLinksList.splice(it,linkoutStr);
+        //list<string> ::iterator it = m_CustomLinksList.end();
+        //m_CustomLinksList.splice(it,linkoutStr);
 
         if(m_CustomLinksList.size() > 0) {
             string customLinkStr;
@@ -3560,10 +3536,44 @@ void CDisplaySeqalign::x_DisplaySingleAlignParams(CNcbiOstream& out,
     }   
 }
 
+//<div class="dflLnk hsp <@multiHSP@>"><label>Range <@fromHSP@> to <@toHSP@>:</label><@alnHSPLinks@></div>
+string CDisplaySeqalign:: x_FormatAlnHSPLinks(string &alignInfo)
+{
+
+    string hspLinks;
+    if(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber > 1 && m_HSPLinksList.size() > 0) { 
+        const CRange<TSeqPos>& range = m_AV->GetSeqRange(1);	
+        TSeqPos from = (range.GetFrom()> range.GetTo()) ? range.GetTo() : range.GetFrom() + 1;
+        TSeqPos to =   (range.GetFrom()> range.GetTo()) ? range.GetFrom() : range.GetTo() + 1;
+
+        int addToRange = (int)((to - from) * 0.05);//add 5% to each side
+	    int fromAdjust = from - addToRange; 
+	    int toAdjust = to  + addToRange; 			 
+        string customLinkStr;
+        ITERATE(list<string>, iter_custList, m_HSPLinksList){
+            string singleLink = CAlignFormatUtil::MapTemplate(*iter_custList,"from",fromAdjust); 
+		    singleLink = CAlignFormatUtil::MapTemplate(singleLink,"to",toAdjust);
+            singleLink = CAlignFormatUtil::MapTemplate(singleLink,"fromHSP",from);
+            singleLink = CAlignFormatUtil::MapTemplate(singleLink,"toHSP",to);        
+            hspLinks += singleLink;
+        }                    
+        alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"fromHSP",from);
+        alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"toHSP",to);
+    }    
+    string multiHSP = (hspLinks.empty()) ? "hidden" : "" ;       
+
+    
+    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnHSPLinks",hspLinks);
+    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"multiHSP",multiHSP);
+
+    return alignInfo;    
+}
+
 //Displays features, Score Expect, Idnt,Gaps,strand
 string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info)                                                  
 {
     string alignInfo;
+    
     if (m_AlignOption&eShowBlastInfo) { 
         
         //7. Display score,bits,expect,method
@@ -3577,6 +3587,10 @@ string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info)
         //6. Display Dynamic Features            
         alignInfo = x_FormatDynamicFeaturesInfo(alignInfo, aln_vec_info);    
     }
+    
+    alignInfo = (alignInfo.empty()) ? m_AlignTemplates->alignInfoTmpl : alignInfo;    
+    alignInfo =  x_FormatAlnHSPLinks(alignInfo);        
+    
 	m_currAlignHsp++;	
 	string alignRowsTemplate = (m_currAlignHsp == m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber) ? m_AlignTemplates->alignRowTmplLast : m_AlignTemplates->alignRowTmpl;
 	
@@ -4079,7 +4093,7 @@ void CDisplaySeqalign::x_PreProcessSingleAlign(CSeq_align_set::Tdata::const_iter
 }
 
 
-void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs, bool checkGiFirst) //(blast_rank = 1,2...)
+void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs) //(blast_rank = 1,2...)
 {
     string alignRows;
     hash_set <string> :: const_iterator idsIter;
@@ -4110,7 +4124,7 @@ void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <strin
          //int selectedGi = atoi(selectedID.c_str());         
 
          string currID;
-         if(checkGiFirst && subid->Which() == CSeq_id::e_Gi) {               
+         if(subid->Which() == CSeq_id::e_Gi) {               
             int currGi = subid->GetGi();            
             currID = NStr::IntToString(currGi);
          }

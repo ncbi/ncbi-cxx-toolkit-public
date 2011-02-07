@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -371,7 +371,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                     sdl->linkout = m_UseLinkoutDB
                         ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
                         : CAlignFormatUtil::GetLinkout((**iter));
-                    if (!m_AdvancedView)
+                    if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)            
                         sdl->linkout_list =
                             CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
@@ -389,7 +389,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                         sdl->linkout = m_UseLinkoutDB
                             ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
                             : CAlignFormatUtil::GetLinkout((**iter));
-                        if (!m_AdvancedView)
+                        if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)
                             sdl->linkout_list = 
                                 CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
@@ -412,6 +412,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     //get score and id url
     if(m_Option & eHtml){      
         bool useTemplates = m_DeflineTemplates != NULL;
+        bool advancedView = (m_DeflineTemplates != NULL) ? m_DeflineTemplates->advancedView : false;
         string accession;
         sdl->id->GetLabel(&accession, CSeq_id::eContent);
         sdl->score_url = !useTemplates ? "<a href=#" : "";
@@ -419,17 +420,19 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             NStr::IntToString(sdl->gi);
         sdl->score_url += !useTemplates ? ">" : "";
 
-		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;		
-
+		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;        
 		//blast_rank = num_align + 1
 		CRange<TSeqPos> seqRange = ((int)m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
         bool flip = ((int)m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;        
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
                                                  m_QueryNumber,sdl->gi, accession, sdl->linkout,
                                                  blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,flip); 
-        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef,useTemplates, m_AdvancedView);        
-        if (m_AdvancedView){
-            if (m_Option & eLinkout) {                    
+        seqUrlInfo.resourcesUrl = m_Reg.get() ? m_Reg->Get(m_BlastType, "RESOURCES_URL") : kEmptyStr;
+        seqUrlInfo.useTemplates = useTemplates;        
+        seqUrlInfo.advancedView = advancedView;
+        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef);        
+        if (advancedView){
+            if (m_Option & eLinkout && (sdl->gi > 0) ) {                    
                     sdl->linkout_list = CAlignFormatUtil::GetFullLinkoutUrl(bdl,
                                            m_Rid, 
                                            m_CddRid, 
@@ -448,8 +451,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             list <string> customLinksList = 
             CAlignFormatUtil::GetCustomLinksList(&seqUrlInfo,
                            aln_id,
-                           *m_ScopeRef,                                             
-                           CAlignFormatUtil::eLinkTypeSeqViewer);
+                           *m_ScopeRef);                           
             sdl->linkout_list.splice(sdl->linkout_list.begin(),customLinksList);
         }
     }
@@ -505,8 +507,8 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
                                      size_t line_length,
                                      size_t num_defline_to_show,
                                      bool translated_nuc_alignment,
-                                     CRange<TSeqPos>* master_range,
-                                     bool advancedView):
+                                     CRange<TSeqPos>* master_range):
+                                     
     m_AlnSetRef(&seqalign), 
     m_ScopeRef(&scope),
     m_LineLen(line_length),
@@ -532,8 +534,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
         }
     }
     m_DeflineTemplates = NULL;
-    m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
-    m_AdvancedView = advancedView;
+    m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();    
 }
 
 CShowBlastDefline::~CShowBlastDefline()
