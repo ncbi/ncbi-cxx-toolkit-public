@@ -77,8 +77,8 @@ public:
                       size_t line_length = 65,
                       size_t deflines_to_show = kDfltArgNumDescriptions,
                       bool translated_nuc_alignment = false,
-                      CRange<TSeqPos>* master_range = NULL,
-                      bool advancedView = false);
+                      CRange<TSeqPos>* master_range = NULL);
+                      
     
     ~CShowBlastDefline();
     
@@ -118,6 +118,7 @@ public:
         string seqInfoTmpl;           ///< sequence infor template
         string psiFirstNewAnchorTmpl; ///< first new seq anchor template (psi blast)
         string psiGoodGiHiddenTmpl;   ///< good gi hidden field tewmplate (psi blast)
+        bool   advancedView;
     };
 
     ///options per DisplayOption
@@ -391,8 +392,6 @@ protected:
 
     ///blast defline templates
     SDeflineTemplates *m_DeflineTemplates;
-
-    bool    m_AdvancedView;
     
     CCgiContext* m_Ctx;
 
