@@ -313,7 +313,7 @@ public:
     ///Structure that holds information needed for creation seqID URL in descriptions
     /// and alignments
     struct SSeqURLInfo { 
-        string user_url;        ///< user url TOOL_URL from .ncbirc 
+        string user_url;        ///< user url TOOL_URL from .ncbirc
         string blastType;       ///< blast type refer to blobj->adm->trace->created_by
         bool isDbNa;            ///< bool indicating if the database is nucleotide or not
         string database;        ///< name of the database
@@ -331,16 +331,19 @@ public:
         bool addCssInfo;        ///< bool indicating that css info should be added
         string segs;            ///< string containing align segments in the the following format seg1Start-seg1End,seg2Start-seg2End
         string resourcesUrl;    ///< URL(s) to other resources from .ncbirc
+        bool useTemplates;      ///< bool indicating that templates should be used when contsructing links
+        bool advancedView;      ///< bool indicating that advanced view design option should be used when contsructing links
         string seqUrl;          ///< sequence URL created
         
         
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "") 
+                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "",bool useTmpl = false, bool advView = false) 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
                     queryNumber(qn), gi(gi), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
-                    new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf),segs(seqSegs),resourcesUrl(resUrl){}
+                    new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf),segs(seqSegs),
+                    resourcesUrl(resUrl),useTemplates(useTmpl),advancedView(advView){}
 
     };
     
@@ -367,9 +370,15 @@ public:
     };
 
     enum CustomLinkType {
+        eLinkTypeDefault = 0,
         eLinkTypeMapViewer = (1 << 0),
         eLinkTypeSeqViewer = (1 << 1),
-        eDownLoadSeq = (1 << 2)
+        eDownLoadSeq = (1 << 2),
+        eLinkTypeGenLinks = (1 << 3),
+        eLinkTypeTraceLinks = (1 << 4),
+        eLinkTypeSRALinks = (1 << 5),
+        eLinkTypeSNPLinks = (1 << 6),
+        eLinkTypeGSFastaLinks = (1 << 7)
     };
 
     ///Output blast errors
@@ -988,51 +997,57 @@ public:
     ///Create URL for seqid
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param id: seqid CSeq_id
-    ///@param scopeRef:scope to fetch sequence
-    ///@param useTemplates:bool indicating if templates are used
-    ///@param advancedView:bool indicating advanced view design option
+    ///@param scopeRef:scope to fetch sequence    
     static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
                            const objects::CSeq_id& id,
-                           objects::CScope &scope,
-                           bool useTemplates = false,
-                           bool advancedView = false);
+                           objects::CScope &scope);
+                           
 
     ///Create URL for seqid 
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
-    ///@param ids: CBioseq::TId object    
-    ///@param useTemplates:bool indicating if templates are used
+    ///@param ids: CBioseq::TId object        
     static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
-                            const objects::CBioseq::TId* ids,                            
-                            bool useTemplates = false,
-                            bool advancedView = false);
+                            const objects::CBioseq::TId* ids);                            
 
     ///Create URL for seqid that goes to entrez or trace
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param id: seqid CSeq_id
-    ///@param scopeRef:scope to fetch sequence
-    ///@param useTemplates:bool indicating if templates are used
+    ///@param scopeRef:scope to fetch sequence    
     static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,
                               const objects::CSeq_id& id,
-                              objects::CScope &scope,
-                              bool useTemplates);
+                              objects::CScope &scope);
+                              
 
     ///Create URL for seqid that goes to entrez or trace
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
-    ///@param ids: CBioseq::TId object    
-    ///@param useTemplates:bool indicating if templates are used
-    static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const objects::CBioseq::TId* ids,bool useTemplates);
-    
+    ///@param ids: CBioseq::TId object        
+    static string GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const objects::CBioseq::TId* ids);
 
-    ///Create the list of string links for seqid that goes to mapviewer,seqviewer or download
+    ///Create info indicating what kind of links to display
+    ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction    
+    ///@param customLinkTypesInp: original types of links to be included in the list    
+    ///@return: int containing customLinkTypes with the bits set to indicate what kind of links to display for the sequence
+    ///
+    ///examples:(Mapviewer,Download,GenBank,FASTA,Seqviewer, Trace, SRA, SNP, GSFASTA)
+    static int SetCustomLinksTypes(SSeqURLInfo *seqUrlInfo, int customLinkTypesInp);
+
+    ///Create the list of string links for seqid that go 
+    /// - to GenBank,FASTA and Seqviewer for gi > 0 
+    /// - customized links determined by seqUrlInfo->blastType for gi = 0
+    /// - customized links determined by customLinkTypes    
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param id: CSeq_id object    
     ///@param scope: scope to fetch this sequence
-    ///@param customLinkTypes: types of links to be included in the list(mapviewer,seqviewer or download)
+    ///@param customLinkTypes: types of links to be included in the list(mapviewer,seqviewer or download etc)    
     ///@param customLinksList: list of strings containing links
     static list <string>  GetCustomLinksList(SSeqURLInfo *seqUrlInfo,
                                    const objects::CSeq_id& id,
                                    objects::CScope &scope,                                             
-                                   int customLinkTypes);    
+                                   int customLinkTypes = eLinkTypeDefault);
+
+    static list<string>  GetGiLinksList(SSeqURLInfo *seqUrlInfo,bool hspRange = false);
+                                          
+                                   
     ///Get Gene symobol for gi
     ///@param  giForGeneLookup: gi
     ///@return: string gene symbol
