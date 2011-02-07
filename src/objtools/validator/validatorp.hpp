@@ -1028,7 +1028,7 @@ private:
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
-    bool x_IsMrnaMissingForCDS (const CSeq_feat& cds_feat, const CTSE_Handle& tse, bool is_genbank, bool have_cds_gene_mrna, vector< CMappedFeat > & mrna_list);
+    void x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq);
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
     unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
@@ -1232,7 +1232,7 @@ public:
     bool IsAccountedFor(void) { return m_AccountedFor; }
     void SetAccountedFor (bool val) { m_AccountedFor = val; }
 
-    const CMappedFeat &m_Mrna;
+    CConstRef<CSeq_feat> m_Mrna;
 
 private:
     CMappedFeat m_Cds;
@@ -1251,15 +1251,19 @@ public:
     bool IsXrefMatch (void) { return m_XrefMatch; }
     bool HasmRNA(void) { return m_AssignedMrna != NULL; }
 
-    void AssignFirstmRNA (void);
+    bool NeedsmRNA(void) { return m_NeedsmRNA; }
+    void SetNeedsmRNA(bool val) { m_NeedsmRNA = val; }
+    void AssignSinglemRNA (void);
     int GetNummRNA(bool &loc_unique);
 
-    const CMappedFeat &m_Cds;
+    CConstRef<CSeq_feat> m_Cds;
+    const CMatchmRNA * GetmRNA(void) { return m_AssignedMrna; }
 
 private:
     vector < CMatchmRNA * > m_OverlappingmRNAs;
     CMatchmRNA * m_AssignedMrna;
     bool m_XrefMatch;
+    bool m_NeedsmRNA;
 };
 
 
