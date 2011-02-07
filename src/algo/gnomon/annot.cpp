@@ -515,10 +515,6 @@ void RemoveTrailingNs::transform_model(CGeneModel& m)
         for(three_p=0; three_p < (int)vec.size() && vec[(int)vec.size()-1-three_p] == 'N'; ++three_p);
 
         if(five_p > 0 || three_p > 0) {
-            if(five_p%3 != 0) 
-                five_p += 3-five_p%3; 
-            if(three_p%3 != 0) 
-                three_p += 3-three_p%3; 
             int left = five_p;
             int right = three_p;
             if(m.Strand() == eMinus)
