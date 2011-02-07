@@ -6,7 +6,7 @@
 #################################
 
 
-BLAST_FORMATTER_MINIMAL_LIBS = xblastformat align_format blastdb_format \
+BLAST_FORMATTER_MINIMAL_LIBS = xblastformat align_format taxon1 blastdb_format \
     gene_info xalnmgr blastxml xcgi xhtml
 # BLAST_FORMATTER_LIBS = $(BLAST_FORMATTER_MINIMAL_LIBS)
 BLAST_FORMATTER_LIBS = $(BLAST_INPUT_LIBS)
