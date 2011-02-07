@@ -191,6 +191,13 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         eRed
     };
 
+
+    enum LinksDisplayParams {        
+        eDisplayDefault = 0,
+        eDisplayResourcesLinks = (1 << 0),
+        eDisplayDownloadLink = (1 << 1)
+    };
+
     /// Constructors
     ///@param seqalign: seqalign to display. 
     ///@param mask_seqloc: seqloc to be displayed with different characters
@@ -215,7 +222,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     void DisplaySeqalign(CNcbiOstream & out);
 
     //Display pariwise seqalign for the set of seq IDS (for future use)
-    void DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs, bool checkGiFirst=true);
+    void DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs);
     //Data representing templates for defline display 
     struct SAlignTemplates {
         string alignHeaderTmpl; ///< Template for displaying header,deflines and gene info  - BLAST_ALIGN_HEADER
@@ -518,6 +525,7 @@ private:
     
     map < string, struct SAlnLinksParams > m_AlnLinksParams;
     list <string> m_CustomLinksList;
+    list <string> m_HSPLinksList;
 
     CRef < objects::CObjectManager > m_FeatObj;  // used for fetching feature
     CRef < objects::CScope > m_featScope;        // used for fetching feature
@@ -536,10 +544,6 @@ private:
 
     int        m_currAlignHsp;///< Current HSP number for single alignmnet
 
-    int     m_currSeqTaxid;///< Current sequence taxid
-
-    string  m_UserUrl;///< User URL for blast type
-    
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
     ///@param out: stream for display
@@ -553,7 +557,6 @@ private:
     ///
     string x_PrintDefLine(const objects::CBioseq_Handle& bsp_handle, SAlnInfo* aln_vec_info);
                         
-
     /// display sequence for one row
     ///@param sequence: the sequence for that row
     ///@param id: seqid
@@ -579,7 +582,13 @@ private:
     ///@param ids: id list    
     ///@param seqUrlInfo: struct containging params for URL    
     ///    
-    string x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<objects::CSeq_id> >& ids);
+
+
+    CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(int giToUse,string accession,int linkout,
+        int taxid,const list<CRef<objects::CSeq_id> >& ids);
+
+    string x_GetUrl(int giToUse,string accession,int linkout,int taxid,const list<CRef<objects::CSeq_id> >& ids);
+    string x_GetUrl(const objects::CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid,const list<CRef<objects::CSeq_id> >& ids,int lnkDispPrarms = 0);
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list
@@ -814,17 +823,19 @@ private:
     void x_PreProcessSingleAlign(objects::CSeq_align_set::Tdata::const_iterator currSeqAlignIter,
                                  objects::CSeq_align_set &actual_aln_list,
                                   bool multipleSeqs);
-	SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
-								   list<int>& use_this_gi,
-								   int firstGi,
-								   bool isNa,
-								  int seqLength);
-								  
+    string x_FormatAlnHSPLinks(string &alignInfo);
+	
+    SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
+                                        const objects::CBioseq_Handle& bsp_handle,
+								        list<int>& use_this_gi,
+								        int firstGi);
+								   
+    
 	SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);	
 	string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
 	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
-    void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
+	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
     bool m_UseLinkoutDB; // temporary to determine whether to use LinkoutDB or not
 };
 
