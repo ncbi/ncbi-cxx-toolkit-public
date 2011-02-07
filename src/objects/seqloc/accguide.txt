@@ -517,7 +517,7 @@ special  CAJ33891           embl_tpa_prot
 special  CAJ38407-CAJ38408  embl_tpa_prot
 special  CAJ38499           embl_tpa_prot
 special  CAJ40614           embl_tpa_prot
-special  CAJ43786-CAJ43809  embl_tpa_prot
+special  CAJ43796-CAJ43809  embl_tpa_prot
 special  CAJ43920-CAJ43921  embl_tpa_prot
 special  CAJ44080           embl_tpa_prot
 special  CAJ44121           embl_tpa_prot
@@ -550,7 +550,6 @@ special  CAL10024           embl_tpa_prot
 special  CAL36192           embl_tpa_prot
 special  CAL36432-CAL36433  embl_tpa_prot
 special  CAL41938-CAL41942  embl_tpa_prot
-special  CAL43796-CAL43799  embl_tpa_prot
 special  CAL48250           embl_tpa_prot
 special  CAL48381-CAL48383  embl_tpa_prot
 special  CAL59562-CAL59577  embl_tpa_prot
@@ -9465,13 +9464,13 @@ special  CBF90396-CBF90397  embl_tpa_prot
 special  CBF90399           embl_tpa_prot
 special  CBF90401           embl_tpa_prot
 special  CBF90404           embl_tpa_prot
-special  CBL43266-CBL43270  embl_tpa_prot
-special  CBL43272-CBL43273  embl_tpa_prot
-special  CBL43375-CBL43394  embl_tpa_prot
+special  CBL43266-CBL43309  embl_tpa_prot
+special  CBL43311-CBL43352  embl_tpa_prot
+special  CBL43354-CBL43394  embl_tpa_prot
 special  CBN66325           embl_tpa_prot
 special  CBN69342           embl_tpa_prot
 special  CBN69349           embl_tpa_prot
 special  CBV36767-CBV36776  embl_tpa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CBY89319-CZZ99999  unreserved_prot
+#special CBZ13178-CZZ99999  unreserved_prot
