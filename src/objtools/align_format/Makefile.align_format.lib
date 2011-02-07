@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = xnetblast blastdb
+ASN_DEP = xnetblast blastdb taxon1
 
 ###  BASIC PROJECT SETTINGS
 LIB = align_format
