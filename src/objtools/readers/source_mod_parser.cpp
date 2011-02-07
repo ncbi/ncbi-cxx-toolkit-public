@@ -61,7 +61,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/submit/Submit_block.hpp>
+// #include <objects/submit/Submit_block.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
