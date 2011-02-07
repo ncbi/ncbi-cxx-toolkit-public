@@ -91,7 +91,7 @@ struct TransformFunction {
     void operator()(CAlignModel& a) { transform_align(a); }
 
     virtual void transform_model(CGeneModel& a) {}
-    virtual void transform_align(CAlignModel& a) {}
+    virtual void transform_align(CAlignModel& a) { transform_model(a); }
 };
 struct Predicate {
     virtual ~Predicate() {}
