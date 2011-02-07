@@ -1510,6 +1510,7 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
     bool has_5prime_unaligned = false;
     bool has_3prime_unaligned = false;
     bool has_polya_tail = false;
+    bool has_incomplete_polya_tail = false;
     bool has_mismatches = false;
     bool has_gaps = false;
 
@@ -1581,7 +1582,9 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         if (al->GetSegs().GetSpliced().IsSetPoly_a()) {
             has_polya_tail = true;
         }
-    } else {
+    }
+
+    if ( !has_5prime_unaligned  &&  !has_gaps  &&  !has_3prime_unaligned ) {
         /// only compare for mismatches and 3' unaligned
         /// we assume that the feature is otherwise aligned
 
@@ -1614,6 +1617,9 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
 
         if (tail_len  &&  count_a >= tail_len * 0.8) {
             has_polya_tail = true;
+            if (count_a < tail_len * 0.95) {
+                has_incomplete_polya_tail = true;
+            }
         }
         else if (tail_len) {
             has_3prime_unaligned = true;
@@ -1621,8 +1627,11 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
     }
 
     string except_text;
-    if (has_5prime_unaligned  ||  has_3prime_unaligned  ||
-        has_gaps  ||  has_length_mismatch) {
+    if (has_5prime_unaligned  ||
+        has_3prime_unaligned  ||
+        has_gaps  ||
+        has_length_mismatch  ||
+        has_incomplete_polya_tail) {
         except_text = "unclassified transcription discrepancy";
     }
     else if (has_mismatches) {
@@ -1635,6 +1644,7 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
              << " has_mismatches=" << (has_mismatches ? "yes" : "no")
              << " has_gaps=" << (has_gaps ? "yes" : "no")
              << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
+             << " has_incomplete_polya_tail=" << (has_incomplete_polya_tail ? "yes" : "no")
              << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
              << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no")
              << " has_length_mismatch=" << (has_length_mismatch ? "yes" : "no")
