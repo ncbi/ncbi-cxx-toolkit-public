@@ -354,7 +354,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  JE  embl_patent",
     "2+6  JF  gb_dirsub",
     "2+6  JG  gb_est",
-    "2+6  JH  gb_other_nuc",
+    "2+6  JH  gb_con",
     "2+6  JI  gb_other_nuc",
     "2+6  JJ  gb_other_nuc",
     "2+6  JK  gb_other_nuc",
