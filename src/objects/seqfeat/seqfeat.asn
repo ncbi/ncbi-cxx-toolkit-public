@@ -427,8 +427,8 @@ VariantProperties ::= SEQUENCE {
         above-5pct-all    (2), -- >5% minor allele freq in each and all
                                -- populations (0x02)
         above-5pct-1plus  (4), -- >5% minor allele freq in 1+ populations (0x04)
-        validated         (8), -- Bit is set if the variant has 2+ minor allele
-                               -- count based on freq or genotype data
+        validated         (8), -- Bit is set if the variant has a minor allele
+                               -- observed in two or more separate chromosomes
         above-1pct-all   (16), -- >1% minor allele freq in each and all
                                -- populations (0x10)
         above-1pct-1plus (32)  -- >1% minor allele freq in 1+ populations (0x20)
@@ -487,6 +487,8 @@ Phenotype ::= SEQUENCE {
         probable-non-pathogenic (3),
         probable-pathogenic     (4),
         pathogenic              (5),
+        drug-response           (6),
+        histocompatibility      (7),
         other                   (255)
     } OPTIONAL
 }
@@ -496,7 +498,17 @@ Population-data ::= SEQUENCE {
     population VisibleString,
     genotype-frequency REAL OPTIONAL,
     chromosomes-tested INTEGER OPTIONAL,
-    sample-ids SET OF Object-id OPTIONAL
+    sample-ids SET OF Object-id OPTIONAL,
+    allele-frequency REAL OPTIONAL,
+
+    -- This field is an explicit bit-field
+    -- Valid values should be a bitwise combination (= simple sum)
+    -- of any of the values below
+    flags INTEGER {
+        is-default-population   (1),
+        is-minor-allele         (2),
+        is-rare-allele          (4)
+    }
 }
 
 Ext-loc ::= SEQUENCE {
@@ -611,6 +623,9 @@ Variation-ref ::= SEQUENCE {
         other           (255)
     } OPTIONAL,
 
+    -- NOTE:
+    -- 'allele-frequency' here refers to the minor allele frequency of the
+    -- default population
     allele-frequency REAL OPTIONAL,
 
     -- is this variant the ancestral allele?
