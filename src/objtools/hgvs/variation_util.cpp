@@ -59,6 +59,8 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 
@@ -69,6 +71,138 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+CVariationUtil::ETestStatus CVariationUtil::CheckAssertedAllele(
+        const CSeq_feat& variation_feat,
+        string* asserted_out,
+        string* actual_out)
+{
+    if(!variation_feat.GetData().IsVariation()) {
+        return eNotApplicable;
+    }
+
+    CVariation_ref vr;
+    vr.Assign(variation_feat.GetData().GetVariation());
+    if(!vr.IsSetLocation()) {
+        vr.SetLocation().Assign(variation_feat.GetLocation());
+    }
+    s_PropagateLocsInPlace(vr);
+
+
+    bool have_asserted_seq = false;
+    bool is_ok = true;
+    for(CTypeIterator<CVariation_ref> it1(Begin(vr)); it1; ++it1) {
+        const CVariation_ref& vr1 = *it1;
+        if(!vr1.IsSetExt()
+           || !vr1.GetExt().GetType().IsStr()
+           || vr1.GetExt().GetType().GetStr() != "HGVS"
+           || !vr1.GetExt().HasField("asserted_sequence"))
+        {
+            continue;
+        }
+
+        have_asserted_seq = true;
+        const string& asserted_seq = vr1.GetExt().GetField("asserted_sequence").GetData().GetStr();
+
+        //an asserted sequnece may be of the form "A..BC", where ".." is to be interpreted as a
+        //gap of arbitrary length - we need to match prefix and suffix separately
+        string prefix, suffix;
+        string str_tmp = NStr::Replace(asserted_seq, "..", "\t"); //SplitInTwo's delimiter must be single-character
+        NStr::SplitInTwo(str_tmp, "\t", prefix, suffix);
+
+        CSeqVector v(vr1.GetLocation(), *m_scope, CBioseq_Handle::eCoding_Iupac);
+        string actual_seq;
+        v.GetSeqData(v.begin(), v.end(), actual_seq);
+
+        if(   prefix.size() > 0 && !NStr::StartsWith(actual_seq, prefix)
+           || suffix.size() > 0 && !NStr::EndsWith(actual_seq, suffix))
+        {
+            is_ok = false;
+            if(asserted_out) {
+                *asserted_out = asserted_seq;
+            }
+            if(actual_out) {
+                *actual_out = actual_seq;
+            }
+            break;
+        }
+    }
+
+    return !have_asserted_seq ? eNotApplicable : is_ok ? ePass : eFail;
+}
+
+/*!
+ * if variation-feat is not intronic, or alignment is not spliced-seg -> eNotApplicable
+ * else if variation is intronic but location is not at exon boundary -> eFail
+ * else -> ePass
+ */
+CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CSeq_feat& variation_feat, const CSeq_align& aln)
+{
+    if(!variation_feat.GetData().IsVariation() || !aln.GetSegs().IsSpliced()) {
+        return eNotApplicable;
+    }
+
+    CVariation_ref vr;
+    vr.Assign(variation_feat.GetData().GetVariation());
+    if(!vr.IsSetLocation()) {
+        vr.SetLocation().Assign(variation_feat.GetLocation());
+    }
+    s_PropagateLocsInPlace(vr);
+
+    set<TSeqPos> exon_terminal_pts;
+    ITERATE(CSpliced_seg::TExons, it, aln.GetSegs().GetSpliced().GetExons()) {
+        const CSpliced_exon& exon = **it;
+        exon_terminal_pts.insert(exon.GetProduct_start().IsNucpos() ?
+                                     exon.GetProduct_start().GetNucpos() :
+                                     exon.GetProduct_start().GetProtpos().GetAmin());
+        exon_terminal_pts.insert(exon.GetProduct_end().IsNucpos() ?
+                                     exon.GetProduct_end().GetNucpos() :
+                                     exon.GetProduct_end().GetProtpos().GetAmin());
+    }
+
+    bool is_intronic = false;
+    bool is_ok = true;
+    for(CTypeIterator<CVariation_ref> it1(Begin(vr)); it1; ++it1) {
+        const CVariation_ref& vr1 = *it1;
+        if(!vr1.GetData().IsInstance()) {
+            continue;
+        }
+        const CSeq_id* id1 = vr1.GetLocation().GetId();
+        if(!id1 || !aln.GetSeq_id(0).Equals(*id1)) {
+            continue;
+        }
+
+        if(vr1.GetData().GetInstance().GetDelta().size() == 0) {
+            continue;
+        }
+
+        const CDelta_item& first_delta = *vr1.GetData().GetInstance().GetDelta().front();
+        const CDelta_item& last_delta = *vr1.GetData().GetInstance().GetDelta().front();
+
+        //check intronic offsets for bio-start
+        if(first_delta.IsSetAction() && first_delta.GetAction() == CDelta_item::eAction_offset) {
+            is_intronic = true;
+            if(exon_terminal_pts.find(vr1.GetLocation().GetStart(eExtreme_Biological)) == exon_terminal_pts.end()) {
+                is_ok = false;
+            }
+        }
+
+        //check intronic offsets for bio-stop
+        if(last_delta.IsSetAction() && last_delta.GetAction() == CDelta_item::eAction_offset) {
+            is_intronic = true;
+            if(exon_terminal_pts.find(vr1.GetLocation().GetStop(eExtreme_Biological)) == exon_terminal_pts.end()) {
+                is_ok = false;
+            }
+        }
+
+        if(!is_ok) {
+            break;
+        }
+    }
+
+    return !is_intronic ? eNotApplicable : is_ok ? ePass : eFail;
+}
 
 
 void CVariationUtil::s_FactorOutLocsInPlace(CVariation_ref& v)
@@ -89,7 +223,7 @@ void CVariationUtil::s_FactorOutLocsInPlace(CVariation_ref& v)
     aggregate_loc = aggregate_loc->Merge(CSeq_loc::fSortAndMerge_All, NULL);
     v.SetLocation(*aggregate_loc);
 
-    //round-2: reset the set-member locatinos if they are the same as this
+    //round-2: reset the set-member locations if they are the same as this
     NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
         CVariation_ref& vr = **it;
         if(vr.IsSetLocation() && vr.GetLocation().Equals(v.GetLocation())) {
@@ -634,6 +768,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     }
 
     if(!vr.GetData().GetInstance().GetDelta().size() == 1) {
+        //can't process intronic, etc.
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
     }
 
@@ -642,6 +777,9 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     if(delta.IsSetSeq() && !delta.GetSeq().IsLiteral()) {
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "A sequence in delta is specified, but not a literal");
     }
+
+
+    //todo: if sum of ins - sum of del % 3 is not 0, add fs
 
 
     CRef<CSeq_loc_Mapper> nuc2prot_mapper;

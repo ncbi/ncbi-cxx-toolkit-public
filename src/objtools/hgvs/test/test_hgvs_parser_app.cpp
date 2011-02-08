@@ -104,24 +104,27 @@ public:
         string err_code;
 
         try {
+            CVariationUtil variation_util(m_parser->SetScope());
+
             LOG_POST("Parsing " << m_expr);
             feat = m_parser->AsVariationFeat(m_expr);
 
             if(m_convert_to_precursor) {
                 LOG_POST("Converting to precursor");
-                CVariationUtil u(m_parser->SetScope());
-                feat = u.ProtToPrecursor(*feat);
+                feat = variation_util.ProtToPrecursor(*feat);
             }
 
-            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\t" << "OK");
+            CVariationUtil::ETestStatus allele_status = variation_util.CheckAssertedAllele(*feat);
+
+            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\tallele_check_status:" << allele_status << "\t" << "OK");
 
             if(m_throw_str != "") {
                 BOOST_REQUIRE_THROW(feat.Reset(), CException); //this will not throw
             }
 
 
-        } catch(CException& e) {
-            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\t" << "FAILED:" << e.GetMsg());
+        } catch(CHgvsParser::CHgvsParserException& e) {
+            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\t" << "FAILED:" << e.GetMsg() << ";err-code=" << e.GetErrCode());
 
 
             if(m_throw_str != "") {
@@ -180,6 +183,7 @@ CRef<CSeq_loc> CreateLoc(const string& id, TSeqPos from = kInvalidSeqPos, TSeqPo
     return loc;
 }
 
+#include <limits>
 NCBITEST_INIT_TREE()
 {
     CException::SetStackTraceLevel(eDiag_Error);

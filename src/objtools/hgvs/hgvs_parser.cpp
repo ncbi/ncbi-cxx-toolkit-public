@@ -59,7 +59,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/BioSource.hpp>
-
+#include <objects/general/User_object.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 
 #include <serial/iterator.hpp>
@@ -77,8 +77,29 @@ BEGIN_NCBI_SCOPE
     if((i->value.id()) != (SGrammar::rule_id))             \
     {HGVS_THROW(eGrammatic, "Unexpected rule " + CHgvsParser::SGrammar::s_GetRuleName(i->value.id()) ); }
 
+
 CHgvsParser::SGrammar::TRuleNames CHgvsParser::SGrammar::s_rule_names;
 CHgvsParser::SGrammar CHgvsParser::s_grammar;
+
+
+void AttachAssertedSequence(CVariation_ref& vr, const string& seq)
+{
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("HGVS");
+    uo->AddField("asserted_sequence", seq);
+    vr.SetExt(*uo);
+}
+
+void AttachAssertedSequence(CVariation_ref& vr, const CSeq_literal& literal)
+{
+    if(literal.GetSeq_data().IsIupacna()) {
+        AttachAssertedSequence(vr, literal.GetSeq_data().GetIupacna());
+    } else if(literal.GetSeq_data().IsNcbieaa()) {
+        AttachAssertedSequence(vr, literal.GetSeq_data().GetNcbieaa());
+    } else {
+        HGVS_THROW(eLogic, "Seq-data is neither IUPAC-AA or IUPAC-NA");
+    }
+}
 
 
 const CSeq_loc& CHgvsParser::CContext::GetLoc() const
@@ -583,6 +604,9 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_prot_pos(TIterator const& i, const CCon
     ++it;
     SOffsetPoint pnt = x_pos_spec(it, context);
 
+    pnt.asserted_sequence = prot_literal->GetSeq_data().GetNcbieaa();
+
+#if 0
     if(!pnt.IsOffset()) {
         //Create temporary loc and validate against it, since at this point context does not
         //have this loc set, since we are in the process of constructing it.
@@ -590,7 +614,7 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_prot_pos(TIterator const& i, const CCon
         tmp_loc->SetPnt(*pnt.pnt);
         context.Validate(*prot_literal, *tmp_loc);
     }
-
+#endif
 
     return pnt;
 }
@@ -634,6 +658,10 @@ CHgvsParser::SOffsetLoc CHgvsParser::x_range(TIterator const& i, const CContext&
     ofloc.start_offset = pnt1.offset;
     ofloc.stop_offset = pnt2.offset;
 
+    if(pnt1.asserted_sequence != "" || pnt2.asserted_sequence != "") {
+        ofloc.asserted_sequence = pnt1.asserted_sequence + ".." + pnt2.asserted_sequence;
+    }
+
     return ofloc;
 }
 
@@ -650,10 +678,12 @@ CHgvsParser::SOffsetLoc CHgvsParser::x_location(TIterator const& i, const CConte
         SOffsetPoint pnt = x_prot_pos(it, context);
         ofloc.loc->SetPnt(*pnt.pnt);
         ofloc.start_offset = pnt.offset;
+        ofloc.asserted_sequence = pnt.asserted_sequence;
     } else if(it->value.id() == SGrammar::eID_pos_spec) {
         SOffsetPoint pnt = x_pos_spec(it, context);
         ofloc.loc->SetPnt(*pnt.pnt);
         ofloc.start_offset = pnt.offset;
+        ofloc.asserted_sequence = pnt.asserted_sequence;
     } else if(it->value.id() == SGrammar::eID_nuc_range || it->value.id() == SGrammar::eID_prot_range) {
         ofloc = x_range(it, context);
     } else {
@@ -828,10 +858,12 @@ CRef<CVariation_ref> CHgvsParser::x_delins(TIterator const& i, const CContext& c
 
     ++it; //skip "del"
 
+
     if(it->value.id() == SGrammar::eID_raw_seq) {
         CRef<CSeq_literal> literal = x_raw_seq(it, context);
-        context.Validate(*literal);
+        //context.Validate(*literal);
         ++it;
+        AttachAssertedSequence(*vr, *literal);
     }
 
     ++it; //skip "ins"
@@ -866,8 +898,9 @@ CRef<CVariation_ref> CHgvsParser::x_deletion(TIterator const& i, const CContext&
 
     if(it->value.id() == SGrammar::eID_raw_seq) {
         CRef<CSeq_literal> literal = x_raw_seq(it, context);
-        context.Validate(*literal);
+        //context.Validate(*literal);
         ++it;
+        AttachAssertedSequence(*vr, *literal);
     }
 
     var_inst.SetDelta();
@@ -935,7 +968,8 @@ CRef<CVariation_ref> CHgvsParser::x_duplication(TIterator const& i, const CConte
         } else if(dup_seq->GetSeq().GetLiteral().GetLength() != context.GetLoc().GetTotalRange().GetLength()) {
             HGVS_THROW(eSemantic, "The expected duplication length is not equal to the location length");
         } else if(dup_seq->GetSeq().GetLiteral().IsSetSeq_data()) {
-            context.Validate(dup_seq->GetSeq().GetLiteral());
+            //context.Validate(dup_seq->GetSeq().GetLiteral());
+            AttachAssertedSequence(*vr, dup_seq->GetSeq().GetLiteral());
         }
     }
 
@@ -958,7 +992,8 @@ CRef<CVariation_ref> CHgvsParser::x_nuc_subst(TIterator const& i, const CContext
         HGVS_THROW(eSemantic, "Expected literal of length 1 left of '>'");
     }
 
-    context.Validate(*seq_from);
+    //context.Validate(*seq_from);
+    AttachAssertedSequence(*vr, *seq_from);
 
     ++it;//skip to ">"
     ++it;//skip to next
@@ -1040,12 +1075,12 @@ CRef<CVariation_ref> CHgvsParser::x_ssr(TIterator const& i, const CContext& cont
     } else {
         loc->Assign(context.GetLoc());
         if(!literal.IsNull()) {
-            context.Validate(*literal);
+            //context.Validate(*literal);
+            AttachAssertedSequence(*vr, *literal);
         }
     }
 
     vr->SetLocation().Assign(*loc);
-
 
     if(it->value.id() == SGrammar::eID_ssr) { // list('['>>int_p>>']', '+') with '[',']','+' nodes discarded;
         //Note: see ssr grammar in the header for reasons why we have to match all alleles here
@@ -1174,7 +1209,6 @@ CRef<CVariation_ref> CHgvsParser::x_prot_ext(TIterator const& i, const CContext&
     ++it;
     string ext_len_str(it->value.begin(), it->value.end());
     int ext_len = NStr::StringToInt(ext_len_str);
-
 
     vr->SetLocation().SetPnt().SetId().Assign(context.GetId());
     vr->SetLocation().SetPnt().SetStrand(eNa_strand_plus);
@@ -1350,6 +1384,7 @@ CRef<CVariation_ref> CHgvsParser::x_expr2(TIterator const& i, const CContext& co
         ++it;
         vr = x_expr3(it, local_context);
 
+        //if the location is intronic, create delta-items for intronic offsets
         CRef<CDelta_item> di1;
         if(ofloc.start_offset.value || ofloc.start_offset.fuzz) {
             di1.Reset(new CDelta_item);
@@ -1363,7 +1398,6 @@ CRef<CVariation_ref> CHgvsParser::x_expr2(TIterator const& i, const CContext& co
                 di1->SetSeq().SetLiteral().SetFuzz().Assign(*ofloc.start_offset.fuzz);
             }
         }
-
         CRef<CDelta_item> di2;
         if(ofloc.stop_offset.value || ofloc.stop_offset.fuzz) {
             di2.Reset(new CDelta_item);
@@ -1378,6 +1412,7 @@ CRef<CVariation_ref> CHgvsParser::x_expr2(TIterator const& i, const CContext& co
             }
         }
 
+        //attach intronic offsets to the variation delta-items
         for(CTypeIterator<CVariation_inst> it2(Begin(*vr)); it2; ++it2) {
             CVariation_inst& inst = *it2;
             if(di1) {
@@ -1388,6 +1423,12 @@ CRef<CVariation_ref> CHgvsParser::x_expr2(TIterator const& i, const CContext& co
             }
         }
 
+
+        //in some cases, e.g. protein variations, asserted sequence comes from the location-specification, rather than
+        //variation-specification,
+        if(ofloc.asserted_sequence != "") {
+           AttachAssertedSequence(*vr, ofloc.asserted_sequence);
+        }
 
     } else if(it->value.id() == SGrammar::eID_prot_ext) {
         vr = x_prot_ext(it, context);
@@ -1842,7 +1883,6 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool flip_str
         {
             CSeqportUtil::Convert(*sd, sd, CSeq_data::e_Iupacaa, 0, literal.GetLength() );
             out += sd->GetIupacaa().Get();
-            //todo: add AA positions
         }
 
     } else {

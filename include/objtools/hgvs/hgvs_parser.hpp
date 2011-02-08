@@ -80,6 +80,13 @@ USING_SCOPE(objects);
 
 #define HGVS_THROW(err_code, message) NCBI_THROW(CHgvsParser::CHgvsParserException, err_code, message)
 
+//Todo:
+//Capture asserted sequence.
+//Assertion in the HGVS may be specified partially, e.g.
+//Ala25_Lys46 - only endponds are asserted. Represent as "A..L"
+
+
+
 class CHgvsParser : public CObject
 {
 public:
@@ -194,6 +201,7 @@ protected:
             }
         }
 
+        string asserted_sequence;
         CRef<CSeq_point> pnt;
         SFuzzyInt offset;
     };
@@ -231,6 +239,7 @@ protected:
             return start_offset.value || start_offset.value || stop_offset.fuzz || stop_offset.fuzz;
         }
 
+        string asserted_sequence;
         CRef<CSeq_loc> loc;
         SFuzzyInt start_offset;
         SFuzzyInt stop_offset;

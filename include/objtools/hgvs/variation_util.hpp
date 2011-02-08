@@ -67,6 +67,29 @@ public:
        : m_scope(&scope)
     {}
 
+    enum ETestStatus
+    {
+        eFail,
+        ePass,
+        eNotApplicable,
+    };
+
+    /*!
+     * if variation-feat is not intronic, or alignment is not spliced-seg -> eNotApplicable
+     * else if variation is intronic but location is not at exon boundary -> eFail
+     * else -> ePass
+     */
+    ETestStatus CheckExonBoundary(const CSeq_feat& variation_feat, const CSeq_align& aln);
+
+
+    /* !
+     * if an allele not asserted -> eNotApplicable
+     * else if an allele is asserted, but differs from actual -> eFail
+     * else -> ePass
+     */
+    ETestStatus CheckAssertedAllele(const CSeq_feat& variation_feat, string* asserted = NULL, string* actual = NULL);
+
+
     /*!
      * Create remapped copy of the variation feat via given alignment
      * The seq-locs that are
