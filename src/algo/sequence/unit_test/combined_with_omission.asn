@@ -4,7 +4,6 @@ Seq-annot ::= {
       data gene {
         locus "SLC37A1"
       },
-      partial TRUE,
       location int {
         from 914182,
         to 995990,
@@ -12,226 +11,6 @@ Seq-annot ::= {
         id other {
           accession "NT_011515",
           version 12
-        },
-        fuzz-to lim gt
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 54020
-        },
-        {
-          db "HGNC",
-          tag id 11024
-        },
-        {
-          db "HPRD",
-          tag id 10479
-        },
-        {
-          db "MIM",
-          tag id 608094
-        }
-      }
-    },
-    {
-      data rna {
-        type mRNA,
-        ext name "Homo sapiens solute carrier family 37 (glycerol-3-phosphate
- transporter), member 1 (SLC37A1), mRNA"
-      },
-      partial TRUE,
-      product whole gi 49619230,
-      location packed-int {
-        {
-          from 914182,
-          to 914293,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 916846,
-          to 916967,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 932827,
-          to 933060,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 940326,
-          to 940407,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 949248,
-          to 949380,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 950022,
-          to 950100,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 954062,
-          to 954197,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 956954,
-          to 957030,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 957986,
-          to 958152,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 961653,
-          to 961690,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 968612,
-          to 968692,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 973508,
-          to 973639,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 976628,
-          to 976718,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 978365,
-          to 978427,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 979258,
-          to 979343,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 980377,
-          to 980425,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 981535,
-          to 981608,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 982910,
-          to 982988,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 989368,
-          to 989465,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 994286,
-          to 994350,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          }
-        },
-        {
-          from 994895,
-          to 995990,
-          strand plus,
-          id other {
-            accession "NT_011515",
-            version 12
-          },
-          fuzz-to lim gt
         }
       },
       dbxref {
@@ -437,6 +216,37 @@ Seq-annot ::= {
         {
           db "CCDS",
           tag str "CCDS13689.1"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "COL18A1"
+      },
+      partial TRUE,
+      location int {
+        from 3819537,
+        to 3928074,
+        strand plus,
+        id gi 224514634,
+        fuzz-from lim lt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag id 2195
+        },
+        {
+          db "HPRD",
+          tag str "00382"
+        },
+        {
+          db "MIM",
+          tag id 120328
         }
       }
     },
@@ -1870,37 +1680,6 @@ Seq-annot ::= {
         }
       },
       except-text "unclassified translation discrepancy"
-    },
-    {
-      data gene {
-        locus "COL18A1"
-      },
-      partial TRUE,
-      location int {
-        from 3819537,
-        to 3928074,
-        strand plus,
-        id gi 224514634,
-        fuzz-from lim lt
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 80781
-        },
-        {
-          db "HGNC",
-          tag id 2195
-        },
-        {
-          db "HPRD",
-          tag str "00382"
-        },
-        {
-          db "MIM",
-          tag id 120328
-        }
-      }
     },
     {
       data rna {

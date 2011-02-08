@@ -71,10 +71,15 @@ struct CFeatureGenerator::SImplementation {
     void StitchSmallHoles(objects::CSeq_align& align);
     void TrimHolesToCodons(objects::CSeq_align& align);
 
+    CConstRef<objects::CSeq_align> CleanAlignment(const objects::CSeq_align& align_in);
     CRef<CSeq_feat> ConvertAlignToAnnot(const objects::CSeq_align& align,
                              objects::CSeq_annot& annot,
                              objects::CBioseq_set& seqs,
-                             int gene_id, const objects::CSeq_feat* cdregion);
+                             int gene_id, const objects::CSeq_feat* cdregion,
+                             bool call_on_align_list);
+    void ConvertAlignToAnnot(const list< CRef<objects::CSeq_align> > &aligns,
+                             objects::CSeq_annot &annot,
+                             objects::CBioseq_set &seqs);
     void SetFeatureExceptions(objects::CSeq_feat& feat,
                               const objects::CSeq_align* align);
     void SetPartialFlags(CRef<CSeq_feat> gene_feat,
@@ -155,20 +160,21 @@ private:
                                         CBioseq_set& seqs,
                                         const CSeq_id& rna_id,
                                         const CSeq_feat* cdregion);
-    CRef<CSeq_feat> x_CreateGeneFeature(const CBioseq_Handle& handle,
-                                        SMapper& mapper,
-                                        CRef<CSeq_feat> mrna_feat,
-                                        CRef<CSeq_loc> loc,
-                                        const CSeq_id& genomic_id,
-                                        int gene_id = 0);
+    void x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
+                             const CBioseq_Handle& handle,
+                             SMapper& mapper,
+                             CRef<CSeq_loc> loc,
+                             const CSeq_id& genomic_id,
+                             int gene_id = 0);
     CRef<CSeq_feat> x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                                        const CSeq_align& align,
                                        CRef<CSeq_loc> loc,
                                        const CTime& time,
                                        size_t model_num,
                                        CBioseq_set& seqs,
-                                       CSeq_loc_Mapper::TMapOptions opts,
-                                       CRef<CSeq_feat> gene_feat);
+                                       CSeq_loc_Mapper::TMapOptions opts);
+    void x_CopyDbxrefs(CConstRef<CSeq_feat> gene_feat,
+                       CRef<CSeq_feat> child_feat);
     void x_CopyAdditionalFeatures(const CBioseq_Handle& handle,
                                   SMapper& mapper,
                                   CSeq_annot& annot);

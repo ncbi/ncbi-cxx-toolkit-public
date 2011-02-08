@@ -83,6 +83,20 @@ void CGeneModel::CreateGeneModelFromAlign(const CSeq_align& align_in,
     generator.ConvertAlignToAnnot(*clean_align, annot, seqs);
 }
 
+void CGeneModel::CreateGeneModelsFromAligns(const list< CRef<objects::CSeq_align> > &aligns,
+                                       CScope& scope,
+                                       CSeq_annot& annot,
+                                       CBioseq_set& seqs,
+                                       TGeneModelCreateFlags flags,
+                                       TSeqPos allowed_unaligned)
+{
+    CFeatureGenerator generator(scope);
+    generator.SetFlags(flags | CFeatureGenerator::fGenerateLocalIds);
+    generator.SetAllowedUnaligned(allowed_unaligned);
+
+    generator.ConvertAlignToAnnot(aligns, annot, seqs);
+}
+
 void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
                                       CScope& scope,
                                       const CSeq_align* align)
@@ -106,6 +120,7 @@ void CGeneModel::RecomputePartialFlags(CScope& scope,
     CFeatureGenerator generator(scope);
     generator.RecomputePartialFlags(annot);
 }
+
 
 /////////////////////////////////////
 
@@ -155,28 +170,27 @@ void CFeatureGenerator::SetAllowedUnaligned(TSeqPos value)
     m_impl->m_allowed_unaligned = value;
 }
 
-CConstRef<objects::CSeq_align>
-CFeatureGenerator::CleanAlignment(const objects::CSeq_align& align_in)
+CConstRef<CSeq_align>
+CFeatureGenerator::CleanAlignment(const CSeq_align& align_in)
 {
-    if (!align_in.CanGetSegs() || !align_in.GetSegs().IsSpliced())
-        return CConstRef<CSeq_align>(&align_in);
-
-    CRef<CSeq_align> align(new CSeq_align);
-    align->Assign(align_in);
-
-    m_impl->StitchSmallHoles(*align);
-    m_impl->TrimHolesToCodons(*align);
-
-    return align;
+    return m_impl->CleanAlignment(align_in);
 }
 
 CRef<CSeq_feat> CFeatureGenerator::ConvertAlignToAnnot(const CSeq_align& align,
                                             CSeq_annot& annot,
                                             CBioseq_set& seqs,
                                             int gene_id,
-                                            const objects::CSeq_feat* cdregion)
+                                            const CSeq_feat* cdregion)
 {
-    return m_impl->ConvertAlignToAnnot(align, annot, seqs, gene_id, cdregion);
+    return m_impl->ConvertAlignToAnnot(align, annot, seqs, gene_id, cdregion, false);
+}
+
+void CFeatureGenerator::ConvertAlignToAnnot(
+                         const list< CRef<CSeq_align> > &aligns,
+                         CSeq_annot &annot,
+                         CBioseq_set &seqs)
+{
+    m_impl->ConvertAlignToAnnot(aligns, annot, seqs);
 }
 
 void CFeatureGenerator::SetFeatureExceptions(CSeq_feat& feat,
@@ -186,17 +200,18 @@ void CFeatureGenerator::SetFeatureExceptions(CSeq_feat& feat,
 }
 
 
-void CFeatureGenerator::SetPartialFlags(CRef<objects::CSeq_feat> gene_feat,
-                                        CRef<objects::CSeq_feat> mrna_feat,
-                                        CRef<objects::CSeq_feat> cds_feat)
+void CFeatureGenerator::SetPartialFlags(CRef<CSeq_feat> gene_feat,
+                                        CRef<CSeq_feat> mrna_feat,
+                                        CRef<CSeq_feat> cds_feat)
 {
     m_impl->SetPartialFlags(gene_feat, mrna_feat, cds_feat);
 }
 
-void CFeatureGenerator::RecomputePartialFlags(objects::CSeq_annot& annot)
+void CFeatureGenerator::RecomputePartialFlags(CSeq_annot& annot)
 {
     m_impl->RecomputePartialFlags(annot);
 }
+
 
 ///
 /// Return the mol-info object for a given sequence
@@ -378,13 +393,30 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::x_GetLocFromSplicedE
     
 }
 
+CConstRef<CSeq_align>
+CFeatureGenerator::
+SImplementation::CleanAlignment(const CSeq_align& align_in)
+{
+    if (!align_in.CanGetSegs() || !align_in.GetSegs().IsSpliced())
+        return CConstRef<CSeq_align>(&align_in);
+
+    CRef<CSeq_align> align(new CSeq_align);
+    align->Assign(align_in);
+
+    StitchSmallHoles(*align);
+    TrimHolesToCodons(*align);
+
+    return align;
+}
+
 CRef<CSeq_feat>
 CFeatureGenerator::
-SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
-                                     objects::CSeq_annot& annot,
-                                     objects::CBioseq_set& seqs,
+SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
+                                     CSeq_annot& annot,
+                                     CBioseq_set& seqs,
                                      int gene_id,
-                                     const objects::CSeq_feat* cdregion)
+                                     const CSeq_feat* cdregion,
+                                     bool call_on_align_list)
 {
     CScopeTransaction tr = m_scope->GetTransaction(); // to rollback any changes at return
 
@@ -401,7 +433,6 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
     CTime time(CTime::eCurrent);
 
     const CSeq_id& rna_id = align.GetSeq_id(mapper.GetRnaRow());
-    const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
 
     /// we always need the mRNA location as a reference
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -426,42 +457,45 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
 
     CRef<CSeq_feat> gene_feat;
 
-    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+    CBioseq_Handle handle;
 
-
-    if (gene_id) {
-        TGeneMap::iterator gene = genes.find(gene_id);
-        if (gene == genes.end()) {
-            gene_feat = x_CreateGeneFeature(handle, mapper, mrna_feat, loc,
-                                            genomic_id, gene_id);
+    if(!call_on_align_list){
+        const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
+        handle = m_scope->GetBioseqHandle(rna_id);
+        if (gene_id) {
+            TGeneMap::iterator gene = genes.find(gene_id);
+            if (gene == genes.end()) {
+                x_CreateGeneFeature(gene_feat, handle, mapper, loc,
+                                                genomic_id, gene_id);
+                if (gene_feat) {
+                    _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
+                    annot.SetData().SetFtable().push_back(gene_feat);
+                }
+                gene = genes.insert(make_pair(gene_id,gene_feat)).first;
+            } else {
+                gene_feat = gene->second;
+                gene_feat->SetLocation
+                    (*gene_feat->GetLocation().Add(mrna_feat->GetLocation(),
+                                                   CSeq_loc::fMerge_SingleRange,
+                                                   NULL));
+            }
+    
+            CRef< CSeqFeatXref > genexref( new CSeqFeatXref() );
+            genexref->SetId(*gene_feat->SetIds().front());
+        
+            CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
+            mrnaxref->SetId(*mrna_feat->SetIds().front());
+    
+            gene_feat->SetXref().push_back(mrnaxref);
+            mrna_feat->SetXref().push_back(genexref);
+            
+        } else {
+            x_CreateGeneFeature(gene_feat, handle, mapper,
+                                            loc, genomic_id);
             if (gene_feat) {
                 _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
                 annot.SetData().SetFtable().push_back(gene_feat);
             }
-            gene = genes.insert(make_pair(gene_id,gene_feat)).first;
-        } else {
-            gene_feat = gene->second;
-            gene_feat->SetLocation
-                (*gene_feat->GetLocation().Add(mrna_feat->GetLocation(),
-                                               CSeq_loc::fMerge_SingleRange,
-                                               NULL));
-        }
-
-        CRef< CSeqFeatXref > genexref( new CSeqFeatXref() );
-        genexref->SetId(*gene_feat->SetIds().front());
-    
-        CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
-        mrnaxref->SetId(*mrna_feat->SetIds().front());
-
-        gene_feat->SetXref().push_back(mrnaxref);
-        mrna_feat->SetXref().push_back(genexref);
-        
-    } else {
-        gene_feat = x_CreateGeneFeature(handle, mapper,
-                                        mrna_feat, loc, genomic_id);
-        if (gene_feat) {
-            _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
-            annot.SetData().SetFtable().push_back(gene_feat);
         }
     }
 
@@ -474,7 +508,7 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
 
     CRef<CSeq_feat> cds_feat =
         x_CreateCdsFeature(cdregion, align, loc,
-                           time, model_num, seqs, opts, gene_feat);
+                           time, model_num, seqs, opts);
 
     if (cds_feat) {
         _ASSERT(cds_feat->GetData().Which() != CSeqFeatData::e_not_set);
@@ -494,8 +528,12 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
         annot.SetData().SetFtable().push_back(cds_feat);
     }
 
-    SetPartialFlags(gene_feat, mrna_feat, cds_feat);
-    x_CopyAdditionalFeatures(handle, mapper, annot);
+    if(!call_on_align_list){
+        SetPartialFlags(gene_feat, mrna_feat, cds_feat);
+        x_CopyDbxrefs(gene_feat, mrna_feat);
+        x_CopyDbxrefs(gene_feat, cds_feat);
+        x_CopyAdditionalFeatures(handle, mapper, annot);
+    }
 
     if (gene_id) {
         tr.Commit();
@@ -511,6 +549,61 @@ SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
     }
 
     return mrna_feat;
+}
+
+void
+CFeatureGenerator::
+SImplementation::ConvertAlignToAnnot(
+                         const list< CRef<CSeq_align> > &aligns,
+                         CSeq_annot &annot,
+                         CBioseq_set &seqs)
+{
+    CScope mapper_scope(*CObjectManager::GetInstance());
+    mapper_scope.AddScope(*m_scope);
+    
+    typedef map< CSeq_id_Handle, list< CRef<CSeq_align> > > TAlignsByGene;
+    TAlignsByGene aligns_by_gene;
+
+    CSeq_loc_Mapper::TMapOptions opts = 0;
+    if (m_flags & fDensegAsExon) {
+        opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
+    }
+
+    /// Collate alignments in list by gene
+    ITERATE(list< CRef<CSeq_align> >, align_it, aligns){
+        SMapper mapper(**align_it, mapper_scope, m_allowed_unaligned, opts);
+        const CSeq_id& genomic_id = (*align_it)->GetSeq_id(mapper.GetGenomicRow());
+        aligns_by_gene[CSeq_id_Handle::GetHandle(genomic_id)].push_back(*align_it);
+    }
+
+    ITERATE(TAlignsByGene, by_gene_it, aligns_by_gene){
+        CRef<CSeq_feat> gene_feat;
+        CSeq_annot gene_annot;
+        ITERATE(list< CRef<CSeq_align> >, align_it, by_gene_it->second){
+            CConstRef<CSeq_align> clean_align = CleanAlignment(**align_it);
+            CRef<CSeq_feat> mrna_feat = ConvertAlignToAnnot(*clean_align, gene_annot, seqs, 0, NULL, true);
+    
+            SMapper mapper(*clean_align, mapper_scope, m_allowed_unaligned, opts);
+            const CSeq_id& rna_id = clean_align->GetSeq_id(mapper.GetRnaRow());
+    
+            CRef<CSeq_loc> loc(new CSeq_loc);
+            loc->Assign(mapper.GetRnaLoc());
+    
+            CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+            x_CreateGeneFeature(gene_feat, handle, mapper, loc, *by_gene_it->first.GetSeqId());
+    
+            x_CopyAdditionalFeatures(handle, mapper, gene_annot);
+        }
+        NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat_it, gene_annot.SetData().SetFtable())
+        {
+            if((*feat_it)->GetData().IsCdregion() || (*feat_it)->GetData().IsRna())
+                x_CopyDbxrefs(gene_feat, *feat_it);
+        }
+        gene_annot.SetData().SetFtable().push_front(gene_feat);
+        RecomputePartialFlags(gene_annot);
+        annot.SetData().SetFtable().splice(annot.SetData().SetFtable().end(),
+                                           gene_annot.SetData().SetFtable());
+    }
 }
 
 bool IsContinuous(CSeq_loc& loc)
@@ -985,52 +1078,66 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
     return mrna_feat;
 }
 
-CRef<CSeq_feat>
+void
 CFeatureGenerator::
-SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
+SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
+                                     const CBioseq_Handle& handle,
                                      SMapper& mapper,
-                                     CRef<CSeq_feat> mrna_feat,
                                      CRef<CSeq_loc> loc,
                                      const CSeq_id& genomic_id, int gene_id)
 {
-    CRef<CSeq_feat> gene_feat;
     if (m_flags & fCreateGene) {
         CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
+        CRef<CSeq_loc> gene_loc;
+        bool update_existing_gene = gene_feat;
 
         if (m_flags & fPropagateOnly) {
             //
             // only create a gene feature if one exists on the mRNA feature
             //
             if (feat_iter  &&  feat_iter.GetSize()) {
-                gene_feat.Reset(new CSeq_feat());
-                gene_feat->Assign(feat_iter->GetOriginalFeature());
-                CRef<CSeq_loc> new_loc =
-                    mapper.Map(feat_iter->GetLocation());
-                new_loc->Merge(CSeq_loc::fMerge_SingleRange, NULL);
-                gene_feat->SetLocation(*new_loc);
+                if(!update_existing_gene){
+                    gene_feat.Reset(new CSeq_feat());
+                    gene_feat->Assign(feat_iter->GetOriginalFeature());
+                }
+                gene_loc = mapper.Map(feat_iter->GetLocation());
             }
         } else {
             //
             // always create a gene feature
             //
-            gene_feat.Reset(new CSeq_feat());
-            gene_feat->SetData().SetGene();
-            string title = sequence::GetTitle(handle);
-            if (!title.empty()) {
-                gene_feat->SetData().SetGene().SetLocus(title);
+            if(!update_existing_gene){
+                gene_feat.Reset(new CSeq_feat());
+                gene_feat->SetData().SetGene();
+                string title = sequence::GetTitle(handle);
+                if (!title.empty()) {
+                    gene_feat->SetData().SetGene().SetLocus(title);
+                }
+                if (gene_id) {
+                    string gene_id_str = "gene." + NStr::IntToString(gene_id);
+    
+                    CRef<CObject_id> obj_id( new CObject_id() );
+                    obj_id->SetStr(gene_id_str);
+                    CRef<CFeat_id> feat_id( new CFeat_id() );
+                    feat_id->SetLocal(*obj_id);
+                    gene_feat->SetIds().push_back(feat_id);
+                    gene_feat->SetData().SetGene().SetDesc(gene_id_str);
+                }
             }
-            if (gene_id) {
-                string gene_id_str = "gene." + NStr::IntToString(gene_id);
+            gene_loc = loc;
+        }
 
-                CRef<CObject_id> obj_id( new CObject_id() );
-                obj_id->SetStr(gene_id_str);
-                CRef<CFeat_id> feat_id( new CFeat_id() );
-                feat_id->SetLocal(*obj_id);
-                gene_feat->SetIds().push_back(feat_id);
-                gene_feat->SetData().SetGene().SetDesc(gene_id_str);
+        if(gene_loc){
+            gene_loc = gene_loc->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+            if(update_existing_gene){
+                TSeqRange gene_range =
+                    gene_feat->GetLocation().GetTotalRange() +
+                    gene_loc->GetTotalRange();
+                gene_feat->SetLocation().SetInt().SetFrom(gene_range.GetFrom());
+                gene_feat->SetLocation().SetInt().SetTo(gene_range.GetTo());
+            } else {
+                gene_feat->SetLocation(*gene_loc);
             }
-            gene_feat->SetLocation(*loc->Merge(CSeq_loc::fMerge_SingleRange,
-                                               NULL));
         }
 
         ///
@@ -1044,44 +1151,40 @@ SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle,
                          feat_iter->GetDbxref()) {
                     CRef<CDbtag> tag(new CDbtag);
                     tag->Assign(**xref_it);
-                    gene_feat->SetDbxref().push_back(tag);
+                    bool duplicate = false;
+                    if(update_existing_gene && gene_feat->IsSetDbxref()){
+                        /// Check for duplications
+                        ITERATE(CSeq_feat::TDbxref, previous_xref_it,
+                                gene_feat->GetDbxref())
+                            if((*previous_xref_it)->Match(**xref_it)){
+                                duplicate = true;
+                                break;
+                            }
+                    }
+                    if(!duplicate)
+                        gene_feat->SetDbxref().push_back(tag);
                 }
             }
 
             /// set the locus
-            if (feat_iter->GetData().GetGene().IsSetLocus()) {
+            if (!update_existing_gene &&
+                feat_iter->GetData().GetGene().IsSetLocus()) {
                 gene_feat->SetData().SetGene().SetLocus
                     (feat_iter->GetData().GetGene().GetLocus());
             }
         }
-
-        if (mrna_feat) {
-            /// set dbxrefs
-            if (!mrna_feat->IsSetDbxref()  &&
-                feat_iter.GetSize() == 1  &&
-                feat_iter->IsSetDbxref()) {
-                ITERATE (CSeq_feat::TDbxref, xref_it,
-                         feat_iter->GetDbxref()) {
-                    CRef<CDbtag> tag(new CDbtag);
-                    tag->Assign(**xref_it);
-                    mrna_feat->SetDbxref().push_back(tag);
-                }
-            }
-        }
     }
-    return gene_feat;
 }
 
 CRef<CSeq_feat>
 CFeatureGenerator::
-SImplementation::x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
+SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                                     const CSeq_align& align,
                                     CRef<CSeq_loc> loc,
                                     const CTime& time,
                                     size_t model_num,
                                     CBioseq_set& seqs,
-                                    CSeq_loc_Mapper::TMapOptions opts,
-                                    CRef<CSeq_feat> gene_feat)
+                                    CSeq_loc_Mapper::TMapOptions opts)
 {
     CRef<CSeq_feat> cds_feat;
     if (m_flags & fCreateCdregion && cdregion_on_mrna != NULL) {
@@ -1275,17 +1378,6 @@ SImplementation::x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
                     }
                 }
 
-                /// copy any existing dbxrefs
-                if (gnomon_model_num.empty()  &&  cds_feat  &&  gene_feat  &&
-                    !cds_feat->IsSetDbxref()  &&  gene_feat->IsSetDbxref()) {
-                    ITERATE (CSeq_feat::TDbxref, xref_it,
-                             gene_feat->GetDbxref()) {
-                        CRef<CDbtag> tag(new CDbtag);
-                        tag->Assign(**xref_it);
-                        cds_feat->SetDbxref().push_back(tag);
-                    }
-                }
-
                 /// also copy the code break if it exists
                 if (cds_feat->GetData().GetCdregion().IsSetCode_break()) {
                     CSeqFeatData::TCdregion& cds =
@@ -1333,7 +1425,6 @@ static void s_SetGeneId(CSeq_feat& feat, int gene_id)
         feat.AddDbxref("GeneID", gene_id);
     }
 }
-
 
 void CFeatureGenerator::
 SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
@@ -1400,7 +1491,7 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
 }
 
 void CFeatureGenerator::
-SImplementation::RecomputePartialFlags(objects::CSeq_annot& annot)
+SImplementation::RecomputePartialFlags(CSeq_annot& annot)
 {
     CScope scope(*CObjectManager::GetInstance());
     CSeq_annot_Handle sah = scope.AddSeq_annot(annot);
@@ -1473,6 +1564,33 @@ SImplementation::RecomputePartialFlags(objects::CSeq_annot& annot)
         }
     }
 }
+
+
+void CFeatureGenerator::SImplementation::x_CopyDbxrefs(
+                       CConstRef<CSeq_feat> gene_feat,
+                       CRef<CSeq_feat> child_feat)
+{
+    /// Only copy if both the gene feature and the child feature exist,
+    /// the gene feature has Dbxrefs and the child feature does not
+    if(!gene_feat || !gene_feat->IsSetDbxref() ||
+       !child_feat || child_feat->IsSetDbxref())
+        return;
+
+    /// Special check; don't propagate gene feature dbxrefs to the CDS
+    /// for gnomon
+    if(child_feat->GetData().IsCdregion() &&
+       child_feat->CanGetProduct() &&
+       !ExtractGnomonModelNum(*child_feat->GetProduct().GetId()).empty())
+        return;
+
+    ITERATE (CSeq_feat::TDbxref, xref_it,
+             gene_feat->GetDbxref()) {
+        CRef<CDbtag> tag(new CDbtag);
+        tag->Assign(**xref_it);
+        child_feat->SetDbxref().push_back(tag);
+    }
+}
+
 
 
 void CFeatureGenerator::SImplementation::x_CopyAdditionalFeatures(const CBioseq_Handle& handle, SMapper& mapper, CSeq_annot& annot)

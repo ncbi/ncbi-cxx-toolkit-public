@@ -73,7 +73,10 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                      "Expected bioseqs produced from input alignments",
                      CArgDescriptions::eString);
     arg_desc->AddKey("combined-data-expected", "InputData",
-                     "Expected Single seq-annot produced from all input alignments",
+                     "Expected single seq-annot produced from all input alignments",
+                     CArgDescriptions::eInputFile);
+    arg_desc->AddKey("combined-with-omission-expected", "InputData",
+                     "Expected single seq-annot produced from all input alignments omitting the first RNA feature",
                      CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("data-out", "OutputData",
                      "Seq-annots produced from input alignments",
@@ -83,6 +86,12 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                      CArgDescriptions::eOutputFile);
     arg_desc->AddOptionalKey("combined-data-out", "OutputData",
                      "Single seq-annot produced from all input alignments",
+                     CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("combined-with-omission-out", "OutputData",
+                     "Single seq-annot produced from all input alignments omitting the first RNA feature",
+                     CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("combined-data-expected-sorted", "OutputData",
+                     "Expected single seq-annot produced from all input alignments, sorted",
                      CArgDescriptions::eOutputFile);
 }
 
@@ -178,6 +187,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     CNcbiIstream& align_istr = args["data-in"].AsInputFile();
     CNcbiIstream& annot_istr = args["data-expected"].AsInputFile();
     CNcbiIstream& combined_annot_istr = args["combined-data-expected"].AsInputFile();
+    CNcbiIstream& combined_annot_with_omission_istr = args["combined-with-omission-expected"].AsInputFile();
 
     auto_ptr<CObjectIStream> align_is(CObjectIStream::Open(eSerial_AsnText,
                                                            align_istr));
@@ -185,6 +195,9 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                                                            annot_istr));
     auto_ptr<CObjectIStream> combined_annot_is(CObjectIStream::Open(eSerial_AsnText,
                                                            combined_annot_istr));
+    auto_ptr<CObjectIStream> combined_annot_with_omission_is(
+                                   CObjectIStream::Open(eSerial_AsnText,
+                                   combined_annot_with_omission_istr));
     auto_ptr<CObjectOStream> annot_os;
     if (args["data-out"]) {
         CNcbiOstream& annot_ostr = args["data-out"].AsOutputFile();
@@ -196,6 +209,18 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         CNcbiOstream& combined_annot_ostr = args["combined-data-out"].AsOutputFile();
         combined_annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
                                             combined_annot_ostr));
+    }
+    auto_ptr<CObjectOStream> combined_annot_sorted_os;
+    if (args["combined-data-expected-sorted"]) {
+        CNcbiOstream& combined_annot_sorted_ostr = args["combined-data-expected-sorted"].AsOutputFile();
+        combined_annot_sorted_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            combined_annot_sorted_ostr));
+    }
+    auto_ptr<CObjectOStream> combined_annot_with_omission_os;
+    if (args["combined-with-omission-out"]) {
+        CNcbiOstream& combined_annot_with_omission_ostr = args["combined-with-omission-out"].AsOutputFile();
+        combined_annot_with_omission_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            combined_annot_with_omission_ostr));
     }
     output_test_stream seqdata_test_stream( args["seqdata-expected"].AsString(), true );
     auto_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
@@ -211,11 +236,20 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     CSeq_annot actual_combined_annot;
     CSeq_annot::C_Data::TFtable &actual_combined_features = 
             actual_combined_annot.SetData().SetFtable();
-    set< CRef<CSeq_feat>, CCompareReferents< CRef<CSeq_feat> > > unique_gene_feats;
     CSeq_annot expected_combined_annot;
     *combined_annot_is >> expected_combined_annot;
-    const CSeq_annot::C_Data::TFtable &expected_combined_features = 
-            expected_combined_annot.GetData().GetFtable();
+    CSeq_annot::C_Data::TFtable &expected_combined_features = 
+            expected_combined_annot.SetData().SetFtable();
+    CSeq_annot actual_combined_annot_with_omission;
+    CSeq_annot::C_Data::TFtable &actual_combined_features_with_omission = 
+            actual_combined_annot_with_omission.SetData().SetFtable();
+    CSeq_annot expected_combined_annot_with_omission;
+    *combined_annot_with_omission_is >> expected_combined_annot_with_omission;
+    CSeq_annot::C_Data::TFtable &expected_combined_features_with_omission = 
+            expected_combined_annot_with_omission.SetData().SetFtable();
+
+    set< CSeq_id_Handle > unique_gene_ids;
+    list< CRef<CSeq_align> > aligns;
 
     CFeatureGenerator generator(scope);
     generator.SetFlags((CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
@@ -224,7 +258,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
     for (int alignment = 0; align_istr  &&  annot_istr; ++alignment) {
 
-        CSeq_align align;
+        CRef<CSeq_align> align(new CSeq_align);
         CSeq_annot expected_annot;
 
         /// we wrap the first serialization in try/catch
@@ -232,7 +266,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         /// be at the end of the file.
         /// a failure in the second serialization is fatal
         try {
-            *align_is >> align;
+            *align_is >> *align;
         }
         catch (CEofException&) {
             try {
@@ -245,24 +279,27 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
         cerr << "Alignment "<< ++count <<  endl;
 
-        BOOST_CHECK_NO_THROW(align.Validate(true));
+        BOOST_CHECK_NO_THROW(align->Validate(true));
+
+        aligns.push_back(align);
 
         CBioseq_set seqs;
         CSeq_annot actual_annot;
         const CSeq_annot::C_Data::TFtable &actual_features = 
             actual_annot.SetData().SetFtable();
         {
-            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(*align);
             generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs);
             ITERATE(CSeq_annot::C_Data::TFtable, it, actual_features){
+                CSeq_id_Handle id = CSeq_id_Handle::GetHandle(*(*it)->GetLocation().GetId());
                 /// Add to combined annot, unless this is a gene feature that
                 /// was already added. Also, don't add the RNA feature from the
                 /// very first alignment (to test recomputation of the partial flag
                 /// for the gene)
                 if((!(*it)->GetData().IsGene() ||
-                   unique_gene_feats.insert(*it).second) &&
+                   unique_gene_ids.insert(id).second) &&
                    (!(*it)->GetData().IsRna() || alignment > 0))
-                    actual_combined_features.push_back(*it);
+                    actual_combined_features_with_omission.push_back(*it);
             }
         }
 
@@ -283,10 +320,27 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         s_CompareFtables(actual_features, expected_features);
     }
 
-    generator.RecomputePartialFlags(actual_combined_annot);
+    generator.RecomputePartialFlags(actual_combined_annot_with_omission);
 
-    if (combined_annot_os.get() != NULL) {
+    if (combined_annot_with_omission_os.get() != NULL) {
+        *combined_annot_with_omission_os << actual_combined_annot_with_omission;
+    }
+    s_CompareFtables(actual_combined_features_with_omission, expected_combined_features_with_omission);
+
+    CBioseq_set seqs;
+    generator.ConvertAlignToAnnot(aligns, actual_combined_annot, seqs);
+
+    // ConvertAlignToAnnot collates alignments by gene using unpredictable ordering over
+    // SeqId handles; so order of features in result is unpredictable, we need to sort
+    // them before comparison
+    actual_combined_features.sort(CCompareReferents< CRef<CSeq_feat> >());
+    expected_combined_features.sort(CCompareReferents< CRef<CSeq_feat> >());
+
+    if(combined_annot_os.get() != NULL) {
         *combined_annot_os << actual_combined_annot;
+    }
+    if(combined_annot_sorted_os.get() != NULL) {
+        *combined_annot_sorted_os << expected_combined_annot;
     }
     s_CompareFtables(actual_combined_features, expected_combined_features);
 

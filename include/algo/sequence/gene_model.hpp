@@ -93,6 +93,10 @@ public:
                              int gene_id = 0,
                              const objects::CSeq_feat* cdregion_on_mrna = NULL);
 
+    void ConvertAlignToAnnot(const list< CRef<objects::CSeq_align> > &aligns,
+                             objects::CSeq_annot &annot,
+                             objects::CBioseq_set &seqs);
+
     /// Correctly mark exceptions on a feature
     ///
     void SetFeatureExceptions(objects::CSeq_feat& feat,
@@ -137,6 +141,13 @@ public:
                                          TGeneModelCreateFlags flags = fDefaults,
                                          TSeqPos allowed_unaligned = 10);
 
+    NCBI_DEPRECATED
+    static void CreateGeneModelsFromAligns(const list< CRef<objects::CSeq_align> > &aligns,
+                                           objects::CScope& scope,
+                                           objects::CSeq_annot& annot,
+                                           objects::CBioseq_set& seqs,
+                                           TGeneModelCreateFlags flags = fDefaults,
+                                           TSeqPos allowed_unaligned = 10);
 
     /// Correctly mark exceptions on a feature
     ///
