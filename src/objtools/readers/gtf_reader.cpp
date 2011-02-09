@@ -448,8 +448,9 @@ bool CGtfReader::x_UpdateAnnotStartCodon(
     //
     CRef< CSeq_feat > pCds;
     if ( ! x_FindParentCds( gff, pCds ) ) {
-        cerr << "start_codon sans parent CDS" << endl;
-        return false;
+        if ( ! x_CreateParentCds( gff, pAnnot ) || ! x_FindParentCds( gff, pCds ) ) {
+            return false;
+        }
     }
     if ( ! pCds->IsSetPartial() || ! pCds->GetPartial() ) {
         return true;
@@ -814,9 +815,19 @@ bool CGtfReader::x_CreateParentCds(
 //  -----------------------------------------------------------------------------
 {
     //
-    // Create a single cds feature:
+    // Create a single cds feature.
+	// This creation may either be triggered by an actual CDS feature found in the
+	//	gtf, or by a feature that would imply a CDS feature (such as a start codon 
+	//	or a stop codon). The latter is necessary because nothing the the gtf 
+	//	standard stipulates that gtf features have to be arranged in any particular
+	//	order.
     //
     CRef< CSeq_feat > pFeature( new CSeq_feat );
+
+    string strType = gff.Type();
+    if ( strType != "CDS"  &&  strType != "start_codon"  &&  strType != "stop_codon" ) {
+        return false;
+    }
 
     if ( ! x_FeatureSetDataCDS( gff, pFeature ) ) {
         return false;
@@ -833,21 +844,6 @@ bool CGtfReader::x_CreateParentCds(
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
         return false;
     }
-
-//    if ( x_CdsIsPartial( gff ) ) {
-//        CRef<CSeq_feat> pParent;
-//        if ( x_FindParentMrna( gff, pParent ) ) {
-//            CSeq_loc& loc = pFeature->SetLocation();
-//            if ( loc.GetStart( eExtreme_Positional ) == 
-//                pParent->GetLocation().GetStart( eExtreme_Positional ) ) {
-//                loc.SetPartialStart( true, eExtreme_Positional );
-//            }
-//            if ( loc.GetStop( eExtreme_Positional ) == 
-//                pParent->GetLocation().GetStop( eExtreme_Positional ) ) {
-//                loc.SetPartialStop( true, eExtreme_Positional );
-//            }
-//        }
-//    }
 
     m_CdsMap[ s_FeatureKey( gff ) ] = pFeature;
 
