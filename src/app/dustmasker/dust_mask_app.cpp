@@ -201,13 +201,10 @@ int CDustMaskApplication::Run (void)
             if (res.get()) {
                 writer->Print(bsh, *res, GetArgs()["parse_seqids"] );
             }
-
-            NcbiCerr << "." << flush;
         }
     }
 
     output_stream << flush;
-    NcbiCerr << endl;
     return 0;
 }
 
