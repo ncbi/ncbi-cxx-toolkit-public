@@ -45,11 +45,10 @@
 #ifndef COMMON__NCBI_PACKAGE_VER__H
 #define COMMON__NCBI_PACKAGE_VER__H
 
-#define NCBI_PACKAGE  1
-#define NCBI_PACKAGE_NAME                   "rmblast[1.3]"
-#define NCBI_PACKAGE_VERSION_MAJOR          2
-#define NCBI_PACKAGE_VERSION_MINOR          2 
-#define NCBI_PACKAGE_VERSION_PATCH          24
+#define NCBI_PACKAGE_NAME                   "unknown"
+#define NCBI_PACKAGE_VERSION_MAJOR          0
+#define NCBI_PACKAGE_VERSION_MINOR          0
+#define NCBI_PACKAGE_VERSION_PATCH          0
 #define NCBI_PACKAGE_CONFIG                 ""
 
 
