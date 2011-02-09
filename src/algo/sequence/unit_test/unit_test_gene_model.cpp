@@ -95,13 +95,12 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                      CArgDescriptions::eOutputFile);
 }
 
-/// Class to compare pointers of CRef objects by their referents
-template<class T>
-class CCompareReferents {
-public:
-    bool operator()(T ref1, T ref2)
-    { return *ref1 < *ref2; }
-};
+/// Function to compare Cref<Cseq_feat>s by their referents
+static bool s_CompareFeatRefs(const CRef<CSeq_feat>& ref1,
+                              const CRef<CSeq_feat>& ref2)
+{
+    return *ref1 < *ref2;
+}
 
 void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
                       const CSeq_annot::TData::TFtable &expected)
@@ -333,8 +332,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     // ConvertAlignToAnnot collates alignments by gene using unpredictable ordering over
     // SeqId handles; so order of features in result is unpredictable, we need to sort
     // them before comparison
-    actual_combined_features.sort(CCompareReferents< CRef<CSeq_feat> >());
-    expected_combined_features.sort(CCompareReferents< CRef<CSeq_feat> >());
+    actual_combined_features.sort(s_CompareFeatRefs);
+    expected_combined_features.sort(s_CompareFeatRefs);
 
     if(combined_annot_os.get() != NULL) {
         *combined_annot_os << actual_combined_annot;
