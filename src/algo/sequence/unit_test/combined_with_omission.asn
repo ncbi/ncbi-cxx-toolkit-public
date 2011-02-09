@@ -2,7 +2,13 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "SLC37A1"
+        locus "SLC37A1",
+        desc "solute carrier family 37 (glycerol-3-phosphate transporter),
+ member 1",
+        syn {
+          "FLJ22340",
+          "G3PP"
+        }
       },
       location int {
         from 914182,
@@ -221,7 +227,15 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "COL18A1"
+        locus "COL18A1",
+        desc "collagen, type XVIII, alpha 1",
+        syn {
+          "FLJ27325",
+          "FLJ34914",
+          "KNO",
+          "KNO1",
+          "MGC74745"
+        }
       },
       partial TRUE,
       location int {
@@ -817,7 +831,8 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "WRN"
+        locus "WRN",
+        desc "Werner syndrome"
       },
       partial TRUE,
       location int {
@@ -1079,7 +1094,12 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "ctnnbl1"
+        locus "ctnnbl1",
+        desc "catenin, beta like 1",
+        syn {
+          "MGC77673",
+          "zgc:77673"
+        }
       },
       partial TRUE,
       location int {
@@ -1330,7 +1350,8 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "OAZ1"
+        locus "OAZ1",
+        desc "ornithine decarboxylase antizyme 1"
       },
       location int {
         from 3142906,
@@ -1448,7 +1469,17 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "PEG10"
+        locus "PEG10",
+        desc "paternally expressed 10",
+        syn {
+          "EDR",
+          "HB-1",
+          "KIAA1051",
+          "Mar2",
+          "Mart2",
+          "MEF3L",
+          "RGAG3"
+        }
       },
       location int {
         from 32318479,
@@ -1548,7 +1579,12 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "dnm2l"
+        locus "dnm2l",
+        desc "dynamin2-like",
+        syn {
+          "dnm2",
+          "zgc:77233"
+        }
       },
       partial TRUE,
       location int {
@@ -2253,7 +2289,14 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "pold1"
+        locus "pold1",
+        desc "polymerase (DNA directed), delta 1, catalytic subunit",
+        syn {
+          "fla",
+          "im:7139126",
+          "MGC152688",
+          "zgc:152688"
+        }
       },
       location int {
         from 2407605,
@@ -2637,7 +2680,13 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "USO1"
+        locus "USO1",
+        desc "USO1 vesicle docking protein homolog (yeast)",
+        syn {
+          "P115",
+          "TAP",
+          "VDP"
+        }
       },
       partial TRUE,
       location int {
@@ -4139,7 +4188,13 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "COPG2"
+        locus "COPG2",
+        desc "coatomer protein complex, subunit gamma 2",
+        syn {
+          "2-COP",
+          "DKFZp761N09121",
+          "FLJ11781"
+        }
       },
       location int {
         from 27700604,
@@ -4662,7 +4717,13 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "COPG2"
+        locus "COPG2",
+        desc "coatomer protein complex, subunit gamma 2",
+        syn {
+          "2-COP",
+          "DKFZp761N09121",
+          "FLJ11781"
+        }
       },
       partial TRUE,
       location int {
@@ -5895,7 +5956,8 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "CLDN2"
+        locus "CLDN2",
+        desc "claudin 2"
       },
       location int {
         from 131748,
@@ -5970,7 +6032,8 @@ Seq-annot ::= {
     },
     {
       data gene {
-        locus "COL2A1"
+        locus "COL2A1",
+        desc "collagen, type II, alpha 1"
       },
       partial TRUE,
       location int {

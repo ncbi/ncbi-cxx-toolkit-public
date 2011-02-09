@@ -1090,6 +1090,9 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
         CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
         CRef<CSeq_loc> gene_loc;
         bool update_existing_gene = gene_feat;
+        string gene_id_str = "gene.";
+        if(gene_id)
+            gene_id_str += NStr::IntToString(gene_id);
 
         if (m_flags & fPropagateOnly) {
             //
@@ -1108,20 +1111,12 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
             //
             if(!update_existing_gene){
                 gene_feat.Reset(new CSeq_feat());
-                gene_feat->SetData().SetGene();
-                string title = sequence::GetTitle(handle);
-                if (!title.empty()) {
-                    gene_feat->SetData().SetGene().SetLocus(title);
-                }
                 if (gene_id) {
-                    string gene_id_str = "gene." + NStr::IntToString(gene_id);
-    
                     CRef<CObject_id> obj_id( new CObject_id() );
                     obj_id->SetStr(gene_id_str);
                     CRef<CFeat_id> feat_id( new CFeat_id() );
                     feat_id->SetLocal(*obj_id);
                     gene_feat->SetIds().push_back(feat_id);
-                    gene_feat->SetData().SetGene().SetDesc(gene_id_str);
                 }
             }
             gene_loc = loc;
@@ -1167,12 +1162,23 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
             }
 
             /// set the locus
-            if (!update_existing_gene &&
-                feat_iter->GetData().GetGene().IsSetLocus()) {
-                gene_feat->SetData().SetGene().SetLocus
-                    (feat_iter->GetData().GetGene().GetLocus());
+            if (!update_existing_gene){
+                gene_feat->SetData().SetGene().Assign
+                    (feat_iter->GetData().GetGene());
             }
         }
+
+        if(!gene_feat->SetData().SetGene().IsSetLocus()){
+            /// Didn't find locus in bioseq's gene feature; try to use bioseq's title instead
+            string title = sequence::GetTitle(handle);
+            if (!title.empty()) {
+                gene_feat->SetData().SetGene().SetLocus(title);
+            }    
+        }
+
+        if(gene_id)
+            /// Special case for gnomon, set gene desc from gnomon id
+            gene_feat->SetData().SetGene().SetDesc(gene_id_str);
     }
 }
 

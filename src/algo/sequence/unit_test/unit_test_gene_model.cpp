@@ -157,6 +157,54 @@ void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
                 }
             }
 
+            if(f1.GetData().IsGene() && f2.GetData().IsGene()){
+                BOOST_CHECK(f1.GetData().GetGene().IsSetLocus() ==
+                            f2.GetData().GetGene().IsSetLocus());
+                if (f1.GetData().GetGene().IsSetLocus() !=
+                    f2.GetData().GetGene().IsSetLocus()) {
+                    display = true;
+                }
+                if(f1.GetData().GetGene().IsSetLocus() &&
+                   f2.GetData().GetGene().IsSetLocus()){
+                    BOOST_CHECK(f1.GetData().GetGene().GetLocus() ==
+                                f2.GetData().GetGene().GetLocus());
+                    if (f1.GetData().GetGene().GetLocus() !=
+                        f2.GetData().GetGene().GetLocus()) {
+                        display = true;
+                    }
+                }
+                BOOST_CHECK(f1.GetData().GetGene().IsSetDesc() ==
+                            f2.GetData().GetGene().IsSetDesc());
+                if (f1.GetData().GetGene().IsSetDesc() !=
+                    f2.GetData().GetGene().IsSetDesc()) {
+                    display = true;
+                }
+                if(f1.GetData().GetGene().IsSetDesc() &&
+                   f2.GetData().GetGene().IsSetDesc()){
+                    BOOST_CHECK(f1.GetData().GetGene().GetDesc() ==
+                                f2.GetData().GetGene().GetDesc());
+                    if (f1.GetData().GetGene().GetDesc() !=
+                        f2.GetData().GetGene().GetDesc()) {
+                        display = true;
+                    }
+                }
+                BOOST_CHECK(f1.GetData().GetGene().IsSetSyn() ==
+                            f2.GetData().GetGene().IsSetSyn());
+                if (f1.GetData().GetGene().IsSetSyn() !=
+                    f2.GetData().GetGene().IsSetSyn()) {
+                    display = true;
+                }
+                if(f1.GetData().GetGene().IsSetSyn() &&
+                   f2.GetData().GetGene().IsSetSyn()){
+                    BOOST_CHECK(f1.GetData().GetGene().GetSyn() ==
+                                f2.GetData().GetGene().GetSyn());
+                    if (f1.GetData().GetGene().GetSyn() !=
+                        f2.GetData().GetGene().GetSyn()) {
+                        display = true;
+                    }
+                }
+            }
+
             bool f1_except = f1.IsSetExcept()  &&  f1.GetExcept();
             bool f2_except = f2.IsSetExcept()  &&  f2.GetExcept();
 
