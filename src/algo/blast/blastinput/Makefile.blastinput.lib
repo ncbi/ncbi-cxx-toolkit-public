@@ -9,6 +9,7 @@ cmdline_flags \
 blast_input_aux \
 blastp_args \
 blastn_args \
+rmblastn_args \
 blastx_args \
 tblastn_args \
 tblastx_args \

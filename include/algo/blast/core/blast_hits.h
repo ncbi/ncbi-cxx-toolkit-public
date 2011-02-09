@@ -477,6 +477,15 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list, 
                                const BlastHitSavingOptions* hit_options);
 
+/** Discard the HSPs above the raw threshold from the HSP list 
+ * @param hsp_list List of HSPs for one subject sequence [in] [out]
+ * @param hit_options Options block containing the e-value cut-off [in]
+ * -RMH-
+ */
+NCBI_XBLAST_EXPORT
+Int2 Blast_HSPListReapByRawScore(BlastHSPList* hsp_list,
+                               const BlastHitSavingOptions* hit_options);
+
 /** Cleans out the NULLed out HSP's from the HSP array that
  * is part of the BlastHSPList.
  * @param hsp_list Contains array of pointers to HSP structures [in]
@@ -777,6 +786,12 @@ PHIBlast_HSPResultsSplit(const BlastHSPResults* results,
 NCBI_XBLAST_EXPORT
 Int4
 PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info);
+
+/** Apply Cross_match like masklevel to HSP list.  -RMH-
+ */
+Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
+                                    const BlastQueryInfo *query_info,
+                                    Int4 masklevel, Int4 query_length);
 
 #ifdef __cplusplus
 }

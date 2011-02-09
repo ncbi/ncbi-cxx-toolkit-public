@@ -166,6 +166,8 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SegFilteringWindow;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SegFilteringLocut;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SegFilteringHicut;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UngappedMode;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_ComplexityAdjustMode;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MaskLevel;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UseRealDbSize;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowSize;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WordSize;

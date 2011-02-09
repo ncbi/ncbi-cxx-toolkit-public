@@ -6,6 +6,7 @@
 REQUIRES = objects algo
 
 APP_PROJ = \
+rmblastn \
 blastp \
 blastn \
 blastx \
@@ -41,3 +42,6 @@ rpstblastn:
 	make -f Makefile.rpstblastn_app
 blast_formatter:
 	make -f Makefile.blast_formatter_app
+rmblastn:
+	make -f Makefile.rmblastn_app
+

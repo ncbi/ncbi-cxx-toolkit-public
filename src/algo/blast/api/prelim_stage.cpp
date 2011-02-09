@@ -143,8 +143,10 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
         (m_Options->CreateSnapshot());
     _TRACE("Launching BLAST with " << GetNumberOfThreads() << " threads");
 
-    BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 
-                                  GetNumberOfThreads());
+    // -RMH- This appears to be a problem right now.  When used...this
+    // can cause all the work to go to a single thread!
+    //BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 
+    //                              GetNumberOfThreads());
 
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
@@ -158,6 +160,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
 
     // ... launch the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
+        printf("Launching thread...\n");
         (*thread)->Run();
     }
 

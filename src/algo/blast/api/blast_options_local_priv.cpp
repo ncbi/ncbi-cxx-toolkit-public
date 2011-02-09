@@ -471,6 +471,8 @@ x_BlastScoringOptions_cmp(const BlastScoringOptions* a,
     if (a->reward != b->reward) return false;
     if (a->penalty != b->penalty) return false;
     if (a->gapped_calculation != b->gapped_calculation) return false;
+    // Added to support complexity adjusted scoring in RMBlastN -RMH-
+    if (a->complexity_adjusted_scoring != b->complexity_adjusted_scoring) return false;
     if (a->gap_open != b->gap_open) return false;
     if (a->gap_extend != b->gap_extend) return false;
     if (a->is_ooframe != b->is_ooframe) return false;

@@ -93,6 +93,12 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgNumThreads;
 /// Argument for scoring matrix
 NCBI_BLASTINPUT_EXPORT extern const string kArgMatrixName;
 
+// Argurment for mask_level for RMBlastN -RMH-
+NCBI_BLASTINPUT_EXPORT extern const string kArgMaskLevel;
+
+// Argurment for complexity adjustment mode of RMBlastN -RMH-
+NCBI_BLASTINPUT_EXPORT extern const string kArgComplexityAdj;
+
 /// Argument for expectation value cutoff
 NCBI_BLASTINPUT_EXPORT extern const string kArgEvalue;
 /// Argument for minimum raw gapped score for preliminary gapped and traceback

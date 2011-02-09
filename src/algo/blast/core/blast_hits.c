@@ -1678,6 +1678,44 @@ Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list,
    return 0;
 }
 
+/** Same as Blast_HSPListReapByEvalue() except that it uses
+ *  the raw score of the hit and the HitSavingOptions->cutoff_score
+ *  to filter out hits. -RMH- 
+ */
+Int2 Blast_HSPListReapByRawScore(BlastHSPList* hsp_list,
+        const BlastHitSavingOptions* hit_options)
+{
+   BlastHSP* hsp;
+   BlastHSP** hsp_array;
+   Int4 hsp_cnt = 0;
+   Int4 index;
+   double cutoff;
+
+   if (hsp_list == NULL)
+      return 0;
+
+   cutoff = hit_options->expect_value;
+
+   hsp_array = hsp_list->hsp_array;
+   for (index = 0; index < hsp_list->hspcnt; index++) {
+      hsp = hsp_array[index];
+
+      ASSERT(hsp != NULL);
+
+      if ( hsp->score < hit_options->cutoff_score ) {
+         hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+      } else {
+         if (index > hsp_cnt)
+            hsp_array[hsp_cnt] = hsp_array[index];
+         hsp_cnt++;
+      }
+   }
+
+   hsp_list->hspcnt = hsp_cnt;
+
+   return 0;
+}
+
 /** callback used to sort HSP lists in order of increasing OID
  * @param x First HSP list [in]
  * @param y Second HSP list [in]
@@ -2816,6 +2854,113 @@ typedef struct SHspWrap {
     BlastHSPList *hsplist;  /**< The HSPList to which this HSP belongs */
     BlastHSP *hsp;          /**< HSP described by this structure */
 } SHspWrap;
+
+/** callback used to sort a list of encapsulated HSP
+ *  structures in order of decreasing raw score 
+ *  -RMH-
+ */
+static int s_SortHspWrapRawScore(const void *x, const void *y)
+{
+    SHspWrap *wrap1 = (SHspWrap *)x;
+    SHspWrap *wrap2 = (SHspWrap *)y;
+    if (wrap1->hsp->score > wrap2->hsp->score)
+        return -1;
+    if (wrap1->hsp->score < wrap2->hsp->score)
+        return 1;
+
+    return 0;
+}
+
+// Masklevel filtering for rmblastn. -RMH-
+Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
+                                    const BlastQueryInfo *query_info,
+                                    Int4 masklevel, Int4 query_length)
+{
+   Int4 i, j, k, m;
+   Int4 hsp_count;
+   SHspWrap *hsp_array;
+   BlastIntervalTree *tree;
+
+   /* set up the interval tree; subject offsets are not needed */
+
+   tree = Blast_IntervalTreeInit(0, query_length + 1, 0, 0);
+
+   for (i = 0; i < results->num_queries; i++) {
+      BlastHitList *hitlist = results->hitlist_array[i];
+      if (hitlist == NULL)
+         continue;
+
+      for (j = hsp_count = 0; j < hitlist->hsplist_count; j++) {
+         BlastHSPList *hsplist = hitlist->hsplist_array[j];
+         hsp_count += hsplist->hspcnt;
+      }
+      //printf("QUERY TOTAL HITS = %d\n", hsp_count );
+
+      /* empty each HSP into a combined HSP array, then
+         sort the array by raw score */
+
+      hsp_array = (SHspWrap *)malloc(hsp_count * sizeof(SHspWrap));
+
+      for (j = k = 0; j < hitlist->hsplist_count; j++) {
+         BlastHSPList *hsplist = hitlist->hsplist_array[j];
+         for (m = 0; m < hsplist->hspcnt; k++, m++) {
+            BlastHSP *hsp = hsplist->hsp_array[m];
+            hsp_array[k].hsplist = hsplist;
+            hsp_array[k].hsp = hsp;
+         }
+         hsplist->hspcnt = 0;
+      }
+
+      qsort(hsp_array, hsp_count, sizeof(SHspWrap), s_SortHspWrapRawScore);
+
+      /* Starting with the best HSP, use the interval tree to
+         check that the query range of each HSP in the list has
+         not already been enveloped by too many higher-scoring
+         HSPs. If this is not the case, add the HSP back into results */
+
+      Blast_IntervalTreeReset(tree);
+
+      for (j = 0; j < hsp_count; j++) {
+         BlastHSPList *hsplist = hsp_array[j].hsplist;
+         BlastHSP *hsp = hsp_array[j].hsp;
+
+         if (BlastIntervalTreeMasksHSP(tree,
+                         hsp, query_info, 0, masklevel)) {
+             //printf("Contained: %d q:%d-%d\n", hsp->score, hsp->query.offset, hsp->query.end );
+             Blast_HSPFree(hsp);
+         }
+         else {
+             //printf("Adding: %d q:%d-%d\n", hsp->score, hsp->query.offset, hsp->query.end );
+             BlastIntervalTreeAddHSP(hsp, tree, query_info, eQueryOnlyStrandIndifferent);
+             Blast_HSPListSaveHSP(hsplist, hsp);
+
+             /* the first HSP added back into an HSPList
+                automatically has the best e-value */
+             // RMH: hmmmmmmm
+             if (hsplist->hspcnt == 1)
+                 hsplist->best_evalue = hsp->evalue;
+         }
+      }
+      sfree(hsp_array);
+
+      /* remove any HSPLists that are still empty after the 
+         culling process. Sort any remaining lists by score */
+      for (j = 0; j < hitlist->hsplist_count; j++) {
+         BlastHSPList *hsplist = hitlist->hsplist_array[j];
+         if (hsplist->hspcnt == 0) {
+             hitlist->hsplist_array[j] =
+                   Blast_HSPListFree(hitlist->hsplist_array[j]);
+         }
+         else {
+             Blast_HSPListSortByScore(hitlist->hsplist_array[j]);
+         }
+      }
+      Blast_HitListPurgeNullHSPLists(hitlist);
+   }
+
+   tree = Blast_IntervalTreeFree(tree);
+   return 0;
+}
 
 /** callback used to sort a list of encapsulated HSP
  *  structures in order of increasing e-value, using

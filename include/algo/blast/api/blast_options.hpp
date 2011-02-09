@@ -320,6 +320,15 @@ public:
     bool GetGappedMode() const;
     void SetGappedMode(bool m = true);
 
+    // Masklevel filtering option -RMH-
+    int GetMaskLevel() const;
+    void SetMaskLevel(int s);
+
+    /// Returns true if cross_match-like complexity adjusted
+    //  scoring is required, false otherwise. -RMH-
+    bool GetComplexityAdjMode() const;
+    void SetComplexityAdjMode(bool m = true);
+
     /************************ Scoring options ************************/
     const char* GetMatrixName() const;
     void SetMatrixName(const char* matrix);

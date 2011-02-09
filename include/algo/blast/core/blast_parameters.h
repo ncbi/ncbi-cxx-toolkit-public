@@ -115,6 +115,9 @@ typedef struct BlastInitialWordParameters {
                                         seeds? */
    Int4 nucl_score_table[256]; /**< the combined score of all match/mismatch
                                     combinations for aligning four bases */
+   Boolean matrix_only_scoring; /**< Use the scoring matrix ( not table )
+                                     to score ungapped and gapped alignments 
+                                     -RMH- */
    Boolean ungapped_extension; /**< Should an ungapped extension be
                                   performed? */
 } BlastInitialWordParameters;
@@ -172,6 +175,9 @@ typedef struct BlastHitSavingParameters {
    Boolean do_sum_stats;  /**< TRUE if sum stats will be used.  Can override the
                                   do_sum_stats Boolean in the options if criteria for 
                                   doing sum stats are not met.  */
+   Int4 mask_level; /**< Only keep the highest scoring HSP when more than
+                          one HSP overlaps the same region of the query by
+                          more than or equal to mask_level %. -RMH- */
 } BlastHitSavingParameters;
 
 /** Because approximate gapped alignment adds extra overhead,
@@ -421,6 +427,17 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
    const BlastInitialWordParameters* word_params,
    Int8 db_length, Int4 subject_length);
 
+// Routines for debugging parameter settings.  -RMH-
+void printBlastScoringParameters( BlastScoringParameters* params );
+void printBlastInitialWordParamters ( BlastInitialWordParameters *word_params,
+                                      BlastQueryInfo *query_info );
+void printBlastExtensionParameters ( BlastExtensionParameters *ext_params );
+void printBlastHitSavingParameters ( BlastHitSavingParameters * hit_params,
+                                     BlastQueryInfo *query_info );
+void printAllParameters ( BlastHitSavingParameters * hit_params,
+                          BlastExtensionParameters *ext_params,
+                          BlastInitialWordParameters *word_params,
+                          BlastQueryInfo *query_info  );
 
 #ifdef __cplusplus
 }

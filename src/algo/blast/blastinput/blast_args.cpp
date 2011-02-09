@@ -455,6 +455,54 @@ COffDiagonalRangeArg::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& 
     }
 }
 
+// Options specific to rmblastn -RMH-
+void
+CRMBlastNArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("General search options");
+
+    arg_desc.AddDefaultKey(kArgMatrixName, "matrix_name",
+                           "Scoring matrix name",
+                           CArgDescriptions::eString,
+                           string(""));
+
+    arg_desc.AddFlag(kArgComplexityAdj,
+                     "Use complexity adjusted scoring",
+                     true);
+
+
+    arg_desc.AddDefaultKey(kArgMaskLevel, "int_value",
+                            "Masklevel - percentage overlap allowed per "
+                            "query domain [0-101]",
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(-1) );
+    arg_desc.SetConstraint(kArgMaskLevel,
+                           new CArgAllowValuesLessThanOrEqual(101));
+
+    arg_desc.SetCurrentGroup("");
+}
+
+// Options specific to rmblastn -RMH-
+void
+CRMBlastNArg::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
+{
+    if (args[kArgMatrixName]) {
+        opt.SetMatrixName(args[kArgMatrixName].AsString().c_str());
+    }
+
+    opt.SetComplexityAdjMode( args[kArgComplexityAdj] );
+
+    if (args[kArgMaskLevel]) {
+        opt.SetMaskLevel(args[kArgMaskLevel].AsInteger());
+    }
+
+    if (args[kArgMinRawGappedScore]) {
+        opt.SetCutoffScore(args[kArgMinRawGappedScore].AsInteger());
+    }else if (args[kArgUngappedXDropoff]) {
+        opt.SetCutoffScore(args[kArgUngappedXDropoff].AsInteger());
+    }
+}
+
 void
 CWordThresholdArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {

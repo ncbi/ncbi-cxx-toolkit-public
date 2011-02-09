@@ -109,6 +109,16 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (use_sum_statistics && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
     }
+    if ( m_Program == "blastn" &&
+         options.GetMatchReward() == 0 &&
+         options.GetMismatchPenalty() == 0 )
+    {
+       /* This combination is an indicator that we have used matrices
+        * solely to develop the hsp score.  Also for the time being it
+        * indicates that KA stats are not available. -RMH- 
+        */
+        m_DisableKAStats = true;
+    }
     CAlignFormatUtil::GetAsciiProteinMatrix(m_MatrixName, m_ScoringMatrix);
 }
 
@@ -187,9 +197,23 @@ CBlastFormat::PrintProlog()
     if (m_IsHTML) {
         m_Outfile << kHTML_Prefix << "\n";
     }
+    // Make sure no-one confuses us with the standard BLASTN 
+    // algorithm.  -RMH-
+    if ( m_Program == "blastn" &&
+         m_DisableKAStats == true )
+    {
+      CBlastFormatUtil::BlastPrintVersionInfo("rmblastn", m_IsHTML,
+                                              m_Outfile);
+      m_Outfile << "\n\n";
+      m_Outfile << "Reference: Robert M. Hubley, Arian Smit\n";
+      m_Outfile << "RMBlast - RepeatMasker Search Engine\n";
+      m_Outfile << "2010 <http://www.repeatmasker.org>";
+    }else
+    {
+      CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML,
+                                              m_Outfile);
+    }
 
-    CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML, 
-                                            m_Outfile);
     if (m_IsBl2Seq) {
         return;
     }
@@ -229,6 +253,10 @@ CBlastFormat::PrintProlog()
 void
 CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
 {
+    /* Skip printing KA parameters if the program is rmblastn -RMH- */
+    if ( m_DisableKAStats )
+      return;
+
     const Blast_KarlinBlk *kbp_ungap = (m_Program == "psiblast") 
         ? summary.GetPsiUngappedKarlinBlk() 
         : summary.GetUngappedKarlinBlk();
@@ -676,7 +704,10 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     //-------------------------------------------------
     // print 1-line summaries
-    if ( !m_IsBl2Seq ) {
+    // Also disable when program is rmblastn.  At this time
+    // we do not want summary bit scores/evalues for this 
+    // program. -RMH-
+    if ( !m_IsBl2Seq && !m_DisableKAStats ) {
         x_DisplayDeflines(aln_set, itr_num, prev_seqids);
     }
 
@@ -692,6 +723,13 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
                            m_IsBl2Seq);
+
+    /* Display the raw score and disable the display of bitscore and 
+     * evalue. -RMH- 
+     */
+    if ( m_DisableKAStats ) {
+        flags |= CDisplaySeqalign::eShowRawScoreOnly;
+    }
 
     CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);

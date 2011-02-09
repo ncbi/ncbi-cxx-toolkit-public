@@ -740,6 +740,9 @@ EProgram ProgramNameToEnum(const std::string& program_name)
 
     if (NStr::StartsWith(lowercase_program_name, "blastn")) {
         return eBlastn;
+    // -RMH- support new toolkit program
+    } else if (NStr::StartsWith(lowercase_program_name, "rmblastn")) {
+        return eBlastn;
     } else if (NStr::StartsWith(lowercase_program_name, "blastp")) {
         return eBlastp;
     } else if (lowercase_program_name == "blastx") {

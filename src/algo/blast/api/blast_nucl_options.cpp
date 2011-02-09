@@ -172,6 +172,8 @@ CBlastNucleotideOptionsHandle::SetScoringOptionsDefaults()
     SetMatchReward(2);
     SetMismatchPenalty(-3);
     SetGappedMode();
+    // Complexity adjusted scoring for RMBlastN -RMH-
+    SetComplexityAdjMode(false);
 
     // set out-of-frame options to invalid? values
     m_Opts->SetOutOfFrameMode(false);
@@ -187,6 +189,8 @@ CBlastNucleotideOptionsHandle::SetMBScoringOptionsDefaults()
     SetMatchReward(1);
     SetMismatchPenalty(-2);
     SetGappedMode();
+    // Complexity adjusted scoring for RMBlastN -RMH-
+    SetComplexityAdjMode(false);
 
     // set out-of-frame options to invalid? values
     m_Opts->SetOutOfFrameMode(false);
@@ -201,6 +205,8 @@ CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
     SetMinDiagSeparation(50);
+    // Default is to show all results. -RMH-
+    SetMaskLevel(101);
 
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
@@ -215,6 +221,8 @@ CBlastNucleotideOptionsHandle::SetMBHitSavingOptionsDefaults()
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
     SetMinDiagSeparation(6);
+    // Default is to show all results. -RMH-
+    SetMaskLevel(101);
 
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple

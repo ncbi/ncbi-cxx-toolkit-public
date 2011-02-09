@@ -165,7 +165,10 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
 
         eShowEndGaps = (1 << 26),      // if set end gaps will be shown as '-'
                                        // otherwise as spaces
-        eShowGapOnlyLines = (1 << 27)  // Show lines than contain only gaps
+        eShowGapOnlyLines = (1 << 27), // Show lines than contain only gaps
+        eShowRawScoreOnly = (1 << 28)  // For RMBLASTN.  This disables the
+                                       //   display of the bitscore and
+                                       //   the evalue fields. -RMH-
     };
     
     ///Middle line style option

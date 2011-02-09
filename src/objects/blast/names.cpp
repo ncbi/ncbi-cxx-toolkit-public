@@ -196,6 +196,10 @@ TField B4Param_SegFilteringLocut     ("SegFilteringLocut",     CBlast4_value::e_
 TField B4Param_SegFilteringHicut     ("SegFilteringHicut",     CBlast4_value::e_Real);
 TField B4Param_StrandOption          ("StrandOption",          CBlast4_value::e_Strand_type);
 TField B4Param_UngappedMode          ("UngappedMode",          CBlast4_value::e_Boolean);
+// New option for RMBlastN -RMH-
+TField B4Param_ComplexityAdjustMode          ("ComplexityAdjustMode",          CBlast4_value::e_Boolean);
+// New option for RMBlastN -RMH-
+TField B4Param_MaskLevel          ("MaskLevel",               CBlast4_value::e_Integer);
 TField B4Param_UseRealDbSize         ("UseRealDbSize",         CBlast4_value::e_Boolean);
 TField B4Param_WindowMaskerDatabase  ("WindowMaskerDatabase",  CBlast4_value::e_String);
 TField B4Param_WindowMaskerTaxId     ("WindowMaskerTaxId",     CBlast4_value::e_Integer);

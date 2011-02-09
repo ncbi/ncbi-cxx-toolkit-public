@@ -75,6 +75,12 @@ const string kArgNumThreads("num_threads");
 
 const string kArgMatrixName("matrix");
 
+/* Turn on complexity adjustment for RMBlastN -RMH- */
+const string kArgComplexityAdj("complexity_adjust");
+
+/* Turn on masklevel parameter for RMBlastN -RMH- */
+const string kArgMaskLevel("mask_level");
+
 const string kArgEvalue("evalue");
 const string kArgMinRawGappedScore("min_raw_gapped_score");
 

@@ -199,22 +199,27 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_SlaveGeneticCode = 1;
     m_AlignTemplates = NULL;
     m_Ctx = NULL;
+    m_Matrix = NULL; //-RMH-
     m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
 
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
                                        ? matrix_name 
                                        : BLAST_DEFAULT_MATRIX, mtx);
-    _ASSERT(!mtx.GetData().empty());
-
-    m_Matrix = new int*[mtx.GetRows()];
-    for(size_t i = 0; i<mtx.GetRows(); ++i) {
-        m_Matrix[i] = new int[mtx.GetCols()];
-    }
-    // copy data from matrix
-    for(size_t i = 0; i<mtx.GetRows(); ++i) {
-        for (size_t j = 0; j < mtx.GetCols(); j++) {
-            m_Matrix[i][j] = mtx(i, j);
+    // -RMH- --- Need to see if we can retrieve our matrix this way.
+    //           for now don't initialize if empty
+    //_ASSERT(!mtx.GetData().empty());
+    if ( !mtx.GetData().empty() )
+    {
+        m_Matrix = new int*[mtx.GetRows()];
+        for(size_t i = 0; i<mtx.GetRows(); ++i) {
+            m_Matrix[i] = new int[mtx.GetCols()];
+        }
+        // copy data from matrix
+        for(size_t i = 0; i<mtx.GetRows(); ++i) {
+            for (size_t j = 0; j < mtx.GetCols(); j++) {
+                m_Matrix[i][j] = mtx(i, j);
+            }
         }
     }
 }
@@ -222,19 +227,23 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
 
 CDisplaySeqalign::~CDisplaySeqalign()
 {
-    for(int i = 0; i<k_NumAsciiChar; ++i) {
-        delete [] m_Matrix[i];
-    }
-    delete [] m_Matrix;
-    if (m_ConfigFile) {
-        delete m_ConfigFile;
-    } 
-    if (m_Reg) {
-        delete m_Reg;
-    }
-    
-    if(m_DynamicFeature){
-        delete m_DynamicFeature;
+    // -RMH- See above
+    if ( m_Matrix )
+    {
+        for(int i = 0; i<k_NumAsciiChar; ++i) {
+            delete [] m_Matrix[i];
+        }
+        delete [] m_Matrix;
+        if (m_ConfigFile) {
+            delete m_ConfigFile;
+        } 
+        if (m_Reg) {
+            delete m_Reg;
+        }
+        
+        if(m_DynamicFeature){
+            delete m_DynamicFeature;
+        }
     }
 }
 
@@ -1899,6 +1908,9 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
             }
             match ++;
         } else {
+            if (m_AlignType&eProt)  // -RMH-
+               cout << "Oops...I guess I am in trouble\n";
+
             if ((m_AlignType&eProt) 
                 && m_Matrix[(int)sequence_standard[i]][(int)sequence[i]] > 0){  
                 positive ++;
@@ -3211,17 +3223,25 @@ void CDisplaySeqalign::x_DisplayAlignInfo(CNcbiOstream& out,
     }
     else
     {
-        out<<" Score = "<<bit_score_buf<<" ";
-        out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
-        out<<"Expect";
-        if (aln_vec_info->sum_n > 0) {
-        out << "(" << aln_vec_info->sum_n << ")";
+        // Disable bits score/evalue fields and only show raw
+        // score for RMBlastN -RMH-
+        if ( m_AlignOption & eShowRawScoreOnly ) 
+        {
+            out<<" Score = "<<aln_vec_info->score<<"\n";
+        }else 
+        {
+            out<<" Score = "<<bit_score_buf<<" ";
+            out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
+            out<<"Expect";
+            if (aln_vec_info->sum_n > 0) {
+            out << "(" << aln_vec_info->sum_n << ")";
+            }
+            out << " = " << evalue_buf;
+            if (aln_vec_info->comp_adj_method == 1)
+            out << ", Method: Composition-based stats.";
+            else if (aln_vec_info->comp_adj_method == 2)
+            out << ", Method: Compositional matrix adjust.";
         }
-        out << " = " << evalue_buf;
-        if (aln_vec_info->comp_adj_method == 1)
-        out << ", Method: Composition-based stats.";
-        else if (aln_vec_info->comp_adj_method == 2)
-        out << ", Method: Compositional matrix adjust.";
     }
     out << "\n";
 }

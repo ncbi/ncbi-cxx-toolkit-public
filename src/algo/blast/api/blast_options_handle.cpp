@@ -188,6 +188,8 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("megablast");
         retval.insert("dc-megablast");
         retval.insert("vecscreen");
+        // -RMH-
+        retval.insert("rmblastn");
     }
 
     if (choice == eProtProt || choice == eAll) {
@@ -273,6 +275,8 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
 
     if (!NStr::CompareNocase(task, "blastn") || 
         !NStr::CompareNocase(task, "blastn-short") ||
+        // -RMH-
+        !NStr::CompareNocase(task, "rmblastn") ||
         !NStr::CompareNocase(task, "vecscreen"))
     {
         CBlastNucleotideOptionsHandle* opts = 
@@ -297,6 +301,11 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
             opts->SetEvalueThreshold(700);
             opts->SetOptions().SetEffectiveSearchSpace(Int8(1.75e12));
             // based on VSBlastOptionNew from tools/vecscrn.c
+        }else if ( !NStr::CompareNocase(task, "rmblastn") )
+        {
+            // -RMH- This blastn only supports full matrix scoring.
+            opts->SetMatchReward(0);
+            opts->SetMismatchPenalty(0);
         }
         retval = opts;
     }

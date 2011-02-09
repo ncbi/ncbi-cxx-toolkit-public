@@ -253,6 +253,9 @@ private:
     CRef<blast::CBlastQueryVector> m_AccumulatedQueries;
     /// Accumulated results to display in XML format 
     blast::CSearchResultSet m_AccumulatedResults;
+    /// Modify format to accomodate results that do not
+    /// contain KA stats such as bitscores and evalues. -RMH-
+    bool m_DisableKAStats;
     /// The custom output format specification
     string m_CustomOutputFormatSpec;
 

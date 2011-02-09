@@ -216,6 +216,15 @@ public:
     bool GetGappedMode() const;
     void SetGappedMode(bool m = true);
 
+    // Masklevel filtering option -RMH-
+    int GetMaskLevel() const;
+    void SetMaskLevel(int s);
+
+    /// Returns true if cross_match-like complexity adjusted
+    //  scoring is required, false otherwise. -RMH-
+    bool GetComplexityAdjMode() const;
+    void SetComplexityAdjMode(bool m = true);
+
     double GetGapTrigger() const;
     void SetGapTrigger(double g);
 
@@ -1245,6 +1254,35 @@ inline void
 CBlastOptionsLocal::SetGappedMode(bool m)
 {
     m_ScoringOpts->gapped_calculation = m;
+}
+
+/* Masklevel parameter -RMH- */
+inline int
+CBlastOptionsLocal::GetMaskLevel() const
+{
+    return m_HitSaveOpts->mask_level;
+}
+
+// -RMH-
+inline void
+CBlastOptionsLocal::SetMaskLevel(int s)
+{
+    m_HitSaveOpts->mask_level = s;
+}
+
+/* Flag to indicate if cross_match-like complexity adjusted
+   scoring is in use. Currently only used by RMBlastN. -RMH- */
+inline bool
+CBlastOptionsLocal::GetComplexityAdjMode() const
+{
+    return m_ScoringOpts->complexity_adjusted_scoring ? true : false;
+}
+
+// -RMH-
+inline void
+CBlastOptionsLocal::SetComplexityAdjMode(bool m)
+{
+    m_ScoringOpts->complexity_adjusted_scoring = m;
 }
 
 /************************ Scoring options ************************/

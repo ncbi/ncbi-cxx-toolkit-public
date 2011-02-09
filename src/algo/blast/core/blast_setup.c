@@ -71,11 +71,26 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
 
         /* At this stage query sequences are nucleotide only for blastn */
         if (program == eBlastTypeBlastn) {
-            retval = 
+          /* If reward/penalty are both zero the calling program is
+           * indicating that a matrix must be used to score both the
+           * ungapped and gapped alignments.  If this is the case
+           * set reward/penalty to allowed values so that extraneous
+           * KA stats can be performed without error. -RMH-
+           */
+            if ( scoring_options->reward == 0 &&  scoring_options->penalty == 0 )
+            {
+              retval =
                 Blast_KarlinBlkNuclGappedCalc(sbp->kbp_gap_std[index],
-                    scoring_options->gap_open, scoring_options->gap_extend, 
-                    scoring_options->reward, scoring_options->penalty, 
+                    scoring_options->gap_open, scoring_options->gap_extend,
+                    BLAST_REWARD, BLAST_PENALTY,
                     sbp->kbp_std[index], &(sbp->round_down), error_return);
+            }else {
+              retval =
+                Blast_KarlinBlkNuclGappedCalc(sbp->kbp_gap_std[index],
+                    scoring_options->gap_open, scoring_options->gap_extend,
+                    scoring_options->reward, scoring_options->penalty,
+                    sbp->kbp_std[index], &(sbp->round_down), error_return);
+            }
         } else {
             retval = 
                 Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[index],
@@ -307,11 +322,32 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
         return 1;
     }
 
+    /* Matrix only scoring is used to disable the greedy extension 
+       optimisations which avoid use of a full-matrix.  This is 
+       currently only turned on in RMBlastN -RMH-  */
+    sbp->matrix_only_scoring = FALSE;
+
     if (program_number == eBlastTypeBlastn) {
 
         BLAST_ScoreSetAmbigRes(sbp, 'N');
-        sbp->penalty = scoring_options->penalty;
-        sbp->reward = scoring_options->reward;
+
+        /* If reward/penalty are both zero the calling program is
+         * indicating that a matrix must be used to score both the
+         * ungapped and gapped alignments.  Set the new 
+         * matrix_only_scoring.  For now reset reward/penalty to 
+         * allowed blastn values so that extraneous KA stats can be 
+         * performed without error. -RMH-
+         */
+        if ( scoring_options->penalty == 0 && scoring_options->reward == 0 )
+        {
+           sbp->matrix_only_scoring = TRUE;
+           sbp->penalty = BLAST_PENALTY;
+           sbp->reward = BLAST_REWARD;
+        }else {
+           sbp->penalty = scoring_options->penalty;
+           sbp->reward = scoring_options->reward;
+        }
+
         if (scoring_options->matrix && *scoring_options->matrix != NULLB) {
  
             sbp->read_in_matrix = TRUE;
@@ -367,6 +403,11 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
 
     *sbpp = sbp;
     sbp->scale_factor = scale_factor;
+
+    /* Flag to indicate if we are using cross_match-like complexity
+       adjustments on the raw scores.  RMBlastN is the currently 
+       the only program using this flag. -RMH- */
+    sbp->complexity_adjusted_scoring = scoring_options->complexity_adjusted_scoring;
 
     status = Blast_ScoreBlkMatrixInit(program_number, scoring_options, sbp, get_path);
     if (status) {
@@ -640,13 +681,28 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
           * only need one of them.
           */
          if (program_number == eBlastTypeBlastn) {
-             Blast_GetNuclAlphaBeta(scoring_options->reward, 
-                                    scoring_options->penalty, 
-                                    scoring_options->gap_open, 
-                                    scoring_options->gap_extend, 
-                                    sbp->kbp_std[index], 
+             /* Setting reward and penalty to zero is being used to indicate
+              * that matrix scoring should be used for ungapped and gapped
+              * alignment.  For now reward/penalty are being reset to the
+              * default blastn values to not disturb the KA calcs  -RMH- */
+             if ( scoring_options->reward == 0 && scoring_options->penalty == 0 )
+             {
+                 Blast_GetNuclAlphaBeta(BLAST_REWARD,
+                                    BLAST_PENALTY,
+                                    scoring_options->gap_open,
+                                    scoring_options->gap_extend,
+                                    sbp->kbp_std[index],
                                     scoring_options->gapped_calculation,
                                     &alpha, &beta);
+             }else {
+                 Blast_GetNuclAlphaBeta(scoring_options->reward,
+                                    scoring_options->penalty,
+                                    scoring_options->gap_open,
+                                    scoring_options->gap_extend,
+                                    sbp->kbp_std[index],
+                                    scoring_options->gapped_calculation,
+                                    &alpha, &beta);
+             }
          } else {
              BLAST_GetAlphaBeta(sbp->name, &alpha, &beta,
                                 scoring_options->gapped_calculation, 

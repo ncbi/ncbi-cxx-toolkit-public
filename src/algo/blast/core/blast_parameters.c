@@ -207,9 +207,21 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
          continue;
       kbp= sbp->kbp[context];
       ASSERT(s_BlastKarlinBlkIsValid(kbp));
-      p->cutoffs[context].x_dropoff_init =
-          (Int4)(sbp->scale_factor *
-                 ceil(word_options->x_dropoff * NCBIMATH_LN2 / kbp->Lambda));
+      if ( program_number == eBlastTypeBlastn && sbp->matrix_only_scoring )
+      {
+        /* In this mode our scoring system is matrix only.  Reward/Penalty
+         * parameters are shutoff.  Also as the matrix parameters of
+         * lambda and K are not available.  We need to treat all scores as
+         * raw and avoid using/breaking KA stats. This supports the 
+         * rmblastn app.
+         * -RMH-
+         */
+        p->cutoffs[context].x_dropoff_init = word_options->x_dropoff;
+      }else {
+        p->cutoffs[context].x_dropoff_init =
+            (Int4)(sbp->scale_factor *
+                   ceil(word_options->x_dropoff * NCBIMATH_LN2 / kbp->Lambda));
+      }
    }
 
    if (program_number == eBlastTypeBlastn &&
@@ -247,6 +259,19 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
          if (i >> 6) score += penalty; else score += reward;
          table[i] = score;
       }
+   }
+
+   /* Inherit the state of the ScoreBlk matrix_only_scoring flag to
+    * our BlastInitialWordParameters matrix_only_scoring flag.  This 
+    * is used to disable reward/penalty scoring and bypass KA stats
+    * usage.
+    * -RMH-
+    */
+   if ( program_number == eBlastTypeBlastn && sbp->matrix_only_scoring )
+   {
+     p->matrix_only_scoring = TRUE;
+   }else {
+     p->matrix_only_scoring = FALSE;
    }
 
    return status;
@@ -357,6 +382,19 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       else
          curr_cutoffs->x_dropoff = curr_cutoffs->x_dropoff_init;
 
+     if ( program_number == eBlastTypeBlastn && sbp->matrix_only_scoring )
+     {
+        /* In this mode our scoring system is matrix only.  Reward/Penalty
+         * parameters are shutoff.  Also as the matrix parameters of
+         * lambda and K are not available.  We need to treat all scores as
+         * raw and avoid using KA stats. This supports the rmblastn app.
+         * Override the modification of x_dropoff and hold it at the 
+         * initial value.
+         * -RMH-
+         */
+         curr_cutoffs->x_dropoff = curr_cutoffs->x_dropoff_init;
+      }
+
       /* Check if this is the smallest cutoff seen so far, and
          save both the cutoff and its associated X-drop value if so */
 
@@ -429,6 +467,20 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
        params->gap_x_dropoff *= (Int4)sbp->scale_factor;
        params->gap_x_dropoff_final *= (Int4)sbp->scale_factor;
    }
+
+   if ( program_number == eBlastTypeBlastn && sbp->matrix_only_scoring )
+   {
+      /* In this mode our scoring system is matrix only.  Reward/Penalty
+       * parameters are shutoff.  Also as the matrix parameters of
+       * lambda and K are not available.  We need to treat all scores as
+       * raw and avoid using/breaking KA stats. This supports the 
+       * rmblastn app.  
+       * -RMH-
+       */
+       params->gap_x_dropoff = options->gap_x_dropoff;
+       params->gap_x_dropoff_final = options->gap_x_dropoff_final;
+   }
+
    return 0;
 }
 
@@ -439,7 +491,6 @@ BlastExtensionParametersFree(BlastExtensionParameters* parameters)
   return NULL;
 }
 
-
 BlastScoringParameters*
 BlastScoringParametersFree(BlastScoringParameters* parameters)
 {
@@ -447,6 +498,40 @@ BlastScoringParametersFree(BlastScoringParameters* parameters)
 	return NULL;
 }
 
+/* -RMH-: Added new function ( for debuging ) */
+void printBlastScoringParameters( BlastScoringParameters* params )
+{
+  if ( params == NULL )
+  {
+    printf("parameters{ null }\n");
+    return;
+  }
+  printf("BlastScoringParameters:\n");
+  if ( params->options == NULL )
+  {
+    printf("  options = NULL\n");
+  }else {
+    BlastScoringOptions* options = params->options;
+    printf("  options:\n");
+    printf("    matrix = %s\n", options->matrix );
+    printf("    matrix_path = %s\n", options->matrix_path );
+    printf("    reward = %d\n", options->reward );
+    printf("    penalty = %d\n", options->penalty );
+    printf("    gapped_calculation = %d\n", options->gapped_calculation );
+    printf("    complexity_adjusted_scoring = %d\n", options->complexity_adjusted_scoring );
+    printf("    gap_open = %d\n", options->gap_open );
+    printf("    gap_extend = %d\n", options->gap_extend );
+    printf("    is_ooframe = %d\n", options->is_ooframe );
+    printf("    shift_pen = %d\n", options->shift_pen );
+    printf("    program_number = %d\n", options->program_number );
+  }
+  printf("  reward = %d\n", params->reward );
+  printf("  penalty = %d\n", params->penalty );
+  printf("  gap_open = %d\n", params->gap_open );
+  printf("  gap_extend = %d\n", params->gap_extend );
+  printf("  shift_pen = %d\n", params->shift_pen );
+  printf("  scale_factor = %f\n\n", params->scale_factor );
+}
 
 Int2
 BlastScoringParametersNew(const BlastScoringOptions* score_options, 
@@ -674,6 +759,9 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    if (params == NULL)
       return 1;
 
+   // -RMH-  Initialize mask_level to default
+   params->mask_level = 101;
+
    params->do_sum_stats = options->do_sum_stats;
    params->options = (BlastHitSavingOptions *) options;
    /* Each context gets its own gapped cutoff data */
@@ -763,6 +851,10 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
        return -1;
    }
 
+   // Set masklevel parameter -RMH-
+   if ( program_number == eBlastTypeBlastn && options->mask_level >= 0 )
+     params->mask_level = options->mask_level;
+
    /* Calculate cutoffs based on effective length information */
    if (options->cutoff_score > 0) {
       Int4 new_cutoff = options->cutoff_score * (Int4) sbp->scale_factor;
@@ -770,6 +862,19 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
                           context <= query_info->last_context; ++context) {
          params->cutoffs[context].cutoff_score = new_cutoff;
          params->cutoffs[context].cutoff_score_max = new_cutoff;
+         if ( program_number == eBlastTypeBlastn && sbp->matrix_only_scoring )
+         {
+            /* In this mode our scoring system is matrix only.  Reward/Penalty
+             * parameters are shutoff.  Also as the matrix parameters of
+             * lambda and K are not available.  We need to treat all scores as
+             * raw and avoid using KA stats. This supports the rmblastn app.
+             * Override the modification of x_dropoff and hold it at the 
+             * initial value.
+             * -RMH-
+             */
+             params->cutoffs[context].cutoff_score = options->cutoff_score;
+             params->cutoffs[context].cutoff_score_max = (Int4)(options->cutoff_score/2);
+          }
       }
       params->cutoff_score_min = new_cutoff;
                             
@@ -945,6 +1050,63 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
    link_hsp_params->cutoff_big_gap *= (Int4)sbp->scale_factor;
    link_hsp_params->cutoff_small_gap *= (Int4)sbp->scale_factor;
 }
+
+/* For debugging within the C core -RMH- */
+void printBlastInitialWordParamters ( BlastInitialWordParameters *word_params, BlastQueryInfo *query_info )
+{   
+  int context;
+  printf("BlastInitialWordParamters:\n");
+  printf("  x_dropoff_max = %d\n", word_params->x_dropoff_max );
+  printf("  cutoff_score_min = %d\n", word_params->cutoff_score_min );
+  printf("  cutoffs:\n");
+  for (context = query_info->first_context;
+       context <= query_info->last_context; ++context)
+  { 
+    if (!(query_info->contexts[context].is_valid))
+      continue;
+    printf("    %d x_dropoff_init = %d\n", context, word_params->cutoffs[context].x_dropoff_init );
+    printf("    %d x_dropoff = %d\n", context, word_params->cutoffs[context].x_dropoff );
+    printf("    %d cutoff_score = %d\n", context, word_params->cutoffs[context].cutoff_score );
+    printf("    %d reduced_nucl_cutoff_score = %d\n", context, word_params->cutoffs[context].reduced_nucl_cutoff_score );
+  }
+}
+
+/* For debugging within the C core -RMH- */
+void printBlastExtensionParameters ( BlastExtensionParameters *ext_params )
+{
+  printf("BlastExtensionParameters:\n");
+  printf("  gap_x_dropoff = %d\n", ext_params->gap_x_dropoff );
+  printf("  gap_x_dropoff_final = %d\n", ext_params->gap_x_dropoff_final );
+}
+
+/* For debugging within the C core -RMH- */
+void printBlastHitSavingParameters ( BlastHitSavingParameters * hit_params,
+                                     BlastQueryInfo *query_info )
+{
+  int context;
+  printf("BlastHitSavingParameters:\n");
+  printf("  cutoff_score_min = %d\n", hit_params->cutoff_score_min );
+   for (context = query_info->first_context;
+       context <= query_info->last_context; ++context)
+  {
+    if (!(query_info->contexts[context].is_valid))
+      continue;
+    printf("    %d cutoff_score = %d\n", context, hit_params->cutoffs[context].cutoff_score );
+    printf("    %d cutoff_score_max = %d\n", context, hit_params->cutoffs[context].cutoff_score_max );
+  }
+}
+
+/* For debugging within the C core -RMH- */
+void printAllParameters ( BlastHitSavingParameters * hit_params,
+                          BlastExtensionParameters *ext_params,
+                          BlastInitialWordParameters *word_params,
+                          BlastQueryInfo *query_info  )
+{
+  printBlastInitialWordParamters( word_params, query_info );
+  printBlastExtensionParameters( ext_params );
+  printBlastHitSavingParameters( hit_params, query_info );
+}
+
 
 
 /*

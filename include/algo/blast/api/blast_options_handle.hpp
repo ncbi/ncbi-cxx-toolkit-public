@@ -269,6 +269,18 @@ public:
     /// @param s CullingLimit [in]
     void SetCullingLimit(int s) { m_Opts->SetCullingLimit(s); }
 
+    /// Returns MaskLevel -RMH-
+    int GetMaskLevel() const { return m_Opts->GetMaskLevel(); }
+    /// Sets MaskLevel -RMH-
+    /// @param ml MaskLevel [in]
+    void SetMaskLevel(int ml) { m_Opts->SetMaskLevel(ml); }
+
+    /// Returns Complexity Adjustment Mode -RMH-
+    bool GetComplexityAdjMode() const { return m_Opts->GetComplexityAdjMode(); }
+    /// Sets ComplexityAdjMode -RMH-
+    /// @param m ComplexityAdjMode [in]
+    void SetComplexityAdjMode(bool m = true) { m_Opts->SetComplexityAdjMode(m); }
+
     /******************** Database (subject) options *******************/
     /// Returns DbLength
     Int8 GetDbLength() const { return m_Opts->GetDbLength(); }

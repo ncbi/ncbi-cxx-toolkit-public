@@ -216,6 +216,19 @@ public:
                                          CBlastOptions& options);
 };
 
+/** RMH: Argument class to retrieve and set the options specific to 
+ *       the RMBlastN algorithm 
+ */
+class NCBI_BLASTINPUT_EXPORT CRMBlastNArg : public IBlastCmdLineArgs
+{
+public:
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
+                                         CBlastOptions& options);
+};
+
 /** Argument class to retrieve and set the scoring matrix name BLAST algorithm
  * option */
 class NCBI_BLASTINPUT_EXPORT CMatrixNameArg : public IBlastCmdLineArgs

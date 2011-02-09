@@ -103,6 +103,8 @@ typedef struct SBlastScoreMatrix {
                           form */
     size_t ncols;       /**< number of columns */
     size_t nrows;       /**< number of rows */
+    double* freqs;      /**< array of assumed matrix background frequencies -RMH-*/
+    double lambda;      /**< derived value of the matrix lambda -RMH- */
 } SBlastScoreMatrix;
 
 /** Scoring matrix data used in PSI-BLAST */
@@ -146,6 +148,14 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
    SPsiBlastScoreMatrix* psi_matrix;    /**< PSSM and associated data. If this
                                          is not NULL, then the BLAST search is
                                          position specific (i.e.: PSI-BLAST) */
+   Boolean  matrix_only_scoring;  /**< Score ungapped/gapped alignment only
+                                       using the matrix parameters and
+                                       with raw scores. Ignore 
+                                       penalty/reward and do not report 
+                                       Karlin-Altschul stats.  This is used
+                                       by the rmblastn program. -RMH- */
+   Boolean complexity_adjusted_scoring; /**< Use cross_match-like complexity
+                                           adjustment on raw scores. -RMH- */
    Int4  loscore;   /**< Min.  substitution scores */
    Int4  hiscore;   /**< Max. substitution scores */
    Int4  penalty;   /**< penalty for mismatch in blastn. */
@@ -767,6 +777,13 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp);
  */
 NCBI_XBLAST_EXPORT 
 SNCBIPackedScoreMatrix* BlastScoreBlkGetCompiledInMatrix(const char* name);
+
+/** 
+ * Prints the BlastScoreBlk data structure to stdout for debuging purposes.
+ * -RMH-
+ * @param sbp The BlastScoreBlk to print.
+ */
+void printBlastScoreBlk( BlastScoreBlk* sbp );
 
 #ifdef __cplusplus
 }

@@ -710,10 +710,24 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
             Int4 context = BSearchContextInfo(q_off, query_info);
             cutoffs = word_params->cutoffs + context;
             ungapped_data = &dummy_ungapped_data;
-            s_NuclUngappedExtend(query, subject, matrix, q_off, s_end, s_off,
+
+            /* 
+             * Skip use of the scoring table and go straight to the matrix
+             * based extension if matrix_only_scoring is set.  Used by
+             * app rmblastn.
+             * -RMH-
+             */
+            if ( word_params->options->program_number == eBlastTypeBlastn &&
+                 word_params->matrix_only_scoring )
+            {
+               s_NuclUngappedExtendExact(query, subject, matrix, q_off,
+                                  s_off, -(cutoffs->x_dropoff), ungapped_data);
+            }else {
+               s_NuclUngappedExtend(query, subject, matrix, q_off, s_end, s_off,
                                  -(cutoffs->x_dropoff), ungapped_data,
                                  word_params->nucl_score_table,
                                  cutoffs->reduced_nucl_cutoff_score);
+            }
 
             if (off_found || ungapped_data->score >= cutoffs->cutoff_score) {
                 BlastUngappedData *final_data =
@@ -865,11 +879,25 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
             Int4 context = BSearchContextInfo(q_off, query_info);
             cutoffs = word_params->cutoffs + context;
             ungapped_data = &dummy_ungapped_data;
-            s_NuclUngappedExtend(query, subject, matrix, q_off, s_end,
+
+            /* 
+             * Skip use of the scoring table and go straight to the matrix
+             * based extension if matrix_only_scoring is set.  Used by
+             * app rmblastn.
+             * -RMH-
+             */
+            if ( word_params->options->program_number == eBlastTypeBlastn &&                          word_params->matrix_only_scoring )
+            {
+                s_NuclUngappedExtendExact(query, subject, matrix, q_off,
+                                  s_off, -(cutoffs->x_dropoff), ungapped_data);
+            }else {
+                s_NuclUngappedExtend(query, subject, matrix, q_off, s_end,
                                  s_off, -(cutoffs->x_dropoff),
                                  ungapped_data,
                                  word_params->nucl_score_table,
                                  cutoffs->reduced_nucl_cutoff_score);
+            }
+
             if (off_found || ungapped_data->score >= cutoffs->cutoff_score) {
                 BlastUngappedData *final_data =
                     (BlastUngappedData *) malloc(sizeof(BlastUngappedData));

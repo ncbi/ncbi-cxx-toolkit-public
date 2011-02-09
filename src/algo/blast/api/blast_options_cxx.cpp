@@ -98,6 +98,8 @@ enum EBlastOptIdx {
     eBlastOpt_SumStatisticsMode,
     eBlastOpt_LongestIntronLength,
     eBlastOpt_GappedMode,
+    eBlastOpt_ComplexityAdjMode,  // -RMH-
+    eBlastOpt_MaskLevel,  // -RMH-
     eBlastOpt_MatrixName,
     eBlastOpt_MatrixPath,
     eBlastOpt_MatchReward,
@@ -447,6 +449,11 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam(B4Param_WordSize, v);
         return;
 
+    // Added for rmblastn and the new masklevel option. -RMH-
+    case eBlastOpt_MaskLevel:
+         x_SetParam(B4Param_MaskLevel,v);
+         return;
+
     case eBlastOpt_LookupTableType: 
         // do nothing, should be specified by the task
         return;
@@ -749,6 +756,11 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
             x_SetParam(B4Param_UngappedMode, ungapped); // inverted
             return;
         }
+
+    // Added for rmblastn and the new complexity adjusted scoring -RMH-
+    case eBlastOpt_ComplexityAdjMode:
+        x_SetParam(B4Param_ComplexityAdjustMode, v);
+        return;
         
     case eBlastOpt_OutOfFrameMode:
         x_SetParam(B4Param_OutOfFrameMode, v);
@@ -1835,6 +1847,50 @@ CBlastOptions::SetGappedMode(bool m)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_GappedMode, m);
+    }
+}
+
+// -RMH-
+int
+CBlastOptions::GetMaskLevel() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetMaskLevel() not available.");
+    }
+    return m_Local->GetMaskLevel();
+}
+
+// -RMH-
+void
+CBlastOptions::SetMaskLevel(int s)
+{
+    if (m_Local) {
+        m_Local->SetMaskLevel(s);
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_MaskLevel, s);
+    }
+}
+
+// -RMH-
+bool
+CBlastOptions::GetComplexityAdjMode() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetComplexityAdjMode() not available.");
+    }
+    return m_Local->GetComplexityAdjMode();
+}
+
+// -RMH-
+void
+CBlastOptions::SetComplexityAdjMode(bool m)
+{
+    if (m_Local) {
+        m_Local->SetComplexityAdjMode(m);
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_ComplexityAdjMode, m);
     }
 }
 

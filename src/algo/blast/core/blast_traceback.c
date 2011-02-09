@@ -355,6 +355,9 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Uint1* translation_buffer = NULL;
    Int4 * frame_offsets   = NULL;
    Int4 * frame_offsets_a = NULL;
+   Int4 matcounts[32];  // -RMH-
+   Int4 ridx, bidx, queryIdx, count, t_counts; // -RMH-
+   double t_factor, t_sum, adj_score; // -RMH-
    const Boolean is_rpsblast = Blast_ProgramIsRpsBlast(program_number);
    const Boolean kIsOutOfFrame = score_options->is_ooframe;
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
@@ -583,6 +586,53 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          if (fence_error) {
              break;
          }
+
+         // -RMH- testing complexity adjustment
+         if ( sbp->complexity_adjusted_scoring &&
+              sbp->matrix->freqs &&
+              gap_align->edit_script ) {
+
+             queryIdx = 0;
+             t_factor = 0;         
+             t_sum = 0;
+             t_counts = 0;
+
+             /* support both protein/dna */
+             for ( ridx = 0; ridx < 32; ridx++ )
+                 matcounts[ridx] = 0;
+
+             // Calculate aligned query composition
+             for ( ridx = 0; ridx < gap_align->edit_script->size; ridx++ ) {
+                 if ( gap_align->edit_script->op_type[ridx] == eGapAlignSub ) {
+                     for( bidx = 0; bidx < gap_align->edit_script->num[ridx]; bidx++ ) {
+                         matcounts[*(query + gap_align->query_start + queryIdx)]++;
+                         queryIdx++;
+                     }
+                 }else if ( gap_align->edit_script->op_type[ridx]
+                            == eGapAlignIns ) {
+                     queryIdx += gap_align->edit_script->num[ridx];
+                 }
+              }
+
+              for ( ridx = 0; ridx < sbp->alphabet_size; ridx++ )
+                  if ( matcounts[ ridx ]  &&
+                       sbp->matrix->freqs[ ridx ] > 0 &&                       
+                       log( sbp->matrix->freqs[ ridx ] ) != 0 ) {
+                      count = matcounts[ ridx ];
+                      t_factor += count * log( count );
+                      t_sum    += count * log( sbp->matrix->freqs[ ridx ] );
+                      t_counts += count;
+                  }
+              t_factor -= t_counts * log( t_counts );
+              t_sum    -= t_factor;
+              adj_score = gap_align->score + t_sum / sbp->matrix->lambda + .999;
+
+              if ( adj_score < 0 )
+                  adj_score = 0;
+             //printf("Score = %d, Complexity Adjusted = %d\n", gap_align->score, (Int4)adj_score );
+             gap_align->score = adj_score;
+         }
+         // -RMH-: Done
          
          if (gap_align->score >= cutoff) {
             Boolean delete_hsp = FALSE;
@@ -1376,6 +1426,38 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
       BlastSequenceBlkFree(seq_arg.seq);
    }
+
+   // -RMH-: Apply masklevel filter
+   if ( results && hit_params->mask_level < 101 )
+   {
+     //printf("Masklevel being invoked at level: %d\n", hit_params->mask_level );
+                          
+     Int4 totalCnt = 0;   
+     Int4 rmIdx;          
+     Int4 hspIdx;         
+     for ( rmIdx = 0; rmIdx < results->num_queries; rmIdx++ )
+     {                    
+       if ( results->hitlist_array[rmIdx] == NULL )
+         continue;
+       for ( hspIdx = 0; hspIdx < results->hitlist_array[rmIdx]->hsplist_count; hspIdx++ )
+        totalCnt += results->hitlist_array[rmIdx]->hsplist_array[hspIdx]->hspcnt;  
+     }
+     //printf("Before masklevel total = %d\n", totalCnt );
+   
+     Blast_HSPResultsApplyMasklevel( results, query_info,
+                                     hit_params->mask_level, query->length );
+
+     totalCnt = 0;
+     for ( rmIdx = 0; rmIdx < results->num_queries; rmIdx++ )
+     {
+       if ( results->hitlist_array[rmIdx] == NULL )
+         continue;
+       for ( hspIdx = 0; hspIdx < results->hitlist_array[rmIdx]->hsplist_count; hspIdx++ )
+        totalCnt += results->hitlist_array[rmIdx]->hsplist_array[hspIdx]->hspcnt;
+     }
+     //printf("After masklevel total = %d\n", totalCnt );
+   }
+   // -RMH-: end of change
 
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed. Only do this for a database search. */

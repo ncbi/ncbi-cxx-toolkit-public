@@ -1229,6 +1229,12 @@ char* BlastFindMatrixPath(const char* matrix_name, Boolean is_prot)
            return s_GetCStringOfMatrixPath(full_path, mtx);
        }
 
+       // Try all the default directories with original string case -RMH-
+       full_path = g_FindDataFile(matrix_name);
+       if(!full_path.empty()){
+           return s_GetCStringOfMatrixPath(full_path, matrix_name);
+       }
+
        // Try env BLASTMAT directory
        CNcbiApplication* app = CNcbiApplication::Instance();
        if (!app) {
@@ -1242,12 +1248,48 @@ char* BlastFindMatrixPath(const char* matrix_name, Boolean is_prot)
            if (CFile(full_path).Exists()) {
                return s_GetCStringOfMatrixPath(full_path, mtx);
            }
+           // Try env BLASTMAT directory with original matrix string case -RMH-
+           full_path = blastmat_env;
+           full_path += CFile::GetPathSeparator();
+           full_path += matrix_name;
+           if (CFile(full_path).Exists()) {
+               return s_GetCStringOfMatrixPath(full_path, matrix_name);
+           }
+
+           // Try original path/nt/matrix or path/aa/matrix alternatives -RMH-
+           full_path = blastmat_env; 
+           full_path += CFile::GetPathSeparator();
+           full_path += is_prot ? "aa" : "nt";
+           full_path += CFile::GetPathSeparator();
+           full_path += mtx;
+           if (CFile(full_path).Exists()) {
+               return s_GetCStringOfMatrixPath(full_path, mtx);
+           }
+
+           // Allow original case to be checked. -RMH-
+           full_path = blastmat_env;
+           full_path += CFile::GetPathSeparator();
+           full_path += is_prot ? "aa" : "nt";
+           full_path += CFile::GetPathSeparator();
+           full_path += matrix_name;
+           if (CFile(full_path).Exists()) {
+               return s_GetCStringOfMatrixPath(full_path, matrix_name);
+           }
+
        }
 
        // Try local "data" directory
        full_path = "data";
        full_path += CFile::GetPathSeparator();
        full_path += mtx;
+       if (CFile(full_path).Exists()) {
+           return s_GetCStringOfMatrixPath(full_path, mtx);
+       }
+
+       // Try local "data" directory with original matrix string case -RMH-
+       full_path = "data";
+       full_path += CFile::GetPathSeparator();
+       full_path += matrix_name;
        if (CFile(full_path).Exists()) {
            return s_GetCStringOfMatrixPath(full_path, mtx);
        }

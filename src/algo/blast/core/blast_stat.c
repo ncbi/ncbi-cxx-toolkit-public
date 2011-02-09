@@ -698,6 +698,12 @@ SBlastScoreMatrixFree(SBlastScoreMatrix* matrix)
                                                     matrix->ncols);
     }
 
+    /* Deallocate the matrix frequencies which is used by the
+     * nucleotide custom matrix reader. -RMH-
+     */
+    if ( matrix->freqs )
+      sfree(matrix->freqs);
+
     sfree(matrix);
     return NULL;
 }
@@ -722,6 +728,13 @@ SBlastScoreMatrixNew(size_t ncols, size_t nrows)
     if ( !retval->data ) {
         return SBlastScoreMatrixFree(retval);
     }
+
+    /* Allocate additional attributes for use with custom
+     * nucleotide matrices. -RMH-
+     */
+    retval->freqs = (double *) calloc(ncols, sizeof(double));
+    retval->lambda = 0;
+
     retval->ncols = ncols;
     retval->nrows = nrows;
     return retval;
@@ -1044,6 +1057,217 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
     return 0;
 }
 
+/** 
+ * Read in a custom nucleotide matrix from the FILE *fp.
+ * This function ASSUMES that the matrices are in the 
+ * format:
+ *          
+ * # FREQS A 0.255 C 0.245 G 0.245 T 0.255
+ *    A   R   G   C   Y   T   K   M   S   W   N   X
+ * A  9   1  -5 -12 -12 -13  -9  -1  -8  -2  -1 -27
+ * R  3   2   1 -12 -12 -13  -5  -4  -5  -4  -1 -27
+ * ...
+ *
+ * @param sbp the BlastScoreBlk with the matrix to be populated [in|out]
+ * @param fp the file pointer to read from [in]
+ * @return zero on success
+ *              
+ * -RMH-        
+ */                 
+                                          
+static Int2     
+BlastScoreBlkNucleotideMatrixRead(BlastScoreBlk* sbp, FILE *fp)
+{                     
+    Int4 ** matrix;
+    double* freqs;
+    Int4 i = 0;
+    Int4 j = 0;
+    Int4 rowIdx,colIdx,val,base;
+    Int4 numFreqs = 0;
+    Int4 alphaSize = 0;
+    double fval;
+    register int  index1, index2;
+    char fbuf[512+3];
+    char alphabet[24];
+    char *cp,*ncp,*lp;
+    double lambda_upper = 0;
+    double lambda_lower = 0;
+    double lambda = 0.5;
+    double sum;
+    double check;
+    const char kCommentChar = '#';
+    const char* kTokenStr = " \t\n\r";
+
+    // Initialize matrix to default values
+    matrix = sbp->matrix->data;
+    for (index1 = 0; index1 < sbp->alphabet_size; index1++)
+      for (index2 = 0; index2 < sbp->alphabet_size; index2++)
+        matrix[index1][index2] = BLAST_SCORE_MIN;
+
+    // Initialize matrix freqs to default values
+    freqs = sbp->matrix->freqs;
+    for (index1 = 0; index1 < sbp->alphabet_size; index1++)
+      freqs[index1] = 0;
+
+    alphabet[0] = 0;
+    while ( fgets(fbuf,sizeof(fbuf),fp) ) {
+      if (strchr(fbuf, '\n') == NULL) {
+        return 2;
+      }
+
+      /* initialize column pointer */
+      cp = (char *)fbuf;
+
+      /* eat whitespace */
+      while( (*cp) && isspace(*cp) ) cp++;
+
+      if (*cp == kCommentChar) {
+        /* special case FREQS line ( must exist ) */
+        if ( (ncp = strstr( cp, (const char *)"FREQS" )) != NULL ) {
+          cp = ncp + 5;
+          /* eat whitespace */
+          while( (*cp) && isspace(*cp) ) cp++;
+
+          lp = (char*)strtok(cp, kTokenStr);
+          /* Missing values */
+          if (lp == NULL)
+              return 2;
+
+          numFreqs = 0;
+          while (lp != NULL) {
+            // Read Nucleotide
+            base = (int)IUPACNA_TO_BLASTNA[toupper((unsigned char)(*lp))];
+
+            lp = (char*)strtok(NULL, kTokenStr);
+            /* Expected a token pair */
+            if ( lp == NULL )
+              return 2;
+
+            // Read Frequency
+            if ( sscanf(lp, "%lf", &fval ) != 1 )
+              return( 2 );
+
+            // Store base/fval
+            freqs[base] = fval;
+            numFreqs++;
+            lp = (char*)strtok(NULL, kTokenStr);
+          }
+        }else {
+          /* save the comment line in a linked list */
+          *strchr(cp, '\n') = NULLB;
+          ListNodeCopyStr(&sbp->comments, 0, cp);
+        }
+        continue;
+      }
+
+      /* alphabet line */
+      if ( isalpha(*cp) && !alphabet[0] ) {
+        j = 0;
+        lp = (char*)strtok(cp, kTokenStr);
+        while (lp != NULL) {
+          alphabet[j++] = toupper((unsigned char)(*lp));
+          lp = (char*)strtok(NULL, kTokenStr);
+        }
+        alphabet[j] = 0;
+        alphaSize = j;
+        continue;
+      }else if ( isalpha(*cp) ) {
+        /* Chew off first alphabet character */
+        cp++;
+        /* eat whitespace */
+        while( (*cp) && isspace(*cp) ) cp++;
+      }
+
+      /* Matrix data */
+      if ( isdigit(*cp) || *cp == '-' ) {
+        j = 0;
+        lp = (char*)strtok(cp, kTokenStr);
+        rowIdx = (int)IUPACNA_TO_BLASTNA[toupper((unsigned char)alphabet[i])];
+        while (lp != NULL) {
+          if ( sscanf(lp, "%d", &val ) != 1 )
+            return( 2 );
+          colIdx = (int)IUPACNA_TO_BLASTNA[toupper((unsigned char)alphabet[j++])];
+          matrix[rowIdx][colIdx] = val;
+         lp = (char*)strtok(NULL, kTokenStr);
+        }
+        /* We should have as many values as we do characters in the
+           alphabet */
+        if ( j != alphaSize )
+          return( 2 );
+        i++;
+        continue;
+     }
+   }
+
+   /* Expected 4 base frequencies, and a square matrix */
+   if ( numFreqs != 4 || i != alphaSize )
+     return( 2 );
+
+   /* Calculate lambda for complexity adjusted scoring. This
+      scoring system was designed by Phil Green and used in the
+      cross_match package.  It was also used in MaskerAid to make
+      wublast compatable with RepeatMasker. */
+   do {
+     sum = 0;
+     check = 0;
+     for ( i = 0 ; i < sbp->alphabet_size ; i++ ) {
+       for ( j = 0 ; j < sbp->alphabet_size ; j++ ) {
+         if ( freqs[i] && freqs[j] )
+         {
+           sum += freqs[i] * freqs[j] *
+                  exp( lambda * matrix[i][j] );
+           check += freqs[i] * freqs[j];
+         }
+       }
+     }
+     ASSERT( ( check < (double)1.001 ) && ( check > (double)0.999 ) );
+     if ( sum < 1.0 ) {
+       lambda_lower = lambda;
+       lambda *= 2.0;
+     }
+   } while ( sum < 1.0 );
+
+   lambda_upper = lambda;
+
+   while ( lambda_upper - lambda_lower > (double).00001 ) {
+     lambda = ( lambda_lower + lambda_upper ) / 2.0;
+     sum          = 0;
+     check        = 0;
+     for ( i = 0 ; i < sbp->alphabet_size ; i++ )
+     {
+       for ( j = 0 ; j < sbp->alphabet_size ; j++ )
+       {
+         if ( freqs[i] && freqs[j] )
+         {
+           sum += freqs[i] * freqs[j] *
+                  exp( lambda * matrix[i][j] );
+           check += freqs[i] * freqs[j];
+         }
+       }
+     }
+     ASSERT( ( check < (double)1.001 ) && ( check > (double).999 ) );
+     if ( sum >= 1.0 ) {
+       lambda_upper = lambda;
+     }
+     else {
+       lambda_lower = lambda;
+     }
+   }
+   sbp->matrix->lambda = lambda;
+
+   /* The value of 15 is a gap, which is a sentinel between strands in 
+      the ungapped extension algorithm. */
+   for (index1=0; index1<BLASTNA_SIZE; index1++)
+     matrix[BLASTNA_SIZE-1][index1] = INT4_MIN / 2;
+   for (index1=0; index1<BLASTNA_SIZE; index1++)
+     matrix[index1][BLASTNA_SIZE-1] = INT4_MIN / 2;
+
+   return(0);
+
+}
+
+
+
 /** Read in the matrix from the FILE *fp.
  * This function ASSUMES that the matrices are in the ncbistdaa
  * @param sbp the BlastScoreBlk with the matrix to be populated [in|out]
@@ -1298,6 +1522,97 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     return status;
 }
 
+/** 
+ * Prints the BlastScoreBlk data structure to stdout for debuging purposes.
+ *  
+ * @param sbp The BlastScoreBlk to print.
+ *
+ * -RMH-
+ */ 
+void printBlastScoreBlk( BlastScoreBlk* sbp )
+{      
+  int i,j;
+  if ( sbp == NULL )
+  { 
+    printf("BlastScoreBlk: ( NULL )\n");
+    return;
+  }
+  printf("BlastScoreBlk:\n");
+  printf("  protein_alphabet: %d\n", sbp->protein_alphabet);
+  printf("  alphabet_code: %d\n", sbp->alphabet_code);
+  printf("  alphabet_size %d\n", sbp->alphabet_size);
+  printf("  name: %s\n", sbp->name);
+  if ( sbp->matrix == NULL )
+  {
+    printf("  matrix = NULL\n");
+  }else {
+    printf("  matrix = \n");
+    for ( i = 0; i < sbp->matrix->nrows; i++ )
+    {
+      printf("    ");
+      for( j = 0; j < sbp->matrix->ncols; j++ )
+        printf("%3d ",sbp->matrix->data[i][j] );
+      printf("\n");
+    }
+   if ( sbp->matrix->freqs )
+   {
+     printf("  freqs = [");
+     for( j = 0; j < sbp->matrix->ncols; j++ )
+       printf("%f, ", sbp->matrix->freqs[j] );
+     printf("]\n");
+   }else {
+     printf("  freqs = NULL\n");
+   }
+   printf("    lambda = %f\n", sbp->matrix->lambda );
+  }
+  if ( sbp->sfp == NULL )
+  {
+    printf("  sfp = NULL\n");
+  }else {
+    Blast_ScoreFreq* sfp = sbp->sfp;
+    printf("  sfp:\n");
+    printf("     score_min = %d\n", sfp->score_min );
+    printf("     score_max = %d\n", sfp->score_max );
+    printf("     obs_min = %d\n", sfp->obs_min );
+    printf("     obs_max = %d\n", sfp->obs_max );
+    printf("     score_avg = %f\n", sfp->score_avg );
+  }
+  //printf("  comments: %s\n", sbp->comments);
+  printf("  loscore: %d\n", sbp->loscore );
+  printf("  hiscore: %d\n", sbp->hiscore );
+  printf("  penalty: %d\n", sbp->penalty );
+  printf("  reward: %d\n", sbp->reward );
+  printf("  scale_factor: %f\n", sbp->scale_factor );
+  printf("  read_in_matrix: %d\n", sbp->read_in_matrix );
+  printf("  matrix_only_scoring: %d\n", sbp->matrix_only_scoring );
+  if ( sbp->kbp_std == NULL )
+  {
+    printf("  kbp_std = NULL\n");
+  }else{
+    Blast_KarlinBlk* kbp = sbp->kbp_std;
+    printf("    Lambda = %f\n", kbp->Lambda);
+    printf("    K = %f\n", kbp->K);
+    printf("    logK = %f\n", kbp->logK);
+    printf("    H = %f\n", kbp->H);
+    printf("    paramC = %f\n", kbp->paramC);
+  }
+  printf("  number_of_contexts = %d\n", sbp->number_of_contexts );
+  printf("  ambiguous_size = %d\n", sbp->ambig_size );
+  if ( sbp->ambig_size < 1 )
+  {
+    printf("  ambiguous_res = empty\n");
+  }else {
+    printf("  ambiguous_res = [\n");
+    for ( j = 0; j < sbp->ambig_size; j++ )
+    {
+      printf("%d, ", sbp->ambiguous_res[j] );
+    }
+    printf("]\n");
+    printf("  ambig_occupy = %d\n", sbp->ambig_occupy);
+    printf("  round_down = %d\n", sbp->round_down);
+  }
+}
+
 Int2
 Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
 {
@@ -1307,9 +1622,22 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
     /* For nucleotide case we first create a default matrix, based on the 
        match and mismatch scores. */
     if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
-       if ( (status=BlastScoreBlkNuclMatrixCreate(sbp)) != 0)
-          return status;
-       matrix_found = TRUE;
+        /* RMBLASTN supports reading a custom matrix.  Currently
+         * I am using the sbp->read_in_matrix parameter to tell if
+         * we should invoke the matrix reader. 
+         * -RMH-
+         */
+        if ( sbp->read_in_matrix && get_path )
+        {
+           // Read in custom rmblastn matrix
+           matrix_found = FALSE;
+        }
+        else
+        {
+           if ( (status=BlastScoreBlkNuclMatrixCreate(sbp)) != 0)
+              return status;
+           matrix_found = TRUE;
+        }
     }
     else
     {  /* Try to get compiled in matrix for proteins. */
@@ -1319,7 +1647,8 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
     }
 
     if (matrix_found == FALSE && sbp->read_in_matrix && get_path) {
-            char* matrix_path = get_path(sbp->name, TRUE);
+            // -RMH- Changed to FALSE
+            char* matrix_path = get_path(sbp->name, FALSE);
             if (matrix_path) {
 
                 FILE *fp = NULL;
@@ -1341,10 +1670,24 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
                 }
                 sfree(full_matrix_path);
 
-                if ( (status=BlastScoreBlkProteinMatrixRead(sbp, fp)) != 0) {
-                   fclose(fp);
-                   return status;
+                if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
+                   /* nucleotide blast ( rmblastn ) which can utilize a
+                    * a custom matrix -RMH-
+                    */
+                   if ((status=BlastScoreBlkNucleotideMatrixRead(sbp, fp)) != 0)
+                   {
+                      fclose(fp);
+                      return status;
+                   }
+                }else {
+                   /* protein blast */
+                   if ( (status=BlastScoreBlkProteinMatrixRead(sbp, fp)) != 0)
+                   {
+                      fclose(fp);
+                      return status;
+                   }
                 }
+
                 fclose(fp);
                 matrix_found = TRUE;
             } 

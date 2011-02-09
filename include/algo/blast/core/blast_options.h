@@ -344,6 +344,9 @@ typedef struct BlastHitSavingOptions {
    Int4 culling_limit; /**< If the query range of an HSP is contained in
                             at least this many higher-scoring HSPs, throw
                             away the HSP as redundant (turned off if zero) */
+   Int4 mask_level; /**< Only keep the highest scoring HSP when more than
+                          one HSP overlaps the same region of the query by
+                          more than or equal to mask_level %. -RMH- */
 
    /********************************************************************/
    /* Merge all these in a structure for clarity? */
@@ -379,6 +382,8 @@ typedef struct BlastScoringOptions {
    Int2 reward;      /**< Reward for a match */
    Int2 penalty;     /**< Penalty for a mismatch */
    Boolean gapped_calculation; /**< gap-free search if FALSE */
+   Boolean complexity_adjusted_scoring; /**< Use cross_match-like complexity
+                                           adjustment on raw scores. -RMH- */
    Int4 gap_open;    /**< Extra penalty for starting a gap */
    Int4 gap_extend;  /**< Penalty for each gap residue */
 

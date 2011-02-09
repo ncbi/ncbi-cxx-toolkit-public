@@ -632,6 +632,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
     Uint4 context, first_context, last_context;
     BlastQueryInfo* query_info = query_info_in;
     Int4 orig_length = subject->length;
+    // To support rmblastn -RMH-
+    BlastScoreBlk* sbp = gap_align->sbp;
 
     const Boolean kTranslatedSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
@@ -780,8 +782,16 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
                                          gap_align->sbp, 0, 1.0);
     }
     
-    /* Discard HSPs that don't pass the e-value test. */
-    status = Blast_HSPListReapByEvalue(hsp_list_out, hit_options);
+   /* Use score threshold rather than evalue if 
+    * matrix_only_scoring is used.  -RMH- 
+    */
+    if ( sbp->matrix_only_scoring )
+    {
+        status = Blast_HSPListReapByRawScore(hsp_list_out, hit_options);
+    }else {
+       /* Discard HSPs that don't pass the e-value test. */
+        status = Blast_HSPListReapByEvalue(hsp_list_out, hit_options);
+    }
 
     /* If there are no HSPs left, destroy the HSP list too. */
     if (hsp_list_out && hsp_list_out->hspcnt == 0)
@@ -1197,9 +1207,18 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                                           gapped_calculation, 
                                           sbp, 0, 1.0);
                }
-               status = Blast_HSPListReapByEvalue(hsp_list, 
+               /* Use score threshold rather than evalue if 
+                * matrix_only_scoring is used.  -RMH- 
+                */
+               if ( sbp->matrix_only_scoring )
+               {
+                   status = Blast_HSPListReapByRawScore(hsp_list,
                                           hit_params->options);
-             
+               }else {
+                   status = Blast_HSPListReapByEvalue(hsp_list,
+                                          hit_params->options);
+               }
+ 
             /* Calculate and fill the bit scores, since there will be no
                traceback stage where this can be done. */
             Blast_HSPListGetBitScores(hsp_list, gapped_calculation, sbp);

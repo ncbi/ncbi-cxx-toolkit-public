@@ -777,6 +777,9 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
        (*options)->gapped_calculation = TRUE;
    }
    (*options)->program_number = program_number;
+   /* By default cross_match-like complexity adjusted scoring is 
+      turned off.  RMBlastN is currently the only program to use this. -RMH */  
+   (*options)->complexity_adjusted_scoring = FALSE;
    
    return 0;
 }
@@ -836,6 +839,10 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 
 	if (program_number == eBlastTypeBlastn || program_number == eBlastTypePhiBlastn)
 	{
+           // A penalty/reward of 0/0 is a signal that this is rmblastn
+           // which allows specification of penalties as positive integers.
+           if ( ! ( options->penalty == 0 && options->reward == 0 ) )
+           {
 		if (options->penalty >= 0)
 		{
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
@@ -849,13 +856,14 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
                             "BLASTN reward/penalty combination not supported for gapped search");
 			return BLASTERR_OPTION_VALUE_INVALID;
                 }
+             }
 
-                if (options->gapped_calculation && options->gap_open > 0 && options->gap_extend == 0) 
-                {
-                        Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
-                           "BLASTN gap extension penalty cannot be 0");
-                        return BLASTERR_OPTION_VALUE_INVALID;
-                }
+             if (options->gapped_calculation && options->gap_open > 0 && options->gap_extend == 0) 
+             {
+                     Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
+                        "BLASTN gap extension penalty cannot be 0");
+                     return BLASTERR_OPTION_VALUE_INVALID;
+             }
 	}
 	else
 	{
@@ -1348,6 +1356,9 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
    (*options)->hitlist_size = BLAST_HITLIST_SIZE;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
    (*options)->program_number = program_number;
+
+   // Initialize mask_level parameter -RMH-
+   (*options)->mask_level = 101;
 
    /* By default, sum statistics is used for all translated searches 
     * (except RPS BLAST), and for all ungapped searches.
