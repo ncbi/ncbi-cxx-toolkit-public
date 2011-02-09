@@ -221,6 +221,8 @@ void CValidError_imp::Reset(void)
     m_IsXR = false;
     m_IsGI = false;
     m_IsGB = false;
+    m_IsGpipe = false;
+    m_IsGenomic = false;
     m_FeatLocHasGI = false;
     m_ProductLocHasGI = false;
     m_GeneHasLocusTag = false;
@@ -2483,10 +2485,23 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                 case CSeq_id::e_Tpd:
                     m_IsINSDInSep = true;
                     break;
+                case CSeq_id::e_Gpipe:
+                    m_IsGpipe = true;
+                    break;
                 default:
                     break;
             }
         }
+    }
+
+    // search all source descriptors for genomic source
+    for (CSeqdesc_CI desc_ci (seh, CSeqdesc::e_Source);
+         desc_ci && !m_IsGenomic;
+         ++desc_ci) {
+         if (desc_ci->GetSource().IsSetGenome() 
+             && desc_ci->GetSource().GetGenome() == CBioSource::eGenome_genomic) {
+             m_IsGenomic = true;
+         }
     }
 
     // examine features for location gi, product gi, and locus tag

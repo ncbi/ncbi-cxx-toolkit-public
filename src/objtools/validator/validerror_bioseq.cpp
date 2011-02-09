@@ -3930,6 +3930,20 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
         return;
     }
 
+    string except_text = "";
+    bool no_nonconsensus_except = true;
+    if (feat.IsSetExcept_text()) {
+        except_text = feat.GetExcept_text();
+        if (feat.IsSetExcept()) {
+            if (NStr::Find (except_text, "nonconsensus splice site") != string::npos ||
+                NStr::Find (except_text, "heterogeneous population sequenced") != string::npos ||
+                NStr::Find (except_text, "low-quality sequence region") != string::npos ||
+                NStr::Find (except_text, "artificial location") != string::npos) {
+                no_nonconsensus_except = false;
+            }
+        }
+    }
+
     unsigned int partials[2] = { partial_prod, partial_loc };
     for ( int i = 0; i < 2; ++i ) {
         unsigned int errtype = eSeqlocPartial_Nostart;
@@ -3952,9 +3966,14 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
                     x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
                     if (!is_gap) {
                         if (!feat.GetData().IsCdregion() || x_SplicingNotExpected (feat)) {
-                            PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                                parterr[i] + ": " + parterrs[j] + 
-                                " (but is at consensus splice site)", *(feat.GetSeq_feat()));
+                            if (m_Imp.IsGenomic() && m_Imp.IsGpipe()
+                                && i == 1 && (j == 0 || j == 1 || j == 2)) {
+                                // ignore in genomic gpipe sequence
+                            } else {
+                                PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                                    parterr[i] + ": " + parterrs[j] + 
+                                    " (but is at consensus splice site)", *(feat.GetSeq_feat()));
+                            }
                         } else if (feat.GetData().IsCdregion()) {
                             if (m_CurrentHandle) {
                                 CSeqdesc_CI diter (m_CurrentHandle, CSeqdesc::e_Molinfo);
@@ -3973,22 +3992,40 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
                         parterr[i] + ": " + parterrs[j] + 
                         " (and is at bad sequence)",
                         *(feat.GetSeq_feat()));
+                } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
+                           && feat.IsSetExcept()
+                           && NStr::Find(except_text, "rearrangement required for product") != string::npos) {
+                    // suppress
+                } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 0) {
+                    if (no_nonconsensus_except) {
+                        if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
+                            // suppress
+                        } else {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+                                parterr[i] + 
+                                ": 5' partial is not at start AND is not at consensus splice site",
+                                *(feat.GetSeq_feat())); 
+                        }
+                    }
+                } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 1) {
+                    if (no_nonconsensus_except) {
+                        if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
+                            // suppress
+                        } else {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+                                parterr[i] + 
+                                ": 3' partial is not at stop AND is not at consensus splice site",
+                                *(feat.GetSeq_feat()));
+                        }
+                    }
                 } else if ( i == 1  &&  j < 2  &&
                     (feat.GetData().Which() == CSeqFeatData::e_Gene  ||
                     feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) &&
                      x_IsSameAsCDS(feat) ) {
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                         parterr[i] + ": " + parterrs[j], *(feat.GetSeq_feat()));
-                } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 0) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                        parterr[i] + 
-                        ": 5' partial is not at start AND is not at consensus splice site",
-                        *(feat.GetSeq_feat())); 
-                } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 1) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                        parterr[i] + 
-                        ": 3' partial is not at stop AND is not at consensus splice site",
-                        *(feat.GetSeq_feat()));
+                } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe() && i == 1 && (j == 0 || j == 1 || j == 2)) {
+                    // ignore start/stop not at end in genomic gpipe sequence
                 } else {
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                         parterr[i] + ": " + parterrs[j], *(feat.GetSeq_feat()));
@@ -4442,17 +4479,29 @@ unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal (const CSeq_feat &cds, c
         return 0;
     }
 
+    bool match1 = false, match2 = false;
+    bool has1 = false, has2 = false;
     FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, cds) {
-        if ((*itx)->IsSetId() && !s_FeatureIdsMatch ((*itx)->GetId(), mrna.GetId())) {
-            return 1;
+        if ((*itx)->IsSetId()) {
+            has1 = true;
+            if (s_FeatureIdsMatch ((*itx)->GetId(), mrna.GetId())) {
+                match1 = true;
+            }
         }
     }
 
             
     FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, mrna) {
-        if ((*itx)->IsSetId() && !s_FeatureIdsMatch ((*itx)->GetId(), cds.GetId())) {
-            return 1;
+        if ((*itx)->IsSetId()) {
+            has2 = true;
+            if (s_FeatureIdsMatch ((*itx)->GetId(), cds.GetId())) {
+                match2 = true;
+            }
         }
+    }
+
+    if ((has1 || has2) && (!match1 || !match2)) {
+        return 1;
     }
 
     if (!cds.IsSetProduct() || !mrna.IsSetExt()) {
@@ -7148,10 +7197,6 @@ void CValidError_bioseq::x_CompareStrings
 
         if (!NStr::IsBlank (message)
             && s_ReportableCollision(feat->GetData().GetGene(), it->second->GetData().GetGene())) {
-
-            if (NStr::Equal(it->first, "rRNA-5s")) {
-                bool mm = true;
-            }
 
             if (is_gene_locus && sequence::Compare(feat->GetLocation(),
                                                    (*it->second).GetLocation(),

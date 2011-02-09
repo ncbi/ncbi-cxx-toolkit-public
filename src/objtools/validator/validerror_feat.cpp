@@ -1043,9 +1043,13 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             feat.CanGetProduct ()                   &&
             feat.GetProduct ().IsWhole()            &&
             partial_prod != eSeqlocPartial_Complete ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                "When SeqFeat.product is a partial Bioseq, SeqFeat.location "
-                "should also be partial", feat);
+            if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
+                // suppress in gpipe genomic
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+                    "When SeqFeat.product is a partial Bioseq, SeqFeat.location "
+                    "should also be partial", feat);
+            }
         }
         // gene on segmented set is now 'order', should also be partial
         else if ( feat.GetData ().IsGene ()  &&
@@ -1072,7 +1076,11 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             str += (partial_loc != eSeqlocPartial_Complete) ? "partial, " : "complete, ";
             str += "Feature.partial= ";
             str += is_partial ? "TRUE" : "FALSE";
-            PostErr(sev, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
+            if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
+                // suppress for genomic gpipe
+            } else {
+                PostErr(sev, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
+            }
         }
         // inconsistent combination of partial/complete product,location,partial flag - part 2
         else if ( partial_loc == eSeqlocPartial_Complete  ||  !is_partial ) {
@@ -1085,7 +1093,11 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             str += (partial_loc != eSeqlocPartial_Complete) ? "partial, " : "complete, ";
             str += "Feature.partial= ";
             str += is_partial ? "TRUE" : "FALSE";
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
+            if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
+                // suppress for genomic gpipe
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
+            }
         }
         // 5' or 3' partial location giving unclassified partial product
         else if ( (((partial_loc & eSeqlocPartial_Start) != 0)  ||
@@ -1709,6 +1721,11 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
 
     ENa_strand strand = loc.GetStrand();
 
+    EDiagSev sev = eDiag_Warning;
+    if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
+        sev = eDiag_Info;
+    }
+
     if (!partial5) {
         TSeqPos end = loc.GetStart (eExtreme_Biological);
         if (vec.IsInGap (end)) {
@@ -1724,7 +1741,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
                           + NStr::IntToString (end + 1) + " of " + label,
                           feat);
             } else {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
                          "Splice donor consensus (GT) not found at start of intron, position "
                           + NStr::IntToString (end + 1) + " of " + label,
                           feat);
@@ -1740,7 +1757,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
                           + NStr::IntToString (end + 1) + " of " + label,
                           feat);
             } else {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
                          "Splice donor consensus (GT) not found at start of intron, position "
                           + NStr::IntToString (end + 1) + " of " + label,
                           feat);
@@ -1762,7 +1779,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
                           + NStr::IntToString (end + 1) + " of " + label + ", but at end of sequence",
                           feat);
             } else {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
                          "Splice acceptor consensus (AG) not found at end of intron, position "
                           + NStr::IntToString (end + 1) + " of " + label,
                           feat);
@@ -1778,13 +1795,28 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
                           + NStr::IntToString (end + 1) + " of " + label + ", but at end of sequence",
                           feat);
             } else {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
                          "Splice acceptor consensus (AG) not found at end of intron, position "
                           + NStr::IntToString (end + 1) + " of " + label,
                           feat);
             }
         }
     }
+}
+
+
+static bool s_HasRefSeqAccession (CBioseq_Handle bsh)
+{
+    if (!bsh) {
+        return false;
+    }
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
+        if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
+            && !NStr::IsBlank((*id_it)->GetOther().GetAccession())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -1800,6 +1832,7 @@ void CValidError_feat::ValidateDonor
  bool&      has_errors,
  const CSeq_feat& feat)
 {
+
     if (strand == eNa_strand_minus) {
         // check donor on minus strand
         if (stop > 1) {
@@ -1810,7 +1843,7 @@ void CValidError_feat::ValidateDonor
             } else if (!IsResidue (vec[stop - 1] || !IsResidue (vec[stop - 2]))) {
                 has_errors = true;
                 if (report_errors) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                   PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
                              "Bad sequence at splice donor after exon ending at position "
                              + NStr::IntToString (stop + 1) + " of " + label,
                              feat);
@@ -1832,7 +1865,9 @@ void CValidError_feat::ValidateDonor
                 has_errors = true;
                 if (report_errors) {
                     EDiagSev sev = eDiag_Error;
-                    if (relax_to_warning) {
+                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                        sev = eDiag_Info;
+                    } else if (relax_to_warning) {
                         sev = eDiag_Warning;
                     }
                     PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
@@ -1874,7 +1909,9 @@ void CValidError_feat::ValidateDonor
                 has_errors = true;
                 if (report_errors) {
                     EDiagSev sev = eDiag_Error;
-                    if (relax_to_warning) {
+                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                        sev = eDiag_Info;
+                    } else if (relax_to_warning) {
                         sev = eDiag_Warning;
                     }
                     PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
@@ -1921,7 +1958,9 @@ void CValidError_feat::ValidateAcceptor
                 has_errors = true;
                 if (report_errors) {
                     EDiagSev sev = eDiag_Error;
-                    if (relax_to_warning) {
+                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                        sev = eDiag_Info;
+                    } else if (relax_to_warning) {
                         sev = eDiag_Warning;
                     }
                     PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
@@ -1952,7 +1991,9 @@ void CValidError_feat::ValidateAcceptor
                 has_errors = true;
                 if (report_errors) {
                     EDiagSev sev = eDiag_Error;
-                    if (relax_to_warning) {
+                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                        sev = eDiag_Info;
+                    } else if (relax_to_warning) {
                         sev = eDiag_Warning;
                     }
                     PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
@@ -2092,13 +2133,13 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                     bool first_partial = first && part.IsPartialStart(eExtreme_Biological);
 
                     // check donor
-                    if (!last || (checkExonDonor && last_partial)) {
+                    if (!last || (checkExonDonor && !last_partial)) {
                         ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
                                             
                     // check acceptor
-                    if (!first || (checkExonAcceptor && first_partial)) {
+                    if (!first || (checkExonAcceptor && !first_partial)) {
                         ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
@@ -4313,6 +4354,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         return;
     }
 
+    bool rna_editing = false;
+
     if (!m_Imp.IgnoreExceptions() &&
         feat.CanGetExcept()  &&  feat.GetExcept()  &&
         feat.CanGetExcept_text()) {
@@ -4321,6 +4364,9 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
             if (NStr::FindNoCase(except_text, *it) != NPOS) {
                 report_errors = false;  // biological exception
             }
+        }
+        if (NStr::FindNoCase(except_text, "RNA editing") != NPOS) {
+            rna_editing = true;
         }
         if (NStr::FindNoCase(except_text, "unclassified transcription discrepancy") != NPOS) {
             unclassified_except = true;
@@ -4386,7 +4432,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 if (!rna) {
                     return;
                 }
-                farstr = "(far)";
+                farstr = "(far) ";
             }
             _ASSERT(nuc  &&  rna);
 
@@ -4417,7 +4463,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                         }
                     }
                     if (count_a < (19 * count_no_a)) { // less then 5%
-                        if (report_errors) {
+                        if (report_errors || rna_editing) {
                             PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
                                 "Transcript length [" + NStr::IntToString(nuc_len) + 
                                 "] less than " + farstr + "product length [" +
@@ -4427,12 +4473,16 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                     } else if (count_a > 0 && count_no_a == 0) {
                         has_errors = true;
                         other_than_mismatch = true;
-                        if (report_errors) {
-                            PostErr (eDiag_Info, eErr_SEQ_FEAT_PolyATail, 
-                                     "Transcript length [" + NStr::IntToString(nuc_len)
-                                     + "] less than " + farstr + "product length ["
-                                     + NStr::IntToString (rna_len) + "], but tail is 100% polyA",
-                                     feat);
+                        if (report_errors || rna_editing) {
+                            if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                                // suppress
+                            } else {
+                                PostErr (eDiag_Info, eErr_SEQ_FEAT_PolyATail, 
+                                         "Transcript length [" + NStr::IntToString(nuc_len)
+                                         + "] less than " + farstr + "product length ["
+                                         + NStr::IntToString (rna_len) + "], but tail is 100% polyA",
+                                         feat);
+                            }
                         }
                     } else {
                         if (report_errors) {
@@ -4686,6 +4736,7 @@ void CValidError_feat::ValidateCommonCDSProduct
             }
         }
     }
+
     const CSeq_feat* sfp = GetCDSForProduct(prod);
     if ( sfp == 0 ) {
         return;
@@ -5408,14 +5459,22 @@ bool CValidError_feat::ValidateCdRegionTranslation
                     reported_bad_start_codon = true;
                 }
                 NStr::ToLower(codon_desc);
-                PostErr(sev, eErr_SEQ_FEAT_InternalStop, 
-                    NStr::IntToString(internal_stop_count) + 
-                    " internal stops (and " + codon_desc + " start codon). Genetic code [" + gccode + "]", feat);
+                if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                    // suppress if gpipe genomic
+                } else {
+                    PostErr(sev, eErr_SEQ_FEAT_InternalStop, 
+                        NStr::IntToString(internal_stop_count) + 
+                        " internal stops (and " + codon_desc + " start codon). Genetic code [" + gccode + "]", feat);
+                }
             }
         } else if (report_errors  ||  unclassified_except) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
-                NStr::IntToString(internal_stop_count) + 
-                " internal stops. Genetic code [" + gccode + "]", feat);
+            if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                // suppress if gpipe genomic
+            } else {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
+                    NStr::IntToString(internal_stop_count) + 
+                    " internal stops. Genetic code [" + gccode + "]", feat);
+            }
         }
         prot_ok = false;
         if (internal_stop_count > 5) {
@@ -5694,6 +5753,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             prot_handle = m_Scope->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
             if (!prot_handle  &&  m_Imp.IsFarFetchCDSproducts()) {
                 prot_handle = m_Scope->GetBioseqHandle(*protid);
+                farstr = "(far) ";
             }
         }
     }
@@ -5875,12 +5935,16 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             mismatches.empty()) {
             if (!no_beg  && !no_end) {
                 if (report_errors) {
-                    if (!got_stop) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
-                            "End of location should probably be partial", feat);
+                    if (m_Imp.IsGpipe () && m_Imp.IsGenomic()) {
+                        // suppress in gpipe genomic
                     } else {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
-                            "This SeqFeat should not be partial", feat);
+                        if (!got_stop) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
+                                "End of location should probably be partial", feat);
+                        } else {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                                "This SeqFeat should not be partial", feat);
+                        }
                     }
                 }
                 show_stop = false;
@@ -6218,7 +6282,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
         // compare gene xref to overlapping gene
         bool redundant_xref = false;
-        bool equivalent = false;
         string label = "?";
 
         if (overlapping_genes.size() > 0) {
@@ -6688,7 +6751,16 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_MinusStrandProtein, 
                          "Feature on protein indicates negative strand",
                          feat);
-            }            
+            }    
+
+            bool is_interesting = false;
+            if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
+                int id_num = feat.GetId().GetLocal().GetId();
+                if (id_num == 413 || id_num == 1296) {
+                  is_interesting = true;
+                }
+            }
+
 
             // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
             // ignore gap features for this

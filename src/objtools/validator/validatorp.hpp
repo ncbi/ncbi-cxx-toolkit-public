@@ -456,6 +456,8 @@ public:
     inline bool IsNW(void) const { return m_IsNW; }
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
+    inline bool IsGpipe(void) const { return m_IsGpipe; }
+    inline bool IsGenomic(void) const { return m_IsGenomic; }
     bool IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev);
     inline bool IsGenbank(void) const { return m_IsGB; }
     inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
@@ -614,6 +616,8 @@ private:
     bool m_IsXR;
     bool m_IsGI;
     bool m_IsGB;
+    bool m_IsGpipe;
+    bool m_IsGenomic;
     bool m_FeatLocHasGI;
     bool m_ProductLocHasGI;
     bool m_GeneHasLocusTag;
