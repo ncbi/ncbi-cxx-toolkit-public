@@ -532,6 +532,8 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
     enum EIntervalDirection which_half;
     Boolean index_subject_range = FALSE;
     Int2 retval = 0;
+    Int4 q_start;
+    Int4 mid_index2;
 
     /* Determine the query strand containing the input HSP.
        Only the strand matters for containment purposes,
@@ -736,7 +738,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
                  query_info->contexts[old_hsp->context].frame == -1 ) {
               /* Translate the old_hsp coordinates to the + strand 
                  (frame=1) for storage and comparison. -RMH- */
-              Int4 q_start = s_GetQueryStrandOffset(query_info,
+              q_start = s_GetQueryStrandOffset(query_info,
                                                     old_hsp->context);
               old_region_end = q_start - old_hsp->query.offset;
               old_region_start = q_start - old_hsp->query.end;
@@ -774,7 +776,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
                 nodes[mid_index].midptr = old_index;
             }
             else {
-                Int4 mid_index2 = s_IntervalRootNodeInit(tree, tree->s_min,
+                mid_index2 = s_IntervalRootNodeInit(tree, tree->s_min,
                                                          tree->s_max, &retval);
                 if (retval)
                       return retval;   
@@ -1063,6 +1065,14 @@ s_HSPQueryRangeIsMasklevelContained(Int4 in_offset,
                                     const BlastQueryInfo *query_info,
                                     Int4 masklevel )
 {
+    Int4 tree_hsp_offset;
+    Int4 tree_hsp_end;
+    Int4 overlapStart;
+    Int4 overlapEnd;
+    Int4 percOverlap;
+
+    tree_q_start = s_GetQueryStrandOffset(query_info, tree_hsp->context);
+
     /* check if alignments are from different query sequences 
        or query strands. Also check if tree_hsp has score strictly
        higher than in_hsp */
@@ -1073,9 +1083,6 @@ s_HSPQueryRangeIsMasklevelContained(Int4 in_offset,
         return 0;
     }
 
-    Int4 tree_hsp_offset;
-    Int4 tree_hsp_end;
-    tree_q_start = s_GetQueryStrandOffset(query_info, tree_hsp->context);
     if ( query_info->contexts[tree_hsp->context].frame == -1 )
     {
       tree_hsp_end = tree_q_start - tree_hsp->query.offset;
@@ -1085,13 +1092,13 @@ s_HSPQueryRangeIsMasklevelContained(Int4 in_offset,
       tree_hsp_end = tree_q_start + tree_hsp->query.end;
     }
 
-    Int4 overlapStart = tree_hsp_offset;
+    overlapStart = tree_hsp_offset;
     if ( overlapStart < in_offset )
       overlapStart = in_offset;
-    Int4 overlapEnd = tree_hsp_end;
+    overlapEnd = tree_hsp_end;
     if ( overlapEnd > in_end )
       overlapEnd = in_end;
-    Int4 percOverlap = (Int4)( 100*((double)(overlapEnd - overlapStart) /
+    percOverlap = (Int4)( 100*((double)(overlapEnd - overlapStart) /
                                (in_end - in_offset)) );
 
     if ( percOverlap >=  masklevel )
@@ -1110,10 +1117,16 @@ BlastIntervalTreeMasksHSP(const BlastIntervalTree *tree,
 {
     Int4 region_start;
     Int4 region_end;
+    Int4 in_query_start;
+    Int4 tmp_qstart;
+    Int4 middle;
+    Int4 tmp_index = 0;
+
     SIntervalNode *node = tree->nodes + subtree_index;
 
-    Int4 in_query_start = s_GetQueryStrandOffset(query_info, hsp->context);
-    Int4 tmp_qstart = in_query_start;
+    in_query_start = s_GetQueryStrandOffset(query_info, hsp->context);
+    tmp_qstart = in_query_start;
+
     if ( query_info->contexts[hsp->context].frame == -1 )
     {
       region_end = in_query_start - hsp->query.offset;
@@ -1123,9 +1136,6 @@ BlastIntervalTreeMasksHSP(const BlastIntervalTree *tree,
       region_start = in_query_start + hsp->query.offset;
       region_end = in_query_start + hsp->query.end;
     }
-
-    Int4 middle;
-    Int4 tmp_index = 0;
 
     ASSERT(hsp->query.offset <= hsp->query.end);
     ASSERT(hsp->subject.offset <= hsp->subject.end);
