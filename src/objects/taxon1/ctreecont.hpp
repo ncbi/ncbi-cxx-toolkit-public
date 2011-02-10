@@ -221,6 +221,7 @@ public:
     // modification of tree
     class CSortPredicate {
     public:
+        virtual ~CSortPredicate(void) {}
 	virtual bool Execute( CTreeContNodeBase* p1, CTreeContNodeBase* p2 )=0;
     };
     // add child to a node pointed by cursor
