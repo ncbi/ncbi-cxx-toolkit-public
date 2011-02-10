@@ -221,35 +221,35 @@ static STimeout       s_MxTmo;
 
 static void x_Sendmail_InitEnv(void)
 {
-    char         buf[40];
+    char         buf[sizeof(s_MxHost)];
     unsigned int port;
     double       tmo;
 
     if (*s_MxHost)
         return;
 
-    CORE_LOCK_WRITE;
-    if (ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)
-        &&  (tmo = atof(buf)) > 0.0) {
-        s_MxTmo.sec  = (unsigned int)  tmo;
-        s_MxTmo.usec = (unsigned int)((tmo - s_MxTmo.sec) * 1000000.0);
-    } else {
-        s_MxTmo.sec  = 120;
-        s_MxTmo.usec = 0;
+    if (!ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)
+        ||  (tmo = atof(buf)) <= 0.0) {
+        tmo = 120.0;
     }
-    if (ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
-        &&  (port = atoi(buf)) > 0  &&  port < 65536) {
-        s_MxPort = port;
-    } else
-        s_MxPort = 25;
-    if (!ConnNetInfo_GetValue(0, "MX_HOST", s_MxHost, sizeof(s_MxHost), 0)
-        ||  !*s_MxHost) {
+    if (!ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
+        ||  !(port = atoi(buf))  ||  port > 65535) {
+        port = 25;
+    }
+    if (!ConnNetInfo_GetValue(0, "MX_HOST", buf, sizeof(buf), 0)
+        ||  !*buf) {
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
-        strcpy(s_MxHost, "localhost");
+        strcpy(buf, "localhost");
 #else
-        strcpy(s_MxHost, "mailgw");
+        strcpy(buf, "mailgw");
 #endif /*NCBI_OS_UNIX && !NCBI_OS_CYGWIN*/
     }
+
+    CORE_LOCK_WRITE;
+    s_MxTmo.sec  = (unsigned int)  tmo;
+    s_MxTmo.usec = (unsigned int)((tmo - s_MxTmo.sec) * 1000000.0);
+    strcpy(s_MxHost, buf);
+    s_MxPort = port;
     CORE_UNLOCK;
 }
 
