@@ -47,8 +47,6 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
-#include <objtools/seqmasks_io/mask_bdb_reader.hpp>
 #include <algo/winmask/win_mask_dup_table.hpp>
 #include <algo/winmask/win_mask_util.hpp>
 
@@ -533,22 +531,6 @@ static const string GetIdString( const CSeq_entry & entry )
 }
 #endif
 
-namespace {
-    CMaskReader * x_GetReader( 
-            const string & name, CNcbiIstream * is, 
-            const string & infmt, bool parse_seqids )
-    {
-        if( infmt == "fasta" ) {
-            _ASSERT( is != 0 );
-            return new CMaskFastaReader( *is, true, parse_seqids );
-        }
-        else if( infmt == "blastdb" ) {
-            return new CMaskBDBReader( name );
-        }
-        else return 0;
-    }
-}
-
 //------------------------------------------------------------------------------
 void CheckDuplicates( const vector< string > & input,
                       const string & infmt,
@@ -562,52 +544,39 @@ void CheckDuplicates( const vector< string > & input,
 
     for( input_iterator i( input.begin() ); i != input.end(); ++i )
     {
-        CNcbiIfstream istream( i->c_str() );
-        // CMaskFastaReader reader( istream );
-        std::auto_ptr< CMaskReader > reader_p(
-                x_GetReader( *i, &istream, infmt, false ) );
-        _ASSERT( reader_p.get() != 0 );
-        CMaskReader & reader( *reader_p.get() );
-        CRef< CSeq_entry > entry( 0 );
         Uint4 seqnum( 0 );
 
-        while( (entry = reader.GetNextSequence()).NotEmpty() )
+        for(CWinMaskUtil::CInputBioseq_CI bs_iter(*i, infmt); bs_iter; ++bs_iter)
         {
-            CScope scope(*om);
-            CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+            CBioseq_Handle bsh = *bs_iter;
 
-            CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
-            for ( ;  bs_iter;  ++bs_iter) {
-                CBioseq_Handle bsh = *bs_iter;
+            if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
+            {
+                TSeqPos data_len = bsh.GetBioseqLength();
+                if( data_len < MIN_SEQ_LENGTH )
+                    continue;
 
-                if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
+                string id;
+                sequence::GetId(bsh, sequence::eGetId_Best)
+                    .GetSeqId()->GetLabel(&id);
+                data_len -= SAMPLE_SKIP;
+                tracker track( table, id );
+
+                string index;
+                CSeqVector data =
+                    bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                for( TSeqPos i = 0;  i < data_len;  ++i )
                 {
-                    TSeqPos data_len = bsh.GetBioseqLength();
-                    if( data_len < MIN_SEQ_LENGTH )
-                        continue;
+                    index.erase();
+                    data.GetSeqData(i, i + SAMPLE_LENGTH, index);
+                    const dup_lookup_table::sample * sample( table[index] );
 
-                    string id;
-                    sequence::GetId(bsh, sequence::eGetId_Best)
-                        .GetSeqId()->GetLabel(&id);
-                    data_len -= SAMPLE_SKIP;
-                    tracker track( table, id );
-
-                    string index;
-                    CSeqVector data =
-                        bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-                    for( TSeqPos i = 0;  i < data_len;  ++i )
-                    {
-                        index.erase();
-                        data.GetSeqData(i, i + SAMPLE_LENGTH, index);
-                        const dup_lookup_table::sample * sample( table[index] );
-
-                        if( sample != 0 )
-                            track( index, seqnum, i, sample->begin(), sample->end() );
-                    }
-
-                    table.add_seq_info( id, data );
-                    ++seqnum;
+                    if( sample != 0 )
+                        track( index, seqnum, i, sample->begin(), sample->end() );
                 }
+
+                table.add_seq_info( id, data );
+                ++seqnum;
             }
         }
     }

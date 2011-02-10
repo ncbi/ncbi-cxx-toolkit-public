@@ -39,7 +39,9 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/seqmasks_io/mask_reader.hpp>
 
 // #include "win_mask_config.hpp"
 
@@ -165,9 +167,37 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskUtil
             vector< TNwordSet > nword_sets_;
     };
 
+    /** Function iterating over bioseqs in input. Handles input as a list of seq-ids
+     *  to be queried from the object manager, in Fasta format or in BlastDB format
+    */
+    class NCBI_XALGOWINMASK_EXPORT CInputBioseq_CI
+    {
+    public:
+        CInputBioseq_CI(const string & input_file, const string & input_format);
+
+        /// Move to the next object in iterated sequence
+        CInputBioseq_CI& operator++ (void);
+
+        /// Check if iterator points to an object
+        DECLARE_OPERATOR_BOOL(m_CurrentBioseq);
+
+        const objects::CBioseq_Handle& operator* (void) const { return m_CurrentBioseq; }
+        const objects::CBioseq_Handle* operator-> (void) const { return &m_CurrentBioseq; }
+
+    private:
+        auto_ptr< CNcbiIstream > m_InputFile; // input file
+        auto_ptr< CMaskReader > m_Reader;      // reader used for fasta and bdb formats
+        CRef<objects::CScope> m_Scope;
+        objects::CBioseq_Handle      m_CurrentBioseq; // current found Bioseq
+
+        // disallow copying of object
+        CInputBioseq_CI(const CInputBioseq_CI&);
+        CInputBioseq_CI& operator= (const CInputBioseq_CI&);
+    };
+
         /**
-            \brief Check if the given bioseq should be considered for 
-                   processing.
+	  \brief Check if the given bioseq should be considered for 
+	  processing.
 
             ids and exclude_ids should not be simultaneousely non empty.
 

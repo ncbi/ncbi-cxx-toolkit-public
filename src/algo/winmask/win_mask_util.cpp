@@ -37,6 +37,9 @@
 #include <objmgr/util/sequence.hpp>
 #include <algo/winmask/win_mask_util.hpp>
 
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
+#include <objtools/seqmasks_io/mask_bdb_reader.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -167,6 +170,48 @@ bool CWinMaskUtil::CIdSet_TextMatch::find( const string & id_str ) const
     }
 
     return false;
+}
+
+CWinMaskUtil::CInputBioseq_CI::CInputBioseq_CI(const string & input_file,
+                                 const string & input_format)
+  : m_InputFile(new CNcbiIfstream(input_file.c_str()))
+{
+    if( input_format == "fasta" ) {
+        m_Reader.reset( new CMaskFastaReader( *m_InputFile, true, false ) );
+    }
+    else if( input_format == "blastdb" ) {
+        m_Reader.reset( new CMaskBDBReader( input_file ) );
+    } else if( input_format != "seqids" ) {
+        NCBI_THROW(CException, eUnknown,
+                    "Invalid CInputBioseq_CI input format: " + input_format);
+    }
+    operator++();
+}
+
+CWinMaskUtil::CInputBioseq_CI& CWinMaskUtil::CInputBioseq_CI::operator++ (void)
+{
+    m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
+    m_Scope->AddDefaults();
+    m_CurrentBioseq.Reset();
+
+    if(m_Reader.get()){
+        CRef<CSeq_entry> next_entry = m_Reader->GetNextSequence();
+        if( next_entry.NotEmpty() ){
+            NCBI_ASSERT(next_entry->IsSeq(), "Reader returned bad entry");
+            m_CurrentBioseq = m_Scope->AddTopLevelSeqEntry(*next_entry).GetSeq();
+        }
+    } else {
+        // No reader; this means input is a list of gis, one per line
+        string id;
+        while (NcbiGetlineEOL(*m_InputFile, id)) {
+            if(id.empty() || id[0] == '#')
+                continue;
+            m_CurrentBioseq = m_Scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+            break;
+        }
+    }
+
+    return *this;
 }
 
 //------------------------------------------------------------------------------

@@ -104,29 +104,14 @@ string mkdata( const CSeq_entry & entry )
 //------------------------------------------------------------------------------
 Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
 {
-    CNcbiIfstream input_stream( fname.c_str() );
-    // CMaskFastaReader reader( input_stream );
-    std::auto_ptr< CMaskReader > reader_p( x_GetReader( 
-                fname, &input_stream, infmt, false ) );
-    _ASSERT( reader_p.get() != 0 );
-    CMaskReader & reader( *reader_p.get() );
-    CRef< CSeq_entry > entry( 0 );
     Uint8 result = 0;
 
-    CRef<CObjectManager> om(CObjectManager::GetInstance());
-
-    while( (entry = reader.GetNextSequence()).NotEmpty() )
+    for(CWinMaskUtil::CInputBioseq_CI bs_iter(fname, infmt); bs_iter; ++bs_iter)
     {
-        CScope scope(*om);
-        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+        CBioseq_Handle bsh = *bs_iter;
 
-        CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
-        for ( ;  bs_iter;  ++bs_iter) {
-            CBioseq_Handle bsh = *bs_iter;
-
-            if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
-                result += bs_iter->GetBioseqLength();
-        }
+        if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
+            result += bsh.GetBioseqLength();
     }
 
     return result;
@@ -234,7 +219,7 @@ void CWinMaskCountsGenerator::operator()()
     vector< string > file_list;
 
     if( !use_list ) {
-        file_list.push_back( input );
+        NStr::Tokenize(input, ",", file_list);
     } else {
         string line;
         CNcbiIfstream fl_stream( input.c_str() );
@@ -431,59 +416,45 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
     for( vector< string >::const_iterator it( input_list.begin() );
          it != input_list.end(); ++it )
     {
-        CNcbiIfstream input_stream( it->c_str() );
-        // CMaskFastaReader reader( input_stream );
-        std::auto_ptr< CMaskReader > reader_p(
-                x_GetReader( *it, &input_stream, infmt, false ) );
-        _ASSERT( reader_p.get() != 0 );
-        CMaskReader & reader( *reader_p.get() );
-        CRef< CSeq_entry > entry( 0 );
-
-        while( (entry = reader.GetNextSequence()).NotEmpty() )
+        for(CWinMaskUtil::CInputBioseq_CI bs_iter(*it, infmt); bs_iter; ++bs_iter)
         {
-            CScope scope(*om);
-            CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+            CBioseq_Handle bsh = *bs_iter;
 
-            CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
-            for ( ;  bs_iter;  ++bs_iter) {
-                CBioseq_Handle bsh = *bs_iter;
+            if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
+            {
+                CSeqVector data =
+                    bs_iter->GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
-                if( CWinMaskUtil::consider( bsh, ids, exclude_ids ) )
-                {
-                    CSeqVector data =
-                        bs_iter->GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                if( data.empty() )
+                    continue;
 
-                    if( data.empty() )
+                TSeqPos length( data.size() );
+                Uint4 count( 0 );
+                Uint4 unit( 0 );
+
+                for( Uint4 i( 0 ); i < length; ++i ) {
+                    if( ambig( data[i] ) )
+                    {
+                        count = 0;
+                        unit = 0;
                         continue;
+                    }
+                    else
+                    {
+                        unit = ((unit<<2)&unit_mask) + letter( data[i] );
 
-                    TSeqPos length( data.size() );
-                    Uint4 count( 0 );
-                    Uint4 unit( 0 );
-
-                    for( Uint4 i( 0 ); i < length; ++i ) {
-                        if( ambig( data[i] ) )
+                        if( count >= unit_size - 1 )
                         {
-                            count = 0;
-                            unit = 0;
-                            continue;
+                            Uint4 runit( reverse_complement( unit, unit_size ) );
+
+                            if( unit <= runit && (unit&prefix_mask) == prefix )
+                                ++counts[unit&suffix_mask];
+
+                            if( runit <= unit && (runit&prefix_mask) == prefix )
+                                ++counts[runit&suffix_mask];
                         }
-                        else
-                        {
-                            unit = ((unit<<2)&unit_mask) + letter( data[i] );
 
-                            if( count >= unit_size - 1 )
-                            {
-                                Uint4 runit( reverse_complement( unit, unit_size ) );
-    
-                                if( unit <= runit && (unit&prefix_mask) == prefix )
-                                    ++counts[unit&suffix_mask];
-
-                                if( runit <= unit && (runit&prefix_mask) == prefix )
-                                    ++counts[runit&suffix_mask];
-                            }
-
-                            ++count;
-                        }
+                        ++count;
                     }
                 }
             }

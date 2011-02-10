@@ -215,30 +215,6 @@ private:
      **/
     Uint8 fastalen( const string & fname ) const;
 
-    /**\internal
-     **\brief Return a sequence stream based on input format.
-     **
-     **\param name database name for blastdb format
-     **\param is istream for fasta format
-     **\param infmt input format
-     **\param parse_seqids flag to parse ids in fasta stream
-     **
-     **\return ptr to the CMaskReader sequence stream object
-     **/
-    CMaskReader * x_GetReader( 
-            const string & name, CNcbiIstream * is, 
-            const string & infmt, bool parse_seqids ) const
-    {
-        if( infmt == "fasta" ) {
-            _ASSERT( is != 0 );
-            return new CMaskFastaReader( *is, true, parse_seqids );
-        }
-        else if( infmt == "blastdb" ) {
-            return new CMaskBDBReader( name );
-        }
-        else return 0;
-    }
-
     string input;                   /**<\internal input file (or list of input files) */
     CRef< CSeqMaskerOstat > ustat;  /**<\internal object used to output the unit counts statistics */
     Uint4 max_mem;                  /**<\internal available memory in bytes */
