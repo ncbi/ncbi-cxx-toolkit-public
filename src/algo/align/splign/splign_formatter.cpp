@@ -719,21 +719,33 @@ const
                         scores.push_back(score);
                     }}
 
-                    // add acceptor residues if available
-                    const size_t adim (seg.m_annot.size());
-                    if(adim > 2 && seg.m_annot[2] == '<') {
-                        string acc;
-                        acc.push_back(seg.m_annot[0]);
-                        acc.push_back(seg.m_annot[1]);
-                        exon->SetAcceptor_before_exon().SetBases(acc);
+                    if( i>0 && !(*ii).m_Segments[i-1].m_exon) {// 5` partial
+                        exon->SetPartial(true);
                     }
 
-                    // add donor residues if available
-                    if(adim > 2 && seg.m_annot[adim - 3] == '>') {
-                        string dnr;
-                        dnr.push_back(seg.m_annot[adim - 2]);
-                        dnr.push_back(seg.m_annot[adim - 1]);
-                        exon->SetDonor_after_exon().SetBases(dnr);
+                    const size_t adim (seg.m_annot.size());
+                    if( i>0 && (*ii).m_Segments[i-1].m_exon) {
+                        // add acceptor residues if available   
+                        if(adim > 2 && seg.m_annot[2] == '<') {
+                            string acc;
+                            acc.push_back(seg.m_annot[0]);
+                            acc.push_back(seg.m_annot[1]);
+                            exon->SetAcceptor_before_exon().SetBases(acc);
+                        }
+                    }
+
+                    if(i+1<seg_dim && !(*ii).m_Segments[i+1].m_exon) {//3` partial
+                        exon->SetPartial(true);
+                    }
+
+                    if(i+1<seg_dim && (*ii).m_Segments[i+1].m_exon) {
+                        // add donor residues if available
+                        if(adim > 2 && seg.m_annot[adim - 3] == '>') {
+                            string dnr;
+                            dnr.push_back(seg.m_annot[adim - 2]);
+                            dnr.push_back(seg.m_annot[adim - 1]);
+                            exon->SetDonor_after_exon().SetBases(dnr);
+                        }
                     }
 
                     if(with_parts) {
