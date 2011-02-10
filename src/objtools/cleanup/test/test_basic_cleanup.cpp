@@ -119,32 +119,32 @@ public:
 
     /// Main methods
 
-    CConstRef<CCleanupChange> BasicCleanup (
+    CConstRef<CCleanupChange> BasicCleanupSeqEntry (
         CSeq_entry& se,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> BasicCleanup (
+    CConstRef<CCleanupChange> BasicCleanupSeqSubmit (
         CSeq_submit& ss,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> BasicCleanup (
+    CConstRef<CCleanupChange> BasicCleanupSeqAnnot (
         CSeq_annot& sa,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanup (
+    CConstRef<CCleanupChange> ExtendedCleanupSeqEntry (
         CSeq_entry& se,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanup (
+    CConstRef<CCleanupChange> ExtendedCleanupSeqSubmit (
         CSeq_submit& ss,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanup (
+    CConstRef<CCleanupChange> ExtendedCleanupSeqAnnot (
         CSeq_annot& sa,
         Uint4 options = 0
     );
@@ -155,7 +155,6 @@ private:
     CNewCleanup (const CNewCleanup&);
     CNewCleanup& operator= (const CNewCleanup&);
 };
-
 
 
 END_SCOPE(objects)
@@ -208,12 +207,13 @@ private:
 
     size_t m_Level;
     size_t m_Reported;
+    bool m_DoExtendedCleanup;
 };
 
 
 CTest_cleanupApplication::CTest_cleanupApplication(void) :
     m_In(0), m_Options(0), m_Continue(false), m_NoCleanup(false), m_Level(0),
-    m_Reported(0)
+    m_Reported(0), m_DoExtendedCleanup(false)
 {
 }
 
@@ -236,6 +236,7 @@ void CTest_cleanupApplication::Init(void)
     arg_desc->AddFlag("t", "Input is Seq-set (NCBI Release file)");
     arg_desc->AddFlag("b", "Input is in binary format");
     arg_desc->AddFlag("c", "Continue on ASN.1 error");
+    arg_desc->AddFlag("e", "Do extended cleanup, not just basic cleanup.");
     arg_desc->AddFlag("n", "Don't do cleanup. Just read and write file");
 
     arg_desc->AddOptionalKey(
@@ -316,11 +317,16 @@ void CTest_cleanupApplication::ReadClassMember
                 CNewCleanup cleanup;
                 CConstRef<CCleanupChange> changes;
                 if ( ! m_NoCleanup) {
-                    changes = cleanup.BasicCleanup(*se, m_Options);
+                    changes = cleanup.BasicCleanupSeqEntry(*se, m_Options);
+                }
+                // ExtendedCleanup, if requested
+                if( m_DoExtendedCleanup ) {
+                    cleanup.ExtendedCleanupSeqEntry( *se, m_Options );
                 }
                 if ( changes->ChangeCount() > 0 ) {
                     m_Reported += PrintChanges(changes, GetArgs());
                 }
+
             } catch (exception e) {
                 if ( !m_Continue ) {
                     throw;
@@ -373,7 +379,11 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanup(*se, m_Options);
+        changes = cleanup.BasicCleanupSeqEntry(*se, m_Options);
+    }
+    // ExtendedCleanup, if requested
+    if( m_DoExtendedCleanup ) {
+        cleanup.ExtendedCleanupSeqEntry( *se, m_Options );
     }
     *m_Out << (*se);
     return changes;
@@ -391,7 +401,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanup(*ss, m_Options);
+        changes = cleanup.BasicCleanupSeqSubmit(*ss, m_Options);
     }
     *m_Out << (*ss);
     return changes;
@@ -409,7 +419,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanup(*sa, m_Options);
+        changes = cleanup.BasicCleanupSeqAnnot(*sa, m_Options);
     }
     *m_Out << (*sa);
     return changes;
@@ -420,6 +430,9 @@ void CTest_cleanupApplication::Setup(const CArgs& args)
 {
     if (args["n"])
         m_NoCleanup = true;
+    if( args["e"] ) {
+        m_DoExtendedCleanup = true;
+    }
     SetupCleanupOptions(args);
 }
 

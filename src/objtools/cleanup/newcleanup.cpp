@@ -75,32 +75,32 @@ public:
 
     /// Main methods
 
-    CConstRef<CCleanupChange> BasicCleanup (
+    CConstRef<CCleanupChange> BasicCleanupSeqEntry (
         CSeq_entry& se,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> BasicCleanup (
+    CConstRef<CCleanupChange> BasicCleanupSeqSubmit (
         CSeq_submit& ss,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> BasicCleanup (
+    CConstRef<CCleanupChange> BasicCleanupSeqAnnot (
         CSeq_annot& sa,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanup (
+    CConstRef<CCleanupChange> ExtendedCleanupSeqEntry (
         CSeq_entry& se,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanup (
+    CConstRef<CCleanupChange> ExtendedCleanupSeqSubmit (
         CSeq_submit& ss,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanup (
+    CConstRef<CCleanupChange> ExtendedCleanupSeqAnnot (
         CSeq_annot& sa,
         Uint4 options = 0
     );
@@ -219,6 +219,8 @@ class CNewCleanup_imp
 {
 public:
 
+    static const int NCBI_CLEANUP_VERSION;
+
     // some cleanup functions will return a value telling you what to do
     enum EAction {
         eAction_Nothing = 1,
@@ -233,27 +235,27 @@ public:
 
     /// Main methods
 
-    void BasicCleanup (
+    void BasicCleanupSeqEntry (
         CSeq_entry& se
     );
 
-    void BasicCleanup (
+    void BasicCleanupSeqSubmit (
         CSeq_submit& ss
     );
 
-    void BasicCleanup (
+    void BasicCleanupSeqAnnot (
         CSeq_annot& sa
     );
 
-    void ExtendedCleanup (
+    void ExtendedCleanupSeqEntry (
         CSeq_entry& se
     );
 
-    void ExtendedCleanup (
+    void ExtendedCleanupSeqSubmit (
         CSeq_submit& ss
     );
 
-    void ExtendedCleanup (
+    void ExtendedCleanupSeqAnnot (
         CSeq_annot& sa
     );
 
@@ -275,6 +277,13 @@ private:
     void SeqentryBC (CSeq_entry& se);
     void SeqsetBC (CBioseq_set& bss);
     void BioseqBC (CBioseq& bs);
+
+    void SeqIdBC( CSeq_id &seq_id );
+
+    void SeqAlignBC( CSeq_align &seq_align );
+    void DendiagBC( CDense_diag & dense_diag );
+    void DenseSegBC( CDense_seg & dense_seg );
+    void StdSegBC( CStd_seg & std_seg );
 
     void SeqdescBC (CSeqdesc& sd);
 
@@ -328,6 +337,7 @@ private:
     void GenerefBC (CGene_ref& gr);
     void ProtrefBC (CProt_ref& pr);
     void RnarefBC (CRNA_ref& rr);
+    void CdregionBC( CCdregion & cdregion );
 
     void GeneFeatBC (CGene_ref& gr, CSeq_feat& sf);
     void ProtFeatfBC (CProt_ref& pr, CSeq_feat& sf);
@@ -393,6 +403,13 @@ private:
     // modernize PCR Primer
     void x_ModernizePCRPrimers( CBioSource &biosrc );
 
+    void x_AddNonCopiedQual( 
+        vector< CRef< CGb_qual > > &out_quals, 
+        const char *qual, 
+        const char *val );
+
+    void x_AddNcbiCleanupObject( CSeq_entry &seq_entry);
+
 protected:
 
     CRef<CCleanupChange>  m_Changes;
@@ -452,7 +469,6 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-
 static CRef<CCleanupChange> makeCleanupChange (
     Uint4 options
 )
@@ -479,7 +495,7 @@ CNewCleanup::~CNewCleanup (void)
 {
 }
 
-CConstRef<CCleanupChange> CNewCleanup::BasicCleanup (
+CConstRef<CCleanupChange> CNewCleanup::BasicCleanupSeqEntry (
     CSeq_entry& se,
     Uint4 options
 )
@@ -487,11 +503,11 @@ CConstRef<CCleanupChange> CNewCleanup::BasicCleanup (
 {
     CRef<CCleanupChange> changes (makeCleanupChange (options));
     CNewCleanup_imp clean_i (changes, options);
-    clean_i.BasicCleanup (se);
+    clean_i.BasicCleanupSeqEntry (se);
     return changes;
 }
 
-CConstRef<CCleanupChange> CNewCleanup::BasicCleanup (
+CConstRef<CCleanupChange> CNewCleanup::BasicCleanupSeqSubmit (
     CSeq_submit& ss,
     Uint4 options
 )
@@ -499,11 +515,11 @@ CConstRef<CCleanupChange> CNewCleanup::BasicCleanup (
 {
     CRef<CCleanupChange> changes (makeCleanupChange (options));
     CNewCleanup_imp clean_i (changes, options);
-    clean_i.BasicCleanup (ss);
+    clean_i.BasicCleanupSeqSubmit (ss);
     return changes;
 }
 
-CConstRef<CCleanupChange> CNewCleanup::BasicCleanup (
+CConstRef<CCleanupChange> CNewCleanup::BasicCleanupSeqAnnot (
     CSeq_annot& sa,
     Uint4 options
 )
@@ -511,11 +527,11 @@ CConstRef<CCleanupChange> CNewCleanup::BasicCleanup (
 {
     CRef<CCleanupChange> changes (makeCleanupChange (options));
     CNewCleanup_imp clean_i (changes, options);
-    clean_i.BasicCleanup (sa);
+    clean_i.BasicCleanupSeqAnnot (sa);
     return changes;
 }
 
-CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
+CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanupSeqEntry (
     CSeq_entry& se,
     Uint4 options
 )
@@ -523,11 +539,11 @@ CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
 {
     CRef<CCleanupChange> changes (makeCleanupChange (options));
     CNewCleanup_imp clean_i (changes, options);
-    clean_i.ExtendedCleanup (se);
+    clean_i.ExtendedCleanupSeqEntry (se);
     return changes;
 }
 
-CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
+CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanupSeqSubmit (
     CSeq_submit& ss,
     Uint4 options
 )
@@ -535,11 +551,11 @@ CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
 {
     CRef<CCleanupChange> changes (makeCleanupChange (options));
     CNewCleanup_imp clean_i (changes, options);
-    clean_i.ExtendedCleanup (ss);
+    clean_i.ExtendedCleanupSeqSubmit (ss);
     return changes;
 }
 
-CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
+CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanupSeqAnnot (
     CSeq_annot& sa,
     Uint4 options
 )
@@ -547,7 +563,7 @@ CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
 {
     CRef<CCleanupChange> changes (makeCleanupChange (options));
     CNewCleanup_imp clean_i (changes, options);
-    clean_i.ExtendedCleanup (sa);
+    clean_i.ExtendedCleanupSeqAnnot (sa);
     return changes;
 }
 
@@ -591,6 +607,7 @@ CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
 // #include <new_cleanupp.hpp>
 #include "cleanup_utils.hpp"
 
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
@@ -604,6 +621,7 @@ CConstRef<CCleanupChange> CNewCleanup::ExtendedCleanup (
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+const int CNewCleanup_imp::NCBI_CLEANUP_VERSION = 1;
 
 // Constructor
 CNewCleanup_imp::CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options)
@@ -629,7 +647,7 @@ CNewCleanup_imp::~CNewCleanup_imp (void)
 
 // Main methods
 
-void CNewCleanup_imp::BasicCleanup (
+void CNewCleanup_imp::BasicCleanupSeqEntry (
     CSeq_entry& se
 )
 
@@ -640,7 +658,7 @@ void CNewCleanup_imp::BasicCleanup (
     SeqentryBC (se);
 }
 
-void CNewCleanup_imp::BasicCleanup (
+void CNewCleanup_imp::BasicCleanupSeqSubmit (
     CSeq_submit& ss
 )
 
@@ -654,13 +672,13 @@ void CNewCleanup_imp::BasicCleanup (
         case NCBI_SEQSUBMIT(Entrys):
             EDIT_EACH_SEQENTRY_ON_SEQSUBMIT (ss_itr, ss) {
                 CSeq_entry& se = **ss_itr;
-                BasicCleanup (se);
+                BasicCleanupSeqEntry (se);
             }
             break;
         case NCBI_SEQSUBMIT(Annots):
             EDIT_EACH_SEQANNOT_ON_SEQSUBMIT (sa_itr, ss) {
                 CSeq_annot& sa = **sa_itr;
-                BasicCleanup (sa);
+                BasicCleanupSeqAnnot (sa);
             }
             break;
         default :
@@ -668,7 +686,7 @@ void CNewCleanup_imp::BasicCleanup (
     }
 }
 
-void CNewCleanup_imp::BasicCleanup (
+void CNewCleanup_imp::BasicCleanupSeqAnnot (
     CSeq_annot& sa
 )
 
@@ -751,8 +769,6 @@ void CNewCleanup_imp::SeqentryBC (
 )
 
 {
-    // recursive exploration from top Seq-entry
-
     SWITCH_ON_SEQENTRY_CHOICE (se) {
         case NCBI_SEQENTRY(Seq) :
             {
@@ -776,6 +792,32 @@ void CNewCleanup_imp::SeqsetBC (
 )
 
 {
+    if( ! FIELD_IS_SET(bss, Class) || 
+        GET_FIELD(bss, Class) == CBioseq_set::eClass_not_set || 
+        GET_FIELD(bss, Class) == CBioseq_set::eClass_other ) 
+    { 
+        // TODO: check the first param for NULL
+        int num_nucs = 0;
+        int num_prots = 0;
+        CBioseq_set_Handle handle = m_Scope->GetBioseq_setHandle( bss );
+        if( handle ) {
+            CBioseq_CI bioseq_it( handle, CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_Mains );
+            for( ; bioseq_it ; ++bioseq_it ) {
+                if( bioseq_it->IsAa() ) {
+                    ++num_prots;
+                } else if( bioseq_it->IsNa() ) {
+                    ++num_nucs;
+                }
+            }
+        }
+
+        if( (num_nucs == 1) && (num_prots > 0) ) {
+            bss.SetClass( CBioseq_set::eClass_nuc_prot );
+        } else {
+            bss.SetClass( CBioseq_set::eClass_genbank );
+        }
+    }
+
     EDIT_EACH_SEQDESC_ON_SEQSET (sd_itr, bss) {
         CSeqdesc& sd = **sd_itr;
         SeqdescBC (sd);
@@ -807,18 +849,73 @@ void CNewCleanup_imp::BioseqBC (
         SeqannotBC (sa);
     }
 
-    // TODO: test this
-    /* EDIT_EACH_SEQID_ON_BIOSEQ( seqid_itr, bs ) {
-        CSeq_id &seq_id = **seqid_itr;
-        // also, use macros here
-        if( SEQID_CHOICE_IS( seq_id, NCBI_SEQID(Local) ) ) {
-            if( CleanString( seq_id.SetLocal().SetStr() ) ) {
-                ChangeMade (CCleanupChange::eTrimSpaces);
+    EDIT_EACH_SEQID_ON_BIOSEQ( seqid_itr, bs ) {
+        SeqIdBC( **seqid_itr );
+    }
+
+    // !!! TODO: cleanup instance !!!
+}
+
+void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
+{
+    if( SEQID_CHOICE_IS( seq_id, NCBI_SEQID(Local) ) && GET_FIELD(seq_id, Local).IsStr() ) {
+        TRUNCATE_CHOICE_SPACES( GET_MUTABLE(seq_id, Local), Str );
+    }
+}
+
+void CNewCleanup_imp::SeqAlignBC( CSeq_align &seq_align )
+{
+    EDIT_EACH_BOUND_ON_SEQALIGN( bound_iter, seq_align ) {
+        SeqLocBC( **bound_iter );
+    }
+
+    SWITCH_ON_SEGTYPE_ON_SEQALIGN(seq_align) {
+    case NCBI_SEGTYPE(Dendiag):
+        {
+            EDIT_EACH_DENDIAG_ON_SEQALIGN( dendiag_iter, seq_align ) {
+                DendiagBC( **dendiag_iter );
             }
         }
-    } */
+        break;
+    case NCBI_SEGTYPE(Denseg):
+        DenseSegBC( seq_align.SetSegs().SetDenseg() );
+        break;
+    case NCBI_SEGTYPE(Std):
+        EDIT_EACH_STDSEG_ON_SEQALIGN( std_iter, seq_align ) {
+            StdSegBC( **std_iter );
+        }
+        break;
+    case NCBI_SEGTYPE(Disc):
+        // recursive
+        EDIT_EACH_RECURSIVE_SEQALIGN_ON_SEQALIGN( disc_iter, seq_align ) {
+            SeqAlignBC( **disc_iter );
+        }
+        break;
+    default:
+        break;
+    }
+}
 
-    // !!! TODO: cleanup instance and ids !!!
+void CNewCleanup_imp::DendiagBC( CDense_diag & dense_diag )
+{
+    EDIT_EACH_SEQID_ON_DENDIAG( id_iter, dense_diag ) {
+        SeqIdBC( **id_iter );
+    }
+}
+
+void CNewCleanup_imp::DenseSegBC( CDense_seg & dense_seg )
+{
+    EDIT_EACH_SEQID_ON_DENSEG( id_iter, dense_seg ) {
+        SeqIdBC( **id_iter );
+    }
+}
+
+void CNewCleanup_imp::StdSegBC( CStd_seg & std_seg )
+{
+    /* EDIT_EACH_SEQID_ON_STDSEG( id_iter, std_seg ) {
+        SeqIdBC( **id_iter );
+    } */
+    // TODO
 }
 
 void CNewCleanup_imp::SeqdescBC (
@@ -1415,8 +1512,8 @@ static bool s_OrgModCompare (
     }
 
     // attrib comparison (realistically, we don't expect to fall back to this)
-    const string& attrib1 = GET_FIELD (omd1, Attrib);
-    const string& attrib2 = GET_FIELD (omd2, Attrib);
+    const string& attrib1 = ( FIELD_IS_SET(omd1, Attrib) ? GET_FIELD (omd1, Attrib) : kEmptyStr );
+    const string& attrib2 = ( FIELD_IS_SET(omd2, Attrib) ? GET_FIELD (omd2, Attrib) : kEmptyStr );
     return NStr::CompareNocase( attrib1, attrib2 ) < 0;
 }
 
@@ -1437,8 +1534,8 @@ static bool s_OrgModEqual (
     const string& subname2 = GET_FIELD (omd2, Subname);
     if (! NStr::EqualNocase (subname1, subname2)) return false;
 
-    const string& attrib1 = GET_FIELD (omd1, Attrib);
-    const string& attrib2 = GET_FIELD (omd2, Attrib);
+    const string& attrib1 = ( FIELD_IS_SET(omd1, Attrib) ? GET_FIELD (omd1, Attrib) : kEmptyStr );
+    const string& attrib2 = ( FIELD_IS_SET(omd2, Attrib) ? GET_FIELD (omd2, Attrib) : kEmptyStr );
     if (! NStr::EqualNocase (attrib1, attrib2)) return false;
 
     TORGMOD_SUBTYPE chs1 = GET_FIELD (omd1, Subtype);
@@ -1732,16 +1829,16 @@ void CNewCleanup_imp::PubBC(CPub& pub, bool fix_initials)
 #define PUBBC_CASE(cit_type, func) \
     case NCBI_PUB(cit_type): \
         func( GET_MUTABLE(pub, cit_type), fix_initials); \
-        break
+        break;
 
     switch (pub.Which()) {
-    PUBBC_CASE(Gen, CitGenBC);
-    PUBBC_CASE(Sub, CitSubBC);
-    PUBBC_CASE(Article, CitArtBC);
-    PUBBC_CASE(Book, CitBookBC);
-    PUBBC_CASE(Patent, CitPatBC);
-    PUBBC_CASE(Man, CitLetBC);
-    PUBBC_CASE(Medline, MedlineEntryBC);
+    PUBBC_CASE(Gen, CitGenBC)
+    PUBBC_CASE(Sub, CitSubBC)
+    PUBBC_CASE(Article, CitArtBC)
+    PUBBC_CASE(Book, CitBookBC)
+    PUBBC_CASE(Patent, CitPatBC)
+    PUBBC_CASE(Man, CitLetBC)
+    PUBBC_CASE(Medline, MedlineEntryBC)
     default:
         break;
     }
@@ -1814,7 +1911,6 @@ void CNewCleanup_imp::CitSubBC(CCit_sub& citsub, bool fix_initials)
         }
         if (! FIELD_IS_SET(citsub, Date)  &&  FIELD_IS_SET(imp, Date) ) {
              GET_MUTABLE(citsub, Date).Assign( GET_FIELD(imp, Date) );
-            RESET_FIELD(imp, Date);
             ChangeMade(CCleanupChange::eChangePublication);
         }
         if ( ! FIELD_IS_SET(imp, Pub) ) {
@@ -2056,7 +2152,9 @@ void CNewCleanup_imp::AffilBC( CAffil& af )
     switch (af.Which()) {
         case CAffil::e_Str:
         {{
-            CLEAN_STRING_CHOICE(af, Str);
+            if ( CleanString( af.SetStr() ) ) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
             break;
         }}
         case CAffil::e_Std:
@@ -2327,6 +2425,8 @@ bool s_IsOneMinusStrand(const CSeq_loc& sl)
 void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
 {
     if (loc.IsWhole()  &&  m_Scope) {
+        SeqIdBC( GET_MUTABLE(loc, Whole) );
+
         // change the Seq-loc/whole to a Seq-loc/interval which covers the whole sequence.
         CRef<CSeq_id> id(new CSeq_id());
         id->Assign(loc.GetWhole());
@@ -2348,8 +2448,11 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
             ChangeMade(CCleanupChange::eChangeWholeLocation);
         }
     }
-            
+
     switch (loc.Which()) {
+    case CSeq_loc::e_Empty:
+        SeqIdBC( GET_MUTABLE(loc, Empty) );
+        break;
     case CSeq_loc::e_Int :
         x_SeqIntervalBC( GET_MUTABLE(loc, Int) );
         break;
@@ -2369,6 +2472,7 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
     case CSeq_loc::e_Pnt :
         {
             CSeq_loc::TPnt& pnt = loc.SetPnt();
+            CALL_IF_SET( SeqIdBC, pnt, Id );
             
             // change both and both-rev to plus and minus, respectively
             if (pnt.CanGetStrand()) {
@@ -2381,6 +2485,27 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
                     ChangeMade(CCleanupChange::eChangeStrand);
                 }                
             }
+        }
+        break;
+    case CSeq_loc::e_Packed_pnt:
+        {
+            CSeq_loc::TPacked_pnt &packed_pnt = GET_MUTABLE( loc, Packed_pnt );
+            CALL_IF_SET( SeqIdBC, packed_pnt, Id );
+        }
+        break;
+    case CSeq_loc::e_Equiv:
+        {
+            CSeq_loc_equiv &equiv = GET_MUTABLE(loc, Equiv);
+            NON_CONST_ITERATE(CSeq_loc_equiv::Tdata, loc_iter, equiv.Set()) {
+                SeqLocBC(**loc_iter);
+            }
+        }
+        break;
+    case CSeq_loc::e_Bond:
+        {
+            CSeq_bond &bond = GET_MUTABLE(loc, Bond);
+            CALL_IF_SET_CHAIN_2( SeqIdBC, bond, A, Id );
+            CALL_IF_SET_CHAIN_2( SeqIdBC, bond, B, Id );
         }
         break;
     case CSeq_loc::e_Mix :
@@ -2516,7 +2641,8 @@ void CNewCleanup_imp::SeqannotBC (
             }
             break;
         case NCBI_SEQANNOT(Align) :
-            {
+            EDIT_EACH_SEQALIGN_ON_SEQANNOT( align_iter, sa ) {
+                SeqAlignBC( **align_iter );
             }
             break;
         case NCBI_SEQANNOT(Graph) :
@@ -3360,130 +3486,365 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, CSeq_f
     return trna;        
 }
 
+static
+char s_FindTrnaAA( const string &str )
+{
+    if ( str.empty() ) return '\0';
+    string tmp = str;
+    NStr::TruncateSpacesInPlace(tmp);
+    
+    if( tmp.length() == 1 ) {
+        // if the string is a valid one-letter code, just return that
+        const char aminoAcidLetter = toupper(tmp[0]);
+        if( sm_TrnaInverseKeys.find(aminoAcidLetter) != sm_TrnaInverseKeys.end() ) {
+            return aminoAcidLetter;
+        }
+    } else {
+        // translate 3-letter codes and full-names to one-letter codes
+        TTrnaMap::const_iterator trna_iter = sm_TrnaKeys.find (tmp.c_str ());
+        if( trna_iter != sm_TrnaKeys.end() ) {
+            return trna_iter->second;
+        }
+    }
+
+    return '\0';
+}
+
+class CCharInSet {
+public:
+    CCharInSet( const string &list_of_characters ) {
+        copy( list_of_characters.begin(), list_of_characters.end(),
+            inserter( char_set, char_set.begin() ) );
+    }
+
+    bool operator()( const char ch ) {
+        return ( char_set.find(ch) != char_set.end() );
+    }
+
+private:
+    set<char> char_set;
+};
+
+static
+void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_list )
+{
+    out_string_list.clear();
+    if ( tRNA_string.empty() ) return;
+
+    // SGD Tx(NNN)c or Tx(NNN)c#, where x is the amino acid, c is the chromosome (A-P, Q for mito),
+    // and optional # is presumably for individual tRNAs with different anticodons and the same
+    // amino acid.
+    static CRegexp valid_sgd_regex("^[Tt][A-Za-z]\\(...\\)[A-Za-z]\\d?\\d?$");
+    if ( valid_sgd_regex.IsMatch(tRNA_string) ) {
+        // parse SGD tRNA anticodon
+        out_string_list.push_back(kEmptyStr);
+        string &new_SGD_tRNA_anticodon = out_string_list.back();
+        string raw_codon_part = tRNA_string.substr(3,3);
+        NStr::ToUpper( raw_codon_part );
+        string reverse_complement;
+        CSeqManip::ReverseComplement( raw_codon_part, CSeqUtil::e_Iupacna, 0, 3, reverse_complement );
+        new_SGD_tRNA_anticodon = string("(") + reverse_complement + ')';
+
+        // parse SGD tRNA amino acid
+        out_string_list.push_back(tRNA_string.substr(1,1));
+        return;
+    }
+
+    string tRNA_string_copy = tRNA_string;
+    // Note that we do NOT remove "*", since it might be a terminator tRNA symbol
+    replace_if( tRNA_string_copy.begin(), tRNA_string_copy.end(), 
+        CCharInSet("-,;:()=\'_~"), ' ' );
+
+    vector<string> tRNA_tokens;
+    // " \t\n\v\f\r" are the standard whitespace chars
+    // ( source: http://www.cplusplus.com/reference/clibrary/cctype/isspace/ )
+    NStr::Tokenize( tRNA_string_copy, " \t\n\v\f\r", tRNA_tokens, NStr::eMergeDelims );
+
+    EDIT_EACH_STRING_IN_VECTOR( tRNA_token_iter, tRNA_tokens ) {
+        string &tRNA_token = *tRNA_token_iter;
+        // remove initial "tRNA", if any
+        if ( NStr::StartsWith(tRNA_token, "tRNA", NStr::eNocase) ) {
+            tRNA_token = tRNA_token.substr(3);
+        }
+        static CRegexp threeLettersPlusDigits("^[A-Za-z][A-Za-z][A-Za-z]\\d*$");
+        if (! tRNA_token.empty() ) {
+            if ( threeLettersPlusDigits.IsMatch(tRNA_token) ) {
+                tRNA_token = tRNA_token.substr(0, 3);
+            }
+            out_string_list.push_back(tRNA_token);
+        }
+    }
+}
+
+static const char *codonLetterExpand [] =
+{
+  "?", "A", "C", "AC",
+  "G", "AG", "CG", "ACG",
+  "T", "AT", "CT", "ACT",
+  "GT", "AGT", "CGT", "ACGT",
+  NULL
+};
+
+static
+bool s_ParseDegenerateCodon( CTrna_ext & tRNA, string & codon )
+{
+  const static string intToChr = "?ACMGRSVTWYHKDBN";
+
+  if( codon.length() < 3 ) {
+      return false;
+  }
+
+  // the first two have to be real nucleotides
+  const string::size_type first_bad_char = codon.find_first_not_of("ACGT");
+  if( first_bad_char != string::npos && first_bad_char < 2 ) {
+      return false;
+  }
+
+  int idx = intToChr.find( codon [2] );
+  if (idx == (int)string::npos ) return false;
+
+  const char *expanded_codon_letter = codonLetterExpand [idx];
+  const char *iter = expanded_codon_letter;
+  char ch = *iter;
+  int tRNA_codon_idx = 0;
+  codon.erase(3);
+  while ( *iter != '\0' && tRNA_codon_idx < 6 ) {
+    codon [2] = ch;
+    tRNA.SetCodon().push_back( CGen_code_table::CodonToIndex(codon) ); // TODO: make sure Seq_code_iupacna
+
+    // prepare for next iteration
+    iter++;
+    ch = *iter;
+    tRNA_codon_idx++;
+  }
+
+  return true;
+}
+
+// based on C's ParseTRnaString (TODO: remove that comment)
+static 
+char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, string &tRNA_codon, bool noSingleLetter )
+{
+    if (out_justTrnaText != NULL) {
+        *out_justTrnaText = false;
+    }
+    tRNA_codon.clear();
+
+    if ( comment.empty() ) return '\0';
+
+    CRef<CTrna_ext> tr( new CTrna_ext );
+
+    char aa = '\0';
+    list<string> head;
+    s_TokenizeTRnaString (comment, head);
+    bool justt = true;
+    FOR_EACH_STRING_IN_LIST( head_iter, head ) {
+        if( aa != 0 && aa != 'A' ) {
+            break;
+        }
+        const string &str = *head_iter;
+        char curraa = '\0';
+        if (noSingleLetter && str.length() == 1) {
+            curraa = '\0';
+        } else {
+            curraa = s_FindTrnaAA (str);
+        }
+        if (curraa != '\0') {
+            if (aa == '\0' || aa == 'A') {
+                aa = curraa;
+            }
+        } else if ( ! NStr::EqualNocase ("tRNA", str) &&
+            ! NStr::EqualNocase ("transfer", str) &&
+            ! NStr::EqualNocase ("RNA", str) &&
+            ! NStr::EqualNocase ("product", str) ) 
+        {
+            if ( str.length() == 3) {
+                tRNA_codon = str;
+                NStr::ReplaceInPlace( tRNA_codon, "U", "T" );
+                if (s_ParseDegenerateCodon ( *tr, tRNA_codon)) {
+                    tRNA_codon.clear();
+                    copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
+                } else {
+                    justt = false;
+                }
+            } else {
+                justt = false;
+            }
+        }
+    }
+    FOR_EACH_STRING_IN_LIST( head_iter, head ) {
+        const string &str = *head_iter;
+        char curraa = s_FindTrnaAA (str);
+        if (curraa != '\0') {
+        } else if ( ! NStr::EqualNocase ("tRNA", str) &&
+            ! NStr::EqualNocase ("transfer", str) &&
+            ! NStr::EqualNocase ("RNA", str) &&
+            ! NStr::EqualNocase ("product", str) ) {
+                if ( str.length() == 3) {
+                    tRNA_codon = str;
+                    NStr::ReplaceInPlace( tRNA_codon, "U", "T" );
+                    if (s_ParseDegenerateCodon( *tr, tRNA_codon) ) {
+                        tRNA_codon.clear();
+                        copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
+                    } else {
+                        justt = false;
+                    }
+                } else {
+                    justt = false;
+                }
+        }
+    }
+
+    if (justt) {
+        if( comment.find_first_of("0123456789") != string::npos ) {
+            justt = false;
+        }
+    }
+    if (out_justTrnaText != NULL) {
+        *out_justTrnaText = justt;
+    }
+    return aa;
+}
+
+
+// homologous to C's HandledGBQualOnRNA.
+// That func was copy-pasted, then translated into C++.
+// Later we can go back and actually refactor the code
+// to make it more efficient or cleaner.
 CNewCleanup_imp::EAction 
 CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual)
 {
-    const string& qual = GET_FIELD(gb_qual, Qual);
-
-    bool is_std_name = NStr::EqualNocase(qual, "standard_name");
-    if (NStr::EqualNocase(qual, "product")  ||  (is_std_name  &&  ! m_IsEmblOrDdbj )) {
-        if (! FIELD_IS_SET(gb_qual, Val) ) {
-            return eAction_Nothing;
-        }
-        if (  FIELD_IS_SET(rna, Type) ) {
-            if ( GET_FIELD(rna, Type) == NCBI_RNAREF(unknown)) {
-                SET_FIELD( rna, Type, NCBI_RNAREF(other) );
-                ChangeMade(CCleanupChange::eChangeKeywords);
-            }
-        } else {
-            SET_FIELD( rna, Type, NCBI_RNAREF(other));
-            ChangeMade(CCleanupChange::eChangeKeywords);
-        }
-        _ASSERT(rna.IsSetType());
-
-        CRNA_ref::TType type = GET_FIELD(rna, Type);
-        
-        if (type == NCBI_RNAREF(other)  &&  is_std_name) {
-            return eAction_Nothing;
-        }
-
-        if (type == NCBI_RNAREF(other) && FIELD_IS_SET(rna, Ext) && rna.GetExt().IsName()
-            && NStr::Equal (rna.GetExt().GetName(), "misc_RNA")
-            && NStr::Equal(qual, "product")) {
-            if (STRING_FIELD_MATCH( gb_qual, Val, "its1")
-                || STRING_FIELD_MATCH( gb_qual, Val, "its 1")
-                || STRING_FIELD_MATCH( gb_qual, Val, "Ribosomal DNA internal transcribed spacer 1")
-                || STRING_FIELD_MATCH( gb_qual, Val, "internal transcribed spacer 1 (ITS1)")) {
-                SET_FIELD( gb_qual, Val, "internal transcribed spacer 1");
-                ChangeMade(CCleanupChange::eChangeQualifiers);
-            } else if ( STRING_FIELD_MATCH( gb_qual, Val, "its2")
-                || STRING_FIELD_MATCH( gb_qual, Val, "its 2")
-                || STRING_FIELD_MATCH( gb_qual, Val, "Ribosomal DNA internal transcribed spacer 2")
-                || STRING_FIELD_MATCH( gb_qual, Val, "internal transcribed spacer 2 (ITS2)")) {
-                SET_FIELD( gb_qual, Val, "internal transcribed spacer 2");
-                ChangeMade(CCleanupChange::eChangeQualifiers);
-            } else if ( STRING_FIELD_MATCH( gb_qual, Val, "its3")
-                || STRING_FIELD_MATCH( gb_qual, Val, "its 3")
-                || STRING_FIELD_MATCH( gb_qual, Val, "Ribosomal DNA internal transcribed spacer 3")
-                || STRING_FIELD_MATCH( gb_qual, Val, "internal transcribed spacer 3 (ITS3)")) {
-                SET_FIELD( gb_qual, Val, "internal transcribed spacer 3");
-                ChangeMade(CCleanupChange::eChangeQualifiers);
-            }
-        }
-
-
-        if (type == NCBI_RNAREF(tRNA) ) {
-            if (rna.IsSetExt() && rna.GetExt().IsName() ) {
-                string comment = rna.GetExt().GetName();
-                CRef<CTrna_ext> trna_from_name = s_ParseTRnaString (comment);
-                x_SeqFeatTRNABC( feat, *trna_from_name );
-                if (trna_from_name->IsSetAa() && NStr::IsBlank (comment)) {
-                    rna.SetExt().SetTRNA (*trna_from_name);
-                    ChangeMade (CCleanupChange::eChange_tRna);
-                    if (trna_from_name->GetAa().GetIupacaa() == 'M'
-                        && NStr::Find (rna.GetExt().GetName(), "fMet") != string::npos) {
-                            if (!feat.IsSetComment()) {
-                                feat.SetComment ("fMet");
-                            } else if (NStr::Find (feat.GetComment(), "fMet") == string::npos) {
-                                feat.SetComment (feat.GetComment() + "; fMet");
-                            }
-                            ChangeMade (CCleanupChange::eChangeComment);
-                    }
-                }
-            } else {                
-                string comment = gb_qual.GetVal();
-                CRef<CTrna_ext> trna_from_name = s_ParseTRnaString (comment);
-                x_SeqFeatTRNABC( feat, *trna_from_name );
-                if (trna_from_name->IsSetAa() && NStr::IsBlank (comment)) {
-                    rna.SetExt().SetTRNA (*trna_from_name);
-                    ChangeMade (CCleanupChange::eChange_tRna);
-                    if (trna_from_name->GetAa().GetIupacaa() == 'M' 
-                        && NStr::Find (gb_qual.GetVal(), "fMet") != string::npos) {
-                        if (!feat.IsSetComment()) {
-                            feat.SetComment ("fMet");
-                        } else if (NStr::Find (feat.GetComment(), "fMet") == string::npos) {
-                            feat.SetComment (feat.GetComment() + "; fMet");
-                        }
-                        ChangeMade (CCleanupChange::eChangeComment);
-                    }
-                    return eAction_Erase;
-                }
-            }
-        } else if (rna.IsSetExt() && !rna.GetExt().IsName()) {
-            return eAction_Nothing;
-        /* } else if (type == NCBI_RNAREF(other)) { // TODO?
-            // new convention follows ASN.1 spec comments, allows new RNA types
-            return eAction_Nothing; */
-        } else {
-            // subsequent /product now added to comment
-            const string *p_rna_name = &kEmptyStr;
-            const string &val = gb_qual.GetVal();
-            if (rna.IsSetExt() && rna.GetExt().IsName()) {
-                p_rna_name = &rna.GetExt().GetName();
-            }
-            if (NStr::IsBlank (*p_rna_name)) {
-                rna.SetExt().SetName(val);
-                ChangeMade (CCleanupChange::eChange_rRna);
-                return eAction_Erase;
-            } else {
-                if (NStr::EqualNocase(*p_rna_name, val)) {
-                    return eAction_Erase;
-                } else if (type == NCBI_RNAREF(miscRNA)) {
-                    return eAction_Nothing;
-                } else {
-                    if (!feat.IsSetComment() || NStr::IsBlank (feat.GetComment())) {
-                        feat.SetComment(val);
-                    } else {
-                        feat.SetComment (feat.GetComment() + "; " + val);
-                    }
-                    ChangeMade (CCleanupChange::eChangeComment);
-                    return eAction_Erase;
-                }
-            }
-        }
-
+    if( ! gb_qual.IsSetVal() ) {
+        return eAction_Nothing;
     }
-    if (NStr::EqualNocase(qual, "anticodon")) {
+    const string &gb_qual_qual = gb_qual.GetQual();
+    string &gb_qual_val = gb_qual.SetVal();
+    TRNAREF_TYPE& rna_type = rna.SetType();
+    const bool is_std_name = NStr::EqualNocase( gb_qual_qual, "standard_name" );
+    if (NStr::EqualNocase( gb_qual_qual, "product" ) ||
+        (is_std_name && (! m_IsEmblOrDdbj) )) 
+    {
+        if (rna_type == NCBI_RNAREF(unknown)) {
+            rna_type = NCBI_RNAREF(other);
+        }
+        if (rna_type == NCBI_RNAREF(other) && is_std_name) return eAction_Nothing;
+        if ( rna.IsSetExt() && rna.GetExt().IsName() ) {
+            const string &name = rna.SetExt().SetName();
+            if ( name.empty() ) {
+                rna.ResetExt();
+            }
+        }
+        if ( rna.IsSetExt() && rna.GetExt().IsTRNA() ) {
+            CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
+            if ( ! trp.IsSetAa() && ! trp.IsSetAnticodon() ) {
+                if( ! trp.IsSetCodon() || trp.GetCodon().empty() ) {
+                    rna.ResetExt();
+                }
+            }
+        }
+        if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsName() ) {
+            const string &name = rna.SetExt().SetName();
+            bool justTrnaText = false;
+            string codon;
+            char aa = s_ParseSeqFeatTRnaString( name, &justTrnaText, codon, false );
+            if (aa != '\0') {
+                const bool is_fMet = ( NStr::Find(name, "fMet") != NPOS );
+                CRNA_ref_Base::C_Ext::TTRNA &trp = rna.SetExt().SetTRNA();
+                trp.SetAa().SetNcbieaa(aa);
+                if (justTrnaText) {
+                    copy( codon.begin(), codon.end(), back_inserter(trp.SetCodon()) );
+                }
+                if (aa == 'M') {
+                    if (is_fMet) {
+                        if ( ! feat.IsSetComment() ) {
+                            feat.SetComment("fMet");
+                        } else {
+                            feat.SetComment() += "; fMet";
+                        }
+                    }
+                }
+                x_SeqFeatTRNABC(feat, trp);
+            }
+        }
+        if (rna_type == NCBI_RNAREF(tRNA) && ! rna.IsSetExt() ) {
+            // this part inserted from: AddQualifierToFeature (sfp, "product", gb_qual_val);
+            bool justTrnaText = false;
+            string codon;
+            char aa = s_ParseSeqFeatTRnaString (gb_qual_val, &justTrnaText, codon, false);
+            if (aa != '\0') {
+                
+                CRNA_ref_Base::C_Ext::TTRNA& trna = rna.SetExt().SetTRNA();
+                trna.SetAa().SetNcbieaa(aa);
+                
+                if (justTrnaText) {
+                    copy( codon.begin(), codon.end(), back_inserter(trna.SetCodon()) );
+                }
+                
+                if (aa == 'M') {
+                    if( NStr::Find(gb_qual_val, "fMet") != NPOS ) {
+                        if ( ! feat.IsSetComment() ) {
+                            feat.SetComment("fMet");
+                        } else {
+                            feat.SetComment() += "; fMet";
+                        }
+                    }
+                }
+            } else {
+                if ( ! feat.IsSetComment() ) {
+                    feat.SetComment(gb_qual_val);
+                } else {
+                    feat.SetComment() += "; ";
+                    feat.SetComment() += gb_qual_val;
+                }
+            }
+            return eAction_Erase;
+        }
+        if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsTRNA() ) {
+            CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
+            if ( trp.IsSetAa() && trp.GetAa().IsNcbieaa() ) {
+                string ignored;
+                if ( trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString (gb_qual_val, NULL, ignored, false)) {
+                    return eAction_Erase;
+                }
+            }
+        }
+        if ( rna.IsSetExt() && ! rna.GetExt().IsName() ) return eAction_Nothing;
+        const string &name = ( rna.IsSetExt() ? rna.GetExt().GetName() : kEmptyStr );
+        if (! name.empty() ) {
+            SIZE_TYPE rDNA_pos = NStr::Find( gb_qual_val, "rDNA");
+            if (rDNA_pos != NPOS) {
+                gb_qual_val[rDNA_pos+1] = 'R';
+            }
+            if ( NStr::EqualNocase(name, gb_qual_val) ) {
+                return eAction_Erase;
+            }
+            if (rna_type == NCBI_RNAREF(other) || rna_type == NCBI_RNAREF(ncRNA) || 
+                rna_type == NCBI_RNAREF(tmRNA) || rna_type == NCBI_RNAREF(miscRNA) ) 
+            {
+                // new convention follows ASN.1 spec comments, allows new RNA types
+                return eAction_Nothing;
+            }
+            // subsequent /product now added to comment
+            if ( ! feat.IsSetComment() ) {
+                feat.SetComment( gb_qual_val );
+                gb_qual.ResetVal(); // TODO: invalidates gb_qual_val.  Make unavailable?
+            } else if ( NStr::Find(gb_qual_val, feat.GetComment()) == NPOS) {
+                feat.SetComment() += "; ";
+                feat.SetComment() += gb_qual_val;
+            }
+            return eAction_Erase;
+        }
+        if (rna_type == NCBI_RNAREF(ncRNA) || 
+            rna_type == NCBI_RNAREF(tmRNA) || rna_type == NCBI_RNAREF(miscRNA) ) 
+        {
+            // new convention follows ASN.1 spec comments, allows new RNA types
+            return eAction_Nothing;
+        }
+        if ( ! rna.IsSetExt() || rna.GetExt().IsName() ) {
+            rna.SetExt().SetName( gb_qual_val );
+            return eAction_Erase;
+        }
+    } else if (NStr::EqualNocase(gb_qual_qual, "anticodon") ) {
         if (!rna.IsSetType()) {
             rna.SetType(CRNA_ref::eType_tRNA);
             ChangeMade(CCleanupChange::eChangeKeywords);
@@ -3502,25 +3863,27 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
         if ( rna.IsSetExt()  &&
              rna.GetExt().Which() == NCBI_RNAEXT(TRNA) ) {
             
-            CRef<CTrna_ext> trna = s_ParseTRnaFromAnticodonString (gb_qual.GetVal(), feat, m_Scope);
+            CRef<CTrna_ext> trna = s_ParseTRnaFromAnticodonString( gb_qual.GetVal(), feat, m_Scope );
             x_SeqFeatTRNABC( feat, *trna );
             if (trna->IsSetAa() || trna->IsSetAnticodon()) {
-                /* don't apply at all if there are conflicts */
+                // don't apply at all if there are conflicts
                 bool apply_aa = false;
                 bool apply_anticodon = false;
                 bool ok_to_apply = true;
                 
-                /* look for conflict with aa */
-                if (trna->IsSetAa()) {
-                    if (rna.GetExt().GetTRNA().IsSetAa()) {
-                        if (trna->GetAa().GetIupacaa() != rna.GetExt().GetTRNA().GetAa().GetIupacaa()) {
-                            ok_to_apply = false;
+                // look for conflict with aa
+                if (trna->IsSetAa() ) {
+                    if (rna.GetExt().GetTRNA().IsSetAa() ) {
+                        if( rna.GetExt().GetTRNA().GetAa().IsIupacaa() ) {
+                            if (trna->GetAa().GetIupacaa() != rna.GetExt().GetTRNA().GetAa().GetIupacaa()) {
+                                ok_to_apply = false;
+                            }
                         }
                     } else {
                         apply_aa = true;
                     }
                 }
-                /* look for conflict with anticodon */
+                // look for conflict with anticodon
                 if (trna->IsSetAnticodon()) {
                     if (rna.GetExt().GetTRNA().IsSetAnticodon()) {
                         if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(), trna->GetAnticodon(), m_Scope) != sequence::eSame) {
@@ -3532,8 +3895,8 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                 }
 
                 if (ok_to_apply) {
-                    if (apply_aa) {
-                        rna.SetExt().SetTRNA().SetAa().SetIupacaa(trna->GetAa().GetIupacaa());
+                    if (apply_aa ) {
+                        rna.SetExt().SetTRNA().SetAa().SetIupacaa(trna->GetAa().GetNcbieaa());
                         ChangeMade (CCleanupChange::eChange_tRna);
                     }
                     if (apply_anticodon) {
@@ -3549,6 +3912,7 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
     }
     return eAction_Nothing;
 }
+
 
 CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str)
 {
@@ -4043,7 +4407,7 @@ void CNewCleanup_imp::x_CleanupUserString(string& str)
 {
     if (!NStr::IsBlank(str)) {
         const size_t old_str_size = str.size();
-        NStr::TruncateSpacesInPlace(str);
+        CleanString( str );
         if (old_str_size != str.size()) {
             ChangeMade(CCleanupChange::eTrimSpaces);
         }
@@ -4086,6 +4450,8 @@ void CNewCleanup_imp::x_SeqIntervalBC( CSeq_interval & seq_interval )
             ChangeMade(CCleanupChange::eChangeStrand);
         }        
     }
+    // fix id
+    CALL_IF_SET( SeqIdBC, seq_interval, Id );
 }
 
 void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_new_dbtags )
@@ -4116,226 +4482,6 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
 
         out_new_dbtags.push_back( new_tag );
     }
-}
-
-class CCharInSet {
-public:
-    CCharInSet( const string &list_of_characters ) {
-        copy( list_of_characters.begin(), list_of_characters.end(),
-            inserter( char_set, char_set.begin() ) );
-    }
-
-    bool operator()( const char ch ) {
-        return ( char_set.find(ch) != char_set.end() );
-    }
-
-private:
-    set<char> char_set;
-};
-
-static
-void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_list )
-{
-    out_string_list.clear();
-    if ( tRNA_string.empty() ) return;
-
-    // SGD Tx(NNN)c or Tx(NNN)c#, where x is the amino acid, c is the chromosome (A-P, Q for mito),
-    // and optional # is presumably for individual tRNAs with different anticodons and the same
-    // amino acid.
-    static CRegexp valid_sgd_regex("^[Tt][A-Za-z]\\(...\\)[A-Za-z]\\d?\\d?$");
-    if ( valid_sgd_regex.IsMatch(tRNA_string) ) {
-        // parse SGD tRNA anticodon
-        out_string_list.push_back(kEmptyStr);
-        string &new_SGD_tRNA_anticodon = out_string_list.back();
-        string raw_codon_part = tRNA_string.substr(3,3);
-        NStr::ToUpper( raw_codon_part );
-        string reverse_complement;
-        CSeqManip::ReverseComplement( raw_codon_part, CSeqUtil::e_Iupacna, 0, 3, reverse_complement );
-        new_SGD_tRNA_anticodon = string("(") + reverse_complement + ')';
-
-        // parse SGD tRNA amino acid
-        out_string_list.push_back(tRNA_string.substr(1,1));
-        return;
-    }
-
-    string tRNA_string_copy = tRNA_string;
-    // Note that we do NOT remove "*", since it might be a terminator tRNA symbol
-    replace_if( tRNA_string_copy.begin(), tRNA_string_copy.end(), 
-        CCharInSet("-,;:()=\'_~"), ' ' );
-
-    vector<string> tRNA_tokens;
-    // " \t\n\v\f\r" are the standard whitespace chars
-    // ( source: http://www.cplusplus.com/reference/clibrary/cctype/isspace/ )
-    NStr::Tokenize( tRNA_string_copy, " \t\n\v\f\r", tRNA_tokens, NStr::eMergeDelims );
-
-    EDIT_EACH_STRING_IN_VECTOR( tRNA_token_iter, tRNA_tokens ) {
-        string &tRNA_token = *tRNA_token_iter;
-        // remove initial "tRNA", if any
-        if ( NStr::StartsWith(tRNA_token, "tRNA", NStr::eNocase) ) {
-            tRNA_token = tRNA_token.substr(3);
-        }
-        static CRegexp threeLettersPlusDigits("^[A-Za-z][A-Za-z][A-Za-z]\\d*$");
-        if (! tRNA_token.empty() ) {
-            if ( threeLettersPlusDigits.IsMatch(tRNA_token) ) {
-                tRNA_token = tRNA_token.substr(0, 3);
-            }
-            out_string_list.push_back(tRNA_token);
-        }
-    }
-}
-
-static
-char s_FindTrnaAA( const string &str )
-{
-    if ( str.empty() ) return '\0';
-    string tmp = str;
-    NStr::TruncateSpacesInPlace(tmp);
-    
-    if( tmp.length() == 1 ) {
-        // if the string is a valid one-letter code, just return that
-        const char aminoAcidLetter = toupper(tmp[0]);
-        if( sm_TrnaInverseKeys.find(aminoAcidLetter) != sm_TrnaInverseKeys.end() ) {
-            return aminoAcidLetter;
-        }
-    } else {
-        // translate 3-letter codes and full-names to one-letter codes
-        TTrnaMap::const_iterator trna_iter = sm_TrnaKeys.find (tmp.c_str ());
-        if( trna_iter != sm_TrnaKeys.end() ) {
-            return trna_iter->second;
-        }
-    }
-
-    return '\0';
-}
-
-static const char *codonLetterExpand [] =
-{
-  "?", "A", "C", "AC",
-  "G", "AG", "CG", "ACG",
-  "T", "AT", "CT", "ACT",
-  "GT", "AGT", "CGT", "ACGT",
-  NULL
-};
-
-static
-bool s_ParseDegenerateCodon( CTrna_ext & tRNA, string & codon )
-{
-  const static string intToChr = "?ACMGRSVTWYHKDBN";
-
-  if( codon.length() < 3 ) {
-      return false;
-  }
-
-  // the first two have to be real nucleotides
-  const string::size_type first_bad_char = codon.find_first_not_of("ACGT");
-  if( first_bad_char != string::npos && first_bad_char < 2 ) {
-      return false;
-  }
-
-  int idx = intToChr.find( codon [2] );
-  if (idx == (int)string::npos ) return false;
-
-  const char *expanded_codon_letter = codonLetterExpand [idx];
-  const char *iter = expanded_codon_letter;
-  char ch = *iter;
-  int tRNA_codon_idx = 0;
-  codon.erase(3);
-  while ( *iter != '\0' && tRNA_codon_idx < 6 ) {
-    codon [2] = ch;
-    tRNA.SetCodon().push_back( CGen_code_table::CodonToIndex(codon) ); // TODO: make sure Seq_code_iupacna
-
-    // prepare for next iteration
-    iter++;
-    ch = *iter;
-    tRNA_codon_idx++;
-  }
-
-  return true;
-}
-
-// based on C's ParseTRnaString (TODO: remove that comment)
-static 
-char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, string &tRNA_codon, bool noSingleLetter )
-{
-    if (out_justTrnaText != NULL) {
-        *out_justTrnaText = false;
-    }
-    tRNA_codon.clear();
-
-    if ( comment.empty() ) return '\0';
-
-    CRef<CTrna_ext> tr( new CTrna_ext );
-
-    char aa = '\0';
-    list<string> head;
-    s_TokenizeTRnaString (comment, head);
-    bool justt = true;
-    FOR_EACH_STRING_IN_LIST( head_iter, head ) {
-        if( aa != 0 && aa != 'A' ) {
-            break;
-        }
-        const string &str = *head_iter;
-        char curraa = '\0';
-        if (noSingleLetter && str.length() == 1) {
-            curraa = '\0';
-        } else {
-            curraa = s_FindTrnaAA (str);
-        }
-        if (curraa != '\0') {
-            if (aa == '\0' || aa == 'A') {
-                aa = curraa;
-            }
-        } else if ( ! NStr::EqualNocase ("tRNA", str) &&
-            ! NStr::EqualNocase ("transfer", str) &&
-            ! NStr::EqualNocase ("RNA", str) &&
-            ! NStr::EqualNocase ("product", str) ) 
-        {
-            if ( str.length() == 3) {
-                tRNA_codon = str;
-                NStr::ReplaceInPlace( tRNA_codon, "U", "T" );
-                if (s_ParseDegenerateCodon ( *tr, tRNA_codon)) {
-                    tRNA_codon.clear();
-                    copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
-                } else {
-                    justt = false;
-                }
-            } else {
-                justt = false;
-            }
-        }
-    }
-    FOR_EACH_STRING_IN_LIST( head_iter, head ) {
-        const string &str = *head_iter;
-        char curraa = s_FindTrnaAA (str);
-        if (curraa != '\0') {
-        } else if ( ! NStr::EqualNocase ("tRNA", str) &&
-            ! NStr::EqualNocase ("transfer", str) &&
-            ! NStr::EqualNocase ("RNA", str) &&
-            ! NStr::EqualNocase ("product", str) ) {
-                if ( str.length() == 3) {
-                    tRNA_codon = str;
-                    NStr::ReplaceInPlace( tRNA_codon, "U", "T" );
-                    if (s_ParseDegenerateCodon( *tr, tRNA_codon) ) {
-                        tRNA_codon.clear();
-                        copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
-                    } else {
-                        justt = false;
-                    }
-                } else {
-                    justt = false;
-                }
-        }
-    }
-
-    if (justt) {
-        if( comment.find_first_of("0123456789") != string::npos ) {
-            justt = false;
-        }
-    }
-    if (out_justTrnaText != NULL) {
-        *out_justTrnaText = justt;
-    }
-    return aa;
 }
 
 inline
@@ -4597,7 +4743,10 @@ void s_ParsePCRColonString( vector<string> &out_list, const string &str )
     NStr::Tokenize( str, ":", out_list );
     EDIT_EACH_STRING_IN_VECTOR(str_iter, out_list ) {
         NStr::TruncateSpacesInPlace( *str_iter );
-    }
+        if( str_iter->empty() ) {
+            ERASE_STRING_IN_VECTOR(str_iter, out_list);
+        }
+    }    
 }
 
 static 
@@ -4717,14 +4866,18 @@ void CNewCleanup_imp::x_ModernizePCRPrimers( CBioSource &biosrc )
             GET_MUTABLE(biosrc, Pcr_primers).Set().end(), 
             back_inserter(pcr_reaction_list) );
         // we are now the real pcr reaction set
-        SET_FIELD( biosrc, Pcr_primers, *pcr_reaction_set  );
+        SET_FIELD( biosrc, Pcr_primers, *pcr_reaction_set );
+        ChangeMade(CCleanupChange::eChangePCRPrimers);
 
         // remove all old-style PCR primer subsources ( fwd_primer_seq, etc. ) 
         if( FIELD_IS_SET(biosrc, Subtype) ) {
             list< CRef< CSubSource > > &subsources = GET_MUTABLE(biosrc, Subtype);
             list< CRef< CSubSource > >::iterator first_bad_element = 
                 remove_if( subsources.begin(), subsources.end(), CIsBadCRefPCRSubSource() );
-            subsources.erase( first_bad_element, subsources.end() );
+            if( first_bad_element != subsources.end() ) {
+                subsources.erase( first_bad_element, subsources.end() );
+                ChangeMade(CCleanupChange::eChangeSubsource);
+            }
         }
     }
 }
@@ -4824,6 +4977,8 @@ void CNewCleanup_imp::Except_textBC (
 static
 bool s_SeqLocAllEmpty( const CSeq_loc & loc )
 {
+    // TODO: would it be faster to use the "empty" allow iterator and just iterate through it to
+    // look for empty seqlocs?
     CSeq_loc_CI completeIter( loc, CSeq_loc_CI::eEmpty_Allow);
     CSeq_loc_CI gapSkippingIter( loc, CSeq_loc_CI::eEmpty_Skip);
 
@@ -4835,11 +4990,14 @@ void CNewCleanup_imp::SeqfeatBC (
 )
 
 {
+    CALL_IF_SET( SeqLocBC, sf, Location );
+    // TODO: Actually, we want to clean it, just not
+    // convert whole to int
+    // CALL_IF_SET( SeqLocBC, sf, Product );
+
     // note - need to clean up GBQuals before dbxrefs, because they may be converted to populate other fields
 
-    if ( FIELD_IS_SET(sf, Qual) ) {
-        x_ExpandCombinedQuals( GET_MUTABLE(sf, Qual) );
-    }
+    CALL_IF_SET( x_ExpandCombinedQuals, sf, Qual );
 
     // sort/unique gbquals
 
@@ -4878,9 +5036,7 @@ void CNewCleanup_imp::SeqfeatBC (
     REMOVE_IF_EMPTY_GBQUAL_ON_SEQFEAT(sf);
 
     CLEAN_STRING_MEMBER (sf, Comment);
-    if (FIELD_IS_SET (sf, Comment)) {
-        CleanDoubleQuote (GET_MUTABLE (sf, Comment));        
-    }
+    CALL_IF_SET( CleanDoubleQuote, sf, Comment );
     if (FIELD_IS_SET (sf, Comment) && GET_FIELD (sf, Comment) == ".") {
         RESET_FIELD (sf, Comment);
         ChangeMade (CCleanupChange::eChangeComment);
@@ -4937,7 +5093,7 @@ void CNewCleanup_imp::SeqfeatBC (
         PubSetBC( GET_MUTABLE( sf, Cit ) );
     }
 
-    SeqLocBC( GET_MUTABLE( sf, Location ) );
+    CALL_IF_SET( SeqLocBC, sf, Location );
 
     // clean up partial flag
     const unsigned int partial_loc_mask = ( 
@@ -5306,6 +5462,34 @@ void CNewCleanup_imp::ProtFeatfBC (
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(pr);
 }
 
+
+typedef pair<const string, const string>  TInTrSpElem;
+static const TInTrSpElem sc_its_map[] = {
+    TInTrSpElem("internal transcribed spacer 1 (ITS1)", "internal transcribed spacer 1"),
+    TInTrSpElem("internal transcribed spacer 2 (ITS2)", "internal transcribed spacer 2"),
+    TInTrSpElem("internal transcribed spacer 3 (ITS3)", "internal transcribed spacer 3"),
+    TInTrSpElem("its 1", "internal transcribed spacer 1"),
+    TInTrSpElem("its 2", "internal transcribed spacer 2"),
+    TInTrSpElem("its 3", "internal transcribed spacer 3"),
+    TInTrSpElem("its1", "internal transcribed spacer 1"),
+    TInTrSpElem("its2", "internal transcribed spacer 2"),
+    TInTrSpElem("its3", "internal transcribed spacer 3"),
+    TInTrSpElem("Ribosomal DNA internal transcribed spacer 1", "internal transcribed spacer 1"),
+    TInTrSpElem("Ribosomal DNA internal transcribed spacer 2", "internal transcribed spacer 2"),
+    TInTrSpElem("Ribosomal DNA internal transcribed spacer 3", "internal transcribed spacer 3")
+};
+typedef CStaticArrayMap<const string, const string, PNocase> TInTrSpMap;
+DEFINE_STATIC_ARRAY_MAP(TInTrSpMap, sc_ITSMap, sc_its_map);
+
+static
+void s_TranslateITSName( string &in_out_name )
+{
+    TInTrSpMap::const_iterator its_iter = sc_ITSMap.find(in_out_name);
+    if( its_iter != sc_ITSMap.end() ) {
+        in_out_name = its_iter->second;
+    }
+}
+
 static const char* const ncrna_names [] = {
     "antisense_RNA",
     "autocatalytically_spliced_intron",
@@ -5359,6 +5543,7 @@ void CNewCleanup_imp::RnarefBC (
                     }
 
                     static const string rRNA = " rRNA";
+                    static const string rRNA2 = "_rRNA";
                     static const string kRibosomalrRna = " ribosomal RNA";
 
                     if (rr.IsSetType()) {
@@ -5367,7 +5552,7 @@ void CNewCleanup_imp::RnarefBC (
                             {{
                                 size_t len = name.length();
                                 if (len >= rRNA.length()                       &&
-                                    NStr::EndsWith(name, rRNA, NStr::eNocase)  &&
+                                    ( NStr::EndsWith(name, rRNA, NStr::eNocase) || NStr::EndsWith(name, rRNA2, NStr::eNocase)) &&
                                     !NStr::EndsWith(name, kRibosomalrRna, NStr::eNocase)) {
                                     name.replace(len - rRNA.length(), name.size(), kRibosomalrRna);
                                     ChangeMade(CCleanupChange::eChangeQualifiers);
@@ -5380,9 +5565,15 @@ void CNewCleanup_imp::RnarefBC (
                                 break;
                             }}
                             case CRNA_ref::eType_other:
-                            {{
-                                // TODO
-                            }}
+                            case CRNA_ref::eType_miscRNA:
+                                {{
+                                    s_TranslateITSName(name); 
+
+                                    // convert to RNA-gen
+                                    string name_copy; // copy because name is about to be destroyed
+                                    name_copy.swap( name );
+                                    ext.SetGen().SetProduct( name_copy );
+                                }}
                                 break;
                             default:
                                 // TODO ???
@@ -5412,6 +5603,8 @@ void CNewCleanup_imp::RnarefBC (
                     }
 
                     REMOVE_IF_EMPTY_CODON_ON_TRNAEXT(tRNA);
+
+                    CALL_IF_SET( SeqLocBC, tRNA, Anticodon );
 
                     if (! FIELD_IS_SET (tRNA, Aa) &&
                         ! FIELD_IS_SET (tRNA, Codon) &&
@@ -5517,6 +5710,97 @@ void CNewCleanup_imp::RnarefBC (
     }
 }
 
+void CNewCleanup_imp::CdregionBC( CCdregion & cdregion )
+{
+    EDIT_EACH_CODEBREAK_ON_CDREGION( code_break_iter, cdregion ) {
+        CCode_break &code_break = **code_break_iter;
+        CALL_IF_SET( SeqLocBC, code_break, Loc );
+    }
+}
+
+void
+CNewCleanup_imp::x_AddNonCopiedQual( 
+    vector< CRef< CGb_qual > > &out_quals, const char *qual, const char *val )
+{
+    // bail out if this qual already exists
+    ITERATE( vector< CRef< CGb_qual > >, qual_iter, out_quals ) {
+        if( (*qual_iter)->IsSetQual() && (*qual_iter)->GetQual() == qual &&
+            (*qual_iter)->IsSetVal()  && (*qual_iter)->GetVal()  == val ) 
+        {
+                return;
+        }
+    }
+
+    CRef< CGb_qual > new_qual( new CGb_qual(qual, val) );
+    out_quals.push_back( new_qual );
+    ChangeMade( CCleanupChange::eAddQualifier );
+}
+
+static void 
+s_AddStringToUserField( CSeqdesc_Base::TUser& user, const char* field, const char *str )
+{
+    CRef< CUser_field > new_field( new CUser_field );
+
+    new_field->SetLabel().SetStr( field );
+    new_field->SetData().SetStr( str );
+
+    user.SetData().push_back( new_field );
+}
+
+static void 
+s_AddIntegerToUserField
+( CSeqdesc_Base::TUser& user, const char* field, int num )
+{
+    CRef< CUser_field > new_field( new CUser_field );
+
+    new_field->SetLabel().SetStr( field );
+    new_field->SetData().SetInt(num);
+
+    user.SetData().push_back( new_field );
+}
+
+void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry)
+{
+    CRef<CSeqdesc> ncbi_cleanup_object( new CSeqdesc );
+    CSeqdesc_Base::TUser& user = ncbi_cleanup_object->SetUser();
+
+    user.SetType().SetStr("NcbiCleanup");
+
+    s_AddStringToUserField(  user, "method", "ExtendedSeqEntryCleanup" );
+    s_AddIntegerToUserField( user, "version", NCBI_CLEANUP_VERSION );
+  
+    // get current time
+    CTime curr_time( CTime::eCurrent );
+    s_AddIntegerToUserField( user, "month", curr_time.Month() );
+    s_AddIntegerToUserField( user, "day",   curr_time.Day() );
+    s_AddIntegerToUserField( user, "year",  curr_time.Year() );
+
+    seq_entry.SetDescr().Set().push_back( ncbi_cleanup_object );
+}
+
+static
+string
+s_GetMiRNAProduct( const string &name )
+{
+    if ( NStr::StartsWith(name, "miRNA ") ) {
+        return name.substr(6);
+    } else if ( NStr::StartsWith(name, "microRNA ") ) {
+        return name.substr(9);
+    } else {
+        if ( NStr::EndsWith(name, " miRNA") &&
+            ! NStr::EndsWith(name, "precursor miRNA") )
+        {
+            return name.substr(0, name.length() - 6);
+        }
+        else if (  NStr::EndsWith( name, " microRNA") &&
+            ! NStr::EndsWith(name, "precursor microRNA") )
+        {
+            return name.substr(0, name.length() - 9 );
+        }
+    }
+    return kEmptyStr;
+}
+
 void CNewCleanup_imp::RnaFeatBC (
     CRNA_ref& rna,
     CSeq_feat& seq_feat
@@ -5547,6 +5831,132 @@ void CNewCleanup_imp::RnaFeatBC (
                 if (loc_strand == eNa_strand_minus && ac_strand != eNa_strand_minus) {
                     tRNA.SetAnticodon().SetInt().SetStrand(eNa_strand_minus);
                     ChangeMade (CCleanupChange::eChangeAnticodon);
+                }
+            }
+        }
+    }
+
+    // this part is like C's ConvertToNcRNA
+    {
+        const CRNA_ref_Base::TType rna_type = 
+            ( rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown) );
+        if (rna_type == NCBI_RNAREF(snRNA) || 
+            rna_type == NCBI_RNAREF(scRNA) || 
+            rna_type == NCBI_RNAREF(snoRNA) )
+        {
+            if (rna_type == NCBI_RNAREF(snRNA)) {
+                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "snRNA");
+            } else if (rna_type == NCBI_RNAREF(scRNA)) {
+                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "scRNA");
+            } else if (rna_type == NCBI_RNAREF(snoRNA)) {
+                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "snoRNA");
+            }
+            if ( rna.IsSetExt() && rna.GetExt().IsName() )
+            {
+                x_AddNonCopiedQual (seq_feat.SetQual(), "product", rna.GetExt().GetName().c_str() );
+            }
+            rna.SetExt().SetName("ncRNA");
+            rna.SetType( NCBI_RNAREF(other) );
+            ChangeMade( CCleanupChange::eChangeRNAref );
+        }
+        else if (rna_type == NCBI_RNAREF(other) && rna.IsSetExt() && rna.GetExt().IsName() )
+        {
+            string &rna_name = rna.SetExt().SetName();
+            string miRNAproduct;
+            if (s_IsNcrnaName(rna.GetExt().GetName())) 
+            {
+                x_AddNonCopiedQual (seq_feat.SetQual(), "ncRNA_class", rna_name.c_str() );
+                rna.SetExt().SetName("ncRNA");
+                ChangeMade( CCleanupChange::eChangeRNAref );
+            }
+            else if ( ! (miRNAproduct = s_GetMiRNAProduct (rna_name)).empty() )
+            {
+                x_AddNonCopiedQual ( seq_feat.SetQual(), "ncRNA_class", "miRNA");
+                rna_name = "ncRNA";
+                x_AddNonCopiedQual ( seq_feat.SetQual(), "product", miRNAproduct.c_str() );
+                ChangeMade( CCleanupChange::eChangeRNAref );
+            }
+            else if ( 
+                rna_name != "ncRNA" && 
+                rna_name != "tmRNA" &&
+                rna_name != "misc_RNA" )
+            {
+                x_AddNonCopiedQual ( seq_feat.SetQual(), "product", rna_name.c_str() );
+                rna_name = "misc_RNA";
+                ChangeMade( CCleanupChange::eChangeRNAref );
+            }
+        }
+        if (rna_type == NCBI_RNAREF(other) && ! rna.IsSetExt() ) {
+            rna.SetExt().SetName( "misc_RNA" );
+            ChangeMade( CCleanupChange::eChangeRNAref );
+        }
+        if (rna_type == NCBI_RNAREF(other) && rna.IsSetExt() && rna.GetExt().IsName() &&
+            rna.GetExt().GetName() == "misc_RNA" ) 
+        {
+            NON_CONST_ITERATE( CSeq_feat::TQual, qual_iter, seq_feat.SetQual() ) {
+                string &qual = (*qual_iter)->SetQual();
+                if ( qual == "ncRNA_class" ) {
+                    qual = "ncRNA";
+                    ChangeMade( CCleanupChange::eChangeRNAref );
+                } else if ( qual == "tag_peptide") {
+                    qual = "tmRNA";
+                    ChangeMade( CCleanupChange::eChangeRNAref );
+                } else if ( qual == "product" ) {
+                    // e.g. "its1" to "internal transcribed spacer 1"
+                    s_TranslateITSName( (*qual_iter)->SetVal() );
+                }
+            }
+        }
+    }
+
+    // this part is like C's ModernizeRNAFields
+    const CRNA_ref_Base::TType rna_type = 
+        ( rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown) );
+    if( rna_type == NCBI_RNAREF(other) && rna.IsSetExt() && rna.GetExt().IsName() )
+    {
+        const string &name = rna.GetExt().GetName();
+        bool need_qual_cleanup = true;
+        if( name == "ncRNA" ) {
+            rna.SetType( NCBI_RNAREF(ncRNA) );
+        } else if( name == "tmRNA" ) {
+            rna.SetType( NCBI_RNAREF(tmRNA) );
+        } else if( name == "misc_RNA" ) {
+            rna.SetType( NCBI_RNAREF(miscRNA) );
+        } else {
+            need_qual_cleanup = false;
+        }
+
+        if( need_qual_cleanup ) {
+            string name_copy = name; // we're about to destroy name
+            CRNA_gen& rna_gen = rna.SetExt().SetGen();
+
+            if( seq_feat.IsSetQual() ) {
+                vector< CRef< CGb_qual > > new_qual_vec;
+                vector< CRef< CGb_qual > > &qual_vec = seq_feat.SetQual();
+                NON_CONST_ITERATE( vector< CRef< CGb_qual > >, qual_iter, qual_vec ) {
+                    const string &qual = ( (*qual_iter)->IsSetQual() ? (*qual_iter)->GetQual() : kEmptyStr );
+                    const string &val  = ( (*qual_iter)->IsSetVal()  ? (*qual_iter)->GetVal()  : kEmptyStr );
+                    if ( qual == "ncRNA_class" ) {
+                        rna_gen.SetClass( val );
+                    } else if (qual == "product") {
+                        rna_gen.SetProduct( val );
+                    } else if ( qual ==  "tag_peptide") {
+                        CRef<CRNA_qual> rna_qual( new CRNA_qual );
+                        rna_qual->SetQual( qual );
+                        rna_qual->SetVal( val );
+
+                        rna_gen.SetQuals().Set().push_back( rna_qual );
+                    } else {
+                        // keep this one
+                        new_qual_vec.push_back( *qual_iter );
+                    }
+                }
+
+                // update qual vec if changed
+                if( new_qual_vec.empty() ) {
+                    seq_feat.ResetQual();
+                } else if( new_qual_vec.size() != qual_vec.size() ) {
+                    seq_feat.SetQual().swap( new_qual_vec );
                 }
             }
         }
@@ -5592,6 +6002,9 @@ void CNewCleanup_imp::SeqFeatSeqfeatDataBC (
             }
             break;
         case NCBI_SEQFEAT(Cdregion):
+            {
+                CdregionBC( GET_MUTABLE(sfd, Cdregion) );
+            }
             break;
         case NCBI_SEQFEAT(Prot):
             {
@@ -5603,8 +6016,8 @@ void CNewCleanup_imp::SeqFeatSeqfeatDataBC (
         case NCBI_SEQFEAT(Rna):
             {
                 CRNA_ref& rr = GET_MUTABLE (sfd, Rna);
-                RnarefBC(rr);
                 RnaFeatBC (rr, sf);
+                RnarefBC(rr);
             }
             break;
         case NCBI_SEQFEAT(Pub):
@@ -5680,26 +6093,83 @@ void CNewCleanup_imp::SeqFeatSeqfeatDataBC (
     }
 }
 
+// maps the type of seqdesc to the order it should be in 
+// (lowest to highest)
+typedef pair<CSeqdesc::E_Choice, int>  TSeqdescOrderElem;
+static const TSeqdescOrderElem sc_seqdesc_order_map[] = {
+    // Note that ordering must match ordering
+    // in CSeqdesc::E_Choice
+    TSeqdescOrderElem(CSeqdesc::e_Mol_type,    13),
+    TSeqdescOrderElem(CSeqdesc::e_Modif,       14),
+    TSeqdescOrderElem(CSeqdesc::e_Method,      15),
+    TSeqdescOrderElem(CSeqdesc::e_Name,         7),
+    TSeqdescOrderElem(CSeqdesc::e_Title,        1),
+    TSeqdescOrderElem(CSeqdesc::e_Org,         16),
+    TSeqdescOrderElem(CSeqdesc::e_Comment,      6),
+    TSeqdescOrderElem(CSeqdesc::e_Num,         11),
+    TSeqdescOrderElem(CSeqdesc::e_Maploc,       9),
+    TSeqdescOrderElem(CSeqdesc::e_Pir,         18),
+    TSeqdescOrderElem(CSeqdesc::e_Genbank,     22),
+    TSeqdescOrderElem(CSeqdesc::e_Pub,          5),
+    TSeqdescOrderElem(CSeqdesc::e_Region,      10),
+    TSeqdescOrderElem(CSeqdesc::e_User,         8),
+    TSeqdescOrderElem(CSeqdesc::e_Sp,          17),
+    TSeqdescOrderElem(CSeqdesc::e_Dbxref,      12),
+    TSeqdescOrderElem(CSeqdesc::e_Embl,        21),
+    TSeqdescOrderElem(CSeqdesc::e_Create_date, 24),
+    TSeqdescOrderElem(CSeqdesc::e_Update_date, 25),
+    TSeqdescOrderElem(CSeqdesc::e_Prf,         19),
+    TSeqdescOrderElem(CSeqdesc::e_Pdb,         20),
+    TSeqdescOrderElem(CSeqdesc::e_Het,          4),
+    TSeqdescOrderElem(CSeqdesc::e_Source,       2),
+    TSeqdescOrderElem(CSeqdesc::e_Molinfo,      3),
+    TSeqdescOrderElem(CSeqdesc::e_Modelev,     23)
+};
+typedef CStaticArrayMap<CSeqdesc::E_Choice, int> TSeqdescOrderMap;
+DEFINE_STATIC_ARRAY_MAP(TSeqdescOrderMap, sc_SeqdescOrderMap, sc_seqdesc_order_map);
 
+static
+int s_SeqDescToOrdering( const CRef<CSeqdesc> &desc ) {
+    // ordering assigned to unknown
+    const int unknown_seqdesc = (1 + sc_SeqdescOrderMap.size());
 
-void CNewCleanup_imp::ExtendedCleanup (
-    CSeq_entry& se
+    TSeqdescOrderMap::const_iterator find_iter = sc_SeqdescOrderMap.find(desc->Which());
+    if( find_iter == sc_SeqdescOrderMap.end() ) {
+        return unknown_seqdesc;
+    }
+
+    return find_iter->second;
+}
+
+static
+bool s_SeqDescLessThan( const CRef<CSeqdesc> &desc1, const CRef<CSeqdesc> &desc2 )
+{
+    return ( s_SeqDescToOrdering(desc1) < s_SeqDescToOrdering(desc2) );
+}
+
+void CNewCleanup_imp::ExtendedCleanupSeqEntry (
+    CSeq_entry& seq_entry
 )
 
 {
+    x_AddNcbiCleanupObject(seq_entry); 
+
+    if( ! SEQDESC_ON_SEQENTRY_IS_SORTED(seq_entry, s_SeqDescLessThan) ) {
+        SORT_SEQDESC_ON_SEQENTRY(seq_entry, s_SeqDescLessThan);
+        ChangeMade( CCleanupChange::eMoveDescriptor );
+    }
 }
 
-void CNewCleanup_imp::ExtendedCleanup (
+void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
     CSeq_submit& ss
 )
 
 {
 }
 
-void CNewCleanup_imp::ExtendedCleanup (
+void CNewCleanup_imp::ExtendedCleanupSeqAnnot (
     CSeq_annot& sa
 )
 
 {
 }
-

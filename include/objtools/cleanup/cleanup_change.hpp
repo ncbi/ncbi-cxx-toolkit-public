@@ -128,6 +128,8 @@ public:
         eChangeProtNames,
         eChangeProtActivities,
         eChangeSite,
+        eChangePCRPrimers,
+        eChangeRNAref,
 
         // set when any other change is made.
         eChangeOther,

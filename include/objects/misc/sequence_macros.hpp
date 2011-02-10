@@ -304,6 +304,12 @@ typedef CRNA_ref::C_Ext::E_Choice TRNAREF_EXT;
 #define NCBI_PERSONID(Type) CPerson_id::e_##Type
 typedef CPerson_id::E_Choice TPERSONID_TYPE;
 
+//  Dendiag   Denseg    Std     Packed
+//  Disc      Spliced   Sparse
+
+#define NCBI_SEGTYPE(Type) CSeq_align::C_Segs::e_##Type
+typedef CSeq_align::C_Segs::E_Choice TSEGTYPE_TYPE;
+
 /////////////////////////////////////////////////////////////////////////////
 /// Macros for obtaining closest specific CSeqdesc applying to a CBioseq
 /////////////////////////////////////////////////////////////////////////////
@@ -926,6 +932,24 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define FIELD_EQUALS( Var, Fld, Value ) \
     ( (Var).IsSet##Fld() && (Var).Get##Fld() == (Value) )
 
+/// CALL_IF_SET base macro
+
+#define CALL_IF_SET( Func, Var, Fld ) \
+    { \
+        if( (Var).IsSet##Fld() ) { \
+            Func( GET_MUTABLE( (Var), Fld) ); \
+        } \
+    }
+
+/// CALL_IF_SET_CHAIN_2 base macro
+
+#define CALL_IF_SET_CHAIN_2( Func, Var, Fld1, Fld2 ) \
+    { \
+        if( (Var).IsSet##Fld1() ) { \
+            CALL_IF_SET( Func, (Var).Set##Fld1(), Fld2 ); \
+        } \
+    }
+
 ///
 /// CSeq_submit macros
 
@@ -1077,6 +1101,14 @@ ADD_ITEM (SEQDESC_ON_SEQENTRY, Var, Ref)
 
 #define ERASE_SEQDESC_ON_SEQENTRY(Itr, Var) \
 LIST_ERASE_ITEM (SEQDESC_ON_SEQENTRY, Itr, Var)
+
+/// SEQDESC_ON_SEQENTRY_IS_SORTED
+
+#define SEQDESC_ON_SEQENTRY_IS_SORTED( Var, Func ) \
+    IS_SORTED (SEQDESC_ON_SEQENTRY, Var, Func)
+
+#define SORT_SEQDESC_ON_SEQENTRY(Var, Func) \
+    DO_LIST_SORT (SEQDESC_ON_SEQENTRY, Var, Func)
 
 /// SEQENTRY_HAS_DESCRIPTOR
 /// FOR_EACH_DESCRIPTOR_ON_SEQENTRY
@@ -1281,6 +1313,17 @@ IS_UNIQUE (SEQID_ON_BIOSEQ, Var, Func)
 #define UNIQUE_SEQID_ON_BIOSEQ(Var, Func) \
 DO_UNIQUE (SEQID_ON_BIOSEQ, Var, Func)
 
+////
+//// FEATID_ON_SEQFEAT macros
+//// ( Warning: features also have an "Id" field (deprecated?) )
+
+#define FEATID_ON_BIOSEQ_Type      CSeq_feat::TIds:
+#define FEATID_ON_BIOSEQ_Test(Var) (Var).IsSetIds()
+#define FEATID_ON_BIOSEQ_Get(Var)  (Var).GetIds()
+#define FEATID_ON_BIOSEQ_Set(Var)  (Var).SetIds()
+
+#define EDIT_EACH_FEATID_ON_SEQFEAT( Iter, Var ) \
+    EDIT_EACH( FEATID_ON_BIOSEQ, Iter, Var )
 
 ///
 /// CSeq_id macros
@@ -1565,6 +1608,85 @@ LIST_ERASE_ITEM (SEQALIGN_ON_SEQANNOT, Itr, Var)
 #define ADD_ALIGN_TO_ANNOT ADD_SEQALIGN_TO_SEQANNOT
 #define ERASE_ALIGN_ON_ANNOT ERASE_SEQALIGN_ON_SEQANNOT
 
+/// BOUND_ON_SEQALIGN macros
+
+#define BOUND_ON_SEQALIGN_Type      CSeq_align::TBounds
+#define BOUND_ON_SEQALIGN_Test(Var) (Var).IsSetBounds()
+#define BOUND_ON_SEQALIGN_Get(Var)  (Var).GetBounds()
+#define BOUND_ON_SEQALIGN_Set(Var)  (Var).SetBounds()
+
+// EDIT_EACH_BOUND_ON_SEQALIGN
+
+#define EDIT_EACH_BOUND_ON_SEQALIGN(Itr, Var) \
+    EDIT_EACH (BOUND_ON_SEQALIGN, Itr, Var)
+
+/// SEGTYPE_ON_SEQALIGN macros
+
+#define SEGTYPE_ON_SEQALIGN_Test(Var) ((Var).IsSetSegs())
+#define SEGTYPE_ON_SEQALIGN_Chs(Var)  (Var).GetSegs().Which()
+
+#define SWITCH_ON_SEGTYPE_ON_SEQALIGN(Var) \
+    SWITCH_ON( SEGTYPE_ON_SEQALIGN, Var )
+
+/// DENDIAG_ON_SEQALIGN macros
+
+#define DENDIAG_ON_SEQALIGN_Type        CSeq_align_Base::C_Segs::TDendiag
+#define DENDIAG_ON_SEQALIGN_Test(Var)   (Var).IsSetSegs() && (Var).GetSegs().IsDendiag()
+#define DENDIAG_ON_SEQALIGN_Get(Var)    (Var).GetSegs().GetDendiag()
+#define DENDIAG_ON_SEQALIGN_Set(Var)    (Var).SetSegs().SetDendiag()
+
+/// EDIT_EACH_DENDIAG_ON_SEQALIGN
+
+#define EDIT_EACH_DENDIAG_ON_SEQALIGN(Itr, Var) \
+EDIT_EACH (DENDIAG_ON_SEQALIGN, Itr, Var)
+
+/// STDSEG_ON_SEQALIGN macros
+
+#define STDSEG_ON_SEQALIGN_Type        CSeq_align_Base::C_Segs::TStd
+#define STDSEG_ON_SEQALIGN_Test(Var)   (Var).IsSetSegs() && (Var).GetSegs().IsStd()
+#define STDSEG_ON_SEQALIGN_Get(Var)    (Var).GetSegs().GetStd()
+#define STDSEG_ON_SEQALIGN_Set(Var)    (Var).SetSegs().SetStd()
+
+/// EDIT_EACH_STDSEG_ON_SEQALIGN
+
+#define EDIT_EACH_STDSEG_ON_SEQALIGN(Itr, Var) \
+EDIT_EACH (STDSEG_ON_SEQALIGN, Itr, Var)
+
+/// RECURSIVE_SEQALIGN_ON_SEQALIGN macros
+
+#define RECURSIVE_SEQALIGN_ON_SEQALIGN_Type        CSeq_align_Base::C_Segs::TDisc::Tdata
+#define RECURSIVE_SEQALIGN_ON_SEQALIGN_Test(Var)   (Var).IsSetSegs() && (Var).GetSegs().IsDisc()
+#define RECURSIVE_SEQALIGN_ON_SEQALIGN_Get(Var)    (Var).GetSegs().GetDisc().Get()
+#define RECURSIVE_SEQALIGN_ON_SEQALIGN_Set(Var)    (Var).SetSegs().SetDisc().Set()
+
+/// EDIT_EACH_RECURSIVE_SEQALIGN_ON_SEQALIGN
+
+#define EDIT_EACH_RECURSIVE_SEQALIGN_ON_SEQALIGN(Itr, Var) \
+EDIT_EACH (RECURSIVE_SEQALIGN_ON_SEQALIGN, Itr, Var)
+
+/// SEQID_ON_DENDIAG macros
+
+#define SEQID_ON_DENDIAG_Type        CDense_diag_Base::TIds
+#define SEQID_ON_DENDIAG_Test(Var)   (Var).IsSetIds()
+#define SEQID_ON_DENDIAG_Get(Var)    (Var).GetIds()
+#define SEQID_ON_DENDIAG_Set(Var)    (Var).SetIds()
+
+/// EDIT_EACH_SEQID_ON_DENDIAG
+
+#define EDIT_EACH_SEQID_ON_DENDIAG(Itr, Var) \
+EDIT_EACH (SEQID_ON_DENDIAG, Itr, Var)
+
+/// SEQID_ON_DENSEG macros
+
+#define SEQID_ON_DENSEG_Type        CDense_seg::TIds
+#define SEQID_ON_DENSEG_Test(Var)   (Var).IsSetIds()
+#define SEQID_ON_DENSEG_Get(Var)    (Var).GetIds()
+#define SEQID_ON_DENSEG_Set(Var)    (Var).SetIds()
+
+/// EDIT_EACH_SEQID_ON_DENSEG
+
+#define EDIT_EACH_SEQID_ON_DENSEG(Itr, Var) \
+EDIT_EACH (SEQID_ON_DENSEG, Itr, Var)
 
 /// SEQGRAPH_ON_SEQANNOT macros
 
