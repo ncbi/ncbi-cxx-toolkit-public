@@ -309,8 +309,6 @@ CNetServerConnection SNetServerImpl::Connect()
         message += ": ";
         message += IO_StatusStr(io_st);
 
-        RegisterConnectionEvent(true);
-
         NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
     }
 
@@ -341,12 +339,21 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
             CException::TErrCode err_code = e.GetErrCode();
             if (err_code != CNetSrvConnException::eWriteFailure &&
                 err_code != CNetSrvConnException::eConnClosedByServer)
+            {
+                RegisterConnectionEvent(true);
                 throw;
+            }
         }
     }
 
-    exec_result.conn = Connect();
-    exec_result.response = exec_result.conn.Exec(cmd);
+    try {
+        exec_result.conn = Connect();
+        exec_result.response = exec_result.conn.Exec(cmd);
+    }
+    catch (CNetSrvConnException&) {
+        RegisterConnectionEvent(true);
+        throw;
+    }
 }
 
 void SNetServerImpl::RegisterConnectionEvent(bool failure)
