@@ -1,13 +1,13 @@
 # $Id$
 
-WATCHERS = morgulis camacho
+WATCHERS = morgulis camacho mozese2
 
 REQUIRES = objects algo
 
 ASN_DEP = seq
 
 APP = windowmasker
-SRC = main win_mask_app win_mask_config win_mask_sdust_masker
+SRC = main win_mask_app win_mask_sdust_masker
 
 LIB = xalgowinmask xalgodustmask blast composition_adjustment seqdb blastdb \
 	seqmasks_io tables xobjread creaders xobjutil \
