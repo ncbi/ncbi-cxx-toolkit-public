@@ -508,7 +508,7 @@ Population-data ::= SEQUENCE {
         is-default-population   (1),
         is-minor-allele         (2),
         is-rare-allele          (4)
-    }
+    } OPTIONAL
 }
 
 Ext-loc ::= SEQUENCE {
