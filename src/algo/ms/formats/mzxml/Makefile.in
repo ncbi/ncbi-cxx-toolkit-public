@@ -1,5 +1,0 @@
-XSD_PROJ = mzXML
-APP_PROJ = test_mzxml
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

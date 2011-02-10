@@ -8,7 +8,7 @@ SUB_PROJ = asn2asn asn2fasta asn2flat asnval id1_fetch blast convert_seq \
            winmasker dustmasker segmasker blastdb \
            agpconvert id2_fetch agp_validate objextract lds_indexer \
            bdb_env_keeper nw_aligner speedtest idmapper formatguess \
-           multireader read_blast_result splign mshdf5 hfilter \
+           multireader read_blast_result splign hfilter \
            annotwriter compart streamtest
 
 EXPENDABLE_SUB_PROJ = split_cache wig2table

@@ -1,4 +1,0 @@
-WATCHERS = slottad
-
-LIB = unimod
-SRC = unimod__ unimod___

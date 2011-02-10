@@ -1,6 +1,0 @@
-# $Id$
-
-LIB = mzXML
-SRC = mzXML__ mzXML___
-
-WATCHERS = slottad
