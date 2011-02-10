@@ -121,10 +121,10 @@ s_BuildArchiveAll(CRef<CRemoteBlast> rmt_blast,
              TMaskedQueryRegions query_masks;
              (*result)->GetMaskedQueryRegions(query_masks);
              mask_vector.push_back(query_masks);
-             list<CRef<CBlast4_mask> > masks = 
-                   CRemoteBlast::ConvertToRemoteMasks(mask_vector, options_handle.GetOptions().GetProgramType());
-             net_masks.insert(net_masks.end(), masks.begin(), masks.end());
         }
+        list<CRef<CBlast4_mask> > masks = 
+                   CRemoteBlast::ConvertToRemoteMasks(mask_vector, options_handle.GetOptions().GetProgramType());
+        net_masks.insert(net_masks.end(), masks.begin(), masks.end());
 
         list<string>& search_stats = net_results->SetSearch_stats();
         search_stats.push_back("Effective search space: " + NStr::Int8ToString(effective_search_space));
