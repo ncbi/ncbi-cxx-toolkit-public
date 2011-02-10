@@ -257,22 +257,16 @@ bool CPrefetchManager::IsActive(void)
         return false;
     }
 
-    CPrefetchRequest* req = static_cast<CPrefetchRequest*>(
-                                    thread->GetCurrentTask().GetNCPointer());
+    CRef<CThreadPool_Task> req = thread->GetCurrentTask();
     if ( !req ) {
         return false;
     }
     
-    if (req->IsCancelRequested()) {
+    if ( req->IsCancelRequested() && dynamic_cast<CPrefetchRequest*>(&*req) ) {
         throw prefetch::CCancelRequestException();
     }
     
-    switch ( req->GetState() ) {
-    case eInvalid:
-        return false;
-    default:
-        return true;
-    }
+    return true;
 }
 
 
