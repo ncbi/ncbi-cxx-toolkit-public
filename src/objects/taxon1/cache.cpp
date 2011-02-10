@@ -283,13 +283,17 @@ s_BuildLineage( string& str, CTaxon1Node* pNode, unsigned sz, int sp_rank )
 string::size_type
 s_AfterPrefix( const string& str1, const string& prefix )
 {
-    string::size_type pos(0);
+    string::size_type pos(0), result(string::npos);
     if( NStr::StartsWith( str1, prefix ) ) {
         pos += prefix.size();
-    } else {
-	return string::npos;
+	if( pos < str1.size() ) {
+	    result = str1.find_first_not_of( " \t\n\r", pos );
+	    if( result == pos ) { // fail in word-for-word comparison
+		result = string::npos;
+	    }
+	}
     }
-    return str1.find_first_not_of( " \t\n\r", pos );
+    return result;
 }
 
 static const char s_achSubsp[] = "subsp.";
