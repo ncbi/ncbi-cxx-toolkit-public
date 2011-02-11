@@ -51,49 +51,50 @@ class CMaskReader;
 class CMaskWriter;
 
 /**
- **\brief Objects of this class contain winmasker configuration data.
- **
- ** The class is also responsible for validation of command line arguments.
- **/
-class CWinMaskConfig
+**\brief Winmasker configuration errors.
+**
+** This class encapsulates information about different kind of
+** exceptions that may occur in winmasker configuration.
+**/
+class CWinMaskConfigException : public CException
 {
 public:
 
     /**
-     **\brief Winmasker configuration errors.
+     **\brief Error codes.
      **
-     ** This class encapsulates information about different kind of
-     ** exceptions that may occur in winmasker configuration.
      **/
-    class CWinMaskConfigException : public CException
+    enum EErrCode
     {
-    public:
-
-        /**
-         **\brief Error codes.
-         **
-         **/
-        enum EErrCode
-        {
-            eInputOpenFail, /**< Can not open input file. */
-            eReaderAllocFail,     /**< Memory allocation for input 
+        eInputOpenFail, /**< Can not open input file. */
+        eReaderAllocFail,     /**< Memory allocation for input 
                                     reader object failed. */
-            eInconsistentOptions    /**< Option validation failure. */
-        };
-
-        /**
-         **\brief Get the description of an error.
-         **
-         ** Returns the string corresponding to the error code of
-         ** this exception object.
-         **
-         **\return error description.
-         **
-         **/
-        virtual const char * GetErrCodeString() const;
-
-        NCBI_EXCEPTION_DEFAULT( CWinMaskConfigException, CException );
+        eInconsistentOptions    /**< Option validation failure. */
     };
+
+    /**
+     **\brief Get the description of an error.
+     **
+     ** Returns the string corresponding to the error code of
+     ** this exception object.
+     **
+     **\return error description.
+     **
+     **/
+    virtual const char * GetErrCodeString() const;
+
+    NCBI_EXCEPTION_DEFAULT( CWinMaskConfigException, CException );
+};
+
+
+/**
+ **\brief Objects of this class contain winmasker configuration data.
+ **
+ ** The class is also responsible for validation of command line arguments.
+ **/
+class NCBI_XALGOWINMASK_EXPORT CWinMaskConfig
+{
+public:
 
     typedef CWinMaskUtil::CIdSet CIdSet;
     typedef CWinMaskUtil::CIdSet_SeqId CIdSet_SeqId;
