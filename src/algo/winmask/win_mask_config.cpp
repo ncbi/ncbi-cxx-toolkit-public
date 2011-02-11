@@ -449,7 +449,7 @@ void CWinMaskConfig::FillIdList( const string & file_name,
 }
 
 //----------------------------------------------------------------------------
-const char * CWinMaskConfig::CWinMaskConfigException::GetErrCodeString() const
+const char * CWinMaskConfigException::GetErrCodeString() const
 {
     switch( GetErrCode() )
     {
