@@ -341,6 +341,13 @@ static void TEST_UTIL_Log(void)
 /* NOTE: closes STDIN */
 static void TEST_CORE_GetUsername(void)
 {
+    static const char* null =
+#ifdef NCBI_OS_MSWIN
+        "NUL"
+#else
+        "/dev/null"
+#endif /*NCBI_OS_MSWIN*/
+        ;
     char buffer[512];
     const char* temp = CORE_GetUsername(buffer, sizeof(buffer));
     char* user = temp  &&  *temp ? strdup(temp) : 0;
@@ -349,7 +356,7 @@ static void TEST_CORE_GetUsername(void)
            temp ?   temp              : "NULL",
            temp ? (*temp ? "" : "\"") : ">",
            !temp ^ !user ? ", error!" : "");
-    (void) fclose(stdin);
+    (void) freopen(null, "r", stdin);
     temp = CORE_GetUsername(buffer, sizeof(buffer));
     printf("Username = %s%s%s\n",
            temp ? (*temp ? "" : "\"") : "<",
