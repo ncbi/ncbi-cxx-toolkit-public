@@ -525,7 +525,7 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
         m_SingleServerGroup->m_Service = this;
         return m_SingleServerGroup;
 
-    case SNetServiceImpl::eLoadBalanced:
+    default: // always SNetServiceImpl::eLoadBalanced
         break;
     }
 
