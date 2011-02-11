@@ -507,7 +507,7 @@ int main(int argc, const char* argv[])
     http << "Sample input -- should be ignored";
 
     if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))
-        ERR_POST(Fatal << "Test 6 failed");
+        ERR_POST(Fatal << "Test 7 failed");
     else
         LOG_POST("Test 7 passed\n");
 
