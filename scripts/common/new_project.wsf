@@ -700,7 +700,7 @@
             sysenv("PTB_PROJECT_REQ") = "src\\";
 
             var ptb_command_line;
-            ptb_command_line = oTree.CompilersBranch + "\\ptb.bat";
+            ptb_command_line = "\"" + oTree.CompilersBranch + "\\ptb.bat\"";
             if (!GetVerbose()) {
                 WScript.Echo(ptb_command_line);
             }
