@@ -130,11 +130,13 @@ void CStd_seg::SwapRows(int row0, int row1)
     _ASSERT(row1 < GetLoc().size());
     if (row0 < GetLoc().size()  &&  row1 < GetLoc().size()) {
         swap(SetLoc()[row0], SetLoc()[row1]);
+        if (IsSetIds()) {
+            swap(SetIds()[row0], SetIds()[row1]);
+        }
     } else {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                    "CStd_seg::SwapRows():"
                    " Invalid row number");
-
     }
 }
 
