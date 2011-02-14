@@ -80,12 +80,6 @@ USING_SCOPE(objects);
 
 #define HGVS_THROW(err_code, message) NCBI_THROW(CHgvsParser::CHgvsParserException, err_code, message)
 
-//Todo:
-//Capture asserted sequence.
-//Assertion in the HGVS may be specified partially, e.g.
-//Ala25_Lys46 - only endponds are asserted. Represent as "A..L"
-
-
 
 class CHgvsParser : public CObject
 {
@@ -238,6 +232,8 @@ protected:
         {
             return start_offset.value || start_offset.value || stop_offset.fuzz || stop_offset.fuzz;
         }
+
+        TSeqPos GetLength() const;
 
         string asserted_sequence;
         CRef<CSeq_loc> loc;
@@ -597,7 +593,7 @@ protected:
                  */
                 seq_id          = leaf_node_d[alpha_p >> +(alnum_p | chset<>("._-|"))];
 
-                mol             = chset<>("gcrp") | str_p("mt");
+                mol             = str_p("mt") | chset<>("gcrpm"); //note: for 'mt.' also supporting 'm.'
 
                 header          = seq_id
                                   >> !(discard_node_d[ch_p('{')]

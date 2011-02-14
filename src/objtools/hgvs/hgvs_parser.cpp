@@ -101,6 +101,10 @@ void AttachAssertedSequence(CVariation_ref& vr, const CSeq_literal& literal)
     }
 }
 
+TSeqPos CHgvsParser::SOffsetLoc::GetLength() const
+{
+    return ncbi::sequence::GetLength(*loc, NULL) + stop_offset.value - start_offset.value;
+}
 
 const CSeq_loc& CHgvsParser::CContext::GetLoc() const
 {
@@ -537,6 +541,8 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
                      : mol == "g" ? CContext::eMol_g
                      : mol == "r" ? CContext::eMol_r
                      : mol == "p" ? CContext::eMol_p
+                     : mol == "m" ? CContext::eMol_mt
+                     : mol == "mt" ? CContext::eMol_mt
                      : CContext::eMol_not_set;
 
     it  = (i->children.rbegin() + 1)->children.begin();
@@ -923,7 +929,7 @@ CRef<CVariation_ref> CHgvsParser::x_insertion(TIterator const& i, const CContext
 
     //verify that the HGVS-location is of length two, as in HGVS coordinates insertion
     //is denoted to be between the specified coordinates.
-    TSeqPos len = context.GetLoc().GetTotalRange().GetLength();
+    TSeqPos len = context.GetOffsetLoc().GetLength();
     if(len != 2) {
         HGVS_THROW(eSemantic, "Encountered target location for an insertion with the length != 2");
     }
@@ -965,7 +971,7 @@ CRef<CVariation_ref> CHgvsParser::x_duplication(TIterator const& i, const CConte
         TDelta dup_seq = x_seq_ref(it, context);
         if(!dup_seq->GetSeq().IsLiteral()) {
             HGVS_THROW(eSemantic, "Expected literal after 'dup'");
-        } else if(dup_seq->GetSeq().GetLiteral().GetLength() != context.GetLoc().GetTotalRange().GetLength()) {
+        } else if(dup_seq->GetSeq().GetLiteral().GetLength() != context.GetOffsetLoc().GetLength()) {
             HGVS_THROW(eSemantic, "The expected duplication length is not equal to the location length");
         } else if(dup_seq->GetSeq().GetLiteral().IsSetSeq_data()) {
             //context.Validate(dup_seq->GetSeq().GetLiteral());

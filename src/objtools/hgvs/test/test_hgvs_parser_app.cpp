@@ -58,7 +58,8 @@ public:
       : m_feat(NULL)
       , m_parser(parser)
       , m_out(out)
-      , m_convert_to_precursor(false)
+      , m_map_up(false)
+      , m_map_down(false)
     {
         LOG_POST("Creating test-case for expression");
         string s1("");
@@ -74,9 +75,14 @@ public:
             m_throw_str = "";
         }
 
-        if(s1 == "_CONVERT_TO_PRECURSOR") {
-            m_convert_to_precursor = true;
+        if(s1 == "_MAP_UP") {
+            m_map_up = true;
         }
+
+        if(s1 == "_MAP_DOWN") {
+            m_map_down = true;
+        }
+
 
         NStr::TruncateSpacesInPlace(m_expr);
         NStr::TruncateSpacesInPlace(m_comment);
@@ -89,7 +95,8 @@ public:
       , m_feat(&feat)
       , m_parser(parser)
       , m_out(out)
-      , m_convert_to_precursor(false)
+      , m_map_up(false)
+      , m_map_down(false)
     {
         LOG_POST("Creating test-case for feature");
         m_expr = m_feat->GetData().GetVariation().GetName();
@@ -109,9 +116,14 @@ public:
             LOG_POST("Parsing " << m_expr);
             feat = m_parser->AsVariationFeat(m_expr);
 
-            if(m_convert_to_precursor) {
-                LOG_POST("Converting to precursor");
+            if(m_map_up) {
+                LOG_POST("Mapping to precursor");
                 feat = variation_util.ProtToPrecursor(*feat);
+            }
+
+            if(m_map_down) {
+                LOG_POST("Mapping to prot");
+                feat = variation_util.PrecursorToProt(*feat);
             }
 
             CVariationUtil::ETestStatus allele_status = variation_util.CheckAssertedAllele(*feat);
@@ -166,7 +178,8 @@ public:
     CConstRef<CSeq_feat> m_feat;
     CRef<CHgvsParser> m_parser;
     CNcbiOstream& m_out;
-    bool m_convert_to_precursor;
+    bool m_map_up;
+    bool m_map_down;
 };
 
 CRef<CSeq_loc> CreateLoc(const string& id, TSeqPos from = kInvalidSeqPos, TSeqPos to = kInvalidSeqPos, ENa_strand strand = eNa_strand_unknown)

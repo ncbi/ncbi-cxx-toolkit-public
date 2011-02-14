@@ -110,9 +110,6 @@ public:
     CRef<CSeq_feat> PrecursorToProt(const CSeq_feat& prot_variation_feat);
 
 
-    /// todo: implement when schema captures asserted allele
-    bool ValidateAllele(const CSeq_feat& variation_feat);
-
     /// todo: implement when decide on representation in the schema
     void FlipStrand(CSeq_feat& variation_feat);
 
@@ -134,17 +131,24 @@ public:
     /// Propagate parent variation location to the members of set, unles they have their own location set.
     static void s_PropagateLocsInPlace(CVariation_ref& v);
 
-private:
-    void s_UntranslateProt(const string& prot_str, vector<string>& codons);
 
-    size_t CVariationUtil::s_CountMatches(const string& a, const string& b);
+private:
+
+    //return iupacna or ncbieaa literals
+    CRef<CSeq_literal> x_GetLiteralAtLoc(const CSeq_loc& loc);
+
+    static CRef<CSeq_literal> s_CatLiterals(const CSeq_literal& a, const CSeq_literal& b);
+
+    static void s_UntranslateProt(const string& prot_str, vector<string>& codons);
+
+    static size_t s_CountMatches(const string& a, const string& b);
 
     void s_CalcPrecursorVariationCodon(
             const string& codon_from, //codon on cDNA
             const string& prot_to,    //missense/nonsense AA
             vector<string>& codons_to);           //calculated variation-codon
 
-    string s_CollapseAmbiguities(const vector<string>& seqs);
+    static string s_CollapseAmbiguities(const vector<string>& seqs);
 
     /*!
      * Apply offsets to the variation's location (variation must be inst)
@@ -159,6 +163,22 @@ private:
      * This is to be applied before remapping a genomic variation to transcript coordinates
      */
     static void s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss);
+
+    /*!
+     * Convert any variation to delins form, if possible; throw if not.
+     * Precondition: location must be set.
+     */
+    void x_ChangeToDelins(CVariation_ref& v);
+
+    /*!
+     * Extend or truncate delins to specified location.
+     * truncate or attach suffixes/prefixes to seq-literals as necessary).
+     *
+     * Precondition: variation must be a normalized delins (via x_ChangeToDelins)
+     */
+    void x_AdjustDelinsToInterval(CVariation_ref& delins_variation, const CSeq_loc& loc);
+
+
     CRef<CScope> m_scope;
 };
 

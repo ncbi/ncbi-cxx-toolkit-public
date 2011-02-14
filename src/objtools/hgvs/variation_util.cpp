@@ -755,43 +755,344 @@ CRef<CSeq_feat> CVariationUtil::ProtToPrecursor(const CSeq_feat& prot_variation_
     return feat;
 }
 
-#if 0
+
+CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
+{
+    CSeqVector v(loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
+    string seq;
+    v.GetSeqData(v.begin(), v.end(), seq);
+    CRef<CSeq_literal> literal(new CSeq_literal);
+    literal->SetLength(seq.length());
+    if(v.IsProtein()) {
+        literal->SetSeq_data().SetNcbieaa().Set(seq);
+    } else if (v.IsNucleotide()) {
+        literal->SetSeq_data().SetIupacna().Set(seq);
+    }
+    return literal;
+}
+
+CRef<CSeq_literal> CVariationUtil::s_CatLiterals(const CSeq_literal& a, const CSeq_literal& b)
+{
+    CRef<CSeq_literal> c(new CSeq_literal);
+
+    if(b.GetLength() == 0) {
+        c->Assign(a);
+    } else if(a.GetLength() == 0) {
+        c->Assign(b);
+    } else {
+        CSeqportUtil::Append(&(c->SetSeq_data()),
+                             a.GetSeq_data(), 0, a.GetLength(),
+                             b.GetSeq_data(), 0, b.GetLength());
+
+        c->SetLength(a.GetLength() + b.GetLength());
+
+        if(a.IsSetFuzz() || b.IsSetFuzz()) {
+            c->SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+        }
+    }
+    return c;
+}
+
+
+
+/*!
+ * Convert any simple nucleotide variation to delins form, if possible; throw if not.
+ * Precondition: location must be set.
+ */
+void CVariationUtil::x_ChangeToDelins(CVariation_ref& v)
+{
+    s_PropagateLocsInPlace(v);
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            x_ChangeToDelins(**it);
+        }
+    } else if(v.GetData().IsInstance()) {
+        CVariation_inst& inst = v.SetData().SetInstance();
+        inst.SetType(CVariation_inst::eType_delins);
+
+        if(inst.GetDelta().size() == 0) {
+            CRef<CDelta_item> di(new CDelta_item);
+            di->SetSeq().SetLiteral().SetLength(0);
+            di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set("");
+            inst.SetDelta().push_back(di);
+        } else if(inst.GetDelta().size() > 1) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Complex deltas are not supported");
+        } else {
+            CDelta_item& di = *inst.SetDelta().front();
+
+
+            //convert 'del' to 'replace-with-empty-literal'
+            if(di.GetAction() == CDelta_item::eAction_del_at) {
+                di.ResetAction();
+                di.SetSeq().SetLiteral().SetLength(0);
+                di.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set("");
+            }
+
+            //convert 'loc' or 'this'-based deltas to literals
+            if(di.GetSeq().IsLoc()) {
+                CRef<CSeq_literal> literal = x_GetLiteralAtLoc(di.GetSeq().GetLoc());
+                di.SetSeq().SetLiteral(*literal);
+            } else if(di.GetSeq().IsThis()) {
+                CRef<CSeq_literal> literal = x_GetLiteralAtLoc(v.GetLocation());
+                di.SetSeq().SetLiteral(*literal);
+            }
+
+            //expand multipliers.
+            if(di.IsSetMultiplier()) {
+                if(di.GetMultiplier() < 0) {
+                    NCBI_THROW(CArgException, CArgException::eInvalidArg, "Encountered negative multiplier");
+                } else {
+                    LOG_POST("Expanding multiplier");
+                    CSeq_literal& literal = di.SetSeq().SetLiteral();
+                    string str_kernel = literal.GetSeq_data().GetIupacna().Get();
+                    literal.SetSeq_data().SetIupacna().Set("");
+                    for(int i = 0; i < di.GetMultiplier(); i++) {
+                        literal.SetSeq_data().SetIupacna().Set() += str_kernel;
+                    }
+                    literal.SetLength(literal.GetSeq_data().GetIupacna().Get().size());
+                    if(literal.IsSetFuzz()) {
+                        literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                    }
+
+                    di.ResetMultiplier();
+                    if(di.IsSetMultiplier_fuzz()) {
+                        di.SetMultiplier_fuzz().SetLim(CInt_fuzz::eLim_unk);
+                    }
+                }
+            }
+
+            //Convert ins-X-before-loc to 'replace seq@loc with X + seq@loc'
+            if(!di.IsSetAction() || di.GetAction() == CDelta_item::eAction_morph) {
+                ;  //already done
+            } else if(di.GetAction() == CDelta_item::eAction_ins_before) {
+                di.ResetAction();
+                CRef<CSeq_literal> suffix_literal = x_GetLiteralAtLoc(v.GetLocation());
+                CRef<CSeq_literal> cat_literal = s_CatLiterals(di.GetSeq().GetLiteral(), *suffix_literal);
+                di.SetSeq().SetLiteral(*cat_literal);
+            }
+        }
+    }
+}
+
+
+
+/*!
+ * Extend or truncate delins to specified location.
+ * truncate or attach suffixes/prefixes to seq-literals as necessary).
+ *
+ * Precondition:
+ *    -variation must be a normalized delins (via x_ChangeToDelins)
+ *    -loc must be a superset of variation's location.
+ */
+void CVariationUtil::x_AdjustDelinsToInterval(CVariation_ref& v, const CSeq_loc& loc)
+{
+    if(!loc.IsInt()) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected Int location");
+    }
+
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            x_AdjustDelinsToInterval(**it, loc);
+        }
+    } else if(v.GetData().IsInstance()) {
+        CVariation_inst& inst = v.SetData().SetInstance();
+        inst.SetType(CVariation_inst::eType_delins);
+
+        CRef<CSeq_loc> sub_loc = v.GetLocation().Subtract(loc, 0, NULL, NULL);
+        if(sub_loc->Which() && sequence::GetLength(*sub_loc, NULL) > 0) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Location must be a superset of the variation's loc");
+        }
+
+        if(!inst.GetDelta().size() == 1) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+        }
+
+        CDelta_item& delta = *inst.SetDelta().front();
+
+        if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral()) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected literal");
+        }
+
+        CRef<CSeq_loc> tmp_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
+        tmp_loc->SetInt().SetFrom(sequence::GetStart(v.GetLocation(), NULL, eExtreme_Positional));
+        CRef<CSeq_loc> suffix_loc = sequence::Seq_loc_Subtract(*tmp_loc, v.GetLocation(), CSeq_loc::fSortAndMerge_All, NULL);
+
+
+
+        tmp_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
+        tmp_loc->SetInt().SetTo(sequence::GetStop(v.GetLocation(), NULL, eExtreme_Positional));
+        CRef<CSeq_loc> prefix_loc = sequence::Seq_loc_Subtract(*tmp_loc, v.GetLocation(), CSeq_loc::fSortAndMerge_All, NULL);
+
+        if(sequence::GetStrand(loc, NULL) == eNa_strand_minus) {
+            swap(prefix_loc, suffix_loc);
+        }
+
+        CRef<CSeq_literal> prefix_literal = x_GetLiteralAtLoc(*prefix_loc);
+        CRef<CSeq_literal> suffix_literal = x_GetLiteralAtLoc(*suffix_loc);
+
+        CRef<CSeq_literal> tmp_literal1 = s_CatLiterals(*prefix_literal, delta.SetSeq().SetLiteral());
+        CRef<CSeq_literal> tmp_literal2 = s_CatLiterals(*tmp_literal1, *suffix_literal);
+        delta.SetSeq().SetLiteral(*tmp_literal2);
+        v.SetLocation().Assign(loc);
+    }
+}
+
+
 CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_feat)
 {
-    if(!prot_variation_feat.GetData().IsVariation()) {
+    /*
+     * Method:
+     * 1. Normalize variation into a delins form :
+     *    location: what is being replaced;     del := seq-literal(location)
+     *    delta: what replaces the location;    ins := seq-literal(delta)
+     *    E.g. "ins 'AC' before loc" is expressed as "replace seq@loc with 'AC'+seq@loc".
+     *         "del@loc" is expressed as "replace seq@loc with ''".
+     *
+     * 2. Throw if location not completely within CDS.
+     *    In the future, might truncate to CDS location:
+     *    1. If the location crosses CDS edge (cds-start, or splice-junction):
+     *       1. If |ins| == 0 or |ins| == |del| - can truncate the variation to part covered by CDS
+     *       2. Else - bail, because we don't know base-for-base correspondence in ins vs del.
+     *
+     * 3. Extend the location and append suffix/prefix literal up to nearest codon boundaries.
+     *  Note that the suffix and prefix for ins and del might be different. Account for the fact
+     *  that if part of a codon is deleted, the bases from the downstream codon will replace it.
+     *
+     * 3. Translate modified ins and del literals and remap location to prot.
+     *
+     * 4. If translated sequences are the same -> silent variation.
+     *    Else, truncate common prefixes and suffixes and adjust location accordingy
+     *    (make sure to leave at least one pnt).
+     *
+     * 5. Attach frameshift based on (|ins|-|del|) % 3
+     */
+
+    bool verbose = false;
+
+    if(!nuc_variation_feat.GetData().IsVariation()) {
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-feature");
     }
 
-    const CVariation_ref& vr = prot_variation_feat.GetData().GetVariation();
-    if(!vr.GetData().IsInstance()) {
+    const CVariation_ref& nuc_v = nuc_variation_feat.GetData().GetVariation();
+    if(!nuc_v.GetData().IsInstance()) {
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation.inst");
     }
 
-    if(!vr.GetData().GetInstance().GetDelta().size() == 1) {
+    if(!nuc_v.GetData().GetInstance().GetDelta().size() == 1) {
         //can't process intronic, etc.
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
     }
 
-    const CDelta_item& delta = *vr.GetData().GetInstance().GetDelta().front();
-
-    if(delta.IsSetSeq() && !delta.GetSeq().IsLiteral()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "A sequence in delta is specified, but not a literal");
-    }
-
-
-    //todo: if sum of ins - sum of del % 3 is not 0, add fs
-
-
     CRef<CSeq_loc_Mapper> nuc2prot_mapper;
+    CRef<CSeq_loc_Mapper> prot2nuc_mapper;
+
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
     for(CFeat_CI ci(*m_scope, nuc_variation_feat.GetLocation(), sel); ci; ++ci) {
         nuc2prot_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eLocationToProduct, m_scope));
+        prot2nuc_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eProductToLocation, m_scope));
         break;
     }
 
-    CRef<CSeq_loc> prot_variation_feat;
+    if(!prot2nuc_mapper) {
+        NCBI_THROW(CException, eUnknown, "Could not create prot->nuc mapper");
+    }
+
+    CRef<CVariation_ref> v(new CVariation_ref);
+    v->Assign(nuc_variation_feat.GetData().GetVariation());
+    if(!v->IsSetLocation()) {
+        v->SetLocation().Assign(nuc_variation_feat.GetLocation());
+        if(!v->GetLocation().GetId()) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation's location to have unique seq-id");
+        }
+    }
+
+    if(verbose) NcbiCerr << "Original variation: " << MSerial_AsnText << *v;
+
+    x_ChangeToDelins(*v);
+
+    if(verbose) NcbiCerr << "Normalized variation: " << MSerial_AsnText << *v;
+
+
+    const CDelta_item& delta = *v->GetData().GetInstance().GetDelta().front();
+
+    bool have_frameshift = ((long)sequence::GetLength(v->GetLocation(), NULL) - (long)delta.GetSeq().GetLiteral().GetLength()) % 3 != 0;
+
+    CRef<CSeq_loc> prot_loc = nuc2prot_mapper->Map(v->GetLocation());
+    CRef<CSeq_loc> codons_loc = prot2nuc_mapper->Map(*prot_loc);
+    codons_loc->SetId(*v->GetLocation().GetId()); //restore the original id, as mapping forward and back may have changed the type
+
+    if(verbose) NcbiCerr << "Prot-loc: " << MSerial_AsnText << *prot_loc;
+
+    if(verbose) NcbiCerr << "Codons-loc: " << MSerial_AsnText << *codons_loc;
+
+    //extend codons-loc by two bases downstream, since a part of the next
+    //codon may become part of the variation (e.g. 1-base deletion in a codon
+    //results in first base of the downstream codon becoming part of modified one)
+    //If, on the other hand, the downstream codon does not participate, there's
+    //only two bases if it, so it won't get translated.
+    SFlankLocs flocs = CreateFlankLocs(*codons_loc, 2);
+    CRef<CSeq_loc> codons_loc_ext = sequence::Seq_loc_Add(*codons_loc, *flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
+
+    if(verbose) NcbiCerr << "Codons-loc-ext: " << MSerial_AsnText << *codons_loc_ext;
+
+    x_AdjustDelinsToInterval(*v, *codons_loc_ext);
+
+    CSeq_literal& literal = v->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral();
+    int prot_literal_len = literal.GetLength() / 3;
+    literal.SetLength(prot_literal_len * 3); //divide by 3 and multiply by 3 to truncate to codon boundary.
+    literal.SetSeq_data().SetIupacna().Set().resize(literal.GetLength());
+
+    if(verbose) NcbiCerr << "Adjusted variation: " << MSerial_AsnText << *v;
+
+    string prot_delta_str("");
+
+    CSeqTranslator translator;
+    translator.Translate(
+            delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna(),
+            prot_delta_str,
+            CSeqTranslator::fIs5PrimePartial);
+    NStr::ReplaceInPlace(prot_delta_str, "*", "X"); //Conversion to IUPAC produces "X", but Translate produces "*"
+
+    literal.SetLength(prot_delta_str.size());
+    literal.SetSeq_data().SetNcbieaa().Set(prot_delta_str);
+
+    CRef<CSeq_literal> ref_prot_literal = x_GetLiteralAtLoc(*prot_loc);
+
+    if(literal.GetLength() == 0) {
+        v->SetData().SetInstance().SetType(CVariation_inst::eType_del);
+        v->SetData().SetInstance().SetDelta().clear();
+    } else if(ref_prot_literal->GetLength() != literal.GetLength()) {
+        v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_other);
+    } else {
+        //sequence of the same length
+        if(ref_prot_literal->GetSeq_data().GetNcbieaa().Get() == prot_delta_str) {
+            v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_silent);
+        } else if(NStr::Find(prot_delta_str, "X") != NPOS) {
+            v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_nonsense);
+        } else {
+            v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_missense);
+        }
+    }
+
+    CRef<CSeq_feat> prot_variation_feat(new CSeq_feat);
+    prot_variation_feat->SetLocation(*prot_loc);
+    prot_variation_feat->SetData().SetVariation(*v);
+    v->ResetLocation();
+
+    if(have_frameshift) {
+        CVariation_ref::TConsequence::value_type consequence(new CVariation_ref::TConsequence::value_type::TObjectType);
+        consequence->SetFrameshift();
+        v->SetConsequence().push_back(consequence);
+    }
+
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("HGVS");
+    uo->AddField("reference_sequence", ref_prot_literal->GetSeq_data().GetNcbieaa());
+    v->SetExt(*uo);
+
+    return prot_variation_feat;
 }
-#endif
+
 
 END_NCBI_SCOPE
 
