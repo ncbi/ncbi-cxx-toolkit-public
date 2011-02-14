@@ -74,6 +74,18 @@ public:
         return empty_str;
     }
 };
+#if defined(HAVE_WSTRING)
+class CNcbiEmptyWString
+{
+public:
+    /// Get string.
+    static const wstring& Get(void)
+    {
+        static wstring empty_str;
+        return empty_str;
+    }
+};
+#endif
 #else
 class NCBI_XNCBI_EXPORT CNcbiEmptyString
 {
@@ -92,6 +104,10 @@ private:
 #define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString::Get()
 #define kEmptyStr NcbiEmptyString
 
+#if defined(HAVE_WSTRING)
+#  define NcbiEmptyWString NCBI_NS_NCBI::CNcbiEmptyWString::Get()
+#  define kEmptyWStr NcbiEmptyWString
+#endif
 
 // SIZE_TYPE and NPOS
 
@@ -129,7 +145,10 @@ typedef wstring TXString;
 #  define _T_XCSTRING(x)      _T_XSTRING(x).c_str()
 #  define _T_CSTRING(x)       _T_STDSTRING(x).c_str()
 
-#  define kEmptyXCStr kEmptyWCStr
+#  define NcbiEmptyXCStr   NcbiEmptyWCStr
+#  define NcbiEmptyXString NcbiEmptyWString
+#  define kEmptyXStr       kEmptyWStr
+#  define kEmptyXCStr      kEmptyWCStr
 
 #else
 
@@ -145,7 +164,10 @@ typedef string TXString;
 #  define _T_XCSTRING(x)      impl_ToCString(x)
 #  define _T_CSTRING(x)       (x)
 
-#  define kEmptyXCStr kEmptyCStr
+#  define NcbiEmptyXCStr   NcbiEmptyCStr
+#  define NcbiEmptyXString NcbiEmptyString
+#  define kEmptyXStr       kEmptyStr
+#  define kEmptyXCStr      kEmptyCStr
 
 inline const char* impl_ToCString(const char*   s) { return s; }
 inline const char* impl_ToCString(const string& s) { return s.c_str(); }
