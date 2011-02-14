@@ -825,6 +825,7 @@ public:
     // functions expected to be used in Discrepancy Report
     bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);
     bool IsIntronShort(const CSeq_feat& feat);
+    void ValidatemRNAGene (const CSeq_feat &feat);
 
 private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
@@ -866,7 +867,6 @@ private:
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
     void ValidateMrnaTrans(const CSeq_feat& feat);
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
-    void ValidatemRNAGene (const CSeq_feat &feat);
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
     void ValidateIntron(const CSeq_feat& feat);
 
@@ -1102,6 +1102,8 @@ private:
     bool x_IsActiveFin(const CBioseq& seq) const;
     bool x_IsMicroRNA(const CBioseq& seq) const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
+
+    void ValidatemRNAGene (const CBioseq& seq);
     
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
 

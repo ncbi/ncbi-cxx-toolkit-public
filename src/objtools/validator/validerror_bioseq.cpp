@@ -164,6 +164,7 @@ void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
         ValidateSeqIds(seq);
         ValidateInst(seq);
         ValidateBioseqContext(seq);
+        ValidatemRNAGene(seq);
         ValidateHistory(seq);
         FOR_EACH_ANNOT_ON_BIOSEQ (annot, seq) {
             m_AnnotValidator.ValidateSeqAnnot(**annot);
@@ -8066,6 +8067,28 @@ void CValidError_bioseq::CheckTpaHistory(const CBioseq& seq)
     } else {
         m_Imp.IncrementTpaWithoutHistoryCount();
     }
+}
+
+
+// check that there is no conflict between the gene on the genomic 
+// and the gene on the mrna.
+void CValidError_bioseq::ValidatemRNAGene (const CBioseq& seq)
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
+    if (!bsh) {
+        return;
+    }
+    if (!IsMrna(bsh)) {
+        return;
+    }
+
+    CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct(seq);
+
+    if (!mrna) {
+        return;
+    }
+    m_FeatValidator.ValidatemRNAGene (*mrna);
+
 }
 
 

@@ -2596,8 +2596,6 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         }
         ValidateCommonMRNAProduct(feat);
 
-        ValidatemRNAGene (feat);
-
         FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
             const CGb_qual& qual = **it;
             if ( qual.CanGetQual() ) {
@@ -4492,7 +4490,10 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                                 NStr::IntToString(rna_len) + "], but tail >= 95% polyA",
                                 feat);
                         }
-                    }            
+                    }  
+                    // allow base-by-base comparison on common length
+                    rna_len = nuc_len = min(nuc_len, rna_len);
+
                 } else {
                     if (report_errors) {
                         PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
@@ -4501,12 +4502,9 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                             NStr::IntToString(rna_vec.size()) + "]", feat);
                     }
                 }
-                // allow base-by-base comparison on common length
-                rna_len = nuc_len = min(nuc_len, rna_len);
             }
-            _ASSERT(nuc_len == rna_len);
-
-            if (nuc_len > 0) {
+            
+            if (rna_len == nuc_len && nuc_len > 0) {
                 CSeqVector_CI nuc_ci(nuc_vec);
                 CSeqVector_CI rna_ci(rna_vec);
 
@@ -4595,6 +4593,14 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 // and the gene on the mrna.
 void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
 {
+    bool is_interesting = false;
+    if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
+        int id_num = feat.GetId().GetLocal().GetId();
+        if (id_num == 8) {
+          is_interesting = true;
+        }
+    }
+
     if (feat.IsSetProduct()) {
         // get gene ref for mRNA feature
         const CGene_ref* genomicgrp = feat.GetGeneXref();
@@ -4613,6 +4619,9 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
                 if ( mrna_gene ) {
                     const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
                     if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
+                        if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
+                            int id_num = feat.GetId().GetLocal().GetId();
+                        }
                         PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
                             "Gene on mRNA bioseq does not match gene on genomic bioseq",
                             mrna_gene->GetOriginalFeature());
@@ -4683,7 +4692,11 @@ void CValidError_feat::ValidateCommonCDSProduct
         return;
     }
 
-    CBioseq_Handle prod = m_Scope->GetBioseqHandle(feat.GetProduct());
+    CBioseq_Handle prod;
+    const CSeq_id * sid = feat.GetProduct().GetId();
+    if (sid) {
+        prod = m_Scope->GetBioseqHandleFromTSE(*sid, m_Scope->GetBioseqHandle(feat.GetLocation()));
+    }
     if ( !prod ) {
         const CSeq_id* sid = 0;
         try {
@@ -4712,6 +4725,14 @@ void CValidError_feat::ValidateCommonCDSProduct
     }
     CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( nuc ) {
+        bool is_interesting = false;
+        if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
+            int id_num = feat.GetId().GetLocal().GetId();
+            if (id_num == 12) {
+              is_interesting = true;
+            }
+        }
+
         bool is_nt = false;
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(nuc.GetBioseqCore())) {
             if ((*it)->IsOther() && (*it)->GetTextseq_Id()->IsSetAccession()
@@ -5497,6 +5518,14 @@ bool CValidError_feat::ValidateCdRegionTranslation
 
 void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 {
+    bool is_interesting = false;
+    if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
+        int id_num = feat.GetId().GetLocal().GetId();
+        if (id_num == 46) {
+          is_interesting = true;
+        }
+    }
+
     // bail if not CDS
     if (!feat.GetData().IsCdregion()) {
         return;
@@ -5793,8 +5822,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
     show_stop = true;
 
+    bool no_product = true;
+
     // can't check for mismatches unless there is a product
     if (prot_handle && prot_handle.IsAa()) {
+        no_product = false;
         CSeqVector prot_vec = prot_handle.GetSeqVector();
         prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
         size_t prot_len = prot_vec.size(); 
@@ -5846,6 +5878,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         } else {
             has_errors = true;
+            other_than_mismatch = true;
             if (report_errors || (rna_editing && (prot_len < len - 1 || prot_len > len))) {
                 PostErr(rna_editing ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_TransLen,
                     "Given protein length [" + NStr::IntToString(prot_len) + 
@@ -6010,7 +6043,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     }
 
-    if (!report_errors) {
+    if (!report_errors && !no_product) {
         if (! has_errors) {
             if (!frameshift_except && !rearrange_except && !mixed_population && !low_quality) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
@@ -6752,15 +6785,6 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                          "Feature on protein indicates negative strand",
                          feat);
             }    
-
-            bool is_interesting = false;
-            if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
-                int id_num = feat.GetId().GetLocal().GetId();
-                if (id_num == 413 || id_num == 1296) {
-                  is_interesting = true;
-                }
-            }
-
 
             // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
             // ignore gap features for this
