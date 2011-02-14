@@ -225,6 +225,9 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
         retval += "50 bases";
     } else if (task == "vecscreen") {
         retval.assign("BLASTN with several options re-set for running Vecscreen");
+    } else if (task == "rmblastn") {
+        retval.assign("BLASTN with complexity adjusted scoring and masklevel");
+        retval += "filtering";
     } else if (task == "blastp") {
         retval.assign("Traditional BLASTP to compare a protein query to a ");
         retval += "protein database";
