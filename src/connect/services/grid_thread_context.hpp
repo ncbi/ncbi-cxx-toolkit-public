@@ -66,8 +66,6 @@ public:
     IWorkerNodeJob* GetJob();
 
 private:
-    void x_HandleRunJobError(exception* ex = NULL);
-
     CGridWorkerNode&              m_Worker;
     CWorkerNodeJobContext*        m_JobContext;
     CRef<IWorkerNodeJob>          m_Job;

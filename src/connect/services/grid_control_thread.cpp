@@ -269,7 +269,7 @@ CWorkerNodeControlServer::CWorkerNodeControlServer(
 
 CWorkerNodeControlServer::~CWorkerNodeControlServer()
 {
-    LOG_POST_X(14, "Control server stopped.");
+    LOG_POST_X(14, Info << "Control server stopped.");
 }
 bool CWorkerNodeControlServer::ShutdownRequested(void)
 {

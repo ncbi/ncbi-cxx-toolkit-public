@@ -329,26 +329,6 @@ CWorkerNodeRequest::CWorkerNodeRequest(auto_ptr<CWorkerNodeJobContext> context)
 }
 
 
-void CGridThreadContext::x_HandleRunJobError(exception* ex /*= NULL*/)
-{
-    string msg = " Error in Job execution";
-    if (ex) {
-        msg += ": ";
-        msg += ex->what();
-    }
-    ERR_POST_X(18, m_JobContext->GetJobKey() << msg);
-    try {
-        m_JobContext->m_Job.error_msg = ex ? ex->what() : "Unknown error";
-        PutFailure();
-    } catch (exception& ex1) {
-        ERR_POST_X(19, "Failed to report exception: " <<
-            m_JobContext->GetJobKey() << " " << ex1.what());
-    } catch (...) {
-        ERR_POST_X(20, "Failed to report exception while processing " <<
-            m_JobContext->GetJobKey());
-    }
-}
-
 static bool s_ReqEventsDisabled = false;
 
 class CRequestStateGuard
@@ -513,10 +493,15 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
             request_state_guard.RequestStop();
         }
         catch (exception& ex) {
-            x_HandleRunJobError(&ex);
-        }
-        catch (...) {
-            x_HandleRunJobError();
+            ERR_POST_X(18, m_JobContext->GetJobKey() <<
+                " Error in Job execution: " << ex.what());
+            try {
+                m_JobContext->m_Job.error_msg = ex.what();
+                PutFailure();
+            } catch (exception& ex1) {
+                ERR_POST_X(19, "Failed to report exception: " <<
+                    m_JobContext->GetJobKey() << " " << ex1.what());
+            }
         }
 
         _ASSERT(m_JobContext);
@@ -543,8 +528,6 @@ void CWorkerNodeRequest::x_HandleProcessError(exception* ex)
         m_JobContext->GetWorkerNode().x_ReturnJob(m_JobContext->GetJobKey());
     } catch (exception& ex1) {
         ERR_POST_X(24, "Could not return job back to queue: " << ex1.what());
-    } catch (...) {
-        ERR_POST_X(25, "Could not return job back to queue.");
     }
 }
 
@@ -560,7 +543,6 @@ void CWorkerNodeRequest::Process()
         thread_context->RunJobs(*m_JobContext);
     }
     catch (exception& ex) { x_HandleProcessError(&ex);  }
-    catch (...) { x_HandleProcessError(); }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -623,7 +605,7 @@ protected:
     {
         CThread::OnExit();
         CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
-        LOG_POST_X(46, "Control Thread has been stopped.");
+        LOG_POST_X(46, Info << "Control Thread has been stopped.");
     }
 
 private:
@@ -758,7 +740,8 @@ void* CWorkerNodeIdleThread::Main()
 {
     while (!m_ShutdownFlag) {
         if ( x_IsAutoShutdownTime() ) {
-            LOG_POST_X(47, "There are no more jobs to be done. Exiting.");
+            LOG_POST_X(47, Info <<
+                "There are no more jobs to be done. Exiting.");
             CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
             break;
         }
@@ -775,7 +758,7 @@ void* CWorkerNodeIdleThread::Main()
             try {
                 do {
                     if ( x_IsAutoShutdownTime() ) {
-                        LOG_POST_X(48,
+                        LOG_POST_X(48, Info <<
                             "There are no more jobs to be done. Exiting.");
                         CGridGlobals::GetInstance().RequestShutdown(
                             CNetScheduleAdmin::eShutdownImmediate);
@@ -794,7 +777,7 @@ void* CWorkerNodeIdleThread::Main()
 
 void CWorkerNodeIdleThread::OnExit(void)
 {
-    LOG_POST_X(49, "Idle Thread has been stopped.");
+    LOG_POST_X(49, Info << "Idle Thread has been stopped.");
 }
 
 CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
@@ -901,7 +884,7 @@ const char* kServerSec = "server";
 
 int CGridWorkerNode::Run()
 {
-    LOG_POST_X(50, GetJobFactory().GetJobVersion() << WN_BUILD_DATE);
+    LOG_POST_X(50, Info << GetJobFactory().GetJobVersion() << WN_BUILD_DATE);
 
     const IRegistry& reg = m_App.GetConfig();
     CConfig conf(reg);
@@ -915,7 +898,8 @@ int CGridWorkerNode::Run()
         else {
             try {
                 m_MaxThreads = NStr::StringToUInt(max_threads);
-            } catch (...) {
+            }
+            catch (exception& e) {
                 m_MaxThreads = GetCpuCount();
                 ERR_POST_X(51, "Could not convert [" << kServerSec <<
                     "] max_threads parameter to number.\n"
@@ -989,10 +973,8 @@ int CGridWorkerNode::Run()
         NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, port);
         if (host.empty() || port.empty())
             continue;
-        try {
-            m_Masters.insert(SServerAddress(NStr::ToLower(host),
-                (unsigned short) NStr::StringToUInt(port)));
-        } catch(...) {}
+        m_Masters.insert(SServerAddress(NStr::ToLower(host),
+            (unsigned short) NStr::StringToUInt(port)));
     }
 
     vhosts.clear();
@@ -1087,7 +1069,7 @@ int CGridWorkerNode::Run()
 
     control_thread->Run();
 
-    LOG_POST_X(54, "\n=================== NEW RUN : " <<
+    LOG_POST_X(54, Info << "\n=================== NEW RUN : " <<
         CGridGlobals::GetInstance().GetStartTime().AsString() <<
             " ===================\n" <<
         GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
@@ -1124,12 +1106,6 @@ int CGridWorkerNode::Run()
             CGridGlobals::GetInstance().RequestShutdown(
                 CNetScheduleAdmin::eShutdownImmediate);
             return 2;
-        }
-        catch (...) {
-            ERR_POST_X(27, "Unknown error");
-            CGridGlobals::GetInstance().RequestShutdown(
-                CNetScheduleAdmin::eShutdownImmediate);
-            return 3;
         }
     }
 
@@ -1168,7 +1144,7 @@ int CGridWorkerNode::Run()
                 } else {
                     try {
                         single_thread_context->RunJobs(*job_context);
-                    } catch (...) {
+                    } catch (exception&) {
                         x_ReturnJob(job_context->GetJobKey());
                         throw;
                     }
@@ -1189,48 +1165,40 @@ int CGridWorkerNode::Run()
                 CGridGlobals::GetInstance().RequestShutdown(
                     CNetScheduleAdmin::eShutdownImmediate);
             }
-        } catch (...) {
-            if (TWorkerNode_StopOnJobErrors::GetDefault()) {
-                ERR_POST_X(30, "Unknown error");
-                CGridGlobals::GetInstance().RequestShutdown(
-                    CNetScheduleAdmin::eShutdownImmediate);
-            }
         }
         try_count = 0;
     }
-    LOG_POST_X(31, "Shutting down...");
+    LOG_POST_X(31, Info << "Shutting down...");
     if (reg.GetBool(kServerSec,
             "force_exit", false, 0, CNcbiRegistry::eReturn)) {
         ERR_POST_X(45, "Force exit");
     } else if (m_MaxThreads > 1) {
         try {
-            LOG_POST_X(32, "Stopping worker threads...");
+            LOG_POST_X(32, Info << "Stopping worker threads...");
             thread_pool->KillAllThreads(true);
             thread_pool.reset(0);
-        } catch (exception& ex) {
+        }
+        catch (exception& ex) {
             ERR_POST_X(33, "Could not stop worker threads: " << ex.what());
-        } catch (...) {
-            ERR_POST_X(34, "Could not stop worker threads: Unknown error");
         }
     }
     try {
         GetNSExecuter().UnRegisterClient();
-    } catch (CNetServiceException& ex) {
+    }
+    catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error
         if (ex.GetErrCode() != CNetServiceException::eCommunicationError
             || NStr::Find(ex.what(),"Server error:Unknown request") == NPOS) {
-            ERR_POST_X(35, "Could unregister from NetScehdule services: "
+            ERR_POST_X(35, "Could not unregister from NetScehdule services: "
                        << ex.what());
         }
-    } catch(exception& ex) {
-        ERR_POST_X(36, "Could unregister from NetScehdule services: "
+    }
+    catch (exception& ex) {
+        ERR_POST_X(36, "Could not unregister from NetScehdule services: "
                    << ex.what());
-    } catch(...) {
-        ERR_POST_X(37, "Could unregister from NetScehdule services: "
-            "Unknown error." );
     }
 
-    LOG_POST_X(38, "Worker Node has been stopped.");
+    LOG_POST_X(38, Info << "Worker Node has been stopped.");
 
 
     CRef<CGridCleanupThread> cleanup_thread(
@@ -1238,13 +1206,13 @@ int CGridWorkerNode::Run()
 
     cleanup_thread->Run();
 
-    LOG_POST_X(55, "Stopping Control thread...");
+    LOG_POST_X(55, Info << "Stopping Control thread...");
     control_thread->Stop();
     control_thread->Join();
 
     CNcbiOstrstream os;
     CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
-    LOG_POST_X(56, string(CNcbiOstrstreamToString(os)));
+    LOG_POST_X(56, Info << string(CNcbiOstrstreamToString(os)));
 
     if (m_IdleThread) {
         if (!m_IdleThread->IsShutdownRequested()) {
@@ -1256,7 +1224,7 @@ int CGridWorkerNode::Run()
 
     if (cleanup_thread->Wait(thread_pool_timeout)) {
         cleanup_thread->Join();
-        LOG_POST_X(58, "Cleanup thread finished");
+        LOG_POST_X(58, Info << "Cleanup thread finished");
     } else {
         ERR_POST_X(59, "Clean-up thread timed out");
     }
@@ -1403,7 +1371,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
                 int load = NStr::StringToInt(msg);
                 if (load > 0)
                     return false;
-            } catch (...) {}
+            } catch (exception&) {}
         } else {
             ERR_POST_X(44, "Worker Node at " << it->AsString() <<
                 " returned unknown reply: " << reply);
