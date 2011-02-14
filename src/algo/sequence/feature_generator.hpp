@@ -173,14 +173,17 @@ private:
                                        size_t model_num,
                                        CBioseq_set& seqs,
                                        CSeq_loc_Mapper::TMapOptions opts);
-    void x_CopyDbxrefs(CConstRef<CSeq_feat> gene_feat,
-                       CRef<CSeq_feat> child_feat);
+    void x_CheckInconsistentDbxrefs(CConstRef<CSeq_feat> gene_feat,
+                                    CConstRef<CSeq_feat> cds_feat);
     void x_CopyAdditionalFeatures(const CBioseq_Handle& handle,
                                   SMapper& mapper,
                                   CSeq_annot& annot);
-    void x_HandleCdsExceptions(CSeq_feat& feat,
-                               CScope& scope,
+    void x_HandleRnaExceptions(CSeq_feat& feat,
                                const CSeq_align* align);
+    void x_HandleCdsExceptions(CSeq_feat& feat,
+                               const CSeq_align* align);
+    void x_SetExceptText(CSeq_feat& feat,
+                         const string &except_text);
 };
 
 END_NCBI_SCOPE

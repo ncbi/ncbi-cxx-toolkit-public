@@ -129,17 +129,13 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 393840
-        },
-        {
-          db "ZFIN",
-          tag str "ZDB-GENE-040426-1850"
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_200866.1"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -244,17 +240,13 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 393840
-        },
-        {
-          db "ZFIN",
-          tag str "ZDB-GENE-040426-1850"
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_957160.1"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data gene {
@@ -389,13 +381,14 @@ Seq-annot ::= {
           id gi 269932227
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 505061
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001143857.1"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -511,13 +504,13 @@ Seq-annot ::= {
           id gi 269932227
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 505061
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_001137329.1"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data gene {
@@ -561,13 +554,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 404089
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_205781.2"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -586,12 +579,6 @@ Seq-annot ::= {
             accession "NW_001508749",
             version 2
           }
-        }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 404089
         }
       }
     },
@@ -723,17 +710,13 @@ Seq-annot ::= {
           fuzz-from lim lt
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 406525
-        },
-        {
-          db "ZFIN",
-          tag str "ZDB-GENE-040426-2371"
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_213242.1"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data gene {
@@ -973,24 +956,6 @@ Seq-annot ::= {
             version 12
           },
           fuzz-to lim gt
-        }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 54020
-        },
-        {
-          db "HGNC",
-          tag id 11024
-        },
-        {
-          db "HPRD",
-          tag id 10479
-        },
-        {
-          db "MIM",
-          tag id 608094
         }
       }
     },
@@ -1453,25 +1418,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 8615
-        },
-        {
-          db "HGNC",
-          tag id 30904
-        },
-        {
-          db "HPRD",
-          tag str "09135"
-        },
-        {
-          db "MIM",
-          tag id 603344
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_003715.2"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
@@ -1706,25 +1659,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 8615
-        },
-        {
-          db "HGNC",
-          tag id 30904
-        },
-        {
-          db "HPRD",
-          tag str "09135"
-        },
-        {
-          db "MIM",
-          tag id 603344
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_003715.2"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
@@ -1939,25 +1880,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 8615
-        },
-        {
-          db "HGNC",
-          tag id 30904
-        },
-        {
-          db "HPRD",
-          tag str "09135"
-        },
-        {
-          db "MIM",
-          tag id 603344
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_003715.2"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -2189,25 +2118,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 8615
-        },
-        {
-          db "HGNC",
-          tag id 30904
-        },
-        {
-          db "HPRD",
-          tag str "09135"
-        },
-        {
-          db "MIM",
-          tag id 603344
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_003706.1"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -2439,25 +2356,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 8615
-        },
-        {
-          db "HGNC",
-          tag id 30904
-        },
-        {
-          db "HPRD",
-          tag str "09135"
-        },
-        {
-          db "MIM",
-          tag id 603344
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_003706.1"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -2669,25 +2574,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 8615
-        },
-        {
-          db "HGNC",
-          tag id 30904
-        },
-        {
-          db "HPRD",
-          tag str "09135"
-        },
-        {
-          db "MIM",
-          tag id 603344
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_003706.1"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data gene {
@@ -3027,13 +2920,14 @@ Seq-annot ::= {
           id gi 295788403
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 403826
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001006951.1"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -3355,13 +3249,13 @@ Seq-annot ::= {
           id gi 295788403
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 403826
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_001006952.1"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data gene {
@@ -3563,17 +3457,14 @@ Seq-annot ::= {
           id gi 258442493
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 556456
-        },
-        {
-          db "ZFIN",
-          tag str "ZDB-GENE-060429-1"
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001039810.1"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -3742,17 +3633,13 @@ Seq-annot ::= {
           id gi 258442493
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 556456
-        },
-        {
-          db "ZFIN",
-          tag str "ZDB-GENE-060429-1"
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_001034899.1"
         }
       },
-      except-text "mismatches in translation"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data gene {
@@ -3809,12 +3696,6 @@ Seq-annot ::= {
           strand minus,
           id gi 260082811
         }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 506973
-        }
       }
     },
     {
@@ -3863,12 +3744,6 @@ Seq-annot ::= {
           to 3143460,
           strand minus,
           id gi 260082811
-        }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 506973
         }
       },
       except-text "ribosomal slippage"
@@ -4174,25 +4049,13 @@ Seq-annot ::= {
           id gi 224514634
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 80781
-        },
-        {
-          db "HGNC",
-          tag id 2195
-        },
-        {
-          db "HPRD",
-          tag str "00382"
-        },
-        {
-          db "MIM",
-          tag id 120328
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_130445.2"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -4457,25 +4320,13 @@ Seq-annot ::= {
           id gi 224514634
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 80781
-        },
-        {
-          db "HGNC",
-          tag id 2195
-        },
-        {
-          db "HPRD",
-          tag str "00382"
-        },
-        {
-          db "MIM",
-          tag id 120328
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_569712.2"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
@@ -4741,25 +4592,13 @@ Seq-annot ::= {
           id gi 224514634
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 80781
-        },
-        {
-          db "HGNC",
-          tag id 2195
-        },
-        {
-          db "HPRD",
-          tag str "00382"
-        },
-        {
-          db "MIM",
-          tag id 120328
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_130445.2"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -5027,25 +4866,13 @@ Seq-annot ::= {
           id gi 224514634
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 80781
-        },
-        {
-          db "HGNC",
-          tag id 2195
-        },
-        {
-          db "HPRD",
-          tag str "00382"
-        },
-        {
-          db "MIM",
-          tag id 120328
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_569712.2"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data gene {
@@ -5312,24 +5139,6 @@ Seq-annot ::= {
             version 1
           }
         }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
-        }
       }
     },
     {
@@ -5556,24 +5365,6 @@ Seq-annot ::= {
             version 1
           }
         }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
-        }
       }
     },
     {
@@ -5631,20 +5422,6 @@ Seq-annot ::= {
           strand plus,
           id gi 224514692
         }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 23089
-        },
-        {
-          db "HGNC",
-          tag id 14005
-        },
-        {
-          db "MIM",
-          tag id 609810
-        }
       }
     },
     {
@@ -5668,20 +5445,6 @@ Seq-annot ::= {
           to 32327836,
           strand plus,
           id gi 224514692
-        }
-      },
-      dbxref {
-        {
-          db "GeneID",
-          tag id 23089
-        },
-        {
-          db "HGNC",
-          tag id 14005
-        },
-        {
-          db "MIM",
-          tag id 609810
         }
       },
       except-text "ribosomal slippage"
@@ -5930,25 +5693,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
@@ -6155,25 +5906,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
@@ -6310,25 +6049,13 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -6532,25 +6259,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -6754,25 +6469,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     },
     {
       data cdregion {
@@ -6905,25 +6608,13 @@ Seq-annot ::= {
           }
         }
       },
-      dbxref {
+      qual {
         {
-          db "GeneID",
-          tag id 26958
-        },
-        {
-          db "HGNC",
-          tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
-          db "MIM",
-          tag id 604355
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "annotated by transcript or proteomic data"
     }
   }
 }

@@ -530,8 +530,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
 
     if(!call_on_align_list){
         SetPartialFlags(gene_feat, mrna_feat, cds_feat);
-        x_CopyDbxrefs(gene_feat, mrna_feat);
-        x_CopyDbxrefs(gene_feat, cds_feat);
+        x_CheckInconsistentDbxrefs(gene_feat, cds_feat);
         x_CopyAdditionalFeatures(handle, mapper, annot);
     }
 
@@ -596,8 +595,8 @@ SImplementation::ConvertAlignToAnnot(
         }
         NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat_it, gene_annot.SetData().SetFtable())
         {
-            if((*feat_it)->GetData().IsCdregion() || (*feat_it)->GetData().IsRna())
-                x_CopyDbxrefs(gene_feat, *feat_it);
+            if((*feat_it)->GetData().IsCdregion())
+                x_CheckInconsistentDbxrefs(gene_feat, *feat_it);
         }
         gene_annot.SetData().SetFtable().push_front(gene_feat);
         RecomputePartialFlags(gene_annot);
@@ -1572,29 +1571,26 @@ SImplementation::RecomputePartialFlags(CSeq_annot& annot)
 }
 
 
-void CFeatureGenerator::SImplementation::x_CopyDbxrefs(
+void CFeatureGenerator::SImplementation::x_CheckInconsistentDbxrefs(
                        CConstRef<CSeq_feat> gene_feat,
-                       CRef<CSeq_feat> child_feat)
+                       CConstRef<CSeq_feat> cds_feat)
 {
-    /// Only copy if both the gene feature and the child feature exist,
-    /// the gene feature has Dbxrefs and the child feature does not
     if(!gene_feat || !gene_feat->IsSetDbxref() ||
-       !child_feat || child_feat->IsSetDbxref())
+       !cds_feat || !cds_feat->IsSetDbxref())
         return;
 
-    /// Special check; don't propagate gene feature dbxrefs to the CDS
-    /// for gnomon
-    if(child_feat->GetData().IsCdregion() &&
-       child_feat->CanGetProduct() &&
-       !ExtractGnomonModelNum(*child_feat->GetProduct().GetId()).empty())
-        return;
-
-    ITERATE (CSeq_feat::TDbxref, xref_it,
-             gene_feat->GetDbxref()) {
-        CRef<CDbtag> tag(new CDbtag);
-        tag->Assign(**xref_it);
-        child_feat->SetDbxref().push_back(tag);
-    }
+    ITERATE (CSeq_feat::TDbxref, gene_xref_it, gene_feat->GetDbxref())
+        ITERATE (CSeq_feat::TDbxref, cds_xref_it, cds_feat->GetDbxref())
+        {
+            if((*gene_xref_it)->GetDb() == (*cds_xref_it)->GetDb() &&
+               !(*gene_xref_it)->Match(**cds_xref_it))
+                LOG_POST(Warning << "Features for gene "
+                                 << gene_feat->GetLocation().GetId()->AsFastaString()
+                                 << " and corresponding cdregion "
+                                 << cds_feat->GetProduct().GetId()->AsFastaString()
+                                 << " have " << (*gene_xref_it)->GetDb()
+                                 << " dbxrefs with inconsistent tags");
+        }
 }
 
 
@@ -1630,8 +1626,7 @@ void CFeatureGenerator::SImplementation::x_CopyAdditionalFeatures(const CBioseq_
 ///
 /// Handle feature exceptions
 ///
-static void s_HandleRnaExceptions(CSeq_feat& feat,
-                                  CScope& scope,
+void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
                                   const CSeq_align* align)
 {
     if ( !feat.IsSetProduct() ) {
@@ -1642,7 +1637,7 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         /// we trust only featu-id xrefs here
         ///
         if (feat.IsSetXref()) {
-            CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+            CBioseq_Handle bsh = m_scope->GetBioseqHandle(feat.GetLocation());
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
 
             ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
@@ -1699,14 +1694,14 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
     if ( !al ) {
         SAnnotSelector sel;
         sel.SetResolveAll();
-        CAlign_CI align_iter(scope, feat.GetLocation(), sel);
+        CAlign_CI align_iter(*m_scope, feat.GetLocation(), sel);
         for ( ;  align_iter;  ++align_iter) {
             const CSeq_align& this_align = *align_iter;
             if (this_align.GetSegs().IsSpliced()  &&
                 sequence::IsSameBioseq
-                (sequence::GetId(feat.GetProduct(), &scope),
+                (sequence::GetId(feat.GetProduct(), m_scope.GetPointer()),
                  this_align.GetSeq_id(0),
-                 &scope)) {
+                 m_scope.GetPointer())) {
                 al.Reset(&this_align);
                 break;
             }
@@ -1721,14 +1716,14 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
     bool has_mismatches = false;
     bool has_gaps = false;
 
-    CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(feat.GetProduct());
+    CBioseq_Handle prod_bsh    = m_scope->GetBioseqHandle(feat.GetProduct());
     if ( !prod_bsh ) {
         NCBI_THROW(CException, eUnknown,
                    "failed to retrieve bioseq for "
                    + sequence::GetIdHandle(feat.GetProduct(), NULL).GetSeqId()->AsFastaString());
     }
 
-    TSeqPos loc_len = sequence::GetLength(feat.GetLocation(), &scope);
+    TSeqPos loc_len = sequence::GetLength(feat.GetLocation(), m_scope.GetPointer());
     if (loc_len > prod_bsh.GetBioseqLength()) {
         has_length_mismatch = true;
     }
@@ -1795,7 +1790,7 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         /// only compare for mismatches and 3' unaligned
         /// we assume that the feature is otherwise aligned
 
-        CSeqVector nuc_vec(feat.GetLocation(), scope,
+        CSeqVector nuc_vec(feat.GetLocation(), *m_scope,
                            CBioseq_Handle::eCoding_Iupac);
 
         CSeqVector rna_vec(prod_bsh,
@@ -1845,66 +1840,11 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         except_text = "mismatches in transcription";
     }
 
-    /**
-    LOG_POST(Error << "  " << (al ? "align:" : "sequence:")
-             << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
-             << " has_mismatches=" << (has_mismatches ? "yes" : "no")
-             << " has_gaps=" << (has_gaps ? "yes" : "no")
-             << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
-             << " has_incomplete_polya_tail=" << (has_incomplete_polya_tail ? "yes" : "no")
-             << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
-             << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no")
-             << " has_length_mismatch=" << (has_length_mismatch ? "yes" : "no")
-             << " (loc=" << loc_len << " prod=" << prod_bsh.GetBioseqLength() << ")"
-             << " except=" << (except_text.empty() ? "no" : "yes")
-            );
-            **/
-
-    // there are some exceptions we don't account for
-    // we would like to set the exception state to whatever we compute above
-    // on the other hand, an annotated exception such as ribosomal slippage or
-    // rearrangement required for assembly trumps any computed values
-    // scan to see if it is set to an exception state we can account for
-
-    list<string> except_toks;
-    if (feat.IsSetExcept_text()) {
-        NStr::Split(feat.GetExcept_text(), ",", except_toks);
-
-        for (list<string>::iterator it = except_toks.begin();
-             it != except_toks.end();  ) {
-            NStr::TruncateSpacesInPlace(*it);
-            if (it->empty()  ||
-                *it == "unclassified transcription discrepancy"  ||
-                *it == "mismatches in transcription") {
-                except_toks.erase(it++);
-            }
-            else if (*it == "ribosomal slippage") {
-                except_text.clear();
-                ++it;
-            }
-            else {
-                ++it;
-            }
-        }
-    }
-    if ( !except_text.empty() ) {
-        except_toks.push_back(except_text);
-    }
-    except_text = NStr::Join(except_toks, ", ");
-
-    if (except_text.empty()) {
-        // no exception; set states correctly
-        feat.ResetExcept_text();
-        feat.ResetExcept();
-    } else {
-        feat.SetExcept(true);
-        feat.SetExcept_text(except_text);
-    }
+    x_SetExceptText(feat, except_text);
 }
 
 
 void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
-                                  CScope& scope,
                                   const CSeq_align* align)
 {
     if ( !feat.IsSetProduct() ) {
@@ -1915,7 +1855,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         /// we trust only featu-id xrefs here
         ///
         if (feat.IsSetXref()) {
-            CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+            CBioseq_Handle bsh = m_scope->GetBioseqHandle(feat.GetLocation());
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
 
             ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
@@ -1976,7 +1916,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     if (align != NULL) {
         CBioseq bioseq;
         x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), false, &has_gap, &has_indel);
-        CSeqVector seq(bioseq, &scope,
+        CSeqVector seq(bioseq, m_scope.GetPointer(),
                        CBioseq_Handle::eCoding_Iupac);
         string mrna;
         int frame = 0;
@@ -1995,8 +1935,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         seq.GetSeqData(frame, seq.size(), mrna);
         CSeqTranslator::Translate(mrna, xlate, CSeqTranslator::fIs5PrimePartial);
     } else {
-        CSeqVector seq(feat.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
-        CSeqTranslator::Translate(feat, scope, xlate);
+        CSeqVector seq(feat.GetLocation(), *m_scope, CBioseq_Handle::eCoding_Iupac);
+        CSeqTranslator::Translate(feat, *m_scope, xlate);
     }
 
     // deal with code breaks
@@ -2060,7 +2000,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     }
 
     string actual;
-    CSeqVector vec(feat.GetProduct(), scope,
+    CSeqVector vec(feat.GetProduct(), *m_scope,
                    CBioseq_Handle::eCoding_Iupac);
     vec.GetSeqData(0, vec.size(), actual);
 
@@ -2101,28 +2041,19 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         except_text = "mismatches in translation";
     }
 
-    /**
-    LOG_POST(Error << "  cds states:"
-             << " feat-id=" << (feat.IsSetId() ? feat.GetId().GetLocal().GetId() : 0)
-             << " has_start=" << (has_start ? "yes" : "no")
-             << " has_stop=" << (has_stop ? "yes" : "no")
-             << " has_internal_stop=" << (has_internal_stop ? "yes" : "no")
-             << " has_gap=" << (has_gap ? "yes" : "no")
-             << " has_indel=" << (has_indel ? "yes" : "no")
-             << " has_mismatches=" << (has_mismatches ? "yes" : "no")
-             << " size_match=" << ((actual.size() == xlate.size()) ? "yes" : "no")
-             << " except=" << (except_text.empty() ? "no" : "yes")
-            );
-    LOG_POST(Error << "    actual = " << actual);
-    LOG_POST(Error << "    xlate  = " << xlate);
-    **/
+    x_SetExceptText(feat, except_text);
+}
+
+void CFeatureGenerator::SImplementation::x_SetExceptText(
+      CSeq_feat& feat, const string &text)
+{
+    string except_text = text;
 
     // there are some exceptions we don't account for
     // we would like to set the exception state to whatever we compute above
     // on the other hand, an annotated exception such as ribosomal slippage or
     // rearrangement required for assembly trumps any computed values
     // scan to see if it is set to an exception state we can account for
-
     list<string> except_toks;
     if (feat.IsSetExcept_text()) {
         NStr::Split(feat.GetExcept_text(), ",", except_toks);
@@ -2131,6 +2062,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
              it != except_toks.end();  ) {
             NStr::TruncateSpacesInPlace(*it);
             if (it->empty()  ||
+                *it == "unclassified transcription discrepancy"  ||
+                *it == "mismatches in transcription" ||
                 *it == "unclassified translation discrepancy"  ||
                 *it == "mismatches in translation") {
                 except_toks.erase(it++);
@@ -2144,7 +2077,36 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             }
         }
     }
+
     if ( !except_text.empty() ) {
+        /// Check whether this is a Refseq product
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(feat.GetProduct());
+        ITERATE(CBioseq_Handle::TId, it, bsh.GetId())
+        if(it->GetSeqId()->IsOther() &&
+           it->GetSeqId()->GetOther().GetAccession()[0] == 'N' &&
+           string("MRP").find(it->GetSeqId()->GetOther().GetAccession()[1]) != string::npos)
+        {
+            except_text = "annotated by transcript or proteomic data";
+
+            /// Refseq exception has to be combined with an inference qualifer
+            string product_type_string;
+            if(feat.GetData().IsCdregion())
+                product_type_string = "AA sequence";
+            else {
+                NCBI_ASSERT(feat.GetData().IsRna(), "Bad feature type");
+                product_type_string = "RNA sequence";
+                if(feat.GetData().GetRna().CanGetType() &&
+                   feat.GetData().GetRna().GetType() == CRNA_ref::eType_mRNA)
+                    product_type_string += ", mRNA";
+            }
+            CRef<CGb_qual> qualifier(new CGb_qual);
+            qualifier->SetQual("inference");
+            qualifier->SetVal("similar to " + product_type_string + " (same species):RefSeq:" +
+                              it->GetSeqId()->GetOther().GetAccession() + '.' +
+                              NStr::IntToString(it->GetSeqId()->GetOther().GetVersion()));
+            feat.SetQual().push_back(qualifier);
+        }
+
         except_toks.push_back(except_text);
     }
     except_text = NStr::Join(except_toks, ", ");
@@ -2171,11 +2133,11 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
     //   - mismatches in translation
     switch (feat.GetData().Which()) {
     case CSeqFeatData::e_Rna:
-        s_HandleRnaExceptions(feat, *m_scope, align);
+        x_HandleRnaExceptions(feat, align);
         break;
 
     case CSeqFeatData::e_Cdregion:
-        x_HandleCdsExceptions(feat, *m_scope, align);
+        x_HandleCdsExceptions(feat, align);
         break;
 
     case CSeqFeatData::e_Imp:
@@ -2187,7 +2149,7 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
         case CSeqFeatData::eSubtype_S_region:
         case CSeqFeatData::eSubtype_V_region:
         case CSeqFeatData::eSubtype_V_segment:
-            s_HandleRnaExceptions(feat, *m_scope, align);
+            x_HandleRnaExceptions(feat, align);
             break;
 
         default:
