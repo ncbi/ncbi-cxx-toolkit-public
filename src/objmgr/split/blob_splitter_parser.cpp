@@ -65,6 +65,9 @@
 #include <objmgr/split/chunk_info.hpp>
 #include <objmgr/split/place_id.hpp>
 #include <objmgr/impl/seq_table_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_map.hpp>
 #include <objmgr/error_codes.hpp>
 
 
@@ -439,6 +442,22 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
         dst.SetSeq_set().push_back(Ref(new CSeq_entry));
         CopySkeleton(*dst.SetSeq_set().back(), **it);
     }
+    
+    if ( src.IsSetClass() &&
+         src.GetClass() == CBioseq_set::eClass_segset &&
+         !src.GetSeq_set().empty() ) {
+        CConstRef<CSeq_entry> first = src.GetSeq_set().front();
+        if ( first->IsSeq() ) {
+            m_Master = new CMasterSeqSegments();
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(first->GetSeq());
+            m_Master->AddSegments(bh.GetSeqMap());
+            ITERATE ( CBioseq_set::TSeq_set, it, src.GetSeq_set() ) {
+                if ( *it != first && (*it)->IsSeq() ) {
+                    m_Master->AddSegmentIds((*it)->GetSeq().GetId());
+                }
+            }
+        }
+    }
 }
 
 
@@ -619,7 +638,7 @@ bool CBlobSplitterImpl::CopyAnnot(CPlace_SplitInfo& place_info,
     }
 
     CSeq_annot_SplitInfo& info = place_info.m_Annots[ConstRef(&annot)];
-    info.SetSeq_annot(annot, m_Params);
+    info.SetSeq_annot(annot, m_Params, *this);
 
     if ( info.m_Size.GetAsnSize() > 1024 ) {
         if ( m_Params.m_Verbose ) {

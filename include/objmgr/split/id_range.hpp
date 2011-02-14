@@ -64,6 +64,9 @@ class CSparse_seg;
 class CSeq_table;
 class CSeqTableInfo;
 class CSeqTableLocColumns;
+class CHandleRange;
+class CHandleRangeMap;
+class CBlobSplitterImpl;
 
 class COneSeqRange
 {
@@ -83,6 +86,7 @@ public:
     void Add(const COneSeqRange& range);
     void Add(const TRange& range);
     void Add(TSeqPos start, TSeqPos stop_exclusive);
+    void Add(const CHandleRange& hr);
 
 private:
     TRange m_TotalRange;
@@ -128,22 +132,20 @@ public:
     void Add(const CSeq_id_Handle& id, const COneSeqRange& loc);
     void Add(const CSeq_id_Handle& id, const TRange& range);
     void Add(const CSeqsRange& seqs_range);
+    void Add(const CHandleRangeMap& hrmap);
 
-    void Add(const CSeq_loc& loc);
-    void Add(const CSeq_id& id);
-    void Add(const CSeq_point& p);
-    void Add(const CSeq_interval& i);
-    void Add(const CPacked_seqpnt& pp);
-    void Add(const CSeq_feat& obj);
-    void Add(const CSeq_align& obj);
-    void Add(const CSeq_graph& obj);
-    void Add(const CDense_seg& denseg);
-    void Add(const CDense_diag& diag);
-    void Add(const CPacked_seg& packed);
-    void Add(const CSpliced_seg& spliced);
-    void Add(const CSparse_seg& sparse);
-    void Add(const CSeq_table& table);
-    void Add(const CSeqTableLocColumns& loc, const CSeq_table& table);
+    void Add(const CSeq_loc& loc, const CBlobSplitterImpl& impl);
+    void Add(const CSeq_feat& obj, const CBlobSplitterImpl& impl);
+    void Add(const CSeq_align& obj, const CBlobSplitterImpl& impl);
+    void Add(const CSeq_graph& obj, const CBlobSplitterImpl& impl);
+    void Add(const CDense_seg& denseg, const CBlobSplitterImpl& impl);
+    void Add(const CDense_diag& diag, const CBlobSplitterImpl& impl);
+    void Add(const CPacked_seg& packed, const CBlobSplitterImpl& impl);
+    void Add(const CSpliced_seg& spliced, const CBlobSplitterImpl& impl);
+    void Add(const CSparse_seg& sparse, const CBlobSplitterImpl& impl);
+    void Add(const CSeq_table& table, const CBlobSplitterImpl& impl);
+    void Add(const CSeqTableLocColumns& loc, const CSeq_table& table,
+             const CBlobSplitterImpl& impl);
 
 private:
     TRanges m_Ranges;

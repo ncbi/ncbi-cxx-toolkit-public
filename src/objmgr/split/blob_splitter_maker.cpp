@@ -56,6 +56,7 @@
 
 #include <objects/seqsplit/seqsplit__.hpp>
 
+#include <objmgr/scope.hpp>
 #include <objmgr/split/blob_splitter.hpp>
 #include <objmgr/split/object_splitinfo.hpp>
 #include <objmgr/split/annot_piece.hpp>
@@ -105,6 +106,8 @@ void CBlobSplitterImpl::Reset(void)
     m_Entries.clear();
     m_Pieces.clear();
     m_Chunks.clear();
+    m_Scope.Reset();
+    m_Master.Reset();
 }
 
 
@@ -237,20 +240,21 @@ namespace {
         typedef vector<SAnnotTypeSelector> TTypeSet;
         typedef map<TTypeSet, CSeqsRange> TSplitAnnots;
 
-        void Add(const CSeq_annot& annot)
+        void Add(const CSeq_annot& annot,
+                 const CBlobSplitterImpl& impl)
             {
                 switch ( annot.GetData().Which() ) {
                 case CSeq_annot::C_Data::e_Ftable:
-                    Add(annot.GetData().GetFtable());
+                    Add(annot.GetData().GetFtable(), impl);
                     break;
                 case CSeq_annot::C_Data::e_Align:
-                    Add(annot.GetData().GetAlign());
+                    Add(annot.GetData().GetAlign(), impl);
                     break;
                 case CSeq_annot::C_Data::e_Graph:
-                    Add(annot.GetData().GetGraph());
+                    Add(annot.GetData().GetGraph(), impl);
                     break;
                 case CSeq_annot::C_Data::e_Seq_table:
-                    Add(annot.GetData().GetSeq_table());
+                    Add(annot.GetData().GetSeq_table(), impl);
                     break;
                 default:
                     _ASSERT("bad annot type" && 0);
@@ -258,35 +262,39 @@ namespace {
             }
 
 
-        void Add(const CSeq_annot::C_Data::TGraph& objs)
+        void Add(const CSeq_annot::C_Data::TGraph& objs,
+                 const CBlobSplitterImpl& impl)
             {
                 SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
                 ITERATE ( CSeq_annot::C_Data::TGraph, it, objs ) {
                     CSeqsRange loc;
-                    loc.Add(**it);
+                    loc.Add(**it, impl);
                     Add(type, loc);
                 }
             }
-        void Add(const CSeq_annot::C_Data::TAlign& objs)
+        void Add(const CSeq_annot::C_Data::TAlign& objs,
+                 const CBlobSplitterImpl& impl)
             {
                 SAnnotTypeSelector type(CSeq_annot::C_Data::e_Align);
                 ITERATE ( CSeq_annot::C_Data::TAlign, it, objs ) {
                     CSeqsRange loc;
-                    loc.Add(**it);
+                    loc.Add(**it, impl);
                     Add(type, loc);
                 }
             }
-        void Add(const CSeq_annot::C_Data::TFtable& objs)
+        void Add(const CSeq_annot::C_Data::TFtable& objs,
+                 const CBlobSplitterImpl& impl)
             {
                 ITERATE ( CSeq_annot::C_Data::TFtable, it, objs ) {
                     const CSeq_feat& feat = **it;
                     SAnnotTypeSelector type(feat.GetData().GetSubtype());
                     CSeqsRange loc;
-                    loc.Add(feat);
+                    loc.Add(feat, impl);
                     Add(type, loc);
                 }
             }
-        void Add(const CSeq_annot::C_Data::TSeq_table& table)
+        void Add(const CSeq_annot::C_Data::TSeq_table& table,
+                 const CBlobSplitterImpl& impl)
             {
                 SAnnotTypeSelector type;
                 if ( CSeqTableInfo::IsGoodFeatTable(table) ) {
@@ -301,7 +309,7 @@ namespace {
                     type.SetAnnotType(CSeq_annot::C_Data::e_Seq_table);
                 }
                 CSeqsRange loc;
-                loc.Add(table);
+                loc.Add(table, impl);
                 Add(type, loc);
             }
 
@@ -684,11 +692,13 @@ namespace {
 
 TSeqPos CBlobSplitterImpl::GetLength(const CSeq_id_Handle& id) const
 {
-    TEntries::const_iterator iter = m_Entries.find(CPlaceId(id));
-    if ( iter != m_Entries.end() ) {
-        const CSeq_inst& inst = iter->second.m_Bioseq->GetInst();
-        if ( inst.IsSetLength() )
-            return inst.GetLength();
+    try {
+        CBioseq_Handle bh = m_Scope.GetNCObject().GetBioseqHandle(id);
+        if ( bh ) {
+            return bh.GetBioseqLength();
+        }
+    }
+    catch ( CException& /*ignored*/ ) {
     }
     return kInvalidSeqPos;
 }
@@ -698,7 +708,7 @@ bool CBlobSplitterImpl::IsWhole(const CSeq_id_Handle& id,
                                 const TRange& range) const
 {
     return range == range.GetWhole() ||
-        range.GetFrom() <= 0 && range.GetLength() >= GetLength(id);
+        range.GetFrom() <= 0 && range.GetToOpen() >= GetLength(id);
 }
 
 
@@ -710,7 +720,7 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
     TIntervalSet interval_set;
 
     ITERATE ( CSeqsRange, it, ranges ) {
-        const TRange& range = it->second.GetTotalRange();
+        TRange range = it->second.GetTotalRange();
         if ( IsWhole(it->first, range) ) {
             if ( it->first.IsGi() ) {
                 whole_gi_set.insert(it->first.GetGi());
@@ -720,6 +730,10 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
             }
         }
         else {
+            TSeqPos len = GetLength(it->first);
+            if ( range.GetToOpen() > len ) {
+                range.SetToOpen(len);
+            }
             interval_set[it->first].insert(range);
         }
     }
@@ -740,7 +754,7 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
 
     ITERATE ( CHandleRangeMap, id_it, ranges ) {
         ITERATE ( CHandleRange, it, id_it->second ) {
-            const TRange& range = it->first;
+            TRange range = it->first;
             if ( IsWhole(id_it->first, range) ) {
                 if ( id_it->first.IsGi() ) {
                     whole_gi_set.insert(id_it->first.GetGi());
@@ -750,6 +764,10 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
                 }
             }
             else {
+                TSeqPos len = GetLength(id_it->first);
+                if ( range.GetToOpen() > len ) {
+                    range.SetToOpen(len);
+                }
                 interval_set[id_it->first].insert(range);
             }
         }
@@ -764,7 +782,7 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
 
 void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
                                const CSeq_id_Handle& id,
-                               const TRange& range) const
+                               TRange range) const
 {
     if ( IsWhole(id, range) ) {
         if ( id.IsGi() ) {
@@ -775,6 +793,10 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
         }
     }
     else {
+        TSeqPos len = GetLength(id);
+        if ( range.GetToOpen() > len ) {
+            range.SetToOpen(len);
+        }
         if ( id.IsGi() ) {
             CID2S_Gi_Interval& interval = loc.SetGi_interval();
             interval.SetGi(id.GetGi());
@@ -892,7 +914,7 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
 
             // collect locations
             CAnnotName name = CSeq_annot_SplitInfo::GetName(*ait->first);
-            all_annots[name].Add(*annot);
+            all_annots[name].Add(*annot, *this);
 #ifdef HAVE_FEAT_IDS
             if ( annot->GetData().IsFtable() ) {
                 feat_ids.Add(annot->GetData().GetFtable());

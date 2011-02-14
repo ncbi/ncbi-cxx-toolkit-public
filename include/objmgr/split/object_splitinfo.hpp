@@ -101,10 +101,18 @@ public:
         : m_ObjectType(0)
         {
         }
-    CAnnotObject_SplitInfo(const CSeq_feat& obj, double ratio);
-    CAnnotObject_SplitInfo(const CSeq_align& obj, double ratio);
-    CAnnotObject_SplitInfo(const CSeq_graph& obj, double ratio);
-    CAnnotObject_SplitInfo(const CSeq_table& obj, double ratio);
+    CAnnotObject_SplitInfo(const CSeq_feat& obj,
+                           const CBlobSplitterImpl& impl,
+                           double ratio);
+    CAnnotObject_SplitInfo(const CSeq_align& obj,
+                           const CBlobSplitterImpl& impl,
+                           double ratio);
+    CAnnotObject_SplitInfo(const CSeq_graph& obj,
+                           const CBlobSplitterImpl& impl,
+                           double ratio);
+    CAnnotObject_SplitInfo(const CSeq_table& obj,
+                           const CBlobSplitterImpl& impl,
+                           double ratio);
 
     TAnnotPriority GetPriority(void) const;
     TAnnotPriority CalcPriority(void) const;
@@ -175,7 +183,8 @@ public:
     CSeq_annot_SplitInfo(void);
 
     void SetSeq_annot(const CSeq_annot& annot,
-                      const SSplitterParams& params);
+                      const SSplitterParams& params,
+                      const CBlobSplitterImpl& impl);
     void Add(const CAnnotObject_SplitInfo& obj);
 
     CNcbiOstream& Print(CNcbiOstream& out) const;

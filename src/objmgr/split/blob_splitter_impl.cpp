@@ -44,6 +44,8 @@
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
 #include <objmgr/error_codes.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
@@ -91,6 +93,9 @@ static CAsnSizer s_Sizer;
 bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
 {
     Reset();
+
+    m_Scope = new CScope(*CObjectManager::GetInstance());
+    m_Scope->AddTopLevelSeqEntry(entry);
 
     // copying skeleton while stripping annotations
     CopySkeleton(*m_Skeleton, entry);

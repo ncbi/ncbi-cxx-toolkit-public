@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
+#include <objects/seq/seq__.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -255,7 +256,6 @@ void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
                     ENa_strand strand2 = backw? Reverse(strand): strand;
                     int dir = backw ? -1: 1;
                     for ( int pos = pos1+dir; pos != pos2; pos += dir ) {
-                        bool mminus = m_MasterSeq->GetMinusStrand(pos) ^ backw;
                         CHandleRange& mhr =
                             m_LocMap[m_MasterSeq->GetHandle(pos)];
                         mhr.AddRange(TRange::GetEmpty(), strand2, true, true);
@@ -336,29 +336,90 @@ bool CHandleRangeMap::TotalRangeIntersectingWith(const CHandleRangeMap& rmap) co
 // CMasterSeqSegments
 /////////////////////////////////////////////////////////////////////////////
 
-CMasterSeqSegments::CMasterSeqSegments(const CBioseq_Info& master)
+CMasterSeqSegments::CMasterSeqSegments(void)
 {
-    for ( CSeqMap_CI it(ConstRef(&master.GetSeqMap()), 0, CSeqMap::fFindRef);
-          it; ++it ) {
-        const CSeq_id_Handle& h = it.GetRefSeqid();
-        int idx = m_SegSet.size();
-        m_Id2Seg[h] = idx;
-        CConstRef<CBioseq_Info> seg =
-            master.GetTSE_Info().FindMatchingBioseq(h);
-        if ( seg ) {
-            ITERATE ( CBioseq_Info::TId, hit, seg->GetId() ) {
-                if ( *hit != h ) {
-                    m_Id2Seg[*hit] = idx;
-                }
-            }
-        }
-        m_SegSet.push_back(TSeg(h, it.GetRefMinusStrand()));
-    }
 }
 
 
 CMasterSeqSegments::~CMasterSeqSegments(void)
 {
+}
+
+
+CMasterSeqSegments::CMasterSeqSegments(const CBioseq_Info& master)
+{
+    AddSegments(master.GetSeqMap());
+    for ( size_t idx = 0; idx < GetSegmentCount(); ++idx ) {
+        const CSeq_id_Handle& h = GetHandle(idx);
+        CConstRef<CBioseq_Info> seg =
+            master.GetTSE_Info().FindMatchingBioseq(h);
+        if ( seg ) {
+            AddSegmentIds(idx, seg->GetId());
+        }
+    }
+}
+
+
+int CMasterSeqSegments::AddSegment(const CSeq_id_Handle& id, bool minus_strand)
+{
+    int idx = m_SegSet.size();
+    m_SegSet.push_back(TSeg(id, minus_strand));
+    AddSegmentId(idx, id);
+    return idx;
+}
+
+
+void CMasterSeqSegments::AddSegmentId(int idx, const CSeq_id_Handle& id)
+{
+    m_Id2Seg[id] = idx;
+}
+
+
+void CMasterSeqSegments::AddSegmentIds(int idx, const TIds& ids)
+{
+    ITERATE ( TIds, it, ids ) {
+        AddSegmentId(idx, *it);
+    }
+}
+
+
+void CMasterSeqSegments::AddSegmentIds(int idx, const TIds2& ids)
+{
+    ITERATE ( TIds2, it, ids ) {
+        AddSegmentId(idx, CSeq_id_Handle::GetHandle(**it));
+    }
+}
+
+
+void CMasterSeqSegments::AddSegmentIds(const TIds& ids)
+{
+    ITERATE ( TIds, it, ids ) {
+        int idx = FindSeg(*it);
+        if ( idx >= 0 ) {
+            AddSegmentIds(idx, ids);
+            return;
+        }
+    }
+}
+
+
+void CMasterSeqSegments::AddSegmentIds(const TIds2& ids)
+{
+    ITERATE ( TIds2, it, ids ) {
+        int idx = FindSeg(CSeq_id_Handle::GetHandle(**it));
+        if ( idx >= 0 ) {
+            AddSegmentIds(idx, ids);
+            return;
+        }
+    }
+}
+
+
+void CMasterSeqSegments::AddSegments(const CSeqMap& seq)
+{
+    for ( CSeqMap_CI it(ConstRef(&seq), 0, CSeqMap::fFindRef); it; ++it ) {
+        AddSegment(it.GetRefSeqid(), it.GetRefMinusStrand());
+    }
 }
 
 

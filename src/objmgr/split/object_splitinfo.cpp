@@ -46,18 +46,21 @@
 #include <objects/seqtable/Seq_table.hpp>
 
 #include <objmgr/error_codes.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <objmgr/split/asn_sizer.hpp>
 
 #define NCBI_USE_ERRCODE_X   ObjMgr_ObjSplitInfo
+
+#ifndef NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX
+# define NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "@@"
+#endif
 
 BEGIN_NCBI_SCOPE
 
 NCBI_DEFINE_ERR_SUBCODE_X(10);
 
 BEGIN_SCOPE(objects)
-
-#define ZOOM_LEVEL_SUFFIX "@@"
 
 static CAsnSizer s_Sizer; // for size estimation
 
@@ -204,7 +207,7 @@ CAnnotName CSeq_annot_SplitInfo::GetName(const CSeq_annot& annot)
             ERR_POST_X(10, "Named annot zoom level with empty name");
         }
         else {
-            name += ZOOM_LEVEL_SUFFIX+NStr::IntToString(zoom_level);
+            name += NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX+NStr::IntToString(zoom_level);
         }
     }
     if ( name.empty() ) {
@@ -261,7 +264,8 @@ size_t CSeq_annot_SplitInfo::CountAnnotObjects(const CSeq_annot& annot)
 
 
 void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
-                                        const SSplitterParams& params)
+                                        const SSplitterParams& params,
+                                        const CBlobSplitterImpl& impl)
 {
     s_Sizer.Set(annot, params);
     m_Size = CSize(s_Sizer);
@@ -274,21 +278,21 @@ void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
     switch ( annot.GetData().Which() ) {
     case CSeq_annot::TData::e_Ftable:
         ITERATE(CSeq_annot::C_Data::TFtable, it, annot.GetData().GetFtable()) {
-            Add(CAnnotObject_SplitInfo(**it, ratio));
+            Add(CAnnotObject_SplitInfo(**it, impl, ratio));
         }
         break;
     case CSeq_annot::TData::e_Align:
         ITERATE(CSeq_annot::C_Data::TAlign, it, annot.GetData().GetAlign()) {
-            Add(CAnnotObject_SplitInfo(**it, ratio));
+            Add(CAnnotObject_SplitInfo(**it, impl, ratio));
         }
         break;
     case CSeq_annot::TData::e_Graph:
         ITERATE(CSeq_annot::C_Data::TGraph, it, annot.GetData().GetGraph()) {
-            Add(CAnnotObject_SplitInfo(**it, ratio));
+            Add(CAnnotObject_SplitInfo(**it, impl, ratio));
         }
         break;
     case CSeq_annot::TData::e_Seq_table:
-        Add(CAnnotObject_SplitInfo(annot.GetData().GetSeq_table(), ratio));
+        Add(CAnnotObject_SplitInfo(annot.GetData().GetSeq_table(), impl, ratio));
         break;
     default:
         _ASSERT("bad annot type" && 0);
@@ -298,9 +302,9 @@ void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
         m_NamePriority = max(m_TopPriority,
                              TAnnotPriority(eAnnotPriority_regular));
         // zoomed annotation have fixed priority
-        SIZE_TYPE p = m_Name.GetName().find(ZOOM_LEVEL_SUFFIX);
+        SIZE_TYPE p = m_Name.GetName().find(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX);
         if ( p != NPOS ) {
-            SIZE_TYPE pl = p+strlen(ZOOM_LEVEL_SUFFIX);
+            SIZE_TYPE pl = p+strlen(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX);
             int zoom_level = NStr::StringToInt(m_Name.GetName().substr(pl));
             if ( zoom_level > 0 ) {
                 m_NamePriority = eAnnotPriority_zoomed + zoom_level;
@@ -351,42 +355,46 @@ CNcbiOstream& CSeq_annot_SplitInfo::Print(CNcbiOstream& out) const
 /////////////////////////////////////////////////////////////////////////////
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_feat& obj,
+                                               const CBlobSplitterImpl& impl,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Ftable),
       m_Object(&obj),
       m_Size(s_Sizer.GetAsnSize(obj), ratio)
 {
-    m_Location.Add(obj);
+    m_Location.Add(obj, impl);
 }
 
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_graph& obj,
+                                               const CBlobSplitterImpl& impl,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Graph),
       m_Object(&obj),
       m_Size(s_Sizer.GetAsnSize(obj), ratio)
 {
-    m_Location.Add(obj);
+    m_Location.Add(obj, impl);
 }
 
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_align& obj,
+                                               const CBlobSplitterImpl& impl,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Align),
       m_Object(&obj),
       m_Size(s_Sizer.GetAsnSize(obj), ratio)
 {
-    m_Location.Add(obj);
+    m_Location.Add(obj, impl);
 }
 
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_table& obj,
+                                               const CBlobSplitterImpl& impl,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Seq_table),
       m_Object(&obj),
       m_Size(s_Sizer.GetAsnSize(obj), ratio)
 {
-    m_Location.Add(obj);
+    m_Location.Add(obj, impl);
 }
 
 

@@ -84,7 +84,9 @@ class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
 class CPlace_SplitInfo;
+class CScope;
 class CHandleRangeMap;
+class CMasterSeqSegments;
 
 struct SAnnotPiece;
 struct SIdAnnotPieces;
@@ -164,7 +166,7 @@ public:
     void SetLoc(CID2S_Seq_loc& loc,
                 const CSeqsRange& ranges) const;
     void SetLoc(CID2S_Seq_loc& loc,
-                const CSeq_id_Handle& id, const TRange& range) const;
+                const CSeq_id_Handle& id, TRange range) const;
     CRef<CID2S_Seq_loc> MakeLoc(const CSeqsRange& range) const;
     CRef<CID2S_Seq_loc> MakeLoc(const CSeq_id_Handle& id,
                                 const TRange& range) const;
@@ -187,6 +189,10 @@ public:
     SChunkInfo* NextChunk(void);
     SChunkInfo* NextChunk(SChunkInfo* chunk, const CSize& size);
 
+    const CMasterSeqSegments* GetMaster(void) const {
+        return m_Master.GetPointerOrNull();
+    }
+
 private:
     // params
     SSplitterParams m_Params;
@@ -206,6 +212,9 @@ private:
     TPieces m_Pieces;
 
     TChunks m_Chunks;
+
+    CRef<CScope> m_Scope;
+    CRef<CMasterSeqSegments> m_Master;
 };
 
 

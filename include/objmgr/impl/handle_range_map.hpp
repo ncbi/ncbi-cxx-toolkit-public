@@ -36,6 +36,8 @@
 #include <objects/seq/seq_id_handle.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <map>
+#include <vector>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,9 +48,24 @@ class CBioseq_Info;
 
 class CMasterSeqSegments : public CObject {
 public:
+    CMasterSeqSegments(void);
     CMasterSeqSegments(const CBioseq_Info& seq);
     ~CMasterSeqSegments(void);
 
+    void AddSegments(const CSeqMap& seq);
+    int AddSegment(const CSeq_id_Handle& id, bool minus_strand);
+    void AddSegmentId(int idx, const CSeq_id_Handle& id);
+
+    typedef vector<CSeq_id_Handle> TIds;
+    typedef list< CRef<CSeq_id> > TIds2;
+    void AddSegmentIds(int idx, const TIds& ids);
+    void AddSegmentIds(int idx, const TIds2& ids);
+    void AddSegmentIds(const TIds& ids);
+    void AddSegmentIds(const TIds2& ids);
+
+    size_t GetSegmentCount(void) const {
+        return m_SegSet.size();
+    }
     int FindSeg(const CSeq_id_Handle& h) const;
     bool GetMinusStrand(int seg) const;
     const CSeq_id_Handle& GetHandle(int seg) const;

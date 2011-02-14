@@ -33,9 +33,12 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/split/id_range.hpp>
+#include <objmgr/split/blob_splitter_impl.hpp>
 #include <objmgr/impl/seq_table_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
+#include <objmgr/impl/handle_range.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/error_codes.hpp>
 
 #include <objects/seqloc/seqloc__.hpp>
@@ -80,6 +83,12 @@ void COneSeqRange::Add(const TRange& range)
 void COneSeqRange::Add(TSeqPos start, TSeqPos stop_exclusive)
 {
     Add(COpenRange<TSeqPos>(start, stop_exclusive));
+}
+
+
+void COneSeqRange::Add(const CHandleRange& hr)
+{
+    Add(hr.GetOverlappingRange());
 }
 
 
@@ -139,119 +148,61 @@ void CSeqsRange::Add(const CSeqsRange& range)
 }
 
 
-void CSeqsRange::Add(const CSeq_loc& loc)
+void CSeqsRange::Add(const CHandleRangeMap& hrmap)
 {
-    switch ( loc.Which() ) {
-    case CSeq_loc::e_Whole:
-        Add(loc.GetWhole());
-        break;
-    case CSeq_loc::e_Int:
-        Add(loc.GetInt());
-        break;
-    case CSeq_loc::e_Pnt:
-        Add(loc.GetPnt());
-        break;
-    case CSeq_loc::e_Packed_int:
-        ITERATE( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
-            Add(**ii);
-        }
-        break;
-    case CSeq_loc::e_Packed_pnt:
-        Add(loc.GetPacked_pnt());
-        break;
-    case CSeq_loc::e_Mix:
-        // extract sub-locations
-        ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
-            Add(**li);
-        }
-        break;
-    case CSeq_loc::e_Equiv:
-        // extract sub-locations
-        ITERATE ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
-            Add(**li);
-        }
-        break;
-    case CSeq_loc::e_Bond:
-        Add(loc.GetBond().GetA());
-        if ( loc.GetBond().IsSetB() ) {
-            Add(loc.GetBond().GetB());
-        }
-        break;
-    default:
-        break;
+    ITERATE ( CHandleRangeMap, it, hrmap ) {
+        m_Ranges[it->first].Add(it->second);
     }
 }
 
-
-void CSeqsRange::Add(const CSeq_id& id)
+    
+void CSeqsRange::Add(const CSeq_loc& loc, const CBlobSplitterImpl& impl)
 {
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
-    m_Ranges[idh].Add(TRange::GetWhole());
+    CHandleRangeMap hrmap;
+    hrmap.SetMasterSeq(impl.GetMaster());
+    hrmap.AddLocation(loc);
+    Add(hrmap);
 }
 
 
-void CSeqsRange::Add(const CSeq_point& p)
+void CSeqsRange::Add(const CSeq_feat& obj, const CBlobSplitterImpl& impl)
 {
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(p.GetId());
-    m_Ranges[idh].Add(p.GetPoint(), p.GetPoint()+1);
-}
-
-
-void CSeqsRange::Add(const CSeq_interval& i)
-{
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(i.GetId());
-    m_Ranges[idh].Add(i.GetFrom(), i.GetTo()+1);
-}
-
-
-void CSeqsRange::Add(const CPacked_seqpnt& pp)
-{
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(pp.GetId());
-    COneSeqRange& range = m_Ranges[idh];
-    ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
-        range.Add(*pi, *pi+1);
-    }
-}
-
-
-void CSeqsRange::Add(const CSeq_feat& obj)
-{
-    Add(obj.GetLocation());
+    Add(obj.GetLocation(), impl);
     if ( obj.IsSetProduct() ) {
-        Add(obj.GetProduct());
+        Add(obj.GetProduct(), impl);
     }
 }
 
 
-void CSeqsRange::Add(const CSeq_align& obj)
+void CSeqsRange::Add(const CSeq_align& obj, const CBlobSplitterImpl& impl)
 {
     const CSeq_align::C_Segs& segs = obj.GetSegs();
     switch ( segs.Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
         ITERATE ( CSeq_align::C_Segs::TDendiag, it, segs.GetDendiag() ) {
-            Add(**it);
+            Add(**it, impl);
         }
         break;
     case CSeq_align::C_Segs::e_Denseg:
-        Add(segs.GetDenseg());
+        Add(segs.GetDenseg(), impl);
         break;
     case CSeq_align::C_Segs::e_Std:
         ITERATE ( CSeq_align::C_Segs::TStd, it, segs.GetStd() ) {
             ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
-                Add(**it_loc);
+                Add(**it_loc, impl);
             }
         }
         break;
     case CSeq_align::C_Segs::e_Packed:
-        Add(segs.GetPacked());
+        Add(segs.GetPacked(), impl);
         break;
     case CSeq_align::C_Segs::e_Disc:
         ITERATE ( CSeq_align_set::Tdata, it, segs.GetDisc().Get() ) {
-            Add(**it);
+            Add(**it, impl);
         }
         break;
     case CSeq_align::C_Segs::e_Spliced:
-        Add(segs.GetSpliced());
+        Add(segs.GetSpliced(), impl);
         break;
     default:
         break;
@@ -259,7 +210,8 @@ void CSeqsRange::Add(const CSeq_align& obj)
 }
 
 
-void CSeqsRange::Add(const CDense_seg& denseg)
+void CSeqsRange::Add(const CDense_seg& denseg,
+                     const CBlobSplitterImpl& impl)
 {
     size_t dim    = denseg.GetDim();
     size_t numseg = denseg.GetNumseg();
@@ -290,7 +242,8 @@ void CSeqsRange::Add(const CDense_seg& denseg)
 }
 
 
-void CSeqsRange::Add(const CDense_diag& diag)
+void CSeqsRange::Add(const CDense_diag& diag,
+                     const CBlobSplitterImpl& impl)
 {
     size_t dim = diag.GetDim();
     if ( dim != diag.GetIds().size() ) {
@@ -311,7 +264,8 @@ void CSeqsRange::Add(const CDense_diag& diag)
 }
 
 
-void CSeqsRange::Add(const CPacked_seg& packed)
+void CSeqsRange::Add(const CPacked_seg& packed,
+                     const CBlobSplitterImpl& impl)
 {
     size_t dim    = packed.GetDim();
     size_t numseg = packed.GetNumseg();
@@ -342,7 +296,8 @@ void CSeqsRange::Add(const CPacked_seg& packed)
 }
 
 
-void CSeqsRange::Add(const CSpliced_seg& spliced)
+void CSeqsRange::Add(const CSpliced_seg& spliced,
+                     const CBlobSplitterImpl& impl)
 {
     const CSeq_id* gen_id = spliced.IsSetGenomic_id() ?
         &spliced.GetGenomic_id() : 0;
@@ -371,7 +326,8 @@ void CSeqsRange::Add(const CSpliced_seg& spliced)
 }
 
 
-void CSeqsRange::Add(const CSparse_seg& sparse)
+void CSeqsRange::Add(const CSparse_seg& sparse,
+                     const CBlobSplitterImpl& impl)
 {
     size_t row = 0;
     ITERATE ( CSparse_seg::TRows, it, sparse.GetRows() ) {
@@ -414,18 +370,18 @@ void CSeqsRange::Add(const CSparse_seg& sparse)
 }
 
 
-void CSeqsRange::Add(const CSeq_graph& obj)
+void CSeqsRange::Add(const CSeq_graph& obj, const CBlobSplitterImpl& impl)
 {
-    Add(obj.GetLoc());
+    Add(obj.GetLoc(), impl);
 }
 
 
-void CSeqsRange::Add(const CSeq_table& table)
+void CSeqsRange::Add(const CSeq_table& table, const CBlobSplitterImpl& impl)
 {
     CRef<CSeqTableInfo> info(new CSeqTableInfo(table));
     if ( info->IsFeatTable() ) {
-        Add(info->GetLocation(), table);
-        Add(info->GetProduct(), table);
+        Add(info->GetLocation(), table, impl);
+        Add(info->GetProduct(), table, impl);
     }
     else {
         CConstRef<CSeq_loc> loc;
@@ -435,13 +391,14 @@ void CSeqsRange::Add(const CSeq_table& table)
         catch ( CException& /*ignored*/ ) {
         }
         if ( loc ) {
-            Add(*loc);
+            Add(*loc, impl);
         }
     }
 }
 
 
-void CSeqsRange::Add(const CSeqTableLocColumns& loc, const CSeq_table& table)
+void CSeqsRange::Add(const CSeqTableLocColumns& loc, const CSeq_table& table,
+                     const CBlobSplitterImpl& impl)
 {
     if ( !loc.IsSet() ) {
         return;
@@ -449,7 +406,7 @@ void CSeqsRange::Add(const CSeqTableLocColumns& loc, const CSeq_table& table)
     size_t num_rows = table.GetNum_rows();
     if ( loc.IsRealLoc() ) { // full Seq-loc object
         for ( size_t row = 0; row < num_rows; ++row ) {
-            Add(*loc.GetLoc(row));
+            Add(*loc.GetLoc(row), impl);
         }
     }
     else { // simplified Seq-loc object
