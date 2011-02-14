@@ -406,6 +406,64 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
     }
 }
 
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+static
+void s_Create_ArgsOrEnvW(
+    vector<string>& storage,
+    AutoArray<const char*>& pointers,
+    const TXChar* const* begin)
+{
+    const TXChar* const* arg = begin;
+    size_t count = 0;
+    while( *(arg++) )
+        ++count;
+
+    const char** args = new const char*[count+1];
+    if ( !args ) {
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+    }
+    pointers = args;
+
+    arg = begin;
+    size_t i=0;
+    for (i=0; i<count; ++i) {
+        storage.push_back( _T_STDSTRING( *(arg++) ) );
+    }
+
+    for (i=0; i < storage.size(); ++i) {
+        args[i] = storage[i].c_str();
+    }
+    args[i] = NULL;
+}
+
+int CNcbiApplication::AppMain
+(int                  argc,
+ const TXChar* const* argv,
+ const TXChar* const* envp,
+ EAppDiagStream       diag,
+ const TXChar*        conf,
+ const TXString&      name)
+{
+    vector< string> argv_storage;
+    AutoArray<const char*> argv_pointers;
+    if (argv) {
+        s_Create_ArgsOrEnvW(argv_storage, argv_pointers, argv);
+    }
+
+    vector< string> envp_storage;
+    AutoArray<const char*> envp_pointers;
+    if (envp) {
+        s_Create_ArgsOrEnvW(envp_storage, envp_pointers, envp);
+    }
+
+    return AppMain(argc,
+        argv == NULL ? NULL : argv_pointers.get(),
+        envp == NULL ? NULL : envp_pointers.get(),
+        diag,
+        conf == NULL ? NULL : (conf == NcbiEmptyXCStr ? NcbiEmptyCStr : _T_CSTRING(conf)),
+        name == NcbiEmptyXString ? NcbiEmptyString : _T_STDSTRING(name));
+}
+#endif
 
 int CNcbiApplication::AppMain
 (int                argc,

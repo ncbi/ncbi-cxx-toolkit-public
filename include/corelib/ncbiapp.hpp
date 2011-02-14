@@ -45,6 +45,11 @@
 #include <corelib/metareg.hpp>
 #include <corelib/version.hpp>
 
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#  define NcbiSys_main        wmain
+#else
+#  define NcbiSys_main         main
+#endif
 
 /// Avoid preprocessor name clash with the NCBI C Toolkit.
 #if !defined(NCBI_OS_UNIX)  ||  defined(HAVE_NCBI_C)
@@ -180,6 +185,17 @@ public:
      const char*        conf = NcbiEmptyCStr,
      const string&      name = NcbiEmptyString
      );
+
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+    int AppMain
+    (int                  argc,
+     const TXChar* const* argv,
+     const TXChar* const* envp = 0,
+     EAppDiagStream       diag = eDS_Default,
+     const TXChar*        conf = NcbiEmptyXCStr,
+     const TXString&      name = NcbiEmptyXString
+     );
+#endif
 
     /// Initialize the application.
     ///
