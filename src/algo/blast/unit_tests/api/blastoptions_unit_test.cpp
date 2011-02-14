@@ -774,6 +774,7 @@ BOOST_AUTO_TEST_CASE( testExtensionParamsNew )
     MakeSomeValidKBP(sb.kbp, k_num_contexts, query_info.Get());
     MakeSomeValidKBP(sb.kbp_gap, k_num_contexts, query_info.Get());
     sb.scale_factor = 0.0;
+    sb.matrix_only_scoring = FALSE;
 
 
     BlastExtensionParameters* ext_params;
