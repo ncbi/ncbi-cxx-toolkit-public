@@ -39,6 +39,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
@@ -295,6 +296,26 @@ bool SAnnotSelector::IncludedAnnotName(const CAnnotName& name) const
 
 bool SAnnotSelector::ExcludedAnnotName(const CAnnotName& name) const
 {
+    if ( IsIncludedAnyNamedAnnotAccession() && name.IsNamed() ) {
+        string acc;
+        int zoom_level;
+        ExtractZoomLevel(name.GetName(), &acc, &zoom_level);
+
+        int incl_level;
+        TNamedAnnotAccessions::const_iterator it =
+            m_NamedAnnotAccessions->find(acc);
+        if ( it != m_NamedAnnotAccessions->end() ) {
+            incl_level = it->second;
+        }
+        else {
+            incl_level = 0; // ? do we include non-listed annot accessions?
+        }
+
+        if ( incl_level != -1 && zoom_level != incl_level ) {
+            // excluded
+            return true;
+        }
+    }
     return sx_Has(m_ExcludeAnnotsNames, name);
 }
 
@@ -392,12 +413,24 @@ SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
 
 
 SAnnotSelector&
-SAnnotSelector::IncludeNamedAnnotAccession(const string& acc)
+SAnnotSelector::IncludeNamedAnnotAccession(const string& acc,
+                                           int zoom_level)
 {
     if ( !m_NamedAnnotAccessions ) {
         m_NamedAnnotAccessions.reset(new TNamedAnnotAccessions());
     }
-    m_NamedAnnotAccessions->insert(acc);
+    string acc_part;
+    int zoom_part;
+    if ( ExtractZoomLevel(acc, &acc_part, &zoom_part) ) {
+        if ( zoom_level != 0 && zoom_part != zoom_level ) {
+            NCBI_THROW_FMT(CAnnotException, eOtherError,
+                           "SAnnotSelector::IncludeNamedAnnotAccession: "
+                           "Incompatible zoom levels: "
+                           <<acc<<" vs "<<zoom_level);
+        }
+        zoom_level = zoom_part;
+    }
+    (*m_NamedAnnotAccessions)[acc_part] = zoom_level;
     return *this;
 }
 
@@ -413,7 +446,7 @@ bool SAnnotSelector::IsIncludedNamedAnnotAccession(const string& acc) const
     }
     TNamedAnnotAccessions::const_iterator it =
         m_NamedAnnotAccessions->lower_bound(acc);
-    if ( it != m_NamedAnnotAccessions->end() && *it == acc ) {
+    if ( it != m_NamedAnnotAccessions->end() && it->first == acc ) {
         // direct match
         return true;
     }
@@ -425,14 +458,15 @@ bool SAnnotSelector::IsIncludedNamedAnnotAccession(const string& acc) const
     CTempString acc_name(acc.data(), acc_size);
     // find "accession" or "accession.*" which should be before iterator it
     while ( it != m_NamedAnnotAccessions->begin() &&
-            NStr::StartsWith(*--it, acc_name) ) {
-        if ( it->size() == acc_size ) {
+            NStr::StartsWith((--it)->first, acc_name) ) {
+        const string& tacc = it->first;
+        if ( tacc.size() == acc_size ) {
             // plain accession ("accession")
             return true;
         }
-        if ( it->size() == acc_size+2 &&
-             (*it)[acc_size] == '.' &&
-             (*it)[acc_size+1] == '*' ) {
+        if ( tacc.size() == acc_size+2 &&
+             tacc[acc_size] == '.' &&
+             tacc[acc_size+1] == '*' ) {
             // all accessions ("accession.*")
             return true;
         }
@@ -748,6 +782,97 @@ SAnnotSelector& SAnnotSelector::ResetSourceLoc(void)
 IFeatComparator::~IFeatComparator()
 {
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Zoom level manipulation functions
+/////////////////////////////////////////////////////////////////////////////
+
+
+bool ExtractZoomLevel(const string& full_name,
+                      string* acc_ptr, int* zoom_level_ptr)
+{
+    SIZE_TYPE pos = full_name.find(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX);
+    if ( pos != NPOS ) {
+        if ( acc_ptr ) {
+            *acc_ptr = full_name.substr(0, pos);
+        }
+        SIZE_TYPE num_pos = pos+strlen(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX);
+        if ( num_pos+1 == full_name.size() && full_name[num_pos] == '*' ) {
+            if ( zoom_level_ptr ) {
+                *zoom_level_ptr = -1;
+            }
+            return true;
+        }
+        else {
+            try {
+                int zoom_level = NStr::StringToInt(full_name.substr(num_pos));
+                if ( zoom_level_ptr ) {
+                    *zoom_level_ptr = zoom_level;
+                }
+                return true;
+            }
+            catch ( CException& ) {
+                // invalid zoom level suffix, assume no zoom level
+            }
+        }
+    }
+    // no explicit zoom level
+    if ( acc_ptr ) {
+        *acc_ptr = full_name;
+    }
+    if ( zoom_level_ptr ) {
+        *zoom_level_ptr = 0;
+    }
+    return false;
+}
+
+
+string CombineWithZoomLevel(const string& acc, int zoom_level)
+{
+    int incl_level;
+    if ( !ExtractZoomLevel(acc, 0, &incl_level) ) {
+        if ( zoom_level == -1 ) {
+            // wildcard
+            return acc + NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "*";
+        }
+        else {
+            return acc +
+                NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX +
+                NStr::IntToString(zoom_level);
+        }
+    }
+    else if ( incl_level != zoom_level ) {
+        // different zoom level
+        NCBI_THROW_FMT(CAnnotException, eOtherError,
+                       "AddZoomLevel: Incompatible zoom levels: "
+                       <<acc<<" vs "<<zoom_level);
+    }
+    return acc;
+}
+
+
+void AddZoomLevel(string& acc, int zoom_level)
+{
+    int incl_level;
+    if ( !ExtractZoomLevel(acc, 0, &incl_level) ) {
+        if ( zoom_level == -1 ) {
+            // wildcard
+            acc += NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "*";
+        }
+        else {
+            acc += NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX;
+            acc += NStr::IntToString(zoom_level);
+        }
+    }
+    else if ( incl_level != zoom_level ) {
+        // different zoom level
+        NCBI_THROW_FMT(CAnnotException, eOtherError,
+                       "AddZoomLevel: Incompatible zoom levels: "
+                       <<acc<<" vs "<<zoom_level);
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

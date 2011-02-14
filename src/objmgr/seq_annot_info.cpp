@@ -47,6 +47,7 @@
 #include <objmgr/impl/seq_table_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/error_codes.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
@@ -257,7 +258,9 @@ void CSeq_annot_Info::x_UpdateName(void)
         }
     }
     if ( zoom_level >= 0 && m_Name.IsNamed() ) {
-        m_Name.SetNamed(m_Name.GetName()+"@@"+NStr::IntToString(zoom_level));
+        m_Name.SetNamed(m_Name.GetName()+
+                        NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX+
+                        NStr::IntToString(zoom_level));
     }
 }
 
@@ -395,9 +398,9 @@ void CSeq_annot_Info::x_InitFeatList(TFtable& objs)
     _ASSERT(m_ObjectIndex.GetInfos().empty());
     TAnnotIndex index = 0;
     NON_CONST_ITERATE ( TFtable, oit, objs ) {
-        m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index++, oit));
+        CAnnotObject_Info info(*this, index++, oit);
+        m_ObjectIndex.AddInfo(info);
     }
-    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
 }
 
 
@@ -685,6 +688,15 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
         if ( info.IsRemoved() ) {
             continue;
         }
+        _ASSERT(info.GetFeatType() == info.GetFeatFast()->GetData().Which());
+    }
+    NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
+                        m_ObjectIndex.GetInfos() ) {
+        CAnnotObject_Info& info = *it;
+        if ( info.IsRemoved() ) {
+            continue;
+        }
+        _ASSERT(info.GetFeatType() == info.GetFeatFast()->GetData().Which());
         size_t keys_begin = m_ObjectIndex.GetKeys().size();
         index.m_AnnotObject_Info = &info;
 

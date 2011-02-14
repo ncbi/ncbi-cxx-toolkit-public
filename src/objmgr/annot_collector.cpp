@@ -2917,15 +2917,6 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
 }
 
 
-#define NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "@@"
-
-static inline bool IsAnnotTrackZoomLevel(const CAnnotName& name)
-{
-    return name.IsNamed() &&
-        name.GetName().find(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX) != NPOS;
-}
-
-
 const CAnnot_Collector::TAnnotNames&
 CAnnot_Collector::x_GetAnnotNames(void) const
 {
@@ -2933,10 +2924,7 @@ CAnnot_Collector::x_GetAnnotNames(void) const
         TAnnotNames* names = new TAnnotNames;
         m_AnnotNames.reset(names);
         ITERATE ( TAnnotSet, it, m_AnnotSet ) {
-            const CAnnotName& name = it->GetSeq_annot_Info().GetName();
-            if ( !IsAnnotTrackZoomLevel(name) ) {
-                names->insert(name);
-            }
+            names->insert(it->GetSeq_annot_Info().GetName());
         }
     }
     return *m_AnnotNames;

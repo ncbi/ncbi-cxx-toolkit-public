@@ -474,7 +474,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
                 queue_size = NStr::StringToUInt(param);
             }
         }
-        catch ( ... ) {
+        catch ( CException& exc ) {
         }
     }
     m_LoadMapSeq_ids.SetMaxSize(queue_size);
@@ -504,7 +504,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
                     preopen = CGBLoaderParams::ePreopenNever;
             }
         }
-        catch ( ... ) {
+        catch ( CException& ) {
         }
     }
     
@@ -1261,7 +1261,12 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
 
     CGBReaderRequestResult result(this, sih);
     SAnnotSelector sel;
-    sel.IncludeNamedAnnotAccession(named_acc+"@@*");
+    if ( !ExtractZoomLevel(named_acc, 0, 0) ) {
+        sel.IncludeNamedAnnotAccession(CombineWithZoomLevel(named_acc, -1));
+    }
+    else {
+        sel.IncludeNamedAnnotAccession(named_acc);
+    }
     CLoadLockBlob_ids blobs(result, sih, &sel);
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih, &sel);
     _ASSERT(blobs.IsLoaded());

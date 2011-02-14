@@ -200,14 +200,15 @@ public:
         {
             m_NamedAnnotNames.insert(name);
         }
-    void SetAnnotInfo(const CID2S_Seq_annot_Info& info);
+    void AddAnnotInfo(const CID2S_Seq_annot_Info& info);
     bool IsSetAnnotInfo(void) const
         {
-            return m_AnnotInfo;
+            return !m_AnnotInfo.empty();
         }
-    const CID2S_Seq_annot_Info& GetAnnotInfo(void) const
+    typedef vector< CConstRef<CID2S_Seq_annot_Info> > TAnnotInfo;
+    const TAnnotInfo& GetAnnotInfo(void) const
         {
-            return *m_AnnotInfo;
+            return m_AnnotInfo;
         }
 
     bool Matches(const CBlob_id& blob_id,
@@ -217,7 +218,7 @@ public:
 private:
     TContentsMask   m_Contents;
     TNamedAnnotNames m_NamedAnnotNames;
-    CConstRef<CID2S_Seq_annot_Info> m_AnnotInfo;
+    TAnnotInfo m_AnnotInfo;
 };
 
 

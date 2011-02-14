@@ -677,7 +677,7 @@ void CProcessor_ID1::SaveBlob(CReaderRequestResult& result,
         CWriter::WriteBytes(**stream, byte_source);
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -701,7 +701,7 @@ void CProcessor_ID1::SaveBlob(CReaderRequestResult& result,
         }}
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1118,7 +1118,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
         CWriter::WriteBytes(**stream, reader);
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1141,7 +1141,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
         CWriter::WriteBytes(**stream, data);
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1168,7 +1168,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
         }}
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1189,7 +1189,7 @@ void CProcessor_St_SE::SaveNoBlob(CReaderRequestResult& result,
         WriteBlobState(**stream, blob_state);
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1282,7 +1282,7 @@ void CProcessor_St_SE_SNPT::SaveSNPBlob(CReaderRequestResult& result,
                                           ConstBegin(seq_entry), set_info);
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1531,7 +1531,7 @@ void CProcessor_ID2::SaveData(CReaderRequestResult& result,
         }}
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1774,7 +1774,7 @@ void CProcessor_ID2AndSkel::SaveDataAndSkel(CReaderRequestResult& result,
         }}
         stream->Close();
     }
-    catch ( ... ) { // ignored
+    catch ( CException& ) { // ignored
     }
 }
 
@@ -1868,7 +1868,7 @@ bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id,
         // ok it's special processing of external annotation
         return !blob->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).IsLoaded();
     }
-    catch ( ... ) {
+    catch ( CException& ) {
     }
     return false;
 }
@@ -1983,7 +1983,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
             try {
                 stream->Close();
             }
-            catch ( ... ) { // ignored
+            catch ( CException& ) { // ignored
             }
         }
     }
@@ -2019,7 +2019,6 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
                                     const CBlob_Info& info)
 {
     _ASSERT(info.IsSetAnnotInfo());
-    const CID2S_Seq_annot_Info& annot_info = info.GetAnnotInfo();
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, kMain_ChunkId, blob) ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
@@ -2027,44 +2026,49 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
                        "double load of "<<blob_id);
     }
     
-    // create special external annotations blob
-    CAnnotName name(annot_info.GetName());
-    blob->SetName(name);
+    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
+    const CBlob_Info::TAnnotInfo& annot_infos = info.GetAnnotInfo();
+    ITERATE ( CBlob_Info::TAnnotInfo, it, annot_infos ) {
+        const CID2S_Seq_annot_Info& annot_info = **it;
+        // create special external annotations blob
+        CAnnotName name(annot_info.GetName());
+        blob->SetName(name);
 
-    vector<SAnnotTypeSelector> types;
-    if ( annot_info.IsSetAlign() ) {
-        types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Align));
-    }
-    if ( annot_info.IsSetGraph() ) {
-        types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph));
-    }
-    if ( annot_info.IsSetFeat() ) {
-        ITERATE ( CID2S_Seq_annot_Info::TFeat, it, annot_info.GetFeat() ) {
-            const CID2S_Feat_type_Info& finfo = **it;
-            int feat_type = finfo.GetType();
-            if ( feat_type == 0 ) {
-                types.push_back(SAnnotTypeSelector
-                                (CSeq_annot::C_Data::e_Seq_table));
-            }
-            else if ( !finfo.IsSetSubtypes() ) {
-                types.push_back(SAnnotTypeSelector
-                                (CSeqFeatData::E_Choice(feat_type)));
-            }
-            else {
-                ITERATE ( CID2S_Feat_type_Info::TSubtypes, it2, finfo.GetSubtypes() ) {
+        vector<SAnnotTypeSelector> types;
+        if ( annot_info.IsSetAlign() ) {
+            types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Align));
+        }
+        if ( annot_info.IsSetGraph() ) {
+            types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph));
+        }
+        if ( annot_info.IsSetFeat() ) {
+            ITERATE ( CID2S_Seq_annot_Info::TFeat, it, annot_info.GetFeat() ) {
+                const CID2S_Feat_type_Info& finfo = **it;
+                int feat_type = finfo.GetType();
+                if ( feat_type == 0 ) {
                     types.push_back(SAnnotTypeSelector
-                                    (CSeqFeatData::ESubtype(*it2)));
+                                    (CSeq_annot::C_Data::e_Seq_table));
+                }
+                else if ( !finfo.IsSetSubtypes() ) {
+                    types.push_back(SAnnotTypeSelector
+                                    (CSeqFeatData::E_Choice(feat_type)));
+                }
+                else {
+                    ITERATE ( CID2S_Feat_type_Info::TSubtypes,
+                              it2, finfo.GetSubtypes() ) {
+                        types.push_back(SAnnotTypeSelector
+                                        (CSeqFeatData::ESubtype(*it2)));
+                    }
                 }
             }
         }
-    }
 
-    CTSE_Chunk_Info::TLocationSet loc;
-    CSplitParser::x_ParseLocation(loc, annot_info.GetSeq_loc());
+        CTSE_Chunk_Info::TLocationSet loc;
+        CSplitParser::x_ParseLocation(loc, annot_info.GetSeq_loc());
 
-    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
-    ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
-        chunk->x_AddAnnotType(name, *it, loc);
+        ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
+            chunk->x_AddAnnotType(name, *it, loc);
+        }
     }
     blob->GetSplitInfo().AddChunk(*chunk);
     _ASSERT(blob->x_NeedsDelayedMainChunk());

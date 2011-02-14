@@ -550,7 +550,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     ///   ExcludeNamedAnnots()
     ///   SetAllNamedAnnots()
     typedef vector<CAnnotName> TAnnotsNames;
-    typedef set<string> TNamedAnnotAccessions;
+    typedef map<string, int> TNamedAnnotAccessions;
     /// Select annotations from all Seq-annots
     SAnnotSelector& ResetAnnotsNames(void);
     /// Reset special processing of unnamed annots (added or excluded)
@@ -606,7 +606,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool ExcludedAnnotName(const CAnnotName& name) const;
 
     /// Add named annot accession (NA*) in the search.
-    SAnnotSelector& IncludeNamedAnnotAccession(const string& acc);
+    SAnnotSelector& IncludeNamedAnnotAccession(const string& acc,
+                                               int zoom_level = 0);
     /// 
     const TNamedAnnotAccessions& GetNamedAnnotAccessions(void) const
         {
@@ -723,6 +724,34 @@ protected:
     AutoPtr<CHandleRangeMap> m_SourceLoc;
 };
 
+
+/// Named annotations zoom level can be encoded in the accession string
+/// with @@ suffix, for example: NA000000001.1@@1000
+/// zoom level is the number of bases covered by single value in a annotation
+/// density graph.
+
+#define NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "@@"
+
+
+/// Extract optional zoom level suffix from named annotation string.
+/// returns true if zoom level explicitly defined in the full_name argument.
+/// The accession string without zoom level will be written
+/// by acc_ptr pointer if it's not null.
+/// Zoom level will be written by zoom_level_ptr pointer if it's not null.
+/// Absent zoom level will be represented by value 0.
+/// Wildcard zoom level will be represented by value -1.
+NCBI_XOBJMGR_EXPORT
+bool ExtractZoomLevel(const string& full_name,
+                      string* acc_ptr, int* zoom_level_ptr);
+
+/// Combine accession string and zoom level into a string with separator.
+/// If the argument string already contains zoom level verify it's the same
+/// as the zoom_level argument.
+/// Zoom level value of -1 can be used to add wildcard @@*.
+NCBI_XOBJMGR_EXPORT
+string CombineWithZoomLevel(const string& acc, int zoom_level);
+NCBI_XOBJMGR_EXPORT
+void AddZoomLevel(string& acc, int zoom_level);
 
 /* @} */
 

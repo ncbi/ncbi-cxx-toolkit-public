@@ -110,14 +110,14 @@ void SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel,
     str << "blobs";
     size_t total_size = 0;
     ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
-        total_size += 1+it->size();
+        total_size += 1+it->first.size();
     }
     bool add_hash = total_size > kHashLimit;
     if ( add_hash ) {
         size_t hash = 5381;
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
-            hash = hash*17 + it->size();
-            ITERATE ( string, i, *it ) {
+            hash = hash*17 + it->first.size();
+            ITERATE ( string, i, it->first ) {
                 hash = hash*17 + (*i & 0xff);
             }
         }
@@ -126,7 +126,7 @@ void SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel,
     ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
               sel->GetNamedAnnotAccessions() ) {
         str << ';';
-        str << *it;
+        str << it->first;
     }
     if ( add_hash ) {
         true_subkey = CNcbiOstrstreamToString(str);

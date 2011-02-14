@@ -736,7 +736,7 @@ bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
         CID2_Request_Get_Blob_Id::TSources& srcs = get_blob_id.SetSources();
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
                   sel->GetNamedAnnotAccessions() ) {
-            srcs.push_back(*it);
+            srcs.push_back(it->first);
         }
     }
     x_ProcessRequest(result, req, sel);
@@ -1416,22 +1416,20 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
         ITERATE ( SId2LoadedSet::TBlob_ids, it2, it->second.second ) {
             CBlob_Info blob_info(it2->second.m_ContentMask);
             const SId2BlobInfo::TAnnotInfo& ainfos = it2->second.m_AnnotInfo;
-            if ( !ainfos.empty() ) {
-                ITERATE ( SId2BlobInfo::TAnnotInfo, it3, ainfos ) {
-                    const CID2S_Seq_annot_Info& annot_info = **it3;
-                    if ( (it2->second.m_ContentMask & fBlobHasNamedFeat) &&
-                         annot_info.IsSetName() ) {
-                        blob_info.AddNamedAnnotName(annot_info.GetName());
-                    }
-                    if ( ainfos.size() == 1 &&
-                         annot_info.IsSetName() &&
-                         annot_info.IsSetSeq_loc() &&
-                         (annot_info.IsSetAlign() ||
-                          annot_info.IsSetGraph() ||
-                          annot_info.IsSetFeat()) ) {
-                        // complete annot info
-                        blob_info.SetAnnotInfo(annot_info);
-                    }
+            ITERATE ( SId2BlobInfo::TAnnotInfo, it3, ainfos ) {
+                const CID2S_Seq_annot_Info& annot_info = **it3;
+                if ( (it2->second.m_ContentMask & fBlobHasNamedFeat) &&
+                     annot_info.IsSetName() ) {
+                    blob_info.AddNamedAnnotName(annot_info.GetName());
+                }
+                if ( ainfos.size() == 1 &&
+                     annot_info.IsSetName() &&
+                     annot_info.IsSetSeq_loc() &&
+                     (annot_info.IsSetAlign() ||
+                      annot_info.IsSetGraph() ||
+                      annot_info.IsSetFeat()) ) {
+                    // complete annot info
+                    blob_info.AddAnnotInfo(annot_info);
                 }
             }
             ids.AddBlob_id(it2->first, blob_info);
@@ -1847,7 +1845,7 @@ void CId2ReaderBase::x_ProcessGetBlobId(
 #if 0
                 // test named annot code
                 // remove after fixing annot-info in data from ID2
-                if ( 1 &&
+                if ( 0 &&
                      !info.IsSetAlign() &&
                      !info.IsSetGraph() &&
                      !info.IsSetFeat() &&
@@ -1863,8 +1861,37 @@ void CId2ReaderBase::x_ProcessGetBlobId(
                     loc.SetLength(249230600);
                 }
 #endif
+#if 1
+                if ( 1 &&
+                     info.IsSetGraph() &&
+                     (info.IsSetFeat() || info.IsSetAlign()) &&
+                     info.IsSetSeq_loc() ) {
+                    ERR_POST("DEBUG: Adding zoom annot-info");
+                    CID2S_Seq_annot_Info& finfo =
+                        const_cast<CID2S_Seq_annot_Info&>(info);
+                    for ( int zoom = 10; zoom <= 1000000; zoom *= 10 ) {
+                        CRef<CID2S_Seq_annot_Info> zinfo
+                            (new CID2S_Seq_annot_Info);
+                        zinfo->SetName(info.GetName());
+                        zinfo->SetGraph();
+                        zinfo->SetSeq_loc(finfo.SetSeq_loc());
+                        blob_info.m_AnnotInfo.push_back(zinfo);
+                    }
+                    finfo.ResetGraph();
+                }
+#endif
                 //cout << "Named "<<blob_id<<": "<<MSerial_AsnText<<info<<endl;
                 mask = fBlobHasNamedFeat;
+            }
+        }
+        if ( !blob_info.m_AnnotInfo.empty() ) {
+            ITERATE ( CID2_Reply_Get_Blob_Id::TAnnot_info,
+                      it, blob_info.m_AnnotInfo ) {
+                const CID2S_Seq_annot_Info& info = **it;
+                if ( info.IsSetName() &&
+                     NStr::StartsWith(info.GetName(), "NA") ) {
+                    mask = fBlobHasNamedFeat;
+                }
             }
         }
     }

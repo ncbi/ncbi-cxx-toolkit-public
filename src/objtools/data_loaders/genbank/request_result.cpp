@@ -385,10 +385,9 @@ CBlob_Info::~CBlob_Info(void)
 }
 
 
-void CBlob_Info::SetAnnotInfo(const CID2S_Seq_annot_Info& info)
+void CBlob_Info::AddAnnotInfo(const CID2S_Seq_annot_Info& info)
 {
-    _ASSERT(!m_AnnotInfo);
-    m_AnnotInfo = &info;
+    m_AnnotInfo.push_back(ConstRef(&info));
 }
 
 
@@ -459,7 +458,7 @@ CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
                   sel->GetNamedAnnotAccessions() ) {
-            key.second += *it;
+            key.second += it->first;
             key.second += ',';
         }
     }
