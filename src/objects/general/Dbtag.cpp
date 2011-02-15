@@ -472,8 +472,8 @@ static const string kMiRBaseMat = "http://www.mirbase.org/cgi-bin/mature.pl?matu
 static const string kMaizeGDBInt = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
 static const string kMaizeGDBStr = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?term=";
 
-// mapping of DB to its URL; please sort these by tag name (mostly in
-// case-sensitive ASCII-betical order as above)
+// mapping of DB to its URL; please sort these by tag name (mostly,
+// but NOT entirely, in case-sensitive ASCII-betical order as above)
 typedef pair<CDbtag::EDbtagType, string>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_AFTOL, "http://aftol1.biology.duke.edu/pub/displayTaxonInfo?aftol_id="),
@@ -512,7 +512,6 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_HSSP, "http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-newId+-e+hssp-ID:"),
     TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
     TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT="),
-    TDbtUrl(CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/"),
     TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://imgt.cines.fr/cgi-bin/GENElect.jv?species=Homo+sapiens&query=2+"),
     TDbtUrl(CDbtag::eDbtagType_IMGT_LIGM, "http://imgt.cines.fr:8104/cgi-bin/IMGTlect.jv?query=202+"),
     TDbtUrl(CDbtag::eDbtagType_IRD, "http://www.fludb.org/brc/fluSegmentDetails.do?irdSubmissionId="),
@@ -575,7 +574,8 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
     TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
     TDbtUrl(CDbtag::eDbtagType_BEEBASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/bee_genome4/?name="),
-    TDbtUrl(CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name=")
+    TDbtUrl(CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name="),
+    TDbtUrl(CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/")
 };
 
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
