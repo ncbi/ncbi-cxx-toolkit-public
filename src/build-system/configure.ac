@@ -69,7 +69,7 @@ case "$with_3psw" in
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
                      python, jni, cppunit, boost, sqlite, sqlite3, icu, expat,
                      sablot, libxml, libxslt, xerces, xalan, oechem, sge,
-                     muparser, hdf5, gif, jpeg, png, tiff, xpm, magic],
+                     muparser, hdf5, gif, jpeg, png, tiff, xpm, magic, curl],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -403,6 +403,10 @@ AC_ARG_WITH(magic,
    [ --with-magic=DIR        use libmagic installation in DIR])
 AC_ARG_WITH(magic2,
    [ --without-magic         do not use libmagic])
+AC_ARG_WITH(curl,
+   [ --with-curl=DIR         use libcurl installation in DIR])
+AC_ARG_WITH(curl2,
+   [ --without-curl          do not use libcurl])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -454,7 +458,7 @@ z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic 3psw \
+gif jpeg tiff png xpm magic curl 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -495,7 +499,7 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
-      | --with-gnutls=* | --with-openssl=* \
+      | --with-gnutls=* | --with-openssl=* | --with-curl=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
@@ -5883,6 +5887,11 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(magic,
    [AC_LANG_PROGRAM([#include <magic.h>],
        [magic_t m = magic_open(17);])])
+
+
+NCBI_CHECK_THIRD_PARTY_LIB(curl,
+   [AC_LANG_PROGRAM([#include <curl/curl.h>],
+       [char* v = curl_version();])])
 
 
 ### Restore original compiler/linker flags

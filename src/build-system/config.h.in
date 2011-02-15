@@ -201,6 +201,9 @@
    the standard libraries. */
 #undef HAVE_LIBCRYPT
 
+/* Define to 1 if libcurl is available. */
+#undef HAVE_LIBCURL
+
 /* Define to 1 if DEMANGLE is available, either in its own library or as part
    of the standard libraries. */
 #undef HAVE_LIBDEMANGLE
