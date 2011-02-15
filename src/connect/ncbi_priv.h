@@ -116,14 +116,15 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #define DO_CORE_LOG_X(_code, _subcode, _level, _message, _dynamic,      \
                       _error, _descr, _raw_data, _raw_size)             \
     do {                                                                \
-        if (g_CORE_Log  ||  (_level) == eLOG_Fatal) {                   \
+        ELOG_Level xx_level = (_level);                                 \
+        if (g_CORE_Log  ||  xx_level == eLOG_Fatal) {                   \
             SLOG_Handler _mess;                                         \
             _mess.dynamic     = _dynamic;                               \
             _mess.message     = NcbiMessagePlusError(&_mess.dynamic,    \
                                                      _message,          \
                                                      _error,            \
                                                      _descr);           \
-            _mess.level       = (_level);                               \
+            _mess.level       = xx_level;                               \
             _mess.module      = THIS_MODULE;                            \
             _mess.file        = THIS_FILE;                              \
             _mess.line        = __LINE__;                               \
@@ -252,7 +253,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_MetaConn,   302,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,      304,   2);
-NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,   6);
+NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,  10);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,    306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,       307,  18);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LB,         308,   0);
