@@ -119,6 +119,11 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
         */
         m_DisableKAStats = true;
     }
+    else
+    {
+        m_DisableKAStats = false;
+    }
+
     CAlignFormatUtil::GetAsciiProteinMatrix(m_MatrixName, m_ScoringMatrix);
 }
 
