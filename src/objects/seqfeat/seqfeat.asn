@@ -664,6 +664,9 @@ Variation-ref ::= SEQUENCE {
                                  -- e.g. g.[476C>T(+)183G>C]
                 population  (7), -- population
                 alleles     (8), -- set represents a set of observed alleles
+                package     (9), -- set represents a package of observations at
+                                 -- a given location, generally containing
+                                 -- asserted + reference
                 other       (255)
             },
             variations SET OF Variation-ref,
@@ -801,6 +804,13 @@ Variation-inst ::= SEQUENCE {
         prot-silent     (19),   -- delta=[morph of length 1, same AA as at
                                 -- variation-location]
         prot-other      (20),   -- delta=any
+
+        asserted        (21),   -- inst represents the asserted base at a
+                                -- position
+        reference       (22),   -- inst represents the reference base at the
+                                -- position
+        variant         (23),   -- inst represent the observed variant at a
+                                -- given position
 
         other           (255)   -- delta=any
     },
