@@ -37,6 +37,7 @@
 #include <serial/serial.hpp>    
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/iterator.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/scope.hpp>
@@ -44,23 +45,37 @@
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objtools/align_format/aln_printer.hpp>
 
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/readers/fasta.hpp>
+#include <objtools/readers/reader_exception.hpp>
+
 #include <corelib/test_boost.hpp>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(align_format);
 
 
+// Read sequences from fasta file and add them to scope
+static CRef<CScope> CreateScope(const string& filename);
+
+
 BOOST_AUTO_TEST_SUITE(aln_printer)
 
+// input file names
+const string protein_seqalign = "data/multialign.asn";
+const string nucleotide_seqalign = "data/multialign_nucleotide.asn";
+const string nucleotide_seqs = "data/nucleotide.fa";
 
-string PrintAlignment(CMultiAlnPrinter::EFormat format)
+string PrintAlignment(CMultiAlnPrinter::EFormat format,
+                      const string& seqalign_file,
+                      const string& fasta_file = "")
 {
-    blast::CBlastScopeSource scope_src(true);
-    CRef<CScope> scope(scope_src.NewScope());
-
+    CRef<CScope> scope = CreateScope(fasta_file);
+    
     CSeq_align seqalign;
-    CNcbiIfstream istr("data/multialign.asn");
+    CNcbiIfstream istr(seqalign_file.c_str());
     istr >> MSerial_AsnText >> seqalign;
 
     CMultiAlnPrinter printer(seqalign, *scope);
@@ -76,7 +91,9 @@ string PrintAlignment(CMultiAlnPrinter::EFormat format)
 
 BOOST_AUTO_TEST_CASE(TestFastaPlusGaps)
 {
-    string output = PrintAlignment(CMultiAlnPrinter::eFastaPlusGaps);
+    // Test protein
+    string output = PrintAlignment(CMultiAlnPrinter::eFastaPlusGaps,
+                                   protein_seqalign);
 
     BOOST_REQUIRE(output.find(">gi|129295 RecName: Full=Ovalbumin-related pro"
                               "tein X; AltName: Full=Gene X protein") != NPOS);
@@ -85,12 +102,30 @@ BOOST_AUTO_TEST_CASE(TestFastaPlusGaps)
 
     // last line
     BOOST_REQUIRE(output.find("KTG------LLLAAGLIGDPLLAGE----") != NPOS);
+
+
+    // Test nucleotide
+    output = PrintAlignment(CMultiAlnPrinter::eFastaPlusGaps,
+                            nucleotide_seqalign, nucleotide_seqs);
+
+    BOOST_REQUIRE(output.find(">lcl|1 gi|405832|gb|U00001.1|HSCDC27 Human "
+                              "homologue of S. pombe nuc2+ and A. nidulans "
+                              "bimA") != NPOS);
+
+    BOOST_REQUIRE(output.find("CACTAATACACCTCCTGTAATTGATGTGCCATCCACCGGAGCCCCT"
+                              "TC-------AA-A-------A-------------") != NPOS);
+
+    // last line
+    BOOST_REQUIRE(output.find("GATGAATTTTAACTTCTGGAAATCAGACTTTTACAACTGGATGTGT"
+                              "GACTAGTGCTGACATGTTTCT-------") != NPOS);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestClustalW)
 {
-    string output = PrintAlignment(CMultiAlnPrinter::eClustal);
+    // Test protein
+    string output = PrintAlignment(CMultiAlnPrinter::eClustal,
+                                   protein_seqalign);
 
     BOOST_REQUIRE(output.find("gi|189500654                  M----------------"
                               "------------------------RII-IYNR---------------"
@@ -101,12 +136,31 @@ BOOST_AUTO_TEST_CASE(TestClustalW)
                               "TFKTLPKKLVYGEL") != NPOS);
 
     BOOST_REQUIRE(output.find("*") != NPOS);
+
+
+    // Test nucleotide
+    output = PrintAlignment(CMultiAlnPrinter::eClustal,
+                            nucleotide_seqalign, nucleotide_seqs);
+
+    BOOST_REQUIRE(output.find("lcl|2                         ------CCGCTACAGG"
+                              "GGGGGCCTGAGGCACTGCAGAAAGTGGGCCTGAGCCTCGAGGATGA"
+                              "CGGTG") != NPOS);
+
+    BOOST_REQUIRE(output.find("                                              "
+                              "                                      ********"
+                              "*****") != NPOS);
+
+    // in last alignment line
+    BOOST_REQUIRE(output.find("lcl|10                        GATGAATTTTAACTTC"
+                              "TGGAAATCAGACTTTTACAACTGGATGTG") != NPOS);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestPhylipSequential)
 {
-    string output = PrintAlignment(CMultiAlnPrinter::ePhylipSequential);
+    // Test protein
+    string output = PrintAlignment(CMultiAlnPrinter::ePhylipSequential,
+                                   protein_seqalign);
 
     BOOST_REQUIRE(output.find("  100   749") != NPOS);
 
@@ -117,12 +171,28 @@ BOOST_AUTO_TEST_CASE(TestPhylipSequential)
     // last line
     BOOST_REQUIRE(output.find("ARFAFALRDTKTG------LLLAAGLIGDPLLAGE----")
                   != NPOS);
+
+
+    // Test nucleotide
+    output = PrintAlignment(CMultiAlnPrinter::ePhylipSequential,
+                            nucleotide_seqalign, nucleotide_seqs);
+
+    BOOST_REQUIRE(output.find("  10   2634") != NPOS);
+
+    BOOST_REQUIRE(output.find("gi_167466 ------CCGCTACAGGGGGGGCCTGAGGCACTGCAG"
+                              "AAAGTGGGCCTGAGCCTCGAGGATGACGGTGCTG") != NPOS);
+
+    // one before last line
+    BOOST_REQUIRE(output.find("AGCTGAAAGTGATGAATTTTAACTTCTGGAAATCAGACTTTTACAA"
+                              "CTGGATGTGTGACTAGTGCTGACATGTTTCT---") != NPOS);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestPhylipInterleaved)
 {
-    string output = PrintAlignment(CMultiAlnPrinter::ePhylipInterleaved);
+    // Test protein
+    string output = PrintAlignment(CMultiAlnPrinter::ePhylipInterleaved,
+                                   protein_seqalign);
 
     BOOST_REQUIRE(output.find("  100   749") != NPOS);
 
@@ -135,12 +205,28 @@ BOOST_AUTO_TEST_CASE(TestPhylipInterleaved)
 
     // last line
     BOOST_REQUIRE(output.find("DTKTG------LLLAAGLIGDPLLAGE----") != NPOS);
+
+
+    // Test nucleotide
+    output = PrintAlignment(CMultiAlnPrinter::ePhylipInterleaved,
+                            nucleotide_seqalign, nucleotide_seqs);
+
+    BOOST_REQUIRE(output.find("  10   2634") != NPOS);
+
+    BOOST_REQUIRE(output.find("gi_167466 ------CCGCTACAGGGGGGGCCTGAGGCACTGCAG"
+                              "AAAGTGGGCCTGAGCCTCGAGGATGACGGTGCTGC") != NPOS);
+
+    // last line
+    BOOST_REQUIRE(output.find("ATCAGACTTTTACAACTGGATGTGTGACTAGTGCTGACATGTTTCT"
+                              "-------") != NPOS);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestNexus)
 {
-    string output = PrintAlignment(CMultiAlnPrinter::eNexus);
+    // Test protein
+    string output = PrintAlignment(CMultiAlnPrinter::eNexus,
+                                   protein_seqalign);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
     BOOST_REQUIRE(output.find("BEGIN DATA;") != NPOS);
@@ -160,11 +246,62 @@ BOOST_AUTO_TEST_CASE(TestNexus)
     // last line
     BOOST_REQUIRE(output.find("241667095  LLLAAGLIGDPLLAGE----") != NPOS);
     BOOST_REQUIRE(output.find("END;") != NPOS);
+
+
+    // Test nucleotide
+    output = PrintAlignment(CMultiAlnPrinter::eNexus,
+                            nucleotide_seqalign, nucleotide_seqs);
+
+    BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
+    BOOST_REQUIRE(output.find("BEGIN DATA;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=10 nchar=2633;") != NPOS);
+    BOOST_REQUIRE(output.find("MATRIX") != NPOS);
+
+    BOOST_REQUIRE(output.find("2   ------CCGCTACAGGGGGGGCCTGAGGCACTGCAGAAAGTG"
+                      "GGCCTGAGCCTCGAGGATGACGGTGCTGCAGGAACCCGT") != NPOS);
+
+    BOOST_REQUIRE(output.find("4   CCAGGCTGCTATATGGCAAGCACTAAACCACTATGCTTACCG"
+                      "AGATGCGGTTTTCCTCGCAGAACGCCTTTATGCAGAAGT") != NPOS);
+
+    // last line
+    BOOST_REQUIRE(output.find("10  ACAACTGGATGTGTGACTAGTGCTGACATGTTTCT-------")
+                  != NPOS);
+    BOOST_REQUIRE(output.find("END;") != NPOS);
 }
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 
 
+CRef<CScope> CreateScope(const string& filename)
+{
+    blast::CBlastScopeSource scope_src(true);
+    CRef<CScope> scope(scope_src.NewScope());
+
+    if (filename == "") {
+        return scope;
+    }
+
+    CNcbiIfstream instream(filename.c_str());
+    BOOST_REQUIRE(instream);
+
+    CStreamLineReader line_reader(instream);
+    CFastaReader fasta_reader(line_reader, 
+                              CFastaReader::fAssumeProt |
+                              CFastaReader::fForceType |
+                              CFastaReader::fNoParseID);
+
+    while (!line_reader.AtEOF()) {
+
+        CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
+
+        if (entry == 0) {
+            NCBI_THROW(CObjReaderException, eInvalid, 
+                        "Could not retrieve seq entry");
+        }
+        scope->AddTopLevelSeqEntry(*entry);
+        CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
+    }
+
+    return scope;
+}
 
