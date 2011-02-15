@@ -1908,9 +1908,6 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
             }
             match ++;
         } else {
-            if (m_AlignType&eProt)  // -RMH-
-               cout << "Oops...I guess I am in trouble\n";
-
             if ((m_AlignType&eProt) 
                 && m_Matrix[(int)sequence_standard[i]][(int)sequence[i]] > 0){  
                 positive ++;
