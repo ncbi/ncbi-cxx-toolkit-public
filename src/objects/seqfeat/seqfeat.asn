@@ -811,6 +811,9 @@ Variation-inst ::= SEQUENCE {
     -- Sequence that replaces the location, in biological order.
     delta SEQUENCE OF Delta-item,
 
+    -- 'observation' is used to label items in a Variation-ref package
+    -- This field is explicitly a bit-field, so the bitwise OR (= sum) of any
+    -- of the values may be observed.
     observation INTEGER {
         asserted        (1),   -- inst represents the asserted base at a
                                -- position
