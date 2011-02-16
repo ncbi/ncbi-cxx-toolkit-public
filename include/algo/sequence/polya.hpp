@@ -53,12 +53,14 @@ FindPolyA(Iterator begin, Iterator end);
 
 ///////////////////////////////////////////////////////////////////////////////
 /// PRE : two random access iterators pointing to sequence data [begin,
-/// end)
+/// end); minimum length for tail
 /// POST: cleavageSite (if any) and whether we found a poly-A tail, a poly-T
 /// head, or neither
 template <typename Iterator>
 EPolyTail
-FindPolyTail(Iterator begin, Iterator end, TSignedSeqPos &cleavageSite);
+FindPolyTail(Iterator begin, Iterator end,
+             TSignedSeqPos &cleavageSite,
+             TSignedSeqPos min_length = 0);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -180,7 +182,7 @@ TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
     string motif1("AATAAA");
     string motif2("ATTAAA");
 
-    Iterator pos = max(begin, end-250);
+    Iterator pos = (end - begin < 250) ? begin : end - 250;
 
     Iterator uStrmMotif = pos;
     while (uStrmMotif != end) {
@@ -191,42 +193,40 @@ TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
         }
 
         if (uStrmMotif != end) {
-            uStrmMotif += 6; // skip over upstream motif
-            pos = uStrmMotif;
-            if (end - pos < 10) { //min skip of 10
+            if (end - uStrmMotif < 16) {  // skip over upstream motif, and at least 10 more
                 break;
             }
+            pos = uStrmMotif + 15;
+            ++uStrmMotif;
 
-            Iterator maxCleavage = (end - pos < 30) ? end : pos + 30;
+            Iterator maxCleavage = (end - pos < 21) ? end : pos + 21;
 
-            unsigned int aRun = 0;
-            for (pos += 10;  pos < maxCleavage  &&  aRun < 3;  ++pos) {
-                if (*pos == 'A') {
-                    ++aRun;
-                } else {
-                    aRun = 0;
+            while (pos < maxCleavage) {
+                unsigned int aRun = 0;
+                for (++pos;  pos < maxCleavage  &&  aRun < 3;  ++pos) {
+                    if (*pos == 'A') {
+                        ++aRun;
+                    } else {
+                        aRun = 0;
+                    }
                 }
-            }
-            
-            if (aRun) {
-                pos -= aRun;
-            }
-            TSignedSeqPos cleavageSite = pos - begin;
-
-            //now let's look for poly-adenylated tail..
-            unsigned int numA = 0, numOther = 0;
-            while (pos < end) {
-                if (*pos == 'A') {
-                    ++numA;
-                } else {
-                    ++numOther;
+                
+                Iterator cleavageSite = pos - aRun;
+    
+                //now let's look for poly-adenylated tail..
+                unsigned int numA = 0, numOther = 0;
+                for (Iterator p = cleavageSite; p < end; ++p) {
+                    if (*p == 'A') {
+                        ++numA;
+                    } else {
+                        ++numOther;
+                    }
                 }
-                ++pos;
-            }
-
-            if (numOther + numA > 0  &&
-                ((double) numA / (numA+numOther)) > 0.95) {
-                return cleavageSite;
+    
+                if (numOther + numA > 0  &&
+                    ((double) numA / (numA+numOther)) > 0.95) {
+                    return cleavageSite - begin;
+                }
             }
         }
     }
@@ -240,21 +240,23 @@ TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
 // POST: cleavageSite (if any) and whether we found a poly-A tail, a poly-T
 // head, or neither
 template<typename Iterator>
-EPolyTail FindPolyTail(Iterator begin, Iterator end,
-                       TSignedSeqPos &cleavageSite)
+EPolyTail
+FindPolyTail(Iterator begin, Iterator end,
+             TSignedSeqPos &cleavageSite,
+             TSignedSeqPos min_length)
 {
     cleavageSite = FindPolyA(begin, end);
-    if (cleavageSite >= 0) {
+    int seqLen = end - begin;
+    if (cleavageSite >= 0 && seqLen - cleavageSite >= min_length) {
         return ePolyTail_A3;
     } else {
-        int seqLen = end - begin;
-
         cleavageSite = FindPolyA(CRevComp_It<Iterator>(end),
                                  CRevComp_It<Iterator>(begin));
 
         if (cleavageSite >= 0) {
             cleavageSite = seqLen - cleavageSite - 1;
-            return ePolyTail_T5;
+            if(cleavageSite+1 >= min_length)
+                return ePolyTail_T5;
         }
     }
 
