@@ -170,7 +170,9 @@ static string s_WinError(DWORD error, string& message)
                                FORMAT_MESSAGE_FROM_SYSTEM     |
                                FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                                FORMAT_MESSAGE_IGNORE_INSERTS,
-                               NULL, error, 0, (TXChar*) &errstr, 0, NULL);
+                               NULL, error,
+                               MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+                               (TXChar*) &errstr, 0, NULL);
 	if (!rv  &&  errstr) {
 		::LocalFree(errstr);
 		errstr = NULL;
