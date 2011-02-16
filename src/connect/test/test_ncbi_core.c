@@ -356,7 +356,7 @@ static void TEST_CORE_GetUsername(void)
            temp ?   temp              : "NULL",
            temp ? (*temp ? "" : "\"") : ">",
            !temp ^ !user ? ", error!" : "");
-    (void) freopen(null, "r", stdin);
+    verify(freopen(null, "r", stdin));
     temp = CORE_GetUsername(buffer, sizeof(buffer));
     printf("Username = %s%s%s\n",
            temp ? (*temp ? "" : "\"") : "<",
