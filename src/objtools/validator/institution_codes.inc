@@ -5998,6 +5998,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UPMSI	s	Marine Science Institute",
 "UPNA	s	Universidad Publica de Navarra, Departamento de Ciencias del Medio Natural",
 "UPNG	s	University of Papua New Guinea, Division of Biological Sciences",
+"UPOL<CZE>	s	University Palacky Olomouc",
 "UPOS	s	Universidad Pablo de Olavide, Ciencias Ambientales (Botanica)",
 "UPP	s	Uppingham School Museum",
 "UPPC	s	University of the Philippines",
