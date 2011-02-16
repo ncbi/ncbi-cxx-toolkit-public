@@ -851,6 +851,8 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
     m_ExclusiveJobSemaphore(1, 1),
     m_IsProcessingExclusiveJob(false),
     m_TotalMemoryLimit(0),
+    m_TotalTimeLimit(0),
+    m_StartupTime(0),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
     m_Listener(new CGridWorkerNodeApp_Listener()),
     m_App(app),
@@ -961,6 +963,12 @@ int CGridWorkerNode::Run()
     if (!memlimitstr.empty()) {
         m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
     }
+    }}
+
+    {{
+    m_TotalTimeLimit = 
+        reg.GetInt(kServerSec,"total_time_limit", 0, 0, IRegistry::eReturn);
+    m_StartupTime = time(0);
     }}
 
     vector<string> vhosts;

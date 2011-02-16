@@ -580,6 +580,11 @@ public:
     ///
     Uint8 GetTotalMemoryLimit() const { return m_TotalMemoryLimit; }
 
+    /// Get total time limit (automatic restart after that)
+    ///
+    int GetTotalTimeLimit() const { return m_TotalTimeLimit; }
+    time_t GetStartupTime() const { return m_StartupTime; }
+
     bool IsHostInAdminHostsList(const string& host) const;
 
     unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
@@ -641,6 +646,10 @@ private:
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
     Uint8                        m_TotalMemoryLimit;
+    time_t                       m_TotalTimeLimit;
+    time_t                       m_StartupTime;
+
+
 
     CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 

@@ -46,7 +46,7 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
-#define MEM_OVERUSE_EXIT_CODE 100
+#define RESOURCE_OVERUSE_EXIT_CODE 100
 
 
 BEGIN_NCBI_SCOPE
@@ -190,12 +190,26 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
                     CGridGlobals::GetInstance().RequestShutdown(
                         CNetScheduleAdmin::eNormalShutdown);
                     CGridGlobals::GetInstance().SetExitCode(
-                        MEM_OVERUSE_EXIT_CODE);
+                        RESOURCE_OVERUSE_EXIT_CODE);
                 }
             } else {
                 ERR_POST("Could not check self memory usage" );
             }
         }
+
+        int total_time_limit = m_Worker.GetTotalTimeLimit();
+        time_t start_time = m_Worker.GetStartupTime();
+        if (total_time_limit) {  // time check requested
+            time_t curr = time(0);
+            if (start_time && (start_time + total_time_limit < curr)) {
+                    CGridGlobals::GetInstance().RequestShutdown(
+                        CNetScheduleAdmin::eNormalShutdown);
+                    CGridGlobals::GetInstance().SetExitCode(
+                        RESOURCE_OVERUSE_EXIT_CODE);
+            }
+        }
+
+
 
         if (CGridGlobals::GetInstance().IsShuttingDown() ||
                 m_Worker.IsTimeToRebalance() ||
