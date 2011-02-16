@@ -805,18 +805,20 @@ Variation-inst ::= SEQUENCE {
                                 -- variation-location]
         prot-other      (20),   -- delta=any
 
-        asserted        (21),   -- inst represents the asserted base at a
-                                -- position
-        reference       (22),   -- inst represents the reference base at the
-                                -- position
-        variant         (23),   -- inst represent the observed variant at a
-                                -- given position
-
         other           (255)   -- delta=any
     },
 
     -- Sequence that replaces the location, in biological order.
-    delta SEQUENCE OF Delta-item
+    delta SEQUENCE OF Delta-item,
+
+    observation INTEGER {
+        asserted        (1),   -- inst represents the asserted base at a
+                               -- position
+        reference       (2),   -- inst represents the reference base at the
+                               -- position
+        variant         (4)    -- inst represent the observed variant at a
+                               -- given position
+    } OPTIONAL
 }
 
 END
