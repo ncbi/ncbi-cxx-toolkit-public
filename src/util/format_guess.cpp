@@ -683,7 +683,10 @@ CFormatGuess::TestFormatNewick(
         return false;
     }
     if ( ! EnsureSplitLines() ) {
-        return false;
+        if ( ! m_TestLines.empty() ) {
+            return false;
+        }
+        m_TestLines.push_back( string( m_pTestBuffer ) );
     }
 
     string one_line;
@@ -1271,49 +1274,121 @@ CFormatGuess::IsLineNewick(
     const string& cline )
 {
     //
-    //  Note:
-    //  Newick lines are a little tricky. They contain tree structure of the form
-    //  (a,b), where each a or be can either be a another tree structure, or a
-    //  label of the form 'ABCD'. The trickiness comes from the fact that these
-    //  beasts are highly recursive, to the point that our 1k read buffer may not
-    //  even cover a single line in the file. Which means, we might only have a
-    //  partial line to work with.
+    //  See http://evolution.genetics.washington.edu/phylip/newick_doc.html
     //
-    //  The test:
-    //  Throw away all the labels, i.e. everything between an odd-numbered ' and
-    //  an even numbered tick. After that, there should only remain '(', ')', ';',
-    //  ''', ',', or whitespace.
-    //  Moreover, if there is a semicolon, it must be at the end of the line.
+    //  Note that Newick tree tend to be written out as a single long line. Thus,
+    //  we are most likely only seeing the first part of a tree.
     //
     string line = NStr::TruncateSpaces( cline );
     if ( line.empty() ) {
         return false;
     }
-    string delimiters = " ,();";
-    for ( size_t i=0; line[i] != 0; ++i ) {
-
-        if ( NPOS != delimiters.find( line[i] ) ) {
-            if ( line[i] == ';' && i != line.size() - 1 ) {
-                return false;
+    {{
+        //  Strip out comments:
+        string trimmed;
+        bool in_comment = false;
+        for ( size_t ii=0; line[ii] != 0; ++ii ) {
+            if ( ! in_comment ) {
+                if ( line[ii] != '[' ) {
+                    trimmed += line[ii];
+                }
+                else {
+                    in_comment = true;
+                }
+            }
+            else /* in_comment */ {
+                if ( line[ii] == ']' ) {
+                    in_comment = false;
+                }
+            }
+        }
+        line = trimmed;
+    }}
+    {{
+        //  Compress quoted labels:
+        string trimmed;
+        bool in_quote = false;
+        for ( size_t ii=0; line[ii] != 0; ++ii ) {
+            if ( ! in_quote ) {
+                if ( line[ii] != '\'' ) {
+                    trimmed += line[ii];
+                }
+                else {
+                    in_quote = true;
+                    trimmed += 'A';
+                }
+            }
+            else { /* in_quote */
+                if ( line[ii] == '\'' ) {
+                    in_quote = false;
+                }
+            }
+        }
+        line = trimmed;
+    }}
+    {{
+        //  Strip distance markers:
+        string trimmed;
+        size_t ii=0;
+        while ( line[ii] != 0 ) {
+            if ( line[ii] != ':' ) {
+                trimmed += line[ii++];
             }
             else {
-                continue;
+                ii++;
+                if ( line[ii] == '-'  || line[ii] == '+' ) {
+                    ii++;
+                }
+                while ( '0' <= line[ii] && line[ii] <= '9' ) {
+                    ii++;
+                }
+                if ( line[ii] == '.' ) {
+                    ii++;
+                    while ( '0' <= line[ii] && line[ii] <= '9' ) {
+                        ii++;
+                    }
+                }
             }
         }
-        if ( line[i] == '[' || line[i] == ']' ) {
+        line = trimmed;
+    }}
+    {{
+        //  Rough lexical analysis of what's left. Bail immediately on fault:
+        if ( line.empty() ) {
             return false;
         }
-        size_t label_end = line.find_first_of( delimiters, i );
-        string label = line.substr( i, label_end - i );
-        if ( ! IsLabelNewick( label ) ) {
-            return false;
-        }
-        if ( NPOS == label_end ) {
+        if ( line[0] != '(' ) {
             return true;
         }
-        i = label_end;
-    }
-    return true;
+
+        size_t paren_count = 1;
+        for ( size_t ii=1; line[ii] != 0; ++ii ) {
+            switch ( line[ii] ) {
+                default: 
+                    break;
+                case '(':
+                    ++paren_count;
+                    break;
+                case ')':
+                    if ( paren_count == 0 ) {
+                        return false;
+                    }
+                    --paren_count;
+                    break;
+                case ',':
+                    if ( paren_count == 0 ) {
+                        return false;
+                    }
+                    break;
+                case ';':
+                    if ( line[ii+1] != 0 ) {
+                        return false;
+                    }
+                    break;
+            }
+        }
+    }}
+    return true; 
 }
 
 
