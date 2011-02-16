@@ -213,7 +213,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         unsigned int time_to_live = 0,
         const string& owner = kEmptyStr);
 
-    virtual void Remove(const string& key);
     virtual void Remove(const string&    key,
                         int              version,
                         const string&    subkey);

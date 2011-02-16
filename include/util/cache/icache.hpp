@@ -328,14 +328,6 @@ public:
                                     unsigned int     time_to_live = 0,
                                     const string&    owner = kEmptyStr) = 0;
 
-    /// Remove all versions of the specified BLOB
-    ///
-    /// @param key BLOB identification key
-    /// @deprecated Not implemented in NetCache, which is the
-    ///             primary implementation of this interface.
-    NCBI_DEPRECATED
-    virtual void Remove(const string& key) = 0;
-
     /// Remove specific cache entry
     ///
     /// @param key

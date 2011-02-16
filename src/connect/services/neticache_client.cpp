@@ -485,12 +485,6 @@ IEmbeddedStreamWriter* CNetICacheClient::GetNetCacheWriter(const string& key,
 }
 
 
-void CNetICacheClient::Remove(const string& key)
-{
-    NCBI_THROW(CNetCacheException, eNotImplemented, "REMK is not implemented");
-}
-
-
 void CNetICacheClient::Remove(const string&    key,
                               int              version,
                               const string&    subkey)
