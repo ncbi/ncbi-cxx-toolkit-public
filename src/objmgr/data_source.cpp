@@ -1491,11 +1491,11 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
         try {
             lock->x_DSAttach(*this);
         }
-        catch (...) {
+        catch ( ... ) {
             try {
                 lock->x_DSDetach(*this);
             }
-            catch (...) {
+            catch ( exception& ) {
             }
             throw;
         }

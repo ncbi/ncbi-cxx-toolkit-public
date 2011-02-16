@@ -59,9 +59,6 @@ CScopeTransaction::~CScopeTransaction()
     } catch (exception& ex) {
         ERR_POST_X(1, Fatal << "Exception cought in ~CScopeTransaction() : " 
                             << ex.what());
-    } catch (...) {
-        ERR_POST_X(2, Fatal
-                   << "Unknown Exception cought in ~CScopeTransaction()");
     }
 }
 

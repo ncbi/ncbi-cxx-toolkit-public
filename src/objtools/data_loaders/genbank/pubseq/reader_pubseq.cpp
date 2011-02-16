@@ -368,7 +368,7 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
                 if ( m_Context )
                     break;
             }
-            catch ( CException& exc ) {
+            catch ( exception& exc ) {
                 errmsg[i] = exc.what();
             }
         }
@@ -522,7 +522,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                             cmd->DumpResults();
                             break;
                         }
-                        catch ( CException& /*exc*/ ) {
+                        catch ( exception& /*exc*/ ) {
                             /*
                             ERR_POST_X(7,
                                        "CPubseqReader: bad accver data: "<<
@@ -936,7 +936,7 @@ void CPubseqReader::GetBlobVersion(CReaderRequestResult& result,
             }
         }
     }
-    catch ( ... ) {
+    catch ( exception& ) {
         if ( !blob_id.IsMainBlob() ) {
             SetAndSaveBlobVersion(result, blob_id, 0);
             return;

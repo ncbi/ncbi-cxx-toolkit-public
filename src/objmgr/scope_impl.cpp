@@ -358,7 +358,7 @@ void CScope_Impl::RemoveDataLoader(const string& name,
     try {
         ds_info->ResetHistory(action);
     }
-    catch (...) {
+    catch ( ... ) {
         x_ClearCacheOnRemoveData();
         throw;
     }

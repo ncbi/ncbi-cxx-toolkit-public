@@ -187,7 +187,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                     }
                     m_Weight |= TWeight(value) << (int)fWeightFlagBits;
                 }
-                catch ( ... ) {
+                catch ( exception& ) {
                     return eSNP_Complex_WeightBadValue;
                 }
             }
@@ -236,7 +236,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             try {
                 m_SNP_Id = NStr::StringToInt(tag.GetStr());
             }
-            catch ( ... ) {
+            catch ( exception& ) {
                 return eSNP_Bad_WrongMemberSet;
             }
             break;

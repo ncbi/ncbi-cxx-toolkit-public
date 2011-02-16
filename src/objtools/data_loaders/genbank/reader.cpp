@@ -123,10 +123,10 @@ void CReader::InitParams(CConfig& conf,
                     DEFAULT_WAIT_TIME_ERRORS);
     m_WaitTime.Init(conf, driver_name, s_WaitTimeParams);
 
-    TConn max_connections = conf.GetInt(driver_name,
-                                        NCBI_GBLOADER_READER_PARAM_NUM_CONN,
-                                        CConfig::eErr_NoThrow,
-                                        -1);
+    int max_connections = conf.GetInt(driver_name,
+                                      NCBI_GBLOADER_READER_PARAM_NUM_CONN,
+                                      CConfig::eErr_NoThrow,
+                                      -1);
     if ( max_connections == -1 ) {
         max_connections = conf.GetInt(driver_name,
                                       NCBI_GBLOADER_READER_PARAM2_NUM_CONN,
@@ -386,7 +386,7 @@ void CReader::x_AbortConnection(TConn conn, bool failed)
     try {
         x_RemoveConnectionSlot(conn);
     }
-    catch ( ... ) {
+    catch ( exception& ) {
         // ignore
     }
     _ASSERT(m_MaxConnections > 0);

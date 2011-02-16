@@ -286,7 +286,7 @@ void CGBLGuard::Switch(EState newstate)
             m_Locks->m_SlowTraverseMode++;
             MUnlock();
         }
-        catch(...) {
+        catch( exception& ) {
             m_Locks->m_SlowTraverseMode--;
             if(m_Locks->m_SlowTraverseMode==0) {
                 PUnlock();

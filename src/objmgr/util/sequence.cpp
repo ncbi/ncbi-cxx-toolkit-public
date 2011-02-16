@@ -170,7 +170,7 @@ int GetTaxId(const CBioseq_Handle& handle)
     try {
         return GetOrg_ref(handle).GetTaxId();
     }
-    catch (...) {
+    catch ( exception& ) {
         return 0;
     }
 }
@@ -228,7 +228,7 @@ CBioseq_Handle GetBioseqFromSeqLoc
                 }
             }
         }
-    } catch (CException&) {
+    } catch (exception&) {
         retval.Reset();
     }
 
@@ -422,8 +422,8 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
             ret = x_GetId(scope.GetIds(idh), type);
         }
     }
-    catch (CException& e) {
-        ERR_POST(e);
+    catch (exception& e) {
+        ERR_POST("sequence::GetId(): exception: "<<e.what());
         if ( (type & eGetId_ThrowOnError) != 0 ) {
             throw;
         }
@@ -815,7 +815,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             try {
                 loc.CheckId(single_id);
             }
-            catch (CException&) {
+            catch (exception&) {
                 single_id = 0;
             }
             if ( single_id ) {
@@ -826,8 +826,8 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 }
             }
         }
-        catch (CException& _DEBUG_ARG(e)) {
-            _TRACE("test for circularity failed: " << e.GetMsg()) ;
+        catch (exception& _DEBUG_ARG(e)) {
+            _TRACE("test for circularity failed: " << e.what()) ;
         }
     }
 
@@ -904,7 +904,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             feats.push_back(sc);
         }
     }
-    catch (CException&) {
+    catch (exception&) {
         _TRACE("GetOverlappingFeatures(): error: feature iterator failed");
     }
 
@@ -1124,7 +1124,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                 }
             }
         }
-        catch (CException&) {
+        catch (exception&) {
         }
     }
 
@@ -1177,7 +1177,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                 }
             }
         }
-        catch (CException&) {
+        catch (exception&) {
         }
     }
 
@@ -1275,7 +1275,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                     }
                 }
             }
-            catch (CException&) {
+            catch (exception&) {
             }
         }
     }
@@ -1340,7 +1340,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                     }
                 }
             }
-            catch (...) {
+            catch ( exception& ) {
             }
         }
         while (false);

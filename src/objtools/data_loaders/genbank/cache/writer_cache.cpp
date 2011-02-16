@@ -237,7 +237,7 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
             m_IdCache->Store(seq_id, 0, GetGiSubkey(),
                              str.data(), str.size());
         }
-        catch ( ... ) { // ignored
+        catch ( exception& ) { // ignored
         }
     }
 }
@@ -270,7 +270,7 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
             m_IdCache->Store(GetIdKey(seq_id), 0, GetGiSubkey(),
                              str.data(), str.size());
         }
-        catch ( ... ) { // ignored
+        catch ( exception& ) { // ignored
         }
     }
 }
@@ -293,7 +293,7 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
             m_IdCache->Store(GetIdKey(seq_id), 0, GetAccVerSubkey(),
                              str.data(), str.size());
         }
-        catch ( ... ) { // ignored
+        catch ( exception& ) { // ignored
         }
     }
 }
@@ -313,7 +313,7 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
             m_IdCache->Store(GetIdKey(seq_id), 0, GetLabelSubkey(),
                              str.data(), str.size());
         }
-        catch ( ... ) { // ignored
+        catch ( exception& ) { // ignored
         }
     }
 }
@@ -334,7 +334,7 @@ void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
             m_IdCache->Store(GetIdKey(seq_id), 0, GetTaxIdSubkey(),
                              str.data(), str.size());
         }
-        catch ( ... ) { // ignored
+        catch ( exception& ) { // ignored
         }
     }
 }
@@ -353,7 +353,7 @@ namespace {
                 try {
                     m_Cache->Remove(m_Key, m_Version, m_Subkey);
                 }
-                catch (...) { // ignored
+                catch ( exception& ) { // ignored
                 }
                 m_Cache = 0;
             }
@@ -401,13 +401,13 @@ void CCacheWriter::WriteSeq_ids(const string& key,
 
         writer.reset();
     }
-    catch ( ... ) {
+    catch ( exception& ) {
         // In case of an error we need to remove incomplete data
         // from the cache.
         try {
             m_BlobCache->Remove(key, 0, GetSeq_idsSubkey());
         }
-        catch ( ... ) { // ignored
+        catch ( exception& ) { // ignored
         }
         // ignore cache write error - it doesn't affect application
     }
@@ -451,7 +451,7 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     try {
         m_IdCache->Store(GetIdKey(seq_id), 0, subkey, str.data(), str.size());
     }
-    catch ( ... ) { // ignored
+    catch ( exception& ) { // ignored
     }
 }
 
@@ -470,7 +470,7 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
         m_IdCache->Store(GetBlobKey(blob_id), 0, GetBlobVersionSubkey(),
                          str.data(), str.size());
     }
-    catch ( ... ) { // ignored
+    catch ( exception& ) { // ignored
     }
 }
 
@@ -529,7 +529,7 @@ public:
             try {
                 m_Cache->Remove(m_Key, m_Version, m_Subkey);
             }
-            catch (...) { // ignored
+            catch ( exception& ) { // ignored
             }
         }
 
@@ -566,7 +566,7 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
         WriteProcessorTag(**stream, processor);
         return stream;
     }
-    catch ( ... ) { // ignored
+    catch ( exception& ) { // ignored
         return null;
     }
 }

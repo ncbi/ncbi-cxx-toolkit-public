@@ -297,7 +297,7 @@ const CSeq_descr::Tdata& CBioseq_Base_Info::x_GetDescList(void) const
     try {
         return x_GetDescr().Get();
     }
-    catch (...) {
+    catch ( exception& ) {
         if ( !x_IsSetDescr() && IsSetDescr() ) {
             return const_cast<CBioseq_Base_Info*>(this)->x_SetDescr().Get();
         }

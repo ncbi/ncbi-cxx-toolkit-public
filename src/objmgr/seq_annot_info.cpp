@@ -966,7 +966,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
         try {
             loc = m_Table_Info->GetColumn("Seq-table location").GetSeq_loc(0);
         }
-        catch ( CException& /*ignored*/ ) {
+        catch ( exception& /*ignored*/ ) {
         }
         if ( !loc ) {
             return;

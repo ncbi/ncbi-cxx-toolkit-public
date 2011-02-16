@@ -104,7 +104,7 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
             }
         }
     }
-    catch(...)
+    catch ( ... )
     {
         m_Sniffer->m_CallStack.pop_back();
         throw;    
@@ -230,7 +230,7 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
     }
     catch (CEofException& ) {
     }
-    catch (CException& e) {
+    catch (exception& e) {
         LOG_POST_X(3, Info << "Exception reading "
                    << format_name << " " << e.what());
     }
@@ -269,8 +269,8 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         catch (CEofException& ) {
             break;
         }
-        catch (CException& _DEBUG_ARG(e)) {
-            _TRACE("  failed to read: " << e.GetMsg());
+        catch (exception& _DEBUG_ARG(e)) {
+            _TRACE("  failed to read: " << e.what());
             Reset();
             input.SetStreamPos(m_StreamPos);
             ++it; // trying the next type.

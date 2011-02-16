@@ -128,7 +128,8 @@ CScope_Mapper_Sequence_Info::GetSequenceType(const CSeq_id_Handle& idh)
                 break;
             }
         }
-    } catch (...) {
+    }
+    catch ( exception& ) {
     }
     return seqtype;
 }

@@ -99,9 +99,6 @@ CScopeTransaction_Impl::~CScopeTransaction_Impl()
     } catch (exception& ex) {
         ERR_POST_X(3, Fatal << "Exception cought in ~CScopeTransaction_Impl() : " 
                             << ex.what());
-    } catch (...) {
-        ERR_POST_X(4, Fatal
-                   << "Unknown Exception cought in ~CScopeTransaction_Impl()");
     }
 }
 
@@ -180,8 +177,6 @@ void CScopeTransaction_Impl::Commit()
                 } catch (exception& ex) {
                     ERR_POST_X(5, Fatal << "Couldn't commit transaction : " 
                                         << ex.what());
-                } catch (...) {
-                    ERR_POST_X(6, Fatal << "Couldn't commit transaction");
                 }
             }
         }
@@ -208,8 +203,6 @@ void CScopeTransaction_Impl::RollBack()
                 } catch (exception& ex) {
                     ERR_POST_X(7, Fatal << "Couldn't rollback transaction : " 
                                         << ex.what());
-                } catch (...) {
-                    ERR_POST_X(8, Fatal << "Couldn't rollback transaction");
                 }
             }
         }

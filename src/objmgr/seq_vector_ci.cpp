@@ -105,7 +105,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
     try {
         *this = sv_it;
     }
-    catch (...) {
+    catch ( ... ) {
         x_DestroyCache();
         throw;
     }
@@ -133,7 +133,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
     try {
         x_SetPos(pos);
     }
-    catch (...) {
+    catch ( ... ) {
         x_DestroyCache();
         throw;
     }
@@ -162,7 +162,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
     try {
         x_SetPos(pos);
     }
-    catch (...) {
+    catch ( ... ) {
         x_DestroyCache();
         throw;
     }
@@ -191,7 +191,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, ENa_strand strand,
     try {
         x_SetPos(pos);
     }
-    catch (...) {
+    catch ( ... ) {
         x_DestroyCache();
         throw;
     }
@@ -250,7 +250,7 @@ bool CSeqVector_CI::CanGetRange(TSeqPos start, TSeqPos stop)
         }
         return true;
     }
-    catch ( CException& /*ignored*/ ) {
+    catch ( exception& /*ignored*/ ) {
         return false;
     }
 }
@@ -488,7 +488,7 @@ void CSeqVector_CI::x_InitializeCache(void)
         try {
             m_BackupEnd = m_BackupData = new char[kCacheSize];
         }
-        catch (...) {
+        catch ( ... ) {
             x_DestroyCache();
             throw;
         }

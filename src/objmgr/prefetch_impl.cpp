@@ -236,7 +236,7 @@ void* CPrefetchThreadOld::Main(void)
                 if ( match ) {
                     token->AddResolvedId(i, match.m_TSE_Lock);
                 }
-            } catch (...) {
+            } catch ( exception& ) {
                 // BestResolve() failed, go to the next id.
             }
         }
