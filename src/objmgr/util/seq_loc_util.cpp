@@ -141,8 +141,13 @@ namespace {
                 case CSeq_loc::e_Packed_pnt:
                     Add(loc.GetPacked_pnt());
                     return;
-                case CSeq_loc::e_not_set:
-                case CSeq_loc::e_Bond:  //can't calculate coverage
+                case CSeq_loc::e_Bond:
+                    Add(loc.GetBond().GetA());
+                    if ( loc.GetBond().IsSetB() ) {
+                        Add(loc.GetBond().GetB());
+                    }
+                    return;
+                case CSeq_loc::e_not_set: //can't calculate coverage
                 case CSeq_loc::e_Feat:
                 case CSeq_loc::e_Equiv: // unless actually the same length...
                 default:
@@ -226,9 +231,9 @@ TSeqPos GetCoverage(const CSeq_loc& loc, CScope* scope)
     case CSeq_loc::e_Packed_int:
     case CSeq_loc::e_Mix:
     case CSeq_loc::e_Packed_pnt:
+    case CSeq_loc::e_Bond:
         return SCoverageCollector(loc, scope).GetCoverage();
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Bond:         //can't calculate length
+    case CSeq_loc::e_not_set:      // can't calculate length
     case CSeq_loc::e_Feat:
     case CSeq_loc::e_Equiv:        // unless actually the same length...
     default:
