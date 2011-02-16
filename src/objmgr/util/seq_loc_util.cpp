@@ -99,8 +99,9 @@ TSeqPos GetLength(const CSeq_loc& loc, CScope* scope)
         return GetLength(loc.GetMix(), scope);
     case CSeq_loc::e_Packed_pnt:   // just a bunch of points
         return loc.GetPacked_pnt().GetPoints().size();
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Bond:         //can't calculate length
+    case CSeq_loc::e_Bond:         // return number of points
+        return loc.GetBond().IsSetB() + loc.GetBond().IsSetA();
+    case CSeq_loc::e_not_set:      //can't calculate length
     case CSeq_loc::e_Feat:
     case CSeq_loc::e_Equiv:        // unless actually the same length...
     default:
