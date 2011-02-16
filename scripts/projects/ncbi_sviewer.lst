@@ -1,0 +1,7 @@
+#include "ncbi_gui_base.lst"
+internal/gbench
+-internal/gbench/packages/pkg_radar
+misc/third_party
+-[^gi].*/app
+-[^g].*/unit_test
+-algo/ms
