@@ -230,7 +230,7 @@ int CNetCacheControl::Run()
                     host, NStr::StringToInt(port));
             else {
                 NCBI_THROW(CArgException, eInvalidArg,
-                    "This operation requires the \"service\" "
+                    "This operation requires the \"service_name\" "
                     "argument to be a host:port server address.");
             }
         }
