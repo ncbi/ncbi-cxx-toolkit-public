@@ -229,7 +229,7 @@ int CNetCacheControl::Run()
                 nc_client.GetService().StickToServer(
                     host, NStr::StringToInt(port));
             else {
-                NCBI_THROW(CArgException, eNoValue,
+                NCBI_THROW(CArgException, eInvalidArg,
                     "This operation requires the \"service\" "
                     "argument to be a host:port server address.");
             }
