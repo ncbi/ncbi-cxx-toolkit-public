@@ -144,10 +144,6 @@ public:
                                const string& key,
                                string* hashed_content);
 
-    /// Remove hash content
-    ///
-    void RemoveHashedContent(const string& hash_str);
-
 protected:
     /// Returns TRUE if hash verification is successfull
     bool x_CheckHashContent(const string& hash_str, 
@@ -174,12 +170,6 @@ CCacheHashedContent::CCacheHashedContent(ICache& cache)
   m_HashContentSubKey("CONTENT"),
   m_RefValueSubKey("REF")
 {}
-
-inline
-void CCacheHashedContent::RemoveHashedContent(const string& hash_str)
-{
-    m_ICache.Remove(hash_str);
-}
 
 inline
 void CCacheHashedContent::StoreHashedContent(const string& hash_str, 
