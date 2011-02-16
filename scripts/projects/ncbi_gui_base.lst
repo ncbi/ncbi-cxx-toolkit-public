@@ -20,7 +20,6 @@ internal/gpipe/common$
 internal/gpipe/gencoll/src/gcaccess$
 internal/ID/utils$
 internal/mapview/objects
--internal/mapview/objects/cache
 misc/grid_cgi$
 misc/xmlwrapp
 objects
