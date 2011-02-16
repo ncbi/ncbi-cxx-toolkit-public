@@ -92,6 +92,8 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     bool IsLoadBalanced() const;
 
+    void StickToServer(const string& host, unsigned port);
+
     void SetPermanentConnection(ESwitch type);
 
     void SetCommunicationTimeout(const STimeout& to);

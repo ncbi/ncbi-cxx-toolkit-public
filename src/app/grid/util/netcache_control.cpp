@@ -78,11 +78,9 @@ private:
         string key;
         int version;
         string subkey;
-    };
 
-    void ParseICacheBlobAddress(const string& key,
-        SICacheBlobAddress* blob_address,
-        bool* version_is_defined = NULL);
+        SICacheBlobAddress() : version(0) {}
+    };
 };
 
 
@@ -148,33 +146,22 @@ void CNetCacheControl::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
-void CNetCacheControl::ParseICacheBlobAddress(
-    const string& key, SICacheBlobAddress* blob_address,
-    bool* version_is_defined)
-{
-    vector<string> key_parts;
+#define REQUIRES_KEY 0x100
+#define REQUIRES_ADMIN 0x200
 
-    NStr::Tokenize(key, ",", key_parts);
-    if (key_parts.size() != 3) {
-        NCBI_THROW_FMT(CArgException, eInvalidArg,
-            "Invalid ICache key specification \"" << key << "\" ("
-                "expected a comma-separated key,version,subkey triplet).");
-    }
-    if (!key_parts[1].empty()) {
-        if (version_is_defined != NULL)
-            *version_is_defined = true;
-
-        blob_address->version = NStr::StringToInt(key_parts[1]);
-    } else {
-        if (version_is_defined != NULL)
-            *version_is_defined = false;
-
-        NCBI_THROW(CArgException, eNoValue,
-            "blob version parameter is missing");
-    }
-    blob_address->key = key_parts.front();
-    blob_address->subkey = key_parts.back();
-}
+enum {
+    eCmdFetch = 0x01 | REQUIRES_KEY,
+    eCmdStore = 0x02 | REQUIRES_KEY,
+    eCmdSize = 0x03 | REQUIRES_KEY,
+    eCmdRemove = 0x04 | REQUIRES_KEY,
+    eCmdGetConf = 0x05 | REQUIRES_ADMIN,
+    eCmdHealth = 0x06 | REQUIRES_ADMIN,
+    eCmdStat = 0x07 | REQUIRES_ADMIN,
+    eCmdVer = 0x08 | REQUIRES_ADMIN,
+    eCmdShutdown = 0x09 | REQUIRES_ADMIN,
+    eCmdReconf = 0x0A | REQUIRES_ADMIN,
+    eCmdReinit = 0x0B | REQUIRES_ADMIN
+};
 
 int CNetCacheControl::Run()
 {
@@ -186,33 +173,104 @@ int CNetCacheControl::Run()
 
     bool icache_mode = args["icache"].HasValue();
 
-    if (icache_mode && service.empty()) {
-        NCBI_THROW(CArgException, eNoValue, "The \"service\" "
-            "argument is required in icache mode.");
+    const CArgValue& password_arg = args["password"];
+
+    int cmd;
+    string key;
+
+    size_t offset = 0;
+    size_t part_size = 0;
+    int reader_select = -1;
+
+    if (args["fetch"].HasValue()) {
+        key = args["fetch"].AsString();
+        cmd = eCmdFetch;
+        offset = (size_t) args["offset"].AsInt8();
+        part_size = (size_t) args["part_size"].AsInt8();
+        reader_select = (password_arg.HasValue() << 1) |
+            (offset != 0 || part_size != 0);
+    } else if (args["store"]) {
+        key = args["store"].AsString();
+        cmd = eCmdStore;
+    } else if (args["size"]) {
+        key = args["size"].AsString();
+        cmd = eCmdSize;
+    } else if (args["remove"].HasValue()) {
+        key = args["remove"].AsString();
+        cmd = eCmdRemove;
+    } else {
+        cmd = args["getconf"] ? eCmdGetConf :
+            args["health"] ? eCmdHealth :
+            args["stat"] ? eCmdStat :
+            args["ver"] ? eCmdVer :
+            args["shutdown"] ? eCmdShutdown :
+            args["reconf"] ? eCmdReconf :
+            args["reinit"] ? eCmdReinit : 0;
     }
+
+    SICacheBlobAddress blob_address;
+    bool version_is_defined = true;
 
     string client_name = args["auth"].HasValue() ?
         args["auth"].AsString() : "netcache_control";
 
-    CNetCacheAPI nc_client(service, client_name);
-    CNetCacheAdmin admin = nc_client.GetAdmin();
-
+    CNetCacheAPI nc_client;
+    CNetCacheAdmin admin;
     CNetICacheClient icache_client(eVoid);
-    if (icache_mode)
+
+    if (cmd & REQUIRES_ADMIN)
+        admin = CNetCacheAPI(service, client_name).GetAdmin();
+    else if (!icache_mode) {
+        nc_client = CNetCacheAPI(service, client_name);
+        if (!service.empty()) {
+            string host, port;
+
+            if (NStr::SplitInTwo(service, ":", host, port))
+                nc_client.GetService().StickToServer(
+                    host, NStr::StringToInt(port));
+            else {
+                NCBI_THROW(CArgException, eNoValue,
+                    "This operation requires the \"service\" "
+                    "argument to be a host:port server address.");
+            }
+        }
+    } else {
         icache_client = CNetICacheClient(service,
             args["icache"].AsString(), client_name);
 
-    const CArgValue& password_arg = args["password"];
+        if (service.empty()) {
+            NCBI_THROW(CArgException, eNoValue, "The \"service\" "
+                "argument is required in icache mode.");
+        }
 
-    if (args["fetch"].HasValue()) {
-        string key(args["fetch"].AsString());
-        size_t offset = (size_t) args["offset"].AsInt8();
-        size_t part_size = (size_t) args["part_size"].AsInt8();
-        size_t blob_size = 0;
-        int reader_select = (password_arg.HasValue() << 1) |
-            (offset != 0 || part_size != 0);
+        if (cmd & REQUIRES_KEY) {
+            vector<string> key_parts;
+
+            NStr::Tokenize(key, ",", key_parts);
+            if (key_parts.size() != 3) {
+                NCBI_THROW_FMT(CArgException, eInvalidArg,
+                    "Invalid ICache key specification \"" << key << "\" ("
+                    "expected a comma-separated key,version,subkey triplet).");
+            }
+            if (!key_parts[1].empty())
+                blob_address.version = NStr::StringToInt(key_parts[1]);
+            else if (reader_select == 0)
+                version_is_defined = false;
+            else {
+                NCBI_THROW(CArgException, eNoValue,
+                    "blob version parameter is missing");
+            }
+            blob_address.key = key_parts.front();
+            blob_address.subkey = key_parts.back();
+        }
+    }
+
+    switch (cmd) {
+    case eCmdFetch:
+        {{
         auto_ptr<IReader> reader;
-        if (!icache_mode)
+        if (!icache_mode) {
+            size_t blob_size = 0;
             switch (reader_select) {
             case 0: /* no special case */
                 reader.reset(nc_client.GetReader(key, &blob_size,
@@ -232,12 +290,7 @@ int CNetCacheControl::Run()
                     password_arg.AsString())->GetPartReader(key, offset,
                     part_size, &blob_size, CNetCacheAPI::eCaching_Disable));
             }
-        else {
-            SICacheBlobAddress blob_address;
-            bool version_is_defined = true;
-            ParseICacheBlobAddress(key, &blob_address,
-                reader_select == 0 ? &version_is_defined : NULL);
-            int version = 0;
+        } else {
             ICache::EBlobValidity validity;
             switch (reader_select) {
             case 0: /* no special case */
@@ -246,7 +299,7 @@ int CNetCacheControl::Run()
                         blob_address.version, blob_address.subkey, NULL,
                         CNetCacheAPI::eCaching_Disable) :
                     icache_client.GetReadStream(blob_address.key,
-                        blob_address.subkey, &version, &validity));
+                        blob_address.subkey, &blob_address.version, &validity));
                 break;
             case 1: /* use offset */
                 reader.reset(icache_client.GetReadStreamPart(blob_address.key,
@@ -266,7 +319,8 @@ int CNetCacheControl::Run()
                     offset, part_size, NULL, CNetCacheAPI::eCaching_Disable));
             }
             if (!version_is_defined)
-                NcbiCerr << "Blob version: " << version << NcbiEndl <<
+                NcbiCerr << "Blob version: " <<
+                        blob_address.version << NcbiEndl <<
                     "Blob validity: " << (validity == ICache::eValid ?
                         "valid" : "expired") << NcbiEndl;
         }
@@ -303,24 +357,21 @@ int CNetCacheControl::Run()
             ERR_POST("Error while sending data to the output stream");
             return 1;
         }
-    } else if (args["store"]) {
-        string key(args["store"].AsString());
-        auto_ptr<IEmbeddedStreamWriter> writer;
-        if (!icache_mode)
-            writer.reset(password_arg.HasValue() ?
-                CNetCachePasswordGuard(nc_client,
-                    password_arg.AsString())->PutData(&key) :
-                nc_client.PutData(&key));
-        else {
-            SICacheBlobAddress blob_address;
-            ParseICacheBlobAddress(key, &blob_address);
-            writer.reset(password_arg.HasValue() ?
-                CNetICachePasswordGuard(icache_client,
-                    password_arg.AsString())->GetNetCacheWriter(blob_address.key,
-                        blob_address.version, blob_address.subkey) :
+        }}
+        break;
+
+    case eCmdStore:
+        {{
+        auto_ptr<IEmbeddedStreamWriter> writer(!icache_mode ?
+            password_arg.HasValue() ? CNetCachePasswordGuard(nc_client,
+                password_arg.AsString())->PutData(&key) :
+                    nc_client.PutData(&key) :
+            password_arg.HasValue() ? CNetICachePasswordGuard(icache_client,
+                password_arg.AsString())->GetNetCacheWriter(blob_address.key,
+                    blob_address.version, blob_address.subkey) :
                 icache_client.GetNetCacheWriter(blob_address.key,
                     blob_address.version, blob_address.subkey));
-        }
+
         if (!writer.get()) {
             NCBI_USER_THROW_FMT("Cannot create blob stream");
         }
@@ -354,30 +405,24 @@ int CNetCacheControl::Run()
 
         if (!icache_mode)
             NcbiCout << key << NcbiEndl;
-    } else if (args["size"]) {
-        string key(args["size"].AsString());
-        size_t size;
-        if (!icache_mode)
-            size = nc_client.GetBlobSize(key);
-        else {
-            SICacheBlobAddress blob_address;
-            ParseICacheBlobAddress(key, &blob_address);
-            size = icache_client.GetSize(blob_address.key,
-                blob_address.version, blob_address.subkey);
-        }
-        NcbiCout << "BLOB size: " << size << NcbiEndl;
-    } else if (args["remove"].HasValue()) {
-        string key(args["remove"].AsString());
+        }}
+        break;
 
+    case eCmdSize:
+        NcbiCout << "BLOB size: " <<
+            (!icache_mode ? nc_client.GetBlobSize(key) :
+                icache_client.GetSize(blob_address.key,
+                    blob_address.version, blob_address.subkey)) << NcbiEndl;
+        break;
+
+    case eCmdRemove:
         if (!icache_mode)
             if (password_arg.HasValue())
                 CNetCachePasswordGuard(nc_client,
                     password_arg.AsString())->Remove(key);
             else
                 nc_client.Remove(key);
-        else {
-            SICacheBlobAddress blob_address;
-            ParseICacheBlobAddress(key, &blob_address);
+        else
             if (password_arg.HasValue())
                 CNetICachePasswordGuard(icache_client,
                     password_arg.AsString())->Remove(blob_address.key,
@@ -385,22 +430,35 @@ int CNetCacheControl::Run()
             else
                 icache_client.Remove(blob_address.key,
                     blob_address.version, blob_address.subkey);
-        }
-    } else if (args["getconf"])
+        break;
+
+    case eCmdGetConf:
         admin.PrintConfig(NcbiCout);
-    else if (args["health"])
+        break;
+
+    case eCmdHealth:
         admin.PrintHealth(NcbiCout);
-    else if (args["stat"])
+        break;
+
+    case eCmdStat:
         admin.PrintStat(NcbiCout);
-    else if (args["ver"])
+        break;
+
+    case eCmdVer:
         admin.GetServerVersion(NcbiCout);
-    else if (args["shutdown"]) {
+        break;
+
+    case eCmdShutdown:
         admin.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
-    } else if (args["reconf"]) {
+        break;
+
+    case eCmdReconf:
         admin.ReloadServerConfig();
         NcbiCout << "Reconfigured." << NcbiEndl;
-    } else if (args["reinit"]) {
+        break;
+
+    case eCmdReinit:
         if (icache_mode)
             admin.Reinitialize(args["icache"].AsString());
         else
