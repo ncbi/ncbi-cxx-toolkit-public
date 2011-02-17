@@ -588,46 +588,47 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
     case eIO_Read:
     case eIO_Write:
         {
-            const char* strerr = s_StrError(sock, *((int*) data));
+            const char* strerr = NULL;
             what = (event == eIO_Read
                     ? (sock->type != eDatagram  &&  !size
-                       ? (data ? strerr : "EOF hit")
+                       ? (data ? (strerr = s_StrError(sock, *((int*) data))) : "EOF hit")
                        : "Read")
                     : (sock->type != eDatagram  &&  !size
                        ? strerr
                        : "Written"));
+
+            n = (int) strlen(what);
+            while (n  &&  isspace((unsigned char) what[n - 1]))
+                n--;
+            if (n > 1  &&  what[n - 1] == '.')
+                n--;
+            if (sock->type == eDatagram) {
+                sin = (const struct sockaddr_in*) ptr;
+                assert(sin  &&  sin->sin_family == AF_INET);
+                SOCK_HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
+                                      head, sizeof(head));
+                sprintf(tail, ", msg# %" NCBI_BIGCOUNT_FORMAT_SPEC,
+                        event == eIO_Read ? sock->n_in : sock->n_out);
+            } else if (!ptr  ||  !*((char*) ptr)) {
+                sprintf(head, " at offset %" NCBI_BIGCOUNT_FORMAT_SPEC,
+                        event == eIO_Read ? sock->n_read : sock->n_written);
+                strcpy(tail, ptr ? " [OOB]" : "");
+            } else {
+                strncpy0(head, (const char*) ptr, sizeof(head));
+                *tail = '\0';
+            }
+
+            CORE_DATAF_EXX(109, level, data, size,
+                           ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
+                            sock->type == eDatagram
+                            ? (event == eIO_Read ? " from " : " to ")
+                            : !size
+                            ? (event == eIO_Read
+                               ? " while reading" : " while writing")
+                            : "",
+                            head, tail));
             UTIL_ReleaseBuffer(strerr);
         }
-        n = (int) strlen(what);
-        while (n  &&  isspace((unsigned char) what[n - 1]))
-            n--;
-        if (n > 1  &&  what[n - 1] == '.')
-            n--;
-        if (sock->type == eDatagram) {
-            sin = (const struct sockaddr_in*) ptr;
-            assert(sin  &&  sin->sin_family == AF_INET);
-            SOCK_HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
-                                  head, sizeof(head));
-            sprintf(tail, ", msg# %" NCBI_BIGCOUNT_FORMAT_SPEC,
-                    event == eIO_Read ? sock->n_in : sock->n_out);
-        } else if (!ptr  ||  !*((char*) ptr)) {
-            sprintf(head, " at offset %" NCBI_BIGCOUNT_FORMAT_SPEC,
-                    event == eIO_Read ? sock->n_read : sock->n_written);
-            strcpy(tail, ptr ? " [OOB]" : "");
-        } else {
-            strncpy0(head, (const char*) ptr, sizeof(head));
-            *tail = '\0';
-        }
-
-        CORE_DATAF_EXX(109, level, data, size,
-                       ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
-                        sock->type == eDatagram
-                        ? (event == eIO_Read ? " from " : " to ")
-                        : !size
-                        ? (event == eIO_Read
-                           ? " while reading" : " while writing")
-                        : "",
-                        head, tail));
         break;
 
     case eIO_Close:
