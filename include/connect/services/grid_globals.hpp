@@ -118,6 +118,12 @@ public:
     /// Request node shutdown
     void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level)
                       { m_ShutdownLevel = level; }
+    void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level,
+        int exit_code)
+    {
+        m_ShutdownLevel = level;
+        m_ExitCode = exit_code;
+    }
     bool IsShuttingDown();
 
     /// Check if shutdown was requested.

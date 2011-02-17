@@ -179,37 +179,27 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
             decision_mask ^= PREV_JOB_WAS_EXCLUSIVE | OTHER_JOB_IS_EXCLUSIVE;
 
         Uint8 total_memory_limit = m_Worker.GetTotalMemoryLimit();
-        if (total_memory_limit) {  // memory check requested
-            size_t total_mem;
-            if (GetMemoryUsage(&total_mem, 0, 0)) {
-                if (total_mem > total_memory_limit) {
-                    ERR_POST(Warning << "Memory usage (" << total_mem <<
-                        ") is above the configured limit (" <<
-                        total_memory_limit << ")");
-
-                    CGridGlobals::GetInstance().RequestShutdown(
-                        CNetScheduleAdmin::eNormalShutdown);
-                    CGridGlobals::GetInstance().SetExitCode(
-                        RESOURCE_OVERUSE_EXIT_CODE);
-                }
-            } else {
+        if (total_memory_limit > 0) {  // memory check requested
+            size_t memory_usage;
+            if (!GetMemoryUsage(&memory_usage, 0, 0)) {
                 ERR_POST("Could not check self memory usage" );
+            }
+            if (memory_usage > total_memory_limit) {
+                ERR_POST(Warning << "Memory usage (" << memory_usage <<
+                    ") is above the configured limit (" <<
+                    total_memory_limit << ")");
+
+                CGridGlobals::GetInstance().RequestShutdown(
+                    CNetScheduleAdmin::eNormalShutdown,
+                        RESOURCE_OVERUSE_EXIT_CODE);
             }
         }
 
         int total_time_limit = m_Worker.GetTotalTimeLimit();
-        time_t start_time = m_Worker.GetStartupTime();
-        if (total_time_limit) {  // time check requested
-            time_t curr = time(0);
-            if (start_time && (start_time + total_time_limit < curr)) {
-                    CGridGlobals::GetInstance().RequestShutdown(
-                        CNetScheduleAdmin::eNormalShutdown);
-                    CGridGlobals::GetInstance().SetExitCode(
-                        RESOURCE_OVERUSE_EXIT_CODE);
-            }
-        }
-
-
+        if (total_time_limit > 0 &&  // time check requested
+                time(0) > m_Worker.GetStartupTime() + total_time_limit)
+            CGridGlobals::GetInstance().RequestShutdown(
+                CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
 
         if (CGridGlobals::GetInstance().IsShuttingDown() ||
                 m_Worker.IsTimeToRebalance() ||

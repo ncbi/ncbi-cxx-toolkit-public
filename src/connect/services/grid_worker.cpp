@@ -965,18 +965,16 @@ int CGridWorkerNode::Run()
         reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eReturn);
 
     {{
-    string memlimitstr = 
+    string memlimitstr =
         reg.GetString(kServerSec,"total_memory_limit","",IRegistry::eReturn);
     if (!memlimitstr.empty()) {
         m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
     }
     }}
 
-    {{
-    m_TotalTimeLimit = 
+    m_TotalTimeLimit =
         reg.GetInt(kServerSec,"total_time_limit", 0, 0, IRegistry::eReturn);
     m_StartupTime = time(0);
-    }}
 
     vector<string> vhosts;
 
