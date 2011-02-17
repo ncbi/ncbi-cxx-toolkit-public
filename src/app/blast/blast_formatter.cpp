@@ -173,7 +173,7 @@ CBlastFormatterApp::x_ExtractQueries(bool query_is_protein)
 
     CRef<CBlastQueryVector> retval(new CBlastQueryVector);
 
-    SDataLoaderConfig dlconfig(query_is_protein);
+    SDataLoaderConfig dlconfig(query_is_protein, SDataLoaderConfig::eUseNoDataLoaders);
     dlconfig.OptimizeForWholeLargeSequenceRetrieval(false);
     m_QueryScopeSource.Reset(new CBlastScopeSource(dlconfig));
 
