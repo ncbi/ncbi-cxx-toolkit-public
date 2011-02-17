@@ -1033,56 +1033,61 @@ extern char* UTIL_NcbiLocalHostName(char* hostname)
     return 0;
 }
 
-#if defined(NCBI_OS_MSWIN)
-#if defined(_UNICODE)
-const char*    UTIL_TcharToUtf8OnHeap(const TCHAR* buffer)
+
+#ifdef NCBI_OS_MSWIN
+
+
+#  ifdef _UNICODE
+
+extern const char* UTIL_TcharToUtf8OnHeap(const TCHAR* buffer)
 {
     const char* p = UTIL_TcharToUtf8(buffer);
     UTIL_ReleaseBufferOnHeap(buffer);
     return p;
 }
 
-const char*    UTIL_TcharToUtf8(const TCHAR* buffer)
+
+extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
 {
     char* p = NULL;
-    int n;
     if (buffer) {
-        n = WideCharToMultiByte(
-            CP_UTF8, 0, buffer, -1, NULL, 0, NULL, NULL);
-        if (n>=0) {
-            p = (char*)LocalAlloc(LPTR, (n+1) * sizeof(char));
+        int n = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL,
+                                    0, NULL, NULL);
+        if (n >= 0) {
+            p = (char*) LocalAlloc(LPTR, (n + 1) * sizeof(char));
             if (p) {
-                WideCharToMultiByte(
-                    CP_UTF8, 0, buffer, -1, p, n, NULL, NULL);
+                WideCharToMultiByte(CP_UTF8, 0, buffer, -1, p,
+                                    n, NULL, NULL);
             }
         }
     }
     return p;
 }
 
-const TCHAR*   UTIL_Utf8ToTchar(const char* buffer)
+
+extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
 {
     TCHAR* p = NULL;
-    int n;
     if (buffer) {
-        n = MultiByteToWideChar(
-            CP_UTF8, 0, buffer, -1, NULL, 0);
-        if (n>=0) {
-            p = (wchar_t*)LocalAlloc(LPTR, (n+1) * sizeof(wchar_t));
+        int n = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, NULL, 0);
+        if (n >= 0) {
+            p = (wchar_t*) LocalAlloc(LPTR, (n + 1) * sizeof(wchar_t));
             if (p) {
-                MultiByteToWideChar(
-                    CP_UTF8, 0, buffer, -1, p, n);
+                MultiByteToWideChar(CP_UTF8, 0, buffer, -1, p,    n);
             }
         }
     }
     return p;
 }
-#endif //_UNICODE
-void  UTIL_ReleaseBufferOnHeap(const void* buffer)
+
+#  endif /*_UNICODE*/
+
+
+extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
 {
     if (buffer) {
-        LocalFree((HLOCAL)buffer);
+        LocalFree((HLOCAL) buffer);
     }
 }
-#endif //NCBI_OS_MSWIN
 
+#endif /*NCBI_OS_MSWIN*/

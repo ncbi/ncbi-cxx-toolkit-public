@@ -549,6 +549,7 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  int         full
  );
 
+
 /**
  *  Conversion from Unicode to UTF8, and back.
  *  Microsoft Windows - specific.
@@ -557,24 +558,24 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  *    to free the buffer returned from UTIL_TcharToUtf8OnHeap;
  *    and ReleaseBuffer to free the one returned from UTIL_TcharToUtf8
  */
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-const char*      UTIL_TcharToUtf8OnHeap(const wchar_t* buffer);
-const char*      UTIL_TcharToUtf8(      const wchar_t* buffer);
-const wchar_t*   UTIL_Utf8ToTchar(      const    char* buffer);
-#  define        UTIL_ReleaseBuffer(x)  UTIL_ReleaseBufferOnHeap(x)
-#else
-#  define        UTIL_TcharToUtf8OnHeap(x) (x)
-#  define        UTIL_TcharToUtf8(x)       (x)
-#  define        UTIL_Utf8ToTchar(x)       (x)
-#  define        UTIL_ReleaseBuffer(x)
-#endif
 
-#if defined(NCBI_OS_MSWIN)
-void             UTIL_ReleaseBufferOnHeap( const void* buffer);
+#if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
+extern const char*    UTIL_TcharToUtf8OnHeap(const wchar_t* buffer);
+extern const char*    UTIL_TcharToUtf8      (const wchar_t* buffer);
+extern const wchar_t* UTIL_Utf8ToTchar      (const    char* buffer);
+#  define             UTIL_ReleaseBuffer(x)  UTIL_ReleaseBufferOnHeap(x)
 #else
-#  define        UTIL_ReleaseBufferOnHeap(x)
-#endif
+#  define             UTIL_TcharToUtf8OnHeap(x)  (x)
+#  define             UTIL_TcharToUtf8(x)        (x)
+#  define             UTIL_Utf8ToTchar(x)        (x)
+#  define             UTIL_ReleaseBuffer(x)      /*void*/
+#endif /*NCBI_OS_MSWIN && _UNICODE*/
 
+#ifdef NCBI_OS_MSWIN
+extern void           UTIL_ReleaseBufferOnHeap(const void* buffer);
+#else
+#  define             UTIL_ReleaseBufferOnHeap(x)  /*void*/
+#endif /*NCBI_OS_MSWIN*/
 
 
 #ifdef __cplusplus
