@@ -183,8 +183,7 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
             size_t memory_usage;
             if (!GetMemoryUsage(&memory_usage, 0, 0)) {
                 ERR_POST("Could not check self memory usage" );
-            }
-            if (memory_usage > total_memory_limit) {
+            } else if (memory_usage > total_memory_limit) {
                 ERR_POST(Warning << "Memory usage (" << memory_usage <<
                     ") is above the configured limit (" <<
                     total_memory_limit << ")");
