@@ -320,10 +320,31 @@ void CSeq_id::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 }
 
 
+inline bool CanCmpAcc(CSeq_id::E_Choice choice)
+{
+    switch ( choice ) {
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpd:
+    case CSeq_id::e_Gpipe:
+    case CSeq_id::e_Named_annot_track:
+        return true;
+    default:
+        return false;
+    }
+}
+
+
 // Compare() - are SeqIds equivalent?
 CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 {
     if ( Which() != sid2.Which() ) { // Only one case where this will work
+        if (!CanCmpAcc(Which()) || !CanCmpAcc(sid2.Which())) {
+            return e_DIFF;
+        }
         const CTextseq_id *tsip1 = GetTextseq_Id();
         if ( !tsip1 )
             return e_DIFF;
