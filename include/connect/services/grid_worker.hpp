@@ -624,7 +624,13 @@ public:
 
     /// Disable the automatic logging of request-start and
     /// request-stop events by the framework itself.
-    static void DisableDefaultRequestEventLogging();
+    enum EDisabledRequestEvents {
+        eEnableStartStop,
+        eDisableStartStop,
+        eDisableStartOnly
+    };
+    static void DisableDefaultRequestEventLogging(
+        EDisabledRequestEvents disabled_events = eDisableStartStop);
 
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 

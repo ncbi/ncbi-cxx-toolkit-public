@@ -329,7 +329,8 @@ CWorkerNodeRequest::CWorkerNodeRequest(auto_ptr<CWorkerNodeJobContext> context)
 }
 
 
-static bool s_ReqEventsDisabled = false;
+static CGridWorkerNode::EDisabledRequestEvents s_ReqEventsDisabled =
+    CGridWorkerNode::eEnableStartStop;
 
 class CRequestStateGuard
 {
@@ -362,7 +363,7 @@ CRequestStateGuard::CRequestStateGuard(CWorkerNodeJobContext& job_context) :
 
     request_context.SetAppState(eDiagAppState_RequestBegin);
 
-    if (!s_ReqEventsDisabled)
+    if (s_ReqEventsDisabled == CGridWorkerNode::eEnableStartStop)
         GetDiagContext().PrintRequestStart().Print("jid", job.job_id);
 }
 
@@ -391,8 +392,14 @@ CRequestStateGuard::~CRequestStateGuard()
         /* FALL THROUGH */
 
     default:
-        if (!s_ReqEventsDisabled)
+        switch (s_ReqEventsDisabled) {
+        case CGridWorkerNode::eEnableStartStop:
+        case CGridWorkerNode::eDisableStartOnly:
             GetDiagContext().PrintRequestStop();
+
+        default:
+            break;
+        }
         request_context.SetAppState(eDiagAppState_NotSet);
         request_context.UnsetSessionID();
         request_context.UnsetClientIP();
@@ -901,7 +908,7 @@ int CGridWorkerNode::Run()
             try {
                 m_MaxThreads = NStr::StringToUInt(max_threads);
             }
-            catch (exception& e) {
+            catch (exception&) {
                 m_MaxThreads = GetCpuCount();
                 ERR_POST_X(51, "Could not convert [" << kServerSec <<
                     "] max_threads parameter to number.\n"
@@ -1438,9 +1445,10 @@ bool CGridWorkerNode::WaitForExclusiveJobToFinish()
     return false;
 }
 
-void CGridWorkerNode::DisableDefaultRequestEventLogging()
+void CGridWorkerNode::DisableDefaultRequestEventLogging(
+    CGridWorkerNode::EDisabledRequestEvents disabled_events)
 {
-    s_ReqEventsDisabled = true;
+    s_ReqEventsDisabled = disabled_events;
 }
 
 IWorkerNodeCleanupEventSource* CGridWorkerNode::GetCleanupEventSource()
