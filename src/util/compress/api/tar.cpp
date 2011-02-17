@@ -2446,6 +2446,12 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 }
 
 
+struct CTmpDirEntryDeleter {
+    static void Delete(CDirEntry* entry)
+    { entry->Remove(); delete entry; }
+};
+
+
 bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
 {
     Uint8                size = m_Current.GetSize();
@@ -2461,7 +2467,7 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
         // Source for extraction
         auto_ptr<CDirEntry> src;
         // Direntry pending removal
-        auto_ptr<CDirEntry> pending;
+        AutoPtr<CDirEntry, CTmpDirEntryDeleter> pending;
 
         // Dereference sym.link if requested
         if (type != CTarEntryInfo::eSymLink  &&
@@ -2534,13 +2540,12 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
                                                 (dst->GetDir(), "xNCBItArX")));
                     errno = 0;
                     if (!tmp.Rename(pending->GetPath())  ||  dst->Exists()) {
-                        // Security concern (not to attempt data extractions
-                        // into special files etc., which can harm system).
-                        string reason = s_OSReason(errno ? errno : EEXIST);
-                        pending->Remove();
+                        // Security concern:  do not attempt data extraction
+                        // into special files etc., which can harm the system.
+                        int x_errno = errno ? errno : EEXIST;
                         TAR_THROW(this, eWrite,
                                   "Cannot extract '" + dst->GetPath() + '\''
-                                  + reason);
+                                  + s_OSReason(x_errno));
                     }
                 }
             }
@@ -2560,20 +2565,16 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
             }
             umask(u);
 #endif // NCBI_OS_UNIX
-            if (pending.get()) {
-                if (!extract) {
-                    // Undo delete
-                    dst->Remove();
-                    CDirEntry tmp(*pending);
-                    if (!tmp.Rename(dst->GetPath())) {
-                        int x_errno = errno;
-                        pending->Remove();
-                        TAR_THROW(this, eWrite,
-                                  "Cannot restore '" + dst->GetPath()
-                                  + "' back in place" + s_OSReason(x_errno));
-                    }
+            if (!extract  &&  pending.get()/*NB: not dir*/) {
+                dst->Remove();
+                // Undo delete
+                CDirEntry tmp(*pending);
+                if (!tmp.Rename(dst->GetPath())) {
+                    int x_errno = errno;
+                    TAR_THROW(this, eWrite,
+                              "Cannot restore '" + dst->GetPath()
+                              + "' back in place" + s_OSReason(x_errno));
                 }
-                pending->Remove();
             }
         }
     }
@@ -2657,8 +2658,8 @@ bool CTar::x_ExtractEntry(Uint8& size,
                     src = src_ptr.get();
                 }
                 if (src->GetType() == CDirEntry::eUnknown  &&  size) {
-                    // Looks like a dangling hard link but luckily we also
-                    // have actual file data (POSIX extension) so use it here.
+                    // Looks like a dangling hard link but luckily we have
+                    // the actual file data (POSIX extension) so use it here.
                     type = CTarEntryInfo::eFile;
                 }
             }
@@ -2667,6 +2668,8 @@ bool CTar::x_ExtractEntry(Uint8& size,
                 // Create the file
                 // FIXME:  Switch to CFileIO eventually to bypass
                 // ofstream obscurity w.r.t. errors, extra buffering etc.
+                // FIXME:  Should the file name match an existing device (or
+                // a terminal, in particular), things may go really ugly here.
                 ofstream ofs(dst->GetPath().c_str(),
                              IOS_BASE::out    |
                              IOS_BASE::binary |
@@ -2741,7 +2744,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                       "Cannot create directory '" + dst->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
-        // Attributes for directories must be set only when all
+        // Attributes for a directory must be set only when all
         // its files have been already extracted.
         _ASSERT(size == 0);
         break;
@@ -3153,7 +3156,7 @@ void CTar::x_AppendFile(const string& file)
     if (!ifs) {
         int x_errno = errno;
         TAR_THROW(this, eOpen,
-                  "Cannot open file '" + file + '\''+ s_OSReason(x_errno));
+                  "Cannot open file '" + file + '\'' + s_OSReason(x_errno));
     }
 
     // Write file header
