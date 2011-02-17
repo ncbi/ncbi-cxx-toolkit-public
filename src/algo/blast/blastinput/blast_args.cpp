@@ -120,10 +120,17 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("General search options");
 
     // evalue cutoff
-    arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
+    if (!m_IsIgBlast) {
+        arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
                      "Expectation value (E) threshold for saving hits ",
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(BLAST_EXPECT_VALUE));
+    } else {
+        arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
+                     "Expectation value (E) threshold for saving hits ",
+                     CArgDescriptions::eDouble,
+                     NStr::DoubleToString(1e-15));
+    }
 
     // word size
     // Default values: blastn=11, megablast=28, others=3
@@ -1177,27 +1184,38 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Ig-BLAST options");
     const static string suffix = "VDJ";
-    for (int i=0; i<3; ++i) {
+    const static int df_num_align[3] = {1,3,2};
+    int num_genes = (m_IsProtein) ? 1 : 3;
+
+    for (int gene=0; gene<num_genes; ++gene) {
         // Subject sequence input
         string arg_sub = kArgGLSubject;
-        arg_sub.push_back(suffix[i]);
+        arg_sub.push_back(suffix[gene]);
         arg_desc.AddOptionalKey(arg_sub , "filename",
                             "Germline subject sequence to align",
                             CArgDescriptions::eInputFile);
-        string arg_db = kArgGLDatabase;
-        arg_db.push_back(suffix[i]);
         // Germline database file name
+        string arg_db = kArgGLDatabase;
+        arg_db.push_back(suffix[gene]);
         arg_desc.AddOptionalKey(arg_db, "germline_database_name",
                             "Germline database name",
                             CArgDescriptions::eString);
         arg_desc.SetDependency(arg_db, CArgDescriptions::eExcludes, arg_sub);
+        // Number of alignments to show
+        string arg_na = kArgGLNumAlign;
+        arg_na.push_back(suffix[gene]);
+        arg_desc.AddDefaultKey(arg_na, "int_value",
+                            "Number of Germline sequences to show alignments for",
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(df_num_align[gene]));
+        arg_desc.SetConstraint(arg_na,
+                            new CArgAllowValuesBetween(0, 4));
     }
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
                             "Origin of the species to be annotated",
                             CArgDescriptions::eString, "Human");
     arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "Human", "Mouse"));
-
 
     arg_desc.AddDefaultKey(kArgGLDomainSystem, "domain_system",
                             "Domain system to be used for segment annotation",
@@ -1206,14 +1224,30 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddOptionalKey(kArgGLFuncClass, "func_class",
                             "Restrict search of germline database to certain function class",
-                            CArgDescriptions::eInteger);
+                            CArgDescriptions::eString);
 
     arg_desc.AddFlag(kArgGLFocusV, "Should the alignments focus only on V segment?", true);
 
-    arg_desc.AddFlag(kArgTranslate, "Show translated alignments (applicable to igblastn only)", true);
+    if (! m_IsProtein) {
+        arg_desc.AddFlag(kArgTranslate, "Show translated alignments", true);
+    }
 
     arg_desc.SetCurrentGroup("");
 }
+
+static string s_RegisterOMDataLoader(CRef<CSeqDB> db_handle)
+{    // the blast formatter requires that the database coexist in
+    // the same scope with the query sequences
+    CRef<CObjectManager> om = CObjectManager::GetInstance();                          
+    CBlastDbDataLoader::RegisterInObjectManager(*om, db_handle, true,                 
+                        CObjectManager::eDefault,                                     
+                        CBlastDatabaseArgs::kSubjectsDataLoaderPriority);             
+    CBlastDbDataLoader::SBlastDbParam param(db_handle);                               
+    string retval(CBlastDbDataLoader::GetLoaderNameFromArgs(param));                  
+    _TRACE("Registering " << retval << " at priority " <<                             
+           (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority);                     
+    return retval;                                                                    
+}               
 
 void
 CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
@@ -1231,15 +1265,38 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
 
-    const static string suffix = "VDJ";
-    for (int i=0; i<3; ++i) {
-        string arg_sub = kArgGLSubject;
-        string arg_db = kArgGLDatabase;
-        arg_sub.push_back(suffix[i]);
-        arg_db.push_back(suffix[i]);
+    _ASSERT(m_IsProtein == m_IgOptions->m_IsProtein);
 
-        if (args.Exist(kArgGLSubject) && args[kArgGLSubject]) {
-            CNcbiIstream& subj_input_stream = args[kArgGLSubject].AsInputFile();
+    m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
+
+    // default germline database name for annotation
+    string df_db_name = m_IgOptions->m_Origin + "_gl_V";
+    CRef<CSearchDatabase> db(new CSearchDatabase(df_db_name, mol_type));
+    m_IgOptions->m_Db[3].Reset(new CLocalDbAdapter(*db));
+    m_Scope->AddDataLoader(s_RegisterOMDataLoader(db->GetSeqDb()));
+
+    CRef<CBlastOptionsHandle> opts_hndl;
+    if (m_IgOptions->m_IsProtein) {
+        opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastp));
+    } else {
+        opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastn));
+    }
+
+    const static string suffix = "VDJ";
+    int num_genes = (m_IsProtein) ? 1: 3;
+    for (int gene=0; gene< num_genes; ++gene) {
+        string arg_sub = kArgGLSubject;
+        string arg_db  = kArgGLDatabase;
+        string arg_na  = kArgGLNumAlign;
+
+        arg_sub.push_back(suffix[gene]);
+        arg_db.push_back(suffix[gene]);
+        arg_na.push_back(suffix[gene]);
+
+        m_IgOptions->m_NumAlign[gene] = args[arg_na].AsInteger();
+
+        if (args.Exist(arg_sub) && args[arg_sub]) {
+            CNcbiIstream& subj_input_stream = args[arg_sub].AsInputFile();
             TSeqRange subj_range;
 
             const bool parse_deflines = args.Exist(kArgParseDeflines) 
@@ -1257,30 +1314,23 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                         CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
             CRef<IQueryFactory> sub_seqs(
                                 new blast::CObjMgr_QueryFactory(*subjects));
-            //TODO test if this is ok:
-            CRef<CBlastOptionsHandle> opts_hndl;
-            if (m_IgOptions->m_IsProtein) {
-                opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastp));
-            } else {
-                opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastn));
-            }
-            m_IgOptions->m_Db[i].Reset(new CLocalDbAdapter(
+            m_IgOptions->m_Db[gene].Reset(new CLocalDbAdapter(
                                        sub_seqs, opts_hndl));
         } else { 
-            string db_name = (args.Exist(kArgGLDatabase) 
-                           && args[kArgGLDatabase]) 
-                       ?  args[kArgGLDatabase].AsString() 
-                          // TODO the default gl db name
-                       :  "gl_" + m_IgOptions->m_Origin;
-            CRef<CSearchDatabase> db(new CSearchDatabase(db_name, mol_type));
+            string gl_db_name = m_IgOptions->m_Origin + "_gl_";
+            gl_db_name.push_back(suffix[gene]);
+            string db_name = (args.Exist(arg_db) && args[arg_db]) 
+                       ?  args[arg_db].AsString() :  gl_db_name;
+            db.Reset(new CSearchDatabase(db_name, mol_type));
 
-            // TODO does func_class only limit V?
-            if (i==0 && args.Exist(kArgGLFuncClass) && args[kArgGLFuncClass]) {
+            if (gene==0 && args.Exist(kArgGLFuncClass) && args[kArgGLFuncClass]) {
                 string fn(SeqDB_ResolveDbPath(args[kArgGLFuncClass].AsString()));
                 db->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
                              CSeqDBFileGiList::eSiList)));
             }
-            m_IgOptions->m_Db[i].Reset(new CLocalDbAdapter(*db));
+
+            m_IgOptions->m_Db[gene].Reset(new CLocalDbAdapter(*db));
+            m_Scope->AddDataLoader(s_RegisterOMDataLoader(db->GetSeqDb()));
         }
     }
 }
@@ -1350,9 +1400,13 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 }
 
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
-                                       bool is_rpsblast /* = false */)
-    : m_RequestMoleculeType(request_mol_type), m_IsRpsBlast(is_rpsblast),
-    m_IsProtein(true), m_SupportsDatabaseMasking(false)
+                                       bool is_rpsblast /* = false */,
+                                       bool is_igblast  /* = false */)
+    : m_RequestMoleculeType(request_mol_type), 
+      m_IsRpsBlast(is_rpsblast),
+      m_IsIgBlast(is_igblast),
+      m_IsProtein(true), 
+      m_SupportsDatabaseMasking(false)
 {}
 
 bool
@@ -1547,7 +1601,8 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                                        use_lcase_masks, subjects);
         m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
 
-    } else {
+    } else if (!m_IsIgBlast){
+        // IgBlast will set a default db 
         NCBI_THROW(CInputException, eInvalidInput,
            "Either a BLAST database or subject sequence(s) must be specified");
     }
@@ -1687,7 +1742,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_NumAlignments = args[kArgNumAlignments].AsInteger();
     }
 
-    TSeqPos hitlist_size = 0;
+    TSeqPos hitlist_size =0; // opt.GetHitlistSize();
     if (args[kArgMaxTargetSequences]) {
         hitlist_size = args[kArgMaxTargetSequences].AsInteger();
         if (hitlist_size > 0 && m_OutputFormat == ePairwise) {
@@ -1710,18 +1765,22 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         msg += "be non-zero";
         NCBI_THROW(CInputException, eInvalidInput, msg);
     }
-    else if (hitlist_size != 0) {
-        opt.SetHitlistSize(hitlist_size);
-        // alignments and descriptions are set here so that limiting is done
-        // correctly for tabular output
-        m_NumDescriptions = MIN(m_NumDescriptions, 
+    else {
+        int df_hitlist_size = (TSeqPos)opt.GetHitlistSize();
+        if (hitlist_size != 0 || 
+            df_hitlist_size <= MIN(m_NumDescriptions, m_NumAlignments)) { 
+            if (hitlist_size == 0) hitlist_size = df_hitlist_size;
+            opt.SetHitlistSize(hitlist_size);
+            // alignments and descriptions are set here so that limiting is done
+            // correctly for tabular output
+            m_NumDescriptions = MIN(m_NumDescriptions, 
                                 (TSeqPos)opt.GetHitlistSize());
-        m_NumAlignments = MIN(m_NumAlignments, 
+            m_NumAlignments = MIN(m_NumAlignments, 
                               (TSeqPos)opt.GetHitlistSize());
-    } else {
-        if (m_OutputFormat <= eFlatQueryAnchoredNoIdentities)
+        } else {
+            if (m_OutputFormat <= eFlatQueryAnchoredNoIdentities)
         	opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
-	else {
+	    else 
                 // These formats do not have sections just for descriptions or alignments.
         	opt.SetHitlistSize(MIN(m_NumDescriptions, m_NumAlignments));
         }

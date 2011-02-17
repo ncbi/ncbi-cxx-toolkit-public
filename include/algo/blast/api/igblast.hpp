@@ -53,26 +53,52 @@ class NCBI_XBLAST_EXPORT CIgBlastOptions : public CObject
 {
 public:
     // the germline database search must be carried out locally
-    CRef<CLocalDbAdapter> m_Db[3];   // germline database
-    string m_Origin;                 // the origin of species
-    string m_DomainSystem;           // domain system to do annotation
     bool m_IsProtein;                // search molecular type
+    string m_Origin;                 // the origin of species
+    string m_DomainSystem;           // domain system for annotation
+    CRef<CLocalDbAdapter> m_Db[4];   // user specified germline database
+                                     // 0-2: - user specified V, D, J
+                                     // 3:   - the default V gl db
+    int  m_NumAlign[3];              // number of VDJ alignments to show
     bool m_FocusV;                   // should alignment restrict to V
     bool m_Translate;                // should translation be displayed
 };
 
-class NCBI_XBLAST_EXPORT CIgBlastResults : public CSearchResults 
+class NCBI_XBLAST_EXPORT CIgAnnotation : public CObject
 {
 public:
     bool m_MinusStrand;              // hit is on minus strand of the query
     // TODO: this may move to igblastn_app.cpp...
-    map<string, string> m_ChainType; // chain type of the subjects
-    vector<string> m_TopVMatches;    // Top 3 V matches
+    vector<string> m_ChainType;      // chain type of the subjects
     int m_GeneInfo[6];               // The start and end offset for VDJ
     int m_FrameInfo[2];              // Frame number for V end and J start
     int m_DomainInfo[12];            // The start and end offset for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3 domains
 
+    /// Constructor
+    CIgAnnotation() 
+        : m_MinusStrand (false) 
+    {
+        for (int i=0; i<6; i++) m_GeneInfo[i] = -1;
+        for (int i=0; i<2; i++) m_FrameInfo[i] = -1;
+        for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
+    }
+
+};
+    
+
+class NCBI_XBLAST_EXPORT CIgBlastResults : public CSearchResults 
+{
+public:
+
+    const CRef<CIgAnnotation> & GetIgAnnotation() const {
+        return m_Annotation;
+    }
+  
+    CRef<CIgAnnotation> & SetIgAnnotation() {
+        return m_Annotation;
+    }
+    
     /// Constructor
     /// @param query List of query identifiers [in]
     /// @param align alignments for a single query sequence [in]
@@ -80,14 +106,14 @@ public:
     /// @param ancillary_data Miscellaneous output from the blast engine [in]
     /// @param query_masks Mask locations for this query [in]
     /// @param rid RID (if applicable, else empty string) [in]
-    CIgBlastResults(CConstRef<objects::CSeq_id>     query,
-                    CRef<objects::CSeq_align_set>   align,
-                    const TQueryMessages           &errs,
-                    CRef<CBlastAncillaryData>       ancillary_data,
-                    const TMaskedQueryRegions      *query_masks = NULL,
-                    const string                   &rid = kEmptyStr)
-           : CSearchResults(query, align, errs, ancillary_data, query_masks, rid) {}
+    CIgBlastResults(CConstRef<objects::CSeq_id>   query,
+                    CRef<objects::CSeq_align_set> align,
+                    const TQueryMessages         &errs,
+                    CRef<CBlastAncillaryData>     ancillary_data)
+           : CSearchResults(query, align, errs, ancillary_data) { }
 
+private:
+    CRef<CIgAnnotation> m_Annotation;
 };
 
 class NCBI_XBLAST_EXPORT CIgBlast : public CObject
@@ -98,9 +124,9 @@ public:
     /// @param blastdb        Adapter to the BLAST database to search [in]
     /// @param options        Blast search options [in]
     /// @param ig_options     Additional Ig-BLAST specific options [in]
-    CIgBlast(CRef<IQueryFactory> query_factory,
+    CIgBlast(CRef<CBlastQueryVector> query_factory,
              CRef<CLocalDbAdapter> blastdb,
-             CConstRef<CBlastOptionsHandle> options,
+             CRef<CBlastOptionsHandle> options,
              CConstRef<CIgBlastOptions> ig_options)
        : m_IsLocal(true),
          m_Query(query_factory),
@@ -114,10 +140,10 @@ public:
     /// @param subjects       Subject sequences to search [in]
     /// @param options        Blast search options [in]
     /// @param ig_options     Additional Ig-BLAST specific options [in]
-    CIgBlast(CRef<IQueryFactory> query_factory,
+    CIgBlast(CRef<CBlastQueryVector> query_factory,
              CRef<CSearchDatabase> blastdb,
              CRef<IQueryFactory>   subjects,
-             CConstRef<CBlastOptionsHandle> options,
+             CRef<CBlastOptionsHandle> options,
              CConstRef<CIgBlastOptions> ig_options)
        : m_IsLocal(false),
          m_Query(query_factory),
@@ -135,11 +161,11 @@ public:
 private:
 
     bool m_IsLocal;
-    CRef<IQueryFactory> m_Query;
+    CRef<CBlastQueryVector> m_Query;
     CRef<IQueryFactory> m_Subject;
     CRef<CLocalDbAdapter> m_LocalDb;
     CRef<CSearchDatabase> m_RemoteDb;
-    CConstRef<CBlastOptionsHandle> m_Options;
+    CRef<CBlastOptionsHandle> m_Options;
     CConstRef<CIgBlastOptions> m_IgOptions;
 
     /// Prohibit copy constructor
@@ -147,6 +173,35 @@ private:
 
     /// Prohibit assignment operator
     CIgBlast& operator=(const CIgBlast& rhs);
+
+    /// Prepare blast option handle and query for germline database search
+    void x_SetupGLSearch(int                            gene,
+                         vector<CRef <CIgAnnotation> > &annot,
+                         CRef<IQueryFactory>           &qf,
+                         CRef<CBlastOptionsHandle>     &opts_hndl);
+
+    /// Prepare blast option handle and query for specified database search
+    void x_SetupDbSearch(vector<CRef <CIgAnnotation> > &annot,
+                         CRef<IQueryFactory>           &qf);
+
+    /// Anntate the genes based on blast results
+    static void s_AnnotateGene(int                           gene,
+                               CRef<CSearchResultSet>        &results, 
+                               vector<CRef <CIgAnnotation> > &annot);
+
+    /// Anntate the domains based on blast results
+    static void s_AnnotateDomain(CRef<CSearchResultSet>        &results, 
+                                 vector<CRef <CIgAnnotation> > &annot);
+
+    /// Append blast results to the final results
+    static void s_AppendResults(CRef<CSearchResultSet> &results,
+                                CRef<CSearchResultSet> &final_results);
+
+    
+    /// Append annotation info to the final results
+    static void s_SetAnnotation(vector<CRef <CIgAnnotation> > &annot,
+                                CRef<CSearchResultSet> &final_results);
+
 };
 
 END_SCOPE(blast)

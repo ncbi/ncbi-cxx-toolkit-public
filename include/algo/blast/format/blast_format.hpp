@@ -41,6 +41,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_results.hpp>
+#include <algo/blast/api/igblast.hpp>
 #include <algo/blast/api/psiblast_iteration.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <objtools/align_format/tabular.hpp>
@@ -114,7 +115,8 @@ public:
                  int dbfilt_algorithm = -1,
                  const string& custom_output_format = kEmptyStr,
                  bool is_megablast = false,
-                 bool is_indexed = false);
+                 bool is_indexed = false,
+                 const blast::CIgBlastOptions * ig_opts = NULL);
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]
@@ -170,6 +172,14 @@ public:
                            numeric_limits<unsigned int>::max(),
                            blast::CPsiBlastIterationState::TSeqIds prev_seqids =
                            blast::CPsiBlastIterationState::TSeqIds());
+
+    /// Print all Ig alignment information for a single query sequence along with
+    /// any errors or warnings (errors are deemed fatal)
+    /// @param results Object containing alignments, mask regions, and
+    ///                ancillary data to be output [in]
+    /// @param queries Query sequences (cached for XML formatting) [in]
+    void PrintOneResultSet(blast::CIgBlastResults& results,
+                           CConstRef<blast::CBlastQueryVector> queries);
 
     /// Print all alignment information for aa PHI-BLAST run.
     /// any errors or warnings (errors are deemed fatal)
@@ -262,6 +272,9 @@ private:
     /// Flag indicating a non-Blast DB source of subject sequences.
     bool m_IsNonBlastDB;
 
+    /// Used by Igblast formatting.
+    CConstRef<blast::CIgBlastOptions> m_IgOptions;
+
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
     void x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary);
@@ -305,6 +318,14 @@ private:
    /// @param itr_num Iteration number for PSI-BLAST [in]
    void x_PrintTabularReport(const blast::CSearchResults& results,
                              unsigned int itr_num);
+
+   /// Prints IgTabular report for one query
+   /// @param results Results for one query or Phi-blast iteration [in]
+   void x_PrintIgTabularReport(const blast::CIgBlastResults& results);
+
+   /// Replace the query with its reversed-compliement
+   /// @param results Ig Blast results [in, out]
+   void x_ReverseQuery(blast::CIgBlastResults& results);
 
    /// Creates a bioseq to be able to print the acknowledgement for the
    /// subject bioseq when formatting bl2seq results

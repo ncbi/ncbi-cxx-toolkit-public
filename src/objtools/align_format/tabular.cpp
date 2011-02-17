@@ -941,6 +941,18 @@ int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
     return CBlastTabularInfo::SetFields(align, scope, matrix);
 };
 
+void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot,
+                                          bool is_protein)
+{
+    SetSeqType(!is_protein);
+    SetMinusStrand(annot->m_MinusStrand);
+    // TODO top VDJ match sid?
+    SetVGene("TopV", annot->m_GeneInfo[0], annot->m_GeneInfo[1]);
+    SetDGene("TopD", annot->m_GeneInfo[2], annot->m_GeneInfo[3]);
+    SetJGene("TopJ", annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
+    // SetFrame("N/A");  
+};
+
 void CIgBlastTabularInfo::Print(void)
 {
     m_Ostream << m_ChainType << m_FieldDelimiter;

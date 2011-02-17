@@ -169,6 +169,7 @@ const string kArgPHIPatternFile("phi_pattern");
 
 const string kArgGLSubject("germline_sequence_");
 const string kArgGLDatabase("germline_db_");
+const string kArgGLNumAlign("num_alignments_");
 const string kArgGLOrigin("origin");
 const string kArgGLFuncClass("func_class");
 const string kArgGLDomainSystem("domain_system");

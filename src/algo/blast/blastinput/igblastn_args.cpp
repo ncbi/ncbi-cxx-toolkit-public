@@ -65,11 +65,11 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
     m_Args.push_back(arg); */
 
-    m_IgBlastArgs.Reset(new CIgBlastArgs);
+    m_IgBlastArgs.Reset(new CIgBlastArgs(false));
     arg.Reset(m_IgBlastArgs);
     m_Args.push_back(arg);    
 
-    m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
+    m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, false, true));
     m_BlastDbArgs->SetDatabaseMaskingSupport(true);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
@@ -78,7 +78,7 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, true));
+    arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, true, false, true));
     m_Args.push_back(arg);
 
     arg.Reset(new CNuclArgs);
@@ -137,14 +137,18 @@ CIgBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
     SetTask("blastn");
     retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
     _ASSERT(retval.NotEmpty());
-    retval->SetEvalueThreshold(1e-15);
+
+    retval->SetHitlistSize(10);
     retval->SetFilterString("F");
-    // Default options for igblastn
-    CBlastOptions & opts = retval->SetOptions();
+    //retval->SetEvalueThreshold(1e-15);  <- this will be overwritten anyway
+    CBlastOptions &opts = retval->SetOptions();
     opts.SetMatchReward(1);
-    opts.SetWordSize(7);
+    opts.SetMismatchPenalty(-1);
+    opts.SetWordSize(11);
+    opts.SetGapOpeningCost(4);
+    opts.SetGapExtensionCost(1);
+
     return retval;
-    // Default options for igblastp:   NoCompositionBased...
 }
 
 int

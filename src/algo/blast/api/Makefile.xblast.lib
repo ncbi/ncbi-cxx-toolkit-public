@@ -37,6 +37,7 @@ repeats_filter_cxx \
 blast_mtlock \
 psibl2seq \
 local_db_adapter \
+igblast \
 psiblast \
 psiblast_impl \
 psiblast_iteration \

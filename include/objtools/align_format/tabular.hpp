@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/align_format/align_format_util.hpp>
+#include <algo/blast/api/igblast.hpp>
 
 #include <algorithm>
 
@@ -451,8 +452,9 @@ public:
     /// @param ostr Stream to write output to [in]
     /// @param format Output format - what fields to include in the output [in]
     CIgBlastTabularInfo(CNcbiOstream& ostr,
-                        const string& format = kDfltArgTabularOutputFmt)
-        : CBlastTabularInfo(ostr, format) { };
+                        const string& format = kDfltArgTabularOutputFmt,
+                        EFieldDelimiter delim = eTab)
+        : CBlastTabularInfo(ostr, format, delim) { };
 
     /// Destructor
     ~CIgBlastTabularInfo() {
@@ -517,6 +519,10 @@ public:
     void SetJGene(const string &id, int s, int e) {
         m_JGene.Set(id, s,e);
     }
+
+    /// One method to set all annotation information
+    void SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot,
+                         bool is_protein = true);
 
 protected:
     void x_ResetIgFields();

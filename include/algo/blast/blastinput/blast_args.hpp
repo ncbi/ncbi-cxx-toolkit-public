@@ -254,12 +254,15 @@ public:
      * @param query_is_protein is the query sequence(s) protein? [in]
      * @param is_rpsblast is it RPS-BLAST? [in]
      * @param show_perc_identity should the percent identity be shown?
+     * @param is_igblast is it IG-BLAST? [in]
      * Currently only supported for blastn [in]
      */
     CGenericSearchArgs(bool query_is_protein = true, bool is_rpsblast = false,
-                       bool show_perc_identity = false, bool is_tblastx = false)
+                       bool show_perc_identity = false, bool is_tblastx = false,
+                       bool is_igblast = false)
         : m_QueryIsProtein(query_is_protein), m_IsRpsBlast(is_rpsblast),
-          m_ShowPercentIdentity(show_perc_identity), m_IsTblastx(is_tblastx) {}
+          m_ShowPercentIdentity(show_perc_identity), m_IsTblastx(is_tblastx),
+          m_IsIgBlast(is_igblast) {}
          
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -272,6 +275,7 @@ private:
     bool m_ShowPercentIdentity; /**< true if the percent identity option should
                                  be shown */
     bool m_IsTblastx; /**< true if the search is tblastx */
+    bool m_IsIgBlast; /**< true if the search is igblast */
 };
 
 /** Argument class for collecting filtering options */
@@ -627,7 +631,10 @@ public:
     /// include a mandatory option to disambiguate whether a protein or a
     /// nucleotide database is searched
     /// @param is_rpsblast is it RPS-BLAST?
-    CBlastDatabaseArgs(bool request_mol_type = false, bool is_rpsblast = false);
+    /// @param is_igblast is it IG-BLAST?
+    CBlastDatabaseArgs(bool request_mol_type = false, 
+                       bool is_rpsblast = false,
+                       bool is_igblast = false);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -689,6 +696,7 @@ protected:
                                       command line, true in case of PSI-BLAST
                                       */
     bool m_IsRpsBlast;              /**< true if the search is RPS-BLAST */
+    bool m_IsIgBlast;               /**< true if the search is Ig-BLAST */
 
     bool m_IsProtein;               /**< Is the database/subject(s) protein? */
     CRef<IQueryFactory> m_Subjects; /**< The subject sequences */
@@ -701,7 +709,7 @@ protected:
 class NCBI_BLASTINPUT_EXPORT CIgBlastArgs : public IBlastCmdLineArgs
 {
 public:
-    CIgBlastArgs() { };
+    CIgBlastArgs(bool is_protein) : m_IsProtein(is_protein) {};
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -711,8 +719,9 @@ public:
 
     CRef<CIgBlastOptions> GetIgBlastOptions() { return m_IgOptions; }
 
-    void AddIgSequenceScope(objects::CScope* scope = NULL) {
-        if (scope && m_Scope.NotEmpty()) {
+    void AddIgSequenceScope(CRef<objects::CScope> scope) {
+
+        if (m_Scope.NotEmpty()) {
             // Add the scope with a lower priority to avoid conflicts
             scope->AddScope(*m_Scope, 
                   CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
@@ -720,6 +729,8 @@ public:
     }
 
 private:
+    /// Is this a protein search?
+    bool m_IsProtein;
     /// Igblast options to fill
     CRef<CIgBlastOptions> m_IgOptions;
     /// scope to get sequences
