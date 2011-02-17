@@ -602,7 +602,7 @@ CRWLock::~CRWLock(void)
 }
 
 
-bool CRWLock::x_MayAcquireForReading(CThreadSystemID self_id)
+inline bool CRWLock::x_MayAcquireForReading(CThreadSystemID self_id)
 {
     _ASSERT(self_id == CThreadSystemID::GetCurrent());
     if (m_Count < 0) { // locked for writing, possibly by self
@@ -611,12 +611,13 @@ bool CRWLock::x_MayAcquireForReading(CThreadSystemID self_id)
     } else if ( !(m_Flags & fFavorWriters) ) {
         return true; // no other concerns
     } else if (find(m_Readers.begin(), m_Readers.end(), self_id)
-               != m_Readers.end()) {
+        != m_Readers.end()) {
         return true; // allow recursive read locks
     } else {
         return !m_WaitingWriters;
     }
 }
+
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
 
@@ -645,14 +646,115 @@ CWin32MutexHandleGuard::~CWin32MutexHandleGuard(void)
     ReleaseMutex(m_Handle);
 }
 
-
 #endif
+
+
+// Helper functions for changing readers/writers counter without
+// locking the mutex. Most of the functions check a condition
+// and return false if it's not met before the new value is set.
+
+inline void interlocked_set(volatile long* val, long new_val)
+{
+#if defined(NCBI_WIN32_THREADS)
+    for (long old_val = *val; ; old_val = *val) {
+        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
+        if (cur_val == old_val) {
+            break;
+        }
+    }
+#else
+    *val = new_val;
+#endif
+}
+
+
+inline bool interlocked_inc_min(volatile long* val, long min)
+{
+#if defined(NCBI_WIN32_THREADS)
+    for (long old_val = *val; old_val > min; old_val = *val) {
+        long new_val = old_val + 1;
+        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
+        if (cur_val == old_val) {
+            return true;
+        }
+    }
+    return false;
+#else
+    (*val)++;
+    return true;
+#endif
+}
+
+
+inline bool interlocked_inc_max(volatile long* val, long max)
+{
+#if defined(NCBI_WIN32_THREADS)
+    for (long old_val = *val; old_val < max; old_val = *val) {
+        long new_val = old_val + 1;
+        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
+        if (cur_val == old_val) {
+            return true;
+        }
+    }
+    return false;
+#else
+    (*val)++;
+    return true;
+#endif
+}
+
+
+inline bool interlocked_dec_max(volatile long* val, long max)
+{
+#if defined(NCBI_WIN32_THREADS)
+    for (long old_val = *val; old_val < max; old_val = *val) {
+        long new_val = old_val - 1;
+        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
+        if (cur_val == old_val) {
+            return true;
+        }
+    }
+    return false;
+#else
+    (*val)--;
+    return true;
+#endif
+}
+
+
+inline bool interlocked_dec_min(volatile long* val, long min)
+{
+#if defined(NCBI_WIN32_THREADS)
+    for (long old_val = *val; old_val > min; old_val = *val) {
+        long new_val = old_val - 1;
+        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
+        if (cur_val == old_val) {
+            return true;
+        }
+    }
+    return false;
+#else
+    (*val)--;
+    return true;
+#endif
+}
+
 
 void CRWLock::ReadLock(void)
 {
 #if defined(NCBI_NO_THREADS)
     return;
 #else
+
+#if defined(NCBI_WIN32_THREADS)
+    if ((m_Flags & fTrackReaders) == 0) {
+        // Try short way if there are other readers.
+        if (interlocked_inc_min(&m_Count, 0)) return;
+    }
+#endif
+
+    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+
     // Lock mutex now, unlock before exit.
     // (in fact, it will be unlocked by the waiting function for a while)
 #if defined(NCBI_USE_CRITICAL_SECTION)
@@ -660,11 +762,9 @@ void CRWLock::ReadLock(void)
 #else
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
     if ( !x_MayAcquireForReading(self_id) ) {
         if (m_Count < 0  &&  m_Owner.Is(self_id)) {
-            // if W-locked by the same thread - update W-counter
-            m_Count--;
+            _VERIFY(interlocked_dec_max(&m_Count, 0));
         }
         else {
             // (due to be) W-locked by another thread
@@ -704,7 +804,7 @@ void CRWLock::ReadLock(void)
 #endif
             xncbi_Validate(m_Count >= 0,
                            "CRWLock::ReadLock() - invalid readers counter");
-            m_Count++;
+            _VERIFY(interlocked_inc_min(&m_Count, -1));
         }
     }
     else {
@@ -718,7 +818,7 @@ void CRWLock::ReadLock(void)
                            "can not lock W-semaphore");
         }
 #endif
-        m_Count++;
+        _VERIFY(interlocked_inc_min(&m_Count, -1));
     }
 
     // Remember new reader
@@ -735,12 +835,19 @@ bool CRWLock::TryReadLock(void)
     return true;
 #else
 
+#if defined(NCBI_WIN32_THREADS)
+    if ((m_Flags & fTrackReaders) == 0) {
+        if (interlocked_inc_min(&m_Count, 0)) return true;
+    }
+#endif
+
+    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
 #else
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if ( !x_MayAcquireForReading(self_id) ) {
         if (m_Count >= 0  ||  m_Owner.IsNot(self_id)) {
@@ -749,7 +856,7 @@ bool CRWLock::TryReadLock(void)
         }
         else {
             // W-locked, try to set R after W if in the same thread
-            m_Count--;
+            _VERIFY(interlocked_dec_max(&m_Count, 0));
             return true;
         }
     }
@@ -764,7 +871,7 @@ bool CRWLock::TryReadLock(void)
                        "can not lock W-semaphore");
     }
 #endif
-    m_Count++;
+    _VERIFY(interlocked_inc_min(&m_Count, -1));
     if (m_Flags & fTrackReaders) {
         m_Readers.push_back(self_id);
     }
@@ -779,20 +886,20 @@ void CRWLock::WriteLock(void)
     return;
 #else
 
+    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
 #else
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if ( m_Count < 0 && m_Owner.Is(self_id) ) {
         // W-locked by the same thread
-        m_Count--;
+        _VERIFY(interlocked_dec_max(&m_Count, 0));
     }
     else {
         // Unlocked or RW-locked by another thread
-
         // Look in readers - must not be there
         xncbi_Validate(find(m_Readers.begin(), m_Readers.end(), self_id)
                        == m_Readers.end(),
@@ -856,7 +963,7 @@ void CRWLock::WriteLock(void)
 #endif
         xncbi_Validate(m_Count >= 0,
                        "CRWLock::WriteLock() - invalid readers counter");
-        m_Count = -1;
+        interlocked_set(&m_Count, -1);
         m_Owner.Set(self_id);
     }
 
@@ -872,12 +979,13 @@ bool CRWLock::TryWriteLock(void)
     return true;
 #else
 
+    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
 #else
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if ( m_Count < 0 ) {
         // W-locked
@@ -886,7 +994,7 @@ bool CRWLock::TryWriteLock(void)
             return false;
         }
         // W-locked by same thread
-        m_Count--;
+        _VERIFY(interlocked_dec_max(&m_Count, 0));
     }
     else if ( m_Count > 0 ) {
         // R-locked
@@ -905,7 +1013,7 @@ bool CRWLock::TryWriteLock(void)
                        "CRWLock::TryWriteLock() - "
                        "error locking R&W-semaphores");
 #endif
-        m_Count = -1;
+        interlocked_set(&m_Count, -1);
         m_Owner.Set(self_id);
     }
 
@@ -923,19 +1031,27 @@ void CRWLock::Unlock(void)
     return;
 #else
 
+#if defined(NCBI_WIN32_THREADS)
+    if ((m_Flags & fTrackReaders) == 0) {
+        if (interlocked_dec_min(&m_Count, 1)) return;
+    }
+#endif
+
+    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
 #else
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if (m_Count < 0) {
         // Check it is R-locked or W-locked by the same thread
         xncbi_Validate(m_Owner.Is(self_id),
                        "CRWLock::Unlock() - "
                        "RWLock is locked by another thread");
-        if ( ++m_Count == 0 ) {
+        _VERIFY(interlocked_inc_max(&m_Count, 0));
+        if ( m_Count == 0 ) {
             // Unlock the last W-lock
 #if defined(NCBI_WIN32_THREADS)
             xncbi_Validate(m_RW->m_Rsema.Release() == 0,
@@ -960,7 +1076,8 @@ void CRWLock::Unlock(void)
     else {
         xncbi_Validate(m_Count != 0,
                        "CRWLock::Unlock() - RWLock is not locked");
-        if ( --m_Count == 0 ) {
+        _VERIFY(interlocked_dec_min(&m_Count, -1));
+        if ( m_Count == 0 ) {
             // Unlock the last R-lock
 #if defined(NCBI_WIN32_THREADS)
             xncbi_Validate(m_RW->m_Wsema.Release() == 0,

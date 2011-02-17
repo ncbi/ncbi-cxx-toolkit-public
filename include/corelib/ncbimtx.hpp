@@ -984,7 +984,7 @@ private:
 
     volatile CThreadSystemID   m_Owner; ///< Writer ID, one of the readers ID
 
-    volatile int               m_Count; ///< Number of readers (if >0) or
+    volatile long              m_Count; ///< Number of readers (if >0) or
                                         ///< writers (if <0)
 
     volatile unsigned int      m_WaitingWriters; ///< Number of writers waiting;
