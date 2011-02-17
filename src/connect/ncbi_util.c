@@ -294,6 +294,7 @@ extern const char* NcbiMessagePlusError
     char*  buf;
     size_t mlen;
     size_t dlen;
+    int need_release = 0;
 
     /* Check for an empty addition */
     if (!error  &&  (!descr  ||  !*descr)) {
@@ -304,9 +305,17 @@ extern const char* NcbiMessagePlusError
     }
 
     /* Adjust description, if necessary and possible */
-    if (error  &&  !descr) {
-        if (error < 0  ||  !(descr = strerror(error)))
-            descr = "";
+    
+    if (error >=0  &&  !descr) {
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+        descr = TcharToUtf8( _wcserror(error) );
+        need_release = 1;
+#else
+        descr = strerror(error);
+#endif
+    }
+    if (!descr) {
+        descr = "";
     }
     dlen = strlen(descr);
     while (dlen  &&  isspace((unsigned char) descr[dlen - 1]))
@@ -322,6 +331,9 @@ extern const char* NcbiMessagePlusError
         if (*dynamic  &&  message)
             free((void*) message);
         *dynamic = 0;
+        if (need_release) {
+            ReleaseBuffer(descr);
+        }
         return "Ouch! Out of memory";
     }
 
@@ -337,6 +349,9 @@ extern const char* NcbiMessagePlusError
         mlen += sprintf(buf + mlen, "%d%s", error, "," + !*descr);
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
+    if (need_release) {
+        ReleaseBuffer(descr);
+    }
 
     *dynamic = 1/*true*/;
     return buf;
@@ -627,8 +642,8 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
     char pwdbuf[1024];
 #  endif
 #elif defined(NCBI_OS_MSWIN)
-    char  loginbuf[256 + 1];
-    DWORD loginbufsize = sizeof(loginbuf) - 1;
+    TCHAR  loginbuf[256 + 1];
+    DWORD loginbufsize = sizeof(loginbuf)/sizeof(TCHAR) - 1;
 #endif
     const char* login;
 
@@ -637,10 +652,12 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 #ifndef NCBI_OS_UNIX
 
 #  ifdef NCBI_OS_MSWIN
-    if (GetUserNameA(loginbuf, &loginbufsize)) {
-        assert(loginbufsize < sizeof(loginbuf));
-        loginbuf[loginbufsize] = '\0';
-        strncpy0(buf, loginbuf, bufsize - 1);
+    if (GetUserName(loginbuf, &loginbufsize)) {
+        assert(loginbufsize < sizeof(loginbuf)/sizeof(TCHAR));
+        loginbuf[loginbufsize] = (TCHAR)0;
+        login = TcharToUtf8(loginbuf);
+        strncpy0(buf, login, bufsize - 1);
+        ReleaseBuffer(login);
         return buf;
     }
     if ((login = getenv("USERNAME")) != 0) {
@@ -1015,3 +1032,57 @@ extern char* UTIL_NcbiLocalHostName(char* hostname)
     }
     return 0;
 }
+
+#if defined(NCBI_OS_MSWIN)
+#if defined(_UNICODE)
+const char*    TcharToUtf8OnHeap(const TCHAR* buffer)
+{
+    const char* p = TcharToUtf8(buffer);
+    ReleaseBufferOnHeap(buffer);
+    return p;
+}
+
+const char*    TcharToUtf8(const TCHAR* buffer)
+{
+    char* p = NULL;
+    int n;
+    if (buffer) {
+        n = WideCharToMultiByte(
+            CP_UTF8, 0, buffer, -1, NULL, 0, NULL, NULL);
+        if (n>=0) {
+            p = (char*)LocalAlloc(LPTR, (n+1) * sizeof(char));
+            if (p) {
+                WideCharToMultiByte(
+                    CP_UTF8, 0, buffer, -1, p, n, NULL, NULL);
+            }
+        }
+    }
+    return p;
+}
+
+const TCHAR*   Utf8ToTchar(const char* buffer)
+{
+    TCHAR* p = NULL;
+    int n;
+    if (buffer) {
+        n = MultiByteToWideChar(
+            CP_UTF8, 0, buffer, -1, NULL, 0);
+        if (n>=0) {
+            p = (wchar_t*)LocalAlloc(LPTR, (n+1) * sizeof(wchar_t));
+            if (p) {
+                MultiByteToWideChar(
+                    CP_UTF8, 0, buffer, -1, p, n);
+            }
+        }
+    }
+    return p;
+}
+#endif //_UNICODE
+void  ReleaseBufferOnHeap(const void* buffer)
+{
+    if (buffer) {
+        LocalFree((HLOCAL)buffer);
+    }
+}
+#endif //NCBI_OS_MSWIN
+

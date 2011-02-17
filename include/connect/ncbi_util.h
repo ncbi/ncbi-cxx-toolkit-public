@@ -549,6 +549,33 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  int         full
  );
 
+/**
+ *  Conversion from Unicode to UTF8, and back.
+ *  Microsoft Windows - specific.
+ *  NOTE:
+ *    The caller should use ReleaseBufferOnHeap function
+ *    to free the buffer returned from TcharToUtf8OnHeap;
+ *    and ReleaseBuffer to free the one returned from TcharToUtf8
+ */
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+const char*      TcharToUtf8OnHeap(const wchar_t* buffer);
+const char*      TcharToUtf8(      const wchar_t* buffer);
+const wchar_t*   Utf8ToTchar(      const    char* buffer);
+#  define        ReleaseBuffer(x)  ReleaseBufferOnHeap(x)
+#else
+#  define        TcharToUtf8OnHeap(x) (x)
+#  define        TcharToUtf8(x)       (x)
+#  define        Utf8ToTchar(x)       (x)
+#  define        ReleaseBuffer(x)
+#endif
+
+#if defined(NCBI_OS_MSWIN)
+void             ReleaseBufferOnHeap( const void* buffer);
+#else
+#  define        ReleaseBufferOnHeap(x)
+#endif
+
+
 
 #ifdef __cplusplus
 }  /* extern "C" */
