@@ -591,10 +591,12 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
             const char* strerr = NULL;
             what = (event == eIO_Read
                     ? (sock->type != eDatagram  &&  !size
-                       ? (data ? (strerr = s_StrError(sock, *((int*) data))) : "EOF hit")
+                       ? (data
+                          ? (strerr = s_StrError(sock, *((int*) data)))
+                          : "EOF hit")
                        : "Read")
                     : (sock->type != eDatagram  &&  !size
-                       ? strerr
+                       ? (strerr = s_StrError(sock, *((int*) data)))
                        : "Written"));
 
             n = (int) strlen(what);
@@ -605,7 +607,8 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
             if (sock->type == eDatagram) {
                 sin = (const struct sockaddr_in*) ptr;
                 assert(sin  &&  sin->sin_family == AF_INET);
-                SOCK_HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
+                SOCK_HostPortToString(sin->sin_addr.s_addr,
+                                      ntohs(sin->sin_port),
                                       head, sizeof(head));
                 sprintf(tail, ", msg# %" NCBI_BIGCOUNT_FORMAT_SPEC,
                         event == eIO_Read ? sock->n_in : sock->n_out);
@@ -627,6 +630,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                                ? " while reading" : " while writing")
                             : "",
                             head, tail));
+
             UTIL_ReleaseBuffer(strerr);
         }
         break;
