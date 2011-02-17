@@ -308,7 +308,7 @@ extern const char* NcbiMessagePlusError
     
     if (error >=0  &&  !descr) {
 #if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-        descr = TcharToUtf8( _wcserror(error) );
+        descr = UTIL_TcharToUtf8( _wcserror(error) );
         need_release = 1;
 #else
         descr = strerror(error);
@@ -332,7 +332,7 @@ extern const char* NcbiMessagePlusError
             free((void*) message);
         *dynamic = 0;
         if (need_release) {
-            ReleaseBuffer(descr);
+            UTIL_ReleaseBuffer(descr);
         }
         return "Ouch! Out of memory";
     }
@@ -350,7 +350,7 @@ extern const char* NcbiMessagePlusError
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
     if (need_release) {
-        ReleaseBuffer(descr);
+        UTIL_ReleaseBuffer(descr);
     }
 
     *dynamic = 1/*true*/;
@@ -655,9 +655,9 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
     if (GetUserName(loginbuf, &loginbufsize)) {
         assert(loginbufsize < sizeof(loginbuf)/sizeof(TCHAR));
         loginbuf[loginbufsize] = (TCHAR)0;
-        login = TcharToUtf8(loginbuf);
+        login = UTIL_TcharToUtf8(loginbuf);
         strncpy0(buf, login, bufsize - 1);
-        ReleaseBuffer(login);
+        UTIL_ReleaseBuffer(login);
         return buf;
     }
     if ((login = getenv("USERNAME")) != 0) {
@@ -1035,14 +1035,14 @@ extern char* UTIL_NcbiLocalHostName(char* hostname)
 
 #if defined(NCBI_OS_MSWIN)
 #if defined(_UNICODE)
-const char*    TcharToUtf8OnHeap(const TCHAR* buffer)
+const char*    UTIL_TcharToUtf8OnHeap(const TCHAR* buffer)
 {
-    const char* p = TcharToUtf8(buffer);
-    ReleaseBufferOnHeap(buffer);
+    const char* p = UTIL_TcharToUtf8(buffer);
+    UTIL_ReleaseBufferOnHeap(buffer);
     return p;
 }
 
-const char*    TcharToUtf8(const TCHAR* buffer)
+const char*    UTIL_TcharToUtf8(const TCHAR* buffer)
 {
     char* p = NULL;
     int n;
@@ -1060,7 +1060,7 @@ const char*    TcharToUtf8(const TCHAR* buffer)
     return p;
 }
 
-const TCHAR*   Utf8ToTchar(const char* buffer)
+const TCHAR*   UTIL_Utf8ToTchar(const char* buffer)
 {
     TCHAR* p = NULL;
     int n;
@@ -1078,7 +1078,7 @@ const TCHAR*   Utf8ToTchar(const char* buffer)
     return p;
 }
 #endif //_UNICODE
-void  ReleaseBufferOnHeap(const void* buffer)
+void  UTIL_ReleaseBufferOnHeap(const void* buffer)
 {
     if (buffer) {
         LocalFree((HLOCAL)buffer);

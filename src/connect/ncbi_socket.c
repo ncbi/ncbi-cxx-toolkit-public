@@ -387,7 +387,7 @@ static const char* s_StrError(SOCK sock, int error)
             return errmap[i].errtxt;
     }
 #if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-    return TcharToUtf8(error > 0 ? _wcserror(error) : L"");
+    return UTIL_TcharToUtf8(error > 0 ? _wcserror(error) : L"");
 #else
     return error > 0 ? strerror(error) : "";
 #endif
@@ -409,7 +409,7 @@ static const char* s_WinStrerror(DWORD error)
 		LocalFree(str);
 		str = NULL;
 	}
-	return TcharToUtf8OnHeap(str);
+	return UTIL_TcharToUtf8OnHeap(str);
 }
 #endif /*NCBI_OS_MSWIN*/
 
@@ -596,7 +596,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                     : (sock->type != eDatagram  &&  !size
                        ? errstr
                        : "Written"));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
         n = (int) strlen(what);
         while (n  &&  isspace((unsigned char) what[n - 1]))
@@ -862,7 +862,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
                                x_error, errstr,
                                "[SOCK::InitializeAPI] "
                                " Failed WSAStartup()");
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             return eIO_NotSupported;
         }
     }}
@@ -968,7 +968,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
                                x_error, errstr,
                                "[SOCK::ShutdownAPI] "
                                " Failed WSACleanup()");
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             return eIO_NotSupported;
         }
     }}
@@ -1050,7 +1050,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
                                x_error, errstr,
                                "[SOCK_gethostname] "
                                " Failed gethostname()");
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
         error = 1/*true*/;
     } else if (name[namelen - 1]) {
@@ -1111,7 +1111,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
                                     ("[SOCK_gethostbyname] "
                                      " Failed getaddrinfo(\"%.64s\")",
                                      hostname));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
             }
             host = 0;
         }
@@ -1168,7 +1168,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
                                 ("[SOCK_gethostbyname] "
                                  " Failed gethostbyname%s(\"%.64s\")",
                                  suffix, hostname));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 
 #endif /*HAVE_GETADDR_INFO*/
@@ -1253,7 +1253,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                                     ("[SOCK_gethostbyaddr] "
                                      " Failed getnameinfo(%s)",
                                      addr));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
             }
         }
         return name;
@@ -1318,7 +1318,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                                 ("[SOCK_gethostbyaddr] "
                                  " Failed gethostbyaddr%s(%s)",
                                  suffix, addr));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 
         return name;
@@ -1708,7 +1708,7 @@ static EIO_Status s_Select_(size_t                n,
                                     ("%s[SOCK::Select] "
                                      " Failed select()",
                                      n == 1 ? s_ID(polls[0].sock, _id) : ""));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
                 if (!ready)
                     return eIO_Unknown;
             }
@@ -1985,7 +1985,7 @@ static EIO_Status s_Poll_(size_t                n,
                                     ("%s[SOCK::Select] "
                                      " Failed poll()",
                                      n == 1 ? s_ID(polls[0].sock, _id) : ""));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
                 if (!ready) {
                     status = eIO_Unknown;
                     break;
@@ -2278,7 +2278,7 @@ static EIO_Status s_Select(size_t                n,
                                         err, strerr ? strerr : "",
                                         ("[SOCK::Select] "
                                          " Failed WaitForMultipleObjects"));
-                    ReleaseBufferOnHeap(strerr);
+                    UTIL_ReleaseBufferOnHeap(strerr);
                     break;
                 }
                 if (r == WAIT_TIMEOUT)
@@ -2325,7 +2325,7 @@ static EIO_Status s_Select(size_t                n,
                                             ("%s[SOCK::Select] "
                                              " Failed WSAEnumNetworkEvents",
                                              s_ID(sock, _id)));
-                        ReleaseBuffer(errstr);
+                        UTIL_ReleaseBuffer(errstr);
                         polls[j].revent = eIO_Close;
                         ready = 1;
                         break;
@@ -2505,7 +2505,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                 sprintf(mtu, ", MTU unknown (%s)", errstr);
             else
                 sprintf(mtu, ", MTU = %d", m);
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         } else
 #  endif /*SOL_IP && IP_MTU*/
             *mtu = '\0';
@@ -2524,7 +2524,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                                 ("%s[SOCK::IsConnected] "
                                  " Failed setsockopt(REUSEADDR)",
                                  s_ID(sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
         sock->connected = 1;
     }
@@ -2549,7 +2549,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                                             ("%s[SOCK::IsConnected] "
                                              " Failed SSL hello",
                                              s_ID(sock, _id)));
-                        ReleaseBuffer(errstr);
+                        UTIL_ReleaseBuffer(errstr);
                     }
                 } else
                     sock->pending = 0;
@@ -2667,7 +2667,7 @@ static EIO_Status s_Recv(SOCK    sock,
                                 ("%s[SOCK::Recv] "
                                  " Failed recv()",
                                  s_ID(sock, _id)));            
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             /* don't want to handle all possible errors...
                let them be "unknown" */
             sock->r_status = eIO_Unknown;
@@ -3129,7 +3129,7 @@ static EIO_Status s_Send(SOCK        sock,
                                 ("%s[SOCK::Send] "
                                  " Failed send()",
                                  s_ID(sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             /* don't want to handle all possible errors...
                let them be "unknown" */
             sock->w_status = eIO_Unknown;
@@ -3244,7 +3244,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
                                      s_ID(sock, _id),
                                      IO_StatusStr(status)));
                 sock->w_status = status;
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
             }
             return status;
         }
@@ -3395,7 +3395,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                                              " Failed SSL bye",
                                              s_ID(sock, _id),
                                              dir ? "Shutdown" : "Close"));
-                        ReleaseBuffer(errstr);
+                        UTIL_ReleaseBuffer(errstr);
                     }
                 }
             }
@@ -3458,7 +3458,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                                  " Failed shutdown(%s)",
                                  s_ID(sock, _id), dir == eIO_Read ? "R" :
                                  dir == eIO_Write ? "W" : "RW"));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
     }
 #endif /*!NCBI_OS_MSWIN*/
@@ -3518,7 +3518,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
                                      " Failed setsockopt(SO_LINGER)",
                                      s_ID(sock, _id),
                                      abort ? "Abort" : "Close"));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
             }
 #  ifdef TCP_LINGER2
             if (abort  ||  (tv  &&  !(tv->tv_sec | tv->tv_usec))) {
@@ -3526,14 +3526,14 @@ static EIO_Status s_Close(SOCK sock, int abort)
                 if (setsockopt(sock->sock, IPPROTO_TCP, TCP_LINGER2,
                                (char*) &no, sizeof(no)) != 0
                     &&  !abort  &&  sock->connected) {
-                    const char* errstr = SOCK_STRERROR(x_error = SOCK_ERRNO)
+                    const char* errstr = SOCK_STRERROR(x_error = SOCK_ERRNO);
                     CORE_LOGF_ERRNO_EXX(18, eLOG_Trace,
                                         x_error, errstr,
                                         ("%s[SOCK::%s] "
                                          " Failed setsockopt(TCP_LINGER2)",
                                          s_ID(sock, _id),
                                          abort ? "Abort" : "Close"));
-                    ReleaseBuffer(errstr);
+                    UTIL_ReleaseBuffer(errstr);
                 }
             }
 #  endif /*TCP_LINGER2*/
@@ -3560,7 +3560,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
                                 ("%s[SOCK::Close] "
                                  " Cannot set socket back to blocking mode",
                                  s_ID(sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
     } else
         status = s_Shutdown(sock, eIO_Open, sock->c_timeout);
@@ -3619,7 +3619,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
                                      " Failed close()",
                                      s_ID(sock, _id),
                                      abort ? "Abort" : "Close"));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
                 if (abort > 1  ||  x_error != SOCK_EINTR) {
                     status = eIO_Unknown;
                     break;
@@ -3689,7 +3689,7 @@ static EIO_Status s_Connect(SOCK            sock,
                                 ("%s[SOCK::Connect] "
                                  " Failed to initialize secure session",
                                  s_ID(sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             return eIO_NotSupported;
         }
         assert(session != SESSION_INVALID);
@@ -3751,7 +3751,7 @@ static EIO_Status s_Connect(SOCK            sock,
                             ("%s[SOCK::Connect] "
                              " Cannot create socket",
                              s_ID(sock, _id)));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         return eIO_Unknown;
     }
     sock->sock     = x_sock;
@@ -3770,7 +3770,7 @@ static EIO_Status s_Connect(SOCK            sock,
                             ("%s[SOCK::Connect] "
                              " Failed to create IO event",
                              s_ID(sock, _id)));
-        ReleaseBufferOnHeap(strerr);
+        UTIL_ReleaseBufferOnHeap(strerr);
         s_Close(sock, -1/*abort*/);
         return eIO_Unknown;
 	}
@@ -3782,7 +3782,7 @@ static EIO_Status s_Connect(SOCK            sock,
                             ("%s[SOCK::Connect] "
                              " Failed to bind IO event",
                              s_ID(sock, _id)));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         s_Close(sock, -1/*abort*/);
         return eIO_Unknown;
     }
@@ -3796,7 +3796,7 @@ static EIO_Status s_Connect(SOCK            sock,
                             ("%s[SOCK::Connect] "
                              " Cannot set socket to non-blocking mode",
                              s_ID(sock, _id)));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         s_Close(sock, -1/*abort*/);
         return eIO_Unknown;
     }
@@ -3811,7 +3811,7 @@ static EIO_Status s_Connect(SOCK            sock,
                                 ("%s[SOCK::Connect] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 #endif /*SO_KEEPALIVE*/
 
@@ -3823,7 +3823,7 @@ static EIO_Status s_Connect(SOCK            sock,
                                 ("%s[SOCK::Connect] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 #endif /*SO_OOBINLINE*/
     }
@@ -3862,7 +3862,7 @@ static EIO_Status s_Connect(SOCK            sock,
                                     ("%s[SOCK::Connect] "
                                      " Failed connect()",
                                      s_ID(sock, _id)));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
                 if (x_error == SOCK_ECONNREFUSED
 #ifdef NCBI_OS_UNIX
                     ||  (sock->path[0]  &&  x_error == ENOENT)
@@ -3904,7 +3904,7 @@ static EIO_Status s_Connect(SOCK            sock,
                                     ("%s[SOCK::Connect] "
                                      " Failed pending connect(): %s",
                                      s_ID(sock, _id), reason));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
             }
             s_Close(sock, -1/*abort*/);
             return status;
@@ -3927,9 +3927,9 @@ static EIO_Status s_Connect(SOCK            sock,
                              " Cannot set socket close-on-exec mode",
                              s_ID(sock, _id)));
 #ifdef NCBI_OS_MSWIN
-        ReleaseBufferOnHeap(errstr);
+        UTIL_ReleaseBufferOnHeap(errstr);
 #else
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
 #endif /*NCBI_OS_MSWIN*/
     }
 
@@ -4086,7 +4086,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
                                 err, strerr ? strerr : "",
                                 ("TRIGGER#%u: [TRIGGER::Create] "
                                  " Cannot create event object", x_id));
-            ReleaseBufferOnHeap(strerr);
+            UTIL_ReleaseBufferOnHeap(strerr);
             return eIO_Closed;
         }
         if (!(*trigger = (TRIGGER) calloc(1, sizeof(**trigger)))) {
@@ -4342,7 +4342,7 @@ static EIO_Status s_CreateListening(const char*    path,
                             x_error, errstr,
                             ("LSOCK#%u[?]@%s: [LSOCK::Create] "
                              " Failed socket()", x_id, cp));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         return eIO_Unknown;
     }
 
@@ -4389,7 +4389,7 @@ static EIO_Status s_CreateListening(const char*    path,
                                 ("LSOCK#%u[%u]@:%s: [LSOCK::Create] "
                                  " Failed setsockopt(%s)", x_id,
                                  (unsigned int) x_lsock, _id, failed));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             SOCK_CLOSE(x_lsock);
             return eIO_Unknown;
         }
@@ -4446,7 +4446,7 @@ static EIO_Status s_CreateListening(const char*    path,
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed bind()",
                              x_id, (unsigned int) x_lsock, cp));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         SOCK_CLOSE(x_lsock);
         return x_error == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
@@ -4465,7 +4465,7 @@ static EIO_Status s_CreateListening(const char*    path,
                                 ("LSOCK#%u[%u]@:?: [LSOCK::Create] "
                                  " Cannot obtain free socket port",
                                  x_id, (unsigned int) x_lsock));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             SOCK_CLOSE(x_lsock);
             return eIO_Closed;
         }
@@ -4484,7 +4484,7 @@ static EIO_Status s_CreateListening(const char*    path,
                             ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
                              " Failed to create IO event",
                              x_id, (unsigned int) x_lsock, port));
-        ReleaseBufferOnHeap(strerr);
+        UTIL_ReleaseBufferOnHeap(strerr);
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
     }
@@ -4497,7 +4497,7 @@ static EIO_Status s_CreateListening(const char*    path,
                             ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_lsock, port));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         SOCK_CLOSE(x_lsock);
         CloseHandle(event);
         return eIO_Unknown;
@@ -4516,7 +4516,7 @@ static EIO_Status s_CreateListening(const char*    path,
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_lsock, cp));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
     }
@@ -4543,9 +4543,9 @@ static EIO_Status s_CreateListening(const char*    path,
                              " Cannot set socket close-on-exec mode",
                              x_id, (unsigned int) x_lsock, cp));
 #ifdef NCBI_OS_MSWIN
-        ReleaseBufferOnHeap(errstr);
+        UTIL_ReleaseBufferOnHeap(errstr);
 #else
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
 #endif /*NCBI_OS_MSWIN*/
     }
 
@@ -4562,7 +4562,7 @@ static EIO_Status s_CreateListening(const char*    path,
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed listen(%hu)",
                              x_id, (unsigned int) x_lsock, cp, backlog));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         SOCK_CLOSE(x_lsock);
 #ifdef NCBI_OS_MSWIN
         CloseHandle(event);
@@ -4729,7 +4729,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                             ("%s[LSOCK::Accept] "
                              " Failed accept()",
                              s_ID((SOCK) lsock, _id)));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         return eIO_Unknown;
     }
     lsock->n_accept++;
@@ -4760,7 +4760,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                              " Failed to create IO event",
                              x_id, (unsigned int) x_sock,
                              s_CP(host, port, path, _id, sizeof(_id))));
-        ReleaseBufferOnHeap(strerr);
+        UTIL_ReleaseBufferOnHeap(strerr);
         SOCK_ABORT(x_sock);
         return eIO_Unknown;
 	}
@@ -4773,7 +4773,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_sock,
                              s_CP(host, port, path, _id, sizeof(_id))));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         CloseHandle(event);
         SOCK_ABORT(x_sock);
         return eIO_Unknown;
@@ -4789,7 +4789,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_sock,
                              s_CP(host, port, path, _id, sizeof(_id))));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         SOCK_ABORT(x_sock);
         return eIO_Unknown;
     }
@@ -4847,7 +4847,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(REUSEADDR)",
                                  s_ID(*sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 
 #ifdef SO_KEEPALIVE
@@ -4858,7 +4858,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(*sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 #endif /*SO_KEEPALIVE*/
 
@@ -4870,7 +4870,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(*sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 #endif /*SO_OOBINLINE*/
     }
@@ -4891,9 +4891,9 @@ static EIO_Status s_Accept(LSOCK           lsock,
                              " Cannot set socket close-on-exec mode",
                              s_ID(*sock, _id)));
 #ifdef NCBI_OS_MSWIN
-        ReleaseBufferOnHeap(errstr);
+        UTIL_ReleaseBufferOnHeap(errstr);
 #else
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
 #endif /*NCBI_OS_MSWIN*/
     }
 
@@ -4947,7 +4947,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
                             ("LSOCK#%u[%u]: [LSOCK::Close] "
                              " Cannot set socket back to blocking mode",
                              lsock->id, (unsigned int) lsock->sock));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
     }
 
     /* statistics & logging */
@@ -4989,7 +4989,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
                                     ("LSOCK#%u[%u]: [LSOCK::Close] "
                                      " Failed close()",
                                      lsock->id, (unsigned int) lsock->sock));
-                ReleaseBuffer(errstr);
+                UTIL_ReleaseBuffer(errstr);
                 status = eIO_Unknown;
                 break;
             }
@@ -5155,7 +5155,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                              " Invalid OS socket handle (%ld)",
                              x_id, (unsigned int) fd, (long) fd));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         return eIO_Closed;
     }
 #ifdef NCBI_OS_UNIX
@@ -5261,7 +5261,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed to initialize secure session",
                                  s_ID(x_sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             x_sock->sock = SOCK_INVALID;
             SOCK_Close(x_sock);
             return eIO_NotSupported;
@@ -5278,7 +5278,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                             ("%s[SOCK::CreateOnTop] "
                              " Cannot set socket to non-blocking mode",
                              s_ID(x_sock, _id)));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         x_sock->sock = SOCK_INVALID;
         SOCK_Close(x_sock);
         return eIO_Unknown;
@@ -5293,7 +5293,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(x_sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 #endif /*SO_KEEPALIVE*/
 
@@ -5305,7 +5305,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(x_sock, _id)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
 #endif /*SO_OOBINLINE*/
     }
@@ -5326,9 +5326,9 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                              " Cannot modify socket close-on-exec mode",
                              s_ID(x_sock, _id)));
 #ifdef NCBI_OS_MSWIN
-        ReleaseBufferOnHeap(errstr);
+        UTIL_ReleaseBufferOnHeap(errstr);
 #else
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
 #endif /*NCBI_OS_MSWIN*/
     }
  
@@ -6141,7 +6141,7 @@ extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
                                 ("%s[SOCK::DisableOSSendDelay] "
                                  " Failed setsockopt(%sTCP_NODELAY)",
                                  s_ID(sock, _id), on_off ? "" : "!"));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
     }
 #endif /*TCP_NODELAY*/
@@ -6183,7 +6183,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
                             ("DSOCK#%u[?]: [DSOCK::Create] "
                              " Cannot create socket",
                              x_id));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         return eIO_Unknown;
     }
 
@@ -6196,7 +6196,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Failed to create IO event",
                              x_id, (unsigned int) x_sock));
-        ReleaseBufferOnHeap(strerr);
+        UTIL_ReleaseBufferOnHeap(strerr);
         SOCK_CLOSE(x_sock);
         return eIO_Unknown;
     }
@@ -6208,7 +6208,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_sock));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         SOCK_CLOSE(x_sock);
         CloseHandle(event);
         return eIO_Unknown;
@@ -6223,7 +6223,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_sock));
-        ReleaseBuffer(strerr);
+        UTIL_ReleaseBuffer(strerr);
         SOCK_CLOSE(x_sock);
         return eIO_Unknown;
     }
@@ -6274,9 +6274,9 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
                              " socket close-on-exec mode",
                              s_ID(*sock, _id)));
 #ifdef NCBI_OS_MSWIN
-        ReleaseBufferOnHeap(errstr);
+        UTIL_ReleaseBufferOnHeap(errstr);
 #else
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
 #endif /*NCBI_OS_MSWIN*/
     }
 
@@ -6326,7 +6326,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
                             ("%s[DSOCK::Bind] "
                              " Failed bind(:%hu)",
                              s_ID(sock,_id), port));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         return x_error == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
 
@@ -6414,7 +6414,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
                              " Failed %sconnect%s%s%s",
                              s_ID(sock, _id), *addr ? "" : "to dis",
                              &"("[!*addr], addr, &")"[!*addr]));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
         return eIO_Unknown;
     }
 
@@ -6618,7 +6618,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
                                 ("%s[DSOCK::SendMsg] "
                                  " Failed sendto(%s)",
                                  s_ID(sock, w + sizeof(w)/2), w));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
         /* don't want to handle all possible errors... let them be "unknown" */
         sock->w_status = status = eIO_Unknown;
@@ -6759,7 +6759,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                                 ("%s[DSOCK::RecvMsg] "
                                  " Failed recvfrom()",
                                  s_ID(sock, w)));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
         }
         /* don't want to handle all possible errors... let them be "unknown" */
         sock->r_status = status = eIO_Unknown;
@@ -6851,7 +6851,7 @@ extern EIO_Status DSOCK_SetBroadcast(SOCK sock, int/*bool*/ broadcast)
                                 ("%s[DSOCK::SetBroadcast] "
                                  " Failed setsockopt(%sBROADCAST)",
                                  s_ID(sock, _id), bcast ? "" : "NO"));
-            ReleaseBuffer(errstr);
+            UTIL_ReleaseBuffer(errstr);
             return eIO_Unknown;
         }
     }}
@@ -7013,7 +7013,7 @@ extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
                             ("%s[SOCK::SetReuseAddress] "
                              " Failed setsockopt(%sREUSEADDR)",
                              s_ID(sock, _id), on_off ? "" : "NO"));
-        ReleaseBuffer(errstr);
+        UTIL_ReleaseBuffer(errstr);
     }
 }
 
