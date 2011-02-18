@@ -235,6 +235,9 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     /// Set communication timeout
     void SetCommunicationTimeout(const STimeout& to);
     STimeout  GetCommunicationTimeout() const;
+
+    /// Print meta information about the specified blob.
+    void PrintBlobInfo(const string& key, int version, const string& subkey);
 };
 
 class NCBI_NET_CACHE_EXPORT CNetICachePasswordGuard

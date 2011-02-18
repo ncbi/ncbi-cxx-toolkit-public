@@ -295,6 +295,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// Remove BLOB by key
     void Remove(const string& key);
 
+    /// Print meta information about the specified blob.
+    void PrintBlobInfo(const string& key);
 
     CNetCacheAdmin GetAdmin();
 

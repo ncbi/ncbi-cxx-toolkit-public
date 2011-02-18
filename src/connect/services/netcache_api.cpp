@@ -395,6 +395,20 @@ void CNetCacheAPI::Remove(const string& key)
 }
 
 
+void CNetCacheAPI::PrintBlobInfo(const string& key)
+{
+    CNetServerMultilineCmdOutput output(
+        m_Impl->GetServer(key).ExecWithRetry(m_Impl->MakeCmd("GETMETA ", key)));
+
+    output->SetNetCacheCompatMode();
+
+    string line;
+
+    while (output.ReadLine(line))
+        NcbiCout << line << NcbiEndl;
+}
+
+
 string CNetCacheAPI::GetOwner(const string& key)
 {
     CNetServer srv = m_Impl->GetServer(key);

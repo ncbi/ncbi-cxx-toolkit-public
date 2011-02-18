@@ -613,6 +613,21 @@ void CNetICacheClient::SetBlobVersionAsValid(const string& key,
     }
 }
 
+void CNetICacheClient::PrintBlobInfo(const string& key,
+        int version, const string& subkey)
+{
+    CNetServerMultilineCmdOutput output(m_Impl->StickToServerAndExec(
+        m_Impl->MakeStdCmd("GETMETA", key, version, subkey)));
+
+    output->SetNetCacheCompatMode();
+
+    string line;
+
+    while (output.ReadLine(line))
+        NcbiCout << line << NcbiEndl;
+}
+
+
 string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
     const string& key, int version, const string& subkey,
     const string& injection)

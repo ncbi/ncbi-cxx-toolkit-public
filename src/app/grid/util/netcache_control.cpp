@@ -141,6 +141,9 @@ void CNetCacheControl::Init()
     arg_desc->AddOptionalKey("remove", "key",
         "Delete blob by key", CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("blobinfo", "key",
+        "Retrieve meta information on the blob", CArgDescriptions::eString);
+
     arg_desc->PrintUsageIfNoArgs();
 
     SetupArgDescriptions(arg_desc.release());
@@ -148,19 +151,21 @@ void CNetCacheControl::Init()
 
 #define REQUIRES_KEY 0x100
 #define REQUIRES_ADMIN 0x200
+#define PROHIBITS_SERVICE_NAME 0x400
 
 enum {
-    eCmdFetch = 0x01 | REQUIRES_KEY,
+    eCmdFetch = 0x01 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
     eCmdStore = 0x02 | REQUIRES_KEY,
-    eCmdSize = 0x03 | REQUIRES_KEY,
-    eCmdRemove = 0x04 | REQUIRES_KEY,
-    eCmdGetConf = 0x05 | REQUIRES_ADMIN,
-    eCmdHealth = 0x06 | REQUIRES_ADMIN,
-    eCmdStat = 0x07 | REQUIRES_ADMIN,
-    eCmdVer = 0x08 | REQUIRES_ADMIN,
-    eCmdShutdown = 0x09 | REQUIRES_ADMIN,
-    eCmdReconf = 0x0A | REQUIRES_ADMIN,
-    eCmdReinit = 0x0B | REQUIRES_ADMIN
+    eCmdSize = 0x03 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
+    eCmdRemove = 0x04 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
+    eCmdBlobInfo = 0x05 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
+    eCmdGetConf = 0x06 | REQUIRES_ADMIN,
+    eCmdHealth = 0x07 | REQUIRES_ADMIN,
+    eCmdStat = 0x08 | REQUIRES_ADMIN,
+    eCmdVer = 0x09 | REQUIRES_ADMIN,
+    eCmdShutdown = 0x0A | REQUIRES_ADMIN,
+    eCmdReconf = 0x0B | REQUIRES_ADMIN,
+    eCmdReinit = 0x0C | REQUIRES_ADMIN
 };
 
 int CNetCacheControl::Run()
@@ -198,6 +203,9 @@ int CNetCacheControl::Run()
     } else if (args["remove"].HasValue()) {
         key = args["remove"].AsString();
         cmd = eCmdRemove;
+    } else if (args["blobinfo"].HasValue()) {
+        key = args["blobinfo"].AsString();
+        cmd = eCmdBlobInfo;
     } else {
         cmd = args["getconf"] ? eCmdGetConf :
             args["health"] ? eCmdHealth :
@@ -222,7 +230,7 @@ int CNetCacheControl::Run()
         admin = CNetCacheAPI(service, client_name).GetAdmin();
     else if (!icache_mode) {
         nc_client = CNetCacheAPI(service, client_name);
-        if (!service.empty()) {
+        if ((cmd & PROHIBITS_SERVICE_NAME) && !service.empty()) {
             string host, port;
 
             if (NStr::SplitInTwo(service, ":", host, port))
@@ -430,6 +438,14 @@ int CNetCacheControl::Run()
             else
                 icache_client.Remove(blob_address.key,
                     blob_address.version, blob_address.subkey);
+        break;
+
+    case eCmdBlobInfo:
+        if (!icache_mode)
+            nc_client.PrintBlobInfo(key);
+        else
+            icache_client.PrintBlobInfo(blob_address.key,
+                blob_address.version, blob_address.subkey);
         break;
 
     case eCmdGetConf:
