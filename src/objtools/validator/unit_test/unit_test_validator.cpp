@@ -3906,7 +3906,6 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     // genbank
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gb|AY123456.1| - gb|AY123457.1|)"));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
-    expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Warning, "UnexpectedIdentifierChange", "New accession (gb|AY123457.1|) does not match one in NCBI sequence repository (gb|AY123456.1|) on gi (21914627)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3916,8 +3915,6 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetDdbj().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
-    delete expected_errors[2];
-    expected_errors.pop_back();
     expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gb|AY123456.1| - dbj|AY123457.1|)");
     CheckErrors (*eval, expected_errors);
 
@@ -8571,7 +8568,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrganismInTitle)
 
     CLEAR_ERRORS
 
-        scope.RemoveTopLevelSeqEntry(seh);
+    
+
+    scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
     CRef<CSeq_id> other_id(new CSeq_id());
     other_id->SetOther().SetAccession("NP_123456");
