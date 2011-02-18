@@ -151,14 +151,13 @@ void CNetCacheControl::Init()
 
 #define REQUIRES_KEY 0x100
 #define REQUIRES_ADMIN 0x200
-#define PROHIBITS_SERVICE_NAME 0x400
 
 enum {
-    eCmdFetch = 0x01 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
+    eCmdFetch = 0x01 | REQUIRES_KEY,
     eCmdStore = 0x02 | REQUIRES_KEY,
-    eCmdSize = 0x03 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
-    eCmdRemove = 0x04 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
-    eCmdBlobInfo = 0x05 | REQUIRES_KEY | PROHIBITS_SERVICE_NAME,
+    eCmdSize = 0x03 | REQUIRES_KEY,
+    eCmdRemove = 0x04 | REQUIRES_KEY,
+    eCmdBlobInfo = 0x05 | REQUIRES_KEY,
     eCmdGetConf = 0x06 | REQUIRES_ADMIN,
     eCmdHealth = 0x07 | REQUIRES_ADMIN,
     eCmdStat = 0x08 | REQUIRES_ADMIN,
@@ -230,7 +229,7 @@ int CNetCacheControl::Run()
         admin = CNetCacheAPI(service, client_name).GetAdmin();
     else if (!icache_mode) {
         nc_client = CNetCacheAPI(service, client_name);
-        if ((cmd & PROHIBITS_SERVICE_NAME) && !service.empty()) {
+        if (!key.empty() && !service.empty()) {
             string host, port;
 
             if (NStr::SplitInTwo(service, ":", host, port))
