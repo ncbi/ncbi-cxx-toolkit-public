@@ -40,7 +40,7 @@
 #include <algorithm>
 
 #ifndef   MAXHOSTNAMELEN
-#  define MAXHOSTNAMELEN 255
+#  define MAXHOSTNAMELEN  255
 #endif // MAXHOSTNAMELEN
 
 #define __STR(x)  #x
