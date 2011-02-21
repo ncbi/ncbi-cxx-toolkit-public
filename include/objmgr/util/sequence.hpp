@@ -334,6 +334,7 @@ typedef vector<TFeatScore> TFeatScores;
 // function, we allow plugins
 class CGetOverlappingFeaturesPlugin {
 public:
+    virtual ~CGetOverlappingFeaturesPlugin() {}
     virtual void processSAnnotSelector( 
         SAnnotSelector &sel ) = 0;
 
