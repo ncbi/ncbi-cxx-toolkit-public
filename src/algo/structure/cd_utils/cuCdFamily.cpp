@@ -169,7 +169,7 @@ void CDFamily::getChildren(vector<CDFamilyIterator>& cdITs, CDFamilyIterator pit
 void CDFamily::getDescendants(vector<CCdCore*>& cds, CCdCore* parentCd) const {
     vector<CCdCore*> tmpCds;
 	getChildren(tmpCds, parentCd);
-    for (int i = 0; i < tmpCds.size(); ++i) {
+    for (unsigned int i = 0; i < tmpCds.size(); ++i) {
         cds.push_back(tmpCds[i]);
         getDescendants(cds, tmpCds[i]);
     }
@@ -179,7 +179,7 @@ void CDFamily::getDescendants(set<CCdCore*>& cds, CCdCore* parentCd) const {
     vector<CCdCore*> tmpCds;
     cds.clear();
 	getDescendants(tmpCds, parentCd);
-    for (int i = 0; i < tmpCds.size(); ++i) {
+    for (unsigned int i = 0; i < tmpCds.size(); ++i) {
         cds.insert(tmpCds[i]);
     }
 }
@@ -457,7 +457,7 @@ bool CDFamily::isDup(CDFamily& one, vector<CDFamily>& all)
 {
 	int occurrence = 0;
 	CCdCore* cd = one.getRootCD();
-	for (int i = 0; i < all.size(); i++)
+	for (unsigned int i = 0; i < all.size(); i++)
 	{
 		if (all[i].findCD(cd) != all[i].end())
 			occurrence++;
@@ -467,7 +467,7 @@ bool CDFamily::isDup(CDFamily& one, vector<CDFamily>& all)
 
 CDFamily* CDFamily::findFamily(CCdCore* cd, vector<CDFamily>& families)
 {
-	for (int i = 0; i < families.size(); i++)
+	for (unsigned int i = 0; i < families.size(); i++)
 	{
 		if (families[i].findCD(cd) != families[i].end())
 			return &(families[i]);
@@ -533,7 +533,7 @@ void CDFamily::extractFamily(CCdCore* parentCD, CDFamily& cdFamily, vector<CCdCo
 		//remove added children from cds
 		vector<CCdCore*> tmp(cds);
 		cds.clear();
-		for (int i = 0; i < tmp.size(); i++)
+		for (unsigned int i = 0; i < tmp.size(); i++)
 		{
 			if (children.find(i) == children.end())
 			{
@@ -551,7 +551,7 @@ void CDFamily::extractFamily(CCdCore* parentCD, CDFamily& cdFamily, vector<CCdCo
 bool CDFamily::findParent(CCdCore* cd, vector<CCdCore*>& cds)
 {
 	string acc = cd->GetClassicalParentAccession();
-	for (int i = 0; i < cds.size(); i++)
+	for (unsigned int i = 0; i < cds.size(); i++)
 	{
 		if (cds[i] != cd)
 			if (acc.compare(cds[i]->GetAccession()) == 0)
@@ -563,7 +563,7 @@ bool CDFamily::findParent(CCdCore* cd, vector<CCdCore*>& cds)
 bool CDFamily::findChildren(CCdCore* cd, vector<CCdCore*>& cds, set<int>& children)
 {
 	string acc = cd->GetAccession();
-	for (int i = 0; i < cds.size(); i++)
+	for (int i = 0; i < (int) cds.size(); i++)
 	{
 		if (cds[i] != cd)
 			if (acc.compare(cds[i]->GetClassicalParentAccession()) == 0)
