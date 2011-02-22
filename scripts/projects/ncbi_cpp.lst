@@ -16,6 +16,7 @@ internal/blast/GumbelParams
 internal/gpipe/align_db
 internal/test/misc/xmlwrapp
 internal/demo/misc/xmlwrapp
+internal/sra
 misc
 objects
 objmgr
