@@ -531,7 +531,9 @@ void CAlignFilter::SetFilter(const string& filter)
 {
     static const char *sc_Functions[] = {
         "MUL",
+        "DIV",
         "ADD",
+        "SUB",
         "IS_SEG_TYPE",
         "COALESCE",
         NULL
@@ -739,6 +741,7 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
                 } else {
                     score_value = score.GetValue().GetReal();
                 }
+
                 found = true;
                 break;
             }
@@ -780,6 +783,30 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
         this_val = val1 * val2;
 
     }
+    else if (NStr::EqualNocase(function, "DIV")) {
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        const CQueryParseTree::TNode& node1 = **iter;
+        ++iter;
+        if (iter == end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: expected 2, got 1");
+        }
+        const CQueryParseTree::TNode& node2 = **iter;
+        ++iter;
+        if (iter != end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: "
+                       "expected 2, got more than 2");
+        }
+
+        double val1 = x_TermValue(node1, align);
+        double val2 = x_TermValue(node2, align);
+
+        this_val = val1 / val2;
+    }
     else if (NStr::EqualNocase(function, "ADD")) {
         CQueryParseTree::TNode::TNodeList_CI iter =
             node.SubNodeBegin();
@@ -803,6 +830,30 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
         double val2 = x_TermValue(node2, align);
 
         this_val = val1 + val2;
+    }
+    else if (NStr::EqualNocase(function, "SUB")) {
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        const CQueryParseTree::TNode& node1 = **iter;
+        ++iter;
+        if (iter == end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: expected 2, got 1");
+        }
+        const CQueryParseTree::TNode& node2 = **iter;
+        ++iter;
+        if (iter != end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: "
+                       "expected 2, got more than 2");
+        }
+
+        double val1 = x_TermValue(node1, align);
+        double val2 = x_TermValue(node2, align);
+
+        this_val = val1 - val2;
     }
     else if (NStr::EqualNocase(function, "COALESCE")) {
         ///
@@ -944,17 +995,21 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
 
             string val = r_node.GetValue().GetStrValue();
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(val);
-            CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
-
-            if ( !syns ) {
-                return false;
-            }
 
             CSeq_id_Handle other_idh;
             if (NStr::EqualNocase(s, "query")) {
                 other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
             } else {
                 other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+            }
+
+            if ((idh == other_idh) == !is_not) {
+                return true;
+            }
+
+            CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
+            if ( !syns ) {
+                return false;
             }
 
             return (syns->ContainsSynonym(other_idh) == !is_not);
