@@ -310,6 +310,11 @@ typedef CPerson_id::E_Choice TPERSONID_TYPE;
 #define NCBI_SEGTYPE(Type) CSeq_align::C_Segs::e_##Type
 typedef CSeq_align::C_Segs::E_Choice TSEGTYPE_TYPE;
 
+// not_set    one       two     three
+
+#define NCBI_CDSFRAME(Type) CCdregion::eFrame_##Type
+typedef CCdregion::EFrame TCDSFRAME_TYPE;
+
 /////////////////////////////////////////////////////////////////////////////
 /// Macros for obtaining closest specific CSeqdesc applying to a CBioseq
 /////////////////////////////////////////////////////////////////////////////
@@ -3843,6 +3848,21 @@ DO_UNIQUE (CODON_ON_TRNAEXT, Var, Func)
 
 #define FOR_EACH_PCRPARSEDSET_IN_LIST(Itr, Var) \
     FOR_EACH (PCRPARSEDSET_IN_LIST, Itr, Var)
+
+///
+/// CDelta_ext macros
+
+#define DELTASEQ_IN_DELTAEXT_Type       list< CRef< CDelta_seq > >
+#define DELTASEQ_IN_DELTAEXT_Test(Var)  (  (Var).IsSet() && ! (Var).Get().empty() )
+#define DELTASEQ_IN_DELTAEXT_Get(Var)   (Var).Get()
+#define DELTASEQ_IN_DELTAEXT_Set(Var)   (Var).Set()
+#define DELTASEQ_IN_DELTAEXT_Reset(Var) (Var).Reset()
+
+#define EDIT_EACH_DELTASEQ_IN_DELTAEXT(Itr, Var) \
+    EDIT_EACH( DELTASEQ_IN_DELTAEXT, Itr, Var )
+
+#define ERASE_DELTASEQ_IN_DELTAEXT(Itr, Var) \
+    LIST_ERASE_ITEM (DELTASEQ_IN_DELTAEXT, Itr, Var)
 
 ///
 /// @}

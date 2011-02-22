@@ -119,32 +119,32 @@ public:
 
     /// Main methods
 
-    CConstRef<CCleanupChange> BasicCleanupSeqEntry (
+    CConstRef<CCleanupChange> BasicCleanup (
         CSeq_entry& se,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> BasicCleanupSeqSubmit (
+    CConstRef<CCleanupChange> BasicCleanup (
         CSeq_submit& ss,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> BasicCleanupSeqAnnot (
+    CConstRef<CCleanupChange> BasicCleanup (
         CSeq_annot& sa,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanupSeqEntry (
+    CConstRef<CCleanupChange> ExtendedCleanup (
         CSeq_entry& se,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanupSeqSubmit (
+    CConstRef<CCleanupChange> ExtendedCleanup (
         CSeq_submit& ss,
         Uint4 options = 0
     );
 
-    CConstRef<CCleanupChange> ExtendedCleanupSeqAnnot (
+    CConstRef<CCleanupChange> ExtendedCleanup (
         CSeq_annot& sa,
         Uint4 options = 0
     );
@@ -188,8 +188,8 @@ private:
     void Setup(const CArgs& args);
     void SetupCleanupOptions(const CArgs& args);
 
-    CObjectIStream* OpenIFile(const CArgs& args);
-    CObjectOStream* OpenOFile(const CArgs& args);
+    vector<CObjectIStream*> OpenIFiles(const CArgs& args);
+    vector<CObjectOStream*> OpenOFiles(const CArgs& args);
 
     CConstRef<CCleanupChange> ProcessSeqEntry(void);
     CConstRef<CCleanupChange> ProcessSeqSubmit(void);
@@ -227,10 +227,10 @@ void CTest_cleanupApplication::Init(void)
 
     arg_desc->AddDefaultKey
         ("i", "ASNFile", "Input Seq-entry/Seq_submit ASN.1 text file",
-        CArgDescriptions::eInputFile, "-");
+        CArgDescriptions::eString, "-", CArgDescriptions::fAllowMultiple );
     arg_desc->AddDefaultKey
         ("o", "ASNFile", "Output Seq-entry/Seq_submit ASN.1 text file",
-         CArgDescriptions::eOutputFile, "-");
+         CArgDescriptions::eString, "-", CArgDescriptions::fAllowMultiple );
     
     arg_desc->AddFlag("s", "Input is Seq-submit");
     arg_desc->AddFlag("t", "Input is Seq-set (NCBI Release file)");
@@ -259,39 +259,54 @@ int CTest_cleanupApplication::Run(void)
     const CArgs& args = GetArgs();
     Setup(args);
 
-    // Open File 
-    m_In .reset(OpenIFile(args));
-    m_Out.reset(OpenOFile(args));
+    vector<CObjectIStream*> input_files  = OpenIFiles(args);
+    vector<CObjectOStream*> output_files = OpenOFiles(args);
 
-    // Process file based on its content
-    // Unless otherwise specified we assume the file in hand is
-    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
-    // Release file (batch processing) where we process each Seq-entry
-    // at a time.
-    CConstRef<CCleanupChange> changes;
-    if ( args["t"] ) {          // Release file
-        ProcessReleaseFile(args);
-        return 0;
-    } else {
-        string header = m_In->ReadFileHeader();
-
-        if ( args["s"]  &&  header != "Seq-submit" ) {
-            NCBI_THROW(CException, eUnknown,
-                "Conflict: '-s' flag is specified but file is not Seq-submit");
-        } 
-        if ( args["s"]  ||  header == "Seq-submit" ) {  // Seq-submit
-            changes = ProcessSeqSubmit();
-        } else if ( header == "Seq-entry" ) {           // Seq-entry
-            changes = ProcessSeqEntry();
-        } else if ( header == "Seq-annot" ) {           // Seq-annot
-            changes = ProcessSeqAnnot();
-        } else {
-            NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
-        }
+    if( input_files.size() != output_files.size() ) {
+        NCBI_THROW(CException, eUnknown,
+            "You must have the same number of input files as output files");
+    }
+    if( input_files.size() < 1 ) {
+        NCBI_THROW(CException, eUnknown,
+            "You must specify at least one input and output file");
     }
 
-    if ( changes && changes->ChangeCount() > 0 ) {
-        PrintChanges(changes, args);
+    // Open File 
+    int file_index = 0;
+    for( ; file_index < (int)input_files.size(); ++file_index ) {
+        m_In .reset(input_files[file_index]);
+        m_Out.reset(output_files[file_index]);
+
+        // Process file based on its content
+        // Unless otherwise specified we assume the file in hand is
+        // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
+        // Release file (batch processing) where we process each Seq-entry
+        // at a time.
+        CConstRef<CCleanupChange> changes;
+        if ( args["t"] ) {          // Release file
+            ProcessReleaseFile(args);
+            return 0;
+        } else {
+            string header = m_In->ReadFileHeader();
+
+            if ( args["s"]  &&  header != "Seq-submit" ) {
+                NCBI_THROW(CException, eUnknown,
+                    "Conflict: '-s' flag is specified but file is not Seq-submit");
+            } 
+            if ( args["s"]  ||  header == "Seq-submit" ) {  // Seq-submit
+                changes = ProcessSeqSubmit();
+            } else if ( header == "Seq-entry" ) {           // Seq-entry
+                changes = ProcessSeqEntry();
+            } else if ( header == "Seq-annot" ) {           // Seq-annot
+                changes = ProcessSeqAnnot();
+            } else {
+                NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+            }
+        }
+
+        if ( changes && changes->ChangeCount() > 0 ) {
+            PrintChanges(changes, args);
+        }
     }
 
     return 0;
@@ -317,11 +332,11 @@ void CTest_cleanupApplication::ReadClassMember
                 CNewCleanup cleanup;
                 CConstRef<CCleanupChange> changes;
                 if ( ! m_NoCleanup) {
-                    changes = cleanup.BasicCleanupSeqEntry(*se, m_Options);
+                    changes = cleanup.BasicCleanup(*se, m_Options);
                 }
                 // ExtendedCleanup, if requested
                 if( m_DoExtendedCleanup ) {
-                    cleanup.ExtendedCleanupSeqEntry( *se, m_Options );
+                    cleanup.ExtendedCleanup( *se, m_Options );
                 }
                 if ( changes->ChangeCount() > 0 ) {
                     m_Reported += PrintChanges(changes, GetArgs());
@@ -379,11 +394,11 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanupSeqEntry(*se, m_Options);
+        changes = cleanup.BasicCleanup(*se, m_Options);
     }
     // ExtendedCleanup, if requested
     if( m_DoExtendedCleanup ) {
-        cleanup.ExtendedCleanupSeqEntry( *se, m_Options );
+        cleanup.ExtendedCleanup( *se, m_Options );
     }
     *m_Out << (*se);
     return changes;
@@ -401,7 +416,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanupSeqSubmit(*ss, m_Options);
+        changes = cleanup.BasicCleanup(*ss, m_Options);
     }
     *m_Out << (*ss);
     return changes;
@@ -419,7 +434,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanupSeqAnnot(*sa, m_Options);
+        changes = cleanup.BasicCleanup(*sa, m_Options);
     }
     *m_Out << (*sa);
     return changes;
@@ -445,33 +460,64 @@ void CTest_cleanupApplication::SetupCleanupOptions(const CArgs& args)
 }
 
 
-CObjectIStream* CTest_cleanupApplication::OpenIFile
+vector<CObjectIStream*> CTest_cleanupApplication::OpenIFiles
 (const CArgs& args)
 {
-    // file name
-    string fname = args["i"].AsString();
-    CNcbiIstream& in = args["i"].AsInputFile();
+    vector<CObjectIStream*> result;
 
-    // file format 
-    ESerialDataFormat format = eSerial_AsnText;
-    if ( args["b"] ) {
-        format = eSerial_AsnBinary;
+    // file name
+    const CArgValue::TStringArray &file_name_array = args["i"].GetStringList();
+    FOR_EACH_STRING_IN_VECTOR( file_name_iter, file_name_array ) {
+        // just let it "leak" because our result will point to it
+        // almost the whole time the program is running
+        CNcbiIstream *in_file = NULL;
+        if( *file_name_iter == "-" ) {
+            in_file = &std::cin;
+        } else {
+            in_file = new CNcbiIfstream( file_name_iter->c_str() );
+        }
+
+        // file format 
+        ESerialDataFormat format = eSerial_AsnText;
+        if ( args["b"] ) {
+            format = eSerial_AsnBinary;
+        }
+
+        result.push_back( CObjectIStream::Open(format, *in_file ) );
     }
 
-    return CObjectIStream::Open(format, in );
+    // copies a vector, but the performance hit is completely negligible, so
+    // we do it the easy way.
+    return result;
 }
 
 
-CObjectOStream* CTest_cleanupApplication::OpenOFile
+vector<CObjectOStream*> CTest_cleanupApplication::OpenOFiles
 (const CArgs& args)
 {
+    vector<CObjectOStream*> result;
+
     // file name
-    CNcbiOstream& out = args["o"].AsOutputFile();
-    
-    // file format 
-    ESerialDataFormat format = eSerial_AsnText;
-    
-    return CObjectOStream::Open(format, out );
+    const CArgValue::TStringArray &file_name_array = args["o"].GetStringList();
+    FOR_EACH_STRING_IN_VECTOR( file_name_iter, file_name_array ) {
+        // just let it "leak" because our result will point to it
+        // almost the whole time the program is running
+        CNcbiOstream *out_file = NULL;
+        if( *file_name_iter == "-" ) {
+            out_file = &std::cout;
+        } else {
+            out_file = new CNcbiOfstream( file_name_iter->c_str() );
+        }
+
+        // file format 
+        ESerialDataFormat format = eSerial_AsnText;
+
+        result.push_back( CObjectOStream::Open(format, *out_file) );
+    }
+
+    // copies a vector, but the performance hit is completely negligible, so
+    // we do it the easy way.
+    return result;
 }
 
 

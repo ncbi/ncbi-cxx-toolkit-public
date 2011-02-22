@@ -861,8 +861,6 @@ BEGIN_NCBI_SCOPE
 
 #endif // NCBI_STRICT_CTYPE_ARGS
 
-
-
 //  ITERATE
 //  NON_CONST_ITERATE
 //  ERASE_ITERATE
@@ -878,6 +876,19 @@ BEGIN_NCBI_SCOPE
 /// Non constant version of ITERATE macro.
 #define NON_CONST_ITERATE(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
+
+/// NON_CONST_ITERATE macro for STL sets.  A special macro is required because 
+/// STL sets iterate in a const manner even if you use their "iterator" type.
+/// Using this macro is discouraged because if you affect an object's state
+/// in such a way that it's ordering in the set should change, the set
+/// could be in an invalid state.
+/// The "REAL92137892" is just a random suffix to make the variable unique
+#define NON_CONST_SET_ITERATE( Type, Var, Cont) \
+    Type::key_type *Var = NULL;  \
+    Type::iterator Var##REAL92137892  = (Cont).begin(); \
+    Var = ( Var##REAL92137892 != (Cont).end() ? (Type::key_type *)&*Var##REAL92137892 : NULL ); \
+    for ( ; Var##REAL92137892 != (Cont).end(); \
+    ( ++Var##REAL92137892 != (Cont).end() ? Var = (Type::key_type *)&*(Var##REAL92137892) : Var = NULL ) )
 
 /// Non constant version with ability to erase current element, if container permits.
 /// Use only on containers, for which erase do not ruin other iterators into the container
