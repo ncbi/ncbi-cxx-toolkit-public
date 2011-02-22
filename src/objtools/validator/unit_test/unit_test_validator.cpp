@@ -3906,8 +3906,11 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     // genbank
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gb|AY123456.1| - gb|AY123457.1|)"));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
+    expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Warning, "UnexpectedIdentifierChange", "New accession (gb|AY123457.1|) does not match one in NCBI sequence repository (gb|AY123456.1|) on gi (21914627)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    delete expected_errors[2];
+    expected_errors.pop_back();
 
     // ddbj
     scope.RemoveTopLevelSeqEntry(seh);
@@ -3932,7 +3935,8 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetPir().SetAccession("AY123457");
     other_acc->SetPir().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gb|AY123456.1| - pir|AY123457.1|)");
+    delete expected_errors[0];
+    expected_errors[0] = NULL;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3941,7 +3945,6 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetSwissprot().SetAccession("AY123457");
     other_acc->SetSwissprot().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gb|AY123456.1| - sp|AY123457.1|)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3950,7 +3953,6 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetPrf().SetAccession("AY123457");
     other_acc->SetPrf().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gb|AY123456.1| - prf|AY123457.1|)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3959,10 +3961,10 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetTpg().SetAccession("AY123457");
     other_acc->SetTpg().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gb|AY123456.1| - tpg|AY123457.1|)");
 
-    delete expected_errors[1];
-    expected_errors[1] = new CExpectedError("AY123456.1", eDiag_Info, "HistAssemblyMissing", "TPA record tpg|AY123457.1| should have Seq-hist.assembly for PRIMARY block");
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gb|AY123456.1| - tpg|AY123457.1|)"));
+    expected_errors.push_back (new CExpectedError("AY123456.1", eDiag_Info, "HistAssemblyMissing", "TPA record tpg|AY123457.1| should have Seq-hist.assembly for PRIMARY block"));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
 
     eval = validator.Validate(seh, options);
@@ -3996,7 +3998,6 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetOther().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "INSDRefSeqPackaging", "INSD and RefSeq records should not be present in the same set"));
-    expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gb|AY123456.1| - ref|NC_123457.1|)"));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -8653,8 +8654,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
     SetTaxon(entry, 0);
     SetTaxon(entry, 227086);
     SetLineage(entry, "some lineage; Chlorarachniophyceae");
+    expected_errors.push_back(new CExpectedError("AC_123456", eDiag_Warning, "TaxonomyLookupProblem",
+                              "Taxonomy lookup does not have expected nucleomorph flag"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
     SetGenome (entry, CBioSource::eGenome_apicoplast);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
