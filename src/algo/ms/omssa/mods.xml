@@ -2848,7 +2848,7 @@
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
     </MSModSpec_residues>
     <MSModSpec_unimod>738</MSModSpec_unimod>
-</MSModSpec>
+  </MSModSpec>
   <MSModSpec>
     <MSModSpec_mod>
       <MSMod value="mod199">199</MSMod>
@@ -2864,23 +2864,7 @@
       <MSModSpec_residues_E>X</MSModSpec_residues_E>
     </MSModSpec_residues>
     <MSModSpec_unimod>738</MSModSpec_unimod>
-</MSModSpec>
-<MSModSpec>
-    <MSModSpec_mod>
-      <MSMod value="mod198">198</MSMod>
-    </MSModSpec_mod>
-    <MSModSpec_type>
-      <MSModType value="modaa">0</MSModType>
-    </MSModSpec_type>
-    <MSModSpec_name>TMT 6-plex on K</MSModSpec_name>
-    <MSModSpec_monomass>229.162932</MSModSpec_monomass>
-    <MSModSpec_averagemass>229.2634</MSModSpec_averagemass>
-    <MSModSpec_n15mass>0</MSModSpec_n15mass>
-    <MSModSpec_residues>
-      <MSModSpec_residues_E>K</MSModSpec_residues_E>
-    </MSModSpec_residues>
-    <MSModSpec_unimod>738</MSModSpec_unimod>
-</MSModSpec>
+  </MSModSpec>
   <MSModSpec>
     <MSModSpec_mod>
       <MSMod value="mod200">200</MSMod>
@@ -3110,8 +3094,8 @@
     <MSModSpec_averagemass>229.2634</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>738</MSModSpec_unimod>
-</MSModSpec>
-<MSModSpec>
+  </MSModSpec>
+  <MSModSpec>
     <MSModSpec_mod>
       <MSMod value="mod215">215</MSMod>
     </MSModSpec_mod>
@@ -3125,5 +3109,21 @@
     <MSModSpec_residues>
       <MSModSpec_residues_E>Y</MSModSpec_residues_E>
     </MSModSpec_residues>
-</MSModSpec>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod216">216</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>TMT 6-plex on K</MSModSpec_name>
+    <MSModSpec_monomass>229.162932</MSModSpec_monomass>
+    <MSModSpec_averagemass>229.2634</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>K</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>738</MSModSpec_unimod>
+  </MSModSpec>
 </MSModSpecSet>
