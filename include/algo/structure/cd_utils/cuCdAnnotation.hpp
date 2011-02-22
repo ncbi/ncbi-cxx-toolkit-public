@@ -99,6 +99,10 @@ void SetAlignAnnotDescription(const string& descr, CAlign_annot& feature);
 NCBI_CDUTILS_EXPORT
 bool SetAlignAnnotType(CAlign_annot::TType type, CAlign_annot& feature);
 
+//  Removes the 'type' field from all Align-annots in the CCdd object
+//  [useful when a CCdd object needs to be passed to legacy software w/ an older ASN.1 spec]
+NCBI_CDUTILS_EXPORT
+void PurgeTypeFromAlignAnnots(CCdd& cd);
 
 NCBI_CDUTILS_EXPORT
 unsigned int GetAlignAnnotFromToPairs(const CAlign_annot& feature, vector<FromToPair>& pairs);

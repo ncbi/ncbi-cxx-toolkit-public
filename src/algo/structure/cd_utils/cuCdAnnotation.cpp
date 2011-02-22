@@ -335,6 +335,15 @@ bool SetAlignAnnotType(CAlign_annot::TType type, CAlign_annot& feature)
     return result;
 }
 
+void PurgeTypeFromAlignAnnots(CCdd& cd)
+{
+    if (cd.IsSetAlignannot()) {
+        CAlign_annot_set::Tdata& features = cd.SetAlignannot().Set();
+        NON_CONST_ITERATE ( CAlign_annot_set::Tdata, fit, features) {
+            if ((*fit)->IsSetType()) (*fit)->ResetType();
+        }
+    }
+}
 
 string CAlignAnnotToString(const CAlign_annot& feature, bool includeFromTo, bool includeEvidence, bool hyphenateFromTo) {
     static const string descrHeader = "Description:\n";
