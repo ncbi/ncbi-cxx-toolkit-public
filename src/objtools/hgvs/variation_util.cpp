@@ -260,27 +260,39 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariation_ref& v)
     }
 
     const CDelta_item& delta_first = *v.GetData().GetInstance().GetDelta().front();
-    if(delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
-        CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
-        TSeqPos& bio_start = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetTo() : range_loc->SetInt().SetFrom();
+
+    if(v.GetLocation().IsPnt() && delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
         int offset = delta_first.GetSeq().GetLiteral().GetLength()
                    * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
-                   * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
-        bio_start += offset;
-        v.SetLocation().Assign(*range_loc);
+                   * (v.GetLocation().GetStrand() == eNa_strand_minus ? -1 : 1);
+        v.SetLocation().SetPnt().SetPoint() += offset;
         v.SetData().SetInstance().SetDelta().pop_front();
-    }
+    } else {
+        //If the location is not a point, then the offset(s) apply to start and/or stop individually
 
-    const CDelta_item& delta_last = *v.GetData().GetInstance().GetDelta().back();
-    if(delta_last.IsSetAction() && delta_last.GetAction() == CDelta_item::eAction_offset) {
-        CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
-        TSeqPos& bio_end = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetFrom() : range_loc->SetInt().SetTo();
-        int offset = delta_last.GetSeq().GetLiteral().GetLength()
-                   * (delta_last.IsSetMultiplier() ? delta_last.GetMultiplier() : 1)
-                   * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
-        bio_end += offset;
-        v.SetLocation().Assign(*range_loc);
-        v.SetData().SetInstance().SetDelta().pop_back();
+        if(delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
+            CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
+            TSeqPos& bio_start = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetTo() : range_loc->SetInt().SetFrom();
+            int offset = delta_first.GetSeq().GetLiteral().GetLength()
+                       * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
+                       * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+            bio_start += offset;
+            v.SetLocation().Assign(*range_loc);
+            v.SetData().SetInstance().SetDelta().pop_front();
+        }
+
+        const CDelta_item& delta_last = *v.GetData().GetInstance().GetDelta().back();
+        if(delta_last.IsSetAction() && delta_last.GetAction() == CDelta_item::eAction_offset) {
+            CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
+            TSeqPos& bio_end = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetFrom() : range_loc->SetInt().SetTo();
+            int offset = delta_last.GetSeq().GetLiteral().GetLength()
+                       * (delta_last.IsSetMultiplier() ? delta_last.GetMultiplier() : 1)
+                       * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+            bio_end += offset;
+            v.SetLocation().Assign(*range_loc);
+            v.SetData().SetInstance().SetDelta().pop_back();
+        }
+
     }
 }
 
@@ -799,12 +811,12 @@ CRef<CSeq_literal> CVariationUtil::s_CatLiterals(const CSeq_literal& a, const CS
  * Convert any simple nucleotide variation to delins form, if possible; throw if not.
  * Precondition: location must be set.
  */
-void CVariationUtil::x_ChangeToDelins(CVariation_ref& v)
+void CVariationUtil::ChangeToDelins(CVariation_ref& v)
 {
     s_PropagateLocsInPlace(v);
     if(v.GetData().IsSet()) {
         NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
-            x_ChangeToDelins(**it);
+            ChangeToDelins(**it);
         }
     } else if(v.GetData().IsInstance()) {
         CVariation_inst& inst = v.SetData().SetInstance();
@@ -816,7 +828,7 @@ void CVariationUtil::x_ChangeToDelins(CVariation_ref& v)
             di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set("");
             inst.SetDelta().push_back(di);
         } else if(inst.GetDelta().size() > 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Complex deltas are not supported");
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Deltas of length >1 are not supported");
         } else {
             CDelta_item& di = *inst.SetDelta().front();
 
@@ -842,7 +854,6 @@ void CVariationUtil::x_ChangeToDelins(CVariation_ref& v)
                 if(di.GetMultiplier() < 0) {
                     NCBI_THROW(CArgException, CArgException::eInvalidArg, "Encountered negative multiplier");
                 } else {
-                    LOG_POST("Expanding multiplier");
                     CSeq_literal& literal = di.SetSeq().SetLiteral();
                     string str_kernel = literal.GetSeq_data().GetIupacna().Get();
                     literal.SetSeq_data().SetIupacna().Set("");
@@ -884,7 +895,7 @@ void CVariationUtil::x_ChangeToDelins(CVariation_ref& v)
  *    -variation must be a normalized delins (via x_ChangeToDelins)
  *    -loc must be a superset of variation's location.
  */
-void CVariationUtil::x_AdjustDelinsToInterval(CVariation_ref& v, const CSeq_loc& loc)
+void CVariationUtil::AdjustDelinsToInterval(CVariation_ref& v, const CSeq_loc& loc)
 {
     if(!loc.IsInt()) {
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected Int location");
@@ -892,7 +903,7 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation_ref& v, const CSeq_loc&
 
     if(v.GetData().IsSet()) {
         NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
-            x_AdjustDelinsToInterval(**it, loc);
+            AdjustDelinsToInterval(**it, loc);
         }
     } else if(v.GetData().IsInstance()) {
         CVariation_inst& inst = v.SetData().SetInstance();
@@ -916,8 +927,6 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation_ref& v, const CSeq_loc&
         CRef<CSeq_loc> tmp_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
         tmp_loc->SetInt().SetFrom(sequence::GetStart(v.GetLocation(), NULL, eExtreme_Positional));
         CRef<CSeq_loc> suffix_loc = sequence::Seq_loc_Subtract(*tmp_loc, v.GetLocation(), CSeq_loc::fSortAndMerge_All, NULL);
-
-
 
         tmp_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
         tmp_loc->SetInt().SetTo(sequence::GetStop(v.GetLocation(), NULL, eExtreme_Positional));
@@ -1008,7 +1017,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
 
     if(verbose) NcbiCerr << "Original variation: " << MSerial_AsnText << *v;
 
-    x_ChangeToDelins(*v);
+    ChangeToDelins(*v);
 
     if(verbose) NcbiCerr << "Normalized variation: " << MSerial_AsnText << *v;
 
@@ -1035,7 +1044,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
 
     if(verbose) NcbiCerr << "Codons-loc-ext: " << MSerial_AsnText << *codons_loc_ext;
 
-    x_AdjustDelinsToInterval(*v, *codons_loc_ext);
+    AdjustDelinsToInterval(*v, *codons_loc_ext);
 
     CSeq_literal& literal = v->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral();
     int prot_literal_len = literal.GetLength() / 3;

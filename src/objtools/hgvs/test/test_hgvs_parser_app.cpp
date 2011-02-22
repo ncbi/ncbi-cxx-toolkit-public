@@ -61,7 +61,6 @@ public:
       , m_map_up(false)
       , m_map_down(false)
     {
-        LOG_POST("Creating test-case for expression");
         string s1("");
         string s2("");
         //line = "hgvs_expression [#comment [#_THROWS:exception_string]]"

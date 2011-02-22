@@ -75,17 +75,26 @@ public:
     };
 
     /*!
-     * if variation-feat is not intronic, or alignment is not spliced-seg -> eNotApplicable
-     * else if variation is intronic but location is not at exon boundary -> eFail
-     * else -> ePass
+     * If variation-feat is not intronic, or alignment is not spliced-seg -> eNotApplicable
+     * Else if variation is intronic but location is not at exon boundary -> eFail
+     * Else -> ePass
      */
     ETestStatus CheckExonBoundary(const CSeq_feat& variation_feat, const CSeq_align& aln);
 
 
-    /* !
-     * if an allele not asserted -> eNotApplicable
-     * else if an allele is asserted, but differs from actual -> eFail
-     * else -> ePass
+    /*!
+     * Convert each variation-ref of type inst into a variation-ref of type set/package which includes
+     * the original + generated inst containing sequence retrieved from the location. If the inst
+     * is already a child of a package, add the reference-inst to the parent package instead of creating one.
+     *
+     */
+    //bool AttachReferenceSequence(CSeq_feat& variation_feat);
+
+
+    /*!
+     * If an allele not asserted -> eNotApplicable
+     * Else if an allele is asserted, but differs from actual -> eFail
+     * Else -> ePass
      */
     ETestStatus CheckAssertedAllele(const CSeq_feat& variation_feat, string* asserted = NULL, string* actual = NULL);
 
@@ -121,6 +130,22 @@ public:
     };
     SFlankLocs CreateFlankLocs(const CSeq_loc& loc, TSeqPos len);
 
+
+    /*!
+     * Convert any inst variation to delins form, if possible; throw if not.
+     * Precondition: location must be set.
+     */
+    void ChangeToDelins(CVariation_ref& v);
+
+    /*!
+     * Extend or truncate delins to specified location.
+     * truncate or attach suffixes/prefixes to seq-literals as necessary).
+     *
+     * Precondition: variation must be a normalized delins (via x_ChangeToDelins)
+     */
+    void AdjustDelinsToInterval(CVariation_ref& delins_variation, const CSeq_loc& int_loc);
+
+
     /*!
      * Calculate location of variation-sets as union of the members.
      * If all members have the same location, their locations are reset
@@ -131,9 +156,7 @@ public:
     /// Propagate parent variation location to the members of set, unles they have their own location set.
     static void s_PropagateLocsInPlace(CVariation_ref& v);
 
-
 private:
-
     //return iupacna or ncbieaa literals
     CRef<CSeq_literal> x_GetLiteralAtLoc(const CSeq_loc& loc);
 
@@ -164,19 +187,7 @@ private:
      */
     static void s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss);
 
-    /*!
-     * Convert any variation to delins form, if possible; throw if not.
-     * Precondition: location must be set.
-     */
-    void x_ChangeToDelins(CVariation_ref& v);
 
-    /*!
-     * Extend or truncate delins to specified location.
-     * truncate or attach suffixes/prefixes to seq-literals as necessary).
-     *
-     * Precondition: variation must be a normalized delins (via x_ChangeToDelins)
-     */
-    void x_AdjustDelinsToInterval(CVariation_ref& delins_variation, const CSeq_loc& loc);
 
 
     CRef<CScope> m_scope;
