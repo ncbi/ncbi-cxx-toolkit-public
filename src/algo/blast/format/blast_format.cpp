@@ -40,8 +40,11 @@ Author: Jason Papadopoulos
 #include <ncbi_pch.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
 #include <algo/blast/api/sseqloc.hpp>
@@ -610,7 +613,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
         tabinfo.SetIgAnnotation(results.GetIgAnnotation(), m_IgOptions->m_IsProtein);
         tabinfo.PrintMasterAlign();        
  
-        for (++itr; itr != aln_set->Get().end(); ++itr) {
+        for (; itr != aln_set->Get().end(); ++itr) {
             tabinfo.SetFields(**itr, *m_Scope, "NA", &m_ScoringMatrix);
             tabinfo.Print();
         }
@@ -955,6 +958,49 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
 void 
 CBlastFormat::x_ReverseQuery(blast::CIgBlastResults& results)
 {
+    // create a temporary seq_id
+    CConstRef<CSeq_id> qid = results.GetSeqId();
+    string new_id = qid->AsFastaString() + "_reversed";
+    
+    // create a bioseq
+    CBioseq_Handle q_bh = m_Scope->GetBioseqHandle(*qid);
+    int len = q_bh.GetBioseqLength();
+    CSeq_loc loc(*(const_cast<CSeq_id *>(&*qid)), 0, len-1, eNa_strand_minus);
+    CRef<CBioseq> q_new(new CBioseq(loc, new_id));
+    CConstRef<CSeq_id> new_qid = m_Scope->AddBioseq(*q_new).GetSeqId();
+    if (qid->IsLocal()) {
+        string title = sequence::GetTitle(q_bh);
+        if (title != "") {
+            CRef<CSeqdesc> des(new CSeqdesc());
+            des->SetTitle("reversed|" + title);
+            m_Scope->GetBioseqEditHandle(*q_new).SetDescr().Set().push_back(des);
+        }
+    }
+
+    // set up the mapping
+    CSeq_loc new_loc(*(const_cast<CSeq_id *>(&*new_qid)), 0, len-1, eNa_strand_plus);
+    CSeq_loc_Mapper mapper(loc, new_loc, &*m_Scope);
+
+    // replace the alignment with the new query 
+    CRef<CSeq_align_set> align_set(new CSeq_align_set());
+    ITERATE(CSeq_align_set::Tdata, align, results.GetSeqAlign()->Get()) {
+        CRef<CSeq_align> new_align = mapper.Map(**align, 0);
+        align_set->Set().push_back(new_align);
+    }
+    results.SetSeqAlign().Reset(&*align_set);
+
+    // reverse IgAnnotations
+    CRef<CIgAnnotation> &annots = results.SetIgAnnotation();
+    for (int i=0; i<6; i+=2) {
+        int start = annots->m_GeneInfo[i];
+        if (start >= 0) {
+            annots->m_GeneInfo[i] = len - annots->m_GeneInfo[i+1];
+            annots->m_GeneInfo[i+1] = len - start;
+        }
+    }
+    for (int i=0; i<12; ++i) {
+        // TODO
+    }
 }
 
 void

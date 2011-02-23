@@ -58,16 +58,24 @@ CIgBlast::Run()
     CRef<IQueryFactory> qf;
     CRef<CBlastOptionsHandle> opts_hndl(CBlastOptionsFactory
            ::Create((m_IgOptions->m_IsProtein)? eBlastp: eBlastn));
-    CRef<CSearchResultSet> results;
+    CRef<CSearchResultSet> results[3], result;
 
     /*** search germline database */
     int num_genes =  (m_IgOptions->m_IsProtein) ? 1 : 3;
     for (int gene = 0; gene < num_genes; ++gene) {
         x_SetupGLSearch(gene, annots, qf, opts_hndl);
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
-        results = blast.Run();
-        s_AnnotateGene(gene, results, annots);
-        s_AppendResults(results, final_results);
+        results[gene] = blast.Run();
+        s_AnnotateGene(gene, results[gene], annots);
+    }
+
+    /*** check and modify the germline search results */
+    if (num_genes > 1) {
+        s_CheckGeneAnnotations(results, annots);
+    }
+
+    for (int gene = 0; gene  < num_genes; ++gene) {
+        s_AppendResults(results[gene], final_results);
     }
     
     /*** search user specified db */
@@ -75,7 +83,7 @@ CIgBlast::Run()
     if (m_IsLocal) {
         CLocalBlast blast(qf, m_Options, m_LocalDb);
         // blast.SetNumberOfThreads(num_threads);
-        results = blast.Run();
+        result = blast.Run();
     } else {
         CRef<CRemoteBlast> blast;
         if (m_RemoteDb.NotEmpty()) {
@@ -84,13 +92,13 @@ CIgBlast::Run()
         } else {
             blast.Reset(new CRemoteBlast(qf, m_Options, m_Subject));
         }
-        results = blast->GetResultSet();
+        result = blast->GetResultSet();
     }
-    s_AppendResults(results, final_results);
+    s_AppendResults(result, final_results);
 
     /*** search germline db for region annotation */
     // TODO set up germline search fo db[3]
-    s_AnnotateDomain(results, annots);
+    s_AnnotateDomain(result, annots);
     s_SetAnnotation(annots, final_results);
 
     return final_results;
@@ -224,6 +232,12 @@ void CIgBlast::s_AnnotateGene(int                            gene,
             }
         } 
     }
+};
+
+void CIgBlast::s_CheckGeneAnnotations(CRef<CSearchResultSet> results[3], 
+                                vector<CRef <CIgAnnotation> > &annots)
+{
+    //TODO
 };
 
 void CIgBlast::s_AnnotateDomain(CRef<CSearchResultSet>        &results, 

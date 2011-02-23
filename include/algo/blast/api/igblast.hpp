@@ -98,6 +98,10 @@ public:
     CRef<CIgAnnotation> & SetIgAnnotation() {
         return m_Annotation;
     }
+
+    CRef<CSeq_align_set> & SetSeqAlign() {
+        return m_Alignment;
+    }
     
     /// Constructor
     /// @param query List of query identifiers [in]
@@ -188,6 +192,10 @@ private:
     static void s_AnnotateGene(int                           gene,
                                CRef<CSearchResultSet>        &results, 
                                vector<CRef <CIgAnnotation> > &annot);
+
+    /// Check if the gene annotation criteria are met
+    static void s_CheckGeneAnnotations(CRef<CSearchResultSet>  results[3],
+                                 vector<CRef <CIgAnnotation> > &annot);
 
     /// Anntate the domains based on blast results
     static void s_AnnotateDomain(CRef<CSearchResultSet>        &results, 

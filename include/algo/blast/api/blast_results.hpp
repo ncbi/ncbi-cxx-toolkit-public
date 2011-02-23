@@ -240,7 +240,7 @@ public:
          return m_PhiQueryInfo;
     }
 
-private:
+protected:
     /// this query's id
     CConstRef<objects::CSeq_id> m_QueryId;
     
