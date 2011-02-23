@@ -155,3 +155,8 @@ December 28, 2010
 version 3.2.2
 Take into account Unicode settings when processing 3rd party libraries settings.
 Added possibility to add Unicode configurations by default.
+
+February 23, 2011
+version 3.3.0
+Improved the way project tree builder processes localization macros.
+In 3rd party library description, extended the meaning of FILES to include alternatives.
