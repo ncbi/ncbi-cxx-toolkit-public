@@ -282,7 +282,6 @@ private:
     const SAnnotSelector& GetSelector(void);
     bool CanResolveId(const CSeq_id_Handle& idh, const CBioseq_Handle& bh);
 
-    void x_Clear(void);
     void x_Initialize0(const SAnnotSelector& selector);
     void x_Initialize(const SAnnotSelector& selector,
                       const CBioseq_Handle& bioseq,

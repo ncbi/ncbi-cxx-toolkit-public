@@ -1330,7 +1330,6 @@ CAnnot_Collector::CAnnot_Collector(CScope& scope)
 
 CAnnot_Collector::~CAnnot_Collector(void)
 {
-    x_Clear();
 }
 
 
@@ -1346,18 +1345,6 @@ bool CAnnot_Collector::x_NoMoreObjects(void) const
         size += m_MappingCollector->m_AnnotMappingSet.size();
     }
     return size >= limit;
-}
-
-
-void CAnnot_Collector::x_Clear(void)
-{
-    m_AnnotLocsSet.reset();
-    m_AnnotNames.reset();
-    m_AnnotSet.clear();
-    m_MappingCollector.reset();
-    m_TSE_LockMap.clear();
-    m_Scope = CHeapScope();
-    m_Selector = 0;
 }
 
 
@@ -1440,138 +1427,122 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         NCBI_THROW(CAnnotException, eBadLocation,
                    "Bioseq handle is null");
     }
-    try {
-        CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
-        x_Initialize0(selector);
+    CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
+    x_Initialize0(selector);
 
-        CSeq_id_Handle master_id = bh.GetAccessSeq_id_Handle();
-        CHandleRange master_range;
-        master_range.AddRange(range, strand);
+    CSeq_id_Handle master_id = bh.GetAccessSeq_id_Handle();
+    CHandleRange master_range;
+    master_range.AddRange(range, strand);
 
-        int depth = selector.GetResolveDepth();
-        bool depth_is_set = depth >= 0 && depth < kMax_Int;
-        bool exact_depth = selector.GetExactDepth() && depth_is_set;
-        int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
-        int by_policy = adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy;
-        adaptive_flags &=
-            SAnnotSelector::fAdaptive_ByTriggers |
-            SAnnotSelector::fAdaptive_BySubtypes;
+    int depth = selector.GetResolveDepth();
+    bool depth_is_set = depth >= 0 && depth < kMax_Int;
+    bool exact_depth = selector.GetExactDepth() && depth_is_set;
+    int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
+    int by_policy = adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy;
+    adaptive_flags &=
+        SAnnotSelector::fAdaptive_ByTriggers |
+        SAnnotSelector::fAdaptive_BySubtypes;
 
-        // main sequence
-        bool deeper = true;
-        if ( adaptive_flags || !exact_depth || depth == 0 ) {
-            x_SearchMaster(bh, master_id, master_range);
-            deeper = !x_NoMoreObjects();
-        }
-        if ( deeper ) {
-            deeper = depth > 0 &&
-                selector.GetResolveMethod() != selector.eResolve_None;
-        }
-        if ( deeper && by_policy ) {
-            deeper =
-                bh.GetFeatureFetchPolicy() != bh.eFeatureFetchPolicy_only_near;
-        }
-        if ( deeper && adaptive_flags ) {
-            m_CollectAnnotTypes &= m_UnseenAnnotTypes;
-            deeper = m_CollectAnnotTypes.any();
-        }
-        if ( deeper ) {
-            deeper = bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef);
-        }
+    // main sequence
+    bool deeper = true;
+    if ( adaptive_flags || !exact_depth || depth == 0 ) {
+        x_SearchMaster(bh, master_id, master_range);
+        deeper = !x_NoMoreObjects();
+    }
+    if ( deeper ) {
+        deeper = depth > 0 &&
+            selector.GetResolveMethod() != selector.eResolve_None;
+    }
+    if ( deeper && by_policy ) {
+        deeper =
+            bh.GetFeatureFetchPolicy() != bh.eFeatureFetchPolicy_only_near;
+    }
+    if ( deeper && adaptive_flags ) {
+        m_CollectAnnotTypes &= m_UnseenAnnotTypes;
+        deeper = m_CollectAnnotTypes.any();
+    }
+    if ( deeper ) {
+        deeper = bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef);
+    }
 
-        if ( deeper ) {
-            CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
-            master_loc_empty->
-                SetEmpty(const_cast<CSeq_id&>(*master_id.GetSeqId()));
-            for ( int level = 1; level <= depth && deeper; ++level ) {
-                // segments
-                if ( adaptive_flags || !exact_depth || depth == level ) {
-                    deeper = x_SearchSegments(bh, master_id, master_range,
-                                              *master_loc_empty, level);
-                    if ( deeper ) {
-                        deeper = !x_NoMoreObjects();
-                    }
-                }
+    if ( deeper ) {
+        CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
+        master_loc_empty->
+            SetEmpty(const_cast<CSeq_id&>(*master_id.GetSeqId()));
+        for ( int level = 1; level <= depth && deeper; ++level ) {
+            // segments
+            if ( adaptive_flags || !exact_depth || depth == level ) {
+                deeper = x_SearchSegments(bh, master_id, master_range,
+                                          *master_loc_empty, level);
                 if ( deeper ) {
-                    deeper = depth > level;
-                }
-                if ( deeper && adaptive_flags ) {
-                    m_CollectAnnotTypes &= m_UnseenAnnotTypes;
-                    deeper = m_CollectAnnotTypes.any();
+                    deeper = !x_NoMoreObjects();
                 }
             }
+            if ( deeper ) {
+                deeper = depth > level;
+            }
+            if ( deeper && adaptive_flags ) {
+                m_CollectAnnotTypes &= m_UnseenAnnotTypes;
+                deeper = m_CollectAnnotTypes.any();
+            }
         }
+    }
         
-        x_AddPostMappings();
-        x_Sort();
-    }
-    catch (const CException& exc) {
-        ERR_POST("CAnnot_Collector::x_Initialize: "<<exc);
-        // clear all members - GCC 3.0.4 does not do it
-        x_Clear();
-        throw;
-    }
+    x_AddPostMappings();
+    x_Sort();
 }
 
 
 void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                                     const CHandleRangeMap& master_loc)
 {
-    try {
-        CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
-        x_Initialize0(selector);
+    CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
+    x_Initialize0(selector);
 
-        int depth = selector.GetResolveDepth();
-        bool depth_is_set = depth >= 0 && depth < kMax_Int;
-        bool exact_depth = selector.GetExactDepth() && depth_is_set;
-        int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
-        adaptive_flags &=
-            SAnnotSelector::fAdaptive_ByTriggers |
-            SAnnotSelector::fAdaptive_BySubtypes;
+    int depth = selector.GetResolveDepth();
+    bool depth_is_set = depth >= 0 && depth < kMax_Int;
+    bool exact_depth = selector.GetExactDepth() && depth_is_set;
+    int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
+    adaptive_flags &=
+        SAnnotSelector::fAdaptive_ByTriggers |
+        SAnnotSelector::fAdaptive_BySubtypes;
 
-        // main sequence
-        bool deeper = true;
-        if ( adaptive_flags || !exact_depth || depth == 0 ) {
-            x_SearchLoc(master_loc, 0, 0, true);
-            deeper = !x_NoMoreObjects();
-        }
-        if ( deeper ) {
-            deeper = depth > 0 &&
-                selector.GetResolveMethod() != selector.eResolve_None;
-        }
-        if ( deeper && adaptive_flags ) {
-            m_CollectAnnotTypes &= m_UnseenAnnotTypes;
-            deeper = m_CollectAnnotTypes.any();
-        }
+    // main sequence
+    bool deeper = true;
+    if ( adaptive_flags || !exact_depth || depth == 0 ) {
+        x_SearchLoc(master_loc, 0, 0, true);
+        deeper = !x_NoMoreObjects();
+    }
+    if ( deeper ) {
+        deeper = depth > 0 &&
+            selector.GetResolveMethod() != selector.eResolve_None;
+    }
+    if ( deeper && adaptive_flags ) {
+        m_CollectAnnotTypes &= m_UnseenAnnotTypes;
+        deeper = m_CollectAnnotTypes.any();
+    }
 
-        if ( deeper ) {
-            for ( int level = 1; level <= depth && deeper; ++level ) {
-                // segments
-                if ( adaptive_flags || !exact_depth || depth == level ) {
-                    deeper = x_SearchSegments(master_loc, level);
-                    if ( deeper ) {
-                        deeper = !x_NoMoreObjects();
-                    }
-                }
+    if ( deeper ) {
+        for ( int level = 1; level <= depth && deeper; ++level ) {
+            // segments
+            if ( adaptive_flags || !exact_depth || depth == level ) {
+                deeper = x_SearchSegments(master_loc, level);
                 if ( deeper ) {
-                    deeper = depth > level;
-                }
-                if ( deeper && adaptive_flags ) {
-                    m_CollectAnnotTypes &= m_UnseenAnnotTypes;
-                    deeper = m_CollectAnnotTypes.any();
+                    deeper = !x_NoMoreObjects();
                 }
             }
+            if ( deeper ) {
+                deeper = depth > level;
+            }
+            if ( deeper && adaptive_flags ) {
+                m_CollectAnnotTypes &= m_UnseenAnnotTypes;
+                deeper = m_CollectAnnotTypes.any();
+            }
         }
+    }
 
-        x_AddPostMappings();
-        x_Sort();
-    }
-    catch (const CException& exc) {
-        ERR_POST("CAnnot_Collector::x_Initialize: "<<exc);
-        // clear all members - GCC 3.0.4 does not do it
-        x_Clear();
-        throw;
-    }
+    x_AddPostMappings();
+    x_Sort();
 }
 
 
@@ -1893,22 +1864,14 @@ void CAnnot_Collector::x_AddPostMappings(void)
 
 void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector)
 {
-    try {
-        CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
-        x_Initialize0(selector);
-        // Limit must be set, resolving is obsolete
-        _ASSERT(m_Selector->m_LimitObjectType != SAnnotSelector::eLimit_None);
-        _ASSERT(m_Selector->m_LimitObject);
-        _ASSERT(m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_None);
-        x_SearchAll();
-        x_Sort();
-    }
-    catch (const CException& exc) {
-        ERR_POST("CAnnot_Collector::x_Initialize: "<<exc);
-        // clear all members - GCC 3.0.4 does not do it
-        x_Clear();
-        throw;
-    }
+    CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
+    x_Initialize0(selector);
+    // Limit must be set, resolving is obsolete
+    _ASSERT(m_Selector->m_LimitObjectType != SAnnotSelector::eLimit_None);
+    _ASSERT(m_Selector->m_LimitObject);
+    _ASSERT(m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_None);
+    x_SearchAll();
+    x_Sort();
 }
 
 
