@@ -55,7 +55,7 @@
 #include <dbapi/dbapi.hpp>
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
-
+#include <objmgr/seq_loc_mapper.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -157,6 +157,10 @@ public:
     static void s_PropagateLocsInPlace(CVariation_ref& v);
 
 private:
+
+    //precondition: s_AddIntronicOffsets has been called as applicable
+    static void s_Remap(CVariation_ref& vr, CSeq_loc_Mapper& mapper, const CSeq_loc& parent_variation_loc);
+
     //return iupacna or ncbieaa literals
     CRef<CSeq_literal> x_GetLiteralAtLoc(const CSeq_loc& loc);
 
@@ -177,15 +181,15 @@ private:
      * Apply offsets to the variation's location (variation must be inst)
      * E.g. the original variation could be a transcript location with offsets specifying intronic location.
      * After original transcript lociation is remapped, the offsets are to be applied to the remapped location
-     * to get absolute offset-free genomic location
+     * to get absolute offset-free genomic location.
      */
-    static void s_ResolveIntronicOffsets(CVariation_ref& v);
+    static void s_ResolveIntronicOffsets(CVariation_ref& v, const CSeq_loc& parent_variation_loc);
 
     /*!
      * If start|stop don't fall into an exon, adjust start|stop to the closest exon boundary and add offset to inst.
      * This is to be applied before remapping a genomic variation to transcript coordinates
      */
-    static void s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss);
+    static void s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss, const CSeq_loc& parent_variation_loc);
 
 
 

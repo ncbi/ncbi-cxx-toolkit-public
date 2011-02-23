@@ -72,7 +72,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
 CVariationUtil::ETestStatus CVariationUtil::CheckAssertedAllele(
         const CSeq_feat& variation_feat,
         string* asserted_out,
@@ -94,43 +93,48 @@ CVariationUtil::ETestStatus CVariationUtil::CheckAssertedAllele(
     bool is_ok = true;
     for(CTypeIterator<CVariation_ref> it1(Begin(vr)); it1; ++it1) {
         const CVariation_ref& vr1 = *it1;
-        if(!vr1.IsSetExt()
-           || !vr1.GetExt().GetType().IsStr()
-           || vr1.GetExt().GetType().GetStr() != "HGVS"
-           || !vr1.GetExt().HasField("asserted_sequence"))
+        if(vr1.GetData().IsInstance()
+           && vr1.GetData().GetInstance().IsSetObservation()
+           && vr1.GetData().GetInstance().GetObservation() == CVariation_inst::eObservation_asserted)
         {
-            continue;
-        }
-
-        have_asserted_seq = true;
-        const string& asserted_seq = vr1.GetExt().GetField("asserted_sequence").GetData().GetStr();
-
-        //an asserted sequnece may be of the form "A..BC", where ".." is to be interpreted as a
-        //gap of arbitrary length - we need to match prefix and suffix separately
-        string prefix, suffix;
-        string str_tmp = NStr::Replace(asserted_seq, "..", "\t"); //SplitInTwo's delimiter must be single-character
-        NStr::SplitInTwo(str_tmp, "\t", prefix, suffix);
-
-        CSeqVector v(vr1.GetLocation(), *m_scope, CBioseq_Handle::eCoding_Iupac);
-        string actual_seq;
-        v.GetSeqData(v.begin(), v.end(), actual_seq);
-
-        if(   prefix.size() > 0 && !NStr::StartsWith(actual_seq, prefix)
-           || suffix.size() > 0 && !NStr::EndsWith(actual_seq, suffix))
-        {
-            is_ok = false;
-            if(asserted_out) {
-                *asserted_out = asserted_seq;
+            string asserted_seq;
+            const CSeq_literal& literal = vr1.GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral();
+            if(literal.GetSeq_data().IsIupacna()) {
+                asserted_seq = literal.GetSeq_data().GetIupacna();
+                have_asserted_seq = true;
+            } else if(literal.GetSeq_data().IsNcbieaa()) {
+                asserted_seq = literal.GetSeq_data().GetNcbieaa();
+                have_asserted_seq = true;
             }
-            if(actual_out) {
-                *actual_out = actual_seq;
+
+            //an asserted sequnece may be of the form "A..BC", where ".." is to be interpreted as a
+            //gap of arbitrary length - we need to match prefix and suffix separately
+            string prefix, suffix;
+            string str_tmp = NStr::Replace(asserted_seq, "..", "\t"); //SplitInTwo's delimiter must be single-character
+            NStr::SplitInTwo(str_tmp, "\t", prefix, suffix);
+
+            CSeqVector v(vr1.GetLocation(), *m_scope, CBioseq_Handle::eCoding_Iupac);
+            string actual_seq;
+            v.GetSeqData(v.begin(), v.end(), actual_seq);
+
+            if(   prefix.size() > 0 && !NStr::StartsWith(actual_seq, prefix)
+               || suffix.size() > 0 && !NStr::EndsWith(actual_seq, suffix))
+            {
+                is_ok = false;
+                if(asserted_out) {
+                    *asserted_out = asserted_seq;
+                }
+                if(actual_out) {
+                    *actual_out = actual_seq;
+                }
+                break;
             }
-            break;
         }
     }
 
     return !have_asserted_seq ? eNotApplicable : is_ok ? ePass : eFail;
 }
+
 
 /*!
  * if variation-feat is not intronic, or alignment is not spliced-seg -> eNotApplicable
@@ -247,144 +251,193 @@ void CVariationUtil::s_PropagateLocsInPlace(CVariation_ref& v)
     }
 }
 
-
-
-void CVariationUtil::s_ResolveIntronicOffsets(CVariation_ref& v)
+void CVariationUtil::s_ResolveIntronicOffsets(CVariation_ref& v, const CSeq_loc& parent_variation_loc)
 {
-    if(!v.GetData().IsInstance()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected inst");
-    }
+    const CSeq_loc& variation_loc = v.IsSetLocation() ? v.GetLocation() : parent_variation_loc;
 
-    if(!v.IsSetLocation()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected location to be set");
-    }
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            s_ResolveIntronicOffsets(**it, variation_loc);
+        }
+    } else if(v.GetData().IsInstance()) {
+        const CDelta_item& delta_first = *v.GetData().GetInstance().GetDelta().front();
 
-    const CDelta_item& delta_first = *v.GetData().GetInstance().GetDelta().front();
-
-    if(v.GetLocation().IsPnt() && delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
-        int offset = delta_first.GetSeq().GetLiteral().GetLength()
-                   * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
-                   * (v.GetLocation().GetStrand() == eNa_strand_minus ? -1 : 1);
-        v.SetLocation().SetPnt().SetPoint() += offset;
-        v.SetData().SetInstance().SetDelta().pop_front();
-    } else {
-        //If the location is not a point, then the offset(s) apply to start and/or stop individually
-
-        if(delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
-            CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
-            TSeqPos& bio_start = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetTo() : range_loc->SetInt().SetFrom();
+        if(variation_loc.IsPnt() && delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
+            if(!v.IsSetLocation()) {
+                v.SetLocation().Assign(variation_loc);
+            }
             int offset = delta_first.GetSeq().GetLiteral().GetLength()
                        * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
-                       * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
-            bio_start += offset;
-            v.SetLocation().Assign(*range_loc);
+                       * (v.GetLocation().GetStrand() == eNa_strand_minus ? -1 : 1);
+            v.SetLocation().SetPnt().SetPoint() += offset;
             v.SetData().SetInstance().SetDelta().pop_front();
-        }
+        } else {
+            //If the location is not a point, then the offset(s) apply to start and/or stop individually
+            if(delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
+                if(!v.IsSetLocation()) {
+                    v.SetLocation().Assign(variation_loc);
+                }
+                CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
+                TSeqPos& bio_start = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetTo() : range_loc->SetInt().SetFrom();
+                int offset = delta_first.GetSeq().GetLiteral().GetLength()
+                           * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
+                           * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+                bio_start += offset;
+                v.SetLocation().Assign(*range_loc);
+                v.SetData().SetInstance().SetDelta().pop_front();
+            }
 
-        const CDelta_item& delta_last = *v.GetData().GetInstance().GetDelta().back();
-        if(delta_last.IsSetAction() && delta_last.GetAction() == CDelta_item::eAction_offset) {
-            CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
-            TSeqPos& bio_end = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetFrom() : range_loc->SetInt().SetTo();
-            int offset = delta_last.GetSeq().GetLiteral().GetLength()
-                       * (delta_last.IsSetMultiplier() ? delta_last.GetMultiplier() : 1)
-                       * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
-            bio_end += offset;
-            v.SetLocation().Assign(*range_loc);
-            v.SetData().SetInstance().SetDelta().pop_back();
+            const CDelta_item& delta_last = *v.GetData().GetInstance().GetDelta().back();
+            if(delta_last.IsSetAction() && delta_last.GetAction() == CDelta_item::eAction_offset) {
+                if(!v.IsSetLocation()) {
+                    v.SetLocation().Assign(variation_loc);
+                }
+                CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
+                TSeqPos& bio_end = range_loc->GetStrand() == eNa_strand_minus ? range_loc->SetInt().SetFrom() : range_loc->SetInt().SetTo();
+                int offset = delta_last.GetSeq().GetLiteral().GetLength()
+                           * (delta_last.IsSetMultiplier() ? delta_last.GetMultiplier() : 1)
+                           * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+                bio_end += offset;
+                v.SetLocation().Assign(*range_loc);
+                v.SetData().SetInstance().SetDelta().pop_back();
+            }
         }
-
     }
 }
 
 
-void CVariationUtil::s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss)
+void CVariationUtil::s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss, const CSeq_loc& parent_variation_loc)
 {
-    if(!v.GetData().IsInstance()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected inst");
-    }
+    const CSeq_loc& vloc = v.IsSetLocation() ? v.GetLocation() : parent_variation_loc;
 
-    if(!v.IsSetLocation()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected location to be set");
-    }
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            s_AddIntronicOffsets(**it, ss, vloc);
+        }
+    } else if(v.GetData().IsInstance()) {
+        if(!vloc.GetId() || !vloc.GetId()->Equals(ss.GetGenomic_id()))
+        {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected genomic_id in the variation to be the same as in spliced-seg");
+        }
 
-    if(!v.GetLocation().GetId()
-       || !v.GetLocation().GetId()->Equals(ss.GetGenomic_id()))
-    {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected genomic_id in the variation to be the same as in spliced-seg");
-    }
+        long start = vloc.GetStart(eExtreme_Positional);
+        long stop = vloc.GetStop(eExtreme_Positional);
 
-    long start = v.GetLocation().GetStart(eExtreme_Positional);
-    long stop = v.GetLocation().GetStop(eExtreme_Positional);
+        long closest_start = 0; //closest-exon-boundary for bio-start of variation location
+        long closest_stop = 0; //closest-exon-boundary for bio-stop of variation location
 
-    long closest_start = 0; //closest-exon-boundary for bio-start of variation location
-    long closest_stop = 0; //closest-exon-boundary for bio-stop of variation location
+        ITERATE(CSpliced_seg::TExons, it, ss.GetExons()) {
+            const CSpliced_exon& se = **it;
 
-    ITERATE(CSpliced_seg::TExons, it, ss.GetExons()) {
-        const CSpliced_exon& se = **it;
-
-        if(se.GetGenomic_end() >= start && se.GetGenomic_start() <= start) {
-            closest_start = start; //start is within exon - use itself.
-        } else {
-            if(abs((long)se.GetGenomic_end() - start) < abs(closest_start - start)) {
-                closest_start = (long)se.GetGenomic_end();
+            if(se.GetGenomic_end() >= start && se.GetGenomic_start() <= start) {
+                closest_start = start; //start is within exon - use itself.
+            } else {
+                if(abs((long)se.GetGenomic_end() - start) < abs(closest_start - start)) {
+                    closest_start = (long)se.GetGenomic_end();
+                }
+                if(abs((long)se.GetGenomic_start() - start) < abs(closest_start - start)) {
+                    closest_start = (long)se.GetGenomic_start();
+                }
             }
-            if(abs((long)se.GetGenomic_start() - start) < abs(closest_start - start)) {
-                closest_start = (long)se.GetGenomic_start();
+
+            if(se.GetGenomic_end() >= stop && se.GetGenomic_start() <= stop) {
+                closest_stop = stop; //end is within exon - use itself.
+            } else {
+                if(abs((long)se.GetGenomic_end() - stop) < abs(closest_stop - stop)) {
+                    closest_stop = (long)se.GetGenomic_end();
+                }
+                if(abs((long)se.GetGenomic_start() - stop) < abs(closest_stop - stop)) {
+                    closest_stop = (long)se.GetGenomic_start();
+                }
             }
         }
 
-        if(se.GetGenomic_end() >= stop && se.GetGenomic_start() <= stop) {
-            closest_stop = stop; //end is within exon - use itself.
-        } else {
-            if(abs((long)se.GetGenomic_end() - stop) < abs(closest_stop - stop)) {
-                closest_stop = (long)se.GetGenomic_end();
+        //adjust location
+        if(start != closest_start || stop != closest_stop) {
+            CRef<CSeq_loc> loc = sequence::Seq_loc_Merge(vloc, CSeq_loc::fMerge_SingleRange, NULL);
+            loc->SetInt().SetFrom(closest_start);
+            loc->SetInt().SetTo(closest_stop);
+            v.SetLocation().Assign(*loc);
+        }
+
+        //add offsets
+        if(start != closest_start) {
+            int offset = start - closest_start;
+            CRef<CDelta_item> delta(new CDelta_item);
+            delta->SetAction(CDelta_item::eAction_offset);
+            delta->SetSeq().SetLiteral().SetLength(abs(offset));
+
+            int sign = (v.GetLocation().GetStrand() == eNa_strand_minus ? -1 : 1) * (offset < 0 ? -1 : 1);
+            if(sign < 0) {
+                delta->SetMultiplier(-1);
             }
-            if(abs((long)se.GetGenomic_start() - stop) < abs(closest_stop - stop)) {
-                closest_stop = (long)se.GetGenomic_start();
+            if(v.GetLocation().GetStrand() == eNa_strand_minus) {
+                v.SetData().SetInstance().SetDelta().push_back(delta);
+            } else {
+                v.SetData().SetInstance().SetDelta().push_front(delta);
+            }
+        }
+
+        if(stop != closest_stop && start != stop) {
+            int offset = stop - closest_stop;
+            CRef<CDelta_item> delta(new CDelta_item);
+            delta->SetAction(CDelta_item::eAction_offset);
+            delta->SetSeq().SetLiteral().SetLength(abs(offset));
+            int sign = (v.GetLocation().GetStrand() == eNa_strand_minus ? -1 : 1) * (offset < 0 ? -1 : 1);
+            if(sign < 0) {
+                delta->SetMultiplier(-1);
+            }
+            if(v.GetLocation().GetStrand() == eNa_strand_minus) {
+                v.SetData().SetInstance().SetDelta().push_front(delta);
+            } else {
+                v.SetData().SetInstance().SetDelta().push_back(delta);
             }
         }
     }
+}
 
-    //adjust location
-    if(start != closest_start || stop != closest_stop) {
-        CRef<CSeq_loc> loc = sequence::Seq_loc_Merge(v.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL);
-        loc->SetInt().SetFrom(closest_start);
-        loc->SetInt().SetTo(closest_stop);
-        v.SetLocation().Assign(*loc);
+
+bool IsFirstSubsetOfSecond(const CSeq_loc& aa, const CSeq_loc& bb)
+{
+    CRef<CSeq_loc> a(new CSeq_loc);
+    a->Assign(aa);
+    a->ResetStrand();
+
+    CRef<CSeq_loc> b(new CSeq_loc);
+    b->Assign(bb);
+    b->ResetStrand();
+
+    CRef<CSeq_loc> sub_loc = a->Subtract(*b, CSeq_loc::fSortAndMerge_All, NULL, NULL);
+    return !sub_loc->Which() || sequence::GetLength(*sub_loc, NULL) == 0;
+}
+
+
+void CVariationUtil::s_Remap(CVariation_ref& vr, CSeq_loc_Mapper& mapper, const CSeq_loc& parent_variation_loc)
+{
+    const CSeq_loc& variation_loc = vr.IsSetLocation() ? vr.GetLocation() : parent_variation_loc;
+
+    if(vr.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, vr.SetData().SetSet().SetVariations()) {
+            s_Remap(**it, mapper, variation_loc);
+        }
+    } else if(vr.GetData().IsInstance()) {
+        //remap inst: process inst's locations in delta that are subset of the variation-loc.
+        NON_CONST_ITERATE(CVariation_inst::TDelta, it, vr.SetData().SetInstance().SetDelta()) {
+            CDelta_item& di = **it;
+            if(!di.IsSetSeq() || !di.GetSeq().IsLoc() || !IsFirstSubsetOfSecond(di.GetSeq().GetLoc(), variation_loc)) {
+                continue;
+            }
+            CRef<CSeq_loc> mapped_loc = mapper.Map(di.GetSeq().GetLoc());
+            CRef<CSeq_loc> merged_mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fSortAndMerge_All, NULL);
+            di.SetSeq().SetLoc().Assign(*merged_mapped_loc);
+        }
     }
 
-    //add offsets
-    if(start != closest_start) {
-        int offset = start - closest_start;
-        CRef<CDelta_item> delta(new CDelta_item);
-        delta->SetAction(CDelta_item::eAction_offset);
-        delta->SetSeq().SetLiteral().SetLength(abs(offset));
-
-        int sign = (v.GetLocation().GetStrand() == eNa_strand_minus ? -1 : 1) * (offset < 0 ? -1 : 1);
-        if(sign < 0) {
-            delta->SetMultiplier(-1);
-        }
-        if(v.GetLocation().GetStrand() == eNa_strand_minus) {
-            v.SetData().SetInstance().SetDelta().push_back(delta);
-        } else {
-            v.SetData().SetInstance().SetDelta().push_front(delta);
-        }
-    }
-
-    if(stop != closest_stop && start != stop) {
-        int offset = stop - closest_stop;
-        CRef<CDelta_item> delta(new CDelta_item);
-        delta->SetAction(CDelta_item::eAction_offset);
-        delta->SetSeq().SetLiteral().SetLength(abs(offset));
-        int sign = (v.GetLocation().GetStrand() == eNa_strand_minus ? -1 : 1) * (offset < 0 ? -1 : 1);
-        if(sign < 0) {
-            delta->SetMultiplier(-1);
-        }
-        if(v.GetLocation().GetStrand() == eNa_strand_minus) {
-            v.SetData().SetInstance().SetDelta().push_front(delta);
-        } else {
-            v.SetData().SetInstance().SetDelta().push_back(delta);
-        }
+    //remap the location.
+    if(vr.IsSetLocation()) {
+        CRef<CSeq_loc> mapped_loc = mapper.Map(vr.GetLocation());
+        CRef<CSeq_loc> merged_mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fSortAndMerge_All, NULL);
+        vr.SetLocation().Assign(*merged_mapped_loc);
     }
 }
 
@@ -398,114 +451,42 @@ CRef<CSeq_feat> CVariationUtil::Remap(const CSeq_feat& variation_feat, const CSe
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "feature must be of variation-feat type");
     }
 
-    //temporarily transfer root location to variation-feat, so we can only
-    //concentrate on mapping variation-refs recursively. will transfer back when done.
-    feat->SetData().SetVariation().SetLocation().Assign(feat->GetLocation());
+    CVariation_ref& vr = feat->SetData().SetVariation();
 
-    CRef<CSeq_loc_mix> locs(new CSeq_loc_mix);
-    for(CTypeIterator<CVariation_ref> it1(Begin(feat->SetData().SetVariation())); it1; ++it1) {
-        //Step1: collect locs to remap (non-const refs)
-        locs->Set().clear();
-        CVariation_ref& vr = *it1;
-        if(vr.IsSetLocation()) {
-            locs->Set().push_back(CRef<CSeq_loc>(&vr.SetLocation()));
+    //copy the feature's location to root variation's for remapping (will move back when done)
+    vr.SetLocation().Assign(feat->GetLocation());
+    if(!vr.GetLocation().GetId()) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Can't get unique seq-id for location");
+    }
 
-            //save the original in ext-locs
-            typedef CVariation_ref::TExt_locs::value_type TExtLoc;
-            TExtLoc ext_loc(new TExtLoc::TObjectType);
-            ext_loc->SetId().SetStr("mapped-from");
-            ext_loc->SetLocation().Assign(vr.GetLocation());
-            vr.SetExt_locs().push_back(ext_loc);
+    if(aln.GetSegs().IsSpliced() && aln.GetSegs().GetSpliced().GetGenomic_id().Equals(*vr.GetLocation().GetId())) {
+        s_AddIntronicOffsets(vr, aln.GetSegs().GetSpliced(), vr.GetLocation());
+    }
+
+    CSeq_align::TDim target_row = -1;
+    for(int i = 0; i < 2; i++) {
+        if(sequence::IsSameBioseq(*vr.GetLocation().GetId(), aln.GetSeq_id(i), m_scope )) {
+            target_row = 1 - i;
         }
+    }
+    if(target_row == -1) {
+        NCBI_THROW(CException, eUnknown, "The alignment has no row for seq-id " + vr.GetLocation().GetId()->AsFastaString());
+    }
 
-        /*
-         * Not sure whether we want to remap seq-locs in delta-inst.
-         * E.g. if the original is an inversion, the delta-loc will reference
-         * location on this sequence on the opposite strand. Do we want to
-         * have this location remapped or leave it as is? Surely,
-         * we don't want to remap just ANY seq-loc here, as it may not
-         * necessarily be mappable in this context. Current implementation
-         * remaps inst-locs that are on the same sequence that is represented
-         * in tha variation-ref (i.e. we would remap inst-loc of an inversion, but not
-         * of a transposon or far-loc insertion).
-         */
-        if(vr.GetData().IsInstance()) {
-            NON_CONST_ITERATE(CVariation_inst::TDelta, it2, vr.SetData().SetInstance().SetDelta()) {
-                CRef<CDelta_item> delta = *it2;
-                if(delta->GetSeq().IsLoc()) {
-                    const CSeq_id* delta_seq_id = delta->GetSeq().GetLoc().GetId();
+    CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(aln, target_row, m_scope));
 
-                    bool is_represented_in_variation = false;
-                    for(CTypeConstIterator<CSeq_loc> it3(Begin(variation_feat.GetLocation())); it3; ++it3) {
-                        //note that we're checking against top-level location of the variation, as
-                        //the location within a sub-variation-ref may have been yanked during compactification,
-                        //(see rebuild-locs rules)
-                        const CSeq_id* variation_seq_id = it3->GetId();
-                        if(delta_seq_id != NULL && variation_seq_id != NULL && delta_seq_id->Equals(*variation_seq_id)) {
-                            is_represented_in_variation = true;
-                            break;
-                        }
-                    }
+    //save the original in ext-locs (for root variation only)
+    typedef CVariation_ref::TExt_locs::value_type TExtLoc;
+    TExtLoc ext_loc(new TExtLoc::TObjectType);
+    ext_loc->SetId().SetStr("mapped-from");
+    ext_loc->SetLocation().Assign(vr.GetLocation());
+    vr.SetExt_locs().push_back(ext_loc);
 
-                    if(is_represented_in_variation) {
-                        locs->Set().push_back(CRef<CSeq_loc>(&delta->SetSeq().SetLoc()));
-                    }
-                }
-            }
 
-            if(vr.GetLocation().GetId()
-               && aln.GetSegs().IsSpliced()
-               && aln.GetSegs().GetSpliced().GetGenomic_id().Equals(*vr.GetLocation().GetId()))
-            {
-                s_AddIntronicOffsets(vr, aln.GetSegs().GetSpliced());
-            }
-        }
+    s_Remap(vr, *mapper, vr.GetLocation());
 
-        //note: originally I tried using seq-loc type-iterator to process each primitive seq-loc individually, but that
-        //does not work right because after remapping a loc the type iterator will try find and try to process the already-mapped
-        //primitive-locs.
-        NON_CONST_ITERATE(CSeq_loc_mix::Tdata, it2, locs->Set()) {
-            CSeq_loc& loc = **it2;
-            if(!loc.GetId()) {
-                NCBI_THROW(CException, eUnknown, "Encountered location with non-unique id within variation-ref; can't remap");
-            }
-
-            CSeq_align::TDim target_row(-1);
-            for(int i = 0; i < 2; i++) {
-                if(sequence::IsSameBioseq(*loc.GetId(), aln.GetSeq_id(i), m_scope )) {
-                    target_row = 1 - i;
-                }
-            }
-            if(target_row == -1) {
-                NCBI_THROW(CException, eUnknown, "The alignment has no row for seq-id " + loc.GetId()->AsFastaString());
-            }
-
-            try {
-                CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(
-                        aln,
-                        target_row,
-                        m_scope));
-                CRef<CSeq_loc> mapped_loc = mapper->Map(loc);
-                CRef<CSeq_loc> merged_mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fSortAndMerge_All, NULL);
-                loc.Assign(*merged_mapped_loc);
-            } catch (CException& e) {
-                string s("");
-                loc.GetLabel(&s);
-                NCBI_RETHROW_SAME(e, "Could not remap loc " + s + " to row "
-                                      + NStr::IntToString(target_row)
-                                      + " via alignment of " + aln.GetSeq_id(0).AsFastaString()
-                                      + "-" + aln.GetSeq_id(1).AsFastaString());
-            }
-
-        }
-
-        if(vr.GetData().IsInstance()
-           && vr.GetLocation().GetId()
-           && aln.GetSegs().IsSpliced()
-           && aln.GetSegs().GetSpliced().GetGenomic_id().Equals(*vr.GetLocation().GetId()))
-        {
-            s_ResolveIntronicOffsets(vr);
-        }
+    if(aln.GetSegs().IsSpliced() && aln.GetSegs().GetSpliced().GetGenomic_id().Equals(*vr.GetLocation().GetId())) {
+        s_ResolveIntronicOffsets(vr, vr.GetLocation());
     }
 
     //transfer the root location of the variation back to feat.location

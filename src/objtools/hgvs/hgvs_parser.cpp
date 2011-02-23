@@ -82,24 +82,83 @@ CHgvsParser::SGrammar::TRuleNames CHgvsParser::SGrammar::s_rule_names;
 CHgvsParser::SGrammar CHgvsParser::s_grammar;
 
 
-void AttachAssertedSequence(CVariation_ref& vr, const string& seq)
-{
-    CRef<CUser_object> uo(new CUser_object);
-    uo->SetType().SetStr("HGVS");
-    uo->AddField("asserted_sequence", seq);
-    vr.SetExt(*uo);
-}
-
+//attach asserted sequence to the variation-ref in a user-object. This is for
+//internal representation only, as the variation-ref travels up through the
+//parse-tree nodes. Before we return the final variation, this will be repackaged
+//as set of variations (see RepackageAssertedSequence()). This is done so that
+//we don't have to deal with possibility of a variation-ref being a package
+//within the parser.
 void AttachAssertedSequence(CVariation_ref& vr, const CSeq_literal& literal)
 {
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("hgvs_asserted_seq");
+
+    uo->SetField("length").SetData().SetInt(literal.GetLength());
     if(literal.GetSeq_data().IsIupacna()) {
-        AttachAssertedSequence(vr, literal.GetSeq_data().GetIupacna());
+        uo->AddField("iupacna", literal.GetSeq_data().GetIupacna());
     } else if(literal.GetSeq_data().IsNcbieaa()) {
-        AttachAssertedSequence(vr, literal.GetSeq_data().GetNcbieaa());
+        uo->AddField("ncbieaa", literal.GetSeq_data().GetNcbieaa());
     } else {
         HGVS_THROW(eLogic, "Seq-data is neither IUPAC-AA or IUPAC-NA");
     }
+    vr.SetExt(*uo);
 }
+
+//if a variation has an asserted sequence, repackage it as a set having
+//the original variation and a synthetic one representing the asserted sequence
+void RepackageAssertedSequence(CVariation_ref& vr)
+{
+    if(vr.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, vr.SetData().SetSet().SetVariations()) {
+            RepackageAssertedSequence(**it);
+        }
+    } else if(vr.IsSetExt() && vr.GetExt().GetType().GetStr() == "hgvs_asserted_seq") {
+        CRef<CVariation_ref> asserted_vr(new CVariation_ref);
+        asserted_vr->SetData().SetInstance().SetObservation(CVariation_inst::eObservation_asserted);
+        asserted_vr->SetData().SetInstance().SetType(CVariation_inst::eType_identity);
+        CRef<CDelta_item> delta(new CDelta_item);
+        delta->SetSeq().SetLiteral().SetLength(vr.GetExt().GetField("length").GetData().GetInt());
+        if(vr.GetExt().HasField("iupacna")) {
+            delta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(vr.GetExt().GetField("iupacna").GetData().GetStr());
+        } else {
+            delta->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set(vr.GetExt().GetField("ncbieaa").GetData().GetStr());
+        }
+        asserted_vr->SetData().SetInstance().SetDelta().push_back(delta);
+
+
+        //copy the offsets, if present
+        if(   vr.GetData().GetInstance().GetDelta().size() > 0
+           && vr.GetData().GetInstance().GetDelta().front()->IsSetAction()
+           && vr.GetData().GetInstance().GetDelta().front()->GetAction() == CDelta_item::eAction_offset)
+        {
+            CRef<CDelta_item> offset_di(new CDelta_item);
+            offset_di->Assign(*vr.GetData().GetInstance().GetDelta().front());
+            asserted_vr->SetData().SetInstance().SetDelta().push_front(offset_di);
+        }
+        if(   vr.GetData().GetInstance().GetDelta().size() > 0
+           && vr.GetData().GetInstance().GetDelta().back() != vr.GetData().GetInstance().GetDelta().front()
+           && vr.GetData().GetInstance().GetDelta().back()->IsSetAction()
+           && vr.GetData().GetInstance().GetDelta().back()->GetAction() == CDelta_item::eAction_offset)
+        {
+            CRef<CDelta_item> offset_di(new CDelta_item);
+            offset_di->Assign(*vr.GetData().GetInstance().GetDelta().back());
+            asserted_vr->SetData().SetInstance().SetDelta().push_back(offset_di);
+        }
+
+        vr.ResetExt();
+
+        CRef<CVariation_ref> orig(new CVariation_ref);
+        orig->Assign(vr);
+        orig->ResetLocation(); //location will be set on the package, as it is the same for both members
+
+        vr.SetData().SetSet().SetType(CVariation_ref::TData::TSet::eData_set_type_package);
+        vr.SetData().SetSet().SetVariations().push_back(asserted_vr);
+        vr.SetData().SetSet().SetVariations().push_back(orig);
+    }
+}
+
+
+
 
 TSeqPos CHgvsParser::SOffsetLoc::GetLength() const
 {
@@ -1433,7 +1492,14 @@ CRef<CVariation_ref> CHgvsParser::x_expr2(TIterator const& i, const CContext& co
         //in some cases, e.g. protein variations, asserted sequence comes from the location-specification, rather than
         //variation-specification,
         if(ofloc.asserted_sequence != "") {
-           AttachAssertedSequence(*vr, ofloc.asserted_sequence);
+           CSeq_literal tmp_literal;
+           tmp_literal.SetLength(ofloc.GetLength());
+           if(context.GetMolType() == CContext::eMol_p) {
+               tmp_literal.SetSeq_data().SetNcbieaa().Set(ofloc.asserted_sequence);
+           } else {
+               tmp_literal.SetSeq_data().SetIupacna().Set(ofloc.asserted_sequence);
+           }
+           AttachAssertedSequence(*vr, tmp_literal);
         }
 
     } else if(it->value.id() == SGrammar::eID_prot_ext) {
@@ -1573,6 +1639,7 @@ CRef<CSeq_feat> CHgvsParser::x_root(TIterator const& i, const CContext& context)
     CRef<CVariation_ref> vr = x_list(i, context);
 
     CVariationUtil::s_FactorOutLocsInPlace(*vr);
+    RepackageAssertedSequence(*vr);
 
     CRef<CSeq_feat> feat(new CSeq_feat);
     feat->SetLocation(vr->SetLocation());
