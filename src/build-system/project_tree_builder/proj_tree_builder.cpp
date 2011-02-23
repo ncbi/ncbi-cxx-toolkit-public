@@ -383,6 +383,14 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
 
             include_dirs->push_back(dir);
         }
+
+        // process -Ipath
+        token_val = SMakeProjectT::GetOneIncludeDir(flag, "-I");
+        if ( !token_val.empty() && token_val[0] != '$' && isalpha(token_val[0]) )  {
+            string dir = CDirEntry::NormalizePath(token_val);
+            dir = CDirEntry::AddTrailingPathSeparator(dir);
+            include_dirs->push_back(dir);
+        }
         
         // process defines like NCBI_C_INCLUDE
         if(CSymResolver::IsDefine(flag)) {
