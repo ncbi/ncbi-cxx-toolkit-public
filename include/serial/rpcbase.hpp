@@ -34,6 +34,7 @@
  */
 
 #include <connect/ncbi_conn_stream.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -80,6 +81,9 @@ public:
     unsigned int GetRetryLimit(void) const     { return m_RetryLimit; }
             void SetRetryLimit(unsigned int n) { m_RetryLimit = n; }
 
+    const CTimeSpan GetRetryDelay(void) const          { return m_RetryDelay; }
+    void            SetRetryDelay(const CTimeSpan& ts) { m_RetryDelay = ts; }
+
     EIO_Status      SetTimeout(const STimeout* timeout,
                                EIO_Event direction = eIO_ReadWrite);
     const STimeout* GetTimeout(EIO_Event direction = eIO_Read) const;
@@ -120,6 +124,7 @@ private:
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     const STimeout*          m_Timeout; ///< Cloned if not special.
+    CTimeSpan                m_RetryDelay;
 
 protected:
     unsigned int             m_RetryLimit;
@@ -275,6 +280,8 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
                     Reset();
                 } STD_CATCH_ALL_XX(Serial_RPCClient, 1, "CRPCClient<>::Reset()")
             }
+            SleepSec(m_RetryDelay.GetCompleteSeconds());
+            SleepMicroSec(m_RetryDelay.GetNanoSecondsAfterSecond() / 1000);
         }
     }
 }
