@@ -70,10 +70,10 @@ CSeqVector_CI::CSeqVector_CI(void)
       m_CaseConversion(eCaseConversion_none),
       m_Cache(0),
       m_CachePos(0),
-      m_CacheData(0),
+      m_CacheData(),
       m_CacheEnd(0),
       m_BackupPos(0),
-      m_BackupData(0),
+      m_BackupData(),
       m_BackupEnd(0),
       m_ScannedStart(0),
       m_ScannedEnd(0)
@@ -83,7 +83,6 @@ CSeqVector_CI::CSeqVector_CI(void)
 
 CSeqVector_CI::~CSeqVector_CI(void)
 {
-    x_DestroyCache();
 }
 
 
@@ -93,22 +92,16 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
       m_CaseConversion(eCaseConversion_none),
       m_Cache(0),
       m_CachePos(0),
-      m_CacheData(0),
+      m_CacheData(),
       m_CacheEnd(0),
       m_BackupPos(0),
-      m_BackupData(0),
+      m_BackupData(),
       m_BackupEnd(0),
       m_Randomizer(sv_it.m_Randomizer),
       m_ScannedStart(0),
       m_ScannedEnd(0)
 {
-    try {
-        *this = sv_it;
-    }
-    catch ( ... ) {
-        x_DestroyCache();
-        throw;
-    }
+    *this = sv_it;
 }
 
 
@@ -121,22 +114,16 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
       m_CaseConversion(eCaseConversion_none),
       m_Cache(0),
       m_CachePos(0),
-      m_CacheData(0),
+      m_CacheData(),
       m_CacheEnd(0),
       m_BackupPos(0),
-      m_BackupData(0),
+      m_BackupData(),
       m_BackupEnd(0),
       m_Randomizer(seq_vector.m_Randomizer),
       m_ScannedStart(0),
       m_ScannedEnd(0)
 {
-    try {
-        x_SetPos(pos);
-    }
-    catch ( ... ) {
-        x_DestroyCache();
-        throw;
-    }
+    x_SetPos(pos);
 }
 
 
@@ -150,22 +137,16 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
       m_CaseConversion(case_cvt),
       m_Cache(0),
       m_CachePos(0),
-      m_CacheData(0),
+      m_CacheData(),
       m_CacheEnd(0),
       m_BackupPos(0),
-      m_BackupData(0),
+      m_BackupData(),
       m_BackupEnd(0),
       m_Randomizer(seq_vector.m_Randomizer),
       m_ScannedStart(0),
       m_ScannedEnd(0)
 {
-    try {
-        x_SetPos(pos);
-    }
-    catch ( ... ) {
-        x_DestroyCache();
-        throw;
-    }
+    x_SetPos(pos);
 }
 
 
@@ -179,22 +160,16 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, ENa_strand strand,
       m_CaseConversion(case_cvt),
       m_Cache(0),
       m_CachePos(0),
-      m_CacheData(0),
+      m_CacheData(),
       m_CacheEnd(0),
       m_BackupPos(0),
-      m_BackupData(0),
+      m_BackupData(),
       m_BackupEnd(0),
       m_Randomizer(seq_vector.m_Randomizer),
       m_ScannedStart(0),
       m_ScannedEnd(0)
 {
-    try {
-        x_SetPos(pos);
-    }
-    catch ( ... ) {
-        x_DestroyCache();
-        throw;
-    }
+    x_SetPos(pos);
 }
 
 
@@ -446,16 +421,16 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
     size_t cache_size = sv_it.x_CacheSize();
     if ( cache_size ) {
         x_InitializeCache();
-        m_CacheEnd = m_CacheData + cache_size;
-        m_Cache = m_CacheData + sv_it.x_CacheOffset();
-        memcpy(m_CacheData, sv_it.m_CacheData, cache_size);
+        m_CacheEnd = m_CacheData.get() + cache_size;
+        m_Cache = m_CacheData.get() + sv_it.x_CacheOffset();
+        memcpy(m_CacheData.get(), sv_it.m_CacheData.get(), cache_size);
 
         // copy backup cache if any
         size_t backup_size = sv_it.x_BackupSize();
         if ( backup_size ) {
             m_BackupPos = sv_it.x_BackupPos();
-            m_BackupEnd = m_BackupData + backup_size;
-            memcpy(m_BackupData, sv_it.m_BackupData, backup_size);
+            m_BackupEnd = m_BackupData.get() + backup_size;
+            memcpy(m_BackupData.get(), sv_it.m_BackupData.get(), backup_size);
         }
         else {
             x_ResetBackup();
@@ -469,29 +444,13 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
 }
 
 
-void CSeqVector_CI::x_DestroyCache(void)
-{
-    m_CachePos = GetPos();
-
-    delete[] m_CacheData;
-    m_Cache = m_CacheData = m_CacheEnd = 0;
-
-    delete[] m_BackupData;
-    m_BackupData = m_BackupEnd = 0;
-}
-
-
 void CSeqVector_CI::x_InitializeCache(void)
 {
     if ( !m_Cache ) {
-        m_Cache = m_CacheEnd = m_CacheData = new char[kCacheSize];
-        try {
-            m_BackupEnd = m_BackupData = new char[kCacheSize];
-        }
-        catch ( ... ) {
-            x_DestroyCache();
-            throw;
-        }
+        m_CacheData.reset(new char[kCacheSize]);
+        m_BackupData.reset(new char[kCacheSize]);
+        m_BackupEnd = m_BackupData.get();
+        m_Cache = m_CacheEnd = m_CacheData.get();
     }
     else {
         x_ResetCache();
@@ -503,11 +462,11 @@ inline
 void CSeqVector_CI::x_ResizeCache(size_t size)
 {
     _ASSERT(size <= kCacheSize);
-    if ( !m_CacheData ) {
+    if ( !m_CacheData.get() ) {
         x_InitializeCache();
     }
-    m_CacheEnd = m_CacheData + size;
-    m_Cache = m_CacheData;
+    m_Cache = m_CacheData.get();
+    m_CacheEnd = m_CacheData.get() + size;
 }
 
 
@@ -520,7 +479,7 @@ void CSeqVector_CI::x_UpdateCacheUp(TSeqPos pos)
 
     TSeqPos cache_size = min(kCacheSize, segEnd - pos);
     x_FillCache(pos, cache_size);
-    m_Cache = m_CacheData;
+    m_Cache = m_CacheData.get();
     _ASSERT(GetPos() == pos);
 }
 
@@ -534,7 +493,7 @@ void CSeqVector_CI::x_UpdateCacheDown(TSeqPos pos)
 
     TSeqPos cache_offset = min(kCacheSize - 1, pos - segStart);
     x_FillCache(pos - cache_offset, cache_offset + 1);
-    m_Cache = m_CacheData + cache_offset;
+    m_Cache = m_CacheData.get() + cache_offset;
     _ASSERT(GetPos() == pos);
 }
 
@@ -689,7 +648,7 @@ void CSeqVector_CI::x_SetPos(TSeqPos pos)
         _ASSERT(x_CacheSize() &&
                 x_CachePos() >= m_Seg.GetPosition() &&
                 x_CacheEndPos() <= m_Seg.GetEndPosition());
-        m_Cache = m_CacheData + cache_offset;
+        m_Cache = m_CacheData.get() + cache_offset;
     }
     else {
         // cannot use backup
@@ -699,7 +658,7 @@ void CSeqVector_CI::x_SetPos(TSeqPos pos)
              m_Seg.GetEndPosition() >= old_pos ) {
             x_UpdateCacheDown(old_pos - 1);
             cache_offset = pos - x_CachePos();
-            m_Cache = m_CacheData + cache_offset;
+            m_Cache = m_CacheData.get() + cache_offset;
         }
         else {
             x_UpdateCacheUp(pos);
@@ -815,7 +774,7 @@ void CSeqVector_CI::x_NextCacheSeg()
     }
     // Try to re-use backup cache
     if ( pos < x_CacheEndPos() && pos >= x_CachePos() ) {
-        m_Cache = m_CacheData + pos - x_CachePos();
+        m_Cache = m_CacheData.get() + pos - x_CachePos();
     }
     else {
         // can not use backup cache
@@ -856,7 +815,7 @@ void CSeqVector_CI::x_PrevCacheSeg()
     }
     // Try to re-use backup cache
     if ( pos >= x_CachePos()  &&  pos < x_CacheEndPos() ) {
-        m_Cache = m_CacheData + pos - x_CachePos();
+        m_Cache = m_CacheData.get() + pos - x_CachePos();
     }
     else {
         // can not use backup cache

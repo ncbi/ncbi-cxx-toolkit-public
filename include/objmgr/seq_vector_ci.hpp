@@ -230,7 +230,6 @@ private:
 
     void x_SetPos(TSeqPos pos);
     void x_InitializeCache(void);
-    void x_DestroyCache(void);
     void x_ClearCache(void);
     void x_ResizeCache(size_t size);
     void x_SwapCache(void);
@@ -265,7 +264,7 @@ private:
     friend class CSeqVector;
     void x_SetVector(CSeqVector& seq_vector);
 
-    typedef char* TCacheData;
+    typedef AutoArray<char> TCacheData;
     typedef char* TCache_I;
 
     CHeapScope               m_Scope;
@@ -325,7 +324,7 @@ TSeqPos CSeqVector_CI::x_CachePos(void) const
 inline
 TSeqPos CSeqVector_CI::x_CacheSize(void) const
 {
-    return TSeqPos(m_CacheEnd - m_CacheData);
+    return TSeqPos(m_CacheEnd - m_CacheData.get());
 }
 
 
@@ -346,7 +345,7 @@ TSeqPos CSeqVector_CI::x_BackupPos(void) const
 inline
 TSeqPos CSeqVector_CI::x_BackupSize(void) const
 {
-    return TSeqPos(m_BackupEnd - m_BackupData);
+    return TSeqPos(m_BackupEnd - m_BackupData.get());
 }
 
 
@@ -360,7 +359,7 @@ TSeqPos CSeqVector_CI::x_BackupEndPos(void) const
 inline
 TSeqPos CSeqVector_CI::x_CacheOffset(void) const
 {
-    return TSeqPos(m_Cache - m_CacheData);
+    return TSeqPos(m_Cache - m_CacheData.get());
 }
 
 
@@ -374,14 +373,14 @@ TSeqPos CSeqVector_CI::GetPos(void) const
 inline
 void CSeqVector_CI::x_ResetBackup(void)
 {
-    m_BackupEnd = m_BackupData;
+    m_BackupEnd = m_BackupData.get();
 }
 
 
 inline
 void CSeqVector_CI::x_ResetCache(void)
 {
-    m_Cache = m_CacheEnd = m_CacheData;
+    m_Cache = m_CacheEnd = m_CacheData.get();
 }
 
 
@@ -391,14 +390,14 @@ void CSeqVector_CI::x_SwapCache(void)
     swap(m_CacheData, m_BackupData);
     swap(m_CacheEnd, m_BackupEnd);
     swap(m_CachePos, m_BackupPos);
-    m_Cache = m_CacheData;
+    m_Cache = m_CacheData.get();
 }
 
 
 inline
 CSeqVector_CI& CSeqVector_CI::SetPos(TSeqPos pos)
 {
-    TCache_I cache = m_CacheData;
+    TCache_I cache = m_CacheData.get();
     TSeqPos offset = pos - m_CachePos;
     TSeqPos size = TSeqPos(m_CacheEnd - cache);
     if ( offset >= size ) {
@@ -491,7 +490,7 @@ inline
 CSeqVector_CI& CSeqVector_CI::operator--(void)
 {
     TCache_I cache = m_Cache;
-    if ( cache == m_CacheData ) {
+    if ( cache == m_CacheData.get() ) {
         x_PrevCacheSeg();
     }
     else {
