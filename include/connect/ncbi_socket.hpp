@@ -818,20 +818,20 @@ inline EIO_Status CSocket::Abort(void)
 
 inline EIO_Status CSocket::Close(void)
 {
-    return m_Socket ? SOCK_CloseEx(m_Socket, 0) : eIO_Success;
+    return SOCK_CloseEx(m_Socket, 0/*do not destroy handle*/);
 }
 
 
 inline unsigned short CSocket::GetLocalPort(ENH_ByteOrder byte_order,
                                             bool          trueport) const
 {
-    return m_Socket ? SOCK_GetLocalPortEx(m_Socket, trueport, byte_order) : 0;
+    return SOCK_GetLocalPortEx(m_Socket, trueport, byte_order);
 }
 
 
 inline unsigned short CSocket::GetRemotePort(ENH_ByteOrder byte_order) const
 {
-    return m_Socket ? SOCK_GetRemotePort(m_Socket, byte_order) : 0;
+    return SOCK_GetRemotePort(m_Socket, byte_order);
 }
 
 
