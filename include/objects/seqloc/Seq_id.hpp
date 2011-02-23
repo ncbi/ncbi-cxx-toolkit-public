@@ -325,8 +325,14 @@ public:
         eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,  // BN
         eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // CAD29848
 
-        eAcc_ddbj_tpa_nuc  = e_Tpd | eAcc_other | fAcc_nuc,  // BR
-        eAcc_ddbj_tpa_prot = e_Tpd | eAcc_other | fAcc_prot, // FAA
+        eAcc_ddbj_tpa_nuc        = e_Tpd | eAcc_other      | fAcc_nuc,  // BR
+        eAcc_ddbj_tpa_prot       = e_Tpd | eAcc_other      | fAcc_prot, // FAA
+        eAcc_ddbj_tpa_con        = e_Tpd | eAcc_con        | fAcc_nuc,  // HT
+        eAcc_ddbj_tpa_wgs_nuc    = e_Tpd | eAcc_wgs        | fAcc_nuc,  // EAAA
+        eAcc_ddbj_tpa_wgs_prot   = e_Tpd | eAcc_wgs        | fAcc_prot, // IAA
+        eAcc_ddbj_tpa_wgsm_nuc   = e_Tpd | eAcc_wgs_master | fAcc_nuc,
+        eAcc_ddbj_tpa_wgsm_prot  = e_Tpd | eAcc_wgs_master | fAcc_prot,
+        eAcc_ddbj_tpa_chromosome = e_Tpd | eAcc_chromosome | fAcc_nuc,  // HU
 
         // genome pipeline, modeled after RefSeq
         eAcc_gpipe_other_nuc  = e_Gpipe | eAcc_other      | fAcc_nuc,  // GPN_

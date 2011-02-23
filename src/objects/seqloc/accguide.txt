@@ -12,6 +12,8 @@ version  1 # of file format
 3+5  F??  ddbj_tpa_prot
 3+5  G??  ddbj_wgs_prot
 3+5  H??  gb_tpa_wgs_prot
+3+5  I??  ddbj_tpa_prot # fallback to placate older clients
+3+5  I??  ddbj_tpa_wgs_prot
 3+5  ???  unreserved_prot
 
 # whole genome shotgun accessions
@@ -27,6 +29,12 @@ version  1 # of file format
 4+8   D???  gb_tpa_wgs_nuc
 4+9   D???  gb_tpa_wgs_nuc
 4+10  D???  gb_tpa_wgs_nuc
+4+8   E???  ddbj_tpa_nuc # fallback to placate older clients
+4+9   E???  ddbj_tpa_nuc # fallback to placate older clients
+4+10  E???  ddbj_tpa_nuc # fallback to placate older clients
+4+8   E???  ddbj_tpa_wgs_nuc
+4+9   E???  ddbj_tpa_wgs_nuc
+4+10  E???  ddbj_tpa_wgs_nuc
 
 # Mass sequence Genome for Annotation
 5+7   A???? ddbj_other_nuc
@@ -314,6 +322,10 @@ version  1 # of file format
 2+6  HQ  gb_dirsub
 2+6  HR  gb_gss
 2+6  HS  gb_est
+2+6  HT  ddbj_tpa_nuc # fallback to placate older clients
+2+6  HT  ddbj_tpa_con
+2+6  HU  ddbj_tpa_nuc # fallback to placate older clients
+2+6  HU  ddbj_tpa_chromosome
 2+6  JA  embl_patent
 2+6  JB  embl_patent
 2+6  JC  embl_patent
