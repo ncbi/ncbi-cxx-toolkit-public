@@ -1063,6 +1063,8 @@ CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope)
 }
 
 
+const char* kRibosomalSlippageText = "ribosomal slippage";
+
 CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                                        CScope& scope,
                                        TBestFeatOpts opts,
@@ -1075,10 +1077,16 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     // we start with a scan through the product accessions because we need
     // to insure that the chosen transcript does indeed match what we want
     TFeatScores feats;
+    EOverlapType overlap_type = eOverlap_CheckIntRev;
+    if (cds_feat.IsSetExcept()  &&  cds_feat.GetExcept()  &&
+        cds_feat.IsSetExcept_text()  &&
+        cds_feat.GetExcept_text() == kRibosomalSlippageText) {
+        overlap_type = eOverlap_SubsetRev;
+    }
     GetOverlappingFeatures(cds_feat.GetLocation(),
                            CSeqFeatData::e_Rna,
                            CSeqFeatData::eSubtype_mRNA,
-                           eOverlap_SubsetRev,
+                           overlap_type,
                            feats, scope, opts, plugin );
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -1211,6 +1219,90 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
 }
 
 
+// Plugin for GetOverlappingFeatures - uses eOverlap_CheckIntervals
+// or eOverlap_Subset depending on the "ribosomal slippage" flag
+// in the current feature.
+
+class CCdsForMrnaPlugin : public CGetOverlappingFeaturesPlugin
+{
+public:
+    CCdsForMrnaPlugin(CGetOverlappingFeaturesPlugin* prev_plugin)
+        : m_PrevPlugin(prev_plugin) {}
+    virtual ~CCdsForMrnaPlugin() {}
+
+    virtual void processSAnnotSelector(
+        SAnnotSelector &sel)
+    {
+        if ( m_PrevPlugin ) {
+            m_PrevPlugin->processSAnnotSelector(sel);
+        }
+    }
+
+    virtual void setUpFeatureIterator(
+        CBioseq_Handle &bioseq_handle,
+        auto_ptr<CFeat_CI> &feat_ci,
+        TSeqPos circular_length ,
+        CRange<TSeqPos> &range,
+        const CSeq_loc& loc,
+        SAnnotSelector &sel,
+        CScope &scope,
+        ENa_strand &strand)
+    {
+        if ( m_PrevPlugin ) {
+            m_PrevPlugin->setUpFeatureIterator(bioseq_handle,
+                feat_ci, circular_length, range, loc, sel, scope, strand);
+            return;
+        }
+        if ( bioseq_handle ) {
+            feat_ci.reset(new CFeat_CI(bioseq_handle, range, strand, sel));
+        } else {
+            feat_ci.reset(new CFeat_CI(scope, loc, sel));
+        }
+    }
+
+    virtual void processLoc(
+        CBioseq_Handle &bioseq_handle,
+        CRef<CSeq_loc> &loc,
+        TSeqPos circular_length)
+    {
+        if ( m_PrevPlugin ) {
+            m_PrevPlugin->processLoc(bioseq_handle, loc, circular_length);
+        }
+    }
+
+    virtual void processMainLoop(
+        bool &shouldContinueToNextIteration,
+        CRef<CSeq_loc> &candidate_feat_loc,
+        EOverlapType &overlap_type_this_iteration,
+        bool &revert_locations_this_iteration,
+        CBioseq_Handle &bioseq_handle,
+        const CMappedFeat &feat,
+        TSeqPos circular_length,
+        SAnnotSelector::EOverlapType annot_overlap_type)
+    {
+        const CSeq_feat& cds = feat.GetOriginalFeature();
+        _ASSERT(cds.GetData().GetSubtype() ==
+            CSeqFeatData::eSubtype_cdregion);
+        // If the feature has "ribosomal slippage" flag set, use
+        // eOverlap_Subset. Otherwise use more strict eOverlap_CheckIntervals.
+        if (cds.IsSetExcept()  &&  cds.GetExcept()  &&
+            cds.IsSetExcept_text()  &&
+            cds.GetExcept_text() == kRibosomalSlippageText) {
+            overlap_type_this_iteration = eOverlap_Subset;
+        }
+        if ( m_PrevPlugin ) {
+            m_PrevPlugin->processMainLoop(shouldContinueToNextIteration,
+                candidate_feat_loc, overlap_type_this_iteration,
+                revert_locations_this_iteration,
+                bioseq_handle, feat, circular_length, annot_overlap_type);
+        }
+    }
+
+private:
+    CGetOverlappingFeaturesPlugin* m_PrevPlugin;
+};
+
+
 CConstRef<CSeq_feat>
 GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                   CScope& scope,
@@ -1220,6 +1312,8 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> cds_feat;
 
+    auto_ptr<CGetOverlappingFeaturesPlugin> cds_plugin(
+        new CCdsForMrnaPlugin(plugin));
     // search for a best overlapping CDS
     // we start with a scan through the product accessions because we need
     // to insure that the chosen transcript does indeed match what we want
@@ -1227,8 +1321,8 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     GetOverlappingFeatures(mrna_feat.GetLocation(),
                            CSeqFeatData::e_Cdregion,
                            CSeqFeatData::eSubtype_cdregion,
-                           eOverlap_Subset,
-                           feats, scope, opts, plugin );
+                           eOverlap_CheckIntervals,
+                           feats, scope, opts, cds_plugin.get());
 
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
