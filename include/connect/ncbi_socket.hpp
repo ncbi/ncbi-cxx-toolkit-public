@@ -627,7 +627,7 @@ private:
 ///
 ///  CSocketAPI::
 ///
-///    Global settings related to the socket API
+///    Global utility routines / settings related to the socket API
 ///
 /// @li <b>NOTE:</b>  for documentation see SOCK_***() functions in
 /// "ncbi_socket.h"
