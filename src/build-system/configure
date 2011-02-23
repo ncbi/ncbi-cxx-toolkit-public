@@ -32361,11 +32361,6 @@ CPPFLAGS="$orig_CPPFLAGS"
 ### --------------------------------------------
 
 
-## SRA SDK
-if test -f $real_srcdir/src/internal/sra/sdk/Makefile.in ; then
-             WithFeatures="$WithFeatures${WithFeaturesSep}SRAT-internal"; WithFeaturesSep=" " # For compatibility with Windows builds.
-fi
-
 ## `local_lbsm' support
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
@@ -32738,7 +32733,7 @@ esac
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS Ncbi-JNI SRAT-internal check; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS Ncbi-JNI check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
