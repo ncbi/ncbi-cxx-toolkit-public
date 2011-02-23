@@ -71,18 +71,18 @@ public:
             void Disconnect(void);
             void Reset(void);
 
-    const string& GetService(void)                  { return m_Service; }
+    const string& GetService(void) const            { return m_Service; }
              void SetService(const string& service) { m_Service = service; }
 
-    ESerialDataFormat GetFormat(void)                  { return m_Format; }
+    ESerialDataFormat GetFormat(void) const            { return m_Format; }
                  void SetFormat(ESerialDataFormat fmt) { m_Format = fmt; }
 
-    unsigned int GetRetryLimit(void)           { return m_RetryLimit; }
+    unsigned int GetRetryLimit(void) const     { return m_RetryLimit; }
             void SetRetryLimit(unsigned int n) { m_RetryLimit = n; }
 
     EIO_Status      SetTimeout(const STimeout* timeout,
                                EIO_Event direction = eIO_ReadWrite);
-    const STimeout* GetTimeout(EIO_Event direction = eIO_Read);
+    const STimeout* GetTimeout(EIO_Event direction = eIO_Read) const;
 
 protected:
     virtual string GetAffinity(const TRequest& request) const;
@@ -235,6 +235,7 @@ EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
 template <class TRequest, class TReply>
 inline
 const STimeout* CRPCClient<TRequest, TReply>::GetTimeout(EIO_Event direction)
+    const
 {
     CConn_IOStream* conn_stream
         = dynamic_cast<CConn_IOStream*>(m_Stream.get());
