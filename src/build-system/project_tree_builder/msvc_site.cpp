@@ -314,7 +314,7 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
         string files_str    = ProcessMacros(GetOpt(m_Registry, section, "FILES", config),false);
         list<string> tmp;
-        NStr::Split(files_str, LIST_SEPARATOR, tmp);
+        NStr::Split(files_str, "|", tmp);
         ITERATE( list<string>, f, tmp) {
             libinfo->m_Files.push_back( ToOSPath(*f));
         }
@@ -765,29 +765,38 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent) const
         }
     }
     if ( !lib_info.m_Files.empty()) {
-        ITERATE(list<string>, p, lib_info.m_Files) {
-            bool exists = true;
-            string file = *p;
-            if (!CDirEntry::IsAbsolutePath(file)) {
-                file = CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Root, file);
-            }
-            if ( !x_DirExists(file) ) {
-                exists = false;
-                if (!GetApp().GetExtSrcRoot().empty()) {
-                    file = *p;
-                    if (!CDirEntry::IsAbsolutePath(file)) {
-                        file = CDirEntry::ConcatPath(GetApp().GetExtSrcRoot(), file);
+        bool group_exists = false;
+        ITERATE(list<string>, g, lib_info.m_Files) {
+            list<string> tmp;
+            NStr::Split(*g, LIST_SEPARATOR, tmp);
+            bool file_exists = true;
+            ITERATE( list<string>, p, tmp) {
+                string file = *p;
+                if (!CDirEntry::IsAbsolutePath(file)) {
+                    file = CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Root, file);
+                }
+                if ( !x_DirExists(file) ) {
+                    file_exists = false;
+                    if (!GetApp().GetExtSrcRoot().empty()) {
+                        file = *p;
+                        if (!CDirEntry::IsAbsolutePath(file)) {
+                            file = CDirEntry::ConcatPath(GetApp().GetExtSrcRoot(), file);
+                        }
+                        file_exists = x_DirExists(file);
                     }
-                    exists = x_DirExists(file);
+                }
+                if (!file_exists) {
+                    if (!silent) {
+                        PTB_WARNING_EX(file, ePTB_FileNotFound,
+                                       "file not found");
+                    }
+                    break;
                 }
             }
-            if (!exists) {
-                if (!silent) {
-                    PTB_WARNING_EX(file, ePTB_FileNotFound,
-                                   "file not found");
-                }
-                return false;
-            }
+            group_exists = group_exists || file_exists;
+        }
+        if (!group_exists) {
+            return false;
         }
     }
 
