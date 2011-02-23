@@ -199,6 +199,41 @@ CDataSource::TTSE_Lock CDataSource::AddStaticTSE(CSeq_entry& se)
 }
 
 
+namespace {
+    // local class for calling x_DSAttach()/x_DSDetach() without catch(...)
+    class CDSDetachGuard
+    {
+    public:
+        CDSDetachGuard(void)
+            : m_DataSource(0),
+              m_TSE_Info(0)
+            {
+            }
+        ~CDSDetachGuard(void)
+            {
+                if ( m_TSE_Info ) {
+                    m_TSE_Info->x_DSDetach(*m_DataSource);
+                }
+            }
+        void Attach(CDataSource* ds, CTSE_Info* tse)
+            {
+                m_DataSource = ds;
+                m_TSE_Info = tse;
+                m_TSE_Info->x_DSAttach(*m_DataSource);
+                m_TSE_Info = 0;
+                m_DataSource = 0;
+            }
+    private:
+        CDataSource* m_DataSource;
+        CTSE_Info* m_TSE_Info;
+
+    private:
+        CDSDetachGuard(const CDSDetachGuard&);
+        void operator=(const CDSDetachGuard&);
+    };
+}
+
+
 CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
 {
     _ASSERT(!m_SharedObject || m_StaticBlobs.empty());
@@ -219,7 +254,10 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
         NCBI_THROW(CObjMgrException, eFindConflict,
                    "Duplicated Blob-id");
     }
-    info->x_DSAttach(*this);
+    {{
+        CDSDetachGuard detach_guard;
+        detach_guard.Attach(this, info);
+    }}
     x_SetLock(lock, info);
     _ASSERT(info->IsLocked());
     return lock;
@@ -1488,17 +1526,8 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
         _ASSERT(!IsLoaded(*lock));
         _ASSERT(lock.m_LoadLock);
         _ASSERT(!lock->HasDataSource());
-        try {
-            lock->x_DSAttach(*this);
-        }
-        catch ( ... ) {
-            try {
-                lock->x_DSDetach(*this);
-            }
-            catch ( exception& ) {
-            }
-            throw;
-        }
+        CDSDetachGuard detach_guard;
+        detach_guard.Attach(this, &*lock);
     }}
     {{
         TMainLock::TWriteLockGuard guard2(m_DSCacheLock);
