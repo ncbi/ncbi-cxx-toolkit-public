@@ -72,45 +72,54 @@ private:
     CObjectsSniffer::EEventCallBackMode  m_EventMode;
 };
 
+namespace {
+
+class CCallStackGuard {
+public:
+    CCallStackGuard(CObjectsSniffer::TObjectStack& stack,
+                    const CObjectInfo& object)
+        : m_Stack(stack)
+        {
+            m_Stack.push_back(&object);
+        }
+    ~CCallStackGuard(void)
+        {
+            m_Stack.pop_back();
+        }
+private:
+    CObjectsSniffer::TObjectStack& m_Stack;
+};
+
+}
+
 void COffsetReadHook::ReadObject(CObjectIStream &in, 
                                  const CObjectInfo &object)
 {
-    m_Sniffer->m_CallStack.push_back(&object);
+    CCallStackGuard guard(m_Sniffer->m_CallStack, object);
+    
+    if (m_EventMode == CObjectsSniffer::eCallAlways) {
 
-    try
-    {
-        if (m_EventMode == CObjectsSniffer::eCallAlways) {
+        // Clear the discard flag before calling sniffer's event reactors
+        m_Sniffer->SetDiscardCurrObject(false);
 
-            // Clear the discard flag before calling sniffer's event reactors
-            m_Sniffer->SetDiscardCurrObject(false);
-
-            m_Sniffer->OnObjectFoundPre(object, in.GetStreamPos());
+        m_Sniffer->OnObjectFoundPre(object, in.GetStreamPos());
      
+        DefaultRead(in, object);
+
+        m_Sniffer->OnObjectFoundPost(object);
+
+        // Relay discard flag to the stream
+        bool discard = m_Sniffer->GetDiscardCurrObject();
+        in.SetDiscardCurrObject(discard);
+    }
+    else {
+        if (m_EventMode == CObjectsSniffer::eSkipObject) {
+            DefaultSkip(in, object);
+        }
+        else {
             DefaultRead(in, object);
-
-            m_Sniffer->OnObjectFoundPost(object);
-
-            // Relay discard flag to the stream
-            bool discard = m_Sniffer->GetDiscardCurrObject();
-            in.SetDiscardCurrObject(discard);
-        }
-        else 
-        {
-            if (m_EventMode == CObjectsSniffer::eSkipObject) {
-                DefaultSkip(in, object);
-            }
-            else {
-                DefaultRead(in, object);
-            }
         }
     }
-    catch ( ... )
-    {
-        m_Sniffer->m_CallStack.pop_back();
-        throw;    
-    }
-
-    m_Sniffer->m_CallStack.pop_back();
 }
 
 
