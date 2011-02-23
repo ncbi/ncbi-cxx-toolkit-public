@@ -724,7 +724,7 @@ void SAccGuide::AddRule(const CTempString& rule)
                 }
                 ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
                            << ": ignoring refinement of " << tokens[1]
-                           << " from " << old << key_used
+                           << " from 0x" << hex << old << key_used
                            << " to unrecognized accession type " << tokens[2]);
             } else {
                 ERR_POST_X(3, "SAccGuide::AddRule: " << count
@@ -794,7 +794,7 @@ void SAccGuide::AddRule(const CTempString& rule)
             } else {
                 ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
                            << ": ignoring refinement of " << tokens[1]
-                           << " from " << it2->second
+                           << " from 0x" << hex << it2->second
                            << " to unrecognized accession type " << tokens[2]);
             }
         } else {
