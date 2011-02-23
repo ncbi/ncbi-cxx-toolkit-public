@@ -343,6 +343,35 @@ CSeq_annot_Handle CScope_Impl::AddSharedSeq_annot(const CSeq_annot& annot,
 }
 
 
+namespace {
+    class CClearCacheOnRemoveGuard
+    {
+    public:
+        CClearCacheOnRemoveGuard(CScope_Impl* scope)
+            : m_Scope(scope)
+            {
+            }
+        ~CClearCacheOnRemoveGuard(void)
+            {
+                if ( m_Scope ) {
+                    m_Scope->x_ClearCacheOnRemoveData();
+                }
+            }
+
+        void Done(void)
+            {
+                m_Scope = 0;
+            }
+    private:
+        CScope_Impl* m_Scope;
+
+    private:    
+        CClearCacheOnRemoveGuard(const CClearCacheOnRemoveGuard&);
+        void operator=(const CClearCacheOnRemoveGuard&);
+    };
+}
+
+
 void CScope_Impl::RemoveDataLoader(const string& name,
                                    int action)
 {
@@ -355,13 +384,11 @@ void CScope_Impl::RemoveDataLoader(const string& name,
                    "data loader not found in the scope");
     }
     CRef<CDataSource_ScopeInfo> ds_info = ds_it->second;
-    try {
+    {{
+        CClearCacheOnRemoveGuard guard2(this);
         ds_info->ResetHistory(action);
-    }
-    catch ( ... ) {
-        x_ClearCacheOnRemoveData();
-        throw;
-    }
+        guard2.Done();
+    }}
     if ( action != CScope::eRemoveIfLocked ) {
         // we need to process each TSE individually checking if it's unlocked
         CDataSource_ScopeInfo::TTSE_InfoMap tse_map;
@@ -371,13 +398,11 @@ void CScope_Impl::RemoveDataLoader(const string& name,
             tse_map = ds_info->GetTSE_InfoMap();
         }}
         ITERATE( CDataSource_ScopeInfo::TTSE_InfoMap, tse_it, tse_map ) {
-            try {
+            {{
+                CClearCacheOnRemoveGuard guard2(this);
                 tse_it->second.GetNCObject().RemoveFromHistory(CScope::eThrowIfLocked);
-            }
-            catch ( ... ) {
-                x_ClearCacheOnRemoveData();
-                throw;
-            }
+                guard2.Done();
+            }}
         }
     }
     _VERIFY(m_setDataSrc.Erase(*ds_info));
