@@ -5982,7 +5982,7 @@ extern unsigned short SOCK_GetLocalPortEx(SOCK          sock,
 {
     unsigned short port;
 
-    if (sock->sock == SOCK_INVALID)
+    if (!sock  ||  sock->sock == SOCK_INVALID)
         return 0;
 
 #ifdef NCBI_OS_UNIX
@@ -6012,19 +6012,21 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
                                 unsigned short* port,
                                 ENH_ByteOrder   byte_order)
 {
-    unsigned int   x_host;
-    unsigned short x_port;
-    if (sock  &&  sock->sock != SOCK_INVALID) {
-        x_host = sock->host;
-        x_port = sock->port;
-    } else {
-        x_host = 0;
-        x_port = 0;
+    if (!sock  ||  sock->sock == SOCK_INVALID) {
+        if ( host )
+            *host = 0;
+        if ( port )
+            *port = 0;
+        return;
     }
-    if (host)
-        *host = byte_order == eNH_HostByteOrder ? ntohl(x_host) : x_host;
-    if (port)
-        *port = byte_order == eNH_HostByteOrder ? x_port : ntohs(x_port);
+    if ( host ) {
+        *host = byte_order == eNH_HostByteOrder
+            ? ntohl(sock->host) :      sock->host;
+    }
+    if ( port ) {
+        *port = byte_order == eNH_HostByteOrder
+            ?       sock->port : ntohs(sock->port);
+    }
 }
 
 
@@ -6053,13 +6055,18 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
     char   port[10];
     size_t len;
 
-    if (!buf  ||  !buflen)
+    if (!sock  ||  !buf  ||  !buflen)
         return 0/*error*/;
     if (format == eSAF_Full) {
 #ifdef NCBI_OS_UNIX
-        if (sock->path[0])
-            strncpy0(buf, sock->path, buflen - 1);
-        else
+        if (*sock->path) {
+            size_t len = strlen(sock->path);
+            if (len < buflen) {
+                memcpy(buf, sock->path, len);
+                buf[len] = '\0';
+            } else
+                return 0;
+        } else
 #endif /*NCBI_OS_UNIX*/
             if (!SOCK_HostPortToString(sock->host, sock->port, buf, buflen))
                 return 0/*error*/;
@@ -6067,21 +6074,26 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
     }
     switch (format) {
     case eSAF_Port:
-        if ((len = (size_t) sprintf(port, "%hu", sock->port)) >= buflen)
-            return 0/*error*/;
-        memcpy(buf, port, len + 1);
+#ifdef NCBI_OS_UNIX
+        if (sock->path[0]) 
+            *buf = '\0';
+        else
+#endif /*NCBI_OS_UNIX*/
+            if ((len = (size_t) sprintf(port, "%hu", sock->port)) >= buflen)
+                return 0/*error*/;
+            else
+                memcpy(buf, port, len + 1);
         break;
     case eSAF_IP:
-        if (SOCK_ntoa(sock->host, buf, buflen) != 0)
-            return 0/*error*/;
+#ifdef NCBI_OS_UNIX
+        if (sock->path[0]) 
+            *buf = '\0';
+        else
+#endif /*NCBI_OS_UNIX*/
+            if (SOCK_ntoa(sock->host, buf, buflen) != 0)
+                return 0/*error*/;
         break;
     default:
-#ifdef NCBI_OS_UNIX
-        if (sock->path[0]) {
-            *buf = '\0';
-            break;
-        }
-#endif /*NCBI_OS_UNIX*/
         return 0/*error*/;
     }
     return buf;
