@@ -38,7 +38,6 @@
 #include <objects/general/Date_std.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seq/Numbering.hpp>
 #include <objects/seq/Num_ref.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -63,6 +62,7 @@
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Sparse_seg.hpp>
 #include <objects/seqalign/Sparse_align.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqblock/PIR_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seq/Pubdesc.hpp>
@@ -132,7 +132,6 @@
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annot_id.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Align_def.hpp>
@@ -141,7 +140,11 @@
 #include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqtable/SeqTable_multi_data.hpp>
 #include <objects/seqtable/SeqTable_single_data.hpp>
+#include <objects/seq/Annot_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
+#include <objects/submit/Contact_info.hpp>
 
 #include <objtools/cleanup/newcleanup.hpp>
 
@@ -161,32 +164,35 @@ public:
     m_LastArg_x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E(NULL),
     m_LastArg_x_BasicCleanupSeqEntry_set_set_descr_descr_E_E(NULL),
     m_LastArg_x_BasicCleanupSeqEntry_set_set_annot_E_E_data_ftable_E_E(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E(NULL),
+    m_LastArg_x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E(NULL),
+    m_LastArg_x_BasicCleanupSeqAnnot_data_ftable_E_E(NULL),
     m_Dummy(0)
   { } 
 
   void BasicCleanupSeqEntry( CSeq_entry & arg0 );
+  void BasicCleanupSeqSubmit( CSeq_submit & arg0 );
+  void BasicCleanupSeqAnnot( CSeq_annot & arg0 );
 
 private: 
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_E_general_general_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_E_general_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_id_E_E_general_general_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_id_E_E_general_ETC( CDbtag & arg0 );
   void x_BasicCleanupSeqEntry_set_set_date_date_std_std_ETC( CDate_std & arg0 );
   void x_BasicCleanupSeqEntry_set_set_date_date_std_ETC( CDate_std & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_E_pdb_pdb_rel_rel_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_E_pdb_pdb_rel_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_E_pdb_pdb_ETC( CPDB_seq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_E_pdb_ETC( CPDB_seq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_E_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_id_E_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ids_E_E_pdb_pdb_rel_rel_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ids_E_E_pdb_pdb_rel_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ids_E_E_pdb_pdb_ETC( CPDB_seq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ids_E_E_pdb_ETC( CPDB_seq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ids_E_E_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ids_E_ETC( CSeq_id & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_id_ >
 void x_BasicCleanupSeqEntry_seq_seq_id_ETC( Tcontainer_ncbi_cref_cseq_id_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_name_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_title_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org_org_db_E_E_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org_org_db_E_ETC( CDbtag & arg0 );
-  template< typename Tcontainer_ncbi_cref_cdbtag_ >
-void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org_org_db_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org_org( COrg_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_comment_ETC( std::string & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
@@ -196,37 +202,37 @@ void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_align
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
 void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_empty_empty_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_empty_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_whole_whole_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_whole_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_int_int_id_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_int_int_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_int_int_ETC( CSeq_interval & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_int_ETC( CSeq_interval & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_packed_int_packed_int_E_E_ETC( CSeq_interval & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_packed_int_packed_int_E_ETC( CSeq_interval & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_empty_empty_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_empty_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_whole_whole_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_whole_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_int_int_id_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_int_int_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_int_int_ETC( CSeq_interval & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_int_ETC( CSeq_interval & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_packed_int_packed_int_E_E_ETC( CSeq_interval & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_packed_int_packed_int_E_ETC( CSeq_interval & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_interval_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_packed_int_packed_int_ETC( Tcontainer_ncbi_cref_cseq_interval_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_packed_int_ETC( CPacked_seqint & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_pnt_pnt_ETC( CSeq_point & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_pnt_ETC( CSeq_point & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_packed_pnt_packed_pnt_ETC( CPacked_seqpnt & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_packed_pnt_ETC( CPacked_seqpnt & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_bond_bond_a_a_ETC( CSeq_point & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_bond_bond_a_ETC( CSeq_point & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_bond_bond_b_b_ETC( CSeq_point & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_bond_bond_b_ETC( CSeq_point & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_bond_bond_ETC( CSeq_bond & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_bond_ETC( CSeq_bond & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_feat_feat_ETC( CFeat_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_locs_E_E_feat_ETC( CFeat_id & arg0 );
+void x_BasicCleanupSeqAnnot_data_locs_E_E_packed_int_packed_int_ETC( Tcontainer_ncbi_cref_cseq_interval_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_packed_int_ETC( CPacked_seqint & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_pnt_pnt_ETC( CSeq_point & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_pnt_ETC( CSeq_point & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_packed_pnt_packed_pnt_ETC( CPacked_seqpnt & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_packed_pnt_ETC( CPacked_seqpnt & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_bond_bond_a_a_ETC( CSeq_point & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_bond_bond_a_ETC( CSeq_point & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_bond_bond_b_b_ETC( CSeq_point & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_bond_bond_b_ETC( CSeq_point & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_bond_bond_ETC( CSeq_bond & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_bond_ETC( CSeq_bond & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_feat_feat_ETC( CFeat_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_feat_ETC( CFeat_id & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
 void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_id_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ids_ETC( Tcontainer_ncbi_cref_cseq_id_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ids_ETC( Tcontainer_ncbi_cref_cseq_id_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
   template< typename Tcontainer_ncbi_cref_cstd_seg_ >
@@ -242,53 +248,53 @@ void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_align
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
   template< typename Tcontainer_ncbi_cref_cuser_object_ >
 void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_user_user_type_type_str_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_user_user_data_E_E_data_strs_E_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_str_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data_strs_E_ETC( std::string & arg0 );
   template< typename Tcontainer_std_string_ >
-void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_user_user_data_E_E_data_strs_ETC( Tcontainer_std_string_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data_strs_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_user_user_data_E_E_label_label_ETC( CObject_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_user_user_data_E_E_label_ETC( CObject_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_label_label_ETC( CObject_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_label_ETC( CObject_id & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
   template< typename Tcontainer_ncbi_cref_cuser_field_ >
 void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_user_user_type_type_ETC( CObject_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_user_user_type_ETC( CObject_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_type_type_ETC( CObject_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_type_ETC( CObject_id & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
   template< typename Tcontainer_ncbi_cref_cuser_object_ >
 void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_product_id_product_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_product_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_genomic_id_genomic_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_genomic_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_product_id_product_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_product_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_genomic_id_genomic_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_genomic_id_ETC( CSeq_id & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
   template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
 void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_dendiag_E_E_ETC( CDense_diag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_dendiag_E_ETC( CDense_diag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_dendiag_E_E_ETC( CDense_diag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_dendiag_E_ETC( CDense_diag & arg0 );
   template< typename Tcontainer_ncbi_cref_cdense_diag_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_dendiag_ETC( Tcontainer_ncbi_cref_cdense_diag_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_denseg_denseg_ETC( CDense_seg & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_denseg_ETC( CDense_seg & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_packed_packed_ETC( CPacked_seg & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_packed_ETC( CPacked_seg & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_master_id_master_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_master_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_rows_E_E_first_id_first_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_rows_E_E_first_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_rows_E_E_second_id_second_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_rows_E_E_second_id_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_rows_E_E_ETC( CSparse_align & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_rows_E_ETC( CSparse_align & arg0 );
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_dendiag_ETC( Tcontainer_ncbi_cref_cdense_diag_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_denseg_denseg_ETC( CDense_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_denseg_ETC( CDense_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_packed_packed_ETC( CPacked_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_packed_ETC( CPacked_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_master_id_master_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_master_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_rows_E_E_first_id_first_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_rows_E_E_first_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_rows_E_E_second_id_second_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_rows_E_E_second_id_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_rows_E_E_ETC( CSparse_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_rows_E_ETC( CSparse_align & arg0 );
   template< typename Tcontainer_ncbi_cref_csparse_align_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_rows_ETC( Tcontainer_ncbi_cref_csparse_align_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_sparse_ETC( CSparse_seg & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_align_E_E_segs_sparse_ETC( CSparse_seg & arg0 );
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_rows_ETC( Tcontainer_ncbi_cref_csparse_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_sparse_ETC( CSparse_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_sparse_ETC( CSparse_seg & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
@@ -324,6 +330,14 @@ void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_align
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num_ref( CNum_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num_num( CNumbering & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_name_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_title_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_dbxref_E_E_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_dbxref_E_ETC( CDbtag & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdbtag_ >
+void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org_org_db_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_maploc_maploc_ETC( CDbtag & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_maploc_ETC( CDbtag & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_id_ >
@@ -334,92 +348,92 @@ void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_sp_sp_seqref_ETC( Tcontainer
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_genbank_genbank_entry_date_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_genbank_genbank_ETC( CGB_block & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_genbank_ETC( CGB_block & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_std_E_E_name_name_dbtag_dbtag_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_std_E_E_name_name_dbtag_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_std_E_E_name_name_ETC( CPerson_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_std_E_E_name_ETC( CPerson_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_affil_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_div_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_city_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_sub_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_country_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_street_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_email_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_fax_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_phone_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_postal_code_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_std_ETC( CAffil::C_Std & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_affil_affil_ETC( CAffil & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_affil_ETC( CAffil & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_std_E_E_ETC( CAuthor & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_std_E_ETC( CAuthor & arg0 );
-  template< typename Tcontainer_ncbi_cref_cauthor_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_std_ETC( Tcontainer_ncbi_cref_cauthor_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_names_ETC( CAuth_list::C_Names & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_authors_ETC( CAuth_list & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_authors_ETC( CAuth_list & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
   void x_BasicCleanupSeqEntry_set_set_date_date_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_set_set_date_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_gen_gen_ETC( CCit_gen & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_gen_ETC( CCit_gen & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_pub_ETC( CAffil & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_pub_ETC( CAffil & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_cprt_cprt_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_cprt_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_history_history_E_E_ETC( CPubStatusDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_history_history_E_ETC( CPubStatusDate & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact_contact_contact_contact_name_name_dbtag_dbtag_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact_contact_contact_contact_name_name_dbtag_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact_contact_contact_contact_name_name_ETC( CPerson_id & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact_contact_contact_contact_name_ETC( CPerson_id & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_affil_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_div_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_city_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_sub_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_country_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_street_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_email_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_fax_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_phone_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_postal_code_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_std_ETC( CAffil::C_Std & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_authors_affil_affil_ETC( CAffil & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_authors_affil_ETC( CAffil & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_authors_names_std_E_E_ETC( CAuthor & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_authors_names_std_E_ETC( CAuthor & arg0 );
+  template< typename Tcontainer_ncbi_cref_cauthor_ >
+void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_authors_names_std_ETC( Tcontainer_ncbi_cref_cauthor_ & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_authors_names_ETC( CAuth_list::C_Names & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_authors_ETC( CAuth_list & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_authors_ETC( CAuth_list & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_gen_gen_ETC( CCit_gen & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_gen_ETC( CCit_gen & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_pub_ETC( CAffil & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_pub_ETC( CAffil & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_cprt_cprt_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_cprt_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_history_history_E_E_ETC( CPubStatusDate & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_history_history_E_ETC( CPubStatusDate & arg0 );
   template< typename Tcontainer_ncbi_cref_cpubstatusdate_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_history_history_ETC( Tcontainer_ncbi_cref_cpubstatusdate_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_history_ETC( CPubStatusDateSet & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_imp_ETC( CImprint & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_imp_ETC( CImprint & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_sub_sub_ETC( CCit_sub & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_sub_ETC( CCit_sub & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_medline_E_E_em_em_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_medline_E_E_em_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_journal_journal_ETC( CCit_jour & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_journal_ETC( CCit_jour & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_book_book_ETC( CCit_book & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_book_ETC( CCit_book & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_proc_E_E_meet_meet_place_place_ETC( CAffil & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_proc_E_E_meet_meet_place_ETC( CAffil & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_proc_E_E_meet_meet_ETC( CMeeting & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_proc_E_E_meet_ETC( CMeeting & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_proc_proc_ETC( CCit_proc & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_proc_ETC( CCit_proc & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_from_ETC( CCit_art::C_From & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_E_other_other_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_E_other_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_E_ETC( CArticleId & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_ETC( CArticleId & arg0 );
+void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_history_history_ETC( Tcontainer_ncbi_cref_cpubstatusdate_ & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_history_ETC( CPubStatusDateSet & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_imp_ETC( CImprint & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit_imp_ETC( CImprint & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_sub_sub_ETC( CCit_sub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_sub_ETC( CCit_sub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_medline_E_E_em_em_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_medline_E_E_em_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_journal_journal_ETC( CCit_jour & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_journal_ETC( CCit_jour & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_book_book_ETC( CCit_book & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_book_ETC( CCit_book & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_proc_E_E_meet_meet_place_place_ETC( CAffil & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_proc_E_E_meet_meet_place_ETC( CAffil & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_proc_E_E_meet_meet_ETC( CMeeting & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_proc_E_E_meet_ETC( CMeeting & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_proc_proc_ETC( CCit_proc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_proc_ETC( CCit_proc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_from_ETC( CCit_art::C_From & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_E_other_other_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_E_other_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_E_ETC( CArticleId & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_ids_ids_E_ETC( CArticleId & arg0 );
   template< typename Tcontainer_ncbi_cref_carticleid_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_ids_ids_ETC( Tcontainer_ncbi_cref_carticleid_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_ids_ETC( CArticleIdSet & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_medline_E_E_cit_cit_ETC( CCit_art & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_medline_E_E_cit_ETC( CCit_art & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_medline_medline_ETC( CMedline_entry & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_medline_ETC( CMedline_entry & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_article_article_ETC( CCit_art & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_article_ETC( CCit_art & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_date_issue_date_issue_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_date_issue_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_app_date_app_date_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_app_date_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_applicants_applicants_ETC( CAuth_list & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_applicants_ETC( CAuth_list & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_assignees_assignees_ETC( CAuth_list & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_assignees_ETC( CAuth_list & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_priority_E_E_ETC( CPatent_priority & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_priority_E_ETC( CPatent_priority & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_ids_ids_ETC( Tcontainer_ncbi_cref_carticleid_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_ids_ETC( CArticleIdSet & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_medline_E_E_cit_cit_ETC( CCit_art & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_medline_E_E_cit_ETC( CCit_art & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_medline_medline_ETC( CMedline_entry & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_medline_ETC( CMedline_entry & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_article_article_ETC( CCit_art & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_article_ETC( CCit_art & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_date_issue_date_issue_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_date_issue_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_app_date_app_date_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_app_date_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_applicants_applicants_ETC( CAuth_list & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_applicants_ETC( CAuth_list & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_assignees_assignees_ETC( CAuth_list & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_assignees_ETC( CAuth_list & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_priority_E_E_ETC( CPatent_priority & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_priority_E_ETC( CPatent_priority & arg0 );
   template< typename Tcontainer_ncbi_cref_cpatent_priority_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_priority_ETC( Tcontainer_ncbi_cref_cpatent_priority_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_patent_patent_ETC( CCit_pat & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_patent_ETC( CCit_pat & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_man_man_cit_cit_ETC( CCit_book & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_man_man_cit_ETC( CCit_book & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_man_man_ETC( CCit_let & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_man_ETC( CCit_let & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_priority_ETC( Tcontainer_ncbi_cref_cpatent_priority_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_patent_patent_ETC( CCit_pat & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_patent_ETC( CCit_pat & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_man_man_cit_cit_ETC( CCit_book & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_man_man_cit_ETC( CCit_book & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_man_man_ETC( CCit_let & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_man_ETC( CCit_let & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E( CPub & arg0 );
   template< typename Tcontainer_ncbi_cref_cpub_ >
@@ -533,24 +547,22 @@ void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_sp_sp_dbref_ETC( Tcontainer_
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_dbxref_ETC( CDbtag & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_embl_embl_creation_date_creation_date_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_embl_embl_creation_date_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_update_date_update_date_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_update_date_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_update_date_update_date_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_update_date_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_embl_embl_ETC( CEMBL_block & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_embl_ETC( CEMBL_block & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_create_date_create_date_ETC( CDate & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_create_date_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pdb_pdb_deposition_deposition_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pdb_pdb_deposition_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pdb_pdb_replace_replace_ETC( CPDB_replace & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pdb_pdb_replace_ETC( CPDB_replace & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pdb_pdb_ETC( CPDB_block & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_pdb_ETC( CPDB_block & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_source_source_org_org_ETC( COrg_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_source_source_org_ETC( COrg_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_source_source_subtype_E_E_ETC( CSubSource & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_source_source_subtype_E_ETC( CSubSource & arg0 );
   template< typename Tcontainer_ncbi_cref_csubsource_ >
 void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_source_source_subtype_ETC( Tcontainer_ncbi_cref_csubsource_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_org_org_ETC( COrg_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_org_ETC( COrg_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_source_source_ETC( CBioSource & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_source_ETC( CBioSource & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_molinfo_molinfo( CMolInfo & arg0 );
@@ -566,9 +578,11 @@ void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_modelev_modelev_protein_ETC(
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_modelev_modelev_identification_identification_ETC( CSeq_id & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_modelev_modelev_identification_ETC( CSeq_id & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_modelev_modelev_ETC( CModelEvidenceSupport & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_modelev_ETC( CModelEvidenceSupport & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_create_date_create_date_ETC( CDate & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_create_date_ETC( CDate & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E( CSeqdesc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E( CSeqdesc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseqdesc_ >
@@ -598,10 +612,10 @@ void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext_equiv_equi
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext( CSeq_loc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_ref_ref( CSeq_loc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_ref( CRef_ext & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_gene_gene_formal_name_formal_name_source_source_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_gene_gene_formal_name_formal_name_source_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_gene_gene_formal_name_formal_name_ETC( CGene_nomenclature & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_gene_gene_formal_name_ETC( CGene_nomenclature & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_gene_gene_formal_name_formal_name_source_source_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_gene_gene_formal_name_formal_name_source_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_gene_gene_formal_name_formal_name_ETC( CGene_nomenclature & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_gene_gene_formal_name_ETC( CGene_nomenclature & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_gene_gene( CGene_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_gene( CGene_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_org_org( COrg_ref & arg0 );
@@ -848,8 +862,8 @@ void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clon
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_align_id_align_id_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_align_id_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_align_id_align_id_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_align_id_ETC( CDbtag & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
   template< typename Tcontainer_ncbi_cref_cclone_seq_ >
@@ -928,50 +942,50 @@ void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_vari
 void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_id_id_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_id_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_parent_id_parent_id_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_parent_id_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_id_id_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_id_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_parent_id_parent_id_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_parent_id_ETC( CDbtag & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_other_ids_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_other_ids_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_phenotype_E_E_xref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_phenotype_E_E_ETC( CPhenotype & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_phenotype_E_ETC( CPhenotype & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_phenotype_E_E_xref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_phenotype_E_E_ETC( CPhenotype & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_phenotype_E_ETC( CPhenotype & arg0 );
   template< typename Tcontainer_ncbi_cref_cphenotype_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_phenotype_ETC( Tcontainer_ncbi_cref_cphenotype_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_phenotype_ETC( Tcontainer_ncbi_cref_cphenotype_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_clinical_test_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_source_source_ETC( CSubSource & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_source_ETC( CSubSource & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_clinical_test_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_source_source_ETC( CSubSource & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_source_ETC( CSubSource & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_condition_object_id_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_condition_object_id_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
   template< typename Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin_c_condition >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_condition_ETC( Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin_c_condition & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_condition_ETC( Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin_c_condition & arg0 );
   template< typename Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_ETC( Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_ETC( Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin & arg0 );
   template< typename Tcontainer_ncbi_cref_c_e_somatic_origin_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_somatic_origin_ETC( Tcontainer_ncbi_cref_c_e_somatic_origin_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_somatic_origin_ETC( Tcontainer_ncbi_cref_c_e_somatic_origin_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation( CVariation_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation( CVariation_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_rsite_rsite_db_db_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_rsite_rsite_db_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_rsite_rsite_ETC( CRsite_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_rsite_ETC( CRsite_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_gene_E_E_ETC( CGene_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_gene_E_ETC( CGene_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rsite_rsite_db_db_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rsite_rsite_db_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rsite_rsite_ETC( CRsite_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rsite_ETC( CRsite_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_gene_E_E_ETC( CGene_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_gene_E_ETC( CGene_ref & arg0 );
   template< typename Tcontainer_ncbi_cref_cgene_ref_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_gene_ETC( Tcontainer_ncbi_cref_cgene_ref_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_protein_E_E_ETC( CProt_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_protein_E_ETC( CProt_ref & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_gene_ETC( Tcontainer_ncbi_cref_cgene_ref_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_protein_E_E_ETC( CProt_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_protein_E_ETC( CProt_ref & arg0 );
   template< typename Tcontainer_ncbi_cref_cprot_ref_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_protein_ETC( Tcontainer_ncbi_cref_cprot_ref_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_txorg_txorg_ETC( COrg_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_txorg_ETC( COrg_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_txinit_ETC( CTxinit & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_txinit_ETC( CTxinit & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_biosrc_biosrc_ETC( CBioSource & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_data_data_biosrc_ETC( CBioSource & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_protein_ETC( Tcontainer_ncbi_cref_cprot_ref_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_txorg_txorg_ETC( COrg_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_txorg_ETC( COrg_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_txinit_ETC( CTxinit & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_txinit_ETC( CTxinit & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_biosrc_biosrc_ETC( CBioSource & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_biosrc_ETC( CBioSource & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data( CSeqFeatData & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_data( CSeqFeatData & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product_mix_mix_E( CSeq_loc & arg0 );
@@ -1016,30 +1030,30 @@ void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub_E_
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub_E( CPub & arg0 );
   template< typename Tcontainer_ncbi_cref_cpub_ >
 void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_medline_E_E_ETC( CMedline_entry & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_medline_E_ETC( CMedline_entry & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_medline_E_E_ETC( CMedline_entry & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_medline_E_ETC( CMedline_entry & arg0 );
   template< typename Tcontainer_ncbi_cref_cmedline_entry_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_medline_ETC( Tcontainer_ncbi_cref_cmedline_entry_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_E_ETC( CCit_art & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_E_ETC( CCit_art & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_medline_ETC( Tcontainer_ncbi_cref_cmedline_entry_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_E_ETC( CCit_art & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_E_ETC( CCit_art & arg0 );
   template< typename Tcontainer_ncbi_cref_ccit_art_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_article_ETC( Tcontainer_ncbi_cref_ccit_art_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_journal_E_E_ETC( CCit_jour & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_journal_E_ETC( CCit_jour & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_article_ETC( Tcontainer_ncbi_cref_ccit_art_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_journal_E_E_ETC( CCit_jour & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_journal_E_ETC( CCit_jour & arg0 );
   template< typename Tcontainer_ncbi_cref_ccit_jour_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_journal_ETC( Tcontainer_ncbi_cref_ccit_jour_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_E_ETC( CCit_book & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_E_ETC( CCit_book & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_journal_ETC( Tcontainer_ncbi_cref_ccit_jour_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_book_E_E_ETC( CCit_book & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_book_E_ETC( CCit_book & arg0 );
   template< typename Tcontainer_ncbi_cref_ccit_book_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_book_ETC( Tcontainer_ncbi_cref_ccit_book_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_proc_E_E_ETC( CCit_proc & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_proc_E_ETC( CCit_proc & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_book_ETC( Tcontainer_ncbi_cref_ccit_book_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_proc_E_E_ETC( CCit_proc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_proc_E_ETC( CCit_proc & arg0 );
   template< typename Tcontainer_ncbi_cref_ccit_proc_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_proc_ETC( Tcontainer_ncbi_cref_ccit_proc_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_E_ETC( CCit_pat & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_E_ETC( CCit_pat & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_proc_ETC( Tcontainer_ncbi_cref_ccit_proc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_E_ETC( CCit_pat & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_E_ETC( CCit_pat & arg0 );
   template< typename Tcontainer_ncbi_cref_ccit_pat_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_patent_ETC( Tcontainer_ncbi_cref_ccit_pat_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_patent_ETC( Tcontainer_ncbi_cref_ccit_pat_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit( CPub_set & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_cit( CPub_set & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
@@ -1359,14 +1373,14 @@ void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation( CVariation_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation( CVariation_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_gene_gene_ETC( CGene_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_gene_ETC( CGene_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_prot_prot_ETC( CProt_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_prot_ETC( CProt_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_gene_gene_ETC( CGene_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_gene_ETC( CGene_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_prot_prot_ETC( CProt_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_prot_ETC( CProt_ref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data( CSeqFeatData & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data( CSeqFeatData & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_id_id_ETC( CFeat_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_id_ETC( CFeat_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_id_id_ETC( CFeat_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_id_ETC( CFeat_id & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E( CSeqFeatXref & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E( CSeqFeatXref & arg0 );
   template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
@@ -1388,25 +1402,25 @@ void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data(
   template< typename Tcontainer_ncbi_cref_cuser_object_ >
 void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cgb_qual_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_qual_ETC( Tcontainer_ncbi_cref_cgb_qual_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_ids_E_E_ETC( CFeat_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_ids_E_ETC( CFeat_id & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_qual_ETC( Tcontainer_ncbi_cref_cgb_qual_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ids_E_E_ETC( CFeat_id & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ids_E_ETC( CFeat_id & arg0 );
   template< typename Tcontainer_ncbi_cref_cfeat_id_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_ids_ETC( Tcontainer_ncbi_cref_cfeat_id_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_ids_ETC( Tcontainer_ncbi_cref_cfeat_id_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_id_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_inference_E_E_basis_basis_accessions_ETC( Tcontainer_ncbi_cref_cseq_id_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_inference_E_E_basis_basis_ETC( CEvidenceBasis & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_inference_E_E_basis_ETC( CEvidenceBasis & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_inference_E_E_ETC( CInferenceSupport & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_inference_E_ETC( CInferenceSupport & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_inference_E_E_basis_basis_accessions_ETC( Tcontainer_ncbi_cref_cseq_id_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_inference_E_E_basis_basis_ETC( CEvidenceBasis & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_inference_E_E_basis_ETC( CEvidenceBasis & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_inference_E_E_ETC( CInferenceSupport & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_inference_E_ETC( CInferenceSupport & arg0 );
   template< typename Tcontainer_ncbi_cref_cinferencesupport_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_inference_ETC( Tcontainer_ncbi_cref_cinferencesupport_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_model_evidence_E_E_ETC( CModelEvidenceSupport & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_model_evidence_E_ETC( CModelEvidenceSupport & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_inference_ETC( Tcontainer_ncbi_cref_cinferencesupport_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_model_evidence_E_E_ETC( CModelEvidenceSupport & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_model_evidence_E_ETC( CModelEvidenceSupport & arg0 );
   template< typename Tcontainer_ncbi_cref_cmodelevidencesupport_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_model_evidence_ETC( Tcontainer_ncbi_cref_cmodelevidencesupport_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_support_ETC( CSeqFeatSupport & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E_support_ETC( CSeqFeatSupport & arg0 );
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_model_evidence_ETC( Tcontainer_ncbi_cref_cmodelevidencesupport_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_support_ETC( CSeqFeatSupport & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_support_ETC( CSeqFeatSupport & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E_E( CSeq_feat & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_ext_ext_map_map_E( CSeq_feat & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_feat_ >
@@ -1504,19 +1518,15 @@ void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_assembly_E_E_ext( Tconta
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_assembly_E( CSeq_align & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_align_ >
 void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_assembly( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaces_replaces( CSeq_hist_rec & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaces( CSeq_hist_rec & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaced_by_replaced_by( CSeq_hist_rec & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaced_by( CSeq_hist_rec & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_deleted( CSeq_hist::C_Deleted & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaces_replaces_ETC( CSeq_hist_rec & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaces_ETC( CSeq_hist_rec & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaced_by_replaced_by_ETC( CSeq_hist_rec & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_replaced_by_ETC( CSeq_hist_rec & arg0 );
+  void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist_deleted_ETC( CSeq_hist::C_Deleted & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist_hist( CSeq_hist & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst_hist( CSeq_hist & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst_inst( CSeq_inst & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_inst( CSeq_inst & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_id_E_E_ETC( CAnnot_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_id_E_ETC( CAnnot_id & arg0 );
-  template< typename Tcontainer_ncbi_cref_cannot_id_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_id_ETC( Tcontainer_ncbi_cref_cannot_id_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E( CPub & arg0 );
@@ -1616,10 +1626,6 @@ void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E_d
 void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_user_user( CUser_object & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_user( CUser_object & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_src_src_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_src_ETC( CSeq_id & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_align_align_ETC( CAlign_def & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_align_ETC( CAlign_def & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_region_region_mix_mix_E( CSeq_loc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
 void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_region_region_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
@@ -1630,6 +1636,10 @@ void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_region_region_equiv_
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_region_region_equiv( CSeq_loc_equiv & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_region_region( CSeq_loc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_src_src_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_src_ETC( CSeq_id & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_align_align_ETC( CAlign_def & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_align_ETC( CAlign_def & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E_E( CAnnotdesc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_desc_desc_E( CAnnotdesc & arg0 );
   template< typename Tcontainer_ncbi_cref_cannotdesc_ >
@@ -2464,7 +2474,7 @@ void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
 void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_interval_ >
-void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_interval_ETC( Tcontainer_ncbi_cref_cseq_interval_ & arg0 );
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_interval_ETC( Tcontainer_ncbi_cref_cseq_interval_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data( CSeqTable_multi_data & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data( CSeqTable_multi_data & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix_E( CSeq_loc & arg0 );
@@ -2477,8 +2487,8 @@ void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv( CSeq_loc_equiv & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc( CSeq_loc & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc( CSeq_loc & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_interval_interval_ETC( CSeq_interval & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_interval_ETC( CSeq_interval & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_interval_interval_ETC( CSeq_interval & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_interval_ETC( CSeq_interval & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default( CSeqTable_single_data & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default( CSeqTable_single_data & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix_E( CSeq_loc & arg0 );
@@ -2500,14 +2510,18 @@ void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table_columns( 
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table_seq_table( CSeq_table & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_seq_table( CSeq_table & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data( CSeq_annot::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_id_E_E_ETC( CAnnot_id & arg0 );
+  void x_BasicCleanupSeqAnnot_id_E_ETC( CAnnot_id & arg0 );
+  template< typename Tcontainer_ncbi_cref_cannot_id_ >
+void x_BasicCleanupSeqAnnot_id_ETC( Tcontainer_ncbi_cref_cannot_id_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E_E( CSeq_annot & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_BasicCleanupSeqEntry_seq_seq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq( CBioseq & arg0 );
   void x_BasicCleanupSeqEntry_seq( CBioseq & arg0 );
-  void x_BasicCleanupSeqEntry_set_set_coll_coll( CDbtag & arg0 );
-  void x_BasicCleanupSeqEntry_set_set_coll( CDbtag & arg0 );
+  void x_BasicCleanupSeqEntry_set_set_coll_coll_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqEntry_set_set_coll_ETC( CDbtag & arg0 );
   void x_BasicCleanupSeqEntry_set_set_descr_descr_E_E_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqEntry_set_set_descr_descr_E_E_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqEntry_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
@@ -3675,6 +3689,5146 @@ void x_BasicCleanupSeqEntry_set_set_annot_E_E_data_seq_table_seq_table_columns( 
 void x_BasicCleanupSeqEntry_set_set_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   void x_BasicCleanupSeqEntry_set_set( CBioseq_set & arg0 );
   void x_BasicCleanupSeqEntry_set( CBioseq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact_contact_contact_contact( CAuthor & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact_contact_contact( CAuthor & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact_contact( CContact_info & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_contact( CContact_info & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit_cit( CCit_sub & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_cit( CCit_sub & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_reldate_reldate( CDate & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub_reldate( CDate & arg0 );
+  void x_BasicCleanupSeqSubmit_sub_sub( CSubmit_block & arg0 );
+  void x_BasicCleanupSeqSubmit_sub( CSubmit_block & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_molinfo_molinfo( CMolInfo & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E_molinfo( CMolInfo & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E( CSeqdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E( CSeqdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqdesc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr( Tcontainer_ncbi_cref_cseqdesc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr( CSeq_descr & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg_seg( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_seg( CSeg_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref_Ref_ext( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref_ref( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_ref( CRef_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_gene_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_prot_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_imp_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_site( CSeqFeatData::ESite & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub_E_E_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub_E_E_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E_E( CSeqFeatXref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref_E( CSeqFeatXref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_xref( Tcontainer_ncbi_cref_cseqfeatxref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E( CSeq_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E( CSeq_feat & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map( CMap_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E_E( CDelta_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta_E( CDelta_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_seq_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta_delta( Tcontainer_ncbi_cref_cdelta_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_delta( CDelta_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext( CSeq_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext( CSeq_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E_E( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist_assembly( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist_hist( CSeq_hist & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_hist( CSeq_hist & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst( CSeq_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst( CSeq_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region_region_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region_region_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region_region_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region_region_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region_region_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region_region_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E_E( CAnnotdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc_E( CAnnotdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cannotdesc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc_desc( Tcontainer_ncbi_cref_cannotdesc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_desc( CAnnot_descr & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_gene_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_prot_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_imp_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_site( CSeqFeatData::ESite & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product_product_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product_product_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product_product_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product_product_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product_product_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product_product_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit_cit_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E_E( CSeqFeatXref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref_E( CSeqFeatXref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_xref( Tcontainer_ncbi_cref_cseqfeatxref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E( CSeq_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E( CSeq_feat & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E_E( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_align( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E_E( CSeq_graph & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph_E( CSeq_graph & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_graph_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_graph( Tcontainer_ncbi_cref_cseq_graph_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_locs( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E_E( CSeqTable_column & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns_E( CSeqTable_column & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqtable_column_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table_columns( Tcontainer_ncbi_cref_cseqtable_column_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data( CSeq_annot::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E( CSeq_annot & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E( CSeq_annot & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_annot_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq( CBioseq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_seq( CBioseq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E( CSeqdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E( CSeqdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqdesc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr( Tcontainer_ncbi_cref_cseqdesc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr( CSeq_descr & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_seq_set_E( CSeq_entry & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_entry_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region_region_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region_region_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region_region_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region_region_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region_region_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region_region_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E_E( CAnnotdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc_E( CAnnotdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cannotdesc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc_desc( Tcontainer_ncbi_cref_cannotdesc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_desc( CAnnot_descr & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_gene_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_prot_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_imp_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_site( CSeqFeatData::ESite & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product_product_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product_product_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product_product_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product_product_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product_product_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product_product_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit_cit_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit_cit_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit_cit_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E_E( CSeqFeatXref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref_E( CSeqFeatXref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_xref( Tcontainer_ncbi_cref_cseqfeatxref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E( CSeq_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E( CSeq_feat & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E_E( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_align( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E_E( CSeq_graph & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph_E( CSeq_graph & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_graph_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_graph( Tcontainer_ncbi_cref_cseq_graph_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_locs( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E_E( CSeqTable_column & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns_E( CSeqTable_column & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqtable_column_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table_columns( Tcontainer_ncbi_cref_cseqtable_column_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data( CSeq_annot::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E( CSeq_annot & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E( CSeq_annot & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_annot_ >
+void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set( CBioseq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E_set( CBioseq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E_E( CSeq_entry & arg0 );
+  void x_BasicCleanupSeqSubmit_data_entrys_E( CSeq_entry & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_entry_ >
+void x_BasicCleanupSeqSubmit_data_entrys( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region_region_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region_region_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region_region_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region_region_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region_region_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region_region_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E_E( CAnnotdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc_E( CAnnotdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cannotdesc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_desc_desc( Tcontainer_ncbi_cref_cannotdesc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_desc( CAnnot_descr & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_gene_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_prot_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_imp_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_site( CSeqFeatData::ESite & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product_product_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product_product_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product_product_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product_product_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product_product_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product_product_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit_cit_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit_cit_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit_cit_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit_cit_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E_E( CSeqFeatXref & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref_E( CSeqFeatXref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_xref( Tcontainer_ncbi_cref_cseqfeatxref_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E( CSeq_feat & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E( CSeq_feat & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E_E( CSeq_align & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_align( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E_E( CSeq_graph & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph_E( CSeq_graph & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_graph_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_graph( Tcontainer_ncbi_cref_cseq_graph_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_locs( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E_E( CSeqTable_column & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns_E( CSeqTable_column & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqtable_column_ >
+void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table_columns( Tcontainer_ncbi_cref_cseqtable_column_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E_data( CSeq_annot::C_Data & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E_E( CSeq_annot & arg0 );
+  void x_BasicCleanupSeqSubmit_data_annots_E( CSeq_annot & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_annot_ >
+void x_BasicCleanupSeqSubmit_data_annots( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_id_ >
+void x_BasicCleanupSeqSubmit_data_delete( Tcontainer_ncbi_cref_cseq_id_ & arg0 );
+  void x_BasicCleanupSeqSubmit_data( CSeq_submit::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_region_region_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_region_region_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_region_region_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_region_region_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_desc_desc_E_E_region_region_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_region_region_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_region_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E_region( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E_E( CAnnotdesc & arg0 );
+  void x_BasicCleanupSeqAnnot_desc_desc_E( CAnnotdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cannotdesc_ >
+void x_BasicCleanupSeqAnnot_desc_desc( Tcontainer_ncbi_cref_cannotdesc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_desc( CAnnot_descr & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_gene_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_gene( CGene_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_prot_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_imp_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_site( CSeqFeatData::ESite & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_product_product_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_product_product_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_product_product_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_product_product_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_product_product_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_product_product_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_product_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_product( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_cit( CPub_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E_E( CCode_break & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break_E( CCode_break & arg0 );
+  template< typename Tcontainer_ncbi_cref_ccode_break_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion_code_break( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_anticodon( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext_tRNA( CTrna_ext & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna_ext( CRNA_ref::C_Ext & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_rna( CRNA_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E_E( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub_pub( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_pub( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_pub( CPubdesc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_user( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref_aligns( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num_ref( CNum_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_num( CNumbering & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_seq( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E( CClone_seq & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E( CClone_seq & arg0 );
+  template< typename Tcontainer_ncbi_cref_cclone_seq_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq_clone_seq( Tcontainer_ncbi_cref_cclone_seq_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone_clone_seq( CClone_seq_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_clone( CClone_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
+  template< typename Tcontainer_ncbi_cref_cpub_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub_equiv( CPub_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub_pub( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_pub( CPub & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E_seq( CDelta_item::C_Seq & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E_E( CDelta_item & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta_E( CDelta_item & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdelta_item_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance_delta( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_instance( CVariation_inst & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations_E( CVariation_ref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cvariation_ref_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set_variations( Tcontainer_ncbi_cref_cvariation_ref_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data_set( CVariation_ref::C_Data::C_Set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_data( CVariation_ref::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence_variation( CVariation_ref & arg0 );
+  template< typename Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence_E_Consequence( Tcvariation_ref_container_ncbi_cref_c_e_consequence_c_e_consequence & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_consequence_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_consequence( Tcontainer_ncbi_cref_c_e_consequence_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E_location( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E_E( CExt_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs_E( CExt_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cext_loc_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_locs( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation_ext( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data_variation( CVariation_ref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E_data( CSeqFeatData & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E_E( CSeqFeatXref & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref_E( CSeqFeatXref & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_xref( Tcontainer_ncbi_cref_cseqfeatxref_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_ftable_E_E_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E_E( CSeq_feat & arg0 );
+  void x_BasicCleanupSeqAnnot_data_ftable_E( CSeq_feat & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
+void x_BasicCleanupSeqAnnot_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E_E( CStd_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std_E( CStd_seg & arg0 );
+  template< typename Tcontainer_ncbi_cref_cstd_seg_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_std( Tcontainer_ncbi_cref_cstd_seg_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_disc_disc_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_disc_disc( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_disc( CSeq_align_set & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E_E( CSpliced_exon & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons_E( CSpliced_exon & arg0 );
+  template< typename Tcontainer_ncbi_cref_cspliced_exon_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced_exons( Tcontainer_ncbi_cref_cspliced_exon_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs_spliced( CSpliced_seg & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_segs( CSeq_align::C_Segs & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_bounds_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_bounds( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data_object( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E_E( CUser_field & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data_E( CUser_field & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_field_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E_E( CUser_object & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E_ext_E( CUser_object & arg0 );
+  template< typename Tcontainer_ncbi_cref_cuser_object_ >
+void x_BasicCleanupSeqAnnot_data_align_E_E_ext( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E_E( CSeq_align & arg0 );
+  void x_BasicCleanupSeqAnnot_data_align_E( CSeq_align & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_align_ >
+void x_BasicCleanupSeqAnnot_data_align( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E_E_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_graph_E_E_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E_E_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E_E_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_graph_E_E_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E_E_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E_E_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E_E_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E_E( CSeq_graph & arg0 );
+  void x_BasicCleanupSeqAnnot_data_graph_E( CSeq_graph & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_graph_ >
+void x_BasicCleanupSeqAnnot_data_graph( Tcontainer_ncbi_cref_cseq_graph_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_locs_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_locs_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_locs_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_locs( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E_E( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data_loc( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_data( CSeqTable_multi_data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_default( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv_E( CSeq_loc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseq_loc_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv_equiv( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc_equiv( CSeq_loc_equiv & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_loc( CSeq_loc & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E_sparse_other( CSeqTable_single_data & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E_E( CSeqTable_column & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns_E( CSeqTable_column & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqtable_column_ >
+void x_BasicCleanupSeqAnnot_data_seq_table_seq_table_columns( Tcontainer_ncbi_cref_cseqtable_column_ & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqAnnot_data_seq_table( CSeq_table & arg0 );
+  void x_BasicCleanupSeqAnnot_data( CSeq_annot::C_Data & arg0 );
 
   CNewCleanup_imp & m_NewCleanup;
 
@@ -3685,6 +8839,15 @@ void x_BasicCleanupSeqEntry_set_set_annot( Tcontainer_ncbi_cref_cseq_annot_ & ar
   CSeq_feat* m_LastArg_x_BasicCleanupSeqEntry_seq_seq_annot_E_E_data_ftable_E_E;
   CSeqdesc* m_LastArg_x_BasicCleanupSeqEntry_set_set_descr_descr_E_E;
   CSeq_feat* m_LastArg_x_BasicCleanupSeqEntry_set_set_annot_E_E_data_ftable_E_E;
+  CBioseq* m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq;
+  CSeqdesc* m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_descr_descr_E_E;
+  CSeq_inst* m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst;
+  CSeq_feat* m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_inst_inst_ext_ext_map_map_E_E;
+  CSeq_feat* m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_seq_seq_annot_E_E_data_ftable_E_E;
+  CSeqdesc* m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_descr_descr_E_E;
+  CSeq_feat* m_LastArg_x_BasicCleanupSeqSubmit_data_entrys_E_E_set_set_annot_E_E_data_ftable_E_E;
+  CSeq_feat* m_LastArg_x_BasicCleanupSeqSubmit_data_annots_E_E_data_ftable_E_E;
+  CSeq_feat* m_LastArg_x_BasicCleanupSeqAnnot_data_ftable_E_E;
 
   int m_Dummy;
 }; // end of CAutogeneratedCleanup

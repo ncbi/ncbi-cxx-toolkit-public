@@ -566,7 +566,7 @@ bool ParseLex (string text, TLexTokenArray &token_list)
  *  JOIN
  *------*/
 			case 'j':
-				if (NStr::CompareNocase (text.substr(offset, 4), "join")) {
+				if (NStr::EqualNocase (text.substr(offset, 4), "join")) {
 				    offset += 4;
 				    paren_len = GetParenLen(text.substr(offset));
 				    if (paren_len == 0) {
@@ -583,7 +583,7 @@ bool ParseLex (string text, TLexTokenArray &token_list)
  *  ORDER
  *------*/
 			case 'o':
-				if (NStr::CompareNocase (text.substr(offset, 5), "order")) {
+				if (NStr::EqualNocase (text.substr(offset, 5), "order")) {
 				    offset += 5;
 				    paren_len = GetParenLen(text.substr(offset));
 				    if (paren_len == 0) {

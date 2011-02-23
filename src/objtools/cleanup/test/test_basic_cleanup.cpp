@@ -332,11 +332,9 @@ void CTest_cleanupApplication::ReadClassMember
                 CNewCleanup cleanup;
                 CConstRef<CCleanupChange> changes;
                 if ( ! m_NoCleanup) {
-                    changes = cleanup.BasicCleanup(*se, m_Options);
-                }
-                // ExtendedCleanup, if requested
-                if( m_DoExtendedCleanup ) {
-                    cleanup.ExtendedCleanup( *se, m_Options );
+                    changes = ( m_DoExtendedCleanup ? 
+                        cleanup.ExtendedCleanup( *se, m_Options ) :
+                        cleanup.BasicCleanup(*se, m_Options) );
                 }
                 if ( changes->ChangeCount() > 0 ) {
                     m_Reported += PrintChanges(changes, GetArgs());
@@ -394,11 +392,9 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanup(*se, m_Options);
-    }
-    // ExtendedCleanup, if requested
-    if( m_DoExtendedCleanup ) {
-        cleanup.ExtendedCleanup( *se, m_Options );
+        changes = ( m_DoExtendedCleanup ?
+            cleanup.ExtendedCleanup( *se, m_Options ) :
+            cleanup.BasicCleanup(*se, m_Options) );
     }
     *m_Out << (*se);
     return changes;
@@ -416,7 +412,9 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanup(*ss, m_Options);
+        changes = ( m_DoExtendedCleanup ?
+            cleanup.ExtendedCleanup(*ss, m_Options) : 
+            cleanup.BasicCleanup(*ss, m_Options) );
     }
     *m_Out << (*ss);
     return changes;
@@ -434,7 +432,9 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
     CNewCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = cleanup.BasicCleanup(*sa, m_Options);
+        changes = ( m_DoExtendedCleanup ?
+            cleanup.ExtendedCleanup(*sa, m_Options) : 
+            cleanup.BasicCleanup(*sa, m_Options) );
     }
     *m_Out << (*sa);
     return changes;

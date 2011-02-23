@@ -209,7 +209,6 @@ private:
     void SeqLocBC( CSeq_loc &loc );
     void ConvertSeqLocWholeToInt( CSeq_loc &loc );
 
-    void SeqannotBC (CSeq_annot& sa);
     void SeqfeatBC (CSeq_feat& sf);
 
     void GBQualBC (CGb_qual& gbq);
