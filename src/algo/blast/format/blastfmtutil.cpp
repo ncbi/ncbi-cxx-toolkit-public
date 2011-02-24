@@ -47,6 +47,11 @@ static char const rcsid[] = "$Id$";
 
 #include <objects/seq/seqport_util.hpp>
 
+#include <algo/blast/api/blast_types.hpp>   // for CScorematPssmConverter
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -292,6 +297,32 @@ CBlastFormatUtil::PrintAsciiPssm
 }
 
 
+CRef<objects::CSeq_annot>
+CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(CConstRef<objects::CSeq_align_set> alnset,
+												const string & program)
+{
+    _ASSERT(alnset.NotEmpty());
+    CRef<CSeq_annot> retval(new CSeq_annot);
+
+    CRef<CUser_object> hist_align_obj(new CUser_object);
+    static const string kHistSeqalign("Hist Seqalign");
+    hist_align_obj->SetType().SetStr(kHistSeqalign);
+    hist_align_obj->AddField(kHistSeqalign, true);
+    retval->AddUserObject(*hist_align_obj);
+
+    CRef<CUser_object> blast_type(new CUser_object);
+    static const string kBlastType("Blast Type");
+    blast_type->SetType().SetStr(kBlastType);
+    blast_type->AddField(program, blast::ProgramNameToEnum(program));
+    retval->AddUserObject(*blast_type);
+
+    ITERATE(CSeq_align_set::Tdata, itr, alnset->Get()) {
+        retval->SetData().SetAlign().push_back(*itr);
+    }
+
+    return retval;
+}
+
 CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows, 
                                                unsigned int ncols)
 {
@@ -326,5 +357,6 @@ CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows,
         }
     }
 }
+
 
 END_NCBI_SCOPE

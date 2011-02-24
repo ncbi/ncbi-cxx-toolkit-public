@@ -95,6 +95,18 @@ public:
                        CConstRef<blast::CBlastAncillaryData> ancillary_data,
                        CNcbiOstream& out);
 
+    /*
+     * @brief Create a CSeq_annot object from a CSeq_align_set.
+     *
+     * @input parm: alnset -- seq align set to be embedded in the
+     * 						  new seq annot object
+     * 				program -- blast program name
+     * @output parm : seq annot object
+     */
+    static CRef<objects::CSeq_annot> CreateSeqAnnotFromSeqAlignSet(
+    				   CConstRef<objects::CSeq_align_set> alnset,
+    				   const string & program);
+
 };
 
 

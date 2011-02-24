@@ -41,8 +41,6 @@ Author: Jason Papadopoulos
 #include <algo/blast/format/blast_format.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_descr.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/core/blast_stat.h>
@@ -433,63 +431,11 @@ s_SetFlags(string& program,
     return flags;
 }
 
-// Ported from blastutl.c's BlastGetTypes and BlastGetProgramNumber (CVS
-// revision 6.471), using program number definitions from blastdef.h (CVS
-// revision 6.169)
-pair<string, int> 
-CBlastFormat::x_ComputeBlastTypePair() const
-{
-    pair<string, int> retval("unknown", 0);
-    if (NStr::CompareNocase(m_Program, "blastn") == 0 ||
-        NStr::CompareNocase(m_Program, "phiblastn") == 0) {
-        retval = make_pair<string, int>("BLASTN", 1);
-    } else if (NStr::CompareNocase(m_Program, "blastp") == 0 ||
-               NStr::CompareNocase(m_Program, "psiblast") == 0 ||
-               NStr::CompareNocase(m_Program, "rpsblast") == 0 ||
-               NStr::CompareNocase(m_Program, "phiblastp") == 0) {
-        retval = make_pair<string, int>("BLASTP", 2);
-    } else if (NStr::CompareNocase(m_Program, "blastx") == 0 ||
-               NStr::CompareNocase(m_Program, "rpstblastn") == 0) {
-        retval = make_pair<string, int>("BLASTX", 3);
-    } else if (NStr::CompareNocase(m_Program, "tblastn") == 0) {
-        retval = make_pair<string, int>("TBLASTN", 4);
-    } else if (NStr::CompareNocase(m_Program, "tblastx") == 0) {
-        retval = make_pair<string, int>(kEmptyStr, 5);
-    } else if (NStr::CompareNocase(m_Program, "psitblastn") == 0) {
-        retval = make_pair<string, int>("TBLASTN", 6);
-    } 
-    return retval;
-}
-
 // Port of jzmisc.c's AddAlignInfoToSeqAnnotEx (CVS revision 6.11)
 CRef<objects::CSeq_annot>
 CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const
 {
-    _ASSERT(alnset.NotEmpty());
-    CRef<CSeq_annot> retval(new CSeq_annot);
-    static const string kHistSeqalign("Hist Seqalign");
-    static const string kBlastType("Blast Type");
-
-    CRef<CUser_object> hist_align_obj(new CUser_object);
-    hist_align_obj->AddField(kHistSeqalign, true);
-    hist_align_obj->SetType().SetStr(kHistSeqalign);
-    retval->AddUserObject(*hist_align_obj);
-
-    pair<string, int> blast_type_pair(x_ComputeBlastTypePair());
-    CRef<CUser_object> blast_type(new CUser_object);
-    blast_type->AddField(blast_type_pair.first, blast_type_pair.second);
-    if (blast_type_pair.first == kEmptyStr) {
-        // For backwards compatibility with C toolkit BLAST output
-        blast_type->SetData().back()->SetLabel().SetId(0);
-    }
-    blast_type->SetType().SetStr(kBlastType);
-    retval->AddUserObject(*blast_type);
-
-    ITERATE(CSeq_align_set::Tdata, itr, alnset->Get()) {
-        retval->SetData().SetAlign().push_back(*itr);
-    }
-
-    return retval;
+	 return CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(alnset, m_Program);
 }
 
 void 

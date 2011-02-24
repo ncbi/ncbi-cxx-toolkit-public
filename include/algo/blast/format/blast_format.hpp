@@ -339,9 +339,6 @@ private:
    CRef<objects::CSeq_annot> 
    x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const;
 
-   /// Computes the 'Blast Type' portion of the Seq-annot created in
-   /// x_WrapAlignmentInSeqAnnot
-   pair<string, int> x_ComputeBlastTypePair() const;
 };
 
 END_NCBI_SCOPE
