@@ -425,8 +425,18 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
     CRef<CSeq_annot> seq_annot(new CSeq_annot);
     main_seq_entry->SetSet().SetAnnot().push_back(seq_annot);
     CSeq_annot::C_Data::TAlign* aligns = &seq_annot->SetData().SetAlign();
-    seq_annot->AddName("Evidence for "+CIdHandler::ToString(*md.mrna_sid));
-    seq_annot->SetTitle("Evidence for "+CIdHandler::ToString(*md.mrna_sid));
+
+    {{
+         string id_str = CIdHandler::ToString(*md.mrna_sid);
+
+         seq_annot->AddName("Evidence for " + id_str);
+         seq_annot->SetTitle("Evidence for " + id_str);
+
+         CRef<CAnnot_id> annot_id(new CAnnot_id);
+         annot_id->SetGeneral().SetDb("GNOMON");
+         annot_id->SetGeneral().SetTag().SetId(md.model.ID());
+         seq_annot->SetId().push_back(annot_id);
+     }}
     
     
     ITERATE(CSupportInfoSet, s, model.Support()) {
