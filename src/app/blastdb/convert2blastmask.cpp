@@ -153,6 +153,7 @@ void CConvert2BlastMaskApplication::Init(void) {
     strings_allowed->Allow("maskinfo_asn1_text");
     strings_allowed->Allow("maskinfo_asn1_bin");
     strings_allowed->Allow("maskinfo_xml");
+    strings_allowed->Allow("interval");
     arg_desc->SetConstraint("outfmt", strings_allowed);
 
     arg_desc->AddFlag      ( "parse_seqids",

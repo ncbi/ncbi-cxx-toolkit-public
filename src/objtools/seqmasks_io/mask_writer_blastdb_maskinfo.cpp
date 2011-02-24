@@ -36,6 +36,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
+#include <objtools/seqmasks_io/mask_writer_int.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -65,6 +66,8 @@ CMaskWriterBlastDbMaskInfo::CMaskWriterBlastDbMaskInfo
         m_OutputFormat = eSerial_AsnText;
     } else if (format == "maskinfo_xml") {
         m_OutputFormat = eSerial_Xml;
+    } else if (format == "interval") {
+        m_OutputFormat = eSerial_None;  // N.B.: used to signal interval format
     } else {
         throw runtime_error("Invalid output format: " + format);
     }
@@ -90,6 +93,11 @@ void s_WriteObject(CRef<T> obj, CNcbiOstream& os, ESerialDataFormat fmt)
 
 CMaskWriterBlastDbMaskInfo::~CMaskWriterBlastDbMaskInfo()
 {
+    if (m_OutputFormat == eSerial_None) {
+        // nothing to do for interval output format
+        return;
+    }
+
     if (m_ListOfMasks.empty()) {
         CRef<CBlast_mask_list> empty_list(new CBlast_mask_list);
         empty_list->SetMasks();
@@ -138,6 +146,12 @@ void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id,
         return;
     }
 
+    if (m_OutputFormat == eSerial_None) {
+        // assume interval output format and return
+        CMaskWriterInt::PrintMasks(os, mask);
+        return;
+    }
+
     CPacked_seqint::TRanges masked_ranges;
     masked_ranges.reserve(mask.size());
     ITERATE(TMaskList, itr, mask) {
@@ -171,7 +185,7 @@ void CMaskWriterBlastDbMaskInfo::Print( int gi,
 
 string BuildAlgorithmParametersString(const CArgs& args)
 {
-    ostringstream os;
+    CNcbiOstrstream os;
     if (args.Exist("locut") &&
         args.Exist("hicut") &&
         args.Exist("window")) {
@@ -187,7 +201,7 @@ string BuildAlgorithmParametersString(const CArgs& args)
            << "level=" << args["level"].AsInteger() << "; "
            << "linker=" << args["linker"].AsInteger();
     }
-    return os.str();
+    return CNcbiOstrstreamToString(os);
 }
 
 END_NCBI_SCOPE

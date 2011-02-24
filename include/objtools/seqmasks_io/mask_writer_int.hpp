@@ -79,6 +79,9 @@ public:
     virtual void Print( objects::CBioseq_Handle& bsh,
                         const TMaskList & mask,
                         bool parsed_id = false );
+
+    /** Print masks only */
+    static void PrintMasks(CNcbiOstream& os, const TMaskList& mask);
 };
 
 END_NCBI_SCOPE

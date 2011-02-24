@@ -47,7 +47,11 @@ void CMaskWriterInt::Print( objects::CBioseq_Handle& bsh,
                                bool parsed_id )
 {
     PrintId( bsh, parsed_id );
+    PrintMasks(os, mask);
+}
 
+void CMaskWriterInt::PrintMasks(CNcbiOstream& os, const TMaskList& mask)
+{
     for( TMaskList::const_iterator i = mask.begin();
          i != mask.end(); ++i )
         os << i->first << " - " << i->second << "\n";
