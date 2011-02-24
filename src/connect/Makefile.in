@@ -12,5 +12,7 @@
 LIB_PROJ = connect connssl xxconnect xconnect xthrserv 
 SUB_PROJ = services ext test daemons
 
+WATCHERS = lavr
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

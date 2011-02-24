@@ -6,5 +6,7 @@
 SUB_PROJ = composition_adjustment core dbindex dbindex_search api format blastinput \
            gumbel_params unit_tests
 
+WATCHERS = blastsoft
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
