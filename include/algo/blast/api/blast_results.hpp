@@ -265,6 +265,7 @@ protected:
     /// PHI-BLAST information.
     SPHIQueryInfo *m_PhiQueryInfo;
 
+private:
     /// Prohibit copy constructor
     CSearchResults(const CSearchResults& rhs);
     /// Prohibit assignment operator
