@@ -72,11 +72,13 @@
 
 BEGIN_NCBI_SCOPE
 
+#if 0
 CVariationUtil::ETestStatus CVariationUtil::CheckAssertedAllele(
         const CSeq_feat& variation_feat,
         string* asserted_out,
         string* actual_out)
 {
+    return eNotApplicable;
     if(!variation_feat.GetData().IsVariation()) {
         return eNotApplicable;
     }
@@ -134,6 +136,7 @@ CVariationUtil::ETestStatus CVariationUtil::CheckAssertedAllele(
 
     return !have_asserted_seq ? eNotApplicable : is_ok ? ePass : eFail;
 }
+#endif
 
 
 /*!
@@ -646,6 +649,105 @@ string CVariationUtil::s_CollapseAmbiguities(const vector<string>& seqs)
 }
 
 
+void CVariationUtil::x_ProtToPrecursor(CVariation_ref& v)
+{
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            CVariation_ref& v2 = **it;
+            x_ProtToPrecursor(v2);
+        }
+    } else if(v.GetData().IsInstance()) {
+        if(!v.GetData().GetInstance().GetDelta().size() == 1) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+        }
+
+        const CDelta_item& delta = *v.GetData().GetInstance().GetDelta().front();
+        if(delta.IsSetAction() && delta.GetAction() != CDelta_item::eAction_morph) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected morph action");
+        }
+
+        if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral() || delta.GetSeq().GetLiteral().GetLength() != 1) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected literal of length 1 in inst.");
+        }
+
+        CSeq_data variant_prot_seq;
+        CSeqportUtil::Convert(delta.GetSeq().GetLiteral().GetSeq_data(), &variant_prot_seq, CSeq_data::e_Iupacaa);
+
+        if(sequence::GetLength(v.GetLocation(), NULL) != 1) {
+            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-aa location");
+        }
+
+        SAnnotSelector sel(CSeqFeatData::e_Cdregion, true);
+           //note: sel by product; location is prot; found feature is mrna having this prot as product
+        CRef<CSeq_loc_Mapper> prot2precursor_mapper;
+        for(CFeat_CI ci(*m_scope, v.GetLocation(), sel); ci; ++ci) {
+            prot2precursor_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eProductToLocation, m_scope));
+            break;
+        }
+
+        if(!prot2precursor_mapper) {
+            NCBI_THROW(CException, eUnknown, "Can't create prot2precursor mapper. Is this a prot?");
+        }
+
+        CRef<CSeq_loc> nuc_loc = prot2precursor_mapper->Map(v.GetLocation());
+        if(!nuc_loc->IsInt() || sequence::GetLength(*nuc_loc, NULL) != 3) {
+            NCBI_THROW(CException, eUnknown, "AA does not remap to a single codon.");
+        }
+
+        CSeqVector seqv(*nuc_loc, m_scope, CBioseq_Handle::eCoding_Iupac);
+
+        string original_allele_codon; //nucleotide allele on the sequence
+        seqv.GetSeqData(seqv.begin(), seqv.end(), original_allele_codon);
+
+        vector<string> variant_codons;
+        s_CalcPrecursorVariationCodon(original_allele_codon, variant_prot_seq.GetIupacaa(), variant_codons);
+
+        string variant_codon = s_CollapseAmbiguities(variant_codons);
+
+        //If the original and variant codons have terminal bases shared, we can truncate the variant codon and location accordingly.
+        while(variant_codon.length() > 1 && variant_codon.at(0) == original_allele_codon.at(0)) {
+            variant_codon = variant_codon.substr(1);
+            original_allele_codon = variant_codon.substr(1);
+            if(nuc_loc->GetStrand() == eNa_strand_minus) {
+                nuc_loc->SetInt().SetTo()--;
+            } else {
+                nuc_loc->SetInt().SetFrom()++;
+            }
+        }
+        while(variant_codon.length() > 1 &&
+              variant_codon.at(variant_codon.length() - 1) == original_allele_codon.at(original_allele_codon.length() - 1))
+        {
+            variant_codon.resize(variant_codon.length() - 1);
+            original_allele_codon.resize(variant_codon.length() - 1);
+            //Note: normally given a protein, the parent will be a mRNA and the CDS location
+            //will have plus strand; however, the parent could be MT, so we can't assume plus strand
+            if(nuc_loc->GetStrand() == eNa_strand_minus) {
+                nuc_loc->SetInt().SetFrom()++;
+            } else {
+                nuc_loc->SetInt().SetTo()--;
+            }
+        }
+
+        CRef<CDelta_item> delta2(new CDelta_item);
+        delta2->SetSeq().SetLiteral().SetLength(variant_codon.length());
+        delta2->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(variant_codon);
+
+        CRef<CVariation_ref> v2(new CVariation_ref);
+
+        //merge loc to convert int of length 1 to a pnt as necessary
+        v2->SetLocation(*sequence::Seq_loc_Merge(*nuc_loc, CSeq_loc::fSortAndMerge_All, NULL));
+        CVariation_inst& inst2 = v2->SetData().SetInstance();
+        inst2.SetType(variant_codon.length() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
+        inst2.SetDelta().push_back(delta2);
+
+        if(v.GetData().GetInstance().IsSetObservation()) {
+            inst2.SetObservation(v.GetData().GetInstance().GetObservation());
+        }
+
+        v.Assign(*v2);
+    }
+}
+
 //vr must be a prot missense or nonsense (inst) with location set; inst must not have offsets.
 CRef<CSeq_feat> CVariationUtil::ProtToPrecursor(const CSeq_feat& prot_variation_feat)
 {
@@ -653,99 +755,17 @@ CRef<CSeq_feat> CVariationUtil::ProtToPrecursor(const CSeq_feat& prot_variation_
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-feature");
     }
 
-    const CVariation_ref& vr = prot_variation_feat.GetData().GetVariation();
+    CRef<CSeq_feat> nuc_feat(new CSeq_feat);
+    CVariation_ref& nuc_vr = nuc_feat->SetData().SetVariation();
 
-    if(!vr.GetData().IsInstance()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation.inst");
-    }
-
-    if(!vr.GetData().GetInstance().GetDelta().size() == 1) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
-    }
-
-    const CDelta_item& delta = *vr.GetData().GetInstance().GetDelta().front();
-    if(delta.IsSetAction() && delta.GetAction() != CDelta_item::eAction_morph) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected morph action");
-    }
-
-    if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral() || delta.GetSeq().GetLiteral().GetLength() != 1) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected literal of length 1 in inst.");
-    }
-
-    CSeq_data variant_prot_seq;
-    CSeqportUtil::Convert(delta.GetSeq().GetLiteral().GetSeq_data(), &variant_prot_seq, CSeq_data::e_Iupacaa);
-
-
-    if(sequence::GetLength(prot_variation_feat.GetLocation(), NULL) != 1) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-aa location");
-    }
-
-    SAnnotSelector sel(CSeqFeatData::e_Cdregion, true);
-       //note: sel by product; location is prot; found feature is mrna having this prot as product
-    CRef<CSeq_loc_Mapper> prot2precursor_mapper;
-    for(CFeat_CI ci(*m_scope, prot_variation_feat.GetLocation(), sel); ci; ++ci) {
-        prot2precursor_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eProductToLocation, m_scope));
-        break;
-    }
-
-    if(!prot2precursor_mapper) {
-        NCBI_THROW(CException, eUnknown, "Can't create prot2precursor mapper. Is this a prot?");
-    }
-
-    CRef<CSeq_loc> nuc_loc = prot2precursor_mapper->Map(prot_variation_feat.GetLocation());
-    if(!nuc_loc->IsInt() || sequence::GetLength(*nuc_loc, NULL) != 3) {
-        NCBI_THROW(CException, eUnknown, "AA does not remap to a single codon.");
-    }
-
-
-    CSeqVector v(*nuc_loc, m_scope, CBioseq_Handle::eCoding_Iupac);
-
-    string original_allele_codon; //nucleotide allele on the sequence
-    v.GetSeqData(v.begin(), v.end(), original_allele_codon);
-
-
-    vector<string> variant_codons;
-    s_CalcPrecursorVariationCodon(original_allele_codon, variant_prot_seq.GetIupacaa(), variant_codons);
-
-    string variant_codon = s_CollapseAmbiguities(variant_codons);
-
-    //If the original and variant codons have terminal bases shared, we can truncate the variant codon and location accordingly.
-    while(variant_codon.length() > 1 && variant_codon.at(0) == original_allele_codon.at(0)) {
-        variant_codon = variant_codon.substr(1);
-        original_allele_codon = variant_codon.substr(1);
-        if(nuc_loc->GetStrand() == eNa_strand_minus) {
-            nuc_loc->SetInt().SetTo()--;
-        } else {
-            nuc_loc->SetInt().SetFrom()++;
-        }
-    }
-    while(variant_codon.length() > 1 &&
-          variant_codon.at(variant_codon.length() - 1) == original_allele_codon.at(original_allele_codon.length() - 1))
-    {
-        variant_codon.resize(variant_codon.length() - 1);
-        original_allele_codon.resize(variant_codon.length() - 1);
-        //Note: normally given a protein, the parent will be a mRNA and the CDS location
-        //will have plus strand; however, the parent could be MT, so we can't assume plus strand
-        if(nuc_loc->GetStrand() == eNa_strand_minus) {
-            nuc_loc->SetInt().SetFrom()++;
-        } else {
-            nuc_loc->SetInt().SetTo()--;
-        }
-    }
-
-    CRef<CDelta_item> delta2(new CDelta_item);
-    delta2->SetSeq().SetLiteral().SetLength(variant_codon.length());
-    delta2->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(variant_codon);
-
-    CRef<CSeq_feat> feat(new CSeq_feat);
-
-    //merge loc to convert int of length 1 to a pnt as necessary
-    feat->SetLocation(*sequence::Seq_loc_Merge(*nuc_loc, CSeq_loc::fSortAndMerge_All, NULL));
-    CVariation_inst& inst = feat->SetData().SetVariation().SetData().SetInstance();
-    inst.SetType(variant_codon.length() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
-    inst.SetDelta().push_back(delta2);
-
-    return feat;
+    nuc_vr.Assign(prot_variation_feat.GetData().GetVariation());
+    nuc_vr.SetLocation().Assign(prot_variation_feat.GetLocation());
+    s_PropagateLocsInPlace(nuc_vr);
+    x_ProtToPrecursor(nuc_vr);
+    s_FactorOutLocsInPlace(nuc_vr);
+    nuc_feat->SetLocation().Assign(nuc_vr.GetLocation());
+    nuc_vr.ResetLocation();
+    return nuc_feat;
 }
 
 
@@ -964,6 +984,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     }
 
     const CVariation_ref& nuc_v = nuc_variation_feat.GetData().GetVariation();
+
     if(!nuc_v.GetData().IsInstance()) {
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation.inst");
     }
@@ -1083,6 +1104,69 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     return prot_variation_feat;
 }
 
+
+bool CVariationUtil::SetReferenceSequence(CVariation_ref& v, const CSeq_loc& parent_location)
+{
+    const CSeq_loc& loc = v.IsSetLocation() ? v.GetLocation() : parent_location;
+
+    bool ret = true; //True iff not enconutered a case with offsets that could not have a refrence loc computed
+
+    if(!v.GetData().IsSet()) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-set");
+    }
+
+    if(v.GetData().GetSet().GetType() == CVariation_ref::TData::TSet::eData_set_type_package) {
+        bool have_offsets = false;
+
+        CRef<CVariation_ref> observation_vr;
+
+        //try to find existing reference-observation to overwrite.
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            CVariation_ref& vr2 = **it;
+            if(vr2.GetData().IsSet()) {
+                ret = ret && SetReferenceSequence(**it, loc);
+            } else if(vr2.GetData().IsInstance()) {
+                ITERATE(CVariation_inst::TDelta, it2, vr2.GetData().GetInstance().GetDelta()) {
+                    const CDelta_item& di = **it2;
+                    have_offsets =  have_offsets || di.IsSetAction() && di.GetAction() == CDelta_item::eAction_offset;
+                }
+
+                if(vr2.GetData().GetInstance().IsSetObservation()
+                   && vr2.GetData().GetInstance().GetObservation() == CVariation_inst::eObservation_reference)
+                {
+                    observation_vr.Reset(&vr2);
+                }
+            }
+        }
+
+        if(!have_offsets) {
+            if(!observation_vr) {
+                observation_vr.Reset(new CVariation_ref);
+                v.SetData().SetSet().SetVariations().push_back(observation_vr);
+            }
+            observation_vr->SetData().SetInstance().SetObservation(CVariation_inst::eObservation_reference);
+            observation_vr->SetData().SetInstance().SetType(CVariation_inst::eType_identity);
+
+            CRef<CSeq_literal> literal = x_GetLiteralAtLoc(loc);
+
+            CRef<CDelta_item> di(new CDelta_item);
+            di->SetSeq().SetLiteral(*literal);
+            observation_vr->SetData().SetInstance().SetDelta().clear();
+            observation_vr->SetData().SetInstance().SetDelta().push_back(di);
+        } else {
+            ret = false;
+        }
+    } else {
+        NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            CVariation_ref& vr2 = **it;
+            if(vr2.GetData().IsSet()) {
+                ret = ret && SetReferenceSequence(**it, loc);
+            }
+        }
+    }
+
+    return ret;
+}
 
 END_NCBI_SCOPE
 

@@ -112,48 +112,52 @@ void RepackageAssertedSequence(CVariation_ref& vr)
         NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, it, vr.SetData().SetSet().SetVariations()) {
             RepackageAssertedSequence(**it);
         }
-    } else if(vr.IsSetExt() && vr.GetExt().GetType().GetStr() == "hgvs_asserted_seq") {
-        CRef<CVariation_ref> asserted_vr(new CVariation_ref);
-        asserted_vr->SetData().SetInstance().SetObservation(CVariation_inst::eObservation_asserted);
-        asserted_vr->SetData().SetInstance().SetType(CVariation_inst::eType_identity);
-        CRef<CDelta_item> delta(new CDelta_item);
-        delta->SetSeq().SetLiteral().SetLength(vr.GetExt().GetField("length").GetData().GetInt());
-        if(vr.GetExt().HasField("iupacna")) {
-            delta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(vr.GetExt().GetField("iupacna").GetData().GetStr());
-        } else {
-            delta->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set(vr.GetExt().GetField("ncbieaa").GetData().GetStr());
-        }
-        asserted_vr->SetData().SetInstance().SetDelta().push_back(delta);
-
-
-        //copy the offsets, if present
-        if(   vr.GetData().GetInstance().GetDelta().size() > 0
-           && vr.GetData().GetInstance().GetDelta().front()->IsSetAction()
-           && vr.GetData().GetInstance().GetDelta().front()->GetAction() == CDelta_item::eAction_offset)
-        {
-            CRef<CDelta_item> offset_di(new CDelta_item);
-            offset_di->Assign(*vr.GetData().GetInstance().GetDelta().front());
-            asserted_vr->SetData().SetInstance().SetDelta().push_front(offset_di);
-        }
-        if(   vr.GetData().GetInstance().GetDelta().size() > 0
-           && vr.GetData().GetInstance().GetDelta().back() != vr.GetData().GetInstance().GetDelta().front()
-           && vr.GetData().GetInstance().GetDelta().back()->IsSetAction()
-           && vr.GetData().GetInstance().GetDelta().back()->GetAction() == CDelta_item::eAction_offset)
-        {
-            CRef<CDelta_item> offset_di(new CDelta_item);
-            offset_di->Assign(*vr.GetData().GetInstance().GetDelta().back());
-            asserted_vr->SetData().SetInstance().SetDelta().push_back(offset_di);
-        }
-
-        vr.ResetExt();
-
+    } else {
         CRef<CVariation_ref> orig(new CVariation_ref);
         orig->Assign(vr);
         orig->ResetLocation(); //location will be set on the package, as it is the same for both members
 
         vr.SetData().SetSet().SetType(CVariation_ref::TData::TSet::eData_set_type_package);
-        vr.SetData().SetSet().SetVariations().push_back(asserted_vr);
         vr.SetData().SetSet().SetVariations().push_back(orig);
+        vr.ResetExt();
+
+        if(orig->IsSetExt() && orig->GetExt().GetType().GetStr() == "hgvs_asserted_seq") {
+            CRef<CVariation_ref> asserted_vr(new CVariation_ref);
+            vr.SetData().SetSet().SetVariations().push_back(asserted_vr);
+
+            asserted_vr->SetData().SetInstance().SetObservation(CVariation_inst::eObservation_asserted);
+            asserted_vr->SetData().SetInstance().SetType(CVariation_inst::eType_identity);
+
+            CRef<CDelta_item> delta(new CDelta_item);
+            delta->SetSeq().SetLiteral().SetLength(orig->GetExt().GetField("length").GetData().GetInt());
+            if(orig->GetExt().HasField("iupacna")) {
+                delta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(orig->GetExt().GetField("iupacna").GetData().GetStr());
+            } else {
+                delta->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set(orig->GetExt().GetField("ncbieaa").GetData().GetStr());
+            }
+
+            if(   orig->GetData().GetInstance().GetDelta().size() > 0
+               && orig->GetData().GetInstance().GetDelta().front()->IsSetAction()
+               && orig->GetData().GetInstance().GetDelta().front()->GetAction() == CDelta_item::eAction_offset)
+            {
+                CRef<CDelta_item> offset_di(new CDelta_item);
+                offset_di->Assign(*orig->GetData().GetInstance().GetDelta().front());
+                asserted_vr->SetData().SetInstance().SetDelta().push_back(offset_di);
+            }
+
+            asserted_vr->SetData().SetInstance().SetDelta().push_back(delta);
+
+            if(   orig->GetData().GetInstance().GetDelta().size() > 0
+               && orig->GetData().GetInstance().GetDelta().back() != orig->GetData().GetInstance().GetDelta().front()
+               && orig->GetData().GetInstance().GetDelta().back()->IsSetAction()
+               && orig->GetData().GetInstance().GetDelta().back()->GetAction() == CDelta_item::eAction_offset)
+            {
+                CRef<CDelta_item> offset_di(new CDelta_item);
+                offset_di->Assign(*orig->GetData().GetInstance().GetDelta().back());
+                asserted_vr->SetData().SetInstance().SetDelta().push_back(offset_di);
+            }
+            orig->ResetExt();
+        }
     }
 }
 
@@ -1642,7 +1646,7 @@ CRef<CSeq_feat> CHgvsParser::x_root(TIterator const& i, const CContext& context)
     RepackageAssertedSequence(*vr);
 
     CRef<CSeq_feat> feat(new CSeq_feat);
-    feat->SetLocation(vr->SetLocation());
+    feat->SetLocation().Assign(vr->GetLocation());
     vr->ResetLocation();
     feat->SetData().SetVariation(*vr);
 

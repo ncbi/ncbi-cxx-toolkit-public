@@ -83,21 +83,10 @@ public:
 
 
     /*!
-     * Convert each variation-ref of type inst into a variation-ref of type set/package which includes
-     * the original + generated inst containing sequence retrieved from the location. If the inst
-     * is already a child of a package, add the reference-inst to the parent package instead of creating one.
-     *
+     * Given a variation-ref, find set(s) of type package, and add or overwrite a member variation
+     * of type inst/observation=reference iff there are no intronic members for the package.
      */
-    //bool AttachReferenceSequence(CSeq_feat& variation_feat);
-
-
-    /*!
-     * If an allele not asserted -> eNotApplicable
-     * Else if an allele is asserted, but differs from actual -> eFail
-     * Else -> ePass
-     */
-    ETestStatus CheckAssertedAllele(const CSeq_feat& variation_feat, string* asserted = NULL, string* actual = NULL);
-
+    bool SetReferenceSequence(CVariation_ref& vr, const CSeq_loc& location);
 
     /*!
      * Create remapped copy of the variation feat via given alignment
@@ -158,6 +147,8 @@ public:
 
 private:
 
+    void x_ProtToPrecursor(CVariation_ref& v);
+
     //precondition: s_AddIntronicOffsets has been called as applicable
     static void s_Remap(CVariation_ref& vr, CSeq_loc_Mapper& mapper, const CSeq_loc& parent_variation_loc);
 
@@ -190,9 +181,6 @@ private:
      * This is to be applied before remapping a genomic variation to transcript coordinates
      */
     static void s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss, const CSeq_loc& parent_variation_loc);
-
-
-
 
     CRef<CScope> m_scope;
 };

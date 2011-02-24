@@ -114,6 +114,7 @@ public:
 
             LOG_POST("Parsing " << m_expr);
             feat = m_parser->AsVariationFeat(m_expr);
+            variation_util.SetReferenceSequence(feat->SetData().SetVariation(), feat->GetLocation());
 
             if(m_map_up) {
                 LOG_POST("Mapping to precursor");
@@ -125,7 +126,7 @@ public:
                 feat = variation_util.PrecursorToProt(*feat);
             }
 
-            CVariationUtil::ETestStatus allele_status = variation_util.CheckAssertedAllele(*feat);
+            CVariationUtil::ETestStatus allele_status = CVariationUtil::eNotApplicable;
 
             LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\tallele_check_status:" << allele_status << "\t" << "OK");
 
