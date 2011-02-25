@@ -3400,7 +3400,11 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 
 	//fill length
 	int seqLength = bsp_handle.GetBioseqLength();
-	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqLength", NStr::IntToString(seqLength));
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqLength", NStr::IntToString(seqLength));    
+
+    string hspNum = NStr::IntToString(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber);
+    hspNum = (hspNum == "0") ? "" : hspNum;
+    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnHspNum", hspNum);
 
 	//fill multiple titles
 	int alnSeqTitlesNum = (m_NumBlastDefLines > k_MaxDeflinesToShow) ? m_NumBlastDefLines - k_MinDeflinesToShow : 0;
