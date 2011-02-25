@@ -349,7 +349,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
     include_dirs->clear();
     ITERATE(list<string>, p, cpp_flags) {
         const string& flag = *p;
-        string token("-I$(includedir)");
+//        string token("-I$(includedir)");
 
         // process -I$(includedir)
         string token_val;
@@ -374,7 +374,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
 
         // process -I$(srcdir)
         token_val = SMakeProjectT::GetOneIncludeDir(flag, "-I$(srcdir)");
-        if ( !token_val.empty() )  {
+        if ( !token_val.empty() || flag == "-I$(srcdir)" )  {
             string dir = 
                 CDirEntry::ConcatPath(source_base_dir,
                                       token_val);
@@ -386,7 +386,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
 
         // process -Ipath
         token_val = SMakeProjectT::GetOneIncludeDir(flag, "-I");
-        if ( !token_val.empty() && token_val[0] != '$' && isalpha(token_val[0]) )  {
+        if ( !token_val.empty() && token_val[0] != '$' && token_val[0] != ':' )  {
             string dir = CDirEntry::NormalizePath(token_val);
             dir = CDirEntry::AddTrailingPathSeparator(dir);
             include_dirs->push_back(dir);

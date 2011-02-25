@@ -309,8 +309,8 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     }
 
     // project dir
-    string tree_inc = CDirEntry::CreateRelativePath(m_ProjectDir, 
-        GetApp().GetProjectTreeInfo().m_Include);
+    string tree_inc_abs(GetApp().GetProjectTreeInfo().m_Include);
+    string tree_inc = CDirEntry::CreateRelativePath(m_ProjectDir, tree_inc_abs);
     tree_inc = CDirEntry::AddTrailingPathSeparator(tree_inc);
     add_include_dirs_list.push_back( tree_inc );
     
@@ -323,6 +323,9 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     //take into account project include dirs
     ITERATE(list<string>, p, m_ProjectIncludeDirs) {
         const string& dir_abs = *p;
+        if (dir_abs == tree_inc_abs) {
+            continue;
+        }
         dirs.clear();
         if (CSymResolver::IsDefine(dir_abs)) {
             GetApp().GetSite().GetLibInclude( dir_abs, cfg_info, &dirs);
@@ -331,9 +334,11 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         }
         for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
             dir = *i;
-            add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir) ?
-                    CDirEntry::CreateRelativePath(m_ProjectDir, dir) :
-                    dir);
+            if (CDirEntry(dir).IsDir()) {
+                add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir) ?
+                        CDirEntry::CreateRelativePath(m_ProjectDir, dir) :
+                        dir);
+            }
         }
     }
 
