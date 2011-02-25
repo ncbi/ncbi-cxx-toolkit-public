@@ -13,7 +13,11 @@ SRC = datatool \
 	value mcontainer module moduleset generate filecode code \
 	fileutil alexer aparser parser lexer exceptions comments srcutil \
 	dtdaux dtdlexer dtdparser rpcgen aliasstr xsdlexer xsdparser \
-        wsdllexer wsdlparser wsdlstr
+        wsdllexer wsdlparser wsdlstr \
+        traversal_attach_user_funcs_callback \
+        traversal_code_generator traversal_merger \
+        traversal_node traversal_spec_file_parser
+
 LIB = xser xutil xncbi
 
 # Build even --without-exe, to avoid version skew.

@@ -55,6 +55,7 @@
 #include "generate.hpp"
 #include "datatool.hpp"
 #include "filecode.hpp"
+#include "traversal_code_generator.hpp"
 #include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/error_codes.hpp>
@@ -79,7 +80,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(2,3,1) );
+    SetVersion( CVersionInfo(2,4,0) );
 }
 
 void CDataTool::Init(void)
@@ -126,6 +127,9 @@ void CDataTool::Init(void)
                       CArgDescriptions::eInputFile);
     d->AddOptionalKey("d", "valueFile",
                       "read value in ASN.1 binary format (-t is required)",
+                      CArgDescriptions::eInputFile);
+    d->AddOptionalKey("tvs", "traversalSpecFile",
+                      "read traversal specification file",
                       CArgDescriptions::eInputFile);
     d->AddOptionalKey("t", "type",
                       "binary value type (see \"-d\" argument)",
@@ -606,9 +610,25 @@ bool CDataTool::GenerateCode(void)
     if ( GetArgs()["ods"] ) {
         generator.GetMainModules().PrintSampleDEF(generator.GetCPPDir());
     }
+
+    // also generate traversal code if requested
+    const CArgValue& tvs = GetArgs()["tvs"];
+    if( tvs ) {
+        CNcbiIstream& traversal_spec_file = tvs.AsInputFile();
+
+        try {
+            CStopWatch total_code_generation_stop_watch(CStopWatch::eStart);
+            CTraversalCodeGenerator traversal_code_generator( 
+                generator.GetMainModules(),
+                traversal_spec_file );
+            ERR_POST_X(2, Info << "Total seconds to generate traversal code: " << total_code_generation_stop_watch.Restart() );
+        } catch( exception &ex ) {
+            cerr << "Exception: " << ex.what() << endl;
+        }
+    }
+
     return true;
 }
-
 
 SourceFile::EType CDataTool::LoadDefinitions(
     CFileSet& fileSet, const list<string>& modulesPath,
@@ -699,7 +719,6 @@ SourceFile::EType CDataTool::LoadDefinitions(
 }
 
 END_NCBI_SCOPE
-
 
 int main(int argc, const char* argv[])
 {
