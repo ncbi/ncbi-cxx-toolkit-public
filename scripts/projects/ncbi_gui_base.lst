@@ -26,6 +26,7 @@ objects
 objmgr
 objtools
 serial
+sra
 util
 -[^g].*/samples
 -[^g].*/mssamples
