@@ -30,7 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbimisc.hpp>
+#include <corelib/ncbitime.hpp>
 #include <serial/error_codes.hpp>
 #include "traversal_merger.hpp"
 #include "traversal_code_generator.hpp"
