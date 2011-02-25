@@ -165,14 +165,11 @@ int CIgBlastnApp::Run(void)
         /*** Process the input ***/
         for (; !input.End(); formatter.ResetScopeHistory()) {
 
-cout << "1" << endl;
             CRef<CBlastQueryVector> query(input.GetNextSeqBatch(*scope));
 
-cout << "2" << endl;
             //SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl);
             CRef<CSearchResultSet> results;
 
-cout << "3" << endl;
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 CIgBlast rmt_blast(query, 
                                    db_args->GetSearchDatabase(), 
@@ -186,7 +183,6 @@ cout << "3" << endl;
                 //TODO:         lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = lcl_blast.Run();
             }
-cout << "4" << endl;
 
             /* TODO should we support archive format?
             if (fmt_args->ArchiveFormatRequested(args)) {
@@ -195,7 +191,6 @@ cout << "4" << endl;
             } else {
             */
             BlastFormatter_PreFetchSequenceData(*results, scope);
-cout << "5" << endl;
             ITERATE(CSearchResultSet, result, *results) {
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>
                         (dynamic_cast<const CIgBlastResults *>(&(**result)));
