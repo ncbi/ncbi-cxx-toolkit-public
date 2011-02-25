@@ -408,8 +408,11 @@ bool CTraversalNode::Merge( CRef<CTraversalNode> node_to_merge_into_this )
     m_DoStoreArg = ( m_DoStoreArg || node_to_merge_into_this->m_DoStoreArg );
 
     // add others' functions to us (as long as we don't already have them )
-    TUserCallSet funcsWeHave( m_PreCalleesUserCalls.begin(), m_PreCalleesUserCalls.end() );
-    funcsWeHave.insert( m_PostCalleesUserCalls.begin(), m_PostCalleesUserCalls.end() );
+    TUserCallSet funcsWeHave;
+    copy( m_PreCalleesUserCalls.begin(), m_PreCalleesUserCalls.end(),
+          inserter(funcsWeHave, funcsWeHave.end() ) );
+    copy( m_PostCalleesUserCalls.begin(), m_PostCalleesUserCalls.end(),
+          inserter(funcsWeHave, funcsWeHave.end() ) );
     ITERATE( TUserCallVec, pre_call_iter, node_to_merge_into_this->m_PreCalleesUserCalls ) {
         if( funcsWeHave.find(*pre_call_iter) == funcsWeHave.end() ) {
             m_PreCalleesUserCalls.push_back( *pre_call_iter );
