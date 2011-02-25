@@ -15,6 +15,7 @@ tblastx \
 psiblast \
 rpsblast \
 rpstblastn \
+igblastn \
 blast_formatter
 
 USR_PROJ = legacy_blast update_blastdb
@@ -40,6 +41,8 @@ rpsblast:
 	make -f Makefile.rpsblast_app
 rpstblastn:
 	make -f Makefile.rpstblastn_app
+igblastn:
+	make -f Makefile.igblastn_app
 blast_formatter:
 	make -f Makefile.blast_formatter_app
 rmblastn:
