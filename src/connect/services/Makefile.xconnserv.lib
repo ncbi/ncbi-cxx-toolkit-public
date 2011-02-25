@@ -9,7 +9,7 @@ SRC     = grid_worker ns_client_factory grid_worker_app \
           netschedule_api netschedule_api_submitter netschedule_api_executer \
           netschedule_api_admin netschedule_key netschedule_api_expt \
           netcache_key netcache_rw netcache_api netcache_api_admin \
-          netservice_protocol_parser util
+          netservice_protocol_parser util clparser
 
 LIB     = xconnserv
 PROJ_TAG = core
