@@ -6098,6 +6098,16 @@ else
 fi
 
 
+## Sequence Read Archive SDK, which may be attached on either the
+## public or the internal side
+
+if test -f "${real_srcdir}/src/sra/sdk/Makefile.sra_macros.mk"; then
+   sra=sra
+else
+   sra=
+fi
+
+
 ## `internal' project cluster
 
 if test "$with_internal" = "no"  \
@@ -6401,6 +6411,7 @@ AC_SUBST(gui)
 AC_SUBST(algo)
 AC_SUBST(app)
 AC_SUBST(internal)
+AC_SUBST(sra)
 
 AC_SUBST(check)
 AC_SUBST(CHECK_ARG)
