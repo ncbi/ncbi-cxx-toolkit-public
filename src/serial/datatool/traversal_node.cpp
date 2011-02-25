@@ -480,8 +480,10 @@ void CTraversalNode::x_DepthFirst( CDepthFirstCallback &callback, TNodeVec &node
 {
     node_path.push_back( Ref() );
 
-    const bool post_traversal = ( traversal_opts & fTraversalOpts_Post ) != 0;
-    const bool allow_cycles  = ( traversal_opts & fTraversalOpts_AllowCycles ) != 0;
+    const bool post_traversal =
+      ( ( traversal_opts & fTraversalOpts_Post ) != 0);
+    const bool allow_cycles =
+      ( ( traversal_opts & fTraversalOpts_AllowCycles ) != 0 );
 
     const bool seen_before = ( nodesSeen.find(Ref()) != nodesSeen.end() );
     // must avoid cyclic calls on post-traversal or we will get infinite loops
@@ -502,7 +504,8 @@ void CTraversalNode::x_DepthFirst( CDepthFirstCallback &callback, TNodeVec &node
         }
     }
 
-    const bool up_callers = ( traversal_opts & fTraversalOpts_UpCallers ) != 0;
+    const bool up_callers =
+      ( ( traversal_opts & fTraversalOpts_UpCallers ) != 0 );
     TNodeSet & set_to_traverse = ( up_callers ? m_Callers : m_Callees );
 
     // traverse

@@ -88,6 +88,7 @@ static int s_Lexicographical_compare_arrays(
     } else if( iter2 == end2 ) {
         return 1;
     }
+    _ASSERT(false); // should be impossible to reach here
     return 0;
 }
 
@@ -146,7 +147,7 @@ CTraversalMerger::CMergeLessThan::operator()(
         node2->GetPreCalleesUserCalls().begin(), node2->GetPreCalleesUserCalls().end(), 
         CCompareCRefUserCall() );
     if( pre_callee_compare != 0 ) {
-        return true;
+        return ( pre_callee_compare < 0 );
     }
 
     // compare user calls (post)
@@ -155,7 +156,7 @@ CTraversalMerger::CMergeLessThan::operator()(
         node2->GetPostCalleesUserCalls().begin(), node2->GetPostCalleesUserCalls().end(), 
         CCompareCRefUserCall() );
     if( post_callee_compare != 0 ) {
-        return true;
+        return ( post_callee_compare < 0 );
     }
 
     // compare children
