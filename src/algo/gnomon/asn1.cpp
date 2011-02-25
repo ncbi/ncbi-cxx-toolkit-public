@@ -492,6 +492,14 @@ void CAnnotationASN1::CImplementationData::DumpUnusedChains()
     }
 }
 
+void CollectUserField(const CUser_field& field, const string& name, vector<string>& values)
+{
+    if (field.HasField(name)) {
+        const vector<string>& strs = field.GetField(name).GetData().GetStrs();
+        copy(strs.begin(), strs.end(), back_inserter(values));
+    }
+}
+
 CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_user_object(const CGeneModel& model)
 {
     CRef< CUser_object > user_obj(new CUser_object);
@@ -524,7 +532,9 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             int type = m ?  m->Type() : 0;
 
             string accession;
-            if (m == NULL || (m->Type()&CGeneModel::eChain)) {
+            if (m == NULL) {
+                continue;
+            } else if ((m->Type()&CGeneModel::eChain)) {
                 accession = CIdHandler::ToString(*CIdHandler::GnomonMRNA(id));
             } else {
                 accession = CIdHandler::ToString(*m->GetTargetId());
@@ -544,6 +554,30 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             else
                 unknown.push_back(accession);
         }
+
+        if (proteins.empty() && mrnas.empty() && ests.empty()) {
+            if ((model.Type()&CGeneModel::eChain)) {
+                support.clear();
+                support.insert(CSupportInfo(model.ID()));
+            } else {
+                support = model.Support();
+            }
+            ITERATE(CSupportInfoSet, s, support) {
+                int id = s->GetId();
+                const CGeneModel* m = (id == model.ID()) ? &model : evidence.GetModel(id);
+                if (m != NULL && (m->Type()&CGeneModel::eChain)) {
+                    CRef<CUser_object> uo = evidence.GetModelEvidenceUserObject(id);
+                    if (uo.NotNull() && uo->HasField("Support")) {
+                        const CUser_field& support_field = uo->GetField("Support");
+                        CollectUserField(support_field, "Core", cores);
+                        CollectUserField(support_field, "Proteins", proteins);
+                        CollectUserField(support_field, "mRNAs", mrnas);
+                        CollectUserField(support_field, "ESTs", ests);
+                    }
+                }
+            }            
+        }
+
         if (!chains.empty()) {
             support_field->AddField("Chains",chains);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
@@ -786,6 +820,16 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
     return seq_align;
 }
 
+CRef<CUser_object> GetModelEvidenceUserObject(const CSeq_feat_Handle& feat)
+{
+    ITERATE(CSeq_feat::TExts, uo, feat.GetSeq_feat()->GetExts()) {
+        if ((*uo)->GetType().GetStr() == "ModelEvidence" ) {
+            return *uo;
+        }
+    }
+    return CRef<CUser_object>();
+}
+
 void RestoreModelMethod(const CSeq_feat_Handle& feat, CAlignModel& model)
 {
     const CUser_object& user = *feat.GetSeq_feat()->GetExts().front();
@@ -979,7 +1023,8 @@ void ExtractSupportModels(int model_id,
 string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
                                       TAlignModelList& model_list,
                                       TAlignModelList& evidence_models,
-                                      list<CRef<CSeq_align> >& evidence_alignments)
+                                      list<CRef<CSeq_align> >& evidence_alignments,
+                                      map<int, CRef<CUser_object> >& model_evidence_uo)
 {
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle seq_entry_handle = scope.AddTopLevelSeqEntry(seq_entry);
@@ -1030,6 +1075,7 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
         model_list.push_back(*model);
         processed_ids.insert(model->ID());
         ExtractSupportModels(model->ID(), evidence_models, evidence_alignments, seq_entry_handle, seq_annot_map, processed_ids);
+        model_evidence_uo[model->ID()] = GetModelEvidenceUserObject(feat_ci->GetSeq_feat_Handle());
     }
 
     CFeat_CI internal_feat_ci(scope.GetSeq_annotHandle(*internal_feature_table));
