@@ -337,9 +337,6 @@ class CRequestStateGuard
 public:
     CRequestStateGuard(CWorkerNodeJobContext& job_context);
 
-    void RequestStart();
-    void RequestStop();
-
     ~CRequestStateGuard();
 
 private:
@@ -365,21 +362,15 @@ CRequestStateGuard::CRequestStateGuard(CWorkerNodeJobContext& job_context) :
 
     if (s_ReqEventsDisabled == CGridWorkerNode::eEnableStartStop)
         GetDiagContext().PrintRequestStart().Print("jid", job.job_id);
-}
 
-inline void CRequestStateGuard::RequestStart()
-{
-    CDiagContext::GetRequestContext().SetAppState(eDiagAppState_Request);
-}
-
-inline void CRequestStateGuard::RequestStop()
-{
-    CDiagContext::GetRequestContext().SetAppState(eDiagAppState_RequestEnd);
+    request_context.SetAppState(eDiagAppState_Request);
 }
 
 CRequestStateGuard::~CRequestStateGuard()
 {
     CRequestContext& request_context = CDiagContext::GetRequestContext();
+
+    request_context.SetAppState(eDiagAppState_RequestEnd);
 
     if (!request_context.IsSetRequestStatus())
         request_context.SetRequestStatus(
@@ -425,11 +416,12 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
         m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
             IWorkerNodeJobWatcher::eJobStarted);
 
+        CNetScheduleJob new_job;
+
+        {{ // CRequestStateGuard scope.
+
         CRequestStateGuard request_state_guard(job_context);
 
-        request_state_guard.RequestStart();
-
-        CNetScheduleJob new_job;
         try {
             CRef<IWorkerNodeJob> job(GetJob());
             try {
@@ -496,8 +488,6 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
             if (!CGridGlobals::GetInstance().IsShuttingDown())
                 static_cast<CWorkerNodeJobCleanup*>(
                     job_context.GetCleanupEventSource())->CallEventHandlers();
-
-            request_state_guard.RequestStop();
         }
         catch (exception& ex) {
             ERR_POST_X(18, m_JobContext->GetJobKey() <<
@@ -511,9 +501,10 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
             }
         }
 
-        _ASSERT(m_JobContext);
         m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
             IWorkerNodeJobWatcher::eJobStopped);
+
+        }} // Call CRequestStateGuard destructor before job_context is reset.
 
         if (more_jobs)
             job_context.Reset(new_job);
