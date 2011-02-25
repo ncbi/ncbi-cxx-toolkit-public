@@ -46,7 +46,7 @@
 
 
 
-BEGIN_NCBI_SCOPE
+BEGIN_NCBI_NAMESPACE;
 
 /** @addtogroup String
  *
@@ -3947,6 +3947,6 @@ bool PNocase_Conditional_Generic<T>::operator()(const T& s1, const T& s2) const
 
 
 
-END_NCBI_SCOPE
+END_NCBI_NAMESPACE;
 
 #endif  /* CORELIB___NCBISTR__HPP */

@@ -91,7 +91,7 @@ typedef enum {
 #endif  /* !defined(NCBI_ESWITCH_DEFINED) */
 
 
-BEGIN_NCBI_SCOPE
+BEGIN_NCBI_NAMESPACE;
 
 
 /// Which type of ownership between objects.
@@ -706,7 +706,7 @@ extern char* strdup(const char* str);
 
 #ifdef NCBI_STRICT_CTYPE_ARGS
 
-END_NCBI_SCOPE
+END_NCBI_NAMESPACE;
 
 #define NCBI_CTYPEFAKEBODY \
   { return See_the_standard_on_proper_argument_type_for_ctype_macros(c); }
@@ -857,7 +857,7 @@ inline int NCBI_toupper(C c) NCBI_CTYPEFAKEBODY
 
 #undef NCBI_CTYPEFAKEBODY
 
-BEGIN_NCBI_SCOPE
+BEGIN_NCBI_NAMESPACE;
 
 #endif // NCBI_STRICT_CTYPE_ARGS
 
@@ -1022,9 +1022,9 @@ private:
 /// @sa NCBI_DEPRECATED_CTOR
 #define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
 
-END_NCBI_SCOPE
+END_NCBI_NAMESPACE;
 
-BEGIN_STD_SCOPE
+BEGIN_STD_NAMESPACE;
 
 template<class T1, class T2>
 inline
@@ -1059,7 +1059,7 @@ size_t ArraySize(const Element (&)[Size])
 
 #endif
 
-END_STD_SCOPE
+END_STD_NAMESPACE;
 
 /// Definition of packed enum type, to save some memory
 #if defined(NCBI_COMPILER_MSVC)

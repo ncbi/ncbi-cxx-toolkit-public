@@ -123,10 +123,20 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 /// NB: If this names are macros themselves expanding will not take place.
 #  define NCBI_NAME3(Name1, Name2, Name3) Name1##Name2##Name3
 #endif
+
 #if !defined(NCBI_EAT_SEMICOLON)
-#  define NCBI_EAT_SEMICOLON(UniqueName) \
-typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
+#  define NCBI_EAT_SEMICOLON(UniqueName)                \
+    extern int dummy_function_to_eat_semicolon()
 #endif
+
+#define BEGIN_NAMESPACE(ns) namespace ns { NCBI_EAT_SEMICOLON(ns)
+#define END_NAMESPACE(ns) } NCBI_EAT_SEMICOLON(ns)
+#define BEGIN_NCBI_NAMESPACE BEGIN_NAMESPACE(NCBI_NS_NCBI)
+#define END_NCBI_NAMESPACE END_NAMESPACE(NCBI_NS_NCBI)
+#define BEGIN_STD_NAMESPACE BEGIN_NAMESPACE(NCBI_NS_STD)
+#define END_STD_NAMESPACE END_NAMESPACE(NCBI_NS_STD)
+#define BEGIN_LOCAL_NAMESPACE namespace { NCBI_EAT_SEMICOLON(ns)
+#define END_LOCAL_NAMESPACE } NCBI_EAT_SEMICOLON(ns)
 
 /// Convert some value to string even if this value is macro itself
 #define NCBI_AS_STRING(value)   NCBI_AS_STRING2(value)

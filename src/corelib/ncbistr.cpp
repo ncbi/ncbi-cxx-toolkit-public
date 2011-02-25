@@ -50,7 +50,7 @@
 #define NCBI_USE_ERRCODE_X   Corelib_Util
 
 
-BEGIN_NCBI_SCOPE
+BEGIN_NCBI_NAMESPACE;
 
 
 // Hex symbols (up to base 36)
@@ -4247,4 +4247,4 @@ CTempString::CTempString(const string& str, size_type len)
 
 
 
-END_NCBI_SCOPE
+END_NCBI_NAMESPACE;
