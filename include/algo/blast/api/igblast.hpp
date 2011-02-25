@@ -178,9 +178,12 @@ private:
     /// Prohibit assignment operator
     CIgBlast& operator=(const CIgBlast& rhs);
 
-    /// Prepare blast option handle and query for germline database search
-    void x_SetupGLSearch(int                            gene,
-                         vector<CRef <CIgAnnotation> > &annot,
+    /// Prepare blast option handle and query for V germline database search
+    void x_SetupVSearch(CRef<IQueryFactory>           &qf,
+                        CRef<CBlastOptionsHandle>     &opts_hndl);
+
+    /// Prepare blast option handle and query for D, J germline database search
+    void x_SetupDJSearch(vector<CRef <CIgAnnotation> > &annots,
                          CRef<IQueryFactory>           &qf,
                          CRef<CBlastOptionsHandle>     &opts_hndl);
 
@@ -188,14 +191,14 @@ private:
     void x_SetupDbSearch(vector<CRef <CIgAnnotation> > &annot,
                          CRef<IQueryFactory>           &qf);
 
-    /// Anntate the genes based on blast results
-    static void s_AnnotateGene(int                           gene,
-                               CRef<CSearchResultSet>        &results, 
-                               vector<CRef <CIgAnnotation> > &annot);
+    /// Anntate the V gene based on blast results
+    static void s_AnnotateV(CRef<CSearchResultSet>        &results_V, 
+                            vector<CRef <CIgAnnotation> > &annot);
 
-    /// Check if the gene annotation criteria are met
-    static void s_CheckGeneAnnotations(CRef<CSearchResultSet>  results[3],
-                                 vector<CRef <CIgAnnotation> > &annot);
+    /// Anntate the D, J genes based on blast results
+    static void s_AnnotateDJ(CRef<CSearchResultSet>        &results_D, 
+                             CRef<CSearchResultSet>        &results_J, 
+                             vector<CRef <CIgAnnotation> > &annot);
 
     /// Anntate the domains based on blast results
     static void s_AnnotateDomain(CRef<CSearchResultSet>        &results, 
@@ -203,6 +206,7 @@ private:
 
     /// Append blast results to the final results
     static void s_AppendResults(CRef<CSearchResultSet> &results,
+                                int                     num_aligns,
                                 CRef<CSearchResultSet> &final_results);
 
     
