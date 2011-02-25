@@ -1978,13 +1978,17 @@ static list<string> s_GetLinkoutUrl(int linkout,
     if (linkout & eStructure){
         url_link = kStructureUrl;        
         lnk_displ = textLink ? "Structure" : kStructureImg;  
-        if(!disableLink) {        
-            lnkTitleInfo = "PDB structure";
+        if(!disableLink) {
+            string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";
+            vector<string> accs;
+            NStr::Tokenize(labelList,",",accs); 
+            string firstAcc = (accs.size() > 0)? accs[0] : labelList;
+            
             url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",NStr::IntToString(first_gi));        
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cd_rid",cdd_rid);
             url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_view",structure_linkout_as_group ? "onegroup" : "onepair");
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"taxname",(entrez_term == NcbiEmptyString) ? "none":entrez_term);        
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"taxname",(entrez_term == NcbiEmptyString) ? "none":entrez_term);            
+            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,firstAcc,lnk_displ,"",linkTitle);
         }
         else {
             url_link = s_MapDisabledLink(lnk_displ);
@@ -2057,20 +2061,20 @@ static list<string> s_GetLinkoutUrl(int linkout,
         lnk_displ = textLink ? "Map Viewer" : kMapviwerImg;        
         if(!disableLink) {        
             string linkTitle = " title=\"View <@label@> aligned to the "  + taxname + " genome\"";  
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"mama",linkTitle);
+            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
         }
         else {
             url_link = s_MapDisabledLink(lnk_displ);
         }
         linkout_list.push_back(url_link);        
     }
-    
+    //View Bioassays involving <accession
     if(linkout & eBioAssay && is_na){
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");                        
         lnk_displ = textLink ? "Bioassay" : kBioAssayNucImg;            
-        if(!disableLink) {        
-            lnkTitleInfo = "Bioassay data";
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
+        if(!disableLink) {                    
+            string linkTitle = " title=\"View Bioassays involving <@label@>\"";
+            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
         }
         else {
             url_link = s_MapDisabledLink(lnk_displ);
@@ -2082,7 +2086,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
         lnk_displ = textLink ? "Bioassay" : kBioAssayProtImg;
         if(!disableLink) {        
             lnkTitleInfo ="Bioassay data";
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
+            string linkTitle = " title=\"View Bioassays involving <@label@>\"";
+            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
         }
         else {
             url_link = s_MapDisabledLink(lnk_displ);
@@ -3028,7 +3033,8 @@ int CAlignFormatUtil::SetCustomLinksTypes(SSeqURLInfo *seqUrlInfo, int customLin
     if ( seqUrlInfo->gi > 0) {
         customLinkTypes +=eLinkTypeGenLinks;
     }     
-    else if(NStr::StartsWith(seqUrlInfo->accession,"ti:")) {//seqUrlInfo->seqUrl has "trace.cgi"        
+    //else if(NStr::StartsWith(seqUrlInfo->accession,"ti:")) {//seqUrlInfo->seqUrl has "trace.cgi"
+    else if(NStr::Find(seqUrlInfo->seqUrl,"trace.cgi") != NPOS ){        
         customLinkTypes +=eLinkTypeTraceLinks;
     }    
     else if(seqUrlInfo->blastType == "sra") {//seqUrlInfo->seqUrl has sra.cgi        
