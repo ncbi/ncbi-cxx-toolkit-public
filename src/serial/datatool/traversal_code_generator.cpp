@@ -258,14 +258,10 @@ CTraversalCodeGenerator::CTraversalCodeGenerator(
     CFileSet& mainModules, 
     CNcbiIstream& traversal_spec_file )
 {
-    CStopWatch stop_watch;
-
     TNameToASNMap nameToASNMap;
     // Need to build this map because mainModules.ResolveInAnyModule
     // is just too slow.
-    stop_watch.Restart();
     x_BuildNameToASNMap( mainModules, nameToASNMap );
-    ERR_POST_X(2, Info << "Seconds to create ASN Map: " << stop_watch.Restart() );
 
     // parse spec file and extract some basic info
     CTraversalSpecFileParser spec_file_parser( traversal_spec_file ) ;
@@ -290,7 +286,6 @@ CTraversalCodeGenerator::CTraversalCodeGenerator(
         }
 
         // recurse to create the traversal node
-        stop_watch.Restart();
         {
             TASNToTravMap asn_nodes_seen; // to prevent infinite recursion
             CRef<CTraversalNode> a_traversal_root = x_CreateNode( nameToASNMap, asn_nodes_seen, "x_" + (*root_iter)->m_Root_func_name, a_asn_root, CRef<CTraversalNode>() );
@@ -298,7 +293,6 @@ CTraversalCodeGenerator::CTraversalCodeGenerator(
             // remove "x_" from root node's function name since it's public
             a_traversal_root->RemoveXFromFuncName();
         }
-        ERR_POST_X(2, Info << "Seconds to create root " << (*root_iter)->m_Root_func_name << ": " << stop_watch.Restart() );
 
         // uncomment this code if you want to print out all the nodes
         // CPrintTraversalNodeCallback printTraversalNodes(std::cerr);
@@ -308,36 +302,27 @@ CTraversalCodeGenerator::CTraversalCodeGenerator(
     // This will attach functions to all nodes that should get them, and
     // fill in nodesWithFunctions
     // ( The constructor does all the work )
-    stop_watch.Restart();
     CTraversalAttachUserFuncsCallback( spec_file_parser, nodesWithFunctions );
-    ERR_POST_X(2, Info << "Seconds to attach funcs: " << stop_watch.Restart() );
 
     // remove empty nodes (or nodes that only call empty calls)
     // otherwise we might generate a huge number of functions
     if( spec_file_parser.IsPruningAllowed() ) {
-        stop_watch.Restart();
         x_PruneEmptyNodes( rootTraversalNodes, nodesWithFunctions );
-        ERR_POST_X(2, Info << "Seconds to prune: " << stop_watch.Restart() );
     }
 
     // This merges functions that are completely identical.
     // This also tremendously reduces the number of functions we output.
     // ( The constructor does all the work )
     if( spec_file_parser.IsMergingAllowed() ) {
-        stop_watch.Restart();
         CTraversalMerger merger( rootTraversalNodes, nodesWithFunctions );
-        ERR_POST_X(2, Info << "Seconds to merge: " << stop_watch.Restart() );
     }
 
     // Finally, generate the files
-    stop_watch.Restart();
     x_GenerateHeaderFile( spec_file_parser.GetOutputClassName(), headerFileName, traversal_header_file, 
         rootTraversalNodes, spec_file_parser.GetMembers(), spec_file_parser.GetHeaderIncludes(),
         spec_file_parser.GetHeaderForwardDeclarations() );
-    ERR_POST_X(2, Info << "Seconds to write header: " << stop_watch.Restart() );
     x_GenerateSourceFile( spec_file_parser.GetOutputClassName(), headerFileName, traversal_source_file, 
         rootTraversalNodes, spec_file_parser.GetSourceIncludes() );
-    ERR_POST_X(2, Info << "Seconds to write source: " << stop_watch.Restart() );
 }
 
 void CTraversalCodeGenerator::x_PruneEmptyNodes( 
