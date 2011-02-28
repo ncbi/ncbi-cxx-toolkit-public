@@ -33,6 +33,7 @@
 #define ALGO_SEQUENCE___POLYA__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 
