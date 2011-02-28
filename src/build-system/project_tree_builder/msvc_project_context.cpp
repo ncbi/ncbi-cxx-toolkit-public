@@ -334,7 +334,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         }
         for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
             dir = *i;
-            if (CDirEntry(dir).IsDir()) {
+            /*if (CDirEntry(dir).IsDir())*/ {
                 add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir) ?
                         CDirEntry::CreateRelativePath(m_ProjectDir, dir) :
                         dir);
