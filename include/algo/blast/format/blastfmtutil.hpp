@@ -100,12 +100,14 @@ public:
      *
      * @input parm: alnset -- seq align set to be embedded in the
      * 						  new seq annot object
-     * 				program -- blast program name
+     * 				program -- blast program enum
+     * 				db_name -- database name
      * @output parm : seq annot object
      */
     static CRef<objects::CSeq_annot> CreateSeqAnnotFromSeqAlignSet(
-    				   CConstRef<objects::CSeq_align_set> alnset,
-    				   const string & program);
+    				   const objects::CSeq_align_set & alnset,
+    				   blast::EProgram program,
+    				   const string & db_name);
 
 };
 
