@@ -92,10 +92,24 @@ x_timeout="${x_timeout:-$x_timeout_default}"
 reg_build=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 req_check=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 x_requires="$reg_build $req_check"
-# Get list of autors to report errors
-x_authors=`grep '^ *WATCHERS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
-if test -z "$x_authors"; then
-   x_authors=`grep '^ *CHECK_AUTHORS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+
+# Get list of watchers
+x_makefile="$x_srcdir/Makefile.$x_test.app"
+x_watchers=`grep '^ *WATCHERS' "$x_makefile" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+if [ -z "$x_watchers" ]; then
+   # Watchers not found in the project's makefile, continue searching in Makefile.in files
+   f=$x_makefile;
+   while [ -n "$f" ]; do
+      f=`dirname $f`
+      test $f = '.' &&  f=''
+      x_makefile="$f/Makefile.in"
+      if [ -f "$x_makefile" ] ; then
+         x_watchers=`grep '^ *WATCHERS' "$x_makefile" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+         test -n "$x_watchers"  &&  f=''
+      else
+         f=''
+      fi
+   done
 fi
 
 # Write data about current test into the list file
@@ -103,7 +117,7 @@ for x_cmd in $x_run; do
     x_cmd=`echo "$x_cmd"  | sed -e 's/%gj_s4%/ /g'`
     x_name=`echo "$x_cmd" | sed -e 's/^.*CHECK_NAME *= *\(\w*\).*/\1/' -e 's/.*CHECK_CMD.*//'`
     x_cmd=`echo "$x_cmd"  | sed -e 's/ *\/CHECK_NAME.*//' -e 's/^[^=]*=//' -e 's/^ *//'  -e 's/\"/\\\\"/g'`
-    echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_name$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires$x_delim$x_authors" >> $x_out
+    echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_name$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires$x_delim$x_watchers" >> $x_out
 done
 
 exit 0
