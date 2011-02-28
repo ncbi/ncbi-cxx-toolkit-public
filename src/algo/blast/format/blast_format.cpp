@@ -435,7 +435,9 @@ s_SetFlags(string& program,
 CRef<objects::CSeq_annot>
 CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const
 {
-	 return CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(alnset, m_Program);
+	return CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(*alnset,
+														   ProgramNameToEnum(m_Program),
+														   m_DbName);
 }
 
 void 

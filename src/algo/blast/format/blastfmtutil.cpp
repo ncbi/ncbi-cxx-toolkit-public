@@ -52,6 +52,8 @@ static char const rcsid[] = "$Id$";
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -298,25 +300,37 @@ CBlastFormatUtil::PrintAsciiPssm
 
 
 CRef<objects::CSeq_annot>
-CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(CConstRef<objects::CSeq_align_set> alnset,
-												const string & program)
+CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & alnset,
+												blast::EProgram program,
+												const string & db_name)
 {
-    _ASSERT(alnset.NotEmpty());
     CRef<CSeq_annot> retval(new CSeq_annot);
 
+    //Fill in Hist Seqalign
     CRef<CUser_object> hist_align_obj(new CUser_object);
     static const string kHistSeqalign("Hist Seqalign");
     hist_align_obj->SetType().SetStr(kHistSeqalign);
     hist_align_obj->AddField(kHistSeqalign, true);
     retval->AddUserObject(*hist_align_obj);
 
+    //Fill in Blast Type
     CRef<CUser_object> blast_type(new CUser_object);
     static const string kBlastType("Blast Type");
     blast_type->SetType().SetStr(kBlastType);
-    blast_type->AddField(program, blast::ProgramNameToEnum(program));
+    blast_type->AddField(blast::EProgramToTaskName(program), program);
     retval->AddUserObject(*blast_type);
 
-    ITERATE(CSeq_align_set::Tdata, itr, alnset->Get()) {
+    //Fill in DB Title
+   	CRef<CUser_object> blast_db_info(new CUser_object);
+    static const string kBlastDBTitle("Blast Database Title");
+   	blast_db_info->SetType().SetStr(kBlastDBTitle);
+    bool is_nucl = Blast_QueryIsNucleotide(EProgramToEBlastProgramType(program));
+    CSeqDB seqdb(db_name, is_nucl ? CSeqDB::eNucleotide:CSeqDB::eProtein);
+   	blast_db_info->AddField( seqdb.GetTitle(), is_nucl );
+   	retval->AddUserObject(*blast_db_info);
+
+   	//Fill in data -- Seq align
+    ITERATE(CSeq_align_set::Tdata, itr, alnset.Get()) {
         retval->SetData().SetAlign().push_back(*itr);
     }
 
