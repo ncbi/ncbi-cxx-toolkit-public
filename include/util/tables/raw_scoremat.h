@@ -49,13 +49,34 @@ typedef struct SNCBIPackedScoreMatrix {
     TNCBIScore        defscore; /**< score for unknown residues */
 } SNCBIPackedScoreMatrix;
 
-/** These two functions aren't very fast, but avoid the memory and time
- ** overhead of unpacking.
- ** Residues (aa, aa1, aa2) may be either NCBIstdaa, NCBIeaa, or
- ** lowercase NCBIeaa, though matrices generally don't cover U.
+/** Map a standard residue code into an index suitable for a particular
+ ** packed score matrix.  Calling this function is not as fast as working
+ ** with unpacked matrices, but avoids the overhead of producing them.
+ ** @param sm
+ **   Packed score matrix of interest.
+ ** @param aa
+ **   Standard amino acid code; may be either NCBIstdaa or case-insensitive
+ **   NCBIeaa (which are conveniently disjoint), modulo gaps in coverage.
+ **   (The standard built-in matrices don't cover O or U.)
+ ** @return
+ **   The corresponding index into sm, or -1 if it doesn't cover AA.
  **/
 extern NCBI_TABLES_EXPORT
 int        NCBISM_GetIndex(const SNCBIPackedScoreMatrix* sm, int aa);
+
+/** Look up an entry in a packed score matrix.  Calling this function is
+ ** not as fast as working with unpacked matrices, but avoids the overhead
+ ** of producing them.
+ ** @param sm
+ **   Packed score matrix of interest.
+ ** @param aa1, aa2
+ **   Standard amino acid code; may be either NCBIstdaa or case-insensitive
+ **   NCBIeaa (which are conveniently disjoint), modulo gaps in coverage.
+ **   (The standard built-in matrices don't cover O or U.)
+ ** @return
+ **   The corresponding score (or the matrix's default if it doesn't cover
+ **   both residues).
+ **/
 extern NCBI_TABLES_EXPORT
 TNCBIScore NCBISM_GetScore(const SNCBIPackedScoreMatrix* sm,
                            int aa1, int aa2);
@@ -66,6 +87,16 @@ typedef struct SNCBIFullScoreMatrix {
     TNCBIScore s[NCBI_FSM_DIM][NCBI_FSM_DIM];
 } SNCBIFullScoreMatrix;
 
+/** Expand a packed score matrix into an unpacked one, which callers can
+ ** proceed to index directly by standard residue values (NCBIstdaa or
+ ** case-insensitive NCBIeaa, which are conveniently disjoint) modulo gaps
+ ** in coverage, for which the unpacked matrix will hold the packed one's
+ ** default score. (The standard built-in matrices don't cover O or U.)
+ ** @param sm
+ **   Packed score matrix to expand.
+ ** @param fsm
+ **   Storage for the resulting full score matrix.
+ **/
 extern NCBI_TABLES_EXPORT
 void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
                    SNCBIFullScoreMatrix* fsm);
