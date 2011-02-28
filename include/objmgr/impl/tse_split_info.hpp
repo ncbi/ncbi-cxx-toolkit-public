@@ -168,7 +168,7 @@ private:
 
     // loading
     CInitMutexPool         m_MutexPool;
-    mutable CFastMutex     m_SeqIdToChunksMutex;
+    mutable CMutex         m_SeqIdToChunksMutex;
     mutable bool           m_SeqIdToChunksSorted;
     mutable TSeqIdToChunks m_SeqIdToChunks;
 

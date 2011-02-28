@@ -309,7 +309,7 @@ void CTSE_Split_Info::x_UpdateAnnotIndex(void)
 
 void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
-    CFastMutexGuard guard(m_SeqIdToChunksMutex);
+    CMutexGuard guard(m_SeqIdToChunksMutex);
     if ( !chunk.m_AnnotIndexEnabled ) {
         NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
             CTSE_Info& tse = *it->first;
@@ -325,7 +325,7 @@ CTSE_Split_Info::TSeqIdToChunks::const_iterator
 CTSE_Split_Info::x_FindChunk(const CSeq_id_Handle& id) const
 {
     if ( !m_SeqIdToChunksSorted ) {
-        CFastMutexGuard guard(m_SeqIdToChunksMutex);
+        CMutexGuard guard(m_SeqIdToChunksMutex);
         if ( !m_SeqIdToChunksSorted ) {
             TSeqIdToChunks(m_SeqIdToChunks).swap(m_SeqIdToChunks);
             sort(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end());
