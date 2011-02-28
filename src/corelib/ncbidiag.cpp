@@ -754,6 +754,23 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
         CDiagHandler* handler = GetDiagHandler();
         if ( handler ) {
             ITERATE(TDiagCollection, itc, m_DiagCollection) {
+                if ((itc->m_Flags & eDPF_IsConsole) != 0) {
+                    // Print all messages to console
+                    handler->PostToConsole(*itc);
+                    // Make sure only messages with the severity above allowed
+                    // are printed to normal log.
+                    EDiagSev gpsev = guard->GetPrintSeverity();
+                    EDiagSev gcsev = guard->GetCollectSeverity();
+                    EDiagSev post_sev =
+                        CompareDiagPostLevel(gpsev, gcsev) < 0 ? gpsev : gcsev;
+                    bool allow_trace = post_sev == eDiag_Trace;
+                    if (itc->m_Severity == eDiag_Trace  &&  !allow_trace) {
+                        continue; // trace is disabled
+                    }
+                    if (itc->m_Severity < post_sev) {
+                        continue;
+                    }
+                }
                 handler->Post(*itc);
             }
             size_t discarded = m_DiagCollectionSize - m_DiagCollection.size();
@@ -1968,6 +1985,9 @@ void CDiagContext::FlushMessages(CDiagHandler& handler)
     //ERR_POST_X(1, Message << "***** BEGIN COLLECTED MESSAGES *****");
     ITERATE(TMessages, it, *tmp.get()) {
         handler.Post(*it);
+        if (it->m_Flags & eDPF_IsConsole) {
+            handler.PostToConsole(*it);
+        }
     }
     //ERR_POST_X(2, Message << "***** END COLLECTED MESSAGES *****");
     m_Messages.reset(tmp.release());
@@ -2462,6 +2482,7 @@ CDiagBuffer::~CDiagBuffer(void)
 
 void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
+    bool is_console = (mess.m_Flags & eDPF_IsConsole);
     if ( CDiagBuffer::sm_Handler ) {
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_Handler ) {
@@ -2469,9 +2490,16 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             CDiagBuffer& diag_buf = GetDiagBuffer();
             bool show_warning = false;
             CDiagContext& ctx = GetDiagContext();
+            mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
+                0 : diag_buf.m_PostPrefix.c_str();
+            if (!is_console  &&  !SeverityPrintable(mess.m_Severity) ) {
+                return;
+            }
+            if (is_console) {
+                // No throttling for console
+                CDiagBuffer::sm_Handler->PostToConsole(mess);
+            }
             if ( ctx.ApproveMessage(mess, &show_warning) ) {
-                mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
-                    0 : diag_buf.m_PostPrefix.c_str();
                 CDiagBuffer::sm_Handler->Post(mess);
             }
             else if ( show_warning ) {
@@ -2570,7 +2598,8 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
     }
 
     EDiagSev sev = diag.GetSeverity();
-    if ( SeverityDisabled(sev) ) {
+    bool is_console = (diag.GetPostFlags() & eDPF_IsConsole);
+    if (!is_console  &&  SeverityDisabled(sev)) {
         return false;
     }
 
@@ -2603,9 +2632,10 @@ void CDiagBuffer::Flush(void)
     CRecursionGuard guard(m_InUse);
 
     EDiagSev sev = m_Diag->GetSeverity();
-
+    bool is_console = m_Diag && (m_Diag->GetPostFlags() & eDPF_IsConsole);
+    bool is_disabled = SeverityDisabled(sev);
     // Do nothing if diag severity is lower than allowed
-    if (!m_Diag  ||  SeverityDisabled(sev)) {
+    if (!m_Diag  || (!is_console  &&  is_disabled)) {
         return;
     }
 
@@ -2647,14 +2677,19 @@ void CDiagBuffer::Flush(void)
                           m_Diag->GetModule(),
                           m_Diag->GetClass(),
                           m_Diag->GetFunction());
-        if ( !SeverityPrintable(sev) ) {
-            thr_data.CollectDiagMessage(mess);
-            Reset(*m_Diag);
-            return;
+        if (!SeverityPrintable(sev)) {
+            bool can_collect = thr_data.GetCollectGuard() != NULL;
+            if (!is_disabled  ||  (is_console  &&  can_collect)) {
+                thr_data.CollectDiagMessage(mess);
+                Reset(*m_Diag);
+                if ( can_collect ) {
+                    // The message has been collected, don't print to
+                    // the console now.
+                    return;
+                }
+            }
         }
-        else {
-            DiagHandler(mess);
-        }
+        DiagHandler(mess);
     }
 
 #if defined(NCBI_COMPILER_KCC)
@@ -4261,6 +4296,10 @@ class CTeeDiagHandler : public CDiagHandler
 public:
     CTeeDiagHandler(CDiagHandler* orig, bool own_orig);
     virtual void Post(const SDiagMessage& mess);
+
+    // Don't post duplicates to console.
+    virtual void PostToConsole(const SDiagMessage& mess) {}
+
     virtual string GetLogName(void)
     {
         return m_OrigHandler.get() ?
@@ -4329,7 +4368,8 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
     }
     if ( CDiagBuffer::sm_CanDeleteHandler )
         delete CDiagBuffer::sm_Handler;
-    if (TTeeToStderr::GetDefault()  &&  handler->GetLogName() != "STDERR") {
+    if (TTeeToStderr::GetDefault()  &&
+        handler->GetLogName() != kLogName_Stderr) {
         // Need to tee?
         handler = new CTeeDiagHandler(handler, can_delete);
         can_delete = true;
@@ -4370,6 +4410,26 @@ extern void DiagHandler_Reopen(void)
 extern CDiagBuffer& GetDiagBuffer(void)
 {
     return CDiagContextThreadData::GetThreadData().GetDiagBuffer();
+}
+
+
+void CDiagHandler::PostToConsole(const SDiagMessage& mess)
+{
+    if (GetLogName() == kLogName_Stderr  &&
+        IsVisibleDiagPostLevel(mess.m_Severity)) {
+        // Already posted to console.
+        return;
+    }
+    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
+        CNcbiOstrstream str_os;
+        str_os << mess;
+        cerr.write(str_os.str(), str_os.pcount());
+        str_os.rdbuf()->freeze(false);
+    }
+    else {
+        cerr << mess;
+    }
+    cerr << NcbiFlush;
 }
 
 

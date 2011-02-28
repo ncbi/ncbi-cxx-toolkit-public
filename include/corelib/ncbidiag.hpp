@@ -724,6 +724,10 @@ enum EDiagPostFlag {
     /// possible (e.g. for stream and file handlers).
     eDPF_AtomicWrite        = 0x4000000,
 
+    /// Send the message to 'console' regardless of it's severity.
+    /// To be set by 'Console' manipulator only.
+    eDPF_IsConsole          = 0x8000000,
+
     /// Use global default flags (merge with).
     /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
     eDPF_Default            = 0x10000000,
@@ -998,6 +1002,12 @@ public:
     /// by the next Flush().
     friend const CNcbiDiag& Message (const CNcbiDiag& diag);
 
+    /// Set IsConsole flag to indicate that the current post should
+    /// go to console rather that to the default output (file etc.).
+    /// Do not flush current post or change the severity. The flag is reset
+    /// by the next Flush().
+    friend const CNcbiDiag& Console (const CNcbiDiag& diag);
+
     /// Get a common symbolic name for the severity levels.
     static const char* SeverityName(EDiagSev sev);
 
@@ -1098,6 +1108,9 @@ public:
 
     /// Reset IsMessage flag.
     void ResetIsMessageFlag(void) const { m_PostFlags &= ~eDPF_IsMessage; }
+
+    /// Reset IsConsole flag.
+    void ResetIsConsoleFlag(void) const { m_PostFlags &= ~eDPF_IsConsole; }
 
     /// Set important flags to their globally set values
     /// @sa EDiagPostFlags
@@ -2161,6 +2174,8 @@ public:
 
     /// Post message to handler.
     virtual void Post(const SDiagMessage& mess) = 0;
+    /// Post message to console regardless of its severity.
+    virtual void PostToConsole(const SDiagMessage& mess);
 
     /// Get current diag posts destination
     virtual string GetLogName(void);

@@ -180,8 +180,8 @@ private:
     static bool GetTraceEnabledFirstTime(void);
     static bool GetSeverityChangeEnabledFirstTime(void);
     // Anything not disabled but also not printable is collectable.
-    static bool SeverityDisabled(EDiagSev sev); // ignore this severity
-    static bool SeverityPrintable(EDiagSev sev); // print this severity
+    static bool SeverityDisabled(EDiagSev sev);
+    static bool SeverityPrintable(EDiagSev sev);
 
     // call the current diagnostics handler directly
     static void DiagHandler(SDiagMessage& mess);
@@ -429,6 +429,11 @@ const CNcbiDiag& Message(const CNcbiDiag& diag)  {
     diag.m_PostFlags |= eDPF_IsMessage;
     return diag;
 }
+inline
+const CNcbiDiag& Console(const CNcbiDiag& diag)  {
+    diag.m_PostFlags |= eDPF_IsConsole;
+    return diag;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -439,6 +444,7 @@ void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag) {
         m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
         diag.ResetIsMessageFlag();
+        diag.ResetIsConsoleFlag();
     }
 }
 
