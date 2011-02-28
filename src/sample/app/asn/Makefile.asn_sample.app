@@ -8,6 +8,8 @@
 APP = asn_sample
 SRC = asn_sample
 
+ASN_DEP = sample_asn
+
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
