@@ -60,7 +60,28 @@ template <typename Iterator>
 EPolyTail
 FindPolyTail(Iterator begin, Iterator end,
              TSignedSeqPos &cleavageSite,
-             TSignedSeqPos min_length = 0);
+             TSeqPos min_length = 1);
+
+///////////////////////////////////////////////////////////////////////////////
+/// PRE : two random access iterators pointing to sequence data [begin,
+/// end); maximum number of non-A bases that are allowed to follow the tail
+/// POST: poly-A tail range, if any (empty range if not)
+template <typename Iterator>
+TSeqRange
+FindPolyARange(Iterator begin, Iterator end, TSeqPos max_following_bases);
+
+///////////////////////////////////////////////////////////////////////////////
+/// PRE : two random access iterators pointing to sequence data [begin,
+/// end); minimum length for tail; maximum number of non-A bases that
+/// are allowed to follow the tail
+/// POST: poly-tail range (if any) and whether we found a poly-A tail, a poly-T
+/// head, or neither
+template <typename Iterator>
+EPolyTail
+FindPolyTail(Iterator begin, Iterator end,
+             TSeqRange &tail,
+             TSeqPos min_length = 1,
+             TSeqPos max_following_bases = 0);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,6 +112,15 @@ public:
     CRevComp_It operator++(int) {
         CRevComp_It it = m_Base;
         --m_Base;
+        return it;
+    }
+    CRevComp_It& operator--(void) {
+        ++m_Base;
+        return *this;
+    }
+    CRevComp_It operator--(int) {
+        CRevComp_It it = m_Base;
+        ++m_Base;
         return it;
     }
     CRevComp_It& operator+=(int i) {
@@ -179,10 +209,21 @@ ForwardIterator1 ItrSearch(ForwardIterator1 first1, ForwardIterator1 last1,
 template <typename Iterator>
 TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
 {
+    TSeqRange tail_found = FindPolyARange(begin, end);
+    return tail_found.Empty() ? -1 : tail_found.GetFrom();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/// PRE : two random access iterators pointing to sequence data [begin,
+/// end)
+/// POST: poly-A tail range, if any (empty range if not)
+template <typename Iterator>
+TSeqRange FindPolyARange(Iterator begin, Iterator end, TSeqPos max_following_bases)
+{
     string motif1("AATAAA");
     string motif2("ATTAAA");
 
-    Iterator pos = (end - begin < 250) ? begin : end - 250;
+    Iterator pos = begin;
 
     Iterator uStrmMotif = pos;
     while (uStrmMotif != end) {
@@ -223,15 +264,26 @@ TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
                     }
                 }
     
-                if (numOther + numA > 0  &&
-                    ((double) numA / (numA+numOther)) > 0.95) {
-                    return cleavageSite - begin;
+                for(Iterator p = end - 1;
+                    p >= cleavageSite && (end - p) <= max_following_bases+1;
+                    --p){
+                    if (numOther + numA > 0  &&
+                        ((double) numA / (numA+numOther)) > 0.95) {
+                        while(*p != 'A')
+                            --p;
+                        return TSeqRange(cleavageSite - begin, p - begin);
+                    }
+                    if (*p == 'A') {
+                        --numA;
+                    } else {
+                        --numOther;
+                    }
                 }
             }
         }
     }
 
-    return -1;
+    return TSeqRange();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -243,20 +295,43 @@ template<typename Iterator>
 EPolyTail
 FindPolyTail(Iterator begin, Iterator end,
              TSignedSeqPos &cleavageSite,
-             TSignedSeqPos min_length)
+             TSeqPos min_length)
 {
-    cleavageSite = FindPolyA(begin, end);
-    int seqLen = end - begin;
-    if (cleavageSite >= 0 && seqLen - cleavageSite >= min_length) {
+    TSeqRange tail;
+    EPolyTail type = FindPolyTail(begin, end, tail, min_length);
+    if(type == ePolyTail_A3)
+        cleavageSite = tail.GetFrom();
+    else if(type == ePolyTail_T5)
+        cleavageSite = tail.GetTo();
+    return type;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/// PRE : two random access iterators pointing to sequence data [begin,
+/// end); minimum length for tail
+/// POST: poly-tail range (if any) and whether we found a poly-A tail, a poly-T
+/// head, or neither
+template <typename Iterator>
+EPolyTail
+FindPolyTail(Iterator begin, Iterator end,
+             TSeqRange &tail_result,
+             TSeqPos min_length,
+             TSeqPos max_following_bases)
+{
+    TSeqRange tail = FindPolyARange(begin, end, max_following_bases);
+    if (tail.GetLength() >= min_length) {
+        tail_result = tail;
         return ePolyTail_A3;
     } else {
-        cleavageSite = FindPolyA(CRevComp_It<Iterator>(end),
-                                 CRevComp_It<Iterator>(begin));
+        tail = FindPolyARange(CRevComp_It<Iterator>(end),
+                              CRevComp_It<Iterator>(begin),
+                              max_following_bases);
 
-        if (cleavageSite >= 0) {
-            cleavageSite = seqLen - cleavageSite - 1;
-            if(cleavageSite+1 >= min_length)
-                return ePolyTail_T5;
+        if (tail.GetLength() >= min_length) {
+            int seqLen = end - begin;
+            tail_result.Set(seqLen - 1 - tail.GetTo(),
+                            seqLen - 1 - tail.GetFrom());
+            return ePolyTail_T5;
         }
     }
 

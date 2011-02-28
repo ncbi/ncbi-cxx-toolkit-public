@@ -88,11 +88,9 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
         cerr << "Sequence "<< count <<  endl;
 
-        TSignedSeqPos site = -1;
+        TSeqRange actual_polya;
         CSeqVector vec(entry->GetSeq(), NULL, CBioseq_Handle::eCoding_Iupac);
-        EPolyTail tail = FindPolyTail(vec.begin(), vec.end(), site, 10);
-        TSeqRange actual_polya(tail == ePolyTail_A3 ? site : 0,
-                               tail == ePolyTail_A3 ? vec.size() - 1 : site);
+        FindPolyTail(vec.begin(), vec.end(), actual_polya, 7, 10);
 
         TSeqRange expected_polya;
         CSeq_entry_Handle handle = scope.AddTopLevelSeqEntry(*entry);
