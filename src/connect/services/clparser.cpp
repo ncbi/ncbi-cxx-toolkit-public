@@ -45,95 +45,93 @@ BEGIN_NCBI_SCOPE
 #define DEFAULT_CMD_DESCR_INDENT 24
 #define DEFAULT_OPT_DESCR_INDENT 32
 
-namespace {
-    typedef list<string> TNameVariantList;
+typedef list<string> TNameVariantList;
 
-    struct SOptionOrCommand : public CObject
+struct SOptionOrCommand : public CObject
+{
+    SOptionOrCommand(int id, const string& name_variants) : m_Id(id)
     {
-        SOptionOrCommand(int id, const string& name_variants) : m_Id(id)
-        {
-            NStr::Split(name_variants, "|", m_NameVariants);
-        }
+        NStr::Split(name_variants, "|", m_NameVariants);
+    }
 
-        const string& GetPrimaryName() const {return m_NameVariants.front();}
+    const string& GetPrimaryName() const {return m_NameVariants.front();}
 
-        int m_Id;
-        TNameVariantList m_NameVariants;
-    };
+    int m_Id;
+    TNameVariantList m_NameVariants;
+};
 
-    struct SOptionInfo : public SOptionOrCommand
+struct SOptionInfo : public SOptionOrCommand
+{
+    SOptionInfo(int opt_id, const string& name_variants,
+            CCommandLineParser::EOptionType type,
+            const string& description) :
+        SOptionOrCommand(opt_id, name_variants),
+        m_Type(type),
+        m_Description(description)
     {
-        SOptionInfo(int opt_id, const string& name_variants,
-                CCommandLineParser::EOptionType type,
-                const string& description) :
-            SOptionOrCommand(opt_id, name_variants),
-            m_Type(type),
-            m_Description(description)
-        {
-        }
+    }
 
-        static string AddDashes(const string& opt_name)
-        {
-            return opt_name.length() == 1 ?  '-' + opt_name : "--" + opt_name;
-        }
-
-        string GetNameVariants() const
-        {
-            string result(AddDashes(m_NameVariants.front()));
-            if (m_NameVariants.size() > 1) {
-                result.append(" [");
-                TNameVariantList::const_iterator name(m_NameVariants.begin());
-                result.append(AddDashes(*++name));
-                while (++name != m_NameVariants.end()) {
-                    result.append(", ");
-                    result.append(AddDashes(*name));
-                }
-                result.push_back(']');
-            }
-            if (m_Type == CCommandLineParser::eOptionWithParameter)
-                result.append(" ARG");
-            return result;
-        }
-
-        int m_Type;
-        string m_Description;
-    };
-
-    typedef list<const SOptionInfo*> TOptionInfoList;
-
-    struct SCommandInfo : public SOptionOrCommand
+    static string AddDashes(const string& opt_name)
     {
-        SCommandInfo(int cmd_id, const string& name_variants,
-                const string& synopsis, const string& usage) :
-            SOptionOrCommand(cmd_id, name_variants),
-            m_Synopsis(synopsis),
-            m_Usage(usage)
-        {
-        }
+        return opt_name.length() == 1 ?  '-' + opt_name : "--" + opt_name;
+    }
 
-        string GetNameVariants() const
-        {
-            if (m_NameVariants.size() == 1)
-                return m_NameVariants.front();
+    string GetNameVariants() const
+    {
+        string result(AddDashes(m_NameVariants.front()));
+        if (m_NameVariants.size() > 1) {
+            result.append(" [");
             TNameVariantList::const_iterator name(m_NameVariants.begin());
-            string result(*name);
-            result.append(" (");
-            result.append(*++name);
+            result.append(AddDashes(*++name));
             while (++name != m_NameVariants.end()) {
                 result.append(", ");
-                result.append(*name);
+                result.append(AddDashes(*name));
             }
-            result.push_back(')');
-            return result;
+            result.push_back(']');
         }
+        if (m_Type == CCommandLineParser::eOptionWithParameter)
+            result.append(" ARG");
+        return result;
+    }
 
-        string m_Synopsis;
-        string m_Usage;
+    int m_Type;
+    string m_Description;
+};
 
-        TOptionInfoList m_PositionalArguments;
-        TOptionInfoList m_AcceptedOptions;
-    };
-}
+typedef list<const SOptionInfo*> TOptionInfoList;
+
+struct SCommandInfo : public SOptionOrCommand
+{
+    SCommandInfo(int cmd_id, const string& name_variants,
+            const string& synopsis, const string& usage) :
+        SOptionOrCommand(cmd_id, name_variants),
+        m_Synopsis(synopsis),
+        m_Usage(usage)
+    {
+    }
+
+    string GetNameVariants() const
+    {
+        if (m_NameVariants.size() == 1)
+            return m_NameVariants.front();
+        TNameVariantList::const_iterator name(m_NameVariants.begin());
+        string result(*name);
+        result.append(" (");
+        result.append(*++name);
+        while (++name != m_NameVariants.end()) {
+            result.append(", ");
+            result.append(*name);
+        }
+        result.push_back(')');
+        return result;
+    }
+
+    string m_Synopsis;
+    string m_Usage;
+
+    TOptionInfoList m_PositionalArguments;
+    TOptionInfoList m_AcceptedOptions;
+};
 
 struct SCommandLineParserImpl : public CObject
 {
@@ -227,7 +225,11 @@ void SCommandLineParserImpl::PrintWordWrapped(int topic_len,
     if (cont_indent < 0)
         cont_indent = indent;
 
+#ifdef __GNUC__
+    const char* next_line = NULL; // A no-op assignment to make GCC happy.
+#else
     const char* next_line;
+#endif
     do {
         const char* line_end;
         // Check for verbatim formatting.
@@ -483,10 +485,7 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
         }
 
     if (positional_arguments.empty())
-        if (!m_Options.empty())
-            Throw("a command is required");
-        else
-            Throw(kEmptyStr);
+        Throw(!m_Options.empty() ? "a command is required" : kEmptyStr);
 
     string command_name(positional_arguments.front());
     positional_arguments.pop_front();
@@ -629,12 +628,12 @@ void CCommandLineParser::AddAssociation(int cmd_id, int opt_id)
 
     default:
         _ASSERT("Invalid sequence of optional positional arguments" &&
-            cmd_info->m_PositionalArguments.empty() ||
+            (cmd_info->m_PositionalArguments.empty() ||
             cmd_info->m_PositionalArguments.back()->m_Type ==
                 ePositionalArgument ||
             (cmd_info->m_PositionalArguments.back()->m_Type ==
                 eOptionalPositional &&
-                    opt_info->m_Type != ePositionalArgument));
+                    opt_info->m_Type != ePositionalArgument)));
 
         cmd_info->m_PositionalArguments.push_back(opt_info);
     }
