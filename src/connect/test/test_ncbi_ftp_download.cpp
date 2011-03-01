@@ -47,6 +47,9 @@
 #endif // NCBI_OS
 
 
+#define SCREEN_COLS (80 - 1/*seems to work better on MSWin*/)
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -58,14 +61,30 @@ static bool s_Signaled  = false;
 static int  s_Throttler = 0;
 
 
-#ifdef NCBI_OS_UNIX
+#if   defined(NCBI_OS_MSWIN)
+static BOOL WINAPI s_Interrupt(DWORD type)
+{
+	switch (type) {
+	case CTRL_C_EVENT:
+	case CTRL_BREAK_EVENT:
+		s_Signaled = true;
+		return TRUE;  // handled
+	case CTRL_CLOSE_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+	default:
+		break;
+	}
+	return FALSE;  // unhandled
+}
+#elif defined(NCBI_OS_UNIX)
 extern "C" {
 static void s_Interrupt(int /*signo*/)
 {
     s_Signaled = true;
 }
 }
-#endif // NCBI_OS_UNIX
+#endif // NCBI_OS_MSWIN
 
 
 class CDownloadCallbackData {
@@ -78,11 +97,11 @@ public:
         m_Current = pair<string,Uint8>(kEmptyStr, 0);
     }
 
-    SCONN_Callback *       CB(void)        { return &m_Cb;          }
-    Uint8             GetSize(void) const  { return m_Size;         }
-    void              SetSize(Uint8 size)  { m_Size = size;         }
+    SCONN_Callback *       CB(void)          { return &m_Cb;      }
+    Uint8             GetSize(void)    const { return m_Size;     }
+    void              SetSize(Uint8 size)    { m_Size = size;     }
     double         GetElapsed(bool update = true);
-    const string& GetFilename(void) const  { return m_Filename;     }
+    const string& GetFilename(void)    const { return m_Filename; }
 
     void                  Append(const CTar::TFile* current = 0);
     const CTar::TFiles& Filelist(void) const { return m_Filelist; }
@@ -134,8 +153,16 @@ protected:
             return false;
         }
 
+		CNcbiOstrstream os;
+		os << current;
+		string line = CNcbiOstrstreamToString(os);
+		size_t linelen = line.size();
         cerr.flush();
-        cout << current << left << setw(16) << ' ' << endl;
+        cout << line;
+		if (linelen < SCREEN_COLS) {
+		    cout << left << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+		}
+		cout << endl;
         TFile file(current.GetName(), current.GetSize());
         m_Dlcbdata->Append(&file);
         return true;
@@ -249,12 +276,17 @@ size_t CListProcessor::Run(void)
     do {
         string line;
         getline(*m_Stream, line);
-        if (!line.empty()  &&  NStr::EndsWith(line, '\r')) {
-            line.resize(line.size() - 1);
+	    size_t linelen = line.size();
+        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
+            line.resize(--linelen);
         }
-        if (!line.empty()) {
+        if (linelen /*!line.empty()*/) {
             cerr.flush();
-            cout << left << setw(60) << line << endl;
+			cout << line;
+			if (linelen < SCREEN_COLS) {
+                cout << left << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+			}
+			cout << endl;
             CTar::TFile file = make_pair(line, (Uint8) 0);
             m_Dlcbdata->Append(&file);
             n++;
@@ -402,32 +434,39 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
     }
 
     if (s_IsATTY()) {
-        cout.flush();
+		CNcbiOstrstream os;
         if (!size) {
-            cerr << "Downloaded " << NStr::UInt8ToString(pos)
-                 << "/unknown"
-                " in " << fixed << setprecision(2) << time << 's';
+            os << "Downloaded " << NStr::UInt8ToString(pos)
+               << "/unknown"
+                  " in " << fixed << setprecision(2) << time << 's';
         } else {
             double percent = (pos * 100.0) / size;
-            cerr << "Downloaded " << NStr::UInt8ToString(pos)
-                 << '/' << NStr::UInt8ToString(size)
-                 << " (" << fixed << setprecision(2) << percent << "%)"
-                " in " << fixed << setprecision(2) << time << 's';
+            os << "Downloaded " << NStr::UInt8ToString(pos)
+               << '/' << NStr::UInt8ToString(size)
+               << " (" << fixed << setprecision(2) << percent << "%)"
+                  " in " << fixed << setprecision(2) << time << 's';
             if (time) {
                 double kbps = pos / time / 1024.0;
-                cerr << " (" << fixed << setprecision(2) << kbps << "KB/s)";
+                os << " (" << fixed << setprecision(2) << kbps << "KB/s)";
                 if (pos) {
                     double eta = time * size / pos - time;
                     if (eta > 0) {
-                        cerr << " ETA: " <<
-                            (eta > 24 * 3600
-                             ? CTimeSpan(eta).AsString("d") + "+ day(s)"
-                             : CTimeSpan(eta).AsString("h:m:s"));
+                        os << " ETA: "
+						   << (eta > 24 * 3600
+                               ? CTimeSpan(eta).AsString("d") + "+ day(s)"
+                               : CTimeSpan(eta).AsString("h:m:s"));
                     }
                 }
             }
         }
-        cerr << left << setw(16) << ' ' << '\r' << flush;
+		string line = CNcbiOstrstreamToString(os);
+		size_t linelen = line.size();
+        cout.flush();
+		cerr << line;
+		if (linelen < SCREEN_COLS) {
+            cerr << left << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+		}
+		cerr << '\r' << flush;
     }
 
     if (type == eCONN_OnClose) {
@@ -586,11 +625,13 @@ int main(int argc, const char* argv[])
     ConnNetInfo_Destroy(net_info);
     free((void*) url);
 
-#ifdef NCBI_OS_UNIX
+#if   defined(NCBI_OS_MSWIN)
+	SetConsoleCtrlHandler(s_Interrupt, TRUE);
+#elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
     signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
-#endif // NCBI_OS_UNIX
+#endif // NCBI_OS_MSWIN
 
     // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear
     _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
