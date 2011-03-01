@@ -161,7 +161,7 @@ protected:
     ///   a single-lined step title; or
     ///   a multi-lined step description:  the first line being the actual
     ///   title, and remaining lines -- a verbal explanation.
-    /// Lines are separated with "\n", and normally do not have any
+    /// Lines are separated with '\n', and normally do not have any
     /// ending punctuation (but may be capitalized).
     /// The default callback does the following:
     ///   For the single-lined titles, it outputs the title into the output
@@ -180,7 +180,7 @@ protected:
     /// having an explanation in either case.  Successful completion
     /// expected to supply only a single line via the "reason" parameter;
     /// while a failing check can supply multiple lines (as an extended
-    /// detailed explanation) separated with "\n".
+    /// detailed explanation) separated with '\n'.
     /// The default callback does the following:
     ///   For a succeeding check it prints contents of "reason" and returns;
     ///   For a failing check, it prints the word "FAILED" followed by textual
