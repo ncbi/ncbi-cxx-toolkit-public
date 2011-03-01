@@ -54,32 +54,11 @@ CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
 }
 
 CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
-                         IBlobStorage& storage,
-                         ECleanUp cleanup,
-                         EProgressMsg progress_msg,
-                         bool /*unused*/)
-    : m_NSClient(ns_client), m_NetCacheAPI(
-        dynamic_cast<CBlobStorage_NetCache&>(storage).GetNetCacheAPI())
-{
-    Init(cleanup, progress_msg);
-}
-
-CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                          CNetCacheAPI::TInstance nc_client,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg) :
     m_NSClient(ns_client),
     m_NetCacheAPI(nc_client)
-{
-    Init(cleanup, progress_msg);
-}
-
-CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
-                         CNetCacheAPI::TInstance nc_client,
-                         ECleanUp cleanup,
-                         EProgressMsg progress_msg,
-                         bool /*unused*/)
-    : m_NSClient(ns_client), m_NetCacheAPI(nc_client)
 {
     Init(cleanup, progress_msg);
 }

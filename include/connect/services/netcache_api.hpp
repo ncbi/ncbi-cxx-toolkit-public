@@ -317,14 +317,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         /// use this mode very carefully
         eKeepConnection
     };
-
-    /// Please do not use this method. The eKeepConnection
-    /// connection mode is the default now.
-    NCBI_DEPRECATED void SetConnMode(EConnectionMode conn_mode)
-    {
-        GetService().SetPermanentConnection(
-            conn_mode == eCloseConnection ? eOff : eOn);
-    }
 };
 
 class NCBI_XCONNECT_EXPORT CNetCachePasswordGuard

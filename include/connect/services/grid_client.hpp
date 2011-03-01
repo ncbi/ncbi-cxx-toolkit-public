@@ -279,13 +279,6 @@ public:
                 ECleanUp cleanup,
                 EProgressMsg progress_msg);
 
-    NCBI_DEPRECATED_CTOR(
-    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
-                IBlobStorage& storage,
-                ECleanUp cleanup,
-                EProgressMsg progress_msg,
-                bool unused));
-
     /// Constructor
     ///
     /// @param ns_client
@@ -301,13 +294,6 @@ public:
                 CNetCacheAPI::TInstance nc_client,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg);
-
-    NCBI_DEPRECATED_CTOR(
-    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
-                CNetCacheAPI::TInstance nc_client,
-                ECleanUp cleanup,
-                EProgressMsg progress_msg,
-                bool unused));
 
     /// Get a job submitter
     ///
