@@ -48,6 +48,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/create_defline.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -68,9 +69,6 @@ class CGenetic_code;
 class CMolInfo;
 
 BEGIN_SCOPE(sequence)
-
-class CDeflineGenerator;
-
 
 /** @addtogroup ObjUtilSequence
  *
