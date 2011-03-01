@@ -57,7 +57,7 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 bool CSeq_loc_mix::IsPartialStart(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        return (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().back()->IsPartialStart(ext) : Get().front()->IsPartialStart(ext);
     }
     return false;
@@ -66,7 +66,7 @@ bool CSeq_loc_mix::IsPartialStart(ESeqLocExtremes ext) const
 bool CSeq_loc_mix::IsPartialStop(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        return (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().front()->IsPartialStop(ext) : Get().back()->IsPartialStop(ext);
     }
     return false;
@@ -78,7 +78,7 @@ void CSeq_loc_mix::SetPartialStart(bool val, ESeqLocExtremes ext)
     if (IsPartialStart(ext) == val  ||  Set().empty()) {
         return;
     }
-    if ((IsReverseStrand()  &&  ext == eExtreme_Positional)) {
+    if ((IsReverseStrand()  &&  ext == eExtreme_Biological)) {
         Set().back()->SetPartialStart(val, ext);
     }else {
         Set().front()->SetPartialStart(val, ext);
@@ -91,7 +91,7 @@ void CSeq_loc_mix::SetPartialStop(bool val, ESeqLocExtremes ext)
     if (IsPartialStop(ext) == val  ||  Set().empty()) {
         return;
     }
-    if (IsReverseStrand()  &&  ext == eExtreme_Positional) {
+    if (IsReverseStrand()  &&  ext == eExtreme_Biological) {
         Set().front()->SetPartialStop(val, ext);
     } else {
         Set().back()->SetPartialStop(val, ext);
@@ -102,7 +102,7 @@ void CSeq_loc_mix::SetPartialStop(bool val, ESeqLocExtremes ext)
 bool CSeq_loc_mix::IsTruncatedStart(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        return (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().back()->IsTruncatedStart(ext) :
             Get().front()->IsTruncatedStart(ext);
     }
@@ -112,7 +112,7 @@ bool CSeq_loc_mix::IsTruncatedStart(ESeqLocExtremes ext) const
 bool CSeq_loc_mix::IsTruncatedStop(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        return (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().front()->IsTruncatedStop(ext) :
             Get().back()->IsTruncatedStop(ext);
     }
@@ -125,7 +125,7 @@ void CSeq_loc_mix::SetTruncatedStart(bool val, ESeqLocExtremes ext)
     if (IsTruncatedStart(ext) == val  ||  Set().empty()) {
         return;
     }
-    if ((IsReverseStrand()  &&  ext == eExtreme_Positional)) {
+    if ((IsReverseStrand()  &&  ext == eExtreme_Biological)) {
         Set().back()->SetTruncatedStart(val, ext);
     }else {
         Set().front()->SetTruncatedStart(val, ext);
@@ -138,7 +138,7 @@ void CSeq_loc_mix::SetTruncatedStop(bool val, ESeqLocExtremes ext)
     if (IsTruncatedStop(ext) == val  ||  Set().empty()) {
         return;
     }
-    if (IsReverseStrand()  &&  ext == eExtreme_Positional) {
+    if (IsReverseStrand()  &&  ext == eExtreme_Biological) {
         Set().front()->SetTruncatedStop(val, ext);
     } else {
         Set().back()->SetTruncatedStop(val, ext);
@@ -204,7 +204,7 @@ ENa_strand CSeq_loc_mix::GetStrand(void) const
 TSeqPos CSeq_loc_mix::GetStart(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        return (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().back()->GetStart(ext) : Get().front()->GetStart(ext);
     }
     return kInvalidSeqPos;
@@ -214,7 +214,7 @@ TSeqPos CSeq_loc_mix::GetStart(ESeqLocExtremes ext) const
 TSeqPos CSeq_loc_mix::GetStop(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        return (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().front()->GetStop(ext) : Get().back()->GetStop(ext);
     }
     return kInvalidSeqPos;

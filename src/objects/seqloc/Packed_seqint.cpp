@@ -79,7 +79,7 @@ bool CPacked_seqint::IsPartialStart(ESeqLocExtremes ext) const
 {
     const CSeq_interval* ival = NULL;
     if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().back() : Get().front();
     }
     return (ival != NULL) ? ival->IsPartialStart(ext) : false;
@@ -90,7 +90,7 @@ bool CPacked_seqint::IsPartialStop(ESeqLocExtremes ext) const
 {
     const CSeq_interval* ival = NULL;
     if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().front() : Get().back();
     }
     return (ival != NULL) ? ival->IsPartialStop(ext) : false;
@@ -101,7 +101,7 @@ void CPacked_seqint::SetPartialStart(bool val, ESeqLocExtremes ext)
 {
     CSeq_interval* ival = NULL;
     if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Set().back() : Set().front();
     }
     if (ival != NULL) {
@@ -114,7 +114,7 @@ void CPacked_seqint::SetPartialStop(bool val, ESeqLocExtremes ext)
 {
     CSeq_interval* ival = NULL;
     if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Set().front() : Set().back();
     }
     if (ival != NULL) {
@@ -127,7 +127,7 @@ bool CPacked_seqint::IsTruncatedStart(ESeqLocExtremes ext) const
 {
     const CSeq_interval* ival = NULL;
     if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().back() : Get().front();
     }
     return (ival != NULL) ? ival->IsTruncatedStart(ext) : false;
@@ -138,7 +138,7 @@ bool CPacked_seqint::IsTruncatedStop(ESeqLocExtremes ext) const
 {
     const CSeq_interval* ival = NULL;
     if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Get().front() : Get().back();
     }
     return (ival != NULL) ? ival->IsTruncatedStop(ext) : false;
@@ -149,7 +149,7 @@ void CPacked_seqint::SetTruncatedStart(bool val, ESeqLocExtremes ext)
 {
     CSeq_interval* ival = NULL;
     if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Set().back() : Set().front();
     }
     if (ival != NULL) {
@@ -162,7 +162,7 @@ void CPacked_seqint::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 {
     CSeq_interval* ival = NULL;
     if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Biological) ?
             Set().front() : Set().back();
     }
     if (ival != NULL) {
@@ -223,7 +223,7 @@ TSeqPos CPacked_seqint::GetStart(ESeqLocExtremes ext) const
         return kInvalidSeqPos;
     }
     if (IsReverseStrand()) {
-        return (ext == eExtreme_Positional) ? Get().back()->GetFrom() :
+        return (ext == eExtreme_Biological) ? Get().back()->GetFrom() :
             Get().front()->GetTo(); 
     } else {
         return Get().front()->GetFrom();
@@ -237,7 +237,7 @@ TSeqPos CPacked_seqint::GetStop(ESeqLocExtremes ext) const
         return kInvalidSeqPos;
     }
     if (IsReverseStrand()) {
-        return (ext == eExtreme_Positional) ? Get().front()->GetTo() :
+        return (ext == eExtreme_Biological) ? Get().front()->GetTo() :
             Get().back()->GetFrom(); 
     } else {
         return Get().back()->GetTo();
