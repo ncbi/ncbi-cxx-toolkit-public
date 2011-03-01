@@ -235,7 +235,7 @@ CAutoEnvironmentVariable::~CAutoEnvironmentVariable()
 //  CEnvironmentCleaner::
 
 
-CEnvironmentCleaner::CEnvironmentCleaner(const char* s ...)
+CEnvironmentCleaner::CEnvironmentCleaner(const char* s, ...)
 {
     if (s != NULL) {
         Clean(s);

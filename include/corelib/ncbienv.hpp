@@ -205,7 +205,7 @@ class NCBI_XNCBI_EXPORT CEnvironmentCleaner
 public:
     /// Immediately clean some settings, to be passed in as a NULL-terminated
     /// sequence of C strings.
-    CEnvironmentCleaner(const char* s = NULL ...);
+    CEnvironmentCleaner(const char* s = NULL, ...);
 
     /// Clean the specified setting.
     void Clean(const string& name);
