@@ -197,20 +197,30 @@ typedef struct TRIGGER_tag* TRIGGER;
  *
  * If you are using this API in a multi-threaded application, and there is
  * more than one thread using this API, it is safe to call SOCK_InitializeAPI()
- * explicitly in the beginning of your main thread, before you run any other
- * threads, and to call SOCK_ShutdownAPI() after all threads are exited.
+ * explicitly at the beginning of your main thread, before you run any other
+ * threads, and to call SOCK_ShutdownAPI() after all threads have exited.
  *
  * As soon as the API is initialized it becomes relatively MT-safe, however
  * you still must not operate on same LSOCK or SOCK objects from different
- * threads simultaneously.
+ * threads simultaneously.  Any entry point of this API will attempt to
+ * initialize the API implicitly if that has not yet been previously done.
+ * However, the implicit initialization gets disabled by SOCK_ShutdownAPI()
+ * (explicit re-init with SOCK_InitializeAPI() is always allowed).
  *
  * A MUCH BETTER WAY of dealing with this issue is to provide your own MT
- * locking callback (see CORE_SetLOCK in "ncbi_core.h"). This will also
- * guarantee the proper MT protection should some other SOCK functions
- * start to access any static data in the future.
+ * locking callback (see CORE_SetLOCK() in "ncbi_core.h").  This will also
+ * ensure proper MT protection should some SOCK functions start accessing
+ * any intrinsic static data (such as in case of SSL).
+ *
+ * The MT lock as well as other library-wide settings are also provided
+ * (in most cases automatically) by CONNECT_Init() API:  for C Toolkit it gets
+ * always called before [Nlm_]Main();  in C++ Toolkit it gets called by
+ * most of C++ classes' ctors, except for sockets;  so if your application
+ * does not use any C++ classes besides sockets, it has to set CORE_LOCK
+ * explicitly, as described above.
  *
  * @sa
- *  CORE_SetLOCK
+ *  CORE_SetLOCK, CONNECT_Init
  */
 
 
