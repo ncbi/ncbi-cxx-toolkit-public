@@ -405,20 +405,23 @@ TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
     
     // this loop groups all matches to one target sequences in one vector element.
     TSeqAlignVector temp;
-    ITERATE(CSeq_align_set::Tdata, it, al->Get()) {
-        // index 0 = query, index 1 = subject
-        const int query_index = 0;
-        CConstRef<CSeq_id> this_id( & (*it)->GetSeq_id(query_index) );
-        
-        if (current_id.Empty() || (CSeq_id::e_YES != this_id->Compare(*current_id))) {
-            if (cur_set.NotEmpty()) {
-                temp.push_back(cur_set);
+
+    if (al.NotEmpty())
+    {
+    	   ITERATE(CSeq_align_set::Tdata, it, al->Get()) {
+       	   // index 0 = query, index 1 = subject
+       	   const int query_index = 0;
+       	   CConstRef<CSeq_id> this_id( & (*it)->GetSeq_id(query_index) );
+       
+      	    if (current_id.Empty() || (CSeq_id::e_YES != this_id->Compare(*current_id))) {
+              if (cur_set.NotEmpty()) {
+                  temp.push_back(cur_set);
+              }
+              cur_set.Reset(new CSeq_align_set);
+              current_id = this_id;
             }
-            cur_set.Reset(new CSeq_align_set);
-            current_id = this_id;
-        }
-        
-        cur_set->Set().push_back(*it);
+      	    cur_set->Set().push_back(*it);
+          }
     }
     
     if (cur_set.NotEmpty()) {
