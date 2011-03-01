@@ -71,6 +71,8 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithDB)
     ifstream in(fname);
     CRemoteBlast rb(in);
 
+    rb.LoadFromArchive();
+
     CRef<objects::CBlast4_queries> queries = rb.GetQueries();
  
     CConstRef<objects::CBioseq_set> bss_ref(&(queries->SetBioseq_set()));
@@ -104,6 +106,8 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithBl2seq)
     const char* fname = "data/archive.asn";
     ifstream in(fname);
     CRemoteBlast rb(in);
+
+    rb.LoadFromArchive();
 
     CRef<objects::CBlast4_queries> queries = rb.GetQueries();
  

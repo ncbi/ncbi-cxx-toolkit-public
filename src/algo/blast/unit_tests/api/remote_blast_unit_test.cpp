@@ -1324,6 +1324,7 @@ BOOST_AUTO_TEST_CASE(ReadArchiveFormat)
     const char* fname = "data/archive.asn";
     ifstream in(fname);
     CRemoteBlast rb(in);
+    rb.LoadFromArchive();
     BOOST_REQUIRE(rb.GetProgram() == "blastn");
     BOOST_REQUIRE(rb.GetService() == "megablast");
     BOOST_REQUIRE(rb.GetCreatedBy() == "tom");
@@ -1348,6 +1349,7 @@ BOOST_AUTO_TEST_CASE(ReadBl2seqArchiveFormat)
     const char* fname = "data/archive.bl2seq.asn";
     ifstream in(fname);
     CRemoteBlast rb(in);
+    rb.LoadFromArchive();
     BOOST_REQUIRE(rb.GetProgram() == "blastn");
     BOOST_REQUIRE(rb.GetService() == "megablast");
     BOOST_REQUIRE(rb.GetCreatedBy() == "tom");
@@ -1358,6 +1360,7 @@ BOOST_AUTO_TEST_CASE(ReadArchiveFormatMultipleQueries)
     const char* fname = "data/archive.multiple_queries.asn";
     ifstream in(fname);
     CRemoteBlast rb(in);
+    rb.LoadFromArchive();
     BOOST_REQUIRE(rb.GetProgram() == "blastn");
     BOOST_REQUIRE(rb.GetService() == "plain");
     BOOST_REQUIRE(rb.GetCreatedBy() == "tom");
