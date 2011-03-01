@@ -128,7 +128,7 @@
  */
 #if defined(NCBI_OS_MSWIN)
 
-#  define SOCK_GHB_THREAD_SAFE  1 /*gethostby...()*/
+#  define SOCK_GHB_THREAD_SAFE  1  /* for gethostby...() */
 #  define SOCK_INVALID          INVALID_SOCKET
 #  define SOCK_ERRNO            WSAGetLastError()
 #  define SOCK_NFDS(s)          0
@@ -161,7 +161,7 @@
 #  undef sun
 #endif
 
-#define SESSION_INVALID       ((void*)(-1L))
+#define SESSION_INVALID         ((void*)(-1L))
 
 #if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
 typedef socklen_t  SOCK_socklen_t;
@@ -170,13 +170,13 @@ typedef int	       SOCK_socklen_t;
 #endif /*HAVE_SOCKLEN_T || _SOCKLEN_T*/
 
 
-#define MAXIDLEN              80
+#define MAXIDLEN                80
 #if MAXIDLEN > SOCK_BUF_CHUNK_SIZE
 #  error "SOCK_BUF_CHUNK_SIZE too small"
 #endif /*MAXIDLEN<SOCK_BUF_CHUNK_SIZE*/
 
 
-#define SOCK_LOOPBACK         (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
+#define SOCK_LOOPBACK           (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
 
 
 /******************************************************************************
