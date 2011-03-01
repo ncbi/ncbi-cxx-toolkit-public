@@ -73,7 +73,7 @@ public:
     CTempString(void);
     CTempString(const char* str);
     CTempString(const char* str, size_type len);
-    /// Use CTempString(const char* str, size_type len) instead
+    /// Use CTempString(const char* str + pos, size_type len - pos) instead
     NCBI_DEPRECATED_CTOR(CTempString(const char* str, size_type pos, size_type len));
 
     CTempString(const string& str);
