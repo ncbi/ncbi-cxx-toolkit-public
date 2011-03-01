@@ -84,7 +84,7 @@ static void s_Interrupt(int /*signo*/)
     s_Signaled = true;
 }
 }
-#endif // NCBI_OS_MSWIN
+#endif // NCBI_OS
 
 
 class CDownloadCallbackData {
@@ -631,7 +631,7 @@ int main(int argc, const char* argv[])
     signal(SIGINT,  s_Interrupt);
     signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
-#endif // NCBI_OS_MSWIN
+#endif // NCBI_OS
 
     // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear
     _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
