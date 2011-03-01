@@ -51,6 +51,8 @@
 #include "psiblast_aux_priv.hpp"    // For CPsiBlastValidate::Pssm()
 #include <util/format_guess.hpp>    // for CFormatGuess
 #include <serial/objistrxml.hpp>    // for CObjectIStreamXml
+#include <serial/objistrasnb.hpp>    // for CObjectIStreamAsnBinary
+#include <serial/objistrasn.hpp>    // for CObjectIStreamAsn
 #include <algo/blast/api/objmgr_query_data.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -397,14 +399,12 @@ TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
     CRef<CSeq_align_set> al = GetAlignments();
     
     TSeqAlignVector rv;
-    
-    if (al.Empty() || al->Get().empty()) {
-        return rv;
-    }
-    
+
     CRef<CSeq_align_set> cur_set;
     CConstRef<CSeq_id> current_id;
     
+    // this loop groups all matches to one target sequences in one vector element.
+    TSeqAlignVector temp;
     ITERATE(CSeq_align_set::Tdata, it, al->Get()) {
         // index 0 = query, index 1 = subject
         const int query_index = 0;
@@ -412,7 +412,7 @@ TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
         
         if (current_id.Empty() || (CSeq_id::e_YES != this_id->Compare(*current_id))) {
             if (cur_set.NotEmpty()) {
-                rv.push_back(cur_set);
+                temp.push_back(cur_set);
             }
             cur_set.Reset(new CSeq_align_set);
             current_id = this_id;
@@ -422,7 +422,36 @@ TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
     }
     
     if (cur_set.NotEmpty()) {
-        rv.push_back(cur_set);
+        temp.push_back(cur_set);
+    }
+
+    CSearchResultSet::TQueryIdVector query_ids;
+    x_ExtractQueryIds(query_ids);
+
+    // Fill out the return value, with empty Seq-align-set if not match for a query.
+    int sap_index = 0;
+    ITERATE(CSearchResultSet::TQueryIdVector, it,  query_ids) {
+        const int query_index = 0;
+        if (sap_index < temp.size())
+        {
+             list< CRef< CSeq_align > > sal = temp[sap_index]->Get();
+             CConstRef<CSeq_id> this_id( & (sal.front()->GetSeq_id(query_index) ));
+             if (CSeq_id::e_YES == (*it)->Compare(sal.front()->GetSeq_id(query_index) ))
+             {
+                  rv.push_back(temp[sap_index]);
+                  sap_index++;
+             }
+             else
+             {
+                  cur_set.Reset(new CSeq_align_set);
+                  rv.push_back(cur_set);
+             }
+        }
+        else
+        {
+             cur_set.Reset(new CSeq_align_set);
+             rv.push_back(cur_set);
+        }
     }
     
     return rv;
@@ -500,7 +529,7 @@ CRemoteBlast::GetMasks(void)
         }
     }
 
-    _ASSERT(query_index == GetQueries()->GetNumQueries() - 1);
+    // _ASSERT(query_index == GetQueries()->GetNumQueries() - 1);
 
     return retval;
 }
@@ -756,22 +785,29 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
 void CRemoteBlast::x_Init(CNcbiIstream& f)
 {
       
-      m_Archive.Reset(new CBlast4_archive);
-      switch (ncbi::CFormatGuess().Format(f)) {
-         case ncbi::CFormatGuess::eTextASN:
-            f >> ncbi::MSerial_AsnText >> *m_Archive;
+      // m_Archive.Reset(new CBlast4_archive);
+      CFormatGuess::EFormat fmt_type = ncbi::CFormatGuess().Format(f);
+      switch (fmt_type) {
+        case CFormatGuess::eBinaryASN:
+            m_ObjectStream.reset(new CObjectIStreamAsnBinary(f));
             break;
-         case ncbi::CFormatGuess::eBinaryASN:
-            f >> ncbi::MSerial_AsnBinary >> *m_Archive;
+
+        case CFormatGuess::eTextASN:
+            m_ObjectStream.reset(new CObjectIStreamAsn(f));
             break;
-         case ncbi::CFormatGuess::eXml:
-            f >> ncbi::MSerial_Xml >> *m_Archive;
+
+/* What's up here?
+        case CFormatGuess::eXml:
+            m_ObjectStream.reset(new CObjectIStreamXml(f));
             break;
+*/
+
          default:
             NCBI_THROW(CBlastException, eInvalidArgument,
                        "BLAST archive must be one of text ASN.1, binary ASN.1 or XML.");
       }     
       m_ReadFile = true;
+      m_ObjectType = fmt_type;
       m_ErrIgn     = 5;
       m_Verbose    = eSilent;
       m_DbFilteringAlgorithmId = -1;
@@ -1499,6 +1535,19 @@ CRemoteBlast::x_GetRequestInfo()
     
 }
 
+bool 
+CRemoteBlast::LoadFromArchive()
+{
+      if (m_ObjectStream->EndOfData())
+         return false;
+
+      m_Archive.Reset(new CBlast4_archive);
+      *m_ObjectStream >> *m_Archive;
+      x_GetRequestInfoFromFile(); // update info.
+
+      return true;
+}
+
 
 void
 CRemoteBlast::x_GetRequestInfoFromFile()
@@ -1919,18 +1968,8 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
     }
 
     CSearchResultSet::TQueryIdVector query_ids;
-    int i = 0;
-    ITERATE(TSeqAlignVector, itr, alignments) {
-        CRef<CSeq_align> first_aln = (*itr)->Get().front();
-        query_ids.push_back(CConstRef<CSeq_id>(&first_aln->GetSeq_id(0)));
-        if (eDebug == m_Verbose) {
-            NcbiCout << "Query # " << ++i << ": '"
-                     << query_ids.back()->AsFastaString() << "'" << endl 
-                     << MSerial_AsnText << **itr << endl;
-        }
-    }
-    
-    
+    x_ExtractQueryIds(query_ids);
+
     if (alignments.empty()) {
         // this is required by the CSearchResultSet ctor
         alignments.resize(1);    

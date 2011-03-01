@@ -38,6 +38,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbistre.hpp>
 #include <serial/iterator.hpp>
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/api/remote_blast.hpp>
@@ -326,8 +327,12 @@ int CBlastFormatterApp::Run(void)
 
         if (kRid == "")
         {
-    		m_RmtBlast.Reset(new CRemoteBlast(args["archive"].AsInputFile()));
-            	status = PrintFormattedOutput();
+                CNcbiIstream& istr = args["archive"].AsInputFile();
+    		m_RmtBlast.Reset(new CRemoteBlast(istr));
+
+                while (m_RmtBlast->LoadFromArchive())
+            	    status = PrintFormattedOutput();
+
     		return status;
         }
 

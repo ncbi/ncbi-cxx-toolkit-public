@@ -38,6 +38,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <objects/blast/blast__.hpp>
 #include <objects/blast/names.hpp>
+#include <util/format_guess.hpp> 
 
 /** @addtogroup AlgoBlast
  *
@@ -99,6 +100,8 @@ public:
     /// The file may be text or binary ASN.1 or XML. type is automatically detected.
     ///@param f istream to archive file
     CRemoteBlast(CNcbiIstream& f);
+
+    CRemoteBlast(CObjectIStream& stream);
     
     /// Create a search using any kind of options handle.
     CRemoteBlast(CBlastOptionsHandle * any_opts);
@@ -446,6 +449,9 @@ public:
     string GetClientId() const { return m_ClientId; }
     /// Sets the client ID used by this object to send requests
     void SetClientId(const string& client_id) { m_ClientId = client_id; }
+
+    /// Loads next chunk of archive from file.
+    bool LoadFromArchive();
     
 private:
 
@@ -666,6 +672,12 @@ private:
 
     /// true if a CBlast4_archive should be read in.
     bool m_ReadFile;
+
+    /// Use to ready CBlast4_archive
+    auto_ptr<CObjectIStream> m_ObjectStream;
+
+    /// Type of object CBlast4_archive as determined by CFormatGuess
+    CFormatGuess::EFormat m_ObjectType;
     
     /// List of errors encountered.
     vector<string> m_Errs;

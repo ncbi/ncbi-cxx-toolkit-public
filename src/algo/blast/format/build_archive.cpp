@@ -156,7 +156,8 @@ BlastBuildArchive(blast::IQueryFactory& queries,
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
         CRef<CRemoteBlast> rmt_blast(new CRemoteBlast(iquery_ref, options_ref, search_db));
 
-        return s_BuildArchiveAll(rmt_blast, options_handle, results);
+        CRef<objects::CBlast4_archive> archive = s_BuildArchiveAll(rmt_blast, options_handle, results);
+        return archive;
 
 }
 
