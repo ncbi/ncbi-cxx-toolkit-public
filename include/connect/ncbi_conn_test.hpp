@@ -74,7 +74,15 @@ public:
     ///   no output is produced if "out" is NULL.
     ///
     CConnTest(const STimeout* timeout = kDefaultTimeout,
-              CNcbiOstream* os = 0, SIZE_TYPE linelen = 72);
+              CNcbiOstream* output = 0, SIZE_TYPE width = 72);
+
+    void     SetWidth(SIZE_TYPE width = 72)
+    { m_Width = width; }
+
+    void     SetOutput(CNcbiOstream* output = 0)
+    { m_Output = output; }
+
+    void     SetTimeout(const STimeout* timeout = kDefaultTimeout);
 
     virtual ~CConnTest() { /*nothing*/ }
 
@@ -101,6 +109,9 @@ public:
     /// making any assumption on the contents of "*reason".
     ///
     virtual EIO_Status Execute(EStage& stage, string* reason = 0);
+
+    ///
+    virtual void       Cancel(void);
 
 protected:
 
@@ -200,8 +211,8 @@ protected:
 
     /// As supplied in constructor
     const STimeout*       m_Timeout;
-    SIZE_TYPE             m_Linelen;
-    CNcbiOstream*         m_Out;
+    CNcbiOstream*         m_Output;
+    SIZE_TYPE             m_Width;
 
     /// Certain properties of communication as determined by configuration
     bool                  m_HttpProxy;
@@ -216,6 +227,8 @@ protected:
     bool                  m_End;
 
 private:
+    CConn_IOStream*       m_IO;
+    volatile bool         m_Canceled;
     string                m_CheckPoint;
     STimeout              m_TimeoutStorage;
 

@@ -36,17 +36,19 @@
 #include <corelib/ncbifile.hpp>
 #ifdef NCBI_OS_MSWIN
 #  include <corelib/ncbi_system.hpp>
-#endif //NCBI_OS_MSWIN
+#endif // NCBI_OS_MSWIN
 #include <corelib/rwstream.hpp>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <util/multi_writer.hpp>
-#ifdef NCBI_OS_MSWIN
-#  include <conio.h>
-#endif //NCBI_OS_MSWIN
 #include <iomanip>
 #include <math.h>
+#if   defined(NCBI_OS_MSWIN)
+#  include <conio.h>
+#elif defined(NCBI_OS_UNIX)
+#  include <signal.h>
+#endif // NCBI_OS
 
 
 #define PAGE_WIDTH  72
@@ -77,12 +79,52 @@ class CTest : public CNcbiApplication
 public:
     CTest(CNcbiOstream& log);
 
-    virtual void Init(void);
-    virtual int  Run (void);
+    virtual void Init  (void);
+    virtual int  Run   (void);
+
+    static  void Cancel(void);
+
+protected:
+    static CConnTest m_Test;
 
 private:
     CWStream m_Tee;
 };
+
+
+CConnTest CTest::m_Test;
+
+
+void CTest::Cancel(void)
+{
+    m_Test.Cancel();
+}
+
+
+#if   defined(NCBI_OS_MSWIN)
+static BOOL WINAPI s_Interrupt(DWORD type)
+{
+	switch (type) {
+	case CTRL_C_EVENT:
+	case CTRL_BREAK_EVENT:
+        CTest::Cancel();
+		return TRUE;  // handled
+	case CTRL_CLOSE_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+	default:
+		break;
+	}
+	return FALSE;  // unhandled
+}
+#elif defined(NCBI_OS_UNIX)
+extern "C" {
+static void s_Interrupt(int /*signo*/)
+{
+    CTest::Cancel();
+}
+}
+#endif // NCBI_OS_
 
 
 CTest::CTest(CNcbiOstream& log)
@@ -104,7 +146,7 @@ void CTest::Init(void)
                   "Do not pause at the end"
 #ifndef NCBI_OS_MSWIN
                   " (MS-WIN only, no effect on this platform)"
-#endif //!NCBI_OS_MSWIN
+#endif // !NCBI_OS_MSWIN
                   );
     args->AddExtra(0/*no mandatory*/, 1/*single timeout argument allowed*/,
                    "Timeout", CArgDescriptions::eDouble);
@@ -141,10 +183,14 @@ int CTest::Run(void)
     tmo.sec  = (unsigned int)  timeout;
     tmo.usec = (unsigned int)((timeout - tmo.sec) * 1000000.0);
 
-    CConnTest test(&tmo, &m_Tee, PAGE_WIDTH);
+    m_Test.SetTimeout(&tmo);
+    m_Test.SetOutput(&m_Tee);
+    m_Test.SetWidth(PAGE_WIDTH);
 
     CConnTest::EStage everything = CConnTest::eStatefulService;
-    EIO_Status status = test.Execute(everything);
+    EIO_Status status = m_Test.Execute(everything);
+
+    m_Test.SetOutput(0);
 
     if (status != eIO_Success) {
         list<string> msg;
@@ -170,7 +216,7 @@ int CTest::Run(void)
 #ifdef NCBI_OS_MSWIN
     if (args["nopause"].HasValue())
         retval = ~retval;
-#endif //NCBI_OS_MSWIN
+#endif // NCBI_OS_MSWIN
 
     CORE_SetREG(0);
     return retval;
@@ -193,6 +239,14 @@ int main(int argc, const char* argv[])
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+
+#if   defined(NCBI_OS_MSWIN)
+	SetConsoleCtrlHandler(s_Interrupt, TRUE);
+#elif defined(NCBI_OS_UNIX)
+    signal(SIGINT,  s_Interrupt);
+    signal(SIGTERM, s_Interrupt);
+    signal(SIGQUIT, s_Interrupt);
+#endif // NCBI_OS
 
     int retval = 1/*failure*/;
 
@@ -237,7 +291,7 @@ int main(int argc, const char* argv[])
             SleepMilliSec(500);
         }
     }
-#endif //NCBI_OS_MSWIN
+#endif // NCBI_OS_MSWIN
 
     return retval;
 }
