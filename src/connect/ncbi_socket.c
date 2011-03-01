@@ -128,30 +128,31 @@
  */
 #if defined(NCBI_OS_MSWIN)
 
-#  define SOCK_INVALID        INVALID_SOCKET
-#  define SOCK_ERRNO          WSAGetLastError()
-#  define SOCK_NFDS(s)        0
-#  define SOCK_CLOSE(s)       closesocket(s)
-#  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
-#  define SOCK_STRERROR(err)  s_StrError(0, err)
-#  define SOCK_EVENTS         (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
+#  define SOCK_GHB_THREAD_SAFE  1 /*gethostby...()*/
+#  define SOCK_INVALID          INVALID_SOCKET
+#  define SOCK_ERRNO            WSAGetLastError()
+#  define SOCK_NFDS(s)          0
+#  define SOCK_CLOSE(s)         closesocket(s)
+#  define SOCK_SHUTDOWN(s,h)    shutdown(s,h)
+#  define SOCK_STRERROR(err)    s_StrError(0, err)
+#  define SOCK_EVENTS           (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
 /* NCBI_OS_MSWIN */
 
 #elif defined(NCBI_OS_UNIX)
 
-#  define SOCK_INVALID        (-1)
-#  define SOCK_ERRNO          errno
-#  define SOCK_NFDS(s)        (s + 1)
+#  define SOCK_INVALID          (-1)
+#  define SOCK_ERRNO            errno
+#  define SOCK_NFDS(s)          (s + 1)
 #  ifdef NCBI_OS_BEOS
-#    define SOCK_CLOSE(s)     closesocket(s)
+#    define SOCK_CLOSE(s)       closesocket(s)
 #  else
-#    define SOCK_CLOSE(s)     close(s)	
+#    define SOCK_CLOSE(s)       close(s)	
 #  endif /*NCBI_OS_BEOS*/
-#  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
+#  define SOCK_SHUTDOWN(s,h)    shutdown(s,h)
 #  ifndef   INADDR_NONE
-#    define INADDR_NONE       ((unsigned int)(-1))
+#    define INADDR_NONE         ((unsigned int)(-1))
 #  endif  /*INADDR_NONE*/
-#  define SOCK_STRERROR(err)  s_StrError(0, err)
+#  define SOCK_STRERROR(err)    s_StrError(0, err)
 /* NCBI_OS_UNIX */
 
 #endif /*NCBI_OS*/
@@ -1008,10 +1009,8 @@ extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
     static struct timeval s_NewTmo;
     static STimeout       s_OldTmo;
     const  STimeout*      retval;
-    CORE_LOCK_WRITE;
     retval          = s_tv2to(s_SelectTimeout, &s_OldTmo);
     s_SelectTimeout = s_to2tv(t,               &s_NewTmo);
-    CORE_UNLOCK;
     return retval;
 }
 
@@ -1145,7 +1144,9 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 #  else
         static const char suffix[] = "";
 
+#    ifndef SOCK_GHB_THREAD_SAFE
         CORE_LOCK_WRITE;
+#    endif /*!SOCK_GHB_THREAD_SAFE*/
         he = gethostbyname(hostname);
         x_error = h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYNAME_R*/
@@ -1159,7 +1160,9 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
         }
 
 #  ifndef HAVE_GETHOSTBYNAME_R
+#    ifndef SOCK_GHB_THREAD_SAFE
         CORE_UNLOCK;
+#    endif /*!SOCK_GHB_THREAD_SAFE*/
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
         if (!host  &&  log) {
@@ -1287,7 +1290,9 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 #  else /*HAVE_GETHOSTBYADDR_R*/
         static const char suffix[] = "";
 
+#    ifndef SOCK_GHB_THREAD_SAFE
         CORE_LOCK_WRITE;
+#    endif /*!SOCK_GHB_THREAD_SAFE*/
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
         x_error = h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYADDR_R*/
@@ -1307,7 +1312,9 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
         }
 
 #  ifndef HAVE_GETHOSTBYADDR_R
+#    ifndef SOCK_GHB_THREAD_SAFE
         CORE_UNLOCK;
+#    endif /*!SOCK_GHB_THREAD_SAFE*/
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!name  &&  log) {
