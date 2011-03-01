@@ -197,6 +197,7 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
                                 CSeqDB_BitSet::eAllSet);
             filter->IntersectWith(r2, true);
         } else if (mask.GetType() == CSeqDB_AliasMask::eMemBit) {
+            // TODO, adding vol-specific OR and AND
             vol.Vol()->SetMemBit(mask.GetMemBit());
             // No filter->IntersectWith here since
             // MEMBIT can not be done at OID level, therefore,
@@ -214,20 +215,21 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
         
         CRef<CSeqDB_BitSet> f;
         CRef<CSeqDBGiList> idlist;
-        bool use_tis = false;
+        CSeqDBGiListSet::EGiListType list_type = CSeqDBGiListSet::eGiList;
         
         switch(mask.GetType()) {
         case CSeqDB_AliasMask::eOidList:
             f = x_GetOidMask(mask.GetPath(), vol_start, vol_end, locked);
             break;
             
+        // TODO case eSiList
         case CSeqDB_AliasMask::eTiList:
-            use_tis = true;
+            list_type = CSeqDBGiListSet::eTiList;
             
         case CSeqDB_AliasMask::eGiList:
             idlist = gis.GetNodeIdList(mask.GetPath(),
                                        vol.Vol(),
-                                       use_tis,
+                                       list_type,
                                        locked);
             
             f = x_IdsToBitSet(*idlist, vol_start, vol_end);

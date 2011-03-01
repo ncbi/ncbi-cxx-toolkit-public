@@ -75,7 +75,7 @@ public:
 
 class CSeqDBNodeFileIdList : public CSeqDBGiList {
 public:
-    /// Build a GI or TI list from a memory mapped file.
+    /// Build a GI,TI, or SI list from a memory mapped file.
     ///
     /// Given an ID list file mapped into a region of memory, this
     /// class reads the GIs or TIs from the file.
@@ -84,13 +84,13 @@ public:
     ///   The memory management layer object. [in]
     /// @param fname
     ///   The filename of this ID list. [in]
-    /// @param use_tis
-    ///   Use trace IDs instead of GIs.
+    /// @param list_type
+    ///   The type of ID [in]
     /// @param locked
     ///   Lock holder object for this thread. [in]
     CSeqDBNodeFileIdList(CSeqDBAtlas       & atlas,
                          const CSeqDB_Path & fname,
-                         bool                use_tis,
+                         CSeqDBGiListSet::EGiListType list_type,
                          CSeqDBLockHold    & locked)
         : m_VectorMemory(atlas)
     {
@@ -105,10 +105,15 @@ public:
         try {
             bool in_order = false;
             
-            if (use_tis) {
-                SeqDB_ReadMemoryTiList(fbeginp, fendp, m_TisOids, & in_order);
-            } else {
+            switch(list_type) {
+            case CSeqDBGiListSet::eGiList:
                 SeqDB_ReadMemoryGiList(fbeginp, fendp, m_GisOids, & in_order);
+                break;
+            case CSeqDBGiListSet::eTiList:
+                SeqDB_ReadMemoryTiList(fbeginp, fendp, m_TisOids, & in_order);
+                break;
+            case CSeqDBGiListSet::eSiList:
+                SeqDB_ReadMemorySiList(fbeginp, fendp, m_SisOids, & in_order);
             }
             
             if (in_order) {
@@ -127,6 +132,7 @@ public:
              int(m_TisOids.size() * sizeof(m_TisOids[0])));
         
         atlas.RegisterExternal(m_VectorMemory, vector_size, locked);
+        // TODO m_VectorMemory for seqid_list
     }
     
     /// Destructor
@@ -201,7 +207,7 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
 CRef<CSeqDBGiList>
 CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
                                const CSeqDBVol   * volp,
-                               bool                use_tis,
+                               EGiListType         list_type,
                                CSeqDBLockHold    & locked)
 {
     // Note: possibly the atlas should have a method to add and
@@ -215,13 +221,14 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     // the same file for both should also produce an error when the
     // binary file is read, as the magic number is different.)
 
-    TNodeListMap& map_ref = use_tis ? m_TINodeListMap : m_GINodeListMap;
+    TNodeListMap& map_ref = (list_type == eGiList) ? m_GINodeListMap : 
+                            ((list_type == eTiList) ? m_TINodeListMap : m_SINodeListMap);
     CRef<CSeqDBGiList> gilist = map_ref[filename.GetPathS()];
     
     if (gilist.Empty()) {
         gilist.Reset(new CSeqDBNodeFileIdList(m_Atlas,
                                               filename,
-                                              use_tis,
+                                              list_type,
                                               locked));
         
         if (m_UserList.NotEmpty()) {

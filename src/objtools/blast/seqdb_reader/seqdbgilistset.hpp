@@ -56,6 +56,13 @@ public:
     /// Type used for a reference to a GI list.
     typedef CRef<CSeqDBNegativeList> TNegativeRef;
     
+    /// Gilist types
+    enum EGiListType {
+        eGiList,
+        eTiList,
+        eSiList
+    };
+
     /// Constructor
     ///
     /// This class encapsulates some of the behavior of the GI lists
@@ -104,15 +111,15 @@ public:
     ///   The filename of the GI list file.
     /// @param volp
     ///   The volume to which this GI list is applied.
-    /// @param use_tis
-    ///   The ID list contains TIs (otherwise GIs are assumed).
+    /// @param list_type
+    ///   The type of ID list
     /// @param locked
     ///   The lock holder object for this thread.
     /// @return
     ///   A reference to the specified GI list.
     TListRef GetNodeIdList(const CSeqDB_Path & filename,
                            const CSeqDBVol   * volp,
-                           bool                use_tis,
+                           EGiListType         list_type,
                            CSeqDBLockHold    & locked);
     
 private:
@@ -153,7 +160,7 @@ private:
     /// User-specified Negative GI list.
     TNegativeRef m_NegativeList;
     
-    /// Type used for maps of filenames to GI or TI lists.
+    /// Type used for maps of filenames to ID lists.
     typedef map<string, TListRef> TNodeListMap;
     
     /// Map of filenames to alias node specified GI lists.
@@ -161,6 +168,9 @@ private:
     
     /// Map of filenames to alias node specified TI lists.
     TNodeListMap m_TINodeListMap;
+
+    /// Map of filenames to alias node specified SI lists.
+    TNodeListMap m_SINodeListMap;
 };
 
 END_NCBI_SCOPE
