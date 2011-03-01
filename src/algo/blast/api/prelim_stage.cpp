@@ -160,7 +160,6 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
 
     // ... launch the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
-        printf("Launching thread...\n");
         (*thread)->Run();
     }
 
