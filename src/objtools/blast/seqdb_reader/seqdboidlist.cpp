@@ -215,23 +215,33 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
         
         CRef<CSeqDB_BitSet> f;
         CRef<CSeqDBGiList> idlist;
-        CSeqDBGiListSet::EGiListType list_type = CSeqDBGiListSet::eGiList;
         
         switch(mask.GetType()) {
         case CSeqDB_AliasMask::eOidList:
             f = x_GetOidMask(mask.GetPath(), vol_start, vol_end, locked);
             break;
             
-        // TODO case eSiList
+        case CSeqDB_AliasMask::eSiList:
+            idlist = gis.GetNodeIdList(mask.GetPath(),
+                                       vol.Vol(),
+                                       CSeqDBGiListSet::eSiList,
+                                       locked);
+            f = x_IdsToBitSet(*idlist, vol_start, vol_end);
+            break;
+            
         case CSeqDB_AliasMask::eTiList:
-            list_type = CSeqDBGiListSet::eTiList;
+            idlist = gis.GetNodeIdList(mask.GetPath(),
+                                       vol.Vol(),
+                                       CSeqDBGiListSet::eTiList,
+                                       locked);
+            f = x_IdsToBitSet(*idlist, vol_start, vol_end);
+            break;
             
         case CSeqDB_AliasMask::eGiList:
             idlist = gis.GetNodeIdList(mask.GetPath(),
                                        vol.Vol(),
-                                       list_type,
+                                       CSeqDBGiListSet::eGiList,
                                        locked);
-            
             f = x_IdsToBitSet(*idlist, vol_start, vol_end);
             break;
 
@@ -346,6 +356,7 @@ CSeqDBOIDList::x_IdsToBitSet(const CSeqDBGiList & gilist,
     
     int num_gis = gilist.GetNumGis();
     int num_tis = gilist.GetNumTis();
+    int num_sis = gilist.GetNumSis();
     int prev_oid = -1;
     
     for(int i = 0; i < num_gis; i++) {
@@ -361,6 +372,17 @@ CSeqDBOIDList::x_IdsToBitSet(const CSeqDBGiList & gilist,
     
     for(int i = 0; i < num_tis; i++) {
         int oid = gilist.GetTiOid(i).oid;
+        
+        if (oid != prev_oid) {
+            if ((oid >= oid_start) && (oid < oid_end)) {
+                bitset.SetBit(oid);
+            }
+            prev_oid = oid;
+        }
+    }
+    
+    for(int i = 0; i < num_sis; i++) {
+        int oid = gilist.GetSiOid(i).oid;
         
         if (oid != prev_oid) {
             if ((oid >= oid_start) && (oid < oid_end)) {

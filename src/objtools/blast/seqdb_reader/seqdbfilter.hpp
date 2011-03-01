@@ -54,6 +54,7 @@ public:
     enum EMaskType {
         eGiList,  ///< GI list.
         eTiList,  ///< TI list.
+        eSiList,  ///< SI list.
         eOidList, ///< OID list.
         eOidRange,///< OID Range [start, end).
         eMemBit   ///< MEMBIT filter.
@@ -102,6 +103,7 @@ public:
         switch(m_MaskType) {
         case eGiList:   p="eGiList";   break;
         case eTiList:   p="eTiList";   break;
+        case eSiList:   p="eSiList";   break;
         case eOidList:  p="eOidList";  break;
         case eOidRange: p="eOidRange";
             r = true;

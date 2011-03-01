@@ -1410,6 +1410,13 @@ public:
             return true;
         }
         
+        // Ditto for an attached SILIST.
+        
+        if (vars.find("SEQIDLIST") != vars.end()) {
+            m_NeedScan = true;
+            return true;
+        }
+        
         // If none of those conditions is met, traversal proceeds.
         return false;
     }
@@ -1748,6 +1755,7 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
     
     TVarList::iterator gil_iter   = m_Values.find(string("GILIST"));
     TVarList::iterator til_iter   = m_Values.find(string("TILIST"));
+    TVarList::iterator sil_iter   = m_Values.find(string("SEQIDLIST"));
     TVarList::iterator oid_iter   = m_Values.find(string("OIDLIST"));
     TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
     TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
@@ -1757,6 +1765,7 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
         if (oid_iter   != m_Values.end() ||
             gil_iter   != m_Values.end() ||
             til_iter   != m_Values.end() ||
+            sil_iter   != m_Values.end() ||
             f_oid_iter != m_Values.end() ||
             l_oid_iter != m_Values.end() ||
             mbit_iter  != m_Values.end()) {
@@ -1829,6 +1838,24 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
                 CSeqDB_Path lst_path(m_DBPath, lst);
                 
                 CRef<TMask> mask(new TMask(TMask::eTiList, lst_path));
+                m_NodeMasks.push_back(mask);
+            }
+
+            if (sil_iter != m_Values.end()) {
+                const string & silname = sil_iter->second;
+                
+                if (silname.find(" ") != silname.npos) {
+                    string msg =
+                        string("Alias file (") + m_DBPath.GetDirNameS() +
+                        ") has multiple SEQID lists (" + silname + ").";
+                    
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+                
+                CSeqDB_FileName lst(silname);
+                CSeqDB_Path lst_path(m_DBPath, lst);
+                
+                CRef<TMask> mask(new TMask(TMask::eSiList, lst_path));
                 m_NodeMasks.push_back(mask);
             }
 
