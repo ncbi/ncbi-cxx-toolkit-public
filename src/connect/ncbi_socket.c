@@ -836,6 +836,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
     CORE_TRACE("[SOCK::InitializeAPI]  Begin");
 
     CORE_LOCK_WRITE;
+
     if (s_Initialized) {
         CORE_UNLOCK;
         return s_Initialized < 0 ? eIO_NotSupported : eIO_Success;
@@ -863,6 +864,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
         int x_error = WSAStartup(MAKEWORD(1,1), &wsadata);
         if (x_error) {
             const char* strerr;
+
             CORE_UNLOCK;
             strerr = SOCK_STRERROR(x_error);
             CORE_LOG_ERRNO_EXX(3, eLOG_Error,
@@ -931,10 +933,12 @@ static EIO_Status s_InitAPI(int secure)
         SOCKSSL ssl = s_SSLSetup ? s_SSLSetup() : 0;
         if (ssl  &&  ssl->Init) {
             CORE_LOCK_WRITE;
+
             if (!s_SSL) {
                 s_SSL = ((status = ssl->Init(s_Recv, s_Send)) == eIO_Success
                          ? ssl : &kNoSSL);
             }
+
             CORE_UNLOCK;
         } else
             status = eIO_NotSupported;
@@ -951,6 +955,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
     CORE_TRACE("[SOCK::ShutdownAPI]  Begin");
 
     CORE_LOCK_WRITE;
+
     if (s_Initialized <= 0) {
         CORE_UNLOCK;
         return eIO_Success;
@@ -1147,6 +1152,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 #    ifndef SOCK_GHB_THREAD_SAFE
         CORE_LOCK_WRITE;
 #    endif /*!SOCK_GHB_THREAD_SAFE*/
+
         he = gethostbyname(hostname);
         x_error = h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYNAME_R*/
@@ -1293,6 +1299,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 #    ifndef SOCK_GHB_THREAD_SAFE
         CORE_LOCK_WRITE;
 #    endif /*!SOCK_GHB_THREAD_SAFE*/
+
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
         x_error = h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYADDR_R*/
