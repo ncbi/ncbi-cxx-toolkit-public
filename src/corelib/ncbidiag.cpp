@@ -2483,6 +2483,7 @@ CDiagBuffer::~CDiagBuffer(void)
 void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
     bool is_console = (mess.m_Flags & eDPF_IsConsole);
+    bool applog = (mess.m_Flags & eDPF_AppLog);
     if ( CDiagBuffer::sm_Handler ) {
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_Handler ) {
@@ -2492,7 +2493,8 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             CDiagContext& ctx = GetDiagContext();
             mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
                 0 : diag_buf.m_PostPrefix.c_str();
-            if (!is_console  &&  !SeverityPrintable(mess.m_Severity) ) {
+            if (!applog  &&  !is_console  &&
+                !SeverityPrintable(mess.m_Severity) ) {
                 return;
             }
             if (is_console) {
