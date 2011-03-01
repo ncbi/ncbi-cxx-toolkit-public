@@ -37,6 +37,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <objects/misc/error_codes.hpp>
 #include <algorithm>
@@ -3580,6 +3581,60 @@ CRef<CSeq_graph> CSeq_loc_Mapper_Base::Map(const CSeq_graph& src_graph)
 
     m_GraphRanges.Reset();
     return ret;
+}
+
+
+void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot)
+{
+    switch (annot.GetData().Which()) {
+    case CSeq_annot::C_Data::e_Ftable:
+        {
+            CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
+            NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, it, ftable) {
+                CSeq_feat& feat = **it;
+                CRef<CSeq_loc> loc;
+                loc = Map(feat.GetLocation());
+                if ( loc ) {
+                    feat.SetLocation(*loc);
+                }
+                if ( feat.IsSetProduct() ) {
+                    loc = Map(feat.GetProduct());
+                    if ( loc ) {
+                        feat.SetProduct(*loc);
+                    }
+                }
+            }
+            break;
+        }
+    case CSeq_annot::C_Data::e_Align:
+        {
+            CSeq_annot::C_Data::TAlign& aligns = annot.SetData().SetAlign();
+            NON_CONST_ITERATE(CSeq_annot::C_Data::TAlign, it, aligns) {
+                CRef<CSeq_align> align = Map(**it);
+                if ( align ) {
+                    *it = align;
+                }
+            }
+            break;
+        }
+    case CSeq_annot::C_Data::e_Graph:
+        {
+            CSeq_annot::C_Data::TGraph& graphs = annot.SetData().SetGraph();
+            NON_CONST_ITERATE(CSeq_annot::C_Data::TGraph, it, graphs) {
+                CRef<CSeq_graph> graph = Map(**it);
+                if ( graph ) {
+                    *it = graph;
+                }
+            }
+            break;
+        }
+    default:
+        {
+            ERR_POST_X(30, Warning << "Unsupported CSeq_annot type: " <<
+                annot.GetData().Which());
+            return;
+        }
+    }
 }
 
 

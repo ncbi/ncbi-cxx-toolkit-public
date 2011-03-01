@@ -417,6 +417,10 @@ public:
     /// The data may be truncated to match the new location.
     CRef<CSeq_graph> Map(const CSeq_graph& src_graph);
 
+    /// Map each object from the Seq-annot and replace the original
+    /// with the mapped one.
+    void Map(CSeq_annot& annot);
+
     /// Check if the last mapping resulted in partial location
     /// (not all ranges from the original location could be mapped
     /// to the target).
