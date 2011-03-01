@@ -652,7 +652,7 @@ private:
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
     Uint8                        m_TotalMemoryLimit;
-    time_t                       m_TotalTimeLimit;
+    unsigned                     m_TotalTimeLimit;
     time_t                       m_StartupTime;
 
 
