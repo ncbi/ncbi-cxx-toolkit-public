@@ -36,6 +36,8 @@
 
 #include <serial/iterator.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
+
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>

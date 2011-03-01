@@ -34,8 +34,9 @@
 /// @file create_defline.hpp
 /// API (CDeflineGenerator) for computing sequences' titles ("definitions").
 
-#include <objects/misc/sequence_macros.hpp>
 #include <util/strsearch.hpp>
+#include <objects/seq/MolInfo.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
@@ -185,9 +186,9 @@ private:
     int m_PDBChain;
 
     /// molinfo fields
-    TMOLINFO_BIOMOL m_MIBiomol;
-    TMOLINFO_TECH m_MITech;
-    TMOLINFO_COMPLETENESS m_MICompleteness;
+    CMolInfo::TBiomol m_MIBiomol;
+    CMolInfo::TTech m_MITech;
+    CMolInfo::TCompleteness m_MICompleteness;
 
     bool m_HTGTech;
     bool m_HTGSUnfinished;
@@ -210,7 +211,7 @@ private:
 
     /// biosource fields
     string m_Taxname;
-    TBIOSOURCE_GENOME m_Genome;
+    CBioSource::TGenome m_Genome;
 
     /// subsource fields
     string m_Chromosome;
