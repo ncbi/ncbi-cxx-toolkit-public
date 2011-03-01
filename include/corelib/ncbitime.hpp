@@ -1836,6 +1836,9 @@ CTime operator+ (const CTimeSpan& ts, const CTime& t)
     return tmp;
 }
 
+#ifdef CurrentTime // from <X11/X.h>, perhaps
+#  undef CurrentTime
+#endif
 // Get current time (in local or GMT format)
 inline
 CTime CurrentTime(
