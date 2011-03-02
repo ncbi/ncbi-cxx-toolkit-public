@@ -803,23 +803,24 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
     // Check if the sequence is circular
     TSeqPos circular_length = kInvalidSeqPos;
+    const CSeq_id* circular_id = NULL;
     if ( bioseq_handle ) {
         if ( bioseq_handle.IsSetInst_Topology() &&
              bioseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
             circular_length = bioseq_handle.GetBioseqLength();
+            circular_id = bioseq_handle.GetSeqId().GetPointer();
         }
     }
     else {
         try {
-            const CSeq_id* single_id = 0;
             try {
-                loc.CheckId(single_id);
+                loc.CheckId(circular_id);
             }
             catch (exception&) {
-                single_id = 0;
+                circular_id = 0;
             }
-            if ( single_id ) {
-                CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(*single_id);
+            if ( circular_id ) {
+                CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(*circular_id);
                 if ( bioseq_handle && bioseq_handle.IsSetInst_Topology() &&
                      bioseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
                     circular_length = bioseq_handle.GetBioseqLength();
@@ -831,6 +832,35 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
         }
     }
 
+    CRef<CSeq_loc> circular_loc;
+    if (circular_id  &&  range.GetFrom() > range.GetTo()) {
+        // Circular bioseq, the location crosses zero. Can't use a single
+        // total range.
+        circular_loc.Reset(new CSeq_loc);
+        CRef<CSeq_interval> sub_loc(new CSeq_interval);
+        sub_loc->SetId().Assign(*circular_id);
+        sub_loc->SetFrom(0);
+        sub_loc->SetTo(range.GetTo());
+        if ( loc.IsSetStrand() ) {
+            sub_loc->SetStrand(loc.GetStrand());
+        }
+        // First interval - no matter front or back
+        circular_loc->SetPacked_int().Set().push_back(sub_loc);
+        sub_loc.Reset(new CSeq_interval);
+        sub_loc->SetId().Assign(*circular_id);
+        sub_loc->SetFrom(range.GetFrom());
+        sub_loc->SetTo(circular_length == kInvalidSeqPos
+            ? kInvalidSeqPos : circular_length - 1);
+        if ( loc.IsSetStrand() ) {
+            sub_loc->SetStrand(loc.GetStrand());
+        }
+        if ( IsReverse(strand) ) {
+            circular_loc->SetPacked_int().Set().push_front(sub_loc);
+        }
+        else {
+            circular_loc->SetPacked_int().Set().push_back(sub_loc);
+        }
+    }
     try {
         SAnnotSelector sel;
         sel.SetFeatType(feat_type)
@@ -846,9 +876,13 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             plugin->setUpFeatureIterator( bioseq_handle, feat_it_ptr,
                 circular_length, range, loc, sel, scope, strand);
         } else {
-            if ( bioseq_handle ) {
+            if ( circular_loc ) {
+                feat_it_ptr.reset( new CFeat_CI(scope, *circular_loc, sel) );
+            }
+            else if ( bioseq_handle ) {
                 feat_it_ptr.reset( new CFeat_CI(bioseq_handle, range, strand, sel) );
-            } else {
+            }
+            else {
                 feat_it_ptr.reset( new CFeat_CI(scope, loc, sel) );
             }
         }
