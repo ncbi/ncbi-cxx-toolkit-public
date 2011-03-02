@@ -508,6 +508,49 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 }
 
 
+int CSeq_loc::Compare(const CSeq_loc& loc) const
+{
+    // check first that Seq-ids are the same
+    const CSeq_id* id1 = GetId();
+    const CSeq_id* id2 = id1? loc.GetId(): 0;
+    if ( !id1 || !id2 ) {
+        NCBI_THROW(CException, eUnknown,
+                   "CSeq_loc::Compare(): "
+                   "cannot compare locations with several different seq-ids");
+    }
+    if ( !id1->Equals(*id2) ) {
+        NCBI_THROW(CException, eUnknown,
+                   "CSeq_loc::Compare(): "
+                   "cannot compare locations with different seq-ids");
+    }
+
+    TSeqPos from1 = GetStart(eExtreme_Positional);
+    TSeqPos to1 = GetStop(eExtreme_Positional);
+    TSeqPos from2 = loc.GetStart(eExtreme_Positional);
+    TSeqPos to2 = loc.GetStop(eExtreme_Positional);
+
+    // (from > to) means circular location.
+    // Any circular location is less than (before) non-circular one.
+    // If both are circular, compare them regular way.
+    bool circular1 = from1 > to1;
+    bool circular2 = from2 > to2;
+    if ( int diff = circular2 - circular1 ) {
+        return diff;
+    }
+
+    // smallest left extreme first
+    if ( from1 != from2 ) {
+        return from1 < from2? -1: 1;
+    }
+    // longest feature first
+    if ( to1 != to2 ) {
+        return to1 > to2? -1: 1;
+    }
+
+    return 0;
+}
+
+
 void CSeq_loc::PostRead(void) const
 {
     InvalidateCache();

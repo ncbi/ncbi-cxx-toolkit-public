@@ -583,24 +583,6 @@ DEFINE_NCBI_SEQ_LOC_SETTERS(Feat)
 #undef DEFINE_NCBI_SEQ_LOC_SETTERS
 
 inline
-int CSeq_loc::Compare(const CSeq_loc& loc) const
-{
-    CSeq_loc::TRange range1 = GetTotalRange();
-    CSeq_loc::TRange range2 = loc.GetTotalRange();
-    // smallest left extreme first
-    if ( range1.GetFrom() != range2.GetFrom() ) {
-        return range1.GetFrom() < range2.GetFrom()? -1: 1;
-    }
-
-    // longest first
-    if ( range1.GetToOpen() != range2.GetToOpen() ) {
-        return range1.GetToOpen() < range2.GetToOpen()? 1: -1;
-    }
-    return 0;
-}
-
-
-inline
 bool CSeq_loc::IsReverseStrand(void) const
 {
     return IsReverse(GetStrand());    
