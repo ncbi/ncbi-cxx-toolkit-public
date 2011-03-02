@@ -868,27 +868,17 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     TMaskedQueryRegions masklocs;
     results.GetMaskedQueryRegions(masklocs);
 
-    CSeq_align_set copy_aln_set;
-    CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
+    int flags = CDisplaySeqalign::eMergeAlign
+              + CDisplaySeqalign::eShowIdentity
+              + CDisplaySeqalign::eShowGapOnlyLines;
 
-    int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq);
-
-    CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
+    CDisplaySeqalign display(*aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
 
     // set the alignment flags
     display.SetAlignOption(flags);
-
-    if (m_Program == "blastn" || m_Program == "megablast") {
-            display.SetMiddleLineStyle(CDisplaySeqalign::eBar);
-            display.SetAlignType(CDisplaySeqalign::eNuc);
-    }
-    else {
-            display.SetMiddleLineStyle(CDisplaySeqalign::eChar);
-            display.SetAlignType(CDisplaySeqalign::eProt);
-    }
+    display.SetAlignType(CDisplaySeqalign::eNuc);
 
     display.SetMasterGeneticCode(m_QueryGenCode);
     display.SetSlaveGeneticCode(m_DbGenCode);
