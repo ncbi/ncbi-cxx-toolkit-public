@@ -64,8 +64,10 @@ public:
         fForceTranscribeMrna = 0x040,
         fDensegAsExon        = 0x080,
         fGenerateLocalIds    = 0x100,
+        fPropagateNcrnaFeats = 0x200,
 
-        fDefaults = fCreateGene | fCreateMrna | fCreateCdregion | fGenerateLocalIds
+        fDefaults = fCreateGene | fCreateMrna | fCreateCdregion |
+                    fGenerateLocalIds | fPropagateNcrnaFeats
     };
     typedef int TFeatureGeneratorFlags;
     static const TSeqPos kDefaultMinIntron = 200;

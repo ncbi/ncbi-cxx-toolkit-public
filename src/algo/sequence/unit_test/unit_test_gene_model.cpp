@@ -143,7 +143,7 @@ void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
             }
 
             BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
-            if (f1.IsSetProduct()) {
+            if (f1.IsSetProduct() && f2.IsSetProduct()) {
                 BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));
             }
 

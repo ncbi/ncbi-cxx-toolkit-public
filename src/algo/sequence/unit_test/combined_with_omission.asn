@@ -6413,6 +6413,113 @@ Seq-annot ::= {
         }
       },
       except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data gene {
+        locus "MIR155",
+        desc "microRNA 155",
+        syn {
+          "MIRN155",
+          "miRNA155"
+        }
+      },
+      location int {
+        from 12608162,
+        to 12608226,
+        strand plus,
+        id other {
+          accession "NT_011512",
+          version 11
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 406947
+        },
+        {
+          db "HGNC",
+          tag id 31542
+        },
+        {
+          db "MIM",
+          tag id 609337
+        },
+        {
+          db "miRBase",
+          tag str "MI0000681"
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext name "Homo sapiens microRNA 155 (MIR155), microRNA"
+      },
+      product whole gi 269846817,
+      location packed-int {
+        {
+          from 12608162,
+          to 12608226,
+          strand plus,
+          id other {
+            accession "NT_011512",
+            version 11
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "miRNA",
+          product "hsa-miR-155"
+        }
+      },
+      location packed-int {
+        {
+          from 12608165,
+          to 12608187,
+          strand plus,
+          id other {
+            accession "NT_011512",
+            version 11
+          }
+        }
+      },
+      dbxref {
+        {
+          db "miRBase",
+          tag str "MIMAT0000646"
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "miRNA",
+          product "hsa-miR-155*"
+        }
+      },
+      location packed-int {
+        {
+          from 12608204,
+          to 12608225,
+          strand plus,
+          id other {
+            accession "NT_011512",
+            version 11
+          }
+        }
+      },
+      dbxref {
+        {
+          db "miRBase",
+          tag str "MIMAT0004658"
+        }
+      }
     }
   }
 }

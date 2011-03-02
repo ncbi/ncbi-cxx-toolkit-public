@@ -173,6 +173,15 @@ private:
                                        size_t model_num,
                                        CBioseq_set& seqs,
                                        CSeq_loc_Mapper::TMapOptions opts);
+    CRef<CSeq_feat> x_CreateNcRnaFeature(const objects::CSeq_feat* ncrnafeature_on_mrna,
+                                         const CSeq_align& align,
+                                         CRef<CSeq_loc> loc,
+                                         CSeq_loc_Mapper::TMapOptions opts);
+    CRef<CSeq_loc> x_PropagateFeatureLocation(const objects::CSeq_feat* ncrnafeature_on_mrna,
+                                              const CSeq_align& align,
+                                              CRef<CSeq_loc> loc,
+                                              CSeq_loc_Mapper::TMapOptions opts,
+                                              TSeqPos &offset);
     void x_CheckInconsistentDbxrefs(CConstRef<CSeq_feat> gene_feat,
                                     CConstRef<CSeq_feat> cds_feat);
     void x_CopyAdditionalFeatures(const CBioseq_Handle& handle,

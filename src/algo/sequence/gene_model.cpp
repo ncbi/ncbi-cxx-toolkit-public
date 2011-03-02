@@ -441,14 +441,17 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     static CAtomicCounter counter;
     size_t model_num = counter.Add(1);
 
-    if (cdregion == NULL) {
-        CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
-        if (handle) {
-            CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
-            if (feat_iter  &&  feat_iter.GetSize()) {
-                cdregion = &feat_iter->GetOriginalFeature();
-            }
+    vector<const CSeq_feat *> ncRNAs;
+
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+    if (handle) {
+        CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
+        if (feat_iter  &&  feat_iter.GetSize() && !cdregion) {
+            cdregion = &feat_iter->GetOriginalFeature();
         }
+
+        for(feat_iter = CFeat_CI(handle, CSeqFeatData::eSubtype_ncRNA); feat_iter; ++feat_iter)
+            ncRNAs.push_back(&feat_iter->GetOriginalFeature());
     }
 
     CRef<CSeq_feat> mrna_feat =
@@ -457,11 +460,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
 
     CRef<CSeq_feat> gene_feat;
 
-    CBioseq_Handle handle;
-
     if(!call_on_align_list){
         const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
-        handle = m_scope->GetBioseqHandle(rna_id);
         if (gene_id) {
             TGeneMap::iterator gene = genes.find(gene_id);
             if (gene == genes.end()) {
@@ -506,31 +506,46 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
         annot.SetData().SetFtable().push_back(mrna_feat);
     }
 
+    CSeq_annot::C_Data::TFtable propagated_features;
+
     CRef<CSeq_feat> cds_feat =
-        x_CreateCdsFeature(cdregion, align, loc,
-                           time, model_num, seqs, opts);
+        x_CreateCdsFeature(cdregion, align, loc, time, model_num, seqs, opts);
 
-    if (cds_feat) {
-        _ASSERT(cds_feat->GetData().Which() != CSeqFeatData::e_not_set);
+    if(cds_feat){
+        if(!call_on_align_list)
+            x_CheckInconsistentDbxrefs(gene_feat, cds_feat);
+        propagated_features.push_back(cds_feat);
+    }
 
+    ITERATE(vector<const CSeq_feat *>, it, ncRNAs){
+        CRef<CSeq_feat> ncrna_feat = x_CreateNcRnaFeature(*it, align, loc, opts);
+        if(ncrna_feat)
+            propagated_features.push_back(ncrna_feat);
+    }
+
+    NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, it, propagated_features){
+        _ASSERT((*it)->GetData().Which() != CSeqFeatData::e_not_set);
+        annot.SetData().SetFtable().push_back(*it);
         
         if (gene_id) {  // create xrefs for gnomon models
-            CRef< CSeqFeatXref > cdsxref( new CSeqFeatXref() );
-            cdsxref->SetId(*cds_feat->SetIds().front());
+            CRef< CSeqFeatXref > propagatedxref( new CSeqFeatXref() );
+            propagatedxref->SetId(*(*it)->SetIds().front());
         
             CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
             mrnaxref->SetId(*mrna_feat->SetIds().front());
         
-            cds_feat->SetXref().push_back(mrnaxref);
-            mrna_feat->SetXref().push_back(cdsxref);
+            (*it)->SetXref().push_back(mrnaxref);
+            mrna_feat->SetXref().push_back(propagatedxref);
         }
-
-        annot.SetData().SetFtable().push_back(cds_feat);
     }
 
     if(!call_on_align_list){
-        SetPartialFlags(gene_feat, mrna_feat, cds_feat);
-        x_CheckInconsistentDbxrefs(gene_feat, cds_feat);
+        if(propagated_features.empty()){
+            SetPartialFlags(gene_feat, mrna_feat, CRef<CSeq_feat>());
+        }
+        ITERATE(CSeq_annot::C_Data::TFtable, it, propagated_features){
+            SetPartialFlags(gene_feat, mrna_feat, *it);
+        }
         x_CopyAdditionalFeatures(handle, mapper, annot);
     }
 
@@ -1194,90 +1209,13 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
     CRef<CSeq_feat> cds_feat;
     if (m_flags & fCreateCdregion && cdregion_on_mrna != NULL) {
 
-            // from this point on, we will get complex locations back
-            SMapper mapper(align, *m_scope, 0, opts);
-            mapper.IncludeSourceLocs();
-            mapper.SetMergeNone();
-            
-            CRef<CSeq_loc> source_loc;
-
-            ///
-            /// mapping is complex
-            /// we try to map each segment of the CDS
-            /// in general, there will be only one; there are some corner cases
-            /// (OAZ1, OAZ2, PAZ3, PEG10) in which there are more than one
-            /// segment.
-            ///
-            CRef<CSeq_loc> cds_loc;
-            for (CSeq_loc_CI loc_it(cdregion_on_mrna->GetLocation());
-                 loc_it;  ++loc_it) {
-                /// location for this interval
-                CConstRef<CSeq_loc> this_loc = GetSeq_loc(loc_it);
-
-                /// map it
-                CRef<CSeq_loc> equiv = mapper.Map(*this_loc);
-                if ( !equiv  ||
-                     equiv->IsNull()  ||
-                     equiv->IsEmpty() ) {
-                    continue;
-                }
-
-                /// we are using a special variety that will tell us what
-                /// portion really mapped
-                ///
-                /// the first part is the mapped location
-
-                if (equiv->GetEquiv().Get().size() != 2) {
-                    NCBI_THROW(CException, eUnknown,
-                               "failed to find requisite parts of "
-                               "mapped seq-loc");
-                }
-                CRef<CSeq_loc> this_loc_mapped =
-                    equiv->GetEquiv().Get().front();
-                if ( !this_loc_mapped  ||
-                     this_loc_mapped->IsNull()  ||
-                     this_loc_mapped->IsEmpty() ) {
-                    continue;
-                }
-
-                CRef<CSeq_loc> this_loc_source = equiv->GetEquiv().Get().back();
-                if ( !source_loc ) {
-                    source_loc.Reset(new CSeq_loc);
-                }
-                source_loc->SetMix().Set().push_back(this_loc_source);
-
-                /// we take the extreme bounds of the interval only;
-                /// internal details will be recomputed based on intersection
-                /// with the mRNA location
-                CSeq_loc sub;
-                sub.SetInt().SetFrom(this_loc_mapped->GetTotalRange().GetFrom());
-                sub.SetInt().SetTo(this_loc_mapped->GetTotalRange().GetTo());
-                sub.SetInt().SetStrand(loc->GetStrand());
-                sub.SetInt().SetId().Assign(*this_loc_mapped->GetId());
-
-                bool is_partial_5prime =
-                    this_loc_mapped->IsPartialStart(eExtreme_Biological);
-                bool is_partial_3prime =
-                    this_loc_mapped->IsPartialStop(eExtreme_Biological);
-
-                this_loc_mapped = loc->Intersect(sub,
-                                                 CSeq_loc::fSort,
-                                                 NULL);
-
-                this_loc_mapped->SetPartialStart(is_partial_5prime, eExtreme_Biological);
-                this_loc_mapped->SetPartialStop(is_partial_3prime, eExtreme_Biological);
-
-                if ( !cds_loc ) {
-                    cds_loc.Reset(new CSeq_loc);
-                }
-                cds_loc->SetMix().Set().push_back(this_loc_mapped);
-            }
-            if (cds_loc) {
-                cds_loc->ChangeToPackedInt();
-            }
+            TSeqPos offset;
+            CRef<CSeq_loc> cds_loc = x_PropagateFeatureLocation(cdregion_on_mrna,
+                                                                align, loc, opts, offset);
             if (cds_loc  && cds_loc->Which() != CSeq_loc::e_not_set) {
                 cds_feat.Reset(new CSeq_feat());
                 cds_feat->Assign(*cdregion_on_mrna);
+                cds_feat->ResetId();
 
                 CConstRef<CSeq_id> prot_id(new CSeq_id);
                 if (cds_feat->CanGetProduct()) {
@@ -1300,55 +1238,43 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                 bool is_partial_5prime =
                     cds_loc->IsPartialStart(eExtreme_Biological);
 
-                cds_loc->SetId(*loc->GetId());
-                if (cds_loc->IsMix() && cds_loc->GetMix().Get().size()==1) {
-                    cds_loc = cds_loc->SetMix().Set().front();
-                }
                 cds_feat->SetLocation(*cds_loc);
 
                 /// make sure we set the CDS frame correctly
                 /// if we're 5' partial, we may need to adjust the frame
                 /// to ensure that conceptual translations are in-frame
-                if (is_partial_5prime) {
-                    TSeqRange orig_range = 
-                        cdregion_on_mrna->GetLocation().GetTotalRange();
-                    TSeqRange mappable_range = 
-                        source_loc->GetTotalRange();
-
-                    TSeqPos offs = mappable_range.GetFrom() - orig_range.GetFrom();
-                    if (offs) {
-                        int orig_frame = 0;
-                        if (cds_feat->GetData().GetCdregion().IsSetFrame()) {
-                            orig_frame = cds_feat->GetData()
-                                .GetCdregion().GetFrame();
-                            if (orig_frame) {
-                                orig_frame -= 1;
-                            }
+                if (is_partial_5prime && offset) {
+                    int orig_frame = 0;
+                    if (cds_feat->GetData().GetCdregion().IsSetFrame()) {
+                        orig_frame = cds_feat->GetData()
+                            .GetCdregion().GetFrame();
+                        if (orig_frame) {
+                            orig_frame -= 1;
                         }
-                        int frame = (offs - orig_frame) % 3;
-                        if (frame < 0) {
-                            frame = -frame;
-                        }
-                        frame = (3 - frame) % 3;
-                        if (frame != orig_frame) {
-                            switch (frame) {
-                            case 0:
-                                cds_feat->SetData().SetCdregion()
-                                    .SetFrame(CCdregion::eFrame_one);
-                                break;
-                            case 1:
-                                cds_feat->SetData().SetCdregion()
-                                    .SetFrame(CCdregion::eFrame_two);
-                                break;
-                            case 2:
-                                cds_feat->SetData().SetCdregion()
-                                    .SetFrame(CCdregion::eFrame_three);
-                                break;
+                    }
+                    int frame = (offset - orig_frame) % 3;
+                    if (frame < 0) {
+                        frame = -frame;
+                    }
+                    frame = (3 - frame) % 3;
+                    if (frame != orig_frame) {
+                        switch (frame) {
+                        case 0:
+                            cds_feat->SetData().SetCdregion()
+                                .SetFrame(CCdregion::eFrame_one);
+                            break;
+                        case 1:
+                            cds_feat->SetData().SetCdregion()
+                                .SetFrame(CCdregion::eFrame_two);
+                            break;
+                        case 2:
+                            cds_feat->SetData().SetCdregion()
+                                .SetFrame(CCdregion::eFrame_three);
+                            break;
 
-                            default:
-                                NCBI_THROW(CException, eUnknown,
-                                           "mod 3 out of bounds");
-                            }
+                        default:
+                            NCBI_THROW(CException, eUnknown,
+                                       "mod 3 out of bounds");
                         }
                     }
                 }
@@ -1385,6 +1311,10 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
 
                 /// also copy the code break if it exists
                 if (cds_feat->GetData().GetCdregion().IsSetCode_break()) {
+                    SMapper mapper(align, *m_scope, 0, opts);
+                    mapper.IncludeSourceLocs();
+                    mapper.SetMergeNone();
+    
                     CSeqFeatData::TCdregion& cds =
                         cds_feat->SetData().SetCdregion();
                     CCdregion::TCode_break::iterator it =
@@ -1415,6 +1345,125 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
     return cds_feat;
 }
 
+CRef<CSeq_feat>
+CFeatureGenerator::
+SImplementation::x_CreateNcRnaFeature(const CSeq_feat* ncrnafeature_on_mrna,
+                                      const CSeq_align& align,
+                                      CRef<CSeq_loc> loc,
+                                      CSeq_loc_Mapper::TMapOptions opts)
+{
+    CRef<CSeq_feat> ncrna_feat;
+    if (m_flags & fPropagateNcrnaFeats && ncrnafeature_on_mrna != NULL) {
+
+            TSeqPos offset;
+            CRef<CSeq_loc> ncrna_loc = x_PropagateFeatureLocation(ncrnafeature_on_mrna,
+                                                                  align, loc, opts, offset);
+
+            if (ncrna_loc  && ncrna_loc->Which() != CSeq_loc::e_not_set) {
+                ncrna_feat.Reset(new CSeq_feat());
+                ncrna_feat->Assign(*ncrnafeature_on_mrna);
+                ncrna_feat->ResetId();
+
+                ncrna_feat->SetLocation(*ncrna_loc);
+            }
+    }
+    return ncrna_feat;
+}
+
+CRef<CSeq_loc>
+CFeatureGenerator::
+SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on_mrna,
+                                            const CSeq_align& align,
+                                            CRef<CSeq_loc> loc,
+                                            CSeq_loc_Mapper::TMapOptions opts,
+                                            TSeqPos &offset)
+{
+    // from this point on, we will get complex locations back
+    SMapper mapper(align, *m_scope, 0, opts);
+    mapper.IncludeSourceLocs();
+    mapper.SetMergeNone();
+    
+    CRef<CSeq_loc> mapped_loc;
+
+    ///
+    /// mapping is complex
+    /// we try to map each segment of the CDS
+    /// in general, there will be only one; there are some corner cases
+    /// (OAZ1, OAZ2, PAZ3, PEG10) in which there are more than one
+    /// segment.
+    ///
+    for (CSeq_loc_CI loc_it(feature_on_mrna->GetLocation());
+         loc_it;  ++loc_it) {
+        /// location for this interval
+        CConstRef<CSeq_loc> this_loc = GetSeq_loc(loc_it);
+
+        /// map it
+        CRef<CSeq_loc> equiv = mapper.Map(*this_loc);
+        if ( !equiv  ||
+             equiv->IsNull()  ||
+             equiv->IsEmpty() ) {
+            continue;
+        }
+
+        /// we are using a special variety that will tell us what
+        /// portion really mapped
+        ///
+        /// the first part is the mapped location
+
+        if (equiv->GetEquiv().Get().size() != 2) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to find requisite parts of "
+                       "mapped seq-loc");
+        }
+        CRef<CSeq_loc> this_loc_mapped =
+            equiv->GetEquiv().Get().front();
+        if ( !this_loc_mapped  ||
+             this_loc_mapped->IsNull()  ||
+             this_loc_mapped->IsEmpty() ) {
+            continue;
+        }
+
+        if ( !mapped_loc ) {
+            mapped_loc.Reset(new CSeq_loc);
+            /// This is start of mapped location; record offset
+            offset = equiv->GetEquiv().Get().back()->GetTotalRange().GetFrom() -
+                     feature_on_mrna->GetLocation().GetTotalRange().GetFrom();
+        }
+
+        /// we take the extreme bounds of the interval only;
+        /// internal details will be recomputed based on intersection
+        /// with the mRNA location
+        CSeq_loc sub;
+        sub.SetInt().SetFrom(this_loc_mapped->GetTotalRange().GetFrom());
+        sub.SetInt().SetTo(this_loc_mapped->GetTotalRange().GetTo());
+        sub.SetInt().SetStrand(loc->GetStrand());
+        sub.SetInt().SetId().Assign(*this_loc_mapped->GetId());
+
+        bool is_partial_5prime =
+            this_loc_mapped->IsPartialStart(eExtreme_Biological);
+        bool is_partial_3prime =
+            this_loc_mapped->IsPartialStop(eExtreme_Biological);
+
+        this_loc_mapped = loc->Intersect(sub,
+                                         CSeq_loc::fSort,
+                                         NULL);
+
+        this_loc_mapped->SetPartialStart(is_partial_5prime, eExtreme_Biological);
+        this_loc_mapped->SetPartialStop(is_partial_3prime, eExtreme_Biological);
+
+        mapped_loc->SetMix().Set().push_back(this_loc_mapped);
+    }
+    if (mapped_loc) {
+        mapped_loc->ChangeToPackedInt();
+    }
+    if (mapped_loc  && mapped_loc->Which() != CSeq_loc::e_not_set) {
+        mapped_loc->SetId(*loc->GetId());
+        if (mapped_loc->IsMix() && mapped_loc->GetMix().Get().size()==1) {
+            mapped_loc = mapped_loc->SetMix().Set().front();
+        }
+    }
+    return mapped_loc;
+}
 
 static void s_SetGeneId(CSeq_feat& feat, int gene_id)
 {
@@ -1434,12 +1483,12 @@ static void s_SetGeneId(CSeq_feat& feat, int gene_id)
 void CFeatureGenerator::
 SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
                                  CRef<CSeq_feat> mrna_feat,
-                                 CRef<CSeq_feat> cds_feat)
+                                 CRef<CSeq_feat> propagated_feat)
 {
-    if(cds_feat){
-        for (CSeq_loc_CI loc_it(cds_feat->GetLocation());  loc_it;  ++loc_it) {
+    if(propagated_feat){
+        for (CSeq_loc_CI loc_it(propagated_feat->GetLocation());  loc_it;  ++loc_it) {
             if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
-                cds_feat->SetPartial(true);
+                propagated_feat->SetPartial(true);
                 if(gene_feat)
                     gene_feat->SetPartial(true);
                 break;
@@ -1451,19 +1500,19 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
     /// partial flags may require a global analysis - we may need to mark some
     /// locations partial even if they are not yet partial
     ///
-    if (mrna_feat  &&  cds_feat)
+    if (mrna_feat  &&  propagated_feat)
     {
         /// in addition to marking the mrna feature partial, we must mark the
         /// location partial to match the partialness in the CDS
-        CSeq_loc& cds_loc = cds_feat->SetLocation();
+        CSeq_loc& propagated_feat_loc = propagated_feat->SetLocation();
         CSeq_loc& mrna_loc = mrna_feat->SetLocation();
-        if (cds_loc.IsPartialStart(eExtreme_Biological) &&
-            cds_loc.GetStart(eExtreme_Biological) ==
+        if (propagated_feat_loc.IsPartialStart(eExtreme_Biological) &&
+            propagated_feat_loc.GetStart(eExtreme_Biological) ==
             mrna_loc.GetStart(eExtreme_Biological)) {
             mrna_loc.SetPartialStart(true, eExtreme_Biological);
         }
-        if (cds_loc.IsPartialStop(eExtreme_Biological) &&
-            cds_loc.GetStop(eExtreme_Biological) ==
+        if (propagated_feat_loc.IsPartialStop(eExtreme_Biological) &&
+            propagated_feat_loc.GetStop(eExtreme_Biological) ==
             mrna_loc.GetStop(eExtreme_Biological)) {
             mrna_loc.SetPartialStop(true, eExtreme_Biological);
         }
@@ -1495,11 +1544,19 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
     }
 }
 
+/// Check whether range1 contains range2
+static inline bool s_Contains(const TSeqRange &range1, const TSeqRange &range2)
+{
+    return range1.GetFrom() <= range2.GetFrom() &&
+           range1.GetTo() >= range2.GetTo();
+}
+
 void CFeatureGenerator::
 SImplementation::RecomputePartialFlags(CSeq_annot& annot)
 {
     CScope scope(*CObjectManager::GetInstance());
     CSeq_annot_Handle sah = scope.AddSeq_annot(annot);
+
     /// We're going to recalculate Partial flags for all features,
     /// and fuzzy ends for gene features; reset them if they're currently set
     for(CFeat_CI ci(sah); ci; ++ci){
@@ -1540,6 +1597,7 @@ SImplementation::RecomputePartialFlags(CSeq_annot& annot)
         vector<CMappedFeat> gene_children =
                 gene_feat ? tree.GetChildren(*gene_it)
                           : top_level_features_by_type[CSeqFeatData::e_Rna];
+        sort(gene_children.begin(), gene_children.end());
 
         ITERATE(vector<CMappedFeat>, child_it, gene_children){
             CRef<CSeq_feat> child_feat;
@@ -1551,18 +1609,28 @@ SImplementation::RecomputePartialFlags(CSeq_annot& annot)
                 // We have gene and cds with no RNA feature
                 SetPartialFlags(gene_feat, CRef<CSeq_feat>(), child_feat);
             } else if(!child_feat || child_feat->GetData().IsRna()){
-                vector<CMappedFeat> rna_cdss =
+                vector<CMappedFeat> rna_children =
                     child_feat ? tree.GetChildren(*child_it)
                                : top_level_features_by_type[CSeqFeatData::e_Cdregion];
-                if(rna_cdss.empty()){
+                /// When propagating a ncRNA feature, the propagated feature will have a range
+                /// contained within the range of the newly-created RNA feature, and should be
+                /// treated as its child. Unfortunately the logic of CFeatTree does not recognize
+                /// one RNA feature as a child of the other, so we need to do that manually.
+                while((child_it+1) != gene_children.end() &&
+                      (child_it+1)->GetData().GetSubtype() == CSeqFeatData::eSubtype_ncRNA &&
+                      s_Contains(child_feat->GetLocation().GetTotalRange(),
+                                 (child_it+1)->GetTotalRange())){
+                    rna_children.push_back(*(++child_it));
+                }
+                if(rna_children.empty()){
                     // We have gene and RNA with no cds feature
                     SetPartialFlags(gene_feat, child_feat, CRef<CSeq_feat>());
                 } else {
-                    ITERATE(vector<CMappedFeat>, cds_it, rna_cdss){
-                        CRef<CSeq_feat> cds_feat;
-                        CSeq_feat_EditHandle cds_handle(*cds_it);
-                        cds_feat.Reset(const_cast<CSeq_feat*>(cds_handle.GetSeq_feat().GetPointer()));
-                        SetPartialFlags(gene_feat, child_feat, cds_feat);
+                    ITERATE(vector<CMappedFeat>, rna_child_it, rna_children){
+                        CRef<CSeq_feat> rna_child_feat;
+                        CSeq_feat_EditHandle rna_child_handle(*rna_child_it);
+                        rna_child_feat.Reset(const_cast<CSeq_feat*>(rna_child_handle.GetSeq_feat().GetPointer()));
+                        SetPartialFlags(gene_feat, child_feat, rna_child_feat);
                     }
                 }
             }

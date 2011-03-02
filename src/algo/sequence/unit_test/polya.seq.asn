@@ -1154,7 +1154,7 @@ Seq-entry ::= seq {
           data region "alignable",
           location int {
             from 7,
-            to 169,
+            to 158,
             strand minus,
             id gi 2224996
           }

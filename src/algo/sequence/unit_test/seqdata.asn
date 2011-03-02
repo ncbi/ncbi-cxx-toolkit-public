@@ -14225,3 +14225,82 @@ IQGSNDVEIRAEGNSRFTYTVLKDG"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 269846817
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 65,
+        seq-data ncbi2na '7BC39C36E32ABFF97507875C4CF24F0480'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id gi 269846817,
+                genomic-id other {
+                  accession "NT_011512",
+                  version 11
+                },
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 64,
+                    genomic-start 12608162,
+                    genomic-end 12608226,
+                    parts {
+                      match 65
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 65, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "  "
+                    },
+                    donor-after-exon {
+                      bases "TG"
+                    }
+                  }
+                },
+                product-length 65
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
