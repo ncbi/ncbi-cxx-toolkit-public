@@ -98,21 +98,23 @@ public:
     // Get the validated object (Seq-entry, Seq-submit or Seq-align)
     const CSerialObject* GetValidated(void) const;
 
-private:
 
+protected:
     friend class CValidError_CI;
 
     typedef map<EDiagSev, SIZE_TYPE>               TSevStats;
     typedef CConstRef<CSerialObject>               TValidated;
     typedef CConstRef<CSeq_entry>                  TContext;
 
+    // data
+    TSevStats   m_Stats;     // severity statistics
+    TValidated  m_Validated; // the validated object
+
+private:
     // Prohibit copy constructor & assignment operator
     CValidError(const CValidError&);
     CValidError& operator= (const CValidError&);
 
-    // data
-    TSevStats   m_Stats;     // severity statistics
-    TValidated  m_Validated; // the validated object
 };
 
 
