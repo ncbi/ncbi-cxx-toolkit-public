@@ -511,11 +511,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     CRef<CSeq_feat> cds_feat =
         x_CreateCdsFeature(cdregion, align, loc, time, model_num, seqs, opts);
 
-    if(cds_feat){
-        if(!call_on_align_list)
-            x_CheckInconsistentDbxrefs(gene_feat, cds_feat);
+    if(cds_feat)
         propagated_features.push_back(cds_feat);
-    }
 
     ITERATE(vector<const CSeq_feat *>, it, ncRNAs){
         CRef<CSeq_feat> ncrna_feat = x_CreateNcRnaFeature(*it, align, loc, opts);
@@ -544,6 +541,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
             SetPartialFlags(gene_feat, mrna_feat, CRef<CSeq_feat>());
         }
         ITERATE(CSeq_annot::C_Data::TFtable, it, propagated_features){
+            x_CheckInconsistentDbxrefs(gene_feat, *it);
             SetPartialFlags(gene_feat, mrna_feat, *it);
         }
         x_CopyAdditionalFeatures(handle, mapper, annot);
@@ -610,8 +608,7 @@ SImplementation::ConvertAlignToAnnot(
         }
         NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat_it, gene_annot.SetData().SetFtable())
         {
-            if((*feat_it)->GetData().IsCdregion())
-                x_CheckInconsistentDbxrefs(gene_feat, *feat_it);
+            x_CheckInconsistentDbxrefs(gene_feat, *feat_it);
         }
         gene_annot.SetData().SetFtable().push_front(gene_feat);
         RecomputePartialFlags(gene_annot);
@@ -1641,24 +1638,36 @@ SImplementation::RecomputePartialFlags(CSeq_annot& annot)
 
 void CFeatureGenerator::SImplementation::x_CheckInconsistentDbxrefs(
                        CConstRef<CSeq_feat> gene_feat,
-                       CConstRef<CSeq_feat> cds_feat)
+                       CConstRef<CSeq_feat> propagated_feature)
 {
     if(!gene_feat || !gene_feat->IsSetDbxref() ||
-       !cds_feat || !cds_feat->IsSetDbxref())
+       !propagated_feature || !propagated_feature->IsSetDbxref())
         return;
 
     ITERATE (CSeq_feat::TDbxref, gene_xref_it, gene_feat->GetDbxref())
-        ITERATE (CSeq_feat::TDbxref, cds_xref_it, cds_feat->GetDbxref())
-        {
-            if((*gene_xref_it)->GetDb() == (*cds_xref_it)->GetDb() &&
-               !(*gene_xref_it)->Match(**cds_xref_it))
+    /// Special case for miRBase; the gene feature and propagated ncRNA features can
+    /// legitimately have different tags for it
+    if((*gene_xref_it)->GetDb() != "miRBase")
+        ITERATE (CSeq_feat::TDbxref, propagated_xref_it, propagated_feature->GetDbxref())
+            if((*gene_xref_it)->GetDb() == (*propagated_xref_it)->GetDb() &&
+               !(*gene_xref_it)->Match(**propagated_xref_it))
+            {
+                string propagated_feature_desc;
+                if(propagated_feature->GetData().IsCdregion())
+                    propagated_feature_desc = "corresponding cdregion";
+                else {
+                    NCBI_ASSERT(propagated_feature->GetData().GetSubtype() == CSeqFeatData::eSubtype_ncRNA,
+                                "Unexpected propagated feature type");
+                    propagated_feature_desc = "propagated ncRNA feature";
+                }
+                if(propagated_feature->CanGetProduct())
+                    propagated_feature_desc += " " + propagated_feature->GetProduct().GetId()->AsFastaString();
                 LOG_POST(Warning << "Features for gene "
                                  << gene_feat->GetLocation().GetId()->AsFastaString()
-                                 << " and corresponding cdregion "
-                                 << cds_feat->GetProduct().GetId()->AsFastaString()
+                                 << " and " << propagated_feature_desc
                                  << " have " << (*gene_xref_it)->GetDb()
                                  << " dbxrefs with inconsistent tags");
-        }
+            }
 }
 
 
