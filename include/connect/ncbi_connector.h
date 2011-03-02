@@ -60,10 +60,11 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
  * First argument of these functions accepts a real connector handle
  * rather than a connection handle("CONN").
  * In every call, which has STimeout as an argument, this argument
- * can be either NULL, CONN_DEFAULT_TIMEOUT, or other non-NULL pointer,
- * pointing to finite timeout structure. NULL is treated as an infinite
- * timeout, while CONN_DEFAULT_TIMEOUT means to use any timeout, which
- * is somehow pre-defined by the connector itself.
+ * can be either NULL, kDefaultTimeout, or other non-NULL pointer,
+ * pointing to a finite timeout structure.
+ * NULL (same as kInfiniteTimeout) is treated as an infinite
+ * timeout, while kDefaultTimeout means to use any timeout,
+ * which is somehow pre-defined by the connector itself.
  */
 
 

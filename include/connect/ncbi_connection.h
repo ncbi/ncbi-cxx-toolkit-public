@@ -71,7 +71,7 @@ typedef struct SConnectionTag* CONN;      /* connection handle */
  *         "Flush", "Wait", "Write", or "Read" methods.
  * NOTE2:  "Connection establishment" at this level of abstraction may differ
  *         from actual link establishment at the underlying connector's level.
- * NOTE3:  Initial timeout values are set to CONN_DEFAULT_TIMEOUT, meaning
+ * NOTE3:  Initial timeout values are set to kDefaultTimeout, meaning
  *         that connector-specific timeouts are in force for the connection.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
@@ -134,7 +134,7 @@ extern NCBI_XCONNECT_EXPORT char* CONN_Description
 /* Specify timeout for the connection I/O, including "Connect" (aka "Open")
  * and "Close".  May be called at any time during the connection lifetime.
  * NOTE1:  if "new_timeout" is NULL then set the timeout to be infinite.
- * NOTE2:  if "new_timeout" is CONN_DEFAULT_TIMEOUT then an underlying,
+ * NOTE2:  if "new_timeout" is kDefaultTimeout then an underlying,
  *         connector-specific value is used (this is the default).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
@@ -146,7 +146,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
 
 /* Retrieve current timeout (return NULL if it is infinite).
  * The returned pointer is guaranteed to point to a valid timeout structure,
- * or to be either NULL or CONN_DEFAULT_TIMEOUT until next "SetTimeout"
+ * or to be either NULL or kDefaultTimeout until next "SetTimeout"
  * or "Close" method's call.
  */
 extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
@@ -158,7 +158,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
 /* Block on the connection until it becomes available for either read or
  * write (dep. on "event"), until timeout expires, or until any error.
  * NOTE:  "timeout" can also be one of two special values:
- *         NULL (means infinite), CONN_DEFAULT_TIMEOUT (connector-defined).
+ *         NULL (means infinite), kDefaultTimeout (connector-defined).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
 (CONN            conn,    /* [in] connection handle                  */
