@@ -46,6 +46,7 @@
 
 #include <serial/typeinfo.hpp>
 #include <util/static_map.hpp>
+#include <iterator>
 
 BEGIN_NCBI_SCOPE
 
