@@ -83,6 +83,9 @@ public:
     void SetTruncatedStart(bool val, ESeqLocExtremes ext);
     void SetTruncatedStop (bool val, ESeqLocExtremes ext);
 
+    TSeqPos GetStart(ESeqLocExtremes ext) const;
+    TSeqPos GetStop (ESeqLocExtremes ext) const;
+
     // Flip the strand (e.g. plus to minus)
     void FlipStrand(void);
         

@@ -586,8 +586,7 @@ TSeqPos CSeq_loc::GetStart(ESeqLocExtremes ext) const
         }
     case e_Int:
         {
-            return (ext == eExtreme_Biological  &&  IsReverseStrand()) ?
-                GetInt().GetTo() : GetInt().GetFrom();
+            return GetInt().GetStart(ext);
         }
     case e_Pnt:
         {
@@ -637,8 +636,7 @@ TSeqPos CSeq_loc::GetStop(ESeqLocExtremes ext) const
         }
     case e_Int:
         {
-            return (ext == eExtreme_Biological  &&  IsReverseStrand()) ?
-                GetInt().GetFrom() : GetInt().GetTo();
+            return GetInt().GetStop(ext);
         }
     case e_Pnt:
         {

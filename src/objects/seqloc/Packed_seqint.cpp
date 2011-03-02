@@ -75,98 +75,98 @@ TSeqPos CPacked_seqint::GetLength(void) const
 }
 
 
+const CSeq_interval* CPacked_seqint::GetStartInt(ESeqLocExtremes ext) const
+{
+    return ext == eExtreme_Positional && IsReverseStrand() ?
+        Get().back() : Get().front();
+}
+
+
+const CSeq_interval* CPacked_seqint::GetStopInt(ESeqLocExtremes ext) const
+{
+    return ext == eExtreme_Positional && IsReverseStrand() ?
+        Get().front() : Get().back();
+}
+
+
+CSeq_interval* CPacked_seqint::SetStartInt(ESeqLocExtremes ext)
+{
+    return ext == eExtreme_Positional && IsReverseStrand() ?
+        Set().back() : Set().front();
+}
+
+
+CSeq_interval* CPacked_seqint::SetStopInt(ESeqLocExtremes ext)
+{
+    return ext == eExtreme_Positional && IsReverseStrand() ?
+        Set().front() : Set().back();
+}
+
+
 bool CPacked_seqint::IsPartialStart(ESeqLocExtremes ext) const
 {
-    const CSeq_interval* ival = NULL;
-    if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().back() : Get().front();
+    if ( Get().empty() ) {
+        return false;
     }
-    return (ival != NULL) ? ival->IsPartialStart(ext) : false;
+    return GetStartInt(ext)->IsPartialStart(ext);
 }
 
 
 bool CPacked_seqint::IsPartialStop(ESeqLocExtremes ext) const
 {
-    const CSeq_interval* ival = NULL;
-    if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().front() : Get().back();
+    if ( Get().empty() ) {
+        return false;
     }
-    return (ival != NULL) ? ival->IsPartialStop(ext) : false;
+    return GetStopInt(ext)->IsPartialStop(ext);
 }
 
 
 void CPacked_seqint::SetPartialStart(bool val, ESeqLocExtremes ext)
 {
-    CSeq_interval* ival = NULL;
-    if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Set().back() : Set().front();
-    }
-    if (ival != NULL) {
-        ival->SetPartialStart(val, ext);
+    if ( !Get().empty() ) {
+        SetStartInt(ext)->SetPartialStart(val, ext);
     }
 }
 
 
 void CPacked_seqint::SetPartialStop(bool val, ESeqLocExtremes ext)
 {
-    CSeq_interval* ival = NULL;
-    if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Set().front() : Set().back();
-    }
-    if (ival != NULL) {
-        ival->SetPartialStop(val, ext);
+    if ( !Get().empty() ) {
+        SetStopInt(ext)->SetPartialStop(val, ext);
     }
 }
 
 
 bool CPacked_seqint::IsTruncatedStart(ESeqLocExtremes ext) const
 {
-    const CSeq_interval* ival = NULL;
-    if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().back() : Get().front();
+    if ( Get().empty() ) {
+        return false;
     }
-    return (ival != NULL) ? ival->IsTruncatedStart(ext) : false;
+    return GetStartInt(ext)->IsTruncatedStart(ext);
 }
 
 
 bool CPacked_seqint::IsTruncatedStop(ESeqLocExtremes ext) const
 {
-    const CSeq_interval* ival = NULL;
-    if (!Get().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().front() : Get().back();
+    if ( Get().empty() ) {
+        return false;
     }
-    return (ival != NULL) ? ival->IsTruncatedStop(ext) : false;
+    return GetStopInt(ext)->IsTruncatedStop(ext);
 }
 
 
 void CPacked_seqint::SetTruncatedStart(bool val, ESeqLocExtremes ext)
 {
-    CSeq_interval* ival = NULL;
     if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Set().back() : Set().front();
-    }
-    if (ival != NULL) {
-        ival->SetTruncatedStart(val, ext);
+        SetStartInt(ext)->SetTruncatedStart(val, ext);
     }
 }
 
 
 void CPacked_seqint::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 {
-    CSeq_interval* ival = NULL;
     if (!Set().empty()) {
-        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Set().front() : Set().back();
-    }
-    if (ival != NULL) {
-        ival->SetTruncatedStop(val, ext);
+        SetStopInt(ext)->SetTruncatedStop(val, ext);
     }
 }
 
@@ -222,12 +222,7 @@ TSeqPos CPacked_seqint::GetStart(ESeqLocExtremes ext) const
     if (Get().empty()) {
         return kInvalidSeqPos;
     }
-    if (IsReverseStrand()) {
-        return (ext == eExtreme_Positional) ? Get().back()->GetFrom() :
-            Get().front()->GetTo(); 
-    } else {
-        return Get().front()->GetFrom();
-    }
+    return GetStartInt(ext)->GetStart(ext);
 }
 
 
@@ -236,12 +231,7 @@ TSeqPos CPacked_seqint::GetStop(ESeqLocExtremes ext) const
     if (Get().empty()) {
         return kInvalidSeqPos;
     }
-    if (IsReverseStrand()) {
-        return (ext == eExtreme_Positional) ? Get().front()->GetTo() :
-            Get().back()->GetFrom(); 
-    } else {
-        return Get().back()->GetTo();
-    }
+    return GetStopInt(ext)->GetStop(ext);
 }
 
 

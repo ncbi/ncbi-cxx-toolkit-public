@@ -102,6 +102,11 @@ public:
     TSeqPos GetStart(ESeqLocExtremes ext) const;
     TSeqPos GetStop (ESeqLocExtremes ext) const;
 
+    const CSeq_interval* GetStartInt(ESeqLocExtremes ext) const;
+    const CSeq_interval* GetStopInt (ESeqLocExtremes ext) const;
+    CSeq_interval* SetStartInt(ESeqLocExtremes ext);
+    CSeq_interval* SetStopInt (ESeqLocExtremes ext);
+
     /// Set the strand for all of the location's ranges.
     void SetStrand(ENa_strand strand);
     /// Reset the strand to 'not set'

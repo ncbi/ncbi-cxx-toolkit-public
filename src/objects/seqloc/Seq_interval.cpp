@@ -227,6 +227,20 @@ void CSeq_interval::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 }
 
 
+TSeqPos CSeq_interval::GetStart(ESeqLocExtremes ext) const
+{
+    return ext == eExtreme_Biological  &&  x_IsMinusStrand()?
+        GetTo(): GetFrom();
+}
+
+
+TSeqPos CSeq_interval::GetStop (ESeqLocExtremes ext) const
+{
+    return ext == eExtreme_Biological  &&  x_IsMinusStrand()?
+        GetFrom(): GetTo();
+}
+
+
 void CSeq_interval::FlipStrand(void)
 {
     if (IsSetStrand()) {

@@ -64,7 +64,7 @@ bool CPacked_seqpnt::x_IsMinusStrand(void) const
 
 bool CPacked_seqpnt::IsPartialStart(ESeqLocExtremes ext) const
 {
-    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+    CInt_fuzz::TLim lim = (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
         CInt_fuzz::eLim_gt : CInt_fuzz::eLim_lt;
 
     return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
@@ -72,7 +72,7 @@ bool CPacked_seqpnt::IsPartialStart(ESeqLocExtremes ext) const
 
 bool CPacked_seqpnt::IsPartialStop(ESeqLocExtremes ext) const
 {
-    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+    CInt_fuzz::TLim lim = (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
         CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt;
 
     return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
@@ -88,7 +88,7 @@ void CPacked_seqpnt::SetPartialStart(bool val, ESeqLocExtremes ext)
 
     if (val) {
         CInt_fuzz::TLim lim = 
-            (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+            (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
                 CInt_fuzz::eLim_gt : CInt_fuzz::eLim_lt;
 
         SetFuzz().SetLim(lim);
@@ -106,7 +106,7 @@ void CPacked_seqpnt::SetPartialStop(bool val, ESeqLocExtremes ext)
 
     if (val) {
         CInt_fuzz::TLim lim = 
-            (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+            (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
                 CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt;
 
         SetFuzz().SetLim(lim);
@@ -118,7 +118,7 @@ void CPacked_seqpnt::SetPartialStop(bool val, ESeqLocExtremes ext)
 
 bool CPacked_seqpnt::IsTruncatedStart(ESeqLocExtremes ext) const
 {
-    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+    CInt_fuzz::TLim lim = (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
         CInt_fuzz::eLim_tr : CInt_fuzz::eLim_tl;
 
     return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
@@ -126,7 +126,7 @@ bool CPacked_seqpnt::IsTruncatedStart(ESeqLocExtremes ext) const
 
 bool CPacked_seqpnt::IsTruncatedStop(ESeqLocExtremes ext) const
 {
-    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+    CInt_fuzz::TLim lim = (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
         CInt_fuzz::eLim_tl : CInt_fuzz::eLim_tr;
 
     return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
@@ -141,7 +141,7 @@ void CPacked_seqpnt::SetTruncatedStart(bool val, ESeqLocExtremes ext)
 
     if (val) {
         CInt_fuzz::TLim lim = 
-            (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+            (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
                 CInt_fuzz::eLim_tr : CInt_fuzz::eLim_tl;
 
         SetFuzz().SetLim(lim);
@@ -159,7 +159,7 @@ void CPacked_seqpnt::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 
     if (val) {
         CInt_fuzz::TLim lim = 
-            (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+            (ext == eExtreme_Biological  &&  x_IsMinusStrand()) ?
                 CInt_fuzz::eLim_tl : CInt_fuzz::eLim_tr;
 
         SetFuzz().SetLim(lim);
@@ -172,7 +172,7 @@ void CPacked_seqpnt::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 TSeqPos CPacked_seqpnt::GetStart(ESeqLocExtremes ext) const
 {
     if (!GetPoints().empty()) {
-        return (x_IsMinusStrand()  &&  ext == eExtreme_Positional) ?
+        return (ext == eExtreme_Positional  &&  x_IsMinusStrand()) ?
             GetPoints().back() : GetPoints().front();
     }
     return kInvalidSeqPos;
@@ -182,7 +182,7 @@ TSeqPos CPacked_seqpnt::GetStart(ESeqLocExtremes ext) const
 TSeqPos CPacked_seqpnt::GetStop(ESeqLocExtremes ext) const
 {
     if (!GetPoints().empty()) {
-        return (x_IsMinusStrand()  &&  ext == eExtreme_Positional) ?
+        return (ext == eExtreme_Positional  &&  x_IsMinusStrand()) ?
             GetPoints().front() : GetPoints().back();
     }
     return kInvalidSeqPos;

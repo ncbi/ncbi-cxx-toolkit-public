@@ -54,11 +54,34 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 {
 }
 
+const CSeq_loc* CSeq_loc_mix::GetStartLoc(ESeqLocExtremes ext) const
+{
+    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
+        Get().back(): Get().front();
+}
+
+const CSeq_loc* CSeq_loc_mix::GetStopLoc(ESeqLocExtremes ext) const
+{
+    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
+        Get().front(): Get().back();
+}
+
+CSeq_loc* CSeq_loc_mix::SetStartLoc(ESeqLocExtremes ext)
+{
+    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
+        Set().back(): Set().front();
+}
+
+CSeq_loc* CSeq_loc_mix::SetStopLoc(ESeqLocExtremes ext)
+{
+    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
+        Set().front(): Set().back();
+}
+
 bool CSeq_loc_mix::IsPartialStart(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().back()->IsPartialStart(ext) : Get().front()->IsPartialStart(ext);
+        return GetStartLoc(ext)->IsPartialStart(ext);
     }
     return false;
 }
@@ -66,8 +89,7 @@ bool CSeq_loc_mix::IsPartialStart(ESeqLocExtremes ext) const
 bool CSeq_loc_mix::IsPartialStop(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().front()->IsPartialStop(ext) : Get().back()->IsPartialStop(ext);
+        return GetStopLoc(ext)->IsPartialStop(ext);
     }
     return false;
 }
@@ -78,11 +100,7 @@ void CSeq_loc_mix::SetPartialStart(bool val, ESeqLocExtremes ext)
     if (IsPartialStart(ext) == val  ||  Set().empty()) {
         return;
     }
-    if ((IsReverseStrand()  &&  ext == eExtreme_Positional)) {
-        Set().back()->SetPartialStart(val, ext);
-    }else {
-        Set().front()->SetPartialStart(val, ext);
-    }
+    SetStartLoc(ext)->SetPartialStart(val, ext);
 }
 
 
@@ -91,20 +109,14 @@ void CSeq_loc_mix::SetPartialStop(bool val, ESeqLocExtremes ext)
     if (IsPartialStop(ext) == val  ||  Set().empty()) {
         return;
     }
-    if (IsReverseStrand()  &&  ext == eExtreme_Positional) {
-        Set().front()->SetPartialStop(val, ext);
-    } else {
-        Set().back()->SetPartialStop(val, ext);
-    }
+    SetStopLoc(ext)->SetPartialStop(val, ext);
 }
 
 
 bool CSeq_loc_mix::IsTruncatedStart(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().back()->IsTruncatedStart(ext) :
-            Get().front()->IsTruncatedStart(ext);
+        return GetStartLoc(ext)->IsTruncatedStart(ext);
     }
     return false;
 }
@@ -112,9 +124,7 @@ bool CSeq_loc_mix::IsTruncatedStart(ESeqLocExtremes ext) const
 bool CSeq_loc_mix::IsTruncatedStop(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().front()->IsTruncatedStop(ext) :
-            Get().back()->IsTruncatedStop(ext);
+        return GetStopLoc(ext)->IsTruncatedStop(ext);
     }
     return false;
 }
@@ -125,11 +135,7 @@ void CSeq_loc_mix::SetTruncatedStart(bool val, ESeqLocExtremes ext)
     if (IsTruncatedStart(ext) == val  ||  Set().empty()) {
         return;
     }
-    if ((IsReverseStrand()  &&  ext == eExtreme_Positional)) {
-        Set().back()->SetTruncatedStart(val, ext);
-    }else {
-        Set().front()->SetTruncatedStart(val, ext);
-    }
+    SetStartLoc(ext)->SetTruncatedStart(val, ext);
 }
 
 
@@ -138,11 +144,7 @@ void CSeq_loc_mix::SetTruncatedStop(bool val, ESeqLocExtremes ext)
     if (IsTruncatedStop(ext) == val  ||  Set().empty()) {
         return;
     }
-    if (IsReverseStrand()  &&  ext == eExtreme_Positional) {
-        Set().front()->SetTruncatedStop(val, ext);
-    } else {
-        Set().back()->SetTruncatedStop(val, ext);
-    }
+    SetStopLoc(ext)->SetTruncatedStop(val, ext);
 }
 
 
@@ -204,8 +206,7 @@ ENa_strand CSeq_loc_mix::GetStrand(void) const
 TSeqPos CSeq_loc_mix::GetStart(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().back()->GetStart(ext) : Get().front()->GetStart(ext);
+        return GetStartLoc(ext)->GetStart(ext);
     }
     return kInvalidSeqPos;
 }
@@ -214,8 +215,7 @@ TSeqPos CSeq_loc_mix::GetStart(ESeqLocExtremes ext) const
 TSeqPos CSeq_loc_mix::GetStop(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
-            Get().front()->GetStop(ext) : Get().back()->GetStop(ext);
+        return GetStopLoc(ext)->GetStop(ext);
     }
     return kInvalidSeqPos;
 }
