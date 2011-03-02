@@ -85,9 +85,54 @@ CConn_IOStream::~CConn_IOStream()
 }
 
 
+#define GET_CONN(sb)  ((sb) ? (sb)->GetCONN() : 0)
+
+
 CONN CConn_IOStream::GetCONN(void) const
 {
-    return m_CSb ? m_CSb->GetCONN() : 0;
+    return GET_CONN(m_CSb);
+}
+
+
+string CConn_IOStream::GetType(void) const
+{
+    CONN        conn = GET_CONN(m_CSb);
+    const char* type = conn ? CONN_GetType(conn) : 0;
+    return type ? string(type) : kEmptyStr;
+}
+
+
+string CConn_IOStream::GetDescription(void) const
+{
+    CONN   conn = GET_CONN(m_CSb);
+    char*  text = conn ? CONN_Description(conn) : 0;
+    string retval(text ? text : "");
+    if (text) {
+        free(text);
+    }
+    return retval;
+}
+
+
+const STimeout* CConn_IOStream::GetTimeout(EIO_Event direction) const
+{
+    CONN conn = GET_CONN(m_CSb);
+    return conn ? CONN_GetTimeout(conn, direction) : 0;
+}
+
+
+EIO_Status CConn_IOStream::SetTimeout(EIO_Event       direction,
+                                      const STimeout* timeout) const
+{
+    CONN conn = GET_CONN(m_CSb);
+    return conn ? CONN_SetTimeout(conn, direction, timeout) : eIO_Closed;
+}
+
+
+EIO_Status CConn_IOStream::Cancel(void) const
+{
+    CONN conn = GET_CONN(m_CSb);
+    return conn ? CONN_Cancel(conn) : eIO_Closed;
 }
 
 
@@ -107,15 +152,9 @@ void CConn_IOStream::Close(void)
 
 void CConn_IOStream::x_Cleanup(void)
 {
-    streambuf* sb = rdbuf();
-    delete sb;
-    if (sb != m_CSb) {
-        delete m_CSb;
-    }
+    CConn_Streambuf* sb = m_CSb;
     m_CSb = 0;
-#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    rdbuf(0);
-#endif // AUTOMATIC_STREAMBUF_DESTRUCTION
+    delete sb;
 }
 
 

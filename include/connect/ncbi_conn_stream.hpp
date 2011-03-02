@@ -87,8 +87,8 @@
 BEGIN_NCBI_SCOPE
 
 
-class CConn_Streambuf; // Forward declaration
-class CSocket;         // Forward declaration
+class CConn_Streambuf;  // Forward declaration
+class CSocket;          // Forward declaration
 
 
 const streamsize kConn_DefaultBufSize = 4096;
@@ -99,11 +99,11 @@ const streamsize kConn_DefaultBufSize = 4096;
 ///
 /// Base class, inherited from "std::iostream", does both input
 /// and output, using the specified CONNECTOR.  Input operations
-/// can be tied to the output ones by setting 'do_tie' to 'true'
+/// can be tied to the output ones by setting "do_tie" to "true"
 /// (default), which means that any input attempt first flushes
-/// the output queue from the internal buffers.  'buf_size'
-/// designates the size of the I/O buffers, which reside in between
-/// the stream and underlying connector (which in turn may do
+/// the output queue from the internal buffers.  "Buf_size" designates
+/// the size of internal I/O buffers, which reside in between
+/// stream and underlying connector (which in turn may do
 /// further buffering, if needed).
 ///
 /// Note: CConn_IOStream implementation utilizes the eCONN_OnClose callback
@@ -113,7 +113,7 @@ const streamsize kConn_DefaultBufSize = 4096;
 ///    CONN_SetCallback, eCONN_OnClose
 
 class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConnIniter,
-                                            public CNcbiIostream
+                                            public         CNcbiIostream
 {
 public:
     /// Create a stream based on a CONN, which is to be closed upon
@@ -172,25 +172,56 @@ public:
     virtual ~CConn_IOStream();
 
     /// @return
-    ///   CONNection handle built from the CONNECTION
+    ///   Verbal connection type (empty if unknown)
     /// @sa
-    ///   CONN, ncbi_connection.h
-    CONN GetCONN(void) const;
+    ///   CONN_GetType
+    string          GetType(void) const;
 
     /// @return
-    ///   Status of last CONN I/O
+    ///   Verbal connection description (empty if unknown)
+    /// @sa
+    ///   CONN_Description
+    string          GetDescription(void) const;
+
+    /// @return
+    ///   Connection timeout for "direction"
+    /// @sa
+    ///   CONN_GetTimeout
+    const STimeout* GetTimeout(EIO_Event direction) const;
+
+    /// Set connection timeout for "direction"
+    /// @sa
+    ///   CONN_SetTimeout
+    EIO_Status      SetTimeout(EIO_Event       direction,
+                               const STimeout* timeout= kDefaultTimeout) const;
+
+    /// Cancel stream connection
+    /// @sa
+    ///   CONN_Cancel
+    EIO_Status      Cancel(void) const;
+    
+    /// Note this is *not* CONN_Status
+    /// @return
+    ///   Status of last performed I/O (regardless direction)
     /// @sa
     ///   CONN, ncbi_connection.h, EIO_Status
-    EIO_Status Status(void) const;
+    EIO_Status      Status(void) const;
 
     /// Close CONNection, free all internal buffers and underlying structures,
     /// and render stream unusable for further I/O.
     /// Can be used at places where reaching end-of-scope for the stream
     /// would be impractical.
-    void Close(void);
+    /// @sa
+    ///   CONN_Close
+    void            Close(void);
+
+    /// @return
+    ///   Internal CONNection handle (NULL if unset)
+    /// @sa
+    ///   CONN, ncbi_connection.h
+    CONN GetCONN(void) const;
 
 protected:
-    CConn_IOStream(CConn_Streambuf* sb);
     void x_Cleanup(void);
 
 private:
@@ -342,11 +373,11 @@ private:
 /// This stream exchanges data with an HTTP server found by URL:
 /// http://host[:port]/path[?args]
 ///
-/// Note that 'path' must include a leading slash,
-/// 'args' can be empty, in which case the '?' is not appended to the path.
+/// Note that "path" must include a leading slash,
+/// "args" can be empty, in which case the '?' is not appended to the path.
 ///
-/// 'User_header' (if not empty) should be a sequence of lines in the form
-/// 'HTTP-tag: Tag value', with each line separated by a CR LF sequence
+/// "User_header" (if not empty) should be a sequence of lines in the form
+/// `HTTP-tag: Tag value`, with each line separated by a CR LF sequence
 /// and the last line terminated by a CR LF sequence.  For example:
 /// Content-Encoding: gzip\r\nContent-Length: 123\r\n
 /// It is included in the HTTP-header of each transaction.
@@ -361,8 +392,8 @@ private:
 ///
 /// THCC_Flags and other details: <connect/ncbi_http_connector.h>.
 ///
-/// Provided 'timeout' is set at connection level, and if different from
-/// CONN_DEFAULT_TIMEOUT, it overrides a value supplied by HTTP connector
+/// Provided "timeout" is set at connection level, and if different from
+/// kDefaultTimeout, it overrides a value supplied by HTTP connector
 /// (the latter value is kept in SConnNetInfo::timeout).
 ///
 

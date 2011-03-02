@@ -59,9 +59,9 @@ public:
                     streamsize buf_size, bool tie,
                     CT_CHAR_TYPE* ptr, size_t size);
     virtual   ~CConn_Streambuf()   { Close();  delete[] m_WriteBuf; }
-    CONN       GetCONN(void) const { return m_Conn; }
-    EIO_Status Status(void) const  { return m_Status; }
-    void       Close(void)         { x_Close(true); }
+    CONN       GetCONN(void) const { return m_Conn;   }
+    EIO_Status Status(void)  const { return m_Status; }
+    void       Close(void)         { x_Close(true);   }
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
