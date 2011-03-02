@@ -250,7 +250,7 @@ static bool s_SeqAlignInSet(CSeq_align_set::Tdata & align_list, CRef<CSeq_align>
 };
 
 // Compare two seqaligns according to their evalue and coverage
-static bool s_CompareSeqAlign(CRef<CSeq_align> &x, CRef<CSeq_align> &y)
+static bool s_CompareSeqAlign(const CRef<CSeq_align> &x, const CRef<CSeq_align> &y)
 {
     int sx, sy;
     x->GetNamedScore(CSeq_align::eScore_Score, sx);
