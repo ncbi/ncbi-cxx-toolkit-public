@@ -114,13 +114,6 @@ public:
         init(&m_Sb);
     }
 
-#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    virtual ~CRStream()
-    {
-        rdbuf(0);
-    }
-#endif
-
 private:
     CRWStreambuf m_Sb;
 };
@@ -157,13 +150,6 @@ public:
         init(&m_Sb);
     }
 
-#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    virtual ~CWStream()
-    {
-        rdbuf(0);
-    }
-#endif
-
 private:
     CRWStreambuf m_Sb;
 };
@@ -195,32 +181,25 @@ public:
     CRWStream(IReaderWriter*       rw,
               streamsize           buf_size = 0,
               CT_CHAR_TYPE*        buf      = 0,
-              CRWStreambuf::TFlags flags    = 0) :
-        CNcbiIostream(0), m_Sb(rw, buf_size, buf, flags)
+              CRWStreambuf::TFlags flags    = 0)
+        : CNcbiIostream(0), m_Sb(rw, buf_size, buf, flags)
     {
         init(&m_Sb);
     }
-
-#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    virtual ~CRWStream()
-    {
-        rdbuf(0);
-    }
-#endif
 
 private:
     CRWStreambuf m_Sb;
 };
 
 
-/// istream based IReader
+/// istream-based IReader
 class NCBI_XNCBI_EXPORT CStreamReader : public IReader
 {
 public:
     CStreamReader(CNcbiIstream& is, EOwnership own = eNoOwnership)
         : m_Stream(&is, own)
-        {
-        }
+    {
+    }
     ~CStreamReader();
 
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);

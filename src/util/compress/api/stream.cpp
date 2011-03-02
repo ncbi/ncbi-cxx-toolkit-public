@@ -138,15 +138,8 @@ void CCompressionStream::Create(CNcbiIos&                    stream,
 
 CCompressionStream::~CCompressionStream(void)
 {
-    // Delete stream buffer
-    streambuf* sb = rdbuf();
-    delete sb;
-    if ( sb != m_StreamBuf ) {
-        delete m_StreamBuf;
-    }
-#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    rdbuf(0);
-#endif
+    delete m_StreamBuf;
+
     // Delete owned objects
     if ( m_Stream   &&   m_Ownership & fOwnStream ) {
 #if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
