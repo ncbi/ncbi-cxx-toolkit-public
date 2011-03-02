@@ -618,7 +618,7 @@ private:
 };
 
 
-/* Note the oder of parameters vs generic CConn_FtpStream ctor above */
+/* Note the order of parameters vs generic CConn_FtpStream ctor above */
 class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 {
 public:
