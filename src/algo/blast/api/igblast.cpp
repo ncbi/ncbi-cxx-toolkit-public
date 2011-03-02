@@ -136,13 +136,13 @@ void CIgBlast::x_SetupDJSearch(vector<CRef <CIgAnnotation> > &annots,
     // Only igblastn will search DJ
     CBlastOptions & opts = opts_hndl->SetOptions();
     opts.SetMatchReward(1);
-    opts.SetMismatchPenalty(-1);
+    opts.SetMismatchPenalty(-3);
     opts.SetWordSize(5);
     opts.SetGapOpeningCost(5);
     opts.SetGapExtensionCost(2);
     opts_hndl->SetEvalueThreshold(1000.0);
     opts_hndl->SetFilterString("F");
-    opts_hndl->SetHitlistSize(5);
+    opts_hndl->SetHitlistSize(10);
 
     // Mask query for D, J search
     int iq = 0;
@@ -238,6 +238,29 @@ void CIgBlast::s_AnnotateV(CRef<CSearchResultSet>        &results,
     }
 };
 
+// Test if the alignment is already in the align_list
+static bool s_SeqAlignInSet(CSeq_align_set::Tdata & align_list, CRef<CSeq_align> &align)
+{
+    ITERATE(CSeq_align_set::Tdata, it, align_list) {
+        if ((*it)->GetSeq_id(1).Match(align->GetSeq_id(1)) &&
+            (*it)->GetSeqStart(1) == align->GetSeqStart(1) &&
+            (*it)->GetSeqStop(1) == align->GetSeqStop(1)) return true;
+    }
+    return false;
+};
+
+// Compare two seqaligns according to their evalue and coverage
+static bool s_CompareSeqAlign(CRef<CSeq_align> &x, CRef<CSeq_align> &y)
+{
+    int sx, sy;
+    x->GetNamedScore(CSeq_align::eScore_Score, sx);
+    y->GetNamedScore(CSeq_align::eScore_Score, sy);
+    if (sx != sy) return (sx > sy);
+    x->GetNamedScore(CSeq_align::eScore_IdentityCount, sx);
+    y->GetNamedScore(CSeq_align::eScore_IdentityCount, sy);
+    return (sx <= sy);
+};
+
 void CIgBlast::s_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                             CRef<CSearchResultSet>        &results_J,
                             vector<CRef <CIgAnnotation> > &annots)
@@ -273,6 +296,8 @@ void CIgBlast::s_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
                                            (&*((*result)->GetSeqAlign())));
             CSeq_align_set::Tdata & align_list = align->Set();
+            align_list.sort(s_CompareSeqAlign);
+
             CSeq_align_set::Tdata::iterator it = align_list.begin();
 
             int V_end = (annot->m_MinusStrand) ? 
@@ -319,7 +344,7 @@ void CIgBlast::s_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
                                            (&*((*result)->GetSeqAlign())));
             CSeq_align_set::Tdata & align_list = align->Set();
-            CSeq_align_set::Tdata::iterator it = align_list.begin();
+            align_list.sort(s_CompareSeqAlign);
 
             ENa_strand strand = (annot->m_MinusStrand) ? eNa_strand_minus : eNa_strand_plus;
             bool strand_found = false;
@@ -329,6 +354,7 @@ void CIgBlast::s_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                     break;
                 }
             }
+            CSeq_align_set::Tdata::iterator it = align_list.begin();
             if (strand_found) {
                 while (it != align_list.end()) {
                     if ((*it)->GetSeqStrand(0) != strand) {
@@ -398,9 +424,10 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
         CRef<CSeq_align_set> align;
 
         if ((*result)->HasAlignments()) {
+
+            // keep only the first num_alignments
             align.Reset(const_cast<CSeq_align_set *>
                                    (&*((*result)->GetSeqAlign())));
-
             if (num_aligns >= 0) {
                 CSeq_align_set::Tdata & align_list = align->Set();
                 if (align_list.size() > num_aligns) {
@@ -423,9 +450,17 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
         } else if (!align.Empty()) {
             CIgBlastResults *ig_result = dynamic_cast<CIgBlastResults *>
                                          (&(*final_results)[iq++]);
-            CSeq_align_set_Base::Tdata & align_list = ig_result->SetSeqAlign()->Set();
-            align_list.insert(align_list.end(), align->Get().begin(), align->Get().end());
-            ig_result->GetErrors().Combine(errmsg);
+            CSeq_align_set::Tdata & ig_list = ig_result->SetSeqAlign()->Set();
+            // Remove duplicates first
+            CSeq_align_set::Tdata & align_list = align->Set();
+            CSeq_align_set::Tdata::iterator it = align_list.begin();
+            while (it != align_list.end() && s_SeqAlignInSet(ig_list, *it)) ++it;
+            if (it != align_list.begin())  align_list.erase(align_list.begin(), it);
+
+            if (!align_list.empty()) {
+                ig_list.insert(ig_list.end(), align_list.begin(), align_list.end());
+                ig_result->GetErrors().Combine(errmsg);
+            }
         } 
     }
 };
