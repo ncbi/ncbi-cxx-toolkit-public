@@ -172,7 +172,7 @@ void CPacked_seqpnt::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 TSeqPos CPacked_seqpnt::GetStart(ESeqLocExtremes ext) const
 {
     if (!GetPoints().empty()) {
-        return (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+        return (x_IsMinusStrand()  &&  ext == eExtreme_Positional) ?
             GetPoints().back() : GetPoints().front();
     }
     return kInvalidSeqPos;
@@ -182,7 +182,7 @@ TSeqPos CPacked_seqpnt::GetStart(ESeqLocExtremes ext) const
 TSeqPos CPacked_seqpnt::GetStop(ESeqLocExtremes ext) const
 {
     if (!GetPoints().empty()) {
-        return (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+        return (x_IsMinusStrand()  &&  ext == eExtreme_Positional) ?
             GetPoints().front() : GetPoints().back();
     }
     return kInvalidSeqPos;
