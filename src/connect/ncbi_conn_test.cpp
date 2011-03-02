@@ -110,11 +110,8 @@ void CConnTest::Cancel(void)
     m_Canceled = true;
     if (m_IO) {
         CORE_LOCK_READ;
-        if (m_IO) {
-            CONN conn = m_IO->GetCONN();
-            if (conn)
-                CONN_Cancel(conn);
-        }
+        if (m_IO)
+            m_IO->Cancel();
         CORE_UNLOCK;
     }
 }
@@ -177,26 +174,24 @@ string CConnTest::x_TimeoutMsg(void)
 
 EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
 {
-    CONN        conn  = io   ? io->GetCONN()          : 0;
-    const char* ctype = conn ? CONN_GetType(conn)     : 0;
-    const char* descr = conn ? CONN_Description(conn) : 0;
-    _ASSERT(!ctype  ||  *ctype);
-    _ASSERT(!descr  ||  *descr);
-    m_CheckPoint =
-        string(ctype            ? ctype : kEmptyStr) +
-        string(ctype  &&  descr ? "; "  : kEmptyStr) +
-        string(descr            ? descr : kEmptyStr);
-    if (descr)
-        free((void*) descr);
+    string type = io ? io->GetType()        : kEmptyStr;
+    string text = io ? io->GetDescription() : kEmptyStr;
+    m_CheckPoint = (type
+                    + (!type.empty()  &&  !text.empty() ? "; " : "") +
+                    text);
     if (m_Canceled)
         return eIO_Interrupt;
     if (!failure)
         return eIO_Success;
     EIO_Status status = io ? io->Status() : eIO_Unknown;
-    if (status == eIO_Success  &&  conn) {
-        EIO_Status r_status = CONN_Status(conn, eIO_Read);
-        EIO_Status w_status = CONN_Status(conn, eIO_Write);
-        status = r_status > w_status ? r_status : w_status;
+    if (status == eIO_Success) {
+        _ASSERT(io);
+        CONN conn = io->GetCONN();
+        if (conn) {
+            EIO_Status r_status = CONN_Status(conn, eIO_Read);
+            EIO_Status w_status = CONN_Status(conn, eIO_Write);
+            status = r_status > w_status ? r_status : w_status;
+        }
     }
     return status == eIO_Success ? eIO_Unknown : status;
 }
@@ -683,7 +678,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 status = eIO_Interrupt;
             else if (status != eIO_Success) {
                 size_t unused;
-                CONN_SetTimeout(is->GetCONN(), eIO_Read, &kZeroTimeout);
+                is->SetTimeout(eIO_Read, &kZeroTimeout);
                 CONN_Read(is->GetCONN(), 0, 1<<20, &unused, eIO_ReadPlain);
             } else {
                 CONN conn = is->GetCONN();
