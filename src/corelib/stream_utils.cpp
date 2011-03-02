@@ -48,17 +48,6 @@
 #  define CPushback_StreambufBase CNcbiStreambuf
 #endif //NCBI_COMPILER_MIPSPRO
 
-#ifdef    HAVE_GOOD_IOS_CALLBACKS
-#  undef  HAVE_GOOD_IOS_CALLBACKS
-#endif
-#define   HAVE_GOOD_IOS_CALLBACKS 1
-#if 0
-#if defined(HAVE_IOS_REGISTER_CALLBACK)  &&  \
-  (!defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(_MT))
-#  define HAVE_GOOD_IOS_CALLBACKS 1
-#endif
-#endif
-
 
 #define NCBI_USE_ERRCODE_X   Corelib_StreamUtil
 
@@ -110,10 +99,8 @@ private:
     streamsize           m_BufSize;
     void*                m_DelPtr;
 
-#ifdef HAVE_GOOD_IOS_CALLBACKS
     static volatile int  sm_Index;
     static void          x_Callback(IOS_BASE::event, IOS_BASE&, int);
-#endif //HAVE_GOOD_IOS_CALLBACKS
 
     static const streamsize kMinBufSize;
 };
@@ -122,7 +109,6 @@ private:
 const streamsize CPushback_Streambuf::kMinBufSize = 4096;
 
 
-#ifdef HAVE_GOOD_IOS_CALLBACKS
 volatile int CPushback_Streambuf::sm_Index = -1;  // uninited
 
 
@@ -135,7 +121,6 @@ void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
         delete static_cast<streambuf*> (ios.pword(index));
     }
 }
-#endif //HAVE_GOOD_IOS_CALLBACKS
 
 
 CPushback_Streambuf::CPushback_Streambuf(istream&      is,
@@ -149,7 +134,6 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Sb = m_Is.rdbuf(this);
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
-#ifdef HAVE_GOOD_IOS_CALLBACKS
     try {
         if (!sb) {
             if (sm_Index == -1) {
@@ -166,19 +150,14 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     }
     STD_CATCH_ALL_X(1, (m_Is.clear(NcbiBadbit),
                         "CPushback_Streambuf::CPushback_Streambuf"));
-#else
-    m_Next = sb;
-#endif //HAVE_GOOD_IOS_CALLBACKS
 }
 
 
 CPushback_Streambuf::~CPushback_Streambuf()
 {
-#ifdef HAVE_GOOD_IOS_CALLBACKS
     if (m_Is.pword(sm_Index) == this) {
         m_Is.pword(sm_Index) =  0;
     }
-#endif //HAVE_GOOD_IOS_CALLBACKS
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
     delete m_Next;
 }
