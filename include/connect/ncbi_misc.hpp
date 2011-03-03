@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
  *                             Rate Monitor                            *
  ***********************************************************************/
 
-class CRateMonitor {
+class NCBI_XCONNECT_EXPORT CRateMonitor {
 public:
     /// Monitor position progressing in time, calculate speed and
     /// estimate time to complete the job (if the final size is known).
