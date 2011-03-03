@@ -719,6 +719,7 @@ void CClusterer::ComputeClustersFromLinks(void)
     for (int i=0;i < (int)m_Clusters.size();i++) {
         if (m_Clusters[i].size() == 0) {
             const TSingleCluster& cluster = m_Clusters.back();
+            _ASSERT(cluster.size() > 0);
             ITERATE (vector<int>, it, cluster) {
                 m_Clusters[i].AddElement(*it);
                 m_ClusterId[*it] = i;
@@ -726,6 +727,12 @@ void CClusterer::ComputeClustersFromLinks(void)
                 _ASSERT(m_Clusters[i].m_Tree);
             }
             m_Clusters.pop_back();
+
+            // remove empty clusters from the back of the list of clusters
+            // the empty clusters appear in the list when clusters are joined
+            while (m_Clusters.back().size() == 0) {
+                m_Clusters.pop_back();
+            }
         }        
     }
 
