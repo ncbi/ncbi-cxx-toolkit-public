@@ -282,8 +282,6 @@ public:
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)*this != 0);
-    /// Disable operator<<(bool)
-    void operator<<(bool) const;
 
 protected:
     /// Default constructor.
@@ -304,6 +302,11 @@ protected:
     {
         CCompressionStream::Create(stream, stream_processor, 0, ownership);
     }
+
+protected:
+    /// Disable operator<<(bool)
+    void operator<<(bool) const;
+
 };
 
 
@@ -345,8 +348,6 @@ public:
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)*this != 0);
-    /// Disable operator>>(bool)
-    void operator>>(bool) const;
 
 protected:
     /// Default constructor.
@@ -367,6 +368,10 @@ protected:
     {
         CCompressionStream::Create(stream, 0, stream_processor, ownership);
     }
+
+protected:
+    /// Disable operator>>(bool)
+    void operator>>(bool) const;
 };
 
 
