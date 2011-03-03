@@ -102,7 +102,7 @@ public:
     ///   negative value if cannot estimate
     double GetETA          (void) const;
 
-    /// How long it will take to complete, at the average rate
+    /// How long it will take to complete, at the average pace
     /// @return
     ///   negative value if cannot estimate
     double GetTimeRemaining(void) const;
