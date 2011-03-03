@@ -303,7 +303,7 @@ protected:
         CCompressionStream::Create(stream, stream_processor, 0, ownership);
     }
 
-protected:
+private:
     /// Disable operator<<(bool)
     void operator<<(bool) const;
 
@@ -369,7 +369,7 @@ protected:
         CCompressionStream::Create(stream, 0, stream_processor, ownership);
     }
 
-protected:
+private:
     /// Disable operator>>(bool)
     void operator>>(bool) const;
 };
