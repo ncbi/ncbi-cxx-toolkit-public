@@ -844,9 +844,10 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 
     //requires
     list<string> requires;
-    k = makefile.m_Contents.find("REQUIRES");
-    if (k != makefile.m_Contents.end()) {
-        project_makefile.Redefine(k->second,requires);        
+    list<string> req_lst;
+    if (makefile.CollectValues("REQUIRES", req_lst,
+        CSimpleMakeFileContents::eSortUnique)) {
+        project_makefile.Redefine(req_lst,requires);        
     }
 
     //LIBS
@@ -974,9 +975,10 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
     
     string check_authors;
-    k = makefile.m_Contents.find("WATCHERS");
-    if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
-        check_authors = NStr::Join(k->second, " ");
+    list<string> lst_authors;
+    if (makefile.CollectValues("WATCHERS", lst_authors,
+        CSimpleMakeFileContents::eSortUnique)) {
+        check_authors = NStr::Join(lst_authors, " ");
         project.m_Watchers = check_authors;
     } else {
         k = makefile.m_Contents.find("CHECK_AUTHORS");
@@ -1011,13 +1013,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         }
     }
 
-    k = makefile.m_Contents.find("PROJ_TAG");
-    if ( k != makefile.m_Contents.end() ) {
-        project.m_ProjTags = k->second;
-    }
-    k = makefile.m_Contents.find("USE_PCH");
-    if ( k != makefile.m_Contents.end() ) {
-        project.m_Pch = k->second.front();
+    makefile.CollectValues("PROJ_TAG", project.m_ProjTags,
+        CSimpleMakeFileContents::eMergePlusMinus);
+
+    list<string> pch_lst;
+    if (makefile.CollectValues("USE_PCH", pch_lst,
+        CSimpleMakeFileContents::eFirstNonempty)) {
+        project.m_Pch = pch_lst.front();
     }
 
     CProjKey proj_key(CProjKey::eApp, proj_id);
@@ -1141,11 +1143,12 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
 
     //requires
     list<string> requires;
-    k = m->second.m_Contents.find("REQUIRES");
-    if (k != m->second.m_Contents.end()) {
+    list<string> req_lst;
+    if (m->second.CollectValues("REQUIRES",req_lst,
+        CSimpleMakeFileContents::eSortUnique)) {
         CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
             source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eLib)));
-        project_makefile.Redefine(k->second,requires);        
+        project_makefile.Redefine(req_lst,requires);        
     }
 
     //LIBS
@@ -1246,17 +1249,19 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     if (k != m->second.m_Contents.end()) {
         (tree->m_Projects[proj_key]).m_ExportHeadersDest = k->second.front();
     }
-    k = m->second.m_Contents.find("WATCHERS");
-    if ( k != m->second.m_Contents.end() && !k->second.empty() ) {
-        tree->m_Projects[proj_key].m_Watchers = NStr::Join(k->second, " ");
+    list<string> lst_watchers;
+    if (m->second.CollectValues("WATCHERS", lst_watchers,
+        CSimpleMakeFileContents::eSortUnique)) {
+        tree->m_Projects[proj_key].m_Watchers = NStr::Join(lst_watchers, " ");
     }
-    k = m->second.m_Contents.find("PROJ_TAG");
-    if ( k != m->second.m_Contents.end() ) {
-        tree->m_Projects[proj_key].m_ProjTags = k->second;
-    }
-    k = m->second.m_Contents.find("USE_PCH");
-    if ( k != m->second.m_Contents.end() ) {
-        tree->m_Projects[proj_key].m_Pch = k->second.front();
+
+    m->second.CollectValues("PROJ_TAG", tree->m_Projects[proj_key].m_ProjTags,
+        CSimpleMakeFileContents::eMergePlusMinus);
+
+    list<string> pch_lst;
+    if (m->second.CollectValues("USE_PCH", pch_lst,
+        CSimpleMakeFileContents::eFirstNonempty)) {
+        tree->m_Projects[proj_key].m_Pch = pch_lst.front();
     }
 
     if (!dll_host.empty() && GetApp().GetBuildType().GetType() == CBuildType::eDll) {
@@ -1431,9 +1436,10 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     if (k != m->second.m_Contents.end() && k->second.front() == "plugin") {
         tree->m_Projects[proj_key].m_IsBundle = true;
     }
-    k = m->second.m_Contents.find("WATCHERS");
-    if ( k != m->second.m_Contents.end() && !k->second.empty() ) {
-        tree->m_Projects[proj_key].m_Watchers = NStr::Join(k->second, " ");
+    list<string> lst_watchers;
+    if (m->second.CollectValues("WATCHERS", lst_watchers,
+        CSimpleMakeFileContents::eSortUnique)) {
+        tree->m_Projects[proj_key].m_Watchers = NStr::Join(lst_watchers, " ");
     }
     return proj_key;
 }
@@ -1816,11 +1822,12 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
 
     //requires
     list<string> requires;
-    k = m->second.m_Contents.find("REQUIRES");
-    if (k != m->second.m_Contents.end()) {
+    list<string> req_lst;
+    if (m->second.CollectValues("REQUIRES", req_lst,
+        CSimpleMakeFileContents::eSortUnique)) {
         CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
             source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eMsvc)));
-        project_makefile.Redefine(k->second,requires);        
+        project_makefile.Redefine(req_lst,requires);        
     }
 
     list<string> libs_3_party;
@@ -1845,10 +1852,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                            maketype,
         IdentifySlnGUID(vcproj_file, proj_key));
 
-    k = m->second.m_Contents.find("PROJ_TAG");
-    if ( k != m->second.m_Contents.end() ) {
-        tree->m_Projects[proj_key].m_ProjTags = k->second;
-    }
+    m->second.CollectValues("PROJ_TAG", tree->m_Projects[proj_key].m_ProjTags,
+        CSimpleMakeFileContents::eMergePlusMinus);
     return proj_key;
 }
 //-----------------------------------------------------------------------------
@@ -1862,7 +1867,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     ProcessDir(root_src_path, 
                true,
                filter,
-               &subtree_makefiles, eMakeType_Undefined);
+               &subtree_makefiles, eMakeType_Undefined, NULL);
 
     // Resolve macrodefines
     list<string> metadata_files;
@@ -1959,7 +1964,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                                      bool                  is_root,
                                      const IProjectFilter* filter,
                                      SMakeFiles*           makefiles,
-                                     EMakeFileType         maketype)
+                                     EMakeFileType         maketype,
+                                     const CSimpleMakeFileContents* parent)
 {
     // Node - Makefile.in should present
     // this is true if and only if there are also Makefile.*.lib or
@@ -2002,16 +2008,18 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     }
     
     // Process Makefile.in
+    const CSimpleMakeFileContents* mkin = NULL;
     map<string, EMakeFileType> subprojects;
     map<string, EMakeFileType> appprojects;
     map<string, EMakeFileType> libprojects;
     map<string, EMakeFileType> dllprojects;
 
     if ( process_projects || weak ) {
-        ProcessMakeInFile(node_path, makefiles, maketype);
+        ProcessMakeInFile(node_path, makefiles, maketype, parent);
         TFiles::const_iterator p = makefiles->m_In.find(node_path);
         if (p != makefiles->m_In.end()) {
         const CSimpleMakeFileContents& makefile = p->second;
+        mkin = &makefile;
         CSimpleMakeFileContents::TContents::const_iterator k;
         int j;
         string subproj[] = {"SUB_PROJ","EXPENDABLE_SUB_PROJ","POTENTIAL_SUB_PROJ",""};
@@ -2098,7 +2106,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             const string name = dir_entry->GetName();
             if (libprojects.find(name) != libprojects.end() &&
                 SMakeProjectT::IsMakeLibFile(name) )
-	            ProcessMakeLibFile(dir_entry->GetPath(), makefiles, libprojects[name]);
+	            ProcessMakeLibFile(dir_entry->GetPath(), makefiles, libprojects[name], mkin);
 
         }
     }
@@ -2111,7 +2119,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             const string name = dir_entry->GetName();
             if (dllprojects.find(name) != dllprojects.end() &&
                 SMakeProjectT::IsMakeDllFile(name) )
-	            ProcessMakeDllFile(dir_entry->GetPath(), makefiles, dllprojects[name]);
+	            ProcessMakeDllFile(dir_entry->GetPath(), makefiles, dllprojects[name], mkin);
 
         }
     }
@@ -2124,7 +2132,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             const string name = dir_entry->GetName();
             if (appprojects.find(name) != appprojects.end() &&
                 SMakeProjectT::IsMakeAppFile(name) )
-	            ProcessMakeAppFile(dir_entry->GetPath(), makefiles, appprojects[name]);
+	            ProcessMakeAppFile(dir_entry->GetPath(), makefiles, appprojects[name], mkin);
 
         }
     }
@@ -2135,7 +2143,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
             if ( SMakeProjectT::IsUserProjFile(dir_entry->GetName()) )
-	            ProcessUserProjFile(dir_entry->GetPath(), makefiles, maketype);
+	            ProcessUserProjFile(dir_entry->GetPath(), makefiles, maketype, mkin);
 
         }
 
@@ -2201,7 +2209,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     map<string, EMakeFileType>::const_iterator ps;
     for (ps = subprojects_dirs.begin(); ps != subprojects_dirs.end(); ++ps) {
         const string& subproject_dir = ps->first;
-        ProcessDir(subproject_dir, false, filter, makefiles, ps->second);
+        ProcessDir(subproject_dir, false, filter, makefiles, ps->second, mkin);
     }
 
 }
@@ -2209,9 +2217,11 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 
 void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name, 
                                             SMakeFiles*   makefiles,
-                                            EMakeFileType type)
+                                            EMakeFileType type,
+                                            const CSimpleMakeFileContents* parent)
 {
     CSimpleMakeFileContents fc(file_name, type);
+    fc.SetParent(parent);
     if ( !fc.m_Contents.empty() ) {
 	    makefiles->m_In[file_name] = fc;
         PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
@@ -2223,9 +2233,11 @@ void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name,
 
 void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name, 
                                              SMakeFiles*   makefiles,
-                                             EMakeFileType type)
+                                             EMakeFileType type,
+                                             const CSimpleMakeFileContents* parent)
 {
     CSimpleMakeFileContents fc(file_name, type);
+    fc.SetParent(parent);
     if ( !fc.m_Contents.empty()  ) {
         makefiles->m_Lib[file_name] = fc;
         PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
@@ -2236,11 +2248,13 @@ void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name,
 
 void CProjectTreeBuilder::ProcessMakeDllFile(const string& file_name, 
                                              SMakeFiles*   makefiles,
-                                             EMakeFileType type)
+                                             EMakeFileType type,
+                                             const CSimpleMakeFileContents* parent)
 {
     string s = "MakeDll : " + file_name + "   ";
 
     CSimpleMakeFileContents fc(file_name, type);
+    fc.SetParent(parent);
     if ( !fc.m_Contents.empty()  ) {
         makefiles->m_Dll[file_name] = fc;
 	} else {
@@ -2251,9 +2265,11 @@ void CProjectTreeBuilder::ProcessMakeDllFile(const string& file_name,
 
 void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name, 
                                              SMakeFiles*   makefiles,
-                                             EMakeFileType type)
+                                             EMakeFileType type,
+                                             const CSimpleMakeFileContents* parent)
 {
     CSimpleMakeFileContents fc(file_name, type);
+    fc.SetParent(parent);
     if ( !fc.m_Contents.empty() ) {
         makefiles->m_App[file_name] = fc;
         PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
@@ -2265,9 +2281,11 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
 
 void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name, 
                                              SMakeFiles*   makefiles,
-                                             EMakeFileType type)
+                                             EMakeFileType type,
+                                             const CSimpleMakeFileContents* parent)
 {
     CSimpleMakeFileContents fc(file_name, type);
+    fc.SetParent(parent);
     if ( !fc.m_Contents.empty() ) {
 	    makefiles->m_User[file_name] = fc;
         PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));

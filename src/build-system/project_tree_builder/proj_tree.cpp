@@ -204,65 +204,6 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
             }
         }
     }
-
-    {{
-        // REQUIRES tags in Makefile.in(s)
-        ITERATE(TFiles, p, makein) {
-
-            string makein_dir;
-            CDirEntry::SplitPath(p->first, &makein_dir);
-            const CSimpleMakeFileContents& makein_contents = p->second;
-            NON_CONST_ITERATE(TProjects, n, tree->m_Projects) {
-
-                CProjItem& project = n->second;
-                if ( IsSubdir(makein_dir, project.m_SourcesBaseDir) ) {
-
-                    CSimpleMakeFileContents::TContents::const_iterator k = 
-                        makein_contents.m_Contents.find("REQUIRES");
-                    if ( k != makein_contents.m_Contents.end() ) {
-                        const list<string> requires = k->second;
-                        copy(requires.begin(), 
-                             requires.end(), 
-                             back_inserter(project.m_Requires));
-                        project.m_Requires.sort();
-                        project.m_Requires.unique();
-                    }
-                    k = makein_contents.m_Contents.find("PROJ_TAG");
-                    if ( k != makein_contents.m_Contents.end() ) {
-                        const list<string> ptags = k->second;
-                        copy(ptags.begin(), ptags.end(), 
-                             back_inserter(project.m_ProjTags));
-                        project.m_ProjTags.sort();
-                        project.m_ProjTags.unique();
-                    }
-                    k = makein_contents.m_Contents.find("USE_PCH");
-                    if ( k != makein_contents.m_Contents.end() ) {
-                        if (project.m_Pch.empty()) {
-                            project.m_Pch = k->second.front();
-                        }
-                    }
-                }
-            }
-        }
-        NON_CONST_ITERATE(TProjects, n, tree->m_Projects) {
-            CProjItem& project = n->second;
-            bool erased = false;
-            do {
-                erased = false;
-                NON_CONST_ITERATE(list<string>,v,project.m_ProjTags) {
-                    list<string>::iterator vn = 
-                        find(project.m_ProjTags.begin(),project.m_ProjTags.end(),
-                        string("-")+ *v);
-                    if (vn != project.m_ProjTags.end()) {
-                        project.m_ProjTags.erase(v);
-                        project.m_ProjTags.erase(vn);
-                        erased = true;
-                        break;
-                    }
-                }
-            } while (erased);
-        }
-    }}
     AnalyzeDllData(*tree);
 }
 

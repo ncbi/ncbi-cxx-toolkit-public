@@ -84,6 +84,14 @@ public:
     bool GetPathValue(const string& key, string& value) const;
     bool GetValue(const string& key, string& value) const;
     
+    enum EHowToCollect {
+        eAsIs,
+        eSortUnique,
+        eMergePlusMinus,
+        eFirstNonempty
+    };
+    bool CollectValues( const string& key, list<string>& values, EHowToCollect how) const;
+    
     EMakeFileType GetMakeType(void) const
     {
         return m_Type;
@@ -96,6 +104,11 @@ public:
     void Save(const string& filename) const;
     /// Debug dump
     void Dump(CNcbiOstream& ostr, const list<string>* skip=0) const;
+    
+    void SetParent( const CSimpleMakeFileContents* parent)
+    {
+        m_Parent = parent;
+    }
 
 private:
     void Clear(void);
@@ -127,6 +140,7 @@ private:
     void AddReadyKV(const SKeyValue& kv);
     EMakeFileType m_Type;
     string m_Filename;
+    const CSimpleMakeFileContents* m_Parent;
 };
 
 

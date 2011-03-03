@@ -334,27 +334,33 @@ private:
                             bool                  is_root,
                             const IProjectFilter* filter,
                             SMakeFiles*           makefiles,
-                            EMakeFileType         maketype);
+                            EMakeFileType         maketype,
+                            const CSimpleMakeFileContents* parent);
 
     static void ProcessMakeInFile  (const string& file_name, 
                                     SMakeFiles*   makefiles,
-                                    EMakeFileType type);
+                                    EMakeFileType type,
+                                    const CSimpleMakeFileContents* parent);
 
     static void ProcessMakeLibFile (const string& file_name, 
                                     SMakeFiles*   makefiles,
-                                    EMakeFileType type);
+                                    EMakeFileType type,
+                                    const CSimpleMakeFileContents* parent);
 
     static void ProcessMakeDllFile (const string& file_name, 
                                     SMakeFiles*   makefiles,
-                                    EMakeFileType type);
+                                    EMakeFileType type,
+                                    const CSimpleMakeFileContents* parent);
 
     static void ProcessMakeAppFile (const string& file_name, 
                                     SMakeFiles*   makefiles,
-                                    EMakeFileType type);
+                                    EMakeFileType type,
+                                    const CSimpleMakeFileContents* parent);
 
     static void ProcessUserProjFile(const string& file_name, 
                                     SMakeFiles*   makefiles,
-                                    EMakeFileType type);
+                                    EMakeFileType type,
+                                    const CSimpleMakeFileContents* parent);
 
     static void ResolveDefs(CSymResolver& resolver, SMakeFiles& makefiles);
 

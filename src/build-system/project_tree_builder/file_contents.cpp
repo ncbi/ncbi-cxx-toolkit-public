@@ -50,7 +50,7 @@ string MakeFileTypeAsString(EMakeFileType type)
 
 //-----------------------------------------------------------------------------
 CSimpleMakeFileContents::CSimpleMakeFileContents(void)
-    : m_Type( eMakeType_Undefined )
+    : m_Type( eMakeType_Undefined ), m_Parent(NULL)
 {
 }
 
@@ -77,6 +77,7 @@ CSimpleMakeFileContents::CSimpleMakeFileContents(
 {
     LoadFrom(file_path, this);
     m_Type = type;
+    m_Parent = NULL;
 }
 
 
@@ -90,6 +91,7 @@ void CSimpleMakeFileContents::Clear(void)
     m_Contents.clear();
     m_Type = eMakeType_Undefined;
     m_Filename.erase();
+    m_Parent = NULL;
 }
 
 
@@ -98,6 +100,7 @@ void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
     m_Contents = contents.m_Contents;
     m_Type = contents.m_Type;
     m_Filename = contents.m_Filename;
+    m_Parent = contents.m_Parent;
 }
 
 
@@ -204,6 +207,49 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
         value = NStr::Replace(value,"-static",kEmptyStr);
     }
     return true;
+}
+
+bool CSimpleMakeFileContents::CollectValues(
+    const string& key, list<string>& values, EHowToCollect how) const
+{
+    TContents::const_iterator k = m_Contents.find(key);
+    if (k != m_Contents.end()) {
+        copy(k->second.begin(), k->second.end(), back_inserter(values));
+    }
+    if (m_Parent) {
+        m_Parent->CollectValues(key,values,eAsIs);
+    }
+    if (values.empty()) {
+        return false;
+    }
+
+    if (how == eSortUnique) {
+        values.sort();
+        values.unique();
+    }
+    else if (how == eMergePlusMinus) {
+        bool erased = false;
+        do {
+            erased = false;
+            for ( list<string>::iterator i = values.begin(); i != values.end(); ++i) {
+                if (i->at(0) == '-') {
+                    list<string>::iterator plus;
+                    while ((plus = find( i, values.end(), i->c_str()+1)) != values.end()) {
+                        values.erase(plus);
+                    }
+                    values.erase(i);
+                    erased = true;
+                    break;
+                }
+            }
+        } while (erased);
+    }
+    else if (how == eFirstNonempty) {
+        while ( !values.empty() && values.front().empty()) {
+            values.pop_front();
+        }
+    }
+    return !values.empty();
 }
 
 void CSimpleMakeFileContents::Save(const string& filename) const
