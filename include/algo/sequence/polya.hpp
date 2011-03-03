@@ -210,7 +210,7 @@ ForwardIterator1 ItrSearch(ForwardIterator1 first1, ForwardIterator1 last1,
 template <typename Iterator>
 TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
 {
-    TSeqRange tail_found = FindPolyARange(begin, end);
+    TSeqRange tail_found = FindPolyARange(begin, end, 0);
     return tail_found.Empty() ? -1 : tail_found.GetFrom();
 }
 
