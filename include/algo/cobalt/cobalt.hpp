@@ -661,7 +661,7 @@ protected:
     CMultiAlignerOptions::EInClustAlnMethod m_ClustAlnMethod;
 
     // Minimum tree node id for root of cluster subtree
-    static const int kClusterNodeId = 10000;
+    static const int kClusterNodeId = 16000;
 };
 
 END_SCOPE(cobalt)
