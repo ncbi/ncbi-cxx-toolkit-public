@@ -35,6 +35,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_misc.hpp>
 #include <connect/ncbi_util.h>
 #include <util/compress/stream_util.hpp>
 #include <util/compress/tar.hpp>
@@ -47,7 +48,7 @@
 #endif // NCBI_OS
 
 
-#define SCREEN_COLS (80 - 1/*seems to work better on MSWin*/)
+#define SCREEN_COLS (80 - 1)
 
 
 BEGIN_NCBI_SCOPE
@@ -90,27 +91,32 @@ static void s_Interrupt(int /*signo*/)
 class CDownloadCallbackData {
 public:
     CDownloadCallbackData(const char* filename, Uint8 size = 0)
-        : m_Sw(CStopWatch::eStart), m_Size(size), m_Last(0.0),
-          m_Filename(filename)
+        : m_Sw(CStopWatch::eStart), m_Last(0.0), m_Filename(filename)
     {
+        SetSize(size);
         memset(&m_Cb, 0, sizeof(m_Cb));
-        m_Current = pair<string,Uint8>(kEmptyStr, 0);
+        m_Current = pair<string, Uint8>(kEmptyStr, 0);
     }
 
-    SCONN_Callback *       CB(void)          { return &m_Cb;      }
-    Uint8             GetSize(void)    const { return m_Size;     }
-    void              SetSize(Uint8 size)    { m_Size = size;     }
+    SCONN_Callback*        CB(void)          { return &m_Cb;               }
+
+    Uint8             GetSize(void)    const { return m_Monitor.GetSize(); }
+    void              SetSize(Uint8 size)    { m_Monitor.SetSize(size);    }
     double         GetElapsed(bool update = true);
-    const string& GetFilename(void)    const { return m_Filename; }
+    const string& GetFilename(void)    const { return m_Filename;          }
+
+    void   Mark(Uint8 size, double time)     { m_Monitor.Mark(size, time); }
+    double GetRate(void)               const { return m_Monitor.GetRate(); }
+    double GetETA (void)               const { return m_Monitor.GetETA();  }
 
     void                  Append(const CTar::TFile* current = 0);
-    const CTar::TFiles& Filelist(void) const { return m_Filelist; }
+    const CTar::TFiles& Filelist(void) const { return m_Filelist;          }
 
 private:
     CStopWatch     m_Sw;
     SCONN_Callback m_Cb;
-    Uint8          m_Size;
     double         m_Last;
+    CRateMonitor   m_Monitor;
     CTar::TFile    m_Current;
     const string   m_Filename;
     CTar::TFiles   m_Filelist;
@@ -136,7 +142,7 @@ void CDownloadCallbackData::Append(const CTar::TFile* current)
     } else {
         m_Filelist.push_back(m_Current);
     }
-    m_Current = current ? *current : pair<string,Uint8>(kEmptyStr, 0);
+    m_Current = current ? *current : pair<string, Uint8>(kEmptyStr, 0);
 }
 
 
@@ -160,7 +166,7 @@ protected:
         cerr.flush();
         cout << line;
 		if (linelen < SCREEN_COLS) {
-		    cout << left << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+		    cout << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
 		}
 		cout << endl;
         TFile file(current.GetName(), current.GetSize());
@@ -215,7 +221,9 @@ class CListProcessor : public CNullProcessor
 public:
     CListProcessor(CProcessor& prev, CDownloadCallbackData* dlcbdata = 0)
         : CNullProcessor(prev, dlcbdata)
-    { m_Stream = m_Prev->GetIStream(); }
+    {
+        m_Stream = m_Prev->GetIStream();
+    }
     ~CListProcessor() { Stop(); }
 
     size_t           Run       (void);
@@ -259,6 +267,7 @@ size_t CNullProcessor::Run(void)
         m_Stream->read(buf, sizeof(buf));
         filesize += m_Stream->gcount();
     } while (*m_Stream);
+
     CTar::TFile file = make_pair(m_Dlcbdata->GetFilename(), filesize);
     m_Dlcbdata->Append(&file);
     return 1;
@@ -284,7 +293,7 @@ size_t CListProcessor::Run(void)
             cerr.flush();
 			cout << line;
 			if (linelen < SCREEN_COLS) {
-                cout << left << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+                cout << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
 			}
 			cout << endl;
             CTar::TFile file = make_pair(line, (Uint8) 0);
@@ -407,17 +416,15 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
         CONN_SetCallback(conn, type, &cb, 0);
         update = false;
     } else {
+        // NB: callbacks are always one-shot
         update = true;
     }
 
     CDownloadCallbackData* dlcbdata
         = reinterpret_cast<CDownloadCallbackData*>(data);
-    Uint8  pos  = CONN_GetPosition(conn, eIO_Read);
-    double time = dlcbdata->GetElapsed(update);
-    Uint8  size = dlcbdata->GetSize();
 
     if (type == eCONN_OnClose) {
-        // Callback up the chain
+        // Call back up the chain
         if (dlcbdata->CB()->func) {
             dlcbdata->CB()->func(conn, type, dlcbdata->CB()->data);
         }
@@ -429,42 +436,46 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
         SleepMilliSec(s_Throttler);
     }
 
+    double time = dlcbdata->GetElapsed(update);
+
     if (!update  &&  !time) {
         return;
     }
 
     if (s_IsATTY()) {
+        Uint8 pos  = CONN_GetPosition(conn, eIO_Read);
+        Uint8 size = dlcbdata->GetSize();
 		CNcbiOstrstream os;
-        if (!size) {
-            os << "Downloaded " << NStr::UInt8ToString(pos)
-               << "/unknown"
-                  " in " << fixed << setprecision(2) << time << 's';
-        } else {
+        if (size) {
             double percent = (pos * 100.0) / size;
             os << "Downloaded " << NStr::UInt8ToString(pos)
                << '/' << NStr::UInt8ToString(size)
                << " (" << fixed << setprecision(2) << percent << "%)"
                   " in " << fixed << setprecision(2) << time << 's';
-            if (time) {
-                double kbps = pos / time / 1024.0;
-                os << " (" << fixed << setprecision(2) << kbps << "KB/s)";
-                if (pos) {
-                    double eta = time * size / pos - time;
-                    if (eta > 0) {
-                        os << " ETA: "
-						   << (eta > 24 * 3600
-                               ? CTimeSpan(eta).AsString("d") + "+ day(s)"
-                               : CTimeSpan(eta).AsString("h:m:s"));
-                    }
-                }
-            }
+        } else {
+            os << "Downloaded " << NStr::UInt8ToString(pos)
+               << "/unknown"
+                  " in " << fixed << setprecision(2) << time << 's';
+        }
+        if (time) {
+            dlcbdata->Mark(pos, time);
+            double rate = dlcbdata->GetRate();
+            os << " (" << fixed << setprecision(2) << rate / 1024.0 << "KB/s)";
+            double eta = size  &&  rate ? (size - pos) / rate : 0.0;
+            if (eta > 0.5  &&  type != eCONN_OnClose) {
+                os << " ETA: "
+                   << (eta > 24 * 3600.0
+                       ? CTimeSpan(eta).AsString("d") + "+ day(s)"
+                       : CTimeSpan(eta).AsString("h:m:s"));
+            } else
+                os << "              ";
         }
 		string line = CNcbiOstrstreamToString(os);
 		size_t linelen = line.size();
         cout.flush();
 		cerr << line;
 		if (linelen < SCREEN_COLS) {
-            cerr << left << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+            cerr << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
 		}
 		cerr << '\r' << flush;
     }
@@ -516,10 +527,10 @@ int main(int argc, const char* argv[])
     USING_NCBI_SCOPE;
 
     typedef enum {
-        fProcessor_Null   = 0,  // Discard read data
-        fProcessor_List   = 4,  // List files line-by-line
-        fProcessor_Untar  = 1,  // Untar then discard read data
-        fProcessor_Gunzip = 2   // Decompress then discard read data
+        fProcessor_Null   = 0,  // Discard all read data
+        fProcessor_List   = 1,  // List contents line-by-line
+        fProcessor_Untar  = 2,  // Untar then discard read data
+        fProcessor_Gunzip = 4   // Decompress then discard read data
     } FProcessor;
     typedef unsigned int TProcessor;
 
@@ -670,14 +681,15 @@ int main(int argc, const char* argv[])
              << "; combined file size " << NStr::UInt8ToString(totalsize));
 
     if (!files  ||  !dlcbdata.Filelist().size()) {
-        // Interrupted or an error has occurred
+        // Interrupted or an error occurred
         ERR_POST("Final file list is empty");
         return 1;
     }
     if (files != dlcbdata.Filelist().size()) {
-        // NB: It may be so for an "updated" archive...
+        // NB: It may be so for an "updated" tar archive, for example...
         ERR_POST(Warning << "Final file list size mismatch: " << files);
         return 1;
     }
+
     return 0;
 }
