@@ -243,6 +243,7 @@ void CValidError_imp::Reset(void)
     m_NumGeneXrefs = 0;
     m_NumTpaWithHistory = 0;
     m_NumTpaWithoutHistory = 0;
+    m_FarFetchFailure = false;
     m_IsTbl2Asn = false;
 }
 
@@ -1373,6 +1374,12 @@ bool CValidError_imp::Validate
     FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
     FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
 
+    if (m_FarFetchFailure) {
+        PostErr(eDiag_Warning, eErr_SEQ_INST_FarFetchFailure, 
+                "Far fetch failures caused some validator tests to be bypassed",
+                *m_TSE);
+    }
+
     if (m_UseEntrez) {
         ValidateTaxonomy(*(seh.GetCompleteSeq_entry()));
     }
@@ -2228,6 +2235,9 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                     if(NStr::EndsWith (label, "|")) {
                         label = label.substr(0, label.length() - 1);
                     }
+                    if (NStr::EndsWith (label, "  ")) {
+                        label = label.substr(0, label.length() - 1);
+                    }
                     size_t len = label.length();
                     vector<string>::iterator unpub_it = unpublished_labels.begin();
                     while (unpub_it != unpublished_labels.end() && !found) {
@@ -2601,6 +2611,26 @@ void CValidError_imp::ValidateSeqLocIds
             }
         }
     } 
+}
+
+
+bool CValidError_imp::x_IsFarFetchFailure (const CSeq_loc& loc)
+{
+    bool rval = false;
+    if ( IsOneBioseq(loc, m_Scope) ) {
+        const CSeq_id& prod_id = GetId(loc, m_Scope);
+        CBioseq_Handle prod =
+            m_Scope->GetBioseqHandleFromTSE(prod_id, GetTSE());
+        if ( !prod ) {
+            if (!IsFarFetchMRNAproducts() && !IsFarFetchCDSproducts()
+                && IsFarLocation(loc)) {
+                rval = true;
+            }                        
+        }
+    } else {
+        rval = true;
+    }
+    return rval;
 }
 
 

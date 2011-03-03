@@ -224,6 +224,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
         }
     }
 
+
     ValidateSeqFeatData(feat.GetData(), feat);
   
     ValidateBothStrands (feat);
@@ -1063,12 +1064,16 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
         else if (partial_prod == eSeqlocPartial_Complete  &&  feat.IsSetProduct()) {
             // if not local bioseq product, lower severity
             EDiagSev sev = eDiag_Warning;
+            bool is_far_fail = false;
             if ( IsOneBioseq(feat.GetProduct(), m_Scope) ) {
                 const CSeq_id& prod_id = GetId(feat.GetProduct(), m_Scope);
                 CBioseq_Handle prod =
                     m_Scope->GetBioseqHandleFromTSE(prod_id, m_Imp.GetTSE());
                 if ( !prod ) {
                     sev = eDiag_Info;
+                    if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
+                        is_far_fail = true;
+                    }                        
                 }
             }
                         
@@ -1078,6 +1083,8 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             str += is_partial ? "TRUE" : "FALSE";
             if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                 // suppress for genomic gpipe
+            } else if (is_far_fail) {
+                m_Imp.SetFarFetchFailure();
             } else {
                 PostErr(sev, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
             }
@@ -2030,6 +2037,12 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         report_errors = false;
     }
 
+    if (m_Imp.x_IsFarFetchFailure(loc)) {
+        m_Imp.SetFarFetchFailure();
+        return;
+    }
+
+
     // look for mixed strands, skip if found
     ENa_strand strand = eNa_strand_unknown;
     bool relax_to_warning = false;
@@ -2377,7 +2390,7 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
     FOR_EACH_NAME_ON_PROTREF (it, prot) {
         if (NStr::EndsWith (*it, "]")) {
             bool report_name = true;
-            size_t pos = NStr::Find(*it, "[");
+            size_t pos = NStr::Find(*it, "[", 0, string::npos, NStr::eLast);
             if (pos == string::npos) {
                 report_name = false;
             } else if (it->length() - pos < 5) {
@@ -2653,11 +2666,11 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
         /* tRNA with string extension */
-        if ( rna.CanGetExt()  &&  
+        if ( rna.IsSetExt()  &&  
              rna.GetExt().Which () == CRNA_ref::C_Ext::e_Name ) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                 "Unparsed product qualifier in tRNA", feat);
-        } else if (!rna.CanGetExt() || rna.GetExt().Which() == CRNA_ref::C_Ext::e_not_set ) {
+        } else if (!rna.IsSetExt() || rna.GetExt().Which() == CRNA_ref::C_Ext::e_not_set ) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingTrnaAA,
                 "Missing encoded amino acid qualifier in tRNA", feat);
         }
@@ -3078,17 +3091,17 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
             if (anticodon.length() > 3) {
                 anticodon = anticodon.substr(0, 3);
             }
-		} catch (CException ) {
-		} catch (std::exception ) {
+		    } catch (CException ) {
+		    } catch (std::exception ) {
         }
-    }
 
-    if (codon_values.size() > 0) {
-        // check that codons predicted from anticodon can transfer indicated amino acid
         bool ok = false;
-        for (size_t i = 0; i < codon_values.size(); i++) {
-            if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
-                ok = true;
+        if (codon_values.size() > 0) {
+            // check that codons predicted from anticodon can transfer indicated amino acid
+            for (size_t i = 0; i < codon_values.size(); i++) {
+                if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
+                    ok = true;
+                }
             }
         }
         if (!ok) {
@@ -3105,24 +3118,24 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
                           feat);
             }
         }
-    }
 
-    // check that codons recognized match codons predicted from anticodon
-    if (codon_values.size() > 0 && recognized_codon_values.size() > 0) {
-        bool ok = false;
-        for (size_t i = 0; i < codon_values.size() && !ok; i++) {
-            for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
-                if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
-                    ok = true;
+        // check that codons recognized match codons predicted from anticodon
+        if (recognized_codon_values.size() > 0) {
+            bool ok = false;
+            for (size_t i = 0; i < codon_values.size() && !ok; i++) {
+                for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
+                    if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
+                        ok = true;
+                    }
                 }
             }
-        }
-        if (!ok 
-            && (!feat.IsSetExcept_text() 
-                || NStr::FindNoCase (feat.GetExcept_text(), "RNA editing") == string::npos)) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonCodon,
-                     "Codon recognized cannot be produced from anticodon ("
-                     + anticodon + ")", feat);
+            if (!ok 
+                && (!feat.IsSetExcept_text() 
+                    || NStr::FindNoCase (feat.GetExcept_text(), "RNA editing") == string::npos)) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonCodon,
+                         "Codon recognized cannot be produced from anticodon ("
+                         + anticodon + ")", feat);
+            }
         }
     }
 
@@ -4925,6 +4938,7 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
             if ( partial5 || partial3 ) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
                     "CDS is partial but protein is complete", feat);
+                TSeqPos tmp = feat.GetLocation().GetStop (eExtreme_Biological);
             }
             break;
 
@@ -5538,6 +5552,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     }
 
+    if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
+        m_Imp.SetFarFetchFailure();
+        return;
+    }
+
     bool prot_ok = true;
     int  ragged = 0;
     bool has_errors = false, unclassified_except = false,
@@ -5783,6 +5802,13 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             if (!prot_handle  &&  m_Imp.IsFarFetchCDSproducts()) {
                 prot_handle = m_Scope->GetBioseqHandle(*protid);
                 farstr = "(far) ";
+                if (!prot_handle) {
+                    string label;
+                    protid->GetLabel(&label);
+
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
+                          "Unable to fetch CDS product '" + label + "'", feat);
+                }
             }
         }
     }
@@ -6236,61 +6262,65 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     }
 
     const CGene_ref* gene_xref = feat.GetGeneXref();
+    TSeqPos circular_len = kInvalidSeqPos;
+    if (bsh.IsSetInst_Topology()
+        && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular
+        && bsh.IsSetInst_Length()) {
+        circular_len = bsh.GetInst_Length();
+    }
 
-    // get the list of overlapping genes
-    TFeatScores overlapping_genes;
+    size_t num_genes = 0;
+    size_t max = 0;
+    bool equivalent = false;
+    CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
+    CFeat_CI prev_gene;
+    string label = "?";
+    bool match_to_xref = false;
+    size_t match_to_xref_len = 0;
 
-    GetOverlappingFeatures(feat.GetLocation(),
-                           CSeqFeatData::e_Gene,
-                           CSeqFeatData::eSubtype_gene,
-                           eOverlap_Contained,
-                           overlapping_genes,
-                           *m_Scope);
+    while (gene_it) {
+        if (TestForOverlap (gene_it->GetLocation(), feat.GetLocation(), eOverlap_Contained, circular_len) >= 0) {
+            size_t len = GetLength(gene_it->GetLocation(), m_Scope);
+            if (len < max || num_genes == 0) {
+                num_genes = 1;
+                max = len;
+                equivalent = false;
+                prev_gene = gene_it;
+            } else if (len == max) {
+                equivalent |= s_GeneRefsAreEquivalent(gene_it->GetData().GetGene(), prev_gene->GetData().GetGene(), label);
+                num_genes++;
+            }
+            if (gene_xref && s_GeneRefsAreEquivalent(*gene_xref, gene_it->GetData().GetGene(), label)) {
+                if (!match_to_xref || match_to_xref_len < len) {
+                    match_to_xref = true;
+                    match_to_xref_len = len;
+                }
+            }
+        }
+        ++gene_it;
+    }
 
     if ( gene_xref == 0) {
         // if there is no gene xref, then there should be 0 or 1 overlapping genes
         // so that mapping by overlap is unambiguous
-        if (overlapping_genes.size() > 1) {
-            unsigned int num_genes = 1;
-            bool equivalent = false;
-            string label = "?";
-            
-            TFeatScores::iterator f1 = overlapping_genes.begin();
-            size_t max = GetLength(f1->second->GetLocation(), m_Scope);
-            TFeatScores::iterator f2 = f1;
-            ++f2;
-            while (f2 != overlapping_genes.end()) {
-                size_t len = GetLength(f2->second->GetLocation(), m_Scope);
-                if (len < max) {
-                    num_genes = 1;
-                    max = len;
-                    equivalent = false;
-                    f1 = f2;
-                } else if (len == max) {
-                    equivalent |= s_GeneRefsAreEquivalent(f1->second->GetData().GetGene(), f2->second->GetData().GetGene(), label);
-                    num_genes++;
-                }
-                ++f2;
+        if (num_genes > 1) {
+            if (equivalent) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
+                         "Feature overlapped by "
+                         + NStr::IntToString(num_genes)
+                         + " identical-length equivalent genes but has no cross-reference",
+                         feat);
+            } else {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneXref,
+                         "Feature overlapped by "
+                         + NStr::IntToString(num_genes)
+                         + " identical-length genes but has no cross-reference",
+                         feat);
             }
-            if (num_genes > 1) {
-                if (equivalent) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
-                             "Feature overlapped by "
-                             + NStr::IntToString(num_genes)
-                             + " identical-length equivalent genes but has no cross-reference",
-                             feat);
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneXref,
-                             "Feature overlapped by "
-                             + NStr::IntToString(num_genes)
-                             + " identical-length genes but has no cross-reference",
-                             feat);
-                }
-            }
-        } else if (overlapping_genes.size() == 1 
-                   && overlapping_genes.begin()->second->GetData().GetGene().IsSetAllele()
-                   && !NStr::IsBlank(overlapping_genes.begin()->second->GetData().GetGene().GetAllele())) {
-            const string& allele = overlapping_genes.begin()->second->GetData().GetGene().GetAllele();
+        } else if (num_genes == 1 
+                   && prev_gene->GetData().GetGene().IsSetAllele()
+                   && !NStr::IsBlank(prev_gene->GetData().GetGene().GetAllele())) {
+            const string& allele = prev_gene->GetData().GetGene().GetAllele();
             // overlapping gene should not conflict with allele qualifier
             FOR_EACH_GBQUAL_ON_FEATURE (qual_iter, feat) {
                 const CGb_qual& qual = **qual_iter;
@@ -6314,52 +6344,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         m_Imp.IncrementGeneXrefCount();
 
         // compare gene xref to overlapping gene
-        bool redundant_xref = false;
-        string label = "?";
-
-        if (overlapping_genes.size() > 0) {
-            TFeatScores::iterator f1 = overlapping_genes.begin();
-            while (f1 != overlapping_genes.end() && !redundant_xref) {
-                if (s_GeneRefsAreEquivalent(*gene_xref, f1->second->GetData().GetGene(), label)) {
-                    redundant_xref = true;
-                } else {
-                  ++f1;
-                }
-            }
-        }
-        if (redundant_xref && overlapping_genes.size() > 1) {
-            size_t num_at_min_length = 0;
-            size_t min_length = 0;
-            bool found_shorter_nonmatch = false;
-            bool equivalent_genes = false;
-            TFeatScores::iterator f1 = overlapping_genes.begin();
-            while (f1 != overlapping_genes.end()) {
-                size_t len = GetLength (f1->second->GetLocation(), m_Scope);
-                if (num_at_min_length == 0 || len < min_length) {
-                    num_at_min_length = 1;
-                    min_length = len;
-                    equivalent_genes = s_GeneRefsAreEquivalent(*gene_xref, f1->second->GetData().GetGene(), label);
-                    if (equivalent_genes) {
-                        found_shorter_nonmatch = false;
-                    } else {
-                        found_shorter_nonmatch = true;
-                    }
-                } else if (len == min_length) {
-                    equivalent_genes = s_GeneRefsAreEquivalent(*gene_xref, f1->second->GetData().GetGene(), label);
-                    num_at_min_length++;
-                }
-                ++f1;
-            }
-            if (num_at_min_length > 1) {
-                redundant_xref = false;
-            } else if (found_shorter_nonmatch) {
-                redundant_xref = false;
-            }
-        }
-        if (redundant_xref) {
-            if (NStr::IsBlank(label)) {
-                label = "?";
-            }
+        if (match_to_xref && num_genes == 1 && GetLength (prev_gene->GetLocation(), m_Scope) == match_to_xref_len) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
                 "Unnecessary gene cross-reference " + label, feat);
         } else {
