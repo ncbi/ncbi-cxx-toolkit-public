@@ -573,48 +573,43 @@ SImplementation::ConvertAlignToAnnot(
     CScope mapper_scope(*CObjectManager::GetInstance());
     mapper_scope.AddScope(*m_scope);
     
-    typedef map< CSeq_id_Handle, list< CRef<CSeq_align> > > TAlignsByGene;
-    TAlignsByGene aligns_by_gene;
-
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (m_flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
-    /// Collate alignments in list by gene
+    CRef<CSeq_feat> gene_feat;
+    CSeq_annot gene_annot;
+    CSeq_id_Handle gene_handle;
     ITERATE(list< CRef<CSeq_align> >, align_it, aligns){
-        SMapper mapper(**align_it, mapper_scope, m_allowed_unaligned, opts);
-        const CSeq_id& genomic_id = (*align_it)->GetSeq_id(mapper.GetGenomicRow());
-        aligns_by_gene[CSeq_id_Handle::GetHandle(genomic_id)].push_back(*align_it);
-    }
+        CConstRef<CSeq_align> clean_align = CleanAlignment(**align_it);
+        CRef<CSeq_feat> mrna_feat = ConvertAlignToAnnot(*clean_align, gene_annot, seqs, 0, NULL, true);
 
-    ITERATE(TAlignsByGene, by_gene_it, aligns_by_gene){
-        CRef<CSeq_feat> gene_feat;
-        CSeq_annot gene_annot;
-        ITERATE(list< CRef<CSeq_align> >, align_it, by_gene_it->second){
-            CConstRef<CSeq_align> clean_align = CleanAlignment(**align_it);
-            CRef<CSeq_feat> mrna_feat = ConvertAlignToAnnot(*clean_align, gene_annot, seqs, 0, NULL, true);
-    
-            SMapper mapper(*clean_align, mapper_scope, m_allowed_unaligned, opts);
-            const CSeq_id& rna_id = clean_align->GetSeq_id(mapper.GetRnaRow());
-    
-            CRef<CSeq_loc> loc(new CSeq_loc);
-            loc->Assign(mapper.GetRnaLoc());
-    
-            CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
-            x_CreateGeneFeature(gene_feat, handle, mapper, loc, *by_gene_it->first.GetSeqId());
-    
-            x_CopyAdditionalFeatures(handle, mapper, gene_annot);
-        }
-        NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat_it, gene_annot.SetData().SetFtable())
-        {
-            x_CheckInconsistentDbxrefs(gene_feat, *feat_it);
-        }
-        gene_annot.SetData().SetFtable().push_front(gene_feat);
-        RecomputePartialFlags(gene_annot);
-        annot.SetData().SetFtable().splice(annot.SetData().SetFtable().end(),
-                                           gene_annot.SetData().SetFtable());
+        SMapper mapper(*clean_align, mapper_scope, m_allowed_unaligned, opts);
+        const CSeq_id& genomic_id = clean_align->GetSeq_id(mapper.GetGenomicRow());
+        const CSeq_id& rna_id = clean_align->GetSeq_id(mapper.GetRnaRow());
+        if(!gene_handle)
+            gene_handle = CSeq_id_Handle::GetHandle(genomic_id);
+        else if(!(gene_handle == genomic_id))
+            NCBI_THROW(CException, eUnknown,
+                       "Bad list of alignments to ConvertAlignToAnnot(); alignments on different genes");
+
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->Assign(mapper.GetRnaLoc());
+
+        CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+        x_CreateGeneFeature(gene_feat, handle, mapper, loc, genomic_id);
+
+        x_CopyAdditionalFeatures(handle, mapper, gene_annot);
     }
+    NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat_it, gene_annot.SetData().SetFtable())
+    {
+        x_CheckInconsistentDbxrefs(gene_feat, *feat_it);
+    }
+    gene_annot.SetData().SetFtable().push_front(gene_feat);
+    RecomputePartialFlags(gene_annot);
+    annot.SetData().SetFtable().splice(annot.SetData().SetFtable().end(),
+                                       gene_annot.SetData().SetFtable());
 }
 
 bool IsContinuous(CSeq_loc& loc)
