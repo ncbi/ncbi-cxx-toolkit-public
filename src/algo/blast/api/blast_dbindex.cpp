@@ -793,6 +793,7 @@ void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src )
     _BlastSeqSrcImpl_SetDeleteFnPtr        ( dst, _BlastSeqSrcImpl_GetDeleteFnPtr( src ) );
     _BlastSeqSrcImpl_SetCopyFnPtr          ( dst, _BlastSeqSrcImpl_GetCopyFnPtr( src ) );
     _BlastSeqSrcImpl_SetDataStructure      ( dst, _BlastSeqSrcImpl_GetDataStructure( src ) );
+    _BlastSeqSrcImpl_SetSetNumberOfThreads ( dst, _BlastSeqSrcImpl_GetSetNumberOfThreads( src ) );
     _BlastSeqSrcImpl_SetGetNumSeqs         ( dst, _BlastSeqSrcImpl_GetGetNumSeqs( src ) );
     _BlastSeqSrcImpl_SetGetNumSeqsStats    ( dst, _BlastSeqSrcImpl_GetGetNumSeqsStats( src ) );
     _BlastSeqSrcImpl_SetGetMaxSeqLen       ( dst, _BlastSeqSrcImpl_GetGetMaxSeqLen( src ) );
@@ -838,6 +839,15 @@ static void * s_GetForwardSeqDb( void * handle )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
     return idb_handle->idb_->GetSeqDb();
+}
+
+//------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
+static void s_IDbSetNumberOfThreads( void * handle, int n_th )
+{
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    _BlastSeqSrcImpl_GetSetNumberOfThreads( fw_seqsrc )( fw_handle, n_th );
 }
 
 //------------------------------------------------------------------------------
@@ -1037,6 +1047,7 @@ static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
     _BlastSeqSrcImpl_SetDeleteFnPtr        (retval, & s_IDbSrcFree);
     _BlastSeqSrcImpl_SetCopyFnPtr          (retval, & s_IDbSrcCopy);
     _BlastSeqSrcImpl_SetDataStructure      (retval, (void*) idb);
+    _BlastSeqSrcImpl_SetSetNumberOfThreads (retval, & s_IDbSetNumberOfThreads);
     _BlastSeqSrcImpl_SetGetNumSeqs         (retval, & s_IDbGetNumSeqs);
     _BlastSeqSrcImpl_SetGetNumSeqsStats    (retval, & s_IDbGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen       (retval, & s_IDbGetMaxLength);
