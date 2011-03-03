@@ -151,7 +151,6 @@ BlastBuildArchive(blast::IQueryFactory& queries,
 
        	CSearchDatabase search_db(dbname, mol_type);
 
-        options_handle.SetEffectiveSearchSpace(4000); // Why is this here?  
         CRef<blast::IQueryFactory> iquery_ref(&queries);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
         CRef<CRemoteBlast> rmt_blast(new CRemoteBlast(iquery_ref, options_ref, search_db));
@@ -173,7 +172,6 @@ BlastBuildArchive(blast::IQueryFactory& queries,
 	else
         	mol_type = CSearchDatabase::eBlastDbIsProtein;
 
-        options_handle.SetEffectiveSearchSpace(4000); // Why is this here?  
         CRef<blast::IQueryFactory> iquery_ref(&queries);
         CRef<blast::IQueryFactory> isubject_ref(&subjects);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);

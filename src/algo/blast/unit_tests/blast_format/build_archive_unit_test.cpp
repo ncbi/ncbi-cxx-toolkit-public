@@ -79,6 +79,7 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithDB)
     CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bss_ref));
 
     CBlastNucleotideOptionsHandle nucl_opts(CBlastOptions::eBoth);
+    Int8 effective_search_space = nucl_opts.GetEffectiveSearchSpace();
 
     CRef<objects::CBlast4_archive> archive = 
 		BlastBuildArchive(*query_factory,
@@ -86,6 +87,8 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithDB)
 				*(rb.GetResultSet()),
 				"nr");
    
+    BOOST_REQUIRE(effective_search_space == nucl_opts.GetEffectiveSearchSpace());
+
     const CBlast4_request& request = archive->GetRequest();
     const CBlast4_request_body& body = request.GetBody();
     const CBlast4_queue_search_request& queue_search = body.GetQueue_search();
