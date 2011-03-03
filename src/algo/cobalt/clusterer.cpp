@@ -48,6 +48,10 @@ static void s_CheckDistMatrix(const CClusterer::TDistMatrix& dmat)
     }
 }
 
+CClusterer::CClusterer()
+{
+    x_Init();
+}
 
 CClusterer::CClusterer(const CClusterer::TDistMatrix& dmat)
     : m_DistMatrix(new TDistMatrix(dmat))
@@ -85,7 +89,8 @@ CClusterer::~CClusterer()
 void CClusterer::x_Init(void)
 {
     m_MaxDiameter = 0.8;
-    m_LinkMethod = eDist;
+    m_LinkMethod = eClique;
+    m_MakeTrees = false;
 }
 
 void CClusterer::SetDistMatrix(const TDistMatrix& dmat)
@@ -631,6 +636,8 @@ void CClusterer::ComputeClustersFromLinks(void)
     CLinks::SLink_CI it = m_Links->begin();
     for (;it != m_Links->end();++it) {
 
+        _ASSERT(it->first != it->second);
+
         // if none of elements belongs to a cluster
         if (m_ClusterId[it->first] < 0 && m_ClusterId[it->second] < 0) {
 
@@ -658,21 +665,25 @@ void CClusterer::ComputeClustersFromLinks(void)
 
                 // check if element can be added to the cluster the other
                 // element belongs
-                if (x_CanAddElem(cluster_id, elem)) {
+                double distance;
+                if (x_CanAddElem(cluster_id, elem, distance)) {
                     // add element
-                    x_JoinClustElem(cluster_id, elem, it->weight);
+                    x_JoinClustElem(cluster_id, elem, distance);
                 }
                 
             }
             // if both elements belong to clusters
             else {
-                // if these clusters can e joined
+                // if these clusters can be joined
+                double distance;
                 if (x_CanJoinClusters(m_ClusterId[it->first],
-                                      m_ClusterId[it->second])) {
+                                      m_ClusterId[it->second],
+                                      distance)) {
                     
                     // join clusters
                     x_JoinClusters(m_ClusterId[it->first],
-                                   m_ClusterId[it->second]);
+                                   m_ClusterId[it->second],
+                                   distance);
                 }
             }
         }
@@ -711,9 +722,19 @@ void CClusterer::ComputeClustersFromLinks(void)
             ITERATE (vector<int>, it, cluster) {
                 m_Clusters[i].AddElement(*it);
                 m_ClusterId[*it] = i;
+                m_Clusters[i].m_Tree = cluster.m_Tree;
+                _ASSERT(m_Clusters[i].m_Tree);
             }
             m_Clusters.pop_back();
         }        
+    }
+
+    if (m_MakeTrees) {
+        m_Trees.reserve(m_Clusters.size());
+        ITERATE (vector<CSingleCluster>, it, m_Clusters) {
+            _ASSERT(it->m_Tree);
+            m_Trees.push_back(it->m_Tree);
+        }
     }
 }
 
@@ -751,6 +772,26 @@ void CClusterer::x_JoinElements(const CLinks::SLink& link)
     // set cluster id for elements
     m_ClusterId[link.first] = cluster_id;
     m_ClusterId[link.second] = cluster_id;
+
+    if (!m_MakeTrees) {
+        return;
+    }
+
+    // join tree nodes
+    TPhyTreeNode* root = new TPhyTreeNode();
+    TPhyTreeNode* left = s_CreateTreeLeaf(link.first);
+    TPhyTreeNode* right = s_CreateTreeLeaf(link.second);
+    root->AddNode(left);
+    root->AddNode(right);
+    double dist = link.weight / 2.0;
+    left->GetValue().SetDist(dist);
+    right->GetValue().SetDist(dist);
+
+    // set cluster tree and average leaf distance to root
+    _ASSERT(!m_Clusters[cluster_id].m_Tree);
+    m_Clusters[cluster_id].m_Tree = root;
+    m_Clusters[cluster_id].m_DistToRoot.push_back(dist);
+    m_Clusters[cluster_id].m_DistToRoot.push_back(dist);
 }
 
 void CClusterer::x_CreateCluster(int elem)
@@ -780,16 +821,58 @@ void CClusterer::x_CreateCluster(int elem)
 
     // set cluster id for the element
     m_ClusterId[elem] = cluster_id;
+
+    if (m_MakeTrees) {
+        _ASSERT(!m_Clusters[cluster_id].m_Tree);
+        m_Clusters[cluster_id].m_Tree = s_CreateTreeLeaf(elem);
+    }    
 }
 
 void CClusterer::x_JoinClustElem(int cluster_id, int elem, double distance)
 {
     m_Clusters[cluster_id].AddElement(elem);
     m_ClusterId[elem] = cluster_id;
+
+    if (!m_MakeTrees) {
+        return;
+    }
+
+    _ASSERT(m_Clusters[cluster_id].m_Tree);
+    
+    // attach the new node to cluster tree
+    TPhyTreeNode* root = new TPhyTreeNode();
+    TPhyTreeNode* old_root = m_Clusters[cluster_id].m_Tree;
+    TPhyTreeNode* node = s_CreateTreeLeaf(elem);
+
+    root->AddNode(old_root);
+    root->AddNode(node);
+
+    // find average leaf distance to root
+    double sum_dist = 0.0;
+    ITERATE (vector<double>, it, m_Clusters[cluster_id].m_DistToRoot) {
+        sum_dist += *it;
+    }
+    double ave_dist_to_root
+        = sum_dist / (double)m_Clusters[cluster_id].m_DistToRoot.size();
+
+    // set edge lengths for subtrees
+    double d = (distance - ave_dist_to_root) / 2.0;
+
+    old_root->GetValue().SetDist(d > 0.0 ? d : 0.0);
+    node->GetValue().SetDist(d > 0.0 ? d : 0.0);
+    
+    // set new root for cluster
+    m_Clusters[cluster_id].m_Tree = root;
+
+    // update leaf distances to root
+    NON_CONST_ITERATE (vector<double>, it, m_Clusters[cluster_id].m_DistToRoot) {
+        *it += d;
+    }
+    m_Clusters[cluster_id].m_DistToRoot.push_back(d);
 }
 
 
-bool CClusterer::x_CanAddElem(int cluster_id, int elem) const
+bool CClusterer::x_CanAddElem(int cluster_id, int elem, double& dist) const
 {
     // for the link method, clusters and elements can be joined as long
     // as there exists at least one link between elements
@@ -798,20 +881,82 @@ bool CClusterer::x_CanAddElem(int cluster_id, int elem) const
     }
 
     // for the clique method there must be a link between all pairs of elements
-    ITERATE (vector<int>, it, m_Clusters[cluster_id]) {
-        if (!m_Links->IsLink(*it, elem)) {
-            return false;
-        }
+    if (m_MakeTrees) {
+        vector<int> el(1, elem);
+        return m_Links->IsLink(m_Clusters[cluster_id].GetElements(), el, dist);
     }
+    else {
 
-    return true;
+        ITERATE (vector<int>, it, m_Clusters[cluster_id]) {
+            if (!m_Links->IsLink(*it, elem)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 
-void CClusterer::x_JoinClusters(int cluster1_id, int cluster2_id)
+void CClusterer::x_JoinClusters(int cluster1_id, int cluster2_id, double dist)
 {
     CSingleCluster& cluster1 = m_Clusters[cluster1_id];
     CSingleCluster& cluster2 = m_Clusters[cluster2_id];
+
+    if (m_MakeTrees) {
+
+        _ASSERT(cluster1.m_Tree);
+        _ASSERT(cluster2.m_Tree);
+
+        // join cluster trees
+        TPhyTreeNode* root = new TPhyTreeNode();
+        TPhyTreeNode* left = cluster1.m_Tree;
+        TPhyTreeNode* right = cluster2.m_Tree;
+
+        root->AddNode(left);
+        root->AddNode(right);
+
+        // find edge lengths below new root
+        double left_dist_to_root, right_dist_to_root;
+        double sum = 0.0;
+        ITERATE (vector<double>, it, cluster1.m_DistToRoot) {
+            sum += *it;
+        }
+        left_dist_to_root = sum / (double)cluster1.size();
+
+        sum = 0.0;
+        ITERATE (vector<double>, it, cluster2.m_DistToRoot) {
+            sum += *it;
+        }
+        right_dist_to_root = sum / (double)cluster2.size();
+
+        double left_dist = dist - left_dist_to_root;
+        double right_dist = dist - right_dist_to_root;
+
+        // set lengths lengths for new edges
+        left->GetValue().SetDist(left_dist > 0.0 ? left_dist : 0.0);
+        right->GetValue().SetDist(right_dist > 0.0 ? right_dist : 0.0);
+    
+        // update tree root, the clusters are joint into cluster1 see below
+        cluster1.m_Tree = root;
+
+        // update leaf distances to root
+        NON_CONST_ITERATE (vector<double>, it, cluster1.m_DistToRoot) {
+            *it += left_dist;
+        }
+
+        size_t num_elements
+            = cluster1.m_DistToRoot.size() + cluster2.m_DistToRoot.size();
+
+        if (cluster1.m_DistToRoot.capacity() < num_elements) {
+
+            cluster1.m_DistToRoot.reserve(num_elements
+                                          + (int)(0.3 * num_elements));
+        }
+        ITERATE (vector<double>, it, cluster2.m_DistToRoot) {
+            cluster1.m_DistToRoot.push_back(*it + right_dist);
+        }
+    }
 
     // add elements of cluster2 to cluster1
     ITERATE (vector<int>, it, cluster2) {
@@ -819,32 +964,43 @@ void CClusterer::x_JoinClusters(int cluster1_id, int cluster2_id)
         m_ClusterId[*it] = cluster1_id;
     }
 
-    // remove all elements of cluster 2
+    // remove all elements and detouch tree of cluster 2
     cluster2.clear();
+    cluster2.m_Tree = NULL;
+    _ASSERT(!cluster2.m_Tree);
 
     // mark cluster2 as unused
     m_UnusedEntries.push_back(cluster2_id);
 }
 
 
-bool CClusterer::x_CanJoinClusters(int cluster1_id, int cluster2_id) const
+bool CClusterer::x_CanJoinClusters(int cluster1_id, int cluster2_id,
+                                   double& dist) const
 {
     // for the link method, clusters can be joined as long
     // as there exists at least one link between elements
     if (m_LinkMethod == eDist) {
         return true;
     }
-
+    
     // for the clique method there must be a link between all pairs of elements
-    ITERATE (vector<int>, it1, m_Clusters[cluster1_id]) {
-        ITERATE (vector<int>, it2, m_Clusters[cluster2_id]) {
-            if (!m_Links->IsLink(*it1, *it2)) {
-                return false;
+    if (m_MakeTrees) {
+        return m_Links->IsLink(m_Clusters[cluster1_id].GetElements(),
+                               m_Clusters[cluster2_id].GetElements(),
+                               dist);
+    }
+    else {
+
+        ITERATE (vector<int>, it1, m_Clusters[cluster1_id]) {
+            ITERATE (vector<int>, it2, m_Clusters[cluster2_id]) {
+                if (!m_Links->IsLink(*it1, *it2)) {
+                    return false;
+                }
             }
         }
-    }
 
-    return true;
+        return true;
+    }
 }
 
 int CClusterer::GetClusterId(int elem) const
@@ -947,6 +1103,7 @@ void CClusterer::Reset(void)
     s_PurgeTrees(m_Trees);
     m_Clusters.clear();
     PurgeDistMatrix();
+    m_Links.Reset();
 }
 
 

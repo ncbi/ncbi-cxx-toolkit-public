@@ -80,7 +80,7 @@ public:
     public:
         /// Create empty cluster
         ///
-        CSingleCluster(void) : m_Prototype(-1) {}
+        CSingleCluster(void) : m_Prototype(-1), m_Tree(NULL) {}
 
         /// Add element to the cluster
         /// @param el Index of an element
@@ -124,6 +124,11 @@ public:
         ///
         int FindCenterElement(const TDistMatrix& dmatrix) const;
 
+        /// Get list of cluster elements
+        /// @return Cluster elements
+        ///
+        const vector<int>& GetElements(void) const {return m_Elements;}
+
         /// Get element
         /// @param index Element index
         /// @return Element
@@ -141,6 +146,14 @@ public:
         int m_Prototype;          ///< Index of cluster representative element
         double m_Diameter;        ///< Max distance between elements
         vector<int> m_Elements;   ///< List of indeces of cluster elements
+
+    public:
+
+        /// Cluster tree root
+        TPhyTreeNode* m_Tree;
+
+        /// Distances between cluster elements and tree root
+        vector<double> m_DistToRoot;
     };
 
     typedef CSingleCluster TSingleCluster;
@@ -150,7 +163,7 @@ public:
 
     /// Create empty clusterer
     ///
-    CClusterer(void) {}
+    CClusterer(void);
 
     /// Create clusterer
     /// @param dmat Distance matrix
@@ -210,6 +223,11 @@ public:
     /// @return Clustering method for links
     ///
     EClustMethod GetClustMethod(void) const {return m_LinkMethod;}
+
+    /// Set make cluster tree/dendrogram option
+    /// @param trees If true cluster trees will be computed [in]
+    ///
+    void SetMakeTrees(bool trees) {m_MakeTrees = trees;}
 
     /// Compute clusters
     ///
@@ -321,7 +339,7 @@ protected:
     void x_JoinClustElem(int cluster_id, int elem, double dist);
 
     /// Join two clusters
-    void x_JoinClusters(int cluster1_id, int cluster2_id);
+    void x_JoinClusters(int cluster1_id, int cluster2_id, double dist);
 
     /// Create one-element cluster
     void x_CreateCluster(int elem);
@@ -329,12 +347,21 @@ protected:
     /// Check whether element can be added to the cluster. The function assumes
     /// that there is a link between the element and at least one element
     /// of the cluster.
-    bool x_CanAddElem(int cluster_id, int elem) const;
+    /// @param cluster_id Cluster id [in]
+    /// @param elem Element [in]
+    /// @param dist Average distance between the element and cluster 
+    /// elements [out]
+    bool x_CanAddElem(int cluster_id, int elem, double& dist) const;
 
     /// Check whether two clusters can be joined. The function assumes that
     /// there is a link between at least one pair of elements from the two
     /// clusters.
-    bool x_CanJoinClusters(int cluster1_id, int cluster2_id) const;
+    /// @param cluster1_id Id of the first cluster [in]
+    /// @param cluster2_id Id of the second cluster [in]
+    /// @param dist Average distance between all pairs of elements (x, y), such
+    /// that x belongs to cluster1 and y to cluster2 [out]
+    bool x_CanJoinClusters(int cluster1_id, int cluster2_id,
+                           double& dist) const;
 
 
 protected:
@@ -347,6 +374,8 @@ protected:
     CRef<CLinks> m_Links;
     vector<int> m_ClusterId;
     list<int> m_UnusedEntries;
+
+    bool m_MakeTrees;
 };
 
 

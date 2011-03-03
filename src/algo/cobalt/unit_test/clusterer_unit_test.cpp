@@ -77,7 +77,6 @@ BOOST_AUTO_TEST_CASE(TestSingleCluster)
            CClustererException);
 }
 
-
 BOOST_AUTO_TEST_CASE(TestClusterer)
 {
     // Empty clusterer is created with no clusters and distance matrix
@@ -236,22 +235,23 @@ static void s_TestClusterTree(const CClusterer::TSingleCluster& cluster,
 /// @param clusters Clusters to examine [in]
 /// @param trees Cluster trees to examine [in] 
 /// @param ref_filename Name of filename containing reference clusters data [in]
-static void s_TestClustersAndTrees(const CClusterer::TDistMatrix& dmat,
-                                   const CClusterer::TClusters& clusters,
-                                   const vector<TPhyTreeNode*>& trees,
+static void s_TestClustersAndTrees(int num_elems,
+                                   CClusterer& clusterer,
                                    const string& ref_filename = "")
 {
-    // distance matrix must be square
-    BOOST_REQUIRE(dmat.GetRows() == dmat.GetCols());
+    BOOST_REQUIRE(clusterer.GetClusters().size() > 0);
 
-    vector<bool> check_elems(dmat.GetRows(), false);
+    vector<bool> check_elems(num_elems, false);
+
+    const CClusterer::TClusters& clusters = clusterer.GetClusters();
+    const vector<TPhyTreeNode*>& trees = clusterer.GetTrees();
     
     // check whether each element belongs to exactly one cluster
     int num_elements = 0;
     ITERATE (CClusterer::TClusters, cluster, clusters) {
         ITERATE (CClusterer::TSingleCluster, elem, *cluster) {
 
-            BOOST_REQUIRE(*elem < (int)dmat.GetRows());
+            BOOST_REQUIRE(*elem < num_elems);
 
             // each element appear only once in all clusters
             BOOST_REQUIRE(!check_elems[*elem]);
@@ -346,82 +346,100 @@ static void s_TestClustersAndTrees(const CClusterer::TDistMatrix& dmat,
 }
 
 
+BOOST_AUTO_TEST_CASE(TestNoLinks)
+{
+    CClusterer clusterer;
+    clusterer.SetMakeTrees(true);
+
+    const int num_elements = 5;
+    CRef<CLinks> links(new CLinks(num_elements));
+    clusterer.SetLinks(links);
+    clusterer.Run();
+
+    s_TestClustersAndTrees(num_elements, clusterer);
+}
+
 BOOST_AUTO_TEST_CASE(TestOneElement)
 {
-    // Check clusters and trees
-
-    CClusterer::TDistMatrix dmat;
     CClusterer clusterer;
-    const bool compute_trees = true;
+    clusterer.SetMakeTrees(true);    
 
     // one element
-    dmat.Resize(1, 1);
-    dmat(0, 0) = 0.0;
-    clusterer.SetDistMatrix(dmat);
-    clusterer.ComputeClusters(0.8, CClusterer::eCompleteLinkage, compute_trees);
-    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees());
+    const int num_elements = 1;
+
+    CRef<CLinks> links(new CLinks(num_elements));
+    // one element, hence no links
+    clusterer.SetLinks(links);
+    clusterer.Run();
+
+    s_TestClustersAndTrees(num_elements, clusterer);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestTwoElementsOneCluster)
 {
-    // Check clusters and trees
-
-    CClusterer::TDistMatrix dmat;
     CClusterer clusterer;
-    const bool compute_trees = true;
-    const double dist = 0.5;
-    const double max_diam = 0.8;
-    BOOST_REQUIRE(dist < max_diam);
+    clusterer.SetMakeTrees(true);
 
-    // two elements, one cluster
-    dmat.Resize(2, 2, 0.0);
-    dmat(0, 1) = dmat(1, 0) = dist;
-    clusterer.Reset();
-    clusterer.SetDistMatrix(dmat);
-    clusterer.ComputeClusters(max_diam, CClusterer::eCompleteLinkage,
-                              compute_trees);
+    // two elements
+    const int num_elements = 2;
 
-    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees());
+    CRef<CLinks> links(new CLinks(num_elements));
+    // link exists, hence the elements will be joined
+    links->AddLink(0, 1, 0.0);
+    clusterer.SetLinks(links);
+    clusterer.Run();
+
+    s_TestClustersAndTrees(num_elements, clusterer);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestTwoElementsTwoClusters)
 {
-    // Check clusters and trees
-
-    CClusterer::TDistMatrix dmat;
     CClusterer clusterer;
-    const bool compute_trees = true;
-    const double dist = 0.5;
-    const double max_diam = 0.4;
-    BOOST_REQUIRE(dist > max_diam);
+    clusterer.SetMakeTrees(true);
 
-    // two elements, one cluster
-    dmat.Resize(2, 2, 0.0);
-    dmat(0, 1) = dmat(1, 0) = dist;
-    clusterer.Reset();
-    clusterer.SetDistMatrix(dmat);
-    clusterer.ComputeClusters(max_diam, CClusterer::eCompleteLinkage,
-                              compute_trees);
+    // two elements
+    const int num_elements = 2;
 
-    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees());
+    CRef<CLinks> links(new CLinks(num_elements));
+    // no link between elements, hence two clusters
+    clusterer.SetLinks(links);
+    clusterer.Run();
+
+    s_TestClustersAndTrees(num_elements, clusterer);
 }
 
 BOOST_AUTO_TEST_CASE(TestMoreElements)
 {
     // Check clusters and trees and compare clusters with reference files
 
-    CClusterer::TDistMatrix dmat;
     CClusterer clusterer;
-    const bool compute_trees = true;
+    clusterer.SetMakeTrees(true);
 
-    s_ReadDistMatrix("data/dist_matrix.txt", dmat);
-    clusterer.SetDistMatrix(dmat);
+    CClusterer::TDistMatrix dmat;
+    s_ReadDistMatrix("data/dist_matrix.txt", dmat);    
 
-    clusterer.ComputeClusters(0.8, CClusterer::eCompleteLinkage, compute_trees);
-    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees(),
-                           "data/ref_clusters.txt");
+    BOOST_REQUIRE_EQUAL(dmat.GetCols(), dmat.GetRows());
+
+    // two elements
+    const int num_elements = dmat.GetCols();
+
+    // maximum cluster diameter
+    const double max_distance = 0.8;
+
+    CRef<CLinks> links(new CLinks(num_elements));
+    for (size_t i=0;i < dmat.GetCols() - 1;i++) {
+        for (size_t j=i+1;j < dmat.GetCols();j++) {
+            if (dmat(i, j) < max_distance) {
+                links->AddLink(i, j, dmat(i, j));
+            }
+        }
+    }
+    clusterer.SetLinks(links);
+    clusterer.Run();
+
+    s_TestClustersAndTrees(num_elements, clusterer, "data/ref_clusters.txt");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

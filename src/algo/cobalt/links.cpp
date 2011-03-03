@@ -98,6 +98,31 @@ bool CLinks::IsLink(int first, int second) const
     return x_IsLinkPtr(first, second);
 }
 
+bool CLinks::IsLink(const vector<int>& elems1, const vector<int>& elems2,
+                    double& dist) const
+{
+    if (!m_IsSorted) {
+        NCBI_THROW(CLinksException, eUnsortedLinks, "Links must be sorted "
+                   "before checks for links can be made");
+    }
+
+    double sum = 0.0;
+    ITERATE (vector<int>, it1, elems1) {
+        ITERATE (vector<int>, it2, elems2) {
+            const SLink* link = x_GetLink(*it1, *it2);
+            if (!link) {
+                return false;
+            }
+            else {
+                sum += link->weight;
+            }
+        }
+    }
+
+    dist = sum / ((double)(elems1.size() * elems2.size()));
+    return true;
+}
+
 void CLinks::Sort(void)
 {
     // sort according to weights
@@ -131,6 +156,30 @@ bool CLinks::x_IsLinkPtr(int first, int second) const
     return binary_search(m_LinkPtrs.begin(), m_LinkPtrs.end(), &link,
                          compare_links_by_nodes);
 }
+
+const CLinks::SLink* CLinks::x_GetLink(int first, int second) const
+{
+    _ASSERT(!m_LinkPtrs.empty());
+
+    if (first > second) {
+        swap(first, second);
+    }
+
+    SLink link(first, second, 0.0);
+    vector<SLink*>::const_iterator it = lower_bound(m_LinkPtrs.begin(),
+                                                    m_LinkPtrs.end(),
+                                                    &link,
+                                                    compare_links_by_nodes);
+
+    if (it != m_LinkPtrs.end() && (*it)->first == first
+        && (*it)->second == second) {
+
+        return *it;
+    }
+
+    return NULL;
+}
+
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE

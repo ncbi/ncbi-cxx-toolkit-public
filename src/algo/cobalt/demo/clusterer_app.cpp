@@ -193,6 +193,7 @@ int CClustererApplication::x_RunBinary(const CArgs& args)
     CClusterer clusterer;
     clusterer.SetLinks(links);
     clusterer.SetClustMethod(clust_method);
+    clusterer.SetMakeTrees(false);
     clusterer.Run();
 
     // print output: sequence id  cluster id
@@ -276,6 +277,7 @@ int CClustererApplication::x_RunSparse(const CArgs& args)
     CClusterer clusterer;
     clusterer.SetLinks(links);
     clusterer.SetClustMethod(clust_method);
+    clusterer.SetMakeTrees(false);
     clusterer.Run();
 
     // print output: sequence id  cluster id

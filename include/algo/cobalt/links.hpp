@@ -102,6 +102,18 @@ public:
     /// The link is checked by doing binary search in sorted list of links
     bool IsLink(int first, int second) const;
 
+    /// Check if links exist between all pairs of elemens from two sets.
+    /// Existence of links whithin the sets is not checked.
+    /// @param first List of elements for the first set [in]
+    /// @param second List of elements for the second set [in]
+    /// @param dist Average distance between elements of the two sets [out]
+    /// @return true if links between all pairs exist, false otherwise
+    ///
+    /// The existance of a link is checked by doing binary search in sorted
+    /// list of links
+    bool IsLink(const vector<int>& first, const vector<int>& second,
+                double& dist) const;
+
     /// Check whether the links are sorted according to weights
     /// @return True if links are sorted, false otherwise
     ///
@@ -153,6 +165,11 @@ private:
     /// @return True if link exists, false otherwise
     bool x_IsLinkPtr(int first, int second) const;
 
+    /// Get link by node ids
+    /// @param first First node
+    /// @param second Second node
+    /// @return Pointer to the link or NULL if link does not exist
+    const CLinks::SLink* x_GetLink(int first, int second) const;
 
 protected:
 

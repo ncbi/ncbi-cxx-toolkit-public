@@ -576,21 +576,48 @@ CMultiAligner::x_FindQueryClusters()
                          m_Options->GetKmerAlphabet());
     TKMethods::ComputeCounts(m_tQueries, *m_Scope, kmer_counts);
 
+    // TO DO: Remove distance matrix, currently it is needed for finding
+    // cluster representatives
+
+    // distance matrix is need for fining cluster representatives
     auto_ptr<CClusterer::TDistMatrix> dmat
         = TKMethods::ComputeDistMatrix(kmer_counts,
                                        m_Options->GetKmerDistMeasure());
 
-    // Set distances between queries that appear in user constraints and all
-    // other queries to maximum, so that they form one-element clusters
-    const double kMaxDistance = 1.5;
-
-    // get all user constraint queries
+    // find sequences with user constraints
     set<int> constr_q;
     for (int i=0;i < m_UserHits.Size();i++) {
         CHit* hit = m_UserHits.GetHit(i);
         constr_q.insert(hit->m_SeqIndex1);
         constr_q.insert(hit->m_SeqIndex2);
     }
+
+    // find a set of graph edges between sequences (will be used for clustering)
+    CRef<CLinks> links(new CLinks(kmer_counts.size()));
+    for (int i=0;i < (int)dmat->GetCols() - 1;i++) {
+
+        // do no create links for sequences with user constraints as
+        // they must not be clustered together with other sequences
+        if (!constr_q.empty() && constr_q.find(i) != constr_q.end()) {
+            continue;
+        }
+
+        for (int j=i+1;j < (int)dmat->GetCols();j++) {
+
+            if (!constr_q.empty() && constr_q.find(j) != constr_q.end()) {
+                continue;
+            }
+
+            if ((*dmat)(i, j) < m_Options->GetMaxInClusterDist()) {
+                links->AddLink(i, j, (*dmat)(i, j));
+            }
+        }
+    }
+    links->Sort();
+
+    // Set distances between queries that appear in user constraints and all
+    // other queries to maximum, so that they form one-element clusters
+    const double kMaxDistance = 1.5;
 
     // set distances to maximum
     ITERATE(set<int>, it, constr_q) {
@@ -622,10 +649,17 @@ CMultiAligner::x_FindQueryClusters()
     //-------------------------------------------------------
 
     // Compute query clusters
+    m_Clusterer.SetLinks(links);
+    m_Clusterer.SetClustMethod(CClusterer::eClique);
+    m_Clusterer.SetMakeTrees(
+               m_Options->GetTreeMethod() == CMultiAlignerOptions::eClusters);
+    m_Clusterer.Run();
+
+    // save distance matrix in clusterer
     m_Clusterer.SetDistMatrix(dmat);
-    m_Clusterer.ComputeClusters(m_Options->GetMaxInClusterDist(),
-                CClusterer::eCompleteLinkage,
-                m_Options->GetTreeMethod() == CMultiAlignerOptions::eClusters);
+
+    // links are not needed any more
+    links.Reset();
 
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
 
