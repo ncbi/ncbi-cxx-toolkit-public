@@ -450,8 +450,14 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
             cdregion = &feat_iter->GetOriginalFeature();
         }
 
-        for(feat_iter = CFeat_CI(handle, CSeqFeatData::eSubtype_ncRNA); feat_iter; ++feat_iter)
+        for (CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_ncRNA);
+             feat_iter;  ++feat_iter) {
             ncRNAs.push_back(&feat_iter->GetOriginalFeature());
+        }
+    }
+    else {
+        LOG_POST(Warning << "failed to retrieve sequence for: "
+                 << CSeq_id_Handle::GetHandle(rna_id));
     }
 
     CRef<CSeq_feat> mrna_feat =
@@ -466,7 +472,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
             TGeneMap::iterator gene = genes.find(gene_id);
             if (gene == genes.end()) {
                 x_CreateGeneFeature(gene_feat, handle, mapper, loc,
-                                                genomic_id, gene_id);
+                                    genomic_id, gene_id);
                 if (gene_feat) {
                     _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
                     annot.SetData().SetFtable().push_back(gene_feat);
@@ -491,7 +497,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
             
         } else {
             x_CreateGeneFeature(gene_feat, handle, mapper,
-                                            loc, genomic_id);
+                                loc, genomic_id);
             if (gene_feat) {
                 _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
                 annot.SetData().SetFtable().push_back(gene_feat);
@@ -1093,12 +1099,16 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                                      const CSeq_id& genomic_id, int gene_id)
 {
     if (m_flags & fCreateGene) {
-        CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
+        CFeat_CI feat_iter;
+        if (handle) {
+            feat_iter = CFeat_CI(handle, CSeqFeatData::eSubtype_gene);
+        }
         CRef<CSeq_loc> gene_loc;
         bool update_existing_gene = gene_feat;
         string gene_id_str = "gene.";
-        if(gene_id)
+        if (gene_id) {
             gene_id_str += NStr::IntToString(gene_id);
+        }
 
         if (m_flags & fPropagateOnly) {
             //
@@ -1128,7 +1138,7 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
             gene_loc = loc;
         }
 
-        if(gene_loc){
+        if (gene_loc) {
             gene_loc = gene_loc->Merge(CSeq_loc::fMerge_SingleRange, NULL);
             if(update_existing_gene){
                 TSeqRange gene_range =
@@ -1144,7 +1154,7 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
         ///
         /// copy qualifiers from the mRNA's gene
         ///
-        if (feat_iter.GetSize() == 1) {
+        if (feat_iter  &&  feat_iter.GetSize() == 1) {
 
             /// set dbxrefs
             if (feat_iter->IsSetDbxref()) {
@@ -1174,17 +1184,21 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
             }
         }
 
-        if(!gene_feat->SetData().SetGene().IsSetLocus()){
+        if ( !gene_feat->SetData().SetGene().IsSetLocus() ) {
             /// Didn't find locus in bioseq's gene feature; try to use bioseq's title instead
-            string title = sequence::GetTitle(handle);
-            if (!title.empty()) {
+            string title;
+            if (handle) {
+                title = sequence::GetTitle(handle);
+            }
+            if ( !title.empty() ) {
                 gene_feat->SetData().SetGene().SetLocus(title);
             }    
         }
 
-        if(gene_id)
+        if (gene_id) {
             /// Special case for gnomon, set gene desc from gnomon id
             gene_feat->SetData().SetGene().SetDesc(gene_id_str);
+        }
     }
 }
 
@@ -1274,12 +1288,17 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                 if (!gnomon_model_num.empty() && !is_partial_5prime) {
                     int cds_start = cdregion_on_mrna->GetLocation().GetTotalRange().GetFrom();
                     if (cds_start >= 3) {
-                        CBioseq_Handle handle = m_scope->GetBioseqHandle(*cdregion_on_mrna->GetLocation().GetId());
-                        CSeqVector vec(handle, CBioseq_Handle::eCoding_Iupac);
-                        string mrna;
-                        vec.GetSeqData(cds_start%3, cds_start, mrna);
+                        CBioseq_Handle handle =
+                            m_scope->GetBioseqHandle(cdregion_on_mrna->GetLocation());
                         string strprot;
-                        CSeqTranslator::Translate(mrna, strprot, CSeqTranslator::fIs5PrimePartial);
+                        if (handle) {
+                            CSeqVector vec(handle, CBioseq_Handle::eCoding_Iupac);
+                            string mrna;
+                            vec.GetSeqData(cds_start % 3, cds_start, mrna);
+                            CSeqTranslator::Translate
+                                (mrna, strprot,
+                                 CSeqTranslator::fIs5PrimePartial);
+                        }
                         SIZE_TYPE stop_5prime = strprot.rfind('*');
                         if (stop_5prime != NPOS) {
                             stop_5prime = stop_5prime*3+cds_start%3;
