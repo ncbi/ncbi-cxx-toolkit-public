@@ -250,8 +250,11 @@ static const TTagUrl s_TagUrls [] = {
   TTagUrl("TREEVIEW_FRM",  k_GetTreeViewForm),
   TTagUrl("UNIGEN",  kUnigeneUrl),    
 };
+
+#ifndef NCBI_SWIG
 typedef CStaticArrayMap<string, string> TTagUrlMap;
 DEFINE_STATIC_ARRAY_MAP(TTagUrlMap, sm_TagUrlMap, s_TagUrls);
+#endif
 
 
 #ifndef DIM
