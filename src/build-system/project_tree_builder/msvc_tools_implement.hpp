@@ -85,6 +85,11 @@ public:
     }
     virtual string IntermediateDirectory(void) const
     {
+        if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+	        return CDirEntry::AddTrailingPathSeparator(
+                CDirEntry::ConcatPath(
+                    CMsvc7RegSettings::GetConfigNameKeyword(),"$(TargetName)"));
+        }
 	    return CDirEntry::AddTrailingPathSeparator(
                 CMsvc7RegSettings::GetConfigNameKeyword());
     }
