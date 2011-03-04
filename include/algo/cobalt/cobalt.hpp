@@ -68,7 +68,7 @@ public:
     /// Version information
     static const int kMajorVersion = 2;
     static const int kMinorVersion = 0;
-    static const int kPatchVersion = 0;
+    static const int kPatchVersion = 1;
 
     /// Return status
     enum EStatus {
