@@ -466,6 +466,10 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
 
     CRef<CSeq_feat> gene_feat;
 
+    if (!handle) {
+        handle = m_scope->GetBioseqHandle(rna_id);
+    }
+
     if(!call_on_align_list){
         const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
         if (gene_id) {
