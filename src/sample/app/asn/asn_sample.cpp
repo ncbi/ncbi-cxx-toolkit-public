@@ -36,7 +36,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#include <NCBI_Sample_ASN_Type.hpp>
+#include <sample/app/asn/NCBI_Sample_ASN_Type.hpp>
 
 
 USING_SCOPE(ncbi);
