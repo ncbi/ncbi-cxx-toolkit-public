@@ -344,6 +344,7 @@ private:
 };
 
 
+#ifndef NCBI_SWIG
 /// Packed string data container with sorting and iteration.
 /// 
 /// This class efficiently stores a packed array of string data.
@@ -508,6 +509,7 @@ private:
     /// Shared list of packed string buffers.
     CWriteDB_PackedBuffer<BLOCK> m_Buffer;
 };
+#endif
 
 /// Compute length of sequence from raw packing.
 /// @param protein Specify true for protein formats, false for nucleotide.
