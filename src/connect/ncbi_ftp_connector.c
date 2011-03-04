@@ -804,7 +804,7 @@ static EIO_Status s_FTPEpsv(SFTPConnector*  xxx,
     buf[sizeof(buf) - 1] = '\0';
     if (!(s = strchr(buf, '('))  ||  !(d = *++s)  ||  *++s != d  ||  *++s != d
         ||  sscanf(++s, "%u%c%n", &p, buf, &n) < 2  ||  p > 0xFFFF
-        ||  *buf != d  ||  s[n] != ')'  ||  s[++n]) {
+        ||  *buf != d  ||  s[n] != ')') {
         return eIO_Unknown;
     }
     *host = 0;
