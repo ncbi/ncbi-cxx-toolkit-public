@@ -1,2 +1,7 @@
 June 30, 2010
 * First stand alone release
+
+March 4, 2011
+* 2.0.1 release
+* Maximum number of input sequences was increased to 15999.
+* Improvements to reduce time for pre-alignment sequence clustering.
