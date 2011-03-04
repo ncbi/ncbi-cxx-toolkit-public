@@ -38,6 +38,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/gff2_data.hpp>
