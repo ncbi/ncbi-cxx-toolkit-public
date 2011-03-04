@@ -39,7 +39,6 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -57,6 +56,9 @@ CSeq_feat::~CSeq_feat(void)
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+
 static int s_TypeOrder[] = {
     3, // e_not_set = 0,
     0, // e_Gene,
@@ -66,6 +68,29 @@ static int s_TypeOrder[] = {
     1, // e_Rna,
     3  // e_Pub, and the rest
 };
+
+
+static inline
+bool s_IsOperon(const CSeqFeatData& fd)
+{
+    return fd.Which() == CSeqFeatData::e_Imp &&
+        fd.GetSubtype() == CSeqFeatData::eSubtype_operon;
+}
+
+
+static inline 
+int s_GetCdregionOrder(const CSeqFeatData& fd)
+{
+    CCdregion::EFrame frame = fd.GetCdregion().GetFrame();
+    if ( frame == CCdregion::eFrame_not_set ) {
+        frame = CCdregion::eFrame_one;
+    }
+    return frame;
+}
+
+
+END_LOCAL_NAMESPACE;
+
 
 int CSeq_feat::GetTypeSortingOrder(CSeqFeatData::E_Choice type)
 {
@@ -84,6 +109,10 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
     CSeqFeatData::E_Choice type1 = data1.Which();
     CSeqFeatData::E_Choice type2 = data2.Which();
 
+    // operon first
+    if ( int diff = s_IsOperon(data2) - s_IsOperon(data1) ) {
+        return diff;
+    }
     if ( type1 != type2 ) {
         // order by feature type
         int order1 = GetTypeSortingOrder(type1);
@@ -93,41 +122,15 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
             return diff;
     }
 
-    // compare internal intervals
-    if ( loc1.IsMix() ) {
-        if ( loc2.IsMix() ) {
-            const CSeq_loc_mix::Tdata& l1 = loc1.GetMix().Get();
-            const CSeq_loc_mix::Tdata& l2 = loc2.GetMix().Get();
-            for ( CSeq_loc_mix::Tdata::const_iterator
-                      it1 = l1.begin(), it2 = l2.begin(); ;  it1++, it2++) {
-                if ( it1 == l1.end() ) {
-                    if ( it2 == l2.end() ) {
-                        break;
-                    }
-                    else {
-                        // f1 loc is shorter
-                        return -1;
-                    }
-                }
-                if ( it2 == l2.end() ) {
-                    // f2 loc is shorter
-                    return 1;
-                }
-                int diff = (*it1)->Compare(**it2);
-                if ( diff != 0 )
-                    return diff;
-            }
-        }
-        else {
-            // non-mix loc2 first
-            return 1;
-        }
+    // minus strand last
+    ENa_strand strand1 = loc1.GetStrand();
+    ENa_strand strand2 = loc2.GetStrand();
+    if ( int diff = IsReverse(strand1) - IsReverse(strand2) ) {
+        return diff;
     }
-    else {
-        if ( loc2.IsMix() ) {
-            // non-mix loc1 first
-            return -1;
-        }
+
+    if ( int diff = loc1.CompareSubLoc(loc2, strand1) ) {
+        return diff;
     }
 
     {{ // compare subtypes
@@ -144,13 +147,8 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
     // type dependent comparison
     if ( type1 == CSeqFeatData::e_Cdregion ) {
         // compare frames of identical CDS ranges
-        CCdregion::EFrame frame1 = data1.GetCdregion().GetFrame();
-        CCdregion::EFrame frame2 = data2.GetCdregion().GetFrame();
-        if (frame1 > CCdregion::eFrame_one
-            ||  frame2 > CCdregion::eFrame_one) {
-            int diff = frame1 - frame2;
-            if ( diff != 0 )
-                return diff;
+        if ( int diff = s_GetCdregionOrder(data1)-s_GetCdregionOrder(data2) ) {
+            return diff;
         }
     }
     else if ( type1 == CSeqFeatData::e_Imp ) {

@@ -557,6 +557,149 @@ void CSeq_loc::PostRead(void) const
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+
+// Transform a CSeq_loc into a CRange< TSeqPos >,
+// that will be its total range.
+static inline
+CRange<TSeqPos> s_LocToRange(const CSeq_loc& loc )
+{
+    try {
+        return loc.GetTotalRange();
+    }
+    catch ( CException& /*ignored*/ ) {
+        // assume empty
+        return CRange<TSeqPos>::GetEmpty();
+    }
+}
+
+
+// Transform a CSeq_interval into a CRange< TSeqPos >,
+// that will be its total range.
+static inline
+CRange<TSeqPos> s_LocToRange(const CSeq_interval& interval )
+{
+    return CRange<TSeqPos>(interval.GetFrom(), interval.GetTo());
+};
+
+
+// Compare two ranges (reversed on minus strand)
+static inline
+int s_CompareRanges(const COpenRange<TSeqPos> &x_rng,
+                    const COpenRange<TSeqPos> &y_rng,
+                    bool minus_strand)
+{
+    if ( minus_strand ) {
+        // This is backwards for compatibliity with C
+        // Minus strand features should come in revered order
+
+        // largest right extreme last
+        if ( x_rng.GetToOpen() != y_rng.GetToOpen() ) {
+            return x_rng.GetToOpen() < y_rng.GetToOpen()? -1: 1;
+        }
+        // longest last
+        if ( x_rng.GetFrom() != y_rng.GetFrom() ) {
+            return x_rng.GetFrom() > y_rng.GetFrom()? -1: 1;
+        }
+    }
+    else {
+        // smallest left extreme first
+        if ( x_rng.GetFrom() != y_rng.GetFrom() ) {
+            return x_rng.GetFrom() < y_rng.GetFrom()? -1: 1;
+        }
+        // longest first
+        if ( x_rng.GetToOpen() != y_rng.GetToOpen() ) {
+            return x_rng.GetToOpen() > y_rng.GetToOpen()? -1: 1;
+        }
+    }
+    return 0;
+}
+
+
+// Compare two containers with intervals (CSeq_loc or CSeq_interval)
+template< class Container1, class Container2 >
+int s_CompareIntervals(const Container1& container1,
+                       const Container2& container2,
+                       bool minus_strand)
+{
+    typename Container1::const_iterator iter1 = container1.begin();
+    typename Container1::const_iterator iter1end = container1.end();
+    typename Container2::const_iterator iter2 = container2.begin();
+    typename Container2::const_iterator iter2end = container2.end();
+    for( ; iter1 != iter1end && iter2 != iter2end ; ++iter1, ++iter2 ) {
+        if ( int diff = s_CompareRanges(s_LocToRange(**iter1),
+                                        s_LocToRange(**iter2),
+                                        minus_strand) ) {
+            return diff;
+        }
+    }
+
+    // finally, shorter sequence first
+
+    if( iter1 == iter1end ) {
+        if( iter2 == iter2end ) {
+            return 0;
+        } else {
+            return -1;
+        }
+    } else {
+        return 1;
+    }
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
+int CSeq_loc::CompareSubLoc(const CSeq_loc& loc2, ENa_strand strand) const
+{
+    bool minus_strand = IsReverse(strand);
+    if ( IsMix() ) {
+        if ( loc2.IsMix() ) {
+            return s_CompareIntervals(GetMix().Get(),
+                                      loc2.GetMix().Get(),
+                                      minus_strand);
+        }
+        else if ( loc2.IsPacked_int() ) {
+            return s_CompareIntervals(GetMix().Get(),
+                                      loc2.GetPacked_int().Get(),
+                                      minus_strand);
+        }
+        else {
+            // complex loc1 is last on plus strand and first on minus strand
+            return minus_strand? -1: 1;
+        }
+    }
+    else if ( IsPacked_int() ) {
+        if ( loc2.IsMix() ) {
+            return -s_CompareIntervals(loc2.GetMix().Get(),
+                                       GetPacked_int().Get(),
+                                       minus_strand);
+        }
+        else if ( loc2.IsPacked_int() ) {
+            return s_CompareIntervals(GetPacked_int().Get(),
+                                      loc2.GetPacked_int().Get(),
+                                      minus_strand);
+        }
+        else {
+            // complex loc1 is last on plus strand and first on minus strand
+            return minus_strand? -1: 1;
+        }
+    }
+    else {
+        if ( loc2.IsMix() || loc2.IsPacked_int() ) {
+            // complex loc2 is last on plus strand and first on minus strand
+            return minus_strand? 1: -1;
+        }
+        else {
+            // two simple locations
+            return 0;
+        }
+    }
+}
+
+
 bool CSeq_loc::IsSetStrand(EIsSetStrand flag) const
 {
     switch ( Which() ) {

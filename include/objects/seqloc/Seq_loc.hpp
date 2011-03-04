@@ -215,6 +215,13 @@ public:
     /// or throw exception.
     int Compare(const CSeq_loc& loc) const;
 
+    /// Compare first-level sub-locations sequentially to order them
+    /// by biological "complexity". More "complex" location will come last.
+    /// Sub-locations are checked in Seq-loc-mix and Packed-seqint.
+    /// Minus strand locations' order is reversed.
+    /// Seq-ids are not checked in this method.
+    int CompareSubLoc(const CSeq_loc& loc, ENa_strand strand) const;
+
     /// Simple adding of seq-locs.
     void Add(const CSeq_loc& other);
 
