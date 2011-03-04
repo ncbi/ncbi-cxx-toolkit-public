@@ -691,42 +691,52 @@ void CMakeBlastDBApp::x_ProcessMaskData()
 
         CNcbiIfstream mask_file(mask_list[i].c_str(), ios::binary);
         
-        CRef<CBlast_db_mask_info> first_obj;
+        int algo_id = -1;
+        while (true) {
+            CRef<CBlast_db_mask_info> first_obj;
         
-        s_ReadObject(mask_file, first_obj, "mask data in '" + mask_list[i] + "'");
-        *m_LogFile << "Mask file: " << mask_list[i] << endl;
-        
-        EBlast_filter_program prog_id = 
-            static_cast<EBlast_filter_program>(first_obj->GetAlgo_program());
-        string opts = first_obj->GetAlgo_options();
-        string name = gi_mask_names.size() ? gi_mask_names[i] : mask_list[i];
-
-        int algo_id = m_DB->RegisterMaskingAlgorithm(prog_id, opts, name);
-        
-        CRef<CBlast_mask_list> masks(& first_obj->SetMasks());
-        first_obj.Reset();
-        
-        while(1) {
-            if (m_Ranges.Empty() && ! masks->GetMasks().empty()) {
-                m_Ranges.Reset(new CMaskedRangeSet);
-                m_DB->SetMaskDataSource(*m_Ranges);
-            }
-            
-            ITERATE(CBlast_mask_list::TMasks, iter, masks->GetMasks()) {
-                CConstRef<CSeq_id> seqid((**iter).GetId());
-                
-                if (seqid.Empty()) {
-                    NCBI_THROW(CInvalidDataException, eInvalidInput, 
-                                     "Cannot get masked range Seq-id");
-                }
-                
-                m_Ranges->Insert(algo_id, *seqid, **iter);
-            }
-            
-            if (! masks->GetMore())
+            try {
+                s_ReadObject(mask_file, first_obj, "mask data in '" + mask_list[i] + "'");
+            } catch(...) {
+                // must be end of file
                 break;
+            }
+        
+            if (algo_id < 0) {
+                *m_LogFile << "Mask file: " << mask_list[i] << endl;
+                EBlast_filter_program prog_id = 
+                    static_cast<EBlast_filter_program>(first_obj->GetAlgo_program());
+                string opts = first_obj->GetAlgo_options();
+                string name = gi_mask_names.size() ? gi_mask_names[i] : mask_list[i];
+
+                algo_id = m_DB->RegisterMaskingAlgorithm(prog_id, opts, name);
+            }
+        
+            CRef<CBlast_mask_list> masks(& first_obj->SetMasks());
+            first_obj.Reset();
+        
+            while(1) {
+                if (m_Ranges.Empty() && ! masks->GetMasks().empty()) {
+                    m_Ranges.Reset(new CMaskedRangeSet);
+                    m_DB->SetMaskDataSource(*m_Ranges);
+                }
             
-            s_ReadObject(mask_file, masks, "mask data (continuation)");
+                ITERATE(CBlast_mask_list::TMasks, iter, masks->GetMasks()) {
+                    CConstRef<CSeq_id> seqid((**iter).GetId());
+                    
+                    if (seqid.Empty()) {
+                        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                                     "Cannot get masked range Seq-id");
+                    }
+                
+                    m_Ranges->Insert(algo_id, *seqid, **iter);
+                }
+            
+                if (! masks->GetMore())
+                    break;
+            
+                s_ReadObject(mask_file, masks, "mask data (continuation)");
+            }
         }
     }
 }
