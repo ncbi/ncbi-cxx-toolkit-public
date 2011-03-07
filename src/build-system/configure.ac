@@ -65,7 +65,7 @@ case "$with_3psw" in
          with_ncbi_c=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre, gnutls, openssl,
-                     sybase, ftds, mysql, fltk, opengl, mesa, glut, wxwin,
+                     sybase, ftds, mysql, fltk, opengl, mesa, glut, glew, wxwin,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
                      python, jni, cppunit, boost, sqlite, sqlite3, icu, expat,
                      sablot, libxml, libxslt, xerces, xalan, oechem, sge,
@@ -273,6 +273,10 @@ AC_ARG_WITH(glut,
    [ --without-glut          do not use GLUT])
 AC_ARG_WITH(glut2,
    [ --with-glut=DIR         use GLUT installation in DIR])
+AC_ARG_WITH(glew,
+   [ --without-glew          do not use GLEW])
+AC_ARG_WITH(glew2,
+   [ --with-glew=DIR         use GLEW installation in DIR])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows (2.4-)])
 AC_ARG_WITH(wxwin2,
@@ -455,8 +459,8 @@ check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
-ftds mysql orbacus freetype fltk \
-opengl mesa glut bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
+ftds mysql orbacus freetype fltk opengl mesa glut glew \
+bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl 3psw \
 local-lbsm ncbi-crypt connext \
@@ -508,7 +512,8 @@ for x_arg in "$@" ; do
       | --with-bdb=* | --with-odbc | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
-      | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
+      | --with-mesa=* | --with-glut=* | --with-glew=* \
+      | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
       | --with-muparser=* | --with-hdf5=* | --with-jni=* | --with-magic=* \
       | --x-includes=* | --x-libraries=* | --with-3psw=* \
@@ -4739,6 +4744,9 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    OSMESA_STATIC_LIBS=
    GLUT_INCLUDE=
    GLUT_LIBS=
+   GLEW_INCLUDE=
+   GLEW_LIBS=
+   GLEW_STATIC_LIBS=
    NCBI_MISSING_PACKAGE(opengl)
 else
    NCBI_PACKAGE(OpenGL)
@@ -4792,6 +4800,87 @@ else
          $OPENGL_LIBS)
       if test -z "$GLUT_LIBS"; then
          NCBI_MISSING_PACKAGE(glut)
+      fi
+   fi
+   : ${GLEW_PATH=$NCBI/glew}
+   if test "$with_glew" != "no"; then
+      if test "${with_glew-yes}" != "yes"; then
+         GLEW_PATH=$with_glew
+      fi
+      if test -d "$GLEW_PATH"; then
+         if test -d "$GLEW_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx"; then
+            GLEW_PATH=$GLEW_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx
+         elif test -d "$GLEW_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx"; then
+            GLEW_PATH=$GLEW_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx
+         elif test -d "$GLEW_PATH/$DEBUG_SFX$bit64_sfx"; then
+            GLEW_PATH=$GLEW_PATH/$DEBUG_SFX$bit64_sfx
+         fi
+         NCBI_FIX_DIR(GLEW_PATH)
+         GLEW_LIBDIR=$GLEW_PATH/lib
+         if test -n "$bit64_sfx" -a -d $GLEW_LIBDIR$bit64_sfx; then
+            if test -d $GLEW_LIBDIR; then
+               for x in $GLEW_LIBDIR/libGLEW*; do
+                  if cmp -s "$x" "$GLEW_LIBDIR$bit64_sfx/`basename \"$x\"`"; then
+                     :
+                  else
+                     GLEW_LIBDIR=$GLEW_LIBDIR$bit64_sfx
+                     break
+                  fi
+               done
+            else
+               GLEW_LIBDIR=$GLEW_LIBDIR$bit64_sfx
+            fi
+         fi
+         glew_config="eval PKG_CONFIG_PATH=\"$GLEW_LIBDIR/pkgconfig\" pkg-config"
+      else
+         glew_config=pkg-config
+      fi
+      if pkg-config --version >/dev/null 2>&1; then
+         if $glew_config glewmx --exists; then
+            glew_config="$glew_config glewmx"
+         elif $glew_config glew --exists; then
+            glew_config="$glew_config glew"
+         else
+            glew_config=
+         fi
+         if test -n "$glew_config"; then
+            GLEW_INCLUDE=`$glew_config --cflags | sed s:/GL$::`
+            NCBI_RPATHIFY_OUTPUT(GLEW_LDFLAGS, [$glew_config --libs-only-L])
+            NCBI_RPATHIFY_OUTPUT(GLEW_LIBS, [$glew_config --libs])
+         fi
+      fi
+      if test -n "$GLEW_LIBS"; then
+         if test -d "$GLEW_PATH"; then
+            GLEW_INCLUDE=-I$GLEW_PATH/include
+            NCBI_RPATHIFY(GLEW_LDFLAGS, [$GLEW_PATH/lib])
+            GLEW_LIBS="$GLEW_LDFLAGS -lGLEW"
+         else
+            GLEW_LIBS=-lGLEW
+         fi
+      fi
+      LDFLAGS="$GLEW_LDFLAGS $orig_LDFLAGS"
+      AC_CHECK_LIB(GLEW, glewGetExtension,
+         [NCBI_PACKAGE(GLEW);
+          AC_DEFINE(HAVE_LIBGLEW, 1, [Define to 1 if you have libGLEW.])],
+         [GLEW_LIBS=],
+         [$OPENGL_LIBS $DL_LIBS])
+      if test -z "$GLEW_LIBS"; then
+         NCBI_MISSING_PACKAGE(glew)
+      else
+         AC_CACHE_CHECK([for GLEW multi-context (MX) support (recommended)],
+            ncbi_cv_lib_glew_mx,
+            [CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
+             LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $ORIG_LIBS"
+             AC_LINK_IFELSE([AC_LANG_PROGRAM(
+               [[#define GLEW_MX 1
+                 #include <GL/glew.h>]],
+               [[glewContextInit(NULL);]])],
+             [ncbi_cv_lib_glew_mx=yes], [ncbi_cv_lib_glew_mx=no])])
+          if test $ncbi_cv_lib_glew_mx = yes; then
+             GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
+          fi
+          : ${GLEW_STATIC_LIBS=$GLEW_PATH/lib/libGLEW-static.a}
+          test -f "$GLEW_STATIC_LIBS"  ||  GLEW_STATIC_LIBS=$GLEW_LIBS
       fi
    fi
 fi
@@ -6503,6 +6592,9 @@ AC_SUBST(OSMESA_LIBS)
 AC_SUBST(OSMESA_STATIC_LIBS)
 AC_SUBST(GLUT_INCLUDE)
 AC_SUBST(GLUT_LIBS)
+AC_SUBST(GLEW_INCLUDE)
+AC_SUBST(GLEW_LIBS)
+AC_SUBST(GLEW_STATIC_LIBS)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)

@@ -224,6 +224,9 @@
 /* Define to 1 if libgif is available. */
 #undef HAVE_LIBGIF
 
+/* Define to 1 if you have libGLEW. */
+#undef HAVE_LIBGLEW
+
 /* Define to 1 if you have libglut. */
 #undef HAVE_LIBGLUT
 

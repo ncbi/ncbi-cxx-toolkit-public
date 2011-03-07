@@ -78,6 +78,8 @@ case "$ncbi_platform" in
     *          ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi9-OBSOLETE} ;;
 esac
 
+: ${GLEW_PATH=$NCBI/glew-1.5.8}
+
 case "$ncbi_platform" in
     Linux*     ) : ${GNUTLS_PATH=$NCBI/gnutls-2.4.2} ;;
 esac
