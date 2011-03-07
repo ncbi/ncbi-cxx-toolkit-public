@@ -240,8 +240,9 @@ void CSourceItem::x_SetSource
             const COrgName& org_name = org.GetOrgname();
             
             const string *com = 0, *acr = 0, *syn = 0, *ana = 0,
-                *gbacr = 0, *gbana = 0, *gbsyn = 0;
-            int numcom = 0, numacr = 0, numsyn = 0, numana = 0, numgbacr = 0, numgbana = 0, numgbsyn = 0;
+                *gbacr = 0, *gbana = 0, *gbsyn = 0, *met = 0;
+            int numcom = 0, numacr = 0, numsyn = 0, numana = 0, numgbacr = 0, 
+                numgbana = 0, numgbsyn = 0, nummet = 0;
             ITERATE( COrgName::TMod, mod, org_name.GetMod() ) {
                 if ( (*mod)->CanGetSubtype()  &&  (*mod)->CanGetSubname() ) {
                     switch ( (*mod)->GetSubtype() ) {
@@ -273,6 +274,9 @@ void CSourceItem::x_SetSource
                         gbsyn = &((*mod)->GetSubname());
                         ++numgbsyn;
                         break;
+                    case COrgMod::eSubtype_metagenome_source:
+                        met = &((*mod)->GetSubname());
+                        ++nummet;
                     default:
                         break;
                     }
@@ -300,8 +304,13 @@ void CSourceItem::x_SetSource
             if (numgbsyn > 1) {
                gbsyn = NULL;
             }
+            if( nummet > 1 ) {
+                met = NULL;
+            }
 
-            if ( m_Common->empty()  &&  syn != 0 ) {
+            if( m_Common->empty()  &&  met != 0 ) {
+                m_Common = met;
+            } else if ( m_Common->empty()  &&  syn != 0 ) {
                 m_Common = syn;
             } else if ( m_Common->empty()  &&  acr != 0 ) {
                 m_Common = acr;

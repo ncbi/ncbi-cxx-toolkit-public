@@ -574,6 +574,7 @@ bool ParseLex (string text, TLexTokenArray &token_list)
 				    } else {
 				        token_list.push_back (new CLexTokenParenPair (CLexToken::e_Join, text.substr(offset + 1, paren_len - 2)));
 				    }				    
+                    offset += paren_len;
 				} else {
 				    retval = false;
 				}
@@ -645,7 +646,32 @@ bool ParseLex (string text, TLexTokenArray &token_list)
 				}
 				break;
             default:
-                retval = false;
+// ACCESSION
+// (accessions start with a capital letter, then numbers then
+//  an optional version prefix, then a colon)
+                if( isupper(ch) ) {
+                    end_pos = offset + 1;
+                    while (end_pos < text.length() && isupper (text.c_str()[end_pos])) {
+                        end_pos++;
+                    }
+                    while (end_pos < text.length() && isdigit (text.c_str()[end_pos])) {
+                        end_pos++;
+                    }
+                    if( text.c_str()[end_pos] == '.' ) {
+                        ++end_pos;
+                        while (end_pos < text.length() && isdigit (text.c_str()[end_pos])) {
+                            end_pos++;
+                        }
+                    }
+                    if( text.c_str()[end_pos] != ':' ) {
+                        retval = false;
+                    }
+                    ++end_pos;
+                    token_list.push_back (new CLexTokenAccession (text.substr(offset, end_pos - offset - 1))); // "- 1" to ignore colon
+                    offset = end_pos;
+                } else {
+                    retval = false;
+                }
                 break;
         }
     }
@@ -672,6 +698,15 @@ CLexTokenInt::~CLexTokenInt()
 {
 }
 
+CLexTokenAccession::CLexTokenAccession( const string &token_data )
+    : CLexToken(e_Accession), m_TokenData(token_data) 
+{
+}
+
+CLexTokenAccession::~CLexTokenAccession()
+{
+}
+
 CLexTokenParenPair::CLexTokenParenPair(unsigned int token_type, string between_text) : CLexToken (token_type)
 {
     m_TokenList.clear();
@@ -693,8 +728,10 @@ CRef<CSeq_loc> CLexTokenParenPair::GetLocation(CSeq_id *id, CScope* scope)
 }
 
 
-CRef<CSeq_loc> CLexTokenParenPair::ReadLocFromTokenList (TLexTokenArray token_list, CSeq_id *id, CScope* scope)
+CRef<CSeq_loc> CLexTokenParenPair::ReadLocFromTokenList (TLexTokenArray token_list, CSeq_id *this_id, CScope* scope)
 {
+    CRef<CSeq_id> id( this_id );
+
     CRef<CSeq_loc> retval;
     CRef<CSeq_loc> add;
     unsigned int list_pos;
@@ -741,7 +778,12 @@ CRef<CSeq_loc> CLexTokenParenPair::ReadLocFromTokenList (TLexTokenArray token_li
         retval = Seq_loc_Add (*retval, *add, 0, scope);
         return retval;
     } else {    
+        
         switch (token_list[0]->GetTokenType()) {
+            case CLexToken::e_Accession:
+                id = new CSeq_id( token_list[0]->GetString() );
+                token_list.erase( token_list.begin() ); // inefficient
+                // !!!!!FALL-THROUGH!!!!!
             case CLexToken::e_Int:
                 if (token_list.size() == 1) {
                     // note - subtract one from the int read, because display is 1-based

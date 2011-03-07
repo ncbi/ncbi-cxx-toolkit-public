@@ -176,7 +176,7 @@ protected:
     bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem ) const;
-    bool x_CanUseExtremesToFindGene( CBioseqContext& ctx ) const;
+    bool x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location ) const;
     CConstRef<CSeq_feat> 
         x_GetFeatViaSubsetThenExtremesIfPossible( 
             CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,

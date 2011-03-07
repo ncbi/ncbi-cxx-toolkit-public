@@ -186,6 +186,7 @@ public:
     bool IsGenbankFormat(void) const;
 
     bool HasOperon(void) const;
+    bool HasMultiIntervalGenes(void) const;
 
 private:
     void x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc);
@@ -199,6 +200,7 @@ private:
     bool x_IsInNucProt(void) const;
     void x_SetLocation(const CSeq_loc* user_loc = 0);
     void x_SetMapper(const CSeq_loc& loc);
+    void x_SetHasMultiIntervalGenes(void);
     
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
@@ -249,6 +251,7 @@ private:
     bool m_ShowGBBSource;
     int  m_PatSeqid;
     bool m_HasOperon;
+    bool m_HasMultiIntervalGenes;
 
     CConstRef<CUser_object> m_Encode;
     
@@ -514,6 +517,12 @@ inline
 bool CBioseqContext::HasOperon(void) const
 {
     return m_HasOperon;
+}
+
+inline 
+bool CBioseqContext::HasMultiIntervalGenes(void) const
+{
+    return m_HasMultiIntervalGenes;
 }
 
 

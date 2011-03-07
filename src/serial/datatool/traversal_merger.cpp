@@ -136,9 +136,9 @@ CTraversalMerger::CMergeLessThan::operator()(
     }
 
     // compare var name
-    const int var_comparison = NStr::Compare( node1->GetVarName(), node2->GetVarName() );
-    if( var_comparison != 0 ) {
-        return (var_comparison < 0);
+    int var_name_comparison = NStr::Compare( node1->GetVarName(), node2->GetVarName() );
+    if( var_name_comparison != 0 ) {
+        return ( var_name_comparison < 0 );
     }
 
     // compare user calls (pre)

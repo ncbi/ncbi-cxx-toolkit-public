@@ -376,7 +376,9 @@ void CTraversalCodeGenerator::x_GenerateHeaderFile(
 
     // Add copyright notice to the top
     CFileCode::WriteCopyrightHeader(traversal_header_file);
+    traversal_header_file << " */ " << endl; // close copyright notice
     traversal_header_file << kAutoGenerationNotice;
+    traversal_header_file << endl;
 
     // generate include directives at top
     CGenerateIncludesCallback generateIncludesCallback( traversal_header_file );
@@ -523,7 +525,9 @@ void CTraversalCodeGenerator::x_GenerateSourceFile(
 {
     // Add copyright notice to the top
     CFileCode::WriteCopyrightHeader(traversal_source_file);
+    traversal_source_file << " */ " << endl; // close copyright notice
     traversal_source_file << kAutoGenerationNotice;
+    traversal_source_file << endl;
 
     // generate include directives at top
     if (!CFileCode::GetPchHeader().empty()) {

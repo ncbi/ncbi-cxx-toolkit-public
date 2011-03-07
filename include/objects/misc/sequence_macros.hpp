@@ -882,6 +882,11 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define FIELD_IS(Var, Fld) \
     ((Var).Is##Fld())
 
+/// FIELD_IS_SET_AND_IS base macro
+
+#define FIELD_IS_SET_AND_IS(Var, Fld, Chs) \
+    ( (Var).IsSet##Fld() && (Var).Get##Fld().Is##Chs() )
+
 /// FIELD_IS_SET base macro
 
 #define FIELD_IS_SET(Var, Fld) \
@@ -954,6 +959,11 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
             CALL_IF_SET( Func, (Var).Set##Fld1(), Fld2 ); \
         } \
     }
+
+/// TEST_FIELD_CHOICE
+
+#define TEST_FIELD_CHOICE( Var, Fld, Chs ) \
+    ( (Var).IsSet##Fld() && (Var).Get##Fld().Which() == (Chs) )
 
 ///
 /// CSeq_submit macros
@@ -3041,6 +3051,63 @@ DO_UNIQUE (SEQFEATXREF_ON_SEQFEAT, Var, Func)
 #define SEQFEATXREF_ON_FEATURE_IS_UNIQUE SEQFEATXREF_ON_SEQFEAT_IS_UNIQUE
 #define UNIQUE_SEQFEATXREF_ON_FEATURE UNIQUE_SEQFEATXREF_ON_SEQFEAT
 
+/// XREF_ON_SEQFEAT macros
+
+#define XREF_ON_SEQFEAT_Type       CSeq_feat::TXref
+#define XREF_ON_SEQFEAT_Test(Var)  (Var).IsSetXref()
+#define XREF_ON_SEQFEAT_Get(Var)   (Var).GetXref()
+#define XREF_ON_SEQFEAT_Set(Var)   (Var).SetXref()
+#define XREF_ON_SEQFEAT_Reset(Var) (Var).ResetXref()
+
+/// SEQFEAT_HAS_XREF
+
+#define SEQFEAT_HAS_XREF(Var) \
+ITEM_HAS (XREF_ON_SEQFEAT, Var)
+
+/// FOR_EACH_XREF_ON_SEQFEAT
+/// EDIT_EACH_XREF_ON_SEQFEAT
+// CSeq_feat& as input, dereference with [const] CDbtag& dbt = **itr;
+
+#define FOR_EACH_XREF_ON_SEQFEAT(Itr, Var) \
+FOR_EACH (XREF_ON_SEQFEAT, Itr, Var)
+
+#define EDIT_EACH_XREF_ON_SEQFEAT(Itr, Var) \
+EDIT_EACH (XREF_ON_SEQFEAT, Itr, Var)
+
+/// ADD_XREF_TO_SEQFEAT
+
+#define ADD_XREF_TO_SEQFEAT(Var, Ref) \
+ADD_ITEM (XREF_ON_SEQFEAT, Var, Ref)
+
+/// ERASE_XREF_ON_SEQFEAT
+
+#define ERASE_XREF_ON_SEQFEAT(Itr, Var) \
+VECTOR_ERASE_ITEM (XREF_ON_SEQFEAT, Itr, Var)
+
+/// XREF_ON_SEQFEAT_IS_SORTED
+
+#define XREF_ON_SEQFEAT_IS_SORTED(Var, Func) \
+IS_SORTED (XREF_ON_SEQFEAT, Var, Func)
+
+/// SORT_XREF_ON_SEQFEAT
+
+#define SORT_XREF_ON_SEQFEAT(Var, Func) \
+DO_VECTOR_SORT (XREF_ON_SEQFEAT, Var, Func)
+
+/// XREF_ON_SEQFEAT_IS_UNIQUE
+
+#define XREF_ON_SEQFEAT_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (XREF_ON_SEQFEAT, Var, Func)
+
+/// UNIQUE_XREF_ON_SEQFEAT
+
+#define UNIQUE_XREF_ON_SEQFEAT(Var, Func) \
+DO_UNIQUE (XREF_ON_SEQFEAT, Var, Func)
+
+/// REMOVE_IF_EMPTY_XREF_ON_SEQFEAT
+
+#define REMOVE_IF_EMPTY_XREF_ON_SEQFEAT(Var) \
+REMOVE_IF_EMPTY_FIELD(XREF_ON_SEQFEAT, Var)
 
 /// DBXREF_ON_SEQFEAT macros
 

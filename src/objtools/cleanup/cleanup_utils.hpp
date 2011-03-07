@@ -361,7 +361,8 @@ public:
         e_DotDot,
         e_LeftPartial,
         e_RightPartial,
-        e_Comma
+        e_Comma,
+        e_Accession
     };
     
 protected:
@@ -389,6 +390,15 @@ public:
     virtual unsigned int GetInt() { return m_TokenData; };
 private:
     unsigned int m_TokenData;
+};
+
+class CLexTokenAccession : public CLexToken {
+public:
+    CLexTokenAccession (const string &token_data);
+    virtual ~CLexTokenAccession();
+    virtual string GetString(void) { return m_TokenData; };
+private:
+    string m_TokenData;
 };
 
 class CLexTokenParenPair : public CLexToken

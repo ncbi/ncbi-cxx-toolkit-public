@@ -104,6 +104,7 @@ CBioseqContext::CBioseqContext
     m_ShowGBBSource(false),
     m_PatSeqid(0),
     m_HasOperon(false),
+    m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_FFCtx(ffctx),
     m_Master(mctx)
 {
@@ -174,6 +175,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     SAnnotSelector sel = SetAnnotSelector();
     sel.SetResolveAll();
+
+    x_SetHasMultiIntervalGenes();
 }
 
 
@@ -234,6 +237,31 @@ void CBioseqContext::x_SetMapper(const CSeq_loc& loc)
     }
 }
 
+void CBioseqContext::x_SetHasMultiIntervalGenes(void)
+{
+    m_HasMultiIntervalGenes = false;
+
+    SAnnotSelector sel;
+    sel.SetFeatType( CSeqFeatData::e_Gene );
+
+    CFeat_CI gene_ci( m_Handle, sel );
+    for( ; gene_ci ; ++gene_ci ) {
+        switch( gene_ci->GetLocation().Which() ) {
+            case CSeq_loc::e_Packed_int:
+            case CSeq_loc::e_Packed_pnt:
+            case CSeq_loc::e_Mix:
+            case CSeq_loc::e_Equiv:
+                m_HasMultiIntervalGenes = true;
+                break;
+            default:
+                // do nothing
+                break;
+        }
+        if( m_HasMultiIntervalGenes ) {
+            break;
+        }
+    }
+}
 
 bool CBioseqContext::x_HasOperon(void) const
 {

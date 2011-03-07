@@ -1607,8 +1607,15 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
     sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 }
 
+enum EEndsOnBioseqOpt {
+    // Determines whether any part of the seq-loc ends on this bioseq for it to
+    // count, or that the last part must end on the seqloc.
+    // There is also a little extra unexpected logic for the "last part" case.
+    eEndsOnBioseqOpt_LastPartOfSeqLoc = 1,
+    eEndsOnBioseqOpt_AnyPartOfSeqLoc
+};
 
-static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx )
+static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx, EEndsOnBioseqOpt mode )
 {
     const bool showOutOfBoundsFeats = ctx.Config().ShowOutOfBoundsFeats();
     const bool is_part = ctx.IsPart();
@@ -1619,18 +1626,29 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx )
     }
 
     const CBioseq_Handle& seq = ctx.GetHandle();
+    const int seq_len = seq.GetBioseqLength();
 
     CSeq_loc_CI last;
     for ( CSeq_loc_CI it(loc); it; ++it ) {
+        if( mode == eEndsOnBioseqOpt_AnyPartOfSeqLoc ) {
+            if( seq.IsSynonym(it.GetSeq_id()) && it.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) < seq_len ) {
+                return true;
+            }
+        }
         last = it;
     }
+
+    if( mode == eEndsOnBioseqOpt_AnyPartOfSeqLoc ) {
+        return false;
+    }
+
     const bool endsOnThisBioseq = ( last  &&  seq.IsSynonym(last.GetSeq_id()) );
     if( is_part ) {
         return endsOnThisBioseq;
     } else {
         if( endsOnThisBioseq ) {
             // if we're not partial, we also check that we're within range
-            return seq.GetBioseqLength() > last.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) ;
+            return seq_len > last.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) ;
         } else {
             return true;
         }
@@ -1906,7 +1924,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             CConstRef<CSeq_loc> feat_loc(&it->GetLocation());
         
             // make sure location ends on the current bioseq
-            if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx) ) {
+            if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
                     if (!ctx.Config().IsFormatFTable()) {
@@ -2356,7 +2374,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         if (!loc  ||  loc->IsNull()) {
             continue;
         }
-        if ( !s_SeqLocEndsOnBioseq(*loc, ctx) ) {
+        if ( !s_SeqLocEndsOnBioseq(*loc, ctx, eEndsOnBioseqOpt_AnyPartOfSeqLoc) ) {
             continue;
         }
 

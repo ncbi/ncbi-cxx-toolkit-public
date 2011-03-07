@@ -1467,16 +1467,25 @@ static bool s_GeneMatchesXref
 }
 
 // returns original strand (actually, just the strandedness of the first part,
-// if it were mixed )
+// if it was mixed )
 static
-ENa_strand s_GeneSearchNormalizeLoc( CRef<CSeq_loc> &loc, const TSeqPos circular_length )
+ENa_strand s_GeneSearchNormalizeLoc( CBioseq_Handle top_bioseq_handle, CRef<CSeq_loc> &loc, const TSeqPos circular_length )
 {
     CRef<CSeq_loc> new_loc( new CSeq_loc );
 
     ENa_strand original_strand = eNa_strand_other;
 
-    CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Positional );
+    CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Allow, CSeq_loc_CI::eOrder_Positional );
     for( ; loc_iter; ++loc_iter ) {
+        // don't add parts that are on far bioseqs (e.g. as in X17229)
+        // ( CR956646 is another good test case since its near parts 
+        //   are minus strand and far are plus on the "GNAS" gene )
+        if( top_bioseq_handle ) {
+            const CSeq_id& loc_id = loc_iter.GetSeq_id();
+            if( ! top_bioseq_handle.IsSynonym(loc_id) ) {
+                continue;
+            }
+        }
         if( original_strand == eNa_strand_other ) {
             // strand should have strandedness of first part
             original_strand = loc_iter.GetStrand();
@@ -1496,6 +1505,7 @@ public:
 
     void processSAnnotSelector( SAnnotSelector &sel ) 
     {
+        CBioseq_Handle bioseq_handle;
         sel.SetIgnoreStrand();
     }
 
@@ -1546,7 +1556,7 @@ public:
         CRef<CSeq_loc> &loc,
         TSeqPos circular_length )
     {
-        loc_original_strand = s_GeneSearchNormalizeLoc( loc, circular_length );
+        loc_original_strand = s_GeneSearchNormalizeLoc( bioseq_handle, loc, circular_length );
     }
 
     void processMainLoop( 
@@ -1564,7 +1574,7 @@ public:
         const bool candidate_feat_is_mixed = ( candidate_feat_loc->GetStrand() == eNa_strand_other );
 
         // candidate_feat_loc = bioseq_handle.MapLocation( *candidate_feat_loc );
-        candidate_feat_original_strand = s_GeneSearchNormalizeLoc( candidate_feat_loc, circular_length ) ;
+        candidate_feat_original_strand = s_GeneSearchNormalizeLoc( bioseq_handle, candidate_feat_loc, circular_length ) ;
 
         if( feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" &&
             candidate_feat_is_mixed && annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) {
@@ -1593,24 +1603,14 @@ private:
     ENa_strand loc_original_strand;
 };
 
-static
-CRef<CSeq_loc> s_RemoveEmpty( const CSeq_loc &src )
-{
-    CRef<CSeq_loc> new_loc( new CSeq_loc );
-    CSeq_loc_CI loc_iter( src ); // skips empty parts by default
-    for( ; loc_iter; ++loc_iter ) {
-        new_loc->Add( *loc_iter.GetRangeAsSeq_loc() );
-    }
-    return new_loc;
-}
-
 CConstRef<CSeq_feat> 
 CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible( 
     CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
     CSeqFeatData::ESubtype feat_subtype,
     const CSeq_loc &location, CSeqFeatData::E_Choice sought_type ) const
 {
-    CRef<CSeq_loc> cleaned_location = s_RemoveEmpty( location );
+    CRef<CSeq_loc> cleaned_location( new CSeq_loc );
+    cleaned_location->Assign( location );
 
     // map to master sequence so we can catch genes that are on other segments
     CScope *scope = &ctx.GetScope();
@@ -1670,7 +1670,7 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
                      *scope,
                      0,
                      &plugin );
-    if( ! feat && x_CanUseExtremesToFindGene(ctx) && location.GetStrand() != eNa_strand_other ) {
+    if( ! feat && x_CanUseExtremesToFindGene(ctx, location) ) {
         CGeneSearchPlugin plugin2;
         feat = sequence::GetBestOverlappingFeat
             ( location,
@@ -1820,6 +1820,9 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                     s_feat.Reset();
                     if( ! parentFeatureItem->m_GeneRef->IsSuppressed() ) {
                         g_ref = parentFeatureItem->m_GeneRef;
+                        if( xref_g_ref != NULL ) {
+                            xref_g_ref = NULL; // TODO: is it right to ignore mat_peptide gene xrefs?
+                        }
                     }
                 } else if( ownGeneIsOkay ) {
                     // do nothing; it's already set
@@ -1908,8 +1911,50 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     }
 }
 
-bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx ) const
+// matches C's behavior, even though it's not strictly correct.
+// In the future, we may prefer to use sequence::BadSeqLocSortOrder
+bool s_BadSeqLocSortOrderCStyle( CBioseq_Handle &bioseq_handle, const CSeq_loc &location )
 {
+    CSeq_loc_CI previous_loc;
+
+    ITERATE( CSeq_loc, loc_iter, location ) {
+        if( ! previous_loc ) {
+            previous_loc = loc_iter;
+            continue;
+        }
+        if ( previous_loc.GetSeq_id().Equals( loc_iter.GetSeq_id() ) ) {
+            const int prev_to = previous_loc.GetRange().GetTo();
+            const int this_to = loc_iter.GetRange().GetTo();
+            if ( loc_iter.GetStrand() == eNa_strand_minus ) {
+                if (  prev_to < this_to) {
+                    return true;
+                }
+            } else {
+                if (prev_to > this_to) {
+                    return true;
+                }
+            }
+        }
+        previous_loc = loc_iter;
+    }
+
+    return false;
+}
+
+bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location ) const
+{
+    // disallowed if mixed strand
+    if( location.GetStrand() == eNa_strand_other ) {
+        return false;
+    }
+
+    // disallowed if bad order inside seqloc
+    // if( sequence::BadSeqLocSortOrder( ctx.GetHandle(), location ) ) { // TODO: one day switch to this.
+    // We use s_BadSeqLocSortOrderCStyle to match C's behavior, even though it's not strictly correct.
+    if( s_BadSeqLocSortOrderCStyle( ctx.GetHandle(), location ) ) {
+        return false;
+    }
+
     if( ctx.IsSegmented() || ctx.IsEMBL() || ctx.IsDDBJ() ) {
         return true;
     }
@@ -1930,6 +1975,12 @@ bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx ) const
         length_before_decimal_point = ctx.GetAccession().length();
     }
     if( length_before_decimal_point == 6 ) {
+        return true;
+    }
+
+    if( ! ctx.HasMultiIntervalGenes() ) {
+        // it's debatable whether we should allow this, but
+        // it's here for backward compatibility with C
         return true;
     }
 
@@ -2046,10 +2097,10 @@ void CFeatureItem::x_AddQuals(
     // leaving this here since it's so useful for debugging purposes.
     //
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 59996 &&
-        GetLoc().GetStop(eExtreme_Biological) == 60232) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 59996 &&
-        GetLoc().GetStart(eExtreme_Biological) == 60232)
+        (GetLoc().GetStart(eExtreme_Biological) == 155445 &&
+        GetLoc().GetStop(eExtreme_Biological) == 155450) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 155445 &&
+        GetLoc().GetStart(eExtreme_Biological) == 155450)
         ) {
         cerr << "";
         } */
@@ -5368,6 +5419,7 @@ static ESourceQualifier s_OrgModToSlot(const COrgMod& om)
         CASE_ORGMOD(gb_acronym);
         CASE_ORGMOD(gb_anamorph);
         CASE_ORGMOD(gb_synonym);
+    case COrgMod::eSubtype_metagenome_source: return eSQ_metagenomic;
         CASE_ORGMOD(old_lineage);
         CASE_ORGMOD(old_name);
 #undef CASE_ORGMOD
@@ -5842,7 +5894,8 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(unstructured);
     }
 
-    DO_NOTE(metagenomic);
+    // DO_NOTE(metagenomic);
+    x_FormatNoteQual(eSQ_metagenomic, "derived from metagenome", qvec);
     if ( GetContext()->Config().SrcQualsToNote() ) {
         DO_NOTE(linkage_group);
         DO_NOTE(type);

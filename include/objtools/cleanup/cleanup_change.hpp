@@ -130,6 +130,7 @@ public:
         eChangeSite,
         eChangePCRPrimers,
         eChangeRNAref,
+        eMoveToProtXref,
 
         // set when any other change is made.
         eChangeOther,

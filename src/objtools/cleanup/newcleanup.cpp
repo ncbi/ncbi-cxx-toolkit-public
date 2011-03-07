@@ -481,6 +481,130 @@ void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
     }
 }
 
+typedef pair<const string, TORGMOD_SUBTYPE>  TOrgModElem;
+static const TOrgModElem sc_orgmod_map[] = {
+    TOrgModElem("Acronym",            NCBI_ORGMOD(acronym)),
+    TOrgModElem("Anamorph",           NCBI_ORGMOD(anamorph)),
+    TOrgModElem("Authority",          NCBI_ORGMOD(authority)),
+    TOrgModElem("Bio-material",       NCBI_ORGMOD(bio_material)),
+    TOrgModElem("Biotype",            NCBI_ORGMOD(biotype)),
+    TOrgModElem("Biovar",             NCBI_ORGMOD(biovar)),
+    TOrgModElem("Breed",              NCBI_ORGMOD(breed)),
+    TOrgModElem("Chemovar",           NCBI_ORGMOD(chemovar)),
+    TOrgModElem("Common",             NCBI_ORGMOD(common)),
+    TOrgModElem("Cultivar",           NCBI_ORGMOD(cultivar)),
+    TOrgModElem("Culture-collection", NCBI_ORGMOD(culture_collection) ),
+    TOrgModElem("Ecotype",            NCBI_ORGMOD(ecotype)),
+    TOrgModElem("Forma",              NCBI_ORGMOD(forma)),
+    TOrgModElem("Forma-specialis",    NCBI_ORGMOD(forma_specialis)),
+    TOrgModElem("Group",              NCBI_ORGMOD(group)),
+    TOrgModElem("Host",               NCBI_ORGMOD(nat_host)),
+    TOrgModElem("Isolate",            NCBI_ORGMOD(isolate)),
+    TOrgModElem("Metagenome-source",  NCBI_ORGMOD(metagenome_source)),
+    TOrgModElem("Pathovar",           NCBI_ORGMOD(pathovar)),
+    TOrgModElem("Serogroup",          NCBI_ORGMOD(serogroup)),
+    TOrgModElem("Serotype",           NCBI_ORGMOD(serotype)),
+    TOrgModElem("Serovar",            NCBI_ORGMOD(serovar)),
+    TOrgModElem("Specimen-voucher",   NCBI_ORGMOD(specimen_voucher)),
+    TOrgModElem("Strain",             NCBI_ORGMOD(strain)),
+    TOrgModElem("Sub-species",        NCBI_ORGMOD(sub_species)),
+    TOrgModElem("Subgroup",           NCBI_ORGMOD(subgroup)),
+    TOrgModElem("Substrain",          NCBI_ORGMOD(substrain)),
+    TOrgModElem("Subtype",            NCBI_ORGMOD(subtype)),
+    TOrgModElem("Synonym",            NCBI_ORGMOD(synonym)),
+    TOrgModElem("Teleomorph",         NCBI_ORGMOD(teleomorph)),
+    TOrgModElem("Type",               NCBI_ORGMOD(type)),
+    TOrgModElem("Variety",            NCBI_ORGMOD(variety))
+};
+typedef CStaticArrayMap<const string, TORGMOD_SUBTYPE, PNocase> TOrgModMap;
+DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModMap, sc_orgmod_map);
+
+static const TOrgModElem sc_orgmodalias_map[] = {
+    TOrgModElem("nat-host",      NCBI_ORGMOD(nat_host)),
+    TOrgModElem("specific-host", NCBI_ORGMOD(nat_host)),
+    TOrgModElem("subspecies",    NCBI_ORGMOD(sub_species))
+};
+DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModAliasMap, sc_orgmodalias_map);
+
+typedef pair<const string, TORGMOD_SUBTYPE>  TSubsourceElem;
+static const TSubsourceElem sc_subsource_map[] = {
+    TSubsourceElem("Cell-line",             NCBI_SUBSOURCE(cell_line)),
+    TSubsourceElem("Cell-type",             NCBI_SUBSOURCE(cell_type)),
+    TSubsourceElem("Chromoso me",           NCBI_SUBSOURCE(chromosome)),
+    TSubsourceElem("Clone",                 NCBI_SUBSOURCE(clone)),
+    TSubsourceElem("Clone-lib",             NCBI_SUBSOURCE(clone_lib)),
+    TSubsourceElem("Collected-by",          NCBI_SUBSOURCE(collected_by)),
+    TSubsourceElem("Collection-date",       NCBI_SUBSOURCE(collection_date)),
+    TSubsourceElem("Country",               NCBI_SUBSOURCE(country)),
+    TSubsourceElem("Dev-stage",             NCBI_SUBSOURCE(dev_stage)),
+    TSubsourceElem("Endogenous-virus-name", NCBI_SUBSOURCE(endogenous_virus_name)),
+    TSubsourceElem("Environmental-sample",  NCBI_SUBSOURCE(environmental_sample)),
+    TSubsourceElem("Frequency",             NCBI_SUBSOURCE(frequency)),
+    TSubsourceElem("Genotype",              NCBI_SUBSOURCE(genotype)),
+    TSubsourceElem("Germline",              NCBI_SUBSOURCE(germline)),
+    TSubsourceElem("Haplogroup",            NCBI_SUBSOURCE(haplogroup)),
+    TSubsourceElem("Haplotype",             NCBI_SUBSOURCE(haplotype)),
+    TSubsourceElem("Identified-by",         NCBI_SUBSOURCE(identified_by)),
+    TSubsourceElem("Isolation-source",      NCBI_SUBSOURCE(isolation_source)),
+    TSubsourceElem("Lab-host",              NCBI_SUBSOURCE(lab_host)),
+    TSubsourceElem("Lat-Lon",               NCBI_SUBSOURCE(lat_lon)),
+    TSubsourceElem("Linkage-group",         NCBI_SUBSOURCE(linkage_group)),
+    TSubsourceElem("Map",                   NCBI_SUBSOURCE(map)),
+    TSubsourceElem("Mating-type",           NCBI_SUBSOURCE(mating_type)),
+    TSubsourceElem("Metagenomic",           NCBI_SUBSOURCE(metagenomic)),
+    TSubsourceElem("Plasmid-name",          NCBI_SUBSOURCE(plasmid_name)),
+    TSubsourceElem("Pop-variant",           NCBI_SUBSOURCE(pop_variant)),
+    TSubsourceElem("Rearranged",            NCBI_SUBSOURCE(rearranged)),
+    TSubsourceElem("Segment",               NCBI_SUBSOURCE(segment)),
+    TSubsourceElem("Sex",                   NCBI_SUBSOURCE(sex)),
+    TSubsourceElem("Subclone",              NCBI_SUBSOURCE(subclone)),
+    TSubsourceElem("Tissue-lib",            NCBI_SUBSOURCE(tissue_lib)),
+    TSubsourceElem("Tissue-type",           NCBI_SUBSOURCE(tissue_type)),
+    TSubsourceElem("Transgenic",            NCBI_SUBSOURCE(transgenic))
+};
+typedef CStaticArrayMap<const string, TSUBSOURCE_SUBTYPE, PNocase> TSubsourceMap;
+DEFINE_STATIC_ARRAY_MAP(TSubsourceMap, sc_SubsourceMap, sc_subsource_map);
+
+static const TSubsourceElem sc_subsourcealias_map[] = {
+    TSubsourceElem("fwd-primer-name",    NCBI_SUBSOURCE(fwd_primer_name)),
+    TSubsourceElem("fwd-primer-seq",     NCBI_SUBSOURCE(fwd_primer_seq)),
+    TSubsourceElem("Lat-long",           NCBI_SUBSOURCE(lat_lon)),
+    TSubsourceElem("Latitude-Longitude", NCBI_SUBSOURCE(lat_lon)),
+    TSubsourceElem("rev-primer-name",    NCBI_SUBSOURCE(rev_primer_name)),
+    TSubsourceElem("rev-primer-seq",     NCBI_SUBSOURCE(rev_primer_seq)),
+    TSubsourceElem("sub-clone",          NCBI_SUBSOURCE(subclone))
+};
+DEFINE_STATIC_ARRAY_MAP(TSubsourceMap, sc_SubsourceAliasMap, sc_subsourcealias_map);
+
+// change the target string by searching for the given search_pattern
+// and replacing it with replacement up to max_replace times (0 means unlimited)
+//
+// Example: 
+//     string foo = "Test:   FOO   BAR    :BAZ."
+//     s_RegexpReplace( foo, ":[ ]+", ": " );
+// This turns foo into "Test: FOO   BAR    :BAZ."
+static
+void s_RegexpReplace( string &target, 
+    const char *search_pattern, 
+    const char *replacement,
+    int max_replace = 0 )
+{
+    CRegexpUtil replacer( target );
+    replacer.Replace( search_pattern, replacement, CRegexp::fCompile_default, CRegexp::fMatch_default, max_replace );
+    // swap is faster than assignment
+    replacer.GetResult().swap( target ); 
+}
+
+// If str starts with prefix, the prefix is removed from the string.
+static
+void s_RemoveInitial( string &str, const string &prefix, NStr::ECase case_to_use )
+{
+    if( NStr::StartsWith( str, prefix, case_to_use ) ) {
+        copy( str.begin() + prefix.length(), str.end(), str.begin() );
+        str.resize( str.length() - prefix.length() );
+    }
+}
+
 static bool s_AccessionCompare (
     const string& str1,
     const string& str2
@@ -1814,6 +1938,23 @@ void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
     }
 }
 
+// Give it a map that maps case-insensitive string to some other type, 
+// and it will return any matches that are a prefix for str.
+// For example, if you have a mapping that includes ("foo" to 7), then passing
+// str as "Foo something", will return the ("foo" to 7) mapping.
+template< typename TMapType >
+typename TMapType::const_iterator s_FindInMapAsPrefix( const string &str, const TMapType &the_map )
+{
+    typename TMapType::const_iterator it = the_map.lower_bound( str );
+    if( it != the_map.begin() && ( it == the_map.end() || ! NStr::EqualNocase(str, it->first) ) ) {
+        --it;
+    }
+    if ( it != the_map.end() && NStr::StartsWith(str, it->first, NStr::eNocase)) {
+        return it;
+    }
+    return the_map.end();
+}
+
 typedef pair<const string, CSeqFeatData::TSite>  TSiteElem;
 static const TSiteElem sc_site_map[] = {
     TSiteElem("acetylation", CSeqFeatData::eSite_acetylation),
@@ -1864,11 +2005,8 @@ void CNewCleanup_imp::SiteFeatBC( CSeqFeatData::ESite &site, CSeq_feat& feat )
     {
         // extract if comment starts with any informative possibilities listed in sc_SiteMap
         const string& comment = GET_FIELD(feat, Comment);
-        TSiteMap::const_iterator it = sc_SiteMap.lower_bound( comment );
-        if( it != sc_SiteMap.begin() && ( it == sc_SiteMap.end() || ! NStr::EqualNocase(comment, it->first) ) ) {
-            --it;
-        }
-        if ( it != sc_SiteMap.end() && NStr::StartsWith(comment, it->first, NStr::eNocase)) {
+        TSiteMap::const_iterator it = s_FindInMapAsPrefix<TSiteMap>( comment, sc_SiteMap );
+        if ( it != sc_SiteMap.end() ) {
             feat.SetData().SetSite(it->second);
             ChangeMade(CCleanupChange::eChangeSite);
             // erase the comment if it contains no further useful info aside from the site
@@ -2168,6 +2306,8 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         if (NStr::EqualNocase(val, "non-experimental evidence, no additional details recorded")) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
             return eAction_Erase;  // mark qual for deletion
+        } else {
+            x_CleanupAndRepairInference(val);
         }
     } else if (NStr::EqualNocase(qual, "note")  ||
                NStr::EqualNocase(qual, "notes")  ||
@@ -2224,6 +2364,34 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         if (!data.IsCdregion()) {
             // not legal on anything but CDS, so remove it
             return eAction_Erase;  // mark qual for deletion
+        }
+    } else if ( NStr::EqualNocase(qual, "EC_number") ) {
+        x_CleanupECNumber(val);
+    } else if( qual == "satellite" ) {
+        x_MendSatelliteQualifier( val );
+    }
+
+    if( NStr::EqualNocase( qual, "mobile_element" ) ) {
+        // trim spaces around first colon but only if there are no colons
+        // with spaces before and after
+        if( NPOS == NStr::Find(val, " :") || NPOS == NStr::Find(val, ": ") ) {
+            s_RegexpReplace( val, "[ ]*:[ ]*", ":", 1 );
+        }
+
+        if( data.IsImp() && STRING_FIELD_MATCH( data.GetImp(), Key, "repeat_region" ) && ! val.empty() ) {
+            qual = "mobile_element_type";
+            data.SetImp().SetKey( "mobile_element" );
+        }
+    }
+
+    // conflict is obsolete.  Make it misc_difference, but add a note 
+    // to the feature comment as to what it used to be.
+    if( data.IsImp() && STRING_FIELD_MATCH( data.GetImp(), Key, "conflict" ) ) {
+        data.SetImp().SetKey( "misc_difference");
+        if( feat.IsSetComment() ) {
+            GET_MUTABLE(feat, Comment) = "conflict; " + GET_FIELD(feat, Comment);
+        } else {
+            SET_FIELD(feat, Comment, "conflict");
         }
     }
 
@@ -2549,7 +2717,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
             new_frame == CCdregion::eFrame_two  ||
             new_frame == CCdregion::eFrame_three) {
             if (frame == CCdregion::eFrame_not_set  ||
-                ( FIELD_IS_SET( feat, Pseudo) && GET_FIELD( feat, Pseudo) && ! FIELD_IS_SET(feat, Product) )) {
+                ( FIELD_EQUALS( feat, Pseudo, true ) && ! FIELD_IS_SET(feat, Product) )) {
                 cds.SetFrame(new_frame);
                 ChangeMade(CCleanupChange::eChangeQualifiers);
             }
@@ -2591,7 +2759,6 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     if (NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::Equal (qual, "EC_number")
         || NStr::Equal(qual, "activity") || NStr::Equal (qual, "prot_note")) 
     {
-
         // get protein sequence for product
         CRef<CSeq_feat> prot_feat;
         CRef<CProt_ref> prot_ref;
@@ -2681,9 +2848,10 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     }
 
     // TODO: should this be uncommented?
-    /*if (NStr::EqualNocase(qual, "translation")) {
+    if (NStr::EqualNocase(qual, "translation")) {
         return eAction_Erase;
-    }*/
+    }
+
     return eAction_Nothing;
 }
 
@@ -3428,19 +3596,26 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
                     }
                 }
             }
-            return eAction_Erase;
         }
     } else if (NStr::EqualNocase(qual, "function")) {
         ADD_STRING_TO_LIST( prot.SetActivity(), val );
         ChangeMade(CCleanupChange::eChangeQualifiers);
-        return eAction_Erase;
     } else if (NStr::EqualNocase(qual, "EC_number")) {
         ADD_STRING_TO_LIST( prot.SetEc(), val );
         ChangeMade(CCleanupChange::eChangeQualifiers);
-        return eAction_Erase;
     }
 
-    return eAction_Nothing;
+    // labels to leave alone
+    static const char * const ignored_quals[] = 
+        { "label", "allele", "experiment", "inference", "UniProtKB_evidence" };
+    const static set<string, PNocase> ignored_quals_raw( 
+        ignored_quals, ignored_quals + sizeof(ignored_quals)/sizeof(ignored_quals[0]) );
+    if( ignored_quals_raw.find(qual) != ignored_quals_raw.end() ) {
+        return eAction_Nothing;
+    }
+
+    // all other gbquals not appropriate on protein features
+    return eAction_Erase;
 }
 
 void CNewCleanup_imp::x_FlattenPubEquiv(CPub_equiv& pub_equiv)
@@ -4408,6 +4583,101 @@ void CNewCleanup_imp::x_SetFrameFromLoc( CCdregion &cdregion, const CSeq_loc &lo
     }
 }
 
+void CNewCleanup_imp::x_CleanupECNumber( string &ec_num )
+{
+    NStr::TruncateSpacesInPlace( ec_num );
+
+    // remove any final periods
+    string::size_type last_non_period = ec_num.find_last_not_of(".");
+    if( last_non_period == string::npos ) {
+        ec_num.clear();
+        return;
+    }
+    ec_num.resize( last_non_period + 1 );
+
+    // remove any unnecessary "EC " prefix
+    if( NStr::StartsWith( ec_num, "EC ") ) {
+        ec_num = ec_num.substr(3);
+    }
+}
+
+static const char * const s_evCategoryNoSpace [] = {
+  "COORDINATES:",
+  "DESCRIPTION:",
+  "EXISTENCE:",
+  NULL
+};
+
+void CNewCleanup_imp::x_CleanupAndRepairInference( string &inference )
+{
+    if( inference.empty() ) {
+        return;
+    }
+
+    CRegexpUtil colonFixer( inference );
+    colonFixer.Replace( "[ ]+:", ":" );
+    colonFixer.Replace( ":*:[ ]+", ": ");
+    colonFixer.GetResult().swap( inference ); // swap is faster than assignment
+
+    // check if missing space after a prefix
+    // e.g. "COORDINATES:foo" should become "COORDINATES: foo"
+    static CRegexp spaceInserter( "(COORDINATES|DESCRIPTION|EXISTENCE):[^ ]" );
+    if( spaceInserter.IsMatch( inference ) ) {
+        int location_just_beyond_match = spaceInserter.GetResults(0)[1];
+        inference.insert( inference.begin() + location_just_beyond_match - 1, ' ' );
+    }
+}
+void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
+{
+    if ( val.empty() ){
+        return;
+    }
+
+    static CRegexp prefixRegexp("^(micro|mini|)satellite");
+    if( prefixRegexp.IsMatch(val) ) {
+        int spot_just_after_match = prefixRegexp.GetResults(0)[1];
+        if( val[spot_just_after_match] == ' ' ) {
+            val[spot_just_after_match] = ':';
+        }
+
+        // remove spaces after first colon
+        s_RegexpReplace( val, ":[ ]+", ":", 1 );
+    } else {
+        NStr::TruncateSpacesInPlace( val, NStr::eTrunc_Begin );
+        val = "satellite:" + val;
+    }
+}
+
+void CNewCleanup_imp::x_FixUpEllipsis( string &str )
+{
+    s_RegexpReplace( str, "[,.][,.][,.]$", "..." );
+}
+
+static
+bool s_IsIllegalQual( const string &qual )
+{
+    static const char *sc_Illegal_qual_array[] = {
+        "anticodon",
+        "citation",
+        "codon_start",
+        "db_xref",
+        "evidence",
+        "exception",
+        "gene",
+        "note",
+        "protein_id",
+        "pseudo",
+        "transcript_id",
+        "transl_except",
+        "transl_table",
+        "translation"
+    };
+    typedef CStaticArraySet<const char*, PNocase_CStr> TIllegalQualSet;
+    DEFINE_STATIC_ARRAY_MAP( TIllegalQualSet, sc_IllegalQualArray, sc_Illegal_qual_array );
+
+    return ( sc_IllegalQualArray.find(qual.c_str()) != sc_IllegalQualArray.end() );
+}
+
 static bool s_GbQualCompare (
     const CRef<CGb_qual>& gb1,
     const CRef<CGb_qual>& gb2
@@ -4419,6 +4689,15 @@ static bool s_GbQualCompare (
 
     const string& ql1 = GET_FIELD (gbq1, Qual);
     const string& ql2 = GET_FIELD (gbq2, Qual);
+
+    // legal quals first
+    const bool is_illegal1 = s_IsIllegalQual(ql1);
+    const bool is_illegal2 = s_IsIllegalQual(ql2);
+    if( is_illegal1 && ! is_illegal2 ) {
+        return false;
+    } else if( ! is_illegal1 && is_illegal2 ) {
+        return true;
+    }
 
     int comp = NStr::CompareNocase (ql1, ql2);
     if (comp < 0) return true;
@@ -4464,7 +4743,7 @@ void CNewCleanup_imp::Except_textBC (
         NStr::Find (except_text, "alternate processing") == NPOS &&
         NStr::Find (except_text, "adjusted for low quality genome") == NPOS &&
         NStr::Find (except_text, "non-consensus splice site") == NPOS) {
-        return;
+        return ;
     }
 
     vector<string> exceptions;
@@ -4497,7 +4776,7 @@ void CNewCleanup_imp::Except_textBC (
         }
     }
 
-    except_text = NStr::Join (exceptions, ",");
+    except_text = NStr::Join (exceptions, ", ");
 }
 
 static
@@ -4588,7 +4867,7 @@ void CNewCleanup_imp::x_SortUniqSeqFeat( CSeq_feat& sf )
     // need to clean this up in case it was changed by our children
     CLEAN_STRING_MEMBER (sf, Comment);
     CALL_IF_SET( CleanDoubleQuote, sf, Comment );
-    if (FIELD_IS_SET (sf, Comment) && GET_FIELD (sf, Comment) == ".") {
+    if ( STRING_FIELD_MATCH( sf, Comment, "." ) ) {
         RESET_FIELD (sf, Comment);
         ChangeMade (CCleanupChange::eChangeComment);
     }
@@ -4641,23 +4920,70 @@ s_GeneSynEqual(
     return syn1 == syn2;
 }
 
+class CStringIsEmpty
+{
+public:
+    bool operator()( const string &str ) const { return str.empty(); }
+};
+
+// returns true if a split was done and added to gene_syns_to_add
+// gene_syns_to_add is unaffected if syn was not split.
+bool s_SplitGeneSyn( const string &syn, vector<string> &gene_syns_to_add)
+{
+    // preliminary quick-test
+    if( syn.find_first_of(",;") == NPOS ) {
+        return false;
+    }
+
+    // split by comma
+    vector<string> pieces_split_by_comma;
+    NStr::Tokenize( syn, ",", pieces_split_by_comma );
+
+    // now split each of those pieces by "; "
+    vector<string> pieces_split_by_semicolon;
+    FOR_EACH_STRING_IN_VECTOR( piece_iter, pieces_split_by_comma ) {
+        NStr::TokenizePattern( *piece_iter, "; ", pieces_split_by_semicolon );
+    }
+
+    if( pieces_split_by_semicolon.size() > 1 ) {
+        // copy non-empty pieces, trimming as we go
+        EDIT_EACH_STRING_IN_VECTOR( piece_iter, pieces_split_by_semicolon ) {
+            NStr::TruncateSpacesInPlace( *piece_iter );
+            if( ! piece_iter->empty() ) {
+                gene_syns_to_add.push_back(*piece_iter);
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void CNewCleanup_imp::GenerefBC (
     CGene_ref& gr
 )
 
 {
-    CLEAN_STRING_MEMBER (gr, Locus);
-    CLEAN_STRING_MEMBER (gr, Allele);
-    CLEAN_STRING_MEMBER (gr, Desc);
-    CLEAN_STRING_MEMBER (gr, Maploc);
-    CLEAN_STRING_MEMBER (gr, Locus_tag);
-    CLEAN_STRING_LIST (gr, Syn);
-    
+    // split gene synonyms that have a comma or "; "
+    vector<string> gene_syns_to_add;
+    EDIT_EACH_SYNONYM_ON_GENEREF (syn_itr, gr) {
+        string& syn = *syn_itr;
+        if( s_SplitGeneSyn(syn, gene_syns_to_add) ) {
+            ERASE_SYNONYM_ON_GENEREF (syn_itr, gr);
+        }
+    }
+    if( ! gene_syns_to_add.empty() ) {
+        copy( gene_syns_to_add.begin(), gene_syns_to_add.end(), 
+            back_inserter(gr.SetSyn()) );
+        ChangeMade (CCleanupChange::eChangeQualifiers);
+    }
+
+
+    // TODO: shouldn't this be done POST Gene-ref so we're sorting/uniquing the cleaned up data?
     if( ! SYNONYM_ON_GENEREF_IS_SORTED(gr, s_GeneSynCompare) ) {
         SORT_SYNONYM_ON_GENEREF( gr, s_GeneSynCompare );
         ChangeMade (CCleanupChange::eChangeQualifiers);
     }
-
     if (! SYNONYM_ON_GENEREF_IS_UNIQUE (gr, s_GeneSynEqual)) {
         UNIQUE_SYNONYM_ON_GENEREF(gr, s_GeneSynEqual);
         ChangeMade (CCleanupChange::eCleanQualifiers);
@@ -4673,6 +4999,25 @@ void CNewCleanup_imp::GenerefBC (
             ERASE_SYNONYM_ON_GENEREF (syn_itr, gr);
             ChangeMade (CCleanupChange::eChangeQualifiers);
         }
+    }
+
+    // remove obsolete or otherwise stale dbxrefs
+    EDIT_EACH_DBXREF_ON_GENEREF(it, gr) {
+        CDbtag& dbt = **it;
+        if (s_DbtagIsBad (dbt)) {
+            ERASE_DBXREF_ON_GENEREF (it, gr);
+            ChangeMade (CCleanupChange::eCleanDbxrefs);
+        }
+    }
+
+    // sort/uniq dbxrefs on generef
+    if( ! DBXREF_ON_GENEREF_IS_SORTED(gr, s_DbtagCompare) ) {
+        SORT_DBXREF_ON_GENEREF(gr, s_DbtagCompare);
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    }
+    if( ! DBXREF_ON_GENEREF_IS_UNIQUE(gr, s_DbtagEqual) ) {
+        UNIQUE_DBXREF_ON_GENEREF(gr, s_DbtagEqual);
+        ChangeMade(CCleanupChange::eRemoveGeneXref);
     }
 }
 
@@ -5236,6 +5581,49 @@ CNewCleanup_imp::x_AddNonCopiedQual(
     ChangeMade( CCleanupChange::eAddQualifier );
 }
 
+void CNewCleanup_imp::x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat )
+{
+    if( ! FIELD_IS_SET( seqfeat, Qual ) ) {
+        return;
+    }
+
+    EDIT_EACH_GBQUAL_ON_SEQFEAT( qual_iter, seqfeat ) {
+        CGb_qual &gb_qual = **qual_iter;
+        if( FIELD_IS_SET(gb_qual, Qual) && FIELD_IS_SET(gb_qual, Val) ) {
+            const string qual = NStr::Replace( GET_FIELD(gb_qual, Qual), "_", "-" );
+            const string &val = GET_FIELD(gb_qual, Val);
+
+            // determine whether we should convert this gbqual into an orgmod
+            bool do_gbqual_to_orgmod = false;
+            TOrgModMap::const_iterator orgmod_it = s_FindInMapAsPrefix<TOrgModMap>( qual, sc_OrgModMap );
+            if( orgmod_it != sc_OrgModMap.end() && orgmod_it->second != NCBI_ORGMOD(nat_host) ) {
+                do_gbqual_to_orgmod = true;
+            }
+            if( ! do_gbqual_to_orgmod ) {
+                TOrgModMap::const_iterator orgmodalias_it = s_FindInMapAsPrefix<TOrgModMap>( qual, sc_OrgModAliasMap );
+                if( orgmodalias_it != sc_OrgModAliasMap.end() && orgmodalias_it->second != NCBI_ORGMOD(nat_host) ) {
+                    do_gbqual_to_orgmod = true;
+                }
+            }
+            if( ! do_gbqual_to_orgmod ) {
+                if( s_FindInMapAsPrefix<TSubsourceMap>( qual, sc_SubsourceMap) != sc_SubsourceMap.end() ||
+                    s_FindInMapAsPrefix<TSubsourceMap>( qual, sc_SubsourceAliasMap) != sc_SubsourceAliasMap.end() ) 
+                {
+                    do_gbqual_to_orgmod = true;
+                }
+            }
+
+            // if required, do the conversion
+            if( do_gbqual_to_orgmod ) {
+                org.SetMod().push_back( qual + "=" + val );
+                ERASE_GBQUAL_ON_SEQFEAT( qual_iter, seqfeat );
+                ChangeMade(CCleanupChange::eAddOrgMod);
+                ChangeMade(CCleanupChange::eRemoveQualifier);
+            }
+        }
+    }
+}
+
 void CNewCleanup_imp::x_MoveSeqdescOrgToSourceOrg( COrg_ref &org_param, CSeqdesc &seqdesc )
 {
     // wrap Org_ref in BioSource
@@ -5493,6 +5881,168 @@ void CNewCleanup_imp::RnaFeatBC (
     }
 }
 
+bool CNewCleanup_imp::x_InGpsGenomic( const CSeq_feat& seqfeat )
+{
+    if( ! FIELD_IS_SET(seqfeat, Location) ) {
+        return false;
+    }
+    CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle( GET_FIELD(seqfeat, Location) );
+    if( ! bioseq_handle ) {
+        return false;
+    }
+    CBioseq_set_Handle parent_bioseq_set_handle = bioseq_handle.GetParentBioseq_set();
+    for( ; parent_bioseq_set_handle; 
+           parent_bioseq_set_handle = parent_bioseq_set_handle.GetParentBioseq_set() )
+    {
+        if( ! FIELD_IS_SET(parent_bioseq_set_handle, Class) ) {
+            return false;
+        }
+        if( GET_FIELD(parent_bioseq_set_handle, Class) == CBioseq_set::eClass_nuc_prot ) {
+            return false;
+        } else if( GET_FIELD(parent_bioseq_set_handle, Class) == CBioseq_set::eClass_gen_prod_set ) {
+            return true;
+        } 
+    }
+    return false;
+}
+
+enum EMoveNonDuplicatedItemsOpt {
+    eMoveNonDuplicatedItemsOpt_ModifySource = 1,
+    eMoveNonDuplicatedItemsOpt_DoNotModifySource
+};
+
+// For example:
+// Let's say that dest is {"abc", "123", "xyz"}
+// and src is {"456", "123", "884", "abc"}, then afterwards they will be:
+// src: {"123", "abc"} (holds the items we couldn't move over)
+// dest: {"abc", "123", "xyz", "456", "884"}
+template< typename TDest, typename TSrc, typename TLessThan >
+static
+void s_MoveNonDuplicatedItems( TDest &dest, TSrc &src, 
+    const TLessThan &less_than, 
+    EMoveNonDuplicatedItemsOpt opt = eMoveNonDuplicatedItemsOpt_DoNotModifySource )
+{
+    // first, create a set containing whatever the destination contains for easy
+    // lookup later
+    set<typename TDest::value_type, TLessThan> dest_items_set( dest.begin(), dest.end(), less_than );
+
+    // holds the items that we couldn't move over
+    TSrc new_src;
+
+    typename TSrc::iterator iter = src.begin();
+    for( ; iter != src.end(); ++iter ) {
+        // only add items not already in dest
+        if( dest_items_set.find(*iter) == dest_items_set.end() ) {
+            dest.push_back( *iter );
+            dest_items_set.insert(*iter);
+        } else {
+            if( opt == eMoveNonDuplicatedItemsOpt_ModifySource ) {
+                new_src.push_back( *iter );
+            }
+        }
+    }
+
+    // some (maybe all?) of srcs items were moved over and deleted,
+    // but "new_src" contains the ones we didn't move over.
+    // Note that swap should be faster than assignment.
+    if( opt == eMoveNonDuplicatedItemsOpt_ModifySource ) {
+        src.swap( new_src );
+    }
+}
+
+// move parts of cds_prot_ref to prot_ref
+void s_CopyProtXrefToProtFeat( CProt_ref &prot_ref, CProt_ref &cds_prot_ref )
+{
+    // move the Db field over
+    if( FIELD_IS_SET(cds_prot_ref, Db) ) {
+        copy( GET_FIELD(cds_prot_ref, Db).begin(), GET_FIELD(cds_prot_ref, Db).end(),
+            back_inserter( GET_MUTABLE(prot_ref, Db) ) );
+        RESET_FIELD(cds_prot_ref, Db);
+    }
+
+    // move the Name field over
+    // (Here, we only move over names which don't already exist in the destination )
+    if( FIELD_IS_SET(cds_prot_ref, Name) ) {
+        s_MoveNonDuplicatedItems( GET_MUTABLE(prot_ref, Name), GET_MUTABLE(cds_prot_ref, Name), PNocase() );
+    }
+
+    // move the Desc field over (but only if it differs from ours )
+    if( FIELD_IS_SET(cds_prot_ref, Desc) ) {
+        const string &cds_desc = GET_FIELD(cds_prot_ref, Desc);
+        if( ! FIELD_IS_SET(prot_ref, Desc) ) {
+            SET_FIELD(prot_ref, Desc, cds_desc);
+            RESET_FIELD(cds_prot_ref, Desc);
+        } else if ( GET_FIELD(prot_ref, Desc) != cds_desc ) {
+            SET_FIELD(prot_ref, Desc, GET_FIELD(prot_ref, Desc) + "; " + cds_desc );
+        }
+    }
+
+    // move the Ec field over
+    if( FIELD_IS_SET(cds_prot_ref, Ec) ) {
+        s_MoveNonDuplicatedItems( GET_MUTABLE(prot_ref, Ec), GET_MUTABLE(cds_prot_ref, Ec), PNocase() );
+    }
+
+    // move the Activity field over
+    if( FIELD_IS_SET(cds_prot_ref, Activity) ) {
+        s_MoveNonDuplicatedItems( GET_MUTABLE(prot_ref, Activity), GET_MUTABLE(cds_prot_ref, Activity), PNocase() );
+    }
+}
+
+void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqfeat)
+{
+    if( ! FIELD_IS_SET(seqfeat, Xref) || ! FIELD_IS_SET(seqfeat, Product) ) {
+        return;
+    }
+    if( x_InGpsGenomic(seqfeat) ) {
+        return;
+    }
+
+    // get the protein
+
+    // get protein sequence for product
+    CRef<CProt_ref> prot_ref;
+    {
+        //// try to get existing prot_feat
+        //const CSeq_id* prot_id = GET_FIELD(seqfeat, Product).GetId();
+        //if( ! prot_id ) {
+        //    return;
+        //}
+        //CBioseq_Handle prot_handle = m_Scope->GetBioseqHandle(*prot_id);
+        //if( ! prot_handle ) {
+        //    return;
+        //}
+        //// find main protein feature
+        //SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
+        //CFeat_CI feat_ci = CFeat_CI(prot_handle, sel);
+        SAnnotSelector sel; // (CSeqFeatData::eSubtype_prot);
+        sel.SetFeatType( CSeqFeatData::e_Prot ); // Subtype( CSeqFeatData::eSubtype_prot );
+        CFeat_CI feat_ci( *m_Scope, GET_FIELD(seqfeat, Product), sel );
+        if( ! feat_ci ) {
+            return;
+        }
+        prot_ref.Reset( const_cast<CProt_ref*>(&feat_ci->GetOriginalFeature().GetData().GetProt()) );
+        if( ! prot_ref ) {
+            return;
+        }
+    }
+
+    EDIT_EACH_XREF_ON_SEQFEAT( xref_iter, seqfeat ) {
+        CSeqFeatXref &xref = **xref_iter;
+        if( FIELD_IS_SET(xref, Data) && FIELD_IS( xref.GetData(), Prot) ) {
+            CProt_ref &cds_prot_ref = GET_MUTABLE( xref.SetData(), Prot);
+            s_CopyProtXrefToProtFeat( *prot_ref, cds_prot_ref );
+            ERASE_XREF_ON_SEQFEAT( xref_iter, seqfeat );
+            ChangeMade(CCleanupChange::eMoveToProtXref);
+        }
+    }
+}
+
+void CNewCleanup_imp::CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat)
+{
+    // move the cdregion's xrefs to their destination protein
+    x_MoveCdregionXrefsToProt( cds, seqfeat );
+}
+
 void CNewCleanup_imp::DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst )
 {
     // remove zero-length seq-literals
@@ -5506,6 +6056,62 @@ void CNewCleanup_imp::DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst )
                     the_literal.GetSeq_data().IsIupacna() ) 
                 {
                     ERASE_DELTASEQ_IN_DELTAEXT( delta_seq_iter, delta_ext );
+                }
+            }
+        }
+    }
+}
+
+static
+void s_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_terms )
+{
+    static const char *sc_bsecGoFieldType[] = {
+        "", "evidence", "go id", "go ref", "pubmed id", "text string"
+    };
+    typedef CStaticArraySet<const char*, PNocase_CStr> TGoFieldTypeSet;
+    DEFINE_STATIC_ARRAY_MAP( TGoFieldTypeSet, sc_GoFieldArray, sc_bsecGoFieldType );
+
+    NON_CONST_ITERATE( vector< CRef< CUser_field > >, term_iter, go_terms ) {
+        CUser_field &field = **term_iter;
+        if( TEST_FIELD_CHOICE( field, Data, NCBI_USERFIELD(Fields) ) ) {
+            NON_CONST_ITERATE( vector< CRef< CUser_field > >, inner_term_iter, field.SetData().SetFields() ) {
+                CUser_field &inner_field = **inner_term_iter;
+                if( FIELD_IS_SET_AND_IS(inner_field, Label, Str) && 
+                    TEST_FIELD_CHOICE( inner_field, Data, NCBI_USERFIELD(Str)) )
+                {
+                    const string &inner_label = inner_field.GetLabel().GetStr();
+                    if( sc_GoFieldArray.find(inner_label.c_str()) != sc_GoFieldArray.end() ) {
+                        if( NStr::EqualNocase(inner_label, "go id") ) {
+                            s_RemoveInitial( inner_field.SetData().SetStr(), "GO:", NStr::eNocase );
+                        } else if( NStr::EqualNocase(inner_label, "go ref") ) {
+                            s_RemoveInitial( inner_field.SetData().SetStr(), "GO_REF:", NStr::eNocase );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
+{    
+    static const char *sc_bsecGoQualType[] = {
+        "", "Component", "Function", "Process"
+    };
+    typedef CStaticArraySet<const char*, PNocase_CStr> TGoQualTypeSet;
+    DEFINE_STATIC_ARRAY_MAP( TGoQualTypeSet, sc_GoQualArray, sc_bsecGoQualType );
+
+    if( FIELD_IS_SET_AND_IS( user_object, Type, Str) && 
+        "GeneOntology" == GET_FIELD(user_object.GetType(), Str) ) 
+    {
+        EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
+            CUser_field &field = **user_field_iter;
+            if( TEST_FIELD_CHOICE( field, Data, NCBI_USERFIELD(Fields) ) &&
+                FIELD_IS_SET_AND_IS(field, Label, Str) )
+            {
+                const string &label_str = GET_FIELD( field.GetLabel(), Str);
+                if( sc_GoQualArray.find(label_str.c_str()) != sc_GoQualArray.end() ) {
+                    s_GeneOntologyTermsBC( field.SetData().SetFields() );
                 }
             }
         }
@@ -5586,6 +6192,10 @@ void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
     CSeq_submit& ss
 )
 {
+    // extended cleanup includes basic cleanup
+    BasicCleanupSeqSubmit( ss );
+
+    // TODO
     // extended cleanup includes basic cleanup
     BasicCleanupSeqSubmit( ss );
 

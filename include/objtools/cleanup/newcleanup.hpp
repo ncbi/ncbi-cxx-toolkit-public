@@ -221,8 +221,11 @@ private:
     void GeneFeatBC (CGene_ref& gr, CSeq_feat& sf);
     void ProtFeatfBC (CProt_ref& pr, CSeq_feat& sf);
     void RnaFeatBC (CRNA_ref& rr, CSeq_feat& sf);
+    void CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat);
 
     void DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst );
+
+    void UserObjectBC( CUser_object &user_object );
 
     // void XxxxxxBC (Cxxxxx& xxx);
 
@@ -285,11 +288,24 @@ private:
 
     void x_SetFrameFromLoc( CCdregion &cdregion, const CSeq_loc &location );
 
+    void x_CleanupECNumber( string &ec_num );
+
+    void x_CleanupAndRepairInference( string &inference );
+
+    void x_MendSatelliteQualifier( string &val );
+
+    // e.g. if ends with ",..", turn into "..."
+    void x_FixUpEllipsis( string &str );
+
+    void x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqfeat);
+    bool x_InGpsGenomic( const CSeq_feat& seqfeat );
+
     void x_AddNonCopiedQual( 
         vector< CRef< CGb_qual > > &out_quals, 
         const char *qual, 
         const char *val );
 
+    void x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat );
     void x_MoveSeqdescOrgToSourceOrg( COrg_ref &org, CSeqdesc &seqdesc );
     void x_MoveSeqfeatOrgToSourceOrg( COrg_ref &org, CSeq_feat &seqfeat );
 
@@ -299,6 +315,7 @@ private:
     void x_SortUniqSeqFeat( CSeq_feat& seq_feat );
     void x_SortUniqOrgRef( COrg_ref& org );
     void x_SortUniqBiosource( CBioSource& biosrc );
+
 
 protected:
 
