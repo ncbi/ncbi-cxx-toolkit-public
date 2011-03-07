@@ -1025,6 +1025,8 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    BLAST_SequenceBlk* one_query = NULL;
    BlastQueryInfo* concat_db_info = NULL;
    Boolean make_up_kbp = FALSE;
+   Int4 index;
+   Int4 valid_kb_index;
 
    if (!hsp_stream || !seq_src || !results) {
       return -1;
@@ -1042,22 +1044,30 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
-   /* the first Karlin block must be valid for traceback to
-      be performed; if it is not valid (i.e. if the first query
-      was completely masked), make up a valid Karlin block.
-      This is possible because all gapped Karlin blocks currently
-      look the same */
+   /* At this point, any of the (concatenated) contexts in query_info
+      may be invalid and their corresponding Karlin blocks will be NULL.
 
-   if (sbp->kbp_gap[0] == NULL) {
-       Int4 index;
-       for (index = query_info->first_context; 
-                        index <= query_info->last_context; index++) {
-           if (sbp->kbp_gap[index] != NULL) {
-               sbp->kbp_gap[0] = sbp->kbp_gap[index];
-               break;
-           }
-       }
-       make_up_kbp = TRUE;
+      All non-NULL Karlin blocks are distinct structures in memory,
+      but happen to contain the same information.
+
+      The downstream traceback code operates on one query-subject pair
+      at a time, and as such only knows about the first six Karlin blocks. */
+
+   /* find the first valid Karlin block */
+   for (index = query_info->first_context; 
+        index <= query_info->last_context; index++) {
+      if (sbp->kbp_gap[index] != NULL) {
+         valid_kb_index = index;
+         break;
+         }
+      }
+
+   /* ensure that the first six Karlin blocks are populated */
+   for (index = 0 ; index < 6; index++) {
+      if (sbp->kbp_gap[index] == NULL) {
+         sbp->kbp_gap[index] = Blast_KarlinBlkNew();
+         Blast_KarlinBlkCopy(sbp->kbp_gap[index], sbp->kbp_gap[valid_kb_index]);
+      }
    }
 
    while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
