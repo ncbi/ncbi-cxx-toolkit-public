@@ -153,16 +153,15 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
 
     m_Request->x_SetSession(*m_Session);
     m_Response.x_SetSession(*m_Session);
+    string track_cookie_value = RetrieveTrackingId();
+    if ((flags & CCgiRequest::fSkipDiagProperties) == 0) {
+        GetDiagContext().GetRequestContext().SetSessionID(track_cookie_value);
+    }
     if( !TCGI_DisableTrackingCookie::GetDefault() ) {
-        string track_cookie_value = RetrieveTrackingId();
         m_Response.SetTrackingCookie(TCGI_TrackingCookieName::GetDefault(), 
                                      track_cookie_value,
                                      TCGI_TrackingCookieDomain::GetDefault(), 
                                      TCGI_TrackingCookiePath::GetDefault());
-        if ((flags & CCgiRequest::fSkipDiagProperties) == 0) {
-            GetDiagContext().GetRequestContext()
-                .SetSessionID(track_cookie_value);
-        }
     }
 
     GetSelfURL();
@@ -389,8 +388,6 @@ static inline bool s_CheckRequestEntryForTID(const CCgiRequest* request,
 
 string CCgiContext::RetrieveTrackingId() const
 {
-    if ( TCGI_DisableTrackingCookie::GetDefault() )
-        return "";
     if ( !m_TrackingId.empty() ) {
         // Use cached value
         return m_TrackingId;
