@@ -307,8 +307,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,
 CGBDataLoader::~CGBDataLoader(void)
 {
     GBLOG_POST_X(2, "~CGBDataLoader");
-    // Reset cache for each reader/writer
-    m_Dispatcher->ResetCaches();
+    CloseCache();
 }
 
 
@@ -944,6 +943,14 @@ void CGBDataLoader::PurgeCache(TCacheType            cache_type,
             it->m_Cache->Purge(access_timeout, keep_last_ver);
         }
     }
+}
+
+
+void CGBDataLoader::CloseCache(void)
+{
+    // Reset cache for each reader/writer
+    m_Dispatcher->ResetCaches();
+    m_CacheManager.GetCaches().clear();
 }
 
 

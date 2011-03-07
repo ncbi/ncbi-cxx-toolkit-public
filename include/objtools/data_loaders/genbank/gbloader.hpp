@@ -318,6 +318,7 @@ public:
                     time_t                access_timeout = 0,
                     ICache::EKeepVersions keep_last_ver =
                     ICache::eDropAll);
+    void CloseCache(void);
 
 protected:
     friend class CGBReaderRequestResult;
