@@ -154,6 +154,9 @@ bool SAnnotPiece::operator<(const SAnnotPiece& piece) const
     if ( m_IdRange != piece.m_IdRange ) {
         return m_IdRange < piece.m_IdRange;
     }
+    if ( m_PlaceId != piece.m_PlaceId ) {
+        return m_PlaceId < piece.m_PlaceId;
+    }
     if ( m_ObjectType != piece.m_ObjectType ) {
         return m_ObjectType < piece.m_ObjectType;
     }
@@ -182,6 +185,7 @@ bool SAnnotPiece::operator==(const SAnnotPiece& piece) const
 {
     return
         m_IdRange == piece.m_IdRange &&
+        m_PlaceId == piece.m_PlaceId &&
         m_ObjectType == piece.m_ObjectType &&
         m_Object == piece.m_Object &&
         m_AnnotObject == piece.m_AnnotObject;
@@ -190,11 +194,7 @@ bool SAnnotPiece::operator==(const SAnnotPiece& piece) const
 
 bool SAnnotPiece::operator!=(const SAnnotPiece& piece) const
 {
-    return
-        m_IdRange != piece.m_IdRange ||
-        m_ObjectType != piece.m_ObjectType ||
-        m_Object != piece.m_Object ||
-        m_AnnotObject != piece.m_AnnotObject;
+    return !(*this == piece);
 }
 
 

@@ -82,7 +82,7 @@ struct SAnnotPiece
                          const CBioseq_SplitInfo& data);
     SAnnotPiece(const SAnnotPiece& base, const COneSeqRange& range);
 
-    // sort by location first, than by Seq-annot ptr, than by object ptr.
+    // sort by ( location, place-id, Seq-annot ptr, object ptr).
     bool operator<(const SAnnotPiece& piece) const;
     bool operator==(const SAnnotPiece& piece) const;
     bool operator!=(const SAnnotPiece& piece) const;
@@ -120,7 +120,7 @@ struct SAnnotPiece
 struct SIdAnnotPieces
 {
     typedef CSeqsRange::TRange TRange;
-    typedef set<SAnnotPiece> TPieces;
+    typedef multiset<SAnnotPiece> TPieces;
     typedef TPieces::const_iterator const_iterator;
     typedef TPieces::iterator iterator;
 

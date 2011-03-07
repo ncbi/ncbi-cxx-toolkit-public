@@ -91,6 +91,15 @@ public:
             }
             return m_BioseqId < id.m_BioseqId;
         }
+    bool operator==(const CPlaceId& id) const
+        {
+            return m_Bioseq_setId == id.m_Bioseq_setId &&
+                m_BioseqId == id.m_BioseqId;
+        }
+    bool operator!=(const CPlaceId& id) const
+        {
+            return !(*this == id);
+        }
 
 private:
     TBioseq_setId   m_Bioseq_setId;
