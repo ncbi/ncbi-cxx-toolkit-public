@@ -7,8 +7,11 @@
 
 WATCHERS = grichenk
 
-APP = hello
+APP = hello.cgi
 SRC = helloapp hellores hellocmd
+
+### BEGIN COPIED SETTINGS
 LIB = xhtml xcgi xutil xncbi
+### END COPIED SETTINGS
 
 CHECK_CMD =

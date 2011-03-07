@@ -10,11 +10,13 @@
 
 WATCHERS = grichenk
 
-APP = fasthello
+APP = fasthello.fcgi
 SRC = helloapp hellores hellocmd
-LIB = xhtml xfcgi xutil xncbi
 
+### BEGIN COPIED SETTINGS
+LIB = xfcgi xhtml xutil xncbi
 LIBS = $(FASTCGI_LIBS) $(ORIG_LIBS)
+### END COPIED SETTINGS
 
 CHECK_CMD =
 
