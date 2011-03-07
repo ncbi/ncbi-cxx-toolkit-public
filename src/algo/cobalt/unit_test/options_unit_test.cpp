@@ -121,6 +121,12 @@ BOOST_AUTO_TEST_CASE(TestOptionsValidation)
     BOOST_CHECK_THROW(opts->Validate(), CMultiAlignerException);
     opts->SetRpsEvalue(0.1);
 
+    // Negative domain hit list size does not pass validation if RPS-BLAST is
+    // selected
+    opts->SetDomainHitlistSize(-1);
+    BOOST_CHECK_THROW(opts->Validate(), CMultiAlignerException);
+    opts->SetDomainHitlistSize(250);
+
     // Negative Blastp e-value does not pass validation
     opts->SetBlastpEvalue(-1.0);
     BOOST_CHECK_THROW(opts->Validate(), CMultiAlignerException);

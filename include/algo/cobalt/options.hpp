@@ -432,6 +432,17 @@ public:
     ///
     double GetRpsEvalue(void) const {return m_RpsEvalue;}
 
+    /// Set hitlist size (per sequence) for domain search
+    /// @param size Hitlist size [in]
+    ///
+    void SetDomainHitlistSize(int size)
+    {m_DomainHitlistSize = size; m_Mode = fNonStandard;}
+
+    /// Get hitlist size (per sequence) for domain searches
+    /// @return Hitlist size for domain searches
+    ///
+    int GetDomainHitlistSize(void) const {return m_DomainHitlistSize;}
+
     /// Set boost for residue frequencies in conserved domains from RPS data 
     /// base
     /// @param boost Boost for RPS residue frequencies [in]
@@ -669,6 +680,7 @@ private:
     // RPS Blast
     string m_RpsDb;
     double m_RpsEvalue;
+    int m_DomainHitlistSize;
     double m_DomainResFreqBoost;
     bool m_UsePreRpsHits;
 

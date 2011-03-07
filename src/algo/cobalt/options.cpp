@@ -130,6 +130,12 @@ bool CMultiAlignerOptions::Validate(void)
                    "Incorrect RPS BLAST e-value");
     }
 
+    // Check domain hitlist size if RPS BLAST used
+    if (!m_RpsDb.empty() && m_DomainHitlistSize < 1) {
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Domain hitlist size must be at least 1");
+    }
+
     // Check if Blastp e-value allowed
     if (m_BlastpEvalue < 0.0) {
         NCBI_THROW(CMultiAlignerException, eInvalidOptions,
@@ -210,6 +216,7 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_UsePreRpsHits = true;
     m_RpsEvalue = 0.01;
     m_DomainResFreqBoost = 0.5;
+    m_DomainHitlistSize = 500;
 
     // Blatp
     m_BlastpEvalue = 0.01;

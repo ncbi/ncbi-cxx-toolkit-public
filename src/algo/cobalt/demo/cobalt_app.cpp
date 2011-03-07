@@ -101,6 +101,9 @@ void CMultiApplication::Init(void)
                             "E-value threshold for selecting conserved domains"
                             " from results of RPS-BLAST search",
                             CArgDescriptions::eDouble, "0.01");
+    arg_desc->AddDefaultKey("num_domain_hits", "number", "Maximum number of "
+                            "of domain hits for each sequence",
+                            CArgDescriptions::eInteger, "250");
     arg_desc->AddOptionalKey("p", "patternfile", 
                              "Filename containing regular expression patterns "
                              "for conserved domains",
@@ -329,6 +332,7 @@ int CMultiApplication::Run(void)
     }
     opts->SetRpsEvalue(args["rps_evalue"].AsDouble());
     opts->SetDomainResFreqBoost(args["dfb"].AsDouble());
+    opts->SetDomainHitlistSize(args["num_domain_hits"].AsInteger());
 
     // Blastp parameters
     opts->SetBlastpEvalue(args["blast_evalue"].AsDouble());
