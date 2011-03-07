@@ -325,8 +325,16 @@ CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & 
     static const string kBlastDBTitle("Blast Database Title");
    	blast_db_info->SetType().SetStr(kBlastDBTitle);
     bool is_nucl = Blast_QueryIsNucleotide(EProgramToEBlastProgramType(program));
-    CSeqDB seqdb(db_name, is_nucl ? CSeqDB::eNucleotide:CSeqDB::eProtein);
-   	blast_db_info->AddField( seqdb.GetTitle(), is_nucl );
+    if(0 == db_name.size())
+    {
+    	blast_db_info->AddField( "n/a", false );
+    }
+    else
+    {
+    	CSeqDB seqdb(db_name, is_nucl ? CSeqDB::eNucleotide:CSeqDB::eProtein);
+    	blast_db_info->AddField( seqdb.GetTitle(), is_nucl );
+    }
+
    	retval->AddUserObject(*blast_db_info);
 
    	//Fill in data -- Seq align
