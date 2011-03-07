@@ -313,10 +313,12 @@ char CTempString::operator[] (size_type pos) const
 inline
 void CTempString::clear(void)
 {
+    NCBI_TEMPSTR_DESTROY_COPY();
     // clear() assures that m_String points to a NULL-terminated c-style
     // string as a fall-back.
     m_String = "";
     m_Length = 0;
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -369,6 +371,9 @@ void CTempString::x_DestroyCopy(void)
 
 inline
 CTempString::CTempString(void)
+#if defined(NCBI_TEMPSTR_USE_A_COPY)
+    : m_String(NULL)
+#endif
 {
     clear();
 }
@@ -376,6 +381,9 @@ CTempString::CTempString(void)
 
 inline
 CTempString::CTempString(const char* str)
+#if defined(NCBI_TEMPSTR_USE_A_COPY)
+    : m_String(NULL)
+#endif
 {
     if ( !str ) {
         clear();
@@ -415,6 +423,9 @@ CTempString::CTempString(const string& str)
 
 inline
 CTempString::CTempString(const string& str, size_type pos, size_type len)
+#if defined(NCBI_TEMPSTR_USE_A_COPY)
+    : m_String(NULL)
+#endif
 {
     x_Init(str.data(), str.size(), pos, len);
     NCBI_TEMPSTR_MAKE_COPY();
@@ -431,6 +442,9 @@ CTempString::CTempString(const CTempString& str)
 
 inline
 CTempString::CTempString(const CTempString& str, size_type pos)
+#if defined(NCBI_TEMPSTR_USE_A_COPY)
+    : m_String(NULL)
+#endif
 {
     x_Init(str.data(), str.size(), pos);
     NCBI_TEMPSTR_MAKE_COPY();
@@ -439,6 +453,9 @@ CTempString::CTempString(const CTempString& str, size_type pos)
 
 inline
 CTempString::CTempString(const CTempString& str, size_type pos, size_type len)
+#if defined(NCBI_TEMPSTR_USE_A_COPY)
+    : m_String(NULL)
+#endif
 {
     x_Init(str.data(), str.size(), pos, len);
     NCBI_TEMPSTR_MAKE_COPY();
