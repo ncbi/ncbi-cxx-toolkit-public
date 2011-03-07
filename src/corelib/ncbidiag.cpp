@@ -2484,6 +2484,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
     bool is_console = (mess.m_Flags & eDPF_IsConsole);
     bool applog = (mess.m_Flags & eDPF_AppLog);
+    bool is_printable = applog  ||  SeverityPrintable(mess.m_Severity);
     if ( CDiagBuffer::sm_Handler ) {
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_Handler ) {
@@ -2493,13 +2494,15 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             CDiagContext& ctx = GetDiagContext();
             mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
                 0 : diag_buf.m_PostPrefix.c_str();
-            if (!applog  &&  !is_console  &&
-                !SeverityPrintable(mess.m_Severity) ) {
+            if (!is_console  &&  !is_printable) {
                 return;
             }
             if (is_console) {
                 // No throttling for console
                 CDiagBuffer::sm_Handler->PostToConsole(mess);
+                if ( !is_printable ) {
+                    return;
+                }
             }
             if ( ctx.ApproveMessage(mess, &show_warning) ) {
                 CDiagBuffer::sm_Handler->Post(mess);
