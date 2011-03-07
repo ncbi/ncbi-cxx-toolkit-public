@@ -129,8 +129,15 @@ enum ERound {
 
 /// Whether to follow symbolic links (also known as shortcuts or aliases)
 enum EFollowLinks {
-    eIgnoreLinks,  ///< Do not follow symbolic links
-    eFollowLinks   ///< Follow symbolic links
+    eIgnoreLinks,       ///< Do not follow symbolic links
+    eFollowLinks        ///< Follow symbolic links
+};
+
+
+/// Whether to normalize a path
+enum ENormalizePath {
+    eNormalizePath,     ///< Normalize a path
+    eNotNormalizePath   ///< Do not normalize a path
 };
 
 

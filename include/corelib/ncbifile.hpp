@@ -756,8 +756,8 @@ public:
     ///   This method dereference only last component of the path.
     ///   To dereference all path components use DereferencePath() method.
     /// @sa 
-    ///   DereferencePath, IsLink, LookupLink
-    void DereferenceLink(void);
+    ///   DereferencePath, IsLink, LookupLink, NormalizePath
+    void DereferenceLink(ENormalizePath normalize = eNormalizePath);
 
     /// Dereference a path.
     ///

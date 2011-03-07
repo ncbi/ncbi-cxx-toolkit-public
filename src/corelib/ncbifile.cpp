@@ -1794,7 +1794,7 @@ string CDirEntry::LookupLink(void) const
 }
 
 
-void CDirEntry::DereferenceLink(void)
+void CDirEntry::DereferenceLink(ENormalizePath normalize)
 {
 #ifdef NCBI_OS_MSWIN
     // Not impemented
@@ -1810,24 +1810,28 @@ void CDirEntry::DereferenceLink(void)
         if ( IsAbsolutePath(name) ) {
             Reset(name);
         } else {
-            string path = NormalizePath(MakePath(GetDir(), name));
-            Reset(path);
+            string path = MakePath(GetDir(), name);
+            if (normalize == eNormalizePath) {
+                Reset(NormalizePath(path));
+            } else {
+                Reset(path);
+            }
         }
     }
 }
 
 
-void CDirEntry::DereferencePath(void)
+void s_DereferencePath(CDirEntry& entry)
 {
 #ifdef NCBI_OS_MSWIN
     // Not impemented
     return;
 #endif
     // Dereference each path components starting from last one
-    DereferenceLink();
+    entry.DereferenceLink(eNotNormalizePath);
 
     // Get dir and file names
-    string path = GetPath();
+    string path = entry.GetPath();
     size_t pos = path.find_last_of(ALL_SEPARATORS);
     if (pos == NPOS) {
         return; 
@@ -1838,9 +1842,23 @@ void CDirEntry::DereferencePath(void)
         return;
     }
     // Dereference path one level up
-    CDirEntry e(dirname);
-    e.DereferencePath();
-    Reset(MakePath(e.GetPath(), filename));
+    entry.Reset(dirname);
+    s_DereferencePath(entry);
+    // Create new path
+    entry.Reset(CDirEntry::MakePath(entry.GetPath(), filename));
+}
+
+
+void CDirEntry::DereferencePath(void)
+{
+#ifdef NCBI_OS_MSWIN
+    // Not impemented
+    return;
+#endif
+    // Use s_DereferencePath() recursively and normalize result only once
+    CDirEntry e(GetPath());
+    s_DereferencePath(e);
+    Reset(NormalizePath(e.GetPath()));
 }
 
 
