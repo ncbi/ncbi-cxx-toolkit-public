@@ -382,6 +382,8 @@ void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
         def_exp.AddYear(1);
         m_TrackingCookie->SetExpTime(def_exp);
     }
+    // Prevent storing the page in puplic caches.
+    SetHeaderValue("Cache-Control", "private");
 }
 
 
