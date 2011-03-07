@@ -3608,8 +3608,13 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
     // labels to leave alone
     static const char * const ignored_quals[] = 
         { "label", "allele", "experiment", "inference", "UniProtKB_evidence" };
-    const static set<string, PNocase> ignored_quals_raw( 
-        ignored_quals, ignored_quals + sizeof(ignored_quals)/sizeof(ignored_quals[0]) );
+    static set<string, PNocase> ignored_quals_raw; 
+    if( ignored_quals_raw.empty() ) {
+        copy( ignored_quals, ignored_quals + sizeof(ignored_quals)/sizeof(ignored_quals[0]),
+            inserter(ignored_quals_raw, ignored_quals_raw.begin()) );
+    }
+    
+
     if( ignored_quals_raw.find(qual) != ignored_quals_raw.end() ) {
         return eAction_Nothing;
     }
@@ -5924,7 +5929,8 @@ void s_MoveNonDuplicatedItems( TDest &dest, TSrc &src,
 {
     // first, create a set containing whatever the destination contains for easy
     // lookup later
-    set<typename TDest::value_type, TLessThan> dest_items_set( dest.begin(), dest.end(), less_than );
+    set<typename TDest::value_type, TLessThan> dest_items_set( less_than );
+    copy( dest.begin(), dest.end(), inserter(dest_items_set, dest_items_set.begin() ) );
 
     // holds the items that we couldn't move over
     TSrc new_src;
