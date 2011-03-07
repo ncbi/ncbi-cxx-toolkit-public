@@ -399,12 +399,12 @@ void CSplitCacheApp::SetupCache(void)
     {{ // create loader
         string readers;
         if ( cache_dir.empty() ) {
-            readers = "id2";
+            readers = "id1";
         }
         else {
             GetConfig().Set("genbank/cache/id_cache/bdb", "path", cache_dir);
             GetConfig().Set("genbank/cache/blob_cache/bdb", "path", cache_dir);
-            readers = "cache;id2";
+            readers = "cache;id1";
         }
         m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
             *m_ObjMgr, readers).GetLoader());
@@ -933,7 +933,7 @@ void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
         // storing split data into cache
         {{
             WAIT_LINE << "Removing old split data...";
-            m_Cache->Remove(key);
+            m_Cache->Remove(key, version, "");
         }}
 
         // Remember which data has been split to check loading later
@@ -1093,7 +1093,7 @@ void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry, const string& key)
         // storing split data into cache
         {{
             WAIT_LINE << "Removing old split data...";
-            m_Cache->Remove(key);
+            m_Cache->Remove(key, version, "");
         }}
 
         // Remember which data has been split to check loading later
