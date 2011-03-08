@@ -180,8 +180,8 @@ Int8          CArg_NoValue::AsInt8      (void) const { THROW_CArg_NoValue; }
 int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
 double        CArg_NoValue::AsDouble    (void) const { THROW_CArg_NoValue; }
 bool          CArg_NoValue::AsBoolean   (void) const { THROW_CArg_NoValue; }
-CNcbiIstream& CArg_NoValue::AsInputFile (void) const { THROW_CArg_NoValue; }
-CNcbiOstream& CArg_NoValue::AsOutputFile(void) const { THROW_CArg_NoValue; }
+CNcbiIstream& CArg_NoValue::AsInputFile (CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
+CNcbiOstream& CArg_NoValue::AsOutputFile(CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
 void          CArg_NoValue::CloseFile   (void) const { THROW_CArg_NoValue; }
 
 
@@ -210,8 +210,8 @@ Int8          CArg_ExcludedValue::AsInt8      (void) const { THROW_CArg_Excluded
 int           CArg_ExcludedValue::AsInteger   (void) const { THROW_CArg_ExcludedValue; }
 double        CArg_ExcludedValue::AsDouble    (void) const { THROW_CArg_ExcludedValue; }
 bool          CArg_ExcludedValue::AsBoolean   (void) const { THROW_CArg_ExcludedValue; }
-CNcbiIstream& CArg_ExcludedValue::AsInputFile (void) const { THROW_CArg_ExcludedValue; }
-CNcbiOstream& CArg_ExcludedValue::AsOutputFile(void) const { THROW_CArg_ExcludedValue; }
+CNcbiIstream& CArg_ExcludedValue::AsInputFile (CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
+CNcbiOstream& CArg_ExcludedValue::AsOutputFile(CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
 void          CArg_ExcludedValue::CloseFile   (void) const { THROW_CArg_ExcludedValue; }
 
 
@@ -268,11 +268,11 @@ bool CArg_String::AsBoolean(void) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (Boolean) type", AsString()));}
 
-CNcbiIstream& CArg_String::AsInputFile(void) const
+CNcbiIstream& CArg_String::AsInputFile(CArgValue::TFileFlags) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (InputFile) type", AsString()));}
 
-CNcbiOstream& CArg_String::AsOutputFile(void) const
+CNcbiOstream& CArg_String::AsOutputFile(CArgValue::TFileFlags) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (OutputFile) type", AsString()));}
 
@@ -378,21 +378,28 @@ bool CArg_Boolean::AsBoolean(void) const
 ///////////////////////////////////////////////////////
 //  CArg_InputFile::
 
-void CArg_InputFile::x_Open(void) const
+void CArg_InputFile::x_Open(CArgValue::TFileFlags flags) const
 {
+    if ( m_InputFile ) {
+        if (flags != m_CurrentFlags && flags != 0) {
+            CloseFile();
+        }
+    }
     if ( m_InputFile )
         return;
 
+    m_CurrentFlags = flags ? flags : m_DescriptionFlags;
+    IOS_BASE::openmode mode = CArg_OutputFile::IosMode( m_CurrentFlags);
     if (AsString() == "-") {
 #if defined(NCBI_OS_MSWIN)
-        if ((m_OpenMode & IOS_BASE::binary) != 0)
+        if ((mode & IOS_BASE::binary) != 0)
             setmode(fileno(stdin), O_BINARY);
 #endif
         m_InputFile  = &cin;
         m_DeleteFlag = false;
     } else if ( !AsString().empty() ) {
         m_InputFile  = new CNcbiIfstream(AsString().c_str(),
-                                         IOS_BASE::in | m_OpenMode);
+                                         IOS_BASE::in | mode);
         if (!m_InputFile  ||  !*m_InputFile) {
             delete m_InputFile;
             m_InputFile = 0;
@@ -409,15 +416,18 @@ void CArg_InputFile::x_Open(void) const
 
 
 CArg_InputFile::CArg_InputFile(const string& name, const string& value,
-                               IOS_BASE::openmode openmode,
-                               bool               delay_open)
-: CArg_String(name, value),
-  m_OpenMode(openmode),
-  m_InputFile(0),
-  m_DeleteFlag(true)
+                               CArgDescriptions::TFlags flags)
+    : CArg_String(name, value),
+      m_DescriptionFlags(0),
+      m_CurrentFlags(0),
+      m_InputFile(0),
+      m_DeleteFlag(true)
 {
-    if ( !delay_open )
-        x_Open();
+    m_DescriptionFlags = (CArgValue::TFileFlags)(
+        (flags & CArgDescriptions::fFileFlags) & ~CArgDescriptions::fPreOpen);
+    if ( flags & CArgDescriptions::fPreOpen ) {
+        x_Open(m_DescriptionFlags);
+    }
 }
 
 
@@ -428,10 +438,10 @@ CArg_InputFile::~CArg_InputFile(void)
 }
 
 
-CNcbiIstream& CArg_InputFile::AsInputFile(void) const
+CNcbiIstream& CArg_InputFile::AsInputFile(CArgValue::TFileFlags flags) const
 {
     CFastMutexGuard LOCK(m_AccessMutex);
-    x_Open();
+    x_Open(flags);
     return *m_InputFile;
 }
 
@@ -458,21 +468,29 @@ void CArg_InputFile::CloseFile(void) const
 ///////////////////////////////////////////////////////
 //  CArg_OutputFile::
 
-void CArg_OutputFile::x_Open(void) const
+void CArg_OutputFile::x_Open(CArgValue::TFileFlags flags) const
 {
+    if ( m_OutputFile ) {
+        if ((flags != m_CurrentFlags && flags != 0) ||
+            (flags & fTruncate)) {
+            CloseFile();
+        }
+    }
     if ( m_OutputFile )
         return;
 
+    m_CurrentFlags = flags ? flags : m_DescriptionFlags;
+    IOS_BASE::openmode mode = CArg_OutputFile::IosMode( m_CurrentFlags);
     if (AsString() == "-") {
 #if defined(NCBI_OS_MSWIN)
-        if ((m_OpenMode & IOS_BASE::binary) != 0)
+        if ((mode & IOS_BASE::binary) != 0)
             setmode(fileno(stdout), O_BINARY);
 #endif
         m_OutputFile = &cout;
         m_DeleteFlag = false;
     } else if ( !AsString().empty() ) {
         m_OutputFile = new CNcbiOfstream(AsString().c_str(),
-                                         IOS_BASE::out | m_OpenMode);
+                                         IOS_BASE::out | mode);
         if (!m_OutputFile  ||  !*m_OutputFile) {
             delete m_OutputFile;
             m_OutputFile = 0;
@@ -487,17 +505,35 @@ void CArg_OutputFile::x_Open(void) const
     }
 }
 
+IOS_BASE::openmode CArg_OutputFile::IosMode(CArgValue::TFileFlags flags)
+{
+    IOS_BASE::openmode openmode = (IOS_BASE::openmode) 0;
+    if (flags & CArgValue::fBinary) {
+        openmode |= IOS_BASE::binary;
+    }
+    if (flags & CArgValue::fAppend) {
+        openmode |= IOS_BASE::app;
+    }
+    if (flags & CArgValue::fTruncate) {
+        openmode |= IOS_BASE::trunc;
+    }
+    return openmode;
+}
 
-CArg_OutputFile::CArg_OutputFile(const string& name, const string& value,
-                                 IOS_BASE::openmode openmode,
-                                 bool               delay_open)
+CArg_OutputFile::CArg_OutputFile(
+        const string& name, const string& value,
+        CArgDescriptions::TFlags flags)
     : CArg_String(name, value),
-      m_OpenMode(openmode),
+      m_DescriptionFlags(0),
+      m_CurrentFlags(0),
       m_OutputFile(0),
       m_DeleteFlag(true)
 {
-    if ( !delay_open )
-        x_Open();
+    m_DescriptionFlags = (CArgValue::TFileFlags)(
+        (flags & CArgDescriptions::fFileFlags) & ~CArgDescriptions::fPreOpen);
+    if ( flags & CArgDescriptions::fPreOpen ) {
+        x_Open(m_DescriptionFlags);
+    }
 }
 
 
@@ -508,10 +544,10 @@ CArg_OutputFile::~CArg_OutputFile(void)
 }
 
 
-CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
+CNcbiOstream& CArg_OutputFile::AsOutputFile(CArgValue::TFileFlags flags) const
 {
     CFastMutexGuard LOCK(m_AccessMutex);
-    x_Open();
+    x_Open(flags);
     return *m_OutputFile;
 }
 
@@ -825,21 +861,11 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
         arg_value = new CArg_Double(GetName(), value);
         break;
     case CArgDescriptions::eInputFile: {
-        bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
-        IOS_BASE::openmode openmode = (IOS_BASE::openmode) 0;
-        if (GetFlags() & CArgDescriptions::fBinary)
-            openmode |= IOS_BASE::binary;
-        arg_value = new CArg_InputFile(GetName(), value, openmode, delay_open);
+        arg_value = new CArg_InputFile(GetName(), value, GetFlags());
         break;
     }
     case CArgDescriptions::eOutputFile: {
-        bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
-        IOS_BASE::openmode openmode = (IOS_BASE::openmode) 0;
-        if (GetFlags() & CArgDescriptions::fBinary)
-            openmode |= IOS_BASE::binary;
-        if (GetFlags() & CArgDescriptions::fAppend)
-            openmode |= IOS_BASE::app;
-        arg_value = new CArg_OutputFile(GetName(), value, openmode,delay_open);
+        arg_value = new CArg_OutputFile(GetName(), value, GetFlags());
         break;
     }
     case CArgDescriptions::k_EType_Size: {

@@ -232,11 +232,19 @@ public:
     ///   AsString(), AsInt8(), AsInteger, AsDouble()
     virtual bool   AsBoolean(void) const = 0;
 
+    enum EFileFlags {
+        fBinary   = (1 <<  1),  ///< Open file in binary mode.
+        fText     = (1 << 11),  ///< Open file in text mode.
+        fAppend   = (1 <<  2),  ///< Open file in append mode.
+        fTruncate = (1 << 12)   ///< Open file in truncate mode.
+    };
+    typedef int TFileFlags;   // binary OR of "EFileFlags"
+
     /// Get the argument as an input file stream.
-    virtual CNcbiIstream& AsInputFile (void) const = 0;
+    virtual CNcbiIstream& AsInputFile (TFileFlags flags = 0) const = 0;
 
     /// Get the argument as an output file stream.
-    virtual CNcbiOstream& AsOutputFile(void) const = 0;
+    virtual CNcbiOstream& AsOutputFile(TFileFlags flags = 0) const = 0;
 
     /// Close the file.
     virtual void CloseFile (void) const = 0;
