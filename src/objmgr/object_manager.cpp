@@ -90,7 +90,7 @@ void s_DumpScopes(void)
 {
     if ( s_DebugScope() ) {
         ITERATE ( TScopeRegisterMap, it, s_ScopeRegisterMap.Get() ) {
-            ERR_POST("Scope "<<it->first<<") registered at "<<*it->second);
+            ERR_POST("Scope "<<it->first<<" registered at "<<*it->second);
         }
     }
 }
