@@ -56,6 +56,49 @@ NCBI_DEFINE_ERR_SUBCODE_X(7);
 
 BEGIN_SCOPE(objects)
 
+#ifdef _DEBUG
+namespace {
+
+NCBI_PARAM_DECL(bool, OBJMGR, DEBUG_SCOPE);
+NCBI_PARAM_DEF(bool, OBJMGR, DEBUG_SCOPE, false);
+
+static bool s_DebugScope(void)
+{
+    static NCBI_PARAM_TYPE(OBJMGR, DEBUG_SCOPE) sx_Value;
+    return sx_Value.Get();
+}
+
+typedef map<const CScope_Impl*, AutoPtr<CStackTrace> > TScopeRegisterMap;
+static CSafeStaticPtr<TScopeRegisterMap> s_ScopeRegisterMap;
+
+void s_RegisterScope(const CScope_Impl& scope)
+{
+    if ( s_DebugScope() ) {
+        AutoPtr<CStackTrace> st(new CStackTrace());
+        s_ScopeRegisterMap.Get()[&scope] = st;
+    }
+}
+
+void s_RevokeScope(const CScope_Impl& scope)
+{
+    if ( s_DebugScope() ) {
+        s_ScopeRegisterMap.Get().erase(&scope);
+    }
+}
+
+void s_DumpScopes(void)
+{
+    if ( s_DebugScope() ) {
+        ITERATE ( TScopeRegisterMap, it, s_ScopeRegisterMap.Get() ) {
+            ERR_POST("Scope "<<it->first<<") registered at "<<*it->second);
+        }
+    }
+}
+
+}
+#endif
+
+
 CRef<CObjectManager> CObjectManager::sx_Create(void)
 {
     return Ref(new CObjectManager());
@@ -206,6 +249,9 @@ CObjectManager::x_RevokeDataLoader(CDataLoader* loader)
             _VERIFY(m_setDefaultSource.insert(iter->second).second);
         ERR_POST_X(5, "CObjectManager::RevokeDataLoader: "
                       "data loader is in use");
+#ifdef _DEBUG
+        s_DumpScopes();
+#endif
         return TDataSourceLock();
     }
     // remove from the maps
@@ -266,6 +312,9 @@ void CObjectManager::RegisterScope(CScope_Impl& scope)
 {
     TWriteLockGuard guard(m_OM_ScopeLock);
     _VERIFY(m_setScope.insert(&scope).second);
+#ifdef _DEBUG
+    s_RegisterScope(scope);
+#endif
 }
 
 
@@ -273,6 +322,9 @@ void CObjectManager::RevokeScope(CScope_Impl& scope)
 {
     TWriteLockGuard guard(m_OM_ScopeLock);
     _VERIFY(m_setScope.erase(&scope));
+#ifdef _DEBUG
+    s_RevokeScope(scope);
+#endif
 }
 
 
