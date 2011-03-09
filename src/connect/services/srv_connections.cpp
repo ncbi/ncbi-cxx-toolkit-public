@@ -304,7 +304,7 @@ CNetServerConnection SNetServerImpl::Connect()
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
     EIO_Status io_st = conn->m_Socket.Connect(m_Address.host, m_Address.port,
-        &m_Service->m_Timeout, eOn);
+        &m_Service->m_Timeout, fSOCK_LogOff | fSOCK_KeepAlive);
 
     if (io_st != eIO_Success) {
         conn->m_Socket.Close();
