@@ -40,6 +40,7 @@
 #include <connect/connect_export.h>
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbitype.h>
 
 #include <string>
 
