@@ -216,6 +216,8 @@ struct SCommandDefinition {
 
 int CGridCommandLineInterfaceApp::Run()
 {
+    CONNECT_Init(&GetConfig());
+
     const SCommandDefinition* cmd_def;
 
     {
