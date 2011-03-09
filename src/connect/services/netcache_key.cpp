@@ -42,94 +42,118 @@
 BEGIN_NCBI_SCOPE
 
 
-static const char* kNetCache_KeyPrefix = "NCID";
 static CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
 
+#define KEY_PREFIX "NCID_"
+#define KEY_PREFIX_LENGTH (sizeof(KEY_PREFIX) - 1)
 
+#define SERVICE_PREFIX "_0MetA0_S_"
+#define SERVICE_PREFIX_LENGTH (sizeof(SERVICE_PREFIX) - 1)
+
+#define PARSE_NUMERIC_KEY_PART(part_name) \
+    const char* const part_name = ch; \
+    while (ch != ch_end && isdigit(*ch)) \
+        ++ch; \
+    if (ch == ch_end  ||  *ch != '_') \
+        return false; \
+    ++ch;
 
 inline bool
-CNetCacheKey::x_ParseBlobKey(const char*    key_str,
-                             size_t         key_len,
-                             CNetCacheKey*  key_obj)
+CNetCacheKey::ParseBlobKey(const char* key_str,
+    size_t key_len, CNetCacheKey* key_obj)
 {
-    // NCID_01_1_MYHOST_9000
+    if (memcmp(key_str, KEY_PREFIX, KEY_PREFIX_LENGTH) != 0)
+        return false;
 
-    const char* ch      = key_str;
+    const char* ch      = key_str + KEY_PREFIX_LENGTH;
     const char* ch_end  = key_str + key_len;
 
-    // prefix
-    const char* const prefix = ch;
-    while (ch != ch_end  &&  *ch != '_') {
-        ++ch;
-    }
-    if (ch == ch_end  ||  *ch != '_'
-        ||  NStr::strncmp(prefix, kNetCache_KeyPrefix, ch - prefix) != 0)
-    {
-        return false;
-    }
-    ++ch;
-
     // version
-    const char* const ver_str = ch;
-    while (ch != ch_end  &&  isdigit(*ch)) {
-        ++ch;
-    }
-    if (ch == ch_end  ||  *ch != '_') {
-        return false;
-    }
-    if (key_obj)
-        key_obj->m_Version = atoi(ver_str);
-    ++ch;
+    PARSE_NUMERIC_KEY_PART(ver_str);
 
     // id
-    const char* const id_str = ch;
-    while (ch != ch_end  &&  isdigit(*ch)) {
-        ++ch;
-    }
-    if (ch == ch_end  ||  *ch != '_') {
-        return false;
-    }
-    if (key_obj)
-        key_obj->m_Id = atoi(id_str);
-    ++ch;
+    PARSE_NUMERIC_KEY_PART(id_str);
 
     // hostname
     const char* const hostname = ch;
-    while (ch != ch_end  &&  *ch != '_') {
+    while (ch != ch_end  &&  *ch != '_')
         ++ch;
-    }
-    if (ch == ch_end  ||  *ch != '_') {
+    if (ch == ch_end  ||  *ch != '_')
         return false;
-    }
-    if (key_obj)
+    if (key_obj) {
+        key_obj->m_Key.assign(key_str, ch_end);
+        key_obj->m_Version = atoi(ver_str);
+        key_obj->m_Id = atoi(id_str);
         key_obj->m_Host.assign(hostname, ch - hostname);
+    }
     ++ch;
 
     // port
-    const char* const port_str = ch;
-    while (ch != ch_end  &&  isdigit(*ch)) {
+    PARSE_NUMERIC_KEY_PART(port_str);
+
+    // Creation time
+    PARSE_NUMERIC_KEY_PART(creation_time_str);
+
+    // The last part of the primary key -- the random number.
+    const char* const random_str = ch;
+    while (ch != ch_end  &&  isdigit(*ch))
         ++ch;
-    }
-    if (ch == ch_end  ||  *ch != '_') {
-        return false;
-    }
-    if (key_obj)
+
+    if (key_obj) {
         key_obj->m_Port = atoi(port_str);
+        key_obj->m_CreationTime = (time_t) strtoul(creation_time_str, NULL, 10);
+        key_obj->m_Random = (Uint4) strtoul(random_str, NULL, 10);
+        key_obj->m_PrimaryKeyLength = ch - key_str;
+    }
+
+    // Key extensions
+    if (ch == ch_end) {
+        if (key_obj)
+            key_obj->m_ServiceName = kEmptyStr;
+    } else {
+        if (memcmp(ch, SERVICE_PREFIX, SERVICE_PREFIX_LENGTH) != 0)
+            return false;
+        if (key_obj)
+            key_obj->m_ServiceName = ch + SERVICE_PREFIX_LENGTH;
+    }
 
     return true;
 }
 
-CNetCacheKey::CNetCacheKey(const string& key_str)
+string CNetCacheKey::StripKeyExtensions() const
 {
-    if (!x_ParseBlobKey(key_str.c_str(), key_str.size(), this)) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
-    }
+    return HasExtensions() ? string(m_Key.data(), m_PrimaryKeyLength) : m_Key;
 }
 
-inline
-CNetCacheKey::CNetCacheKey(void)
+void CNetCacheKey::AppendServiceName(string& blob_id,
+    const string& service_name)
 {
-    // Do not initialize anything - it's private
+    blob_id.append(SERVICE_PREFIX);
+    blob_id.append(service_name);
+}
+
+void CNetCacheKey::SetServiceName(const string& service_name)
+{
+    if (HasExtensions()) {
+        int old_service_name_pos = m_PrimaryKeyLength + SERVICE_PREFIX_LENGTH;
+        m_Key.replace(old_service_name_pos,
+            m_Key.length() - old_service_name_pos, service_name);
+    } else
+        AppendServiceName(m_Key, service_name);
+}
+
+CNetCacheKey::CNetCacheKey(const string& key_str)
+{
+    Assign(key_str);
+}
+
+void CNetCacheKey::Assign(const string& key_str)
+{
+    m_Key = key_str;
+
+    if (!ParseBlobKey(key_str.c_str(), key_str.size(), this)) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+    }
 }
 
 CNetCacheKey::operator string() const
@@ -146,11 +170,11 @@ CNetCacheKey::GenerateBlobKey(string*        key,
                               unsigned short port,
                               unsigned int   ver /* = 1 */)
 {
+    key->assign(KEY_PREFIX, KEY_PREFIX_LENGTH);
+
     string tmp;
-    key->assign(kNetCache_KeyPrefix);
 
     NStr::IntToString(tmp, ver);
-    key->append(1, '_');
     key->append(tmp);
 
     NStr::IntToString(tmp, id);
@@ -173,17 +197,19 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     key->append(tmp);
 }
 
+void CNetCacheKey::GenerateBlobKey(string* key, unsigned id,
+    const string& host, unsigned short port, const string& service_name)
+{
+    GenerateBlobKey(key, id, host, port);
+    key->append(SERVICE_PREFIX);
+    key->append(service_name);
+}
+
 unsigned int
 CNetCacheKey::GetBlobId(const string& key_str)
 {
     CNetCacheKey key(key_str);
     return key.m_Id;
-}
-
-bool
-CNetCacheKey::IsValidKey(const char* key_str, size_t key_len)
-{
-    return x_ParseBlobKey(key_str, key_len, NULL);
 }
 
 END_NCBI_SCOPE

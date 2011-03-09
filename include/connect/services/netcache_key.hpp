@@ -58,12 +58,36 @@ BEGIN_NCBI_SCOPE
 struct NCBI_XCONNECT_EXPORT CNetCacheKey
 {
 public:
-    CNetCacheKey(unsigned int  _id,
+    /*CNetCacheKey(unsigned int  _id,
                  const string& _host,
                  unsigned int  _port,
-                 unsigned int  ver = 1);
+                 unsigned int  ver = 1);*/
     /// Create the key out of string
     explicit CNetCacheKey(const string& key_str);
+
+    /// Create an empty object for later use with ParseBlobKey() or Assign().
+    CNetCacheKey() {}
+
+    /// Parse the specified blob ID and initializes this object.
+    /// @throws CNetCacheException if key format is not recognized.
+    void Assign(const string& key_str);
+
+    /// Parse blob key string into a CNetCacheKey structure
+    static bool ParseBlobKey(const char* key_str,
+        size_t key_len, CNetCacheKey* key_obj);
+
+    bool HasExtensions() const {return m_PrimaryKeyLength < m_Key.length();}
+
+    /// If the blob key has been parsed successfully,
+    /// this method returns a trimmed "base" version
+    /// of the key with "0MetA0" extensions removed.
+    string StripKeyExtensions() const;
+
+    /// Unconditionally append a service name to the specified string.
+    static void AppendServiceName(string& blob_id, const string& service_name);
+
+    /// Extend this key with the specified service name.
+    void SetServiceName(const string& service_name);
 
     operator string() const;
 
@@ -79,33 +103,42 @@ public:
                          unsigned short port,
                          unsigned int   ver = 1);
 
-    /// Parse blob key, extract id
-    static
-    unsigned int GetBlobId(const string& key_str);
+    /// Generate a key that includes a service name.
+    static void GenerateBlobKey(
+        string* key,
+        unsigned id,
+        const string& host,
+        unsigned short port,
+        const string& service_name);
 
-    static bool IsValidKey(const char* key_str, size_t key_len);
+    /// Parse blob key, extract id
+    static unsigned int GetBlobId(const string& key_str);
+
+    static bool IsValidKey(const char* key_str, size_t key_len)
+        { return ParseBlobKey(key_str, key_len, NULL); }
 
     static bool IsValidKey(const string& key)
         { return IsValidKey(key.c_str(), key.length()); }
 
-    unsigned int  GetId     (void) const;
-    const string& GetHost   (void) const;
-    unsigned int  GetPort   (void) const;
-    unsigned int  GetVersion(void) const;
+    const string& GetKey() const;
+    unsigned GetId() const;
+    const string& GetHost() const;
+    unsigned GetPort() const;
+    unsigned GetVersion() const;
+    time_t GetCreationTime() const;
+    Uint4 GetRandomPart() const;
+    const string& GetServiceName() const;
 
 private:
-    CNetCacheKey(void);
-
-    /// Parse blob key string into a CNetCache_Key structure
-    static bool x_ParseBlobKey(const char*    key_str,
-                               size_t         key_len,
-                               CNetCacheKey*  key_obj);
-
-
-    unsigned int m_Id;        ///< BLOB id
-    string       m_Host;      ///< server name
-    unsigned int m_Port;      ///< TCP/IP port number
-    unsigned int m_Version;   ///< Key version
+    string m_Key;
+    unsigned int m_Id; ///< BLOB id
+    string m_Host; ///< server name
+    unsigned m_Port; ///< TCP/IP port number
+    unsigned m_Version; ///< Key version
+    time_t m_CreationTime;
+    Uint4 m_Random;
+    size_t m_PrimaryKeyLength;
+    string m_ServiceName;
 };
 
 
@@ -113,13 +146,18 @@ private:
 // Inline functions
 //////////////////////////////////////////////////////////////////////////
 
-inline
+/*inline
 CNetCacheKey::CNetCacheKey(unsigned int  _id,
                            const string& _host,
                            unsigned int  _port,
                            unsigned int  ver)
     : m_Id(_id), m_Host(_host), m_Port(_port), m_Version(ver)
-{}
+{}*/
+
+inline const string& CNetCacheKey::GetKey() const
+{
+    return m_Key;
+}
 
 inline unsigned int
 CNetCacheKey::GetId(void) const
@@ -143,6 +181,21 @@ inline unsigned int
 CNetCacheKey::GetVersion(void) const
 {
     return m_Version;
+}
+
+inline time_t CNetCacheKey::GetCreationTime() const
+{
+    return m_CreationTime;
+}
+
+inline Uint4 CNetCacheKey::GetRandomPart() const
+{
+    return m_Random;
+}
+
+inline const string& CNetCacheKey::GetServiceName() const
+{
+    return m_ServiceName;
 }
 
 

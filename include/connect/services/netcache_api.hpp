@@ -182,7 +182,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///
     /// @return
     ///    True, if the BLOB exists; false otherwise.
-    bool HasBlob(const string& key);
+    bool HasBlob(const string& blob_id);
 
     /// Returns the size of the BLOB identified by the "key" parameter.
     ///
@@ -191,7 +191,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///
     /// @return
     ///    Size of the BLOB in bytes.
-    size_t GetBlobSize(const string& key);
+    size_t GetBlobSize(const string& blob_id);
 
     /// Get a pointer to the IReader interface to read blob contents.
     /// This is a safe version of the GetData method having the same
@@ -290,13 +290,13 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     CNcbiIstream* GetIStream(const string& key, size_t* blob_size = NULL);
 
     /// Retrieve BLOB's owner information as registered by the server
-    string GetOwner(const string& key);
+    string GetOwner(const string& blob_id);
 
     /// Remove BLOB by key
-    void Remove(const string& key);
+    void Remove(const string& blob_id);
 
     /// Print meta information about the specified blob.
-    void PrintBlobInfo(const string& key);
+    void PrintBlobInfo(const string& blob_id);
 
     CNetCacheAdmin GetAdmin();
 
@@ -304,19 +304,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 
     void SetCommunicationTimeout(const STimeout& to)
         {GetService().SetCommunicationTimeout(to);}
-
-    /// Connection management options
-    enum EConnectionMode {
-        /// Close connection after each call.
-        /// This mode frees server side resources, but reconnection can be
-        /// costly because of the network overhead
-        eCloseConnection,
-
-        /// Keep connection open (default).
-        /// This mode occupies server side resources(session thread),
-        /// use this mode very carefully
-        eKeepConnection
-    };
 };
 
 class NCBI_XCONNECT_EXPORT CNetCachePasswordGuard

@@ -72,7 +72,10 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         size_t* n_read,
         size_t blob_size);
 
-    CNetServer GetServer(const string& bid);
+    CNetServer GetServer(const CNetCacheKey& key)
+    {
+        return m_Service->GetServer(key.GetHost(), key.GetPort());
+    }
 
     virtual CNetServerConnection InitiateWriteCmd(string* blob_id,
         unsigned time_to_live);
@@ -80,12 +83,15 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     void SetPassword(const string& password);
     void AppendClientIPSessionIDPassword(string* cmd);
     string MakeCmd(const char* cmd);
-    string MakeCmd(const char* cmd_base, const string& key);
+    string MakeCmd(const char* cmd_base, const CNetCacheKey& key);
+    CNetServer::SExecResult ExecMirrorAware(
+        const CNetCacheKey& key, const string& cmd);
 
     CNetService m_Service;
     string m_TempDir;
     bool m_CacheInput;
     bool m_CacheOutput;
+    bool m_EnableMirroring;
 
     string m_Password;
 };
