@@ -365,6 +365,8 @@ inline
 void CTempString::x_DestroyCopy(void)
 {
     delete [] m_String;
+    m_String = NULL;
+    m_Length = 0;
 }
 #endif
 
