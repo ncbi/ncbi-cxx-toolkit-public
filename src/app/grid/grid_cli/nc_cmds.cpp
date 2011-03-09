@@ -35,11 +35,17 @@
 
 USING_NCBI_SCOPE;
 
-void CGridCommandLineInterfaceApp::SetUp_NCCmd(
+void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
     CGridCommandLineInterfaceApp::ENetCacheAPIClass api_class)
 {
     if (m_Opts.auth.empty())
         m_Opts.auth = "netcache_control";
+
+    static const string config_section("netcache_api");
+
+    if (m_Opts.enable_mirroring)
+        CNcbiApplication::Instance()->GetConfig().Set(
+            config_section, "enable_mirroring", "true");
 
     switch (api_class) {
     case eNetCacheAPI:
@@ -101,7 +107,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
 {
     bool icache_mode = IsOptionSet(eCache);
 
-    SetUp_NCCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
+    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
     int reader_select = (IsOptionSet(ePassword) << 1) |
         (m_Opts.offset != 0 || m_Opts.size != 0);
@@ -223,7 +229,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 {
     bool icache_mode = IsOptionSet(eCache);
 
-    SetUp_NCCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
+    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
     auto_ptr<IEmbeddedStreamWriter> writer;
 
@@ -258,11 +264,14 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
     size_t bytes_written;
 
     while ((bytes_read = fread(buffer, 1,
-            sizeof(buffer), m_Opts.input_stream)) > 0)
+            sizeof(buffer), m_Opts.input_stream)) > 0) {
         if (writer->Write(buffer, bytes_read, &bytes_written) !=
                 eRW_Success || bytes_written != bytes_read) {
             NCBI_USER_THROW_FMT("Error while writing to NetCache");
         }
+        if (feof(m_Opts.input_stream))
+            break;
+    }
 
     writer->Close();
 
@@ -276,7 +285,7 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
 {
     bool icache_mode = IsOptionSet(eCache);
 
-    SetUp_NCCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
+    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
     if (!icache_mode)
         m_NetCacheAPI.PrintBlobInfo(m_Opts.id);
@@ -291,7 +300,7 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
 {
     bool icache_mode = IsOptionSet(eCache);
 
-    SetUp_NCCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
+    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
     if (!icache_mode)
         if (IsOptionSet(ePassword))
@@ -315,7 +324,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReinitNetCache()
 {
     bool icache_mode = IsOptionSet(eCache);
 
-    SetUp_NCCmd(eNetCacheAdmin);
+    SetUp_NetCacheCmd(eNetCacheAdmin);
 
     if (icache_mode)
         m_NetCacheAdmin.Reinitialize(m_Opts.cache_name);

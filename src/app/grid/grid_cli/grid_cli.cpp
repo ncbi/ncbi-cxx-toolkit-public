@@ -41,9 +41,6 @@
 #include <fcntl.h>
 #endif
 
-#define PROGRAM_NAME "grid_cli"
-#define PROGRAM_VERSION "0.1.0"
-
 USING_NCBI_SCOPE;
 
 CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
@@ -104,6 +101,9 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eTTL,
         "ttl", "Override the default time-to-live value."},
 
+    {CCommandLineParser::eSwitch, eEnableMirroring,
+        "enable-mirroring", "Enable NetCache mirroring functionality."},
+
     {CCommandLineParser::eOptionWithParameter, eNetSchedule,
         "ns|netschedule", "NetSchedule service name or server address."},
 
@@ -122,13 +122,13 @@ struct SCommandDefinition {
     int options[eTotalNumberOfOptions + 1];
 } static const s_CommandDefinitions[] = {
 
-    /*{&CGridCommandLineInterfaceApp::Cmd_WhatIs,
+    {&CGridCommandLineInterfaceApp::Cmd_WhatIs,
         "whatis", "Determine argument type and characteristics.",
         "This command makes an attempt to guess the type of its "
         "argument. If the argument is successfully recognized "
         "as a token that represents a Grid object, the type-"
         "dependent information about the object is printed.",
-        {eUntypedArg, -1}},*/
+        {eUntypedArg, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_GetBlob,
         "getblob|gb", "Retrieve a blob from NetCache.",
@@ -145,7 +145,7 @@ struct SCommandDefinition {
         "encountered and save the received data as a NetCache blob."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eOptionalID, eNetCache, eCache, ePassword,
-            eTTL, eInputFile, eAuth, -1}},
+            eTTL, eEnableMirroring, eInputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_BlobInfo,
         "blobinfo|bi", "Retrieve meta information on a NetCache blob.",
@@ -261,7 +261,7 @@ int CGridCommandLineInterfaceApp::Run()
             m_Opts.option_flags[opt_id] = OPTION_SET;
             switch (EOption(opt_id)) {
             case eUntypedArg:
-                break;
+                /* FALL THROUGH */
             case eOptionalID:
                 m_Opts.option_flags[eID] = OPTION_SET;
                 /* FALL THROUGH */
@@ -290,6 +290,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eTTL:
                 m_Opts.ttl = NStr::StringToUInt(opt_value);
+                break;
+            case eEnableMirroring:
+                m_Opts.enable_mirroring = true;
                 break;
             case eNetSchedule:
                 m_Opts.ns_service = opt_value;

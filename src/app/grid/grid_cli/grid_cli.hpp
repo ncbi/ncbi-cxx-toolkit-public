@@ -36,9 +36,12 @@
 
 #include <corelib/ncbiapp.hpp>
 
-//#include <connect/services/grid_client_app.hpp>
 #include <connect/services/netcache_api.hpp>
 #include <connect/services/neticache_client.hpp>
+
+
+#define PROGRAM_NAME "grid_cli"
+#define PROGRAM_VERSION "0.1.0"
 
 
 BEGIN_NCBI_SCOPE
@@ -57,6 +60,7 @@ enum EOption {
     eOffset,
     eSize,
     eTTL,
+    eEnableMirroring,
     eNetSchedule,
     eTotalNumberOfOptions
 };
@@ -65,7 +69,6 @@ enum EOption {
 #define OPTION_SET 2
 
 class CGridCommandLineInterfaceApp : public CNcbiApplication
-                                            //CGridClientApp
 {
 public:
     CGridCommandLineInterfaceApp(int argc, const char* argv[]);
@@ -89,6 +92,7 @@ private:
         size_t offset;
         size_t size;
         unsigned ttl;
+        bool enable_mirroring;
         string ns_service;
         FILE* input_stream;
         FILE* output_stream;
@@ -103,7 +107,7 @@ private:
 
         char option_flags[eTotalNumberOfOptions];
 
-        SOptions() : offset(0), size(0), ttl(0),
+        SOptions() : offset(0), size(0), ttl(0), enable_mirroring(false),
             input_stream(NULL), output_stream(NULL)
         {
             memset(option_flags, 0, eTotalNumberOfOptions);
@@ -135,7 +139,7 @@ public:
 
 // Miscellaneous commands.
 public:
-    bool SetUp_AdmCmd();
+    int Cmd_WhatIs();
     int Cmd_Version();
     int Cmd_Stats();
     int Cmd_Health();
@@ -150,7 +154,8 @@ private:
         eNetICacheClient,
         eNetCacheAdmin
     };
-    void SetUp_NCCmd(ENetCacheAPIClass api_class);
+    bool SetUp_AdminCmd();
+    void SetUp_NetCacheCmd(ENetCacheAPIClass api_class);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);
 };
