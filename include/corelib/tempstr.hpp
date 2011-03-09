@@ -636,6 +636,9 @@ CTempString::size_type CTempString::find(const CTempString& match,
 inline
 CTempString::size_type CTempString::rfind(char match, size_type pos) const
 {
+    if (length() == 0) {
+        return npos;
+    }
     if (pos >= length()) {
         pos = length() - 1;
     }
