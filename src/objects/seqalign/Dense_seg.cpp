@@ -1051,7 +1051,7 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
 }
 
 
-CRef<CDense_seg> CDense_seg::FillUnaligned()
+CRef<CDense_seg> CDense_seg::FillUnaligned() const
 {
     // this dense-seg
     const CDense_seg::TStarts&  starts  = GetStarts();

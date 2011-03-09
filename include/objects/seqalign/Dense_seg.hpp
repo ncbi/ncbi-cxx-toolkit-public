@@ -104,7 +104,7 @@ public:
 
     /// Create a new dense-seg with added all unaligned pieces
     /// (implicit inserts), if any, between segments.
-    CRef<CDense_seg> FillUnaligned();
+    CRef<CDense_seg> FillUnaligned() const;
 
     /// Extract a slice of the alignment that includes the specified range
     CRef<CDense_seg> ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const;
