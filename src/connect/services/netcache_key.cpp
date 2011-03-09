@@ -58,8 +58,7 @@ static CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
         return false; \
     ++ch;
 
-inline bool
-CNetCacheKey::ParseBlobKey(const char* key_str,
+bool CNetCacheKey::ParseBlobKey(const char* key_str,
     size_t key_len, CNetCacheKey* key_obj)
 {
     if (memcmp(key_str, KEY_PREFIX, KEY_PREFIX_LENGTH) != 0)
