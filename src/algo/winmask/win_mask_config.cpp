@@ -261,18 +261,31 @@ CWinMaskConfig::EAppType CWinMaskConfig::s_DetermineAppType(
 }
 
 CMaskWriter*
-CWinMaskConfig::x_GetWriter(const CArgs& args, 
-                            CNcbiOstream& output, 
-                            const string& format)
+CWinMaskConfig::x_GetWriter(const CArgs& args)
 {
+    const string & format( args[kInputFormat].AsString() );
     CMaskWriter* retval = NULL;
+
     if (format == "interval") {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterInt(output);
     } else if (format == "fasta") {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterFasta(output);
-    } else if (NStr::StartsWith(format, "seqloc_")) {
+    } else if (NStr::StartsWith(format, "seqloc_asn1_binary")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
         retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "seqloc_")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
+        retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "maskinfo_asn1_binary")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
+        retval = 
+            new CMaskWriterBlastDbMaskInfo(output, format, 3,
+                               eBlast_filter_program_windowmasker,
+                               BuildAlgorithmParametersString(args));
     } else if (NStr::StartsWith(format, "maskinfo_")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = 
             new CMaskWriterBlastDbMaskInfo(output, format, 3,
                                eBlast_filter_program_windowmasker,
@@ -291,10 +304,6 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
           ( !(args[kInput].AsString() == "-")
             ? new CNcbiIfstream( args[kInput].AsString().c_str() ) 
             : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), 
-      os( app_type >= eGenerateMasks ?
-          ( !(args[kOutput].AsString() == "-")
-            ? new CNcbiOfstream( args[kOutput].AsString().c_str() )
-            : static_cast<CNcbiOstream*>(&NcbiCout) ) : NULL ), writer( NULL ),
       lstat_name( app_type >= eGenerateMasks ? args["ustat"].AsString() : "" ),
       textend( app_type >= eGenerateMasks && args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
       cutoff_score( app_type >= eGenerateMasks && args["t_thres"] ? args["t_thres"].AsInteger() : 0 ),
@@ -361,7 +370,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
 
         string oformatstr = args[kOutputFormat].AsString();
 
-        writer = x_GetWriter(args, *os, oformatstr);
+        writer = x_GetWriter(args);
 
         set_max_score = args["set_t_high"]  ? args["set_t_high"].AsInteger()
                                             : 0;

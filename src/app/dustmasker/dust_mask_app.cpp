@@ -121,21 +121,34 @@ CDustMaskApplication::x_GetWriter()
 {
     const CArgs& args = GetArgs();
     const string& format(args[kOutputFormat].AsString());
-    CNcbiOstream& output = args[kOutput].AsOutputFile();
     CMaskWriter* retval = NULL;
 
     if (format == "interval") {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterInt(output);
     } else if (format == "fasta") {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterFasta(output);
-    } else if (NStr::StartsWith(format, "seqloc_")) {
+    } else if (NStr::StartsWith(format, "seqloc_asn1_binary")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
         retval = new CMaskWriterSeqLoc(output, format);
-    } else if (NStr::StartsWith(format, "maskinfo_")) {
+    } else if (NStr::StartsWith(format, "seqloc_")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
+        retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "maskinfo_asn1_bin")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
+        retval = 
+            new CMaskWriterBlastDbMaskInfo(output, format, 2,
+                               eBlast_filter_program_dust,
+                               BuildAlgorithmParametersString(args));
+    } else if (NStr::StartsWith(format, "maskinfo_asn1")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = 
             new CMaskWriterBlastDbMaskInfo(output, format, 2,
                                eBlast_filter_program_dust,
                                BuildAlgorithmParametersString(args));
     } else {
+
         throw runtime_error("Unknown output format");
     }
     return retval;

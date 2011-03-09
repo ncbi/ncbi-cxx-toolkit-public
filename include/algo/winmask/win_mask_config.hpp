@@ -591,78 +591,6 @@ private:
         CNcbiIstream * resource;
     };
 
-    /**\internal
-     **\brief This class is the resource allocator/initializer for 
-     **       winmasker output streams (used for safe exception
-     **       handling).
-     **
-     **/
-    class COstreamProxy
-    {
-    public:
-
-        /**\internal
-         **\brief Object constructor.
-         **
-         ** Objects are usually constructed at the point of
-         ** dynamic allocation of the corresponding resource.
-         **
-         **\param newResource points to the ostream object.
-         **
-         **/
-        COstreamProxy( CNcbiOstream * newResource = NULL )
-            : resource( newResource ) {}
-
-        /**\internal
-         **\brief Object destructor.
-         **
-         ** Frees the resource unless it points to the standard output.
-         **
-         **/
-        ~COstreamProxy()
-        { if( resource && resource != &NcbiCout ) delete resource; }
-
-        /**\internal
-         **\brief Cast to bool operator.
-         **
-         **\return true if the resource is non NULL, false otherwise.
-         **
-         **/
-        operator bool() const { return resource != NULL; }
-
-        //@{
-        /**\internal
-         **\brief Dereference operator.
-         **
-         **\return resource object pointed to by the internal pointer.
-         **
-         **/
-        CNcbiOstream & operator*() { return *resource; }
-        const CNcbiOstream & operator*() const { return *resource; }
-        //@}
-
-        //@{
-        /**\internal
-         **\brief Field access operator.
-         **
-         **\return this operator return the internal pointer stored in
-         **        the object.
-         **
-         **/
-        CNcbiOstream * operator->() { return resource; }
-        const CNcbiOstream * operator->() const { return resource; }
-        //@}
-
-    private:
-
-        /**\internal
-         **\brief Pointer to the resource that is managed by this
-         **       object.
-         **
-         **/
-        CNcbiOstream * resource;
-    };
-
     /**
      **\brief Read the list of sequence ids from a given file.
      **
@@ -676,15 +604,12 @@ private:
      * @brief Create the CMaskWriter instance for this class
      * 
      * @param args command line arguments
-     * @param output output stream
      * @param format format of the output to be written
      * 
      * @return writer based on the format requested
      * @throws runtime_error if the output format is not recognized
      */
-    CMaskWriter* x_GetWriter(const CArgs& args,
-                             CNcbiOstream& output, 
-                             const string& format);
+    CMaskWriter* x_GetWriter(const CArgs& args);
 
     static EAppType s_DetermineAppType( const CArgs & args, EAppType user_specified_type );
 
@@ -694,7 +619,6 @@ private:
     EAppType app_type;              /**< type of application to run */
     CIstreamProxy is;               /**< input file resource manager */
     CMaskReader * reader;           /**< input reader object */
-    COstreamProxy os;               /**< output file resource manager */
     CMaskWriter * writer;           /**< output writer object */
     string lstat_name;              /**< name of the file containing unit length statitsics */
     Uint4 textend;                  /**< t_extend value for extension of masked intervals */

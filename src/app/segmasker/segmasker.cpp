@@ -172,16 +172,28 @@ SegMaskerApplication::x_GetWriter()
 {
     const CArgs& args = GetArgs();
     const string& format(args[kOutputFormat].AsString());
-    CNcbiOstream& output = args[kOutput].AsOutputFile();
     CMaskWriter* retval = NULL;
 
     if (format == "interval") {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterInt(output);
     } else if (format == "fasta") {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterFasta(output);
-    } else if (NStr::StartsWith(format, "seqloc_")) {
+    } else if (NStr::StartsWith(format, "seqloc_asn1_binary")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
         retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "seqloc_")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
+        retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "maskinfo_asn1_bin")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
+        retval = 
+            new CMaskWriterBlastDbMaskInfo(output, format, 1,
+                               eBlast_filter_program_seg,
+                               BuildAlgorithmParametersString(args));
     } else if (NStr::StartsWith(format, "maskinfo_")) {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = 
             new CMaskWriterBlastDbMaskInfo(output, format, 1,
                                eBlast_filter_program_seg,
