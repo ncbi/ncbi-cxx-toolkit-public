@@ -2234,21 +2234,35 @@ public:
     typedef CConstRef<CInt_fuzz>  TFuzz;
 
     CRangeWithFuzz(const TParent& rg)
-        : TParent(rg)
+        : TParent(rg), m_Strand(eNa_strand_unknown)
     {
     }
     CRangeWithFuzz(const CSeq_loc_CI& it)
         : TParent(it.GetRange()),
           m_Fuzz_from(it.GetFuzzFrom()),
-          m_Fuzz_to(it.GetFuzzTo())
+          m_Fuzz_to(it.GetFuzzTo()),
+          m_Strand(it.GetStrand())
     {
     }
+
     void ResetFuzzFrom(void) { m_Fuzz_from.Reset(); }
     void ResetFuzzTo(void) { m_Fuzz_to.Reset(); }
     TFuzz IsSetFuzzFrom(void) const { return m_Fuzz_from; }
     TFuzz IsSetFuzzTo(void) const { return m_Fuzz_to; }
     const CInt_fuzz& GetFuzzFrom(void) const { return *m_Fuzz_from; }
     const CInt_fuzz& GetFuzzTo(void) const { return *m_Fuzz_to; }
+
+    // Add fuzzes assuming that both ranges had the same 'from'
+    void AddFuzzFrom(const CRangeWithFuzz& rg)
+    {
+        x_AddFuzz(m_Fuzz_from, rg.m_Fuzz_from, rg.m_Strand);
+    }
+
+    // Add fuzzes assuming that both ranges had the same 'to'
+    void AddFuzzTo(const CRangeWithFuzz& rg)
+    {
+        x_AddFuzz(m_Fuzz_to, rg.m_Fuzz_to, rg.m_Strand);
+    }
 
     void CopyFrom(const CRangeWithFuzz& rg)
     {
@@ -2270,19 +2284,15 @@ public:
         if (old_from != GetFrom()) {
             m_Fuzz_from.Reset(rg.m_Fuzz_from);
         }
-        else if (old_from == rg.GetFrom()  &&  m_Fuzz_from) {
+        else if (old_from == rg.GetFrom()) {
             // Reset fuzz if it's not the same for both ranges
-            if (!rg.m_Fuzz_from  ||  !m_Fuzz_from->Equals(*rg.m_Fuzz_from)) {
-                ResetFuzzFrom();
-            }
+            AddFuzzFrom(rg);
         }
         if (old_to != GetTo()) {
             m_Fuzz_to.Reset(rg.m_Fuzz_to);
         }
-        else if (old_to == rg.GetTo()  &&  m_Fuzz_to) {
-            if (!rg.m_Fuzz_to  ||  !m_Fuzz_to->Equals(*rg.m_Fuzz_to)) {
-                ResetFuzzTo();
-            }
+        else if (old_to == rg.GetTo()) {
+            AddFuzzTo(rg);
         }
         return *this;
     }
@@ -2292,18 +2302,161 @@ public:
         TParent::position_type old_from = GetFrom();
         TParent::position_type old_to = GetTo();
         TParent::operator+=(rg);
-        if (old_from != GetFrom()  ||  old_from == rg.GetFrom()) {
+        // Reset fuzz if the corresponding extreme changes
+        if (old_from != GetFrom()) {
             ResetFuzzFrom();
         }
-        if (old_to != GetTo()  ||  old_to == rg.GetTo()) {
+        if (old_to != GetTo()) {
             ResetFuzzTo();
         }
         return *this;
     }
 
 private:
+    CRef<CInt_fuzz> x_SetFuzz(TFuzz&           fuzz,
+                              const CInt_fuzz* copy_from)
+    {
+        // Since TFuzz is a const-ref, setting fuzz requires creating
+        // a new object
+        CRef<CInt_fuzz> new_fuzz(new CInt_fuzz);
+        // The new value is optional
+        if ( copy_from ) {
+            new_fuzz->Assign(*copy_from);
+        }
+        fuzz.Reset(new_fuzz);
+        return new_fuzz;
+    }
+
+    void x_AddFuzz(TFuzz&       fuzz,
+                   const TFuzz& other,
+                   ENa_strand   other_strand)
+    {
+        if ( !fuzz ) {
+            // Use fuzz from the other range if available
+            if ( other ) {
+                x_SetFuzz(fuzz, other.GetPointerOrNull());
+            }
+            return;
+        }
+        if ( !other ) {
+            // The other range has no fuzz, keep the current one
+            return;
+        }
+        if (fuzz->Which() != other->Which()) {
+            // Fuzzes have different types, reset to lim-unk.
+            CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, NULL);
+            new_fuzz->SetLim(CInt_fuzz::eLim_unk);
+            return;
+        }
+
+        const CInt_fuzz& fz = *fuzz;
+        const CInt_fuzz& ofz = *other;
+        // Both fuzzes are set and have the same type, try to merge them
+        switch ( fz.Which() ) {
+        case CInt_fuzz::e_Lim:
+            {
+                CInt_fuzz::ELim this_lim = fz.GetLim();
+                CInt_fuzz::ELim other_lim = ofz.GetLim();
+                bool this_rev = IsReverse(m_Strand);
+                bool other_rev = IsReverse(other_strand);
+                bool other_lt = other_lim == CInt_fuzz::eLim_lt  ||
+                    (!other_rev  &&  other_lim == CInt_fuzz::eLim_tl)  ||
+                    (other_rev  &&  other_lim == CInt_fuzz::eLim_tr);
+                bool other_gt = other_lim == CInt_fuzz::eLim_gt  ||
+                    (!other_rev  &&  other_lim == CInt_fuzz::eLim_tr)  ||
+                    (other_rev  &&  other_lim == CInt_fuzz::eLim_tl);
+                switch ( fz.GetLim() ) {
+                case CInt_fuzz::eLim_lt:
+                    if ( other_lt ) {
+                        return; // the same
+                    }
+                    break;
+                case CInt_fuzz::eLim_gt:
+                    if ( other_gt ) {
+                        return; // the same
+                    }
+                    break;
+                case CInt_fuzz::eLim_tl:
+                    if ((!this_rev  &&  other_lt)  ||
+                        (this_rev  &&  other_gt)) {
+                        return; // the same
+                    }
+                    break;
+                case CInt_fuzz::eLim_tr:
+                    if ((!this_rev  &&  other_gt)  ||
+                        (this_rev  &&  other_lt)) {
+                        return; // the same
+                    }
+                    break;
+                default:
+                    if (other_lim == this_lim) {
+                        return;
+                    }
+                    break;
+                }
+                // Different limits - reset to lim-unk.
+                CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, NULL);
+                new_fuzz->SetLim(CInt_fuzz::eLim_unk);
+                break;
+            }
+        case CInt_fuzz::e_Alt:
+            {
+                // Use union
+                CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, NULL);
+                new_fuzz->SetAlt().insert(
+                    new_fuzz->SetAlt().end(),
+                    fz.GetAlt().begin(),
+                    fz.GetAlt().end());
+                new_fuzz->SetAlt().insert(
+                    new_fuzz->SetAlt().end(),
+                    ofz.GetAlt().begin(),
+                    ofz.GetAlt().end());
+                break;
+            }
+        case CInt_fuzz::e_Range:
+            {
+                // Use union
+                CInt_fuzz::C_Range::TMin min1 = fz.GetRange().GetMin();
+                CInt_fuzz::C_Range::TMin min2 = ofz.GetRange().GetMin();
+                CInt_fuzz::C_Range::TMax max1 = fz.GetRange().GetMax();
+                CInt_fuzz::C_Range::TMax max2 = ofz.GetRange().GetMax();
+                if (min1 > min2  ||  max1 < max2) {
+                    CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, NULL);
+                    new_fuzz->SetRange().SetMin(min1 < min2 ? min1 : min2);
+                    new_fuzz->SetRange().SetMax(max1 > max2 ? max1 : max2);
+                }
+                break;
+            }
+        case CInt_fuzz::e_P_m:
+            {
+                // Use max value
+                CInt_fuzz::TP_m pm = ofz.GetP_m();
+                if (fz.GetP_m() < pm) {
+                    CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, NULL);
+                    new_fuzz->SetP_m(pm);
+                }
+                break;
+            }
+        case CInt_fuzz::e_Pct:
+            {
+                // Use max value
+                CInt_fuzz::TPct pct = ofz.GetPct();
+                if (fz.GetPct() < pct) {
+                    CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, NULL);
+                    new_fuzz->SetPct(pct);
+                }
+                break;
+            }
+        default:
+            // Failed to merge fuzzes
+            fuzz.Reset();
+            break;
+        }
+    }
+
     TFuzz m_Fuzz_from;
     TFuzz m_Fuzz_to;
+    ENa_strand m_Strand;
 };
 
 
@@ -2377,23 +2530,23 @@ bool x_MergeRanges(TRangeWithFuzz& rg1, ENa_strand str1,
         if (rg1.GetFrom() <= rg2.GetFrom()  &&  rg1.GetTo() >= rg2.GetTo()) {
             // rg2 already contained in rg1
             if (rg1.GetFrom() == rg2.GetFrom()) {
-                rg1.ResetFuzzFrom();
+                rg1.AddFuzzFrom(rg2);
             }
             if (rg1.GetTo() == rg2.GetTo()) {
-                rg1.ResetFuzzTo();
+                rg1.AddFuzzTo(rg2);
             }
             return true;
         }
         if (rg1.GetFrom() >= rg2.GetFrom()  &&  rg1.GetTo() <= rg2.GetTo()) {
             // rg1 contained in rg2
-            bool reset_from = rg1.GetFrom() == rg2.GetFrom();
-            bool reset_to = rg1.GetTo() == rg2.GetTo();
+            bool same_from = rg1.GetFrom() == rg2.GetFrom();
+            bool same_to = rg1.GetTo() == rg2.GetTo();
             rg1 = rg2;
-            if (reset_from) {
-                rg1.ResetFuzzFrom();
+            if (same_from) {
+                rg1.AddFuzzFrom(rg2);
             }
-            if (reset_to) {
-                rg1.ResetFuzzTo();
+            if (same_to) {
+                rg1.AddFuzzTo(rg2);
             }
             return true;
         }
