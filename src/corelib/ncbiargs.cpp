@@ -380,32 +380,45 @@ bool CArg_Boolean::AsBoolean(void) const
 
 void CArg_InputFile::x_Open(CArgValue::TFileFlags flags) const
 {
+    CNcbiIfstream *fstrm = NULL;
     if ( m_InputFile ) {
         if (flags != m_CurrentFlags && flags != 0) {
-            CloseFile();
+            if (m_DeleteFlag) {
+                fstrm = dynamic_cast<CNcbiIfstream*>(m_InputFile);
+                _ASSERT(fstrm);
+                fstrm->close();
+            } else {
+                m_InputFile = NULL;
+            }
         }
     }
-    if ( m_InputFile )
+    if ( m_InputFile != NULL && fstrm == NULL) {
         return;
+    }
 
     m_CurrentFlags = flags ? flags : m_DescriptionFlags;
     IOS_BASE::openmode mode = CArg_OutputFile::IosMode( m_CurrentFlags);
+    m_DeleteFlag = false;
+
     if (AsString() == "-") {
 #if defined(NCBI_OS_MSWIN)
-        if ((mode & IOS_BASE::binary) != 0)
-            setmode(fileno(stdin), O_BINARY);
+        setmode(fileno(stdin), (mode & IOS_BASE::binary) ? O_BINARY : O_TEXT);
 #endif
         m_InputFile  = &cin;
-        m_DeleteFlag = false;
     } else if ( !AsString().empty() ) {
-        m_InputFile  = new CNcbiIfstream(AsString().c_str(),
-                                         IOS_BASE::in | mode);
-        if (!m_InputFile  ||  !*m_InputFile) {
-            delete m_InputFile;
-            m_InputFile = 0;
-        } else {
-            m_DeleteFlag = true;
+        if (!fstrm) {
+            fstrm = new CNcbiIfstream;
         }
+        if (fstrm) {
+            fstrm->open(AsString().c_str(),IOS_BASE::in | mode);
+            if ( !fstrm->is_open() ) {
+                delete fstrm;
+                fstrm = NULL;
+            } else {
+                m_DeleteFlag = true;
+            }
+        }
+        m_InputFile = fstrm;
     }
 
     if ( !m_InputFile ) {
@@ -470,33 +483,46 @@ void CArg_InputFile::CloseFile(void) const
 
 void CArg_OutputFile::x_Open(CArgValue::TFileFlags flags) const
 {
+    CNcbiOfstream *fstrm = NULL;
     if ( m_OutputFile ) {
         if ((flags != m_CurrentFlags && flags != 0) ||
             (flags & fTruncate)) {
-            CloseFile();
+            if (m_DeleteFlag) {
+                fstrm = dynamic_cast<CNcbiOfstream*>(m_OutputFile);
+                _ASSERT(fstrm);
+                fstrm->close();
+            } else {
+                m_OutputFile = NULL;
+            }
         }
     }
-    if ( m_OutputFile )
+    if ( m_OutputFile != NULL && fstrm == NULL) {
         return;
+    }
 
     m_CurrentFlags = flags ? flags : m_DescriptionFlags;
     IOS_BASE::openmode mode = CArg_OutputFile::IosMode( m_CurrentFlags);
+    m_DeleteFlag = false;
+
     if (AsString() == "-") {
 #if defined(NCBI_OS_MSWIN)
-        if ((mode & IOS_BASE::binary) != 0)
-            setmode(fileno(stdout), O_BINARY);
+        setmode(fileno(stdout), (mode & IOS_BASE::binary) ? O_BINARY : O_TEXT);
 #endif
         m_OutputFile = &cout;
-        m_DeleteFlag = false;
     } else if ( !AsString().empty() ) {
-        m_OutputFile = new CNcbiOfstream(AsString().c_str(),
-                                         IOS_BASE::out | mode);
-        if (!m_OutputFile  ||  !*m_OutputFile) {
-            delete m_OutputFile;
-            m_OutputFile = 0;
-        } else {
-            m_DeleteFlag = true;
+        if (!fstrm) {
+            fstrm = new CNcbiOfstream;
         }
+        if (fstrm) {
+            fstrm->open(AsString().c_str(),IOS_BASE::out | mode);
+            if ( !fstrm->is_open() ) {
+                delete fstrm;
+                fstrm = NULL;
+            } else {
+                m_DeleteFlag = true;
+            }
+        }
+        m_OutputFile = fstrm;
     }
 
     if ( !m_OutputFile ) {
