@@ -40,6 +40,7 @@
 #include <connect/services/netservice_api_expt.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config.hpp>
@@ -112,6 +113,14 @@ void SNetServiceImpl::Init(CObject* api_impl,
     CConfig* config, const string& config_section,
     const char* const* default_config_sections)
 {
+    // Initialize the connect library and LBSM structures
+    // used in DiscoverServers().
+    {
+        class : public CConnIniter
+        {
+        } conn_initer;
+    }
+
     const char* const* default_section = default_config_sections;
     string section = !config_section.empty() ?
         config_section : *default_section++;
