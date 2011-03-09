@@ -54,30 +54,9 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
     CNetCacheKey nc_key;
     if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
             m_Opts.id.length(), &nc_key)) {
-        string hostname;
-        try {
-            hostname = g_NetService_gethostname(nc_key.GetHost());
-        }
-        catch (CNetServiceException&) {
-            hostname = nc_key.GetHost();
-        }
+        printf("Type: NetCache blob ID, version %u\n", nc_key.GetVersion());
 
-        string service(nc_key.GetServiceName());
-
-        printf("Type: NetCache blob ID, version %u\n"
-            "Blob number: %u\n"
-            "Created by: %s:%u\n"
-            "Creation time: %8lX\n"
-            "Random: %d\n",
-            nc_key.GetVersion(),
-            nc_key.GetId(),
-            hostname.c_str(),
-            nc_key.GetPort(),
-            (unsigned long) nc_key.GetCreationTime(),
-            (unsigned) nc_key.GetRandomPart());
-
-        if (!service.empty())
-            printf("Service name: %s\n", service.c_str());
+        PrintBlobMeta(nc_key);
 
         printf("\nTo retrieve blob attributes from the server, use\n"
             PROGRAM_NAME " blobinfo %s\n", m_Opts.id.c_str());

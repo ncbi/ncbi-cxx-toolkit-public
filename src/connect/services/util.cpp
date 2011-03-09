@@ -260,4 +260,17 @@ string g_NetService_gethostip(const string& ip_or_hostname)
     return CSocketAPI::ntoa(g_NetService_gethostbyname(ip_or_hostname));
 }
 
+string g_NetService_TryResolveHost(const string& ip_or_hostname)
+{
+    unsigned ip = CSocketAPI::gethostbyname(ip_or_hostname, eOn);
+    if (ip == 0)
+        return ip_or_hostname;
+
+    string hostname(CSocketAPI::gethostbyaddr(ip, eOn));
+    if (hostname.empty())
+        return ip_or_hostname;
+
+    return hostname;
+}
+
 END_NCBI_SCOPE

@@ -114,6 +114,10 @@ extern NCBI_XCONNECT_EXPORT
 string g_NetService_gethostip(const string& ip_or_hostname);
 
 
+extern NCBI_XCONNECT_EXPORT
+string g_NetService_TryResolveHost(const string& ip_or_hostname);
+
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___UTIL__HPP */

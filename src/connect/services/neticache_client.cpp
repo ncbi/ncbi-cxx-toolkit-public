@@ -627,6 +627,11 @@ void CNetICacheClient::PrintBlobInfo(const string& key,
         NcbiCout << line << NcbiEndl;
 }
 
+CNetServer CNetICacheClient::GetCurrentServer()
+{
+    return m_Impl->m_SelectedServer;
+}
+
 
 string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
     const string& key, int version, const string& subkey,

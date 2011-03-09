@@ -156,8 +156,10 @@ private:
     };
     bool SetUp_AdminCmd();
     void SetUp_NetCacheCmd(ENetCacheAPIClass api_class);
+    void PrintBlobMeta(const CNetCacheKey& key);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);
+    void PrintICacheServerUsed();
 };
 
 END_NCBI_SCOPE
