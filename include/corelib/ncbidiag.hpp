@@ -2099,6 +2099,14 @@ public:
     /// Internal function, should be used only by CNcbiApplication.
     static void x_FinalizeSetupDiag(void);
 
+    /// When using applog, the diag post level is locked to Warning.
+    /// The following functions allow to access the lock, but should
+    /// not be used by most applications.
+    static bool IsApplogSeverityLocked(void)
+        { return sm_ApplogSeverityLocked; }
+    static void SetApplogSeverityLocked(bool lock)
+        { sm_ApplogSeverityLocked = lock; }
+
 private:
     CDiagContext(const CDiagContext&);
     CDiagContext& operator=(const CDiagContext&);
@@ -2145,6 +2153,9 @@ private:
     auto_ptr<TMessages>                 m_Messages;
     size_t                              m_MaxMessages;
     static CDiagContext*                sm_Instance;
+
+    // Lock severity changes when using applog
+    static bool                         sm_ApplogSeverityLocked;
 
     // Rate control
     auto_ptr<CRequestRateControl>       m_AppLogRC;
@@ -2565,6 +2576,7 @@ private:
     bool              m_CanDeleteHandler;      ///< Can handler be deleted?
     CDiagErrCodeInfo* m_ErrCodeInfo;           ///< Error code information
     bool              m_CanDeleteErrCodeInfo;  ///< Can delete err code info?
+    bool              m_ApplogSeverityLocked;  ///< Limiting applog post level?
 };
 
 

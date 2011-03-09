@@ -547,6 +547,17 @@ public:
 static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 
 
+// Helper function to check if applog severity lock is set and
+// return the proper printable severity.
+
+EDiagSev AdjustApplogPrintableSeverity(EDiagSev sev)
+{
+    if ( !CDiagContext::IsApplogSeverityLocked() ) return sev;
+    return CompareDiagPostLevel(sev, eDiag_Warning) > 0
+        ? sev : eDiag_Warning;
+}
+
+
 ///////////////////////////////////////////////////////
 //  CDiagContextThreadData::
 
@@ -762,7 +773,8 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
                     EDiagSev gpsev = guard->GetPrintSeverity();
                     EDiagSev gcsev = guard->GetCollectSeverity();
                     EDiagSev post_sev =
-                        CompareDiagPostLevel(gpsev, gcsev) < 0 ? gpsev : gcsev;
+                        AdjustApplogPrintableSeverity(
+                        CompareDiagPostLevel(gpsev, gcsev) < 0 ? gpsev : gcsev);
                     bool allow_trace = post_sev == eDiag_Trace;
                     if (itc->m_Severity == eDiag_Trace  &&  !allow_trace) {
                         continue; // trace is disabled
@@ -896,6 +908,7 @@ SDiagMessageData::SDiagMessageData(void)
 
 
 CDiagContext* CDiagContext::sm_Instance = NULL;
+bool CDiagContext::sm_ApplogSeverityLocked = false;
 
 
 CDiagContext::CDiagContext(void)
@@ -2282,8 +2295,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         }
     }
 
-    // Allow to modify severity level
-    DisableDiagPostLevelChange(false);
+    // Unlock severity level
+    SetApplogSeverityLocked(false);
     if ( to_applog ) {
         ctx.SetOldPostFormat(false);
         SetDiagPostFlag(eDPF_PreMergeLines);
@@ -2292,7 +2305,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         TLogSizeLimitParam::SetDefault(0); // No log size limit
         SetDiagPostLevel(eDiag_Warning);
         // Lock severity level
-        DisableDiagPostLevelChange(true);
+        SetApplogSeverityLocked(true);
     }
     else {
         if ( s_MergeLinesSetBySetupDiag ) {
@@ -2555,7 +2568,7 @@ bool CDiagBuffer::SeverityDisabled(EDiagSev sev)
     CDiagContextThreadData& thr_data =
         CDiagContextThreadData::GetThreadData();
     CDiagCollectGuard* guard = thr_data.GetCollectGuard();
-    EDiagSev post_sev = sm_PostSeverity;
+    EDiagSev post_sev = AdjustApplogPrintableSeverity(sm_PostSeverity);
     bool allow_trace = GetTraceEnabled();
     if ( guard ) {
         EDiagSev gpsev = guard->GetPrintSeverity();
@@ -2579,7 +2592,8 @@ bool CDiagBuffer::SeverityPrintable(EDiagSev sev)
     CDiagContextThreadData& thr_data =
         CDiagContextThreadData::GetThreadData();
     CDiagCollectGuard* guard = thr_data.GetCollectGuard();
-    EDiagSev post_sev = guard ? guard->GetPrintSeverity() : sm_PostSeverity;
+    EDiagSev post_sev = AdjustApplogPrintableSeverity(
+        guard ? guard->GetPrintSeverity() : sm_PostSeverity);
     bool allow_trace = guard ? post_sev == eDiag_Trace : GetTraceEnabled();
     if (sev == eDiag_Trace  &&  !allow_trace) {
         return false; // trace is disabled
@@ -4234,7 +4248,7 @@ extern bool IsVisibleDiagPostLevel(EDiagSev sev)
     EDiagSev sev2;
     {{
         CMutexGuard LOCK(s_DiagMutex);
-        sev2 = CDiagBuffer::sm_PostSeverity;
+        sev2 = AdjustApplogPrintableSeverity(CDiagBuffer::sm_PostSeverity);
     }}
     return CompareDiagPostLevel(sev, sev2) >= 0;
 }
@@ -4384,6 +4398,8 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
     if (report_switch  &&  !old_name.empty()  &&  new_name != old_name) {
         ctx.Extra().Print("switch_diag_from", old_name);
     }
+    // Unlock severity
+    CDiagContext::SetApplogSeverityLocked(false);
 }
 
 
@@ -5043,6 +5059,7 @@ extern bool SetLogFile(const string& file_name,
             }
         }
         // Update the existing handler
+        CDiagContext::SetApplogSeverityLocked(false);
         return handler->SetLogFile(file_name, file_type, quick_flush);
     }
     return true;
@@ -5413,6 +5430,8 @@ CDiagRestorer::CDiagRestorer(void)
     m_CanDeleteHandler      = buf.sm_CanDeleteHandler;
     m_ErrCodeInfo           = buf.sm_ErrCodeInfo;
     m_CanDeleteErrCodeInfo  = buf.sm_CanDeleteErrCodeInfo;
+    m_ApplogSeverityLocked  = CDiagContext::IsApplogSeverityLocked();
+
     // avoid premature cleanup
     buf.sm_CanDeleteHandler     = false;
     buf.sm_CanDeleteErrCodeInfo = false;
@@ -5435,6 +5454,7 @@ CDiagRestorer::~CDiagRestorer(void)
     }}
     SetDiagHandler(m_Handler, m_CanDeleteHandler);
     SetDiagErrCodeInfo(m_ErrCodeInfo, m_CanDeleteErrCodeInfo);
+    CDiagContext::SetApplogSeverityLocked(m_ApplogSeverityLocked);
 }
 
 
