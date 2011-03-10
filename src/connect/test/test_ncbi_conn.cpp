@@ -178,7 +178,7 @@ int CTest::Run(void)
 
     m_Tee << NcbiEndl << "NCBI Connectivity Test (Timeout = "
           << setprecision(6) << timeout << "s, "
-          << (CConnTest::CheckClientLocality() ? "" : "non-")
+          << (CConnTest::IsNcbiInhouseClient() ? "" : "non-")
           << "local client)" << NcbiEndl;
 
     STimeout tmo;

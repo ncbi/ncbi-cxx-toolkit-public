@@ -240,10 +240,11 @@ private:
     EIO_Status x_GetFirewallConfiguration(const SConnNetInfo* net_info);
 
 public:
-    /// Return true if the client is local, false otherwise.
-    /// NB:  Do not use this API anywhere else other than when deciding whether
-    /// to proceed with Execute() in this class for thorough connection checks.
-    static bool CheckClientLocality(void);
+    /// Return TRUE if the client is inside NCBI, FALSE otherwise.
+    /// @note  Do not use this API anywhere else other than when deciding
+    ///        whether to proceed with Execute() in this class for thorough
+    ///        connection checks.
+    static bool IsNcbiInhouseClient(void);
 };
 
 

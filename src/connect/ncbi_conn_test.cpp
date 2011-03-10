@@ -1028,7 +1028,7 @@ EIO_Status CConnTest::x_CheckTrap(string* reason)
 }
 
 
-bool CConnTest::CheckClientLocality(void)
+bool CConnTest::IsNcbiInhouseClient(void)
 {
     static const STimeout kFast = { 2, 0 };
     CConn_HttpStream http("http://www.ncbi.nlm.nih.gov/Service/getenv.cgi",
