@@ -5822,7 +5822,9 @@ void s_MoveNonDuplicatedItems( TDest &dest, TSrc &src,
 {
     // first, create a set containing whatever the destination contains for easy
     // lookup later
-    set<typename TDest::value_type, TLessThan> dest_items_set( dest.begin(), dest.end(), less_than );
+    set<typename TDest::value_type, TLessThan> dest_items_set( less_than );
+    copy( dest.begin(), dest.end(),
+          inserter( dest_items_set, dest_items_set.end() ) );
 
     // holds the items that we couldn't move over
     TSrc new_src;
