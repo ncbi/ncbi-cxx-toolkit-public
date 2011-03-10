@@ -44,6 +44,7 @@
 #include <objtools/cleanup/cleanup.hpp>
 
 #include "cleanupp.hpp"
+#include "newcleanupp.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -85,8 +86,8 @@ CRef<CCleanupChange> makeCleanupChange(Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(se);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupSeqEntry(se);
     return changes;
 }
 
@@ -94,8 +95,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(ss);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupSeqSubmit(ss);
     return changes;
 }
 
@@ -104,8 +105,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(bs);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupBioseq(bs);
     return changes;
 }
 
@@ -113,8 +114,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(bss);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupBioseqSet(bss);
     return changes;
 }
 
@@ -122,8 +123,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(sa);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupSeqAnnot(sa);
     return changes;
 }
 
@@ -131,8 +132,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(sf);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupSeqFeat(sf);
     return changes;
 }
 
@@ -140,8 +141,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry_Handle& seh, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(seh);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupSeqEntryHandle(seh);
     return changes;
 }
 
@@ -149,8 +150,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry_Handle& seh, Uint4 o
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_Handle& bsh,    Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(bsh);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupBioseqHandle(bsh);
     return changes;
 }
 
@@ -158,8 +159,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_Handle& bsh,    Uint4 o
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set_Handle& bssh, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(bssh);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupBioseqSetHandle(bssh);
     return changes;
 }
 
@@ -167,8 +168,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set_Handle& bssh, Uint4
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot_Handle& sah, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(sah);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupSeqAnnotHandle(sah);
     return changes;
 }
 
@@ -176,8 +177,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot_Handle& sah, Uint4 o
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CCleanup_imp clean_i(changes, m_Scope, options);
-    clean_i.BasicCleanup(sfh);
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupSeqFeatHandle(sfh);
     return changes;
 }
 
@@ -186,30 +187,30 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 o
 
 
 // *********************** Extended Cleanup implementation ********************
-CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(const CSeq_entry& se)
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se,  Uint4 options)
 {
-    CRef<CCleanupChange> changes(makeCleanupChange(0));
-    CCleanup_imp clean_i(changes, m_Scope, 0);
-    clean_i.ExtendedCleanup(m_Scope->GetSeq_entryHandle(se));
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.ExtendedCleanupSeqEntry(se); // (m_Scope->GetSeq_entryHandle(se));
     
     return changes;
 }
 
 
-CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(const CSeq_submit& ss)
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_submit& ss,  Uint4 options)
 {
-    CRef<CCleanupChange> changes(makeCleanupChange(0));
-    CCleanup_imp clean_i(changes, m_Scope, 0);
-    clean_i.ExtendedCleanup(ss);
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.ExtendedCleanupSeqSubmit(ss);
     return changes;
 }
 
 
-CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(const CSeq_annot& sa)
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_annot& sa,  Uint4 options)
 {
-    CRef<CCleanupChange> changes(makeCleanupChange(0));
-    CCleanup_imp clean_i(changes, m_Scope, 0);
-    clean_i.ExtendedCleanup(m_Scope->GetSeq_annotHandle(sa));
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.ExtendedCleanupSeqAnnot(sa); // (m_Scope->GetSeq_annotHandle(sa));
     return changes;
 }
 

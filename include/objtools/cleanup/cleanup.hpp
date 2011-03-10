@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Robert Smith
+ * Author:  Robert Smith, Michael Kornbluh
  *
  * File Description:
  *   Basic Cleanup of CSeq_entries.
@@ -59,7 +59,8 @@ class NCBI_CLEANUP_EXPORT CCleanup : public CObject
 public:
 
     enum EValidOptions {
-        eClean_NoReporting = 0x1
+        eClean_NoReporting = 0x1,
+        eClean_GpipeMode =   0x2
     };
 
     // Construtor / Destructor
@@ -75,7 +76,7 @@ public:
     /// Cleanup a Seq-submit. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_submit& ss,  Uint4 options = 0);
     /// Cleanup a Bioseq. 
-    CConstRef<CCleanupChange> BasicCleanup(CBioseq& bs,     Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CBioseq& bs,     Uint4 ooptions = 0);
     /// Cleanup a Bioseq_set.
     CConstRef<CCleanupChange> BasicCleanup(CBioseq_set& bss, Uint4 options = 0);
     /// Cleanup a Seq-Annot.
@@ -92,11 +93,11 @@ public:
     
     // Extended Cleanup
         /// Cleanup a Seq-entry. 
-    CConstRef<CCleanupChange> ExtendedCleanup(const CSeq_entry& se);
+    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit. 
-    CConstRef<CCleanupChange> ExtendedCleanup(const CSeq_submit& ss);
+    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_submit& ss, Uint4 options = 0);
     /// Cleanup a Seq-Annot.
-    CConstRef<CCleanupChange> ExtendedCleanup(const CSeq_annot& sa);
+    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_annot& sa,  Uint4 options = 0);
 
 private:
     // Prohibit copy constructor & assignment operator

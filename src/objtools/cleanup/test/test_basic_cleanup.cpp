@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko
+ * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko, Michael Kornbluh
  *
  * File Description:
  *   Test Program for cleanup
@@ -76,101 +76,18 @@
 
 // new_cleanup.hpp
 
-#ifndef __SEQUENCE_CLEANUP__HPP__
-#define __SEQUENCE_CLEANUP__HPP__
-
 #include <objects/misc/sequence_macros.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-class CSeq_entry;
-class CBioseq;
-class CBioseq_set;
-class CSeq_annot;
-class CSeq_feat;
-class CSeq_submit;
-
-class CSeq_entry_Handle;
-class CBioseq_Handle;
-class CBioseq_set_Handle;
-class CSeq_annot_Handle;
-class CSeq_feat_Handle;
-
-class CCleanupChange;
-
-class NCBI_CLEANUP_EXPORT CNewCleanup : public CObject 
-{
-public:
-
-    /// Constructor
-    CNewCleanup();
-
-    /// Destructor
-    ~CNewCleanup();
-
-   /// User-settable flags for tuning behavior
-    enum EValidOptions {
-        eClean_NoReporting = 0x1,
-        eClean_GpipeMode = 0x2
-    };
-
-    /// Main methods
-
-    CConstRef<CCleanupChange> BasicCleanup (
-        CSeq_entry& se,
-        Uint4 options = 0
-    );
-
-    CConstRef<CCleanupChange> BasicCleanup (
-        CSeq_submit& ss,
-        Uint4 options = 0
-    );
-
-    CConstRef<CCleanupChange> BasicCleanup (
-        CSeq_annot& sa,
-        Uint4 options = 0
-    );
-
-    CConstRef<CCleanupChange> ExtendedCleanup (
-        CSeq_entry& se,
-        Uint4 options = 0
-    );
-
-    CConstRef<CCleanupChange> ExtendedCleanup (
-        CSeq_submit& ss,
-        Uint4 options = 0
-    );
-
-    CConstRef<CCleanupChange> ExtendedCleanup (
-        CSeq_annot& sa,
-        Uint4 options = 0
-    );
-
-
-private:
-    // Prohibit copy constructor & assignment operator
-    CNewCleanup (const CNewCleanup&);
-    CNewCleanup& operator= (const CNewCleanup&);
-};
-
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
-
-#endif  /* __SEQUENCE_CLEANUP__HPP__ */
+#include <objtools/cleanup/cleanup.hpp>
 
 using namespace ncbi;
 using namespace objects;
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Demo application
 //
-
 
 class CTest_cleanupApplication : public CNcbiApplication, CReadClassMemberHook
 {
@@ -194,6 +111,9 @@ private:
     CConstRef<CCleanupChange> ProcessSeqEntry(void);
     CConstRef<CCleanupChange> ProcessSeqSubmit(void);
     CConstRef<CCleanupChange> ProcessSeqAnnot(void);
+    CConstRef<CCleanupChange> ProcessSeqFeat(void);
+    CConstRef<CCleanupChange> ProcessBioseq(void);
+    CConstRef<CCleanupChange> ProcessBioseqSet(void);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
     SIZE_TYPE PrintChanges(CConstRef<CCleanupChange> errors, 
@@ -208,12 +128,16 @@ private:
     size_t m_Level;
     size_t m_Reported;
     bool m_DoExtendedCleanup;
+    bool m_UseHandleVersion;
+
+    CScope m_Scope;
 };
 
 
 CTest_cleanupApplication::CTest_cleanupApplication(void) :
     m_In(0), m_Options(0), m_Continue(false), m_NoCleanup(false), m_Level(0),
-    m_Reported(0), m_DoExtendedCleanup(false)
+    m_Reported(0), m_DoExtendedCleanup(false), m_UseHandleVersion(false),
+    m_Scope( *CObjectManager::GetInstance() )
 {
 }
 
@@ -237,12 +161,12 @@ void CTest_cleanupApplication::Init(void)
     arg_desc->AddFlag("b", "Input is in binary format");
     arg_desc->AddFlag("c", "Continue on ASN.1 error");
     arg_desc->AddFlag("e", "Do extended cleanup, not just basic cleanup.");
+    arg_desc->AddFlag("d", "Use the handle version of cleanup, if possible.  Currently, this often doesn't work due to SeqEntry for, e.g., a Bioseq-set not being loaded.");
     arg_desc->AddFlag("n", "Don't do cleanup. Just read and write file");
 
     arg_desc->AddOptionalKey(
         "x", "OutFile", "Output file for error messages",
         CArgDescriptions::eOutputFile);
-
 
     // Program description
     string prog_description = "Test driver for BasicCleanup()\n";
@@ -299,6 +223,12 @@ int CTest_cleanupApplication::Run(void)
                 changes = ProcessSeqEntry();
             } else if ( header == "Seq-annot" ) {           // Seq-annot
                 changes = ProcessSeqAnnot();
+            } else if ( header == "Seq-feat" ) {            // Seq-feat
+                changes = ProcessSeqFeat();
+            } else if ( header == "Bioseq" ) {              // Bioseq
+                changes = ProcessBioseq();
+            } else if ( header == "Bioseq-set" ) {          // Bioseq-set
+                changes = ProcessBioseqSet();
             } else {
                 NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
             }
@@ -329,7 +259,7 @@ void CTest_cleanupApplication::ReadClassMember
                 i >> *se;
 
                 // BasicCleanup Seq-entry
-                CNewCleanup cleanup;
+                CCleanup cleanup;
                 CConstRef<CCleanupChange> changes;
                 if ( ! m_NoCleanup) {
                     changes = ( m_DoExtendedCleanup ? 
@@ -389,12 +319,17 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
     CRef<CSeq_entry> se(ReadSeqEntry());
 
     // BasicCleanup Seq-entry
-    CNewCleanup cleanup;
+    CCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = ( m_DoExtendedCleanup ?
-            cleanup.ExtendedCleanup( *se, m_Options ) :
+        if( m_UseHandleVersion ) {
+            CSeq_entry_Handle seh = m_Scope.AddTopLevelSeqEntry(*se);
+            changes = cleanup.BasicCleanup( seh, m_Options );
+        } else {
+            changes = ( m_DoExtendedCleanup ?
+                cleanup.ExtendedCleanup( *se, m_Options ) :
             cleanup.BasicCleanup(*se, m_Options) );
+        }
     }
     *m_Out << (*se);
     return changes;
@@ -409,7 +344,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
     m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
 
     // Validae Seq-submit
-    CNewCleanup cleanup;
+    CCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
         changes = ( m_DoExtendedCleanup ?
@@ -425,20 +360,95 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
 {
     CRef<CSeq_annot> sa(new CSeq_annot);
 
-    // Get seq-annot to validate
+    // Get seq-feat to validate
     m_In->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
 
-    // Validae Seq-annot
-    CNewCleanup cleanup;
+    // Validate Seq-feat
+    CCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
-        changes = ( m_DoExtendedCleanup ?
-            cleanup.ExtendedCleanup(*sa, m_Options) : 
+        if( m_UseHandleVersion ) {
+            CSeq_annot_Handle sah = m_Scope.AddSeq_annot(*sa);
+            changes = cleanup.BasicCleanup( sah, m_Options );
+        } else {
+            changes = ( m_DoExtendedCleanup ?
+                cleanup.ExtendedCleanup( *sa, m_Options ) :
             cleanup.BasicCleanup(*sa, m_Options) );
+        }
     }
     *m_Out << (*sa);
+    return changes; CBioseq foo;
+}
+
+CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqFeat(void)
+{
+    CRef<CSeq_feat> sf(new CSeq_feat);
+
+    // Get seq-feat to validate
+    m_In->Read(ObjectInfo(*sf), CObjectIStream::eNoFileHeader);
+
+    // Validae Seq-feat
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    if ( ! m_NoCleanup) {
+        if( m_UseHandleVersion ) {
+            CSeq_feat_Handle sfh = m_Scope.GetSeq_featHandle(*sf);
+            changes = cleanup.BasicCleanup(sfh, m_Options);
+        } else {
+            // no ExtendedCleanup for this object type
+            changes = cleanup.BasicCleanup(*sf, m_Options);
+        }
+    }
+    *m_Out << (*sf);
     return changes;
 }
+
+CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessBioseq(void)
+{
+    CRef<CBioseq> bs(new CBioseq);
+
+    // Get bioseq to validate
+    m_In->Read(ObjectInfo(*bs), CObjectIStream::eNoFileHeader);
+
+    // Validae bioseq
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    if ( ! m_NoCleanup) {
+        if( m_UseHandleVersion ) {
+            CBioseq_Handle bsh = m_Scope.AddBioseq(*bs);
+            changes = cleanup.BasicCleanup(bsh, m_Options);
+        } else {
+            // no ExtendedCleanup for this object type
+            changes = cleanup.BasicCleanup(*bs, m_Options);
+        }
+    }
+    *m_Out << (*bs);
+    return changes;
+}
+
+CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessBioseqSet(void)
+{
+    CRef<CBioseq_set> bss(new CBioseq_set);
+
+    // Get bioseq-set to validate
+    m_In->Read(ObjectInfo(*bss), CObjectIStream::eNoFileHeader);
+
+    // Validae bioseq-set
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    if ( ! m_NoCleanup) {
+        if( m_UseHandleVersion ) {
+            CBioseq_set_Handle bssh = m_Scope.GetBioseq_setHandle(*bss);
+            changes = cleanup.BasicCleanup(bssh, m_Options);
+        } else {
+            // no ExtendedCleanup for this object type
+            changes = cleanup.BasicCleanup(*bss, m_Options);
+        }
+    }
+    *m_Out << (*bss);
+    return changes;
+}
+
 
 
 void CTest_cleanupApplication::Setup(const CArgs& args)
@@ -447,6 +457,9 @@ void CTest_cleanupApplication::Setup(const CArgs& args)
         m_NoCleanup = true;
     if( args["e"] ) {
         m_DoExtendedCleanup = true;
+    }
+    if( args["d"] ) {
+        m_UseHandleVersion = true;
     }
     SetupCleanupOptions(args);
 }

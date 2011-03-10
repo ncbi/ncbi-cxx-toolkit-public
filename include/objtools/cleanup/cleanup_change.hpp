@@ -131,6 +131,7 @@ public:
         eChangePCRPrimers,
         eChangeRNAref,
         eMoveToProtXref,
+        eCompressSpaces,
 
         // set when any other change is made.
         eChangeOther,
