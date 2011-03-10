@@ -56,6 +56,8 @@
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/writers/agp_write.hpp>
 
 #include <algo/align/prosplign/prosplign.hpp>
 
@@ -66,6 +68,7 @@ USING_SCOPE(sequence);
 #include "process.hpp"
 #include "process_scoped.hpp"
 #include "process_null.hpp"
+#include "process_agpwrite.hpp"
 #include "process_cleanup.hpp"
 #include "process_defline.hpp"
 #include "process_fasta.hpp"
@@ -153,6 +156,7 @@ void CStreamTestApp::Init()
                                         "gene-overlap",
                                         "macrotest",
                                         "prosplign",
+                                        "agpwrite",
                                         "title",
                                         "indexed_title"));
     
@@ -164,6 +168,9 @@ void CStreamTestApp::Init()
 
     arg_desc->AddFlag( "batch",
         "Process genbank release file" );
+
+    arg_desc->AddFlag("gbload",
+        "Use GenBank data loader");
 
     arg_desc->AddFlag( "rf", 
         "Generate final report" );
@@ -250,6 +257,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "prosplign" ) {
         pProcess = new CProsplignProcess;
+    }
+    if ( testcase == "agpwrite" ) {
+        pProcess = new CAgpwriteProcess;
     }
     if ( testcase == "title" ) {
         pProcess = new CTitleProcess;

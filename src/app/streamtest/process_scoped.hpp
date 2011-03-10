@@ -57,6 +57,13 @@ public:
     //  ------------------------------------------------------------------------
     {
         CSeqEntryProcess::ProcessInitialize( args );
+
+        m_objmgr = CObjectManager::GetInstance();
+        if ( m_objmgr ) {
+            if ( args["gbload"] ) {
+                CGBDataLoader::RegisterInObjectManager(*m_objmgr);
+            }
+        }
     };
 
     //  ------------------------------------------------------------------------
@@ -70,10 +77,12 @@ public:
         if ( !m_objmgr ) {
             /* raise hell */;
         }
+
         m_scope.Reset( new CScope( *m_objmgr ) );
         if ( !m_scope ) {
             /* raise hell */;
         }
+
         m_scope->AddDefaults();
         m_topseh = m_scope->AddTopLevelSeqEntry( *m_entry );
         if ( !m_topseh ) {
