@@ -31,10 +31,10 @@
  *
  */
 
-/// @file ncbi_process.hpp 
+/// @file ncbi_process.hpp
 /// Defines a process management classes.
 ///
-/// Defines classes: 
+/// Defines classes:
 ///     CProcess
 ///     CPIDGuard
 ///
@@ -139,15 +139,15 @@ public:
     /// Return false on error (no daemon created), see errno.
     ///
     /// Reopen stderr/cerr in daemon thread if "logfile" specified as non-NULL
-    /// (stderr will open to "/dev/null" if "logfile" == ""),
+    /// (stderr will open to "/dev/null" if "logfile" has been passed as ""),
     /// otherwise stderr is closed in the daemon thread.
     /// NB: Always check stderr for errors of failed redirection!
     ///
     /// Unless instructed by "flags" parameter, the daemon thread has its
     /// stdin/cin and stdout/cout closed, and current directory changed
-    /// to root (/).
+    /// to root directory ("/").
     ///
-    /// If kept open, stdin and stdout are both redirected to /dev/null.
+    /// If kept open, stdin and stdout are both redirected to "/dev/null".
     /// Opening a terminal device as a controlling terminal is allowed, unless
     /// fImmuneTTY is specified in the flags, which then causes a second
     /// fork() so that the resultant process won't be allowed to open a TTY as

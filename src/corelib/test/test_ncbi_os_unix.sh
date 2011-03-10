@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id
+# $Id$
 
 $CHECK_EXEC test_ncbi_os_unix
 test $? = 0  ||  exit 1

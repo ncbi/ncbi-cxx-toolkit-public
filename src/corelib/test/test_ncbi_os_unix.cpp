@@ -46,16 +46,17 @@ int main()
     SetDiagPostLevel(eDiag_Info);
 
     // Run tests
+    LOG_POST("Trying to daemonize at \"/\", expecting failure");
     _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == false);
     _ASSERT(errno == EACCES  ||  errno == EPERM  ||  errno == ENOENT);
     _ASSERT(CProcess::Daemonize("./test_ncbi_os_unix.log",
                                 CProcess::fDontChroot |
                                 CProcess::fKeepStdout) == true);
+
+    LOG_POST("Trying to daemonize at current location, expecting success");
     _ASSERT(access("./test_ncbi_os_unix.log", F_OK) == 0);
 
     LOG_POST("TEST COMPLETED SUCCESSFULLY");
     sleep(60);
-    remove("./test_ncbi_os_unix.log");
-
     return 0;
 }
