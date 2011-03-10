@@ -485,7 +485,10 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     // To compensate (or rather, avoid double-compentating), avoid use
     // of widths, and copy to a temporary alignment, storing the old widths
     // for lookup, but reset them in the temporary alignment.
-    const CDense_seg* ds_for_alnmix(&ds);
+    const CDense_seg* ds_for_alnmix = ds.FillUnaligned().GetPointerOrNull();
+    if ( 0 == ds_for_alnmix ) {
+        ds_for_alnmix = &ds;
+    }
     CDense_seg ds_no_widths;
     if (width_inverted) {
         ds_no_widths.Assign(ds);
@@ -721,11 +724,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 tgt_range += tgt_piece;
             }
             if (count) {
-                static bool first_time = true;
-                if ( !first_time ) {
-                    cigar << '+';
+                if ( 0 != cigar.pcount() ) {
+                   cigar << '+';
                 }
-                first_time = false;
                 cigar << type << count;
                 trivial = false;
             }
