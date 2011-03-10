@@ -818,11 +818,38 @@ static void s_Extract(const CGC_Replicon& repl,
     }
 }
 
+/// Copy of magic numbers for sequence roles, declared in genome_collection.asn
+static int s_SequenceRoles[] = { 2, 3, 4, 10 };
 
 static void s_Extract(const CGC_AssemblyUnit& unit,
                       list< CConstRef<CGC_Sequence> >& molecules,
                       CGC_Assembly::ESubset subset)
 {
+    CTypeConstIterator<CGC_Sequence> sequence_it(unit);
+    if (sequence_it->IsSetRoles()) {
+        for ( ;  sequence_it;  ++sequence_it) {
+            /// Include this sequence if it has the correct role, or if
+            /// all sequences are requested
+            bool fits_role = false;
+            if (subset == CGC_Assembly::eAll) {
+                fits_role = true;
+            } else {
+                ITERATE (CGC_Sequence::TRoles, it, sequence_it->GetRoles()) {
+                    if (*it == s_SequenceRoles[subset]) {
+                        fits_role = true;
+                        break;
+                    }
+                }
+            }
+            if (fits_role) {
+                molecules.push_back(CConstRef<CGC_Sequence>(&*sequence_it));
+            }
+        }
+        return;
+    }
+    
+    /// Data does not contain sequence roles, so we need to use the older,
+    /// recursive method for getting the right sequences
     switch (subset) {
     case CGC_Assembly::eChromosome:
         if (unit.GetClass() != CGC_AssemblyUnit::eClass_alt_loci  &&
