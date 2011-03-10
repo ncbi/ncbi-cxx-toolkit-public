@@ -818,8 +818,26 @@ static void s_Extract(const CGC_Replicon& repl,
     }
 }
 
-/// Copy of magic numbers for sequence roles, declared in genome_collection.asn
-static int s_SequenceRoles[] = { 2, 3, 4, 10 };
+static bool s_RoleFitsSubset(int role, CGC_Assembly::ESubset subset)
+{
+    switch (subset) {
+    case CGC_Assembly::eChromosome:
+        return role == eGC_SequenceRole_chromosome;
+
+    case CGC_Assembly::eScaffold:
+        return role == eGC_SequenceRole_scaffold;
+
+    case CGC_Assembly::eComponent:
+        return role == eGC_SequenceRole_component;
+
+    case CGC_Assembly::eTopLevel:
+        return role == eGC_SequenceRole_top_level;
+
+    default:
+        NCBI_THROW(CException, eUnknown,
+                   "Unexpected subset in call to CGC_Assembly::GetMolecules()");
+    }
+}
 
 static void s_Extract(const CGC_AssemblyUnit& unit,
                       list< CConstRef<CGC_Sequence> >& molecules,
@@ -835,7 +853,7 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
                 fits_role = true;
             } else {
                 ITERATE (CGC_Sequence::TRoles, it, sequence_it->GetRoles()) {
-                    if (*it == s_SequenceRoles[subset]) {
+                    if (s_RoleFitsSubset(*it, subset)) {
                         fits_role = true;
                         break;
                     }
