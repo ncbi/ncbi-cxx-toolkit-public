@@ -75,6 +75,10 @@ private:
     // returns true if the node can't get a pattern attached to it
     bool x_NodeIsUnmatchable( const CTraversalNode &node );
 
+    // This assumes that the node has the same variable name regardless of
+    // which caller is used.
+    const string &x_GetNodeVarName( const CTraversalNode &node );
+
     enum ERefChoice {
         eRefChoice_RefOnly = 1,
         eRefChoice_ChildOnly,

@@ -41,7 +41,29 @@ BEGIN_NCBI_SCOPE
 
 class CTraversalNode : public CObject {
 public:
+
+    class CNodeCall : public CObject {
+    public:
+        CNodeCall( const std::string &var_name,
+            CRef<CTraversalNode> node ) :
+            m_VarName( var_name ), m_Node( node )
+        {
+        }
+
+        const std::string &GetVarName(void) const { return m_VarName; }
+        CRef<CTraversalNode>GetNode(void) const { return m_Node; }
+
+    private:
+        const std::string m_VarName;
+        const CRef<CTraversalNode> m_Node;
+    };
+
+    struct SRefNodeCallLessthan {
+        bool operator()( const CRef<CNodeCall> ref1, const CRef<CNodeCall> ref2 ) const;
+    };
+
     typedef std::set< CRef<CTraversalNode> > TNodeSet;
+    typedef std::set< CRef<CNodeCall>, SRefNodeCallLessthan > TNodeCallSet;
     typedef std::vector< CRef<CTraversalNode> > TNodeVec;
 
     // factory
@@ -49,7 +71,7 @@ public:
    
     // needed when we find a cycle.  Usually the parent caller is
     // just specified at creation-time.
-    void AddCaller( CRef<CTraversalNode> caller );
+    void AddCaller( const std::string &var_name, CRef<CTraversalNode> caller );
 
     // For depth-first iteration of the nodes
     class CDepthFirstCallback {
@@ -80,6 +102,8 @@ public:
     };
     void GenerateCode( const string &func_class_name, CNcbiOstream& traversal_output_file, EGenerateMode generate_mode );
 
+    void SplitByVarName(void);
+
     enum EType {
         eType_Sequence = 0,
         eType_Choice,
@@ -97,7 +121,7 @@ public:
             std::vector< CRef<CTraversalNode> > &extra_arg_nodes );
 
         const std::string &GetUserFuncName() const { return m_UserFuncName; }
-        const std::vector< CRef<CTraversalNode> > &GetExtraArgNodes(void) const { return m_ExtraArgNodes; }
+        const TNodeVec &GetExtraArgNodes(void) const { return m_ExtraArgNodes; }
 
         bool operator==( const CUserCall & rhs ) const { return Compare(rhs) == 0; }
         bool operator!=( const CUserCall & rhs ) const { return Compare(rhs) != 0; }
@@ -115,10 +139,9 @@ public:
     typedef std::vector< CRef<CUserCall> > TUserCallVec;
 
     const std::string &GetFuncName(void) const { return m_FuncName; }
-    const TNodeSet & GetCallers(void) const { return m_Callers; }
-    const TNodeSet & GetCallees(void) const { return m_Callees; }
+    const TNodeCallSet & GetCallers(void) const { return m_Callers; }
+    const TNodeCallSet & GetCallees(void) const { return m_Callees; }
     const std::string &GetTypeName() const { return m_TypeName; }
-    const std::string &GetVarName()  const { return m_VarName;  }
     EType GetType() const { return m_Type; }
     const string &GetTypeAsString(void) const;
     const std::string &GetIncludePath(void)  const { return m_IncludePath;  }
@@ -127,7 +150,7 @@ public:
     const TUserCallVec &GetPostCalleesUserCalls() const { return m_PostCalleesUserCalls; }
     const TUserCallVec &GetPreCalleesUserCalls() const { return m_PreCalleesUserCalls; }
     
-    const string GetStoredArgVariable(void) const { return "m_LastArg_" + m_FuncName; };
+    const string GetStoredArgVariable(void) const { return ( m_DoStoreArg ? "m_LastArg_" + m_FuncName : kEmptyStr); };
 
     bool GetDoStoreArg(void) const { return m_DoStoreArg; }
     void SetDoStoreArg(void) { m_DoStoreArg = true; }
@@ -135,12 +158,17 @@ public:
     void AddPreCalleesUserCall( CRef<CUserCall> user_call );
     void AddPostCalleesUserCall( CRef<CUserCall> user_call );
 
-    void RemoveCallee( CRef<CTraversalNode> callee );
-
     void RemoveXFromFuncName(void);
 
     // returns false if couldn't merge
-    bool Merge( CRef<CTraversalNode> node_to_merge_into_this );
+    enum EMergeNameAllowed {
+        // Can *this have its name changed when the other node is
+        // merged into it?
+        eMergeNameAllowed_AllowNameChange = 1,
+        eMergeNameAllowed_ForbidNameChange
+    };
+    bool Merge( CRef<CTraversalNode> node_to_merge_into_this, 
+        EMergeNameAllowed merge_name_allowed = eMergeNameAllowed_AllowNameChange );
 
     // erases all connections to and from this node and its calls.
     // It's possible that it will be garbage-collected soon after this point.
@@ -156,6 +184,13 @@ private:
     // to make it easier if we need to transition the code to another parsing system.
     CTraversalNode( CRef<CTraversalNode> parent, const string &var_name, CDataType *asn_node );
     ~CTraversalNode(void);
+
+    // Each CTraversalNode should be unique, so assignment doesn't make sense
+    // ( no-arg constructor is implemented and used
+    //   for internal purposes )
+    CTraversalNode(void);
+    CTraversalNode( const CTraversalNode &other );
+    CTraversalNode& operator = (const CTraversalNode& other);
 
     void x_LoadDataFromASNNode( CDataType *asn_node );
 
@@ -180,12 +215,14 @@ private:
     // When we merge nodes, this function merges the names of the two functions
     static void x_MergeNames( string &result, const string &name1, const string &name2 );
 
+    CRef<CTraversalNode> x_CloneWithoutCallers(const string &var_name) const;
+
     // e.g. C:\foo\bar\src\objects\seqloc\seqlocl.asn" returns "seqloc"
     string x_ExtractIncludePathFromFileName( const string &asn_file_name );
 
     // due to cycles, we can have many callers
-    TNodeSet m_Callees;
-    TNodeSet m_Callers;
+    TNodeCallSet m_Callees;
+    TNodeCallSet m_Callers;
 
     TUserCallVec m_PreCalleesUserCalls;
     TUserCallVec m_PostCalleesUserCalls;
@@ -194,7 +231,6 @@ private:
 
     EType m_Type;
 
-    std::string m_VarName;         // e.g. "location"
     std::string m_TypeName;        // e.g. "Seq-loc"
     std::string m_InputClassName;  // e.g. "CSeq_loc"
     std::string m_IncludePath;      // e.g. "seqloc"
@@ -222,6 +258,10 @@ private:
     // CTraversalNodes remove themselves from ms_EveryNode when they're
     // destroyed, which could cause memory corruption issues.
     static set<CTraversalNode*> *ms_EveryNode;
+
+    // When we need to create a new function name, we append with the
+    // next number, just to force uniqueness.
+    static int ms_FuncUniquerInt;
 };
 
 END_NCBI_SCOPE

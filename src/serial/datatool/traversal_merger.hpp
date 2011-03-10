@@ -44,15 +44,51 @@ public:
         const CTraversalNode::TNodeSet &nodesWithFunctions );
 
 private:
-    // sorts CRef<CTraversalNode> objects, BUT they're equal
-    // if they're mergeable
-    class CMergeLessThan {
-    public:
-        bool operator()( 
-            const CRef<CTraversalNode> &node1, 
-            const CRef<CTraversalNode> &node2 ) const;
 
-        bool x_IsNodeMergeable( const CRef<CTraversalNode> &node ) const;
+    // Gives a unique string for a node such
+    // that two nodes get the same string iff they
+    // are mergeable.  This function does cover cases 
+    // where there are cycles.
+    class CNodeLabeler {
+    public:
+        enum ERootEncountered {
+            eRootEncountered_No = 1,
+            eRootEncountered_Yes
+        };
+
+        // all work done in the constructor
+        CNodeLabeler(CRef<CTraversalNode> start_node, string &out_result, 
+            ERootEncountered &out_root_encountered,
+            const CTraversalNode::TNodeSet &root_nodes );
+    private:
+        enum EIsCyclic {
+            eIsCyclic_NonCyclic = 1,
+            eIsCyclic_Cyclic
+        };
+
+        void x_AppendNodeLabelRecursively( CRef<CTraversalNode> node );
+
+        // non-recursive.  Just gives the plain label
+        EIsCyclic x_AppendDirectNodeLabel( CRef<CTraversalNode> node );
+
+        typedef std::map< CRef<CTraversalNode>, int > TNodeToIntMap;
+        TNodeToIntMap m_NodeToIntMap;
+        int m_PrevNodeInt;
+
+        // When a usercall refers to another node, we check that
+        // that node is somewhere in the nodes we come across.
+        // If there is a dependency outside of that, the node
+        // is unmergeable.
+        set< CRef<CTraversalNode> > m_DependencyNodes;
+
+        // these are member variables so we don't have to pass
+        // them as part of the recursion
+        string &m_Out_result;
+        ERootEncountered &m_Out_root_encountered;
+        const CTraversalNode::TNodeSet & m_Root_nodes;
+
+        // each unmergeable node we find gets a unique number
+        static int ms_NumUnmergeableSoFar;
     };
 
     // process current tier of nodes and load up next tier
@@ -61,10 +97,14 @@ private:
         const CTraversalNode::TNodeSet &currentTier, 
         CTraversalNode::TNodeSet &nextTier );
 
+    void x_AddCallersToTier( 
+        CRef<CTraversalNode> current_node, 
+        CTraversalNode::TNodeSet &tier );
+
     // to prevent infinite loops
     CTraversalNode::TNodeSet m_NodesSeen;
 
-    const CTraversalNode::TNodeVec &m_RootTraversalNodes;
+    const CTraversalNode::TNodeSet m_RootTraversalNodes;
 };
 
 END_NCBI_SCOPE

@@ -38,21 +38,20 @@ BEGIN_NCBI_SCOPE
 CTraversalMerger::CTraversalMerger( 
         const CTraversalNode::TNodeVec &rootTraversalNodes,
         const CTraversalNode::TNodeSet &nodesWithFunctions )
-        : m_RootTraversalNodes(rootTraversalNodes),
-          m_NodesSeen( rootTraversalNodes.begin(), rootTraversalNodes.end() ) // so we don't process root nodes
+        : m_RootTraversalNodes( rootTraversalNodes.begin(), rootTraversalNodes.end() )
 {
     // we do a partial breadth-first search upward from the nodes with functions, merging nodes wherever we can
     CTraversalNode::TNodeSet currentTier;
     CTraversalNode::TNodeSet nextTier;
 
-    // The only nodes that might conceivably be mergeable at the beginning 
-    // are those with functions but no callees.
+    // Don't forget to consider cycles.
+    // e.g. A -> B -> C -> A(again), but where
+    // A, B and C can be merged into other nodes D, E and F
+    // that have an identical cycle with the same types and
+    // everything.
     ITERATE( CTraversalNode::TNodeSet, node_iter, nodesWithFunctions ) {
-        if( (*node_iter)->GetCallees().empty() ) {
-            currentTier.insert( *node_iter );
-        }
+        currentTier.insert( *node_iter );
     }
-
     while( ! currentTier.empty() ) {
         x_DoTier( currentTier, nextTier );
 
@@ -103,85 +102,102 @@ public:
     }
 };
 
-bool
-CTraversalMerger::CMergeLessThan::operator()( 
-            const CRef<CTraversalNode> &node1, 
-            const CRef<CTraversalNode> &node2 ) const
+int CTraversalMerger::CNodeLabeler::ms_NumUnmergeableSoFar = 0;
+
+CTraversalMerger::CNodeLabeler::CNodeLabeler( 
+    ncbi::CRef<CTraversalNode> node, string &out_result, 
+    ERootEncountered &out_root_encountered,
+    const CTraversalNode::TNodeSet &root_nodes )
+: m_PrevNodeInt(0), m_Out_result(out_result), 
+    m_Out_root_encountered(out_root_encountered),
+    m_Root_nodes(root_nodes)
 {
-    // CTraversalNodes are the same if they have the same input type, type,
-    // var name and children
+    // clear args
+    m_Out_result.clear();
+    m_Out_root_encountered = eRootEncountered_No;
 
-    // special case, nodes that contain user calls that reference other nodes
-    // can't be merged.
-    const bool node1_is_unmergeable = ! x_IsNodeMergeable( node1 );
-    const bool node2_is_unmergeable = ! x_IsNodeMergeable( node2 );
-    if( node1_is_unmergeable != node2_is_unmergeable ) {
-        return ( (int)node1_is_unmergeable < (int)node2_is_unmergeable );
-    }
-    if( node1_is_unmergeable ) { // since same, node2_is_unmergeable is also true
-        return node1 < node2; // does pointer comparison
-    }
+    // assign values to output variables
+    x_AppendNodeLabelRecursively( node );
 
-    // compare input class
-    const int class_comparison = 
-        NStr::Compare( node1->GetInputClassName(), node2->GetInputClassName() );
-    if( class_comparison != 0 ) {
-        return ( class_comparison < 0 );
+    // Before leaving, make sure all dependencies are met,
+    // otherwise we mark the node as unmergeable
+    ITERATE( set< CRef<CTraversalNode> >, dependency_iter, m_DependencyNodes ) {
+        if( m_NodeToIntMap.find(*dependency_iter) == m_NodeToIntMap.end() ) {
+            // There's a dependency outside of the nodes we encountered, so give
+            // this node a unique label so it won't be merged into anything.
+            m_Out_result = "(UNMERGEABLE" + NStr::IntToString(++ms_NumUnmergeableSoFar) + ")";
+            break;
+        }
     }
-
-    // compare type
-    int type_comparison = ( node1->GetType() - node2->GetType() );
-    if( type_comparison != 0 ) {
-        return (type_comparison < 0);
-    }
-
-    // compare var name
-    int var_name_comparison = NStr::Compare( node1->GetVarName(), node2->GetVarName() );
-    if( var_name_comparison != 0 ) {
-        return ( var_name_comparison < 0 );
-    }
-
-    // compare user calls (pre)
-    const int pre_callee_compare = s_Lexicographical_compare_arrays( 
-        node1->GetPreCalleesUserCalls().begin(), node1->GetPreCalleesUserCalls().end(), 
-        node2->GetPreCalleesUserCalls().begin(), node2->GetPreCalleesUserCalls().end(), 
-        CCompareCRefUserCall() );
-    if( pre_callee_compare != 0 ) {
-        return ( pre_callee_compare < 0 );
-    }
-
-    // compare user calls (post)
-    const int post_callee_compare = s_Lexicographical_compare_arrays( 
-        node1->GetPostCalleesUserCalls().begin(), node1->GetPostCalleesUserCalls().end(), 
-        node2->GetPostCalleesUserCalls().begin(), node2->GetPostCalleesUserCalls().end(), 
-        CCompareCRefUserCall() );
-    if( post_callee_compare != 0 ) {
-        return ( post_callee_compare < 0 );
-    }
-
-    // compare children
-    return ( node1->GetCallees() < node2->GetCallees() );
 }
 
-bool CTraversalMerger::CMergeLessThan::x_IsNodeMergeable( const CRef<CTraversalNode> &node ) const
+void 
+CTraversalMerger::CNodeLabeler::x_AppendNodeLabelRecursively( CRef<CTraversalNode> node )
 {
-    // If the node has any user calls that rely on other nodes, it's unmergeable.
-    // Imagine that A calls B calls C, and also D calls E calls F.
-    // Let's say that C uses A's arg.  You can't merge C and F
-    // because then the new node might be called via D, so C's arg is never
-    // filled in and you crash on a NULL-pointer dereference.
-    ITERATE( CTraversalNode::TUserCallVec, call_iter, node->GetPreCalleesUserCalls() ) {
-        if( ! (*call_iter)->GetExtraArgNodes().empty() ) {
-            return false;
+    if( eIsCyclic_NonCyclic == x_AppendDirectNodeLabel( node ) ) {
+        // If non-cyclic call, we're free to traverse the children, if there are any
+        if( ! node->GetCallees().empty() ) {
+            m_Out_result += "{";
+            ITERATE( CTraversalNode::TNodeCallSet, callee_iter, node->GetCallees() ) {
+                x_AppendNodeLabelRecursively( (*callee_iter)->GetNode() );
+                m_Out_result += ","; // we don't care if last one has unnecessary comma
+            }
+            m_Out_result += "}";
         }
     }
-    ITERATE( CTraversalNode::TUserCallVec, a_call_iter, node->GetPostCalleesUserCalls() ) {
-        if( ! (*a_call_iter)->GetExtraArgNodes().empty() ) {
-            return false;
-        }
+}
+
+// non-recursive. Just gives the plain label
+CTraversalMerger::CNodeLabeler::EIsCyclic
+CTraversalMerger::CNodeLabeler::x_AppendDirectNodeLabel( CRef<CTraversalNode> node )
+{
+    // First check if the node already has an int.
+    // If so, we just return that number as a string
+    TNodeToIntMap::iterator node_location = m_NodeToIntMap.find( node );
+    if( node_location != m_NodeToIntMap.end() ) {
+        m_Out_result += NStr::IntToString( node_location->second );
+        return eIsCyclic_Cyclic;
     }
 
-    return true;
+    // Otherwise, we have to create the string ourselves:
+    const int node_int = ++m_PrevNodeInt;
+    m_Out_result += "(" + NStr::IntToString( node_int );
+    m_NodeToIntMap[node] = node_int; // store the int for later use
+
+    // name does NOT include fields that don't directly affect:
+    // the function's behavior( e.g. funcname, callers, etc.)
+    // The label doesn't include callees, but that's only
+    // because it will be added recursively elsewhere
+
+    m_Out_result += "[";
+    ITERATE( CTraversalNode::TUserCallVec, pre_user_call_iter, node->GetPreCalleesUserCalls() ) {
+        // we don't care if the last one has an unnecessary comma
+        m_Out_result += (*pre_user_call_iter)->GetUserFuncName() + ",";
+        const CTraversalNode::TNodeVec &node_vec = (*pre_user_call_iter)->GetExtraArgNodes();
+        copy( node_vec.begin(), node_vec.end(), 
+            inserter(m_DependencyNodes, m_DependencyNodes.begin()) );
+    }
+    m_Out_result += "][";
+    ITERATE( CTraversalNode::TUserCallVec, post_user_call_iter, node->GetPostCalleesUserCalls() ) {
+        // we don't care if the last one has an unnecessary comma
+        m_Out_result += (*post_user_call_iter)->GetUserFuncName() + ",";
+        const CTraversalNode::TNodeVec &node_vec = (*post_user_call_iter)->GetExtraArgNodes();
+        copy( node_vec.begin(), node_vec.end(), 
+            inserter(m_DependencyNodes, m_DependencyNodes.begin()) );
+    }
+    m_Out_result += "]";
+
+    m_Out_result += node->GetTypeAsString() + ",";
+    m_Out_result += node->GetInputClassName();
+
+    m_Out_result += ")";
+
+    // check if the given node is a root node
+    if( m_Root_nodes.find(node) != m_Root_nodes.end() ) {
+        m_Out_root_encountered = eRootEncountered_Yes;
+    }
+
+    return eIsCyclic_NonCyclic;
 }
 
 void
@@ -194,37 +210,88 @@ CTraversalMerger::x_DoTier(
     // set the callers of any merged nodes to be the nextTier, since
     // they might become mergeable.
 
-    // CMergeLessThan considers nodes equal when they're mergeable
-    typedef map< CRef<CTraversalNode>,  CTraversalNode::TNodeVec, CMergeLessThan > TMergeMap;
+    // In the "pair", the bool is true iff the node calls a
+    // root node somehow (directly or indirectly or *is* a root)
+    typedef pair< bool, CRef<CTraversalNode> > TMergeMapPair;
+    typedef vector<TMergeMapPair> TMergeMapPairVec;
+    // maps a node's label to all the nodes that have that same label
+    // (and are therefore mergeable)
+    typedef map< string, TMergeMapPairVec > TMergeMap;
 
     TMergeMap merge_map;
     ITERATE( CTraversalNode::TNodeSet, node_iter, currentTier ) {
-        merge_map[*node_iter].push_back( *node_iter );
+        string node_label;
+        // A node's label is the same as another nodes iff
+        // they can be merged
+        CNodeLabeler::ERootEncountered root_encountered = 
+            CNodeLabeler::eRootEncountered_No;
+        CNodeLabeler( *node_iter, node_label, root_encountered, m_RootTraversalNodes );
+        merge_map[node_label].push_back(
+            TMergeMapPair( 
+                root_encountered != CNodeLabeler::eRootEncountered_No, *node_iter ) );
     }
     
-    // for each mergeable set of nodes, merge them and place their callers on the
-    // next tier
-    ITERATE( TMergeMap, merge_iter, merge_map ) {
-        const CTraversalNode::TNodeVec &merge_vec = merge_iter->second;
+    // for each mergeable set of nodes, merge them and place their callers on 
+    // the next tier
+    NON_CONST_ITERATE( TMergeMap, merge_iter, merge_map ) {
+        TMergeMapPairVec &merge_vec = merge_iter->second;
         if( merge_vec.size() > 1 ) {
-            // merge all nodes into the node with the shortest func name
-            CTraversalNode::TNodeVec::const_iterator do_merge_iter =
+            // merge all nodes into the node with the shortest func name,
+            // or, if there's a root node, into the root node
+            // ( Watch out for the case of multiple root nodes! )
+
+            TMergeMapPairVec::iterator do_merge_iter =
                 merge_vec.begin();
-            CRef<CTraversalNode> target = *do_merge_iter;
-            for( ; do_merge_iter != merge_vec.end(); ++do_merge_iter ) {
-                if( (*do_merge_iter)->GetFuncName().length() < target->GetFuncName().length() ) {
-                    target = *do_merge_iter;
+            // length of name, or negative if it's a root node, 
+            // since we prefer root nodes
+            int target_badness = kMax_Int;
+            CRef<CTraversalNode> target = do_merge_iter->second;
+            while( do_merge_iter != merge_vec.end() ) {
+                CRef<CTraversalNode> current_node = do_merge_iter->second;
+                const bool has_root = do_merge_iter->first;
+                if( has_root ) {
+                    // if there's already a root, then just remove 
+                    // this one from the mergeable list
+                    if( target_badness < 0 ) {
+                        // This might be slow.  Maybe use lists instead?
+                        // ( Performance empirically acceptable for now,
+                        // though )
+                        do_merge_iter = merge_vec.erase( do_merge_iter );
+                        continue;
+                    }
+                    target = current_node;
+                    target_badness = -1; // guarantee that we use the root
+                } else if( (int)current_node->GetFuncName().length() < target_badness ) {
+                    target = current_node;
                 }
+                ++do_merge_iter;
             }
 
             do_merge_iter = merge_vec.begin();
             for( ; do_merge_iter != merge_vec.end(); ++do_merge_iter ) {
-                target->Merge( *do_merge_iter );
+                // see if the target itself is a root
+                // (This is different from "has_root" which checks if
+                // the node or any of its direct or indirect callees are a root )
+                const bool target_is_itself_a_root = 
+                    ( m_RootTraversalNodes.find(target) != m_RootTraversalNodes.end() );
+                // "Merge()" will properly detect the case of trying to merge a node into itself
+                target->Merge( do_merge_iter->second, 
+                    ( target_is_itself_a_root ? 
+                        CTraversalNode::eMergeNameAllowed_ForbidNameChange : 
+                        CTraversalNode::eMergeNameAllowed_AllowNameChange ) );
             }
-            const CTraversalNode::TNodeSet &callers = target->GetCallers();
-            copy( callers.begin(), callers.end(), inserter(nextTier, nextTier.begin()) );
+            x_AddCallersToTier( target, nextTier );
         }
-        // TODO: would it help to be able to merge into root nodes?
+    }
+}
+
+void CTraversalMerger::x_AddCallersToTier( 
+    CRef<CTraversalNode> current_node,
+    CTraversalNode::TNodeSet &tier )
+{
+    const CTraversalNode::TNodeCallSet &callers = current_node->GetCallers();
+    ITERATE( CTraversalNode::TNodeCallSet, caller_iter, callers ) {
+        tier.insert( (*caller_iter)->GetNode() );
     }
 }
 

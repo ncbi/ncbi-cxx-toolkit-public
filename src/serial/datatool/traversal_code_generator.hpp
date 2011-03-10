@@ -93,6 +93,8 @@ private:
 
     // e.g. "m_SomeMemberVar" becomes "someMemberVar"
     std::string x_MemberVarNameToArg(const std::string &member_var_name );
+
+    void x_SplitNodesByVar(void);
 };
 
 END_NCBI_SCOPE

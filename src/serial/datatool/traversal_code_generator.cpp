@@ -81,7 +81,7 @@ public:
                 m_Ostream << "(CYCLIC)";
             }
 
-            m_Ostream << node.GetTypeName() << ":" << node.GetVarName() << ":" << node.GetTypeAsString() << ":" << node.GetInputClassName() << endl;
+            m_Ostream << node.GetTypeName() << ":" << node.GetTypeAsString() << ":" << node.GetInputClassName() << endl;
         }
 
         // only continue if we're not cyclic (to avoid infinite loops)
@@ -120,7 +120,7 @@ public:
         // elsewhere
         if( node.GetType() == CTraversalNode::eType_Reference ) {
             _ASSERT( ! node.GetCallees().empty() );
-            switch( (*node.GetCallees().begin())->GetType() ) {
+            switch( (*node.GetCallees().begin())->GetNode()->GetType() ) {
             case CTraversalNode::eType_Primitive:
             case CTraversalNode::eType_Enum:
             case CTraversalNode::eType_Null:
@@ -221,17 +221,22 @@ private:
 // the class prototype.
 class CGenerateStoredArgVariablesCallback : public CTraversalNode::CDepthFirstCallback {
 public:
-    CGenerateStoredArgVariablesCallback( CNcbiOstream& ostream ) 
+    CGenerateStoredArgVariablesCallback( CNcbiOstream& ostream )
         : m_Ostream(ostream) { }
 
     bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
         if( node.GetDoStoreArg() ) {
-            m_Ostream << "  " << node.GetInputClassName() << "* " << node.GetStoredArgVariable() << ";" << endl;
+            const string arg_var = node.GetStoredArgVariable();
+            if( m_Args_seen.find(arg_var) == m_Args_seen.end() ) {
+                m_Ostream << "  " << node.GetInputClassName() << "* " << arg_var << ";" << endl;
+                m_Args_seen.insert( arg_var );
+            }
         }
         return true;
     }
 
 private:
+    set<string> m_Args_seen;
     CNcbiOstream& m_Ostream;
 };
 
@@ -245,12 +250,17 @@ public:
 
     bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
         if( node.GetDoStoreArg() ) {
-            m_Ostream << "    " << node.GetStoredArgVariable() << "(NULL)," << endl;
+            const string arg_var = node.GetStoredArgVariable();
+            if( m_Args_seen.find(arg_var) == m_Args_seen.end() ) {
+                m_Ostream << "    " << arg_var << "(NULL)," << endl;
+                m_Args_seen.insert( arg_var );
+            }
         }
         return true;
     }
 
 private:
+    set<string> m_Args_seen;
     CNcbiOstream& m_Ostream;
 };
 
@@ -292,12 +302,21 @@ CTraversalCodeGenerator::CTraversalCodeGenerator(
             rootTraversalNodes.push_back( a_traversal_root );
             // remove "x_" from root node's function name since it's public
             a_traversal_root->RemoveXFromFuncName();
-        }
 
-        // uncomment this code if you want to print out all the nodes
-        // CPrintTraversalNodeCallback printTraversalNodes(std::cerr);
-        // a_traversal_root->DepthFirst( printTraversalNodes, CTraversalNode::fTraversalOpts_AllowCycles );
+            // !!!!!uncomment this code if you want to print out all the nodes
+            //CPrintTraversalNodeCallback printTraversalNodes(std::cerr);
+            //a_traversal_root->DepthFirst( printTraversalNodes, CTraversalNode::fTraversalOpts_AllowCycles );
+        }
     }
+
+    // For example, consider if the root is Code-break.
+    // Seq-loc is referred to multiple times, sometimes by different names.
+    // Seq-loc is "loc" under the root Code-break, but is
+    // "E" as part of Seq-loc-mix.
+    // To make sure rules only apply to the node they're supposed to apply to, 
+    // we split such nodes so every node has exactly ONE unique variable
+    // name. (They will be merged again later, if possible )
+    x_SplitNodesByVar();
 
     // This will attach functions to all nodes that should get them, and
     // fill in nodesWithFunctions
@@ -406,8 +425,8 @@ void CTraversalCodeGenerator::x_GenerateHeaderFile(
     traversal_header_file << "class " << output_class_name << " { " <<endl;
     traversal_header_file << "public: " << endl;
 
-    // generate constructor, if we're required to initialize members:
-    if( ! members.empty() ) {
+    // generate constructor
+    {
         traversal_header_file << "  " << output_class_name << "(" << endl;
         // constructor params
         ITERATE( CTraversalSpecFileParser::TMemberRefVec, member_iter, members ) {
@@ -575,6 +594,34 @@ std::string CTraversalCodeGenerator::x_MemberVarNameToArg(const std::string &mem
     return result;
 }
 
+void CTraversalCodeGenerator::x_SplitNodesByVar(void)
+{
+    // first, create a vector of all nodes that need to be split
+    
+    CTraversalNode::TNodeVec nodes_that_need_splitting;
+    ITERATE( CTraversalNode::TNodeRawSet, node_iter, CTraversalNode::GetEveryNode() ) {
+        const CTraversalNode::TNodeCallSet &callers = (*node_iter)->GetCallers();
+        if( callers.size() < 2 ) {
+            continue;
+        }
+        const string &var_name = (*callers.begin())->GetVarName();
+        // we don't use the ITERATE macro because we want to skip the first one
+        CTraversalNode::TNodeCallSet::const_iterator caller_iter = callers.begin();
+        ++caller_iter;
+        for( ; caller_iter != callers.end(); ++caller_iter ) {
+            if( (*caller_iter)->GetVarName() != var_name ) {
+                nodes_that_need_splitting.push_back( (*node_iter)->Ref() );
+                break;
+            }
+        }
+    }
+
+    // Now split them
+    NON_CONST_ITERATE( CTraversalNode::TNodeVec, node_to_split_iter, nodes_that_need_splitting ) {
+        (*node_to_split_iter)->SplitByVarName();
+    }
+}
+
 void CTraversalCodeGenerator::x_BuildNameToASNMap( CFileSet& mainModules, TNameToASNMap &nameToASNMap )
 {
     ITERATE( CFileSet::TModuleSets, mod_set_iter, mainModules.GetModuleSets() ) {
@@ -609,7 +656,7 @@ CTraversalCodeGenerator::x_CreateNode(
         CRef<CTraversalNode> child = node_location->second;
         // we still have to link parent/child, though
         if( parent ) {
-            child->AddCaller( parent );
+            child->AddCaller( var_name, parent );
         }
         return child;
     }

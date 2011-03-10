@@ -54,6 +54,7 @@ CTraversalNode::TASNNodeToNodeMap CTraversalNode::m_ASNNodeToNodeMap;
 // Okay to dynamically allocate and never free, because it's needed for the entire
 // duration of the program.
 set<CTraversalNode*> *CTraversalNode::ms_EveryNode = new set<CTraversalNode*>;
+int CTraversalNode::ms_FuncUniquerInt = 0;
 
 CRef<CTraversalNode> CTraversalNode::Create( CRef<CTraversalNode> caller, const string &var_name, CDataType *asn_node )
 {
@@ -62,9 +63,9 @@ CRef<CTraversalNode> CTraversalNode::Create( CRef<CTraversalNode> caller, const 
 }
 
 CTraversalNode::CTraversalNode( CRef<CTraversalNode> caller, const string &var_name, CDataType *asn_node )
-: m_Type(eType_Primitive), m_VarName(var_name), m_IsTemplate(false), m_DoStoreArg(false)
+: m_Type(eType_Primitive), m_IsTemplate(false), m_DoStoreArg(false)
 {
-    if( m_VarName.empty() ) {
+    if( var_name.empty() ) {
         throw runtime_error("No var_name given for CTraversalNode");
     }
 
@@ -84,14 +85,20 @@ CTraversalNode::CTraversalNode( CRef<CTraversalNode> caller, const string &var_n
     }
 
     // function name is our caller's function name plus our variable
-    m_FuncName = ( caller ? ( (caller->m_FuncName) + "_" ) : kEmptyStr ) + NStr::Replace(m_VarName, "-", "_" );
+    m_FuncName = ( caller ? ( (caller->m_FuncName) + "_" ) : kEmptyStr ) + NStr::Replace(var_name, "-", "_" );
 
     // only attach to caller once we've successfully created the object
     if( caller ) {
-        AddCaller( caller );
+        AddCaller( var_name, caller );
     }
 
     // add it to the list of all constructed nodes
+    ms_EveryNode->insert( this );
+}
+
+CTraversalNode::CTraversalNode(void)
+: m_Type(eType_Primitive), m_IsTemplate(false), m_DoStoreArg(false)
+{
     ms_EveryNode->insert( this );
 }
 
@@ -165,10 +172,10 @@ void CTraversalNode::x_LoadDataFromASNNode( CDataType *asn_node )
     }
 }
 
-void CTraversalNode::AddCaller( CRef<CTraversalNode> caller )
+void CTraversalNode::AddCaller( const std::string &var_name, CRef<CTraversalNode> caller )
 {
-    m_Callers.insert( caller );
-    caller->m_Callees.insert( Ref() );
+    m_Callers.insert( CRef<CNodeCall>( new CNodeCall(var_name, caller ) ) );
+    caller->m_Callees.insert( CRef<CNodeCall>( new CNodeCall(var_name, Ref()) ) );
 }
 
 void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& traversal_output_file, EGenerateMode generate_mode )
@@ -226,13 +233,13 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
         case eType_Choice:
             {
                 traversal_output_file << "  switch( arg0.Which() ) {" << endl;
-                ITERATE( TNodeSet, child_iter, m_Callees ) {
+                ITERATE( TNodeCallSet, child_iter, m_Callees ) {
                     string case_name = (*child_iter)->GetVarName();
                     case_name[0] = toupper(case_name[0]);
                     NStr::ReplaceInPlace( case_name, "-", "_" );
                     traversal_output_file << "  case " << m_InputClassName << "::e_" << case_name << ":" << endl;;
                     string argString = string("arg0.Set") + case_name + "()";
-                    x_GenerateChildCall( traversal_output_file, (*child_iter), argString );
+                    x_GenerateChildCall( traversal_output_file, (*child_iter)->GetNode(), argString );
                     traversal_output_file << "    break;" << endl;
                 }
                 traversal_output_file << "  default:" << endl;
@@ -242,13 +249,13 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
             break;
         case eType_Sequence:
             {
-                ITERATE( TNodeSet, child_iter, m_Callees ) {
+                ITERATE( TNodeCallSet, child_iter, m_Callees ) {
                     string case_name = (*child_iter)->GetVarName();
                     case_name[0] = toupper(case_name[0]);
                     NStr::ReplaceInPlace( case_name, "-", "_" );
                     traversal_output_file << "  if( arg0.IsSet" << case_name << "() ) {" << endl;;
                     string argString = string("arg0.Set") + case_name + "()";
-                    x_GenerateChildCall( traversal_output_file, (*child_iter), argString );
+                    x_GenerateChildCall( traversal_output_file, (*child_iter)->GetNode(), argString );
                     traversal_output_file << "  }" << endl;
                 }
             }
@@ -256,8 +263,9 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
         case eType_Reference:
             {
                 _ASSERT( m_Callees.size() == 1 );
-                CRef<CTraversalNode> child = *m_Callees.begin();
-                string case_name = child->GetVarName();
+                CRef<CNodeCall> child_call = *m_Callees.begin();
+                string case_name = child_call->GetVarName();
+                CRef<CTraversalNode> child = child_call->GetNode();
                 case_name[0] = toupper(case_name[0]);
                 NStr::ReplaceInPlace( case_name, "-", "_" );
 
@@ -281,8 +289,9 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
         case eType_UniSequence:
             {
                 _ASSERT( m_Callees.size() == 1 );
-                CRef<CTraversalNode> child = *m_Callees.begin();
-                string case_name = child->GetVarName();
+                CRef<CNodeCall> child_call = *m_Callees.begin();
+                string case_name = child_call->GetVarName();
+                CRef<CTraversalNode> child = child_call->GetNode();
                 case_name[0] = toupper(case_name[0]);
                 NStr::ReplaceInPlace( case_name, "-", "_" );
                 const char *input_class_prefix = ( m_IsTemplate ? "typename " : kEmptyCStr );
@@ -324,6 +333,38 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
     // end of function
     traversal_output_file << "} // end of " << m_FuncName << endl;
     traversal_output_file << endl;
+}
+
+void CTraversalNode::SplitByVarName(void)
+{
+    // create a mapping from var_name to the list of callers who
+    // call us using that var_name
+    typedef map< std::string, TNodeVec > TVarNameToCallersMap;
+    TVarNameToCallersMap var_name_to_callers_map;
+    ITERATE( TNodeCallSet, caller_iter, m_Callers ) {
+        var_name_to_callers_map[(*caller_iter)->GetVarName()].push_back( (*caller_iter)->GetNode() );
+    }
+
+    // nothing to do if all callers use the same name
+    // (This function should not have been called in this case, since
+    // we just wasted processing time)
+    if( var_name_to_callers_map.size() < 2 ) {
+        return;
+    }
+
+    ITERATE( TVarNameToCallersMap, mapping_iter, var_name_to_callers_map ) {
+        const string &var_name = mapping_iter->first;
+        const TNodeVec &callers_for_this_var_name = mapping_iter->second;
+
+        CRef<CTraversalNode> new_node( x_CloneWithoutCallers(var_name) );
+
+        ITERATE( TNodeVec, caller_to_add_iter, callers_for_this_var_name) {
+            new_node->AddCaller( var_name, *caller_to_add_iter );
+        }
+    }
+
+    // destroy this node, since we've duplicated its other calling cases
+    Clear();
 }
 
 CTraversalNode::CUserCall::CUserCall( const std::string &user_func_name,
@@ -385,12 +426,6 @@ void CTraversalNode::AddPostCalleesUserCall( CRef<CUserCall> user_call )
     m_PostCalleesUserCalls.push_back( user_call );
 }
 
-void CTraversalNode::RemoveCallee( CRef<CTraversalNode> callee )
-{
-    m_Callees.erase( callee );
-    callee->m_Callers.erase( Ref() );
-}
-
 void CTraversalNode::RemoveXFromFuncName(void)
 {
     if( NStr::StartsWith(m_FuncName, "x_") ) {
@@ -398,7 +433,8 @@ void CTraversalNode::RemoveXFromFuncName(void)
     }
 }
 
-bool CTraversalNode::Merge( CRef<CTraversalNode> node_to_merge_into_this )
+bool CTraversalNode::Merge( CRef<CTraversalNode> node_to_merge_into_this,
+    EMergeNameAllowed merge_name_allowed )
 {
     // a node can't merge into itself
     if( this == node_to_merge_into_this.GetPointerOrNull() ) {
@@ -407,23 +443,6 @@ bool CTraversalNode::Merge( CRef<CTraversalNode> node_to_merge_into_this )
 
     // if either had to store the argument, we also have to store our argument
     m_DoStoreArg = ( m_DoStoreArg || node_to_merge_into_this->m_DoStoreArg );
-
-    // add others' functions to us (as long as we don't already have them )
-    TUserCallSet funcsWeHave;
-    copy( m_PreCalleesUserCalls.begin(), m_PreCalleesUserCalls.end(),
-          inserter(funcsWeHave, funcsWeHave.end() ) );
-    copy( m_PostCalleesUserCalls.begin(), m_PostCalleesUserCalls.end(),
-          inserter(funcsWeHave, funcsWeHave.end() ) );
-    ITERATE( TUserCallVec, pre_call_iter, node_to_merge_into_this->m_PreCalleesUserCalls ) {
-        if( funcsWeHave.find(*pre_call_iter) == funcsWeHave.end() ) {
-            m_PreCalleesUserCalls.push_back( *pre_call_iter );
-        }
-    }
-    ITERATE( TUserCallVec, post_call_iter, node_to_merge_into_this->m_PostCalleesUserCalls ) {
-        if( funcsWeHave.find(*post_call_iter) == funcsWeHave.end() ) {
-            m_PostCalleesUserCalls.push_back( *post_call_iter );
-        }
-    }
 
     // find any user calls that depended on the other node's value and reassign them to us
     m_ReferencingUserCalls.insert( m_ReferencingUserCalls.end(),
@@ -437,20 +456,19 @@ bool CTraversalNode::Merge( CRef<CTraversalNode> node_to_merge_into_this )
         }
     }
 
-    // add their callers as our callers and their
-    // callees as our callees
-    NON_CONST_SET_ITERATE( TNodeSet, their_caller, node_to_merge_into_this->m_Callers ) {
-        AddCaller( *their_caller );
-    }
-    NON_CONST_SET_ITERATE( TNodeSet, their_callee, node_to_merge_into_this->m_Callees ) {
-        (*their_callee)->AddCaller( Ref() );
+    // add their callers as our callers 
+    NON_CONST_ITERATE( TNodeCallSet, their_caller, node_to_merge_into_this->m_Callers ) {
+        AddCaller( (*their_caller)->GetVarName(), (*their_caller)->GetNode() );
     }
 
-    // change our name.
-    x_MergeNames( m_FuncName, m_FuncName, node_to_merge_into_this->m_FuncName );
-
-    // wipe out all data in the other node so it becomes a hollow shell and nothing
-    // calls it and it calls nothing. (Possibly garbage collected after this)
+    // change our name, if allowed
+    if( merge_name_allowed == eMergeNameAllowed_AllowNameChange ) {
+        x_MergeNames( m_FuncName, m_FuncName, node_to_merge_into_this->m_FuncName );
+    }
+    
+    // wipe out all data in the other node so it becomes a hollow shell and 
+    // nothing calls it and it calls nothing. (Possibly garbage 
+    // collected after this)
     node_to_merge_into_this->Clear();
 
     return true;
@@ -460,14 +478,16 @@ void CTraversalNode::Clear(void)
 {
     // don't let anyone call us
     CRef<CTraversalNode> my_ref = Ref();
-    NON_CONST_SET_ITERATE( TNodeSet, caller_iter, m_Callers ) {
-        (*caller_iter)->m_Callees.erase( my_ref );
+    NON_CONST_ITERATE( TNodeCallSet, caller_iter, m_Callers ) {
+        CRef<CNodeCall> node_ref( new CNodeCall( (*caller_iter)->GetVarName(), my_ref ) );
+        (*caller_iter)->GetNode()->m_Callees.erase( node_ref );
     }
     m_Callers.clear();
 
     // don't call anyone
-    NON_CONST_SET_ITERATE( TNodeSet, callee_iter, m_Callees ) {
-        (*callee_iter)->m_Callers.erase( my_ref );
+    NON_CONST_ITERATE( TNodeCallSet, callee_iter, m_Callees ) {
+        CRef<CNodeCall> node_ref( new CNodeCall( (*callee_iter)->GetVarName(), my_ref ) );
+        (*callee_iter)->GetNode()->m_Callers.erase( node_ref );
     }
     m_Callees.clear();
 
@@ -510,12 +530,12 @@ void CTraversalNode::x_DepthFirst( CDepthFirstCallback &callback, TNodeVec &node
 
     const bool up_callers =
       ( ( traversal_opts & fTraversalOpts_UpCallers ) != 0 );
-    TNodeSet & set_to_traverse = ( up_callers ? m_Callers : m_Callees );
+    TNodeCallSet & set_to_traverse = ( up_callers ? m_Callers : m_Callees );
 
     // traverse
     nodesSeen.insert( Ref() );    
-    NON_CONST_SET_ITERATE( TNodeSet, child_iter, set_to_traverse ) {
-        (*child_iter)->x_DepthFirst( callback, node_path, nodesSeen, traversal_opts );
+    NON_CONST_ITERATE( TNodeCallSet, child_iter, set_to_traverse ) {
+        (*child_iter)->GetNode()->x_DepthFirst( callback, node_path, nodesSeen, traversal_opts );
     }
     nodesSeen.erase( Ref() );
 
@@ -585,6 +605,40 @@ CTraversalNode::x_MergeNames( string &result, const string &name1, const string 
     }
 }
 
+CRef<CTraversalNode> CTraversalNode::x_CloneWithoutCallers( const string &var_name ) const
+{
+    CRef<CTraversalNode> result( new CTraversalNode );
+
+    // This function should only be called before user calls are added
+    _ASSERT(m_PreCalleesUserCalls.empty());
+    _ASSERT(m_PostCalleesUserCalls.empty());
+    _ASSERT(m_ReferencingUserCalls.empty());
+    _ASSERT(! m_DoStoreArg);
+
+    result->m_Type = m_Type;
+    result->m_TypeName = m_TypeName;
+    result->m_InputClassName = m_InputClassName;
+    result->m_IncludePath = m_IncludePath;
+    result->m_IsTemplate = m_IsTemplate;
+
+    result->m_FuncName = m_FuncName;
+
+    // var_name was given to provide a reasonable name for this func
+    string::size_type last_underscore = result->m_FuncName.find_last_of("_");
+    if( string::npos == last_underscore ) {
+        last_underscore = result->m_FuncName.length();
+    }
+    // chop off underscore and the part after it
+    result->m_FuncName.resize( last_underscore );
+    result->m_FuncName += "_" + var_name + NStr::IntToString(++ms_FuncUniquerInt);
+
+    ITERATE( TNodeCallSet, callee_iter, m_Callees ) {
+        (*callee_iter)->GetNode()->AddCaller( (*callee_iter)->GetVarName(), result );
+    }
+
+    return result;
+}
+
 string CTraversalNode::x_ExtractIncludePathFromFileName( const string &asn_file_name )
 {
     static const string kObjectsStr = "objects";
@@ -616,6 +670,21 @@ string CTraversalNode::x_ExtractIncludePathFromFileName( const string &asn_file_
     NStr::ReplaceInPlace( result, "\\", "/" );
     
     return result;
+}
+
+bool 
+CTraversalNode::SRefNodeCallLessthan::operator ()(
+    const ncbi::CRef<CNodeCall> ref1, const ncbi::CRef<CNodeCall> ref2) const
+{
+    // We don't check for NULL because they should never be NULL
+    // unless there is a programming bug.
+
+    int var_comp = NStr::Compare( ref1->GetVarName(), ref2->GetVarName() );
+    if( var_comp != 0 ) {
+        return ( var_comp < 0 );
+    }
+
+    return ( ref1->GetNode() < ref2->GetNode() );
 }
 
 END_NCBI_SCOPE

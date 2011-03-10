@@ -13,7 +13,7 @@
 *
 *  Although all reasonable efforts have been taken to ensure the accuracy
 *  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
+*  Government do not and cannot warrant the perfors54mance or results that
 *  may be obtained by using this software or data. The NLM and the U.S.
 *  Government disclaim all warranties, express or implied, including
 *  warranties of performance, merchantability or fitness for any particular
@@ -54,8 +54,10 @@ CTraversalAttachUserFuncsCallback::CTraversalAttachUserFuncsCallback(
             continue;
         }
 
-        m_LeafToPossibleNodes[(*node_iter)->GetTypeName()]      .push_back( (*node_iter)->Ref() );
-        m_LeafToPossibleNodes[(*node_iter)->GetVarName()]       .push_back( (*node_iter)->Ref() );
+        CRef<CTraversalNode> node_ref = (*node_iter)->Ref();
+        m_LeafToPossibleNodes[(*node_iter)->GetTypeName()].push_back( node_ref );
+
+        m_LeafToPossibleNodes[ x_GetNodeVarName(**node_iter) ].push_back( node_ref );
     }
 
     // now, go through every pattern and try to match it to nodes
@@ -66,7 +68,7 @@ CTraversalAttachUserFuncsCallback::CTraversalAttachUserFuncsCallback(
 
 void CTraversalAttachUserFuncsCallback::x_TryToAttachPattern( CTraversalSpecFileParser::CDescFileNodeRef pattern )
 {
-    const string &last_node = pattern->GetPattern().back();
+    const string &last_node_in_pattern = pattern->GetPattern().back();
     bool pattern_was_used = false;
     bool except_pattern_was_used = false;
 
@@ -75,8 +77,8 @@ void CTraversalAttachUserFuncsCallback::x_TryToAttachPattern( CTraversalSpecFile
         except_pattern_was_used = true;
     }
 
-    NON_CONST_ITERATE( CTraversalNode::TNodeVec, node_iter, m_LeafToPossibleNodes[last_node] ) {
-        if( x_PatternMatches( *node_iter, pattern->GetPattern().rbegin(), pattern->GetPattern().rend() ) ) {
+    NON_CONST_ITERATE( CTraversalNode::TNodeVec, node_iter, m_LeafToPossibleNodes[last_node_in_pattern] ) {
+        if( x_PatternMatches( (*node_iter), pattern->GetPattern().rbegin(), pattern->GetPattern().rend() ) ) {
             // if pattern matches, make sure none of the EXCEPT patterns match.
             if( x_AnyPatternMatches( *node_iter, pattern->GetExceptPatterns() ) ) {
                 except_pattern_was_used = true;
@@ -100,14 +102,15 @@ void CTraversalAttachUserFuncsCallback::x_TryToAttachPattern( CTraversalSpecFile
 
 bool 
 CTraversalAttachUserFuncsCallback::x_PatternMatches( 
-    CRef<CTraversalNode> node, TPatternIter pattern_start, TPatternIter pattern_end )
+    CRef<CTraversalNode> node, 
+    TPatternIter pattern_start, TPatternIter pattern_end )
 {
     // this func is recursive
 
     // skip over references
     if( x_NodeIsUnmatchable(*node) ) {
-        ITERATE( CTraversalNode::TNodeSet, caller_iter, node->GetCallers() ) {
-            if( x_PatternMatches( *caller_iter, pattern_start, pattern_end ) ) { // notice no " + 1"
+        ITERATE( CTraversalNode::TNodeCallSet, caller_iter, node->GetCallers() ) {
+            if( x_PatternMatches( (*caller_iter)->GetNode(), pattern_start, pattern_end ) ) { // notice *no* " + 1"
                 return true;
             }
         }
@@ -117,26 +120,25 @@ CTraversalAttachUserFuncsCallback::x_PatternMatches(
     // shouldn't happen
     _ASSERT( pattern_start != pattern_end );
 
-    // bail if we don't match the current node
+    // where we are in the pattern
     const std::string &current_leaf = *pattern_start;
-    if( current_leaf != "?" ) { // "?" matches anything
-        if( current_leaf != node->GetVarName() && 
-            current_leaf != node->GetTypeName() && 
-            current_leaf != node->GetInputClassName() ) 
-        {
-            return false;
-        }
-    }
 
-    // We're done; we matched everything
-    if( (pattern_start + 1) == pattern_end ) {
-        return true;
-    }
-
-    // recurse up callers.  success if any of them match
-    ITERATE( CTraversalNode::TNodeSet, caller_iter, node->GetCallers() ) {
-        if( x_PatternMatches( *caller_iter, pattern_start + 1, pattern_end ) ) { // notice the " + 1"
+    // if this node matches by certain criteria, we check all callers
+    if( current_leaf == "?" || // "?" matches anything
+        current_leaf == node->GetTypeName() ||
+        current_leaf == node->GetInputClassName() || 
+        current_leaf == x_GetNodeVarName(*node) )
+    {
+        // Everything matched
+        if( (pattern_start + 1) == pattern_end ) {
             return true;
+        }
+
+        // more pattern so check all callers
+        ITERATE( CTraversalNode::TNodeCallSet, caller_iter, node->GetCallers() ) {
+            if( x_PatternMatches( (*caller_iter)->GetNode(), pattern_start + 1, pattern_end ) ) { // notice the " + 1"
+                return true;
+            }
         }
     }
 
@@ -145,7 +147,7 @@ CTraversalAttachUserFuncsCallback::x_PatternMatches(
 }
 
 bool CTraversalAttachUserFuncsCallback::x_AnyPatternMatches( 
-    CRef<CTraversalNode> node, 
+    CRef<CTraversalNode> node,
     const CTraversalSpecFileParser::TPatternVec &patterns )
 {
     // straightforward: just try to match any pattern
@@ -213,7 +215,7 @@ CRef<CTraversalNode> CTraversalAttachUserFuncsCallback::x_TranslateArgToNode(
             msg += "'";
             throw runtime_error( msg );
         }
-        current_node = *(current_node->GetCallers().begin());
+        current_node = (*(current_node->GetCallers().begin()))->GetNode();
         // skip unmatchable nodes
         if( x_NodeIsUnmatchable(*current_node) ) {
             --level_up;
@@ -230,10 +232,10 @@ CRef<CTraversalNode> CTraversalAttachUserFuncsCallback::x_TranslateArgToNode(
 bool CTraversalAttachUserFuncsCallback::x_NodeIsUnmatchable( const CTraversalNode& node )
 {
     if( (node.GetType() == CTraversalNode::eType_Reference) && ! node.GetCallees().empty() ) {
-        const CTraversalNode& node_child = **node.GetCallees().begin();
+        const CTraversalNode& node_child = *(**node.GetCallees().begin()).GetNode();
         return ( x_UseRefOrChild( node, node_child ) == eRefChoice_ChildOnly );
     } else if( ! node.GetCallers().empty() ) {
-        const CTraversalNode& node_parent = **node.GetCallers().begin();
+        const CTraversalNode& node_parent = *(**node.GetCallers().begin()).GetNode();
         if( node_parent.GetType() == CTraversalNode::eType_Reference ) {
             return ( x_UseRefOrChild( node_parent, node ) == eRefChoice_RefOnly );
         }
@@ -242,12 +244,24 @@ bool CTraversalAttachUserFuncsCallback::x_NodeIsUnmatchable( const CTraversalNod
     return false;
 }
 
+const string &
+CTraversalAttachUserFuncsCallback::x_GetNodeVarName( const CTraversalNode &node )
+{
+    const CTraversalNode::TNodeCallSet &callers = node.GetCallers();
+    if( callers.empty() ) {
+        return kEmptyStr;
+    } else {
+        const string &result = (*callers.begin())->GetVarName();
+        return result;
+    }
+}
+
 CTraversalAttachUserFuncsCallback::ERefChoice 
 CTraversalAttachUserFuncsCallback::x_UseRefOrChild(
     const CTraversalNode& parent_ref,
     const CTraversalNode& child )
 {
-    if( parent_ref.GetVarName() != child.GetVarName() ) {
+    if( x_GetNodeVarName(parent_ref) != x_GetNodeVarName(child) ) {
         return eRefChoice_Both;
     }
 
