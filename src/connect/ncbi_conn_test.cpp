@@ -49,7 +49,7 @@
 
 #define NCBI_HELP_DESK  "NCBI Help Desk info@ncbi.nlm.nih.gov"
 #define NCBI_FW_URL                                                     \
-    "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
+    "http://ww.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
 
 
 BEGIN_NCBI_SCOPE
@@ -1025,6 +1025,19 @@ EIO_Status CConnTest::x_CheckTrap(string* reason)
     if (reason)
         reason->clear();
     return eIO_NotSupported;
+}
+
+
+bool CConnTest::CheckClientLocality(void)
+{
+    static const STimeout kFast = { 2, 0 };
+    CConn_HttpStream http("http://www.ncbi.nlm.nih.gov/Service/getenv.cgi",
+                          fHCC_KeepHeader | fHCC_NoAutoRetry, &kFast);
+    char line[1024];
+    if (!http  ||  !http.getline(line, sizeof(line)))
+        return false;
+    int code;
+    return !(::sscanf(line, "HTTP/%*d.%*d %d ", &code) < 1  ||  code != 200);
 }
 
 

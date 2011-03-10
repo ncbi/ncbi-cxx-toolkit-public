@@ -177,7 +177,9 @@ int CTest::Run(void)
         timeout = fabs(args[1].AsDouble());
 
     m_Tee << NcbiEndl << "NCBI Connectivity Test (Timeout = "
-          << setprecision(6) << timeout << "s)" << NcbiEndl;
+          << setprecision(6) << timeout << "s, "
+          << (CConnTest::CheckClientLocality() ? "" : "non-")
+          << "local client)" << NcbiEndl;
 
     STimeout tmo;
     tmo.sec  = (unsigned int)  timeout;
