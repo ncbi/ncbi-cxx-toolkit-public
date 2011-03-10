@@ -18,6 +18,7 @@ THIRD_PARTY_LIBS = \
 	install_berkeleydb \
 	install_fltk       \
 	install_gnutls     \
+	install_glew       \
 	install_lzo        \
 	install_mssql      \
 	install_mysql      \
@@ -36,6 +37,7 @@ CLEAN_THIRD_PARTY_LIBS = \
 	clean_berkeleydb \
 	clean_fltk       \
 	clean_gnutls     \
+	clean_glew       \
 	clean_lzo        \
 	clean_mssql      \
 	clean_mysql      \

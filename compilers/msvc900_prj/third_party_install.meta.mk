@@ -58,6 +58,11 @@ GNUTLS_SRC = $(GNUTLS_BINPATH)\$(INTDIR)
 GNUTLS_SRC = $(GNUTLS_BINPATH)\$(ALTDIR)
 !ENDIF
 
+GLEW_SRC = $(GLEW_BINPATH)\$(INTDIR)
+!IF !EXIST($(GLEW_SRC))
+GLEW_SRC = $(GLEW_BINPATH)\$(ALTDIR)
+!ENDIF
+
 LZO_SRC = $(LZO_BINPATH)\$(INTDIR)
 !IF !EXIST($(LZO_SRC))
 LZO_SRC = $(LZO_BINPATH)\$(ALTDIR)
@@ -173,6 +178,15 @@ $(GNUTLS_SRC).gnutls_clean :
 	@echo ---- & echo Deleting GNUTLS DLLs & $(CLEAN_CMD)
 install_gnutls : $(GNUTLS_SRC).gnutls_install
 clean_gnutls : $(GNUTLS_SRC).gnutls_clean
+
+
+
+$(GLEW_SRC).glew_install :
+	@echo ---- & echo Copying GLEW DLLs & $(INSTALL_CMD)
+$(GLEW_SRC).glew_clean :
+	@echo ---- & echo Deleting GLEW DLLs & $(CLEAN_CMD)
+install_glew : $(GLEW_SRC).glew_install
+clean_glew : $(GLEW_SRC).glew_clean
 
 
 
