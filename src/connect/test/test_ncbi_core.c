@@ -356,6 +356,7 @@ static void TEST_CORE_GetUsername(void)
            temp ?   temp              : "NULL",
            temp ? (*temp ? "" : "\"") : ">",
            !temp ^ !user ? ", error!" : "");
+    /* NB: GCC's __wur (warn unused result) silenced */
     verify(freopen(null, "r", stdin));  /* NCBI_FAKE_WARNING: GCC */
     temp = CORE_GetUsername(buffer, sizeof(buffer));
     printf("Username = %s%s%s\n",
