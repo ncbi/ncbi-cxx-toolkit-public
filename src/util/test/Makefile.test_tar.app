@@ -9,6 +9,6 @@ CHECK_REQUIRES = unix
 
 CHECK_CMD = test_tar.sh
 CHECK_COPY = test_tar.sh
-CHECK_TIMEOUT = 500
+CHECK_TIMEOUT = 600
 
 WATCHERS = lavr
