@@ -61,9 +61,39 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
 
 //-------------------------------------------------------------------------
+namespace {
+    void CheckIndexEndianness( void * map )
+    {
+        static const TWord MAX_KEY_SIZE = 15;
+        TWord key_size( *((TWord *)map + 4) );
+        if( key_size <= MAX_KEY_SIZE ) return;
+
+        {
+            TWord rev_key_size( 0 );
+            rev_key_size += ((key_size&0xFF)<<24);
+            rev_key_size += (((key_size>>8)&0xFF)<<16);
+            rev_key_size += (((key_size>>16)&0xFF)<<8);
+            rev_key_size += (key_size>>24);
+
+            if( rev_key_size <= MAX_KEY_SIZE ) {
+                NCBI_THROW( CDbIndex_Exception, 
+                            CDbIndex_Exception::eBadData,
+                            "possible index endianness mismatch: check "
+                            "if the index was created for the "
+                            "architecture with different endianness" );
+            }
+
+            NCBI_THROW( CDbIndex_Exception, CDbIndex_Exception::eBadData,
+                        "index header validation failed" );
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
 template<>
 const SIndexHeader ReadIndexHeader< true >( void * map )
 {
+    CheckIndexEndianness( map );
     SIndexHeader result;
     unsigned long tmp;
     TWord * ptr = (TWord *)((Uint8 *)map + 2);
@@ -90,6 +120,7 @@ const SIndexHeader ReadIndexHeader< true >( void * map )
 template<>
 const SIndexHeader ReadIndexHeader< false >( void * map )
 {
+    CheckIndexEndianness( map );
     SIndexHeader result;
     TWord * ptr = (TWord *)((Uint8 *)map + 2);
     result.hkey_width_  = (unsigned long)(*ptr++);
