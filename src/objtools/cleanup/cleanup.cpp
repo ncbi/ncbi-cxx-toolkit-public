@@ -274,7 +274,7 @@ string CCleanupChange::GetDescription(EChanges e)
 }
 
 
-const char* CCleanupChange::sm_ChangeDesc[] = {
+const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Invalid Change Code",
     // set when strings are changed.
     "Trim Spaces",
@@ -352,6 +352,14 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Add ProtXref",
     "Change Partial",
     "Change Prot Names",
+    "Change Prot Activities",
+    "Change Site",
+    "Change PCR Primers",
+    "Change RNA-ref",
+    "Move To Prot Xref",
+    "Compress Spaces",
+    "Strip serial",
+
     // set when any other change is made.
     "Change Other", 
     "Invalid Change Code"

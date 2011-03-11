@@ -91,11 +91,12 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
     changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
 	vector<string> changes_str = changes->GetAllDescriptions();
-	if (changes_str.size() == 0) {
+	if (changes_str.size() < 2) {
         BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
 	} else {
         BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
-        for (int i = 1; i < changes_str.size(); i++) {
+        BOOST_CHECK_EQUAL (changes_str[1], "Change Other");
+        for (int i = 2; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
 	}

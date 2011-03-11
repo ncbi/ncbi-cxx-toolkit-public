@@ -132,6 +132,7 @@ public:
         eChangeRNAref,
         eMoveToProtXref,
         eCompressSpaces,
+        eStripSerial,
 
         // set when any other change is made.
         eChangeOther,
@@ -152,7 +153,7 @@ public:
     
     static string  GetDescription(EChanges e);
 private:
-    static const char* sm_ChangeDesc[];
+    static const char* const sm_ChangeDesc[eNumberofChangeTypes+1];
     
     typedef bitset<eNumberofChangeTypes> TChangeBits;
     TChangeBits     m_Changes;
