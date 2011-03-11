@@ -77,13 +77,13 @@ namespace {
 
             if( rev_key_size <= MAX_KEY_SIZE ) {
                 NCBI_THROW( CDbIndex_Exception, 
-                            CDbIndex_Exception::eBadData,
+                            eBadData,
                             "possible index endianness mismatch: check "
                             "if the index was created for the "
                             "architecture with different endianness" );
             }
 
-            NCBI_THROW( CDbIndex_Exception, CDbIndex_Exception::eBadData,
+            NCBI_THROW( CDbIndex_Exception, eBadData,
                         "index header validation failed" );
         }
     }
