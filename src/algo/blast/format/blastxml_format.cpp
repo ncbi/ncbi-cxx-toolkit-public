@@ -237,6 +237,14 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         list<int> use_this_gi;
         CBlastFormatUtil::GetAlnScores(kAlign, score, bit_score, evalue, sum_n, 
                                        num_ident, use_this_gi);
+
+        //Print 6 significant digits for double values
+        char tmp[512];
+        sprintf(tmp,"%.*g", 6, bit_score );
+        bit_score = atof(tmp);
+        sprintf(tmp,"%.*g", 6, evalue );
+        evalue = atof(tmp);
+
         xhsp->SetBit_score(bit_score);
         xhsp->SetScore(score);
         xhsp->SetEvalue(evalue);
