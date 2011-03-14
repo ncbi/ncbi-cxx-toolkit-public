@@ -2535,7 +2535,7 @@ int CAlignFormatUtil::GetPercentMatch(int numerator, int denominator)
      if (numerator == denominator)
         return 100;
      else {
-       int retval =(int) ceil((100.0*(double)numerator)/((double)denominator));
+       int retval =(int) (0.5 + 100.0*((double)numerator)/((double)denominator));
        retval = min(99, retval);
        return retval;
      }

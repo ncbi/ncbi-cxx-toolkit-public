@@ -332,7 +332,7 @@ static void s_DisplayIdentityInfo(CNcbiOstream& out, int aln_stop,
 			<<" ("<<CAlignFormatUtil::GetPercentMatch(positive + match, aln_stop+1)<<"%"<<")";
     }
     out<<", Gaps = "<<gap<<"/"<<(aln_stop+1)
-       <<" ("<<((gap*100)/(aln_stop+1))<<"%"<<")"<<"\n";
+       <<" ("<<CAlignFormatUtil::GetPercentMatch(gap, aln_stop+1)<<"%"<<")"<<"\n";
     if (!aln_is_prot){ 
         out<<" Strand="<<(master_strand==1 ? "Plus" : "Minus")
            <<"/"<<(slave_strand==1? "Plus" : "Minus")<<"\n";
