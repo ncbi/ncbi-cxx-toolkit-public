@@ -607,6 +607,7 @@ extern const char* CORE_GetPlatform(void)
 }
 
 
+
 /******************************************************************************
  *  CORE_GetAppName
  */
@@ -617,6 +618,7 @@ extern const char* CORE_GetAppName(void)
 {
     return *g_CORE_AppName ? g_CORE_AppName : 0;
 }
+
 
 
 /****************************************************************************
