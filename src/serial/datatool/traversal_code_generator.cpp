@@ -662,7 +662,7 @@ CTraversalCodeGenerator::x_CreateNode(
     }
 
 
-    const string &member_name = asn_node->GetMemberName();
+//    const string &member_name = asn_node->GetMemberName();
 
     CRef<CTraversalNode> result = CTraversalNode::Create( parent, var_name, asn_node );
     asn_nodes_seen.insert( TASNToTravMap::value_type(asn_node, result) );
