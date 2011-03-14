@@ -144,6 +144,8 @@ public:
                            const string& domain, const string& path,
                            const CTime&  exp_time = CTime());
 
+    void DisableTrackingCookie(void);
+
     /// If set to TRUE then the writes to a "bad" output stream
     /// will throw exceptions of type std::ios_base::failure.
     /// @sa GetOutput()
@@ -187,6 +189,7 @@ private:
 
     const CCgiSession*   m_Session;
     auto_ptr<CCgiCookie> m_TrackingCookie;
+    bool                 m_DisableTrackingCookie;
 
     //
     NCBI_PARAM_DECL(bool, CGI, ThrowOnBadOutput);

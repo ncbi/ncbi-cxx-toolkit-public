@@ -119,6 +119,9 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                                 inp, flags, ifd, errbuf_size)),
       m_Response(out, ofd)
 {
+    if (flags & CCgiRequest::fDisableTrackingCookie) {
+        m_Response.DisableTrackingCookie();
+    }
     x_InitSession(flags);
     return;
 }

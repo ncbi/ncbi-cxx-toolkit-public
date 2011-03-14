@@ -680,7 +680,10 @@ public:
         /// Enable on-demand parsing via GetNextEntry()
         fParseInputOnDemand         = (1 << 10),
         /// Do not treat semicolon as query string argument separator
-        fSemicolonIsNotArgDelimiter = (1 << 11)
+        fSemicolonIsNotArgDelimiter = (1 << 11),
+        /// Do not set outgoing tracking cookie. This can also be
+        /// done per-request using CCgiResponce::DisableTrackingCookie().
+        fDisableTrackingCookie      = (1 << 12)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,

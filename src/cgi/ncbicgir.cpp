@@ -81,7 +81,8 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
       m_Output(NULL),
       m_OutputFD(0),
       m_HeaderWritten(false),
-      m_Session(NULL)
+      m_Session(NULL),
+      m_DisableTrackingCookie(false)
 {
     SetOutput(os ? os  : &NcbiCout,
               os ? ofd : STDOUT_FILENO  // "os" on this line is NOT a typo
@@ -279,8 +280,11 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
             const_cast<CCgiResponse*>(this)->m_Cookies.Add(*scookie);
         }
     }
-    if (m_TrackingCookie.get()) {
-        const_cast<CCgiResponse*>(this)->m_Cookies.Add(*m_TrackingCookie);
+    if (!m_DisableTrackingCookie  &&  m_TrackingCookie.get()) {
+        CCgiResponse* self = const_cast<CCgiResponse*>(this);
+        self->m_Cookies.Add(*m_TrackingCookie);
+        // Prevent storing the page in puplic caches.
+        self->SetHeaderValue("Cache-Control", "private");
     }
 
     // Cookies (if any)
@@ -382,8 +386,12 @@ void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
         def_exp.AddYear(1);
         m_TrackingCookie->SetExpTime(def_exp);
     }
-    // Prevent storing the page in puplic caches.
-    SetHeaderValue("Cache-Control", "private");
+}
+
+
+void CCgiResponse::DisableTrackingCookie(void)
+{
+    m_DisableTrackingCookie = true;
 }
 
 
