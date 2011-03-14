@@ -115,8 +115,8 @@ struct PScheduler_QueueEvent_Compare
 
 /// Thread-safe implementation of IScheduler interface
 class CScheduler_MT
-    : public IScheduler,
-      public CObject
+    : public CObject,
+      public IScheduler
 {
 public:
     /// Schedule task for one-time execution
