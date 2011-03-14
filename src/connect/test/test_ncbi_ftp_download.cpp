@@ -32,7 +32,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_misc.hpp>
@@ -268,6 +267,8 @@ size_t CNullProcessor::Run(void)
         filesize += m_Stream->gcount();
     } while (*m_Stream);
 
+    if (s_Signaled)
+        return 0;
     CTar::TFile file = make_pair(m_Dlcbdata->GetFilename(), filesize);
     m_Dlcbdata->Append(&file);
     return 1;
