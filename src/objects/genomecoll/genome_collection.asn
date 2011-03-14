@@ -161,7 +161,8 @@ GC-TaggedSequences ::= SEQUENCE
         unplaced (3),       -- exist only on primary/diploid assembly-unit.
                             -- unknown chromosome
         aligned (4),        -- exist only on alt-loci/patch units. List all
-                            -- sequences (both aligned and unaligned).
+                            -- aligned (eg cross-placed) sequences.
+                            -- (unaligned are listed as unlocalized).
         bits (6)            -- exist only on primary/diploid unit. if need to
                             -- report low-level contigs
     },
@@ -239,7 +240,8 @@ GC-AssemblyDesc ::= SEQUENCE {
     release-status INTEGER {
         new(0),
         gpipe(5),
-        public(10)
+        public(10),
+        suppressed(15)
     } OPTIONAL,
 
     -- in alt-loci units - contain alignment of this sequence to the primary
