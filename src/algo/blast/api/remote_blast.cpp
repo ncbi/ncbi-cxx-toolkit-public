@@ -1,5 +1,4 @@
-/*  $Id$
-* ===========================================================================
+/*  $Id$ * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
@@ -1068,6 +1067,7 @@ CRemoteBlast::ConvertToRemoteMasks(const TSeqLocInfoVector& masking_locations,
     CBlast4_get_search_results_reply::TMasks retval;
 
     ITERATE(TSeqLocInfoVector, query_masks, masking_locations) {
+        CRef<CPacked_seqint> packed_seqint(new CPacked_seqint);
 
         if (query_masks->empty()) {
             continue;
@@ -1079,19 +1079,36 @@ CRemoteBlast::ConvertToRemoteMasks(const TSeqLocInfoVector& masking_locations,
             warnings->push_back(w);
         }
 
-        CRef<CPacked_seqint> packed_int = 
-            query_masks->ConvertToCPacked_seqint();
-        if (packed_int.Empty()) {
-            continue;
+        int current_frame = query_masks->front()->GetFrame();
+        ITERATE(TMaskedQueryRegions, mask_locs, *query_masks) {
+              if  (Blast_QueryIsTranslated(program) && current_frame != (*mask_locs)->GetFrame())
+              {
+                  if (!packed_seqint.Empty())
+                  {
+                     CRef<CBlast4_mask> network_mask = s_CreateBlastMask(*packed_seqint, program);
+                     network_mask->SetFrame(FrameNumber2NetworkFrame(current_frame, program));
+                     retval.push_back(network_mask);
+                  }
+                  current_frame = (*mask_locs)->GetFrame();
+                  packed_seqint.Reset(new CPacked_seqint);
+              }
+
+              packed_seqint->AddInterval((*mask_locs)->GetSeqId(),
+                             (*mask_locs)->GetInterval().GetFrom(),
+                             (*mask_locs)->GetInterval().GetTo());
+        } 
+
+        if (!packed_seqint.Empty()) 
+        {
+             CRef<CBlast4_mask> network_mask = s_CreateBlastMask(*packed_seqint, program);
+             if (Blast_QueryIsTranslated(program))
+                  network_mask->SetFrame(FrameNumber2NetworkFrame(current_frame, program));
+             retval.push_back(network_mask);
         }
-        CRef<CBlast4_mask> network_mask = 
-            s_CreateBlastMask(*packed_int, program);
-        _ASSERT(network_mask.NotEmpty());
-        retval.push_back(network_mask);
+        packed_seqint.Reset();
     }
     return retval;
 }
-
 // Puts in each Blast4-mask all the masks that correspond to the same query 
 // and the same frame.
 void

@@ -181,11 +181,11 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
     BOOST_REQUIRE_EQUAL((size_t)1, mask->GetLocations().size());
     sl = mask->GetLocations().front();
     BOOST_REQUIRE(sl->IsPacked_int());
-    BOOST_REQUIRE(sl->GetPacked_int().Get().size() == 1);
+    BOOST_REQUIRE(sl->GetPacked_int().Get().size() == 2);
 
     si = sl->GetPacked_int().Get().front();
     BOOST_REQUIRE_EQUAL((TSeqPos) 200, si->GetFrom());
-    BOOST_REQUIRE_EQUAL((TSeqPos) 300, si->GetTo());
+    BOOST_REQUIRE_EQUAL((TSeqPos) 100, si->GetTo());
 }
 
 // Note that no CRemoteBlast constructor takes a CBlastRPSOptionsHandle, so
@@ -397,8 +397,9 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
     BOOST_REQUIRE(!network_masks.empty());
     BOOST_REQUIRE(!warnings.empty());
     const size_t kNumQueries = 2;
+    const size_t kNumNetMasks = 8;
     BOOST_REQUIRE_EQUAL(kNumQueries, masks.size());
-    BOOST_REQUIRE_EQUAL(kNumQueries, network_masks.size());
+    BOOST_REQUIRE_EQUAL(kNumNetMasks, network_masks.size());
 
     TMaskedQueryRegions query1_masks = masks.front();
     size_t index = 0;
@@ -482,20 +483,6 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
                              (*seqlocinfo)->GetInterval().GetTo());
         BOOST_REQUIRE_EQUAL((int)mask.second, (*seqlocinfo)->GetFrame());
     }
-    index = 0;
-    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_plus1,
-                        network_masks.back()->GetFrame());
-    net_masks = &network_masks.back()->GetLocations();
-    BOOST_REQUIRE_EQUAL((size_t)1, net_masks->size());
-    ITERATE(CPacked_seqint::Tdata, seqint, 
-            net_masks->front()->GetPacked_int().Get()) {
-        const TMask& mask = expected_masks[index++];
-        BOOST_REQUIRE_EQUAL(mask.first.GetFrom(),
-                            (*seqint)->GetFrom());
-        BOOST_REQUIRE_EQUAL(mask.first.GetTo(),
-                             (*seqint)->GetTo());
-    }
-
 }
 
 // This tests some of the functionality in get_filter_options.[hc]pp
