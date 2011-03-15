@@ -155,13 +155,6 @@ void CNetCacheKey::Assign(const string& key_str)
     }
 }
 
-CNetCacheKey::operator string() const
-{
-    string key;
-    GenerateBlobKey(&key, m_Id, m_Host, m_Port);
-    return key;
-}
-
 void
 CNetCacheKey::GenerateBlobKey(string*        key,
                               unsigned int   id,

@@ -90,8 +90,6 @@ public:
     /// Extend this key with the specified service name.
     void SetServiceName(const string& service_name);
 
-    operator string() const;
-
     /// Generate blob key string
     ///
     /// Please note that "id" is an integer issued by the NetCache server.
