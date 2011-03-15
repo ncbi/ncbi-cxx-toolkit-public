@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/xregexp/regexp.hpp>
+#include <util/ncbi_url.hpp>
 
 #include <objects/cdd/Cdd_descr.hpp>
 #include <objects/cdd/Cdd_book_ref.hpp>
@@ -46,7 +47,6 @@
 
 #include <wx/clipbrd.h>
 #include <wx/tokenzr.h>
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // The following is taken unmodified from wxDesigner's C++ header from cdd_book_ref_dialog.wdr
@@ -119,7 +119,7 @@ CDDBookRefDialog::CDDBookRefDialog(StructureSet *structureSet, CDDBookRefDialog 
         enum2str.Associate(CCdd_book_ref::eTextelement_chapter, "chapter");
         enum2str.Associate(CCdd_book_ref::eTextelement_biblist, "biblist");
         enum2str.Associate(CCdd_book_ref::eTextelement_box, "box");
-        enum2str.Associate(CCdd_book_ref::eTextelement_glossary, "glossary");
+        enum2str.Associate(CCdd_book_ref::eTextelement_glossary, "def-item");
         enum2str.Associate(CCdd_book_ref::eTextelement_appendix, "appendix");
         enum2str.Associate(CCdd_book_ref::eTextelement_other, "other");
     }
@@ -169,22 +169,60 @@ void CDDBookRefDialog::OnCloseWindow(wxCloseEvent& event)
     Destroy();
 }
 
+//  Return true if 'bookname' starts with "NBK" (case-sensitive).
+bool IsPortalDerivedBookRef(const CCdd_book_ref& bref)
+{
+    return (bref.GetBookname().substr(0, 3) == "NBK");
+}
+
+//  The return value is a string used in Portal style URLs based on 
+//  .../books/NBK....  The only fields that should be present in 
+//  book ref objects are the bookname, text-element type, and a
+//  celementid.  Any other field in the spec is ignored.  Return an
+//  empty string if there is any problem.
+static wxString MakePortalParameterString(const CCdd_book_ref& bref)
+{    
+    string idStr, rendertype;
+    string bookname = bref.GetBookname();
+    CCdd_book_ref::ETextelement elementType = bref.GetTextelement();
+    wxString paramStr;
+
+    //  'idStr' should exist for everything except chapters.  However, 
+    //  if we find a chapter with non-empty 'idStr' format it as a 
+    //  section.  Conversely, format sections with no 'idStr' as a chapter.
+    if (bref.IsSetCelementid()) {
+        idStr = bref.GetCelementid();
+    }
+
+    if (elementType != CCdd_book_ref::eTextelement_chapter && elementType != CCdd_book_ref::eTextelement_section) {
+        rendertype = *(enum2str.Find(elementType));
+        paramStr.Printf("%s/%s/%s", bookname.c_str(), rendertype.c_str(), idStr.c_str());
+    } else if (idStr.length() > 0) {
+        paramStr.Printf("%s/#%s", bookname.c_str(), idStr.c_str());
+    } else if (bookname.length() > 0) {
+        paramStr.Printf("%s", bookname.c_str());
+    }
+
+    return paramStr;
+}
+
+
 //  The return value is a string used in "DTD2" style URLs based on br.fcgi.
 //  However, note that the CCdd_book_ref could have been encoded based
 //  on URLs from either br.fcgi or bv.fcgi and there's no way to deduce
 //  from which service the data originated.
-static wxString MakeParameterString(const CCdd_book_ref& bref)
+static wxString MakeBrParameterString(const CCdd_book_ref& bref)
 {
     wxString paramStr;
 
     if (!bref.IsSetElementid() && !bref.IsSetCelementid())
-        ERRORMSG("MakeParameterString() failed - neither elementid nor celementid is set");
+        ERRORMSG("MakeBrParameterString() failed - neither elementid nor celementid is set");
 
     else if (bref.IsSetElementid() && bref.IsSetCelementid())
-        ERRORMSG("MakeParameterString() failed - both elementid and celementid are set");
+        ERRORMSG("MakeBrParameterString() failed - both elementid and celementid are set");
 
     else if (bref.IsSetSubelementid() && bref.IsSetCsubelementid())
-        ERRORMSG("MakeParameterString() failed - both subelementid and csubelementid are set");
+        ERRORMSG("MakeBrParameterString() failed - both subelementid and csubelementid are set");
 
     else {
         CCdd_book_ref::ETextelement elementType;
@@ -212,13 +250,16 @@ static wxString MakeParameterString(const CCdd_book_ref& bref)
         //  Expect anything else to be encoded in the 'rendertype' attribute.
         elementType = bref.GetTextelement();
         if (elementType != CCdd_book_ref::eTextelement_chapter && elementType != CCdd_book_ref::eTextelement_section) {
-            rendertype = *(enum2str.Find(elementType));
-            if (id.length() == 0) {
-                id = part;
+            if (elementType == CCdd_book_ref::eTextelement_unassigned || elementType == CCdd_book_ref::eTextelement_other) {
+                paramStr.Printf("%s&part=%s", bref.GetBookname().c_str(), part.c_str());
+            } else {
+                rendertype = *(enum2str.Find(elementType));
+                if (id.length() == 0) {
+                    id = part;
+                }
+                paramStr.Printf("%s&part=%s&rendertype=%s&id=%s",
+                    bref.GetBookname().c_str(), part.c_str(), rendertype.c_str(), id.c_str());
             }
-            paramStr.Printf("%s&part=%s&rendertype=%s&id=%s",
-                bref.GetBookname().c_str(), part.c_str(), rendertype.c_str(), id.c_str());
-//        } else if (elementType == CCdd_book_ref::eTextelement_section || elementType == CCdd_book_ref::eTextelement_chapter) {
         } else {
             if (id.size() > 0)
                 paramStr.Printf("%s&part=%s#%s",
@@ -275,9 +316,14 @@ void CDDBookRefDialog::SetWidgetStates(void)
     for (d=descrSet->Set().begin(); d!=de; ++d) {
         if ((*d)->IsBook_ref()) {
             // make client data of menu item a pointer to the CRef containing the CCdd_descr object
-            wxString rid = MakeParameterString((*d)->GetBook_ref());
-            if (rid.size() > 0)
-                listbox->Append(rid, &(*d));
+            wxString descrText;
+            if (IsPortalDerivedBookRef((*d)->GetBook_ref())) {
+                descrText = MakePortalParameterString((*d)->GetBook_ref());
+            } else {
+                descrText = MakeBrParameterString((*d)->GetBook_ref());
+            }
+            if (descrText.size() > 0)
+                listbox->Append(descrText, &(*d));
         }
     }
     if (selectedItem < 0 && listbox->GetCount() > 0)
@@ -368,53 +414,6 @@ static void InsertAfter(int selectedItem, CCdd_descr_set *descrSet, CCdd_descr *
     ERRORMSG("InsertAfter() - selectedItem = " << selectedItem << " but there aren't that many book refs");
 }
 
-//  Break up URLs formatted as per bv.fcgi conventions.
-//  True if the book reference was created and added.
-bool BvURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
-{
-    bool result = false;
-    wxStringTokenizer sharp(data.GetText().Strip(wxString::both), "#", wxTOKEN_STRTOK);
-    if (sharp.CountTokens() == 1 || sharp.CountTokens() == 2) {
-        bool haveSubaddr = (sharp.CountTokens() == 2);
-        wxStringTokenizer dot(sharp.GetNextToken(), ".", wxTOKEN_STRTOK);
-        if (dot.CountTokens() == 3) {
-//            CRef < CCdd_descr > descr(new CCdd_descr);
-            descr->SetBook_ref().SetBookname(dot.GetNextToken().c_str());
-            const CCdd_book_ref::ETextelement *type = enum2str.Find(string(dot.GetNextToken().c_str()));
-            wxString addrStr = dot.GetNextToken();
-            wxString subaddrStr;
-            if (haveSubaddr)
-                subaddrStr = sharp.GetNextToken();
-            if (type) {
-                descr->SetBook_ref().SetTextelement(*type);
-                long address, subaddress;
-                if (addrStr.ToLong(&address))
-                    descr->SetBook_ref().SetElementid((int) address);
-                else
-                    descr->SetBook_ref().SetCelementid(addrStr.c_str());
-                if (haveSubaddr) {
-                    if (subaddrStr.ToLong(&subaddress))
-                        descr->SetBook_ref().SetSubelementid((int) subaddress);
-                    else
-                        descr->SetBook_ref().SetCsubelementid(subaddrStr.c_str());
-                }
-                /*
-                InsertAfter(selectedItem, descrSet, descr.GetPointer());
-                ++selectedItem;
-                sSet->SetDataChanged(StructureSet::eCDDData);
-                isNew = false;
-                */
-                result = true;
-            }
-        }
-    }
-
-    if (!result) {
-        descr.Reset();
-    }
-    return result;
-}
-
 //  Break up URLs formatted as per br.fcgi conventions;
 //  allow use of the entire URL.
 //  
@@ -493,6 +492,103 @@ bool BrURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
     return result;
 }
 
+//  Break up URLs formatted as per Bookshelf URL scheme released 2010;
+//  allow use of the entire URL.
+//  
+//  section/chapter:
+//  books/<bookname>/#<elementid>
+//
+//  table/figure/box/glossary item:
+//  books/<bookname>/<elementtype>/<elementid>/
+//      -- OR --
+//  books/<bookname>/<elementtype>/<elementid>/?report=objectonly
+//      -- OR --
+//  books/<bookname>/?rendertype=<elementtype>&id=<elementid>
+//
+//  The 'bookname' is the prefix 'NBK' plus an "article ID" - usually numeric but
+//  allow for non-numeric values to be safe.  The 'elementid' is a string typically
+//  starting with 'A' if the remainder of the elementid is numeric.  However, in rare
+//  cases the elementid may have a different format for certain element types.
+//  For 'chapter' legacy book refs, or pages refering to an entire page vs. a specific
+//  location in a bookshelf document, the elementid may be undefined.
+//  Redirection by Entrez can generate the alternate 'rendertype' URL format
+//  for figures, tables, boxes, and glossary items (the latter being a 'def-item').
+//  All derived book references will exclusively use the Celementid CCdd_book_ref field; 
+//  the Csubelementid field no longer appears necessary in this URL scheme.
+bool BookURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
+{
+    bool result = false;
+    if (descr.Empty()) return result;
+
+    //  remove leading/trailing whitespace, and the trailing '/' if present.
+    string inputStr = data.GetText().Trim(true).Trim(false).c_str();
+//    if (NStr::EndsWith(inputStr, '/')) { 
+//        inputStr = inputStr.substr(0, inputStr.length() - 1);
+//    }
+
+    string baseStr, nbkCode, idStr, typeStr;
+    CRegexp regexpBase("/books/(NBK.+)");
+    CRegexp regexpNBK("^(NBK[^/]+)");
+    CRegexp regexpRendertype("^NBK[^/]+/(.+)/(.+)");
+
+    CUrl url(inputStr);
+    string urlPath = url.GetPath();
+    string urlFrag = url.GetFragment();  //  fragment is text after trailing '#'
+    CUrlArgs& urlArgs = url.GetArgs();
+
+    //  may have a trailing '/' in the '.../?report=objectonly' form of URLs,
+    if (NStr::EndsWith(urlPath, '/')) { 
+        urlPath = urlPath.substr(0, urlPath.length() - 1);
+    }
+
+    regexpBase.GetMatch(urlPath, 0, 0, CRegexp::fMatch_default, true);
+    if (regexpBase.NumFound() == 2) {  //  i.e., found full pattern + subpattern
+
+        baseStr = regexpBase.GetSub(urlPath, 1);
+        nbkCode = regexpNBK.GetMatch(baseStr);
+
+        regexpRendertype.GetMatch(baseStr, 0, 0, CRegexp::fMatch_default, true);        
+        if (regexpRendertype.NumFound() == 3) {  //  i.e., full pattern + two subpatterns
+            typeStr = regexpRendertype.GetSub(baseStr, 1);
+            idStr = regexpRendertype.GetSub(baseStr, 2);
+        } else if (urlArgs.IsSetValue("rendertype") && urlArgs.IsSetValue("id")) {
+            //  If the user somehow pasted a redirected br.fcgi URL.
+            typeStr = urlArgs.GetValue("rendertype");
+            idStr = urlArgs.GetValue("id");
+        } else if (urlFrag.length() > 0) {
+            //  A section id appears after the hash character.
+            typeStr = "section";
+            idStr = urlFrag;
+        } else if (urlFrag.length() == 0) {
+            //  If there is no URL fragment or obvious type, designate it 
+            //  a chapter and point to the top of this book page.
+            typeStr = "chapter";
+            idStr = kEmptyStr;
+        }
+    }
+
+    if (nbkCode.length() > 0) {
+
+        if (typeStr.length() > 0) {
+            const CCdd_book_ref::ETextelement *type = enum2str.Find(typeStr);
+            if (type) {
+                descr->SetBook_ref().SetBookname(nbkCode);
+                descr->SetBook_ref().SetTextelement(*type);
+                descr->SetBook_ref().SetCelementid(idStr);
+//                if (subaddress.length() > 0) {
+//                    descr->SetBook_ref().SetCsubelementid(subaddress);
+//                }
+                result = true;
+            }
+        }
+    }
+
+//    if (!result) {
+//        descr.Reset();
+//    }
+    return result;
+}
+
 void CDDBookRefDialog::OnClick(wxCommandEvent& event)
 {
     int eventId = event.GetId();
@@ -511,9 +607,19 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
 
     else if (event.GetId() == ID_B_LAUNCH) {
         if (selDescr) {
+            //  If the book reference was derived from a Portal URL (i.e., the
+            //  bookname has the 'NBK' prefix), launch with a Portal URL.
+            //  Since book reference data stored in a CD may have been parsed
+            //  from br.fcgi URLs, launch with a br.fcgi URL in such cases as
+            //  Entrez will redirect those links to the corresponding Portal-ized URLs.
             wxString url;
-            url.Printf("http://www.ncbi.nlm.nih.gov/bookshelf/br.fcgi?book=%s",
-                MakeParameterString((*selDescr)->GetBook_ref()).c_str());
+            if (IsPortalDerivedBookRef((*selDescr)->GetBook_ref())) {
+                url.Printf("http://www.ncbi.nlm.nih.gov/books/%s",
+                    MakePortalParameterString((*selDescr)->GetBook_ref()).c_str());
+            } else {
+                url.Printf("http://www.ncbi.nlm.nih.gov/bookshelf/br.fcgi?book=%s",
+                    MakeBrParameterString((*selDescr)->GetBook_ref()).c_str());
+            }
 //            url.Printf("http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=%s",
 //                MakeRID((*selDescr)->GetBook_ref()).c_str());
             LaunchWebPage(url.c_str());
@@ -603,15 +709,19 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                 wxTextDataObject data;
                 wxTheClipboard->GetData(data);
 
-                //  This is the *old* method of parsing strings from a bv.fcgi URL.
+                //  This was the *really* old method of parsing strings from a bv.fcgi URL.
                 //bool madeBookRef = BvURLToBookRef(data, descr);
+                //  This is the *old* method of parsing strings from a br.fcgi URL.
+                //bool madeBookRef = BrURLToBookRef(data, descr);
 
-                bool madeBookRef = BrURLToBookRef(data, descr);
+                bool madeBookRef = BookURLToBookRef(data, descr);
                 if (madeBookRef) {
                     InsertAfter(selectedItem, descrSet, descr.GetPointer());
                     ++selectedItem;
                     sSet->SetDataChanged(StructureSet::eCDDData);
                     isNew = false;
+                } else {
+                    INFOMSG("Book reference could not be created from pasted URL:\n" << data.GetText());
                 }
 
             }
@@ -713,7 +823,7 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
         wxT("chapter"),
         wxT("biblist"),
         wxT("box"),
-        wxT("glossary"),
+        wxT("def-item"),   //  used to be 'glossary'
         wxT("appendix"),
         wxT("other")
     };
