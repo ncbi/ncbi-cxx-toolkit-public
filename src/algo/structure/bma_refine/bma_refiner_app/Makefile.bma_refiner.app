@@ -19,7 +19,7 @@ LIB =   xbma_refiner \
 	entrez2cli entrez2 \
         id1cli id1 \
         xregexp $(PCRE_LIB) \
-	$(BLAST_LIBS) \
+	xalnmgr $(BLAST_LIBS) \
         $(OBJMGR_LIBS)
 
 CXXFLAGS   = $(FAST_CXXFLAGS)
