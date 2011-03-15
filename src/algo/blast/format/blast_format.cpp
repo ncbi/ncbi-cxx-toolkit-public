@@ -556,13 +556,19 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
 
     // print the master alignment
     if (results.HasAlignments()) {
+        const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
         CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
-        tabinfo.SetMasterFields(**itr, *m_Scope, "NA", &m_ScoringMatrix);
-        tabinfo.SetIgAnnotation(results.GetIgAnnotation(), m_IgOptions->m_IsProtein);
+        tabinfo.SetMasterFields(**itr, *m_Scope, 
+                                annots->m_ChainType[0], 
+                                &m_ScoringMatrix);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
         tabinfo.PrintMasterAlign();        
  
+        int j = 0;
         for (; itr != aln_set->Get().end(); ++itr) {
-            tabinfo.SetFields(**itr, *m_Scope, "NA", &m_ScoringMatrix);
+            tabinfo.SetFields(**itr, *m_Scope, 
+                              annots->m_ChainType[j++], 
+                              &m_ScoringMatrix);
             tabinfo.Print();
         }
     }
@@ -936,8 +942,12 @@ CBlastFormat::x_ReverseQuery(blast::CIgBlastResults& results)
             annots->m_GeneInfo[i+1] = len - start;
         }
     }
-    for (int i=0; i<12; ++i) {
-        // TODO
+
+    for (int i=0; i<10; ++i) {
+        int pos = annots->m_DomainInfo[i];
+        if (pos >= 0) {
+            annots->m_DomainInfo[i] = len - 1 - pos;
+        }
     }
 }
 

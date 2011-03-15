@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 
 
 /** @addtogroup AlgoBlast
@@ -50,6 +51,54 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
+{
+    // read domain info from pdm or ndm file
+    const string suffix = (ig_opt->m_IsProtein) ? ".pdm" : ".ndm";
+    string fn = ig_opt->m_Origin + "_gl_V_" + ig_opt->m_DomainSystem + suffix;
+    CNcbiIfstream fs(fn.c_str(), IOS_BASE::in);
+
+    if (!(! CFile(fn).Exists()) || fs.fail()) {
+        char line[256];
+        fs.getline(line, 256);
+        int index = 0;
+        while(!fs.eof()) {
+            string l(line);
+            vector<string> tokens;
+            NStr::Tokenize(l, " \t\n\r", tokens, NStr::eMergeDelims);
+
+            if (!tokens.empty() && tokens[0][0] != '#') {
+                m_DomainIndex[tokens[0]] = index;
+                for (int i=1; i<11; ++i) {
+                    m_DomainData.push_back(NStr::StringToInt(tokens[i]));
+                }
+                index += 10;
+            } 
+            fs.getline(line, 256);
+        }
+    }
+    fs.close();
+
+    // read chain type info from ct files
+    fn = ig_opt->m_Origin + "_gl.ct";
+    fs.open(fn.c_str(), IOS_BASE::in);
+
+    if (!(! CFile(fn).Exists()) || fs.fail()) {
+        char line[256];
+        fs.getline(line, 256);
+        while(!fs.eof()) {
+            string l(line);
+            vector<string> tokens;
+            NStr::Tokenize(l, " \t\n\r", tokens, NStr::eMergeDelims);
+
+            if (!tokens.empty() && tokens[0][0] != '#') {
+                m_ChainType[tokens[0]] = tokens[1];
+            }
+            fs.getline(line, 256);
+        }
+    }
+};
+
 CRef<CSearchResultSet>
 CIgBlast::Run()
 {
@@ -58,7 +107,7 @@ CIgBlast::Run()
     CRef<IQueryFactory> qf;
     CRef<CBlastOptionsHandle> opts_hndl(CBlastOptionsFactory
            ::Create((m_IgOptions->m_IsProtein)? eBlastp: eBlastn));
-    CRef<CSearchResultSet> results[3], result;
+    CRef<CSearchResultSet> results[4], result;
 
     /*** search V germline */
     x_SetupVSearch(qf, opts_hndl);
@@ -66,7 +115,18 @@ CIgBlast::Run()
     results[0] = blast.Run();
     s_AnnotateV(results[0], annots);
 
-    /*** search germline database */
+    /*** search V for domain annotation */
+    if (m_IgOptions->m_Db[3]->GetDatabaseName() 
+        !=  m_IgOptions->m_Db[0]->GetDatabaseName()) {
+        //x_SetupVSearch(qf, opts_hndl);
+        CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
+        results[3] = blast.Run();
+        x_AnnotateDomain(results[0], results[3], annots);
+    } else {
+        x_AnnotateDomain(results[0], results[0], annots);
+    }
+
+    /*** search DJ germline */
     int num_genes =  (m_IgOptions->m_IsProtein) ? 1 : 3;
     if (num_genes > 1) {
         x_SetupDJSearch(annots, qf, opts_hndl);
@@ -77,6 +137,7 @@ CIgBlast::Run()
         s_AnnotateDJ(results[1], results[2], annots);
     }
 
+    /*** collect germline search results */
     for (int gene = 0; gene  < num_genes; ++gene) {
         s_AppendResults(results[gene], m_IgOptions->m_NumAlign[gene], final_results);
     }
@@ -99,9 +160,10 @@ CIgBlast::Run()
     }
     s_AppendResults(result, -1, final_results);
 
-    /*** search germline db for region annotation */
-    // TODO set up germline search for db[3]
-    s_AnnotateDomain(result, annots);
+    /*** set chain type */
+    x_SetChainType(final_results, annots);
+
+    /*** attach annotation info back to the results */
     s_SetAnnotation(annots, final_results);
 
     return final_results;
@@ -403,10 +465,130 @@ void CIgBlast::s_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
     }
 };
 
-void CIgBlast::s_AnnotateDomain(CRef<CSearchResultSet>        &results, 
+void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
+                                CRef<CSearchResultSet>        &dm_results, 
                                 vector<CRef <CIgAnnotation> > &annots)
 {
-    //TODO fill up m_ChainType, m_FrameInfo, m_DomainInfo
+    int iq = 0;
+    ITERATE(CSearchResultSet, result, *dm_results) {
+
+        if ((*result)->HasAlignments() && (*gl_results)[iq].HasAlignments()) {
+
+            CIgAnnotation *annot = &*(annots[iq]);
+
+            CConstRef<CSeq_align> master_align = 
+                            (*gl_results)[iq].GetSeqAlign()->Get().front();
+            CAlnMap q_map(master_align->GetSegs().GetDenseg());
+
+            int q_ends[2], q_dir;
+            if (annot->m_MinusStrand) {
+                q_ends[1] = master_align->GetSeqStart(0);
+                q_ends[0] = master_align->GetSeqStop(0);
+                q_dir = -1;
+            } else {
+                q_ends[0] = master_align->GetSeqStart(0);
+                q_ends[1] = master_align->GetSeqStop(0);
+                q_dir = 1;
+            }
+
+            const CSeq_align_set::Tdata & align_list = (*result)->GetSeqAlign()->Get();
+
+            ITERATE(CSeq_align_set::Tdata, it, align_list) {
+
+                string sid = (*it)->GetSeq_id(1).AsFastaString();
+                if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+                int domain_info[10];
+
+                if (m_AnnotationInfo.GetDomainInfo(sid, domain_info)) {
+
+                    CAlnMap s_map((*it)->GetSegs().GetDenseg());
+                    int s_start = (*it)->GetSeqStart(1);
+                    int s_stop = (*it)->GetSeqStop(1);
+                    int start, stop;
+
+                    for (int i =0; i<10; i+=2) {
+
+                        start = domain_info[i] - 1;
+                        stop = domain_info[i+1] - 1;
+                    
+                        if (start > s_stop || stop < s_start) continue;
+
+                        if (start < s_start) start = s_start;
+
+                        if (stop > s_stop) stop = s_stop;
+
+                        if (start > stop) continue;
+
+                        start = s_map.GetSeqPosFromSeqPos(0, 1, start, IAlnExplorer::eForward);
+                        stop = s_map.GetSeqPosFromSeqPos(0, 1, stop, IAlnExplorer::eBackwards);
+
+                        if ((start - q_ends[1])*q_dir > 0 || (stop - q_ends[0])*q_dir < 0) continue;
+
+                        if ((start - q_ends[0])*q_dir < 0) start = q_ends[0];
+
+                        if ((stop - q_ends[1])*q_dir > 0) stop = q_ends[1];
+
+                        if ((start - stop)*q_dir > 0) continue;
+
+                        start = q_map.GetSeqPosFromSeqPos(1, 0, start, IAlnExplorer::eForward);
+                        stop = q_map.GetSeqPosFromSeqPos(1, 0, stop, IAlnExplorer::eBackwards);
+
+                        start = q_map.GetSeqPosFromSeqPos(0, 1, start);
+                        stop = q_map.GetSeqPosFromSeqPos(0, 1, stop);
+ 
+                        if ((start - stop)*q_dir > 0) continue;
+
+                        annot->m_DomainInfo[i] = start;
+                        annot->m_DomainInfo[i+1] = stop;
+                    }
+
+                    // any extra alignments after FWR3 are attributed to CDR3
+                    start = annot->m_DomainInfo[9];
+
+                    if (start >= 0 && (start - q_ends[1])*q_dir < 0) {
+                        start = q_map.GetSeqPosFromSeqPos(1, 0, start+q_dir, IAlnExplorer::eForward);
+                        start = q_map.GetSeqPosFromSeqPos(0, 1, start);
+ 
+                        if ((start - q_ends[1])*q_dir > 0) continue;
+                        annot->m_DomainInfo[10] = start;
+                        annot->m_DomainInfo[11] = q_ends[1];
+                    }
+
+                    // the last annotated domain must be extended if necessary
+                    int i = 9;
+                    while (i>0 && annot->m_DomainInfo[i] < 0) i-=2;
+                    if (i>0) {
+                        int stop = s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
+                                                             IAlnExplorer::eForward);
+                        annot->m_DomainInfo[12] = domain_info[i] -1 - stop;
+                    }
+
+                    break;
+                }
+            }
+        }
+        ++iq;
+    }
+};
+
+void CIgBlast::x_SetChainType(CRef<CSearchResultSet>       &results,
+                              vector<CRef <CIgAnnotation> > &annots) 
+{
+    int iq = 0;
+    ITERATE(CSearchResultSet, result, *results) {
+
+        CIgAnnotation *annot = &*(annots[iq++]);
+
+        if ((*result)->HasAlignments()) {
+
+            const CSeq_align_set::Tdata & align_list = (*result)->GetSeqAlign()->Get();
+            ITERATE(CSeq_align_set::Tdata, it, align_list) {
+                string sid = (*it)->GetSeq_id(1).AsFastaString();
+                if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+                annot->m_ChainType.push_back(m_AnnotationInfo.GetChainType(sid));
+            }
+        }
+    }
 };
 
 void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,

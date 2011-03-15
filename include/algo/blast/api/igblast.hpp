@@ -68,12 +68,14 @@ class NCBI_XBLAST_EXPORT CIgAnnotation : public CObject
 {
 public:
     bool m_MinusStrand;              // hit is on minus strand of the query
-    // TODO: this may move to igblastn_app.cpp...
     vector<string> m_ChainType;      // chain type of the subjects
-    int m_GeneInfo[6];               // The start and end offset for VDJ
+    int m_GeneInfo[6];               // The (start) and (end offset + 1) for VDJ
     int m_FrameInfo[2];              // Frame number for V end and J start
-    int m_DomainInfo[12];            // The start and end offset for FWR1, 
-                                     // CDR1, FWR2, CDR2, FWR3 domains
+    int m_DomainInfo[13];            // The (start) and (end offset) for FWR1, 
+                                     // CDR1, FWR2, CDR2, FWR3, CDR3 domains
+                                     // plus the extension of the last annotated
+                                     // domain
+                                
 
     /// Constructor
     CIgAnnotation() 
@@ -81,11 +83,39 @@ public:
     {
         for (int i=0; i<6; i++) m_GeneInfo[i] = -1;
         for (int i=0; i<2; i++) m_FrameInfo[i] = -1;
-        for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
+        for (int i=0; i<13; i++) m_DomainInfo[i] = -1;
     }
 
 };
     
+class CIgAnnotationInfo
+{
+public:
+    CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_options);
+
+    bool GetDomainInfo(const string sid, int * domain_info) {
+        if (m_DomainIndex.find(sid) != m_DomainIndex.end()) {
+            int index = m_DomainIndex[sid];
+            for (int i=0; i<10; ++i) {
+                domain_info[i] = m_DomainData[index + i];
+            }
+            return true;
+        }
+        return false;
+    }
+
+    const string GetChainType(const string sid) {
+        if (m_ChainType.find(sid) != m_ChainType.end()) {
+            return m_ChainType[sid];
+        }
+        return "N/A";
+    }
+
+private:
+    map<string, int> m_DomainIndex;
+    vector<int> m_DomainData;
+    map<string, string> m_ChainType;
+};
 
 class NCBI_XBLAST_EXPORT CIgBlastResults : public CSearchResults 
 {
@@ -136,7 +166,8 @@ public:
          m_Query(query_factory),
          m_LocalDb(blastdb),
          m_Options(options),
-         m_IgOptions(ig_options) { }
+         m_IgOptions(ig_options),
+         m_AnnotationInfo(ig_options) { }
 
     /// Remote Igblast search API
     /// @param query_factory  Concatenated query sequences [in]
@@ -154,7 +185,8 @@ public:
          m_Subject(subjects),
          m_RemoteDb(blastdb),
          m_Options(options),
-         m_IgOptions(ig_options) { }
+         m_IgOptions(ig_options),
+         m_AnnotationInfo(ig_options) { }
 
     /// Destructor
     ~CIgBlast() {};
@@ -171,6 +203,7 @@ private:
     CRef<CSearchDatabase> m_RemoteDb;
     CRef<CBlastOptionsHandle> m_Options;
     CConstRef<CIgBlastOptions> m_IgOptions;
+    CIgAnnotationInfo m_AnnotationInfo;
 
     /// Prohibit copy constructor
     CIgBlast(const CIgBlast& rhs);
@@ -201,7 +234,12 @@ private:
                              vector<CRef <CIgAnnotation> > &annot);
 
     /// Anntate the domains based on blast results
-    static void s_AnnotateDomain(CRef<CSearchResultSet>        &results, 
+    void x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results, 
+                          CRef<CSearchResultSet>        &dm_results, 
+                          vector<CRef <CIgAnnotation> > &annot);
+
+    /// Set the chain type info
+    void x_SetChainType(CRef<CSearchResultSet>        &results, 
                                  vector<CRef <CIgAnnotation> > &annot);
 
     /// Append blast results to the final results

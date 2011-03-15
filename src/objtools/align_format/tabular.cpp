@@ -946,11 +946,22 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
 {
     SetSeqType(!is_protein);
     SetMinusStrand(annot->m_MinusStrand);
+
     // TODO top VDJ match sid?
+    // Gene info coordinates are half inclusive
     SetVGene("TopV", annot->m_GeneInfo[0], annot->m_GeneInfo[1]);
     SetDGene("TopD", annot->m_GeneInfo[2], annot->m_GeneInfo[3]);
     SetJGene("TopJ", annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
+
     // SetFrame("N/A");  
+
+    // Domain info coordinates are inclusive (and always on positive strand)
+    AddIgDomain("FWR1", annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1);
+    AddIgDomain("CDR1", annot->m_DomainInfo[2], annot->m_DomainInfo[3]+1);
+    AddIgDomain("FWR2", annot->m_DomainInfo[4], annot->m_DomainInfo[5]+1);
+    AddIgDomain("CDR2", annot->m_DomainInfo[6], annot->m_DomainInfo[7]+1);
+    AddIgDomain("FWR3", annot->m_DomainInfo[8], annot->m_DomainInfo[9]+1);
+    AddIgDomain("CDR3 (V region only)", annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
 };
 
 void CIgBlastTabularInfo::Print(void)

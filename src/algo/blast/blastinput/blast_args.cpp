@@ -1219,8 +1219,8 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddDefaultKey(kArgGLDomainSystem, "domain_system",
                             "Domain system to be used for segment annotation",
-                            CArgDescriptions::eString, "Igmt");
-    arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "Igmt", "Kabat"));
+                            CArgDescriptions::eString, "Kabat");
+    arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "Kabat", "Imgt"));
 
     arg_desc.AddOptionalKey(kArgGLFuncClass, "func_class",
                             "Restrict search of germline database to certain function class",

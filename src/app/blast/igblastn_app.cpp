@@ -98,10 +98,6 @@ int CIgBlastnApp::Run(void)
         CRef<CBlastOptionsHandle> opts_hndl(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
-//TODO: get all function class id
-//TODO: get all chain type 
-//TODO: should these go into ig_options?
-
         /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
