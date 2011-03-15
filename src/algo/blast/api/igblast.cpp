@@ -54,8 +54,8 @@ BEGIN_SCOPE(blast)
 CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
 {
     // read domain info from pdm or ndm file
-    const string suffix = (ig_opt->m_IsProtein) ? ".pdm" : ".ndm";
-    string fn = ig_opt->m_Origin + "_gl_V_" + ig_opt->m_DomainSystem + suffix;
+    const string suffix = (ig_opt->m_IsProtein) ? "_gl_V.p.dm." : "_gl_V.n.dm.";
+    string fn = ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem;
     CNcbiIfstream fs(fn.c_str(), IOS_BASE::in);
 
     if (!(! CFile(fn).Exists()) || fs.fail()) {
