@@ -708,6 +708,179 @@ void CObject::ThrowNullPointerException(const type_info& type)
 }
 
 
+#ifndef NCBI_OBJECT_LOCKER_INLINE
+
+static const char* sx_MonitorTypeName = 0;
+
+class CLocksMonitor
+{
+public:
+    ~CLocksMonitor(void)
+    {
+        DumpLocks(true);
+    }
+
+    struct SLocks {
+        SLocks(void) : m_Object(0) {}
+        typedef multimap<const CObjectCounterLocker*, AutoPtr<CStackTrace> > TLocks;
+        typedef multimap<const CObjectCounterLocker*, AutoPtr<CStackTrace> > TUnlocks;
+
+        void Dump(void) const
+        {
+            ITERATE ( TLocks, it, m_Locks ) {
+                LOG_POST("Locked<"<<sx_MonitorTypeName<<">"
+                         "("<<it->first<<","<<m_Object<<")"
+                         " @ " << *it->second);
+            }
+            ITERATE ( TUnlocks, it, m_Unlocks ) {
+                LOG_POST("Unlocked<"<<sx_MonitorTypeName<<">"
+                         "("<<it->first<<","<<m_Object<<")"
+                         " @ " << *it->second);
+            }
+        }
+        int LockCount(void) const
+        {
+            return m_Locks.size() - m_Unlocks.size();
+        }
+        void Locked(const CObjectCounterLocker* locker, const CObject* object)
+        {
+            _ASSERT(LockCount() >= 0);
+            if ( !m_Object ) {
+                m_Object = object;
+            }
+            m_Locks.insert(TLocks::value_type(locker, new CStackTrace()));
+        }
+        bool Unlocked(const CObjectCounterLocker* locker)
+        {
+            _ASSERT(LockCount() > 0);
+            TLocks::iterator lock = m_Locks.lower_bound(locker);
+            if ( lock != m_Locks.end() ) {
+                m_Locks.erase(lock);
+            }
+            else {
+                m_Unlocks.insert(TUnlocks::value_type(locker, new CStackTrace()));
+            }
+            if ( LockCount() <= 0 ) {
+                m_Locks.clear();
+                m_Unlocks.clear();
+                return true;
+            }
+            return false;
+        }
+
+        const CObject* m_Object;
+        TLocks m_Locks;
+        TUnlocks m_Unlocks;
+    };
+
+    void DumpLocks(bool clear = false)
+    {
+        CFastMutexGuard guard(m_Mutex);
+        ITERATE ( TLocks, it, m_Locks ) {
+            it->second.Dump();
+        }
+        if ( clear ) {
+            m_Locks.clear();
+        }
+    }
+    void Locked(const CObjectCounterLocker* locker, const CObject* object)
+    {
+        CFastMutexGuard guard(m_Mutex);
+        m_Locks[object].Locked(locker, object);
+    }
+    void Unlocked(const CObjectCounterLocker* locker, const CObject* object)
+    {
+        CFastMutexGuard guard(m_Mutex);
+        if ( m_Locks[object].Unlocked(locker) ) {
+            m_Locks.erase(object);
+        }
+    }
+private:
+    typedef map<const CObject*, SLocks> TLocks;
+    CFastMutex m_Mutex;
+    TLocks m_Locks;
+};
+
+static CSafeStaticPtr<CLocksMonitor> sx_LocksMonitor;
+
+inline bool MonitoredType(const CObject* object)
+{
+    return sx_MonitorTypeName &&
+        strcmp(typeid(*object).name(), sx_MonitorTypeName) == 0;
+}
+
+void CObjectCounterLocker::Lock(const CObject* object) const
+{
+    object->AddReference();
+    if ( MonitoredType(object) ) {
+        sx_LocksMonitor.Get().Locked(this, object);
+    }
+}
+
+
+void CObjectCounterLocker::Relock(const CObject* object) const
+{
+    Lock(object);
+}
+
+
+void CObjectCounterLocker::Unlock(const CObject* object) const
+{
+    if ( MonitoredType(object) ) {
+        sx_LocksMonitor.Get().Unlocked(this, object);
+    }
+    object->RemoveReference();
+}
+
+
+void CObjectCounterLocker::UnlockRelease(const CObject* object) const
+{
+    if ( MonitoredType(object) ) {
+        LOG_POST("UnlockRelease<"<<typeid(*object).name()<<">"
+                 "("<<this<<", "<<object<<")"
+                 " @ " << CStackTrace());
+        sx_LocksMonitor.Get().Unlocked(this, object);
+    }
+    object->ReleaseReference();
+}
+void CObjectCounterLocker::MonitorObjectType(const type_info& type)
+{
+    StopMonitoring();
+    sx_MonitorTypeName = strdup(type.name());
+}
+
+
+void CObjectCounterLocker::StopMonitoring(void)
+{
+    if ( sx_MonitorTypeName ) {
+        ReportLockedObjects(true);
+        free((void*)sx_MonitorTypeName);
+        sx_MonitorTypeName = 0;
+    }
+}
+
+
+void CObjectCounterLocker::ReportLockedObjects(bool clear)
+{
+    sx_LocksMonitor.Get().DumpLocks(clear);
+}
+#else
+void CObjectCounterLocker::MonitorObjectType(const type_info& )
+{
+}
+
+
+void CObjectCounterLocker::StopMonitoring(void)
+{
+}
+
+
+void CObjectCounterLocker::ReportLockedObjects(bool )
+{
+}
+#endif
+
+
 void CObjectCounterLocker::ReportIncompatibleType(const type_info& type)
 {
 #ifdef _DEBUG

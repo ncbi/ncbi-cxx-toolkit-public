@@ -107,26 +107,41 @@ protected:
 // Default locker class for CRef/CConstRef templates
 ////////////////////////////////////////////////////////////////////////////
 
+#ifdef _DEBUG
+# define NCBI_OBJECT_LOCKER_EXPORT NCBI_XNCBI_EXPORT
+#else
+# define NCBI_OBJECT_LOCKER_EXPORT
+# define NCBI_OBJECT_LOCKER_INLINE
+#endif
+
 class CObjectCounterLocker
 {
 public:
     // Mark object as "locked" from deletion.
-    void Lock(const CObject* object) const;
+    void NCBI_OBJECT_LOCKER_EXPORT Lock(const CObject* object) const;
 
     // Mark object as "locked" from deletion if it was already locked by
     // another locker object.
     // Preconditions: this locker was assigned from the another locker object.
-    void Relock(const CObject* object) const;
+    void NCBI_OBJECT_LOCKER_EXPORT Relock(const CObject* object) const;
 
     // Mark object as "unlocked" for deletion,
     // delete it if last lock was removed.
-    void Unlock(const CObject* object) const;
+    void NCBI_OBJECT_LOCKER_EXPORT Unlock(const CObject* object) const;
 
     // Mark object as "unlocked" for deletion, but do not delete it.
-    void UnlockRelease(const CObject* object) const;
+    void NCBI_OBJECT_LOCKER_EXPORT UnlockRelease(const CObject* object) const;
 
     static
     void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
+
+    /// Set monitored object type, e.g. typeid(CScope)
+    static
+    void NCBI_XNCBI_EXPORT MonitorObjectType(const type_info& type);
+    static
+    void NCBI_XNCBI_EXPORT StopMonitoring(void);
+    static
+    void NCBI_XNCBI_EXPORT ReportLockedObjects(bool clear = false);
 };
 
 
@@ -513,6 +528,8 @@ void CObject::RemoveReference(void) const
 // CObjectCounterLocker inline methods
 ////////////////////////////////////////////////////////////////////////////
 
+#ifdef NCBI_OBJECT_LOCKER_INLINE
+// debug version of CObjectCounterLocker allows monitoring some object type
 inline
 void CObjectCounterLocker::Lock(const CObject* object) const
 {
@@ -539,6 +556,7 @@ void CObjectCounterLocker::UnlockRelease(const CObject* object) const
 {
     object->ReleaseReference();
 }
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -546,7 +564,7 @@ void CObjectCounterLocker::UnlockRelease(const CObject* object) const
 ////////////////////////////////////////////////////////////////////////////
 
 template<class Interface>
-class CInterfaceObjectLocker
+class CInterfaceObjectLocker : public CObjectCounterLocker
 {
 public:
     void Lock(const Interface* object) const
@@ -555,28 +573,28 @@ public:
             if ( !cobject ) {
                 CObjectCounterLocker::ReportIncompatibleType(typeid(*object));
             }
-            cobject->AddReference();
+            CObjectCounterLocker::Lock(cobject);
         }
 
     void Relock(const Interface* object) const
         {
             const CObject* cobject = dynamic_cast<const CObject*>(object);
             _ASSERT(cobject);
-            cobject->AddReference();
+            CObjectCounterLocker::Relock(cobject);
         }
 
     void Unlock(const Interface* object) const
         {
             const CObject* cobject = dynamic_cast<const CObject*>(object);
             _ASSERT(cobject);
-            cobject->RemoveReference();
+            CObjectCounterLocker::Unlock(cobject);
         }
 
     void UnlockRelease(const Interface* object) const
         {
             const CObject* cobject = dynamic_cast<const CObject*>(object);
             _ASSERT(cobject);
-            cobject->ReleaseReference();
+            CObjectCounterLocker::UnlockRelease(cobject);
         }
 };
 
@@ -2135,10 +2153,10 @@ public:
     /// If object is already destroyed then return NULL CRef.
     CRef<C, TThisType> GetLockedObject(TPtrProxyType* proxy) const
     {
-        CRef<C, TThisType> ref(
-                        static_cast<C*>(proxy->GetLockedObject()), *this);
-        if (ref.NotNull()) {
-            Unlock(ref.GetPointer());
+        CRef<C, TThisType> ref;
+        if ( CObject* object = proxy->GetLockedObject() ) {
+            ref.Reset(static_cast<C*>(object));
+            object->RemoveReference(); // remove extra lock from GetLockedObject()
         }
         return ref;
     }
@@ -2178,10 +2196,10 @@ public:
         // because type compatibility is already checked in GetPtrProxy()
         // which always called first. Now we can be sure that this
         // cast will not return null.
-        CIRef<Interface, TThisType> ref(
-                   dynamic_cast<Interface*>(proxy->GetLockedObject()), *this);
-        if (ref.NotNull()) {
-            Unlock(ref.GetPointer());
+        CIRef<Interface, TThisType> ref;
+        if ( CObject* object = proxy->GetLockedObject() ) {
+            ref.Reset(dynamic_cast<Interface*>(object));
+            object->RemoveReference(); // remove extra lock from GetLockedObject()
         }
         return ref;
     }
