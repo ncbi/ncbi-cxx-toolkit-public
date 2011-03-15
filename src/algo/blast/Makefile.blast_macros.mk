@@ -20,5 +20,5 @@ BLAST_SRA_LIBS=blast_sra $(SRAXF_LIBS) vxf $(SRA_LIBS)
 # BLAST_FORMATTER_LIBS and BLAST_INPUT_LIBS need $BLAST_LIBS
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment \
 		xalgodustmask xalgowinmask seqmasks_io seqdb blast_services xobjutil \
-		xobjread creaders xnetblastcli xnetblast blastdb scoremat tables
+		xobjread creaders xnetblastcli xnetblast blastdb scoremat tables xalnmgr
 # BLAST additionally needs xconnect $(SOBJMGR_LIBS) or $(OBJMGR_LIBS)
