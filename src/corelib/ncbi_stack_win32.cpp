@@ -469,7 +469,8 @@ CStackTraceImpl::CStackTraceImpl(void)
     s.AddrStack.Mode   = AddrModeFlat;
 
     try {
-        for (size_t frame = 0; ; ++frame) {
+        unsigned int max_depth = CStackTrace::s_GetStackTraceMaxDepth();
+        for (size_t frame = 0; frame <= max_depth; ++frame) {
             // get next stack frame
             if ( !StackWalk(img_type, curr_proc, thread, &s, &c, NULL,
                             SymFunctionTableAccess,

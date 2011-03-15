@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_stack.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #ifdef NCBI_OS_SOLARIS
 #  include <sys/ucontext.h> // for additional test below
@@ -108,6 +109,44 @@ void CStackTrace::Write(CNcbiOstream& os) const
            << NStr::UInt8ToString(it->offs, 0, 16)
            << endl;
     }
+}
+
+
+// Stack trace depth limit
+const unsigned int kDefaultStackTraceMaxDepth = 200;
+NCBI_PARAM_DECL(int, Debug, Stack_Trace_Max_Depth);
+NCBI_PARAM_DEF_EX(int, Debug, Stack_Trace_Max_Depth, kDefaultStackTraceMaxDepth,
+                  eParam_NoThread, DEBUG_STACK_TRACE_MAX_DEPTH);
+typedef NCBI_PARAM_TYPE(Debug, Stack_Trace_Max_Depth) TStackTraceMaxDepth;
+
+unsigned int CStackTrace::s_GetStackTraceMaxDepth(void)
+{
+    static volatile bool s_InGetMaxDepth = false;
+    static CAtomicCounter s_MaxDepth;
+
+    // Check if we are already getting the max depth. If yes, something
+    // probably went wrong. Just return the default value.
+    unsigned int val = kDefaultStackTraceMaxDepth;
+    if ( !s_InGetMaxDepth ) {
+        s_InGetMaxDepth = true;
+        try {
+            val = s_MaxDepth.Get();
+            if (val > 0) {
+                return val;
+            }
+            val = TStackTraceMaxDepth::GetDefault();
+            if (val == 0) {
+                val = kDefaultStackTraceMaxDepth;
+            }
+            s_MaxDepth.Set(val);
+        }
+        catch (...) {
+            s_InGetMaxDepth = false;
+            throw;
+        }
+        s_InGetMaxDepth = false;
+    }
+    return val;
 }
 
 

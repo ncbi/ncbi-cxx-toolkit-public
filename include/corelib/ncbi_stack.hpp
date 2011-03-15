@@ -89,6 +89,8 @@ public:
     /// Write stack trace to the stream, prepend each line with the prefix.
     void Write(CNcbiOstream& os) const;
 
+    static unsigned int s_GetStackTraceMaxDepth(void);
+
 private:
     // Convert internal stack trace data (collected addresses)
     // to the list of SStackFrameInfo.

@@ -58,7 +58,7 @@ private:
 
 CStackTraceImpl::CStackTraceImpl(void)
 {
-    m_Stack.resize(1024);
+    m_Stack.resize(CStackTrace::s_GetStackTraceMaxDepth());
     m_Stack.resize(backtrace(&m_Stack[0], m_Stack.size()));
 }
 
