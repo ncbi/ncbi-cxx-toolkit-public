@@ -1,4 +1,4 @@
-E:\toolkit\c++\include\corelib\ncbiexec.hpp#ifndef CORELIB__NCBIEXEC__HPP
+#ifndef CORELIB__NCBIEXEC__HPP
 #define CORELIB__NCBIEXEC__HPP
 
 /*  $Id$
