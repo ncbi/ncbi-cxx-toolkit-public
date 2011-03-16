@@ -1,4 +1,4 @@
-#ifndef CORELIB__NCBIEXEC__HPP
+E:\toolkit\c++\include\corelib\ncbiexec.hpp#ifndef CORELIB__NCBIEXEC__HPP
 #define CORELIB__NCBIEXEC__HPP
 
 /*  $Id$
@@ -90,14 +90,16 @@ public:
         /// process group.
         eWaitGroup = eWait | fNewGroup,
         /// Continues to execute calling process concurrently with new
-        /// process (asynchronous process).                      
+        /// process (asynchronous process). Do not forget to call Wait()
+        /// to get process exit code, or started process will became
+        /// a "zombie", even it has finished all work.
         eNoWait      = 2, 
         /// The same as eNoWait, but on UNIX platforms new process group
         /// will be created and calling process become the leader of the new
         /// process group.
         eNoWaitGroup = eNoWait | fNewGroup,
-        /// Continues to execute calling process; new process is run in
-        /// background with no access to console or keyboard.
+        /// Like eNoWait, continues to execute calling process; new process
+        /// is run in background with no access to console or keyboard.
         /// On UNIX new created process become the leader of the new session,
         /// the process group leader of the new process group.
         /// Calls to Wait() against new process will fail on MS Windows,
@@ -465,6 +467,15 @@ public:
     /// @return
     ///   - Exit code of the process, if no errors.
     ///   - (-1), if error has occurred.
+    /// @note
+    ///   It is recommended to call this method for all processes started 
+    ///   in eNoWait or eDetach modes (except on Windows for eDetach), because
+    ///   it release "zombie" processes, that finished working and waiting
+    ///   to return it's exit status. If Wait() is not called somewhere,
+    ///   the child process will be completely removed from the system only
+    ///   when the parent process ends.
+    /// @sa
+    ///   CProcess::Wait(), CProcess:IsAlive(), TMode
     static TExitCode Wait(TProcessHandle handle,
                           unsigned long  timeout = kInfiniteTimeoutMs);
 
@@ -498,6 +509,8 @@ public:
     ///   - Number of terminated processes (size of the "result" list),
     ///     if no errors. Regardless of timeout status.
     ///   - (-1), if error has occurred.
+    /// @sa
+    ///   Wait(), CProcess::Wait(), CProcess:IsAlive()
     static int Wait(list<TProcessHandle>& handles, 
                     EWaitMode             mode,
                     list<CResult>&        result,
