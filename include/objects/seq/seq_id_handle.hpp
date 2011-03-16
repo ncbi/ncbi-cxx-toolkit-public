@@ -121,7 +121,7 @@ private:
 };
 
 
-class CSeq_id_InfoLocker : protected CObjectCounterLocker
+class CSeq_id_InfoLocker : public CObjectCounterLocker
 {
 public:
     void Lock(const CSeq_id_Info* info) const
