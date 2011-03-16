@@ -290,6 +290,43 @@ void CNewCleanup_imp::SetupBC (
     }
 }
 
+// Strips all spaces in string in following manner. If the function
+// meet several spaces (spaces and tabs) in succession it replaces them
+// with one space. Strips all spaces after '(' and before ( ')' or ',' ).
+// ( Returns true if any changes were made )
+void CNewCleanup_imp::x_StripSpacesMarkChanged(string& str)
+{
+    if (str.empty()) {
+        return;
+    }
+
+    const string::size_type old_size = str.length();
+
+    string::iterator end = str.end();
+    string::iterator it = str.begin();
+    string::iterator new_str = it;
+    while (it != end) {
+        *new_str++ = *it;
+        if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
+            for (++it; *it == ' ' || *it == '\t'; ++it) continue;
+            if (*it == ')' || *it == ',') {
+                // this "if" protects against the case "(...bunch of spaces and tabs...)".
+                // Otherwise, the first '(' is unintentionally erased
+                if( *(new_str - 1) != '(' ) { 
+                    --new_str;
+                }
+            }
+        } else {
+            ++it;
+        }
+    }
+    str.erase(new_str, str.end());
+
+    if( str.length() != old_size ) {
+        ChangeMade(CCleanupChange::eTrimSpaces);
+    }
+}
+
 void CNewCleanup_imp::SeqsetBC (
     CBioseq_set& bss
 )
@@ -431,16 +468,77 @@ DEFINE_STATIC_ARRAY_MAP(TSubsourceMap, sc_SubsourceAliasMap, sc_subsourcealias_m
 //     string foo = "Test:   FOO   BAR    :BAZ."
 //     s_RegexpReplace( foo, ":[ ]+", ": " );
 // This turns foo into "Test: FOO   BAR    :BAZ."
+// Returns "true" if a replacement was done
+
+static const int s_RegexpReplace_UnlimitedReplacements = 0;
+
 static
-void s_RegexpReplace( string &target, 
+bool s_RegexpReplace( string &target, 
     const char *search_pattern, 
     const char *replacement,
-    int max_replace = 0 )
+    int max_replace = s_RegexpReplace_UnlimitedReplacements,
+    CRegexp::ECompile compile_flags = CRegexp::fCompile_default )
 {
     CRegexpUtil replacer( target );
-    replacer.Replace( search_pattern, replacement, CRegexp::fCompile_default, CRegexp::fMatch_default, max_replace );
+    int num_replacements = replacer.Replace( search_pattern, replacement, 
+        compile_flags, CRegexp::fMatch_default, max_replace );
     // swap is faster than assignment
     replacer.GetResult().swap( target ); 
+
+    return ( num_replacements > 0 );
+}
+
+static
+const string &s_GenomeToPlastidName( const CBioSource& biosrc )
+{
+    SWITCH_ON_BIOSOURCE_GENOME (biosrc) {
+    case NCBI_GENOME(apicoplast): 
+        {
+            const static string apicoplast("apicoplast");
+            return apicoplast;
+        }
+        break;
+    case NCBI_GENOME(chloroplast):
+        {
+            const static string chloroplast("chloroplast");
+            return chloroplast;
+        }
+        break;
+    case NCBI_GENOME(chromoplast):
+        {
+            const static string chromoplast("chromoplast");
+            return chromoplast;
+        }
+        break;
+    case NCBI_GENOME(kinetoplast):
+        {
+            const static string kinetoplast("kinetoplast");
+            return kinetoplast;
+        }
+        break;
+    case NCBI_GENOME(leucoplast):
+        {
+            const static string leucoplast("leucoplast");
+            return leucoplast;
+        }
+        break;
+    case NCBI_GENOME(plastid):
+        {
+            const static string plastid("plastid");
+            return plastid;
+        }
+        break;
+    case NCBI_GENOME(proplastid):
+        {
+            const static string proplastid("proplastid");
+            return proplastid;
+        }
+        break;
+    default:
+        return kEmptyStr;
+        break;
+    }
+    return kEmptyStr;
 }
 
 // If str starts with prefix, the prefix is removed from the string.
@@ -543,6 +641,47 @@ void CNewCleanup_imp::EMBLblockBC (
     }
 }
 
+// Erases spaces which are not inside angle brackets ("<" to ">").
+// returns true if there was a change
+static
+bool s_EraseSpacesOutsideBrackets( string &str )
+{
+    bool change_made = false;
+
+    string result;
+    result.reserve( str.length() );
+
+    bool in_brackets = false;
+    FOR_EACH_CHAR_IN_STRING( ch_iter, str ) {
+        const char ch = *ch_iter;
+        switch( ch ) {
+            case '<':
+                in_brackets = true;
+                result += ch;
+                break;
+            case '>':
+                in_brackets = false;
+                result += ch;
+                break;
+            case ' ':
+                if( in_brackets ) {
+                    result += ch;
+                } else {
+                    change_made = true;
+                }
+                break;
+            default:
+                result += ch;
+                break;
+        }
+    }
+
+    // swap is faster than assignment
+    result.swap( str );
+
+    return change_made;
+}
+
 static CSubSource* s_StringToSubSource (
     const string& str
 )
@@ -642,20 +781,17 @@ static bool s_SubsourceEqual (
     return false;
 }
 
-void CNewCleanup_imp::SubsourceBC (
-    CSubSource& sbs
-)
-
+// Is str1 a substring of str2? Is str2 a substring of str1?
+// If either is true, we return true.
+static
+bool s_IsEitherASubstring( const string &str1, const string &str2 )
 {
-    x_CleanupStringMarkChanged( GET_MUTABLE(sbs, Name) );
-    CLEAN_STRING_MEMBER (sbs, Attrib);
-
-    TSUBSOURCE_SUBTYPE chs = GET_FIELD (sbs, Subtype);
-    if (CSubSource::NeedsNoText (chs)) {
-        if (! FIELD_IS_SET (sbs, Name)) {
-            // name is required - set it to empty string
-            SET_FIELD (sbs, Name, "");
-        }
+    if( str1.length() == str2.length() ) {
+        return ( str1 == str2 );
+    } else if( str1.length() > str2.length() ) {
+        return ( NStr::Find(str1, str2) != NPOS );
+    } else {
+        return ( NStr::Find(str2, str1) != NPOS );
     }
 }
 
@@ -690,17 +826,80 @@ void CNewCleanup_imp::BiosourceBC (
 
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
     // TODO: subsources should actually be loaded into the pcr-primers structures
+    SUBSOURCE_ON_BIOSOURCE_Type::iterator prev = 
+        SUBSOURCE_ON_BIOSOURCE_Set(biosrc).end();
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, biosrc) {
         CSubSource& sbs = **it;
-        if (SUBSOURCE_CHOICE_IS (sbs, NCBI_SUBSOURCE(fwd_primer_seq)) ||
-            SUBSOURCE_CHOICE_IS (sbs, NCBI_SUBSOURCE(rev_primer_seq))) {
-                string before = GET_FIELD (sbs, Name);
-                NStr::ToLower (GET_MUTABLE (sbs, Name));
-                const string& after = NStr::Replace (GET_FIELD (sbs, Name), " ", kEmptyStr);
-                SET_FIELD (sbs, Name, after);
-                if (NStr::Equal (before, after)) continue;
-                ChangeMade (CCleanupChange::eCleanSubsource);
+
+        TSUBSOURCE_SUBTYPE chs = GET_FIELD (sbs, Subtype);
+        if (CSubSource::NeedsNoText (chs)) {
+            // name is required - set it to empty string
+            SET_FIELD (sbs, Name, "");
+        } else {
+            CLEAN_STRING_MEMBER_JUNK(sbs, Name);
+            if( ! FIELD_IS_SET(sbs, Name) ) {
+                // name must be set
+                SET_FIELD (sbs, Name, "");
+            }
+            x_CompressStringSpacesMarkChanged( GET_MUTABLE(sbs, Name) );
+            CLEAN_STRING_MEMBER(sbs, Attrib);
         }
+
+        if( chs == NCBI_SUBSOURCE(country) ) {
+            string &country = GET_MUTABLE(sbs, Name);
+            static const string kUSPrefix( "United States:" );
+            if( NStr::EqualNocase(country, "United States") || 
+                NStr::EqualNocase(country, "United States of America") || 
+                NStr::EqualNocase(country, "U.S.A.") ) 
+            {
+                country = "USA";
+                ChangeMade(CCleanupChange::eCleanSubsource);
+            } else if( NStr::StartsWith(country, kUSPrefix, NStr::eNocase) ) {
+                country.replace( 0, kUSPrefix.length(), "USA:" );
+                ChangeMade(CCleanupChange::eCleanSubsource);
+            }
+        }
+
+        if ( chs == NCBI_SUBSOURCE(fwd_primer_seq) ||
+             chs == NCBI_SUBSOURCE(rev_primer_seq) )
+        {
+            string before = GET_FIELD (sbs, Name);
+            NStr::ToLower (GET_MUTABLE (sbs, Name));
+            // erase spaces that are outside of brackets
+            s_EraseSpacesOutsideBrackets( GET_MUTABLE(sbs, Name) );
+            const string& after = GET_FIELD (sbs, Name);
+            if ( before != after ) {
+                ChangeMade (CCleanupChange::eCleanSubsource);
+            }
+        }
+
+        // determine whether we should remove this subsource:
+        if(  (! FIELD_IS_SET(sbs, Name) || GET_FIELD(sbs, Name).empty()) &&
+            ! CSubSource::NeedsNoText( chs ) )
+        {
+            ERASE_SUBSOURCE_ON_BIOSOURCE(it, biosrc);
+            continue;
+        } else if( chs == NCBI_SUBSOURCE(plastid_name) &&
+            STRING_FIELD_MATCH(sbs, Name, s_GenomeToPlastidName(biosrc) ) )
+        {
+            ERASE_SUBSOURCE_ON_BIOSOURCE(it, biosrc);
+            continue;
+        } else if( prev != SUBSOURCE_ON_BIOSOURCE_Set(biosrc).end() ) {
+            TSUBSOURCE_SUBTYPE prev_chs = GET_FIELD (**prev, Subtype);
+            const string &name = GET_FIELD(sbs, Name);
+            const string &prev_name = GET_FIELD(**prev, Name);
+
+            // compare to previous one
+            if( (chs == prev_chs) &&
+                ( (chs == NCBI_SUBSOURCE(other) && s_IsEitherASubstring(name, prev_name)) ||
+                  (chs != NCBI_SUBSOURCE(other) && NStr::EqualNocase   (name, prev_name)) ) )
+            {
+                ERASE_SUBSOURCE_ON_BIOSOURCE(it, biosrc);
+                continue;
+            }
+        }
+
+        prev = it;
     }
 
     // sort and remove duplicates.
@@ -713,40 +912,28 @@ void CNewCleanup_imp::BiosourceBC (
         UNIQUE_SUBSOURCE_ON_BIOSOURCE (biosrc, s_SubsourceEqual);
         ChangeMade (CCleanupChange::eCleanSubsource);
     }
+
+    // PCR Primers
+    if( FIELD_IS_SET(biosrc, Pcr_primers) ) {
+        PCRReactionSetBC( GET_MUTABLE(biosrc, Pcr_primers) );
+        if( GET_FIELD(biosrc, Pcr_primers).Get().empty() ) {
+            RESET_FIELD(biosrc, Pcr_primers);
+        }
+    }
 }
 
 void CNewCleanup_imp::x_SortUniqBiosource( CBioSource& biosrc )
 {
+    if( FIELD_EQUALS(biosrc, Genome, NCBI_GENOME(unknown) ) ) {
+        RESET_FIELD(biosrc, Genome);
+    }
+
     if (BIOSOURCE_HAS_SUBSOURCE (biosrc)) {
 
-        // remove plastid-name qual if the value is the same as the biosource location
-        string plastid_name = "";
-        SWITCH_ON_BIOSOURCE_GENOME (biosrc) {
-            case NCBI_GENOME(apicoplast):
-                plastid_name = "apicoplast";
-                break;
-            case NCBI_GENOME(chloroplast):
-                plastid_name = "chloroplast";
-                break;
-            case NCBI_GENOME(chromoplast):
-                plastid_name = "chromoplast";
-                break;
-            case NCBI_GENOME(kinetoplast):
-                plastid_name = "kinetoplast";
-                break;
-            case NCBI_GENOME(leucoplast):
-                plastid_name = "leucoplast";
-                break;
-            case NCBI_GENOME(plastid):
-                plastid_name = "plastid";
-                break;
-            case NCBI_GENOME(proplastid):
-                plastid_name = "proplastid";
-                break;
-            default:
-                break;
-        }
-
+        // remove plastid-name subsource if the value is the same as the biosource location
+        const string &plastid_name = s_GenomeToPlastidName( biosrc );
+        
+        bool plasmid_subsource_found = false;
         EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, biosrc) {
             CSubSource& sbs = **it;
             TSUBSOURCE_SUBTYPE chs = GET_FIELD (sbs, Subtype);
@@ -755,10 +942,24 @@ void CNewCleanup_imp::x_SortUniqBiosource( CBioSource& biosrc )
                 SET_FIELD (sbs, Name, "");
                 ChangeMade (CCleanupChange::eCleanSubsource);
             } else if (chs == NCBI_SUBSOURCE(plastid_name)) {
+                // plasTid
                 if (NStr::EqualNocase (GET_FIELD (sbs, Name), plastid_name)) {
                     ERASE_SUBSOURCE_ON_BIOSOURCE (it, biosrc);
                     ChangeMade (CCleanupChange::eCleanSubsource);
                 }
+            } else if ( chs == NCBI_SUBSOURCE(plasmid_name) ) {
+                // plasMid
+                plasmid_subsource_found = true;
+            }
+        }
+
+        // set genome to "plasmid" under some conditions
+        if( plasmid_subsource_found ) {
+            if( ! FIELD_IS_SET(biosrc, Genome) || 
+                GET_FIELD(biosrc, Genome) == NCBI_GENOME(unknown) || 
+                GET_FIELD(biosrc, Genome) == NCBI_GENOME(genomic) ) 
+            { 
+                biosrc.SetGenome( NCBI_GENOME(plasmid) );
             }
         }
 
@@ -872,7 +1073,7 @@ void CNewCleanup_imp::OrgrefBC (
     }
     if (MOD_ON_ORGREF_Set (org).empty()) {
         RESET_FIELD (org, Mod);
-        ChangeMade (CCleanupChange::eChangeOther);
+        ChangeMade (CCleanupChange::eChangeOrgmod);
     }
 
     if (FIELD_IS_SET (org, Orgname)) {
@@ -1208,21 +1409,21 @@ void CNewCleanup_imp::PubdescBC (
     CPubdesc& pubdesc
 )
 {
-    if ( FIELD_IS_SET(pubdesc, Pub) ) {
-        PubEquivBC( GET_MUTABLE(pubdesc, Pub) );
-    }
-    
-    // TODO: do we clean it? Looks like C doesn't.
-    // CLEAN_STRING_MEMBER(pubdesc, Name);
-    
     if ( FIELD_IS_SET(pubdesc, Comment)) {
-        CleanDoubleQuote( GET_MUTABLE(pubdesc, Comment) );
+        x_ConvertDoubleQuotesMarkChanged( GET_MUTABLE(pubdesc, Comment) );
     }
     if (IsOnlinePub(pubdesc)) {
         TRUNCATE_SPACES(pubdesc, Comment);
     } else {
         CLEAN_STRING_MEMBER(pubdesc, Comment);
     }
+
+    if ( FIELD_IS_SET(pubdesc, Pub) ) {
+        PubEquivBC( GET_MUTABLE(pubdesc, Pub) );
+    }
+    
+    // TODO: do we clean it? Looks like C doesn't.
+    // CLEAN_STRING_MEMBER(pubdesc, Name);
 }
 
 static bool s_FixInitials(const CPub_equiv& equiv)
@@ -1231,7 +1432,8 @@ static bool s_FixInitials(const CPub_equiv& equiv)
     has_art = false;
     
     FOR_EACH_PUB_ON_PUBEQUIV(pub_iter, equiv) {
-        if ((*pub_iter)->IsPmid()  ||  (*pub_iter)->IsMuid()) {
+        if ( ( (*pub_iter)->IsPmid() && (*pub_iter)->GetPmid() > 0 ) ||
+             ( (*pub_iter)->IsMuid() && (*pub_iter)->GetMuid() > 0 ) ) {
             has_id = true;
         } else if ((*pub_iter)->IsArticle()) {
             has_art = true;
@@ -1246,15 +1448,18 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
     
     bool fix_initials = s_FixInitials(pub_equiv);
     EDIT_EACH_PUB_ON_PUBEQUIV(it, pub_equiv) {
-        PubBC(**it, fix_initials);
+        if( PubBC(**it, fix_initials) == eAction_Erase ) {
+            ERASE_PUB_ON_PUBEQUIV(it, pub_equiv);
+            ChangeMade(CCleanupChange::eRemoveEmptyPub);
+        }
     }
 }
 
-void CNewCleanup_imp::PubBC(CPub& pub, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::PubBC(CPub& pub, bool fix_initials)
 {
 #define PUBBC_CASE(cit_type, func) \
     case NCBI_PUB(cit_type): \
-        func( GET_MUTABLE(pub, cit_type), fix_initials); \
+        return func( GET_MUTABLE(pub, cit_type), fix_initials); \
         break;
 
     switch (pub.Which()) {
@@ -1266,12 +1471,28 @@ void CNewCleanup_imp::PubBC(CPub& pub, bool fix_initials)
     PUBBC_CASE(Man, CitLetBC)
     PUBBC_CASE(Medline, MedlineEntryBC)
     default:
-        break;
+        return eAction_Nothing;
     }
 #undef PUBBC_CASE
 }
 
-void CNewCleanup_imp::CitGenBC(CCit_gen& cg, bool fix_initials)
+static
+bool s_IsEmpty( const CCit_gen &cg )
+{
+    return ( ! FIELD_IS_SET(cg, Cit) || GET_FIELD(cg, Cit).empty() ) &&
+        ! FIELD_IS_SET(cg, Authors) &&
+        ( ! FIELD_IS_SET(cg, Muid) || GET_FIELD(cg, Muid) <= 0 ) &&
+        ! FIELD_IS_SET(cg, Journal) &&
+        ( ! FIELD_IS_SET(cg, Volume) || GET_FIELD(cg, Volume).empty() ) &&
+        ( ! FIELD_IS_SET(cg, Issue) || GET_FIELD(cg, Issue).empty() ) &&
+        ( ! FIELD_IS_SET(cg, Pages) || GET_FIELD(cg, Pages).empty() ) &&
+        ! FIELD_IS_SET(cg, Date) &&
+        ( ! FIELD_IS_SET(cg, Serial_number) || GET_FIELD(cg, Serial_number) <= 0 ) &&
+        ( ! FIELD_IS_SET(cg, Title) || GET_FIELD(cg, Title).empty() ) &&
+        ( ! FIELD_IS_SET(cg, Pmid) || GET_FIELD(cg, Pmid) <= 0 );
+}
+
+CNewCleanup_imp::EAction CNewCleanup_imp::CitGenBC(CCit_gen& cg, bool fix_initials)
 {
     if( FIELD_IS_SET(cg, Authors) ) {
         AuthListBC( GET_MUTABLE(cg, Authors), fix_initials );
@@ -1302,21 +1523,29 @@ void CNewCleanup_imp::CitGenBC(CCit_gen& cg, bool fix_initials)
         }
     }
 
-    //!!! TO DO: serial
-    /*
-     if (stripSerial) {
-         cgp->serial_number = -1;
-     }
-     
+    // title strstripspaces (see 8728 in sqnutil1.c, Mar 11, 2011)
+    if( FIELD_IS_SET(cg, Title) ) {
+        x_StripSpacesMarkChanged( GET_MUTABLE(cg, Title) );
+    }
+
+    if( m_StripSerial ) {
+        RESET_FIELD( cg, Serial_number );
+        ChangeMade(CCleanupChange::eStripSerial);
+    }
+
+    /* TODO?
      compare labels before and after doing the above.
      if label changed : (sqnutil1.c, 6156)
      ValNodeCopyStr (publist, 1, buf1);
      ValNodeCopyStr (publist, 2, buf2);
 
      */
+
+    // erase if the Cit-gen is now entirely blank
+    return ( s_IsEmpty(cg) ? eAction_Erase : eAction_Nothing );
 }
 
-void CNewCleanup_imp::CitSubBC(CCit_sub& citsub, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::CitSubBC(CCit_sub& citsub, bool fix_initials)
 {
    CRef<CCit_sub::TAuthors> authors;
     if ( FIELD_IS_SET(citsub, Authors) ) {
@@ -1360,9 +1589,10 @@ void CNewCleanup_imp::CitSubBC(CCit_sub& citsub, bool fix_initials)
         }
     }
 
+    return eAction_Nothing;
 }
 
-void CNewCleanup_imp::CitArtBC(CCit_art& citart, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::CitArtBC(CCit_art& citart, bool fix_initials)
 {
     if ( FIELD_IS_SET(citart, Authors) ) {
         AuthListBC( GET_MUTABLE(citart, Authors), fix_initials);
@@ -1377,9 +1607,11 @@ void CNewCleanup_imp::CitArtBC(CCit_art& citart, bool fix_initials)
             CitJourBC(GET_MUTABLE(from, Journal), fix_initials);
         }
     }
+
+    return eAction_Nothing;
 }
 
-void CNewCleanup_imp::CitBookBC(CCit_book& citbook, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::CitBookBC(CCit_book& citbook, bool fix_initials)
 {
     if ( FIELD_IS_SET(citbook, Authors) ) {
         AuthListBC( GET_MUTABLE(citbook, Authors), fix_initials);
@@ -1387,9 +1619,11 @@ void CNewCleanup_imp::CitBookBC(CCit_book& citbook, bool fix_initials)
     if ( FIELD_IS_SET(citbook, Imp) ) {
         ImprintBC( GET_MUTABLE(citbook, Imp) );
     }
+
+    return eAction_Nothing;
 }
 
-void CNewCleanup_imp::CitPatBC(CCit_pat& citpat, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::CitPatBC(CCit_pat& citpat, bool fix_initials)
 {
     if ( FIELD_IS_SET(citpat, Authors) ) {
         AuthListBC( GET_MUTABLE(citpat, Authors), fix_initials);
@@ -1400,35 +1634,45 @@ void CNewCleanup_imp::CitPatBC(CCit_pat& citpat, bool fix_initials)
     if ( FIELD_IS_SET(citpat, Assignees) ) {
         AuthListBC( GET_MUTABLE(citpat, Assignees), fix_initials);
     }
+
+    return eAction_Nothing;
 }
 
-void CNewCleanup_imp::CitLetBC(CCit_let& citlet, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::CitLetBC(CCit_let& citlet, bool fix_initials)
 {
     if ( FIELD_IS_SET(citlet, Cit) && FIELD_EQUALS( citlet, Type, CCit_let::eType_thesis ) ) {
         CitBookBC( GET_MUTABLE(citlet, Cit), fix_initials);
     }
+
+    return eAction_Nothing;
 }
 
-void CNewCleanup_imp::CitProcBC(CCit_proc& citproc, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::CitProcBC(CCit_proc& citproc, bool fix_initials)
 {
     if ( FIELD_IS_SET(citproc, Book) ) {
         CitBookBC( GET_MUTABLE(citproc, Book), fix_initials);
     }
+
+    return eAction_Nothing;
 }
 
-void CNewCleanup_imp::CitJourBC(CCit_jour &citjour, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::CitJourBC(CCit_jour &citjour, bool fix_initials)
 {
     if ( FIELD_IS_SET(citjour, Imp) ) {
         ImprintBC( GET_MUTABLE(citjour, Imp) );
     }
+
+    return eAction_Nothing;
 }
 
-void CNewCleanup_imp::MedlineEntryBC(CMedline_entry& medline, bool fix_initials)
+CNewCleanup_imp::EAction CNewCleanup_imp::MedlineEntryBC(CMedline_entry& medline, bool fix_initials)
 {
     if ( ! FIELD_IS_SET(medline, Cit) || ! FIELD_IS_SET(medline.GetCit(), Authors) ) {
-        return;
+        return eAction_Nothing;
     }
     AuthListBC( GET_MUTABLE(medline.SetCit(), Authors), fix_initials );
+
+    return eAction_Nothing;
 }
 
 static bool s_IsEmpty(const CAuth_list::TAffil& affil)
@@ -1461,8 +1705,12 @@ static bool s_IsEmpty(const CAuthor& auth)
         case CAuthor::TName::e_Name:
         {{
             const CName_std& nstd = name.GetName();
-            if ((!nstd.IsSetLast()      ||  NStr::IsBlank(nstd.GetLast()))      &&
-                (!nstd.IsSetFirst()     ||  NStr::IsBlank(nstd.GetFirst()))     &&
+            // last name is required
+            if( (!nstd.IsSetLast()      ||  NStr::IsBlank(nstd.GetLast())) ) {
+                return true;
+            }
+            // also fails if all fields are blank
+            if ((!nstd.IsSetFirst()     ||  NStr::IsBlank(nstd.GetFirst()))     &&
                 (!nstd.IsSetMiddle()    ||  NStr::IsBlank(nstd.GetMiddle()))    &&
                 (!nstd.IsSetFull()      ||  NStr::IsBlank(nstd.GetFull()))      &&
                 (!nstd.IsSetInitials()  ||  NStr::IsBlank(nstd.GetInitials()))  &&
@@ -1513,10 +1761,21 @@ void CNewCleanup_imp::AuthListBC( CAuth_list& al, bool fix_initials )
     }
     if ( FIELD_IS_SET(al, Names) ) {
         typedef CAuth_list::TNames TNames;
-        TNames& names = GET_MUTABLE(al, Names);
-        switch (names.Which()) {
+        switch ( GET_MUTABLE(al, Names).Which() ) {
+            case TNames::e_Ml:
+            {{
+                if (ConvertAuthorContainerMlToStd(al)) {
+                    ChangeMade(CCleanupChange::eChangePublication);
+                }
+            }}
+            // !!!!!FALL-THROUGH!!!!!
+            // ( since we just converted the ml to an std, we need to do the
+            //   std clean-up step )
             case TNames::e_Std:
             {{
+                // The "names" variable is not above the switch() because
+                // the case fall-through means it may have been invalidated.
+                TNames& names = GET_MUTABLE(al, Names);
                 // call BasicCleanup for each CAuthor
                 EDIT_EACH_AUTHOR_ON_AUTHLIST( it, al ) {
                     x_AuthorBC(**it, fix_initials);
@@ -1531,15 +1790,9 @@ void CNewCleanup_imp::AuthListBC( CAuth_list& al, bool fix_initials )
                 }
                 break;
             }}
-            case TNames::e_Ml:
-            {{
-                if (ConvertAuthorContainerMlToStd(al)) {
-                    ChangeMade(CCleanupChange::eChangePublication);
-                }
-                break;
-            }}
             case TNames::e_Str:
             {{
+                TNames& names = GET_MUTABLE(al, Names);
                 if (CleanStringContainer( GET_MUTABLE(names, Str) )) {
                     ChangeMade(CCleanupChange::eChangePublication);
                 }
@@ -3652,8 +3905,12 @@ void CNewCleanup_imp::x_FixEtAl(CName_std& name)
     _ASSERT(name.IsSetInitials());
 
     if ( STRING_FIELD_MATCH(name, Last, "et") &&
-        (NStr::Equal(name.GetInitials(), "al")  ||  NStr::Equal(name.GetInitials(), "al."))  &&
-        (!name.IsSetFirst()  ||  NStr::IsBlank(name.GetFirst()))) 
+        (NStr::Equal(name.GetInitials(), "al")  ||  
+        NStr::Equal(name.GetInitials(), "al.") || 
+        NStr::Equal(name.GetInitials(), "Al."))  &&
+        (!name.IsSetFirst()  ||  
+         NStr::IsBlank(name.GetFirst()) || 
+         name.GetFirst() == "a" )) 
     {
         RESET_FIELD( name, First );
         RESET_FIELD( name, Initials );
@@ -4314,6 +4571,257 @@ void CNewCleanup_imp::x_ModernizePCRPrimers( CBioSource &biosrc )
     }
 }
 
+static
+void s_SplitAtSingleTildes( list<string> &piece_vec, const string &str )
+{
+    if( str.empty() ) {
+        return;
+    }
+
+
+    vector<string> pieces;
+
+    // piece_start is the beginning of the piece we're working on,
+    // but search_start is where to start looking for tildes on this iteration
+    // ( invariant: search_pos >= piece_start_pos )
+    string::size_type piece_start_pos = 0;
+    string::size_type search_pos = 0;
+    while( search_pos < str.length() ) {
+        // find the next tilde
+        string::size_type tilde_pos = str.find_first_of("~", search_pos);
+        if( string::npos == tilde_pos ) {
+            tilde_pos = str.length();
+        }
+
+        // can we use the tilde as a place to split?
+        const bool tilde_is_usable = (
+            ( tilde_pos == 0 || str[tilde_pos-1] != ' ' ) &&
+            ( tilde_pos >= (str.length()-1) || str[tilde_pos+1] != '~' ) );
+
+        if( tilde_is_usable ) {
+            // Great, so split at the tilde, and add the new piece
+            piece_vec.push_back( str.substr(piece_start_pos, tilde_pos - piece_start_pos) );
+            // trim spaces and remove if trimmed to nothing
+            NStr::TruncateSpacesInPlace( piece_vec.back() );
+            if( piece_vec.back().empty() ) {
+                piece_vec.resize( piece_vec.size() - 1 );
+            }
+        }
+
+        // skip any tildes after our tilde, regardless of whether it was usable
+        search_pos = tilde_pos;
+        while( search_pos < str.length() && str[search_pos] == '~' ) {
+            ++search_pos;
+        }
+        
+        if( tilde_is_usable ) {
+            // begin a new section
+            piece_start_pos = search_pos;
+        }
+    }
+
+    // add the last piece
+    piece_vec.push_back( str.substr(piece_start_pos) );
+
+    // trim spaces and remove if trimmed to nothing
+    NStr::TruncateSpacesInPlace( piece_vec.back() );
+    if( piece_vec.back().empty() ) {
+        piece_vec.resize( piece_vec.size() - 1 );
+    }
+}
+
+// copy "str" because we're changing it anyway
+// returns true if we found anything
+static
+bool s_StringHasOrgModPrefix(const string &str, string::size_type &out_val_start_pos, TORGMOD_SUBTYPE &out_subtype)
+{
+    bool found_something = false;
+
+    TOrgModMap::const_iterator orgmod_it = s_FindInMapAsPrefix<TOrgModMap>( str, sc_OrgModMap );
+    if( orgmod_it != sc_OrgModMap.end() && orgmod_it->second != NCBI_ORGMOD(nat_host) ) {
+        out_val_start_pos = orgmod_it->first.length();
+        out_subtype = orgmod_it->second;
+        found_something = true;
+    } else {
+        TOrgModMap::const_iterator orgmodalias_it = s_FindInMapAsPrefix<TOrgModMap>( str, sc_OrgModAliasMap );
+        if( orgmodalias_it != sc_OrgModAliasMap.end() && orgmodalias_it->second != NCBI_ORGMOD(nat_host) ) {
+            out_val_start_pos = orgmod_it->first.length();
+            out_subtype = orgmod_it->second;
+            found_something = true;
+        }
+    }
+
+    if( (! found_something) && ( str.find_first_of("-") != string::npos ) ) { 
+        string new_str = str;
+        NStr::ReplaceInPlace( new_str, "-", "_" );
+        return s_StringHasOrgModPrefix( new_str, out_val_start_pos, out_subtype );
+    }
+
+    if( found_something ) {
+        // move out_val_start_pos to where the val begins, since we're probably on an equal sign or something
+        out_val_start_pos = str.find_first_not_of("=: ", out_val_start_pos);
+        if( string::npos == out_val_start_pos ) {
+            out_val_start_pos = str.length();
+        }
+    }
+
+    return found_something;
+}
+
+// returns true if we found anything
+static
+bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_start_pos, TSUBSOURCE_SUBTYPE &out_subtype)
+{
+    bool found_something = false;
+
+    TOrgModMap::const_iterator subsrc_it = s_FindInMapAsPrefix<TSubsourceMap>( str, sc_SubsourceMap );
+    if( subsrc_it != sc_SubsourceMap.end() ) {
+        out_val_start_pos = subsrc_it->first.length();
+        out_subtype = subsrc_it->second;
+        found_something = true;
+    } else {
+        TOrgModMap::const_iterator subsrcalias_it = s_FindInMapAsPrefix<TSubsourceMap>( str, sc_SubsourceAliasMap );
+        if( subsrcalias_it != sc_SubsourceAliasMap.end() ) {
+            out_val_start_pos = subsrcalias_it->first.length();
+            out_subtype = subsrcalias_it->second;
+            found_something = true;
+        }
+    }
+
+    if( (! found_something) && ( str.find_first_of("-") != string::npos ) ) { 
+        string new_str = str;
+        NStr::ReplaceInPlace( new_str, "-", "_" );
+        return s_StringHasSubSourcePrefix( new_str, out_val_start_pos, out_subtype );
+    }
+
+    if( found_something ) {
+        // move out_val_start_pos to where the val begins, since we're probably on an equal sign or something
+        out_val_start_pos = str.find_first_not_of("=: ", out_val_start_pos);
+        if( string::npos == out_val_start_pos ) {
+            out_val_start_pos = str.length();
+        }
+    }
+
+    return found_something;
+}
+
+static
+void s_CleanupOrgModAndSubSourceOther_helper( 
+    string &subname, 
+    map< TORGMOD_SUBTYPE, set<string> > &existingOrgModMap, 
+    map< TSUBSOURCE_SUBTYPE, set<string> > &existingSubsourceMap )
+{
+    list<string> subname_piece_vec;
+    s_SplitAtSingleTildes( subname_piece_vec, subname );
+
+    if( subname_piece_vec.empty() ) {
+        subname.clear();
+        return;
+    }
+
+    // check if any pieces are duplicated elsewhere
+    list<string>::iterator piece_iter = subname_piece_vec.begin();
+    while( piece_iter != subname_piece_vec.end() ) {
+        string &piece = (*piece_iter);
+        bool should_erase_piece = false;
+
+        string::size_type val_start_pos = 0;
+        TORGMOD_SUBTYPE orgmod_subtype = NCBI_ORGMOD(other);
+        TSUBSOURCE_SUBTYPE subsrc_subtype = NCBI_SUBSOURCE(other);
+        if( s_StringHasOrgModPrefix(piece, val_start_pos, orgmod_subtype) ) {
+            string val = piece.substr(val_start_pos);
+
+            set<string> &valsAlreadyThere = existingOrgModMap[orgmod_subtype];
+            if( valsAlreadyThere.find(val) != valsAlreadyThere.end() ) {
+                // already exists, so should be removed
+                should_erase_piece = true;
+            }
+        } else if( s_StringHasSubSourcePrefix(piece, val_start_pos, subsrc_subtype) ) {
+            string val = piece.substr(val_start_pos);
+
+            set<string> &valsAlreadyThere = existingSubsourceMap[subsrc_subtype];
+            if( valsAlreadyThere.find(val) != valsAlreadyThere.end() ) {
+                // already exists, so should be removed
+                should_erase_piece = true;
+            }
+        }
+
+        if( should_erase_piece ) {
+            piece_iter = subname_piece_vec.erase(piece_iter);
+        } else {
+            ++piece_iter;
+        }
+    }
+
+    subname = NStr::Join( subname_piece_vec, "~" );
+}
+
+void CNewCleanup_imp::x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioSource &biosrc )
+{
+    // Load each orgmod and subsource into a map for later retrievable
+    // ( More efficient than C's quadratic loop-in-a-loop for bigger cases )
+
+    map< TORGMOD_SUBTYPE, set<string> > existingOrgModMap;
+    FOR_EACH_ORGMOD_ON_ORGNAME( orgmod_iter, orgname ) {
+        const COrgMod &org_mod = **orgmod_iter;
+        if( FIELD_IS_SET(org_mod, Subtype) ) {
+            const string &val = ( FIELD_IS_SET(org_mod, Subname) ? GET_FIELD(org_mod, Subname) : kEmptyStr );
+            existingOrgModMap[GET_FIELD(org_mod, Subtype)].insert( val );
+        }
+    }
+
+    map< TSUBSOURCE_SUBTYPE, set<string> > existingSubsourceMap;
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE( subsrc_iter, biosrc ) {
+        const CSubSource &subsrc = **subsrc_iter;
+        if( FIELD_IS_SET(subsrc, Subtype) ) {
+            const string &val = ( FIELD_IS_SET(subsrc, Name) ? GET_FIELD(subsrc, Name) : kEmptyStr );
+            existingSubsourceMap[GET_FIELD(subsrc, Subtype)].insert( val );
+        }
+    }
+
+    // edit orgmods of type "other"
+
+    EDIT_EACH_ORGMOD_ON_ORGNAME( orgmod_iter, orgname ) {
+        COrgMod &org_mod = **orgmod_iter;
+
+        // we're only cleaning the ones of type "other"
+        if( ! FIELD_EQUALS(org_mod, Subtype, NCBI_ORGMOD(other) ) ||
+            ! FIELD_IS_SET(org_mod, Subname) ) 
+        {
+            continue;
+        }
+
+        string &subname = GET_MUTABLE( org_mod, Subname );
+        s_CleanupOrgModAndSubSourceOther_helper( subname, existingOrgModMap, existingSubsourceMap );
+
+        if( subname.empty() ) {
+            ERASE_ORGMOD_ON_ORGNAME(orgmod_iter, orgname);
+            ChangeMade(CCleanupChange::eRemoveOrgmod);
+        }
+    }
+
+    // edit subsources of type "other"
+
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE( subsrc_iter, biosrc ) {
+        CSubSource &subsrc = **subsrc_iter;
+
+        // we're only cleaning the ones of type "other"
+        if( ! FIELD_EQUALS(subsrc, Subtype, NCBI_SUBSOURCE(other) ) ||
+            ! FIELD_IS_SET(subsrc, Name) ) 
+        {
+            continue;
+        }
+
+        string &name = GET_MUTABLE( subsrc, Name );
+        s_CleanupOrgModAndSubSourceOther_helper( name, existingOrgModMap, existingSubsourceMap );
+
+        if( name.empty() ) {
+            ERASE_SUBSOURCE_ON_BIOSOURCE(subsrc_iter, biosrc);
+            ChangeMade(CCleanupChange::eRemoveSubSource);
+        }
+    }
+}
+
 void CNewCleanup_imp::x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq )
 {
     if( molinfo.IsSetBiomol() ) 
@@ -4479,6 +4987,125 @@ void CNewCleanup_imp::x_CleanupAndRepairInference( string &inference )
         inference.insert( inference.begin() + location_just_beyond_match - 1, ' ' );
     }
 }
+
+// Yes, we copy dbname because we have to edit it.
+static
+void s_MatchesOfficialStructuredCommentDbname( string &tmp, string dbname )
+{
+    typedef pair<const string, const string>  TOfficialPrefixElem;
+    static const TOfficialPrefixElem sc_official_prefix_map[] = {
+        TOfficialPrefixElem("Assembly", "Assembly-Data"),
+        TOfficialPrefixElem("Epiflu", "EpifluData"),
+        TOfficialPrefixElem("Flu", "FluData"),
+        TOfficialPrefixElem("Genome-Assembly", "Genome-Assembly-Data"),
+        TOfficialPrefixElem("GISAID_EpiFlu(TM)", "GISAID_EpiFlu(TM)Data"),
+        TOfficialPrefixElem("HIV-DataBase", "HIVDatabase"),
+        TOfficialPrefixElem("HIVDataBase", "HIVDataBaseData"),
+        TOfficialPrefixElem("International Barcode of Life (iBOL)",  "International Barcode of Life (iBOL)Data"),
+        TOfficialPrefixElem("MIENS", "MIENS-Data"),
+        TOfficialPrefixElem("MIGS", "MIGS-Data"),
+        TOfficialPrefixElem("MIMS", "MIMS-Data")
+    };
+    typedef CStaticArrayMap<const string, const string, PNocase> TOfficialPrefixMap;
+    DEFINE_STATIC_ARRAY_MAP(TOfficialPrefixMap, sc_OfficialPrefixMap, sc_official_prefix_map);
+
+    tmp.clear();
+
+    s_RegexpReplace( dbname, "-?(Data)?$", "", 
+        s_RegexpReplace_UnlimitedReplacements, 
+        CRegexp::fCompile_ignore_case );
+
+    TOfficialPrefixMap::const_iterator iter = sc_OfficialPrefixMap.find(dbname);
+    if( iter != sc_OfficialPrefixMap.end() ) {
+        tmp = iter->second;
+    }
+}
+
+void s_StructuredCommentDbnameFromString( string &out_dbname, const string &field_str )
+{
+    out_dbname.clear();
+
+    if ( field_str.empty() ) {
+        return;
+    }
+
+    string::size_type after_hash_pos =  field_str.find_first_not_of("#");
+    if( after_hash_pos == string::npos ) {
+        // string is all hashes
+        return;
+    }
+
+    out_dbname = field_str.substr( after_hash_pos );
+    s_RegexpReplace( out_dbname, "(-END)?(-START)?#*$", "" );
+
+    // correct for weirdnesses with -data for recognizable prefixes
+    string tmp;
+    s_MatchesOfficialStructuredCommentDbname (tmp, out_dbname);
+    if ( ! tmp.empty() ) {
+        out_dbname = tmp;
+    }
+}
+
+void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
+{
+    if( ! FIELD_IS_SET_AND_IS(user_object, Type, Str) ||
+        user_object.GetType().GetStr() != "StructuredComment" ) 
+    {
+        return;
+    }
+
+    bool genome_assembly_data = false;
+
+    EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
+        CUser_field &field = **user_field_iter;
+        if( FIELD_IS_SET_AND_IS(field, Label, Str) && FIELD_IS_SET_AND_IS(field, Data, Str) ) {
+            if( GET_FIELD(field.GetLabel(), Str) == "StructuredCommentPrefix" ) {
+                string core;
+                s_StructuredCommentDbnameFromString( core, GET_FIELD(field.GetData(), Str) );
+                SET_FIELD(field.SetData(), Str, "##" + core + "-START##");
+                if (core == "Genome-Assembly-Data") {
+                    genome_assembly_data = true;
+                }
+            } else if ( GET_FIELD(field.GetLabel(), Str) == "StructuredCommentSuffix" ) {
+                string core;
+                s_StructuredCommentDbnameFromString( core, GET_FIELD(field.GetData(), Str) );
+                SET_FIELD(field.SetData(), Str, "##" + core + "-END##");
+                if (core == "Genome-Assembly-Data") {
+                    genome_assembly_data = true;
+                }
+            }
+        }
+    }
+
+    if( genome_assembly_data ) {
+        EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
+            CUser_field &field = **user_field_iter;
+            if( ! FIELD_IS_SET_AND_IS(field, Label, Str) ||
+                ! FIELD_IS_SET_AND_IS(field, Data, Str) ) 
+            {
+                continue;
+            }
+
+            if( GET_FIELD( field.GetLabel(), Str) != "Finishing Goal" &&
+                GET_FIELD( field.GetLabel(), Str) != "Current Finishing Status" )
+            {
+                continue;
+            }
+
+            string &field_str = GET_MUTABLE( field.SetData(), Str );
+            if( field_str == "High Quality Draft" ) {
+                field_str = "High-Quality Draft";
+            } else if( field_str == "Improved High Quality Draft" ) {
+                field_str = "Improved High-Quality Draft";
+            } else if( field_str == "Annotation Directed" ) {
+                field_str = "Annotation-Directed Improvement";
+            } else if( field_str == "Non-contiguous Finished" ) {
+                field_str = "Noncontiguous Finished";
+            }
+        }
+    }
+}
+
 void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
 {
     if ( val.empty() ){
@@ -5215,12 +5842,12 @@ static const TInTrSpElem sc_its_map[] = {
 typedef CStaticArrayMap<const string, const string, PNocase> TInTrSpMap;
 DEFINE_STATIC_ARRAY_MAP(TInTrSpMap, sc_ITSMap, sc_its_map);
 
-static
-void s_TranslateITSName( string &in_out_name )
+void CNewCleanup_imp::x_TranslateITSName( string &in_out_name )
 {
     TInTrSpMap::const_iterator its_iter = sc_ITSMap.find(in_out_name);
     if( its_iter != sc_ITSMap.end() ) {
         in_out_name = its_iter->second;
+        ChangeMade(CCleanupChange::eChangeITS);
     }
 }
 
@@ -5257,6 +5884,66 @@ static bool s_IsNcrnaName (
     return sc_NcrnafNames.find(name.c_str()) != sc_NcrnafNames.end();
 }
 
+// special exception for genome pipeline rRNA names
+static
+bool s_NotExceptedRibosomalName( const string &name )
+{
+    // we are "not excepted" if there is a non-space/non-digit somewhere after " ribosomal"
+    static CRegexp regex(" ribosomal.*[^ 0-9]");
+    return regex.IsMatch(name);
+}
+
+
+void 
+CNewCleanup_imp::x_RRNANameBC( CRNA_ref& rna, string &name )
+{
+    if ( name.length() > 5 && s_NotExceptedRibosomalName (name)) {
+        // suffix is *after* first match of suffix_regex
+        static CRegexp suffix_regex( " (ribosomal|rRNA) ( ?RNA)?( ?DNA)?( ?ribosomal)?" );
+        if( suffix_regex.IsMatch(name) ) {
+
+            // extract suffix
+            SIZE_TYPE suff_pos = ( suffix_regex.GetResults(0)[1] );
+            string suff = name.substr(suff_pos);
+            NStr::TruncateSpacesInPlace(suff);
+
+            // cut ribosomal stuff off of name
+            SIZE_TYPE ribosomal_pos = suffix_regex.GetResults(0)[0];
+            name.resize( ribosomal_pos );
+
+            name += " ribosomal RNA"; 
+            if ( ! suff.empty() ) {
+                if (suff[0] != ',' && suff[0] != ';') {
+                    name += " ";
+                }
+                name += suff;
+            }
+        }
+    }
+    if ( name.length() > 5) {
+        // pos is the position of the first non-digit, non-dot character
+        SIZE_TYPE pos = name.find_first_not_of(".0123456789");
+        if( NPOS != pos ) {
+            if( name[pos] == 's' && name[pos+1] == ' ' ) {
+                name[pos] = 'S';
+            }
+        }
+    }
+    x_StripSpacesMarkChanged (name);
+
+    // remove duplicate words and similar corrections
+    // ( Behold the power of regular expressions; This while loop was about 80 lines in C. )
+    do {
+        x_StripSpacesMarkChanged(name);
+    } while( s_RegexpReplace( name, "ribosomal +ribosomal", "ribosomal ") || 
+           s_RegexpReplace( name, "RNA +RNA", "RNA ") || 
+           s_RegexpReplace( name, "ribosomal +RNA +ribosomal", "ribosomal RNA ") ||
+           s_RegexpReplace( name, "ribosomal +rRNA", "ribosomal RNA ") ||
+           s_RegexpReplace( name, "RNA +rRNA", "RNA ") );
+
+    NStr::TruncateSpacesInPlace(name);
+}
+
 void CNewCleanup_imp::RnarefBC (
     CRNA_ref& rr
 )
@@ -5275,19 +5962,27 @@ void CNewCleanup_imp::RnarefBC (
 
                     static const string rRNA = " rRNA";
                     static const string rRNA2 = "_rRNA";
-                    static const string kRibosomalrRna = " ribosomal RNA";
+                    static const string kRibosomal_Rna = " ribosomal RNA";
+                    static const string kRibosomal_r_Rna = " ribosomal rRNA";
 
                     if (rr.IsSetType()) {
                         switch (rr.GetType()) {
                             case CRNA_ref::eType_rRNA:
                             {{
                                 size_t len = name.length();
-                                if (len >= rRNA.length()                       &&
-                                    ( NStr::EndsWith(name, rRNA, NStr::eNocase) || NStr::EndsWith(name, rRNA2, NStr::eNocase)) &&
-                                    !NStr::EndsWith(name, kRibosomalrRna, NStr::eNocase)) {
-                                    name.replace(len - rRNA.length(), name.size(), kRibosomalrRna);
-                                    ChangeMade(CCleanupChange::eChangeQualifiers);
+                                if (len >= rRNA.length() ) {
+                                    if( NStr::EndsWith(name, rRNA, NStr::eNocase) || NStr::EndsWith(name, rRNA2, NStr::eNocase) ) {
+                                        if( NStr::EndsWith(name, kRibosomal_r_Rna, NStr::eNocase) ) {
+                                            name.replace(len - kRibosomal_r_Rna.length(), name.size(), kRibosomal_Rna);
+                                        } else {
+                                            name.replace(len - rRNA.length(), name.size(), kRibosomal_Rna);
+                                        }
+                                        ChangeMade(CCleanupChange::eChangeQualifiers);
+                                    }
                                 }
+
+                                x_RRNANameBC( rr, name );
+
                                 break;
                             }}
                             case CRNA_ref::eType_tRNA:
@@ -5298,7 +5993,7 @@ void CNewCleanup_imp::RnarefBC (
                             case CRNA_ref::eType_other:
                             case CRNA_ref::eType_miscRNA:
                                 {{
-                                    s_TranslateITSName(name); 
+                                    x_TranslateITSName(name); 
 
                                     // convert to RNA-gen
                                     string name_copy; // copy because name is about to be destroyed
@@ -5711,7 +6406,7 @@ void CNewCleanup_imp::RnaFeatBC (
                     ChangeMade( CCleanupChange::eChangeRNAref );
                 } else if ( qual == "product" ) {
                     // e.g. "its1" to "internal transcribed spacer 1"
-                    s_TranslateITSName( (*qual_iter)->SetVal() );
+                    x_TranslateITSName( (*qual_iter)->SetVal() );
                 }
             }
         }
@@ -5766,6 +6461,85 @@ void CNewCleanup_imp::RnaFeatBC (
                 } else if( new_qual_vec.size() != qual_vec.size() ) {
                     seq_feat.SetQual().swap( new_qual_vec );
                 }
+            }
+        }
+    }
+
+    // Add fMet-related comments
+    if( (! FIELD_IS_SET(rna, Ext) || FIELD_IS(rna.GetExt(), Gen) ) &&
+        FIELD_EQUALS( rna, Type, NCBI_RNAREF(tRNA) ) && 
+        STRING_FIELD_NOT_EMPTY(seq_feat, Comment) )
+    {
+        bool justTrnaText = false;
+        string codon;
+        char aa = s_ParseSeqFeatTRnaString( GET_FIELD(seq_feat, Comment), 
+            &justTrnaText, codon, true );
+        if( aa != '\0' ) {
+            CRef<CTrna_ext> tRNA( new CTrna_ext );
+            tRNA->SetAa().SetNcbieaa( aa );
+            if (justTrnaText) {
+                copy( codon.begin(), codon.end(), back_inserter(tRNA->SetCodon()) );
+            }
+            rna.SetExt().SetTRNA( *tRNA );
+            if (justTrnaText) {
+                if ( GET_FIELD(seq_feat, Comment) != "fMet" &&
+                     GET_FIELD(seq_feat, Comment) != "fMet tRNA" &&
+                     GET_FIELD(seq_feat, Comment) != "fMet-tRNA" ) {
+                        RESET_FIELD( seq_feat, Comment );
+                } else {
+                    SET_FIELD( seq_feat, Comment, "fMet" );
+                }
+            }
+        }
+    }
+
+    // "S ribosomal RNA" logic
+    if ( ! FIELD_IS_SET(rna, Ext) && 
+        STRING_FIELD_NOT_EMPTY(seq_feat, Comment) &&
+        FIELD_EQUALS( rna, Type, NCBI_RNAREF(rRNA) ) ) 
+    {
+        const int comment_len = GET_FIELD(seq_feat, Comment).length();
+        if (comment_len > 15 && comment_len < 20) {
+            if ( NStr::EndsWith(GET_FIELD(seq_feat, Comment), "S ribosomal RNA", NStr::eNocase) ) {
+                rna.SetExt().SetName( GET_FIELD(seq_feat, Comment) );
+                RESET_FIELD(seq_feat, Comment);
+            }
+        } else if (comment_len > 6 && comment_len < 20) {
+            if ( NStr::EndsWith(GET_FIELD(seq_feat, Comment), "S rRNA", NStr::eNocase) ) {
+                rna.SetExt().SetName( GET_FIELD(seq_feat, Comment) );
+                RESET_FIELD(seq_feat, Comment);
+            }
+        }
+    }
+
+    // mRNA logic
+    if( ! FIELD_IS_SET(rna, Ext) &&
+        STRING_FIELD_NOT_EMPTY(seq_feat, Comment) &&
+        FIELD_EQUALS( rna, Type, NCBI_RNAREF(mRNA) ) ) 
+    {
+        if ( NStr::EndsWith( GET_FIELD(seq_feat, Comment), " RNA",  NStr::eNocase ) ||
+             NStr::EndsWith( GET_FIELD(seq_feat, Comment), " mRNA", NStr::eNocase ) )
+        {
+            rna.SetExt().SetName( GET_FIELD(seq_feat, Comment) );
+            RESET_FIELD(seq_feat, Comment);
+        }
+    }
+
+    // ITS logic
+    if( FIELD_EQUALS( rna, Type, NCBI_RNAREF(other)) || 
+        FIELD_EQUALS( rna, Type, NCBI_RNAREF(miscRNA) ) ) 
+    {
+        if( FIELD_IS_SET_AND_IS(rna, Ext, Name) ) {
+            x_TranslateITSName( GET_MUTABLE(rna.SetExt(), Name) );
+        } else if( FIELD_IS_SET(rna, Ext) && FIELD_IS( rna.GetExt(), Gen) &&
+            FIELD_IS_SET(rna.GetExt().GetGen(), Product) ) 
+        {
+            x_TranslateITSName( rna.SetExt().SetGen().SetProduct() );
+        } else if( ! FIELD_IS_SET(rna, Ext) && STRING_FIELD_NOT_EMPTY(seq_feat, Comment) ) {
+            static CRegexp its_regex("internal transcribed spacer [123]", CRegexp::fCompile_ignore_case );
+            if( its_regex.IsMatch(GET_FIELD(seq_feat, Comment) ) ) {
+                rna.SetExt().SetGen().SetProduct( GET_FIELD(seq_feat, Comment) );
+                RESET_FIELD(seq_feat, Comment) ;
             }
         }
     }
@@ -5998,6 +6772,71 @@ void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
             }
         }
     }
+
+    x_CleanStructuredComment( user_object );
+}
+
+void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
+{
+    EDIT_EACH_PCRPRIMER_IN_PCRPRIMERSET( primer_iter, primer_set ) {
+        CPCRPrimer &primer = **primer_iter;
+        
+        if( FIELD_IS_SET(primer, Seq) ) {
+            string &seq = GET_MUTABLE(primer, Seq).Set();
+            string before = seq;
+            x_CleanupStringMarkChanged(seq);
+            s_EraseSpacesOutsideBrackets(seq);
+            NStr::ToLower(seq);
+            if( before != seq ) {
+                ChangeMade(CCleanupChange::eChangePCRPrimers);
+            }
+            if( seq.empty() ) {
+                RESET_FIELD(primer, Seq);
+                ChangeMade(CCleanupChange::eChangePCRPrimers);
+            }
+        }
+
+        if( FIELD_IS_SET(primer, Name) ) {
+            string &name = GET_MUTABLE(primer, Name).Set();
+            x_CleanupStringMarkChanged(name);
+            if( name.empty() ) {
+                RESET_FIELD(primer, Name);
+                ChangeMade(CCleanupChange::eChangePCRPrimers) ;
+            }
+        }
+
+        if( ! FIELD_IS_SET(primer, Name) && ! FIELD_IS_SET(primer, Seq) ) {
+            ERASE_PCRPRIMER_IN_PCRPRIMERSET(primer_iter, primer_set);
+        }
+    }
+    REMOVE_IF_EMPTY_PCRPRIMER_IN_PCRPRIMERSET( primer_set );
+}
+
+void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )
+{
+    EDIT_EACH_PCRREACTION_IN_PCRREACTIONSET( reaction_iter, pcr_reaction_set ) {
+        CPCRReaction &reaction = **reaction_iter;
+
+        if( FIELD_IS_SET(reaction, Forward) ) {
+            x_PCRPrimerSetBC( GET_MUTABLE(reaction, Forward) );
+            if( ! GET_FIELD(reaction, Forward).IsSet() || GET_FIELD(reaction, Forward).Get().empty() ) {
+                RESET_FIELD(reaction, Forward);
+            }
+        }
+
+        if( FIELD_IS_SET(reaction, Reverse) ) {
+            x_PCRPrimerSetBC( GET_MUTABLE(reaction, Reverse) );
+            if( ! GET_FIELD(reaction, Reverse).IsSet() || GET_FIELD(reaction, Reverse).Get().empty() ) {
+                RESET_FIELD(reaction, Reverse);
+            }
+        }
+
+        if( ! FIELD_IS_SET(reaction, Forward) && ! FIELD_IS_SET(reaction, Reverse) ) {
+            ERASE_PCRREACTION_IN_PCRREACTIONSET(reaction_iter, pcr_reaction_set);
+        }
+    }
+
+    REMOVE_IF_EMPTY_PCRREACTION_IN_PCRREACTIONSET( pcr_reaction_set );
 }
 
 // maps the type of seqdesc to the order it should be in 

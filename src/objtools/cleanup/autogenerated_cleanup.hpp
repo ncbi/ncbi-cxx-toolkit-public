@@ -79,6 +79,7 @@
 #include <objects/biblio/Meeting.hpp>
 #include <objects/biblio/ArticleIdSet.hpp>
 #include <objects/biblio/ArticleId.hpp>
+#include <objects/biblio/Title.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/biblio/Cit_pat.hpp>
 #include <objects/biblio/Patent_priority.hpp>
@@ -90,7 +91,9 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/MultiOrgName.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Clone_ref.hpp>
@@ -104,6 +107,9 @@
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/RNA_qual_set.hpp>
+#include <objects/seqfeat/RNA_qual.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Rsite_ref.hpp>
 #include <objects/seqfeat/Txinit.hpp>
@@ -163,6 +169,8 @@ public:
     m_NewCleanup(newCleanup), 
     m_LastArg_x_BasicCleanupSeqEntry_seq_seq(NULL),
     m_LastArg_BasicCleanupSeqFeat(NULL),
+    m_LastArg_x_BasicCleanupSeqFeat_data_data_biosrc_biosrc(NULL),
+    m_LastArg_x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC(NULL),
     m_LastArg_x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E(NULL),
     m_LastArg_x_BasicCleanupSeqEntry_seq_seq_inst_inst(NULL),
     m_LastArg_x_BasicCleanupBioseqSet_descr_descr_E_E_ETC(NULL),
@@ -278,6 +286,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E_ETC( CSeq_align & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_align_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_ETC( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_part_supi_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_pub_pub_std_ETC( CAffil::C_Std & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_pub_pub_ETC( CAffil & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_pub_ETC( CAffil & arg0 );
@@ -311,6 +320,12 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_ma
   template< typename Tcontainer_ncbi_cref_carticleid_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_article_ids_ids_ETC( Tcontainer_ncbi_cref_carticleid_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_article_ids_ETC( CArticleIdSet & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_article_title_title_E_name_ETC( std::string & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_c_e >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_article_title_title_E_ETC( Tcontainer_ncbi_cref_c_e_c_e & arg0 );
+  template< typename Tcontainer_ncbi_cref_c_e_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_article_title_title_ETC( Tcontainer_ncbi_cref_c_e_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_article_title_ETC( CTitle & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_article_ETC( CCit_art & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_article_ETC( CCit_art & arg0 );
   template< typename Tcontainer_ncbi_cref_ccit_art_ >
@@ -352,12 +367,28 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_pub_pub1760_ETC( Tcontaine
   void x_BasicCleanupSeqFeat_comment_ETC( std::string & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
 void x_BasicCleanupSeqFeat_support_support_model_evidence_E_E_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+  template< typename Tcontainer_std_string_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_mod_ETC( Tcontainer_std_string_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_mod_E_E_ETC( COrgMod & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_mod_E_ETC( COrgMod & arg0 );
+  template< typename Tcontainer_ncbi_cref_corgmod_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_mod_ETC( Tcontainer_ncbi_cref_corgmod_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid_hybrid_E( COrgName & arg0 );
+  template< typename Tcontainer_ncbi_cref_corgname_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid_hybrid( Tcontainer_ncbi_cref_corgname_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid( CMultiOrgName & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name( COrgName::C_Name & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_E1780_ETC( COrgName & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_orgname_name_hybrid_hybrid_E_ETC( COrgName & arg0 );
+  template< typename Tcontainer_ncbi_cref_corgname_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_orgname_name_hybrid_hybrid_ETC( Tcontainer_ncbi_cref_corgname_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_orgname_name_hybrid_ETC( CMultiOrgName & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_orgname_name_ETC( COrgName::C_Name & arg0 );
+  void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org_org_orgname_orgname1728( COrgName & arg0 );
+  void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org_org_orgname( COrgName & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org( COrg_ref & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_source_source_ETC( CSubSource & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_somatic_origin_E_Somatic_origin_source_ETC( CSubSource & arg0 );
-  template< typename Tcontainer_ncbi_cref_csubsource_ >
-void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_subtype_ETC( Tcontainer_ncbi_cref_csubsource_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_pcr_primers_ETC( CPCRReactionSet & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location1795_ETC( CSeq_loc & arg0 );
@@ -390,6 +421,8 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ref_ETC( CNum_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ETC( CNumbering & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_ETC( CNumbering & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_orgname1773_ETC( COrgName & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_ETC( COrgName & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_desc_ETC( std::string & arg0 );
@@ -400,9 +433,17 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_ETC( 
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_name_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqFeat_data_data_prot_prot( CProt_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_prot( CProt_ref & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_comment_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_pub_pub_E_E_equiv_ETC( CPub_equiv & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_ETC( CPubdesc & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_ETC( CPubdesc & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_E_E_ETC( CRNA_qual & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_E_ETC( CRNA_qual & arg0 );
+  template< typename Tcontainer_ncbi_cref_crna_qual_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_ETC( Tcontainer_ncbi_cref_crna_qual_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_ETC( CRNA_qual_set & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_ETC( CRNA_gen & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_ETC( CRNA_gen & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_ETC( CTrna_ext & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_tRNA_ETC( CTrna_ext & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_ETC( CRNA_ref::C_Ext & arg0 );
@@ -419,8 +460,8 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_ETC( Tcontainer
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_ETC( CProt_ref & arg0 );
   template< typename Tcontainer_ncbi_cref_cprot_ref_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_ETC( Tcontainer_ncbi_cref_cprot_ref_ & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_ETC( COrg_ref & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_ETC( COrg_ref & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_ETC( COrg_ref & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_ETC( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_ETC( CTxinit & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_ETC( CTxinit & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E( CUser_field & arg0 );
@@ -496,10 +537,16 @@ void x_BasicCleanupSeqFeat_support_support_model_evidence_E_E_protein_ETC( Tcont
 void x_BasicCleanupSeqFeat_support_support_model_evidence_ETC( Tcontainer_ncbi_cref_cmodelevidencesupport_ & arg0 );
   void x_BasicCleanupSeqFeat_support_support_ETC( CSeqFeatSupport & arg0 );
   void x_BasicCleanupSeqFeat_support_ETC( CSeqFeatSupport & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname1781( COrgName & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname( COrgName & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_ETC( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_cdregion_ETC( CCdregion & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_ETC( CCdregion & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_imp_imp_ETC( CImp_feat & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_imp_ETC( CImp_feat & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ETC( CRNA_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_ETC( CRNA_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_ETC( CSeqFeatData & arg0 );
@@ -726,6 +773,8 @@ void x_BasicCleanupBioseqSet_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
 
   CBioseq* m_LastArg_x_BasicCleanupSeqEntry_seq_seq;
   CSeq_feat* m_LastArg_BasicCleanupSeqFeat;
+  CBioSource* m_LastArg_x_BasicCleanupSeqFeat_data_data_biosrc_biosrc;
+  CBioSource* m_LastArg_x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC;
   CSeqdesc* m_LastArg_x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E;
   CSeq_inst* m_LastArg_x_BasicCleanupSeqEntry_seq_seq_inst_inst;
   CSeqdesc* m_LastArg_x_BasicCleanupBioseqSet_descr_descr_E_E_ETC;

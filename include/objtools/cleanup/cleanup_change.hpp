@@ -133,6 +133,8 @@ public:
         eMoveToProtXref,
         eCompressSpaces,
         eStripSerial,
+        eRemoveOrgmod,
+        eRemoveSubSource,
 
         // set when any other change is made.
         eChangeOther,

@@ -100,6 +100,7 @@ class CStd_seg;
 class CMedline_entry;
 class CPub_set;
 class CTrna_ext;
+class CPCRPrimerSet;
 
 class CSeq_entry_Handle;
 class CBioseq_Handle;
@@ -219,22 +220,21 @@ private:
     void OrgrefBC (COrg_ref& org);
     void OrgnameBC (COrgName& onm);
     void OrgmodBC (COrgMod& omd);
-    void SubsourceBC (CSubSource& sbs);
 
     void DbtagBC (CDbtag& dbt);
 
     void PubdescBC (CPubdesc& pub);
     void PubEquivBC (CPub_equiv& pub_equiv);
-    void PubBC(CPub& pub, bool fix_initials);
-    void CitGenBC(CCit_gen& cg, bool fix_initials);
-    void CitSubBC(CCit_sub& cs, bool fix_initials);
-    void CitArtBC(CCit_art& ca, bool fix_initials);
-    void CitBookBC(CCit_book& cb, bool fix_initials);
-    void CitPatBC(CCit_pat& cp, bool fix_initials);
-    void CitLetBC(CCit_let& cl, bool fix_initials);
-    void CitProcBC(CCit_proc& cb, bool fix_initials);
-    void CitJourBC(CCit_jour &j, bool fix_initials);
-    void MedlineEntryBC(CMedline_entry& ml, bool fix_initials);
+    EAction PubBC(CPub& pub, bool fix_initials);
+    EAction CitGenBC(CCit_gen& cg, bool fix_initials);
+    EAction CitSubBC(CCit_sub& cs, bool fix_initials);
+    EAction CitArtBC(CCit_art& ca, bool fix_initials);
+    EAction CitBookBC(CCit_book& cb, bool fix_initials);
+    EAction CitPatBC(CCit_pat& cp, bool fix_initials);
+    EAction CitLetBC(CCit_let& cl, bool fix_initials);
+    EAction CitProcBC(CCit_proc& cb, bool fix_initials);
+    EAction CitJourBC(CCit_jour &j, bool fix_initials);
+    EAction MedlineEntryBC(CMedline_entry& ml, bool fix_initials);
     void AuthListBC( CAuth_list& al, bool fix_initials );
     void AffilBC( CAffil& af );
     void ImprintBC( CImprint& imp );
@@ -265,6 +265,8 @@ private:
     void DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst );
 
     void UserObjectBC( CUser_object &user_object );
+
+    void PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set );
 
     // void XxxxxxBC (Cxxxxx& xxx);
 
@@ -321,15 +323,21 @@ private:
     // modernize PCR Primer
     void x_ModernizePCRPrimers( CBioSource &biosrc );
 
+    void x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioSource &biosrc );
+
     void x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq );
 
     string x_ExtractSatelliteFromComment( string &comment );
+
+    void x_RRNANameBC( CRNA_ref& rna, string &name );
 
     void x_SetFrameFromLoc( CCdregion &cdregion, const CSeq_loc &location );
 
     void x_CleanupECNumber( string &ec_num );
 
     void x_CleanupAndRepairInference( string &inference );
+
+    void x_CleanStructuredComment( CUser_object &user_object );
 
     void x_MendSatelliteQualifier( string &val );
 
@@ -351,11 +359,15 @@ private:
     void x_CleanupStringMarkChanged( std::string &str );
     void x_ConvertDoubleQuotesMarkChanged( std::string &str );
     void x_CompressStringSpacesMarkChanged( std::string &str );
+    void x_StripSpacesMarkChanged(string& str);
 
     void x_SortUniqSeqFeat( CSeq_feat& seq_feat );
     void x_SortUniqOrgRef( COrg_ref& org );
     void x_SortUniqBiosource( CBioSource& biosrc );
 
+    void x_TranslateITSName( string &in_out_name );
+
+    void x_PCRPrimerSetBC( CPCRPrimerSet &primer_set );
 
 protected:
 

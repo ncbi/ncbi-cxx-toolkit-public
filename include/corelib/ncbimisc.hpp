@@ -889,7 +889,8 @@ BEGIN_NCBI_NAMESPACE;
 /// Using this macro is discouraged because if you affect an object's state
 /// in such a way that it's ordering in the set should change, the set
 /// could be in an invalid state.
-/// The "REAL92137892" is just a random suffix to make the variable unique
+/// The "REAL92137892" is just a random suffix to make the variable unique.
+/// The number has no significance.
 #define NON_CONST_SET_ITERATE( Type, Var, Cont) \
     Type::key_type *Var = NULL;  \
     Type::iterator Var##REAL92137892  = (Cont).begin(); \

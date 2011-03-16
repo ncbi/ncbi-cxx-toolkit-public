@@ -359,6 +359,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Move To Prot Xref",
     "Compress Spaces",
     "Strip serial",
+    "Remove Orgmod",
+    "Remove SubSource",
 
     // set when any other change is made.
     "Change Other", 

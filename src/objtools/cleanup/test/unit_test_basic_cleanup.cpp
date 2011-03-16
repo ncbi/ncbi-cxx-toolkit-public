@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
         BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
 	} else {
         BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
-        BOOST_CHECK_EQUAL (changes_str[1], "Change Other");
+        BOOST_CHECK_EQUAL (changes_str[1], "Change Orgmod");
         for (int i = 2; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }

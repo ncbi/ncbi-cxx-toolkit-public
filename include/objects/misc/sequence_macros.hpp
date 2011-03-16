@@ -892,6 +892,28 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define FIELD_IS_SET(Var, Fld) \
     ((Var).IsSet##Fld())
 
+/// FIELD_CHAIN_OF_2_IS_SET
+
+#define FIELD_CHAIN_OF_2_IS_SET(Var, Fld1, Fld2) \
+    ( (Var).IsSet##Fld1() && \
+      (Var).Get##Fld1().IsSet##Fld2() )
+
+/// FIELD_CHAIN_OF_3_IS_SET
+
+#define FIELD_CHAIN_OF_3_IS_SET(Var, Fld1, Fld2, Fld3) \
+    ( (Var).IsSet##Fld1() && \
+      (Var).Get##Fld1().IsSet##Fld2() && \
+      (Var).Get##Fld1().Get##Fld2().IsSet##Fld3() )
+
+/// FIELD_CHAIN_OF_4_IS_SET
+
+#define FIELD_CHAIN_OF_4_IS_SET(Var, Fld1, Fld2, Fld3, Fld4) \
+    ( (Var).IsSet##Fld1() && \
+      (Var).Get##Fld1().IsSet##Fld2() && \
+      (Var).Get##Fld1().Get##Fld2().IsSet##Fld3() && \
+      (Var).Get##Fld1().Get##Fld2().Get##Fld3().IsSet##Fld4() )
+
+
 /// FIELD_CHAIN_OF_5_IS_SET
 
 #define FIELD_CHAIN_OF_5_IS_SET(Var, Fld1, Fld2, Fld3, Fld4, Fld5) \
@@ -927,6 +949,11 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define STRING_FIELD_MATCH(Var, Fld, Str) \
     ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Get##Fld(), Str))
 
+/// STRING_FIELD_NOT_EMPTY base macro
+
+#define STRING_FIELD_NOT_EMPTY(Var, Fld) \
+    ( (Var).IsSet##Fld() && ! (Var).Get##Fld().empty() )
+
 /// STRING_SET_MATCH base macro (for list or vectors)
 
 #define STRING_SET_MATCH(Var, Fld, Str) \
@@ -941,6 +968,8 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 #define FIELD_EQUALS( Var, Fld, Value ) \
     ( (Var).IsSet##Fld() && (Var).Get##Fld() == (Value) )
+
+
 
 /// CALL_IF_SET base macro
 
@@ -3915,6 +3944,64 @@ DO_UNIQUE (CODON_ON_TRNAEXT, Var, Func)
 
 #define FOR_EACH_PCRPARSEDSET_IN_LIST(Itr, Var) \
     FOR_EACH (PCRPARSEDSET_IN_LIST, Itr, Var)
+
+///
+/// CPCRReactionSet macros
+
+#define PCRREACTION_IN_PCRREACTIONSET_Type       CPCRReactionSet::Tdata
+#define PCRREACTION_IN_PCRREACTIONSET_Test(Var)  ( (Var).IsSet() && ! (Var).Get().empty() )
+#define PCRREACTION_IN_PCRREACTIONSET_Get(Var)   (Var).Get()
+#define PCRREACTION_IN_PCRREACTIONSET_Set(Var)   (Var).Set()
+#define PCRREACTION_IN_PCRREACTIONSET_Reset(Var) (Var).Reset()
+
+/// FOR_EACH_PCRREACTION_IN_PCRREACTIONSET
+
+#define FOR_EACH_PCRREACTION_IN_PCRREACTIONSET(Itr, Var) \
+    FOR_EACH (PCRREACTION_IN_PCRREACTIONSET, Itr, Var)
+
+/// EDIT_EACH_PCRREACTION_IN_PCRREACTIONSET
+
+#define EDIT_EACH_PCRREACTION_IN_PCRREACTIONSET(Itr, Var) \
+    EDIT_EACH (PCRREACTION_IN_PCRREACTIONSET, Itr, Var)
+
+/// ERASE_PCRREACTION_IN_PCRREACTIONSET
+
+#define ERASE_PCRREACTION_IN_PCRREACTIONSET(Itr, Var) \
+    LIST_ERASE_ITEM (PCRREACTION_IN_PCRREACTIONSET, Itr, Var)
+
+/// REMOVE_IF_EMPTY_PCRREACTION_IN_PCRREACTIONSET
+
+#define REMOVE_IF_EMPTY_PCRREACTION_IN_PCRREACTIONSET(Var) \
+    REMOVE_IF_EMPTY_FIELD(PCRREACTION_IN_PCRREACTIONSET, Var)
+
+///
+/// CPCRReaction macros
+
+#define PCRPRIMER_IN_PCRPRIMERSET_Type       CPCRPrimerSet::Tdata
+#define PCRPRIMER_IN_PCRPRIMERSET_Test(Var)  ( (Var).IsSet() && ! (Var).Get().empty() )
+#define PCRPRIMER_IN_PCRPRIMERSET_Get(Var)   (Var).Get()
+#define PCRPRIMER_IN_PCRPRIMERSET_Set(Var)   (Var).Set()
+#define PCRPRIMER_IN_PCRPRIMERSET_Reset(Var) (Var).Reset()
+
+/// FOR_EACH_PCRPRIMER_IN_PCRPRIMERSET
+
+#define FOR_EACH_PCRPRIMER_IN_PCRPRIMERSET(Itr, Var) \
+    FOR_EACH (PCRPRIMER_IN_PCRPRIMERSET, Itr, Var)
+
+/// EDIT_EACH_PCRPRIMER_IN_PCRPRIMERSET
+
+#define EDIT_EACH_PCRPRIMER_IN_PCRPRIMERSET(Itr, Var) \
+    EDIT_EACH (PCRPRIMER_IN_PCRPRIMERSET, Itr, Var)
+
+/// ERASE_PCRPRIMER_IN_PCRPRIMERSET
+
+#define ERASE_PCRPRIMER_IN_PCRPRIMERSET(Itr, Var) \
+    LIST_ERASE_ITEM (PCRPRIMER_IN_PCRPRIMERSET, Itr, Var)
+
+/// REMOVE_IF_EMPTY_PCRPRIMER_IN_PCRPRIMERSET
+
+#define REMOVE_IF_EMPTY_PCRPRIMER_IN_PCRPRIMERSET(Var) \
+    REMOVE_IF_EMPTY_FIELD(PCRPRIMER_IN_PCRPRIMERSET, Var)
 
 ///
 /// CDelta_ext macros
