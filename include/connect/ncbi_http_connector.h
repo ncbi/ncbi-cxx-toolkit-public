@@ -111,10 +111,10 @@ extern "C" {
  *  fHCC_KeepHeader --
  *       do not strip HTTP header (i.e. everything up to the first "\r\n\r\n",
  *       including the "\r\n\r\n") from the CGI script's response
+ *       NOTE this flag disables automatic authorization, redirection, etc.
  *  fHCC_UrlDecodeInput --
- *       strip the HTTP header from the input data;  assume the input
- *       data are single-part, URL-encoded;  perform the URL-decoding on read
- *       NOTE:  this flag disables the "fHCC_KeepHeader" flag
+ *       assume the response body single-part, URL-encoded; perform the
+ *       URL-decoding on read, and deliver decoded data to the user
  *  fHCC_DropUnread --
  *       do not collect incoming data in "Read" mode before switching into
  *       "Write" mode for storing output data in buffer;  by default all
@@ -152,7 +152,7 @@ typedef enum {
     fHCC_AutoReconnect    = 0x1,  /* see (*) above                           */
     fHCC_SureFlush        = 0x2,  /* always send HTTP request on CLOSE/RECONN*/
     fHCC_KeepHeader       = 0x4,  /* dont strip HTTP header from CGI response*/
-    fHCC_UrlDecodeInput   = 0x8,  /* strip HTTP header, URL-decode content   */
+    fHCC_UrlDecodeInput   = 0x8,  /* URL-decode content of the response body */
     fHCC_UrlEncodeOutput  = 0x10, /* URL-encode all output data              */
     fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
     fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
