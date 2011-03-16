@@ -2465,8 +2465,8 @@ enum EFindFiles {
     fFF_File       = (1<<0),             ///< find files
     fFF_Dir        = (1<<1),             ///< find directories
     fFF_Recursive  = (1<<2),             ///< descend into sub-dirs
-    fFF_Nocase     = (1<<3),             ///< case-insensitive names search
-    fFF_Default    = fFF_File | fFF_Dir  ///< default behaviur
+    fFF_Nocase     = (1<<3),             ///< case-insensitive name search
+    fFF_Default    = fFF_File | fFF_Dir  ///< default behavior
 };
 /// Bitwise OR of "EFindFiles"
 typedef int TFindFiles; 
