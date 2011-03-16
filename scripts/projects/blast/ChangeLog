@@ -1,4 +1,4 @@
-February 1, 2011
+March 15, 2011
 * 2.2.25 release
 * Enhanced documentation, includes simplified setup instructions, available at
   http://www.ncbi.nlm.nih.gov/books/NBK1762
@@ -7,7 +7,7 @@ Improvements:
 * Added support for hard-masking of BLAST databases.
 * Improve performance of makeblastdb for FASTA input with large numbers of 
   sequences, improve error checking.
-* Enable Best Hit options and XML formatting for Blast2Sequences mode
+* Allow Best Hit options and XML formatting for Blast2Sequences mode
 * Allow multiple query sequences for psiblast.
 * Allow specification of any multiple sequence alignment sequence as the
   master with the -in_msa psiblast argument.
@@ -23,6 +23,10 @@ Bug fixes:
 * Missing subject identifiers in tabular output.
 * Blast_formatter ignoring -num_alignments and -num_descriptions
 * Blast archive format could be saved incorrectly with multiple queries.
+* Blast_formatter established an unneeded network connection.
+* Blast_formatter did not save masking information correctly.
+* Rpstblastn might crash if searching many sequences.
+* Indexed megablast would not run in multi-threaded mode.
 * The query title in the PSSM saved by psiblast was not being stored.
 * Possible failure to run in multi-threaded mode with multiple queries.
 
