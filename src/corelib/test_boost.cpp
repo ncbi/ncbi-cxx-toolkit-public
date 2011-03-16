@@ -825,6 +825,8 @@ CNcbiTestApplication::Init(void)
     }
     else {
         m_ArgDescrs = new CArgDescriptions();
+        m_ArgDescrs->AddFlag("-help",
+             "Print test framework related command line arguments");
         m_ArgDescrs->AddFlag("dryrun",
                              "Do not actually run tests, "
                              "just print list of all available tests.");
@@ -1558,7 +1560,7 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     but::framework::register_observer(m_Observer);
 
     // TODO: change this functionality to use only -dryrun parameter
-    for (int i = 0; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i) {
         if (NStr::CompareCase(argv[i], "--do_not_run") == 0) {
             m_RunMode |= fTestList;
             but::results_reporter::set_level(but::DETAILED_REPORT);
