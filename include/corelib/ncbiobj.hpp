@@ -132,6 +132,10 @@ public:
     // Mark object as "unlocked" for deletion, but do not delete it.
     void NCBI_OBJECT_LOCKER_EXPORT UnlockRelease(const CObject* object) const;
 
+    // Transfer lock from other locker
+    void NCBI_OBJECT_LOCKER_EXPORT TransferLock(const CObject* object,
+                                                const CObjectCounterLocker& old_locker) const;
+
     static
     void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
 
@@ -556,6 +560,13 @@ void CObjectCounterLocker::UnlockRelease(const CObject* object) const
 {
     object->ReleaseReference();
 }
+
+
+inline
+void CObjectCounterLocker::TransferLock(const CObject* /*object*/,
+                                        const CObjectCounterLocker& /*old_locker*/) const
+{
+}
 #endif
 
 
@@ -721,6 +732,12 @@ public:
     void Swap(TThisType& ref)
         {
             swap(m_Data, ref.m_Data);
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().TransferLock(ptr, ref.m_Data.first());
+            }
+            if ( TObjectType* ptr = ref.m_Data.second() ) {
+                ref.m_Data.first().TransferLock(ptr, m_Data.first());
+            }
         }
 
     /// Reset reference object.
@@ -1269,6 +1286,12 @@ public:
     void Swap(TThisType& ref)
         {
             swap(m_Data, ref.m_Data);
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().TransferLock(ptr, ref.m_Data.first());
+            }
+            if ( TObjectType* ptr = ref.m_Data.second() ) {
+                ref.m_Data.first().TransferLock(ptr, m_Data.first());
+            }
         }
 
     /// Reset reference object.
@@ -1831,6 +1854,15 @@ public:
             TParent::operator=(null);
             return *this;
         }
+
+    /// Swaps the pointer with another reference
+    ///
+    /// @sa
+    ///   Swap(CRef<>&)
+    void Swap(TThisType& ref)
+        {
+            TParent::Swap(ref);
+        }
 };
 
 
@@ -1899,6 +1931,15 @@ public:
         {
             TParent::operator=(null);
             return *this;
+        }
+
+    /// Swaps the pointer with another reference
+    ///
+    /// @sa
+    ///   Swap(CRef<>&)
+    void Swap(TThisType& ref)
+        {
+            TParent::Swap(ref);
         }
 };
 
@@ -2442,6 +2483,13 @@ public:
     }
 
 
+    /// Swap values of this reference with another
+    void Swap(TThisType& ref)
+    {
+        TParent::Swap(ref);
+    }
+
+
     /// Lock the object and return reference to it.
     /// If the refenced object is already deleted then return null reference.
     TRefType Lock(void) const
@@ -2472,6 +2520,24 @@ void swap(NCBI_NS_NCBI::CRef<C,L>& ref1,
 
 template<class C, class L>
 inline
+void swap(NCBI_NS_NCBI::CConstIRef<C,L>& ref1,
+          NCBI_NS_NCBI::CConstIRef<C,L>& ref2)
+{
+    ref1.Swap(ref2);
+}
+
+
+template<class C, class L>
+inline
+void swap(NCBI_NS_NCBI::CIRef<C,L>& ref1,
+          NCBI_NS_NCBI::CIRef<C,L>& ref2)
+{
+    ref1.Swap(ref2);
+}
+
+
+template<class C, class L>
+inline
 void swap(NCBI_NS_NCBI::CConstRef<C,L>& ref1,
           NCBI_NS_NCBI::CConstRef<C,L>& ref2)
 {
@@ -2483,6 +2549,15 @@ template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CWeakRef<C,L>& ref1,
           NCBI_NS_NCBI::CWeakRef<C,L>& ref2)
+{
+    ref1.Swap(ref2);
+}
+
+
+template<class C, class L>
+inline
+void swap(NCBI_NS_NCBI::CWeakIRef<C,L>& ref1,
+          NCBI_NS_NCBI::CWeakIRef<C,L>& ref2)
 {
     ref1.Swap(ref2);
 }

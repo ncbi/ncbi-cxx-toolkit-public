@@ -843,6 +843,18 @@ void CObjectCounterLocker::UnlockRelease(const CObject* object) const
     }
     object->ReleaseReference();
 }
+
+
+void CObjectCounterLocker::TransferLock(const CObject* object,
+                                        const CObjectCounterLocker& old_locker) const
+{
+    if ( MonitoredType(object) ) {
+        sx_LocksMonitor.Get().Locked(this, object);
+        sx_LocksMonitor.Get().Unlocked(&old_locker, object);
+    }
+}
+
+
 void CObjectCounterLocker::MonitorObjectType(const type_info& type)
 {
     StopMonitoring();
