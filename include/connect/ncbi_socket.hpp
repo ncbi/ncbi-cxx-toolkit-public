@@ -77,8 +77,7 @@ private:
 ///
 ///  CTrigger::
 ///
-/// @li <b>NOTE:</b>  For documentation see TRIGGER_***() functions in
-/// "ncbi_socket.h".
+/// @note  For documentation see TRIGGER_***() functions in "ncbi_socket.h".
 ///
 
 class NCBI_XCONNECT_EXPORT CTrigger : public CPollable
@@ -93,16 +92,17 @@ public:
     EIO_Status IsSet(void);
     EIO_Status Reset(void);
 
+    /// Access to the the system-specific handle
     virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
-    // Access to the underlying "TRIGGER" and the system-specific handle.
+    /// Access to the underlying "TRIGGER"
     TRIGGER GetTRIGGER(void) const;
 
 protected:
     TRIGGER    m_Trigger;
 
 private:
-    /// disable copy constructor and assignment
+    // disable copy constructor and assignment
     CTrigger(const CTrigger&);
     CTrigger& operator= (const CTrigger&);
 };
@@ -113,9 +113,9 @@ private:
 ///
 ///  CSocket::
 ///
-/// @li <b>NOTE:</b>  For documentation see SOCK_***() functions in
-/// "ncbi_socket.h".
-///        Initially, all timeouts are infinite.
+/// @note  For documentation see SOCK_***() functions in "ncbi_socket.h".
+///
+/// Initially, all timeouts are infinite.
 ///
 
 class NCBI_XCONNECT_EXPORT CSocket : public CPollable
@@ -123,11 +123,9 @@ class NCBI_XCONNECT_EXPORT CSocket : public CPollable
 public:
     CSocket(void);
 
-    /// Create a client-side socket connected to "host:port".
-    /// @li <b>NOTE 1:</b>  the created underlying "SOCK" will be owned by the
-    /// "CSocket";
-    /// @li <b>NOTE 2:</b>  timeout from the argument becomes new eIO_Open 
-    /// timeout.
+    /// Create a client-side socket connected to "host:port"
+    /// @note  the created underlying "SOCK" will be owned by the "CSocket";
+    /// @note  timeout from the argument becomes new eIO_Open timeout.
     ///
     /// @param host
     ///
@@ -143,7 +141,7 @@ public:
             TSOCK_Flags     flags   = fSOCK_LogDefault);
 
     /// Variant of the above, which takes host as a binary value in 
-    /// network b.o.
+    /// network byte order
     /// @param host
     ///  network byte order
     /// @param port
@@ -169,10 +167,9 @@ public:
     /// Direction eIO_Close and eIO_ReadWrite generate eIO_InvalidArg error.
     EIO_Status GetStatus(EIO_Event direction) const;
 
-    /// Connect to "host:port".
-    /// @li <b>NOTE 1:</b>  should not be called if already connected;
-    /// @li <b>NOTE 2:</b>  timeout from the argument becomes new eIO_Open
-    /// timeout.
+    /// Connect to "host:port"
+    /// @note  should not be called if already connected;
+    /// @note  timeout from the argument becomes new eIO_Open timeout.
     ///
     /// @param host
     ///
@@ -187,13 +184,10 @@ public:
                        const STimeout* timeout = kDefaultTimeout,
                        TSOCK_Flags     flags   = fSOCK_LogDefault);
 
-    /// Reconnect to the same address.
-    /// @li <b>NOTE 1:</b>   the socket must not be closed by the time this
-    /// call is made;
-    /// @li <b>NOTE 2:</b> not for the sockets created by
-    /// CListeningSocket::Accept();
-    /// @li <b>NOTE 3:</b>   timeout from the argument becomes new eIO_Open
-    /// timeout.
+    /// Reconnect to the same address
+    /// @note  the socket must not be closed by the time this call is made;
+    /// @note  not for the sockets created by CListeningSocket::Accept();
+    /// @note  timeout from the argument becomes new eIO_Open timeout.
     ///
     /// @param timeout
     ///
@@ -203,13 +197,10 @@ public:
     ///
     EIO_Status Shutdown(EIO_Event how);
 
-    /// @li <b>NOTE:</b>  closes the undelying SOCK only if it is owned by
-    /// this "CSocket"!
-    ///
+    /// @note  closes the undelying SOCK only if it is owned by this "CSocket"!
     EIO_Status Close(void);
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::Poll() to wait on multiple sockets
-    /// at once
+    /// @note  use CSocketAPI::Poll() to wait on multiple sockets at once
     ///
     /// @param event
     ///
@@ -218,10 +209,10 @@ public:
     EIO_Status Wait(EIO_Event       event,
                     const STimeout* timeout);
 
-    /// @li <b>NOTE 1:</b>  by default, initially all timeouts are infinite;
-    /// @li <b>NOTE 2:</b>   SetTimeout(..., kDefaultTimeout) has no effect;
-    /// @li <b>NOTE 3:</b>   GetTimeout(eIO_ReadWrite) returns the least
-    ///          of eIO_Read and eIO_Write ones.
+    /// @note  initially all timeouts are infinite by default;
+    /// @note  SetTimeout(..., kDefaultTimeout) has no effect;
+    /// @note  GetTimeout(eIO_ReadWrite) returns the least
+    ///        of eIO_Read and eIO_Write ones.
     ///
     /// @param  event
     ///
@@ -290,10 +281,10 @@ public:
     ///
     unsigned short GetRemotePort(ENH_ByteOrder byte_order) const;
 
-    /// @li  <b>NOTE 1:</b>  either of "host", "port" can be NULL to opt out
-    ///          from obtaining the corresponding value;
-    /// @li  <b>NOTE 2:</b> both "*host" and "*port" come out in the same
-    ///          byte order requested by the third argument.
+    /// @note  either of "host", "port" can be NULL to opt out
+    ///        from obtaining the corresponding value;
+    /// @note  both "*host" and "*port" come out in the same
+    ///        byte order requested by the third argument.
     ///
     /// @param host
     ///
@@ -306,9 +297,10 @@ public:
                         ENH_ByteOrder   byte_order) const;
 
     /// @return
-    ///  Textual string representing the (parts of) peer's address
+    ///  Text string representing the (parts of) peer's address
     string GetPeerAddress(ESOCK_AddressFormat format = eSAF_Full) const;
 
+    /// Access to the system-specific socket handle
     /// @param handle_buf
     ///
     /// @param handle_size
@@ -316,36 +308,31 @@ public:
     virtual EIO_Status GetOSHandle(void*  handle_buf,
                                    size_t handle_size) const;
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::SetReadOnWrite() to set the default
-    /// value
+    /// @note  use CSocketAPI::SetReadOnWrite() to set the default value
     ///
     /// @param read_on_write
     ///
     ESwitch SetReadOnWrite(ESwitch read_on_write = eOn);
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::SetInterruptOnSignal() to set the
-    /// default value
+    /// @note  use CSocketAPI::SetInterruptOnSignal() to set the default value
     ///
     /// @param interrupt
     ///
     ESwitch SetInterruptOnSignal(ESwitch interrupt = eOn);
 
-    /// @li <b>NOTE:</b>  see comments for SOCK_SetReuseAddress() in
-    /// ncbi_socket.h
+    /// @note  see comments for SOCK_SetReuseAddress() in "ncbi_socket.h"
     ///
     /// @param reuse
     ///
     void    SetReuseAddress(ESwitch reuse = eOff);
 
-    /// @li <b>NOTE:</b>  see comments for SOCK_DisableOSSendDelay() in
-    /// ncbi_socket.h
+    /// @note  see comments for SOCK_DisableOSSendDelay() in "ncbi_socket.h"
     ///
     /// @param on_off
     ///
     void    DisableOSSendDelay(bool on_off = true);
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::SetDataLogging() to set the default
-    /// value
+    /// @note  use CSocketAPI::SetDataLogging() to set the default value
     ///
     /// @param log
     ///
@@ -364,7 +351,7 @@ public:
 
     /// Close the current underlying "SOCK" (if any, and if owned),
     /// and from now on use "sock" as the underlying "SOCK" instead.
-    /// @li <b>NOTE:</b>  "if_to_own" applies to the (new) "sock"
+    /// @note  "if_to_own" applies to the (new) "sock"
     ///
     /// @param sock
     ///
@@ -374,14 +361,14 @@ public:
     ///
     void Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence);
 
-    /// Specify if this "CSocket" is to own the underlying "SOCK".
+    /// Specify if this "CSocket" is to own the underlying "SOCK"
     /// @return
     ///  Previous ownership mode.
     /// @param if_to_own
     ///
     EOwnership SetOwnership(EOwnership if_to_own);
 
-    // Access to the underlying "SOCK" and the system-specific socket handle.
+    /// Access to the underlying "SOCK"
     SOCK GetSOCK(void) const;
 
 protected:
@@ -408,7 +395,7 @@ protected:
     STimeout  cc_timeout;
 
 private:
-    /// disable copy constructor and assignment
+    // disable copy constructor and assignment
     CSocket(const CSocket&);
     CSocket& operator= (const CSocket&);
 };
@@ -421,15 +408,13 @@ private:
 ///
 ///    Datagram socket
 ///
-/// @li <b>NOTE:</b>  for documentation see DSOCK_***() functions in
-/// "ncbi_socket.h"
+/// @note  for documentation see DSOCK_***() functions in "ncbi_socket.h"
 ///
 
 class NCBI_XCONNECT_EXPORT CDatagramSocket : public CSocket
 {
 public:
-    /// @li <b>NOTE:</b>  the created underlying "SOCK" will be owned by the
-    /// object
+    /// @note  the created underlying "SOCK" will be owned by the object
     ///
     /// @param do_log
     ///
@@ -503,20 +488,17 @@ public:
     TNCBI_BigCount GetMessageCount(EIO_Event direction) const;
 
 protected:
-    /// @li <b>NOTE:</b> these calls are not valid with datagram sockets
-    ///
-    /// @param how
-    ///
+    /// @note  the call is not valid with datagram sockets
     EIO_Status Shutdown(EIO_Event how);
 
-    /// @param timeout
-    ///
+    /// @note  the call is not valid with datagram sockets
     EIO_Status Reconnect(const STimeout* timeout);
 
+    /// @note  the call is not valid with datagram sockets
     EIO_Status Abort(void);
 
 private:
-    /// disable copy constructor and assignment
+    // disable copy constructor and assignment
     CDatagramSocket(const CDatagramSocket&);
     CDatagramSocket& operator= (const CDatagramSocket&);
 };
@@ -529,8 +511,7 @@ private:
 ///
 ///    Listening socket (to accept connections on the server side)
 ///
-/// @li <b>NOTE:</b>  for documentation see LSOCK_***() functions in
-/// "ncbi_socket.h"
+/// @note  for documentation see LSOCK_***() functions in "ncbi_socket.h"
 ///
 
 class NCBI_XCONNECT_EXPORT CListeningSocket : public CPollable
@@ -538,7 +519,7 @@ class NCBI_XCONNECT_EXPORT CListeningSocket : public CPollable
 public:
     CListeningSocket(void);
 
-    /// @li <b>NOTE:</b>  "port" ought to be in host byte order
+    /// @note  "port" ought to be in host byte order
     ///
     /// @param port
     ///
@@ -553,10 +534,10 @@ public:
     /// Call Close(), then self-destruct
     virtual ~CListeningSocket(void);
 
-    /// Return eIO_Closed if not yet bound or Close()'d.
+    /// Return eIO_Closed if not yet bound or Close()'d
     EIO_Status GetStatus(void) const;
 
-    /// @li <b>NOTE:</b>  "port" ought to be in host byte order
+    /// @note  "port" ought to be in host byte order
     ///
     /// @param port
     ///
@@ -568,7 +549,7 @@ public:
                       unsigned short backlog = 64,
                       TSOCK_Flags    flags   = fSOCK_LogDefault);
 
-    /// @li <b>NOTE:</b> the created "CSocket" will own its underlying "SOCK"
+    /// @note  the created "CSocket" will own its underlying "SOCK"
     ///
     /// @param sock
     ///
@@ -586,11 +567,10 @@ public:
                       const STimeout* timeout = kInfiniteTimeout,
                       TSOCK_Flags     flags   = fSOCK_LogDefault) const;
 
-    /// @li <b>NOTE:</b>  closes the undelying LSOCK only if it is owned by
-    /// this object!
-    ///
+    /// @note  closes the undelying LSOCK only if it is owned by this object!
     EIO_Status Close(void);
 
+    /// Access to the system-specific socket handle
     /// @param handle_buf
     ///
     /// @param handle_size
@@ -600,15 +580,14 @@ public:
     /// Return port which the server listens on
     unsigned short GetPort(ENH_ByteOrder byte_order) const;
 
-    /// Specify if this "CListeningSocket" is to own the underlying "LSOCK".
+    /// Specify if this "CListeningSocket" is to own the underlying "LSOCK"
     /// @param if_to_own
     ///
     /// @return
     ///  Previous ownership mode.
     EOwnership SetOwnership(EOwnership if_to_own);
 
-    /// Access to the underlying "LSOCK" and the system-specific socket
-    /// handle
+    /// Access to the underlying "LSOCK"
     LSOCK GetLSOCK(void) const;
 
 protected:
@@ -616,7 +595,7 @@ protected:
     EOwnership m_IsOwned;
 
 private:
-    /// disable copy constructor and assignment
+    // disable copy constructor and assignment
     CListeningSocket(const CListeningSocket&);
     CListeningSocket& operator= (const CListeningSocket&);
 };
@@ -629,8 +608,7 @@ private:
 ///
 ///    Global utility routines / settings related to the socket API
 ///
-/// @li <b>NOTE:</b>  for documentation see SOCK_***() functions in
-/// "ncbi_socket.h"
+/// @note  for documentation see SOCK_***() functions in "ncbi_socket.h"
 ///
 
 class NCBI_XCONNECT_EXPORT CSocketAPI
@@ -667,8 +645,7 @@ public:
     ///
     static ESwitch SetDataLogging(ESwitch log);
 
-    /// @li <b>NOTE:</b>  use CSocket::Wait() to wait for I/O event(s) on a
-    /// single socket
+    /// @note  use CSocket::Wait() to wait for I/O event(s) on a single socket
     ///
     /// @param m_Pollable
     ///
