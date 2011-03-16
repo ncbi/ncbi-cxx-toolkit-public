@@ -119,7 +119,10 @@ public:
         // references to primitive types are not included, since they're generated
         // elsewhere
         if( node.GetType() == CTraversalNode::eType_Reference ) {
-            _ASSERT( ! node.GetCallees().empty() );
+            if( node.GetCallees().empty() ) {
+                return true;
+            }
+
             switch( (*node.GetCallees().begin())->GetNode()->GetType() ) {
             case CTraversalNode::eType_Primitive:
             case CTraversalNode::eType_Enum:
