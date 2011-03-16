@@ -4844,34 +4844,37 @@ else
             glew_config=
          fi
          if test -n "$glew_config"; then
-            GLEW_INCLUDE=`$glew_config --cflags | sed s:/GL$::`
-            NCBI_RPATHIFY_OUTPUT(GLEW_LDFLAGS, [$glew_config --libs-only-L])
+            GLEW_INCLUDE=`$glew_config --cflags | sed 's:/GL *$::'`
             NCBI_RPATHIFY_OUTPUT(GLEW_LIBS, [$glew_config --libs])
+            glew_libs_l=`$glew_config --libs-only-l`
          fi
       fi
-      if test -n "$GLEW_LIBS"; then
+      if test -z "$GLEW_LIBS"; then
          if test -d "$GLEW_PATH"; then
             GLEW_INCLUDE=-I$GLEW_PATH/include
-            NCBI_RPATHIFY(GLEW_LDFLAGS, [$GLEW_PATH/lib])
-            GLEW_LIBS="$GLEW_LDFLAGS -lGLEW"
+            NCBI_RPATHIFY(GLEW_LIBS, [$GLEW_PATH/lib], [ -lGLEW])
          else
             GLEW_LIBS=-lGLEW
          fi
+         glew_libs_l=-lGLEW
       fi
-      LDFLAGS="$GLEW_LDFLAGS $orig_LDFLAGS"
-      AC_CHECK_LIB(GLEW, glewGetExtension,
-         [NCBI_PACKAGE(GLEW);
-          AC_DEFINE(HAVE_LIBGLEW, 1, [Define to 1 if you have libGLEW.])],
-         [GLEW_LIBS=],
-         [$OPENGL_LIBS $DL_LIBS])
-      if test -z "$GLEW_LIBS"; then
+      CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
+      LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LDFLAGS"
+      AC_CACHE_CHECK([for glewGetExtension in $glew_libs_l],
+         ncbi_cv_lib_glew,
+         [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+            [[#include <GL/glew.h>]],
+            [[return glewGetExtension("foo");]])],
+            ncbi_cv_lib_glew=yes, ncbi_cv_lib_glew=no)])
+      if test "$ncbi_cv_lib_glew" != yes; then
+         GLEW_LIBS=
          NCBI_MISSING_PACKAGE(glew)
       else
+         NCBI_PACKAGE(GLEW);
+         AC_DEFINE(HAVE_LIBGLEW, 1, [Define to 1 if you have libGLEW.])
          AC_CACHE_CHECK([for GLEW multi-context (MX) support (recommended)],
             ncbi_cv_lib_glew_mx,
-            [CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
-             LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $ORIG_LIBS"
-             AC_LINK_IFELSE([AC_LANG_PROGRAM(
+            [AC_LINK_IFELSE([AC_LANG_PROGRAM(
                [[#define GLEW_MX 1
                  #include <GL/glew.h>]],
                [[glewContextInit(NULL);]])],

@@ -26988,32 +26988,7 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
             glew_config=
          fi
          if test -n "$glew_config"; then
-            GLEW_INCLUDE=`$glew_config --cflags | sed s:/GL$::`
-            if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    GLEW_LDFLAGS=`$glew_config --libs-only-L | sed -e ""`
- else
-    GLEW_LDFLAGS=
-    ncbi_rp_L_sep=
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$glew_config --libs-only-L | sed -e ""`; do
-       case "$x" in
-          -L*)
-             GLEW_LDFLAGS="$GLEW_LDFLAGS${ncbi_rp_L_sep}$x"
-             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
-             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-             ncbi_rp_R_sep=:
-             ;;
-          *)
-             GLEW_LDFLAGS="$GLEW_LDFLAGS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
-             ncbi_rp_R_flags=
-             ncbi_rp_R_sep=" $CONF_f_runpath"
-             ;;
-       esac
-       ncbi_rp_L_sep=" "
-    done
-    GLEW_LDFLAGS="$GLEW_LDFLAGS${ncbi_rp_R_flags}"
- fi
+            GLEW_INCLUDE=`$glew_config --cflags | sed 's:/GL *$::'`
             if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     GLEW_LIBS=`$glew_config --libs | sed -e ""`
  else
@@ -27039,9 +27014,10 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
     done
     GLEW_LIBS="$GLEW_LIBS${ncbi_rp_R_flags}"
  fi
+            glew_libs_l=`$glew_config --libs-only-l`
          fi
       fi
-      if test -n "$GLEW_LIBS"; then
+      if test -z "$GLEW_LIBS"; then
          if test -d "$GLEW_PATH"; then
             GLEW_INCLUDE=-I$GLEW_PATH/include
             ncbi_rp_L_flags=
@@ -27051,7 +27027,7 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
-    GLEW_LDFLAGS="${ncbi_rp_L_flags}"
+    GLEW_LIBS="${ncbi_rp_L_flags} -lGLEW"
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -27062,39 +27038,31 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
        ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
        ncbi_rp_R_sep=:
     done
-    GLEW_LDFLAGS="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+    GLEW_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lGLEW"
  fi
-            GLEW_LIBS="$GLEW_LDFLAGS -lGLEW"
          else
             GLEW_LIBS=-lGLEW
          fi
+         glew_libs_l=-lGLEW
       fi
-      LDFLAGS="$GLEW_LDFLAGS $orig_LDFLAGS"
-      echo "$as_me:$LINENO: checking for glewGetExtension in -lGLEW" >&5
-echo $ECHO_N "checking for glewGetExtension in -lGLEW... $ECHO_C" >&6
-if test "${ac_cv_lib_GLEW_glewGetExtension+set}" = set; then
+      CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
+      LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LDFLAGS"
+      echo "$as_me:$LINENO: checking for glewGetExtension in $glew_libs_l" >&5
+echo $ECHO_N "checking for glewGetExtension in $glew_libs_l... $ECHO_C" >&6
+if test "${ncbi_cv_lib_glew+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lGLEW $OPENGL_LIBS $DL_LIBS $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
+  cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char glewGetExtension ();
+#include <GL/glew.h>
 int
 main ()
 {
-glewGetExtension ();
+return glewGetExtension("foo");
   ;
   return 0;
 }
@@ -27121,45 +27089,38 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_GLEW_glewGetExtension=yes
+  ncbi_cv_lib_glew=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_lib_GLEW_glewGetExtension=no
+ncbi_cv_lib_glew=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_GLEW_glewGetExtension" >&5
-echo "${ECHO_T}$ac_cv_lib_GLEW_glewGetExtension" >&6
-if test $ac_cv_lib_GLEW_glewGetExtension = yes; then
-            WithPackages="$WithPackages${WithPackagesSep}GLEW"; WithPackagesSep=" ";
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBGLEW 1
-_ACEOF
-
-else
-  GLEW_LIBS=
-fi
-
-      if test -z "$GLEW_LIBS"; then
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_glew" >&5
+echo "${ECHO_T}$ncbi_cv_lib_glew" >&6
+      if test "$ncbi_cv_lib_glew" != yes; then
+         GLEW_LIBS=
          if test "${with_glew:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-glew explicitly specified, but no usable version found." >&5
 echo "$as_me: error: --with-glew explicitly specified, but no usable version found." >&2;}
    { (exit 1); exit 1; }; }
     fi
       else
+                   WithPackages="$WithPackages${WithPackagesSep}GLEW"; WithPackagesSep=" ";
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGLEW 1
+_ACEOF
+
          echo "$as_me:$LINENO: checking for GLEW multi-context (MX) support (recommended)" >&5
 echo $ECHO_N "checking for GLEW multi-context (MX) support (recommended)... $ECHO_C" >&6
 if test "${ncbi_cv_lib_glew_mx+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
-             LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $ORIG_LIBS"
-             cat >conftest.$ac_ext <<_ACEOF
+  cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
