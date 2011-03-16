@@ -1405,7 +1405,7 @@ string CDeflineGenerator::x_TitleFromWGS (void)
             pls = " plasmid " + m_Plasmid;
         }
     }
-    if (! m_GeneralStr.empty()) {
+    if (! m_GeneralStr.empty()  &&  m_GeneralStr != m_Chromosome) {
         sfx = " " + m_GeneralStr;
     }
 
@@ -1515,7 +1515,7 @@ string CDeflineGenerator::x_SetSuffix (
                 }            
             } else if (title.find ("whole genome shotgun sequence") == NPOS) {
                 string orgnl = x_OrganelleName (m_Genome, false, false, true);
-                if (! orgnl.empty()) {
+                if (! orgnl.empty()  &&  title.find(orgnl) == NPOS) {
                     suffix = " " + orgnl;
                 }
                 suffix += ", whole genome shotgun sequence";

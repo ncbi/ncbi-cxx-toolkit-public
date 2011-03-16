@@ -898,11 +898,18 @@ static string s_TitleFromBioSource(const CBioSource& source,
         name = org.GetTaxname();
     }
 
+    if (suffix.size() > 0) {
+        sfx = ' ' + suffix;
+    }
+
     if (source.IsSetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, source.GetSubtype()) {
             switch ((*it)->GetSubtype()) {
             case CSubSource::eSubtype_chromosome:
                 chromosome = " chromosome " + (*it)->GetName();
+                if (suffix == (*it)->GetName()) {
+                    sfx.clear();
+                }
                 break;
             case CSubSource::eSubtype_clone:
                 clone = s_DescribeClones((*it)->GetName(), pooled_clones);
@@ -927,10 +934,6 @@ static string s_TitleFromBioSource(const CBioSource& source,
                 strain = " strain " + subname.substr(0, subname.find(';'));
             }
         }
-    }
-
-    if (suffix.size() > 0) {
-        sfx = ' ' + suffix;
     }
 
     string title = NStr::TruncateSpaces(name + strain + chromosome + clone
