@@ -497,7 +497,7 @@ private: // to prevent copying
 };
 
 
-class CScopeInfoLocker : protected CObjectCounterLocker
+class CScopeInfoLocker : public CObjectCounterLocker
 {
 public:
     void Lock(CScopeInfo_Base* info) const
