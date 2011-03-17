@@ -134,18 +134,6 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
         ERR_POST_X(6, "Couldn't send a progress message: " << ex.what());
     }
 }
-/// @internal
-void CGridThreadContext::SetJobRunTimeout(unsigned time_to_run)
-{
-    _ASSERT(m_JobContext);
-    try {
-        m_NetScheduleExecuter.SetRunTimeout(m_JobContext->GetJobKey(), time_to_run);
-    } catch(exception& ex) {
-        ERR_POST_X(7, "CWorkerNodeJobContext::SetJobRunTimeout : "
-                       << ex.what());
-    }
-}
-
 void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
 {
     _ASSERT(m_JobContext);

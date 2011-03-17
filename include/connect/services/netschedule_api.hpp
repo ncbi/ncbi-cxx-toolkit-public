@@ -582,21 +582,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     void ReturnJob(const string& job_key);
 
-    /// Set job execution timeout
-    ///
-    /// When node picks up the job for execution it may evaluate what time it
-    /// takes for computation and report it to the queue. If job does not
-    /// finish in the specified time frame (because of a failure)
-    /// it is going to be rescheduled
-    ///
-    /// Default value for the run timeout specified in the queue settings on
-    /// the server side.
-    ///
-    /// @param time_to_run
-    ///    Time in seconds to finish the job. 0 means "queue default value".
-    ///
-    void SetRunTimeout(const string& job_key, unsigned time_to_run);
-
     /// Increment job execution timeout
     ///
     /// When node picks up the job for execution it may periodically
@@ -607,8 +592,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// @param runtime_inc
     ///    Estimated time in seconds(from the current moment) to
     ///    finish the job.
-    ///
-    /// @sa SetRunTimeout
     void JobDelayExpiration(const string& job_key, unsigned runtime_inc);
 
 

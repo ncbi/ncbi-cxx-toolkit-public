@@ -145,13 +145,6 @@ throw_err:
 }
 
 ////////////////////////////////////////////////////////////////////////
-void CNetScheduleExecuter::SetRunTimeout(const string& job_key,
-                                         unsigned      time_to_run)
-{
-    m_Impl->m_API->x_SendJobCmdWaitResponse("JRTO" , job_key, time_to_run);
-}
-
-
 void CNetScheduleExecuter::JobDelayExpiration(const string& job_key,
                                               unsigned      runtime_inc)
 {

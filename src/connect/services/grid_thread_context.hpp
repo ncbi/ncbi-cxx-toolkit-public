@@ -55,7 +55,6 @@ public:
     CNcbiOstream& GetOStream();
     void PutProgressMessage(const string& msg, bool send_immediately);
 
-    void SetJobRunTimeout(unsigned time_to_run);
     void JobDelayExpiration(unsigned runtime_inc);
 
     bool PutResult(CNetScheduleJob& new_job);

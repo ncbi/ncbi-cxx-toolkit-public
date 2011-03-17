@@ -237,12 +237,6 @@ void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
     m_ThreadContext->PutProgressMessage(msg, send_immediately);
 }
 
-void CWorkerNodeJobContext::SetJobRunTimeout(unsigned time_to_run)
-{
-    _ASSERT(m_ThreadContext);
-    m_ThreadContext->SetJobRunTimeout(time_to_run);
-}
-
 void CWorkerNodeJobContext::JobDelayExpiration(unsigned runtime_inc)
 {
     _ASSERT(m_ThreadContext);
