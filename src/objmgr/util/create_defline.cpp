@@ -1405,7 +1405,8 @@ string CDeflineGenerator::x_TitleFromWGS (void)
             pls = " plasmid " + m_Plasmid;
         }
     }
-    if (! m_GeneralStr.empty()  &&  m_GeneralStr != m_Chromosome) {
+    if (! m_GeneralStr.empty()  &&  m_GeneralStr != m_Chromosome
+        &&  (! m_IsWGS  ||  m_GeneralStr != m_Plasmid)) {
         sfx = " " + m_GeneralStr;
     }
 

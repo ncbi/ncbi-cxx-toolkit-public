@@ -920,6 +920,9 @@ static string s_TitleFromBioSource(const CBioSource& source,
             case CSubSource::eSubtype_plasmid_name:
                 if (tech == CMolInfo::eTech_wgs) { // omit otherwise
                     plasmid = " plasmid " + (*it)->GetName();
+                    if (suffix == (*it)->GetName()) {
+                        sfx.clear();
+                    }
                 }
                 break;
             }
