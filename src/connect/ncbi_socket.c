@@ -5458,14 +5458,14 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
     EIO_Status status;
     if (!sock)
         return eIO_InvalidArg;
-    if (s_Initialized <= 0) {
+    if (sock->sock == SOCK_INVALID)
+        status = eIO_Closed;
+    else if (s_Initialized > 0)        
+        status = s_Close(sock, 0/*orderly*/);
+    else {
         sock->sock = SOCK_INVALID;
         status = eIO_Success;
-    } else if (sock->sock != SOCK_INVALID) {
-        status = s_Close(sock, 0/*orderly*/);
-    } else
-        status = eIO_Closed;
-
+    }
     if (destroy) {
         BUF_Destroy(sock->r_buf);
         BUF_Destroy(sock->w_buf);
@@ -7098,7 +7098,7 @@ extern POLLABLE POLLABLE_FromLSOCK(LSOCK lsock)
 
 extern POLLABLE POLLABLE_FromSOCK(SOCK sock)
 {
-    assert(!sock  ||  sock->type == eSocket);
+    assert(!sock  ||  (sock->type & eSocket));
     return (POLLABLE) sock;
 }
 
@@ -7106,21 +7106,21 @@ extern POLLABLE POLLABLE_FromSOCK(SOCK sock)
 extern TRIGGER POLLABLE_ToTRIGGER(POLLABLE poll)
 {
     TRIGGER trigger = (TRIGGER) poll;
-    return !trigger  ||  trigger->type == eTrigger ? trigger : 0;
+    return trigger  &&  trigger->type == eTrigger ? trigger : 0;
 }
 
 
 extern LSOCK POLLABLE_ToLSOCK(POLLABLE poll)
 {
     LSOCK lsock = (LSOCK) poll;
-    return !lsock  ||  lsock->type == eListening ? lsock : 0;
+    return lsock  &&  lsock->type == eListening ? lsock : 0;
 }
 
 
 extern SOCK  POLLABLE_ToSOCK(POLLABLE poll)
 {
     SOCK sock = (SOCK) poll;
-    return !sock  ||  sock->type == eSocket ? sock : 0;
+    return sock  &&  (sock->type & eSocket) ? sock : 0;
 }
 
 
