@@ -366,6 +366,11 @@
           <string>ABCDABCDABCDABCD00000061</string>
           <string>ABCDABCDABCDABCD00000063</string>
           <string>ABCDABCDABCDABCD00000065</string>
+          <string>ABCDABCDABCDABCD00001065</string>
+          <string>ABCDABCDABCDABCD00001165</string>
+          <string>ABCDABCDABCDABCD00001265</string>
+          <string>ABCDABCDABCDABCD00001365</string>
+          <string>ABCDABCDABCDABCD00001465</string>
         </array>
         <key>isa</key>
         <string>PBXGroup</string>
@@ -1284,6 +1289,106 @@
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
+      <key>ABCDABCDABCDABCD00001065</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>traversal_attach_user_funcs_callback.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/traversal_attach_user_funcs_callback.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001066</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD00001065</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001165</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>traversal_code_generator.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/traversal_code_generator.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001166</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD00001165</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001265</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>traversal_merger.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/traversal_merger.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001266</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD00001265</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001365</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>traversal_node.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/traversal_node.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001366</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD00001365</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001465</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>traversal_spec_file_parser.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/traversal_spec_file_parser.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD00001466</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD00001465</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
       <key>ABCDABCDABCDABCD00000067</key>
       <dict>
         <key>isa</key>
@@ -1902,6 +2007,11 @@
           <string>ABCDABCDABCDABCD00000062</string>
           <string>ABCDABCDABCDABCD00000064</string>
           <string>ABCDABCDABCDABCD00000066</string>
+          <string>ABCDABCDABCDABCD00001066</string>
+          <string>ABCDABCDABCDABCD00001166</string>
+          <string>ABCDABCDABCDABCD00001266</string>
+          <string>ABCDABCDABCDABCD00001366</string>
+          <string>ABCDABCDABCDABCD00001466</string>
         </array>
         <key>isa</key>
         <string>PBXSourcesBuildPhase</string>
