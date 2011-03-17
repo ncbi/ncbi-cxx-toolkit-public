@@ -501,6 +501,9 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     scan_range[1] = subject->seq_ranges[0].left;
     scan_range[2] = subject->seq_ranges[0].right - wordsize;
 
+    if (scan_range[2] < scan_range[1])
+        scan_range[2] = scan_range[1];
+
     while (scan_range[1] <= scan_range[2]) {
         /* scan the subject sequence for hits */
         hits = scansub(lookup_wrap, subject, 
