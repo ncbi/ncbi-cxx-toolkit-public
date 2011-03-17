@@ -284,7 +284,7 @@ public:
     /// @note  either of "host", "port" can be NULL to opt out
     ///        from obtaining the corresponding value;
     /// @note  both "*host" and "*port" come out in the same
-    ///        byte order requested by the third argument.
+    ///        byte order as requested by the last argument.
     ///
     /// @param host
     ///
@@ -795,7 +795,8 @@ inline EIO_Status CSocket::Abort(void)
 
 inline EIO_Status CSocket::Close(void)
 {
-    return SOCK_CloseEx(m_Socket, 0/*do not destroy handle*/);
+    return m_Socket
+        ? SOCK_CloseEx(m_Socket, 0/*do not destroy handle*/) : eIO_Success;
 }
 
 
@@ -839,44 +840,44 @@ inline void CSocket::SetReuseAddress(ESwitch reuse)
 
 inline void CSocket::DisableOSSendDelay(bool on_off)
 {
-    if ( m_Socket)
+    if ( m_Socket )
         SOCK_DisableOSSendDelay(m_Socket, on_off);
 }
 
 
 inline ESwitch CSocket::SetDataLogging(ESwitch log)
 {
-    return m_Socket? SOCK_SetDataLogging(m_Socket, log) : eDefault;
+    return m_Socket ? SOCK_SetDataLogging(m_Socket, log) : eDefault;
 }
 
 
 inline bool CSocket::IsDatagram(void) const
 {
-    return m_Socket && SOCK_IsDatagram(m_Socket) ? true : false;
+    return m_Socket  &&  SOCK_IsDatagram(m_Socket) ? true : false;
 }
 
 
 inline bool CSocket::IsClientSide(void) const
 {
-    return m_Socket && SOCK_IsClientSide(m_Socket) ? true : false;
+    return m_Socket  &&  SOCK_IsClientSide(m_Socket) ? true : false;
 }
 
 
 inline bool CSocket::IsServerSide(void) const
 {
-    return m_Socket && SOCK_IsServerSide(m_Socket) ? true : false;
+    return m_Socket  &&  SOCK_IsServerSide(m_Socket) ? true : false;
 }
 
 
 inline bool CSocket::IsUNIX(void) const
 {
-    return m_Socket && SOCK_IsUNIX(m_Socket) ? true : false;
+    return m_Socket  &&  SOCK_IsUNIX(m_Socket) ? true : false;
 }
 
 
 inline bool CSocket::IsSecure(void) const
 {
-    return m_Socket && SOCK_IsSecure(m_Socket) ? true : false;
+    return m_Socket  &&  SOCK_IsSecure(m_Socket) ? true : false;
 }
 
 
