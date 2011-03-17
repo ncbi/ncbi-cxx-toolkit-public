@@ -3205,6 +3205,24 @@ MAFST	s	Instituto Forestal de la Moncloa
 MAG	s	Institute of Biological Problems of the North
 MAGB	s	National Museum and Art Gallery
 MAGD	s	Northern Territory Museum of Arts and Sciences
+MAGNT<AUS>	s	Museums and Art Galleries of the Northern Territory
+MAGNT<AUS>:A	s	Museums and Art Galleries of the Northern Territory, Arachnid Collection
+MAGNT<AUS>:C	s	Museums and Art Galleries of the Northern Territory, Cnidarian Collection
+MAGNT<AUS>:Cr	s	Museums and Art Galleries of the Northern Territory, Crustacean Collection
+MAGNT<AUS>:D	s	Museums and Art Galleries of the Northern Territory, Minor Invertebrate Collection
+MAGNT<AUS>:E	s	Museums and Art Galleries of the Northern Territory, Ascidian Collection
+MAGNT<AUS>:G	s	Museums and Art Galleries of the Northern Territory, Bryozoan Collection
+MAGNT<AUS>:I	s	Museums and Art Galleries of the Northern Territory, Insect Collection
+MAGNT<AUS>:M	s	Museums and Art Galleries of the Northern Territory, Myriapod Collection
+MAGNT<AUS>:N	s	Museums and Art Galleries of the Northern Territory, Pycnogonid Collection
+MAGNT<AUS>:P	s	Museums and Art Galleries of the Northern Territory, Malacology Collection
+MAGNT<AUS>:Q	s	Museums and Art Galleries of the Northern Territory, Echinoderm Collection
+MAGNT<AUS>:R	s	Museums and Art Galleries of the Northern Territory, Herpetology Collection
+MAGNT<AUS>:S	s	Museums and Art Galleries of the Northern Territory, Fish Collection
+MAGNT<AUS>:T	s	Museums and Art Galleries of the Northern Territory, Bird Collection
+MAGNT<AUS>:U	s	Museums and Art Galleries of the Northern Territory, Mammal Collection
+MAGNT<AUS>:W	s	Museums and Art Galleries of the Northern Territory, Annelid Collection
+MAGNT<AUS>:Z	s	Museums and Art Galleries of the Northern Territory, Poriferan Collection
 MAH	s	Department of Agricultural Research
 MAIA	s	Instituto Nacional de Investigaciones Agrarias, Departamento de Ecologia
 MAIC	s	Mediterranean Agronomic Institute of Chania, Department of Natural Products
@@ -4194,7 +4212,6 @@ NT	s	Department of Natural Resources, Environment and the Arts
 NTCCI	c	Culture Collection, Microbiology and Cell Biology Laboratory
 NTDPIF	s	Northern Territory Department of Primary Industry and Fisheries
 NTLN	s	County Record Office, County Archives Department
-NTM<AUS>	s	Museums and Art Galleries of the Northern Territory
 NTM<FRA>	s	Museum d'Histoire Naturelle de Nantes
 NTN	s	Central Museum and Art Gallery
 NTNU	s	National Taiwan Normal University
