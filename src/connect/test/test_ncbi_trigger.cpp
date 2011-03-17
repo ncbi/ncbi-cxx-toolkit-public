@@ -221,6 +221,7 @@ void CTest::Server(void)
 {
     // Create listening socket
     CListeningSocket lsock;
+    CDatagramSocket  dsock; /*dummy*/
 
     EIO_Status status = lsock.Listen(m_Port);
     if (status == eIO_Closed)
@@ -230,13 +231,14 @@ void CTest::Server(void)
     _ASSERT(status == eIO_Success);
 
     // Spawn test thread to activate the trigger
-    // (allow thread to run even in single thread environment).
+    // (allow thread to run even in a single-thread environment).
     CTriggerThread* thr = new CTriggerThread(m_Delay);
     thr->Run(CThread::fRunAllowST);
 
     vector<CSocketAPI::SPoll> polls;
     polls.push_back(CSocketAPI::SPoll(&s_Trigger, eIO_ReadWrite));
     polls.push_back(CSocketAPI::SPoll(&lsock,     eIO_ReadWrite));
+    polls.push_back(CSocketAPI::SPoll(&dsock,     eIO_ReadWrite));
 
     for (;;) {
         size_t n;
@@ -288,6 +290,11 @@ void CTest::Server(void)
                     if (n == polls.size())
                         polls.push_back(CSocketAPI::SPoll(sock,eIO_ReadWrite));
                     continue;
+                case 2:
+                    /* No activity is expected on an unnamed datagram socket */
+                    _ASSERT(polls[i].m_Pollable == &dsock);
+                    _ASSERT(0);
+                    /*FALLTRHU*/
                 default:
                     break;
                 }
