@@ -844,6 +844,12 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
                       CGC_Assembly::ESubset subset)
 {
     CTypeConstIterator<CGC_Sequence> sequence_it(unit);
+    if (!sequence_it) {
+        /// Deal with case of assembly containing no sequences; we no there's
+        /// nothing to extract
+        return;
+    }
+
     if (sequence_it->IsSetRoles()) {
         for ( ;  sequence_it;  ++sequence_it) {
             /// Include this sequence if it has the correct role, or if
