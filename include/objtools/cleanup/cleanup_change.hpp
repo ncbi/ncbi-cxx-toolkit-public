@@ -133,8 +133,9 @@ public:
         eMoveToProtXref,
         eCompressSpaces,
         eStripSerial,
-        eRemoveOrgmod,
+        eRemoveOrgmod, // 70
         eRemoveSubSource,
+        eCreateGeneNomenclature,
 
         // set when any other change is made.
         eChangeOther,

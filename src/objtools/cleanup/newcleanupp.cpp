@@ -889,16 +889,24 @@ void CNewCleanup_imp::BiosourceBC (
             const string &name = GET_FIELD(sbs, Name);
             const string &prev_name = GET_FIELD(**prev, Name);
 
-            // compare to previous one
-            if( (chs == prev_chs) &&
-                ( (chs == NCBI_SUBSOURCE(other) && s_IsEitherASubstring(name, prev_name)) ||
-                  (chs != NCBI_SUBSOURCE(other) && NStr::EqualNocase   (name, prev_name)) ) )
+            if ( (chs == prev_chs) &&
+                ( CSubSource::NeedsNoText(chs) ||
+                NStr::EqualNocase(prev_name, name) ||
+                (prev_chs == NCBI_SUBSOURCE(other) &&
+                NStr::Find(prev_name, name) != NPOS))) 
             {
+                ERASE_SUBSOURCE_ON_BIOSOURCE(it, biosrc);
+                continue;
+            } else if ( (chs == prev_chs) &&
+                prev_chs == NCBI_SUBSOURCE(other) &&
+                NStr::Find (name, prev_name) )
+            {
+                (**prev).Assign( sbs );
                 ERASE_SUBSOURCE_ON_BIOSOURCE(it, biosrc);
                 continue;
             }
         }
-
+            
         prev = it;
     }
 
@@ -992,7 +1000,7 @@ static COrgMod* s_StringToOrgMod (
 
 {
     try {
-        size_t pos = str.find('=');
+        size_t pos = str.find_first_of("=: ");
         if (pos == NPOS) {
             pos = str.find(' ');
         }
@@ -1078,7 +1086,7 @@ void CNewCleanup_imp::OrgrefBC (
 
     if (FIELD_IS_SET (org, Orgname)) {
         COrgName& onm = GET_MUTABLE (org, Orgname);
-        OrgnameBC (onm);
+        OrgnameBC (onm, org);
     }
 
 
@@ -1179,7 +1187,7 @@ static bool s_OrgModEqual (
 }
 
 void CNewCleanup_imp::OrgnameBC (
-    COrgName& onm
+    COrgName& onm, COrg_ref &org_ref
 )
 
 {
@@ -1228,6 +1236,14 @@ void CNewCleanup_imp::OrgnameBC (
         ChangeMade (CCleanupChange::eCleanOrgmod);
     }
 
+    // clean Orgmod list
+    x_OrgnameModBC( onm, GET_STRING_FLD_OR_BLANK(org_ref, Common) );
+
+    if (! ORGMOD_ON_ORGNAME_IS_SORTED (onm, s_OrgModCompare)) {
+        SORT_ORGMOD_ON_ORGNAME (onm, s_OrgModCompare);
+        ChangeMade (CCleanupChange::eCleanOrgmod);
+    }
+
     if (! ORGMOD_ON_ORGNAME_IS_UNIQUE (onm, s_OrgModEqual)) {
         UNIQUE_ORGMOD_ON_ORGNAME (onm, s_OrgModEqual);
         ChangeMade (CCleanupChange::eCleanOrgmod);
@@ -1239,60 +1255,30 @@ static bool RemoveSpaceBeforeAndAfterColon (
 )
 
 {
-    size_t pos, prev_pos, next_pos;
-    bool changed = false;
-
-    pos = NStr::Find (str, ":");
-    while (pos != string::npos) {
-        if (pos > 0) {
-            // clean up spaces before
-            prev_pos = pos - 1;
-            while (prev_pos > 0 && isspace (str[prev_pos])) {
-                prev_pos--;
-            }
-            if ( !isspace (str[prev_pos])) {
-                prev_pos++;
-            }
-        } else {
-          prev_pos = 0;
-        }
-            
-        next_pos = pos + 1;
-        while ( next_pos < str.length() && 
-            (isspace (str[next_pos]) || str[next_pos] == ':') ) {
-                next_pos++;
-        }
-        string before = "";
-        if (prev_pos > 0) {
-            before = str.substr(0, prev_pos);
-        }
-        string after = str.substr(next_pos);
-        string tmp = before + ":" + after;
-        if (!NStr::Equal (str, tmp)) {
-            str = tmp;
-            changed = true;
-        }
-        pos = NStr::Find (str, ":", prev_pos + 1);
-    }
-
-    return changed;
+    // May need to create a custom implementation if this
+    // regex becomes a bottleneck
+    return s_RegexpReplace( str, "[ ]*:[ ]*", ":");
 }
 
 void CNewCleanup_imp::OrgmodBC (
     COrgMod& omd
 )
-
 {
     CLEAN_STRING_MEMBER (omd, Subname);
     CLEAN_STRING_MEMBER (omd, Attrib);
 
     TORGMOD_SUBTYPE subtype = GET_FIELD (omd, Subtype);
 
-    if (subtype == NCBI_ORGMOD(specimen_voucher) ||
+    if( subtype == NCBI_ORGMOD(specimen_voucher) ||
         subtype == NCBI_ORGMOD(culture_collection) ||
-        subtype == NCBI_ORGMOD(bio_material)) {
+        subtype == NCBI_ORGMOD(bio_material) )
+    {
         if (FIELD_IS_SET (omd, Subname)) {
-            if (RemoveSpaceBeforeAndAfterColon (GET_MUTABLE (omd, Subname))) {
+            string &subname = GET_MUTABLE (omd, Subname);
+            const string::size_type old_len = subname.length();
+            RemoveSpaceBeforeAndAfterColon (subname);
+            NStr::ReplaceInPlace( subname, "::", ":", 0, 1 );
+            if( old_len != subname.length() ) {
                 ChangeMade (CCleanupChange::eTrimSpaces);
             }
         }
@@ -2250,13 +2236,13 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
         break;
     }
 
-    /* don't allow negative strand on protein sequences */
+    /* don't allow strandedness on protein sequences */
     {
         CBioseq_Handle bsh;
         if (m_Scope) {
             bsh = m_Scope->GetBioseqHandle(loc);
         }
-        if (bsh  &&  bsh.IsProtein()  && s_IsOneMinusStrand(loc) ) {
+        if (bsh  &&  bsh.IsProtein() && loc.GetStrand() != eNa_strand_unknown) {
             loc.ResetStrand();
             ChangeMade(CCleanupChange::eChangeSeqloc);
         }
@@ -4822,6 +4808,121 @@ void CNewCleanup_imp::x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioS
     }
 }
 
+void 
+CNewCleanup_imp::x_OrgnameModBC( COrgName &orgname, const string &org_ref_common )
+{
+    if( ! FIELD_IS_SET(orgname, Mod) ) {
+        return;
+    }
+
+    COrgMod *prev = NULL;
+
+    EDIT_EACH_ORGMOD_ON_ORGNAME( orgmod_iter, orgname ) {
+        COrgMod &orgmod = **orgmod_iter;
+
+        bool unlink = false;
+
+        x_CompressStringSpacesMarkChanged( GET_MUTABLE(orgmod, Subname) );
+        CLEAN_STRING_MEMBER_JUNK(orgmod, Subname);
+        x_CompressStringSpacesMarkChanged( GET_MUTABLE(orgmod, Attrib) );
+        CLEAN_STRING_MEMBER(orgmod, Attrib);
+
+        TORGMOD_SUBTYPE subtype = GET_MUTABLE(orgmod, Subtype);
+        string &subname = GET_MUTABLE(orgmod, Subname);
+
+        if ( (subtype == NCBI_ORGMOD(common)) && 
+            NStr::EqualNocase(subname, org_ref_common) )
+        {
+            unlink = true;
+        } else if( prev != NULL ) {
+            TORGMOD_SUBTYPE prev_subtype = GET_MUTABLE(*prev, Subtype);
+            string &prev_subname = GET_MUTABLE(*prev, Subname);
+
+            if( subname.empty() ) {
+                unlink = true;
+            } else if ( (prev_subtype == subtype &&
+                NStr::EqualNocase(prev_subname, subname)) ||
+                (prev_subtype == subtype &&
+                prev_subtype ==  NCBI_ORGMOD(other) &&
+                NStr::Find(prev_subname, subname) != NPOS )) 
+            {
+                unlink = true;
+            } else if (prev_subtype == subtype &&
+                prev_subtype == NCBI_ORGMOD(other) &&
+                NStr::Find (subname, prev_subname) != NPOS ) 
+            {
+                prev->Assign( orgmod );
+                unlink = true;
+            }
+        } else if ( subname.empty() ||
+            subname == ")"  ||
+            subname == "(" )
+        {
+            unlink = true;
+        }
+
+        if (unlink) {
+            ERASE_ORGMOD_ON_ORGNAME(orgmod_iter, orgname);
+        } else {
+            prev = &**orgmod_iter;
+        }
+    }
+
+    COrgMod *omp_anamorph = NULL;
+    COrgMod *omp_gb_anamorph = NULL;
+    COrgMod *omp_other = NULL;
+
+    bool redund = false;
+
+    EDIT_EACH_ORGMOD_ON_ORGNAME( orgmod_iter, orgname ) {
+        TORGMOD_SUBTYPE subtype = GET_MUTABLE(**orgmod_iter, Subtype);
+        switch( subtype ) {
+        case NCBI_ORGMOD(anamorph):
+            omp_anamorph = &**orgmod_iter;
+            break;
+        case NCBI_ORGMOD(gb_anamorph):
+            omp_gb_anamorph = &**orgmod_iter;
+            break;
+        case NCBI_ORGMOD(other):
+            omp_other = &**orgmod_iter;
+            break;
+        }
+    }
+
+    static const string kAnamorph = "anamorph:";
+    if ( (omp_other != NULL) && NStr::StartsWith(GET_MUTABLE(*omp_other, Subname), kAnamorph, NStr::eNocase) ) {
+
+        // This part is just to set anamorph_value to the part of the subname
+        // after "anamorph:" and spaces.
+        SIZE_TYPE after_anamorph_pos = kAnamorph.length();
+        SIZE_TYPE after_anamorph_pos_and_spaces = 
+            GET_MUTABLE(*omp_other, Subname).find_first_not_of(" ", after_anamorph_pos);
+        if( after_anamorph_pos_and_spaces == NPOS ) {
+            after_anamorph_pos_and_spaces = after_anamorph_pos;
+        }
+        string anamorph_value = GET_MUTABLE(*omp_other, Subname).substr(after_anamorph_pos_and_spaces);
+
+        if (omp_anamorph != NULL) {
+            if ( GET_MUTABLE(*omp_anamorph, Subname) == anamorph_value ) {
+                redund = true;
+            }
+        } else if (omp_gb_anamorph != NULL) {
+            if ( GET_MUTABLE(*omp_gb_anamorph, Subname) == anamorph_value ) {
+                redund = true;
+            }
+        }
+    }
+    if(redund) {
+        // remove omp_other
+        EDIT_EACH_ORGMOD_ON_ORGNAME( orgmod_iter, orgname ) {
+            if( &**orgmod_iter == omp_other ) {
+                ERASE_ORGMOD_ON_ORGNAME(orgmod_iter, orgname);
+                break;
+            }
+        }
+    }
+}
+
 void CNewCleanup_imp::x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq )
 {
     if( molinfo.IsSetBiomol() ) 
@@ -5529,6 +5630,85 @@ static bool s_CommentRedundantWithGeneRef (
     return false;
 }
 
+static
+CRef<CDbtag> s_DbtagParse( const string &dbtag_str )
+{
+    CRef<CDbtag> result( new CDbtag );
+
+    string id_str;
+    if( ! NStr::SplitInTwo(dbtag_str, ":", result->SetDb(), id_str ) ) {
+        return CRef<CDbtag>();
+    }
+
+    // checks if a string is all digits
+    static CRegexp all_digits_regex("^[0-9]+$");
+    int id = 0;
+    // Note: assignment in "if"
+    if( all_digits_regex.IsMatch(id_str) && 
+        (id = NStr::StringToInt(id_str, NStr::fConvErr_NoThrow)) > 0 )
+    {
+        result->SetTag().SetId( id );
+    } else {
+        result->SetTag().SetStr().swap( id_str );
+    }
+
+    return result;
+}
+
+static
+CConstRef<CUser_object> s_FindUserObjectTypeRecursive( const CUser_object &user_obj, const string &sought_type_label );
+
+static 
+CConstRef<CUser_object> s_FindUserObjectTypeRecursive_helper( const CUser_field &field, const string &sought_type_label )
+{
+    if( FIELD_IS_SET(field, Data) ) {
+        switch( GET_FIELD(field, Data).Which() ) {
+            case CUser_field::C_Data::e_Object:
+                return s_FindUserObjectTypeRecursive( GET_FIELD(field, Data).GetObject(), sought_type_label );
+                break;
+            case CUser_field::C_Data::e_Fields:
+                ITERATE( CUser_field::C_Data::TFields, field_iter, GET_FIELD(field, Data).GetFields() ) {
+                    CConstRef<CUser_object> result = s_FindUserObjectTypeRecursive_helper( **field_iter, sought_type_label );
+                    if( result ) {
+                        return result;
+                    }
+                }
+                break;
+            case CUser_field::C_Data::e_Objects:
+                ITERATE( CUser_field::C_Data::TObjects, obj_iter, GET_FIELD(field, Data).GetObjects() ) {
+                    CConstRef<CUser_object> result = s_FindUserObjectTypeRecursive( **obj_iter, sought_type_label );
+                    if( result ) {
+                        return result;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    return CConstRef<CUser_object>();
+}
+
+static
+CConstRef<CUser_object> s_FindUserObjectTypeRecursive( const CUser_object &user_obj, const string &sought_type_label )
+{
+    // is the one we're given a match?
+    if( FIELD_IS_SET_AND_IS(user_obj, Type, Str) && user_obj.GetType().GetStr() == "OfficialNomenclature" ) {
+        return CConstRef<CUser_object>( &user_obj );
+    }
+
+    // otherwise, recurse downwards depth-first
+    FOR_EACH_USERFIELD_ON_USEROBJECT(field_iter, user_obj) {
+        CConstRef<CUser_object> result = s_FindUserObjectTypeRecursive_helper( **field_iter, sought_type_label );
+        if( result ) {
+            return result;
+        }
+    }
+
+    return CConstRef<CUser_object>();
+}
+
 void CNewCleanup_imp::GeneFeatBC (
     CGene_ref& gene_ref,
     CSeq_feat& seq_feat
@@ -5584,6 +5764,70 @@ void CNewCleanup_imp::GeneFeatBC (
     }
 
     REMOVE_IF_EMPTY_SEQFEATXREF_ON_SEQFEAT(seq_feat);
+
+    // ModernizeGeneFields
+    // (that is, create a formal_name from User-objects, if possible)
+    if( ! FIELD_IS_SET(gene_ref, Formal_name) && FIELD_IS_SET(seq_feat, Ext)) {
+        CConstRef<CUser_object> user_obj_ref = s_FindUserObjectTypeRecursive( GET_FIELD(seq_feat, Ext), "OfficialNomenclature" );
+        // FIELD_IS_SET_AND_IS(user_obj, Type, Str) && user_obj.GetType().GetStr() == "OfficialNomenclature"
+
+        if( user_obj_ref ) {
+            const CUser_object &user_obj = *user_obj_ref;
+
+            const string *symbol = NULL;
+            const string *name = NULL;
+            const string *source = NULL;
+            CGene_nomenclature::EStatus status = CGene_nomenclature::eStatus_unknown;
+
+            FOR_EACH_USERFIELD_ON_USEROBJECT(user_field_iter, user_obj) {
+                const CUser_field &user_field = **user_field_iter;
+                if( FIELD_IS_SET_AND_IS(user_field, Label, Str) && FIELD_IS_SET_AND_IS(user_field, Data, Str) ) {
+                    const string &label_str = GET_FIELD(user_field.GetLabel(), Str);
+                    const string &data_str = GET_FIELD(user_field.GetData(), Str);
+
+                    if( NStr::EqualNocase(label_str, "Symbol") ) {
+                        symbol = &data_str;
+                    } else if( NStr::EqualNocase(label_str, "Name") ) {
+                        name = &data_str;
+                    } else if( NStr::EqualNocase(label_str, "DataSource") ) {
+                        source = &data_str;
+                    } else if( NStr::EqualNocase(label_str, "Status") ) {
+                        if( NStr::EqualNocase(data_str, "Official") ) {
+                            status = CGene_nomenclature::eStatus_official;
+                        } else if( NStr::EqualNocase(data_str, "Interim") ) {
+                            status = CGene_nomenclature::eStatus_interim;
+                        }
+                    } 
+                }
+            }
+
+            if( (symbol != NULL) || (name != NULL) || (source != NULL) || 
+                (status != CGene_nomenclature::eStatus_unknown) ) 
+            {
+                CGene_nomenclature &gene_nomenclature = GET_MUTABLE(gene_ref, Formal_name);
+                if( symbol != NULL ) {
+                    gene_nomenclature.SetSymbol(*symbol);
+                }
+                if( name != NULL ) {
+                    gene_nomenclature.SetName(*name);
+                }
+                if( source != NULL ) {
+                    // parse "source" string into a CDbtag
+                    CRef<CDbtag> new_dbtag = s_DbtagParse( *source );
+                    if( new_dbtag ) {
+                        gene_nomenclature.SetSource(*new_dbtag);
+                    }
+                }
+                gene_nomenclature.SetStatus(status);
+
+                if( &GET_FIELD(seq_feat, Ext) == user_obj_ref ) {
+                    RESET_FIELD(seq_feat, Ext);
+                }
+
+                ChangeMade(CCleanupChange::eCreateGeneNomenclature);
+            }
+        }
+    }
 }
 
 void CNewCleanup_imp::ProtrefBC (
@@ -5629,6 +5873,7 @@ void CNewCleanup_imp::ProtrefBC (
                 prot_ref.ResetDesc();
             }
 
+            // This is pretty inefficient, so when there's time we should replace it with a map or something
             if (NStr::Find (*it, "ribulose") != string::npos
                 && NStr::Find (*it, "bisphosphate") != string::npos
                 && NStr::Find (*it, "methyltransferase") == string::npos
@@ -6545,10 +6790,118 @@ void CNewCleanup_imp::RnaFeatBC (
     }
 }
 
+class CCodeBreakCompare
+{
+public:
+    CCodeBreakCompare( const CSeq_loc &seq_feat_location, CRef<CScope> scope ) :
+        m_Seq_feat_location(seq_feat_location), m_Scope(scope)
+    {
+    }
+
+    bool operator()( const CRef<CCode_break> break1, const CRef<CCode_break> break2 )
+    {
+        // check for missing locs (shouldn't happen, since locations are mandatory)
+        const bool has_loc1 = FIELD_IS_SET(*break1, Loc);
+        const bool has_loc2 = FIELD_IS_SET(*break2, Loc);
+        if( ! has_loc1 || ! has_loc2 ) {
+            return (has_loc1 < has_loc2);
+        }
+
+        const CSeq_loc &loc1 = GET_FIELD(*break1, Loc);
+        const CSeq_loc &loc2 = GET_FIELD(*break2, Loc);
+
+        TSeqPos seq_pos1 =
+            sequence::LocationOffset(m_Seq_feat_location, loc1,
+            sequence::eOffset_FromStart,
+            &*m_Scope);
+        TSeqPos seq_pos2 =
+            sequence::LocationOffset(m_Seq_feat_location, loc2,
+            sequence::eOffset_FromStart,
+            &*m_Scope);
+
+        return ( seq_pos1 < seq_pos2 );
+    }
+private:
+    const CSeq_loc &m_Seq_feat_location;
+    CRef<CScope> m_Scope;
+};
+
+class CCodeBreakEqual 
+{
+public:
+    CCodeBreakEqual( CRef<CScope> scope ) : 
+        m_Scope( scope ) { }
+
+    bool operator()( const CRef<CCode_break> break1, const CRef<CCode_break> break2 ) 
+    {
+        // check for missing locs (shouldn't happen, since locations are mandatory)
+        const bool has_loc1 = FIELD_IS_SET(*break1, Loc);
+        const bool has_loc2 = FIELD_IS_SET(*break2, Loc); 
+        if( has_loc1 != has_loc2 ) {
+            return false;
+        }
+
+        const CSeq_loc &loc1 = GET_FIELD(*break1, Loc);
+        const CSeq_loc &loc2 = GET_FIELD(*break2, Loc);
+
+        if( sequence::eSame != sequence::Compare( loc1, loc2, &*m_Scope ) ) {
+            return false;
+        }
+
+        const bool aa_set1 = FIELD_IS_SET(*break1, Aa);
+        const bool aa_set2 = FIELD_IS_SET(*break2, Aa);
+        if( aa_set1 != aa_set2 ) {
+            return false;
+        } else if( ! aa_set1 && ! aa_set2 ) {
+            return true;
+        }
+
+        return GET_FIELD(*break1, Aa).Equals( GET_FIELD(*break2, Aa) );
+    }
+
+private:
+    CRef<CScope> m_Scope;
+};
+
 void CNewCleanup_imp::CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat)
 {
     // move the cdregion's xrefs to their destination protein
     x_MoveCdregionXrefsToProt( cds, seqfeat );
+
+    // make code-break's location on minus strand if seq-feat's location is 
+    // on minus strand(and both are on the same seqid)
+    if( FIELD_IS_SET(seqfeat, Location) ) {
+        const ENa_strand seqfeat_loc_strand = GET_FIELD(seqfeat, Location).GetStrand();
+        const CSeq_id* seqfeat_loc_id = GET_FIELD(seqfeat, Location).GetId();
+        if( (seqfeat_loc_strand == eNa_strand_minus) && (seqfeat_loc_id != NULL) ) {
+            EDIT_EACH_CODEBREAK_ON_CDREGION(code_break_iter, cds) {
+                CCode_break &code_break = **code_break_iter;
+                if( FIELD_IS_SET(code_break, Loc) ) {
+                    const ENa_strand code_break_strand = GET_FIELD(code_break, Loc).GetStrand();
+                    const CSeq_id* code_break_id = GET_FIELD(code_break, Loc).GetId();
+                    if( (code_break_strand != eNa_strand_minus) && (code_break_id != NULL) && 
+                        GET_FIELD(code_break, Loc).IsInt() &&
+                        code_break_id->Compare(*seqfeat_loc_id) == CSeq_id::e_YES ) 
+                    {
+                        GET_MUTABLE(code_break, Loc).SetStrand(eNa_strand_minus);
+                    }
+                }
+            }
+        }
+    }
+
+    // sort/uniq code breaks
+    CCodeBreakCompare code_break_compare( seqfeat.GetLocation(), m_Scope );
+    if( ! CODEBREAK_ON_CDREGION_IS_SORTED(cds, code_break_compare) ) {
+        SORT_CODEBREAK_ON_CDREGION(cds, code_break_compare);
+        ChangeMade(CCleanupChange::eChangeCodeBreak);
+    }
+
+    CCodeBreakEqual code_break_equal( m_Scope );
+    if( ! CODEBREAK_ON_CDREGION_IS_UNIQUE(cds, code_break_equal) ) {
+        UNIQUE_CODEBREAK_ON_CDREGION(cds, code_break_equal);
+        ChangeMade(CCleanupChange::eChangeCodeBreak);
+    }
 }
 
 bool CNewCleanup_imp::x_InGpsGenomic( const CSeq_feat& seqfeat )

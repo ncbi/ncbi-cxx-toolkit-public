@@ -54,10 +54,13 @@ use m_NewCleanup.x_CleanupStringMarkChanged {
     Affil.std.fax
     Affil.std.phone
     Affil.std.postal-code
-    User-field.data.str
-    User-field.data.strs.E
-    User-field.label.str
-    User-object.type.str
+#Commented these out for now, since we should really
+# only allow them when under Seq-feat.user
+# In C as: VisitAllUserObjectsInUop ((UserObjectPtr) sfp->data.value.ptrvalue, NULL, CleanUserObject);
+##    User-field.data.str
+##    User-field.data.strs.E
+##    User-field.label.str
+##    User-object.type.str
     RNA-ref.ext.name
     Seq-feat.data.region
     Seq-feat.comment
@@ -93,6 +96,9 @@ use m_NewCleanup.x_CleanupStringMarkChanged {
     Org-ref.common
     OrgMod.subname
     OrgMod.attrib
+    OrgName.attrib
+    OrgName.lineage
+    OrgName.div
 }
 
 use m_NewCleanup.x_ConvertDoubleQuotesMarkChanged {
@@ -145,10 +151,10 @@ use m_NewCleanup.x_CompressStringSpacesMarkChanged {
     Imprint.language
     Imprint.part-supi
     Org-ref.mod.E
-    Org-ref.taxname
-    Org-ref.common
     OrgMod.subname
     OrgMod.attrib
+    Org-ref.taxname
+    Org-ref.common
 }
 
 use m_NewCleanup.x_StripSpacesMarkChanged {
@@ -189,6 +195,7 @@ use m_NewCleanup.EMBLblockBC { EMBL-block }
 
 use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc.org, Seqdesc }
 
+# Biosource stuff
 use m_NewCleanup.BiosourceBC { BioSource }
 use m_NewCleanup.x_SortUniqBiosource { POST BioSource }
 use m_NewCleanup.x_ModernizePCRPrimers { BioSource }
@@ -204,7 +211,6 @@ use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat.data.org, Seq-feat }
 
 use m_NewCleanup.x_ExpandCombinedQuals { Seq-feat.qual }
 
-use m_NewCleanup.OrgrefBC { Org-ref }
 use m_NewCleanup.x_SortUniqOrgRef { POST Org-ref }
 
 use m_NewCleanup.x_DateStdBC { Date-std }

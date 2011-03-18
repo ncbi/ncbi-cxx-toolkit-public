@@ -361,6 +361,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Strip serial",
     "Remove Orgmod",
     "Remove SubSource",
+    "Create Gene Nomenclature",
 
     // set when any other change is made.
     "Change Other", 

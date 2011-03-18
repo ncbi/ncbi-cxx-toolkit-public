@@ -218,7 +218,7 @@ private:
 
     void BiosourceBC (CBioSource& bsc);
     void OrgrefBC (COrg_ref& org);
-    void OrgnameBC (COrgName& onm);
+    void OrgnameBC (COrgName& onm, COrg_ref &org_ref);
     void OrgmodBC (COrgMod& omd);
 
     void DbtagBC (CDbtag& dbt);
@@ -324,6 +324,8 @@ private:
     void x_ModernizePCRPrimers( CBioSource &biosrc );
 
     void x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioSource &biosrc );
+
+    void x_OrgnameModBC( COrgName &orgname, const string &org_ref_common );
 
     void x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq );
 

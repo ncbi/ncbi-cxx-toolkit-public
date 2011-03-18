@@ -577,6 +577,11 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define FIELD_IS_EMPTY_OR_UNSET(Base, Var) \
     ( ! Base##_Test(Var) || Base##_Get(Var).empty() )
 
+/// RAW_FIELD_IS_EMPTY_OR_UNSET macro
+
+#define RAW_FIELD_IS_EMPTY_OR_UNSET(Var, Fld) \
+    ( ! (Var).IsSet##Fld() || (Var).Get##Fld().empty() )
+
 /// RESET_FIELD_IF_EMPTY base macro
 
 // (The do-while is just so the user has to put a semi-colon after it)
@@ -655,6 +660,23 @@ seq_mac_is_sorted (Base##_Set(Var).begin(), \
 (stable_sort (Base##_Set(Var).begin(), \
               Base##_Set(Var).end(), \
               Func))
+
+/// DO_LIST_SORT_HACK base macro
+
+// This is more complex than some of the others
+// to get around the WorkShop compiler's lack of support
+// for member template functions.
+// This should only be needed when you're sorting
+// by a function object rather than a plain function.
+#define DO_LIST_SORT_HACK(Base, Var, Func) \
+    do { \
+        vector< Base##_Type::value_type > vec; \
+        copy( Base##_Get(Var).begin(), Base##_Get(Var).end(), back_inserter(vec) ); \
+        stable_sort( vec.begin(), vec.end(), Func ); \
+        Base##_Set(Var).clear(); \
+        copy( vec.begin(), vec.end(), back_inserter(Base##_Set(Var)) ); \
+    } while(false) // The purpose of the one-time do-while is to force a semicolon
+
 
 /// IS_UNIQUE base macro
 
@@ -948,6 +970,11 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 #define STRING_FIELD_MATCH(Var, Fld, Str) \
     ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Get##Fld(), Str))
+
+/// GET_STRING_FLD_OR_BLANK base macro
+
+#define GET_STRING_FLD_OR_BLANK(Var, Fld) \
+    ( (Var).IsSet##Fld() ? (Var).Get##Fld() : kEmptyStr )
 
 /// STRING_FIELD_NOT_EMPTY base macro
 
@@ -3447,7 +3474,7 @@ IS_SORTED (CODEBREAK_ON_CDREGION, Var, Func)
 /// SORT_CODEBREAK_ON_CDREGION
 
 #define SORT_CODEBREAK_ON_CDREGION(Var, Func) \
-DO_LIST_SORT (CODEBREAK_ON_CDREGION, Var, Func)
+DO_LIST_SORT_HACK(CODEBREAK_ON_CDREGION, Var, Func)
 
 /// CODEBREAK_ON_CDREGION_IS_UNIQUE
 
@@ -3827,6 +3854,16 @@ IS_UNIQUE (QUAL_ON_RNAGEN, Var, Func)
 
 #define UNIQUE_QUAL_ON_RNAGEN(Var, Func) \
 DO_UNIQUE (QUAL_ON_RNAGEN, Var, Func)
+
+/// REMOVE_IF_EMPTY_QUAL_ON_RNAGEN
+
+#define REMOVE_IF_EMPTY_QUAL_ON_RNAGEN(Var) \
+    REMOVE_IF_EMPTY_FIELD(QUAL_ON_RNAGEN, Var)
+
+/// QUAL_ON_RNAGEN_IS_EMPTY
+
+#define QUAL_ON_RNAGEN_IS_EMPTY(Var) \
+    FIELD_IS_EMPTY(QUAL_ON_RNAGEN, Var, Func)
 
 
 ///
