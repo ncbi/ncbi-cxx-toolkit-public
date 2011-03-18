@@ -6020,6 +6020,7 @@ fi
 
 ## `dbapi' projects
 
+DBAPI_DRIVER=
 DBAPI_CTLIB=
 DBAPI_DBLIB=
 DBAPI_MYSQL=
@@ -6029,6 +6030,7 @@ if test "$with_dbapi" = "no" ; then
 else
    NCBI_PROJECT(dbapi)
    dbapi="dbapi"
+   DBAPI_DRIVER=dbapi_driver
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
    test -n "$SYBASE_DBLIBS"  &&  DBAPI_DBLIB=ncbi_xdbapi_dblib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
@@ -6412,6 +6414,7 @@ AC_SUBST(f_outexe)
 
 AC_SUBST(BDB_LIB)
 AC_SUBST(BDB_CACHE_LIB)
+AC_SUBST(DBAPI_DRIVER)
 AC_SUBST(DBAPI_CTLIB)
 AC_SUBST(DBAPI_DBLIB)
 AC_SUBST(DBAPI_MYSQL)
