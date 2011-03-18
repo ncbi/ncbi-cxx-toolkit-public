@@ -113,6 +113,16 @@ public:
         return align.GetAlignLength(m_Gaps);
     }
 
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        if (m_Gaps) {
+            ostr << "Length of the aligned segments, including the length of all gap segments";
+        }
+        else {
+            ostr << "Length of the aligned segments, excluding all gap segments; thus, this is the length of all actually aligned (i.e., match or mismatch) bases";
+        }
+    }
+
 private:
     bool m_Gaps;
 };
@@ -122,8 +132,9 @@ private:
 class CScore_LongestGapLength : public CAlignFilter::IScore
 {
 public:
-    CScore_LongestGapLength()
+    virtual void PrintHelp(CNcbiOstream& ostr) const
     {
+        ostr << "Length of the longest gap observed in either query or subject";
     }
 
     virtual double Get(const CSeq_align& align, CScope* s) const
@@ -195,9 +206,6 @@ public:
 
         return longest_gap;
     }
-
-private:
-    bool m_Gaps;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -205,6 +213,12 @@ private:
 class CScore_3PrimeUnaligned : public CAlignFilter::IScore
 {
 public:
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "Length of unaligned sequence 3' of alignment end";
+    }
+
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         double score_value = 0;
@@ -233,6 +247,15 @@ public:
 class CScore_InternalUnaligned : public CAlignFilter::IScore
 {
 public:
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "Length of unaligned sequence contained within the aligned "
+            "range.  Note that this does not count gaps; rather, it computes "
+            "the length of all missing, unaligned sequence bounded by the "
+            "aligned range";
+    }
+
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         double score_value = 0;
@@ -240,31 +263,67 @@ public:
         case CSeq_align::TSegs::e_Spliced:
             {{
                  const CSpliced_seg& seg = align.GetSegs().GetSpliced();
-                 CSpliced_seg::TExons::const_iterator it =
-                     seg.GetExons().begin();
-                 CSpliced_seg::TExons::const_iterator prev =
-                     seg.GetExons().begin();
-                 CSpliced_seg::TExons::const_iterator end =
-                     seg.GetExons().end();
-                 for (++it;  it != end;  ++it, ++prev) {
+                 if (seg.IsSetProduct_strand()  &&
+                     seg.GetProduct_strand() == eNa_strand_minus) {
+                     CSpliced_seg::TExons::const_reverse_iterator it =
+                         seg.GetExons().rbegin();
+                     CSpliced_seg::TExons::const_reverse_iterator prev =
+                         seg.GetExons().rbegin();
+                     CSpliced_seg::TExons::const_reverse_iterator end =
+                         seg.GetExons().rend();
                      if (seg.GetProduct_type() ==
                          CSpliced_seg::eProduct_type_transcript) {
-                         score_value += (*it)->GetProduct_start().GetNucpos() -
-                                        (*prev)->GetProduct_end().GetNucpos() - 1;
+                         for (++it;  it != end;  ++it, ++prev) {
+                             score_value += (*it)->GetProduct_start().GetNucpos() -
+                                 (*prev)->GetProduct_end().GetNucpos() - 1;
+                         }
                      } else {
-                         const CProt_pos& curr =
-                             (*it)->GetProduct_start().GetProtpos();
-                         const CProt_pos& last =
-                             (*prev)->GetProduct_end().GetProtpos();
-                         TSeqPos curr_nuc = curr.GetAmin() * 3;
-                         if (curr.GetFrame()) {
-                             curr_nuc += curr.GetFrame() - 1;
+                         for (++it;  it != end;  ++it, ++prev) {
+                             const CProt_pos& curr =
+                                 (*it)->GetProduct_start().GetProtpos();
+                             const CProt_pos& last =
+                                 (*prev)->GetProduct_end().GetProtpos();
+                             TSeqPos curr_nuc = curr.GetAmin() * 3;
+                             if (curr.GetFrame()) {
+                                 curr_nuc += curr.GetFrame() - 1;
+                             }
+                             TSeqPos last_nuc = last.GetAmin() * 3;
+                             if (last.GetFrame()) {
+                                 last_nuc += last.GetFrame() - 1;
+                             }
+                             score_value += curr_nuc - last_nuc - 1;
                          }
-                         TSeqPos last_nuc = last.GetAmin() * 3;
-                         if (last.GetFrame()) {
-                             last_nuc += last.GetFrame() - 1;
+                     }
+                 }
+                 else {
+                     CSpliced_seg::TExons::const_iterator it =
+                         seg.GetExons().begin();
+                     CSpliced_seg::TExons::const_iterator prev =
+                         seg.GetExons().begin();
+                     CSpliced_seg::TExons::const_iterator end =
+                         seg.GetExons().end();
+                     if (seg.GetProduct_type() ==
+                         CSpliced_seg::eProduct_type_transcript) {
+                         for (++it;  it != end;  ++it, ++prev) {
+                             score_value += (*it)->GetProduct_start().GetNucpos() -
+                                 (*prev)->GetProduct_end().GetNucpos() - 1;
                          }
-                         score_value += curr_nuc - last_nuc - 1;
+                     } else {
+                         for (++it;  it != end;  ++it, ++prev) {
+                             const CProt_pos& curr =
+                                 (*it)->GetProduct_start().GetProtpos();
+                             const CProt_pos& last =
+                                 (*prev)->GetProduct_end().GetProtpos();
+                             TSeqPos curr_nuc = curr.GetAmin() * 3;
+                             if (curr.GetFrame()) {
+                                 curr_nuc += curr.GetFrame() - 1;
+                             }
+                             TSeqPos last_nuc = last.GetAmin() * 3;
+                             if (last.GetFrame()) {
+                                 last_nuc += last.GetFrame() - 1;
+                             }
+                             score_value += curr_nuc - last_nuc - 1;
+                         }
                      }
                  }
              }}
@@ -290,6 +349,26 @@ public:
     {
     }
 
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        if (m_Start) {
+            if (m_Row == 0) {
+                ostr << "Start of query sequence (0-based coordinates)";
+            }
+            else if (m_Row == 1) {
+                ostr << "Start of subject sequence (0-based coordinates)";
+            }
+        }
+        else {
+            if (m_Row == 0) {
+                ostr << "End of query sequence (0-based coordinates)";
+            }
+            else if (m_Row == 1) {
+                ostr << "End of subject sequence (0-based coordinates)";
+            }
+        }
+    }
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         if (m_Start) {
@@ -309,6 +388,12 @@ private:
 class CScore_AlignLengthRatio : public CAlignFilter::IScore
 {
 public:
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "Ratio of subject aligned range length to query aligned "
+            "range length";
+    }
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         TSeqRange r0 = align.GetSeqRange(0);
@@ -329,6 +414,16 @@ public:
     CScore_SequenceLength(int row)
         : m_Row(row)
     {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        if (m_Row == 0) {
+            ostr << "Length of query sequence";
+        }
+        else if (m_Row == 1) {
+            ostr << "Length of subject sequence";
+        }
     }
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
@@ -358,6 +453,14 @@ private:
 class CScore_MinExonLength : public CAlignFilter::IScore
 {
 public:
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Length of the shortest exon.  Note that this score has "
+            "meaning only for Spliced-seg alignments, as would be generated "
+            "by Splign or ProSplign.";
+    }
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         double score = numeric_limits<double>::quiet_NaN();
@@ -387,6 +490,15 @@ public:
 class CScore_CdsInternalStops : public CAlignFilter::IScore
 {
 public:
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Count of the number of internal stop codons encountered when "
+            "translating the coding region associated with the aligned "
+            "transcript.  Note that this has meaning only for Spliced-seg "
+            "transcript alignments.";
+    }
+
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         double score = 0;
@@ -697,11 +809,20 @@ bool CAlignFilter::Match(const CSeq_align& align)
     return (match  &&  ( !m_RemoveDuplicates  ||  x_IsUnique(align) ) );
 }
 
-void CAlignFilter::PrintDictionary(CNcbiOstream &ostr) {
+void CAlignFilter::PrintDictionary(CNcbiOstream &ostr)
+{
     ITERATE (TScoreDictionary, it, m_Scores) {
-        ostr << it->first << ": ";
-        it->second->PrintHelp(ostr);
-        ostr << endl;
+        ostr << "  * " << it->first << endl;
+
+        CNcbiOstrstream os;
+        it->second->PrintHelp(os);
+
+        string s = string(CNcbiOstrstreamToString(os));
+        list<string> tmp;
+        NStr::Wrap(s, 72, tmp);
+        ITERATE (list<string>, i, tmp) {
+            ostr << "      " << *i << endl;
+        }
     }
 }
 
