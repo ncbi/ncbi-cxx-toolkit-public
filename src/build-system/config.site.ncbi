@@ -78,6 +78,10 @@ case "$ncbi_platform" in
     *          ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi9-OBSOLETE} ;;
 esac
 
+case "$ncbi_platform" in
+    *MAC       ) : ${FREETYPE_PATH=/usr/X11} ;;
+esac
+
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
 
 case "$ncbi_platform" in
@@ -106,6 +110,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    *MAC       ) : ${mysql_config=/usr/bin/false} ;;
     SunOSSparc ) : ${MYSQL_PATH=/netopt/mysql/3-23.40} ;;
 esac
 
@@ -124,6 +129,16 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    *MAC       ) : ${PCRE_PATH=/usr} ;;
+esac
+
+case "$ncbi_platform" in
+    *MAC )
+        : ${PYTHON_PATH=/usr}
+        : ${PYTHON24=/usr/bin/false}
+        : ${PYTHON25=/usr/bin/python2.5}
+        : ${PYTHON26=/usr/bin/python2.6}
+        ;;
     Linux* )
         : ${PYTHON_PATH=/opt/python-2.5.1}
         : ${PYTHON24=/usr/local/python-2.4.4/bin/python}
