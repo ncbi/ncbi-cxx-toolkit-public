@@ -1,8 +1,5 @@
 /* src/build-system/config.h.in.  Generated from src/build-system/configure.ac by autoheader.  */
 
-/* Define to 1 if C++ streams delete their buffers. */
-#undef AUTOMATIC_STREAMBUF_DESTRUCTION
-
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 #undef BSD_COMP
 
@@ -287,9 +284,6 @@
 
 /* Define to 1 if the SP SGML library is available. */
 #undef HAVE_LIBSP
-
-/* Define to 1 if libsqlite is available. */
-#undef HAVE_LIBSQLITE
 
 /* Define to 1 if libsqlite3 is available. */
 #undef HAVE_LIBSQLITE3
@@ -608,9 +602,6 @@
 
 /* Define to 1 if wxWidgets is available. */
 #undef HAVE_WXWIDGETS
-
-/* Define to 1 if wxWindows is available. */
-#undef HAVE_WXWINDOWS
 
 /* Define to 1 if Xalan-C++ is available. */
 #undef HAVE_XALAN

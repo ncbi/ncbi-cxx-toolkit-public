@@ -65,9 +65,9 @@ case "$with_3psw" in
          with_ncbi_c=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre, gnutls, openssl,
-                     sybase, ftds, mysql, fltk, opengl, mesa, glut, glew, wxwin,
+                     sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
-                     python, jni, cppunit, boost, sqlite, sqlite3, icu, expat,
+                     python, jni, cppunit, boost, sqlite3, icu, expat,
                      sablot, libxml, libxslt, xerces, xalan, oechem, sge,
                      muparser, hdf5, gif, jpeg, png, tiff, xpm, magic, curl],
         [if test "${[with_]X-no}" != "no"; then
@@ -277,10 +277,6 @@ AC_ARG_WITH(glew,
    [ --without-glew          do not use GLEW])
 AC_ARG_WITH(glew2,
    [ --with-glew=DIR         use GLEW installation in DIR])
-AC_ARG_WITH(wxwin,
-   [ --without-wxwin         do not use wxWindows (2.4-)])
-AC_ARG_WITH(wxwin2,
-   [ --with-wxwin=DIR        use wxWindows installation in DIR])
 AC_ARG_WITH(wxwidgets,
    [ --without-wxwidgets     do not use wxWidgets (2.6+)])
 AC_ARG_WITH(wxwidgets2,
@@ -331,10 +327,6 @@ AC_ARG_WITH(boost-tag,
    [ --with-boost-tag=TAG    use TAG as the tag appended to Boost library names])
 AC_ARG_WITH(boost-tag2,
    [ --without-boost-tag     use untagged Boost library names])
-AC_ARG_WITH(sqlite,
-   [ --with-sqlite=DIR       use SQLite (2.x) installation in DIR])
-AC_ARG_WITH(sqlite2,
-   [ --without-sqlite,       do not use SQLite 2.x])
 AC_ARG_WITH(sqlite3,
    [ --with-sqlite3=DIR      use SQLite 3.x installation in DIR])
 AC_ARG_WITH(sqlite3b,
@@ -456,11 +448,11 @@ bin-release mt 64 universal exe runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
-ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
+ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew \
-bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
+bdb python jni sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl 3psw \
 local-lbsm ncbi-crypt connext \
@@ -504,9 +496,9 @@ for x_arg in "$@" ; do
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
       | --with-gnutls=* | --with-openssl=* | --with-curl=* \
-      | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
+      | --with-sybase-local=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-sqlite=* | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
+      | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* \
       | --with-libxml=* | --with-libxslt=* \
       | --with-bdb=* | --with-odbc | --with-odbc=* \
@@ -3007,33 +2999,6 @@ if test "$ncbi_cv_func_ios_register_callback" = yes; then
 fi
 
 
-AC_CACHE_CHECK([whether C++ streams delete their buffers],
-   ncbi_cv_cxx_auto_sb_dest,
-   [AC_RUN_IFELSE([AC_LANG_PROGRAM(
-       [[#include <iostream>
-         int status = 1;
-         class mybuf : public std::streambuf
-         {
-         public:
-             ~mybuf() { status = 0; }
-         };
-         class mystream : public std::iostream
-         {
-         public:
-               mystream() { init(new mybuf); }
-         };
-         ]],
-       [[{ mystream s; }  return status;]])],
-       [ncbi_cv_cxx_auto_sb_dest=yes], [ncbi_cv_cxx_auto_sb_dest=no],
-       [ncbi_cv_cxx_auto_sb_dest=no])])
-# Rare, so assume "no" when cross-compiling
-if test "$ncbi_cv_cxx_auto_sb_dest" = yes; then
-   AC_DEFINE(AUTOMATIC_STREAMBUF_DESTRUCTION, 1,
-             [Define to 1 if C++ streams delete their buffers.])
-fi
-
-
-
 AC_CACHE_CHECK([for std::char_traits::], ncbi_cv_type_char_traits,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[#include <iostream>]],
@@ -4968,80 +4933,6 @@ else
 fi
 
 
-## wxWindows
-if test "$with_wxwin" != "no" ; then
-   case "$with_wxwin" in
-      yes | "" ) : ${WXWIN_PATH=$NCBI/wxwin} ;;
-      *        ) WXWIN_PATH=$with_wxwin ;;
-   esac
-   if test -d "$WXWIN_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
-        -a -z "$WXWIN_ARCH_PATH"; then
-      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
-   elif test -d "$WXWIN_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
-        -a -z "$WXWIN_ARCH_PATH"; then
-      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
-   else
-      WXWIN_ARCH_PATH="$WXWIN_PATH"
-   fi
-   WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_ARCH_PATH/bin"}
-   WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_ARCH_PATH/lib"}
-   WXWIN_INCLUDE=
-   wxconf=$WXWIN_BINPATH/wx-config
-   if test -x "$WXWIN_BINPATH/gtk-config"; then
-      gtkconf=$WXWIN_BINPATH/gtk-config
-   elif gtk-config --version >/dev/null 2>&1; then
-      gtkconf=gtk-config
-   else
-      # May work without gtk-config (e.g., on Mac OS X)
-      gtkconf=:
-   fi
-   case "$host_os" in
-      darwin* ) baseflags=""                  ;;
-      *       ) baseflags=`$gtkconf --cflags` ;;
-   esac
-   AC_CACHE_CHECK([for wxWindows in $WXWIN_ARCH_PATH], ncbi_cv_lib_wxwindows,
-      [if test -x "$wxconf" ; then
-          WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
-          WXWIN_LIBS=`$wxconf --libs`
-
-          CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
-          LIBS="$WXWIN_LIBS $orig_LIBS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM(
-             [[#include <wx/wx.h>]],
-             [[ wxExit(); ]])],
-             [ncbi_cv_lib_wxwindows=yes], [ncbi_cv_lib_wxwindows=no])
-       else
-          ncbi_cv_lib_wxwindows=no
-       fi])
-   if test "$ncbi_cv_lib_wxwindows" = "no"; then
-      NCBI_MISSING_PACKAGE(wxwin)
-   fi
-fi
-
-if test "$with_wxwin" = "no" ; then
-   WXWIN_LIBPATH="No_wxWindows"
-   WXWIN_INCLUDE=
-   WXWIN_LIBS=
-   WXWIN_STATIC_LIBS=
-   WXWIN_GL_LIBS=
-   WXWIN_GL_STATIC_LIBS=
-   WXWIN_POST_LINK=:
-else
-   NCBI_PACKAGE(wxWindows)
-   # The "yes" may have been cached; get the actual settings again if needed
-   if test -z "$WXWIN_INCLUDE"; then
-      WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
-      WXWIN_LIBS=`$wxconf --libs`
-   fi
-   WXWIN_STATIC_LIBS=`$wxconf --libs --static`
-   WXWIN_GL_LIBS=`$wxconf --gl-libs`
-   WXWIN_GL_STATIC_LIBS=`$wxconf --gl-libs --static`
-   WXWIN_POST_LINK=`$wxconf --rezflags`
-   test -n "$WXWIN_POST_LINK"  ||  WXWIN_POST_LINK=:
-   AC_DEFINE(HAVE_WXWINDOWS, 1, [Define to 1 if wxWindows is available.])
-fi
-
-
 ## wxWidgets
 # Insist on single-byte builds by default, per various projects' expectations.
 : ${with_wxwidgets_ucs=no}
@@ -5751,14 +5642,6 @@ fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ### SQLite
-: ${SQLITE_PATH=$NCBI/sqlite2}
-if test -d "$SQLITE_PATH"; then
-   NCBI_FIX_DIR(SQLITE_PATH)
-fi
-NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
- AC_LANG_PROGRAM([#include <sqlite.h>],
-    [char *errs; sqlite* db = sqlite_open("foo.db", 0, &errs);]))
-
 case "$with_sqlite3" in
    yes | '' ) : ${SQLITE3_PATH=$NCBI/sqlite3} ;;
    *        ) SQLITE3_PATH=$with_sqlite3 ;;
@@ -6608,12 +6491,6 @@ AC_SUBST(FLTK_STATIC_LIBS_GL)
 AC_SUBST(FLTK_STATIC_LIBS_IMAGES)
 AC_SUBST(FLTK_STATIC_LIBS_ALL)
 AC_SUBST(FLTK_CONFIG)
-AC_SUBST(WXWIN_INCLUDE)
-AC_SUBST(WXWIN_LIBS)
-AC_SUBST(WXWIN_STATIC_LIBS)
-AC_SUBST(WXWIN_GL_LIBS)
-AC_SUBST(WXWIN_GL_STATIC_LIBS)
-AC_SUBST(WXWIN_POST_LINK)
 AC_SUBST(WXWIDGETS_INCLUDE)
 AC_SUBST(WXWIDGETS_LIBS)
 AC_SUBST(WXWIDGETS_STATIC_LIBS)

@@ -106,9 +106,6 @@
 #endif
 
 
-/* Define to 1 if C++ streams delete their buffers. */
-/* #undef AUTOMATIC_STREAMBUF_DESTRUCTION */
-
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 /* #undef BSD_COMP */
 
@@ -326,9 +323,6 @@
 
 /* Define to 1 if the SP SGML library is available. */
 /* #undef HAVE_LIBSP */
-
-/* Define to 1 if libsqlite is available. */
-//#define HAVE_LIBSQLITE 1
 
 /* Define to 1 if the NCBI SSS DB library is available. */
 /* #undef HAVE_LIBSSSDB */
@@ -596,9 +590,6 @@
 
 /* Define to 1 if wxWidgets is available. */
 /* #undef HAVE_WXWIDGETS */
-
-/* Define to 1 if wxWindows is available. */
-/* #undef HAVE_WXWINDOWS */
 
 /* Define to 1 if nullptr keyword is available. */
 /* #undef HAVE_NULLPTR */
