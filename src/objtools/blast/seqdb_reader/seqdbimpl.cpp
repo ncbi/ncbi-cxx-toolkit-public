@@ -619,7 +619,7 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         SSeqRes res;
         const char * seq;
-        Uint8 tot_length = m_Atlas.GetSliceSize();
+        Int8 tot_length = m_Atlas.GetSliceSize();
 
         res.length = vol->GetSequence(vol_oid++, &seq, locked);
         if (res.length < 0) return;

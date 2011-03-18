@@ -144,9 +144,9 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
     _TRACE("Launching BLAST with " << GetNumberOfThreads() << " threads");
 
     // -RMH- This appears to be a problem right now.  When used...this
-    // can cause all the work to go to a single thread!
-    //BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 
-    //                              GetNumberOfThreads());
+    // can cause all the work to go to a single thread!  (-MN- This is fixed in SB-768)
+    BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 
+                                  GetNumberOfThreads());
 
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
