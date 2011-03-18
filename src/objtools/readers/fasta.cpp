@@ -448,10 +448,8 @@ void CFastaReader::ParseDefLine(const TStr& s)
             ds.SetLens().push_back(range_end + 1 - range_start);
         }
         m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(sa);
-        // This assertion accidentally slipped in with an unrelated commit, and
-        // blocks sequences with local IDs and range specifications.
-        // _ASSERT( !GetIDs().front()->IsLocal()
-        //         ||  m_CurrentSeq->GetNonLocalId() == &*m_BestID);
+        _ASSERT(m_BestID->IsLocal()  ||  !GetIDs().front()->IsLocal()
+                ||  m_CurrentSeq->GetNonLocalId() == &*m_BestID);
         m_BestID = GetIDs().front();
         m_ExpectedEnd = range_end - range_start;
 #else
