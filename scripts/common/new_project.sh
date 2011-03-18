@@ -176,6 +176,12 @@ CreateMakefile_App()
   orig_app_name="$6"
 
   base=$src/$stem/${proj_path}/Makefile.${orig_app_name}.app
+  if test -r "$base"; then
+    :
+  else
+    echo "Warning: couldn't read base $base for $1"
+    return 1
+  fi
 
   cat > "$makefile_name" <<EOF
 #
@@ -225,7 +231,7 @@ EOF
 #
 
 ###  BASIC PROJECT SETTINGS
-APP = $app_name
+APP = `sed -ne "s/$old_proj_name/$proj_name/; s/^$ws*APP$ws*=$ws*//p" $base`
 SRC = `sed -ne "s/$old_proj_name/$proj_name/; s/^$ws*SRC$ws*=$ws*//p" $base`
 # OBJ =
 
