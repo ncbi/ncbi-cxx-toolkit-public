@@ -365,8 +365,10 @@ bool CFlatSeqLoc::x_Add
     }
 
     x_Add(from, from_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
-    if (to > 0  &&
-        (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to() || type == eType_assembly)) {
+    if ( (type == eType_assembly) || 
+         ( to > 0  &&
+            (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to()) ) ) 
+    {
         oss << "..";
 
         const CSeq_interval::TFuzz_from *to_fuzz = (si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0);
