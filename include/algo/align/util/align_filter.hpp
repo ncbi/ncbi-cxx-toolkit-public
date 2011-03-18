@@ -162,6 +162,8 @@ public:
         virtual ~IScore() {}
         virtual double Get(const objects::CSeq_align& align,
                            objects::CScope* scope) const = 0;
+        virtual void PrintHelp(CNcbiOstream &ostr) const
+        { ostr << "Explanation TBA"; }
     };
 
 public:
@@ -218,6 +220,13 @@ public:
     void Filter(const objects::CSeq_annot& aligns_in,
                 objects::CSeq_annot&       aligns_out);
 
+    /// Print out the dictionary of score generators
+    void PrintDictionary(CNcbiOstream&);
+
+    /// Do a dry run of the filter, printing out the parse tree and
+    /// looking up all strings
+    void DryRun(CNcbiOstream&);
+
 private:
     void x_Init();
 
@@ -252,6 +261,12 @@ private:
     bool m_RemoveDuplicates;
     string m_Query;
     auto_ptr<CQueryParseTree> m_ParseTree;
+
+    /// Flag indicating whether this is a dry run of the filter. If so we are not
+    /// matching an alignment, but instead walking the parse tree and printing
+    /// information about each score name
+    bool m_IsDryRun;
+    CNcbiOstream *m_DryRunOutput;
 
     CRef<objects::CScope> m_Scope;
 

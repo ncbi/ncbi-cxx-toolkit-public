@@ -435,6 +435,7 @@ public:
 
 CAlignFilter::CAlignFilter()
     : m_RemoveDuplicates(false)
+    , m_IsDryRun(false)
 {
     x_Init();
 }
@@ -442,6 +443,7 @@ CAlignFilter::CAlignFilter()
 
 CAlignFilter::CAlignFilter(const string& query)
     : m_RemoveDuplicates(false)
+    , m_IsDryRun(false)
 {
     x_Init();
     SetFilter(query);
@@ -695,6 +697,24 @@ bool CAlignFilter::Match(const CSeq_align& align)
     return (match  &&  ( !m_RemoveDuplicates  ||  x_IsUnique(align) ) );
 }
 
+void CAlignFilter::PrintDictionary(CNcbiOstream &ostr) {
+    ITERATE (TScoreDictionary, it, m_Scores) {
+        ostr << it->first << ": ";
+        it->second->PrintHelp(ostr);
+        ostr << endl;
+    }
+}
+
+void CAlignFilter::DryRun(CNcbiOstream &ostr) {
+    ostr << "Parse Tree:" << endl;
+    m_ParseTree->Print(ostr);
+    ostr << endl;
+
+    m_IsDryRun = true;
+    m_DryRunOutput = &ostr;
+    CSeq_align dummy_alignment;
+    x_Match(*m_ParseTree->GetQueryTree(), dummy_alignment);
+}
 
 bool CAlignFilter::x_IsUnique(const CSeq_align& align)
 {
@@ -719,6 +739,17 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
     double score_value = numeric_limits<double>::quiet_NaN();
 
     TScoreDictionary::const_iterator it = m_Scores.find(score_name);
+    if (m_IsDryRun) {
+        (*m_DryRunOutput) << score_name << ": ";
+        if (it != m_Scores.end()) {
+            it->second->PrintHelp(*m_DryRunOutput);
+        } else {
+            (*m_DryRunOutput) << "assumed to be a score on the Seq-align";
+        }
+        (*m_DryRunOutput) << endl;
+        return score_value;
+    }
+
     if (it != m_Scores.end()) {
         return it->second->Get(align, m_Scope);
     }
@@ -746,9 +777,13 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
                 break;
             }
         }
-        if ( !found  &&  throw_if_not_found ) {
-            NCBI_THROW(CException, eUnknown,
-                       "failed to find score: " + score_name);
+        if ( !found ) {
+            if( throw_if_not_found ) {
+                NCBI_THROW(CException, eUnknown,
+                           "failed to find score: " + score_name);
+            } else {
+                LOG_POST(Warning << "failed to find score: " << score_name);
+            }
         }
     }
     return score_value;
@@ -869,7 +904,12 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
                 break;
             }
             catch (CException&) {
-                /// ignoring - not found term
+                /// In a real run, any exception we get are likely to be from terms not
+                /// found, and should be ignored. In a dry run, if we get an exception it
+                /// must be the result of some other problem which has to be reported
+                if (m_IsDryRun) {
+                    throw;
+                }
             }
         }
     }
@@ -892,25 +932,39 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
         }
         const string& s = node1.GetValue().GetStrValue();
         if (NStr::EqualNocase(s, "denseg")) {
-            this_val = align.GetSegs().IsDenseg();
+            if (!m_IsDryRun) {
+                this_val = align.GetSegs().IsDenseg();
+            }
         }
         else if (NStr::EqualNocase(s, "spliced")) {
-            this_val = align.GetSegs().IsSpliced();
+            if (!m_IsDryRun) {
+                this_val = align.GetSegs().IsSpliced();
+            }
         }
         else if (NStr::EqualNocase(s, "disc")) {
-            this_val = align.GetSegs().IsDisc();
+            if (!m_IsDryRun) {
+                this_val = align.GetSegs().IsDisc();
+            }
         }
         else if (NStr::EqualNocase(s, "std")) {
-            this_val = align.GetSegs().IsStd();
+            if (!m_IsDryRun) {
+                this_val = align.GetSegs().IsStd();
+            }
         }
         else if (NStr::EqualNocase(s, "sparse")) {
-            this_val = align.GetSegs().IsSparse();
+            if (!m_IsDryRun) {
+                this_val = align.GetSegs().IsSparse();
+            }
         }
         else if (NStr::EqualNocase(s, "dendiag")) {
-            this_val = align.GetSegs().IsDendiag();
+            if (!m_IsDryRun) {
+                this_val = align.GetSegs().IsDendiag();
+            }
         }
         else if (NStr::EqualNocase(s, "packed")) {
-            this_val = align.GetSegs().IsPacked();
+            if (!m_IsDryRun) {
+                this_val = align.GetSegs().IsPacked();
+            }
         }
         else {
             NCBI_THROW(CException, eUnknown,
@@ -996,23 +1050,41 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
             string val = r_node.GetValue().GetStrValue();
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(val);
 
-            CSeq_id_Handle other_idh;
-            if (NStr::EqualNocase(s, "query")) {
-                other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
-            } else {
-                other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
-            }
-
-            if ((idh == other_idh) == !is_not) {
-                return true;
-            }
-
-            CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
-            if ( !syns ) {
+            if (m_IsDryRun) {
+                (*m_DryRunOutput) << val << ": SeqId, ";
+                CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
+                if (!syns) {
+                    (*m_DryRunOutput) << "No synonyms";
+                } else {
+                    (*m_DryRunOutput) << "synonyms ";
+                    ITERATE (CSynonymsSet::TIdSet, syn_it, *syns) {
+                        if (syn_it != syns->begin()) {
+                            (*m_DryRunOutput) << ",";
+                        }
+                        (*m_DryRunOutput) << (*syn_it)->first;
+                    }
+                }
+                (*m_DryRunOutput) << endl;
                 return false;
+            } else {
+                CSeq_id_Handle other_idh;
+                if (NStr::EqualNocase(s, "query")) {
+                    other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+                } else {
+                    other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+                }
+    
+                if ((idh == other_idh) == !is_not) {
+                    return true;
+                }
+    
+                CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
+                if ( !syns ) {
+                    return false;
+                }
+    
+                return (syns->ContainsSynonym(other_idh) == !is_not);
             }
-
-            return (syns->ContainsSynonym(other_idh) == !is_not);
         }
     }
 
@@ -1154,7 +1226,12 @@ bool CAlignFilter::x_Match(const CQueryParseTree::TNode& node,
                  res = x_Match(**iter, align);
                  ++iter;
              }
-             for ( ;  iter != node.SubNodeEnd()  &&  res;  ++iter) {
+             /// In a real run, use short-circuit logic; in a dry run, always interpret
+             /// both sides
+             for ( ;  iter != node.SubNodeEnd()  &&
+                      (res || m_IsDryRun);
+                      ++iter)
+             {
                  res &= x_Match(**iter, align);
              }
 
@@ -1168,10 +1245,6 @@ bool CAlignFilter::x_Match(const CQueryParseTree::TNode& node,
                  node.SubNodeBegin();
              if (iter != node.SubNodeEnd()) {
                  res = !x_Match(**iter, align);
-                 ++iter;
-             }
-             for ( ;  iter != node.SubNodeEnd()  &&  res;  ++iter) {
-                 res &= !x_Match(**iter, align);
              }
 
              return res;
@@ -1186,7 +1259,12 @@ bool CAlignFilter::x_Match(const CQueryParseTree::TNode& node,
                  res = x_Match(**iter, align);
                  ++iter;
              }
-             for ( ;  iter != node.SubNodeEnd();  ++iter) {
+             /// In a real run, use short-circuit logic; in a dry run, always interpret
+             /// both sides
+             for ( ;  iter != node.SubNodeEnd()  &&
+                      (!res || m_IsDryRun);
+                      ++iter)
+             {
                  res |= x_Match(**iter, align);
              }
 
