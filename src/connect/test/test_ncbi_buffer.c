@@ -26,7 +26,7 @@
  * Author:  Denis Vakatov
  *
  * File Description:
- *   Test suite for "ncbi_buffer.[ch]", the memory-resident FIFO storage area
+ *   Test suite for "ncbi_buffer.[ch]", a memory-resident FIFO storage area
  *
  */
 
@@ -38,9 +38,10 @@
 #include "test_assert.h"
 
 
-static unsigned s_Rand(void)
-{   /* a uniform random number generator */
-    static unsigned s_Random = 1;
+/* a (primitive) uniform random number generator :-) */
+static unsigned int s_Rand(void)
+{
+    static unsigned int s_Random = 1;
     s_Random = s_Random * 1103515245 + 12345;
     return (s_Random / 65536) % 32768;
 }
@@ -48,7 +49,7 @@ static unsigned s_Rand(void)
 
 extern int main(void)
 {
-#  define X_MAX_N_IO  (unsigned) 4
+#  define X_MAX_N_IO  (unsigned)  4
 #  define X_MAX_READ  (size_t)   (3 * BUF_DEF_CHUNK_SIZE)
 #  define X_TIMES     (unsigned) (s_Rand() % X_MAX_N_IO)
 #  define X_BYTES     (size_t)   (s_Rand() % X_MAX_READ)
@@ -65,9 +66,14 @@ extern int main(void)
         assert(BUF_Peek(buf, charbuf, sizeof(charbuf)) == 2);
         assert(BUF_PushBack(&buf, (const char*) "BB", 2));
         assert(BUF_PushBack(&buf, (const char*) "aa", 2));
-        assert(BUF_Write(&buf, (const char*) "23", 3));
+        assert(BUF_Write(&buf, (const char*) "23\0", 3));
         assert(BUF_Read(buf, charbuf, sizeof(charbuf)) == 9);
         assert(strcmp(charbuf, (const char*) "aaBB0123") == 0);
+        assert(BUF_Prepend(&buf, "Hello World\0", 12));
+        assert(BUF_Read(buf, 0, 6) == 6);
+        assert(BUF_PushBack(&buf, "Goodbye ", 8));
+        assert(BUF_Read(buf, charbuf, sizeof(charbuf)) == 14);
+        assert(strcmp(charbuf, (const char*) "Goodbye World") == 0);
         BUF_Destroy(buf);
         buf = 0;
     }}
@@ -117,7 +123,7 @@ extern int main(void)
 
             /* read (or just discard) the data */
             if (do_peek  &&  s_Rand() % 2 == 0)
-                n_bytes = BUF_Read(buf, 0, n_bytes);
+                n_bytes = BUF_Read(buf, 0,       n_bytes);
             else
                 n_bytes = BUF_Read(buf, charbuf, n_bytes);
 
@@ -132,7 +138,7 @@ extern int main(void)
                 assert(BUF_PushBack
                        (&buf, charbuf + n_bytes - n_pushback, n_pushback));
                 assert(BUF_Read
-                       (buf, charbuf + n_bytes - n_pushback, n_pushback));
+                       ( buf, charbuf + n_bytes - n_pushback, n_pushback));
             }
 
             /* write the read data to the output stream */
@@ -154,7 +160,7 @@ extern int main(void)
             assert(BUF_PushBack
                    (&buf, charbuf + n_bytes - n_pushback, n_pushback));
             assert(BUF_Read
-                   (buf, tmp, n_pushback) == n_pushback);
+                   ( buf, tmp, n_pushback) == n_pushback);
             memcpy(charbuf + n_bytes - n_pushback, tmp, n_pushback);
         }}
         fprintf(stderr, "\t\tBUF_Read/flush %5lu\n", (unsigned long) n_bytes);
@@ -209,7 +215,6 @@ extern int main(void)
             assert(BUF_Size(buf)  == 0);
         }
     }}
-
 
     /* cleanup & exit */
     BUF_Destroy(buf1);
