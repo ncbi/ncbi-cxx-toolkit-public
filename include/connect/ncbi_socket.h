@@ -808,11 +808,11 @@ typedef struct {
  *        - eIO_Timeout (after the specified amount of time was spent idle), or
  *        - eIO_Interrupted (if signal came while the waiting was in progress).
  * @li <b>NOTE 5:</b> For datagram sockets, the readiness for reading is
- *        determined by message data latched since last message receive call
- *        (DSOCK_RecvMsg).
- * @li <b>NOTE 6:</b> This call allows intermixture of stream and
- *        datagram sockets.
- * @li <b>NOTE 7:</b> This call can cause some socket I/O in those sockets
+ *        determined by the message data latched since last message receive
+ *        call, DSOCK_RecvMsg.
+ * @li <b>NOTE 6:</b> This call allows intermixture of stream, datagram and
+ *        listening sockets, as well as triggers.
+ * @li <b>NOTE 7:</b> This call may cause some socket I/O in those sockets
  *        marked for read-on-write and those with pending connection or
  *        output data.
  * @param n

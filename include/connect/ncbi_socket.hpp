@@ -796,7 +796,7 @@ inline EIO_Status CSocket::Abort(void)
 inline EIO_Status CSocket::Close(void)
 {
     return m_Socket
-        ? SOCK_CloseEx(m_Socket, 0/*do not destroy handle*/) : eIO_Success;
+        ? SOCK_CloseEx(m_Socket, 0/*do not destroy handle*/) : eIO_Closed;
 }
 
 

@@ -755,8 +755,8 @@ static void s_ShowDataLayout(void)
         "\tc_tv:      %3u (%u)\n"
         "\tc_to:      %3u (%u)\n"
         "\tr_buf:     %3u (%u)\n"
-        "\tr_len:     %3u (%u)\n"
         "\tw_buf:     %3u (%u)\n"
+        "\tr_len:     %3u (%u)\n"
         "\tw_len:     %3u (%u)\n"
         "\tn_read:    %3u (%u)\n"
         "\tn_written: %3u (%u)\n"
@@ -788,6 +788,7 @@ static void s_ShowDataLayout(void)
         infof(SOCK_struct,    c_to),                \
         infof(SOCK_struct,    r_buf),               \
         infof(SOCK_struct,    w_buf),               \
+        infof(SOCK_struct,    r_len),               \
         infof(SOCK_struct,    w_len),               \
         infof(SOCK_struct,    n_read),              \
         infof(SOCK_struct,    n_written),           \
@@ -813,8 +814,8 @@ static void s_ShowDataLayout(void)
         infof(SOCK_struct,    c_tv),                \
         infof(SOCK_struct,    c_to),                \
         infof(SOCK_struct,    r_buf),               \
-        infof(SOCK_struct,    r_len),               \
         infof(SOCK_struct,    w_buf),               \
+        infof(SOCK_struct,    r_len),               \
         infof(SOCK_struct,    w_len),               \
         infof(SOCK_struct,    n_read),              \
         infof(SOCK_struct,    n_written),           \
@@ -1205,7 +1206,7 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
         return s_LocalHostAddress;
     if (!s_Warning  &&  reget != eOff) {
         s_Warning = 1;
-        CORE_LOGF_X(157, eLOG_Warning,
+        CORE_LOGF_X(9, eLOG_Warning,
                     ("[SOCK::GetLocalHostAddress]: "
                      " Cannot obtain local host address%s",
                      reget == eDefault ? ", using loopback instead" : ""));
@@ -2958,47 +2959,6 @@ static EIO_Status s_SelectStallsafe(size_t                n,
 }
 
 
-static EIO_Status s_WipeRBuf(SOCK sock)
-{
-    EIO_Status status;
-    size_t     size = BUF_Size(sock->r_buf);
-
-    if (size  &&  BUF_Read(sock->r_buf, 0, size) != size) {
-        char _id[MAXIDLEN];
-        CORE_LOGF_X(9, eLOG_Error,
-                    ("%s[SOCK::WipeRBuf] "
-                     " Cannot drop aux. data buffer",
-                     s_ID(sock, _id)));
-        assert(0);
-        status = eIO_Unknown;
-    } else
-        status = eIO_Success;
-    return status;
-}
-
-
-/* For datagram sockets only! */
-static EIO_Status s_WipeWBuf(SOCK sock)
-{
-    EIO_Status status;
-    size_t     size = BUF_Size(sock->w_buf);
-
-    assert(sock->type == eDatagram);
-    if (size  &&  BUF_Read(sock->w_buf, 0, size) != size) {
-        char _id[MAXIDLEN];
-        CORE_LOGF_X(10, eLOG_Error,
-                    ("%s[SOCK::WipeWBuf] "
-                     " Cannot drop aux. data buffer",
-                     s_ID(sock, _id)));
-        assert(0);
-        status = eIO_Unknown;
-    } else
-        status = eIO_Success;
-    sock->eof = 0;
-    return status;
-}
-
-
 #ifdef NCBI_OS_MSWIN
 static void s_AddTimeout(struct timeval* tv, int ms_addend)
 {
@@ -3269,7 +3229,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
             return status;
         }
     }
-    if ((!sock->session  &&  oob)  ||  sock->w_len == 0)
+    if ((!sock->session  &&  oob)  ||  !sock->w_len)
         return eIO_Success;
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
@@ -3304,8 +3264,11 @@ static EIO_Status s_Write(SOCK        sock,
     EIO_Status status;
 
     if (sock->type == eDatagram) {
-        if (sock->eof)
-            s_WipeWBuf(sock);
+        sock->w_len = 0;
+        if (sock->eof) {
+            BUF_Erase(sock->w_buf);
+            sock->eof = 0;
+        }
         if (BUF_Write(&sock->w_buf, data, size)) {
             *n_written = size;
             sock->w_status = eIO_Success;
@@ -3385,15 +3348,18 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 
     case eIO_Open:
         if (sock->w_status != eIO_Closed) {
-            if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success) {
+            if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success
+                &&  !sock->pending   &&  sock->w_len) {
                 CORE_LOGF_X(dir ? 13 : 20, !tv  ||  (tv->tv_sec | tv->tv_usec)
                             ? eLOG_Warning : eLOG_Trace,
                             ("%s[SOCK::%s] "
-                             " %s with output still pending (%s)",
+                             " %s with output (%lu byte%s) still pending (%s)",
                              s_ID(sock, _id), dir ? "Shutdown" : "Close",
                              !dir ? "Leaving " : dir == eIO_Write
                              ? "Shutting down for write"
-                             : "Shutting does for read/write",
+                             : "Shutting down for read/write",
+                             (unsigned long) sock->w_len,
+                             &"s"[sock->w_len == 1],
                              IO_StatusStr(status)));
             }
             if (sock->session  &&  !sock->pending) {
@@ -3495,11 +3461,10 @@ static EIO_Status s_Close(SOCK sock, int abort)
     int        x_error;
     EIO_Status status;
 
-    /* reset the auxiliary data buffers */
-    s_WipeRBuf(sock);
+    BUF_Erase(sock->r_buf);
     if (sock->type == eDatagram) {
         sock->r_len = 0;
-        s_WipeWBuf(sock);
+        BUF_Erase(sock->w_buf);
     } else if (abort  ||  !sock->keep) {
 #if (defined(NCBI_OS_UNIX) && !defined(NCBI_OS_BEOS)) || defined(NCBI_OS_MSWIN)
         /* setsockopt() is not implemented for MAC (MIT socket emulation lib)*/
@@ -3997,8 +3962,8 @@ static EIO_Status s_Create(const char*     hostpath,
     /* setup the I/O data buffer properties */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     if (datalen) {
-        if (!BUF_SetChunkSize(&x_sock->w_buf, datalen)  ||
-            !BUF_Write(&x_sock->w_buf, data, datalen)) {
+        BUF_SetChunkSize(&x_sock->w_buf, datalen);
+        if (!BUF_Write(&x_sock->w_buf, data, datalen)) {
             CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
                               ("%s[SOCK::Create] "
                                " Cannot store initial data",
@@ -5136,9 +5101,9 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     TSOCK_Handle   fd;
     SOCK           x_sock;
     int            x_error;
-    BUF            w_buf = 0;
     SOCK_socklen_t peerlen;
     size_t         socklen;
+    BUF            w_buf = 0;
     char           _id[MAXIDLEN];
     unsigned int   x_id = ++s_ID_Counter * 1000;
 
@@ -5222,14 +5187,16 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         socklen = 0;
     
     /* store initial data */
-    if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
-                      !BUF_Write(&w_buf, data, datalen))) {
-        CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
-                          ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                           " Cannot store initial data",
-                           x_id, (unsigned int) fd));
-        BUF_Destroy(w_buf);
-        return eIO_Unknown;
+    if (datalen) {
+        BUF_SetChunkSize(&w_buf, datalen);
+        if (!BUF_Write(&w_buf, data, datalen)) {
+            CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
+                              ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
+                               " Cannot store initial data",
+                               x_id, (unsigned int) fd));
+            BUF_Destroy(w_buf);
+            return eIO_Unknown;
+        }
     }
 
     /* create and fill socket handle */
@@ -5617,16 +5584,20 @@ extern EIO_Status SOCK_Poll(size_t          n,
             sock  &&  sock->type == eTrigger  &&  ((TRIGGER) sock)->isset.ptr
             ? polls[i].event
             : eIO_Open;
-        if (!sock  ||  sock->type != eSocket  ||  sock->sock == SOCK_INVALID)
+        if (!sock  ||  !(sock->type & eSocket)  ||  sock->sock == SOCK_INVALID)
             continue;
-        if (polls[i].event & eIO_Read) {
-            if (BUF_Size(sock->r_buf) != 0)
-                polls[i].revent = eIO_Read;
-            else if (sock->r_status == eIO_Closed  ||  sock->eof)
-                polls[i].revent = eIO_Close;
+        if ((polls[i].event & eIO_Read)  &&  BUF_Size(sock->r_buf) != 0) {
+            polls[i].revent = eIO_Read;
+            continue;
         }
-        if ((polls[i].event & eIO_Write)  &&  sock->w_status == eIO_Closed)
+        if (sock->type != eSocket)
+            continue;
+        if ((polls[i].event == eIO_Read
+             &&  (sock->r_status == eIO_Closed  ||  sock->eof))  ||
+            (polls[i].event == eIO_Write
+             &&   sock->w_status == eIO_Closed)) {
             polls[i].revent = eIO_Close;
+        }
     }
 
     return s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
@@ -6396,8 +6367,11 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     }
 
     /* drop all pending data */
-    s_WipeRBuf(sock);
-    s_WipeWBuf(sock);
+    BUF_Erase(sock->r_buf);
+    BUF_Erase(sock->w_buf);
+    sock->r_len = 0;
+    sock->w_len = 0;
+    sock->eof = 0;
     sock->id++;
 
     if (!hostname  ||  !*hostname)
@@ -6525,7 +6499,6 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
         return eIO_Closed;
     }
 
-    sock->w_len = 0;
     if (datalen) {
         status = s_Write(sock, data, datalen, &x_msgsize, 0);
         if (status != eIO_Success) {
@@ -6537,7 +6510,8 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
             return status;
         }
         verify(x_msgsize == datalen);
-    }
+    } else
+        sock->w_len = 0;
     sock->eof = 1/*true - finalized message*/;
 
     x_port = port ? port : sock->port;
@@ -6660,7 +6634,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
     if (x_msg  &&  x_msg != w)
         free(x_msg);
     if (status == eIO_Success)
-        sock->w_status = s_WipeWBuf(sock);
+        BUF_Erase(sock->w_buf);
     return status;
 }
 
@@ -6694,8 +6668,8 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         return eIO_Closed;
     }
 
+    BUF_Erase(sock->r_buf);
     sock->r_len = 0;
-    s_WipeRBuf(sock);
     if (msglen)
         *msglen = 0;
     if (sender_addr)
@@ -6740,10 +6714,10 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                     *sender_addr =       sin.sin_addr.s_addr;
                 if (sender_port)
                     *sender_port = ntohs(sin.sin_port);
-                if ((size_t) x_read > buflen  &&
-                    !BUF_Write(&sock->r_buf,
-                               (char*) x_msg  + buflen,
-                               (size_t)x_read - buflen)) {
+                if ((size_t) x_read > buflen
+                    &&  !BUF_Write(&sock->r_buf,
+                                   (char*) x_msg  + buflen,
+                                   (size_t)x_read - buflen)) {
                     sock->r_status = eIO_Unknown;
                 }
                 if (buflen  &&  x_msgsize > buflen)
@@ -6827,10 +6801,14 @@ extern EIO_Status DSOCK_WipeMsg(SOCK sock, EIO_Event direction)
 
     switch (direction) {
     case eIO_Read:
-        sock->r_status = status = s_WipeRBuf(sock);
+        BUF_Erase(sock->r_buf);
+        sock->r_len = 0;
+        sock->r_status = status = eIO_Success;
         break;
     case eIO_Write:
-        sock->w_status = status = s_WipeWBuf(sock);
+        BUF_Erase(sock->w_buf);
+        sock->w_len = 0;
+        sock->w_status = status = eIO_Success;
         break;
     default:
         CORE_LOGF_X(99, eLOG_Error,
@@ -6956,7 +6934,7 @@ extern TNCBI_BigCount SOCK_GetPosition(SOCK sock, EIO_Event direction)
         switch (direction) {
         case eIO_Read:
             if (sock->type == eDatagram)
-                return BUF_Size(sock->r_buf);
+                return sock->r_len - BUF_Size(sock->r_buf);
             return sock->n_read    - (TNCBI_BigCount) BUF_Size(sock->r_buf);
         case eIO_Write:
             if (sock->type == eDatagram)
@@ -7263,7 +7241,7 @@ extern char* SOCK_gethostbyaddrEx(unsigned int host,
              (!host
               &&  strncasecmp(retval, "localhost", 9) == 0))) {
         s_Warning = 1;
-        CORE_LOGF_X(156, eLOG_Warning,
+        CORE_LOGF_X(10, eLOG_Warning,
                     ("[SOCK::gethostbyaddr]: "
                      " Got %s for local host address", retval));
     }
