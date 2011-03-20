@@ -51,8 +51,6 @@
 #  define SIZEOF_INT           4
 #  if __DARWIN_LONG_DOUBLE_IS_DOUBLE
 #    define SIZEOF_LONG_DOUBLE 8
-#  elif defined(__i386__) || defined(__x86_64__)
-#    define SIZEOF_LONG_DOUBLE 12
 #  else
 #    define SIZEOF_LONG_DOUBLE 16
 #  endif
