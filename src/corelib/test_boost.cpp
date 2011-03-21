@@ -827,6 +827,9 @@ CNcbiTestApplication::Init(void)
         m_ArgDescrs = new CArgDescriptions();
         m_ArgDescrs->AddFlag("-help",
              "Print test framework related command line arguments");
+        m_ArgDescrs->AddOptionalKey("-run_test", "Filter",
+             "Allows to filter which test units to run",
+             CArgDescriptions::eString, CArgDescriptions::fMandatorySeparator);
         m_ArgDescrs->AddFlag("dryrun",
                              "Do not actually run tests, "
                              "just print list of all available tests.");

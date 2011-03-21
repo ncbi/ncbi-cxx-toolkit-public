@@ -789,6 +789,9 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
         if (flags & CArgDescriptions::fOptionalSeparator) {
             out << "<" << "optionalSeparator" << "/>";
         }
+        if (flags & CArgDescriptions::fMandatorySeparator) {
+            out << "<" << "mandatorySeparator" << "/>";
+        }
         out << "</" << "flags" << ">" << endl;
     }
     const CArgDescDefault* def = dynamic_cast<const CArgDescDefault*>(this);
@@ -1230,19 +1233,22 @@ CArgDesc_Key::~CArgDesc_Key(void)
 
 
 inline string s_KeyUsageSynopsis(const string& name, const string& synopsis,
-                                 bool name_only)
+                                 bool name_only,
+                                 CArgDescriptions::TFlags flags)
 {
     if ( name_only ) {
         return '-' + name;
     } else {
-        return '-' + name + ' ' + synopsis;
+        char separator =
+            (flags & CArgDescriptions::fMandatorySeparator) ? '=' : ' ';
+        return '-' + name + separator + synopsis;
     }
 }
 
 
 string CArgDesc_Key::GetUsageSynopsis(bool name_only) const
 {
-    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only);
+    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only, GetFlags());
 }
 
 
@@ -1273,7 +1279,7 @@ CArgDesc_KeyOpt::~CArgDesc_KeyOpt(void)
 
 string CArgDesc_KeyOpt::GetUsageSynopsis(bool name_only) const
 {
-    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only);
+    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only, GetFlags());
 }
 
 
@@ -1306,7 +1312,7 @@ CArgDesc_KeyDef::~CArgDesc_KeyDef(void)
 
 string CArgDesc_KeyDef::GetUsageSynopsis(bool name_only) const
 {
-    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only);
+    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only, GetFlags());
 }
 
 
@@ -2193,6 +2199,10 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
         eq_separator = arg1.length() > name.length()  &&
             (arg1[name.length() + 1] == '=');
         if ( !eq_separator ) {
+            if ((arg.GetFlags() & fMandatorySeparator) != 0) {
+                NCBI_THROW(CArgException,eInvalidArg,
+                    "Invalid argument: " + arg1);
+            }
             no_separator |= (arg.GetFlags() & fOptionalSeparator) != 0  &&
                 name.length() == 1  &&  arg1.length() > 2;
         }
@@ -2512,7 +2522,12 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     // Print type (and value constraint, if any)
     string attr = arg.GetUsageCommentAttr();
     if ( !attr.empty() ) {
-        attr = " <" + attr + '>';
+        char separator =
+            (arg.GetFlags() & CArgDescriptions::fMandatorySeparator) ? '=' : ' ';
+        string t;
+        t += separator;
+        t += '<' + attr + '>';
+        attr = t;
     }
 
     // Add aliases for non-positional arguments

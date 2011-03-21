@@ -510,7 +510,10 @@ public:
         ///   - the argument must be a key (including optional or default);
         ///   - the argument's name must be a single char;
         ///   - no other argument's name can start with the same char.
-        fOptionalSeparator = (1 << 6)
+        fOptionalSeparator = (1 << 6),
+        
+        /// Require '=' separator
+        fMandatorySeparator = (1 << 7)
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 

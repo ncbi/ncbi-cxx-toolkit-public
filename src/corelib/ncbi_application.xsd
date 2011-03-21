@@ -186,6 +186,7 @@
           <xs:element name="ignoreInvalidValue" minOccurs="0"/>
           <xs:element name="warnOnInvalidValue" minOccurs="0"/>
           <xs:element name="optionalSeparator" minOccurs="0"/>
+          <xs:element name="mandatorySeparator" minOccurs="0"/>
         </xs:sequence>
       </xs:complexType>
     </xs:element>
