@@ -310,8 +310,7 @@ int CCgiApplication::Run(void)
     x_OnEvent(eEndRequest, 120);
     x_OnEvent(eExit, result);
 
-    if (orig_stream) 
-        m_Context->GetResponse().SetOutput(NULL);
+    m_Context->GetResponse().SetOutput(NULL);
     return result;
 }
 
@@ -477,7 +476,7 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
         if ( !inp ) {
             if ( !m_InputStream.get() ) {
                 m_InputStream.reset(
-                    new CRStream(new CCGIStreamReader(std::cin),
+                    new CRStream(new CCGIStreamReader(std::cin), 0, 0,
                                 CRWStreambuf::fOwnReader));
             }
             inp = m_InputStream.get();
@@ -485,7 +484,7 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
         if ( !out ) {
             if ( !m_OutputStream.get() ) {
                 m_OutputStream.reset(
-                    new CWStream(new CCGIStreamWriter(std::cout),
+                    new CWStream(new CCGIStreamWriter(std::cout), 0, 0,
                                 CRWStreambuf::fOwnWriter));
             }
             out = m_OutputStream.get();
@@ -707,12 +706,15 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
         {
             CRequestContext& rctx = GetDiagContext().GetRequestContext();
             if ( m_InputStream.get() ) {
-                if ( m_InputStream->eof() ) {
+                if ( !m_InputStream->good() ) {
                     m_InputStream->clear();
                 }
                 rctx.SetBytesRd(NcbiStreamposToInt8(m_InputStream->tellg()));
             }
             if ( m_OutputStream.get() ) {
+                if ( !m_OutputStream->good() ) {
+                    m_OutputStream->clear();
+                }
                 rctx.SetBytesWr(NcbiStreamposToInt8(m_OutputStream->tellp()));
             }
             break;

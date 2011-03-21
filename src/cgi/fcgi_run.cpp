@@ -581,6 +581,12 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                                    e.GetStatusMessage());
                 x_result = 0;
             }
+            catch (exception&) {
+                // Remember byte counts before the streams are destroyed.
+                CDiagContext::GetRequestContext().SetBytesRd(ibuf.GetCount());
+                CDiagContext::GetRequestContext().SetBytesWr(obuf.GetCount());
+                throw;
+            }
             GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             _TRACE("CCgiApplication::Run: flushing");
             m_Context->GetResponse().Flush();
@@ -595,6 +601,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             m_Context->GetRequest().SetInputStream(0);
         }
         catch (exception& e) {
+            // Reset stream pointers since the streams have been destroyed.
+            m_Context->GetResponse().SetOutput(0);
+            m_Context->GetRequest().SetInputStream(0);
+
             GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             // Increment error counter
             (*result)++;
