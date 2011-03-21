@@ -209,6 +209,7 @@ extern int/*bool*/ BUF_Prepend(BUF* buf, const void* data, size_t size)
 extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
 {
     SBufChunk* chunk, *tail;
+    size_t pending;
 
     if (!size)
         return 1/*true*/;
@@ -223,7 +224,6 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
     tail = (*buf)->last;
 
     /* schedule to write to an unfilled space of the last allocated chunk */
-    size_t pending;
     if (tail  &&  tail->extent > tail->size) {
         pending = tail->extent - tail->size;
         if (pending > size)
