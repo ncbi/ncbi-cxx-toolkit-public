@@ -54,6 +54,9 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
+#include <objects/seqalign/Score_set.hpp>
+#include <objects/seqalign/Score.hpp>
+
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/lds/lds_manager.hpp>
@@ -981,6 +984,31 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
 
         CRef<CSeq_align_set> sas (m_Formatter->AsSeqAlignSet(&splign_results,
                                                              flags));
+        //add some scores
+        CSplign::TScoreSets scores;
+        CSplign::s_ComputeStats(sas, &scores);
+        
+        CSplign::TScoreSets::iterator   score_it = scores.begin();
+        CSeq_align_set::Tdata::iterator align_it = sas->Set().begin();
+        for ( ;
+              score_it != scores.end()  &&
+                  align_it != sas->Set().end();
+              ++score_it, ++align_it) {
+            
+            NON_CONST_ITERATE (CScore_set::Tdata, i, (*score_it)->Set()) {
+                CRef<CScore> score(*i);
+                if(score->GetId().GetId() == CSplign::eCS_ConsensusSplices) {
+                    score->SetId().SetStr("consensus_splices");
+                    (*align_it)->SetScore().push_back(score);
+                }
+                else if(score->GetId().GetId() == CSplign::eCS_Splices) {
+                    score->SetId().SetStr("splices");
+                    (*align_it)->SetScore().push_back(score);
+                }
+            }
+        }
+       
+
         *m_AsnOut << MSerial_AsnText  << *sas << endl;
     }
     
