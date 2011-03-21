@@ -66,7 +66,10 @@
 #include <math.h>
 #include <algorithm>
 
+
 BEGIN_NCBI_SCOPE
+
+USING_SCOPE(objects);
 
 namespace {
 
@@ -336,7 +339,6 @@ void CSplign::x_LoadSequence(vector<char>* seq,
                              THit::TCoord finish,
                              bool retain)
 {
-    USING_SCOPE(objects);
 
     try {
     
@@ -749,7 +751,6 @@ CSplign::TOrfPair CSplign::GetCds(const THit::TId& id, const vector<char> * seq_
     }
     else {
 
-        USING_SCOPE(objects);
 
         vector<char> seq;
         if(seq_data == 0) {
@@ -957,7 +958,6 @@ void CSplign::Run(THitRefs* phitrefs)
 bool CSplign::AlignSingleCompartment(CRef<objects::CSeq_align> compartment,
                                      SAlignedCompartment* result)
 {
-    USING_SCOPE(objects);
     const CRef<CSeq_loc> seqloc (compartment->GetBounds().front());
     const size_t subj_min (seqloc->GetStart(eExtreme_Positional));
     const size_t subj_max (seqloc->GetStop(eExtreme_Positional));
@@ -2196,7 +2196,6 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
 
 
 bool IsConsDonor(const objects::CSpliced_exon& exon) {
-    USING_SCOPE(objects);
     const CSpliced_exon::TDonor_after_exon & splice (exon.GetDonor_after_exon());
     const string bases (splice.GetBases());
     return (bases.size() >= 2 && bases[0] == 'G' && bases[1] == 'T');
@@ -2205,7 +2204,6 @@ bool IsConsDonor(const objects::CSpliced_exon& exon) {
 
 bool IsConsAcceptor(const objects::CSpliced_exon& exon) {
 
-    USING_SCOPE(objects);
     const CSpliced_exon::TAcceptor_before_exon &
         splice (exon.GetAcceptor_before_exon());
     const string bases (splice.GetBases());
@@ -2219,7 +2217,6 @@ size_t CSplign::s_ComputeStats(CRef<objects::CSeq_align_set> sas,
                                TOrf cds,
                                EStatFlags flags)
 {
-    USING_SCOPE(objects);
 
     const
     bool valid_input (sas.GetPointer() && sas->CanGet() && sas->Get().size() 
@@ -2257,7 +2254,6 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
                                                   TOrf cds,
                                                   EStatFlags flags)
 {
-    USING_SCOPE(objects);
 
 
     if(!(flags & (eSF_BasicNonCds | eSF_BasicCds))) {
