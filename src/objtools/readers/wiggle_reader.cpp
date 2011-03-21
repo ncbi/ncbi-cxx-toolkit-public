@@ -102,8 +102,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
-    m_Flags( flags ),
-    m_uCurrentRecordType( TYPE_NONE )
+    m_uCurrentRecordType( TYPE_NONE ),
+    m_Flags( flags )
 {
     m_pSet = new CWiggleSet;
 }
@@ -142,6 +142,31 @@ CWiggleReader::ReadSeqAnnot(
     } 
 }
     
+//  --------------------------------------------------------------------------- 
+void
+CWiggleReader::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    CNcbiIstream& istr,
+    IErrorContainer* pErrorContainer )
+//  ---------------------------------------------------------------------------
+{
+    CStreamLineReader lr( istr );
+    ReadSeqAnnots( annots, lr, pErrorContainer );
+}
+ 
+//  ---------------------------------------------------------------------------                       
+void
+CWiggleReader::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    while ( ! lr.AtEOF() ) {
+        annots.push_back( ReadSeqAnnot( lr, pErrorContainer ) );
+    }
+}
+
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CWiggleReader::ReadSeqAnnotGraph(
@@ -155,6 +180,7 @@ CWiggleReader::ReadSeqAnnotGraph(
     string pending;
     vector<string> parts;
     CWiggleRecord record;
+    bool bTrackFound( false );
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
     while ( x_ReadLine( lr, pending ) ) {
@@ -163,7 +189,15 @@ CWiggleReader::ReadSeqAnnotGraph(
                 continue;
             }
             if ( x_ParseTrackData( pending, annot, record ) ) {
-                continue;
+                if ( ! bTrackFound ) {
+                    bTrackFound = true;
+                    continue;
+                }
+                else {
+                    // must belong to the next track- put it back and bail
+                    lr.UngetLine();
+                    break;
+                }
             }
             x_ParseGraphData( lr, pending, parts, record );
             m_pSet->AddRecord( record );
@@ -198,6 +232,7 @@ CWiggleReader::ReadSeqAnnotTable(
     string pending;
     vector<string> parts;
     CWiggleRecord record;
+    bool bTrackFound( false );
     
     CSeq_table& table = annot->SetData().SetSeq_table();
     while ( x_ReadLine( lr, pending ) ) {
@@ -206,7 +241,15 @@ CWiggleReader::ReadSeqAnnotTable(
                 continue;
             }
             if ( x_ParseTrackData( pending, annot, record ) ) {
-                continue;
+                if ( ! bTrackFound ) {
+                    bTrackFound = true;
+                    continue;
+                }
+                else {
+                    // must belong to the next track- put it back and bail
+                    lr.UngetLine();
+                    break;
+                }
             }
             x_ParseGraphData( lr, pending, parts, record );
             m_pSet->AddRecord( record );

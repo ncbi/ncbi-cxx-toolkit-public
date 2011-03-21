@@ -91,6 +91,18 @@ public:
     ReadSeqAnnot(
         ILineReader&,
         IErrorContainer* =0 );
+
+    virtual void
+    ReadSeqAnnots(
+        vector< CRef<CSeq_annot> >&,
+        CNcbiIstream&,
+        IErrorContainer* =0 );
+                        
+    virtual void
+    ReadSeqAnnots(
+        vector< CRef<CSeq_annot> >&,
+        ILineReader&,
+        IErrorContainer* =0 );
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnotGraph(
