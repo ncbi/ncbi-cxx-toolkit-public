@@ -62,6 +62,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/seqalign_exception.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -180,15 +181,12 @@ int CBioseq::GetTaxId() const
     if (IsSetDescr()) {
         ITERATE (TDescr::Tdata, it, GetDescr().Get()) {
             const CSeqdesc& desc = **it;
-            if (desc.IsOrg()  &&  desc.GetOrg().IsSetDb()) {
-                ITERATE (COrg_ref::TDb, dbiter, desc.GetOrg().GetDb()) {
-                    if ((*dbiter)->GetDb() == "taxon") {
-                        taxid = (*dbiter)->GetTag().GetId();
-                        break;
-                    }
-                }
+            CConstRef<COrg_ref> org_ref;
+            if (desc.IsOrg()) {
+                taxid = desc.GetOrg().GetTaxId();
+            } else if (desc.IsSource() && desc.GetSource().IsSetOrg()) {
+                taxid = desc.GetSource().GetOrg().GetTaxId();
             }
-
             if (taxid) {
                 break;
             }
