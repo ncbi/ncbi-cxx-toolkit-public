@@ -51,11 +51,11 @@ public:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual int         sync(void);
 
-    unsigned int GetCount(void) const { return m_cnt; }
+    Uint8 GetCount(void) const { return m_cnt; }
 
 private:
     FCGX_Stream* m_out;
-    unsigned int m_cnt;
+    Uint8 m_cnt;
 };
 
 
@@ -66,13 +66,13 @@ public:
 
     virtual CT_INT_TYPE underflow(void);
 
-    unsigned int GetCount(void) const { return m_cnt; }
+    Uint8 GetCount(void) const { return m_cnt; }
 
 private:
     void x_Setg(void);
 
     FCGX_Stream* m_in;
-    unsigned int m_cnt;
+    Uint8 m_cnt;
 };
 
 
