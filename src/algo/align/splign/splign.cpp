@@ -2194,24 +2194,44 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
     }
 }
 
+string GetDonor(const objects::CSpliced_exon& exon) {
+    if( exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() ) {
+        return exon.GetDonor_after_exon().GetBases();
+    }
+    return string();
+}    
 
-bool IsConsDonor(const objects::CSpliced_exon& exon) {
-    const CSpliced_exon::TDonor_after_exon & splice (exon.GetDonor_after_exon());
-    const string bases (splice.GetBases());
-    return (bases.size() >= 2 && bases[0] == 'G' && bases[1] == 'T');
+string GetAcceptor(const objects::CSpliced_exon& exon) {
+    if( exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases()  ) {
+        return exon.GetAcceptor_before_exon().GetBases();
+    }
+    return string();
 }
 
-
-bool IsConsAcceptor(const objects::CSpliced_exon& exon) {
-
-    const CSpliced_exon::TAcceptor_before_exon &
-        splice (exon.GetAcceptor_before_exon());
-    const string bases (splice.GetBases());
-    const size_t dim (bases.size());
-    return (dim >= 2 && bases[dim - 2] == 'A' && bases[dim - 1] == 'G');
+//returns true for GT/AG, GC/AG AND AT/AC        
+bool IsConsSplice(const string& donor, const string acc) {
+    if(donor.length()<2 || acc.length()<2) return false;
+    if(toupper(acc.c_str()[0]) != 'A') return false;
+    switch(toupper(acc.c_str()[1])) {
+    case 'C':
+        if( toupper(donor.c_str()[0] == 'A') && toupper(donor.c_str()[1] == 'T') ) return true;
+        else return false;
+        break;
+    case 'G':
+        if( toupper(donor.c_str()[0] == 'G') ) {
+            char don2 = toupper(donor.c_str()[1]);
+            if(don2 == 'T' || don2 == 'C') return true;
+        }
+        return false;
+        break;
+    default:
+        return false;
+        break;
+    }
+    return false;
 }
-
-
+           
+    
 size_t CSplign::s_ComputeStats(CRef<objects::CSeq_align_set> sas,
                                TScoreSets * output_stats,
                                TOrf cds,
@@ -2296,7 +2316,7 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
         
     typedef CSpliced_exon TExon;
     TSeqPos qprev (qstrand? TSeqPos(-1): qlen);
-    bool cons_dnr (false);
+    string donor;
     string xcript;
     ITERATE(TExons, ii2, exons) {
 
@@ -2308,12 +2328,12 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
 
         if(qgap > 0) {
             aln_length_gaps += qgap;
-            cons_dnr = false;
+            donor.clear();
             if(cds_stats) xcript.append(qgap, 'X');
         }
         else if (ii2 != exons.begin()) {
             splices_total += 2;
-            if(cons_dnr && IsConsAcceptor(exon)) { splices_consensus += 2; }
+            if(IsConsSplice(donor, GetAcceptor(exon))) { splices_consensus += 2; }
         }
 
         typedef TExon::TParts TParts;
@@ -2352,7 +2372,7 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
             aln_length_exons += len;
         }
 
-        cons_dnr = IsConsDonor(exon);
+        donor = GetDonor(exon);
         qprev = qstrand? qmax: qmin;
     } // TExons
 
