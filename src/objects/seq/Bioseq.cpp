@@ -176,24 +176,26 @@ CBioseq::CBioseq(const CSeq_loc& loc, const string& str_id)
 /// Determine the tax-id for this bioseq
 int CBioseq::GetTaxId() const
 {
-    int taxid = 0;
+    /// A taxid can be found either in a source descriptor (the newer form) or in a
+    /// org descriptor. If both are there, the source descriptor should have precedence.
+    int taxid_from_source = 0,
+        taxid_from_org = 0;
 
     if (IsSetDescr()) {
         ITERATE (TDescr::Tdata, it, GetDescr().Get()) {
             const CSeqdesc& desc = **it;
-            CConstRef<COrg_ref> org_ref;
             if (desc.IsOrg()) {
-                taxid = desc.GetOrg().GetTaxId();
+                taxid_from_org = desc.GetOrg().GetTaxId();
             } else if (desc.IsSource() && desc.GetSource().IsSetOrg()) {
-                taxid = desc.GetSource().GetOrg().GetTaxId();
+                taxid_from_source = desc.GetSource().GetOrg().GetTaxId();
             }
-            if (taxid) {
+            if (taxid_from_source) {
                 break;
             }
         }
     }
 
-    return taxid;
+    return taxid_from_source ? taxid_from_source : taxid_from_org;
 }
 
 
