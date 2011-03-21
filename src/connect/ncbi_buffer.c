@@ -236,7 +236,7 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
     if (size) {
         if (!(chunk = s_AllocChunk(size, (*buf)->unit)))
             return 0/*false*/;
-        memcpy(chunk->data, src + pending, size);
+        memcpy(chunk->data, (const char*) src + pending, size);
         chunk->size = size;
         chunk->next = 0;
 
