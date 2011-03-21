@@ -48,6 +48,8 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#define NOT_AVAILABLE "N/A"
+
 void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     m_Defline.Reset();
     m_Gi = 0;
@@ -190,7 +192,7 @@ string CBlastDBExtractor::ExtractLinkoutTokens()
     x_InitLinkoutData();
 
     if (m_Gi == 0) {
-        return "N/A";
+        return NOT_AVAILABLE;
     }
 
     vector<string> linkouts;
@@ -223,7 +225,7 @@ string CBlastDBExtractor::ExtractLinkoutTokens()
     }
 
     if (linkouts.empty()) {
-        return "N/A";
+        return NOT_AVAILABLE;
     }
     string retval;
     ITERATE(vector<string>, l, linkouts) {
@@ -245,7 +247,7 @@ string CBlastDBExtractor::ExtractTitle() {
             return (*itr)->GetTitle();
         }
     }
-    return "NA";
+    return NOT_AVAILABLE;
 }
 
 string CBlastDBExtractor::ExtractTaxId() {
@@ -255,17 +257,25 @@ string CBlastDBExtractor::ExtractTaxId() {
 string CBlastDBExtractor::ExtractCommonTaxonomicName() {
     const int kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
-    m_BlastDb.GetTaxInfo(kTaxID, tax_info);
-    _ASSERT(kTaxID == tax_info.taxid);
-    return tax_info.common_name;
+    string retval(NOT_AVAILABLE);
+    try {
+        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+        _ASSERT(kTaxID == tax_info.taxid);
+        retval = tax_info.common_name;
+    } catch (...) {}
+    return retval;
 }
 
 string CBlastDBExtractor::ExtractScientificName() {
     const int kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
-    m_BlastDb.GetTaxInfo(kTaxID, tax_info);
-    _ASSERT(kTaxID == tax_info.taxid);
-    return tax_info.scientific_name;
+    string retval(NOT_AVAILABLE);
+    try {
+        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+        _ASSERT(kTaxID == tax_info.taxid);
+        retval = tax_info.scientific_name;
+    } catch (...) {}
+    return retval;
 }
 
 string CBlastDBExtractor::ExtractMaskingData() {
