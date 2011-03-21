@@ -710,7 +710,7 @@ void CObject::ThrowNullPointerException(const type_info& type)
 
 #ifndef NCBI_OBJECT_LOCKER_INLINE
 
-static const char* sx_MonitorTypeName = 0;
+static const type_info* sx_MonitorType = 0;
 
 class CLocksMonitor
 {
@@ -728,12 +728,12 @@ public:
         void Dump(void) const
         {
             ITERATE ( TLocks, it, m_Locks ) {
-                LOG_POST("Locked<"<<sx_MonitorTypeName<<">"
+                LOG_POST("Locked<"<<sx_MonitorType->name()<<">"
                          "("<<it->first<<","<<m_Object<<")"
                          " @ " << *it->second);
             }
             ITERATE ( TUnlocks, it, m_Unlocks ) {
-                LOG_POST("Unlocked<"<<sx_MonitorTypeName<<">"
+                LOG_POST("Unlocked<"<<sx_MonitorType->name()<<">"
                          "("<<it->first<<","<<m_Object<<")"
                          " @ " << *it->second);
             }
@@ -805,8 +805,7 @@ static CSafeStaticPtr<CLocksMonitor> sx_LocksMonitor;
 
 inline bool MonitoredType(const CObject* object)
 {
-    return sx_MonitorTypeName &&
-        strcmp(typeid(*object).name(), sx_MonitorTypeName) == 0;
+    return sx_MonitorType && *sx_MonitorType == typeid(*object);
 }
 
 void CObjectCounterLocker::Lock(const CObject* object) const
@@ -858,16 +857,15 @@ void CObjectCounterLocker::TransferLock(const CObject* object,
 void CObjectCounterLocker::MonitorObjectType(const type_info& type)
 {
     StopMonitoring();
-    sx_MonitorTypeName = strdup(type.name());
+    sx_MonitorType = &type;
 }
 
 
 void CObjectCounterLocker::StopMonitoring(void)
 {
-    if ( sx_MonitorTypeName ) {
+    if ( sx_MonitorType ) {
         ReportLockedObjects(true);
-        free((void*)sx_MonitorTypeName);
-        sx_MonitorTypeName = 0;
+        sx_MonitorType = 0;
     }
 }
 
