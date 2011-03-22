@@ -312,16 +312,13 @@ CWiggleTrack::CWiggleTrack(
                                  record.SeqSpan(),
                                  record.Value()));
     m_uSeqSpan = record.SeqSpan();
-    m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
-    m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
+    m_dMaxValue = record.Value();
+    m_dMinValue = record.Value();
 
     if ( m_uSeqLength == 0 ) {
         m_uSeqStart = record.SeqStart();
         m_uSeqStop = record.SeqStart() + record.SeqSpan();
-    }
-    m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
-    m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
-    
+    }    
 };
 
 //  ===========================================================================
@@ -480,11 +477,34 @@ void CWiggleTrack::MakeTable(
 {
     size_t uSize( Count() );
     
+    { // Table location
+        CRef<CSeqTable_column> col_loc( new CSeqTable_column );
+        table.SetColumns().push_back( col_loc );
+        col_loc->SetHeader().SetField_name( "Seq-table location" );
+        col_loc->SetDefault().SetLoc().SetInt().SetId().Set( CSeq_id::e_Local, m_strChrom );
+        col_loc->SetDefault().SetLoc().SetInt().SetFrom( m_uSeqStart );
+        col_loc->SetDefault().SetLoc().SetInt().SetTo( m_uSeqStop );
+    }
+
     { // Seq-id
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table.SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
         col_id->SetDefault().SetId().Set(CSeq_id::e_Local, m_strChrom);
+    }
+
+    { // Table minimum
+        CRef<CSeqTable_column> col_min( new CSeqTable_column );
+        table.SetColumns().push_back( col_min );
+        col_min->SetHeader().SetField_name( "Min" );
+        col_min->SetDefault().SetReal( m_dMinValue );
+    }
+
+    { // Table maximum
+        CRef<CSeqTable_column> col_max( new CSeqTable_column );
+        table.SetColumns().push_back( col_max );
+        col_max->SetHeader().SetField_name( "Max" );
+        col_max->SetDefault().SetReal( m_dMaxValue );
     }
     
     // position
@@ -754,8 +774,8 @@ void CWiggleTrack::FillGraphsReal(
             values[ u ] = 0;
         } 
     }
-    graph.SetMin( m_dMinValue );
-    graph.SetMax( m_dMaxValue );
+    graph.SetMin( MaxGraphValue() );
+    graph.SetMax( MinGraphValue() );
     graph.SetAxis( 0 );
     graph.SetValues() = values;
 }
@@ -852,11 +872,11 @@ unsigned char CWiggleTrack::ByteGraphValue(
     }
     else {
         // scale into interval [0,255]
-        if ( m_dMinValue == m_dMaxValue ) {
+        if ( MinGraphValue() == MaxGraphValue() ) {
             return static_cast<unsigned char>( (dRaw ? 255 : 0) );
         }
         double dScaled =
-            ( 255 * (dRaw - m_dMinValue) / (m_dMaxValue - m_dMinValue) );
+            ( 255 * (dRaw - MinGraphValue()) / (MaxGraphValue() - MinGraphValue()) );
         return static_cast<unsigned char>( dScaled + 0.5 );
     }
     
@@ -874,7 +894,7 @@ double CWiggleTrack::ScaleConst() const
 double CWiggleTrack::ScaleLinear() const
 //  ===========================================================================
 {
-    return (m_dMaxValue - m_dMinValue) / 255;
+    return (MaxGraphValue() - MinGraphValue()) / 255;
 }
     
 //  ===========================================================================

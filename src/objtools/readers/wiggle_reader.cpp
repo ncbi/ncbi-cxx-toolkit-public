@@ -105,6 +105,8 @@ CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
     m_uCurrentRecordType( TYPE_NONE ),
+    m_strDefaultTrackName( "" ),
+    m_strDefaultTrackTitle( "" ),
     m_Flags( flags )
 {
 }
@@ -348,6 +350,15 @@ CWiggleReader::ReadSeqAnnotTable(
     if ( m_pSet->Count() == 0 ) {
         return CRef<CSeq_annot>();
     }
+    if ( !bTrackFound ) {
+        CAnnot_descr& desc = annot->SetDesc();
+        CRef<CAnnotdesc> title( new CAnnotdesc() );
+        title->SetTitle( m_strDefaultTrackTitle );
+        desc.Set().push_back( title );
+        CRef<CAnnotdesc> name( new CAnnotdesc() );
+        name->SetName( m_strDefaultTrackName );
+        desc.Set().push_back( name );
+    }
     try {
         m_pSet->MakeTable( 
             table, 0!=(m_Flags & fJoinSame), 0!=(m_Flags & fAsByte) );
@@ -567,12 +578,14 @@ void CWiggleReader::x_SetTrackData(
     CAnnot_descr& desc = annot->SetDesc();
 
     if ( strKey == "name" ) {
+        m_strDefaultTrackName = strValue;
         CRef<CAnnotdesc> name( new CAnnotdesc() );
         name->SetName( strValue );
         desc.Set().push_back( name );
         return;
     }
     if ( strKey == "description" ) {
+        m_strDefaultTrackTitle = strValue;
         CRef<CAnnotdesc> title( new CAnnotdesc() );
         title->SetTitle( strValue );
         desc.Set().push_back( title );

@@ -171,6 +171,8 @@ protected:
 protected:
     static const string s_WiggleDelim;
     unsigned int m_uCurrentRecordType;
+    string m_strDefaultTrackName;
+    string m_strDefaultTrackTitle;
     CWiggleSet* m_pSet;
     TFlags m_Flags;
 };

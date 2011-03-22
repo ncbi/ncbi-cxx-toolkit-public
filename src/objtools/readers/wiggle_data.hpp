@@ -187,6 +187,9 @@ protected:
     double ScaleLinear() const;              
     unsigned int GetGraphType();
 
+    double MinGraphValue() const { return ( m_dMinValue <= 0 ? m_dMinValue : 0 ); };
+    double MaxGraphValue() const { return ( m_dMaxValue >= 0 ? m_dMaxValue : 0 ); };
+
     std::string m_strName;                       
     std::string m_strChrom;
     unsigned int m_uGraphType;
