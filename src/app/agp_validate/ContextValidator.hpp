@@ -172,6 +172,8 @@ protected:
   int m_gapsInLastObject;
   bool m_prev_orientation_unknown;
 
+  string m_prev_component_id; // for W_BreakingGapSameCompId: only set when encountering a breaking gap
+
   int m_ObjCount;
   int m_ScaffoldCount;
   int m_SingleCompScaffolds;

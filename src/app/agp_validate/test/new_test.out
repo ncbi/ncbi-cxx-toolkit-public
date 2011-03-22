@@ -1,0 +1,83 @@
+
+2:ps1010rel4_chr1	1	1889	1	W	ps1010rel4_chr1	1	1889	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+3:ps1010rel4_chr100000	1	433	1	W	ps1010rel4_chr100000	1	433	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+4:ps1010rel4_chr100002	1	138	1	W	ps1010rel4_chr100002	1	138	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+5:ps1010rel4_chr100003	1	146	1	W	ps1010rel4_chr100003	1	146	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+6:ps1010rel4_chr100004	1	248	1	W	ps1010rel4_chr100004	1	248	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+7:ps1010rel4_chr100014	1	158	1	W	ps1010rel4_chr100014	1	158	+
+	WARNING: object name (column 1) is the same as component_id (column 6)
+
+23:LACBIscaffold_1	1104	3435	2	U	2332	fragment	yes
+	WARNING: gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
+
+24:LACBIscaffold_1	3436	4636	3	W	LACBIscaffold_1_Cont2	1	1201	+
+25:LACBIscaffold_1	4637	5256	4	N	620	contig	no
+26:LACBIscaffold_1	5257	6500	5	W	LACBIscaffold_1_Cont2	1202	2445	+
+	WARNING: duplicate component with non-draft type; preceding span: 1..1201 at line 24
+	WARNING: scaffold-breaking gap between component lines with the same component_id
+
+27:
+	ERROR, line skipped: empty line
+
+1 error, 16 warnings; 7 not printed.
+  Count Code  Description
+      1  e03  empty line
+      1  w27  duplicate component with non-draft type
+      7  w31  gap line missing column 9 (null)
+      6  w37  object name (column 1) is the same as component_id (column 6)
+      1  w38  gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
+      1  w39  scaffold-breaking gap between component lines with the same component_id
+
+NOTE: 1 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
+
+
+Objects                : 10
+- with single component:  6
+
+Scaffolds              : 11
+- with single component:  7
+
+Components             : 17 (W)
+	orientation +  : 17
+	orientation -  :  0
+	orientation 0  :  0
+	orientation na :  0
+
+Gaps                   :  7 (N:6, U:1)
+- do not break scaffold:  6
+  clone   , linkage yes:  0
+  fragment, linkage yes:  6
+  fragment, linkage no :  0
+  repeat  , linkage yes:  0
+- break it, linkage no :  1
+	clone          :  0
+	repeat         :  0
+	contig         :  1
+	centromere     :  0
+	short_arm      :  0
+	heterochromatin:  0
+	telomere       :  0
+
+Object names               : 10
+  ps1010rel4_chr[1..100022]:  9
+  LACBIscaffold_1          :  1
+
+Component names                        : 16
+  ps1010rel4_chr[100016..100022]_[1..4]:  8
+  ps1010rel4_chr[1..100014]            :  6
+  LACBIscaffold_1_Cont[1,2]            :  2
+
+6 names are used both as object and as component_id:
+  ps1010rel4_chr1, ps1010rel4_chr100000, ps1010rel4_chr100002, ...
+
+#Comment line count    : 2

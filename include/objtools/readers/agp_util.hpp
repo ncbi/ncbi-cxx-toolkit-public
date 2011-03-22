@@ -236,7 +236,7 @@ protected:
     CAgpRow *m_prev_row;
     CAgpRow *m_this_row;
     int m_line_num, m_prev_line_num;
-    string  m_line;  // for valid gap/componentr lines, corresponds to this_row
+    string m_line;  // for valid gap/component lines, corresponds to this_row
     // To save time, we do not keep the line corresponding to m_prev_row.
     // You can use m_prev_row->ToString(), or save it at the end of OnGapOrComponent():
     //   m_prev_line=m_line; // preserves EOL comments
@@ -305,9 +305,10 @@ public:
     virtual ~CAgpErr() {}
 
     enum EAppliesTo{
-      fAtThisLine=1,
-      fAtPrevLine=4, // use fAtThisLine|fAtPrevLine when both lines are involved
-      fAtNone    =8  // Not tied to any specifc line(s) (empty file; possibly, taxid errors)
+      fAtThisLine= 1,
+      fAtPrevLine= 4, // use fAtThisLine|fAtPrevLine when both lines are involved
+      fAtNone    = 8, // Not tied to any specifc line(s) (empty file; possibly, taxid errors)
+      fAtPpLine  =16  // applies to 3 conseq lines (only W_BreakingGapSameCompId so far)
     };
 
     // This implementation accumulates multiple errors separately for
@@ -353,13 +354,13 @@ public:
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.
-        W_GapObjEnd=21 ,        // CAgpReader
-        W_GapObjBegin ,         // CAgpReader
-        W_ConseqGaps ,          // CAgpReader
+        W_GapObjEnd=21,         // CAgpReader
+        W_GapObjBegin,          // CAgpReader
+        W_ConseqGaps,           // CAgpReader
         W_ObjNoComp,            // -- agp_validate --
         W_SpansOverlap,         // -- agp_validate --
 
-        W_SpansOrder ,          // -- agp_validate --
+        W_SpansOrder,           // -- agp_validate --
         W_DuplicateComp,        // -- agp_validate --
         W_LooksLikeGap,         // CAgpRow
         W_LooksLikeComp,        // CAgpRow
@@ -376,7 +377,8 @@ public:
 
         W_CompIsNotWgsTypeIs,   // -- agp_validate --
         W_ObjEqCompId,          // -- agp_validate --
-
+        W_GapSizeNot100,        // CAgpRow
+        W_BreakingGapSameCompId,// -- agp_validate --
         W_Last, W_First = 21,
 
         // "GenBank" checks that rely on information about the sequence
@@ -516,22 +518,21 @@ public:
     void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First, bool report_lines_skipped=false);
 
 private:
-    //typedef const char* TStr;
-
     // Count errors of each type, including skipped ones.
     int m_MsgCount[CODE_Last];
     bool m_MustSkip[CODE_Last];
 
-    //string m_filename_prev;
-    int m_filenum_prev;
+
+    // pp: line before previous (not supported by CAgpReader, but used in agp_validate for W_BreakingGapSameCompId)
+    int m_filenum_prev, m_filenum_pp;
     // Not m_line_num-1 when the previous line:
     // - was in the different file;
     // - was a skipped comment line.
-    string m_line_prev;
-    int  m_line_num_prev;
-    bool m_prev_printed;    // true: previous line was already printed
-                                                    // (probably had another error);
-                                                    // no need to-reprint "fname:linenum:content"
+    string m_line_prev, m_line_pp;
+    int  m_line_num_prev, m_line_num_pp;
+    bool m_prev_printed, m_pp_printed;   // true: previous line was already printed
+                                         // (probably had another error);
+                                         // no need to-reprint "fname:linenum:content"
     bool m_two_lines_involved; // true: do not print "\n" after the previous line
     //bool m_invalid_prev;       // true: suppress errors concerning the previous line
 

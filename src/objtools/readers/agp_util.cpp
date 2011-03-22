@@ -87,9 +87,12 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "component_id looks like a non-WGS accession, yet component_type is W",
     // ? "component_id looks like a protein accession"
     "object name (column 1) is the same as component_id (column 6)",
+    // from Paul Kitts:
+    // Size for a gap of unknown length is not 100 bases. The International Sequence
+    // Database Collaboration uses a length of 100 bases for all gaps of unknown length.
+    "gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)",
+    "scaffold-breaking gap between component lines with the same component_id",
     kEmptyCStr, // W_Last
-    kEmptyCStr,
-    kEmptyCStr,
 
     // GenBank-related errors
     "invalid component_id",
@@ -432,6 +435,9 @@ int CAgpRow::ParseGapCols(bool log_errors)
     if(gap_length<=0) {
         if(log_errors) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "gap_length (column 6)" );
         return CAgpErr::E_MustBePositive;
+    }
+    if(component_type=='U' && gap_length!=100) {
+        m_AgpErr->Msg(CAgpErr::W_GapSizeNot100);
     }
 
     map<string, EGap>::const_iterator it = gap_type_codes->find( GetGapType() );
@@ -845,12 +851,12 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
     m_msg_skipped=0;
     m_lines_skipped=0;
     m_line_num=1;
-    m_filenum_prev=-1;
+    m_filenum_pp=-1; m_filenum_prev=-1;
 
-    m_line_num_prev=0;
-    m_prev_printed=false;
+    m_line_num_pp=0; m_line_num_prev=0;
+    m_pp_printed=false; m_prev_printed=false;
+
     m_two_lines_involved=false;
-    //m_invalid_prev=false;
 
     memset(m_MsgCount , 0, sizeof(m_MsgCount ));
     memset(m_MustSkip , 0, sizeof(m_MustSkip ));
@@ -901,12 +907,23 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
         return;
     }
 
+    if(appliesTo & CAgpErr::fAtPpLine) {
+        // Print the line before previous if it was not printed
+        if( !m_pp_printed && m_line_pp.size() ) {
+            // if( !m_two_lines_involved ) ??
+            *m_out << "\n";
+            PrintLine(*m_out,
+                m_filenum_pp>=0 ? m_InputFiles[m_filenum_pp] : NcbiEmptyString,
+                m_line_num_pp, m_line_pp);
+        }
+        m_pp_printed=true;
+    }
+    if( (appliesTo&CAgpErr::fAtPpLine) && (appliesTo&CAgpErr::fAtPrevLine) ) m_two_lines_involved=true;
     if(appliesTo & CAgpErr::fAtPrevLine) {
         // Print the previous line if it was not printed
         if( !m_prev_printed && m_line_prev.size() ) {
             if( !m_two_lines_involved ) *m_out << "\n";
             PrintLine(*m_out,
-                //m_filename_prev,
                 m_filenum_prev>=0 ? m_InputFiles[m_filenum_prev] : NcbiEmptyString,
                 m_line_num_prev, m_line_prev);
         }
@@ -938,29 +955,27 @@ void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
         delete m_messages;
         m_messages = new CNcbiOstrstream;
 
-        m_prev_printed=true;
+        m_pp_printed=m_prev_printed; m_prev_printed=true;
     }
     else {
-        m_prev_printed=false;
+        m_pp_printed=m_prev_printed; m_prev_printed=false;
     }
 
-    m_line_num_prev = line_num;
-    m_line_prev = s;
-    m_filenum_prev=m_InputFiles.size()-1;
+    m_line_num_pp = m_line_num_prev; m_line_num_prev = line_num;
+    m_line_pp     = m_line_prev    ; m_line_prev     = s;
+    m_filenum_pp  = m_filenum_prev ; m_filenum_prev  = m_InputFiles.size()-1;
 
     if(invalid_line) {
         m_lines_skipped++;
     }
-    // m_invalid_prev = invalid_line;
 
     m_two_lines_involved=false;
 }
 
 void CAgpErrEx::StartFile(const string& s)
 {
-    //m_filename_prev=m_filename;
     // might need to set it here in case some file is empty and LineDone() is never called
-    m_filenum_prev=m_InputFiles.size()-1;
+    m_filenum_pp=m_filenum_prev; m_filenum_prev=m_InputFiles.size()-1;
     m_filename=s;
     m_InputFiles.push_back(s);
 }

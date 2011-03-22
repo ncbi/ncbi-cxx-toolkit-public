@@ -115,6 +115,7 @@ void CAgpValidateReader::OnGapOrComponent()
       "m_GapTypeCnt[] index out of bounds" );
     m_GapTypeCnt[i]++;
 
+    m_prev_component_id.clear();
     if( !m_this_row->GapEndsScaffold() ) {
       m_gapsInLastScaffold++;
       if(m_prev_orientation_unknown && m_componentsInLastScaffold==1) {
@@ -122,6 +123,10 @@ void CAgpValidateReader::OnGapOrComponent()
         agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString, CAgpErr::fAtPrevLine);
         m_prev_orientation_unknown=false;
       }
+    }
+    else if(!m_at_beg && !m_prev_row->IsGap()) {
+      // check for W_BreakingGapSameCompId on the next row
+      m_prev_component_id=m_prev_row->GetComponentId();
     }
   }
   else { // component line
@@ -237,6 +242,10 @@ void CAgpValidateReader::OnGapOrComponent()
 
     }
 
+    //// W_BreakingGapSameCompId
+    if( m_prev_component_id==m_this_row->GetComponentId() ) {
+      agpErr.Msg(CAgpErrEx::W_BreakingGapSameCompId, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErr::fAtPpLine);
+    }
   }
 
   CAgpErrEx* errEx = static_cast<CAgpErrEx*>(GetErrorHandler());
