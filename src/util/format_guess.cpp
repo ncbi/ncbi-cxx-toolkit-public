@@ -143,7 +143,9 @@ CFormatGuess::s_CheckOrder[] =
     //
     eRmo,
     eGtf,
-    eGlimmer3,
+    eGff3,
+	eGff2,
+	eGlimmer3,
     eAgp,
     eXml,
     eWiggle,
@@ -407,7 +409,11 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatRepeatMasker( mode );
     case eGtf:
         return TestFormatGtf( mode );
-    case eGlimmer3:
+    case eGff3:
+		return TestFormatGff3( mode );
+	case eGff2:
+		return TestFormatGff2( mode );
+	case eGlimmer3:
         return TestFormatGlimmer3( mode );
     case eAgp:
         return TestFormatAgp( mode );
@@ -628,6 +634,81 @@ CFormatGuess::TestFormatGtf(
     }
     return (uGtfLineCount != 0);
 }
+
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatGff3(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    unsigned int uGffLineCount = 0;
+    list<string>::iterator it = m_TestLines.begin();
+    for ( ;  it != m_TestLines.end();  ++it) {
+        if ( !it->empty()  &&  (*it)[0] != '#') {
+            break;
+        }
+    }
+
+    for ( ;  it != m_TestLines.end();  ++it) {
+        //
+        //  Make sure to ignore any UCSC track and browser lines prior to the
+        //  start of data
+        //
+        if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGffLineCount && NStr::StartsWith( *it, "track " ) ) {
+            continue;
+        }
+        if ( ! IsLineGff3( *it ) ) {
+            return false;
+        }
+        ++uGffLineCount;
+    }
+    return (uGffLineCount != 0);
+}
+
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatGff2(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    unsigned int uGffLineCount = 0;
+    list<string>::iterator it = m_TestLines.begin();
+    for ( ;  it != m_TestLines.end();  ++it) {
+        if ( !it->empty()  &&  (*it)[0] != '#') {
+            break;
+        }
+    }
+
+    for ( ;  it != m_TestLines.end();  ++it) {
+        //
+        //  Make sure to ignore any UCSC track and browser lines prior to the
+        //  start of data
+        //
+        if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGffLineCount && NStr::StartsWith( *it, "track " ) ) {
+            continue;
+        }
+        if ( ! IsLineGff2( *it ) ) {
+            return false;
+        }
+        ++uGffLineCount;
+    }
+    return (uGffLineCount != 0);
+}
+
 
 //  -----------------------------------------------------------------------------
 bool
@@ -1562,6 +1643,78 @@ bool CFormatGuess::IsLineGlimmer3(
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsLineGtf(
+    const string& line )
+{
+    vector<string> tokens;
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+        return false;
+    }
+    if ( ! s_IsTokenPosInt( tokens[3] ) ) {
+        return false;
+    }
+    if ( ! s_IsTokenPosInt( tokens[4] ) ) {
+        return false;
+    }
+    if ( ! s_IsTokenDouble( tokens[5] ) ) {
+        return false;
+    }
+    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
+        return false;
+    }
+    if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
+        return false;
+    }
+	if ( tokens.size() < 9 || 
+		 (NPOS == tokens[8].find( "gene_id" ) && NPOS == tokens[8].find( "transcript_id" ) ) ) {
+		return false;
+	}
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::IsLineGff3(
+    const string& line )
+{
+    vector<string> tokens;
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+        return false;
+    }
+    if ( ! s_IsTokenPosInt( tokens[3] ) ) {
+        return false;
+    }
+    if ( ! s_IsTokenPosInt( tokens[4] ) ) {
+        return false;
+    }
+    if ( ! s_IsTokenDouble( tokens[5] ) ) {
+        return false;
+    }
+    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
+        return false;
+    }
+    if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
+        return false;
+    }
+	if ( tokens.size() >= 9 && tokens[8].size() > 1) {
+		const string& col9 = tokens[8];
+		if ( NPOS == NStr::FindNoCase(col9, "ID") &&
+			 NPOS == NStr::FindNoCase(col9, "Parent") &&
+			 NPOS == NStr::FindNoCase(col9, "Target") &&
+			 NPOS == NStr::FindNoCase(col9, "Name") &&
+			 NPOS == NStr::FindNoCase(col9, "Alias") &&
+			 NPOS == NStr::FindNoCase(col9, "Note") &&
+			 NPOS == NStr::FindNoCase(col9, "Dbxref") &&
+			 NPOS == NStr::FindNoCase(col9, "Xref") ) {
+			return false;
+		}
+	}
+
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::IsLineGff2(
     const string& line )
 {
     vector<string> tokens;

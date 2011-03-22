@@ -57,7 +57,7 @@ public:
         eUnknown             =  0, ///< unknown format
         eBinaryASN           =  1, ///< Binary ASN.1
         eRmo                 =  2, ///< RepeatMasker Output
-        eGtf                 =  3, ///< GFF/GTF style annotations
+        eGtf_POISENED        =  3, ///< Old and Dead GFF/GTF style annotations
         eGlimmer3            =  4, ///< Glimmer3 predictions
         eAgp                 =  5, ///< AGP format assembly
         eXml                 =  6, ///< XML
@@ -76,7 +76,10 @@ public:
         eTaxplot             = 18, ///< Taxplot file
         ePhrapAce            = 19, ///< Phrap ACE assembly file
         eTable               = 20, ///< Generic table
-        /// Max value of EFormat
+        eGtf                 = 21, ///< New GTF, CGtfReader
+		eGff3                = 22, ///< GFF3, CGff3Reader
+		eGff2                = 23, ///< GFF2, CGff2Reader
+		/// Max value of EFormat
         eFormat_max
     };
 
@@ -202,6 +205,10 @@ protected:
         EMode );
     bool TestFormatGtf(
         EMode );
+    bool TestFormatGff3(
+        EMode );
+    bool TestFormatGff2(
+        EMode );
     bool TestFormatGlimmer3(
         EMode );
     bool TestFormatAgp(
@@ -252,7 +259,11 @@ protected:
         const std::string& );
     static bool IsLineGtf(
         const std::string& );
-    static bool IsLinePhrapId(
+    static bool IsLineGff3(
+		const std::string& );
+	static bool IsLineGff2(
+		const std::string& );
+	static bool IsLinePhrapId(
         const std::string& );
     static bool IsLineRmo(
         const std::string& );
