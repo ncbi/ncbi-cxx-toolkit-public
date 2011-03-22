@@ -451,9 +451,10 @@ void CWiggleSet::MakeTable(
     bool bAsByte )
 //  ===========================================================================
 {
+    table.SetFeat_type(0);
     for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
         it->second->MakeTable( table, bJoinSame, bAsByte );
-    }       
+    }     
 }
 
 //  ===========================================================================
@@ -479,8 +480,6 @@ void CWiggleTrack::MakeTable(
 {
     size_t uSize( Count() );
     
-    table.SetFeat_type(0);
-
     { // Seq-id
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table.SetColumns().push_back(col_id);

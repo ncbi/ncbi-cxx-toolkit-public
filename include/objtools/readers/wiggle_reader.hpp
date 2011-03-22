@@ -158,7 +158,6 @@ protected:
         string& );
 
     unsigned int x_GetLineType(
-        const string&,
         const vector<string>& parts);
     /* throws CObjReaderLineException */
 
@@ -170,6 +169,7 @@ protected:
     //  data:
     //
 protected:
+    static const string s_WiggleDelim;
     unsigned int m_uCurrentRecordType;
     CWiggleSet* m_pSet;
     TFlags m_Flags;

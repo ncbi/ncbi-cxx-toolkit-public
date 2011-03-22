@@ -98,6 +98,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+const string CWiggleReader::s_WiggleDelim = " \t";
+
 //  ----------------------------------------------------------------------------
 CWiggleReader::CWiggleReader(
     TFlags flags ) :
@@ -105,14 +107,12 @@ CWiggleReader::CWiggleReader(
     m_uCurrentRecordType( TYPE_NONE ),
     m_Flags( flags )
 {
-    m_pSet = new CWiggleSet;
 }
 
 //  ----------------------------------------------------------------------------
 CWiggleReader::~CWiggleReader()
 //  ----------------------------------------------------------------------------
 {
-    delete m_pSet;
 }
 
 //  ----------------------------------------------------------------------------                
@@ -134,12 +134,19 @@ CWiggleReader::ReadSeqAnnot(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
+    static size_t count( 0 );
+    count ++;
+
+    m_pSet = new CWiggleSet();
+    CRef< CSeq_annot > pAnnot;
     if (m_Flags & fAsGraph) {
-        return ReadSeqAnnotGraph( lr, pErrorContainer );
+        pAnnot = ReadSeqAnnotGraph( lr, pErrorContainer );
     }
     else {
-        return ReadSeqAnnotTable( lr, pErrorContainer );
+        pAnnot = ReadSeqAnnotTable( lr, pErrorContainer );
     } 
+    delete m_pSet;
+    return pAnnot;
 }
     
 //  --------------------------------------------------------------------------- 
@@ -163,7 +170,10 @@ CWiggleReader::ReadSeqAnnots(
 //  ----------------------------------------------------------------------------
 {
     while ( ! lr.AtEOF() ) {
-        annots.push_back( ReadSeqAnnot( lr, pErrorContainer ) );
+        CRef<CSeq_annot> pAnnot = ReadSeqAnnot( lr, pErrorContainer );
+        if ( pAnnot ) {
+            annots.push_back( pAnnot );
+        }
     }
 }
 
@@ -181,6 +191,7 @@ CWiggleReader::ReadSeqAnnotGraph(
     vector<string> parts;
     CWiggleRecord record;
     bool bTrackFound( false );
+    bool bNewChromFound( false );
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
     while ( x_ReadLine( lr, pending ) ) {
@@ -199,12 +210,49 @@ CWiggleReader::ReadSeqAnnotGraph(
                     break;
                 }
             }
-            x_ParseGraphData( lr, pending, parts, record );
-            m_pSet->AddRecord( record );
+            parts.clear();
+            Tokenize( pending, s_WiggleDelim, parts );
+            unsigned int uLineType = x_GetLineType( parts ); 
+            switch( uLineType ) {
+
+                default: {
+                    x_ParseGraphData( lr, pending, parts, record );
+                    m_pSet->AddRecord( record );
+                    continue;
+                }
+                case TYPE_DECLARATION_VARSTEP: {
+                    m_uCurrentRecordType = TYPE_DATA_VARSTEP;
+
+                    CWiggleRecord temp;
+                    temp.ParseDeclarationVarstep( parts );
+                    if ( !record.Chrom().empty()  &&  record.Chrom() != temp.Chrom() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                }
+                case TYPE_DECLARATION_FIXEDSTEP: {
+                    m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
+
+                    CWiggleRecord temp;
+                    temp.ParseDeclarationFixedstep( parts );
+                    if ( !record.Chrom().empty()  &&  record.Chrom() != temp.Chrom() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                }
+            }
+            if ( bNewChromFound ) {
+                break;
+            }
         }
         catch( CObjReaderLineException& err ) {
             ProcessError( err, pErrorContainer );
         }
+    }
+    if ( m_pSet->Count() ) {
+        return CRef<CSeq_annot>();
     }
     try {
         m_pSet->MakeGraph( graphset );
@@ -226,13 +274,12 @@ CWiggleReader::ReadSeqAnnotTable(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-    m_uLineNumber = 0;
-    
     CRef< CSeq_annot > annot( new CSeq_annot );
     string pending;
     vector<string> parts;
     CWiggleRecord record;
     bool bTrackFound( false );
+    bool bNewChromFound( false );
     
     CSeq_table& table = annot->SetData().SetSeq_table();
     while ( x_ReadLine( lr, pending ) ) {
@@ -251,16 +298,59 @@ CWiggleReader::ReadSeqAnnotTable(
                     break;
                 }
             }
-            x_ParseGraphData( lr, pending, parts, record );
-            m_pSet->AddRecord( record );
-        }
+            parts.clear();
+            Tokenize( pending, s_WiggleDelim, parts );
+            unsigned int uLineType = x_GetLineType( parts );
+            switch ( uLineType ) {
+                default: {
+                    x_ParseGraphData( lr, pending, parts, record );
+                    m_pSet->AddRecord( record );
+                    continue;
+                }
+                case TYPE_DECLARATION_VARSTEP: {
+                    m_uCurrentRecordType = TYPE_DATA_VARSTEP;
+
+                    CWiggleRecord temp;
+                    temp.ParseDeclarationVarstep( parts );
+                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                    record = temp;
+                    continue;
+                }
+                case TYPE_DECLARATION_FIXEDSTEP: {
+                    CWiggleRecord temp;
+
+                    m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
+                    temp.ParseDeclarationFixedstep( parts );
+                    if ( !record.Chrom().empty()  &&  record.Chrom() != temp.Chrom() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                }
+            }
+            if ( bNewChromFound ) {
+                break;
+            }
+       }
         catch( CObjReaderLineException& err ) {
             ProcessError( err, pErrorContainer );
         }
     }
+    if ( m_pSet->Count() == 0 ) {
+        return CRef<CSeq_annot>();
+    }
     try {
-        m_pSet->MakeTable( table, 0!=(m_Flags & fJoinSame), 
-            0!=(m_Flags & fAsByte) );
+        m_pSet->MakeTable( 
+            table, 0!=(m_Flags & fJoinSame), 0!=(m_Flags & fAsByte) );
     }
     catch( CObjReaderLineException& err ) {
         ProcessError( err, pErrorContainer );
@@ -272,8 +362,6 @@ CWiggleReader::ReadSeqAnnotTable(
     return annot; 
 }
     
-static string s_WiggleDelim = " \t";
-
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::x_ParseTrackData(
     const string& pending,
@@ -312,11 +400,8 @@ void CWiggleReader::x_ParseGraphData(
 //          (5) "fixedStep" data. Completes graph record that was started in the
 //              last "fixedStep" declaration.
 //  ----------------------------------------------------------------------------
-{
-    parts.clear();
-    Tokenize( pending, s_WiggleDelim, parts );
-    
-    switch ( x_GetLineType( pending, parts ) ) {
+{    
+    switch ( x_GetLineType( parts ) ) {
 
         default: {
             CObjReaderLineException err( 
@@ -326,20 +411,6 @@ void CWiggleReader::x_ParseGraphData(
                 "inspection" );
             throw err;
         }
-        case TYPE_DECLARATION_VARSTEP:
-            m_uCurrentRecordType = TYPE_DATA_VARSTEP;
-            record.ParseDeclarationVarstep( parts );
-            x_ReadLine( lr, pending );
-            x_ParseGraphData( lr, pending, parts, record );
-            break;
-
-        case TYPE_DECLARATION_FIXEDSTEP:
-            m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
-            record.ParseDeclarationFixedstep( parts );
-            x_ReadLine( lr, pending );
-            x_ParseGraphData( lr, pending, parts, record );
-            break;
-
         case TYPE_DATA_BED:
             record.ParseDataBed( parts );
             break;
@@ -410,7 +481,6 @@ inline bool s_HasPrefix(const string& line, const char (&prefix)[blen])
 
 //  ----------------------------------------------------------------------------
 unsigned int CWiggleReader::x_GetLineType(
-    const string& line,
     const vector<string>& parts)
 //  ----------------------------------------------------------------------------
 {
@@ -418,13 +488,13 @@ unsigned int CWiggleReader::x_GetLineType(
     //  Note: blank lines and comments should have been weeded out before we
     //  we even get here ...
     //
-    if ( s_HasPrefix(line, "track") ) {
+    if ( parts[0] == "track" ) {
         return TYPE_TRACK;
     }
-    if ( s_HasPrefix(line, "variableStep") ) {
+    if ( parts[0] == "variableStep" ) {
         return TYPE_DECLARATION_VARSTEP;
     }
-    if ( s_HasPrefix(line, "fixedStep") ) {
+    if ( parts[0] == "fixedStep" ) {
         return TYPE_DECLARATION_FIXEDSTEP;
     }
 
