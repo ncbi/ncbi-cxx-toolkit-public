@@ -110,6 +110,8 @@ typedef struct {
     volatile Uint1 m_NeedRemap; /* Is remap needed? */
     Uint1   m_RemapOnRead; /* Is remap allowed when reading data? */
     Uint4   m_OffsetHeaderSize; /* 0 for 32-bit version, 256 for 64-bit */
+    char*   m_OldDataPtr;
+    Int8    m_OldMappedDataLen;
 } SGiDataIndex;
 
 /****************************************************************************
@@ -165,7 +167,6 @@ static void x_DumpDataCache(SGiDataIndex* data_index)
 static void x_CloseIndexFiles(SGiDataIndex* data_index)
 {
     if (data_index->m_GiIndexFile >= 0) {
-        x_DumpIndexCache(data_index);
         close(data_index->m_GiIndexFile);
         data_index->m_GiIndexFile = -1;
         data_index->m_GiIndexLen = 0;
@@ -176,7 +177,6 @@ static void x_CloseIndexFiles(SGiDataIndex* data_index)
 static void x_CloseDataFiles(SGiDataIndex* data_index)
 {
     if (data_index->m_DataFile >= 0) {
-        x_DumpDataCache(data_index);
         close(data_index->m_DataFile);
         data_index->m_DataFile = -1;
         data_index->m_DataLen = 0;
@@ -204,6 +204,8 @@ static void x_UnMapIndex(SGiDataIndex* data_index)
 static void x_UnMapData(SGiDataIndex* data_index)
 {
     if (data_index->m_Data != MAP_FAILED) {
+        data_index->m_OldDataPtr = data_index->m_Data;
+        data_index->m_OldMappedDataLen = data_index->m_MappedDataLen;
         munmap((char*)data_index->m_Data, data_index->m_MappedDataLen);
         data_index->m_Data = (char*)MAP_FAILED;
         data_index->m_MappedDataLen = 0;
@@ -276,9 +278,6 @@ static Uint1 x_OpenDataFiles(SGiDataIndex* data_index)
     
     flags = (data_index->m_ReadOnlyMode?O_RDONLY:O_RDWR|O_APPEND|O_CREAT);
     
-    x_UnMapData(data_index);
-    x_CloseDataFiles(data_index);
-    
     strcpy(buf, data_index->m_FileNamePrefix);
     strcat(buf, "dat");
     data_index->m_DataFile = open(buf,flags,0644);
@@ -321,11 +320,18 @@ static Uint1 x_MapIndex(SGiDataIndex* data_index)
 
     if (data_index->m_GiIndex != MAP_FAILED) return 1;
     
-    x_DumpIndexCache(data_index);
-    prot = PROT_READ | (data_index->m_ReadOnlyMode? 0: PROT_WRITE);
-    map_size = data_index->m_GiIndexLen*sizeof(Uint4);
-    assert(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
-    assert(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
+    if (data_index->m_ReadOnlyMode) {
+        map_size = lseek(data_index->m_GiIndexFile, 0, SEEK_END);
+        data_index->m_GiIndexLen = map_size / sizeof(Uint4);
+        prot = PROT_READ;
+    } else {
+        /* If there's anything in local memory cache, write it to disk. */
+        x_DumpIndexCache(data_index);
+        map_size = data_index->m_GiIndexLen*sizeof(Uint4);
+        assert(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
+        assert(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
+        prot = PROT_READ | PROT_WRITE;
+    }
     data_index->m_GiIndex =
         (Uint4*)mmap(0, map_size, prot, MAP_SHARED|MAP_NORESERVE, 
                      data_index->m_GiIndexFile, 0);
@@ -334,27 +340,72 @@ static Uint1 x_MapIndex(SGiDataIndex* data_index)
     return (data_index->m_GiIndex != MAP_FAILED);
 }
 
+#define MAP_EXTRA_DATA_LEN 1000000
+
 static Uint1 x_MapData(SGiDataIndex* data_index)
 {
     if (!x_OpenDataFiles(data_index)) return 0;
 
     if (data_index->m_Data == MAP_FAILED) {
-        int prot = PROT_READ | (data_index->m_ReadOnlyMode ? 0 : PROT_WRITE);
-        x_DumpDataCache(data_index);
+        int prot;
+        Int8 map_size;
+
+        if (data_index->m_ReadOnlyMode) {
+            data_index->m_DataLen = lseek(data_index->m_DataFile, 0, SEEK_END);
+            map_size = 
+                (data_index->m_DataLen < data_index->m_OldMappedDataLen ?
+                 data_index->m_OldMappedDataLen :
+                 data_index->m_DataLen + MAP_EXTRA_DATA_LEN);
+            prot = PROT_READ;
+        } else {
+            /* If there's anything in local memory cache, write it to disk. */
+            x_DumpDataCache(data_index);
+            map_size = data_index->m_DataLen;
+            assert(map_size == lseek(data_index->m_DataFile, 0, SEEK_CUR));
+            assert(map_size == lseek(data_index->m_DataFile, 0, SEEK_END));
+            prot = PROT_READ | PROT_WRITE;
+        }
         
         data_index->m_Data =
-            (char*) mmap(0, data_index->m_DataLen, prot,
+            (char*) mmap(data_index->m_OldDataPtr, map_size, prot,
                          MAP_SHARED|MAP_NORESERVE, data_index->m_DataFile, 0);
-        data_index->m_MappedDataLen = data_index->m_DataLen;
+        data_index->m_MappedDataLen = map_size;
     }
 
     return (data_index->m_Data != MAP_FAILED);
 }
 
+static void x_FlushData(SGiDataIndex* data_index)
+{
+    if (data_index->m_DataFile >= 0) {
+        if (data_index->m_DataCacheLen > 0)
+            x_DumpDataCache(data_index);
+        /* Synchronize memory mapped data with the file on disk. */
+        msync(data_index->m_Data, data_index->m_DataLen, MS_SYNC);
+    }
+}
+
+static void x_FlushIndex(SGiDataIndex* data_index)
+{
+    /* Flush index file */
+    if (data_index->m_GiIndexFile >= 0) {
+        if (data_index->m_IndexCacheLen > 0)
+            x_DumpIndexCache(data_index);
+        /* Synchronize memory mapped data with the file on disk. */
+        msync((char*)data_index->m_GiIndex, data_index->m_GiIndexLen, MS_SYNC);
+    }
+}
+
+static void x_Flush(SGiDataIndex* data_index)
+{
+    x_FlushIndex(data_index);
+    x_FlushData(data_index);
+}
+
 static Uint1 x_ReMapIndex(SGiDataIndex* data_index)
 {
+    x_FlushIndex(data_index);
     x_UnMapIndex(data_index);
-    x_CloseIndexFiles(data_index);
     if (!x_MapIndex(data_index)) return 0;
     
     return 1;
@@ -362,62 +413,11 @@ static Uint1 x_ReMapIndex(SGiDataIndex* data_index)
 
 static Uint1 x_ReMapData(SGiDataIndex* data_index)
 {
+    x_FlushData(data_index);
     x_UnMapData(data_index);
-    x_CloseDataFiles(data_index);
     if (!x_MapData(data_index)) return 0;
     
     return 1;
-}
-
-static void x_Flush(SGiDataIndex* data_index)
-{
-    if (data_index->m_DataFile >= 0) {
-        if (data_index->m_DataCacheLen > 0) {
-            int prot;
-
-            /* Remap the data file */
-            munmap((char*)data_index->m_Data, data_index->m_MappedDataLen);
-            data_index->m_Data = (char*)MAP_FAILED;
-            /* Dump cache */
-            x_DumpDataCache(data_index);
-
-            /* Redo the memory mapping */
-            prot = PROT_READ | (data_index->m_ReadOnlyMode? 0: PROT_WRITE);
-            data_index->m_Data =
-                (char*) mmap(0, data_index->m_DataLen, prot,
-                             MAP_SHARED|MAP_NORESERVE, data_index->m_DataFile, 0);
-            data_index->m_MappedDataLen = data_index->m_DataLen;
-        } else {
-            /* Synchronize memory mapped data with the file on disk. */
-            msync(data_index->m_Data, data_index->m_DataLen, MS_SYNC);
-        }
-    }
-
-    /* Flush index file */
-    if (data_index->m_GiIndexFile >= 0) {
-        if (data_index->m_IndexCacheLen > 0) {
-            int prot;
-
-            /* Remap the index file */
-            munmap((char*)data_index->m_GiIndex,
-                   data_index->m_MappedIndexLen*sizeof(Uint4));
-            data_index->m_GiIndex = (Uint4*)MAP_FAILED;
-            /* Dump index cache */
-            x_DumpIndexCache(data_index);
-
-            /* Redo the memory mapping */
-            prot = PROT_READ | (data_index->m_ReadOnlyMode? 0: PROT_WRITE);
-            data_index->m_GiIndex =
-                (Uint4*) mmap(0, data_index->m_GiIndexLen*sizeof(Uint4), prot, 
-                              MAP_SHARED|MAP_NORESERVE,
-                              data_index->m_GiIndexFile, 0);
-            data_index->m_MappedIndexLen = data_index->m_GiIndexLen;
-        } else {
-            /* Synchronize memory mapped data with the file on disk. */
-            msync((char*)data_index->m_GiIndex, data_index->m_GiIndexLen,
-                  MS_SYNC);
-        }
-    }
 }
 
 static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
@@ -438,9 +438,6 @@ static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
         return 0;
     }
     assert(data_index->m_Remapping == 1);
-
-
-    x_Flush(data_index);
 
     if (!x_ReMapIndex(data_index))
         return 0;
@@ -473,66 +470,78 @@ x_GetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level)
     Uint4 base_page;
     Uint4 remainder = page & kPageMask;
     Uint4* gi_index = NULL;
+    Uint1 remap_done = 0;
 
     if (page >= data_index->m_GiIndexLen + data_index->m_IndexCacheLen) {
-        /* This is an error condition - this page could not be found in the index! */
-        return -1;
-    } else {
-        if (page < data_index->m_GiIndexLen) {
-            if (page >= data_index->m_MappedIndexLen) {
-                data_index->m_NeedRemap = 1;
-                if (!data_index->m_RemapOnRead ||
-                    !GiDataIndex_ReMap(data_index,0))
-                    return -1;
-            }
-            gi_index = data_index->m_GiIndex;
-        } else {
-            page -= data_index->m_GiIndexLen;
-            gi_index = data_index->m_IndexCache;
-        }
+        /* Try remapping and check again */
+        data_index->m_NeedRemap = 1;
+        if (!data_index->m_RemapOnRead || !x_ReMapIndex(data_index))
+            return -1;
+        
+        /* If page is still outside of the index range after remapping, it's an
+           error condition */
+        if (page >= data_index->m_GiIndexLen + data_index->m_IndexCacheLen)
+            return -1;
+        remap_done = 1;
+    }
 
-        /* Non-leaf pages contain direct offsets to other index pages.
-         * When data is added to index sequentially, the leaf offsets can be
-         * encoded in 2 bytes as increment to the offset on the beginning of the
-         * page, i.e. 2 gis can be encoded in the same 4-byte index array
-         * element.
-         */
-        if (level > 0 || !data_index->m_SequentialData) {
-            base = (int) gi_index[page];
-        } else if (remainder == 0 && (gi&1) == 0) {
-            if ((gi_index[page] & kTopBit) == kTopBit)
-                base = gi_index[page] & kFullOffsetMask;
-            else
-                base = -1;
+    if (page < data_index->m_GiIndexLen) {
+        /* If page is outside of the mapped part of the index, try remapping,
+           unless remapping has already been done. */
+        if (page >= data_index->m_MappedIndexLen) {
+            if (remap_done)
+                return -1;
+            data_index->m_NeedRemap = 1;
+            if (!data_index->m_RemapOnRead || !x_ReMapIndex(data_index))
+                return -1;
+        }
+        gi_index = data_index->m_GiIndex;
+    } else {
+        page -= data_index->m_GiIndexLen;
+        gi_index = data_index->m_IndexCache;
+    }
+
+    /* Non-leaf pages contain direct offsets to other index pages.
+     * When data is added to index sequentially, the leaf offsets can be
+     * encoded in 2 bytes as increment to the offset on the beginning of the
+     * page, i.e. 2 gis can be encoded in the same 4-byte index array
+     * element.
+     */
+    if (level > 0 || !data_index->m_SequentialData) {
+        base = (int) gi_index[page];
+    } else if (remainder == 0 && (gi&1) == 0) {
+        if ((gi_index[page] & kTopBit) == kTopBit)
+            base = gi_index[page] & kFullOffsetMask;
+        else
+            base = -1;
+    } else {
+        Uint4 mask;
+        Uint4 base_offset;
+        
+        base_page = page - remainder;
+        if (remainder == 0 && (gi&1) == 1) {
+            base = (gi_index[base_page+1]>>24);
+            mask = kPageMask;
+        } else if (remainder == 1 && (gi&1) == 0) {
+            base = ((gi_index[page]>>16) & kPageMask);
+            mask = kPageMask;
+        } else if ((gi&1) == 0) {
+            base = (gi_index[page]>>16);
+            mask = kLocalOffsetMask;
+        } else { /* (gi&1) == 1 */
+            base = (gi_index[page]&kLocalOffsetMask);
+            mask = kLocalOffsetMask;
+        }
+        
+        if (base == 0) {
+            base = -1;
         } else {
-            Uint4 mask;
-            Uint4 base_offset;
-            
-            base_page = page - remainder;
-            if (remainder == 0 && (gi&1) == 1) {
-                base = (gi_index[base_page+1]>>24);
-                mask = kPageMask;
-            } else if (remainder == 1 && (gi&1) == 0) {
-                base = ((gi_index[page]>>16) & kPageMask);
-                mask = kPageMask;
-            } else if ((gi&1) == 0) {
-                base = (gi_index[page]>>16);
-                mask = kLocalOffsetMask;
-            } else { /* (gi&1) == 1 */
-                base = (gi_index[page]&kLocalOffsetMask);
-                mask = kLocalOffsetMask;
-            }
-            
-            if (base == 0) {
-                base = -1;
-            } else {
-                base_offset = (gi_index[base_page] == kFullOffsetMask ? 0 :
-                               gi_index[base_page]);
-                if ((Uint4)base == mask)
-                    base = (Uint4) base_offset & kFullOffsetMask;
-                else
-                    base += (Uint4) base_offset & kFullOffsetMask;
-            }
+            base_offset = (gi_index[base_page] == kFullOffsetMask ? 0 :
+                           gi_index[base_page]);
+            if ((Uint4)base == mask)
+                base = (Uint4) base_offset & kFullOffsetMask;
+            else
+                base += (Uint4) base_offset & kFullOffsetMask;
         }
     }
 
@@ -546,15 +555,26 @@ x_SetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level,
     Uint4 base_page;
     Uint4 remainder = page & kPageMask;
     Uint4* gi_index = NULL;
+    Uint1 remap_done = 0;
 
     if (page >= data_index->m_GiIndexLen + data_index->m_IndexCacheLen) {
-        return -1;
+        /* Try remapping and check again */
+        data_index->m_NeedRemap = 1;
+        if (!x_ReMapIndex(data_index))
+            return -1;
+        
+        /* If page is still outside of the index range after remapping, it's an
+           error condition */
+        if (page >= data_index->m_GiIndexLen + data_index->m_IndexCacheLen)
+            return -1;
+        remap_done = 1;
     } else {
         if (page < data_index->m_GiIndexLen) {
-            if (page >= data_index->m_MappedIndexLen) {
-                if (!x_ReMapIndex(data_index))
-                    return -1;
-            }
+            if (remap_done)
+                return -1;
+            data_index->m_NeedRemap = 1;
+            if (page >= data_index->m_MappedIndexLen && !x_ReMapIndex(data_index))
+                return -1;
             gi_index = data_index->m_GiIndex;
         } else {
             page -= data_index->m_GiIndexLen;
@@ -669,7 +689,7 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
        try to remap data. If that still doesn't help, bail out. */
     if (gi_offset >= data_index->m_DataLen + data_index->m_DataCacheLen) {
         data_index->m_NeedRemap = 1;
-        if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index,0) ||
+        if (!data_index->m_RemapOnRead || !x_ReMapData(data_index) ||
             gi_offset >= data_index->m_DataLen + data_index->m_DataCacheLen) 
             return NULL;
     }
@@ -683,7 +703,7 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
            mapped, remap now. */
         if (gi_offset >= data_index->m_MappedDataLen) {
             data_index->m_NeedRemap = 1;
-            if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index,0))
+            if (!data_index->m_RemapOnRead || !x_ReMapData(data_index))
                 return NULL;
         }
         return data_index->m_Data + gi_offset;
@@ -726,6 +746,8 @@ GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
     data_index->m_NeedRemap = 1;
     data_index->m_RemapOnRead = 1;
     data_index->m_OffsetHeaderSize = (is_64bit ? kOffsetHeaderSize : 0);
+    data_index->m_OldDataPtr = ((char*)MAP_FAILED);
+    data_index->m_OldMappedDataLen = 0;
 
     return data_index;
 }
@@ -869,7 +891,8 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
         }
         
         x_SetIndexOffset(data_index, gi, page, 0,
-                         data_index->m_DataLen + data_index->m_DataCacheLen - top_page_offset);
+                         data_index->m_DataLen + data_index->m_DataCacheLen -
+                         top_page_offset);
 
         /* This should already be valid, but in case of corruption, make sure
          * that value data_index->m_DataLen reflects what is actually available
