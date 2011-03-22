@@ -825,35 +825,61 @@ static string s_GetSpecimenVoucherText(
     const string& strRawName )
 {
     const string strAtccBase( "http://www.atcc.org/SearchCatalogs/linkin?id=" );
-    const string strCcmpBase( "http://ccmp.bigelow.org/SD/display.php?starin=CCMP" );
-    const string strUamBase( "http://arctos.database.museum/SpecimenDetail.cfm?GUID=" );
+    const string strBcrcBase( "http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrc_no=" );
+    const string strCcapBase( "http://www.ccap.ac.uk/strain_info.php?Strain_No=" );
+    const string strCcmpBase( "https://ccmp.bigelow.org/SD/display.php?strain=CCMP" );
     const string strCcugBase( "http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=" );
+    const string strCoriBase( "http://ccr.coriell.org/Sections/Search/Sample_Detail.aspx?Ref=" );
     const string strDsmzBase( "http://www.dsmz.de/microorganisms/search_no.php?q=" );
     const string strFsuBase( "http://www.prz.uni-jena.de/data.php?fsu=" );
-    const string strPcmbBase( "http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=" );
+    const string strIcmpBase( "http://nzfungi.landcareresearch.co.nz/icmp/results_cultures.asp?ID=&icmpVAR=" );
+    const string strKctcBase( "http://www.brc.re.kr/English/_SearchView.aspx?sn=" );
     const string strKuiBase( "http://collections.nhm.ku.edu/KU_Fish/detail.jsp?record=" );
     const string strKuitBase( "http://collections.nhm.ku.edu/KU_Tissue/detail.jsp?record=" );
-    const string strBcrcBase( "http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrs_no=" );
-    const string strPccBase( "http://www.pasteur.fr/recherche/banque/PCC/docs/pcc" );
+    const string strPccBase( "http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+" );
+    const string strPcmbBase( "http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=" );
+    const string strPddBase( "http://nzfungi.landcareresearch.co.nz/html/data_collections_details.asp?CID=" );
+    const string strSagBase( "http://sagdb.uni-goettingen.de/detailedList.php?str_number=" );
+    const string strTgrcBase( "http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=" );
+    const string strUamBase( "http://arctos.database.museum/SpecimenDetail.cfm?GUID=" );
+    const string strYpmEntBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=ent&ID=" );
+    const string strYpmHerBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=her&ID=" );
+    const string strYpmIchBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=ich&ID=" );
+    const string strYpmIzBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=iz&ID=" );
+    const string strYpmMamBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=mam&ID=" );
+    const string strYpmOrnBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=orn&ID=" );
     
-    const string strMsbInst( "Museum of Southwestern Biology, University of New Mexico" );
-    const string strUamInst( "Museum of Alaska Museum of the North" );
-    const string strWnmuInst( "Western New Mexico Museum" );
-    const string strPsuInst( "Portland State University" );
-    const string strCrcmInst( "Charles R. Conner Museum, Washington State University" );
-    const string strDgrInst( "Division of Genomic Resources, University of New Mexico" );
-    const string strKwpInst( "Kenelm W. Philip Collection, Museum of Alaska Museum of the North" );
-    const string strMvzInst( "Museum of Vertebrate Zoology, University of California" );
-    const string strNbsbInst( "National Biomonitoring Specimen Bank, U.S. Geological Survey" );
     const string strAtccInst( "American Type Culture Collection" );
+    const string strBcrcInst( "Bioresource Collection and Research Center" );
+    const string strCcapInst( "Bioresource Collection and Research Center" );
     const string strCcmpInst( "Provasoli-Guillard National Center for Culture of Marine Phytoplankton" );
     const string strCcugInst( "Culture Collection, University of Goteborg, Department of Clinical Bacteriology" );
+    const string strCoriInst( "Coriell Institute for Medical Research" );
+    const string strCrcmInst( "Charles R. Conner Museum, Washington State University" );
+    const string strDgrInst( "Division of Genomic Resources, University of New Mexico" );
     const string strDsmzInst( "German Resource Center for Biological Material" );
     const string strFsuInst( "Fungal Reference Center, University of Jena" );
-    const string strPcmbInst( "Pacific Center for Molecular Biodiversity" );
+    const string strIcmpInst( "International Collection of Microorganisms from Plants" );
+    const string strKctcInst( "Korean Collection for Type Cultures" );
     const string strKuInst( "University of Kansas, Museum of Natural History" );
-    const string strBcrcInst( "Bioresource Collection and Research Center" );
+    const string strKwpInst( "Kenelm W. Philip Collection, Museum of Alaska Museum of the North" );
+    const string strMsbInst( "Museum of Southwestern Biology, University of New Mexico" );
+    const string strMvzInst( "Museum of Vertebrate Zoology, University of California" );
+    const string strNbsbInst( "National Biomonitoring Specimen Bank, U.S. Geological Survey" );
     const string strPccInst( "Pasteur Culture Collection of Cyanobacteria" );
+    const string strPcmbInst( "Pacific Center for Molecular Biodiversity" );
+    const string strPsuInst( "Portland State University" );
+    const string strPddInst( "New Zealand Fungal Herbarium" );
+    const string strSagInst( "Sammlung von Algenkulturen at Universitat Gottingen" );
+    const string strTgrcInst( "C.M. Rick Tomato Genetics Resource Center" );
+    const string strUamInst( "Museum of Alaska Museum of the North" );
+    const string strWnmuInst( "Western New Mexico Museum" );
+    const string strYpmEntInst( "Yale Peabody Museum of Natural History, Entomology Collection" );
+    const string strYpmHerInst( "Yale Peabody Museum of Natural History, Herpetology Collection" );
+    const string strYpmIchInst( "Yale Peabody Museum of Natural History, Ichthyology Collection" );
+    const string strYpmIzInst( "Yale Peabody Museum of Natural History, Invertebrate Zoology Collection" );
+    const string strYpmMamInst( "Yale Peabody Museum of Natural History, Mammology Collection" );
+    const string strYpmOrnInst( "Yale Peabody Museum of Natural History, Ornithology Collection" );
     
     if ( ! ctx.Config().DoHTML() ) {
         return strRawName;
@@ -1198,6 +1224,110 @@ static string s_GetSpecimenVoucherText(
         text << "</a>";
     }
 
+    else if ( NStr::StartsWith( strRawName, "CCAP" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "CCAP" ) );
+        text << "CCAP:<a ";
+        text << "href=\"" << strCcapBase << strId << "\" title=\"" << strCcapInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "Coriell" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "Coriell" ) );
+        text << "Coriell:<a ";
+        text << "href=\"" << strCoriBase << strId << "\" title=\"" << strCoriInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "ICMP" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "ICMP" ) );
+        text << "ICMP:<a ";
+        text << "href=\"" << strIcmpBase << strId << "\" title=\"" << strIcmpInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "KCTC" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "KCTC" ) );
+        text << "KCTC:<a ";
+        text << "href=\"" << strKctcBase << strId << "\" title=\"" << strKctcInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "PDD" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "PDD" ) );
+        text << "PDD:<a ";
+        text << "href=\"" << strPddBase << strId << "\" title=\"" << strPddInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "SAG" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "SAG" ) );
+        text << "SAG:<a ";
+        text << "href=\"" << strSagBase << strId << "\" title=\"" << strSagInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "TGRC" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "TGRC" ) );
+        text << "TGRC:<a ";
+        text << "href=\"" << strTgrcBase << strId << "\" title=\"" << strTgrcInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "YPM:ENT" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "YPM:ENT" ) );
+        text << "YPM:ENT:<a ";
+        text << "href=\"" << strYpmEntBase << strRawName << "\" title=\"" << strYpmEntInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "YPM:HER" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "YPM:HER" ) );
+        text << "YPM:HER:<a ";
+        text << "href=\"" << strYpmHerBase << strRawName << "\" title=\"" << strYpmHerInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "YPM:ICH" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "YPM:ICH" ) );
+        text << "YPM:ICH:<a ";
+        text << "href=\"" << strYpmIchBase << strRawName << "\" title=\"" << strYpmIchInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "YPM:IZ" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "YPM:IZ" ) );
+        text << "YPM:IZ:<a ";
+        text << "href=\"" << strYpmIzBase << strRawName << "\" title=\"" << strYpmIzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "YPM:MAM" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "YPM:MAM" ) );
+        text << "YPM:MAM:<a ";
+        text << "href=\"" << strYpmMamBase << strRawName << "\" title=\"" << strYpmMamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "YPM:ORN" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "YPM:ORN" ) );
+        text << "YPM:ORN:<a ";
+        text << "href=\"" << strYpmOrnBase << strRawName << "\" title=\"" << strYpmOrnInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
     //base, none, prefix, postfix
     else if ( NStr::StartsWith( strRawName, "BCRC" ) ) {
         const string strPrefix( "" );
