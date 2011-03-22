@@ -5990,6 +5990,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNT	s	Universidad nacional de Tucumn",
 "UNWH	s	University of North-West, Biological Sciences Department",
 "UO	s	University of Oklahoma",
+"UOA/HCPF<GRC>	c	UOA/HCPF University of Athens/Hellenic Collection of Pathogenic Fungi",
 "UOG	s	University of Guelph",
 "UOG:BIO	b	University of Guelph, Biodiversity Institute of Ontario",
 "UOG:DEBU	s	University of Guelph, Ontario Insect Collection",
