@@ -206,7 +206,10 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
 };
 
 static const TDbxrefPair kApprovedProbeDbXrefs[] = {
-    TDbxrefPair("GEO", CDbtag::eDbtagType_GEO)
+    TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
+    TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
+    TDbxrefPair("GEO", CDbtag::eDbtagType_GEO),
+    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank)
 };
 
 
