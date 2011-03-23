@@ -100,6 +100,11 @@ public:
     CWiggleSet();
     ~CWiggleSet() {};
 
+    string Name() const { return m_strName; };
+    void SetName( const string& strName ) { m_strName = strName; };
+    string Title() const { return m_strTitle; };
+    void SetTitle( const string& strTitle ) { m_strTitle = strTitle; };
+
     bool AddRecord(
         const CWiggleRecord& );
 
@@ -125,6 +130,8 @@ protected:
 
     TrackMap m_Tracks;
     CIdMapper* m_pMapper;
+    string m_strName;
+    string m_strTitle;
 };
 
 //  ===========================================================================
@@ -150,6 +157,8 @@ public:
         CNcbiOstream& );
     
     void MakeGraph(
+        const string& strName,
+        const string& strTitle,
         CSeq_annot::TData::TGraph& );
         
     void MakeGraphs(

@@ -281,7 +281,7 @@ void CWiggleRecord::ParseDeclarationFixedstep(
             continue;
         }
         if ( key_value_pair[0] == "start" ) {
-            m_uSeqStart = NStr::StringToUInt( key_value_pair[1] );
+            m_uSeqStart = NStr::StringToUInt( key_value_pair[1] )-1;
             continue;
         }
         if ( key_value_pair[0] == "step" ) {
@@ -437,7 +437,7 @@ void CWiggleSet::MakeGraph(
 //  ===========================================================================
 {
     for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
-        it->second->MakeGraph( graphset );
+        it->second->MakeGraph( Name(), Title(), graphset );
     }       
 }
 
@@ -653,6 +653,8 @@ double CWiggleTrack::EstimateSize(
 
 //  ===========================================================================
 void CWiggleTrack::MakeGraph(
+    const string& strName,
+    const string& strTitle,
     CSeq_annot::TData::TGraph& graphset )
 //  ===========================================================================
 {
@@ -666,6 +668,7 @@ void CWiggleTrack::MakeGraph(
         loc.SetFrom( SeqStart() );
         loc.SetTo( SeqStop() );
             
+        graph->SetTitle( strTitle );
         graph->SetComp( SeqSpan() );
         graph->SetNumval( (SeqStop() - SeqStart() + 1) / SeqSpan() );
         graph->SetA( ScaleLinear() );

@@ -227,22 +227,36 @@ CWiggleReader::ReadSeqAnnotGraph(
 
                     CWiggleRecord temp;
                     temp.ParseDeclarationVarstep( parts );
-                    if ( !record.Chrom().empty()  &&  record.Chrom() != temp.Chrom() ) {
+                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
                         lr.UngetLine();
                         bNewChromFound = true;
                         break;
                     }
-                }
+                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                    record = temp;
+                    continue;
+               }
                 case TYPE_DECLARATION_FIXEDSTEP: {
                     m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
 
                     CWiggleRecord temp;
                     temp.ParseDeclarationFixedstep( parts );
-                    if ( !record.Chrom().empty()  &&  record.Chrom() != temp.Chrom() ) {
+                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
                         lr.UngetLine();
                         bNewChromFound = true;
                         break;
                     }
+                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                    record = temp;
+                    continue;
                 }
             }
             if ( bNewChromFound ) {
@@ -253,8 +267,17 @@ CWiggleReader::ReadSeqAnnotGraph(
             ProcessError( err, pErrorContainer );
         }
     }
-    if ( m_pSet->Count() ) {
+    if ( m_pSet->Count() == 0 ) {
         return CRef<CSeq_annot>();
+    }
+    if ( !bTrackFound ) {
+        CAnnot_descr& desc = annot->SetDesc();
+        CRef<CAnnotdesc> title( new CAnnotdesc() );
+        title->SetTitle( m_strDefaultTrackTitle );
+        desc.Set().push_back( title );
+        CRef<CAnnotdesc> name( new CAnnotdesc() );
+        name->SetName( m_strDefaultTrackName );
+        desc.Set().push_back( name );
     }
     try {
         m_pSet->MakeGraph( graphset );
@@ -328,15 +351,22 @@ CWiggleReader::ReadSeqAnnotTable(
                     continue;
                 }
                 case TYPE_DECLARATION_FIXEDSTEP: {
-                    CWiggleRecord temp;
-
                     m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
+
+                    CWiggleRecord temp;
                     temp.ParseDeclarationFixedstep( parts );
-                    if ( !record.Chrom().empty()  &&  record.Chrom() != temp.Chrom() ) {
+                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
                         lr.UngetLine();
                         bNewChromFound = true;
                         break;
                     }
+                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
+                        lr.UngetLine();
+                        bNewChromFound = true;
+                        break;
+                    }
+                    record = temp;
+                    continue;
                 }
             }
             if ( bNewChromFound ) {
@@ -582,6 +612,8 @@ void CWiggleReader::x_SetTrackData(
         CRef<CAnnotdesc> name( new CAnnotdesc() );
         name->SetName( strValue );
         desc.Set().push_back( name );
+
+        m_pSet->SetName( strValue );
         return;
     }
     if ( strKey == "description" ) {
@@ -589,6 +621,8 @@ void CWiggleReader::x_SetTrackData(
         CRef<CAnnotdesc> title( new CAnnotdesc() );
         title->SetTitle( strValue );
         desc.Set().push_back( title );
+
+        m_pSet->SetTitle( strValue );
         return;
     }
     if ( strKey == "type" ) {
