@@ -111,6 +111,9 @@ public:
                              CConstRef<CSplicedAligner> aligner);
         void ImproveFromRight(const char* seq1, const char* seq2,
                               CConstRef<CSplicedAligner> aligner);
+                              
+        size_t GapLength(); //count total gap length                              
+        bool IsLowComplexityExon(const char *rna_seq);
         
         void Update(const CNWAligner* aligner); // recompute members
         const char* GetDonor(void) const;       // raw pointers to parts of annot
