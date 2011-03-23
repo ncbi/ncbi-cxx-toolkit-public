@@ -466,6 +466,7 @@ public:
                             "FixedBaseAddress",
                             m_Config );
     }
+    SUPPORT_LINKER_OPTION(GenerateManifest)
 
 private:
     string      m_AdditionalOptions;
@@ -530,6 +531,7 @@ public:
 
     SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
     SUPPORT_DUMMY_OPTION(FixedBaseAddress)
+    SUPPORT_DUMMY_OPTION(GenerateManifest)
 
 private:
     CLinkerToolDummyImpl(const CLinkerToolDummyImpl&);

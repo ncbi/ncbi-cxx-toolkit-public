@@ -83,6 +83,7 @@ ProgramDatabaseFile=
 ImportLibrary=
 IgnoreAllDefaultLibraries=FALSE
 IgnoreDefaultLibraryNames=
+GenerateManifest=true
 # use "1" to 'purify', 'quantify', 'vtune' etc; "0" - otherwise
 FixedBaseAddress=0
 

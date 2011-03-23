@@ -393,6 +393,7 @@ struct ILinkerTool : public ITool
     virtual string IgnoreDefaultLibraryNames(void)	  const = 0;
     virtual string AdditionalLibraryDirectories(void) const = 0;
     virtual string FixedBaseAddress(void)			  const = 0;
+    virtual string GenerateManifest(void)			  const = 0;
 };
 
 

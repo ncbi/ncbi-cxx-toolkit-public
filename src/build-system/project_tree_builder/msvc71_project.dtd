@@ -110,6 +110,7 @@
  <!ATTLIST Tool	GlobalOptimizations             CDATA #IMPLIED>
  <!ATTLIST Tool	FavorSizeOrSpeed                CDATA #IMPLIED>
  <!ATTLIST Tool	FixedBaseAddress                CDATA #IMPLIED>
+ <!ATTLIST Tool	GenerateManifest                CDATA #IMPLIED>
 
 
 

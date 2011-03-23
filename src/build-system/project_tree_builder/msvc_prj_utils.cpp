@@ -431,6 +431,16 @@ string SConfigInfo::GetConfigFullName(void) const
     }
 }
 
+bool SConfigInfo::operator== (const SConfigInfo& cfg) const
+{
+    return
+        m_Name == cfg.m_Name &&
+        m_Debug == cfg.m_Debug &&
+        m_VTuneAddon == cfg.m_VTuneAddon &&
+        m_Unicode == cfg.m_Unicode &&
+        m_rtType == cfg.m_rtType;
+}
+
 void LoadConfigInfoByNames(const CNcbiRegistry& registry, 
                            const list<string>&  config_names, 
                            list<SConfigInfo>*   configs)
@@ -758,6 +768,12 @@ CSrcToFilterInserterWithPch::CSrcToFilterInserterWithPch
                                          const string&            project_dir)
     : m_ProjectId  (project_id),
       m_Configs    (configs),
+// see __USE_DISABLED_CFGS__ in msvc_prj_generator.cpp
+#if 1
+      m_AllConfigs (GetApp().GetRegSettings().m_ConfigInfo),
+#else
+      m_AllConfigs (configs),
+#endif
       m_ProjectDir (project_dir)
 {
 }
@@ -779,11 +795,16 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
     TPch pch_usage = DefinePchUsage(m_ProjectDir, rel_source_file, pch_default);
     //
     // For each configuration
-    ITERATE(list<SConfigInfo>, iconfig, m_Configs) {
+    ITERATE(list<SConfigInfo>, iconfig, m_AllConfigs) {
         const string& config = (*iconfig).GetConfigFullName();
         CRef<CFileConfiguration> file_config(new CFileConfiguration());
         file_config->SetAttlist().SetName(ConfigName(config));
-        if ( !enable_cfg.empty()  &&  enable_cfg != config ) {
+        
+        if (m_Configs.size() != m_AllConfigs.size() &&
+            find(m_Configs.begin(), m_Configs.end(), *iconfig) == m_Configs.end()) {
+            file_config->SetAttlist().SetExcludedFromBuild("TRUE");
+        }
+        else if ( !enable_cfg.empty()  &&  enable_cfg != config ) {
             file_config->SetAttlist().SetExcludedFromBuild("TRUE");
         }
 
@@ -839,7 +860,7 @@ CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter,
 
         // Exclude from build all file versions
         // except one for current configuration.
-        ITERATE(list<SConfigInfo>, icfg, m_Configs) {
+        ITERATE(list<SConfigInfo>, icfg, m_AllConfigs) {
             const string& cfg = (*icfg).GetConfigFullName();
             string source_file = NStr::Replace(rel_source_file,
                                                ".@config@", "." + cfg);

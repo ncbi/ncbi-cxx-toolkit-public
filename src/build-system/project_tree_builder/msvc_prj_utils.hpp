@@ -151,6 +151,7 @@ struct SConfigInfo
     void DefineRtType();
     void SetRuntimeLibrary(const string& lib);
     string GetConfigFullName(void) const;
+    bool operator== (const SConfigInfo& cfg) const;
 
     string m_Name;
     string m_RuntimeLibrary;
@@ -373,7 +374,8 @@ public:
 
 private:
     string            m_ProjectId;
-    list<SConfigInfo> m_Configs;
+    const list<SConfigInfo>& m_Configs;
+    const list<SConfigInfo>& m_AllConfigs;
     string            m_ProjectDir;
 
     typedef set<string> TPchHeaders;

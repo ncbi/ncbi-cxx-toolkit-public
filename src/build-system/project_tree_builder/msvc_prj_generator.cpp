@@ -18,6 +18,8 @@ BEGIN_NCBI_SCOPE
 
 #if NCBI_COMPILER_MSVC
 
+#define __USE_DISABLED_CFGS__ 1
+
 static 
 void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
                                      const CMsvcPrjProjectContext& context,
@@ -172,9 +174,17 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
-    ITERATE(list<SConfigInfo>, p , m_project_configs) {
+#if __USE_DISABLED_CFGS__
+    const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
+#else
+    const list<SConfigInfo>& all_cfgs = m_project_configs;
+#endif
+    ITERATE(list<SConfigInfo>, p , all_cfgs) {
 
         const SConfigInfo& cfg_info = *p;
+        bool disabled_cfg = (m_project_configs.size() != all_cfgs.size() &&
+            find(m_project_configs.begin(), m_project_configs.end(),cfg_info) ==
+                 m_project_configs.end());
  
         // Contexts:
         
@@ -273,6 +283,15 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalLibraryDirectories);
             BIND_TOOLS(tool, msvc_tool.Linker(), LargeAddressAware);
             BIND_TOOLS(tool, msvc_tool.Linker(), FixedBaseAddress);
+#if __USE_DISABLED_CFGS__
+            if (disabled_cfg) {
+                tool->SetAttlist().SetGenerateManifest("false");
+            } else {
+                BIND_TOOLS(tool, msvc_tool.Linker(), GenerateManifest);
+            }
+#else
+            BIND_TOOLS(tool, msvc_tool.Linker(), GenerateManifest);
+#endif
 
             conf->SetTool().push_back(tool);
         }}
@@ -305,6 +324,12 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 //                tool->SetAttlist().SetAdditionalDependencies(m_pkg_export_input);
             }
 #endif
+#if __USE_DISABLED_CFGS__
+            if (disabled_cfg) {
+                tool->SetAttlist().SetCommandLine("@echo DISABLED configuration\n");
+                tool->SetAttlist().SetOutputs("aanofile");
+            }
+#endif
             conf->SetTool().push_back(tool);
         }}
 
@@ -329,7 +354,18 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         {{
             CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), Name);
+
+#if 0
+            if (disabled_cfg) {
+                string cmd_line("@echo DISABLED configuration\n");
+                tool->SetAttlist().SetCommandLine(cmd_line);
+            } else {
+                BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), CommandLine);
+            }
+#else
             BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), CommandLine);
+#endif
+
             conf->SetTool().push_back(tool);
         }}
 
@@ -442,7 +478,26 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
                 //Include collected header files
                 CRef<CFFile> file(new CFFile());
                 file->SetAttlist().SetRelativePath(*p);
+// exclude from disabled configurations
+#if __USE_DISABLED_CFGS__
+                if (m_project_configs.size() != all_cfgs.size()) {
+                    ITERATE(list<SConfigInfo>, p , all_cfgs) {
+                        if (find(m_project_configs.begin(), m_project_configs.end(),*p) ==
+                                m_project_configs.end()) {
+                            const string& config = (*p).GetConfigFullName();
+                            CRef<CFileConfiguration> file_config(new CFileConfiguration());
+                            file_config->SetAttlist().SetName(ConfigName(config));
+                            file_config->SetAttlist().SetExcludedFromBuild("TRUE");
 
+                            CRef<CTool> rescl_tool(new CTool());
+                            rescl_tool->SetAttlist().SetName("VCResourceCompilerTool");
+
+                            file_config->SetTool(*rescl_tool);
+                            file->SetFileConfiguration().push_back(file_config);
+                        }
+                    }
+                }
+#endif
                 CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
                 ce->SetFile(*file);
                 filter->SetFF().SetFF().push_back(ce);
@@ -700,11 +755,15 @@ void __SET_LINK_ELEMENT(
 
 template<typename Container>
 void __SET_RC_ELEMENT(
-    Container& container, const string& name, const string& value)
+    Container& container, const string& name, const string& value,
+    const string& condition = kEmptyStr)
 {
     CRef<msbuild::CResourceCompile::C_E> e(new msbuild::CResourceCompile::C_E);
     e->SetAnyContent().SetName(name);
     e->SetAnyContent().SetValue(value);
+    if (!condition.empty()) {
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+    }
     container->SetResourceCompile().SetResourceCompile().push_back(e);
 }
 template<typename Container>
@@ -731,6 +790,11 @@ void CMsvcProjectGenerator::GenerateMsbuild(
     msbuild::CProject project;
     project.SetAttlist().SetDefaultTargets("Build");
     project.SetAttlist().SetToolsVersion("4.0");
+#if __USE_DISABLED_CFGS__
+    const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
+#else
+    const list<SConfigInfo>& all_cfgs = m_project_configs;
+#endif
 
 // ProjectLevelTagExceptTargetOrImportType
     {
@@ -750,7 +814,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         // project configurations
         CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E> t(new msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E);
         t->SetItemGroup().SetAttlist().SetLabel("ProjectConfigurations");
-        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+        ITERATE(list<SConfigInfo>, c , all_cfgs) {
             string cfg_name(c->GetConfigFullName());
             string cfg_platform(CMsvc7RegSettings::GetMsvcPlatformName());
             {
@@ -770,7 +834,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 // ProjectLevelTagType
     // Configurations
     {
-        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+        ITERATE(list<SConfigInfo>, c , all_cfgs) {
 
             const SConfigInfo& cfg_info = *c;
             CMsvcPrjGeneralContext general_context(cfg_info, project_context);
@@ -801,7 +865,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
     }
     // PropertySheets
     {
-        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+        ITERATE(list<SConfigInfo>, c , all_cfgs) {
             string cfg_condition("'$(Configuration)|$(Platform)'=='");
             cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
 
@@ -833,7 +897,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         __SET_PROPGROUP_ELEMENT( t, "_ProjectFileVersion", GetApp().GetRegSettings().GetProjectFileFormatVersion());
 
         // OutDir/IntDir/TargetName
-        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+        ITERATE(list<SConfigInfo>, c , all_cfgs) {
 
             const SConfigInfo& cfg_info = *c;
             CMsvcPrjGeneralContext general_context(cfg_info, project_context);
@@ -845,11 +909,19 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             __SET_PROPGROUP_ELEMENT(t, "IntDir",          msvc_tool.Configuration()->IntermediateDirectory(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "TargetName",      project_context.ProjectId(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "LinkIncremental", msvc_tool.Linker()->LinkIncremental(), cfg_condition);
+            string prop = msvc_tool.Linker()->GenerateManifest();
+#if __USE_DISABLED_CFGS__
+            if (all_cfgs.size() != m_project_configs.size() &&
+                find(m_project_configs.begin(), m_project_configs.end(), *c) == m_project_configs.end()) {
+                prop = "false";
+            }
+#endif
+            __SET_PROPGROUP_ELEMENT(t, "GenerateManifest", prop, cfg_condition);
         }
     }
 
     // compilation settings
-    ITERATE(list<SConfigInfo>, c , m_project_configs) {
+    ITERATE(list<SConfigInfo>, c , all_cfgs) {
 
         const SConfigInfo& cfg_info = *c;
         CMsvcPrjGeneralContext general_context(cfg_info, project_context);
@@ -864,6 +936,12 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             // PreBuild event
             {
                 string cmd(msvc_tool.PreBuildEvent()->CommandLine());
+#if __USE_DISABLED_CFGS__
+                if (all_cfgs.size() != m_project_configs.size() &&
+                    find(m_project_configs.begin(), m_project_configs.end(), *c) == m_project_configs.end()) {
+                    cmd = "@echo DISABLED configuration\n";
+                }
+#endif
                 if (!cmd.empty()) {
                     CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
                     t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
@@ -982,9 +1060,15 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                 CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
                 t->SetItemGroup().SetItemGroup().push_back(p);
                 p->SetClCompile().SetAttlist().SetInclude(rel_source_file);
-                ITERATE(list<SConfigInfo>, c , m_project_configs) {
+                ITERATE(list<SConfigInfo>, c , all_cfgs) {
                     string cfg_condition("'$(Configuration)|$(Platform)'=='");
                     cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+#if __USE_DISABLED_CFGS__
+                    if (all_cfgs.size() != m_project_configs.size() &&
+                        find(m_project_configs.begin(), m_project_configs.end(), *c) == m_project_configs.end()) {
+                        __SET_CLCOMPILE_ELEMENT(p, "ExcludedFromBuild", "true", cfg_condition);
+                    }
+#endif
                     if (pch_use) {
                         if (!m_pch_define.empty()) {
                             __SET_CLCOMPILE_ELEMENT(p, "PreprocessorDefinitions", m_pch_define, cfg_condition);
@@ -1000,7 +1084,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                     first = false;
                 }
             } else {
-                ITERATE(list<SConfigInfo>, c, m_project_configs) {
+                ITERATE(list<SConfigInfo>, c, all_cfgs) {
                     const string& cfg_name = c->GetConfigFullName();
                     string cfg_file = NStr::Replace(rel_source_file, ".@config@", "." + cfg_name);
 
@@ -1008,10 +1092,16 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                     t->SetItemGroup().SetItemGroup().push_back(p);
                     p->SetClCompile().SetAttlist().SetInclude(cfg_file);
 
-                    ITERATE(list<SConfigInfo>, c2 , m_project_configs) {
+                    ITERATE(list<SConfigInfo>, c2 , all_cfgs) {
                         const string& cfg2_name = c2->GetConfigFullName();
                         string cfg_condition("'$(Configuration)|$(Platform)'=='");
                         cfg_condition += cfg2_name + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+#if __USE_DISABLED_CFGS__
+                        if (all_cfgs.size() != m_project_configs.size() &&
+                            find(m_project_configs.begin(), m_project_configs.end(), *c) == m_project_configs.end()) {
+                            __SET_CLCOMPILE_ELEMENT(p, "ExcludedFromBuild", "true", cfg_condition);
+                        } else
+#endif
                         if (cfg2_name != cfg_name) {
                             __SET_CLCOMPILE_ELEMENT(p, "ExcludedFromBuild", "true", cfg_condition);
                         }
@@ -1052,6 +1142,18 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
             t->SetItemGroup().SetItemGroup().push_back(p);
             p->SetResourceCompile().SetAttlist().SetInclude(rel_source_file);
+// exclude from disabled configurations
+#if __USE_DISABLED_CFGS__
+            if (m_project_configs.size() != all_cfgs.size()) {
+                ITERATE(list<SConfigInfo>, c , all_cfgs) {
+                    string cfg_condition("'$(Configuration)|$(Platform)'=='");
+                    cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+                    if (find(m_project_configs.begin(), m_project_configs.end(), *c) == m_project_configs.end()) {
+                        __SET_RC_ELEMENT(p, "ExcludedFromBuild", "true", cfg_condition);
+                    }
+                }
+            }
+#endif
         }
     }
     // custom build and datatool files
@@ -1082,7 +1184,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             t->SetItemGroup().SetItemGroup().push_back(p);
             p->SetCustomBuild().SetAttlist().SetInclude(rel_source_file);
             __SET_CUSTOMBUILD_ELEMENT(p,"FileType", "Document");
-            ITERATE(list<SConfigInfo>, c , m_project_configs) {
+            ITERATE(list<SConfigInfo>, c , all_cfgs) {
                 string cfg_condition("'$(Configuration)|$(Platform)'=='");
                 cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
                 __SET_CUSTOMBUILD_ELEMENT(p,"Message",
@@ -1296,6 +1398,11 @@ void CMsvcProjectGenerator::GenerateMsbuildFilters(
     msbuild::CProject filters;
     filters.SetAttlist().SetToolsVersion("4.0");
     string project_dir(project_context.ProjectDir());
+#if __USE_DISABLED_CFGS__
+    const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
+#else
+    const list<SConfigInfo>& all_cfgs = m_project_configs;
+#endif
 
     CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E> filter_list(new msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E);
     CMsbuildFileFilter::BeginNewProject();
@@ -1311,7 +1418,7 @@ void CMsvcProjectGenerator::GenerateMsbuildFilters(
             if ( NStr::Find(rel_source_file, ".@config@") == NPOS ) {
                 filter.AddFile(rel_source_file);
             } else {
-                ITERATE(list<SConfigInfo>, c, m_project_configs) {
+                ITERATE(list<SConfigInfo>, c, all_cfgs) {
                     const string& cfg_name = c->GetConfigFullName();
                     string cfg_file = NStr::Replace(rel_source_file, ".@config@", "." + cfg_name);
                     filter.AddFile(cfg_file);
