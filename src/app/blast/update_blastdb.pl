@@ -39,6 +39,7 @@ use Getopt::Long;
 use Pod::Usage;
 use File::stat;
 use Digest::MD5;
+use Archive::Tar;
 
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
 use constant BLAST_DB_DIR => "/blast/db";
@@ -57,7 +58,6 @@ my $opt_passive = 0;
 my $opt_timeout = 120;
 my $opt_showall = 0;
 my $opt_show_version = 0;
-my $opt_check_md5 = 1;
 my $result = GetOptions("verbose+"  =>  \$opt_verbose,
                         "quiet"     =>  \$opt_quiet,
                         "force"     =>  \$opt_force_download,
@@ -156,9 +156,10 @@ sub get_files_to_download
     return @retval;
 }
 
-# Download the requestes files only if they are missing or if they are newer in
-# the FTP site. Returns 0 if no files were downloaded, 1 if at least one file
-# was downloaded (so that this can be the application's exit code)
+# Download the requested files only if their checksum files are missing or if
+# these (or the archives) are newer in the FTP site. Returns 0 if no files were
+# downloaded, 1 if at least one file was downloaded (so that this can be the
+# application's exit code)
 sub download($)
 {
     my @requested_dbs = @ARGV;
@@ -167,42 +168,56 @@ sub download($)
     for my $file (@_) {
 
         my $attempts = 0;   # Download attempts for this file
-        if ($opt_verbose and &is_multivolume_db($file)) {
+        if ($opt_verbose and &is_multivolume_db($file) and $file =~ /00/) {
             my $db_name = &extract_db_name($file);
             my $nvol = &get_num_volumes($db_name, @_);
             print STDERR "Downloading $db_name (" . $nvol . " volumes) ...\n";
         }
 
+        # We preserve the checksum files as evidence of the downloaded archive
+        my $checksum_file = "$file.md5";
+        my $new_download = (-e $checksum_file ? 0 : 1);
+        my $update_available = ($new_download or 
+                    ((stat($checksum_file))->mtime < $ftp->mdtm($checksum_file)));
+        if (-e $file and (stat($file)->mtime < $ftp->mdtm($file))) {
+            $update_available = 1;
+        }
+
 download_file:
-        if ($opt_force_download or
-            not -f $file or 
-            ((stat($file))->mtime < $ftp->mdtm($file))) {
-            print STDERR "Downloading $file... " if $opt_verbose;
+        if ($opt_force_download or $new_download or $update_available) {
+            print STDERR "Downloading $file..." if $opt_verbose;
             $ftp->get($file);
-            if ($opt_check_md5) {
-                unless ($ftp->get("$file.md5")) {
-                    print STDERR "Failed to download $file.md5!\n";
+            unless ($ftp->get($checksum_file)) {
+                print STDERR "Failed to download $checksum_file!\n";
+                return EXIT_FAILURE;
+            }
+            my $rmt_digest = &read_md5_file($checksum_file);
+            my $lcl_digest = &compute_md5_checksum($file);
+            print "\nRMT $file Digest $rmt_digest" if (DEBUG);
+            print "\nLCL $file Digest $lcl_digest\n" if (DEBUG);
+            if ($lcl_digest ne $rmt_digest) {
+                unlink $file, $checksum_file;
+                if (++$attempts >= MAX_DOWNLOAD_ATTEMPTS) {
+                    print STDERR "too many failures, aborting download!\n";
                     return EXIT_FAILURE;
-                }
-                my $rmt_digest = &read_md5_file("$file.md5");
-                my $lcl_digest = &compute_md5_checksum($file);
-                print "\nRMT Digest $rmt_digest" if (DEBUG);
-                print "\nLCL Digest $lcl_digest\n" if (DEBUG);
-                if ($lcl_digest ne $rmt_digest) {
-                    unlink $file, "$file.md5";
-                    if (++$attempts >= MAX_DOWNLOAD_ATTEMPTS) {
-                        print STDERR "too many failures, aborting download!\n";
-                        return EXIT_FAILURE;
-                    } else {
-                        print "corrupt download, trying again.\n";
-                        goto download_file;
-                    }
+                } else {
+                    print "corrupt download, trying again.\n";
+                    goto download_file;
                 }
             }
-            print STDERR "done.\n" if $opt_verbose;
+            print STDERR ", uncompressing..." if $opt_verbose;
+            my $decompress_succeeded = Archive::Tar->extract_archive($file, 1);
+            unless ($decompress_succeeded) {
+                my $msg = "Failed to decompress $file ($Archive::Tar::error), ";
+                $msg .= "please do so manually.";
+                print STDERR "$msg\n";
+                next;
+            }
+            print STDERR " [OK]\n" if $opt_verbose;
+            unlink $file;   # Clean up archive, but preserve the checksum file
             $retval = 1 if ($retval == 0);
         } else {
-            print STDERR "$file is up to date.\n" if $opt_verbose;
+            print STDERR "The contents of $file are up to date in your system.\n" if $opt_verbose;
         }
     }
     return $retval;
