@@ -442,9 +442,10 @@ static bool s_OldVersionNumberLess(const string & a, const string & b)
     return one < two;
 }
 
-static string s_OldWindowMaskerTaxidToDb(int taxid)
+static string s_OldWindowMaskerTaxidToDb(const string& window_masker_path,
+                                         int taxid)
 {
-    string path = s_FindPathToWM();
+    string path = window_masker_path;
     path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
         + CFile::GetPathSeparator() + "*.*"
         + CFile::GetPathSeparator();
@@ -488,10 +489,9 @@ static string s_OldWindowMaskerTaxidToDb(int taxid)
     return max_str;
 }
 
-/* Unit test is in bl2seq_unit_test.cpp */
-string WindowMaskerTaxidToDb(int taxid)
+string WindowMaskerTaxidToDb(const string& window_masker_path, int taxid)
 {
-    string path = s_FindPathToWM();
+    string path = window_masker_path;
     path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
         + CFile::GetPathSeparator();
     
@@ -509,9 +509,16 @@ string WindowMaskerTaxidToDb(int taxid)
         /* NOTE: this code branch can be replaced by the exception thrown in
          * s_OldWindowMaskerTaxidToDb once the backwards compatibility code is
          * removed */
-        retval = s_OldWindowMaskerTaxidToDb(taxid);
+        retval = s_OldWindowMaskerTaxidToDb(window_masker_path, taxid);
     }
     return retval;
+}
+
+/* Unit test is in bl2seq_unit_test.cpp */
+string WindowMaskerTaxidToDb(int taxid)
+{
+    string path = s_FindPathToWM();
+    return WindowMaskerTaxidToDb(path, taxid);
 }
 
 void

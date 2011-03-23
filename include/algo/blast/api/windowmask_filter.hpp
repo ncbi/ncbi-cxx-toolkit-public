@@ -52,6 +52,14 @@ void GetTaxIdWithWindowMaskerSupport(set<int>& supported_taxids);
 /// @return empty string if not found
 NCBI_XBLAST_EXPORT string WindowMaskerTaxidToDb(int taxid);
 
+/// Get the windowmasker file path for a given taxid and base path
+/// @param taxid NCBI taxonomy ID to get windowmasker files for [in]
+/// @return empty string if not found
+/// @note Needed for GBench to ensure MT-safety, it this is not a concern, use
+/// the other overloaded version of WindowMaskerTaxidToDb
+NCBI_XBLAST_EXPORT string 
+WindowMaskerTaxidToDb(const string& window_masker_path, int taxid);
+
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
 
