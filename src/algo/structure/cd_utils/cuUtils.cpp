@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <util/xregexp/regexp.hpp>
+#include <util/ncbi_url.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
@@ -223,15 +224,23 @@ bool SameCDAccession(const CCdd_id& id1, const CCdd_id& id2) {
     return result;
 }
 
+bool IsPortalDerivedBookRef(const CCdd_book_ref& bookRef)
+{
+    //  'bookname' is a mandatory CCdd_book_ref element.
+    return (bookRef.GetBookname().substr(0, 3) == "NBK");
+}
 
 string CCddBookRefToString(const CCdd_book_ref& bookRef)
 {
-    return CCddBookRefToBvString(bookRef);
+    if (IsPortalDerivedBookRef(bookRef)) {
+        return CCddBookRefToPortalString(bookRef);
+    } else {
+        return CCddBookRefToBrString(bookRef);
+    }
 }
 
 string CCddBookRefToBvString(const CCdd_book_ref& bookRef)
 {
-//    static map<CCdd_book_ref::ETextelement, string> elementStringMap;
     string result;
     string elementid, subelementid, typeString;
     string bookname = bookRef.GetBookname();
@@ -255,8 +264,8 @@ string CCddBookRefToBvString(const CCdd_book_ref& bookRef)
         NStr::TruncateSpacesInPlace(subelementid);
 
         //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
-        const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::ENUM_METHOD_NAME(ETextelement)();
-        typeString = (allowedElements) ? allowedElements->FindName(bookRef.GetTextelement(), true) : allowedElements->FindName(CCdd_book_ref::eTextelement_unassigned, true);
+        const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::GetTypeInfo_enum_ETextelement();
+        typeString = (allowedElements) ? allowedElements->FindName(bookRef.GetTextelement(), true) : "unassigned";
     
         char buf[2048];
 
@@ -276,7 +285,6 @@ string CCddBookRefToBvString(const CCdd_book_ref& bookRef)
 
 string CCddBookRefToBrString(const CCdd_book_ref& bookRef)
 {
-//    static map<CCdd_book_ref::ETextelement, string> brBookElementStringMap;
     string result;
     string elementid, subelementid, renderType;
     string bookname = bookRef.GetBookname();
@@ -318,25 +326,81 @@ string CCddBookRefToBrString(const CCdd_book_ref& bookRef)
         elementType = bookRef.GetTextelement();
 
         if (elementType != CCdd_book_ref::eTextelement_chapter && elementType != CCdd_book_ref::eTextelement_section) {
+            if (elementType == CCdd_book_ref::eTextelement_unassigned || elementType == CCdd_book_ref::eTextelement_other) {
+                result = bookname + "&part=" + part;
+            } else {
 
-            //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
-            //  For 'eTextelement_figgrp', br.fcgi needs to use 'figure'.
-            const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::ENUM_METHOD_NAME(ETextelement)();
-            renderType = (allowedElements) ? allowedElements->FindName(elementType, true) : allowedElements->FindName(CCdd_book_ref::eTextelement_unassigned, true);
-            if (elementType == CCdd_book_ref::eTextelement_figgrp) {
-                renderType = "figure";
+                //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
+                const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::GetTypeInfo_enum_ETextelement();
+                renderType = kEmptyStr;
+
+                //  For 'eTextelement_figgrp', use 'figure'.
+                if (elementType == CCdd_book_ref::eTextelement_figgrp) {
+                    renderType = "figure";
+                //  For 'eTextelement_glossary', use 'def-item'.
+                } else if (elementType == CCdd_book_ref::eTextelement_glossary) {
+                    renderType = "def-item";
+                } else if (allowedElements) {
+                    renderType = allowedElements->FindName(elementType, true);
+                }
+                if (renderType.length() == 0) {
+                    renderType = "unassigned";
+                }
+            
+                if (id.length() == 0) {
+                    id = part;
+                }
+                result = bookname + "&part=" + part + "&rendertype=" + renderType + "&id=" + id;
             }
-        
-            if (id.length() == 0) {
-                id = part;
-            }
-            result = bookname + "&part=" + part + "&rendertype=" + renderType + "&id=" + id;
         } else {
             result = bookname + "&part=" + part;
             if (id.size() > 0)
                 result += "#" + id;
         }
 
+    }
+
+    return result;
+}
+
+//  The return value is a string used in Portal style URLs based on 
+//  .../books/NBK....  The only fields that should be present in 
+//  book ref objects are the bookname, text-element type, and a
+//  celementid.  Any other field in the spec is ignored.  
+string CCddBookRefToPortalString(const CCdd_book_ref& bookRef)
+{    
+    string result = bookRef.GetBookname();
+    string idStr, renderType;
+
+    CCdd_book_ref::ETextelement elementType = bookRef.GetTextelement();
+    const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::GetTypeInfo_enum_ETextelement();
+
+    //  'idStr' should exist for everything except chapters.  However, 
+    //  if we find a chapter with non-empty 'idStr' format it as a 
+    //  section.  Conversely, format sections with no 'idStr' as a chapter.
+    if (bookRef.IsSetCelementid()) {
+        idStr = bookRef.GetCelementid();
+    }
+
+    if (elementType != CCdd_book_ref::eTextelement_chapter && elementType != CCdd_book_ref::eTextelement_section) {
+
+        //  For 'eTextelement_figgrp', Portal URL requires 'figure'.
+        //  For 'eTextelement_glossary', Portal URL requires 'def-item'.
+        renderType = kEmptyStr;
+        if (elementType == CCdd_book_ref::eTextelement_figgrp)
+            renderType = "figure";
+        else if (elementType == CCdd_book_ref::eTextelement_glossary)
+            renderType = "def-item";
+        else if (allowedElements && elementType != CCdd_book_ref::eTextelement_unassigned)
+            renderType = allowedElements->FindName(elementType, true);
+
+        if (renderType.length() > 0) 
+            result += "/" + renderType + "/" + idStr;
+        else if (idStr.length() > 0)
+            result += "/#" + idStr;
+
+    } else if (idStr.length() > 0) {
+        result += "/#" + idStr;
     }
 
     return result;
@@ -351,8 +415,7 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
     CRegexp regexpRendertype("&part=(.*)&rendertype=(.*)&id=(.*)");
 
     //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
-    //  For 'eTextelement_figgrp', br.fcgi needs to use 'figure'.
-    const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::ENUM_METHOD_NAME(ETextelement)();
+    const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::GetTypeInfo_enum_ETextelement();
     
     NStr::Tokenize(brBookUrl, "#", sharpTokens);
     if (sharpTokens.size() == 1 || sharpTokens.size() == 2) {
@@ -370,10 +433,12 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
                 address = regexpRendertype.GetSub(firstTokenStr, 1);
                 typeStr = regexpRendertype.GetSub(firstTokenStr, 2);
 
-                //  br.fcgi uses 'figure' for 'eTextelement_figgrp'.
-                if (typeStr == "figure") {
+                //  'figure' maps to 'eTextelement_figgrp'
+                //  'def-item' maps to 'eTextelement_glossary'
+                if (typeStr == "figure")
                     typeStr = "figgrp";
-                }
+                else if (typeStr == "def-item")
+                    typeStr = "glossary";
 
                 if (allowedElements && !allowedElements->IsValidName(typeStr)) { 
                     typeStr = kEmptyStr;  //  problem if we don't have a known type
@@ -382,7 +447,7 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
                 }
             } else {  //  treat this as a 'section'
                 address = regexpCommon.GetSub(firstTokenStr, 2);
-                typeStr = (allowedElements) ? allowedElements->FindName(CCdd_book_ref::eTextelement_section, true) : kEmptyStr;
+                typeStr = (allowedElements) ? allowedElements->FindName(CCdd_book_ref::eTextelement_section, true) : "section";
 
                 //  If there's something after the '#', if it's an old-style
                 //  URL it could be numeric -> prepend 'A' in that case.
@@ -397,6 +462,7 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
 
         if (typeStr.length() > 0) {            
             try {
+                //  Throws an error is 'typeStr' is not found.
                 CCdd_book_ref::ETextelement typeEnum = (CCdd_book_ref::ETextelement) allowedElements->FindValue(typeStr);
                 bookRef->SetBookname(bookname);
                 bookRef->SetTextelement(typeEnum);
@@ -417,6 +483,115 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
 
     return result;
 }
+
+//  Break up URLs formatted as per Bookshelf URL scheme released 2010;
+//  allow use of the entire URL.
+//  
+//  section/chapter:
+//  books/<bookname>/#<elementid>
+//
+//  table/figure/box/glossary item:
+//  books/<bookname>/<elementtype>/<elementid>/
+//      -- OR --
+//  books/<bookname>/<elementtype>/<elementid>/?report=objectonly
+//      -- OR --
+//  books/<bookname>/?rendertype=<elementtype>&id=<elementid>
+//
+//  The 'bookname' is the prefix 'NBK' plus an "article ID" - usually numeric but
+//  allow for non-numeric values to be safe.  The 'elementid' is a string typically
+//  starting with 'A' if the remainder of the elementid is numeric.  However, in rare
+//  cases the elementid may have a different format for certain element types.
+//  For 'chapter' legacy book refs, or pages refering to an entire page vs. a specific
+//  location in a bookshelf document, the elementid may be undefined.
+//  Redirection by Entrez can generate the alternate 'rendertype' URL format
+//  for figures, tables, boxes, and glossary items (the latter being a 'def-item').
+//  All derived book references will exclusively use the Celementid CCdd_book_ref field; 
+//  the Csubelementid field no longer appears necessary in this URL scheme.
+bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef < CCdd_descr >& descr)
+{
+    bool result = false;
+    if (descr.Empty()) return result;
+
+    //  remove leading/trailing whitespace from input url
+    string inputStr = NStr::TruncateSpaces(portalBookUrl);
+
+    string baseStr, nbkCode, idStr;
+    string typeStr = kEmptyStr;
+    CRegexp regexpBase("/books/(NBK.+)");
+    CRegexp regexpNBK("^(NBK[^/]+)");
+    CRegexp regexpRendertype("^NBK[^/]+/(.+)/(.+)");
+
+    CUrl url(inputStr);
+    CUrlArgs& urlArgs = url.GetArgs();
+    string urlPath = url.GetPath();
+    string urlFrag = url.GetFragment();  //  fragment is text after trailing '#'
+
+    //  remove a trailing '/' in the path (e.g., '.../?report=objectonly' form of URLs)
+    if (NStr::EndsWith(urlPath, '/')) { 
+        urlPath = urlPath.substr(0, urlPath.length() - 1);
+    }
+
+    regexpBase.GetMatch(urlPath, 0, 0, CRegexp::fMatch_default, true);
+    if (regexpBase.NumFound() == 2) {  //  i.e., found full pattern + subpattern
+
+        baseStr = regexpBase.GetSub(urlPath, 1);
+        nbkCode = regexpNBK.GetMatch(baseStr);
+
+        regexpRendertype.GetMatch(baseStr, 0, 0, CRegexp::fMatch_default, true);        
+        if (regexpRendertype.NumFound() == 3) {  //  i.e., full pattern + two subpatterns
+            typeStr = regexpRendertype.GetSub(baseStr, 1);
+            idStr = regexpRendertype.GetSub(baseStr, 2);
+        } else if (urlArgs.IsSetValue("rendertype") && urlArgs.IsSetValue("id")) {
+            //  If the user somehow pasted a redirected br.fcgi URL.
+            typeStr = urlArgs.GetValue("rendertype");
+            idStr = urlArgs.GetValue("id");
+        } else if (urlFrag.length() > 0) {
+            //  A section id appears after the hash character.
+            typeStr = "section";
+            idStr = urlFrag;
+        } else if (urlFrag.length() == 0) {
+            //  If there is no URL fragment or obvious type, designate it 
+            //  a chapter and point to the top of this book page.
+            typeStr = "chapter";
+            idStr = kEmptyStr;
+        }
+    }
+
+    if (nbkCode.length() > 0) {
+
+        //  'figure' maps to 'eTextelement_figgrp'
+        //  'def-item' maps to 'eTextelement_glossary'
+        //  if have no type at this point, treat as either a section or chapter
+        if (typeStr == "figure")
+            typeStr = "figgrp";
+        else if (typeStr == "def-item")
+            typeStr = "glossary";
+//        else if (typeStr.length() == 0) 
+//            typeStr = (idStr.length() > 0) ? "section" : "chapter";
+
+        typeStr = kEmptyStr;
+
+        CCdd_book_ref::ETextelement typeEnum;
+        const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::GetTypeInfo_enum_ETextelement();
+        if (allowedElements && allowedElements->IsValidName(typeStr)) { 
+            //  Since 'IsValidName' is true, don't need to catch thrown 
+            //  error in the case 'typeStr' is not found.
+            typeEnum = (CCdd_book_ref::ETextelement) allowedElements->FindValue(typeStr);
+        } else {  
+            //  treat invalid typeStr as a 'section' or 'chapter'
+            typeEnum  = (idStr.length() > 0) ? CCdd_book_ref::eTextelement_section : CCdd_book_ref::eTextelement_chapter;
+        }
+
+        descr->SetBook_ref().SetBookname(nbkCode);
+        descr->SetBook_ref().SetTextelement(typeEnum);
+        descr->SetBook_ref().SetCelementid(idStr);
+        result = true;
+    }
+
+    return result;
+}
+
+
 
 bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* errString) {
 //-------------------------------------------------------------------
