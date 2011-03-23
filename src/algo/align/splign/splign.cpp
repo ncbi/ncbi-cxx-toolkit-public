@@ -1618,6 +1618,27 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             if(ii->m_exon) ++exon_count0;
         }
 
+        //drop low complexity terminal exons
+        bool first_exon = true;
+        TSegment *last_exon;
+        NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+            if(ii->m_exon) {
+                //first exon
+                if(first_exon && ii->IsLowComplexityExon(Seq1) ) {
+                    ii->SetToGap();
+                }
+                first_exon = false;
+                last_exon = &*ii;            
+            }
+        }
+        //last exon
+        if(exon_count0 > 1 && !first_exon) {
+            if(last_exon->IsLowComplexityExon(Seq1) ) {
+                last_exon->SetToGap();
+            }
+        }
+        
+
         // Go from the ends and see if we can improve term exons
         size_t k0 (0);
         while(k0 < seg_dim) {

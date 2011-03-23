@@ -329,6 +329,39 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
     }
 }
 
+size_t CNWFormatter::SSegment::GapLength()
+{
+    size_t gap_count = 0;
+    ITERATE(string, irs, m_details) {
+        switch(*irs) {            
+        case 'I':
+        case 'D':
+            ++gap_count;
+            break;
+        default:
+            break;
+        }
+    }
+    return gap_count;
+}
+
+
+bool CNWFormatter::SSegment::IsLowComplexityExon(const char *rna_seq)
+{
+    map<char, size_t> count;
+    for(size_t i = m_box[0]; i<=m_box[1]; ++i) {
+        ++count[rna_seq[i]];
+    }
+    size_t gap_len = GapLength();
+    for(map<char, size_t>::iterator i = count.begin(); i != count.end(); ++i) {
+        if( m_len * 70 <= 100 * (i->second + gap_len) ) {
+            return true;
+        }
+    }
+    return false;
+}
+   
+
 
 // try improving the segment by cutting it from the right
 void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2,
