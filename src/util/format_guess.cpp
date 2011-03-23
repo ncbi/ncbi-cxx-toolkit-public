@@ -190,7 +190,10 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "text ASN.1",
     "Taxplot",
     "Phrap ACE",
-    "table"
+    "table",
+    "GTF",
+    "GFF3",
+    "GFF2"
 };
 
 const char*
@@ -458,10 +461,13 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
 void
 CFormatGuess::Initialize()
 {
-    NCBI_ASSERT(eFormat_max-1 == sizeof( s_CheckOrder ) / sizeof( int ),
+    NCBI_ASSERT(eFormat_max-2 == sizeof( s_CheckOrder ) / sizeof( int ),
         "Indices in s_CheckOrder do not match format count ---"
         "update s_CheckOrder to list all formats" 
     );
+    NCBI_ASSERT(eFormat_max == sizeof(sm_FormatNames) / sizeof(const char*)
+                &&  sm_FormatNames[eFormat_max - 1] != NULL,
+                "sm_FormatNames does not list all possible formats");
     m_pTestBuffer = 0;
 
     m_bStatsAreValid = false;
