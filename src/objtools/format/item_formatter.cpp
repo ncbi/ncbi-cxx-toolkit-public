@@ -442,6 +442,15 @@ static void s_FixPages( string& pages )
 //  bug for bug compatible with the C toolkit version. 
 //
 {
+    // hack: special case for "doi" pages.
+    // This actually chops information away from the user, 
+    // but we do this to be compatible with C.
+    // Once we move away from C, we should remove this code
+    if( NStr::StartsWith(pages, "doi:") ) {
+        pages = "doi";
+        return;
+    }
+
     const char* digits = "0123456789";
     string::iterator it;
     string firstText, firstNumber, dash, lastText, lastNumber;
