@@ -562,6 +562,7 @@ CCgiApplication::CCgiApplication(void)
     DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
     RegisterDiagFactory("asbody", new CAsBodyDiagFactory(this));
+    cerr.tie(0);
 }
 
 
@@ -705,17 +706,25 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
     case eException:
         {
             CRequestContext& rctx = GetDiagContext().GetRequestContext();
-            if ( m_InputStream.get() ) {
-                if ( !m_InputStream->good() ) {
-                    m_InputStream->clear();
+            try {
+                if ( m_InputStream.get() ) {
+                    if ( !m_InputStream->good() ) {
+                        m_InputStream->clear();
+                    }
+                    rctx.SetBytesRd(NcbiStreamposToInt8(m_InputStream->tellg()));
                 }
-                rctx.SetBytesRd(NcbiStreamposToInt8(m_InputStream->tellg()));
             }
-            if ( m_OutputStream.get() ) {
-                if ( !m_OutputStream->good() ) {
-                    m_OutputStream->clear();
+            catch (exception&) {
+            }
+            try {
+                if ( m_OutputStream.get() ) {
+                    if ( !m_OutputStream->good() ) {
+                        m_OutputStream->clear();
+                    }
+                    rctx.SetBytesWr(NcbiStreamposToInt8(m_OutputStream->tellp()));
                 }
-                rctx.SetBytesWr(NcbiStreamposToInt8(m_OutputStream->tellp()));
+            }
+            catch (exception&) {
             }
             break;
         }
