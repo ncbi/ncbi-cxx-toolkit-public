@@ -632,9 +632,25 @@ SetupQueries_OMF(IBlastQuerySource& queries,
 }
 
 static void
-s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp, CSeqDB::TSequenceRanges& output)
+s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp, 
+                          const CSeq_loc* range,
+                          Int4 total_length,
+                          CSeqDB::TSequenceRanges& output)
 {
     output.clear();
+    
+    Int4 offset, length; 
+
+    _ASSERT(range->IsInt() || range->IsWhole());
+  
+    if (range->IsInt()) {
+         offset = range->GetInt().GetFrom();
+         length = range->GetInt().GetTo() - offset + 1;
+    } else {
+         offset = 0;
+         length = total_length;
+    }
+
     if (!slp || 
         slp->Which() == CSeq_loc::e_not_set || 
         slp->IsEmpty() || 
@@ -646,30 +662,37 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp, CSeqDB::TSequenceRanges& output)
 
     if (slp->IsInt()) {
         output.reserve(1);
-		CSeqDB::TOffsetPair p;
-		p.first=slp->GetInt().GetFrom();
-		p.second=slp->GetInt().GetTo();
-        output.push_back(p);
+        CSeqDB::TOffsetPair p;
+        p.first = MAX(slp->GetInt().GetFrom() - offset, 0);
+        p.second = MIN(slp->GetInt().GetTo() - offset, length-1);
+
+        if (p.second >= 0 && p.first < length) {
+            output.push_back(p);
+        }
     } else if (slp->IsPacked_int()) {
         output.reserve(slp->GetPacked_int().Get().size());
         ITERATE(CPacked_seqint::Tdata, itr, slp->GetPacked_int().Get()) {
-    		CSeqDB::TOffsetPair p;
-		    p.first=(*itr)->GetFrom();
-		    p.second=(*itr)->GetTo();
-            output.push_back(p);
+    	    CSeqDB::TOffsetPair p;
+            p.first = MAX((*itr)->GetFrom() - offset, 0);
+            p.second = MIN((*itr)->GetTo() - offset, length-1);
+
+            if (p.second >= 0 && p.first < length) {
+                output.push_back(p);
+            }
         }
     } else if (slp->IsMix()) {
         output.reserve(slp->GetMix().Get().size());
         ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
+    	    CSeqDB::TOffsetPair p;
             if ((*itr)->IsInt()) {
-				CSeqDB::TOffsetPair p;
-				p.first=(*itr)->GetInt().GetFrom();
-				p.second=(*itr)->GetInt().GetTo();
-                output.push_back(p);
+                p.first = MAX((*itr)->GetInt().GetFrom() - offset, 0);
+                p.second = MIN((*itr)->GetInt().GetTo() - offset, length-1);
             } else if ((*itr)->IsPnt()) {
-				CSeqDB::TOffsetPair p;
-				p.first=(*itr)->GetPnt().GetPoint();
-				p.second=(*itr)->GetPnt().GetPoint();
+                p.first = MAX((*itr)->GetPnt().GetPoint() - offset, 0);
+                p.second = MIN((*itr)->GetPnt().GetPoint() - offset, length-1);
+            }
+
+            if (p.second >= 0 && p.first < length) {
                 output.push_back(p);
             }
         }
@@ -734,16 +757,21 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
 
         /* Set the lower case mask, if it exists */
         if (subjects.GetMask(i).NotEmpty()) {
+            CConstRef<CSeq_loc> range = subjects.GetSeqLoc(i);
             const CSeq_loc* masks = subjects.GetMask(i);
+            Int4 length = subjects.GetLength(i);
             CSeqDB::TSequenceRanges masked_ranges;
             _ASSERT(masks);
-            s_SeqLoc2MaskedSubjRanges(masks, masked_ranges);
-            _ASSERT( !masked_ranges.empty() );
-            /// @todo: FIXME: this is inefficient, ideally, the masks shouldn't
-            /// be copied for performance reasons...
-            /// TODO bl2seq only use soft masking?
-            BlastSeqBlkSetSeqRanges(subj, (SSeqRange*) masked_ranges.get_data(),
+            s_SeqLoc2MaskedSubjRanges(masks, &*range, length,  masked_ranges);
+            if ( !masked_ranges.empty() ) {
+                /// @todo: FIXME: this is inefficient, ideally, the masks shouldn't
+                /// be copied for performance reasons...
+                /// TODO bl2seq only use soft masking?
+                BlastSeqBlkSetSeqRanges(subj, (SSeqRange*) masked_ranges.get_data(),
                                     masked_ranges.size() + 1, true, DB_MASK_SOFT);
+            } else {
+                subj->num_seq_ranges = 0;
+            }
         } else {
             subj->num_seq_ranges = 0;
         }
