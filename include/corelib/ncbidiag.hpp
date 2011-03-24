@@ -2511,6 +2511,30 @@ NCBI_XNCBI_EXPORT
 extern string GetLogFile(void);
 
 
+/// Use RW-lock for synchronization rather than mutex.
+/// NOTE:
+/// 1. The function should never be called when there are
+/// several threads running. Otherwise the result may
+/// be unpredictable. Also, do not call it from any diagnostic
+/// framework functions. E.g., it can not be called from
+/// CSomeDiagHandler::Post(). The best place to switch
+/// is in the very beginning of main().
+/// 2. In many cases switching to RW-lock will not improve
+/// the performance. E.g. any stream-based diag handlers including
+/// stderr will have to lock a mutex before writing a message anyway.
+/// Significant improvement may be seen only when using file handle
+/// based handlers which do atomic writes without additional locks.
+/// 3. If a custom diag handler is installed, it must take care
+/// about synchronization in Post() method. The framework only sets
+/// read lock before Post(), so it may be called from multiple
+/// threads at the same time.
+/// If in doubt, do not turn this on.
+/// The returned value is true on success, false if the switching
+/// fails for any reason.
+NCBI_XNCBI_EXPORT
+extern bool Diag_Use_RWLock(void);
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CDiagFactory --

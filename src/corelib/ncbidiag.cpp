@@ -72,7 +72,69 @@
 
 BEGIN_NCBI_SCOPE
 
+static bool s_DiagUseRWLock = false;
 DEFINE_STATIC_MUTEX(s_DiagMutex);
+static CSafeStaticPtr<CRWLock> s_DiagRWLock;
+
+
+bool Diag_Use_RWLock(void)
+{
+    if (s_DiagUseRWLock) return true;
+    // Try to detect at least some dangerous situations.
+    // This does not guarantee safety since some thread may
+    // be waiting for the mutex while we switch to RW-lock.
+    if ( !s_DiagMutex.TryLock() ) {
+        // Mutex is locked - fail
+        return false;
+    }
+    s_DiagUseRWLock = true;
+    s_DiagMutex.Unlock();
+}
+
+
+class CDiagLock
+{
+public:
+    enum ELockType {
+        eRead,   // read lock
+        eWrite,  // write lock (modifying flags etc.)
+        ePost    // lock used by diag handlers to lock stream in Post()
+    };
+
+    CDiagLock(ELockType locktype)
+        : m_UsedRWLock(false), m_LockType(locktype)
+    {
+        if (s_DiagUseRWLock) {
+            if (m_LockType == eRead) {
+                m_UsedRWLock = true;
+                s_DiagRWLock->ReadLock();
+                return;
+            }
+            if (m_LockType == eWrite) {
+                m_UsedRWLock = true;
+                s_DiagRWLock->WriteLock();
+                return;
+            }
+            // For ePost use normal mutex below.
+        }
+        s_DiagMutex.Lock();
+    }
+
+    ~CDiagLock(void)
+    {
+        if (m_UsedRWLock) {
+            s_DiagRWLock->Unlock();
+        }
+        else {
+            s_DiagMutex.Unlock();
+        }
+    }
+
+private:
+    bool      m_UsedRWLock;
+    ELockType m_LockType;
+};
+
 
 #if defined(NCBI_POSIX_THREADS) && defined(HAVE_PTHREAD_ATFORK)
 
@@ -255,7 +317,7 @@ void CDiagCollectGuard::x_Init(EDiagSev print_severity,
         csev = thr_data.GetCollectGuard()->GetCollectSeverity();
     }
     else {
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eRead);
         psev = CDiagBuffer::sm_PostSeverity;
         csev = CDiagBuffer::sm_PostSeverity;
     }
@@ -619,7 +681,7 @@ void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
 {
     if ( cleanup_data ) {
         // Copy properties from the main thread's TLS to the global properties.
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eWrite);
         CDiagContextThreadData::TProperties* props =
             value->GetProperties(CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
         if ( props ) {
@@ -760,7 +822,7 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
         // the last guard.
     }
     // If this is the last guard, perform its action
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     if (guard->GetAction() == CDiagCollectGuard::ePrint) {
         CDiagHandler* handler = GetDiagHandler();
         if ( handler ) {
@@ -1177,7 +1239,7 @@ void CDiagContext::x_CreateUID(void) const
 CDiagContext::TUID CDiagContext::GetUID(void) const
 {
     if ( !m_UID ) {
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eWrite);
         if ( !m_UID ) {
             x_CreateUID();
         }
@@ -1463,7 +1525,7 @@ void CDiagContext::SetProperty(const string& name,
     }
 
     if ( mode == eProp_Global ) {
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eWrite);
         m_Properties[name] = value;
     }
     else {
@@ -1474,7 +1536,7 @@ void CDiagContext::SetProperty(const string& name,
         (*props)[name] = value;
     }
     if ( sm_Instance  &&  TAutoWrite_Context::GetDefault() ) {
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eRead);
         x_PrintMessage(SDiagMessage::eEvent_Extra, name + "=" + value);
     }
 }
@@ -1544,7 +1606,7 @@ string CDiagContext::GetProperty(const string& name,
         }
     }
     // Check global properties
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eRead);
     TProperties::const_iterator gprop = m_Properties.find(name);
     return gprop != m_Properties.end() ? gprop->second : kEmptyStr;
 }
@@ -1570,7 +1632,7 @@ void CDiagContext::DeleteProperty(const string& name,
         }
     }
     // Check global properties
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eRead);
     TProperties::iterator gprop = m_Properties.find(name);
     if (gprop != m_Properties.end()) {
         m_Properties.erase(gprop);
@@ -1581,7 +1643,7 @@ void CDiagContext::DeleteProperty(const string& name,
 void CDiagContext::PrintProperties(void)
 {
     {{
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eRead);
         ITERATE(TProperties, gprop, m_Properties) {
             x_PrintMessage(SDiagMessage::eEvent_Extra,
                 gprop->first + "=" + gprop->second);
@@ -1736,7 +1798,7 @@ void CDiagContext::PrintRequestStop(void)
 
 EDiagAppState CDiagContext::GetGlobalAppState(void) const
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eRead);
     return m_AppState;
 }
 
@@ -1750,7 +1812,7 @@ EDiagAppState CDiagContext::GetAppState(void) const
 
 void CDiagContext::SetGlobalAppState(EDiagAppState state)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     m_AppState = state;
 }
 
@@ -1764,7 +1826,7 @@ void CDiagContext::SetAppState(EDiagAppState state)
     case eDiagAppState_AppEnd:
         {
             ctx.SetAppState(eDiagAppState_NotSet);
-            CMutexGuard LOCK(s_DiagMutex);
+            CDiagLock lock(CDiagLock::eWrite);
             m_AppState = state;
             break;
         }
@@ -2450,7 +2512,7 @@ void* s_DiagHandlerInitializer = InitDiagHandler();
 
 CDiagHandler* CreateDefaultDiagHandler(void)
 {
-    CMutexGuard guard(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     static bool s_DefaultDiagHandlerInitialized = false;
     if ( !s_DefaultDiagHandlerInitialized ) {
         s_DefaultDiagHandlerInitialized = true;
@@ -2499,7 +2561,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
     bool applog = (mess.m_Flags & eDPF_AppLog);
     bool is_printable = applog  ||  SeverityPrintable(mess.m_Severity);
     if ( CDiagBuffer::sm_Handler ) {
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eRead);
         if ( CDiagBuffer::sm_Handler ) {
             // The mutex must be locked before approving.
             CDiagBuffer& diag_buf = GetDiagBuffer();
@@ -2744,7 +2806,7 @@ void CDiagBuffer::Flush(void)
 
 bool CDiagBuffer::GetTraceEnabledFirstTime(void)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     const TXChar* str = NcbiSys_getenv(_T_XCSTRING(DIAG_TRACE));
     if (str  &&  *str) {
         sm_TraceDefault = eDT_Enable;
@@ -2758,7 +2820,7 @@ bool CDiagBuffer::GetTraceEnabledFirstTime(void)
 
 bool CDiagBuffer::GetSeverityChangeEnabledFirstTime(void)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     if ( sm_PostSeverityChange != eDiagSC_Unknown ) {
         return sm_PostSeverityChange == eDiagSC_Enable;
     }
@@ -4109,7 +4171,7 @@ CDiagAutoPrefix::~CDiagAutoPrefix(void)
 static TDiagPostFlags s_SetDiagPostAllFlags(TDiagPostFlags& flags,
                                             TDiagPostFlags  new_flags)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
 
     TDiagPostFlags prev_flags = flags;
     if (new_flags & eDPF_Default) {
@@ -4126,7 +4188,7 @@ static void s_SetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
     if (flag == eDPF_Default)
         return;
 
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     flags |= flag;
     // Assume flag is set by user
     s_MergeLinesSetBySetupDiag = false;
@@ -4138,7 +4200,7 @@ static void s_UnsetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
     if (flag == eDPF_Default)
         return;
 
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     flags &= ~flag;
     // Assume flag is set by user
     s_MergeLinesSetBySetupDiag = false;
@@ -4217,7 +4279,7 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
                    "[eDiagSevMin..eDiagSevMax]");
     }
 
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
     if ( CDiagBuffer::sm_PostSeverityChange != eDiagSC_Disable) {
         if (post_sev == eDiag_Trace) {
@@ -4247,7 +4309,7 @@ extern bool IsVisibleDiagPostLevel(EDiagSev sev)
     }
     EDiagSev sev2;
     {{
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eRead);
         sev2 = AdjustApplogPrintableSeverity(CDiagBuffer::sm_PostSeverity);
     }}
     return CompareDiagPostLevel(sev, sev2) >= 0;
@@ -4263,7 +4325,7 @@ extern void SetDiagFixedPostLevel(const EDiagSev post_sev)
 
 extern bool DisableDiagPostLevelChange(bool disable_change)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     bool prev_status = (CDiagBuffer::sm_PostSeverityChange == eDiagSC_Enable);
     CDiagBuffer::sm_PostSeverityChange = disable_change ? eDiagSC_Disable : 
                                                           eDiagSC_Enable;
@@ -4279,7 +4341,7 @@ extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
                    "[eDiagSevMin..eDiag_Fatal]");
     }
 
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     EDiagSev sev = CDiagBuffer::sm_DieSeverity;
     CDiagBuffer::sm_DieSeverity = die_sev;
     return sev;
@@ -4288,7 +4350,7 @@ extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
 
 extern bool IgnoreDiagDieLevel(bool ignore)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     bool retval = CDiagBuffer::sm_IgnoreToDie;
     CDiagBuffer::sm_IgnoreToDie = ignore;
     return retval;
@@ -4297,7 +4359,7 @@ extern bool IgnoreDiagDieLevel(bool ignore)
 
 extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     (void) CDiagBuffer::GetTraceEnabled();
 
     if (dflt != eDT_Default)
@@ -4362,6 +4424,7 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
 
     CNcbiOstrstream str_os;
     mess.x_OldWrite(str_os);
+    CDiagLock lock(CDiagLock::ePost);
     cerr.write(str_os.str(), str_os.pcount());
     str_os.rdbuf()->freeze(false);
     cerr << NcbiFlush;
@@ -4370,7 +4433,7 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
 
 extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     CDiagContext& ctx = GetDiagContext();
     bool report_switch = ctx.IsSetOldPostFormat()  &&
         CDiagContext::GetProcessPostNumber(ePostNumber_NoIncrement) > 0;
@@ -4410,7 +4473,7 @@ extern bool IsSetDiagHandler(void)
 
 extern CDiagHandler* GetDiagHandler(bool take_ownership)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eRead);
     if (take_ownership) {
         _ASSERT(CDiagBuffer::sm_CanDeleteHandler);
         CDiagBuffer::sm_CanDeleteHandler = false;
@@ -4441,6 +4504,7 @@ void CDiagHandler::PostToConsole(const SDiagMessage& mess)
         // Already posted to console.
         return;
     }
+    CDiagLock lock(CDiagLock::ePost);
     if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
         CNcbiOstrstream str_os;
         str_os << mess;
@@ -4491,6 +4555,7 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
     if ( !m_Stream ) {
         return;
     }
+    CDiagLock lock(CDiagLock::ePost);
     if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
         CNcbiOstrstream str_os;
         str_os << mess;
@@ -4561,6 +4626,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         mode, perm);
     m_ReopenTimer->Restart();
     if (m_Handle == -1) {
+        /*
         string msg;
         switch ( errno ) {
         case EACCES:
@@ -4576,13 +4642,14 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
             msg = "too many open files";
             break;
         case ENOENT:
-            msg = "invalid file or directoty name";
+            msg = "invalid file or directory name";
             break;
         }
+        ERR_POST_X(6, Info << "Failed to reopen log: " << msg);
+        */
         if ( !m_Messages.get() ) {
             m_Messages.reset(new TMessages);
         }
-        // ERR_POST_X(6, Info << "Failed to reopen log: " << msg);
         return;
     }
     // Flush the collected messages, if any, once the handle if available
@@ -4604,7 +4671,11 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
     // Period is longer than for CFileDiagHandler to prevent double-reopening
     if (!m_ReopenTimer->IsRunning()  ||
         m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5) {
-        Reopen(fDefault);
+        CDiagLock lock(CDiagLock::ePost);
+        if (!m_ReopenTimer->IsRunning()  ||
+            m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5) {
+            Reopen(fDefault);
+        }
     }
 
     // If the handle is not available, collect the messages until they
@@ -4617,6 +4688,8 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
         return;
     }
 
+    // write() is atomic, no need to lock mutex. This is the only place
+    // which works faster when using s_DiagRWLock.
     CNcbiOstrstream str_os;
     str_os << mess;
     if (write(m_Handle, str_os.str(),
@@ -4962,7 +5035,11 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
     // Check time and re-open the streams
     if (!m_ReopenTimer->IsRunning()  ||
         m_ReopenTimer->Elapsed() >= kLogReopenDelay) {
-        Reopen(fDefault);
+        CDiagLock lock(CDiagLock::ePost);
+        if (!m_ReopenTimer->IsRunning()  ||
+            m_ReopenTimer->Elapsed() >= kLogReopenDelay) {
+            Reopen(fDefault);
+        }
     }
 
     // Output the message
@@ -5091,7 +5168,7 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 
 extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     if ( CDiagBuffer::sm_CanDeleteErrCodeInfo  &&
          CDiagBuffer::sm_ErrCodeInfo )
         delete CDiagBuffer::sm_ErrCodeInfo;
@@ -5106,7 +5183,7 @@ extern bool IsSetDiagErrCodeInfo(void)
 
 extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eRead);
     if (take_ownership) {
         _ASSERT(CDiagBuffer::sm_CanDeleteErrCodeInfo);
         CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
@@ -5117,7 +5194,7 @@ extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership)
 
 extern void SetDiagFilter(EDiagFilter what, const char* filter_str)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     if (what == eDiagFilter_Trace  ||  what == eDiagFilter_All) 
         s_TraceFilter->Fill(filter_str);
 
@@ -5132,7 +5209,7 @@ bool s_CheckDiagFilter(const CException& ex, EDiagSev sev, const char* file)
     if (sev == eDiag_Fatal) 
         return true;
 
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eRead);
 
     // check for trace filter
     if (sev == eDiag_Trace) {
@@ -5242,7 +5319,7 @@ bool CNcbiDiag::CheckFilters(void) const
     if (current_sev == eDiag_Fatal) 
         return true;
 
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eRead);
     if (GetSeverity() == eDiag_Trace) {
         // check for trace filter
         return  s_TraceFilter->Check(*this, this->GetSeverity())
@@ -5415,7 +5492,7 @@ void CNcbiDiag::DiagValidate(const CDiagCompileInfo& info,
 
 CDiagRestorer::CDiagRestorer(void)
 {
-    CMutexGuard LOCK(s_DiagMutex);
+    CDiagLock lock(CDiagLock::eWrite);
     const CDiagBuffer& buf  = GetDiagBuffer();
     m_PostPrefix            = buf.m_PostPrefix;
     m_PrefixList            = buf.m_PrefixList;
@@ -5440,7 +5517,7 @@ CDiagRestorer::CDiagRestorer(void)
 CDiagRestorer::~CDiagRestorer(void)
 {
     {{
-        CMutexGuard LOCK(s_DiagMutex);
+        CDiagLock lock(CDiagLock::eWrite);
         CDiagBuffer& buf          = GetDiagBuffer();
         buf.m_PostPrefix          = m_PostPrefix;
         buf.m_PrefixList          = m_PrefixList;
