@@ -136,6 +136,8 @@ public:
         eRemoveOrgmod, // 70
         eRemoveSubSource,
         eCreateGeneNomenclature,
+        eCleanSeqFeatXrefs,
+        eCleanUserObjectOrField,
 
         // set when any other change is made.
         eChangeOther,

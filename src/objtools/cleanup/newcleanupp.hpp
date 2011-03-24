@@ -276,6 +276,31 @@ private:
 
 private:
 
+    // data structures used for post-processing
+
+    // recorded by x_NotePubdescOrAnnotPubs
+    typedef std::map<int, int> TMuidToPmidMap;
+    TMuidToPmidMap m_MuidToPmidMap;
+    // recorded by x_RememberMuidThatMightBeConvertibleToPmid
+    typedef std::vector< CRef<CPub> > TMuidPubContainer;
+    TMuidPubContainer m_MuidPubContainer;
+    // m_OldLabelToPubMap and m_PubToNewPubLabelMap work together.
+    // They supply "old_label -> node" and "node -> new_label", respectively,
+    // so together we can get a mapping of "old_label -> new_label".
+    // m_OldLabelToPubMap is a multimap because a node's address may change as we do our cleaning, and 
+    // at least one should remain so we can make the "old_label -> new_label" connection.
+    typedef std::multimap< string, CRef<CPub> > TOldLabelToPubMap;
+    TOldLabelToPubMap m_OldLabelToPubMap;
+    // remember label changes
+    typedef std::map< CRef<CPub>, string > TPubToNewPubLabelMap;
+    TPubToNewPubLabelMap m_PubToNewPubLabelMap;
+    // remember all Seq-feat CPubs so we remember to change them later
+    typedef std::vector< CRef<CPub> > TSeqFeatCitPubContainer;
+    TSeqFeatCitPubContainer m_SeqFeatCitPubContainer;
+    // note all Pubdesc/annot cit-gen labels
+    typedef std::vector<string> TPubdescCitGenLabelVec;
+    TPubdescCitGenLabelVec m_PubdescCitGenLabelVec;
+
     enum EGBQualOpt {
         eGBQualOpt_normal,
         eGBQualOpt_CDSMode
@@ -358,18 +383,39 @@ private:
     void x_MoveSeqdescOrgToSourceOrg( COrg_ref &org, CSeqdesc &seqdesc );
     void x_MoveSeqfeatOrgToSourceOrg( COrg_ref &org, CSeq_feat &seqfeat );
 
+    // string cleanup funcs
     void x_CleanupStringMarkChanged( std::string &str );
     void x_ConvertDoubleQuotesMarkChanged( std::string &str );
     void x_CompressStringSpacesMarkChanged( std::string &str );
-    void x_StripSpacesMarkChanged(string& str);
+    void x_StripSpacesMarkChanged( std::string& str );
+    void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );
 
     void x_SortUniqSeqFeat( CSeq_feat& seq_feat );
     void x_SortUniqOrgRef( COrg_ref& org );
     void x_SortUniqBiosource( CBioSource& biosrc );
 
-    void x_TranslateITSName( string &in_out_name );
+    void x_TranslateITSName( string &in_out_name ) ;
 
     void x_PCRPrimerSetBC( CPCRPrimerSet &primer_set );
+
+    void x_CopyGBBlockDivToOrgnameDiv( CSeq_entry &seq_entry);
+
+    void x_AuthListBCWithFixInitials( CAuth_list& al );
+
+    void x_AddNumToUserField( CUser_field &field );
+
+    // After we've traversed the hierarchy of objects, there may be some
+    // processing that can only be done after the traversal is complete.
+    // This function does that processing.
+    void x_PostProcessing(void);
+
+    // functions that prepare for post-processing while traversing
+    void x_NotePubdescOrAnnotPubs( const CPub_equiv &pub_equiv );
+    void x_NotePubdescOrAnnotPubs_RecursionHelper( 
+        const CPub_equiv &pub_equiv, int &muid, int &pmid );
+    void x_RememberPubOldLabel( CPub &pub );
+    void x_RememberMuidThatMightBeConvertibleToPmid( int &muid, CPub &pub );
+    void x_RememberSeqFeatCitPubs( CPub &pub );
 
 protected:
 

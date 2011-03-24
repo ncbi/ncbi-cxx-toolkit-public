@@ -582,6 +582,12 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define RAW_FIELD_IS_EMPTY_OR_UNSET(Var, Fld) \
     ( ! (Var).IsSet##Fld() || (Var).Get##Fld().empty() )
 
+/// SET_FIELD_IF_UNSET macro
+
+// (The do-while is just so the user has to put a semi-colon after it)
+#define SET_FIELD_IF_UNSET(Var, Fld, Val) \
+    do { if( ! (Var).IsSet##Fld() ) { (Var).Set##Fld(Val); ChangeMade(CCleanupChange::eChangeQualifiers); } } while(false)
+
 /// RESET_FIELD_IF_EMPTY base macro
 
 // (The do-while is just so the user has to put a semi-colon after it)
@@ -698,15 +704,17 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
 
 #define UNIQUE_WITHOUT_SORT(Base, Var, FuncType) \
 { \
-    set<Base##_Type::value_type, FuncType> valuesAlreadySeen; \
-    Base##_Type non_duplicate_items; \
-    FOR_EACH(Base, iter, Var ) { \
-        if( valuesAlreadySeen.find(*iter) == valuesAlreadySeen.end() ) { \
-            non_duplicate_items.push_back( *iter ); \
-            valuesAlreadySeen.insert( *iter ); \
-        } \
+    if( Base##_Test(Var) ) { \
+      set<Base##_Type::value_type, FuncType> valuesAlreadySeen; \
+      Base##_Type non_duplicate_items; \
+      FOR_EACH(Base, iter, Var ) { \
+          if( valuesAlreadySeen.find(*iter) == valuesAlreadySeen.end() ) { \
+              non_duplicate_items.push_back( *iter ); \
+              valuesAlreadySeen.insert( *iter ); \
+          } \
+      } \
+      Base##_Set(Var).swap( non_duplicate_items ); \
     } \
-    Base##_Set(Var).swap( non_duplicate_items ); \
 }
 
 
@@ -2747,6 +2755,10 @@ IS_UNIQUE (KEYWORD_ON_GENBANKBLOCK, Var, Func)
 #define UNIQUE_KEYWORD_ON_GENBANKBLOCK(Var, Func) \
 DO_UNIQUE (KEYWORD_ON_GENBANKBLOCK, Var, Func)
 
+/// UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK
+
+#define UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK(Var, FuncType) \
+UNIQUE_WITHOUT_SORT( KEYWORD_ON_GENBANKBLOCK, Var, FuncType )
 
 ///
 /// CEMBL_block macros
@@ -2856,6 +2868,11 @@ IS_UNIQUE (KEYWORD_ON_EMBLBLOCK, Var, Func)
 #define UNIQUE_KEYWORD_ON_EMBLBLOCK(Var, Func) \
 DO_UNIQUE (KEYWORD_ON_EMBLBLOCK, Var, Func)
 
+
+/// UNIQUE_WITHOUT_SORT_KEYWORD_ON_EMBLBLOCK
+
+#define UNIQUE_WITHOUT_SORT_KEYWORD_ON_EMBLBLOCK(Var, FuncType) \
+UNIQUE_WITHOUT_SORT(KEYWORD_ON_EMBLBLOCK, Var, FuncType)
 
 ///
 /// CPDB_block macros

@@ -362,6 +362,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Remove Orgmod",
     "Remove SubSource",
     "Create Gene Nomenclature",
+    "Clean Seq-feat xref",
+    "Clean User-Object Or -Field",
 
     // set when any other change is made.
     "Change Other", 
