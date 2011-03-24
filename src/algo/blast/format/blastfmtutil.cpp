@@ -324,7 +324,7 @@ CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & 
     CRef<CUser_object> blast_db_info(new CUser_object);
     static const string kBlastDBTitle("Blast Database Title");
     blast_db_info->SetType().SetStr(kBlastDBTitle);
-    if(0 == db_name.size())
+    if(0 == db_name.size() || 0 == NStr::CompareNocase(db_name, "n/a"))
     {
     	blast_db_info->AddField( "n/a", false );
     }
