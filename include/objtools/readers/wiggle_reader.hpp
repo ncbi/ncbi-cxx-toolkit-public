@@ -40,9 +40,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CWiggleSet;
 class CWiggleRecord;
-class CIdMapper;
+class CWiggleTrack;
 
 //  ----------------------------------------------------------------------------
 enum CWiggleLineType
@@ -138,9 +137,7 @@ protected:
     /* throws CObjReaderLineException */
 
     void x_ParseGraphData(
-        ILineReader&,
-        string&,
-        vector<string>& parts,
+        const vector<string>& parts,
         CWiggleRecord& );
     /* throws CObjReaderLineException */
 
@@ -173,8 +170,8 @@ protected:
     unsigned int m_uCurrentRecordType;
     string m_strDefaultTrackName;
     string m_strDefaultTrackTitle;
-    CWiggleSet* m_pSet;
     TFlags m_Flags;
+    CWiggleTrack* m_pTrack;
 };
 
 END_objects_SCOPE

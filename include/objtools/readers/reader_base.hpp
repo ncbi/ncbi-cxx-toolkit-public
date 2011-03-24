@@ -103,6 +103,9 @@ public:
     //  Class helper functions:
     //
 protected:
+    virtual bool x_IsTrackLine(
+        const string& );
+
     virtual bool x_ParseBrowserLine(
         const string&,
         CRef<CSeq_annot>& );

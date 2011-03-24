@@ -359,12 +359,21 @@ bool CReaderBase::x_ParseBrowserLine(
 
 
 //  ----------------------------------------------------------------------------
+bool CReaderBase::x_IsTrackLine(
+    const string& strLine )
+//  ----------------------------------------------------------------------------
+{
+    return ( NStr::StartsWith( strLine, "track" ) );
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CReaderBase::x_ParseTrackLine(
     const string& strLine,
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! NStr::StartsWith( strLine, "track" ) ) {
+    if ( ! x_IsTrackLine( strLine ) ) {
         return false;
     }
     CAnnot_descr& desc = annot->SetDesc();

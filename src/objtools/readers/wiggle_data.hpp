@@ -60,9 +60,10 @@ class CWiggleData
     friend class CWiggleTrack;
 public:
     CWiggleData(
-        unsigned int,
-        unsigned int,
-        double );
+        unsigned int );
+    CWiggleData(
+        const CWiggleRecord& );
+
     ~CWiggleData() {};
 
     void Dump(
@@ -74,6 +75,9 @@ public:
 
     bool operator<(const CWiggleData& d) const {
         return m_uSeqStart < d.m_uSeqStart;
+    }
+    bool Matches( const CWiggleData& d ) const {
+        return (m_uSeqStart == d.m_uSeqStart);
     }
     
 protected:
@@ -90,48 +94,6 @@ protected:
     unsigned int m_uSeqStart;
     unsigned int m_uSeqSpan;
     double m_dValue;
-};
-
-// ===========================================================================
-class CWiggleSet
-//  ===========================================================================
-{
-public:
-    CWiggleSet();
-    ~CWiggleSet() {};
-
-    string Name() const { return m_strName; };
-    void SetName( const string& strName ) { m_strName = strName; };
-    string Title() const { return m_strTitle; };
-    void SetTitle( const string& strTitle ) { m_strTitle = strTitle; };
-
-    bool AddRecord(
-        const CWiggleRecord& );
-
-    void MakeGraph(
-        CSeq_annot::TData::TGraph& );
-
-    void MakeTable(
-        CSeq_table&,
-        bool,
-        bool );
-
-    void Dump(
-        CNcbiOstream& );
-
-    size_t Count() const { return m_Tracks.size(); };
-
-    void DumpStats(
-        CNcbiOstream& );                    
-protected:
-    bool FindTrack(
-        const std::string&,
-        CWiggleTrack*& );
-
-    TrackMap m_Tracks;
-    CIdMapper* m_pMapper;
-    string m_strName;
-    string m_strTitle;
 };
 
 //  ===========================================================================
@@ -159,9 +121,6 @@ public:
     void MakeGraph(
         const string& strName,
         const string& strTitle,
-        CSeq_annot::TData::TGraph& );
-        
-    void MakeGraphs(
         CSeq_annot::TData::TGraph& );
         
     void MakeTable(

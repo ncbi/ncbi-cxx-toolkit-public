@@ -109,6 +109,7 @@ CWiggleReader::CWiggleReader(
     m_strDefaultTrackTitle( "" ),
     m_Flags( flags )
 {
+    m_pTrack = 0;
 }
 
 //  ----------------------------------------------------------------------------
@@ -139,7 +140,6 @@ CWiggleReader::ReadSeqAnnot(
     static size_t count( 0 );
     count ++;
 
-    m_pSet = new CWiggleSet();
     CRef< CSeq_annot > pAnnot;
     if (m_Flags & fAsGraph) {
         pAnnot = ReadSeqAnnotGraph( lr, pErrorContainer );
@@ -147,7 +147,8 @@ CWiggleReader::ReadSeqAnnot(
     else {
         pAnnot = ReadSeqAnnotTable( lr, pErrorContainer );
     } 
-    delete m_pSet;
+    delete m_pTrack;
+    m_pTrack = 0;
     return pAnnot;
 }
     
@@ -201,25 +202,33 @@ CWiggleReader::ReadSeqAnnotGraph(
             if ( x_ParseBrowserLine( pending, annot ) ) {
                 continue;
             }
-            if ( x_ParseTrackData( pending, annot, record ) ) {
+            if ( x_IsTrackLine( pending ) ) {
                 if ( ! bTrackFound ) {
+                    x_ParseTrackData( pending, annot, record );
                     bTrackFound = true;
                     continue;
                 }
                 else {
                     // must belong to the next track- put it back and bail
                     lr.UngetLine();
+                    bNewChromFound = true;
                     break;
                 }
             }
+            bTrackFound = true;
             parts.clear();
             Tokenize( pending, s_WiggleDelim, parts );
             unsigned int uLineType = x_GetLineType( parts ); 
             switch( uLineType ) {
 
                 default: {
-                    x_ParseGraphData( lr, pending, parts, record );
-                    m_pSet->AddRecord( record );
+                    x_ParseGraphData( parts, record );
+                    if ( 0 == m_pTrack ) {
+                        m_pTrack = new CWiggleTrack( record );
+                    }
+                    else {
+                        m_pTrack->AddRecord( record );
+                    }
                     continue;
                 }
                 case TYPE_DECLARATION_VARSTEP: {
@@ -267,10 +276,10 @@ CWiggleReader::ReadSeqAnnotGraph(
             ProcessError( err, pErrorContainer );
         }
     }
-    if ( m_pSet->Count() == 0 ) {
+    if ( 0 == m_pTrack ) {
         return CRef<CSeq_annot>();
     }
-    if ( !bTrackFound ) {
+    try {
         CAnnot_descr& desc = annot->SetDesc();
         CRef<CAnnotdesc> title( new CAnnotdesc() );
         title->SetTitle( m_strDefaultTrackTitle );
@@ -278,9 +287,8 @@ CWiggleReader::ReadSeqAnnotGraph(
         CRef<CAnnotdesc> name( new CAnnotdesc() );
         name->SetName( m_strDefaultTrackName );
         desc.Set().push_back( name );
-    }
-    try {
-        m_pSet->MakeGraph( graphset );
+
+        m_pTrack->MakeGraph( "", "", graphset );
     }
     catch( CObjReaderLineException& err ) {
         ProcessError( err, pErrorContainer );
@@ -312,24 +320,32 @@ CWiggleReader::ReadSeqAnnotTable(
             if ( x_ParseBrowserLine( pending, annot ) ) {
                 continue;
             }
-            if ( x_ParseTrackData( pending, annot, record ) ) {
+            if ( x_IsTrackLine( pending ) ) {
                 if ( ! bTrackFound ) {
+                    x_ParseTrackData( pending, annot, record );
                     bTrackFound = true;
                     continue;
                 }
                 else {
                     // must belong to the next track- put it back and bail
                     lr.UngetLine();
+                    bNewChromFound = true;
                     break;
                 }
             }
+            bTrackFound = true;
             parts.clear();
             Tokenize( pending, s_WiggleDelim, parts );
             unsigned int uLineType = x_GetLineType( parts );
             switch ( uLineType ) {
                 default: {
-                    x_ParseGraphData( lr, pending, parts, record );
-                    m_pSet->AddRecord( record );
+                    x_ParseGraphData( parts, record );
+                    if ( 0 == m_pTrack ) {
+                        m_pTrack = new CWiggleTrack( record );
+                    }
+                    else {
+                        m_pTrack->AddRecord( record );
+                    }
                     continue;
                 }
                 case TYPE_DECLARATION_VARSTEP: {
@@ -377,10 +393,10 @@ CWiggleReader::ReadSeqAnnotTable(
             ProcessError( err, pErrorContainer );
         }
     }
-    if ( m_pSet->Count() == 0 ) {
+    if ( 0 == m_pTrack ) {
         return CRef<CSeq_annot>();
     }
-    if ( !bTrackFound ) {
+    try {
         CAnnot_descr& desc = annot->SetDesc();
         CRef<CAnnotdesc> title( new CAnnotdesc() );
         title->SetTitle( m_strDefaultTrackTitle );
@@ -388,9 +404,8 @@ CWiggleReader::ReadSeqAnnotTable(
         CRef<CAnnotdesc> name( new CAnnotdesc() );
         name->SetName( m_strDefaultTrackName );
         desc.Set().push_back( name );
-    }
-    try {
-        m_pSet->MakeTable( 
+
+        m_pTrack->MakeTable(
             table, 0!=(m_Flags & fJoinSame), 0!=(m_Flags & fAsByte) );
     }
     catch( CObjReaderLineException& err ) {
@@ -424,9 +439,7 @@ bool CWiggleReader::x_ParseTrackData(
 
 //  ----------------------------------------------------------------------------
 void CWiggleReader::x_ParseGraphData(
-    ILineReader& lr,
-    string& pending,
-    vector<string>& parts,
+    const vector<string>& parts,
     CWiggleRecord& record )
 //
 //  Note:   Several possibilities here for the pending line:
@@ -504,20 +517,6 @@ bool CWiggleReader::x_IsCommentLine(
 //  ----------------------------------------------------------------------------
 {
     return line.empty() || line[0] == '#';
-}
-
-namespace {
-template<size_t blen>
-inline bool s_HasPrefix(const string& line, const char (&prefix)[blen])
-{
-    size_t len = blen-1;
-    if ( line.size() > len &&
-         NStr::StartsWith(line.c_str(), prefix) &&
-         (line[len] == ' ' || line[len] == '\t') ) {
-        return true;
-    }
-    return false;
-}
 }
 
 //  ----------------------------------------------------------------------------
@@ -609,20 +608,10 @@ void CWiggleReader::x_SetTrackData(
 
     if ( strKey == "name" ) {
         m_strDefaultTrackName = strValue;
-        CRef<CAnnotdesc> name( new CAnnotdesc() );
-        name->SetName( strValue );
-        desc.Set().push_back( name );
-
-        m_pSet->SetName( strValue );
         return;
     }
     if ( strKey == "description" ) {
         m_strDefaultTrackTitle = strValue;
-        CRef<CAnnotdesc> title( new CAnnotdesc() );
-        title->SetTitle( strValue );
-        desc.Set().push_back( title );
-
-        m_pSet->SetTitle( strValue );
         return;
     }
     if ( strKey == "type" ) {
@@ -636,7 +625,7 @@ void CWiggleReader::x_DumpStats(
     CNcbiOstream& out )
 //  ----------------------------------------------------------------------------
 {
-    m_pSet->DumpStats( out );
+    out << m_pTrack->Chrom() << ": " << m_pTrack->Count() << endl;      
 }
 
 END_objects_SCOPE

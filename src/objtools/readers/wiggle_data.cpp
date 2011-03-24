@@ -53,6 +53,7 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <cmath>
+#include <algorithm>
 
 #include "wiggle_data.hpp"
 
@@ -61,15 +62,24 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
 //  ===========================================================================
 CWiggleData::CWiggleData(
-    unsigned int seq_start,
-    unsigned int seq_span,
-    double value ):
+    unsigned int seq_start ):
 //  ===========================================================================
     m_uSeqStart( seq_start ),
-    m_uSeqSpan( seq_span ),
-    m_dValue( value )
+    m_uSeqSpan( 0 ),
+    m_dValue( 0 )
+{
+};
+
+//  ===========================================================================
+CWiggleData::CWiggleData(
+    const CWiggleRecord& record ):
+//  ===========================================================================
+    m_uSeqStart( record.SeqStart() ),
+    m_uSeqSpan( record.SeqSpan() ),
+    m_dValue( record.Value() )
 {
 };
 
@@ -308,9 +318,7 @@ CWiggleTrack::CWiggleTrack(
     m_uSeqLength( 0 ),
     m_bEvenlySpaced( true )
 {
-    m_Data.push_back(CWiggleData(record.SeqStart(),
-                                 record.SeqSpan(),
-                                 record.Value()));
+    m_Data.push_back(CWiggleData(record));
     m_uSeqSpan = record.SeqSpan();
     m_dMaxValue = record.Value();
     m_dMinValue = record.Value();
@@ -345,9 +353,7 @@ void CWiggleTrack::AddRecord(
     if ( 0 != (record.SeqStart() - m_uSeqStart) % SeqSpan() ) {
         m_bEvenlySpaced = false;
     }
-    m_Data.push_back(CWiggleData(record.SeqStart(),
-                                 record.SeqSpan(),
-                                 record.Value()));
+    m_Data.push_back(CWiggleData(record));
     
     if ( m_uSeqLength == 0 ) {
         if ( m_uSeqStart > record.SeqStart() ) {
@@ -363,12 +369,6 @@ void CWiggleTrack::AddRecord(
     if ( record.Value() < m_dMinValue ) {
         m_dMinValue = record.Value();
     }
-};
-
-//  ===========================================================================
-CWiggleSet::CWiggleSet()
-//  ===========================================================================
-{
 };
 
 //  ===========================================================================
@@ -392,83 +392,6 @@ unsigned int CWiggleTrack::SeqStop() const
 };
 
 //  ===========================================================================
-bool CWiggleSet::AddRecord(
-    const CWiggleRecord& record )
-//  ===========================================================================
-{
-    CWiggleTrack* pTrack = 0;
-    if ( FindTrack( record.Chrom(), pTrack ) ) {
-        pTrack->AddRecord( record );
-    }
-    else {
-        m_Tracks[ record.Chrom() ] = new CWiggleTrack( record );
-    }
-    return true;
-};
-
-//  ===========================================================================
-bool CWiggleSet::FindTrack(
-    const string& key,
-    CWiggleTrack*& pTrack )
-//  ===========================================================================
-{
-    for ( TrackIter it=m_Tracks.begin(); it!=m_Tracks.end(); ++it ) {
-        if ( it->second->Chrom() == key ) {
-            pTrack = it->second;
-            return true;
-        }
-    }
-    return false;
-}
-
-//  ===========================================================================
-void CWiggleSet::Dump(
-    CNcbiOstream& Out )
-//  ===========================================================================
-{
-    for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
-        it->second->Dump( Out );
-    }
-}
-
-//  ===========================================================================
-void CWiggleSet::MakeGraph(
-    CSeq_annot::TData::TGraph& graphset )
-//  ===========================================================================
-{
-    for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
-        it->second->MakeGraph( Name(), Title(), graphset );
-    }       
-}
-
-//  ===========================================================================
-void CWiggleSet::MakeTable(
-    CSeq_table& table,
-    bool bJoinSame,
-    bool bAsByte )
-//  ===========================================================================
-{
-    table.SetFeat_type(0);
-    for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
-        it->second->MakeTable( table, bJoinSame, bAsByte );
-    }     
-}
-
-//  ===========================================================================
-void CWiggleSet::DumpStats(
-    CNcbiOstream& out )
-//  ===========================================================================
-{
-    out << "---------------------------------------------------------" << endl;
-    out << "Record Counts:" << endl;
-    out << "---------------------------------------------------------" << endl;
-    for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
-        out << it->first << " :    " << it->second->Count() << endl;
-    } 
-    out << endl;      
-}
-
-//  ===========================================================================
 void CWiggleTrack::MakeTable(
     CSeq_table& table,
     bool bJoinSame,
@@ -476,6 +399,7 @@ void CWiggleTrack::MakeTable(
 //  ===========================================================================
 {
     size_t uSize( Count() );
+    table.SetFeat_type(0);
     
     { // Table location
         CRef<CSeqTable_column> col_loc( new CSeqTable_column );
@@ -715,35 +639,6 @@ void CWiggleTrack::MakeGraph(
     }
 }
 
-//  ===========================================================================
-void CWiggleTrack::MakeGraphs(
-    CSeq_annot::TData::TGraph& graphset )
-//  ===========================================================================
-{
-    for ( unsigned int u=0; u < m_Data.size(); ++u ) {
-        CRef<CSeq_graph> graph( new CSeq_graph );
-        graph->SetTitle( m_strName );
-        
-        switch( GetGraphType() ) {
-                
-            default:
-//                FillGraphsByte( graph->SetGraph().SetByte() );
-                m_Data[u].FillGraphsByte( *graph, *this );
-                break;
-        
-            case GRAPH_REAL:
-//                m_Data[u]->FillGraphsReal( graph->SetGraph().SetReal() );
-                m_Data[u].FillGraphsReal( *graph );
-                break;
-                
-            case GRAPH_INT:
-//                m_Data[u]->FillGraphsInt( graph->SetGraph().SetInt() );
-                m_Data[u].FillGraphsInt( *graph );
-                break;
-        }                
-        graphset.push_back( graph );
-    }
-}
 
 //  ===========================================================================
 void CWiggleData::FillGraphsReal(
@@ -764,7 +659,7 @@ void CWiggleTrack::FillGraphsReal(
     
         //  *******************************************************************
         //  Note:
-        //  This code does not properly distiguish between missing values and 
+        //  This code does not properly distinguish between missing values and 
         //  values being ==0. Need to come up with a convention if we ever
         //  commit to supporting float graph data.
         //  The byte graph convention does not quite carry over.
@@ -788,7 +683,7 @@ void CWiggleTrack::FillGraphsInt(
     CInt_graph& graph )
 //  ===========================================================================
 {
-    /* to do --- if we ever have a need for this */
+//    // to do --- if we ever have a need for this
 }
 
 //  ===========================================================================
@@ -854,7 +749,7 @@ bool CWiggleTrack::DataValue(
     if ( GRAPH_UNKNOWN == m_uGraphType ) {
         m_uGraphType = GetGraphType();
     }
-    CWiggleData key(uStart, 0, 0);
+    CWiggleData key(uStart);
     DataIter it = lower_bound(m_Data.begin(), m_Data.end(), key);
     if ( it == m_Data.end() || it->SeqStart() != uStart ) {
         return false;
@@ -934,4 +829,3 @@ void CWiggleData::Dump(
 
 END_objects_SCOPE
 END_NCBI_SCOPE
-
