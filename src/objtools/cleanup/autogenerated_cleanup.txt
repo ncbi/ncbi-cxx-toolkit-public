@@ -183,36 +183,36 @@ use m_NewCleanup.SeqfeatBC { Seq-feat }
 use m_NewCleanup.x_SortUniqSeqFeat { POST Seq-feat }
 
 # Seq-feat data stuff
-use m_NewCleanup.GeneFeatBC { Seq-feat.data.gene ARG Seq-feat }
+use m_NewCleanup.GeneFeatBC { Seq-feat.data.gene AND Seq-feat }
 use m_NewCleanup.GenerefBC { POST Gene-ref }
-use m_NewCleanup.ProtFeatfBC { Seq-feat.data.prot ARG Seq-feat }
+use m_NewCleanup.ProtFeatfBC { Seq-feat.data.prot AND Seq-feat }
 use m_NewCleanup.PostProtFeatfBC { POST Seq-feat.data.prot }
 use m_NewCleanup.ProtrefBC { Prot-ref }
-use m_NewCleanup.RnaFeatBC { POST Seq-feat.data.rna ARG Seq-feat }
+use m_NewCleanup.RnaFeatBC { POST Seq-feat.data.rna AND Seq-feat }
 use m_NewCleanup.RnarefBC { POST RNA-ref }
 use m_NewCleanup.PubdescBC { POST Pubdesc }
-use m_NewCleanup.ImpFeatBC { POST Seq-feat.data.imp ARG Seq-feat }
-use m_NewCleanup.SiteFeatBC { Seq-feat.data.site ARG Seq-feat }
-use m_NewCleanup.CdregionFeatBC { Seq-feat.data.cdregion ARG Seq-feat }
+use m_NewCleanup.ImpFeatBC { POST Seq-feat.data.imp AND Seq-feat }
+use m_NewCleanup.SiteFeatBC { Seq-feat.data.site AND Seq-feat }
+use m_NewCleanup.CdregionFeatBC { Seq-feat.data.cdregion AND Seq-feat }
 
 use m_NewCleanup.GBblockBC { GB-block }
 use m_NewCleanup.EMBLblockBC { EMBL-block }
 
-use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc.org ARG Seqdesc }
+use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc.org AND Seqdesc }
 
 # Biosource stuff
 use m_NewCleanup.BiosourceBC { BioSource }
 use m_NewCleanup.x_SortUniqBiosource { POST BioSource }
 use m_NewCleanup.x_ModernizePCRPrimers { BioSource }
 use m_NewCleanup.PCRReactionSetBC { BioSource.pcr-primers }
-use m_NewCleanup.x_CleanupOrgModAndSubSourceOther { BioSource.org.orgname ARG BioSource }
+use m_NewCleanup.x_CleanupOrgModAndSubSourceOther { BioSource.org.orgname AND BioSource }
 
 use m_NewCleanup.x_GBQualToOrgRef {  
-    Seq-feat.data.org ARG Seq-feat ,
-    Seq-feat.data.biosrc.org ARG Seq-feat
+    Seq-feat.data.org AND Seq-feat ,
+    Seq-feat.data.biosrc.org AND Seq-feat
 }
 
-use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat.data.org ARG Seq-feat }
+use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat.data.org AND Seq-feat }
 
 use m_NewCleanup.x_CopyGBBlockDivToOrgnameDiv { Seq-entry }
 
@@ -224,9 +224,9 @@ use m_NewCleanup.x_DateStdBC { Date-std }
 
 use m_NewCleanup.DbtagBC { Dbtag }
 
-use m_NewCleanup.DeltaExtBC { Seq-inst.ext.delta ARG Seq-inst }
+use m_NewCleanup.DeltaExtBC { Seq-inst.ext.delta AND Seq-inst }
 
-use m_NewCleanup.x_FixUnsetMolFromBiomol{ Bioseq.descr.E.molinfo ARG Bioseq }
+use m_NewCleanup.x_FixUnsetMolFromBiomol{ Bioseq.descr.E.molinfo AND Bioseq }
 
 use m_NewCleanup.UserObjectBC { 
     Seq-feat.ext ,
@@ -238,8 +238,8 @@ use m_NewCleanup.x_AddNumToUserField { User-field }
 
 use m_NewCleanup.x_CleanupECNumber { Prot-ref.ec.E }
 
-# While we're traversing the hierarchy ARG we record any
-# muid to pmid mappings we can determine ARG 
+# While we're traversing the hierarchy AND we record any
+# muid to pmid mappings we can determine AND 
 # and other information
 use m_NewCleanup.x_NotePubdescOrAnnotPubs {
     POST Seqdesc.pub.pub ,
@@ -249,7 +249,7 @@ use m_NewCleanup.x_NotePubdescOrAnnotPubs {
 # We remember all the muid pubs that might have to be converted to 
 # pmid later (but we can't look at them until we finish the traversal)
 use m_NewCleanup.x_RememberMuidThatMightBeConvertibleToPmid {
-    POST Seq-feat.cit.pub.E.muid ARG Seq-feat.cit.pub.E
+    POST Seq-feat.cit.pub.E.muid AND Seq-feat.cit.pub.E
 }
 
 # Remember all Seq-feat 
