@@ -403,6 +403,38 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 }
 
 
+void JoinCompartment(const CRef<CSeq_align_set>& compartment,
+                     float gap_ratio,
+                     list< CRef<CSeq_align> >& aligns)
+{
+    CRef<CSeq_align_set> disc_align_set;
+    typedef const list <CRef<CSeq_align> > TConstSeqAlignList;
+    TConstSeqAlignList& alignments = compartment->Get();
+    TSeqPos len = 0;
+    ITERATE(TConstSeqAlignList, al_it, alignments) {
+        len += (*al_it)->GetAlignLength(false);
+    }
+    TSeqPos max_gap_len = len * gap_ratio;
+    ITERATE(TConstSeqAlignList, al_it, alignments) {
+        TConstSeqAlignList::const_iterator al_it_next = al_it;
+        al_it_next++;
+        if (!disc_align_set) disc_align_set.Reset(new CSeq_align_set);
+        disc_align_set->Set().push_back(*al_it);
+        if (al_it_next == alignments.end() ||
+            (*al_it)->GetSeqStop(0) + max_gap_len < (*al_it_next)->GetSeqStart(0) ||
+            (*al_it)->GetSeqStop(1) + max_gap_len < (*al_it_next)->GetSeqStart(1))
+        {
+            // Pack and ship
+            CRef<CSeq_align> comp_align(new CSeq_align);
+            comp_align->SetType(CSeq_align::eType_disc);
+            comp_align->SetSegs().SetDisc(*disc_align_set);
+            aligns.push_back(comp_align);
+            disc_align_set.Reset(0);
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

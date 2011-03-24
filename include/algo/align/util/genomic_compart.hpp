@@ -52,6 +52,17 @@ FindCompartments(const list< CRef<CSeq_align> >& aligns,
                  list< CRef<CSeq_align_set> >& align_sets,
                  TCompartOptions options = fCompart_Defaults);
 
+// Join compartment, which is represented by Seq-align-set into
+// one or more disc Seq-aligns which is suitable for nice graphical
+// representation.
+// It relies on a compartment structure - that is that alignments in
+// the align set are sorted along query. It breaks the set into several
+// alignments by gaps, longer than the gap_ratio*total_alignment_length
+void NCBI_XALGOALIGN_EXPORT
+JoinCompartment(const CRef<CSeq_align_set>& compartment,
+                float gap_ratio,
+                list< CRef<CSeq_align> >& aligns);
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
