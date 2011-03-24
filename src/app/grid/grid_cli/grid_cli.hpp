@@ -38,11 +38,16 @@
 
 #include <connect/services/netcache_api.hpp>
 #include <connect/services/neticache_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 
 #define PROGRAM_NAME "grid_cli"
 #define PROGRAM_VERSION "0.1.0"
 
+#define FAIL_JOB_OPTION "fail-job"
+#define INPUT_FILE_OPTION "input-file"
+#define NOW_OPTION "now"
+#define DIE_OPTION "die"
 
 BEGIN_NCBI_SCOPE
 
@@ -62,6 +67,16 @@ enum EOption {
     eTTL,
     eEnableMirroring,
     eNetSchedule,
+    eQueue,
+    eBrief,
+    eStatusOnly,
+    eDeferExpiration,
+    eExtendLifetime,
+    eDropFromQueue,
+    eFailJob,
+    eNow,
+    eDie,
+    eCompatMode,
     eTotalNumberOfOptions
 };
 
@@ -92,8 +107,10 @@ private:
         size_t offset;
         size_t size;
         unsigned ttl;
-        bool enable_mirroring;
         string ns_service;
+        string queue;
+        time_t extend_lifetime_by;
+        string error_message;
         FILE* input_stream;
         FILE* output_stream;
 
@@ -107,7 +124,7 @@ private:
 
         char option_flags[eTotalNumberOfOptions];
 
-        SOptions() : offset(0), size(0), ttl(0), enable_mirroring(false),
+        SOptions() : offset(0), size(0), ttl(0),
             input_stream(NULL), output_stream(NULL)
         {
             memset(option_flags, 0, eTotalNumberOfOptions);
@@ -128,6 +145,8 @@ private:
     CNetCacheAPI m_NetCacheAPI;
     CNetCacheAdmin m_NetCacheAdmin;
     CNetICacheClient m_NetICacheClient;
+    CNetScheduleAPI m_NetScheduleAPI;
+    CNetScheduleAdmin m_NetScheduleAdmin;
 
 // NetCache commands.
 public:
@@ -136,6 +155,15 @@ public:
     int Cmd_BlobInfo();
     int Cmd_RemoveBlob();
     int Cmd_ReinitNetCache();
+
+// NetSchedule commands.
+public:
+    int Cmd_SubmitJob();
+    int Cmd_JobInfo();
+    int Cmd_GetJobOutput();
+    int Cmd_CancelJob();
+    int Cmd_RequestJob();
+    int Cmd_CommitJob();
 
 // Miscellaneous commands.
 public:
@@ -147,19 +175,24 @@ public:
     int Cmd_Reconf();
     int Cmd_Shutdown();
 
-// Implementation details specific to NetCache commands.
+// Implementation details.
 private:
-    enum ENetCacheAPIClass {
+    enum EAPIClass {
+        eUnknownAPI,
         eNetCacheAPI,
         eNetICacheClient,
-        eNetCacheAdmin
+        eNetCacheAdmin,
+        eNetScheduleAPI,
+        eNetScheduleAdmin
     };
-    bool SetUp_AdminCmd();
-    void SetUp_NetCacheCmd(ENetCacheAPIClass api_class);
+    EAPIClass SetUp_AdminCmd();
+    void SetUp_NetCacheCmd(EAPIClass api_class);
     void PrintBlobMeta(const CNetCacheKey& key);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);
     void PrintICacheServerUsed();
+    void SetUp_NetScheduleCmd(EAPIClass api_class);
+    void PrintJobMeta(const CNetScheduleKey& key);
 };
 
 END_NCBI_SCOPE

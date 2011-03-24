@@ -74,7 +74,7 @@ struct SOptionDefinition {
         "auth", "Authentication string (\"client_name\")."},
 
     {CCommandLineParser::eOptionWithParameter, eInputFile,
-        "input-file", "Read input from the specified file."},
+        INPUT_FILE_OPTION, "Read input from the specified file."},
 
     {CCommandLineParser::eOptionWithParameter, eOutputFile,
         "o|output-file", "Save output to the specified file."},
@@ -107,6 +107,38 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eNetSchedule,
         "ns|netschedule", "NetSchedule service name or server address."},
 
+    {CCommandLineParser::eOptionWithParameter, eQueue,
+        "queue", "NetSchedule queue."},
+
+    {CCommandLineParser::eSwitch, eBrief,
+        "brief", "Produce less verbose output."},
+
+    {CCommandLineParser::eSwitch, eStatusOnly,
+        "status-only", "Print job status only."},
+
+    {CCommandLineParser::eSwitch, eDeferExpiration,
+        "defer-expiration", "Prolong job lifetime by "
+            "updating its last access timestamp."},
+
+    {CCommandLineParser::eOptionWithParameter, eExtendLifetime,
+        "extend-lifetime", "Extend job lifetime by "
+            "the specified number of seconds."},
+
+    {CCommandLineParser::eSwitch, eDropFromQueue,
+        "drop-from-queue", "Cancel the job and delete it from the queue."},
+
+    {CCommandLineParser::eOptionWithParameter, eFailJob,
+        FAIL_JOB_OPTION, "Report the job as failed."},
+
+    {CCommandLineParser::eSwitch, eNow,
+        NOW_OPTION, "Take action immediately."},
+
+    {CCommandLineParser::eSwitch, eDie,
+        DIE_OPTION, "Terminate the server process abruptly."},
+
+    {CCommandLineParser::eSwitch, eCompatMode,
+        "compat-mode", "Enable backward compatibility tweaks."},
+
 };
 
 #define ICACHE_KEY_FORMAT_EXPLANATION \
@@ -130,6 +162,13 @@ struct SCommandDefinition {
         "dependent information about the object is printed.",
         {eUntypedArg, -1}},
 
+    {&CGridCommandLineInterfaceApp::Cmd_BlobInfo,
+        "blobinfo|bi", "Retrieve meta information on a NetCache blob.",
+        "Print vital information about the specified blob. "
+        "Expired blobs will be reported as not found."
+        ICACHE_KEY_FORMAT_EXPLANATION,
+        {eID, eNetCache, eCache, eAuth, -1}},
+
     {&CGridCommandLineInterfaceApp::Cmd_GetBlob,
         "getblob|gb", "Retrieve a blob from NetCache.",
         "Read the blob identified by ID and send its contents "
@@ -147,13 +186,6 @@ struct SCommandDefinition {
         {eOptionalID, eNetCache, eCache, ePassword,
             eTTL, eEnableMirroring, eInputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_BlobInfo,
-        "blobinfo|bi", "Retrieve meta information on a NetCache blob.",
-        "Print vital information about the specified blob. "
-        "Expired blobs will be reported as not found."
-        ICACHE_KEY_FORMAT_EXPLANATION,
-        {eID, eNetCache, eCache, eAuth, -1}},
-
     {&CGridCommandLineInterfaceApp::Cmd_RemoveBlob,
         "rmblob|rb", "Remove a NetCache blob.",
         "Delete a blob if it exists. If the blob has expired "
@@ -168,11 +200,67 @@ struct SCommandDefinition {
         "required.",
         {eNetCache, eCache, eAuth, -1}},
 
+    {&CGridCommandLineInterfaceApp::Cmd_JobInfo,
+        "jobinfo|ji", "Retrieve meta information on a NetSchedule job.",
+        "Print vital information about the specified NetSchedule job. "
+        "Expired jobs will be reported as not found.",
+        {eID, eQueue, eBrief, eStatusOnly, eDeferExpiration, eAuth, -1}},
+
+/*
+    {&CGridCommandLineInterfaceApp::Cmd_SubmitJob,
+        "submitjob", "Submit a job to a NetSchedule queue.",
+        "Create a job by submitting input data to a NetSchedule queue. "
+        "If a worker node is waiting for a job on that queue, "
+        "the newly created job will get executed immediately.\n\n"
+        "This command requires a NetCache server for saving job "
+        "input if it exceeds the capability of the NetSchedule "
+        "internal storage.\n\n"
+        "Unless '--" INPUT_FILE_OPTION "' option is given, the input "
+        "is read from the standard input stream.",
+        {eNetSchedule, eQueue, eNetCache, eInputFile, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
+        "getjoboutput", "Read job output if the job is completed.",
+        "Retrieve and print job output to the standard output stream or "
+        "save it to a file. If the job does not exist or has not been "
+        "completed successfully, an appropriate error message is printed "
+        "to the standard error stream and the program exits with a non-zero "
+        "return code.",
+        {eID, eQueue, eOutputFile, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
+        "canceljob", "Cancel a NetSchedule job.",
+        "Mark the job as canceled. This command also instructs the worker "
+        "node that may be processing this job to cease the processing.",
+        {eID, eQueue, eDropFromQueue, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_RequestJob,
+        "requestjob", "Get a job from NetSchedule for processing.",
+        "Return a job pending for execution. The status of the job is changed "
+        "from \"Pending\" to \"Running\" before the job is returned. "
+        "This command makes it possible for " PROGRAM_NAME " to emulate a "
+        "worker node. If none of the NetSchedule servers has pending jobs "
+        "in the specified queue, an error is printed and the program "
+        "terminates with a non-zero exit code.",
+        {eNetSchedule, eQueue, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_CommitJob,
+        "commitjob", "Mark the job as complete or failed.",
+        "Change the state of the job to either 'Done' or 'Failed'. This "
+        "command can only be executed on jobs that are in the 'Running' "
+        "state.\n\n"
+        "If the job is being reported as successfully completed, job output "
+        "is read from the standard input stream or a file. If the job is being "
+        "reported as failed, an error message must be provided along with the "
+        "'--" FAIL_JOB_OPTION "' command line option.",
+        {eID, eQueue, eNetCache, eInputFile, eFailJob, eAuth, -1}},
+*/
+
     {&CGridCommandLineInterfaceApp::Cmd_Version,
         "version", "Print server version.",
         "Query and print version information of a running "
         "NetCache, NetSchedule, or worker node process.",
-        {eNetCache, eAuth, -1}},
+        {eNetCache, eNetSchedule, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
@@ -201,14 +289,16 @@ struct SCommandDefinition {
         "Update configuration parameters of a running server. "
         "The server will look for a configuration file in the "
         "same location that was used during start-up.",
-        {eNetCache, eAuth, -1}},
+        {eNetCache, eNetSchedule, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Shutdown,
         "shutdown", "Send a shutdown request to a remote server.",
         "Depending on the option specified, this command sends "
         "a shutdown request to a NetCache or NetSchedule server "
-        "or a worker node process.",
-        {eNetCache, eAuth, -1}},
+        "or a worker node process.\n\n"
+        "Additional options '--" NOW_OPTION "' and '--" DIE_OPTION
+        "' are applicable to NetSchedule servers only.",
+        {eNetCache, eNetSchedule, eNow, eDie, eCompatMode, eAuth, -1}},
 };
 
 #define TOTAL_NUMBER_OF_COMMANDS int(sizeof(s_CommandDefinitions) / \
@@ -291,11 +381,17 @@ int CGridCommandLineInterfaceApp::Run()
             case eTTL:
                 m_Opts.ttl = NStr::StringToUInt(opt_value);
                 break;
-            case eEnableMirroring:
-                m_Opts.enable_mirroring = true;
-                break;
             case eNetSchedule:
                 m_Opts.ns_service = opt_value;
+                break;
+            case eQueue:
+                m_Opts.queue = opt_value;
+                break;
+            case eExtendLifetime:
+                m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
+                break;
+            case eFailJob:
+                m_Opts.error_message = opt_value;
                 break;
             case eInputFile:
                 if ((m_Opts.input_stream = fopen(opt_value, "rb")) == NULL) {
@@ -309,7 +405,7 @@ int CGridCommandLineInterfaceApp::Run()
                     return 2;
                 }
                 break;
-            case eTotalNumberOfOptions: // Just to silence the compiler.
+            default: // Just to silence the compiler.
                 break;
             }
         }

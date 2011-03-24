@@ -36,14 +36,14 @@
 USING_NCBI_SCOPE;
 
 void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
-    CGridCommandLineInterfaceApp::ENetCacheAPIClass api_class)
+    CGridCommandLineInterfaceApp::EAPIClass api_class)
 {
     if (m_Opts.auth.empty())
         m_Opts.auth = "netcache_control";
 
     static const string config_section("netcache_api");
 
-    if (m_Opts.enable_mirroring)
+    if (IsOptionSet(eEnableMirroring))
         CNcbiApplication::Instance()->GetConfig().Set(
             config_section, "enable_mirroring", "true");
 
@@ -127,6 +127,38 @@ void CGridCommandLineInterfaceApp::PrintICacheServerUsed()
     printf("Server used: %s:%u\n",
         g_NetService_TryResolveHost(selected_server.GetHost()).c_str(),
         (unsigned) selected_server.GetPort());
+}
+
+int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
+{
+    bool icache_mode = IsOptionSet(eCache);
+
+    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
+
+    try {
+        if (!icache_mode)
+            m_NetCacheAPI.PrintBlobInfo(m_Opts.id);
+        else
+            m_NetICacheClient.PrintBlobInfo(m_Opts.icache_key.key,
+                m_Opts.icache_key.version, m_Opts.icache_key.subkey);
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() != CNetCacheException::eServerError)
+            throw;
+        if (!icache_mode) {
+            PrintBlobMeta(CNetCacheKey(m_Opts.id));
+            printf("Size: %lu\n", (unsigned long)
+                m_NetCacheAPI.GetBlobSize(m_Opts.id));
+        } else {
+            ParseICacheKey();
+            printf("Size: %lu\n", (unsigned long)
+                m_NetICacheClient.GetSize(m_Opts.icache_key.key,
+                    m_Opts.icache_key.version, m_Opts.icache_key.subkey));
+            PrintICacheServerUsed();
+        }
+    }
+
+    return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_GetBlob()
@@ -305,38 +337,6 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
         NcbiCout << m_Opts.id << NcbiEndl;
     else
         PrintICacheServerUsed();
-
-    return 0;
-}
-
-int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
-{
-    bool icache_mode = IsOptionSet(eCache);
-
-    SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
-
-    try {
-        if (!icache_mode)
-            m_NetCacheAPI.PrintBlobInfo(m_Opts.id);
-        else
-            m_NetICacheClient.PrintBlobInfo(m_Opts.icache_key.key,
-                m_Opts.icache_key.version, m_Opts.icache_key.subkey);
-    }
-    catch (CNetCacheException& e) {
-        if (e.GetErrCode() != CNetCacheException::eServerError)
-            throw;
-        if (!icache_mode) {
-            PrintBlobMeta(CNetCacheKey(m_Opts.id));
-            printf("Size: %lu\n", (unsigned long)
-                m_NetCacheAPI.GetBlobSize(m_Opts.id));
-        } else {
-            ParseICacheKey();
-            printf("Size: %lu\n", (unsigned long)
-                m_NetICacheClient.GetSize(m_Opts.icache_key.key,
-                    m_Opts.icache_key.version, m_Opts.icache_key.subkey));
-            PrintICacheServerUsed();
-        }
-    }
 
     return 0;
 }
