@@ -3949,6 +3949,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NCCH	s	Nature Conservancy Council",
 "NCCN	s	Nature Conservancy Council, Norwich",
 "NCCP	c	National Culture Collection for Pathogens",
+"NCCP<PAK>	c	National Culture Collection of Pakistan",
 "NCDC	c	National Collection of Dairy Cultures",
 "NCE	s	University of Newcastle upon Tyne, School of Biological Sciences",
 "NCFB	c	National Collection of Food Bacteria",
