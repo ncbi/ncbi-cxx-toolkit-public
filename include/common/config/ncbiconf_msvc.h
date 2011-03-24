@@ -138,8 +138,8 @@ typedef   int   ssize_t;
 #  define HAVE_NULLPTR  1
 #endif
 
-/* Windows 2000 and above */
-#define _WIN32_WINNT 0x0500
+/* Windows XP and above */
+#define _WIN32_WINNT 0x0501
 
 /*
  *  Site localization

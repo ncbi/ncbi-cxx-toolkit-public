@@ -38,8 +38,12 @@
 #  include <sys/ucontext.h> // for additional test below
 #endif
 
-#if defined NCBI_OS_MSWIN  &&  NCBI_PLATFORM_BITS != 64
-#  include "ncbi_stack_win32.cpp"
+#if defined NCBI_OS_MSWIN
+#  if NCBI_PLATFORM_BITS == 64
+#    include "ncbi_stack_win64.cpp"
+#  else
+#    include "ncbi_stack_win32.cpp"
+#  endif
 #elif defined NCBI_OS_SOLARIS  &&  defined(GETUSTACK)
 #  include "ncbi_stack_solaris.cpp"
 #elif defined NCBI_OS_LINUX
