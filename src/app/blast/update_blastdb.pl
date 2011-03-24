@@ -58,14 +58,16 @@ my $opt_passive = 0;
 my $opt_timeout = 120;
 my $opt_showall = 0;
 my $opt_show_version = 0;
-my $result = GetOptions("verbose+"  =>  \$opt_verbose,
-                        "quiet"     =>  \$opt_quiet,
-                        "force"     =>  \$opt_force_download,
-                        "passive"   =>  \$opt_passive,
-                        "timeout=i" =>  \$opt_timeout,
-                        "showall"   =>  \$opt_showall,
-                        "version"   =>  \$opt_show_version,
-                        "help"      =>  \$opt_help);
+my $opt_decompress = 0;
+my $result = GetOptions("verbose+"      =>  \$opt_verbose,
+                        "quiet"         =>  \$opt_quiet,
+                        "force"         =>  \$opt_force_download,
+                        "passive"       =>  \$opt_passive,
+                        "timeout=i"     =>  \$opt_timeout,
+                        "showall"       =>  \$opt_showall,
+                        "version"       =>  \$opt_show_version,
+                        "decompress"    =>  \$opt_decompress,
+                        "help"          =>  \$opt_help);
 $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
 pod2usage({-exitval => 0, -verbose => 2}) if $opt_help;
@@ -205,22 +207,44 @@ download_file:
                     goto download_file;
                 }
             }
-            print STDERR ", uncompressing..." if $opt_verbose;
-            my $decompress_succeeded = Archive::Tar->extract_archive($file, 1);
-            unless ($decompress_succeeded) {
-                my $msg = "Failed to decompress $file ($Archive::Tar::error), ";
-                $msg .= "please do so manually.";
-                print STDERR "$msg\n";
-                next;
+            if ($opt_decompress) {
+                print STDERR ", decompressing..." if $opt_verbose;
+                my $decompress_succeeded = &decompress($file);
+                next unless ($decompress_succeeded);
+                unlink $file;   # Clean up archive, but preserve the checksum file
             }
             print STDERR " [OK]\n" if $opt_verbose;
-            unlink $file;   # Clean up archive, but preserve the checksum file
             $retval = 1 if ($retval == 0);
         } else {
-            print STDERR "The contents of $file are up to date in your system.\n" if $opt_verbose;
+            my $msg = ($opt_decompress 
+                       ? "The contents of $file are up to date in your system." 
+                       : "$file is up to date.");
+            if ($opt_decompress and -f $file) {
+                print STDERR "Decompressing $file ..." if $opt_verbose;
+                my $decompress_succeeded = &decompress($file);
+                next unless ($decompress_succeeded);
+                unlink $file;   # Clean up archive, but preserve the checksum file
+                $msg = "[OK]";
+            }
+            print STDERR "$msg\n" if $opt_verbose;
         }
     }
     return $retval;
+}
+
+# Decompresses the file passed as its argument
+# Returns 1 on success, and 0 on failure, printing an error to STDERR
+sub decompress($)
+{
+    my $file = shift;
+    my $succeeded = Archive::Tar->extract_archive($file, 1);
+    unless ($succeeded) {
+        my $msg = "Failed to decompress $file ($Archive::Tar::error), ";
+        $msg .= "please do so manually.";
+        print STDERR "$msg\n";
+        return 0;
+    }
+    return 1;
 }
 
 sub compute_md5_checksum($)
@@ -295,6 +319,12 @@ update_blastdb.pl [options] blastdb ...
 =head1 OPTIONS
 
 =over 2
+
+=item B<--decompress>
+
+Downloads, decompresses the archives in the current working directory, and
+deletes the downloaded archive to save disk space, while preserving the
+archive checksum files (default: false).
 
 =item B<--showall>
 
