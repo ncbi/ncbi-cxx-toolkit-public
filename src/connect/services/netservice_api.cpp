@@ -105,7 +105,8 @@ SNetServiceImpl::SNetServiceImpl(
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
     m_ServerGroupPool(NULL),
-    m_ServiceType(eNotDefined)
+    m_ServiceType(eNotDefined),
+    m_UseOldStyleAuth(false)
 {
 }
 
@@ -342,15 +343,19 @@ string SNetServiceImpl::MakeAuthString()
 {
     string auth = m_ClientName;
 
-    auth += " svc=\"";
-    auth += m_ServiceName;
-    auth += '\"';
+    if (!m_UseOldStyleAuth) {
+        if (m_ServiceType == eLoadBalanced) {
+            auth += " svc=\"";
+            auth += m_ServiceName;
+            auth += '\"';
+        }
 
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if (app != NULL) {
-        auth += " client_path=\"";
-        auth += app->GetProgramExecutablePath();
-        auth += '\"';
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app != NULL) {
+            auth += " client_path=\"";
+            auth += app->GetProgramExecutablePath();
+            auth += '\"';
+        }
     }
 
     return auth;

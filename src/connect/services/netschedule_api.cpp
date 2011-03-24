@@ -485,6 +485,14 @@ void CNetScheduleAPI::EnableWorkerNodeCompatMode()
     listener->SetAuthString(m_Impl);
 }
 
+void CNetScheduleAPI::UseOldStyleAuth()
+{
+    m_Impl->m_Service->m_UseOldStyleAuth = true;
+
+    static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
+        m_Impl->m_Service->m_Listener.GetPointer())->SetAuthString(m_Impl);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /// @internal

@@ -261,9 +261,13 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
         eKeepConnection
     };
 
-    /// This method is for use by the netschedule_control utility only.
+    /// This method is for use by the grid_cli utility only.
     /// @internal
     void EnableWorkerNodeCompatMode();
+
+    /// This method is for use by the grid_cli utility only.
+    /// @internal
+    void UseOldStyleAuth();
 };
 
 

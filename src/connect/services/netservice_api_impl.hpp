@@ -176,6 +176,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     int m_MaxQueryTime;
     bool m_ThrottleUntilDiscoverable;
     int m_ForceRebalanceAfterThrottleWithin;
+
+    bool m_UseOldStyleAuth;
 };
 
 inline CNetServer SNetServiceImpl::GetServer(
