@@ -105,17 +105,17 @@ CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
     m_uCurrentRecordType( TYPE_NONE ),
-    m_strDefaultTrackName( "" ),
-    m_strDefaultTrackTitle( "" ),
     m_Flags( flags )
 {
     m_pTrack = 0;
+    m_pTrackDefaults = new CTrackData();
 }
 
 //  ----------------------------------------------------------------------------
 CWiggleReader::~CWiggleReader()
 //  ----------------------------------------------------------------------------
 {
+    delete m_pTrackDefaults;
 }
 
 //  ----------------------------------------------------------------------------                
@@ -137,19 +137,30 @@ CWiggleReader::ReadSeqAnnot(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
-    static size_t count( 0 );
-    count ++;
-
-    CRef< CSeq_annot > pAnnot;
-    if (m_Flags & fAsGraph) {
-        pAnnot = ReadSeqAnnotGraph( lr, pErrorContainer );
+    CRef< CSeq_annot > annot;
+    x_ParseOneSequence( lr, pErrorContainer );
+    if ( 0 == m_pTrack ) {
+        return annot;
     }
-    else {
-        pAnnot = ReadSeqAnnotTable( lr, pErrorContainer );
-    } 
-    delete m_pTrack;
+    annot.Reset( new CSeq_annot );
+
+    try {
+        x_AssignBrowserData( annot );
+        x_AssignTrackData( annot );
+        m_pTrack->MakeAsn( m_Flags,
+            m_pTrackDefaults->Name(), m_pTrackDefaults->Description(), *annot );
+    }
+    catch( CObjReaderLineException& err ) {
+        ProcessError( err, pErrorContainer );
+    }
+    x_AddConversionInfo( annot, pErrorContainer );
+    if ( m_iFlags & fDumpStats ) {
+        x_DumpStats( cerr );
+    }
+
+    delete m_pTrack; // allocated in x_ParseOneSequence, if we get here at all
     m_pTrack = 0;
-    return pAnnot;
+    return annot;
 }
     
 //  --------------------------------------------------------------------------- 
@@ -180,44 +191,37 @@ CWiggleReader::ReadSeqAnnots(
     }
 }
 
-//  ----------------------------------------------------------------------------                
-CRef< CSeq_annot >
-CWiggleReader::ReadSeqAnnotGraph(
+//  ----------------------------------------------------------------------------
+void
+CWiggleReader::x_ParseOneSequence(
     ILineReader& lr,
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-    m_uLineNumber = 0;
-    
     CRef< CSeq_annot > annot( new CSeq_annot );
     string pending;
-    vector<string> parts;
     CWiggleRecord record;
-    bool bTrackFound( false );
-    bool bNewChromFound( false );
+    bool bTrackLineOk( true );
     
-    CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
     while ( x_ReadLine( lr, pending ) ) {
+        vector<string> parts;
+        Tokenize( pending, s_WiggleDelim, parts );
         try {
-            if ( x_ParseBrowserLine( pending, annot ) ) {
+            if ( CBrowserData::IsBrowserData( parts ) ) {
                 continue;
             }
-            if ( x_IsTrackLine( pending ) ) {
-                if ( ! bTrackFound ) {
-                    x_ParseTrackData( pending, annot, record );
-                    bTrackFound = true;
+            if ( CTrackData::IsTrackData( parts ) ) {
+                if ( bTrackLineOk ) {
+                    m_pTrackDefaults->ParseLine( parts );
                     continue;
                 }
                 else {
                     // must belong to the next track- put it back and bail
                     lr.UngetLine();
-                    bNewChromFound = true;
-                    break;
+                    return;
                 }
             }
-            bTrackFound = true;
-            parts.clear();
-            Tokenize( pending, s_WiggleDelim, parts );
+            bTrackLineOk = false;
             unsigned int uLineType = x_GetLineType( parts ); 
             switch( uLineType ) {
 
@@ -238,13 +242,11 @@ CWiggleReader::ReadSeqAnnotGraph(
                     temp.ParseDeclarationVarstep( parts );
                     if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
                         lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
+                        return;
                     }
                     if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
                         lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
+                        return;
                     }
                     record = temp;
                     continue;
@@ -256,185 +258,21 @@ CWiggleReader::ReadSeqAnnotGraph(
                     temp.ParseDeclarationFixedstep( parts );
                     if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
                         lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
+                        return;
                     }
                     if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
                         lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
+                        return;
                     }
                     record = temp;
                     continue;
                 }
-            }
-            if ( bNewChromFound ) {
-                break;
             }
         }
         catch( CObjReaderLineException& err ) {
             ProcessError( err, pErrorContainer );
         }
     }
-    if ( 0 == m_pTrack ) {
-        return CRef<CSeq_annot>();
-    }
-    try {
-        CAnnot_descr& desc = annot->SetDesc();
-        CRef<CAnnotdesc> title( new CAnnotdesc() );
-        title->SetTitle( m_strDefaultTrackTitle );
-        desc.Set().push_back( title );
-        CRef<CAnnotdesc> name( new CAnnotdesc() );
-        name->SetName( m_strDefaultTrackName );
-        desc.Set().push_back( name );
-
-        m_pTrack->MakeGraph( "", "", graphset );
-    }
-    catch( CObjReaderLineException& err ) {
-        ProcessError( err, pErrorContainer );
-    }
-    x_AddConversionInfo( annot, pErrorContainer );
-    if ( m_iFlags & fDumpStats ) {
-        x_DumpStats( cerr );
-    }
-    return annot; 
-}
-    
-//  ----------------------------------------------------------------------------                
-CRef< CSeq_annot >
-CWiggleReader::ReadSeqAnnotTable(
-    ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
-//  ----------------------------------------------------------------------------                
-{ 
-    CRef< CSeq_annot > annot( new CSeq_annot );
-    string pending;
-    vector<string> parts;
-    CWiggleRecord record;
-    bool bTrackFound( false );
-    bool bNewChromFound( false );
-    
-    CSeq_table& table = annot->SetData().SetSeq_table();
-    while ( x_ReadLine( lr, pending ) ) {
-        try {
-            if ( x_ParseBrowserLine( pending, annot ) ) {
-                continue;
-            }
-            if ( x_IsTrackLine( pending ) ) {
-                if ( ! bTrackFound ) {
-                    x_ParseTrackData( pending, annot, record );
-                    bTrackFound = true;
-                    continue;
-                }
-                else {
-                    // must belong to the next track- put it back and bail
-                    lr.UngetLine();
-                    bNewChromFound = true;
-                    break;
-                }
-            }
-            bTrackFound = true;
-            parts.clear();
-            Tokenize( pending, s_WiggleDelim, parts );
-            unsigned int uLineType = x_GetLineType( parts );
-            switch ( uLineType ) {
-                default: {
-                    x_ParseGraphData( parts, record );
-                    if ( 0 == m_pTrack ) {
-                        m_pTrack = new CWiggleTrack( record );
-                    }
-                    else {
-                        m_pTrack->AddRecord( record );
-                    }
-                    continue;
-                }
-                case TYPE_DECLARATION_VARSTEP: {
-                    m_uCurrentRecordType = TYPE_DATA_VARSTEP;
-
-                    CWiggleRecord temp;
-                    temp.ParseDeclarationVarstep( parts );
-                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
-                        lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
-                    }
-                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
-                        lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
-                    }
-                    record = temp;
-                    continue;
-                }
-                case TYPE_DECLARATION_FIXEDSTEP: {
-                    m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
-
-                    CWiggleRecord temp;
-                    temp.ParseDeclarationFixedstep( parts );
-                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
-                        lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
-                    }
-                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
-                        lr.UngetLine();
-                        bNewChromFound = true;
-                        break;
-                    }
-                    record = temp;
-                    continue;
-                }
-            }
-            if ( bNewChromFound ) {
-                break;
-            }
-       }
-        catch( CObjReaderLineException& err ) {
-            ProcessError( err, pErrorContainer );
-        }
-    }
-    if ( 0 == m_pTrack ) {
-        return CRef<CSeq_annot>();
-    }
-    try {
-        CAnnot_descr& desc = annot->SetDesc();
-        CRef<CAnnotdesc> title( new CAnnotdesc() );
-        title->SetTitle( m_strDefaultTrackTitle );
-        desc.Set().push_back( title );
-        CRef<CAnnotdesc> name( new CAnnotdesc() );
-        name->SetName( m_strDefaultTrackName );
-        desc.Set().push_back( name );
-
-        m_pTrack->MakeTable(
-            table, 0!=(m_Flags & fJoinSame), 0!=(m_Flags & fAsByte) );
-    }
-    catch( CObjReaderLineException& err ) {
-        ProcessError( err, pErrorContainer );
-    }
-    x_AddConversionInfo( annot, pErrorContainer );
-    if ( m_iFlags & fDumpStats ) {
-        x_DumpStats( cerr );
-    }
-    return annot; 
-}
-    
-//  ----------------------------------------------------------------------------
-bool CWiggleReader::x_ParseTrackData(
-    const string& pending,
-    CRef<CSeq_annot>& annot,
-    CWiggleRecord& record )
-//
-//  Note:   Expecting a line that starts with "track". With comments already
-//          weeded out coming in, everything else triggers an error.
-//  ----------------------------------------------------------------------------
-{
-    if ( ! CReaderBase::x_ParseTrackLine( pending, annot ) ) {
-        return false;
-    }
-    vector<string> parts;
-    Tokenize( pending, s_WiggleDelim, parts );
-    record.ParseTrackDefinition( parts );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -597,27 +435,37 @@ void CWiggleReader::Tokenize(
 }
 
 //  ----------------------------------------------------------------------------
-void CWiggleReader::x_SetTrackData(
-    CRef<CSeq_annot>& annot,
-    CRef<CUser_object>& trackdata,
-    const string& strKey,
-    const string& strValue )
+void CWiggleReader::x_AssignTrackData(
+    CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
     CAnnot_descr& desc = annot->SetDesc();
+    CRef<CAnnotdesc> title( new CAnnotdesc() );
+    title->SetTitle( m_pTrackDefaults->Description() );
+    desc.Set().push_back( title );
+    CRef<CAnnotdesc> name( new CAnnotdesc() );
+    name->SetName( m_pTrackDefaults->Name() );
+    desc.Set().push_back( name );
 
-    if ( strKey == "name" ) {
-        m_strDefaultTrackName = strValue;
-        return;
+    CRef<CUser_object> trackdata( new CUser_object() );
+    trackdata->SetType().SetStr( "Track Data" );   
+    map<string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
+    while ( cit != m_pTrackDefaults->Values().end() ) {
+        trackdata->AddField( cit->first, cit->second );
+        ++cit;
     }
-    if ( strKey == "description" ) {
-        m_strDefaultTrackTitle = strValue;
-        return;
+    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
+        CRef<CAnnotdesc> user( new CAnnotdesc() );
+        user->SetUser( *trackdata );
+        desc.Set().push_back( user );
     }
-    if ( strKey == "type" ) {
-        return;
-    }
-    CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
+}
+
+//  ----------------------------------------------------------------------------
+void CWiggleReader::x_AssignBrowserData(
+    CRef<CSeq_annot>& annot )
+//  ----------------------------------------------------------------------------
+{
 }
 
 //  ----------------------------------------------------------------------------

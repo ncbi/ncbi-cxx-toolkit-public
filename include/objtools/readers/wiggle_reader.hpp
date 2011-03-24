@@ -42,6 +42,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CWiggleRecord;
 class CWiggleTrack;
+class CTrackData;
 
 //  ----------------------------------------------------------------------------
 enum CWiggleLineType
@@ -56,7 +57,6 @@ enum CWiggleLineType
     TYPE_DATA_VARSTEP,
     TYPE_DATA_FIXEDSTEP
 };
-
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CWiggleReader
@@ -103,16 +103,6 @@ public:
         ILineReader&,
         IErrorContainer* =0 );
                 
-    virtual CRef< CSeq_annot >
-    ReadSeqAnnotGraph(
-        ILineReader&,
-        IErrorContainer* =0 );
-                
-    virtual CRef< CSeq_annot >
-    ReadSeqAnnotTable(
-        ILineReader&,
-        IErrorContainer* =0 );
-                
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
@@ -130,22 +120,20 @@ public:
     //  helpers:
     //
 protected:
-    bool x_ParseTrackData(
-        const string&,
-        CRef<CSeq_annot>&,
-        CWiggleRecord& );
-    /* throws CObjReaderLineException */
+    void x_ParseOneSequence(
+        ILineReader&,
+        IErrorContainer* );
 
     void x_ParseGraphData(
         const vector<string>& parts,
         CWiggleRecord& );
     /* throws CObjReaderLineException */
 
-    virtual void x_SetTrackData(
-        CRef<CSeq_annot>&,
-        CRef<CUser_object>&,
-        const string&,
-        const string& );
+    virtual void x_AssignBrowserData(
+        CRef<CSeq_annot>& );
+                
+    virtual void x_AssignTrackData(
+        CRef<CSeq_annot>& );
                 
     bool x_IsCommentLine(
         const string& );
@@ -158,8 +146,6 @@ protected:
         const vector<string>& parts);
     /* throws CObjReaderLineException */
 
-    void x_UpdateWiggleSet();
-
     virtual void x_DumpStats(
         CNcbiOstream& );    
     //
@@ -168,10 +154,9 @@ protected:
 protected:
     static const string s_WiggleDelim;
     unsigned int m_uCurrentRecordType;
-    string m_strDefaultTrackName;
-    string m_strDefaultTrackTitle;
     TFlags m_Flags;
     CWiggleTrack* m_pTrack;
+    CTrackData* m_pTrackDefaults;
 };
 
 END_objects_SCOPE

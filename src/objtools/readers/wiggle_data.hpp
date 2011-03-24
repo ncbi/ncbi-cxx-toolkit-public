@@ -53,6 +53,53 @@ typedef DataVector::const_iterator DataCiter;
 
 class CIdMapper;
 
+//  ============================================================================
+class CBrowserData
+//  ============================================================================
+{
+public:
+    typedef std::vector< std::string > LineData;
+    typedef std::map< std::string, std::string > BrowserData;
+
+public:
+    CBrowserData() {};
+    ~CBrowserData() {};
+    bool ParseLine(
+        const LineData& );
+    static bool IsBrowserData(
+        const LineData& );
+    const BrowserData& Values() const;
+
+protected:
+    BrowserData m_Data;
+};
+
+//  ============================================================================
+class CTrackData
+//  ============================================================================
+{
+public:
+    typedef std::vector< std::string > LineData;
+    typedef std::map< std::string, std::string > TrackData;
+public:
+    CTrackData() {};
+    ~CTrackData() {};
+    bool ParseLine(
+        const LineData& );
+    static bool IsTrackData(
+        const LineData& );
+    const TrackData& Values() const;
+    string Type() const { return m_strType; };
+    string Description() const { return m_strDescription; };
+    string Name() const { return m_strName; };
+
+protected:
+    TrackData m_Data;
+    string m_strType;
+    string m_strDescription;
+    string m_strName;
+};
+
 //  ===========================================================================
 class CWiggleData
 //  ===========================================================================
@@ -118,16 +165,24 @@ public:
     void Dump(
         CNcbiOstream& );
     
+    void MakeAsn(
+        unsigned int,                               // flags
+        const string& strName,                      // track line name
+        const string& strTitle,                     // track line descr
+        CSeq_annot& );
+
     void MakeGraph(
-        const string& strName,
-        const string& strTitle,
-        CSeq_annot::TData::TGraph& );
+        unsigned int,                               // flags
+        const string& strName,                      // track line name
+        const string& strTitle,                     // track line descr
+        CSeq_annot& );
         
     void MakeTable(
-        CSeq_table&,
-        bool,
-        bool );
-
+        unsigned int,                               // flags
+        const string& strName,                      // track line name
+        const string& strTitle,                     // track line descr
+        CSeq_annot& );
+        
     const string& Chrom() const { return m_strChrom; };
     size_t Count() const { return m_Data.size(); };
     unsigned int SeqStart() const;

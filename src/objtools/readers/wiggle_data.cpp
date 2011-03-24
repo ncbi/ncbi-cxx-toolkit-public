@@ -63,6 +63,88 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
+//  ----------------------------------------------------------------------------
+bool CBrowserData::IsBrowserData(
+    const LineData& linedata )
+//  ----------------------------------------------------------------------------
+{
+    return ( !linedata.empty() && linedata[0] == "browser" );
+}
+
+//  ----------------------------------------------------------------------------
+bool CBrowserData::ParseLine(
+    const LineData& linedata )
+//  ----------------------------------------------------------------------------
+{
+    if ( !IsBrowserData(linedata) ) {
+        return false;
+    }
+    m_Data.clear();
+
+    LineData::const_iterator cit = linedata.begin();
+    for ( cit++; cit != linedata.end(); ++cit ) {
+        string key, value;
+        m_Data[ key ] = value;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+const CBrowserData::BrowserData&
+CBrowserData::Values() const
+//  ----------------------------------------------------------------------------
+{
+    return m_Data;
+}
+
+//  ----------------------------------------------------------------------------
+bool CTrackData::IsTrackData(
+    const LineData& linedata )
+//  ----------------------------------------------------------------------------
+{
+    return ( !linedata.empty() && linedata[0] == "track" );
+}
+
+//  ----------------------------------------------------------------------------
+bool CTrackData::ParseLine(
+    const LineData& linedata )
+//  ----------------------------------------------------------------------------
+{
+    if ( !IsTrackData(linedata) ) {
+        return false;
+    }
+    m_strType = m_strName = m_strDescription = "";
+    m_Data.clear();
+
+    LineData::const_iterator cit = linedata.begin();
+    for ( cit++; cit != linedata.end(); ++cit ) {
+        string key, value;
+        NStr::SplitInTwo( *cit, "=", key, value );
+        if ( key == "type" ) {
+            m_strType = value;
+            continue;
+        }
+        if ( key == "name" ) {
+            m_strName = value;
+            continue;
+        }
+        if ( key == "description" ) {
+            m_strDescription = value;
+            continue;
+        }
+        m_Data[ key ] = value;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+const CTrackData::TrackData&
+CTrackData::Values() const
+//  ----------------------------------------------------------------------------
+{
+    return m_Data;
+}
+
 //  ===========================================================================
 CWiggleData::CWiggleData(
     unsigned int seq_start ):
@@ -392,12 +474,32 @@ unsigned int CWiggleTrack::SeqStop() const
 };
 
 //  ===========================================================================
-void CWiggleTrack::MakeTable(
-    CSeq_table& table,
-    bool bJoinSame,
-    bool bAsByte )
+void CWiggleTrack::MakeAsn(
+    unsigned int uFlags,
+    const string& strName,
+    const string& strTitle,
+    CSeq_annot& annot )
 //  ===========================================================================
 {
+    if ( uFlags && CWiggleReader::fAsGraph ) {
+        MakeGraph( uFlags, strName, strTitle, annot );
+    }
+    else {
+        MakeTable( uFlags, strName, strTitle, annot );
+    }
+}
+
+//  ===========================================================================
+void CWiggleTrack::MakeTable(
+    unsigned int uFlags,
+    const string&,
+    const string&,
+    CSeq_annot& annot )
+//  ===========================================================================
+{
+    CSeq_table& table =  annot.SetData().SetSeq_table();
+    bool bJoinSame = uFlags & CWiggleReader::fJoinSame;
+    bool bAsByte = uFlags & CWiggleReader::fAsByte;
     size_t uSize( Count() );
     table.SetFeat_type(0);
     
@@ -577,11 +679,13 @@ double CWiggleTrack::EstimateSize(
 
 //  ===========================================================================
 void CWiggleTrack::MakeGraph(
+    unsigned int /*not used*/,
     const string& strName,
     const string& strTitle,
-    CSeq_annot::TData::TGraph& graphset )
+    CSeq_annot& annot )
 //  ===========================================================================
 {
+    CSeq_annot::TData::TGraph& graphset = annot.SetData().SetGraph();
     sort(m_Data.begin(), m_Data.end());
     if ( m_bEvenlySpaced ) {
         CRef<CSeq_graph> graph( new CSeq_graph );
