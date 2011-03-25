@@ -143,13 +143,19 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand,
             // Same strand, but location may become circular
             if ( !m_IsCircular ) {
                 // Check if location becomes circular
-                if ( x_IncludesPlus(strand) ) {
-                    m_IsCircular =
-                        range.GetFrom() < m_Ranges.back().first.GetFrom();
-                }
-                else {
-                    m_IsCircular =
-                        range.GetFrom() > m_Ranges.back().first.GetFrom();
+                REVERSE_ITERATE ( TRanges, it, m_Ranges ) {
+                    // compare with last non-empty range
+                    if ( !it->first.Empty() ) {
+                        if ( x_IncludesPlus(strand) ) {
+                            m_IsCircular =
+                                range.GetFrom() < it->first.GetFrom();
+                        }
+                        else {
+                            m_IsCircular =
+                                range.GetFrom() > it->first.GetFrom();
+                        }
+                        break;
+                    }
                 }
                 if ( m_IsCircular ) {
                     // Reorganize total ranges.
