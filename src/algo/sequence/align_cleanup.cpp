@@ -39,6 +39,7 @@
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objtools/alnmgr/aln_builders.hpp>
+#include <objtools/alnmgr/aln_serial.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/aln_generators.hpp>
 #include <objtools/alnmgr/seqids_extractor.hpp>
@@ -315,6 +316,12 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     /// always merge both directions
     opts.m_Direction = CAlnUserOptions::eBothDirections;
 
+    ///
+    /// create a set of anchored alignments
+    ///
+    TAnchoredAlnVec anchored_aln_vec;
+    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, opts);
+
     /// always merge all sequences
     opts.m_MergeAlgo = CAlnUserOptions::eMergeAllSeqs;
     if (m_PreserveRows) {
@@ -322,19 +329,15 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     }
 
     /// we default to truncating overlaps
-    CAlnUserOptions::TMergeFlags flags = CAlnUserOptions::fTruncateOverlaps;
+    CAlnUserOptions::TMergeFlags flags =
+        CAlnUserOptions::fTruncateOverlaps |
+        CAlnUserOptions::fUseAnchorAsAlnSeq;
 
     /// we may disable soring by scores
     if ( !m_SortByScore ) {
         flags |= CAlnUserOptions::fSkipSortByScore;
     }
     opts.SetMergeFlags(flags, true);
-
-    ///
-    /// create a set of anchored alignments
-    ///
-    TAnchoredAlnVec anchored_aln_vec;
-    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, opts);
 
     ///
     /// now, build
@@ -345,12 +348,19 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     /// create dense-segs and return
     ///
+#if 0
+    vector< CRef<CSeq_align> > ds_aligns;
+    ds_aligns.push_back(CreateSeqAlignFromAnchoredAln
+                        (out_anchored_aln, CSeq_align::TSegs::e_Denseg));
+#endif
+
     vector< CRef<CSeq_align> > ds_aligns;
     CreateSeqAlignFromEachPairwiseAln
         (out_anchored_aln.GetPairwiseAlns(), out_anchored_aln.GetAnchorRow(),
          ds_aligns, CSeq_align::TSegs::e_Denseg);
 
-    ITERATE (vector< CRef<CSeq_align> >, it, ds_aligns) {
+    NON_CONST_ITERATE (vector< CRef<CSeq_align> >, it, ds_aligns) {
+        (*it)->SetType(CSeq_align::eType_partial);
         aligns_out.push_back(*it);
     }
 
