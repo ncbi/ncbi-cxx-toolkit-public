@@ -5,6 +5,8 @@
 
 REQUIRES = objects algo
 
+LIB_PROJ = blast_app_util
+
 APP_PROJ = \
 rmblastn \
 blastp \
