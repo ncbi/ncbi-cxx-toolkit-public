@@ -23,6 +23,8 @@ internal/gnomon
 internal/blast
 internal/gpipe
 internal/txserver
+internal/eutils
+internal/portal
 internal/gnomon
 internal/ID/utils$
 internal/blast/DistribDbSupport
