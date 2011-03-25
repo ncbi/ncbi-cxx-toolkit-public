@@ -17,6 +17,10 @@ objtools
 sample
 serial
 util
+./doc/public/LICENSE
+./doc/public/gpl.txt
+./doc/public/index_html_files
+./doc/public/index.html
 -app/sample/gui
 -dll/_ncbi
 -dll/gui

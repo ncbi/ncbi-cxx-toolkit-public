@@ -1,13 +1,13 @@
 [components]
-infrastructure  6.0
-core            6.0
-dbase           6.0
-web             6.0
-objects         6.0
-objtools        6.0
-algo            6.0
-misc            6.0
-blast           6.0
-app             6.0
-sample          6.0
-sra             6.0
+infrastructure  7.0
+core            7.0
+dbase           7.0
+web             7.0
+objects         7.0
+objtools        7.0
+algo            7.0
+misc            7.0
+blast           7.0
+app             7.0
+sample          7.0
+sra             7.0
