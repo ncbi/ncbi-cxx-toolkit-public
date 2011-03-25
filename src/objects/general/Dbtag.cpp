@@ -544,7 +544,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno="),
     TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/"),
     TDbtUrl(CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?"),
-    TDbtUrl(CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/query/query.cgi?id="),
+    TDbtUrl(CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/generalSearch/RgdSearch.jsp?quickSearch=1&searchKeyword="),
     TDbtUrl(CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object="),
     TDbtUrl(CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus="),
