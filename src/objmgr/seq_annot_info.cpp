@@ -631,13 +631,33 @@ void CSeq_annot_Info::x_InitAnnotKeys(CTSE_Info& tse)
 }
 
 
-inline
 void CSeq_annot_Info::x_Map(const CTSEAnnotObjectMapper& mapper,
                             const SAnnotObject_Key& key,
                             const SAnnotObject_Index& index)
 {
-    m_ObjectIndex.AddMap(key, index);
+    if ( key.m_Range.Empty() ) {
+        const CAnnotObject_Info& info = *index.m_AnnotObject_Info;
+        CNcbiOstrstream s;
+        if ( !info.IsRegular() ) {
+            s << "unknown object";
+        }
+        else if ( info.IsFeat() ) {
+            s << MSerial_AsnText << info.GetFeat();
+        }
+        else if ( info.IsGraph() ) {
+            s << "graph " << MSerial_AsnText << info.GetGraph().GetLoc();
+        }
+        else if ( info.IsAlign() ) {
+            s << MSerial_AsnText << info.GetAlign();
+        }
+        else {
+            s << "unknown object";
+        }
+        ERR_POST_X(6, "Failed to parse location of "<<s.rdbuf());
+        return;
+    }
     mapper.Map(key, index);
+    m_ObjectIndex.AddMap(key, index);
 }
 
 
