@@ -143,7 +143,7 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand,
             // Same strand, but location may become circular
             if ( !m_IsCircular ) {
                 // Check if location becomes circular
-                REVERSE_ITERATE ( TRanges, it, m_Ranges ) {
+                NON_CONST_REVERSE_ITERATE ( TRanges, it, m_Ranges ) {
                     // compare with last non-empty range
                     if ( !it->first.Empty() ) {
                         if ( x_IncludesPlus(strand) ) {
