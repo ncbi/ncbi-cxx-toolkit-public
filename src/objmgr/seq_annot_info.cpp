@@ -58,6 +58,7 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqtable/seqtable__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objmgr/seq_feat_handle.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ObjMgr_SeqAnnot
@@ -1656,6 +1657,27 @@ void CSeq_annot_Info::Replace(TAnnotIndex index, const CSeq_graph& new_obj)
         x_UnmapAnnotObject(info);
         info.x_SetObject(new_obj);
         x_MapAnnotObject(info);
+    }
+}
+
+
+void CSeq_annot_Info::ReorderFtable(const vector<CSeq_feat_Handle>& feats)
+{
+    C_Data& data = m_Object->SetData();
+    if ( !data.IsFtable() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "ReorderFtable: Seq-annot annot is not ftable");
+    }
+    C_Data::TFtable& cont = data.SetFtable();
+    ITERATE ( vector<CSeq_feat_Handle>, it, feats ) {
+        if ( &it->x_GetSeq_annot_Info() != this ) {
+            continue;
+        }
+        const CAnnotObject_Info& info = it->x_GetAnnotObject_Info();
+        if ( !info.IsRegular() ) {
+            continue;
+        }
+        const_cast<CAnnotObject_Info&>(info).x_MoveToBack(cont);
     }
 }
 

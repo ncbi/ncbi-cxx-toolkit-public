@@ -42,6 +42,7 @@
 
 #include <objmgr/impl/seq_annot_edit_commands.hpp>
 #include <objects/seqtable/Seq_table.hpp>
+#include <objmgr/feat_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -398,6 +399,26 @@ CSeq_graph_Handle
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_graph& new_obj) const
 {
     return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
+}
+
+
+void CSeq_annot_EditHandle::ReorderFtable(CFeat_CI& feat_ci) const
+{
+    vector<CSeq_feat_Handle> feats;
+    feats.reserve(feat_ci.GetSize());
+    for ( feat_ci.Rewind(); feat_ci; ++feat_ci ) {
+        CSeq_feat_Handle feat = feat_ci->GetSeq_feat_Handle();
+        if ( feat.GetAnnot() == *this ) {
+            feats.push_back(feat);
+        }
+    }
+    ReorderFtable(feats);
+}
+
+
+void CSeq_annot_EditHandle::ReorderFtable(const vector<CSeq_feat_Handle>& feats) const
+{
+    x_GetInfo().ReorderFtable(feats);
 }
 
 

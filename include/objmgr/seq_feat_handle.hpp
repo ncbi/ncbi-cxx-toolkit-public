@@ -211,6 +211,7 @@ public:
 protected:
     friend class CMappedFeat;
     friend class CCreatedFeat_Ref;
+    friend class CSeq_annot_Info;
     friend class CSeq_annot_Handle;
     friend class CSeq_annot_ftable_CI;
     friend class CSeq_annot_ftable_I;

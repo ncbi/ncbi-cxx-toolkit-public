@@ -60,6 +60,7 @@ class CSeq_annot_SNP_Info;
 class CSeqTableInfo;
 class CFeat_id;
 class CGene_ref;
+class CSeq_feat_Handle;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 {
@@ -137,6 +138,8 @@ public:
     TAnnotIndex Add(const CSeq_feat& new_obj);
     TAnnotIndex Add(const CSeq_align& new_obj);
     TAnnotIndex Add(const CSeq_graph& new_obj);
+
+    void ReorderFtable(const vector<CSeq_feat_Handle>& feats);
 
     void Update(TAnnotIndex index);
 

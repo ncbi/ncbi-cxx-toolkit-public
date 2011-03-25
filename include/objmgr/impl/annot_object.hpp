@@ -207,6 +207,8 @@ public:
     const TGraph::iterator& x_GetGraphIter(void) const;
     const TLocs::iterator& x_GetLocsIter(void) const;
 
+    void x_MoveToBack(TFtable& cont);
+
     static void x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                                const CSeq_align& align,
                                const CMasterSeqSegments* master);

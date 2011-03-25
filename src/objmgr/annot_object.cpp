@@ -855,5 +855,14 @@ void CAnnotObject_Info::x_SetObject(const CSeq_graph& new_obj)
 }
 
 
+void CAnnotObject_Info::x_MoveToBack(TFtable& cont)
+{
+    _ASSERT(IsFeat() && IsRegular() && m_Iter.m_RawPtr);
+    TFtable::iterator old_iter = *m_Iter.m_Feat;
+    *m_Iter.m_Feat = cont.insert(cont.end(), *old_iter);
+    cont.erase(old_iter);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -54,6 +54,7 @@ class CScope;
 class CSeq_annot_CI;
 class CAnnotTypes_CI;
 class CAnnot_CI;
+class CFeat_CI;
 class CSeq_annot_Handle;
 class CSeq_annot_EditHandle;
 class CSeq_entry_Handle;
@@ -247,6 +248,10 @@ public:
     CSeq_graph_Handle TakeGraph(const CSeq_graph_Handle& handle) const;
 
     void TakeAllAnnots(const CSeq_annot_EditHandle& annot) const;
+
+    // Reorder features in the order of CFeat_CI
+    void ReorderFtable(CFeat_CI& feat_ci) const;
+    void ReorderFtable(const vector<CSeq_feat_Handle>& feats) const;
 
     /// Update index after manual modification of the object
     void Update(void) const;
