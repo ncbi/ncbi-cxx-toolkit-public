@@ -467,6 +467,7 @@ public:
                             m_Config );
     }
     SUPPORT_LINKER_OPTION(GenerateManifest)
+    SUPPORT_LINKER_OPTION(EmbedManifest)
 
 private:
     string      m_AdditionalOptions;
@@ -532,6 +533,7 @@ public:
     SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
     SUPPORT_DUMMY_OPTION(FixedBaseAddress)
     SUPPORT_DUMMY_OPTION(GenerateManifest)
+    SUPPORT_DUMMY_OPTION(EmbedManifest)
 
 private:
     CLinkerToolDummyImpl(const CLinkerToolDummyImpl&);

@@ -111,6 +111,7 @@
  <!ATTLIST Tool	FavorSizeOrSpeed                CDATA #IMPLIED>
  <!ATTLIST Tool	FixedBaseAddress                CDATA #IMPLIED>
  <!ATTLIST Tool	GenerateManifest                CDATA #IMPLIED>
+ <!ATTLIST Tool	EmbedManifest                   CDATA #IMPLIED>
 
 
 

@@ -295,6 +295,14 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
             conf->SetTool().push_back(tool);
         }}
+        
+        // ManifestTool
+        {{
+            CRef<CTool> tool(new CTool());
+            tool->SetAttlist().SetName("VCManifestTool");
+            tool->SetAttlist().SetEmbedManifest(msvc_tool.Linker()->EmbedManifest());
+            conf->SetTool().push_back(tool);
+        }}
 
         // Librarian
         {{
@@ -917,6 +925,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             }
 #endif
             __SET_PROPGROUP_ELEMENT(t, "GenerateManifest", prop, cfg_condition);
+            __SET_PROPGROUP_ELEMENT(t, "EmbedManifest", msvc_tool.Linker()->EmbedManifest(), cfg_condition);
         }
     }
 

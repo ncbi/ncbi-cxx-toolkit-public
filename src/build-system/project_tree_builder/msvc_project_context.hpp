@@ -394,6 +394,7 @@ struct ILinkerTool : public ITool
     virtual string AdditionalLibraryDirectories(void) const = 0;
     virtual string FixedBaseAddress(void)			  const = 0;
     virtual string GenerateManifest(void)			  const = 0;
+    virtual string EmbedManifest(void)			      const = 0;
 };
 
 
