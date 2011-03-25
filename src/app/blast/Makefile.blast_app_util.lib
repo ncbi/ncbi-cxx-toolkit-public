@@ -1,13 +1,13 @@
+# $Id$
+
 WATCHERS = camacho madden maning
 
 LIB = blast_app_util
 SRC = blast_app_util
 LIB_OR_DLL = lib
 
-# De-universalize Mac builds to work around a PPC toolchain limitation
-CFLAGS   = $(FAST_CFLAGS:ppc=i386)
-CXXFLAGS = $(FAST_CXXFLAGS:ppc=i386)
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
 
-CPPFLAGS = $(ORIG_CPPFLAGS)
-
-REQUIRES = objects -Cygwin
+ASN_DEP = blastdb xnetblast
+REQUIRES = objects
