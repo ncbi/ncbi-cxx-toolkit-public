@@ -144,6 +144,11 @@ void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
                 BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));
             }
 
+            BOOST_CHECK_EQUAL(f1.IsSetPseudo(), f2.IsSetPseudo());
+            if ( f1.IsSetPseudo() != f2.IsSetPseudo() ) {
+                display = true;
+            }
+
             if (f1.GetData().IsCdregion()  &&
                 f2.GetData().IsCdregion()) {
                 BOOST_CHECK(f1.GetData().GetCdregion().IsSetCode_break() ==

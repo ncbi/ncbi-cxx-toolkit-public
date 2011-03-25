@@ -1034,6 +1034,7 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
         mrna_feat.Reset(new CSeq_feat());
         CRNA_ref::TType type = CRNA_ref::eType_unknown;
         string name;    
+        string RNA_class;
         if (m_flags & fForceTranscribeMrna) {
             /// create a new bioseq for this mRNA
             x_CreateMrnaBioseq(align, loc, time, model_num,
@@ -1077,6 +1078,9 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
                 break;
             case CMolInfo::eBiomol_ncRNA:
                 type = CRNA_ref::eType_ncRNA;
+                if (info->IsSetGbmoltype()) {
+                    RNA_class = info->GetGbmoltype();
+                }
                 break;
             default:
                 type = CRNA_ref::eType_other;
@@ -1085,9 +1089,17 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
         }
 
         mrna_feat->SetData().SetRna().SetType(type);
+        if (!RNA_class.empty()) {
+            mrna_feat->SetData().SetRna().SetExt().SetGen().SetClass(RNA_class);
+        }
         name = sequence::GetTitle(handle);
-        if (!name.empty())
-            mrna_feat->SetData().SetRna().SetExt().SetName(name);
+        if (!name.empty()) {
+            if (!RNA_class.empty()) {
+                mrna_feat->SetData().SetRna().SetExt().SetGen().SetProduct(name);
+            } else {
+                mrna_feat->SetData().SetRna().SetExt().SetName(name);
+            }
+        }
 
         mrna_feat->SetLocation(*loc);
     }
@@ -1107,30 +1119,22 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
         if (handle) {
             feat_iter = CFeat_CI(handle, CSeqFeatData::eSubtype_gene);
         }
-        CRef<CSeq_loc> gene_loc;
         bool update_existing_gene = gene_feat;
         string gene_id_str = "gene.";
         if (gene_id) {
             gene_id_str += NStr::IntToString(gene_id);
         }
 
-        if (m_flags & fPropagateOnly) {
-            //
-            // only create a gene feature if one exists on the mRNA feature
-            //
+        if (!update_existing_gene) {
             if (feat_iter  &&  feat_iter.GetSize()) {
-                if(!update_existing_gene){
-                    gene_feat.Reset(new CSeq_feat());
-                    gene_feat->Assign(feat_iter->GetOriginalFeature());
-                }
-                gene_loc = mapper.Map(feat_iter->GetLocation());
-            }
-        } else {
-            //
-            // always create a gene feature
-            //
-            if(!update_existing_gene){
                 gene_feat.Reset(new CSeq_feat());
+                gene_feat->Assign(feat_iter->GetOriginalFeature());
+            } 
+            if (!(m_flags & fPropagateOnly)) {
+                /// if we didn't find am existing gene feature, create one
+                if (!gene_feat) {
+                    gene_feat.Reset(new CSeq_feat());
+                }
                 if (gene_id) {
                     CRef<CObject_id> obj_id( new CObject_id() );
                     obj_id->SetStr(gene_id_str);
@@ -1139,7 +1143,18 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                     gene_feat->SetIds().push_back(feat_id);
                 }
             }
+        }
+
+        if (!gene_feat) {
+            /// Couldn't create gene feature
+            return;
+        }
+
+        CRef<CSeq_loc> gene_loc;
+        if (!(m_flags & fPropagateOnly)) {
             gene_loc = loc;
+        } else if (feat_iter  &&  feat_iter.GetSize()) {
+            gene_loc = mapper.Map(feat_iter->GetLocation());
         }
 
         if (gene_loc) {
@@ -1155,19 +1170,15 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
             }
         }
 
-        ///
-        /// copy qualifiers from the mRNA's gene
-        ///
-        if (feat_iter  &&  feat_iter.GetSize() == 1) {
-
-            /// set dbxrefs
+        if (feat_iter  &&  feat_iter.GetSize() == 1 && update_existing_gene) {
+            /// check if gene feature has any dbxrefs that we don't have yet
             if (feat_iter->IsSetDbxref()) {
                 ITERATE (CSeq_feat::TDbxref, xref_it,
                          feat_iter->GetDbxref()) {
                     CRef<CDbtag> tag(new CDbtag);
                     tag->Assign(**xref_it);
                     bool duplicate = false;
-                    if(update_existing_gene && gene_feat->IsSetDbxref()){
+                    if(gene_feat->IsSetDbxref()){
                         /// Check for duplications
                         ITERATE(CSeq_feat::TDbxref, previous_xref_it,
                                 gene_feat->GetDbxref())
@@ -1179,12 +1190,6 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                     if(!duplicate)
                         gene_feat->SetDbxref().push_back(tag);
                 }
-            }
-
-            /// set the locus
-            if (!update_existing_gene){
-                gene_feat->SetData().SetGene().Assign
-                    (feat_iter->GetData().GetGene());
             }
         }
 

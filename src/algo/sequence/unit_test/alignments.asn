@@ -11823,3 +11823,254 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      id str "matches",
+      value int 4658
+    },
+    {
+      id str "identity",
+      value real { 65930644019816, 10, -15 }
+    },
+    {
+      id str "splices",
+      value int 0
+    },
+    {
+      id str "consensus_splices",
+      value int 0
+    },
+    {
+      id str "product_coverage",
+      value real { 664203507877861, 10, -16 }
+    },
+    {
+      id str "exon_identity",
+      value real { 990853009997873, 10, -15 }
+    },
+    {
+      id str "pct_identity",
+      value real { 993600682593857, 10, -13 }
+    },
+    {
+      id str "num_ident",
+      value int 4658
+    },
+    {
+      id str "num_mismatch",
+      value int 30
+    },
+    {
+      id str "gap_count",
+      value int 4
+    },
+    {
+      id str "pct_coverage",
+      value real { 663637264478136, 10, -14 }
+    },
+    {
+      id str "weighted_identity",
+      value real { 994593643678234, 10, -15 }
+    },
+    {
+      id str "rank",
+      value int 1
+    },
+    {
+      id str "locus_rank",
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 302632519,
+    genomic-id gi 89077346,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 43563,
+        product-end nucpos 48254,
+        genomic-start 0,
+        genomic-end 4696,
+        parts {
+          match 350,
+          mismatch 1,
+          match 588,
+          mismatch 1,
+          match 450,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 121,
+          genomic-ins 4,
+          match 221,
+          mismatch 1,
+          match 120,
+          mismatch 1,
+          match 7,
+          mismatch 1,
+          match 1,
+          mismatch 1,
+          match 196,
+          mismatch 1,
+          match 34,
+          mismatch 2,
+          genomic-ins 1,
+          match 13,
+          mismatch 1,
+          match 21,
+          mismatch 1,
+          match 21,
+          mismatch 1,
+          match 72,
+          mismatch 1,
+          match 42,
+          mismatch 1,
+          match 25,
+          mismatch 1,
+          match 11,
+          mismatch 1,
+          match 167,
+          mismatch 1,
+          match 16,
+          mismatch 1,
+          match 236,
+          mismatch 1,
+          match 36,
+          mismatch 1,
+          match 102,
+          mismatch 1,
+          match 71,
+          product-ins 4,
+          match 15,
+          mismatch 1,
+          match 270,
+          mismatch 1,
+          match 50,
+          mismatch 1,
+          match 757,
+          mismatch 1,
+          match 379,
+          genomic-ins 4,
+          match 83,
+          mismatch 1,
+          match 143,
+          mismatch 2,
+          match 39
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 461215087890625, 10, -11 }
+          },
+          {
+            id str "idty",
+            value real { 990853009997873, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "  "
+        },
+        donor-after-exon {
+          bases "  "
+        }
+      }
+    },
+    product-length 70641
+  },
+  bounds {
+    mix {
+      int {
+        from 0,
+        to 4696,
+        strand plus,
+        id gi 89077346
+      },
+      int {
+        from 0,
+        to 2660,
+        strand plus,
+        id gi 89076881
+      },
+      int {
+        from 0,
+        to 5163,
+        strand plus,
+        id gi 89065426
+      },
+      int {
+        from 0,
+        to 11987,
+        strand plus,
+        id gi 89061907
+      },
+      int {
+        from 0,
+        to 3667,
+        strand plus,
+        id gi 89037101
+      },
+      int {
+        from 0,
+        to 4055,
+        strand minus,
+        id gi 89077258
+      },
+      int {
+        from 0,
+        to 2477,
+        strand minus,
+        id gi 89076939
+      },
+      int {
+        from 0,
+        to 3783,
+        strand minus,
+        id gi 89065619
+      },
+      int {
+        from 0,
+        to 2665,
+        strand minus,
+        id gi 89065177
+      },
+      int {
+        from 0,
+        to 2193,
+        strand minus,
+        id gi 89064562
+      }
+    }
+  },
+  id {
+    str "2c257280-1d10-403a-afb9-b6c3edd93e11"
+  },
+  ext {
+    {
+      type str "origin",
+      data {
+        {
+          label str "algo",
+          data str "Splign:1.39.8"
+        }
+      }
+    },
+    {
+      type str "lxr_data",
+      data {
+        {
+          label str "locus_id",
+          data int 644623
+        },
+        {
+          label str "is_refseq",
+          data int 1
+        }
+      }
+    }
+  }
+}
