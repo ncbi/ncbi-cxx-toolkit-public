@@ -397,9 +397,8 @@ CNetScheduleAPI::EJobStatus
 CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::x_GetJobStatus(
     const string& job_key, bool submitter)
 {
-    return (CNetScheduleAPI::EJobStatus) atoi(x_SendJobCmdWaitResponse(
-        GetServerParams().fast_status ? submitter ? "SST" : "WST" : "STATUS",
-            job_key).c_str());
+    return (CNetScheduleAPI::EJobStatus) atoi(
+        x_SendJobCmdWaitResponse(submitter ? "SST" : "WST", job_key).c_str());
 }
 
 const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
