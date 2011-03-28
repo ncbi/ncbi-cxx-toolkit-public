@@ -131,7 +131,9 @@ int CDemoContigAssemblyApp::Run()
     uo->SetType().SetStr("alignment info");
     CUser_field& uf = uo->SetField("comment");
     list<string> lines;
-    NStr::Split(CNcbiOstrstreamToString(ostr), "\n\r", lines);
+    CTempString ts(ostr.str(), ostr.pcount());
+    NStr::Split(ts, "\n\r", lines);
+    ostr.freeze(false);
     ITERATE(list<string>, line, lines) {
         uf.SetData().SetStrs().push_back(*line);
     }
