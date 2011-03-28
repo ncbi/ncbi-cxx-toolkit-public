@@ -163,6 +163,19 @@ CConstRef<CSeq_id> CGC_Sequence::GetSynonymSeq_id( CGC_TypedSeqId::E_Choice syn_
 }
 
 
+bool CGC_Sequence::HasRole(int Role) const 
+{
+	if( !CanGetRoles() )
+		return false;
+
+	ITERATE(TRoles, roleiter, GetRoles()) {
+		if(*roleiter == Role)
+			return true;
+	}
+
+	return false;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

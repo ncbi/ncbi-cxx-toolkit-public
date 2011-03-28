@@ -91,6 +91,8 @@ public:
     CGC_TaggedSequences::TState GetParentRelation() const;
 
     CConstRef<CSeq_id> GetSynonymSeq_id( CGC_TypedSeqId::E_Choice type, CGC_SeqIdAlias::E_AliasTypes ) const;
+	
+	bool HasRole(int Role) const;
 
 protected:
     CGC_Assembly*     m_Assembly;
