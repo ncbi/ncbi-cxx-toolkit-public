@@ -1900,7 +1900,7 @@ TContainer& s_Split(const TString& str, const TString& delim,
 }
 
 
-list<string>& NStr::Split(const string& str, const string& delim,
+list<string>& NStr::Split(const CTempString& str, const CTempString& delim,
                           list<string>& arr, EMergeDelims merge,
                           vector<SIZE_TYPE>* token_pos)
 {
@@ -1956,7 +1956,7 @@ list<CTempString>& NStr::Split(const CTempString& str, const CTempString& delim,
 }
 
 
-vector<string>& NStr::Tokenize(const string& str, const string& delim,
+vector<string>& NStr::Tokenize(const CTempString& str, const CTempString& delim,
                                vector<string>& arr, EMergeDelims merge,
                                vector<SIZE_TYPE>* token_pos)
 {

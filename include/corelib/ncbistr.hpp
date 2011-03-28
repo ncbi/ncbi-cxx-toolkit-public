@@ -1534,8 +1534,8 @@ public:
     /// @param delim
     ///   Delimiters used to split string "str".
     /// @param arr
-    ///   The split tokens are added to the list "arr" and also returned
-    ///   by the function.  NB: in the CTempString-based variant, modifying or
+    ///   The split tokens are added to the list "arr" and also returned by the
+    ///   function.  NB: in the fully CTempString-based variant, modifying or
     ///   destroying the string underlying "str" will invalidate the tokens.
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
@@ -1547,8 +1547,8 @@ public:
     ///   The list "arr" is also returned.
     /// @sa
     ///   Tokenize()
-    static list<string>& Split(const string& str,
-                               const string& delim,
+    static list<string>& Split(const CTempString& str,
+                               const CTempString& delim,
                                list<string>& arr,
                                EMergeDelims  merge = eMergeDelims,
                                vector<SIZE_TYPE>* token_pos = NULL);
@@ -1569,7 +1569,7 @@ public:
     /// @param arr
     ///   The tokens defined in "str" by using symbols from "delim" are added
     ///   to the list "arr" and also returned by the function.  NB: in the
-    ///   CTempString-based variant, modifying or destroying the string
+    ///   fully CTempString-based variant, modifying or destroying the string
     ///   underlying "str" will invalidate the tokens.
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
@@ -1581,8 +1581,8 @@ public:
     ///   The list "arr" is also returned.
     /// @sa
     ///   Split, TokenizePattern, TokenizeInTwo
-    static vector<string>& Tokenize(const string&      str,
-                                    const string&      delim,
+    static vector<string>& Tokenize(const CTempString& str,
+                                    const CTempString& delim,
                                     vector<string>&    arr,
                                     EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
