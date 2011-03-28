@@ -47,11 +47,11 @@ int main()
 
     // Run tests
     LOG_POST("Trying to daemonize at \"/\", expecting failure");
-    _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == false);
+    _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == 0);
     _ASSERT(errno == EACCES  ||  errno == EPERM  ||  errno == ENOENT);
     _ASSERT(CProcess::Daemonize("./test_ncbi_os_unix.log",
                                 CProcess::fDontChroot |
-                                CProcess::fKeepStdout) == true);
+                                CProcess::fKeepStdout) != 0);
 
     LOG_POST("Trying to daemonize at current location, expecting success");
     _ASSERT(access("./test_ncbi_os_unix.log", F_OK) == 0);
