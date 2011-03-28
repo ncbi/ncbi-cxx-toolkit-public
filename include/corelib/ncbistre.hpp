@@ -190,10 +190,6 @@ public:
         IOS_BASE::openmode _Mode = IOS_BASE::in,
         int _Prot = (int)IOS_BASE::_Openprot
     );
-    void open(
-        const char *_Filename,
-        IOS_BASE::openmode _Mode
-    );
 };
 #elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
@@ -260,10 +256,6 @@ public:
         IOS_BASE::openmode _Mode = IOS_BASE::out,
         int _Prot = (int)IOS_BASE::_Openprot
     );
-    void open(
-        const char *_Filename,
-        IOS_BASE::openmode _Mode
-    );
 };
 #elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
@@ -305,7 +297,33 @@ typedef IO_PREFIX::ofstream      CNcbiOfstream;
 typedef IO_PREFIX::ofstream      CNcbiOfstream;
 #endif
 
-#ifdef NCBI_COMPILER_MSVC
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+class NCBI_XNCBI_EXPORT CNcbiFstream : public IO_PREFIX::fstream
+{
+public:
+    CNcbiFstream( )
+    {
+    }
+    explicit CNcbiFstream(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    );
+    explicit CNcbiFstream(
+        const wchar_t *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    ) : IO_PREFIX::fstream(_Filename,_Mode,_Prot)
+    {
+    }
+ 
+    void open(
+        const char *_Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
+        int _Prot = (int)IOS_BASE::_Openprot
+    );
+};
+#elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 class CNcbiFstream : public IO_PREFIX::fstream
 {

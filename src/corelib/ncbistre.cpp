@@ -54,11 +54,6 @@ void CNcbiIfstream::open(
 {
     IO_PREFIX::ifstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
 }
-void CNcbiIfstream::open(
-    const char *_Filename, IOS_BASE::openmode _Mode)
-{
-    IO_PREFIX::ifstream::open(_T_XCSTRING(_Filename), _Mode);
-}
 
 
 CNcbiOfstream::CNcbiOfstream(
@@ -71,10 +66,17 @@ void CNcbiOfstream::open(
 {
     IO_PREFIX::ofstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
 }
-void CNcbiOfstream::open(
-    const char *_Filename, IOS_BASE::openmode _Mode)
+
+
+CNcbiFstream::CNcbiFstream(
+    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
+ : IO_PREFIX::fstream(_T_XCSTRING(_Filename), _Mode, _Prot)
 {
-    IO_PREFIX::ofstream::open(_T_XCSTRING(_Filename), _Mode);
+}
+void CNcbiFstream::open(
+    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
+{
+    IO_PREFIX::fstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
 }
 
 
