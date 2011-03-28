@@ -296,21 +296,21 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
         if (flags & fKeepStdin) {
             int nullr = ::open("/dev/null", O_RDONLY);
             if (nullr < 0)
-                throw "Error opening /dev/null for reading";
+                throw string("Error opening /dev/null for reading");
             if (nullr != STDIN_FILENO) {
                 int error = ::dup2(nullr, STDIN_FILENO);
                 int x_errno = errno;
                 ::close(nullr);
                 if (error < 0) {
                     errno = x_errno;
-                    throw "Error redirecting stdin";
+                    throw string("Error redirecting stdin");
                 }
             }
         }
         if (flags & fKeepStdout) {
             int nullw = ::open("/dev/null", O_WRONLY);
             if (nullw < 0)
-                throw "Error opening /dev/null for writing";
+                throw string("Error opening /dev/null for writing");
             NcbiCout.flush();
             ::fflush(stdout);
             if (nullw != STDOUT_FILENO) {
@@ -320,15 +320,18 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                 if (error < 0) {
                     ::dup2(fdin, STDIN_FILENO);
                     errno = x_errno;
-                    throw "Error redirecting stdout";
+                    throw string("Error redirecting stdout");
                 }
             }
         }
         if (logfile) {
             int fd = (!*logfile ? ::open("/dev/null", O_WRONLY | O_APPEND) :
                       ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666));
-            if (fd < 0)
-                throw "Unable to open logfile for stderr";
+            if (fd < 0) {
+                if (!*logfile)
+                    throw string("Error opening /dev/null for appending");
+                throw "Unable to redirect stderr to \"" +string(logfile)+ '"';
+            }
             NcbiCerr.flush();
             ::fflush(stderr);
             if (fd != STDERR_FILENO) {
@@ -339,7 +342,7 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                     ::dup2(fdin,  STDIN_FILENO);
                     ::dup2(fdout, STDOUT_FILENO);
                     errno = x_errno;
-                    throw "Error redirecting stderr";
+                    throw string("Error redirecting stderr");
                 }
             }
         }
@@ -354,7 +357,7 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             }
             if (pid == (TPid)(-1)) {
                 errno = x_errno;
-                throw "Cannot fork";
+                throw string("Cannot fork");
             }
             if (!(flags & fKeepParent)) {
                 ::_exit(0);
@@ -391,16 +394,17 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
         ::close(fderr);
         return (TPid)(-1)/*success*/;
     }
-    catch (const char* what) {
+    catch (const string& what) {
         int x_errno = errno;
         const char* error = x_errno ? strerror(x_errno) : 0;
-        ERR_POST_X(1, string("[Daemonize]  ") + what
+        ERR_POST_X(1, "[Daemonize]  " + what
                    + (error  &&  *error ? string(": ") + error : kEmptyStr));
         ::close(fdin);
         ::close(fdout);
         ::close(fderr);
         errno = x_errno;
     }
+    /* caution: stream exceptions (if any) let through */
 #else
     NCBI_THROW(CCoreException, eCore,
                "CProcess::Daemonize() not implemented on this platform");
