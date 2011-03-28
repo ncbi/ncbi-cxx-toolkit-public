@@ -248,19 +248,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     void SetCommunicationTimeout(const STimeout& to)
         {GetService().SetCommunicationTimeout(to);}
 
-    /// Connection management options
-    enum EConnectionMode {
-        /// Close connection after each call.
-        /// This mode frees server side resources, but reconnection can be
-        /// costly because of the network overhead
-        eCloseConnection,
-
-        /// Keep connection open (default).
-        /// This mode occupies server side resources(session thread),
-        /// use this mode very carefully
-        eKeepConnection
-    };
-
     /// This method is for use by the grid_cli utility only.
     /// @internal
     void EnableWorkerNodeCompatMode();
