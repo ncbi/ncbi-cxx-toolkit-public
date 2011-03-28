@@ -62,96 +62,15 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-
-//  ----------------------------------------------------------------------------
-bool CBrowserData::IsBrowserData(
-    const LineData& linedata )
-//  ----------------------------------------------------------------------------
-{
-    return ( !linedata.empty() && linedata[0] == "browser" );
-}
-
-//  ----------------------------------------------------------------------------
-bool CBrowserData::ParseLine(
-    const LineData& linedata )
-//  ----------------------------------------------------------------------------
-{
-    if ( !IsBrowserData(linedata) ) {
-        return false;
-    }
-    m_Data.clear();
-
-    LineData::const_iterator cit = linedata.begin();
-    for ( cit++; cit != linedata.end(); ++cit ) {
-        string key, value;
-        m_Data[ key ] = value;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-const CBrowserData::BrowserData&
-CBrowserData::Values() const
-//  ----------------------------------------------------------------------------
-{
-    return m_Data;
-}
-
-//  ----------------------------------------------------------------------------
-bool CTrackData::IsTrackData(
-    const LineData& linedata )
-//  ----------------------------------------------------------------------------
-{
-    return ( !linedata.empty() && linedata[0] == "track" );
-}
-
-//  ----------------------------------------------------------------------------
-bool CTrackData::ParseLine(
-    const LineData& linedata )
-//  ----------------------------------------------------------------------------
-{
-    if ( !IsTrackData(linedata) ) {
-        return false;
-    }
-    m_strType = m_strName = m_strDescription = "";
-    m_Data.clear();
-
-    LineData::const_iterator cit = linedata.begin();
-    for ( cit++; cit != linedata.end(); ++cit ) {
-        string key, value;
-        NStr::SplitInTwo( *cit, "=", key, value );
-        if ( key == "type" ) {
-            m_strType = value;
-            continue;
-        }
-        if ( key == "name" ) {
-            m_strName = value;
-            continue;
-        }
-        if ( key == "description" ) {
-            m_strDescription = value;
-            continue;
-        }
-        m_Data[ key ] = value;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-const CTrackData::TrackData&
-CTrackData::Values() const
-//  ----------------------------------------------------------------------------
-{
-    return m_Data;
-}
-
 //  ===========================================================================
 CWiggleData::CWiggleData(
-    unsigned int seq_start ):
+    unsigned int seq_start,
+    unsigned int seq_span,
+    double value ):
 //  ===========================================================================
     m_uSeqStart( seq_start ),
-    m_uSeqSpan( 0 ),
-    m_dValue( 0 )
+    m_uSeqSpan( seq_span ),
+    m_dValue( value )
 {
 };
 
@@ -177,7 +96,6 @@ void CWiggleRecord::Reset()
 //  ----------------------------------------------------------------------------
 {
     m_strName = "User Track";
-    m_strBuild = "";
     m_strChrom = "";
     m_uSeqStart = 0;
     m_uSeqStep = 0;
@@ -397,18 +315,14 @@ CWiggleTrack::CWiggleTrack(
     m_strName( record.Name() ),
     m_strChrom( record.Chrom() ),
     m_uGraphType( GRAPH_UNKNOWN ),
-    m_uSeqLength( 0 ),
     m_bEvenlySpaced( true )
 {
     m_Data.push_back(CWiggleData(record));
     m_uSeqSpan = record.SeqSpan();
     m_dMaxValue = record.Value();
     m_dMinValue = record.Value();
-
-    if ( m_uSeqLength == 0 ) {
-        m_uSeqStart = record.SeqStart();
-        m_uSeqStop = record.SeqStart() + record.SeqSpan();
-    }    
+    m_uSeqStart = record.SeqStart();
+    m_uSeqStop = record.SeqStart() + record.SeqSpan();
 };
 
 //  ===========================================================================
@@ -437,13 +351,11 @@ void CWiggleTrack::AddRecord(
     }
     m_Data.push_back(CWiggleData(record));
     
-    if ( m_uSeqLength == 0 ) {
-        if ( m_uSeqStart > record.SeqStart() ) {
-            m_uSeqStart = record.SeqStart();
-        }
-        if ( m_uSeqStop < record.SeqStart() + record.SeqSpan() ) {
-            m_uSeqStop = record.SeqStart() + record.SeqSpan();
-        }
+    if ( m_uSeqStart > record.SeqStart() ) {
+        m_uSeqStart = record.SeqStart();
+    }
+    if ( m_uSeqStop < record.SeqStart() + record.SeqSpan() ) {
+        m_uSeqStop = record.SeqStart() + record.SeqSpan();
     }
     if ( m_dMaxValue < record.Value() ) {
         m_dMaxValue = record.Value();
@@ -451,26 +363,6 @@ void CWiggleTrack::AddRecord(
     if ( record.Value() < m_dMinValue ) {
         m_dMinValue = record.Value();
     }
-};
-
-//  ===========================================================================
-unsigned int CWiggleTrack::SeqStart() const
-//  ===========================================================================
-{
-    if ( m_uSeqLength == 0 ) { 
-        return m_uSeqStart;
-    }
-    return 0;
-};
-
-//  ===========================================================================
-unsigned int CWiggleTrack::SeqStop() const
-//  ===========================================================================
-{
-    if ( m_uSeqLength == 0 ) { 
-        return m_uSeqStop-1;
-    }
-    return m_uSeqLength-1;
 };
 
 //  ===========================================================================

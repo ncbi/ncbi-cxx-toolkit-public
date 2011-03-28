@@ -43,6 +43,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class IErrorContainer;
 class CObjReaderLineException;
+class CTrackData;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CReaderBase
@@ -54,10 +55,10 @@ public:
         OT_SEQANNOT,
         OT_SEQENTRY
     };
-    
+protected:
+    CReaderBase();
 public:
-
-    virtual ~CReaderBase() {}
+    virtual ~CReaderBase();
 
     //
     //  Class interface:
@@ -100,12 +101,20 @@ public:
         IErrorContainer* =0 );
                 
     //
+    //  class interface:
+    //
+    static void Tokenize(
+        const string&,
+        const string&,
+        vector< string >& );
+
+    //
     //  Class helper functions:
     //
 protected:
-    virtual bool x_IsTrackLine(
-        const string& );
-
+    virtual void x_AssignTrackData(
+        CRef<CSeq_annot>& );
+                
     virtual bool x_ParseBrowserLine(
         const string&,
         CRef<CSeq_annot>& );
@@ -113,10 +122,6 @@ protected:
     virtual bool x_ParseTrackLine(
         const string&,
         CRef<CSeq_annot>& );
-        
-    virtual void x_GetTrackValues(
-        const string&,
-        map<string,string>& );
         
     virtual void x_SetBrowserRegion(
         const string&,
@@ -135,11 +140,9 @@ protected:
     virtual void x_AddConversionInfo(
         CRef< CSeq_entry >&,
         IErrorContainer* );
-                    
-    static bool SplitLines( 
-        const char* pcBuffer, 
-        size_t uSize,
-        list<string>& lines );
+    
+    virtual CRef<CUser_object> x_MakeAsnConversionInfo(
+        IErrorContainer* );
 
     void
     ProcessError(
@@ -151,6 +154,7 @@ protected:
     //
     unsigned int m_uLineNumber;
     int m_iFlags;
+    CTrackData* m_pTrackDefaults;
 };
 
 END_objects_SCOPE

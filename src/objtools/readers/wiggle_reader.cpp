@@ -90,6 +90,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqres/Real_graph.hpp>
 
+#include "reader_data.hpp"
 #include "wiggle_data.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
@@ -104,18 +105,18 @@ const string CWiggleReader::s_WiggleDelim = " \t";
 CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
-    m_uCurrentRecordType( TYPE_NONE ),
-    m_Flags( flags )
+    CReaderBase(),
+    m_Flags( flags ),
+    m_uCurrentRecordType( TYPE_DATA_BED )
 {
-    m_pTrack = 0;
-    m_pTrackDefaults = new CTrackData();
+    m_pControlData = new CWiggleRecord;
 }
 
 //  ----------------------------------------------------------------------------
 CWiggleReader::~CWiggleReader()
 //  ----------------------------------------------------------------------------
 {
-    delete m_pTrackDefaults;
+    delete m_pControlData;
 }
 
 //  ----------------------------------------------------------------------------                
@@ -137,9 +138,11 @@ CWiggleReader::ReadSeqAnnot(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
+    CWiggleTrack* pTrack = 0;
     CRef< CSeq_annot > annot;
-    x_ParseOneSequence( lr, pErrorContainer );
-    if ( 0 == m_pTrack ) {
+
+    x_ParseSequence( lr, pTrack, pErrorContainer );
+    if ( 0 == pTrack ) {
         return annot;
     }
     annot.Reset( new CSeq_annot );
@@ -147,7 +150,7 @@ CWiggleReader::ReadSeqAnnot(
     try {
         x_AssignBrowserData( annot );
         x_AssignTrackData( annot );
-        m_pTrack->MakeAsn( m_Flags,
+        pTrack->MakeAsn( m_Flags,
             m_pTrackDefaults->Name(), m_pTrackDefaults->Description(), *annot );
     }
     catch( CObjReaderLineException& err ) {
@@ -155,11 +158,9 @@ CWiggleReader::ReadSeqAnnot(
     }
     x_AddConversionInfo( annot, pErrorContainer );
     if ( m_iFlags & fDumpStats ) {
-        x_DumpStats( cerr );
+        x_DumpStats( cerr, pTrack );
     }
-
-    delete m_pTrack; // allocated in x_ParseOneSequence, if we get here at all
-    m_pTrack = 0;
+    delete pTrack;
     return annot;
 }
     
@@ -192,93 +193,114 @@ CWiggleReader::ReadSeqAnnots(
 }
 
 //  ----------------------------------------------------------------------------
-void
-CWiggleReader::x_ParseOneSequence(
+bool
+CWiggleReader::x_ParseSequence(
     ILineReader& lr,
+    CWiggleTrack*& pTrack,
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef< CSeq_annot > annot( new CSeq_annot );
-    string pending;
-    CWiggleRecord record;
-    bool bTrackLineOk( true );
-    
-    while ( x_ReadLine( lr, pending ) ) {
-        vector<string> parts;
-        Tokenize( pending, s_WiggleDelim, parts );
-        try {
-            if ( CBrowserData::IsBrowserData( parts ) ) {
-                continue;
-            }
-            if ( CTrackData::IsTrackData( parts ) ) {
-                if ( bTrackLineOk ) {
-                    m_pTrackDefaults->ParseLine( parts );
-                    continue;
-                }
-                else {
-                    // must belong to the next track- put it back and bail
-                    lr.UngetLine();
-                    return;
-                }
-            }
-            bTrackLineOk = false;
-            unsigned int uLineType = x_GetLineType( parts ); 
-            switch( uLineType ) {
+    m_pControlData->Reset();
+    m_uCurrentRecordType = TYPE_NONE;
 
-                default: {
-                    x_ParseGraphData( parts, record );
-                    if ( 0 == m_pTrack ) {
-                        m_pTrack = new CWiggleTrack( record );
-                    }
-                    else {
-                        m_pTrack->AddRecord( record );
-                    }
-                    continue;
-                }
-                case TYPE_DECLARATION_VARSTEP: {
-                    m_uCurrentRecordType = TYPE_DATA_VARSTEP;
-
-                    CWiggleRecord temp;
-                    temp.ParseDeclarationVarstep( parts );
-                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
-                        lr.UngetLine();
-                        return;
-                    }
-                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
-                        lr.UngetLine();
-                        return;
-                    }
-                    record = temp;
-                    continue;
-               }
-                case TYPE_DECLARATION_FIXEDSTEP: {
-                    m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
-
-                    CWiggleRecord temp;
-                    temp.ParseDeclarationFixedstep( parts );
-                    if ( ! record.Chrom().empty() && record.Chrom() != temp.Chrom() ) {
-                        lr.UngetLine();
-                        return;
-                    }
-                    if ( record.Chrom().empty() && record.SeqSpan() != temp.SeqSpan() ) {
-                        lr.UngetLine();
-                        return;
-                    }
-                    record = temp;
-                    continue;
-                }
-            }
+    vector<string> parts;
+    while ( x_ReadLineData( lr, parts ) ) {
+        
+        if ( x_ProcessLineData( parts, pTrack ) ) {
+            continue;
         }
-        catch( CObjReaderLineException& err ) {
-            ProcessError( err, pErrorContainer );
-        }
+        lr.UngetLine();
+        break;
     }
+    return (0 != pTrack);
 }
 
 //  ----------------------------------------------------------------------------
-void CWiggleReader::x_ParseGraphData(
-    const vector<string>& parts,
-    CWiggleRecord& record )
+bool CWiggleReader::x_ReadLineData(
+    ILineReader& lr,
+    vector<string>& linedata )
+//  ----------------------------------------------------------------------------
+{
+    if ( lr.AtEOF() ) {
+        return false;
+    }
+    ++m_uLineNumber;
+    linedata.clear();
+    Tokenize( *++lr, s_WiggleDelim, linedata );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleReader::x_ProcessLineData(
+    const vector<string>& linedata,
+    CWiggleTrack*& pTrack )
+//  ----------------------------------------------------------------------------
+{
+    unsigned int uLineType = x_GetLineType( linedata ); 
+    switch( uLineType ) {
+        default: {
+            x_ParseDataRecord( linedata );
+            if ( 0 == pTrack ) {
+                pTrack = new CWiggleTrack( *m_pControlData );
+            }
+            else {
+                pTrack->AddRecord( *m_pControlData );
+            }
+            return true;
+        }
+        case TYPE_COMMENT: {
+            return true;
+        }
+        case TYPE_BROWSER: {
+            return true;
+        }
+        case TYPE_TRACK: {
+            if ( m_uCurrentRecordType == TYPE_NONE ) {
+                m_uCurrentRecordType = TYPE_TRACK;
+                m_pTrackDefaults->ParseLine( linedata );
+                return true;
+            }
+            else {
+                // must belong to the next track- put it back and bail
+                return false;
+            }
+        }
+        case TYPE_DECLARATION_VARSTEP: {
+            m_uCurrentRecordType = TYPE_DATA_VARSTEP;
+
+            CWiggleRecord temp;
+            temp.ParseDeclarationVarstep( linedata );
+            if ( ! m_pControlData->Chrom().empty() && m_pControlData->Chrom() != temp.Chrom() ) {
+                return false;
+            }
+            if ( m_pControlData->Chrom().empty() && m_pControlData->SeqSpan() != temp.SeqSpan() ) {
+                return false;
+            }
+            *m_pControlData = temp;
+            return true;
+        }
+        case TYPE_DECLARATION_FIXEDSTEP: {
+            m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
+
+            CWiggleRecord temp;
+            temp.ParseDeclarationFixedstep( linedata );
+            if ( ! m_pControlData->Chrom().empty() && m_pControlData->Chrom() != temp.Chrom() ) {
+                return false;
+            }
+            if ( m_pControlData->Chrom().empty() && m_pControlData->SeqSpan() != temp.SeqSpan() ) {
+                return false;
+            }
+            *m_pControlData = temp;
+            return true;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+void CWiggleReader::x_ParseDataRecord(
+    const vector<string>& parts )
 //
 //  Note:   Several possibilities here for the pending line:
 //          (1) The line is a "variableStep" declaration. Such a declaration
@@ -292,69 +314,33 @@ void CWiggleReader::x_ParseGraphData(
 //          (5) "fixedStep" data. Completes graph record that was started in the
 //              last "fixedStep" declaration.
 //  ----------------------------------------------------------------------------
-{    
-    switch ( x_GetLineType( parts ) ) {
+{  
+    unsigned int uLineType = x_GetLineType( parts );
+    if ( m_uCurrentRecordType != uLineType ) {
+                CObjReaderLineException err( eDiag_Error, 0, 
+                    "Invalid data line --- does not agree with last seen step" );
+                throw err;
+    }
+    switch ( uLineType ) {
 
         default: {
-            CObjReaderLineException err( 
-                eDiag_Critical, 
-                0, 
+            CObjReaderLineException err( eDiag_Critical, 0, 
                 "Internal error --- please report and submit input file for "
                 "inspection" );
             throw err;
         }
         case TYPE_DATA_BED:
-            record.ParseDataBed( parts );
+            m_pControlData->ParseDataBed( parts );
             break;
 
         case TYPE_DATA_VARSTEP:
-            if ( m_uCurrentRecordType != TYPE_DATA_VARSTEP ) {
-                CObjReaderLineException err( 
-                    eDiag_Error, 
-                    0, 
-                    "Invalid data line --- VarStep data not expected here" );
-                throw err;
-            }
-            record.ParseDataVarstep( parts );
+            m_pControlData->ParseDataVarstep( parts );
             break;
 
         case TYPE_DATA_FIXEDSTEP:
-            if ( m_uCurrentRecordType != TYPE_DATA_FIXEDSTEP ) {
-                CObjReaderLineException err( 
-                    eDiag_Error, 
-                    0, 
-                    "Invalid data line --- FixedStep data not expected here" );
-                throw err;
-            }
-            record.ParseDataFixedstep( parts );
+            m_pControlData->ParseDataFixedstep( parts );
             break;
     }
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleReader::x_ReadLine(
-    ILineReader& lr,
-    string& line )
-//  ----------------------------------------------------------------------------
-{
-    line.clear();
-    while ( ! lr.AtEOF() ) {
-        line = *++lr;
-        ++m_uLineNumber;
-        NStr::TruncateSpacesInPlace( line );
-        if ( ! x_IsCommentLine( line ) ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleReader::x_IsCommentLine(
-    const string& line )
-//  ----------------------------------------------------------------------------
-{
-    return line.empty() || line[0] == '#';
 }
 
 //  ----------------------------------------------------------------------------
@@ -362,10 +348,12 @@ unsigned int CWiggleReader::x_GetLineType(
     const vector<string>& parts)
 //  ----------------------------------------------------------------------------
 {
-    //
-    //  Note: blank lines and comments should have been weeded out before we
-    //  we even get here ...
-    //
+    if ( parts.empty() || NStr::StartsWith( parts[0], "#" ) ) {
+        return TYPE_COMMENT;
+    }
+    if ( parts[0] == "browser" ) {
+        return TYPE_BROWSER;
+    }
     if ( parts[0] == "track" ) {
         return TYPE_TRACK;
     }
@@ -388,50 +376,6 @@ unsigned int CWiggleReader::x_GetLineType(
     
     CObjReaderLineException err( eDiag_Error, 0, "Unrecognizable line type" );
     throw err;
-}
-
-//  ----------------------------------------------------------------------------
-void CWiggleReader::Tokenize(
-    const string& str,
-    const string& delim,
-    vector< string >& parts )
-//  ----------------------------------------------------------------------------
-{
-    string temp;
-    bool in_quote( false );
-    const char joiner( '#' );
-
-    for ( size_t i=0; i < str.size(); ++i ) {
-        switch( str[i] ) {
-
-            default:
-                break;
-            case '\"':
-                in_quote = in_quote ^ true;
-                break;
-
-            case ' ':
-                if ( in_quote ) {
-                    if ( temp.empty() )
-                        temp = str;
-                    temp[i] = joiner;
-                }
-                break;
-        }
-    }
-    if ( temp.empty() ) {
-        NStr::Tokenize(str, delim, parts, NStr::eMergeDelims);
-    }
-    else {
-        NStr::Tokenize(temp, delim, parts, NStr::eMergeDelims);
-        for ( size_t j=0; j < parts.size(); ++j ) {
-            for ( size_t i=0; i < parts[j].size(); ++i ) {
-                if ( parts[j][i] == joiner ) {
-                    parts[j][i] = ' ';
-                }
-            }
-        }
-    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -470,10 +414,11 @@ void CWiggleReader::x_AssignBrowserData(
 
 //  ----------------------------------------------------------------------------
 void CWiggleReader::x_DumpStats(
-    CNcbiOstream& out )
+    CNcbiOstream& out,
+    CWiggleTrack* pTrack )
 //  ----------------------------------------------------------------------------
 {
-    out << m_pTrack->Chrom() << ": " << m_pTrack->Count() << endl;      
+    out << pTrack->Chrom() << ": " << pTrack->Count() << endl;      
 }
 
 END_objects_SCOPE

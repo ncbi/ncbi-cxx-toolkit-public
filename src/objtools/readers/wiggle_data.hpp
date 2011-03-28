@@ -51,54 +51,7 @@ typedef std::vector<CWiggleData> DataVector;
 typedef DataVector::iterator DataIter;
 typedef DataVector::const_iterator DataCiter;
 
-class CIdMapper;
-
-//  ============================================================================
-class CBrowserData
-//  ============================================================================
-{
-public:
-    typedef std::vector< std::string > LineData;
-    typedef std::map< std::string, std::string > BrowserData;
-
-public:
-    CBrowserData() {};
-    ~CBrowserData() {};
-    bool ParseLine(
-        const LineData& );
-    static bool IsBrowserData(
-        const LineData& );
-    const BrowserData& Values() const;
-
-protected:
-    BrowserData m_Data;
-};
-
-//  ============================================================================
-class CTrackData
-//  ============================================================================
-{
-public:
-    typedef std::vector< std::string > LineData;
-    typedef std::map< std::string, std::string > TrackData;
-public:
-    CTrackData() {};
-    ~CTrackData() {};
-    bool ParseLine(
-        const LineData& );
-    static bool IsTrackData(
-        const LineData& );
-    const TrackData& Values() const;
-    string Type() const { return m_strType; };
-    string Description() const { return m_strDescription; };
-    string Name() const { return m_strName; };
-
-protected:
-    TrackData m_Data;
-    string m_strType;
-    string m_strDescription;
-    string m_strName;
-};
+//class CIdMapper;
 
 //  ===========================================================================
 class CWiggleData
@@ -107,7 +60,9 @@ class CWiggleData
     friend class CWiggleTrack;
 public:
     CWiggleData(
-        unsigned int );
+        unsigned int,
+        unsigned int=0,
+        double = 0 );
     CWiggleData(
         const CWiggleRecord& );
 
@@ -185,8 +140,8 @@ public:
         
     const string& Chrom() const { return m_strChrom; };
     size_t Count() const { return m_Data.size(); };
-    unsigned int SeqStart() const;
-    unsigned int SeqStop() const;
+    unsigned int SeqStart() const { return m_uSeqStart; };
+    unsigned int SeqStop() const { return m_uSeqStop-1; };
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     
 protected:
@@ -218,12 +173,10 @@ protected:
     unsigned int m_uGraphType;
     unsigned int m_uSeqStart;
     unsigned int m_uSeqStop;
-    unsigned int m_uSeqLength;
     unsigned int m_uSeqSpan;
     double m_dMaxValue;
     double m_dMinValue;
     bool m_bEvenlySpaced;
-    //DataStore m_Entries;
     DataVector m_Data;
     
     double EstimateSize( size_t, bool, bool ) const;
@@ -265,7 +218,6 @@ public:
     /* throws CObjReaderLineException */
 
     const string& Chrom() const { return m_strChrom; };
-    const string& Build() const { return m_strBuild; };
     const string& Name() const { return m_strName; };
     unsigned int SeqStart() const { return m_uSeqStart; };
     unsigned int SeqSpan() const { return m_uSeqSpan; };
@@ -273,7 +225,6 @@ public:
     
 protected:
     std::string m_strName;
-    std::string m_strBuild;
     std::string m_strChrom;
     unsigned int m_uSeqStart;
     unsigned int m_uSeqSpan;

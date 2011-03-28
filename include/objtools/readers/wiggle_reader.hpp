@@ -50,6 +50,7 @@ enum CWiggleLineType
 {
     TYPE_NONE,
     TYPE_COMMENT,
+    TYPE_BROWSER,
     TYPE_TRACK,
     TYPE_DECLARATION_VARSTEP,
     TYPE_DECLARATION_FIXEDSTEP,
@@ -109,25 +110,24 @@ public:
         IErrorContainer* =0 );
                 
     //
-    //  class interface:
-    //
-    static void Tokenize(
-        const string&,
-        const string&,
-        vector< string >& );
-
-    //
     //  helpers:
     //
 protected:
-    void x_ParseOneSequence(
+    bool x_ReadLineData( 
         ILineReader&,
+        vector<string>& );
+
+    bool x_ProcessLineData(
+        const vector<string>&,
+        CWiggleTrack*& );
+
+    bool x_ParseSequence(
+        ILineReader&,
+        CWiggleTrack*&,
         IErrorContainer* );
 
-    void x_ParseGraphData(
-        const vector<string>& parts,
-        CWiggleRecord& );
-    /* throws CObjReaderLineException */
+    void x_ParseDataRecord(
+        const vector<string>& parts );
 
     virtual void x_AssignBrowserData(
         CRef<CSeq_annot>& );
@@ -135,28 +135,20 @@ protected:
     virtual void x_AssignTrackData(
         CRef<CSeq_annot>& );
                 
-    bool x_IsCommentLine(
-        const string& );
-
-    bool x_ReadLine(
-        ILineReader&,
-        string& );
-
     unsigned int x_GetLineType(
         const vector<string>& parts);
-    /* throws CObjReaderLineException */
 
     virtual void x_DumpStats(
-        CNcbiOstream& );    
+        CNcbiOstream&,
+        CWiggleTrack* );    
     //
     //  data:
     //
 protected:
     static const string s_WiggleDelim;
-    unsigned int m_uCurrentRecordType;
     TFlags m_Flags;
-    CWiggleTrack* m_pTrack;
-    CTrackData* m_pTrackDefaults;
+    unsigned int m_uCurrentRecordType;
+    CWiggleRecord* m_pControlData;
 };
 
 END_objects_SCOPE

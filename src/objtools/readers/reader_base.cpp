@@ -92,6 +92,7 @@
 
 #include <algorithm>
 
+#include "reader_data.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
@@ -118,6 +119,20 @@ CReaderBase::GetReader(
     case CFormatGuess::eGtf:
         return new CGff3Reader( flags );
     }
+}
+
+//  ----------------------------------------------------------------------------
+CReaderBase::CReaderBase()
+//  ----------------------------------------------------------------------------
+{
+    m_pTrackDefaults = new CTrackData;
+}
+
+//  ----------------------------------------------------------------------------
+CReaderBase::~CReaderBase()
+//  ----------------------------------------------------------------------------
+{
+    delete m_pTrackDefaults;
 }
 
 //  ----------------------------------------------------------------------------
@@ -176,54 +191,6 @@ CReaderBase::ReadSeqEntry(
 }
                 
 //  ----------------------------------------------------------------------------
-bool CReaderBase::SplitLines( 
-    const char* pcBuffer, 
-    size_t uSize,
-    list<string>& lines )
-//  ----------------------------------------------------------------------------
-{
-    //
-    //  Make sure the given data is ASCII before checking potential line breaks:
-    //
-    const size_t MIN_HIGH_RATIO = 20;
-    size_t high_count = 0;
-    for ( size_t i=0; i < uSize; ++i ) {
-        if ( 0x80 & pcBuffer[i] ) {
-            ++high_count;
-        }
-    }
-    if ( 0 < high_count && uSize / high_count < MIN_HIGH_RATIO ) {
-        return false;
-    }
-
-    //
-    //  Let's expect at least one line break in the given data:
-    //
-    string data( pcBuffer, uSize );
-    
-    lines.clear();
-    if ( NStr::Split( data, "\r\n", lines ).size() > 1 ) {
-        return true;
-    }
-    lines.clear();
-    if ( NStr::Split( data, "\r", lines ).size() > 1 ) {
-        return true;
-    }
-    lines.clear();
-    if ( NStr::Split( data, "\n", lines ).size() > 1 ) {
-        return true;
-    }
-    
-    //
-    //  Suspicious for non-binary files. Unfortunately, it can actually happen
-    //  for Newick tree files.
-    //
-    lines.clear();
-    lines.push_back( data );
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 void
 CReaderBase::ProcessError(
     CObjReaderLineException& err,
@@ -280,53 +247,6 @@ void CReaderBase::x_SetBrowserRegion(
 }
     
 //  ----------------------------------------------------------------------------
-void CReaderBase::x_GetTrackValues(
-    const string& strLine,
-    map<string, string>& values )
-//  ----------------------------------------------------------------------------
-{
-    string strTemp( strLine );
-    
-    //
-    //  Hide blanks inside of string literals
-    //
-    bool bInString = false;
-    for ( size_t u=0; u < strTemp.size(); ++u ) {
-        switch ( strTemp[u] ) {
-        default:
-            break;
-        case '\"':
-            bInString = !bInString;
-            break;
-        case ' ':
-            if ( bInString ) {
-                strTemp[u] = '\"';
-            }
-            break;
-        }
-    }
-    vector<string> fields;
-    NStr::Tokenize( strTemp, " \t", fields, NStr::eMergeDelims );
-    for ( vector<string>::size_type i=1; i < fields.size(); ++i ) {
-        vector<string> splits;
-        NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );        
-        if ( splits.size() != 2 ) {
-            CObjReaderLineException err(
-                eDiag_Warning,
-                0,
-                "Bad track line: key=value pair expected" );
-            throw( err );
-        }
-        string strKey = splits[0];
-        //  Restore the hidden blanks, remove quotes     
-        string strValue = splits[1];
-        NStr::ReplaceInPlace( strValue, "\"", " " );
-        NStr::TruncateSpacesInPlace( strValue );
-        values[ strKey ] = strValue;
-    }
-}
-
-//  ----------------------------------------------------------------------------
 bool CReaderBase::x_ParseBrowserLine(
     const string& strLine,
     CRef<CSeq_annot>& annot )
@@ -357,15 +277,32 @@ bool CReaderBase::x_ParseBrowserLine(
     return true;
 }
 
-
 //  ----------------------------------------------------------------------------
-bool CReaderBase::x_IsTrackLine(
-    const string& strLine )
+void CReaderBase::x_AssignTrackData(
+    CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
-    return ( NStr::StartsWith( strLine, "track" ) );
-}
+    CAnnot_descr& desc = annot->SetDesc();
 
+    CRef<CUser_object> trackdata( new CUser_object() );
+    trackdata->SetType().SetStr( "Track Data" );   
+    if ( !m_pTrackDefaults->Description().empty() ) {
+        trackdata->AddField( "description", m_pTrackDefaults->Description() );
+    }
+    if ( !m_pTrackDefaults->Name().empty() ) {
+        trackdata->AddField( "name", m_pTrackDefaults->Name() );
+    }
+    map<string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
+    while ( cit != m_pTrackDefaults->Values().end() ) {
+        trackdata->AddField( cit->first, cit->second );
+        ++cit;
+    }
+    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
+        CRef<CAnnotdesc> user( new CAnnotdesc() );
+        user->SetUser( *trackdata );
+        desc.Set().push_back( user );
+    }
+}
 
 //  ----------------------------------------------------------------------------
 bool CReaderBase::x_ParseTrackLine(
@@ -373,24 +310,13 @@ bool CReaderBase::x_ParseTrackLine(
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_IsTrackLine( strLine ) ) {
+    vector<string> parts;
+    Tokenize( strLine, " \t", parts );
+    if ( !CTrackData::IsTrackData( parts ) ) {
         return false;
     }
-    CAnnot_descr& desc = annot->SetDesc();
-
-    CRef<CUser_object> trackdata( new CUser_object() );
-    trackdata->SetType().SetStr( "Track Data" );    
-    
-    map<string, string> values;
-    x_GetTrackValues( strLine, values );
-    for ( map<string,string>::iterator it = values.begin(); it != values.end(); ++it ) {
-        x_SetTrackData( annot, trackdata, it->first, it->second );
-    }
-    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
-        CRef<CAnnotdesc> user( new CAnnotdesc() );
-        user->SetUser( *trackdata );
-        desc.Set().push_back( user );
-    }
+    m_pTrackDefaults->ParseLine( parts );
+    x_AssignTrackData( annot );
     return true;
 }
 
@@ -414,21 +340,9 @@ void CReaderBase::x_AddConversionInfo(
     if ( !annot || !pErrorContainer ) {
         return;
     }
-    CAnnot_descr& desc = annot->SetDesc();
-
-    CRef<CUser_object> conversioninfo( new CUser_object() );
-    conversioninfo->SetType().SetStr( "Conversion Info" );    
-    conversioninfo->AddField( 
-        "critical errors", int ( pErrorContainer->LevelCount( eDiag_Critical ) ) );
-    conversioninfo->AddField( 
-        "errors", int ( pErrorContainer->LevelCount( eDiag_Error ) ) );
-    conversioninfo->AddField( 
-        "warnings", int ( pErrorContainer->LevelCount( eDiag_Warning ) ) );
-    conversioninfo->AddField( 
-        "notes", int ( pErrorContainer->LevelCount( eDiag_Info ) ) );
     CRef<CAnnotdesc> user( new CAnnotdesc() );
-    user->SetUser( *conversioninfo );
-    desc.Set().push_back( user );
+    user->SetUser( *x_MakeAsnConversionInfo( pErrorContainer ) );
+    annot->SetDesc().Set().push_back( user );
 }
 
 //  ----------------------------------------------------------------------------
@@ -440,8 +354,17 @@ void CReaderBase::x_AddConversionInfo(
     if ( !entry || !pErrorContainer ) {
         return;
     }
-    CSeq_descr& descr = entry->SetDescr();
+    CRef<CSeqdesc> user( new CSeqdesc() );
+    user->SetUser( *x_MakeAsnConversionInfo( pErrorContainer ) );
+    entry->SetDescr().Set().push_back( 
+        user );
+}
 
+//  ----------------------------------------------------------------------------
+CRef<CUser_object> CReaderBase::x_MakeAsnConversionInfo(
+    IErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
     CRef<CUser_object> conversioninfo( new CUser_object() );
     conversioninfo->SetType().SetStr( "Conversion Info" );    
     conversioninfo->AddField( 
@@ -452,9 +375,51 @@ void CReaderBase::x_AddConversionInfo(
         "warnings", int ( pErrorContainer->LevelCount( eDiag_Warning ) ) );
     conversioninfo->AddField( 
         "notes", int ( pErrorContainer->LevelCount( eDiag_Info ) ) );
-    CRef<CSeqdesc> user( new CSeqdesc() );
-    user->SetUser( *conversioninfo );
-    descr.Set().push_back( user );
+    return conversioninfo;
+}
+
+//  ----------------------------------------------------------------------------
+void CReaderBase::Tokenize(
+    const string& str,
+    const string& delim,
+    vector< string >& parts )
+//  ----------------------------------------------------------------------------
+{
+    string temp;
+    bool in_quote( false );
+    const char joiner( '#' );
+
+    for ( size_t i=0; i < str.size(); ++i ) {
+        switch( str[i] ) {
+
+            default:
+                break;
+            case '\"':
+                in_quote = in_quote ^ true;
+                break;
+
+            case ' ':
+                if ( in_quote ) {
+                    if ( temp.empty() )
+                        temp = str;
+                    temp[i] = joiner;
+                }
+                break;
+        }
+    }
+    if ( temp.empty() ) {
+        NStr::Tokenize(str, delim, parts, NStr::eMergeDelims);
+    }
+    else {
+        NStr::Tokenize(temp, delim, parts, NStr::eMergeDelims);
+        for ( size_t j=0; j < parts.size(); ++j ) {
+            for ( size_t i=0; i < parts[j].size(); ++i ) {
+                if ( parts[j][i] == joiner ) {
+                    parts[j][i] = ' ';
+                }
+            }
+        }
+    }
 }
 
 END_objects_SCOPE
