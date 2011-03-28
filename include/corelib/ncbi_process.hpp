@@ -90,73 +90,72 @@ const unsigned long kInfiniteTimeoutMs = kMax_ULong;
 /// On Unix both said terms are equivalent and correspond a pid.
 /// On MS Windows they are different.
 ///
-/// NOTE:  All CExec:: functions works with process handle.
+/// @note:  All CExec:: functions work with process handles.
 
 class NCBI_XNCBI_EXPORT CProcess
 {
 public:
-    /// How to interpret passed process identifier.
+    /// How to interpret the passed process identifier argument.
     enum EProcessType {
-        ePid,     ///< As real process identifier (pid).
-        eHandle   ///< As a process handle.
+        ePid,     ///< A real process identifier (pid).
+        eHandle   ///< A process handle.
     };
 
     /// Default wait time (milliseconds) between "soft" and "hard"
-    /// attempts to terminate the process.
+    /// attempts to terminate a process.
     static const unsigned long kDefaultKillTimeout;
 
     /// Constructor.
     CProcess(TPid process, EProcessType type = eHandle);
 #if defined(NCBI_OS_MSWIN)
-    // On MS Windows process identifiers and process handles
+    // NB: On MS Windows process identifiers and process handles
     // are different.
     CProcess(TProcessHandle process, EProcessType type = eHandle);
 #endif
 
-    /// Get process identifier for a current running process.
+    /// Get process identifier for the current running process.
     static TPid GetCurrentPid(void);
 
-    /// Get process identifier for a parent of the current process.
+    /// Get process identifier for the parent of the current process.
     static TPid GetParentPid(void);
 
-    /// Check process existence.
+    /// Check for process existence.
     ///
     /// @return
     ///   TRUE  - if the process is still running.
-    ///   FALSE - if the process did not exist or was already terminated.
+    ///   FALSE - if the process does exist or has already been terminated.
     /// @note
-    ///   On Unix this method return TRUE also for "zombie" processes,
-    ///   that finished working, but waiting to return it's exit status.
+    ///   On Unix this method returns TRUE also for "zombie" processes,
+    ///   those finished executing but waiting to post their exit code.
     ///   Usually the parent process should call Wait() for such processes
-    ///   and release them.
+    ///   and release (aka reap) them.
     /// @sa
     ///   Wait
     bool IsAlive(void) const;
 
     /// Terminate process.
     ///
-    /// First try "soft" and second "hard" attempts to terminate the process.
-    /// Even "hard" terminate do not assure us that process will be
-    /// terminated. Process termination can take some time, and process can
-    /// be "alive" after "hard" attempt of termination.
+    /// First try "soft" and then try "hard" attempt to terminate the process.
+    /// @note Even the "hard" attempt does not guarantee that the process will
+    /// be actually killed.  Process termination can take some time, and the
+    /// process may remain "alive" even after the "hard" termination attempt.
     ///
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process. 
-    ///   If the timeout have zero value, than use unsafe process termination,
-    ///   just try to terminate a process without checks that it is really
-    ///   terminated.
+    ///   If timeout is zero then use an unsafe process termination: just
+    ///   try to terminate the process without checks that it is really gone.
     /// @note
-    ///   On UNIX in case of zero or very small timeout the killing process
-    ///   can be not released and continue to persists as zombie process
-    ///   even after call of this function.
+    ///   On UNIX in case of a zero or very small timeout, the killed process
+    ///   may not be released immediately (and continue to persist as a zombie
+    ///   process) even after this call.
     /// @return
     ///   TRUE  - if the process did not exist or was successfully terminated.
     ///   FALSE - if the process is still running, cannot be terminated, or
-    ///           it is terminating right now (but still not terminated).
+    ///           it is terminating right now (but is still incomplete).
     /// @sa KillGroup, KillGroupById
     bool Kill(unsigned long timeout = kDefaultKillTimeout) const;
-  
+
     /// Terminate a group of processes.
     ///
     /// This method tries to terminate all processes in the group to which
@@ -165,29 +164,27 @@ public:
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process group. 
-    ///   If the timeout have zero value, then use unsafe process termination,
-    ///   just try to terminate a process group without checks that it is
-    ///   really terminated.
+    ///   If timeout is zero then use an unsafe process termination: just
+    ///   try to terminate the group without checks that it is really gone.
     /// @note
-    ///   On UNIX in case of zero or very small timeout the killing process
-    ///   can be not released and continue to persist as zombie process
-    ///   even after this call completes.
+    ///   On UNIX in case of a zero or very small timeout, some processes
+    ///   may not be released (and continue to persist as zombie processes)
+    ///   even after this call.
     ///   On MS Windows this method tries to terminate the process itself
-    ///   and all its children.  But in the case if one of the processes,
-    ///   which should be terminated, spawns a new process at the moment
-    ///   of execution this method, then that new process might not be
-    ///   terminated.
+    ///   and all of its children.  But in case when one of the processes,
+    ///   which should be terminated, spawns a new process at the very moment
+    ///   that this method gets called, the new process may not be terminated.
     /// @return
     ///   TRUE  - if the process group did not exist or was successfully
     ///           terminated.
     ///   FALSE - if the process group is still running, cannot be terminated,
-    ///           or it is terminating right now (but is still not terminated).
+    ///           or it is terminating right now (but is still incomplete).
     /// @sa Kill
     bool KillGroup(unsigned long timeout = kDefaultKillTimeout) const;
 
     /// Terminate a group of processes with specified ID.
     ///
-    /// Note: Implemented on UNIX only, on Windows return FALSE.
+    /// Note: Implemented on UNIX only, on Windows returns FALSE.
     /// @pgid
     ///   Process group ID to terminate.
     ///   if "pgid" parameter is zero, terminate the process group of
@@ -195,26 +192,26 @@ public:
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process group. 
-    ///   If the timeout have zero value, than use unsafe process termination,
-    ///   just try to terminate a process group without checks that it is
-    ///   really terminated.
+    ///   If timeout is zero then use an unsafe process termination: just
+    ///   try to terminate the process group without checks whether it is
+    ///   really gone.
     /// @note
-    ///   On UNIX in case of zero or very small timeout the killing process
-    ///   can be not released and continue to persists as zombie process
-    ///   even after call of this function.
+    ///   On UNIX in case of a zero or very small timeout, some processes from
+    ///   the process group to be killed may not be released immediately
+    ///   (and continue to persist as zombie processes) even after this call.
     /// @return
     ///   TRUE  - if the process group did not exist or was successfully
     ///           terminated.
     ///   FALSE - if the process group is still running, cannot be terminated,
-    ///           or it is terminating right now (but still not terminated).
+    ///           or it is terminating right now (but is still incomplete).
     /// @sa Kill
     static bool KillGroupById(TPid pgid,
                               unsigned long timeout = kDefaultKillTimeout);
 
-    /// The extended exit information for waited process.
+    /// Extended exit information for waited process.
     /// All information about the process available only after Wait() method
     /// with specified parameter 'info' and if IsPresent() method returns
-    /// TRUE. 
+    /// TRUE.
     class NCBI_XNCBI_EXPORT CExitInfo
     {
     public:
@@ -223,90 +220,93 @@ public:
 
         /// TRUE if the object contains information about the process state.
         ///
-        /// All other methods returns value only if this method returns
-        /// TRUE, otherwise they trow an exception.
+        /// All other methods' return values are good only if this method
+        /// returns TRUE, otherwise they may throw exceptions.
         bool IsPresent(void) const;
-    
+
         /// TRUE if the process is still alive.
         bool IsAlive(void) const;
-    
+
         /// TRUE if the process terminated normally.
         bool IsExited(void) const;
-       
-        /// TRUE if the process terminated by signal (UNIX only).
+
+        /// TRUE if the process terminated by a signal (UNIX only).
         bool IsSignaled(void) const;
 
         /// Get process exit code.
-        /// Works only if IsExited() returns TRUE, otherwise return -1.
+        /// Works only if IsExited() returns TRUE, otherwise returns -1.
         int GetExitCode(void) const;
-        
-        /// Get the number of the signal that caused process to terminate.
+
+        /// Get the signal number that has caused the process to terminate
         /// (UNIX only).
-        /// Works only if IsSignaled() returns TRUE, otherwise return -1.
+        /// Works only if IsSignaled() returns TRUE, otherwise returns -1.
         int GetSignal(void) const;
-        
+
     private:
         int state;    ///< Process state (unknown/alive/terminated).
         int status;   ///< Process status information.
-       
+
         friend class CProcess;
     };
 
     /// Wait until process terminates.
     ///
-    /// Wait until a process terminates or timeout expires.
+    /// Wait until the process terminates or timeout expires.
     /// Return immediately if the specifed process has already terminated.
     /// @param timeout
-    ///   Time-out interval in milliceconds. By default it is infinite.
+    ///   Time interval in milliceconds (infinite by default) to wait.
     /// @param info
     ///   Extended exit information for terminated process.
-    ///   Note, that if CProcess:Kill() was used to terminate the process
+    ///   Note that if CProcess:Kill() was used to terminate the process
     ///   then the extended information may not be available.
     /// @return
     ///   - Exit code of the process, if the call completed without errors.
-    ///   - (-1), if error has occurred or it is impossible to get an exit
-    ///     code of the process. If 'info' parameter is specified, it is
-    ///     filled with additional information about the process.
+    ///   - (-1) if an error occurred or it was impossible to get the exit
+    ///     code of the process.  If 'info' parameter is specified, then it
+    ///     is filled with additional information about the process.
     /// @note
     ///   It is recommended to call this method for all processes started 
     ///   in eNoWait or eDetach modes (except on Windows for eDetach), because
-    ///   it release "zombie" processes, that finished working and waiting
-    ///   to return it's exit status. If Wait() is not called somewhere,
-    ///   the child process will be completely removed from the system only
-    ///   when the parent process ends.
+    ///   it releases "zombie" processes, i.e. those finished running and
+    ///   waiting for their parent to obtain their exit code.  If Wait() is
+    ///   not called somewhere, then the child process will be completely
+    ///   removed from the system only when its parent process ends.
     /// @sa
     ///   IsAlive, CExitInfo, CExec
     int Wait(unsigned long timeout = kInfiniteTimeoutMs,
              CExitInfo* info = 0) const;
 
+
     /// Fork (throw exception if the platform does not support fork),
     /// update PID and GUID used for logging.
     static TPid Fork(void);
+
 
     /// Daemonization flags
     enum FDaemonFlags {
         fDontChroot = 1,  ///< Don't change to "/"
         fKeepStdin  = 2,  ///< Keep stdin open as "/dev/null" (RO)
         fKeepStdout = 4,  ///< Keep stdout open as "/dev/null" (WO)
-        fImmuneTTY  = 8   ///< Make daemon immune to opening of controlling TTY
+        fImmuneTTY  = 8,  ///< Make daemon immune to opening of controlling TTY
+        fKeepParent = 16  ///< Do not exit the parent process but return
     };
     /// Bit-wise OR of FDaemonFlags @sa FDaemonFlags
     typedef unsigned int TDaemonFlags;
 
-
     /// Go daemon.
     ///
-    /// Return true in the daemon thread (parent thread doesn't return).
-    /// Return false on error (no daemon created), see errno.
+    /// Return TPid(-1) in the daemon thread (the parent thread doesn't return
+    /// unless fKeepParent is set, or TPid(daemon) in the parent thread).
+    /// On error return 0 in the parent thread (no daemon created), see errno.
     ///
-    /// Reopen stderr/cerr in daemon thread if "logfile" specified as non-NULL
-    /// (stderr will open to "/dev/null" if "logfile" has been passed as ""),
-    /// otherwise stderr is closed in the daemon thread.
+    /// Reopen stderr/cerr in the daemon thread if "logfile" specified as
+    /// non-NULL (stderr will open to "/dev/null" if "logfile" has been passed
+    /// as ""), otherwise stderr is closed in the daemon thread.
     /// NB: Always check stderr for errors of failed redirection!
     ///
-    /// Unless instructed by "flags" parameter, the daemon thread has its
-    /// stdin/cin and stdout/cout closed, and current directory changed
-    /// to root directory ("/").
+    /// Unless instructed by the "flags" parameter, the daemon thread has its
+    /// stdin/cin and stdout/cout closed, and the current working directory
+    /// changed to the root directory ("/").
     ///
     /// If kept open, stdin and stdout are both redirected to "/dev/null".
     /// Opening a terminal device as a controlling terminal is allowed, unless
@@ -317,9 +317,9 @@ public:
     ///
     /// Note that this call is somewhat destructive and may not be able
     /// to restore the process that called it to a state prior to the call
-    /// in case of an error.  So that calling process can find std file
-    /// pointers (and sometimes descriptors) screwed up.
-    static bool Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
+    /// in case of an error.  So that calling process can find the standard
+    //  file pointers (and sometimes descriptors) screwed up.
+    static TPid Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
 
 private:
 #if defined NCBI_THREAD_PID_WORKAROUND
@@ -336,7 +336,7 @@ private:
     friend class CThread;
 #endif
 
-    // itptr_t type can store both: pid and process handle.
+    // itptr_t type can store both pid and process handle.
     intptr_t     m_Process;  ///< Process identifier.
     EProcessType m_Type;     ///< Type of process identifier.
 };

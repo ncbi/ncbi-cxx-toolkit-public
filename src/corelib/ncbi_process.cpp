@@ -285,12 +285,12 @@ TPid CProcess::Fork(void)
 }
 
 
-bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
+TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
 {
 #ifdef NCBI_OS_UNIX
-    int  fdin  = ::dup(STDIN_FILENO);
-    int  fdout = ::dup(STDOUT_FILENO);
-    int  fderr = ::dup(STDERR_FILENO);
+    int fdin  = ::dup(STDIN_FILENO);
+    int fdout = ::dup(STDOUT_FILENO);
+    int fderr = ::dup(STDERR_FILENO);
 
     try {
         if (flags & fKeepStdin) {
@@ -344,16 +344,40 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             }
         }
         TPid pid = Fork();
-        if (pid == (pid_t)(-1)) {
+        if (pid) {
+            // Parent thread (including fork error)
             int x_errno = errno;
-            ::dup2(fdin,  STDIN_FILENO);
-            ::dup2(fdout, STDOUT_FILENO);
-            ::dup2(fderr, STDERR_FILENO);
-            errno = x_errno;
-            throw "Cannot fork";
+            if (pid == (TPid)(-1)  ||  (flags & fKeepParent)) {
+                ::dup2(fdin,  STDIN_FILENO);
+                ::dup2(fdout, STDOUT_FILENO);
+                ::dup2(fderr, STDERR_FILENO);
+            }
+            if (pid == (TPid)(-1)) {
+                errno = x_errno;
+                throw "Cannot fork";
+            }
+            if (!(flags & fKeepParent)) {
+                ::_exit(0);
+            }
+            ::close(fdin);
+            ::close(fdout);
+            ::close(fderr);
+            return (TPid) pid/*success*/;
         }
-        if (pid)
-            ::_exit(0);
+        // Child thread only
+        ::setsid();
+        if (flags & fImmuneTTY) {
+            pid = Fork();
+            if (pid == (TPid)(-1)) {
+                const char* error = strerror(errno);
+                if (!error  ||  !*error)
+                    error = "Unknown error";
+                ERR_POST_X(2, "[Daemonize]  Failed to immune from TTY accruals"
+                           " (" + string(error) + "), continuing anyways");
+            } else if (pid) {
+                ::_exit(0);
+            }
+        }
         if (!(flags & fDontChroot))
             if (::chdir("/") ) { /*dummy*/ };  // NB: "/" always exists
         if (!(flags & fKeepStdin))
@@ -365,20 +389,7 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
         if (!logfile)
             ::fclose(stderr);
         ::close(fderr);
-        ::setsid();
-        if (flags & fImmuneTTY) {
-            pid = Fork();
-            if (pid == (pid_t)(-1)) {
-                const char* error = strerror(errno);
-                if (!error  ||  !*error)
-                    error = "Unknown error";
-                ERR_POST_X(2, "[Daemonize]  Failed to immune from TTY accruals"
-                           " (" + string(error) + "), continue anyways");
-            } else if (pid) {
-                ::_exit(0);
-            }
-        }
-        return true/*success*/;
+        return (TPid)(-1)/*success*/;
     }
     catch (const char* what) {
         int x_errno = errno;
@@ -393,8 +404,9 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
 #else
     NCBI_THROW(CCoreException, eCore,
                "CProcess::Daemonize() not implemented on this platform");
+    /*NOTREACHED*/
 #endif
-    return false/*failure*/;
+    return (TPid) 0/*failure*/;
 }
 
 
