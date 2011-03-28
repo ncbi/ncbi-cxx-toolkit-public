@@ -459,7 +459,9 @@ bool CTestDiagApp::TestApp_Exit(void)
     TStrings messages;
 
     // Get the list of messages
-    NStr::Split(CNcbiOstrstreamToString(s_Sout), "\r\n", messages);
+    CTempString ts(s_Sout.str(), s_Sout.pcount());
+    NStr::Split(ts, "\r\n", messages);
+    s_Sout.freeze(false);
 
     bool result = true;
     ITERATE(TStrings, i, messages) {
