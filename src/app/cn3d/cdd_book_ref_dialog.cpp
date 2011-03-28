@@ -274,38 +274,6 @@ static wxString MakeBrParameterString(const CCdd_book_ref& bref)
     return paramStr;
 }
 
-//  The 'rid' parameter is used in old "DTD1" style URLs based on bv.fcgi
-/*static wxString MakeRID(const CCdd_book_ref& bref)
-{
-    wxString rid;
-
-    if (!bref.IsSetElementid() && !bref.IsSetCelementid())
-        ERRORMSG("MakeRID() failed - neither elementid nor celementid is set");
-
-    else if (bref.IsSetElementid() && bref.IsSetCelementid())
-        ERRORMSG("MakeRID() failed - both elementid and celementid are set");
-
-    else if (bref.IsSetSubelementid() && bref.IsSetCsubelementid())
-        ERRORMSG("MakeRID() failed - both subelementid and csubelementid are set");
-
-    else {
-        string
-            elementid = (bref.IsSetElementid() ? NStr::IntToString(bref.GetElementid()) : bref.GetCelementid()),
-            subelementid = ((bref.IsSetSubelementid() || bref.IsSetCsubelementid()) ?
-                (bref.IsSetSubelementid() ? NStr::IntToString(bref.GetSubelementid()) : bref.GetCsubelementid()) : kEmptyStr);
-        if (subelementid.size() > 0)
-            rid.Printf("%s.%s.%s#%s",
-                bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(),
-                elementid.c_str(), subelementid.c_str());
-        else
-            rid.Printf("%s.%s.%s",
-                bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(),
-                elementid.c_str());
-    }
-
-    return rid;
-}*/
-
 void CDDBookRefDialog::SetWidgetStates(void)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_LISTBOX, wxListBox)
@@ -620,8 +588,6 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                 url.Printf("http://www.ncbi.nlm.nih.gov/bookshelf/br.fcgi?book=%s",
                     MakeBrParameterString((*selDescr)->GetBook_ref()).c_str());
             }
-//            url.Printf("http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=%s",
-//                MakeRID((*selDescr)->GetBook_ref()).c_str());
             LaunchWebPage(url.c_str());
         }
     }
@@ -709,8 +675,6 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                 wxTextDataObject data;
                 wxTheClipboard->GetData(data);
 
-                //  This was the *really* old method of parsing strings from a bv.fcgi URL.
-                //bool madeBookRef = BvURLToBookRef(data, descr);
                 //  This is the *old* method of parsing strings from a br.fcgi URL.
                 //bool madeBookRef = BrURLToBookRef(data, descr);
 

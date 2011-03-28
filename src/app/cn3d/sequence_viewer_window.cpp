@@ -402,8 +402,7 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
         {
             GetFloatingPointDialog fpDialog(NULL,
                 "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
-                0.0, 1.0, 0.05, (MASTER_HAS_STRUCTURE ?
-                    ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5) : 1.0));
+                0.0, 1.0, 0.05, (prevPSSMWeight >= 0.0) ? prevPSSMWeight : 1.0);
             if (fpDialog.ShowModal() == wxOK) {
                 double weightPSSM = prevPSSMWeight = fpDialog.GetValue();
                 SetCursor(*wxHOURGLASS_CURSOR);
@@ -445,8 +444,7 @@ void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
 {
     GetFloatingPointDialog fpDialog(NULL,
         "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
-        0.0, 1.0, 0.05, (MASTER_HAS_STRUCTURE ?
-            ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5) : 1.0));
+        0.0, 1.0, 0.05, (prevPSSMWeight >= 0.0) ? prevPSSMWeight : 1.0);
     if (fpDialog.ShowModal() == wxOK) {
         double weightPSSM = prevPSSMWeight = fpDialog.GetValue();
         SetCursor(*wxHOURGLASS_CURSOR);
