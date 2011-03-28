@@ -330,7 +330,7 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             if (fd < 0) {
                 if (!*logfile)
                     throw string("Error opening /dev/null for appending");
-                throw "Unable to redirect stderr to \"" +string(logfile)+ '"';
+                throw "Unable to open logfile \"" + string(logfile) + '"';
             }
             NcbiCerr.flush();
             ::fflush(stderr);
