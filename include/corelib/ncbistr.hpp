@@ -1568,7 +1568,7 @@ public:
     ///   If delimiter is empty, then input string is appended to "arr" as is.
     /// @param arr
     ///   The tokens defined in "str" by using symbols from "delim" are added
-    ///   to the list "arr" and also returned by the function.  NB: in the
+    ///   to the vector "arr" and also returned by the function.  NB: in the
     ///   fully CTempString-based variant, modifying or destroying the string
     ///   underlying "str" will invalidate the tokens.
     /// @param merge
@@ -1578,7 +1578,7 @@ public:
     /// @param token_pos
     ///   Optional array for the tokens' positions in "str".
     /// @return 
-    ///   The list "arr" is also returned.
+    ///   The vector "arr" is also returned.
     /// @sa
     ///   Split, TokenizePattern, TokenizeInTwo
     static vector<string>& Tokenize(const CTempString& str,
@@ -1604,7 +1604,7 @@ public:
     ///   If delimiter is empty, then input string is appended to "arr" as is.
     /// @param arr
     ///   The tokens defined in "str" by using delimiter "delim" are added
-    ///   to the list "arr" and also returned by the function.  NB: in the
+    ///   to the vector "arr" and also returned by the function.  NB: in the
     ///   CTempString-based variant, modifying or destroying the string
     ///   underlying "str" will invalidate the tokens.
     /// @param merge
@@ -1614,7 +1614,7 @@ public:
     /// @param token_pos
     ///   Optional array for the tokens' positions in "str".
     /// @return 
-    ///   The list "arr" is also returned.
+    ///   The vector "arr" is also returned.
     /// @sa
     ///   Split, Tokenize
     static
