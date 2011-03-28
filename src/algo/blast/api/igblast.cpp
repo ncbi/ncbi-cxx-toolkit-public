@@ -612,7 +612,7 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                                    (&*((*result)->GetSeqAlign())));
             if (num_aligns >= 0) {
                 CSeq_align_set::Tdata & align_list = align->Set();
-                if (align_list.size() > num_aligns) {
+                if (align_list.size() > (CSeq_align_set::Tdata::size_type)num_aligns) {
                     CSeq_align_set::Tdata::iterator it = align_list.begin();
                     for (int i=0; i<num_aligns; ++i) ++it;
                     align_list.erase(it, align_list.end());
