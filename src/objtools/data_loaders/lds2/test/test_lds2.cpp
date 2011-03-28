@@ -56,6 +56,7 @@
 #include <objtools/lds2/lds2.hpp>
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
