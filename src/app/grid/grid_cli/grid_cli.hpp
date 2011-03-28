@@ -82,6 +82,7 @@ enum EOption {
 
 #define OPTION_ACCEPTED 1
 #define OPTION_SET 2
+#define OPTION_N(number) (1 << number)
 
 class CGridCommandLineInterfaceApp : public CNcbiApplication
 {
@@ -140,6 +141,11 @@ private:
     bool IsOptionSet(EOption option)
     {
         return m_Opts.option_flags[option] == OPTION_SET;
+    }
+
+    int IsOptionSet(EOption option, int mask)
+    {
+        return m_Opts.option_flags[option] == OPTION_SET ? mask : 0;
     }
 
     CNetCacheAPI m_NetCacheAPI;

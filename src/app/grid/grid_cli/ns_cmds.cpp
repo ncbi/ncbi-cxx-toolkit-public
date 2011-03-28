@@ -72,15 +72,56 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 
     PrintJobMeta(CNetScheduleKey(m_Opts.id));
 
-    switch ((IsOptionSet(eDeferExpiration) << 1) | IsOptionSet(eStatusOnly)) {
-    case 0:
-        m_NetScheduleAdmin.DumpJob(NcbiCout, m_Opts.id);
-        break;
+    CNetScheduleAPI::EJobStatus status;
 
-    case 1: // Print status only.
-        break;
+    if (IsOptionSet(eDeferExpiration)) {
+        status = m_NetScheduleAPI.GetSubmitter().GetJobStatus(m_Opts.id);
+        if (IsOptionSet(eStatusOnly) ||
+                status == CNetScheduleAPI::eJobNotFound) {
+            printf("Status: %s\n",
+                CNetScheduleAPI::StatusToString(status).c_str());
+            if (status == CNetScheduleAPI::eJobNotFound)
+                return 0;
+        }
+    } else if (IsOptionSet(eStatusOnly)) {
+        status = m_NetScheduleAPI.GetExecuter().GetJobStatus(m_Opts.id);
+        printf("Status: %s\n", CNetScheduleAPI::StatusToString(status).c_str());
+            if (status == CNetScheduleAPI::eJobNotFound)
+                return 0;
     }
 
+    if (!IsOptionSet(eBrief))
+        m_NetScheduleAdmin.DumpJob(NcbiCout, m_Opts.id);
+    else
+    {
+        CNetScheduleJob job;
+        job.job_id = m_Opts.id;
+        status = m_NetScheduleAPI.GetJobDetails(job);
+
+        printf("Status: %s\n", CNetScheduleAPI::StatusToString(status).c_str());
+
+        if (status == CNetScheduleAPI::eJobNotFound)
+            return 0;
+
+        printf("Input size: %u\n", job.input.size());
+
+        switch (status) {
+        default:
+            if (job.output.empty())
+                break;
+            /* FALL THROUGH */
+
+        case CNetScheduleAPI::eDone:
+        case CNetScheduleAPI::eReading:
+        case CNetScheduleAPI::eConfirmed:
+        case CNetScheduleAPI::eReadFailed:
+            printf("Output size: %u\n", job.output.size());
+            break;
+        }
+
+        if (!job.error_msg.empty())
+            printf("Error message: %u\n", job.error_msg.c_str());
+    }
     return 0;
 }
 

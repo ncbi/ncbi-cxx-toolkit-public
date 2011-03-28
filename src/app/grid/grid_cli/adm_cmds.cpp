@@ -40,18 +40,18 @@ USING_NCBI_SCOPE;
 CGridCommandLineInterfaceApp::EAPIClass
     CGridCommandLineInterfaceApp::SetUp_AdminCmd()
 {
-    switch ((IsOptionSet(eNetCache) << 0) |
-            (IsOptionSet(eNetSchedule) << 1)) {
+    switch (IsOptionSet(eNetCache, OPTION_N(0)) |
+            IsOptionSet(eNetSchedule, OPTION_N(1))) {
     case 0:
         fprintf(stderr, "This command requires either "
             "'--nc' or '--ns' option to be specified.\n");
         return eUnknownAPI;
 
-    case 1: // eNetCache
+    case OPTION_N(0): // eNetCache
         SetUp_NetCacheCmd(eNetCacheAdmin);
         return eNetCacheAdmin;
 
-    case 2: // eNetSchedule
+    case OPTION_N(1): // eNetSchedule
         SetUp_NetScheduleCmd(eNetScheduleAdmin);
         return eNetScheduleAdmin;
 
@@ -110,7 +110,7 @@ int CGridCommandLineInterfaceApp::Cmd_Version()
 
 int CGridCommandLineInterfaceApp::Cmd_Stats()
 {
-    if (!SetUp_AdminCmd() != eNetCacheAdmin)
+    if (SetUp_AdminCmd() != eNetCacheAdmin)
         return 2;
     m_NetCacheAdmin.PrintStat(NcbiCout);
     return 0;
@@ -118,7 +118,7 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
 
 int CGridCommandLineInterfaceApp::Cmd_Health()
 {
-    if (!SetUp_AdminCmd() != eNetCacheAdmin)
+    if (SetUp_AdminCmd() != eNetCacheAdmin)
         return 2;
     m_NetCacheAdmin.PrintHealth(NcbiCout);
     return 0;
@@ -126,7 +126,7 @@ int CGridCommandLineInterfaceApp::Cmd_Health()
 
 int CGridCommandLineInterfaceApp::Cmd_GetConf()
 {
-    if (!SetUp_AdminCmd() != eNetCacheAdmin)
+    if (SetUp_AdminCmd() != eNetCacheAdmin)
         return 2;
     m_NetCacheAdmin.PrintConfig(NcbiCout);
     return 0;
@@ -156,18 +156,19 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
         return 0;
 
     case eNetScheduleAdmin:
-        switch ((IsOptionSet(eNow) << 1) | IsOptionSet(eDie)) {
+        switch (IsOptionSet(eNow, OPTION_N(0)) |
+                IsOptionSet(eDie, OPTION_N(1))) {
         case 0: // No additional options.
             m_NetScheduleAdmin.ShutdownServer();
             return 0;
 
-        case 1: // eDie is set.
-            m_NetScheduleAdmin.ShutdownServer(CNetScheduleAdmin::eDie);
-            return 0;
-
-        case 1 << 1: // eNow is set.
+        case OPTION_N(0): // eNow is set.
             m_NetScheduleAdmin.ShutdownServer(
                 CNetScheduleAdmin::eShutdownImmediate);
+            return 0;
+
+        case OPTION_N(1): // eDie is set.
+            m_NetScheduleAdmin.ShutdownServer(CNetScheduleAdmin::eDie);
             return 0;
 
         default: // Both eNow and eDie are set

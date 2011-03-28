@@ -167,8 +167,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
 
     SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
-    int reader_select = (IsOptionSet(ePassword) << 1) |
-        (m_Opts.offset != 0 || m_Opts.size != 0);
+    int reader_select = IsOptionSet(ePassword, OPTION_N(1)) |
+        (m_Opts.offset != 0 || m_Opts.size != 0 ? OPTION_N(0) : 0);
 
     auto_ptr<IReader> reader;
 
@@ -181,7 +181,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                 &blob_size,
                 CNetCacheAPI::eCaching_Disable));
             break;
-        case 1: /* use offset */
+        case OPTION_N(0): /* use offset */
             reader.reset(m_NetCacheAPI.GetPartReader(
                 m_Opts.id,
                 m_Opts.offset,
@@ -189,14 +189,14 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                 &blob_size,
                 CNetCacheAPI::eCaching_Disable));
             break;
-        case 2: /* use password */
+        case OPTION_N(1): /* use password */
             reader.reset(CNetCachePasswordGuard(m_NetCacheAPI,
                 m_Opts.password)->GetReader(
                     m_Opts.id,
                     &blob_size,
                     CNetCacheAPI::eCaching_Disable));
             break;
-        case 3: /* use password and offset */
+        case OPTION_N(1) | OPTION_N(0): /* use password and offset */
             reader.reset(CNetCachePasswordGuard(m_NetCacheAPI,
                 m_Opts.password)->GetPartReader(
                     m_Opts.id,
@@ -226,7 +226,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     &m_Opts.icache_key.version,
                     &validity));
             break;
-        case 1: /* use offset */
+        case OPTION_N(0): /* use offset */
             reader.reset(m_NetICacheClient.GetReadStreamPart(
                 m_Opts.icache_key.key,
                 m_Opts.icache_key.version,
@@ -236,7 +236,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                 NULL,
                 CNetCacheAPI::eCaching_Disable));
             break;
-        case 2: /* use password */
+        case OPTION_N(1): /* use password */
             reader.reset(CNetICachePasswordGuard(m_NetICacheClient,
                 m_Opts.password)->GetReadStream(
                     m_Opts.icache_key.key,
@@ -245,7 +245,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     NULL,
                     CNetCacheAPI::eCaching_Disable));
             break;
-        case 3: /* use password and offset */
+        case OPTION_N(1) | OPTION_N(0): /* use password and offset */
             reader.reset(CNetICachePasswordGuard(m_NetICacheClient,
                 m_Opts.password)->GetReadStreamPart(
                     m_Opts.icache_key.key,
