@@ -2532,7 +2532,7 @@ extern string GetLogFile(void);
 /// The returned value is true on success, false if the switching
 /// fails for any reason.
 NCBI_XNCBI_EXPORT
-extern bool Diag_Use_RWLock(void);
+extern void g_Diag_Use_RWLock(void);
 
 
 /////////////////////////////////////////////////////////////////////////////

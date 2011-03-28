@@ -77,15 +77,19 @@ DEFINE_STATIC_MUTEX(s_DiagMutex);
 static CSafeStaticPtr<CRWLock> s_DiagRWLock;
 
 
-bool Diag_Use_RWLock(void)
+void g_Diag_Use_RWLock(void)
 {
-    if (s_DiagUseRWLock) return true;
+    if (s_DiagUseRWLock) return; // already switched
     // Try to detect at least some dangerous situations.
     // This does not guarantee safety since some thread may
     // be waiting for the mutex while we switch to RW-lock.
-    if ( !s_DiagMutex.TryLock() ) {
-        // Mutex is locked - fail
-        return false;
+    bool diag_mutex_unlocked = s_DiagMutex.TryLock();
+    // Mutex is locked - fail
+    _ASSERT(diag_mutex_unlocked);
+    if (!diag_mutex_unlocked) {
+        _TROUBLE;
+        NCBI_THROW(CCoreException, eCore,
+            "Can not switch diagnostic to RW-lock - mutex is locked.");
     }
     s_DiagUseRWLock = true;
     s_DiagMutex.Unlock();
@@ -4610,20 +4614,37 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
             f.Rename(GetLogName() + "-backup");
         }
         close(m_Handle);
-    }
-    int mode = O_WRONLY | O_APPEND | O_CREAT;
-    if (flags & fTruncate) {
-        mode |= O_TRUNC;
+        m_Handle = -1;
     }
 
-    mode_t perm = CDirEntry::MakeModeT(
-        CDirEntry::fRead | CDirEntry::fWrite,
-        CDirEntry::fRead | CDirEntry::fWrite,
-        CDirEntry::fRead | CDirEntry::fWrite,
-        0);
-    m_Handle = NcbiSys_open(
-        _T_XCSTRING(CFile::ConvertToOSPath(GetLogName())),
-        mode, perm);
+    // Need at least 20K of free space to write logs
+    bool low_disk_space = false;
+    try {
+        CDirEntry entry(GetLogName());
+        low_disk_space = CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20;
+    }
+    catch (CException) {
+        // Ignore error - could not check free space for some reason.
+        // Try to open the file anyway.
+    }
+
+    if ( !low_disk_space ) {
+        int mode = O_WRONLY | O_APPEND | O_CREAT;
+        if (flags & fTruncate) {
+            mode |= O_TRUNC;
+        }
+
+        mode_t perm = CDirEntry::MakeModeT(
+            CDirEntry::fRead | CDirEntry::fWrite,
+            CDirEntry::fRead | CDirEntry::fWrite,
+            CDirEntry::fRead | CDirEntry::fWrite,
+            0);
+        m_Handle = NcbiSys_open(
+            _T_XCSTRING(CFile::ConvertToOSPath(GetLogName())),
+            mode, perm);
+    }
+
+    // Restart the timer even if failed to reopen the file.
     m_ReopenTimer->Restart();
     if (m_Handle == -1) {
         /*
@@ -4652,16 +4673,18 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         }
         return;
     }
-    // Flush the collected messages, if any, once the handle if available
-    if ( m_Messages.get() ) {
-        ITERATE(TMessages, it, *m_Messages) {
-            CNcbiOstrstream str_os;
-            str_os << *it;
-            if (write(m_Handle, str_os.str(),
-                      (unsigned int)str_os.pcount())) {/*dummy*/};
-            str_os.rdbuf()->freeze(false);
+    else {
+        // Flush the collected messages, if any, once the handle if available
+        if ( m_Messages.get() ) {
+            ITERATE(TMessages, it, *m_Messages) {
+                CNcbiOstrstream str_os;
+                str_os << *it;
+                if (write(m_Handle, str_os.str(),
+                          (unsigned int)str_os.pcount())) {/*dummy*/};
+                str_os.rdbuf()->freeze(false);
+            }
+            m_Messages.reset();
         }
-        m_Messages.reset();
     }
 }
 
@@ -4842,14 +4865,6 @@ bool s_CanOpenLogFile(const string& file_name)
         return false;
     }
     CDirEntry entry(abs_path);
-    // Need at least 20K of free space to write logs
-    try {
-        if (CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20) {
-            return false;
-        }
-    }
-    catch (CException) {
-    }
     int mode = O_WRONLY | O_APPEND | O_CREAT;
     mode_t perm = CDirEntry::MakeModeT(
         CDirEntry::fRead | CDirEntry::fWrite,
