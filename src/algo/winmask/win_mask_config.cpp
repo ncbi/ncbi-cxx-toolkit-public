@@ -263,7 +263,7 @@ CWinMaskConfig::EAppType CWinMaskConfig::s_DetermineAppType(
 CMaskWriter*
 CWinMaskConfig::x_GetWriter(const CArgs& args)
 {
-    const string & format( args[kInputFormat].AsString() );
+    const string & format( args[kOutputFormat].AsString() );
     CMaskWriter* retval = NULL;
 
     if (format == "interval") {
@@ -303,7 +303,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
                                      && determine_input ? 
           ( !(args[kInput].AsString() == "-")
             ? new CNcbiIfstream( args[kInput].AsString().c_str() ) 
-            : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), 
+            : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), writer( NULL ),
       lstat_name( app_type >= eGenerateMasks ? args["ustat"].AsString() : "" ),
       textend( app_type >= eGenerateMasks && args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
       cutoff_score( app_type >= eGenerateMasks && args["t_thres"] ? args["t_thres"].AsInteger() : 0 ),
@@ -367,8 +367,6 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
                             eReaderAllocFail, "" );
             }
         }
-
-        string oformatstr = args[kOutputFormat].AsString();
 
         writer = x_GetWriter(args);
 
