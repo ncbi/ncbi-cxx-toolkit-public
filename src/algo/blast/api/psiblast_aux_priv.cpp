@@ -560,8 +560,9 @@ CPsiBlastAlignmentProcessor::operator()
         // Look for HSP with score less than inclusion_ethresh
         double e = GetLowestEvalue((*hsp)->GetScore());
         if (e < evalue_inclusion_threshold) {
-            CRef<CSeq_id> id(const_cast<CSeq_id*>(&(*hsp)->GetSeq_id(1)));
-            output.insert(id);
+            CSeq_id_Handle sid =
+                CSeq_id_Handle::GetHandle((*hsp)->GetSeq_id(1));
+            output.insert(sid);
         }
     }
 }

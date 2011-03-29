@@ -301,9 +301,9 @@ CPsiBlastInputData::x_ExtractAlignmentData()
     unsigned int msa_index = kQueryIndex + 1;  
     
     CSeq_id* last_sid=NULL;
-    bool qualifying_seqid = false;
+    int hit_no = 0;
         
-    // For each hit...
+    // For each HSP...
     ITERATE(CSeq_align_set::Tdata, itr, m_SeqAlignSet->Get()) {
 
         double bit_score;
@@ -311,18 +311,16 @@ CPsiBlastInputData::x_ExtractAlignmentData()
         CSeq_id* current_sid = const_cast<CSeq_id*> (&(*itr)->GetSeq_id(1));
 
         // Increment msa_index (if appropriate) after all CDense_seg for a given target 
-        // sequence have been processed.  Reset qualifying_seqid to false.
-        if (qualifying_seqid && (last_sid && !current_sid->Match(*last_sid))) {
+        // sequence have been processed.
+        if (last_sid && !current_sid->Match(*last_sid)) {
             msa_index++;
-            qualifying_seqid = false;
         }
 
         // ... below the e-value inclusion threshold
         if (evalue < m_Opts.inclusion_ethresh) {
-            // DELME ?? _ASSERT(msa_index < GetNumAlignedSequences() + 1);
+            _ASSERT(msa_index < GetNumAlignedSequences() + 1);
             const CDense_seg& seg = (*itr)->GetSegs().GetDenseg();
             x_ProcessDenseg(seg, msa_index, evalue, bit_score);
-            qualifying_seqid = true;
         }
         last_sid = current_sid;
     }

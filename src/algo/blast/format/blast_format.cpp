@@ -337,9 +337,9 @@ CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
     _ASSERT(new_seqs.IsEmpty());
 
     ITERATE(CSeq_align_set::Tdata, alignment, full_alignment->Get()) {
-        CSeq_id& subj_id =
-            const_cast<CSeq_id&>((*alignment)->GetSeq_id(kSubjRow));
-        if (prev_seqids.find(CRef<CSeq_id>(&subj_id)) != prev_seqids.end()) {
+        CSeq_id_Handle subj_id =
+            CSeq_id_Handle::GetHandle((*alignment)->GetSeq_id(kSubjRow));
+        if (prev_seqids.find(subj_id) != prev_seqids.end()) {
             // if found among previously seen Seq-ids...
             repeated_seqs.Set().push_back(*alignment);
         } else {

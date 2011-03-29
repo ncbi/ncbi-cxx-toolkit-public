@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(TestAsLoopCounter) {
             BOOST_REQUIRE_EQUAL(++gi, itr.GetIterationNumber());
 
             CPsiBlastIterationState::TSeqIds ids;
-            ids.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, gi)));
+            ids.insert(CSeq_id_Handle::GetHandle(gi));
             itr.Advance(ids);
         }
 
@@ -70,8 +70,8 @@ BOOST_AUTO_TEST_CASE(TestConvergence) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
         BOOST_REQUIRE_EQUAL(1U, itr.GetIterationNumber());
         CPsiBlastIterationState::TSeqIds ids, ids_plus_1;
-        ids.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 555)));
-        ids_plus_1.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 556)));
+        ids.insert(CSeq_id_Handle::GetHandle(555));
+        ids_plus_1.insert(CSeq_id_Handle::GetHandle(556));
 
         itr.Advance(ids);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -97,9 +97,9 @@ BOOST_AUTO_TEST_CASE(TestConvergence2) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
         BOOST_REQUIRE_EQUAL(1U, itr.GetIterationNumber());
         CPsiBlastIterationState::TSeqIds ids_itr1, ids_itr2;
-        ids_itr1.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 555)));
-        ids_itr1.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 556)));
-        ids_itr2.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 555)));
+        ids_itr1.insert(CSeq_id_Handle::GetHandle(555));
+        ids_itr1.insert(CSeq_id_Handle::GetHandle(556));
+        ids_itr2.insert(CSeq_id_Handle::GetHandle(555));
 
         itr.Advance(ids_itr1);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(TestModifyingConvergedIterationState) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
 
         CPsiBlastIterationState::TSeqIds ids;
-        ids.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 555)));
-        ids.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 555)));
+        ids.insert(CSeq_id_Handle::GetHandle(555));
+        ids.insert(CSeq_id_Handle::GetHandle(555));
         itr.Advance(ids);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
 
@@ -134,7 +134,7 @@ void RunNIterationsWithoutConverging(CPsiBlastIterationState& itr,
 
         for (unsigned int i = 0; i < n_iterations; i++) {
             CPsiBlastIterationState::TSeqIds ids;
-            ids.insert(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, i+1)));
+            ids.insert(CSeq_id_Handle::GetHandle(i+1));
             itr.Advance(ids);
         }
 }

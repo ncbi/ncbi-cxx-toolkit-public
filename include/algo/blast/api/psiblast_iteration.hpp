@@ -36,7 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/core/blast_export.h>
-#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <list>
 #include <set>
 
@@ -56,21 +56,6 @@ BEGIN_SCOPE(blast)
 
 // Forward declaration
 class CPSIBlastOptionsHandle;
-
-/// Returns true if a < b, else false
-struct CSeqIdComparator : public 
-      binary_function<bool, CRef<objects::CSeq_id>, CRef<objects::CSeq_id> >
-{
-    bool operator() (CRef<objects::CSeq_id> a, CRef<objects::CSeq_id> b) const {
-        if (a.Empty()) {
-            return false;
-        }
-        if (b.Empty()) {
-            return true;
-        }
-        return !! ( *a < *b );
-    }
-};
 
 /// Represents the iteration state in PSI-BLAST
 class NCBI_XBLAST_EXPORT CPsiBlastIterationState
@@ -101,7 +86,7 @@ public:
     bool HasMoreIterations() const;
 
     /// List of CSeq_ids
-    typedef set< CRef<objects::CSeq_id>, CSeqIdComparator> TSeqIds;
+    typedef set<objects::CSeq_id_Handle> TSeqIds;
 
     /// Retrieve the set of Seq-id's found in the previous iteration
     TSeqIds GetPreviouslyFoundSeqIds() const;
