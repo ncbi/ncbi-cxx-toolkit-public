@@ -327,10 +327,10 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
 //  for figures, tables, boxes, and glossary items (the latter being a 'def-item').
 //  All derived book references will exclusively use the Celementid CCdd_book_ref field; 
 //  the Csubelementid field no longer appears necessary in this URL scheme.
-bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef < CCdd_descr >& descr)
+bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef < CCdd_book_ref >& bookRef)
 {
     bool result = false;
-    if (descr.Empty()) return result;
+    if (bookRef.Empty()) return result;
 
     //  remove leading/trailing whitespace from input url
     string inputStr = NStr::TruncateSpaces(portalBookUrl);
@@ -402,9 +402,9 @@ bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef < CCdd_descr >
             typeEnum  = (idStr.length() > 0) ? CCdd_book_ref::eTextelement_section : CCdd_book_ref::eTextelement_chapter;
         }
 
-        descr->SetBook_ref().SetBookname(nbkCode);
-        descr->SetBook_ref().SetTextelement(typeEnum);
-        descr->SetBook_ref().SetCelementid(idStr);
+        bookRef->SetBookname(nbkCode);
+        bookRef->SetTextelement(typeEnum);
+        bookRef->SetCelementid(idStr);
         result = true;
     }
 
