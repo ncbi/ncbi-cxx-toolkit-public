@@ -61,6 +61,10 @@
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gtf_reader.hpp>
 
+#include <algo/phy_tree/phy_node.hpp>
+#include <algo/phy_tree/dist_methods.hpp>
+#include <objects/biotree/BioTreeContainer.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -182,7 +186,12 @@ void CMultiReaderApp::Init(void)
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
-            "bed", "microarray", "bed15", "wig", "wiggle", "gtf", "gff3", "gff2", "guess") );
+            "bed", 
+            "microarray", "bed15", 
+            "wig", "wiggle", 
+            "gtf", "gff3", "gff2", 
+            "newick", "tree", "tre",
+            "guess") );
 
     arg_desc->AddDefaultKey(
         "flags",
@@ -344,6 +353,7 @@ CMultiReaderApp::Run(void)
         }
         break;
     }
+
     DumpErrors( cerr );
 
     
@@ -398,6 +408,10 @@ void CMultiReaderApp::SetFormat(
     if ( NStr::StartsWith( strProgramName, "gtf" ) || 
         format == "gtf" || format == "gff3" || format == "gff2" ) {
         m_uFormat = CFormatGuess::eGtf;
+    }
+    if ( NStr::StartsWith( strProgramName, "newick" ) || 
+        format == "newick" || format == "tree" || format == "tre" ) {
+        m_uFormat = CFormatGuess::eNewick;
     }
     if ( m_uFormat == CFormatGuess::eUnknown ) {
         m_uFormat = CFormatGuess::Format( *m_pInput );
@@ -503,6 +517,15 @@ void CMultiReaderApp::ReadObject(
                 reader.ReadObject( lr, m_pErrors );
                 break;
             }
+        }
+
+        case CFormatGuess::eNewick: {
+            //handle inline while we figure out how far we want to go
+            // writing a full reader_base compliant adapter...
+            auto_ptr< TPhyTreeNode >  pTree( ReadNewickTree( *m_pInput ) );
+            CRef<CBioTreeContainer> btc = MakeBioTreeContainer( pTree.get() );
+            object = btc;
+            break;
         }
     }
 }
