@@ -2442,7 +2442,7 @@ CRange<TSeqPos> CAlignFormatUtil::GetSeqAlignCoverageParams(const CSeq_align_set
 
 
 CRef<CSeq_align_set>
-CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
+CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
                                              CScope& scope,
                                              CSeq_align_set& aln_set,
                                              bool nuc_to_nuc_translation,
@@ -2458,8 +2458,12 @@ CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
     vector< CRef<CSeq_align_set> > seqalign_vec(2);
     seqalign_vec[0] = new CSeq_align_set;
     seqalign_vec[1] = new CSeq_align_set;
-   
-    SplitSeqalignByMolecularType(seqalign_vec, db_sort, aln_set, scope);
+
+    if(IsMixedDatabase(ctx)) {
+        SplitSeqalignByMolecularType(seqalign_vec, db_sort, aln_set, scope);
+    }else {
+        seqalign_vec[0] = const_cast<CSeq_align_set*>(&aln_set);
+    }
 
     ITERATE(vector< CRef<CSeq_align_set> >, iter, seqalign_vec){
         list< CRef<CSeq_align_set> > seqalign_hit_list;
