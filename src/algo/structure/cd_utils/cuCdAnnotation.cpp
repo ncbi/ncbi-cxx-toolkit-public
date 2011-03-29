@@ -56,6 +56,7 @@
 
 #include <algo/structure/cd_utils/cuAlign.hpp>
 #include <algo/structure/cd_utils/cuCD.hpp>
+#include <algo/structure/cd_utils/cuBookRefUtils.hpp>
 #include <algo/structure/cd_utils/cuUtils.hpp>
 
 #include <algo/structure/cd_utils/cuCdAnnotation.hpp>

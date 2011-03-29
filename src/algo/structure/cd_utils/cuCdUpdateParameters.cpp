@@ -38,12 +38,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-char* BlastTypeNames[] = {
+string BlastTypeNames[] = {
     "blast",
     "psi-blast"
 };
 
-char* BlastDatabaseNames[] = {
+string BlastDatabaseNames[] = {
     "nr", 
     "swissprot", 
     "pdb", 
@@ -54,7 +54,7 @@ char* BlastDatabaseNames[] = {
     "month"
 };
 
-char* OrganismNames[] = {
+string OrganismNames[] = {
     "All organisms",
     "Cellular organisms",
     "Viruses", 
@@ -71,17 +71,18 @@ char* OrganismNames[] = {
     "Primates"
 };
 
-char* EnvironmentalTaxNames[] = {
+string EnvironmentalTaxNames[] = {
     "unclassified", 
     "environmental samples", 
     "environmental sequence"
 };
 
+
 CdUpdateParameters::CdUpdateParameters()
-    : entrezQuery(),
-    blastType(ePSI_BLAST),
+    : blastType(ePSI_BLAST),
     database(eNR),
     organism(eAll_organisms),
+    entrezQuery(),
     numHits(0),
     evalue(0.01),
     timeToCheck(100000),
@@ -120,10 +121,10 @@ string CdUpdateParameters::toString()
     return result;
 }
 
-char* CdUpdateParameters::getBlastTypeName(enum BlastType bt)
+string CdUpdateParameters::getBlastTypeName(enum BlastType bt)
 {
     if (bt >= eBlastTypeEnd)
-        return 0;
+        return "";
     else
         return BlastTypeNames[bt];
 }
@@ -133,8 +134,8 @@ string CdUpdateParameters::getBlastTypeDefline()
     string defline("Type of Blast:");
     for (int i = 0; i < eBlastTypeEnd; i++)
     {
-        char* part = getBlastTypeName((BlastType)i);
-        if (part)
+        string part = getBlastTypeName((BlastType)i);
+        if (part.length() > 0)
         {
             defline += '|';
             defline += part;
@@ -143,10 +144,10 @@ string CdUpdateParameters::getBlastTypeDefline()
     return defline;
 }
 
-char* CdUpdateParameters::getBlastDatabaseName(BlastDatabase db)
+string CdUpdateParameters::getBlastDatabaseName(BlastDatabase db)
 {
     if (db >= eBlastDatabaseEnd)
-        return 0;
+        return "";
     else
         return BlastDatabaseNames[db];
 }
@@ -156,8 +157,8 @@ string CdUpdateParameters::getBlastDatabaseDefline()
     string defline("Choose a database:");
     for (int i = 0; i < eBlastDatabaseEnd; i++)
     {
-        char* part = getBlastDatabaseName((BlastDatabase)i);
-        if (part)
+        string part = getBlastDatabaseName((BlastDatabase)i);
+        if (part.length() > 0)
         {
             defline += '|';
             defline += part;
@@ -167,10 +168,10 @@ string CdUpdateParameters::getBlastDatabaseDefline()
 }
 
 
-char* CdUpdateParameters::getOrganismName(Organism org)
+string CdUpdateParameters::getOrganismName(Organism org)
 {
     if (org >= eOrganismEnd)
-        return 0;
+        return "";
     else
         return OrganismNames[org];
 }
@@ -180,8 +181,8 @@ string CdUpdateParameters::getOrganismDefline()
     string defline("Limit search by organism:");
     for (int i = 0; i < eOrganismEnd; i++)
     {
-        char* part = getOrganismName((Organism)i);
-        if (part)
+        string part = getOrganismName((Organism)i);
+        if (part.length() > 0)
         {
             defline += '|';
             defline += part;
@@ -191,10 +192,10 @@ string CdUpdateParameters::getOrganismDefline()
 }
 
 
-char* CdUpdateParameters::getEnvironmentalTaxName(EnvironmentalTax et)
+string CdUpdateParameters::getEnvironmentalTaxName(EnvironmentalTax et)
 {
     if (et >= eEnvironmentalTaxEnd)
-        return 0;
+        return "";
     else
         return EnvironmentalTaxNames[et];
 }
@@ -204,8 +205,8 @@ string CdUpdateParameters::getEnvironmentalTaxDefline()
     string defline("Exclude sequences with this taxonomic classification:");
     for (int i = 0; i < eEnvironmentalTaxEnd; i++)
     {
-        char* part = getEnvironmentalTaxName((EnvironmentalTax)i);
-        if (part)
+        string part = getEnvironmentalTaxName((EnvironmentalTax)i);
+        if (part.length() > 0)
         {
             defline += '|';
             defline += part;

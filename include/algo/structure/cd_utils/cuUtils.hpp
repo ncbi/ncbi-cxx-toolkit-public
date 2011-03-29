@@ -39,7 +39,6 @@
 #include <corelib/ncbiargs.hpp>   
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbistre.hpp>
-#include <objects/cdd/Cdd_book_ref.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 
 #define i2s(i)  NStr::IntToString(i)
@@ -67,40 +66,6 @@ NCBI_CDUTILS_EXPORT
 string CddIdString(const CCdd_id& id);
 NCBI_CDUTILS_EXPORT 
 bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2);
-
-//  Return true if 'bookname' starts with "NBK" (case-sensitive), as
-//  per the Bookshelf group's Portal-based URL scheme.
-NCBI_CDUTILS_EXPORT
-bool IsPortalDerivedBookRef(const CCdd_book_ref& bookRef);
-
-//  Based on the content of the bookRef, return the parameter string appropriate
-//  to br.fcgi or Portal style Bookshelf URLs.  The latter are characterized by
-//  book names starting with 'NBK'.  This method no longer supports the bv.fcgi 
-//  URL format, which has been retired by the Bookshelf group.
-NCBI_CDUTILS_EXPORT
-string CCddBookRefToString(const CCdd_book_ref& bookRef);
-
-//  Returns format for old-style bv.fcgi URL parameters (the 'rid').
-//  bv.fcgi style URLs are no longer supported by Entrez Books, but
-//  the 'rid' can still be used in calls to the 'bookref.fcgi' application.
-NCBI_CDUTILS_EXPORT
-string CCddBookRefToBvString(const CCdd_book_ref& bookRef);
-
-//  Returns format for Bookshelf's br.fcgi URL parameters
-NCBI_CDUTILS_EXPORT
-string CCddBookRefToBrString(const CCdd_book_ref& bookRef);
-
-//  Convert a Bookshelf br.fcgi URL into an ASN.1 object.
-NCBI_CDUTILS_EXPORT
-bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookRef);
-
-//  Returns format for Bookshelf's Portal-style URL parameters
-NCBI_CDUTILS_EXPORT
-string CCddBookRefToPortalString(const CCdd_book_ref& bookRef);
-
-//  Convert a Bookshelf Portal URL into an ASN.1 object.
-NCBI_CDUTILS_EXPORT
-bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef< CCdd_book_ref>& bookRef);
 
 NCBI_CDUTILS_EXPORT 
 bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* errString);

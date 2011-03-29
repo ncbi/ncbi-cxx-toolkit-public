@@ -21,6 +21,7 @@ SRC = \
     cuBlockExtender \
     cuBlockFormater \
     cuBlockIntersector \
+    cuBookRefUtils \
     cuCD \
     cuCdCore \
     cuCdAnnotation \

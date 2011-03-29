@@ -47,7 +47,7 @@ enum BlastType
 	eBlastTypeEnd
 };
 
-extern char* BlastTypeNames[];
+extern string BlastTypeNames[];
 
 enum BlastDatabase
 {
@@ -62,7 +62,7 @@ enum BlastDatabase
 	eBlastDatabaseEnd
 };
 
-extern char* BlastDatabaseNames[];
+extern string BlastDatabaseNames[];
 
 enum Organism
 {
@@ -83,7 +83,7 @@ enum Organism
 	eOrganismEnd
 };
 
-extern char* OrganismNames[];
+extern string OrganismNames[];
 
 enum EnvironmentalTax
 {
@@ -93,7 +93,7 @@ enum EnvironmentalTax
 	eEnvironmentalTaxEnd
 };
 
-extern char* EnvironmentalTaxNames[];
+extern string EnvironmentalTaxNames[];
 
 class NCBI_CDUTILS_EXPORT CdUpdateParameters
 {
@@ -103,16 +103,16 @@ public:
 	string toString();
 
 public:
-	static char* getBlastTypeName(BlastType bt);
+	static string getBlastTypeName(BlastType bt);
 	static string getBlastTypeDefline();
 
-	static char* getBlastDatabaseName(BlastDatabase db);
+	static string getBlastDatabaseName(BlastDatabase db);
 	static string getBlastDatabaseDefline();
 
-	static char* getOrganismName(Organism org);
+	static string getOrganismName(Organism org);
 	static string getOrganismDefline();
 
-	static char* getEnvironmentalTaxName(EnvironmentalTax bt);
+	static string getEnvironmentalTaxName(EnvironmentalTax bt);
 	static string getEnvironmentalTaxDefline();
 
 //members
