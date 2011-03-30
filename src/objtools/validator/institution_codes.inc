@@ -1782,7 +1782,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FSP-USP	s	Faculdade de Saude Publica, Universidade de Sao Paulo",
 "FSSR	s	Forest Service, USDA, Biological and Physical Resources Unit",
 "FSU	s	Florida State University, Department of Biological Science",
-"FSU<DEU>	c	Institut fuer Mikrobiologie FSU Jena",
+"FSU<DEU>	c	Jena Microbial Resource Collection",
 "FSUM	s	Florida State University Museum",
 "FSUMC	s	Frostburg State University, Mammal Collection",
 "FT	s	Centro Studi Erbario Tropicale, Universita degli Studi di Firenze",
