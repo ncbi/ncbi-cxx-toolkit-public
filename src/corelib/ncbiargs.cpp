@@ -407,7 +407,7 @@ CArg_Ios::CArg_Ios(
     : CArg_String(name, value),
       m_DescriptionFlags(0),
       m_CurrentFlags(0),
-      m_Ios(0),
+      m_Ios(NULL),
       m_DeleteFlag(true)
 {
     m_DescriptionFlags = (CArgValue::TFileFlags)(
@@ -484,7 +484,7 @@ void CArg_Ios::CloseFile(void) const
 
     if ( m_DeleteFlag ) {
         delete m_Ios;
-        m_Ios = 0;
+        m_Ios = NULL;
     }
 }
 
