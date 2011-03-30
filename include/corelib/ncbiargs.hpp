@@ -246,6 +246,9 @@ public:
     /// Get the argument as an output file stream.
     virtual CNcbiOstream& AsOutputFile(TFileFlags flags = 0) const = 0;
 
+    /// Get the argument as a file stream.
+    virtual CNcbiIostream& AsIOFile(TFileFlags flags = 0) const = 0;
+
     /// Close the file.
     virtual void CloseFile (void) const = 0;
 
@@ -467,6 +470,7 @@ public:
         eDouble,     ///< Convertible into a floating point number (double)
         eInputFile,  ///< Name of file (must exist and be readable)
         eOutputFile, ///< Name of file (must be writeable)
+        eIOFile,     ///< Name of file (must be writeable)
 
         k_EType_Size ///< For internal use only
     };
@@ -487,9 +491,11 @@ public:
         fBinary  = (1 << 1), 
         /// Append to end-of-file for eOutputFile only
         fAppend  = (1 << 2),
+        /// If needed, create directory where the file is located
+        fCreatePath = (1 << 8),
 
         /// Mask for all file-related flags
-        fFileFlags = fPreOpen | fBinary | fAppend,
+        fFileFlags = fPreOpen | fBinary | fAppend | fCreatePath,
         // multiple keys flag:
 
         /// Repeated key arguments are legal (use with AddKey)

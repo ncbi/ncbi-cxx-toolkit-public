@@ -56,6 +56,7 @@
 //       CArg_Boolean     : CArg_String
 //       CArg_InputFile   : CArg_String
 //       CArg_OutputFile  : CArg_String
+//       CArg_IOFile      : CArg_String
 //    
 
 
@@ -73,6 +74,7 @@ public:
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
+    virtual CNcbiIostream& AsIOFile(TFileFlags flags = 0) const;
     virtual void           CloseFile   (void) const;
 };
 
@@ -92,6 +94,7 @@ public:
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
+    virtual CNcbiIostream& AsIOFile(TFileFlags flags = 0) const;
     virtual void           CloseFile   (void) const;
 };
 
@@ -110,6 +113,7 @@ public:
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
+    virtual CNcbiIostream& AsIOFile(TFileFlags flags = 0) const;
     virtual void           CloseFile   (void) const;
 
     virtual const TStringArray& GetStringList() const;
@@ -166,47 +170,61 @@ private:
 };
 
 
+class CArg_Ios : public CArg_String
+{
+public:
+    CArg_Ios(const string& name, const string& value,
+                    CArgDescriptions::TFlags flags);
+    virtual ~CArg_Ios(void);
 
-class CArg_InputFile : public CArg_String
+    virtual CNcbiIstream&  AsInputFile(  TFileFlags flags = 0) const;
+    virtual CNcbiOstream&  AsOutputFile( TFileFlags flags = 0) const;
+    virtual CNcbiIostream& AsIOFile(     TFileFlags flags = 0) const;
+
+    virtual void CloseFile(void) const;
+    static IOS_BASE::openmode IosMode(TFileFlags flags);
+
+protected:
+    virtual void x_Open(TFileFlags flags) const;
+    void x_CreatePath(TFileFlags flags) const;
+
+    TFileFlags             m_DescriptionFlags;
+    mutable TFileFlags     m_CurrentFlags;
+    mutable CNcbiIos*      m_Ios;
+    mutable bool           m_DeleteFlag;
+    mutable CFastMutex     m_AccessMutex;
+};
+
+
+class CArg_InputFile : public CArg_Ios
 {
 public:
     CArg_InputFile(const string& name, const string& value,
                     CArgDescriptions::TFlags flags);
-    virtual ~CArg_InputFile(void);
-
-    virtual CNcbiIstream& AsInputFile(TFileFlags flags = 0) const;
-    virtual void CloseFile(void) const;
-private:
-    void x_Open(TFileFlags flags) const;
-
-    TFileFlags             m_DescriptionFlags;
-    mutable TFileFlags     m_CurrentFlags;
-    mutable CNcbiIstream*  m_InputFile;
-    mutable bool           m_DeleteFlag;
-    mutable CFastMutex m_AccessMutex;
+protected:
+    virtual void x_Open(TFileFlags flags) const;
 };
 
 
 
-class CArg_OutputFile : public CArg_String
+class CArg_OutputFile : public CArg_Ios
 {
 public:
     CArg_OutputFile(const string& name, const string& value,
                     CArgDescriptions::TFlags flags);
-    virtual ~CArg_OutputFile(void);
+protected:
+    virtual void x_Open(TFileFlags flags) const;
+};
 
-    virtual CNcbiOstream& AsOutputFile(TFileFlags flags = 0) const;
-    virtual void CloseFile(void) const;
 
-    static IOS_BASE::openmode IosMode(TFileFlags flags);
-private:
-    void x_Open(TFileFlags flags) const;
 
-    TFileFlags             m_DescriptionFlags;
-    mutable TFileFlags     m_CurrentFlags;
-    mutable CNcbiOstream*  m_OutputFile;
-    mutable bool           m_DeleteFlag;
-    mutable CFastMutex m_AccessMutex;
+class CArg_IOFile : public CArg_Ios
+{
+public:
+    CArg_IOFile(const string& name, const string& value,
+                    CArgDescriptions::TFlags flags);
+protected:
+    virtual void x_Open(TFileFlags flags) const;
 };
 
 
