@@ -412,9 +412,6 @@ CArg_Ios::CArg_Ios(
 {
     m_DescriptionFlags = (CArgValue::TFileFlags)(
         (flags & CArgDescriptions::fFileFlags) & ~CArgDescriptions::fPreOpen);
-    if ( flags & CArgDescriptions::fPreOpen ) {
-        x_Open(m_DescriptionFlags);
-    }
 }
 
 
@@ -497,6 +494,9 @@ CArg_InputFile::CArg_InputFile(const string& name, const string& value,
                                CArgDescriptions::TFlags flags)
     : CArg_Ios(name, value, flags)
 {
+    if ( flags & CArgDescriptions::fPreOpen ) {
+        x_Open(m_DescriptionFlags);
+    }
 }
 
 void CArg_InputFile::x_Open(CArgValue::TFileFlags flags) const
@@ -553,6 +553,9 @@ CArg_OutputFile::CArg_OutputFile(
         CArgDescriptions::TFlags flags)
     : CArg_Ios(name, value, flags)
 {
+    if ( flags & CArgDescriptions::fPreOpen ) {
+        x_Open(m_DescriptionFlags);
+    }
 }
 
 void CArg_OutputFile::x_Open(CArgValue::TFileFlags flags) const
@@ -612,6 +615,9 @@ CArg_IOFile::CArg_IOFile(
         CArgDescriptions::TFlags flags)
     : CArg_Ios(name, value, flags)
 {
+    if ( flags & CArgDescriptions::fPreOpen ) {
+        x_Open(m_DescriptionFlags);
+    }
 }
 
 void CArg_IOFile::x_Open(CArgValue::TFileFlags flags) const
