@@ -88,5 +88,13 @@ void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream)
         output_stream, CNetService::eSingleLineOutput);
 }
 
+string CNetCacheAdmin::GetServerVersion()
+{
+    string cmd(m_Impl->m_API->MakeCmd("VERSION"));
+
+    return m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
+        ExecWithRetry(cmd).response;
+}
+
 
 END_NCBI_SCOPE
