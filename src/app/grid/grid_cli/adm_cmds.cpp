@@ -35,6 +35,9 @@
 
 #include "grid_cli.hpp"
 
+#include <string.h>
+#include <ctype.h>
+
 USING_NCBI_SCOPE;
 
 CGridCommandLineInterfaceApp::EAPIClass
@@ -92,15 +95,73 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_Version()
+static void PrintVersionParts(const char* version)
+{
+    const char* prev_part_end = version;
+
+    for (;;) {
+        switch (*version) {
+        case 'v':
+        case 'V':
+            if (memcmp(version + 1, "ersion", 6) == 0) {
+                const char* version_number = version + 7;
+                while (isspace(*version_number) || *version_number == ':')
+                    ++version_number;
+                const char* version_number_end = version_number;
+                while (isdigit(*version_number_end) ||
+                        *version_number_end == '.')
+                    ++version_number_end;
+                printf("%.*sversion: %.*s\n",
+                    version - prev_part_end, prev_part_end,
+                    version_number_end - version_number, version_number);
+                prev_part_end = version_number_end;
+                while (isspace(*prev_part_end))
+                    ++prev_part_end;
+            }
+            break;
+        case 'b':
+        case 'B':
+            if (memcmp(version + 1, "uil", 3) == 0 &&
+                    (version[4] == 'd' || version[4] == 't')) {
+                const char* build = version + 5;
+                while (isspace(*build) || *build == ':')
+                    ++build;
+                printf("Buil%c: %s\n", version[4], build);
+                if (version != prev_part_end) {
+                    while (isspace(version[-1]))
+                        --version;
+                    printf("Details: %.*s\n",
+                        version - prev_part_end, prev_part_end);
+                }
+                return;
+            }
+            break;
+        case '\0':
+            return;
+        }
+        ++version;
+    }
+}
+
+int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 {
     switch (SetUp_AdminCmd()) {
     case eNetCacheAdmin:
-        m_NetCacheAdmin.GetServerVersion(NcbiCout);
+        PrintVersionParts(m_NetCacheAdmin.GetServerVersion().c_str());
         return 0;
 
     case eNetScheduleAdmin:
-        m_NetScheduleAdmin.PrintServerVersion(NcbiCout);
+        PrintVersionParts(m_NetScheduleAdmin.GetServerVersion().c_str());
+        if (IsOptionSet(eQueue)) {
+            CNetScheduleAPI::SServerParams params =
+                m_NetScheduleAPI.GetServerParams();
+            printf("Maximum input size: %lu\n"
+                "Maximum output size: %lu\n"
+                "Fast status support: %s\n",
+                (unsigned long) params.max_input_size,
+                (unsigned long) params.max_output_size,
+                params.fast_status ? "yes" : "no");
+        }
         return 0;
 
     default:
@@ -110,10 +171,26 @@ int CGridCommandLineInterfaceApp::Cmd_Version()
 
 int CGridCommandLineInterfaceApp::Cmd_Stats()
 {
-    if (SetUp_AdminCmd() != eNetCacheAdmin)
+    switch (SetUp_AdminCmd()) {
+    case eNetCacheAdmin:
+        m_NetCacheAdmin.PrintStat(NcbiCout);
+        return 0;
+
+    case eNetScheduleAdmin:
+        if (IsOptionSet(eWorkerNodes))
+            m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
+                CNetScheduleAdmin::eStatisticsWorkers);
+        else if (IsOptionSet(eActiveJobCount))
+            printf("%u\n", m_NetScheduleAdmin.CountActiveJobs());
+        else
+            m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
+                IsOptionSet(eBrief) ? CNetScheduleAdmin::eStatisticsBrief :
+                    CNetScheduleAdmin::eStatisticsAll);
+        return 0;
+
+    default:
         return 2;
-    m_NetCacheAdmin.PrintStat(NcbiCout);
-    return 0;
+    }
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Health()
@@ -126,10 +203,18 @@ int CGridCommandLineInterfaceApp::Cmd_Health()
 
 int CGridCommandLineInterfaceApp::Cmd_GetConf()
 {
-    if (SetUp_AdminCmd() != eNetCacheAdmin)
+    switch (SetUp_AdminCmd()) {
+    case eNetCacheAdmin:
+        m_NetCacheAdmin.PrintConfig(NcbiCout);
+        return 0;
+
+    case eNetScheduleAdmin:
+        m_NetScheduleAdmin.PrintConf(NcbiCout);
+        return 0;
+
+    default:
         return 2;
-    m_NetCacheAdmin.PrintConfig(NcbiCout);
-    return 0;
+    }
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Reconf()

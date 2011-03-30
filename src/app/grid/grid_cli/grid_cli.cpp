@@ -108,13 +108,23 @@ struct SOptionDefinition {
         "ns|netschedule", "NetSchedule service name or server address."},
 
     {CCommandLineParser::eOptionWithParameter, eQueue,
-        "queue", "NetSchedule queue."},
+        QUEUE_OPTION, "NetSchedule queue."},
+
+    {CCommandLineParser::eSwitch, eWorkerNodes,
+        "worker-nodes", "Print the list of active worker nodes."},
+
+    {CCommandLineParser::eSwitch, eActiveJobCount,
+        "active-job-count", "Only print the total number of "
+            "Pending and Running jobs in all queues combined."},
 
     {CCommandLineParser::eSwitch, eBrief,
         "brief", "Produce less verbose output."},
 
     {CCommandLineParser::eSwitch, eStatusOnly,
         "status-only", "Print job status only."},
+
+    {CCommandLineParser::eSwitch, eProgressMessageOnly,
+        "progress-message-only", "Print only the progress message."},
 
     {CCommandLineParser::eSwitch, eDeferExpiration,
         "defer-expiration", "Prolong job lifetime by "
@@ -124,8 +134,8 @@ struct SOptionDefinition {
         "extend-lifetime", "Extend job lifetime by "
             "the specified number of seconds."},
 
-    {CCommandLineParser::eSwitch, eDropFromQueue,
-        "drop-from-queue", "Cancel the job and delete it from the queue."},
+    {CCommandLineParser::eSwitch, eAllJobs,
+        "all-jobs", "Apply to all jobs in the queue."},
 
     {CCommandLineParser::eOptionWithParameter, eFailJob,
         FAIL_JOB_OPTION, "Report the job as failed."},
@@ -204,7 +214,8 @@ struct SCommandDefinition {
         "jobinfo|ji", "Retrieve meta information on a NetSchedule job.",
         "Print vital information about the specified NetSchedule job. "
         "Expired jobs will be reported as not found.",
-        {eID, eQueue, eBrief, eStatusOnly, eDeferExpiration, eAuth, -1}},
+        {eID, eQueue, eBrief, eStatusOnly, eDeferExpiration,
+            eProgressMessageOnly, eAuth, -1}},
 
 /*
     {&CGridCommandLineInterfaceApp::Cmd_SubmitJob,
@@ -231,9 +242,19 @@ struct SCommandDefinition {
     {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
-        "node that may be processing this job to cease the processing.",
-        {eID, eQueue, eDropFromQueue, eAuth, -1}},
+        "node that may be processing this job to stop the processing.",
+        {eID, eQueue, eAuth, -1}},
+*/
 
+    {&CGridCommandLineInterfaceApp::Cmd_Kill,
+        "kill", "Delete NetSchedule job(s).",
+        "Delete one or all job records from the specified NetSchedule "
+        "queue. Information about the jobs is completely wiped out as "
+        "if the jobs never existed. Worker nodes that may have already "
+        "started job processing will not be notified.",
+        {eOptionalID, eNetSchedule, eQueue, eAllJobs, eCompatMode, eAuth, -1}},
+
+/*
     {&CGridCommandLineInterfaceApp::Cmd_RequestJob,
         "requestjob", "Get a job from NetSchedule for processing.",
         "Return a job pending for execution. The status of the job is changed "
@@ -256,17 +277,21 @@ struct SCommandDefinition {
         {eID, eQueue, eNetCache, eInputFile, eFailJob, eAuth, -1}},
 */
 
-    {&CGridCommandLineInterfaceApp::Cmd_Version,
-        "version", "Print server version.",
-        "Query and print version information of a running "
-        "NetCache, NetSchedule, or worker node process.",
-        {eNetCache, eNetSchedule, eAuth, -1}},
+    {&CGridCommandLineInterfaceApp::Cmd_ServerInfo,
+        "serverinfo|si", "Print server information.",
+        "Query and print information about a running "
+        "NetCache, NetSchedule, or worker node process.\n\n"
+        "If the '--" QUEUE_OPTION "' option is specified "
+        "for a NetSchedule server, queue parameters will "
+        "be printed as well.",
+        {eNetCache, eNetSchedule, eQueue, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
         "Dump accumulated statistics on server access and "
         "performance.",
-        {eNetCache, eAuth, -1}},
+        {eNetCache, eNetSchedule, eQueue, eBrief,
+            eWorkerNodes, eActiveJobCount, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Health,
         "health", "Evaluate availability of a server.",
@@ -282,7 +307,7 @@ struct SCommandDefinition {
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
         "running NetCache or NetSchedule server.",
-        {eNetCache, eAuth, -1}},
+        {eNetCache, eNetSchedule, eQueue, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Reconf,
         "reconf", "Reload server configuration.",
@@ -433,6 +458,11 @@ CGridCommandLineInterfaceApp::~CGridCommandLineInterfaceApp()
         fclose(m_Opts.input_stream);
     if (IsOptionSet(eOutputFile) && m_Opts.output_stream != NULL)
         fclose(m_Opts.output_stream);
+}
+
+void CGridCommandLineInterfaceApp::PrintLine(const string& line)
+{
+    printf("%s\n", line.c_str());
 }
 
 int main(int argc, const char* argv[])

@@ -70,25 +70,30 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
-    PrintJobMeta(CNetScheduleKey(m_Opts.id));
-
     CNetScheduleAPI::EJobStatus status;
 
     if (IsOptionSet(eDeferExpiration)) {
         status = m_NetScheduleAPI.GetSubmitter().GetJobStatus(m_Opts.id);
-        if (IsOptionSet(eStatusOnly) ||
-                status == CNetScheduleAPI::eJobNotFound) {
-            printf("Status: %s\n",
-                CNetScheduleAPI::StatusToString(status).c_str());
-            if (status == CNetScheduleAPI::eJobNotFound)
-                return 0;
+        if (IsOptionSet(eStatusOnly)) {
+            PrintLine(CNetScheduleAPI::StatusToString(status));
+            return 0;
         }
     } else if (IsOptionSet(eStatusOnly)) {
-        status = m_NetScheduleAPI.GetExecuter().GetJobStatus(m_Opts.id);
-        printf("Status: %s\n", CNetScheduleAPI::StatusToString(status).c_str());
-            if (status == CNetScheduleAPI::eJobNotFound)
-                return 0;
+        PrintLine(CNetScheduleAPI::StatusToString(
+            m_NetScheduleAPI.GetExecuter().GetJobStatus(m_Opts.id)));
+        return 0;
     }
+
+    if (IsOptionSet(eProgressMessageOnly)) {
+        CNetScheduleJob job;
+        job.job_id = m_Opts.id;
+        m_NetScheduleAPI.GetProgressMsg(job);
+        if (!job.progress_msg.empty())
+            printf("%s\n", job.progress_msg.c_str());
+        return 0;
+    }
+
+    PrintJobMeta(CNetScheduleKey(m_Opts.id));
 
     if (!IsOptionSet(eBrief))
         m_NetScheduleAdmin.DumpJob(NcbiCout, m_Opts.id);
@@ -137,6 +142,23 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
 
 int CGridCommandLineInterfaceApp::Cmd_CancelJob()
 {
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_Kill()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    if (IsOptionSet(eAllJobs))
+        m_NetScheduleAdmin.DropQueue();
+    else {
+        if (!IsOptionSet(eOptionalID)) {
+            fprintf(stderr, "kill: job ID required\n");
+            return 1;
+        }
+        m_NetScheduleAdmin.DropJob(m_Opts.id);
+    }
+
     return 0;
 }
 

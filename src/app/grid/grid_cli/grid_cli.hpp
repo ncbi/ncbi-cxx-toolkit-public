@@ -46,6 +46,7 @@
 
 #define FAIL_JOB_OPTION "fail-job"
 #define INPUT_FILE_OPTION "input-file"
+#define QUEUE_OPTION "queue"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
 
@@ -68,11 +69,14 @@ enum EOption {
     eEnableMirroring,
     eNetSchedule,
     eQueue,
+    eWorkerNodes,
+    eActiveJobCount,
     eBrief,
     eStatusOnly,
+    eProgressMessageOnly,
     eDeferExpiration,
     eExtendLifetime,
-    eDropFromQueue,
+    eAllJobs,
     eFailJob,
     eNow,
     eDie,
@@ -168,13 +172,14 @@ public:
     int Cmd_JobInfo();
     int Cmd_GetJobOutput();
     int Cmd_CancelJob();
+    int Cmd_Kill();
     int Cmd_RequestJob();
     int Cmd_CommitJob();
 
 // Miscellaneous commands.
 public:
     int Cmd_WhatIs();
-    int Cmd_Version();
+    int Cmd_ServerInfo();
     int Cmd_Stats();
     int Cmd_Health();
     int Cmd_GetConf();
@@ -183,6 +188,7 @@ public:
 
 // Implementation details.
 private:
+    void PrintLine(const string& line);
     enum EAPIClass {
         eUnknownAPI,
         eNetCacheAPI,
