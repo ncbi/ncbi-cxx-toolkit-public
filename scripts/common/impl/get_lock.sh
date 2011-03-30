@@ -24,7 +24,7 @@ while [ "$seconds" -lt 900 ]; do
         else
             n='-n'; c=''
         fi
-        echo $n "Waiting for $dir$c" >&2
+        echo $n "Waiting for $dir$c" >&2
     fi
     sleep 5
     echo $n ".$c" >&2
