@@ -682,6 +682,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     /// Print version string
     void PrintServerVersion(CNcbiOstream& output_stream);
 
+    string GetServerVersion();
+
     struct SWorkerNodeInfo {
         string name;
         string prog;
@@ -697,7 +699,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     enum EStatisticsOptions
     {
         eStatisticsAll,
-        eStatisticsBrief
+        eStatisticsBrief,
+        eStatisticsWorkers
     };
 
     void PrintServerStatistics(CNcbiOstream& output_stream,

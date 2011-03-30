@@ -134,6 +134,15 @@ void CNetScheduleAdmin::PrintServerVersion(CNcbiOstream& output_stream)
 }
 
 
+string CNetScheduleAdmin::GetServerVersion()
+{
+    string cmd("VERSION");
+
+    return m_Impl->m_API->m_Service->
+        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd).response;
+}
+
+
 void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput("DUMP",
@@ -144,8 +153,8 @@ void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream)
 void CNetScheduleAdmin::PrintQueue(CNcbiOstream& output_stream,
     CNetScheduleAPI::EJobStatus status)
 {
-    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);
-    m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
+    m_Impl->m_API->m_Service.PrintCmdOutput("QPRT " +
+            CNetScheduleAPI::StatusToString(status),
         output_stream, CNetService::eMultilineOutput);
 }
 
@@ -232,8 +241,8 @@ void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)
 void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
     EStatisticsOptions opt)
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(
-        opt == eStatisticsBrief ? "STAT" : "STAT ALL",
+    m_Impl->m_API->m_Service.PrintCmdOutput(opt == eStatisticsBrief ? "STAT" :
+        opt == eStatisticsWorkers ? "STAT WNODE" : "STAT ALL",
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
