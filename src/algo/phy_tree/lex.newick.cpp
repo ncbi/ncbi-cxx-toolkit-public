@@ -1,5 +1,4 @@
 #include <ncbi_pch.hpp>
-
 #define yy_create_buffer newick_create_buffer
 #define yy_delete_buffer newick_delete_buffer
 #define yy_scan_buffer newick_scan_buffer
@@ -42,7 +41,6 @@
 #ifdef __cplusplus
 
 #include <stdlib.h>
-//#include <unistd.h>  // non-existent on some platforms
 
 /* Use prototypes in function declarations. */
 #define YY_USE_PROTOS
@@ -721,12 +719,13 @@ YY_RULE_SETUP
         }
     }
     newicklval.strval = const_cast<char *>(g_Buffer.c_str());
+//    printf( "Token: %s\n", yytext );
     return LABEL;
 }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 96 "newick.lpp"
+#line 97 "newick.lpp"
 {
     g_Buffer.erase();
     g_Buffer.reserve(strlen(yytext));
@@ -737,12 +736,13 @@ YY_RULE_SETUP
         }
     }
     newicklval.strval = const_cast<char *>(g_Buffer.c_str());
+//    printf( "Token: %s\n", yytext );
     return LABEL;
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 109 "newick.lpp"
+#line 111 "newick.lpp"
 {
     BEGIN EXPECT_NUM;
     return ':';
@@ -750,15 +750,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 114 "newick.lpp"
+#line 116 "newick.lpp"
 return yytext[0];
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 116 "newick.lpp"
+#line 118 "newick.lpp"
 ECHO;
 	YY_BREAK
-#line 760 "lex.newick.cpp"
+#line 762 "lex.newick.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(EXPECT_NUM):
 	yyterminate();
@@ -1645,7 +1645,7 @@ int main()
 	return 0;
 	}
 #endif
-#line 116 "newick.lpp"
+#line 118 "newick.lpp"
 
 
 // Reset the lexer: discard input buffer and enter initial state

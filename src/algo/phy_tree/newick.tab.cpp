@@ -1,5 +1,3 @@
-#include <ncbi_pch.hpp>
-
 /* A Bison parser, made by GNU Bison 1.875.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
@@ -34,6 +32,8 @@
    There are some unavoidable exceptions within include files to
    define necessary library symbols; they are noted "INFRINGES ON
    USER NAME SPACE" below.  */
+
+#include <ncbi_pch.hpp>
 
 /* Identify Bison output.  */
 #define YYBISON 1
@@ -261,18 +261,18 @@ union yyalloc
 #endif
 
 /* YYFINAL -- State number of the termination state. */
-#define YYFINAL  8
+#define YYFINAL  10
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   14
+#define YYLAST   17
 
 /* YYNTOKENS -- Number of terminals. */
 #define YYNTOKENS  10
 /* YYNNTS -- Number of nonterminals. */
 #define YYNNTS  4
 /* YYNRULES -- Number of rules. */
-#define YYNRULES  10
+#define YYNRULES  12
 /* YYNRULES -- Number of states. */
-#define YYNSTATES  19
+#define YYNSTATES  21
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
@@ -317,8 +317,8 @@ static const unsigned char yytranslate[] =
    YYRHS.  */
 static const unsigned char yyprhs[] =
 {
-       0,     0,     3,     6,    12,    16,    23,    28,    32,    34,
-      36
+       0,     0,     3,     6,    12,    16,    23,    28,    32,    35,
+      37,    38,    40
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS. */
@@ -327,14 +327,15 @@ static const yysigned_char yyrhs[] =
       11,     0,    -1,    12,     5,    -1,     6,    13,     7,     8,
        4,    -1,     6,    13,     7,    -1,     6,    13,     7,     3,
        8,     4,    -1,     6,    13,     7,     3,    -1,     3,     8,
-       4,    -1,     3,    -1,    12,    -1,    13,     9,    12,    -1
+       4,    -1,     8,     4,    -1,     3,    -1,    -1,    12,    -1,
+      13,     9,    12,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned char yyrline[] =
 {
-       0,    70,    70,    76,    83,    89,    97,   104,   112,   121,
-     126
+       0,    70,    70,    76,    83,    89,    97,   104,   112,   120,
+     127,   136,   141
 };
 #endif
 
@@ -360,15 +361,15 @@ static const unsigned short yytoknum[] =
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const unsigned char yyr1[] =
 {
-       0,    10,    11,    12,    12,    12,    12,    12,    12,    13,
-      13
+       0,    10,    11,    12,    12,    12,    12,    12,    12,    12,
+      12,    13,    13
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
 static const unsigned char yyr2[] =
 {
-       0,     2,     2,     5,     3,     6,     4,     3,     1,     1,
-       3
+       0,     2,     2,     5,     3,     6,     4,     3,     2,     1,
+       0,     1,     3
 };
 
 /* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
@@ -376,14 +377,15 @@ static const unsigned char yyr2[] =
    means the default is an error.  */
 static const unsigned char yydefact[] =
 {
-       0,     8,     0,     0,     0,     0,     9,     0,     1,     2,
-       7,     4,     0,     6,     0,    10,     0,     3,     5
+      10,     9,    10,     0,     0,     0,     0,    11,     0,     8,
+       1,     2,     7,     4,    10,     6,     0,    12,     0,     3,
+       5
 };
 
 /* YYDEFGOTO[NTERM-NUM]. */
 static const yysigned_char yydefgoto[] =
 {
-      -1,     3,     4,     7
+      -1,     4,     5,     8
 };
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
@@ -391,8 +393,9 @@ static const yysigned_char yydefgoto[] =
 #define YYPACT_NINF -8
 static const yysigned_char yypact[] =
 {
-       0,    -7,     0,     4,     3,     1,    -8,     2,    -8,    -8,
-      -8,    -1,     0,     5,     8,    -8,    10,    -8,    -8
+      -1,    -7,    -1,     5,    10,     6,     9,    -8,    -3,    -8,
+      -8,    -8,    -8,     0,    -1,     7,    12,    -8,    13,    -8,
+      -8
 };
 
 /* YYPGOTO[NTERM-NUM].  */
@@ -408,22 +411,23 @@ static const yysigned_char yypgoto[] =
 #define YYTABLE_NINF -1
 static const unsigned char yytable[] =
 {
-       6,     5,    13,     1,     8,    10,     2,    14,     9,    11,
-      15,    12,    17,    16,    18
+       7,     6,     1,    15,    13,     2,    14,     3,    16,     9,
+      10,    11,    17,    12,     0,    18,    19,    20
 };
 
-static const unsigned char yycheck[] =
+static const yysigned_char yycheck[] =
 {
-       2,     8,     3,     3,     0,     4,     6,     8,     5,     7,
-      12,     9,     4,     8,     4
+       2,     8,     3,     3,     7,     6,     9,     8,     8,     4,
+       0,     5,    14,     4,    -1,     8,     4,     4
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
 static const unsigned char yystos[] =
 {
-       0,     3,     6,    11,    12,     8,    12,    13,     0,     5,
-       4,     7,     9,     3,     8,    12,     8,     4,     4
+       0,     3,     6,     8,    11,    12,     8,    12,    13,     4,
+       0,     5,     4,     7,     9,     3,     8,    12,     8,     4,
+       4
 };
 
 #if ! defined (YYSIZE_T) && defined (__SIZE_TYPE__)
@@ -1092,6 +1096,17 @@ yyreduce:
 
   case 8:
 #line 112 "newick.ypp"
+    {
+    yyval.nodeval = new TPhyTreeNode;
+    yyval.nodeval->GetValue().SetLabel("");
+    yyval.nodeval->GetValue().SetDist(yyvsp[0].dblval);
+    yyval.nodeval->GetValue().SetId(nodecount);
+    nodecount++;
+;}
+    break;
+
+  case 9:
+#line 120 "newick.ypp"
     { 
     yyval.nodeval = new TPhyTreeNode;
     yyval.nodeval->GetValue().SetLabel(yyvsp[0].strval);
@@ -1100,16 +1115,26 @@ yyreduce:
 ;}
     break;
 
-  case 9:
-#line 121 "newick.ypp"
+  case 10:
+#line 127 "newick.ypp"
+    {
+	yyval.nodeval = new TPhyTreeNode;
+	yyval.nodeval->GetValue().SetLabel("");
+	yyval.nodeval->GetValue().SetId(nodecount);
+	nodecount++;
+;}
+    break;
+
+  case 11:
+#line 136 "newick.ypp"
     {
     yyval.nodeval = new TPhyTreeNode;
     yyval.nodeval->AddNode(yyvsp[0].nodeval);
 ;}
     break;
 
-  case 10:
-#line 126 "newick.ypp"
+  case 12:
+#line 141 "newick.ypp"
     {
     yyval.nodeval = yyvsp[-2].nodeval;
     yyval.nodeval->AddNode(yyvsp[0].nodeval);
@@ -1120,7 +1145,7 @@ yyreduce:
     }
 
 /* Line 991 of yacc.c.  */
-#line 1121 "newick.tab.cpp"
+#line 1146 "newick.tab.cpp"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1330,7 +1355,7 @@ yyreturn:
 }
 
 
-#line 133 "newick.ypp"
+#line 148 "newick.ypp"
 
 
 void yyerror(const char *s)

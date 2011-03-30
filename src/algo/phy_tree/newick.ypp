@@ -109,11 +109,26 @@ node:	'(' nodelist ')' ':' NUM {
     nodecount++; 
 }
 
+|   ':' NUM   {
+    $$ = new TPhyTreeNode;
+    $$->GetValue().SetLabel("");
+    $$->GetValue().SetDist($2);
+    $$->GetValue().SetId(nodecount);
+    nodecount++;
+}
+
 |	LABEL			{ 
     $$ = new TPhyTreeNode;
     $$->GetValue().SetLabel($1);
     $$->GetValue().SetId(nodecount);
     nodecount++; 
+}
+
+|					{
+    $$ = new TPhyTreeNode;
+    $$->GetValue().SetLabel("");
+    $$->GetValue().SetId(nodecount);
+    nodecount++;
 }
 ;
 

@@ -90,6 +90,7 @@ extern CNcbiIstream *g_NewickIstr;
         }
     }
     newicklval.strval = const_cast<char *>(g_Buffer.c_str());
+//    printf( "Token: %s\n", yytext );
     return LABEL;
 }
 
@@ -103,6 +104,7 @@ extern CNcbiIstream *g_NewickIstr;
         }
     }
     newicklval.strval = const_cast<char *>(g_Buffer.c_str());
+//    printf( "Token: %s\n", yytext );
     return LABEL;
 }
 
