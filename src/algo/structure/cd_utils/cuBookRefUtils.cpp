@@ -304,29 +304,6 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
     return result;
 }
 
-//  Break up URLs formatted as per Bookshelf URL scheme released 2010;
-//  allow use of the entire URL.
-//  
-//  section/chapter:
-//  books/<bookname>/#<elementid>
-//
-//  table/figure/box/glossary item:
-//  books/<bookname>/<elementtype>/<elementid>/
-//      -- OR --
-//  books/<bookname>/<elementtype>/<elementid>/?report=objectonly
-//      -- OR --
-//  books/<bookname>/?rendertype=<elementtype>&id=<elementid>
-//
-//  The 'bookname' is the prefix 'NBK' plus an "article ID" - usually numeric but
-//  allow for non-numeric values to be safe.  The 'elementid' is a string typically
-//  starting with 'A' if the remainder of the elementid is numeric.  However, in rare
-//  cases the elementid may have a different format for certain element types.
-//  For 'chapter' legacy book refs, or pages refering to an entire page vs. a specific
-//  location in a bookshelf document, the elementid may be undefined.
-//  Redirection by Entrez can generate the alternate 'rendertype' URL format
-//  for figures, tables, boxes, and glossary items (the latter being a 'def-item').
-//  All derived book references will exclusively use the Celementid CCdd_book_ref field; 
-//  the Csubelementid field no longer appears necessary in this URL scheme.
 bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef < CCdd_book_ref >& bookRef)
 {
     bool result = false;
@@ -388,8 +365,6 @@ bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef < CCdd_book_re
             typeStr = "glossary";
 //        else if (typeStr.length() == 0) 
 //            typeStr = (idStr.length() > 0) ? "section" : "chapter";
-
-        typeStr = kEmptyStr;
 
         CCdd_book_ref::ETextelement typeEnum;
         const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::GetTypeInfo_enum_ETextelement();

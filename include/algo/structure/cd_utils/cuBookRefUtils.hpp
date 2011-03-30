@@ -63,21 +63,54 @@ string CCddBookRefToString(const CCdd_book_ref& bookRef);
 NCBI_CDUTILS_EXPORT
 string CCddBookRefToBvString(const CCdd_book_ref& bookRef);
 
-//  Returns format for Bookshelf's br.fcgi URL parameters
-NCBI_CDUTILS_EXPORT
-string CCddBookRefToBrString(const CCdd_book_ref& bookRef);
-
 //  Convert a Bookshelf br.fcgi URL into an ASN.1 object.
+//  
+//  section/chapter:
+//  book=<bookname>&part=<address>[#<subaddress>]
+//
+//  table/figure:
+//  book=<bookname>&part=<address>&rendertype=<some_enum2strValue>&id=<subaddress>
+//
+//  For XML validation reasons, <address> and <subaddress> have a prepended 'A'
+//  if the string would have otherwise been numeric.  However, for parsing br.fcgi 
+//  URLs it is fine to leave the string intact w/o stripping off the initial 'A'
+//  (i.e., all br.fcgi derived book references will use Celementid and Csubelementid
+//   exclusively).
 NCBI_CDUTILS_EXPORT
 bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookRef);
 
-//  Returns format for Bookshelf's Portal-style URL parameters
+//  Returns a string formatted for use as Bookshelf's br.fcgi URL parameters,
+//  or an empty string if there was a problem interpreting 'bookRef'.
 NCBI_CDUTILS_EXPORT
-string CCddBookRefToPortalString(const CCdd_book_ref& bookRef);
+string CCddBookRefToBrString(const CCdd_book_ref& bookRef);
 
 //  Convert a Bookshelf Portal URL into an ASN.1 object.
+//  
+//  section/chapter:
+//  books/<bookname>/#<elementid>
+//
+//  table/figure/box/glossary item:
+//  books/<bookname>/<elementtype>/<elementid>/
+//      -- OR --
+//  books/<bookname>/<elementtype>/<elementid>/?report=objectonly
+//      -- OR --
+//  books/<bookname>/?rendertype=<elementtype>&id=<elementid>
+//
+//  The 'bookname' is the prefix 'NBK' plus an 'elementid" - typically a string
+//  starting with 'A' if the remainder of the elementid is numeric.  However, in some
+//  cases the elementid may have a different format for certain element types.
+//  For 'chapter' legacy book refs, or pages refering to an entire page vs. a specific
+//  location in a bookshelf document, the elementid may be undefined.
+//  Redirection by Entrez can generate the alternate 'rendertype' URL format
+//  for figures, tables, boxes, and glossary items (the latter being a 'def-item').
+//  All derived book references will exclusively use the Celementid CCdd_book_ref field; 
+//  the Csubelementid field no longer appears necessary in this URL scheme.
 NCBI_CDUTILS_EXPORT
 bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef< CCdd_book_ref>& bookRef);
+
+//  Returns a string formatted for use as Bookshelf's Portal-style URL parameters.
+NCBI_CDUTILS_EXPORT
+string CCddBookRefToPortalString(const CCdd_book_ref& bookRef);
 
 
 END_SCOPE(cd_utils)
