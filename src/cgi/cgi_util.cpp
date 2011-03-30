@@ -117,6 +117,54 @@ void CCgiUserAgent::Reset(const string& user_agent)
 }
 
 
+bool CCgiUserAgent::IsBrowser(void) const
+{
+    switch ( GetPlatform() ) {
+        case eEngine_IE:
+        case eEngine_Gecko:
+        case eEngine_KHTML:
+            return true;
+        case eEngine_Bot:
+            return false;
+        case eEngine_Unknown:
+            ; // see below
+    }
+    // eEngine_Unknown:
+    switch ( GetBrowser() ) {
+        // Browsers
+        case eiCab:
+        case eKonqueror:
+        case eLynx:
+        case eOregano:
+        case eOpera:
+        case eW3m:
+        // Mobile devices
+        case eAirEdge:
+        case eAvantGo:
+        case eBlackberry:
+        case eDoCoMo:
+        case eEudoraWeb:
+        case eMinimo:
+        case eNetFront:
+        case eOpenWave:
+        case eOperaMini:
+        case eOperaMobile:
+        case ePIE:
+        case ePlucker:
+        case ePocketLink:
+        case ePolaris:
+        case eReqwireless:
+        case eSEMCBrowser:
+        case eTelecaObigo:
+        case euZardWeb:
+        case eVodafone:
+        case eXiino:
+            return true;
+    }
+    return false;
+}
+
+
 // Declare the parameter to get additional bots names.
 // Registry file:
 //     [CGI]

@@ -242,6 +242,14 @@ public:
     };
     typedef unsigned int TBotFlags;    ///< Binary OR of "EBotFlags"
 
+    /// Check that this is known browser.
+    ///
+    /// @note
+    ///   This method can return FALSE for old or unknown browsers,
+    ///   or browsers for mobile devices.
+    /// @sa GetBrowser, GetEngine
+    bool IsBrowser(void) const;
+
     /// Check that this is known search robot/bot.
     ///
     /// By default it use GetBrowser() value to check on known bots,
