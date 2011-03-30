@@ -58,6 +58,15 @@ bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 }
 
 
+int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
+{
+    if ( int diff = GetChain() - psip2.GetChain() ) {
+        return diff;
+    }
+    return PCase().Compare(GetMol(), psip2.GetMol());
+}
+
+
 // format a FASTA style string
 ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 {

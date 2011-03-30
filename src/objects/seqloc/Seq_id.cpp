@@ -441,9 +441,9 @@ int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
     case e_Gi:
         return GetGi() - sid2.GetGi();
     case e_Pdb:
-        return 0;
+        return GetPdb().Compare(sid2.GetPdb());
     default:
-        return this == &sid2? 0: this < &sid2? -1: 1;
+        return 0;
     }
 }
 

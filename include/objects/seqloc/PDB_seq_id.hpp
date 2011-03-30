@@ -58,6 +58,7 @@ public:
 
     // comaprison function
     bool Match(const CPDB_seq_id& psip2) const;
+    int Compare(const CPDB_seq_id& psip2) const;
 
     // format a FASTA style string
     ostream& AsFastaString(ostream& s) const;
