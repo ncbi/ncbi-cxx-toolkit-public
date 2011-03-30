@@ -443,7 +443,7 @@ CNcbiIstream&  CArg_Ios::AsInputFile(  TFileFlags flags) const
 {
     CFastMutexGuard LOCK(m_AccessMutex);
     x_Open(flags);
-    CNcbiIfstream *str = dynamic_cast<CNcbiIfstream*>(m_Ios);
+    CNcbiIstream *str = dynamic_cast<CNcbiIstream*>(m_Ios);
     if (str) {
         return *str;
     }
@@ -454,7 +454,7 @@ CNcbiOstream&  CArg_Ios::AsOutputFile( TFileFlags flags) const
 {
     CFastMutexGuard LOCK(m_AccessMutex);
     x_Open(flags);
-    CNcbiOfstream *str = dynamic_cast<CNcbiOfstream*>(m_Ios);
+    CNcbiOstream *str = dynamic_cast<CNcbiOstream*>(m_Ios);
     if (str) {
         return *str;
     }
@@ -465,7 +465,7 @@ CNcbiIostream& CArg_Ios::AsIOFile(     TFileFlags flags) const
 {
     CFastMutexGuard LOCK(m_AccessMutex);
     x_Open(flags);
-    CNcbiFstream *str = dynamic_cast<CNcbiFstream*>(m_Ios);
+    CNcbiIostream *str = dynamic_cast<CNcbiIostream*>(m_Ios);
     if (str) {
         return *str;
     }
