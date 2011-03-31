@@ -2010,7 +2010,7 @@ if test "${with_tcheck-no}" != "no" ; then
       if test "$with_tcheck" != yes; then
          TCHECK_BIN=$with_tcheck/$tcbin
       fi
-      AC_PATH_PROG(TCHECK_CL, tcheck_cl, [], $TCHECK_BIN:$PATH:/opt/intel/itt/$tcbin:/usr/local/intel/itt-3.1/tcheck/$tcbin)
+      AC_PATH_PROG(TCHECK_CL, tcheck_cl, [], $TCHECK_BIN:$PATH:$TCHECK_FALLBACK)
       if test -n "$TCHECK_CL"; then
          CFLAGS="$CFLAGS -tcheck -O0"
          CXXFLAGS="$CXXFLAGS -tcheck -O0"
@@ -3449,12 +3449,6 @@ fi
 
 ### Third-party libraries
 
-if test "$OSTYPE" = linux  -a  -d "$orig_NCBI"; then
-   ncbi_rpath_sed="s,$orig_NCBI/\\(.*\\),/opt/ncbi/$NCBI_PLATFORM_BITS/\\1:&,"
-else
-   ncbi_rpath_sed=
-fi
-
 no_usr_lib='s,-L/usr/lib[[^/ ]]* ,,g; s,-L/lib[[^/ ]]* ,,g'
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
@@ -3578,8 +3572,6 @@ NETWORK_PURE_LIBS="$NETWORK_LIBS"
 ncbi_xreader_pubseqos=
 UNLESS_PUBSEQOS=
 if test "$with_sybase" != "no" ; then
-   net_sybase_root="/netopt/Sybase/clients"
-   local_sybase_root="/export/home/sybase/clients"
    sybase_lib=lib$bit64_sfx
    resolve_sybase=true
    default_pointer=default-${NCBI_PLATFORM_BITS}bit
@@ -3846,7 +3838,6 @@ freetds=
 if test "$with_ftds" != "no" ; then
    ftds64=ftds64
    try_local=yes
-   : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
    case "$with_ftds" in
       64 | yes | '' )
          ftds_ver=64
@@ -3927,7 +3918,7 @@ AC_SUBST(ftds64)
 ## MySQL
 if test "$with_mysql" != "no" ; then
    case "$with_mysql" in
-      yes | "" ) : ${MYSQL_PATH=/netopt/mysql/current} ;;
+      yes | "" ) ;;
       *        ) MYSQL_PATH=$with_mysql ;;
    esac
    : ${MYSQL_BINPATH=$MYSQL_PATH/bin}
@@ -4091,7 +4082,6 @@ fi
 
 ## ODBC
 case "$with_odbc" in
-   # yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"}       ;;
    yes | ""   ) : ${ODBC_PATH:=dbapi/driver/odbc/unix_odbc} ;;
    internal | no ) ODBC_PATH=dbapi/driver/odbc/unix_odbc       ;;
    *          ) ODBC_PATH=$with_odbc                        ;;
@@ -5694,7 +5684,7 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ### Sun Grid Engine
 case "$with_sge" in
-   yes | "" ) : ${SGE_PATH=/netopt/sge} ;;
+   yes | "" ) ;;
    *        ) SGE_PATH=$with_sge ;;
 esac
 if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then

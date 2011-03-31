@@ -36,6 +36,11 @@ if test "$ncbi_favor_std_packages" = yes; then
 fi
 
 case "$ncbi_platform" in
+    Linux32   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/32/\\1:&," ;;
+    Linux64   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&," ;;
+esac
+
+case "$ncbi_platform" in
     FreeBSD32  )
         case "`uname -r`" in
             6* ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.4.20}   ;;
@@ -82,6 +87,8 @@ case "$ncbi_platform" in
     *MAC       ) : ${FREETYPE_PATH=/usr/X11} ;;
 esac
 
+: ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
+
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
 
 case "$ncbi_platform" in
@@ -116,6 +123,8 @@ esac
 
 # C Toolkit (path overridden in stable components to avoid version skew)
 : ${NCBI_C_PATH=$NCBI}
+
+# : ${ODBC_PATH:="/opt/machine/merant"}
 
 case "$ncbi_platform" in
     FreeBSD32 | *MAC | SunOSx86 ) ;;
@@ -176,6 +185,13 @@ case "$ncbi_platform" in
     Linux64    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-64bit} ;;
     SunOSSparc ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.0-EBF9209}    ;;
     SunOSx86   ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.5.1}          ;;
+esac
+net_sybase_root="/netopt/Sybase/clients"
+local_sybase_root="/export/home/sybase/clients"
+
+case "$ncbi_platform" in
+    Linux32    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32:/usr/local/intel/itt-3.1/tcheck/bin/32}
+    Linux64    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 esac
 
 case "$ncbi_platform" in
