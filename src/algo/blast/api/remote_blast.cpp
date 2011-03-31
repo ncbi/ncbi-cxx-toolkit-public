@@ -1862,7 +1862,7 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         string program_s = GetProgram();
         string service_s = GetService();
         
-        CBlastOptionsBuilder bob(program_s, service_s);
+        CBlastOptionsBuilder bob(program_s, service_s, CBlastOptions::eRemote );
         
         m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts, &m_Task);
         
