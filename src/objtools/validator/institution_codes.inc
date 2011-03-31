@@ -2422,6 +2422,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IFRPD	c	Institute of Food Research and Product Development, Kasetsart University",
 "IFSA	s	Instituto Florestal",
 "IG	s	Institute of Geology",
+"IGB<ISR>	sb	Israel Plant Gene Bank",
 "IGC	c	Portuguese Yeast Culture Collection",
 "IGCAGS	s	Institute of geology, Chinese Academy of Geological Science",
 "IGCU	s	Instituto de Geologia, Ciudad Universitaria",
