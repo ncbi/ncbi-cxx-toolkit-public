@@ -1,12 +1,12 @@
 -- ============================================
--- ::DATATOOL:: Generated from "docsum_3.2.xsd"
+-- ::DATATOOL:: Generated from "docsum_3.3.xsd"
 -- ::DATATOOL:: by application DATATOOL version 2.1.0
--- ::DATATOOL:: on 08/17/2010 10:11:21
+-- ::DATATOOL:: on 03/03/2011 12:34:38
 -- ============================================
 
 -- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Michael Kholodov (National Library of Medicine) 
 -- edited with XMLSpy v2005 rel. 3 U (http://www.altova.com) by Michael Feolo (NCBI/NLM/NIH) 
-Docsum-3-2 DEFINITIONS AUTOMATIC TAGS ::=
+Docsum-3-3 DEFINITIONS AUTOMATIC TAGS ::=
 BEGIN
 
 Assay ::= SEQUENCE {
@@ -317,31 +317,35 @@ FxnSet ::= SEQUENCE {
     protVer INTEGER OPTIONAL,
     
     --variation in region of gene, but not in
-    --									transcript - deprecated
+    --										transcript - deprecated
     fxnClass ENUMERATED {
       locus-region (1),
       coding-unknown (2),
-      coding-synonymous (3),
-      coding-nonsynonymous (4),
+      synonymous-codon (3),
+      non-synonymous-codon (4),
       mrna-utr (5),
-      intron (6),
-      splice-site (7),
+      intron-variant (6),
+      splice-region-variant (7),
       reference (8),
       coding-exception (9),
-      synonymy-unknown (10),
-      gene-segment (11),
-      near-gene-3 (12),
-      near-gene-5 (13),
-      nonsense (14),
+      coding-sequence-variant (10),
+      nc-transcript-variant (11),
+      downstream-variant-500B (12),
+      upstream-variant-2KB (13),
+      stop-gained (14),
       missense (15),
-      frameshift (16),
-      utr-3 (17),
-      utr-5 (18),
-      splice-3 (19),
-      splice-5 (20),
+      frameshift-variant (16),
+      utr-variant-3-prime (17),
+      upstream-variant-5KB (18),
+      splice-acceptor-variant (19),
+      splice-donor-variant (20),
       cds-indel (21),
-      stop-gain (22),
-      stop-loss (23)
+      downstream-variant-5KB (22),
+      complex-change-in-transcript (23),
+      stop-lost (24),
+      incomplete-terminal-codon-variant (25),
+      nmd-transcript-variant (26),
+      mature-miRNA-variant (27)
     } OPTIONAL,
     readingFrame INTEGER OPTIONAL,
     
@@ -513,7 +517,7 @@ Rs ::= SEQUENCE {
       --cluster has 2+ submissions, with 1+ submissions
       --									assayed with a non-computational method
       by2Hit2Allele BOOLEAN OPTIONAL,
-      byHapMap BOOLEAN OPTIONAL, --Validated by HapMap Project
+      byHapMap BOOLEAN OPTIONAL, --Validated by HapMap Project 
       by1000G BOOLEAN OPTIONAL, --Validated by 1000 Genomes Project
       suspect BOOLEAN OPTIONAL --Suspected to be false SNP
     },
@@ -523,37 +527,35 @@ Rs ::= SEQUENCE {
     otherPopBatchId SEQUENCE OF INTEGER OPTIONAL,
     
     --dbSNP batch-id's for double-hit snp
-    --										validation data. Use batch-id to get methods,
-    --										etc.
+    --										validation data. Use batch-id to get methods, etc.
     twoHit2AlleleBatchId SEQUENCE OF INTEGER OPTIONAL,
     
-    --Frequency validation class
-    --										(1) low frequency variation that is cited in journal and other reputable sources 
-    --										(2) greater than 5 percent minor allele freq in each and all populations 
-    --										(4) greater than 5 percent minor allele freq in 1+ populations  
-    --										(8) if the variant has 2+ minor allele count based on freq or genotype data
-    --										(16) less than 1 percent minor allele freq in each and all populations 
-    --										(32) less than 1 percent minor freq in 1+ populations
+    --Frequency validation class (1) low frequency
+    --										variation that is cited in journal and other reputable
+    --										sources (2) greater than 5 percent minor allele freq in each
+    --										and all populations (4) greater than 5 percent minor allele
+    --										freq in 1+ populations (8) if the variant has 2+ minor
+    --										allele count based on freq or genotype data (16) less than 1
+    --										percent minor allele freq in each and all populations (32)
+    --										less than 1 percent minor freq in 1+ populations
     frequencyClass SEQUENCE OF INTEGER OPTIONAL,
     
-    --alidated by HapMap Project
-    --										phase1-genotyped (1),  Phase 1 genotyped; filtered, non-redundant
-    --										phase2-genotyped (2),  Phase 2 genotyped; filtered, non-redundant
-    --										phase3-genotyped (4)   Phase 3 genotyped; filtered, non-redundant
+    --alidated by HapMap Project phase1-genotyped
+    --										(1), Phase 1 genotyped; filtered, non-redundant
+    --										phase2-genotyped (2), Phase 2 genotyped; filtered,
+    --										non-redundant phase3-genotyped (4) Phase 3 genotyped;
+    --										filtered, non-redundant 
     hapMapPhase SEQUENCE OF INTEGER OPTIONAL,
     
-    --Validated by 1000 Genomes Project (TGP)
-    --										pilot 1 (1),
-    --										pilot 2 (2),
-    --										pilot 3 (4)
+    --Validated by 1000 Genomes Project (TGP) pilot
+    --										1 (1), pilot 2 (2), pilot 3 (4) 
     tGPPhase SEQUENCE OF INTEGER OPTIONAL,
     
-    --Suspected to be false SNP evidence
-    --										Single Nucleotide Difference - paralogous genes (1),
-    --										Genotype or base calling errors  (2),
-    --										Submission evidence or errors (4),
-    --										Others (8)
-    suspectEvidence SEQUENCE OF INTEGER OPTIONAL
+    --Suspected to be false SNP evidence Single
+    --										Nucleotide Difference - paralogous genes (1), Genotype or
+    --										base calling errors (2), Submission evidence or errors (4),
+    --										Others (8) 
+    suspectEvidence SEQUENCE OF VisibleString OPTIONAL
   },
   
   --date the refsnp cluster was
@@ -637,7 +639,115 @@ Rs ::= SEQUENCE {
     },
     mergeHistory NULL
   } OPTIONAL,
-  hgvs SEQUENCE OF VisibleString OPTIONAL -- HGVS name list 
+  hgvs SEQUENCE OF VisibleString OPTIONAL, -- HGVS name list 
+  
+  --							origin of this allele, if known
+  --							note that these are powers-of-two, and represent bits; thus, we can
+  --							represent more than one state simultaneously through a bitwise OR
+  --							unknown         (0),
+  --							germline        (1),
+  --							somatic         (2),
+  --							inherited       (4),
+  --							paternal        (8),
+  --							maternal        (16),
+  --							de-novo         (32),
+  --							biparental      (64),
+  --							uniparental     (128),
+  --							not-tested      (256),
+  --							tested-inconclusive (512),
+  alleleOrigin SEQUENCE OF 
+    --							origin of this allele, if known
+    --							note that these are powers-of-two, and represent bits; thus, we can
+    --							represent more than one state simultaneously through a bitwise OR
+    --							unknown         (0),
+    --							germline        (1),
+    --							somatic         (2),
+    --							inherited       (4),
+    --							paternal        (8),
+    --							maternal        (16),
+    --							de-novo         (32),
+    --							biparental      (64),
+    --							uniparental     (128),
+    --							not-tested      (256),
+    --							tested-inconclusive (512),
+    SEQUENCE {
+    attlist SET {
+      allele VisibleString OPTIONAL
+    },
+    
+    --							origin of this allele, if known
+    --							note that these are powers-of-two, and represent bits; thus, we can
+    --							represent more than one state simultaneously through a bitwise OR
+    --							unknown         (0),
+    --							germline        (1),
+    --							somatic         (2),
+    --							inherited       (4),
+    --							paternal        (8),
+    --							maternal        (16),
+    --							de-novo         (32),
+    --							biparental      (64),
+    --							uniparental     (128),
+    --							not-tested      (256),
+    --							tested-inconclusive (512),
+    alleleOrigin INTEGER
+  } OPTIONAL,
+  phenotype SEQUENCE OF SEQUENCE {
+    
+    --										unknown                 (0),
+    --										untested                (1),
+    --										non-pathogenic          (2),
+    --										probable-non-pathogenic (3),
+    --										probable-pathogenic     (4),
+    --										pathogenic              (5),
+    --										drug response           (6),
+    --										other                   (255)
+    clinicalSignificance SEQUENCE OF VisibleString OPTIONAL
+  } OPTIONAL,
+  bioSource SEQUENCE OF SEQUENCE {
+    
+    --										unknown (0) ,
+    --										genomic (1) ,
+    --										chloroplast (2) ,
+    --										chromoplast (3) ,
+    --										kinetoplast (4) ,
+    --										mitochondrion (5) ,
+    --										plastid (6) ,
+    --										macronuclear (7) ,
+    --										extrachrom (8) ,
+    --										plasmid (9) ,
+    --										transposon (10) ,
+    --										insertion-seq (11) ,
+    --										cyanelle (12) ,
+    --										proviral (13) ,
+    --										virion (14) ,
+    --										nucleomorph (15) ,
+    --										apicoplast (16) ,
+    --										leucoplast (17) ,
+    --										proplastid (18) ,
+    --										endogenous-virus (19) ,
+    --										hydrogenosome (20) ,
+    --										chromosome (21) ,
+    --										chromatophore (22)
+    genome SEQUENCE OF VisibleString OPTIONAL,
+    
+    --										unknown (0) ,
+    --										natural (1) ,                    normal biological entity
+    --										natmut (2) ,                    naturally occurring mutant
+    --										mut (3) ,                        artificially mutagenized
+    --										artificial (4) ,                 artificially engineered
+    --										synthetic (5) ,                 purely synthetic
+    --										other (255)
+    origin SEQUENCE OF VisibleString OPTIONAL
+  } OPTIONAL,
+  frequency SEQUENCE OF SEQUENCE {
+    attlist SET {
+      freq REAL OPTIONAL,
+      allele VisibleString OPTIONAL,
+      popId INTEGER OPTIONAL, --dbSNP Populaton ID
+      sampleSize INTEGER OPTIONAL
+    },
+    frequency NULL
+  } OPTIONAL
 }
 
 --link data for another resource
@@ -757,25 +867,33 @@ Ss ::= SEQUENCE {
     --						submitter data.
     linkoutUrl VisibleString OPTIONAL,
     ssAlias VisibleString OPTIONAL,
-    alleleOrigin ENUMERATED {
-      unknown (1),
-      germline (2),
-      somatic (3),
-      inherited (4),
-      paternal (5),
-      maternal (6),
-      de-novo (7),
-      other (8)
-    } OPTIONAL,
-    clinicalSignificance ENUMERATED {
-      unknown (1),
-      untested (2),
-      non-pathogenic (3),
-      probable-non-pathogenic (4),
-      probable-pathogenic (5),
-      pathogenic (6),
-      other (7)
-    } OPTIONAL
+    
+    --				<xsd:simpleType>
+    --					<xsd:restriction base="xsd:string">
+    --						<xsd:enumeration value="unknown"/>
+    --						<xsd:enumeration value="germline"/>
+    --						<xsd:enumeration value="somatic"/>
+    --						<xsd:enumeration value="inherited"/>
+    --						<xsd:enumeration value="paternal"/>
+    --						<xsd:enumeration value="maternal"/>
+    --						<xsd:enumeration value="de-novo"/>
+    --						<xsd:enumeration value="other"/>
+    --					</xsd:restriction>
+    --				</xsd:simpleType>
+    alleleOrigin INTEGER OPTIONAL,
+    
+    --				<xsd:simpleType>
+    --					<xsd:restriction base="xsd:string">
+    --						<xsd:enumeration value="unknown"/>
+    --						<xsd:enumeration value="untested"/>
+    --						<xsd:enumeration value="non-pathogenic"/>
+    --						<xsd:enumeration value="probable-non-pathogenic"/>
+    --						<xsd:enumeration value="probable-pathogenic"/>
+    --						<xsd:enumeration value="pathogenic"/>
+    --						<xsd:enumeration value="other"/>
+    --					</xsd:restriction>
+    --				</xsd:simpleType>
+    clinicalSignificance VisibleString OPTIONAL
   },
   sequence SEQUENCE {
     
