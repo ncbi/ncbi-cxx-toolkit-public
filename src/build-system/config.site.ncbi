@@ -169,7 +169,7 @@ case "$ncbi_platform" in
     *          ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.16} ;;
 esac
 
-SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1
+: ${SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1}
 
 case "$ncbi_platform" in
     Linux32    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-32bit} ;;
