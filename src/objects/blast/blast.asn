@@ -188,7 +188,8 @@ Blast4-get-request-info-reply ::= SEQUENCE {
     queries                 Blast4-queries,
     algorithm-options       Blast4-parameters,
     program-options         Blast4-parameters,
-    format-options          Blast4-parameters OPTIONAL
+    format-options          Blast4-parameters OPTIONAL,
+    subjects                Blast4-subject OPTIONAL
 }
 
 -- Fetch the search strategy (i.e.: object used to submit the search)
@@ -550,7 +551,8 @@ Blast4-strand-type ::= ENUMERATED {
 
 Blast4-subject ::= CHOICE {
     database                VisibleString,
-    sequences               SEQUENCE OF Bioseq
+    sequences               SEQUENCE OF Bioseq,
+    seq-loc-list            SEQUENCE OF Seq-loc
 }
 
 Blast4-parameters ::= SEQUENCE OF Blast4-parameter

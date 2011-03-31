@@ -206,22 +206,31 @@ CBlastFormatterApp::x_ExtractQueries(bool query_is_protein)
     return retval;
 }
 
-/// FIXME 
-/// Converts a list of Bioseqs into a TSeqLocVector. All Bioseqs are added to
-/// the same CScope object
-/// @param subjects Bioseqs to convert
+/// Extracts the subject sequence data from remote_blast into a TSeqLocVector.
+/// All subjects are added to/use the same CScope object
+/// @param remote_blast Source of subject sequences
 static TSeqLocVector
-s_ConvertBioseqs2TSeqLocVector(const list<CRef<CBioseq> > subjects)
+s_ConvertSubjects2TSeqLocVector(CRef<CRemoteBlast> remote_blast)
 {
     TSeqLocVector retval;
     CRef<CScope> subj_scope(new CScope(*CObjectManager::GetInstance()));
-    ITERATE(list<CRef<CBioseq> >, bioseq, subjects) {
-        subj_scope->AddBioseq(**bioseq);
-        CRef<CSeq_id> seqid = FindBestChoice((*bioseq)->GetId(),
-                                             CSeq_id::BestRank);
-        const TSeqPos length = (*bioseq)->GetInst().GetLength();
-        CRef<CSeq_loc> sl(new CSeq_loc(*seqid, 0, length-1));
-        retval.push_back(SSeqLoc(sl, subj_scope));
+    if (remote_blast->GetSubjectSeqLocs().empty()) {
+        const list<CRef<CBioseq> > subjects =
+            remote_blast->GetSubjectSequences();
+        ITERATE(list<CRef<CBioseq> >, bioseq, subjects) {
+            subj_scope->AddBioseq(**bioseq);
+            CRef<CSeq_id> seqid = FindBestChoice((*bioseq)->GetId(),
+                                                 CSeq_id::BestRank);
+            const TSeqPos length = (*bioseq)->GetInst().GetLength();
+            CRef<CSeq_loc> sl(new CSeq_loc(*seqid, 0, length-1));
+            retval.push_back(SSeqLoc(sl, subj_scope));
+        }
+    } else {
+        const CBlast4_subject::TSeq_loc_list seqlocs =
+            remote_blast->GetSubjectSeqLocs();
+        ITERATE(CBlast4_subject::TSeq_loc_list, sl, seqlocs) {
+            retval.push_back(SSeqLoc(*sl, subj_scope));
+        }
     }
     return retval;
 }
@@ -267,8 +276,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     }
     else
     {
-        TSeqLocVector subjects =
-            s_ConvertBioseqs2TSeqLocVector(m_RmtBlast->GetSubjectSequences());
+        TSeqLocVector subjects = s_ConvertSubjects2TSeqLocVector(m_RmtBlast);
         CRef<IQueryFactory> subject_factory(new CObjMgr_QueryFactory(subjects));
         CRef<CScope> subj_scope = subjects.front().scope;
         db_args->SetSubjects(subject_factory, subj_scope, Blast_SubjectIsProtein(p));
@@ -327,11 +335,11 @@ int CBlastFormatterApp::Run(void)
 
         if (kRid == "")
         {
-                CNcbiIstream& istr = args["archive"].AsInputFile();
+            CNcbiIstream& istr = args["archive"].AsInputFile();
     		m_RmtBlast.Reset(new CRemoteBlast(istr));
 
-                while (m_RmtBlast->LoadFromArchive())
-            	    status = PrintFormattedOutput();
+            while (m_RmtBlast->LoadFromArchive())
+                status = PrintFormattedOutput();
 
     		return status;
         }

@@ -141,7 +141,7 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             Blast_SubjectIsProtein(opts_hndl->GetOptions().GetProgramType())
 			? true : false;
         SDataLoaderConfig config(is_protein);
-        if (search_db.NotEmpty()) {
+        if (search_db.NotEmpty() && search_db->GetDatabaseName() != "n/a") {
             config.m_BlastDbName = search_db->GetDatabaseName();
         }
         CBlastScopeSource scope_src(config);

@@ -1,4 +1,5 @@
-/*  $Id$ * ===========================================================================
+/*  $Id$ 
+* ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
@@ -431,7 +432,7 @@ TSeqAlignVector CRemoteBlast::GetSeqAlignSets()
     x_ExtractQueryIds(query_ids);
 
     // Fill out the return value, with empty Seq-align-set if not match for a query.
-    int sap_index = 0;
+    TSeqAlignVector::size_type sap_index = 0;
     ITERATE(CSearchResultSet::TQueryIdVector, it,  query_ids) {
         const int query_index = 0;
         if (sap_index < temp.size())
@@ -1500,7 +1501,13 @@ CRemoteBlast::SetSubjectSequences(const list< CRef< objects::CBioseq > > & subj)
     
     m_QSR->SetSubject(*subject_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
-    
+
+    x_SetSubjectSequences(subj);
+}
+
+void
+CRemoteBlast::x_SetSubjectSequences(const list< CRef< objects::CBioseq > > & subj)
+{   
     m_SubjectSequences = subj;
     m_Dbs.Reset();
 }
@@ -1667,7 +1674,17 @@ CRemoteBlast::x_GetRequestInfoFromRID()
             CRef<CBlast4_get_request_info_reply> grir
                 (& reply->SetBody().SetGet_request_info());
             
-            m_Dbs.Reset( & grir->SetDatabase() );
+            if (grir->GetDatabase().GetName() != "n/a") {
+                m_Dbs.Reset( & grir->SetDatabase() );
+            } else {
+                _ASSERT(grir->IsSetSubjects());
+                CBlast4_subject& s = grir->SetSubjects();
+                if (s.IsSeq_loc_list()) {
+                    m_SubjectSeqLocs = s.SetSeq_loc_list();
+                } else {
+                    x_SetSubjectSequences(s.SetSequences());
+                }
+            }
             
             m_Program   = grir->GetProgram();
             m_Service   = grir->GetService();
@@ -1701,7 +1718,7 @@ CRemoteBlast::GetDatabases()
 bool
 CRemoteBlast::IsDbSearch()
 {
-    if (m_Dbs.Empty() && m_SubjectSequences.empty())
+    if (m_Dbs.Empty() && m_SubjectSequences.empty() && m_SubjectSeqLocs.empty())
        x_GetRequestInfo();
 
     if (! m_Dbs.Empty()) {
@@ -1713,13 +1730,25 @@ CRemoteBlast::IsDbSearch()
 list< CRef<objects::CBioseq> > 
 CRemoteBlast::GetSubjectSequences()
 {
-    if (! m_SubjectSequences.empty()) {
+    if (x_HasRetrievedSubjects()) {
         return m_SubjectSequences;
     }
     
     x_GetRequestInfo();
     
     return m_SubjectSequences;
+}
+
+CBlast4_subject::TSeq_loc_list
+CRemoteBlast::GetSubjectSeqLocs()
+{
+    if (x_HasRetrievedSubjects()) {
+        return m_SubjectSeqLocs;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_SubjectSeqLocs;
 }
 
 string

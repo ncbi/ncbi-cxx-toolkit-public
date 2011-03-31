@@ -398,6 +398,8 @@ public:
     /// @return a list of bioseqs
     list< CRef<objects::CBioseq> > GetSubjectSequences();
 
+    CBlast4_subject::TSeq_loc_list GetSubjectSeqLocs();
+
     /// Get the program used for this search.
     /// @return The value of the program parameter.
     string GetProgram();
@@ -455,12 +457,21 @@ public:
     
 private:
 
+    bool x_HasRetrievedSubjects() const {
+        return !m_SubjectSeqLocs.empty() || !m_SubjectSequences.empty();
+    }
+
     /// Retrieve the request body for a search submission
     CRef<objects::CBlast4_request_body> x_GetBlast4SearchRequestBody();
 
     /// Sets a subset (only m_Dbs) of what the public SetDatabase sets.
     ///@param x name of database.
     void x_SetDatabase(const string & x);
+
+    /// Set a list of subject sequences to search against (only
+    /// m_SubjectSequences)
+    ///@param subj subject bioseqs
+    void x_SetSubjectSequences(const list< CRef<objects::CBioseq> > & subj);
 
     /// Value list.
     typedef list< CRef<objects::CBlast4_parameter> > TValueList;
@@ -708,6 +719,9 @@ private:
     
     /// Subject Sequences
     list< CRef<objects::CBioseq> > m_SubjectSequences;
+    /// This field is populated when dealing with a remote bl2seq search (e.g.:
+    /// when formatting an RID using blast_formatter)
+    CBlast4_subject::TSeq_loc_list m_SubjectSeqLocs;
     
     /// Program value used when submitting this search
     string m_Program;
