@@ -237,7 +237,11 @@ private:
     EAction MedlineEntryBC(CMedline_entry& ml, bool fix_initials);
     void AuthListBC( CAuth_list& al, bool fix_initials );
     void AffilBC( CAffil& af );
-    void ImprintBC( CImprint& imp );
+    enum EImprintBC {
+        eImprintBC_AllowStatusChange =  2,
+        eImprintBC_ForbidStatusChange
+    };
+    void ImprintBC( CImprint& imprint, EImprintBC is_status_change_allowed );
     void PubSetBC( CPub_set &pub_set );
 
     void ImpFeatBC( CImp_feat& imf, CSeq_feat& sf );
@@ -267,6 +271,8 @@ private:
     void UserObjectBC( CUser_object &user_object );
 
     void PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set );
+
+    void MolInfoBC( CMolInfo &molinfo );
 
     // void XxxxxxBC (Cxxxxx& xxx);
 
@@ -356,7 +362,7 @@ private:
 
     string x_ExtractSatelliteFromComment( string &comment );
 
-    void x_RRNANameBC( CRNA_ref& rna, string &name );
+    void x_RRNANameBC( string &name );
 
     void x_SetFrameFromLoc( CCdregion &cdregion, const CSeq_loc &location );
 
@@ -380,8 +386,8 @@ private:
         const char *val );
 
     void x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat );
-    void x_MoveSeqdescOrgToSourceOrg( COrg_ref &org, CSeqdesc &seqdesc );
-    void x_MoveSeqfeatOrgToSourceOrg( COrg_ref &org, CSeq_feat &seqfeat );
+    void x_MoveSeqdescOrgToSourceOrg( CSeqdesc &seqdesc );
+    void x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat );
 
     // string cleanup funcs
     void x_CleanupStringMarkChanged( std::string &str );
@@ -403,6 +409,8 @@ private:
     void x_AuthListBCWithFixInitials( CAuth_list& al );
 
     void x_AddNumToUserField( CUser_field &field );
+
+    void x_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_terms );
 
     // After we've traversed the hierarchy of objects, there may be some
     // processing that can only be done after the traversal is complete.

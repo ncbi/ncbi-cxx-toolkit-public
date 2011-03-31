@@ -171,14 +171,10 @@ public:
     m_LastArg_x_BasicCleanupSeqFeat_cit_cit_pub_E_E_ETC(NULL),
     m_LastArg_x_BasicCleanupSeqFeat_data_data_biosrc_biosrc(NULL),
     m_LastArg_x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC(NULL),
-    m_LastArg_x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E(NULL),
     m_LastArg_x_BasicCleanupSeqEntry_seq_seq_inst_inst(NULL),
-    m_LastArg_x_BasicCleanupBioseqSet_descr_descr_E_E_ETC(NULL),
     m_LastArg_BasicCleanupBioseq(NULL),
-    m_LastArg_x_BasicCleanupBioseq_descr_descr_E_E(NULL),
     m_LastArg_x_BasicCleanupBioseq_inst_inst(NULL),
     m_LastArg_x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq(NULL),
-    m_LastArg_x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E(NULL),
     m_LastArg_x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst(NULL),
     m_Dummy(0)
   { } 
@@ -600,8 +596,6 @@ void x_BasicCleanupSeqEntry_seq_seq_annot( Tcontainer_ncbi_cref_cseq_annot_ & ar
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_genbank_ETC( CGB_block & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_molinfo_molinfo( CMolInfo & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_molinfo( CMolInfo & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org_org( COrg_ref & arg0 );
-  void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_org( COrg_ref & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pdb_pdb_replace_replace_ETC( CPDB_replace & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pdb_pdb_replace_ETC( CPDB_replace & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pdb_pdb_ETC( CPDB_block & arg0 );
@@ -645,8 +639,8 @@ void x_BasicCleanupSeqEntry_set_set_annot_E_E_data_ftable( Tcontainer_ncbi_cref_
   void x_BasicCleanupSeqEntry_set_set_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_BasicCleanupSeqEntry_set_set_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
-  void x_BasicCleanupBioseqSet_descr_descr_E_E_org_org( COrg_ref & arg0 );
-  void x_BasicCleanupBioseqSet_descr_descr_E_E_org( COrg_ref & arg0 );
+  void x_BasicCleanupBioseqSet_descr_descr_E_E_molinfo_molinfo_ETC( CMolInfo & arg0 );
+  void x_BasicCleanupBioseqSet_descr_descr_E_E_molinfo_ETC( CMolInfo & arg0 );
   void x_BasicCleanupBioseqSet_descr_descr_E_E_ETC( CSeqdesc & arg0 );
   void x_BasicCleanupBioseqSet_descr_descr_E_ETC( CSeqdesc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseqdesc_ >
@@ -691,8 +685,6 @@ void x_BasicCleanupBioseq_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_
 void x_BasicCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   void x_BasicCleanupBioseq_descr_descr_E_E_molinfo_molinfo( CMolInfo & arg0 );
   void x_BasicCleanupBioseq_descr_descr_E_E_molinfo( CMolInfo & arg0 );
-  void x_BasicCleanupBioseq_descr_descr_E_E_org_org( COrg_ref & arg0 );
-  void x_BasicCleanupBioseq_descr_descr_E_E_org( COrg_ref & arg0 );
   void x_BasicCleanupBioseq_descr_descr_E_E( CSeqdesc & arg0 );
   void x_BasicCleanupBioseq_descr_descr_E( CSeqdesc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseqdesc_ >
@@ -725,8 +717,6 @@ void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_annot_E_E_data_ftable( Tcontain
 void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_molinfo_molinfo( CMolInfo & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_molinfo( CMolInfo & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_org_org( COrg_ref & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_org( COrg_ref & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E( CSeqdesc & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E( CSeqdesc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseqdesc_ >
@@ -756,14 +746,10 @@ void x_BasicCleanupBioseqSet_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
   CPub* m_LastArg_x_BasicCleanupSeqFeat_cit_cit_pub_E_E_ETC;
   CBioSource* m_LastArg_x_BasicCleanupSeqFeat_data_data_biosrc_biosrc;
   CBioSource* m_LastArg_x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC;
-  CSeqdesc* m_LastArg_x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E;
   CSeq_inst* m_LastArg_x_BasicCleanupSeqEntry_seq_seq_inst_inst;
-  CSeqdesc* m_LastArg_x_BasicCleanupBioseqSet_descr_descr_E_E_ETC;
   CBioseq* m_LastArg_BasicCleanupBioseq;
-  CSeqdesc* m_LastArg_x_BasicCleanupBioseq_descr_descr_E_E;
   CSeq_inst* m_LastArg_x_BasicCleanupBioseq_inst_inst;
   CBioseq* m_LastArg_x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq;
-  CSeqdesc* m_LastArg_x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E;
   CSeq_inst* m_LastArg_x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst;
 
   int m_Dummy;

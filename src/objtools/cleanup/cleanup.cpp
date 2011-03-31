@@ -364,6 +364,18 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Create Gene Nomenclature",
     "Clean Seq-feat xref",
     "Clean User-Object Or -Field",
+    "Letter Case Change",
+    "Change Bioseq-set Class",
+    "Unique Without Sort",
+    "Add RNA-ref",
+    "Change Gene-ref",
+    "Clean Dbtag", // 80
+    "Change Biomol",
+    "Change Cdregion",
+    "Clean EC Number",
+    "Remove Exception",
+    "Add NcbiCleanupObject",
+    "Clean Delta-ext",
 
     // set when any other change is made.
     "Change Other", 

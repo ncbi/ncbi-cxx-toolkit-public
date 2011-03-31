@@ -138,6 +138,18 @@ public:
         eCreateGeneNomenclature,
         eCleanSeqFeatXrefs,
         eCleanUserObjectOrField,
+        eLetterCaseChange,
+        eChangeBioseqSetClass,
+        eUniqueWithoutSort,
+        eAddRNAref,
+        eChangeGeneRef,
+        eCleanDbtag, // 80
+        eChangeBiomol,
+        eChangeCdregion,
+        eCleanECNumber,
+        eRemoveException,
+        eAddNcbiCleanupObject,
+        eCleanDeltaExt,
 
         // set when any other change is made.
         eChangeOther,

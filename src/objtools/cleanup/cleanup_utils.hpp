@@ -165,6 +165,7 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
         } \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset##x(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
     }
 
@@ -177,6 +178,7 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
         } \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
     }
 
@@ -194,6 +196,7 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
         } \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset##x(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
     }
 
@@ -204,6 +207,7 @@ if ((o).IsSet##x()) { \
     } \
     if (NStr::IsBlank((o).Get##x())) { \
         (o).Reset##x(); \
+        ChangeMade(CCleanupChange::eTrimSpaces); \
     } \
 }
 
@@ -212,6 +216,7 @@ if ((o).IsSet##x()) { \
     CleanVisString((o).Set##x()); \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset##x(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
 }
 
@@ -221,6 +226,7 @@ if ((o).IsSet##x()) { \
         } \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         }
 
 #define CLEAN_STRING_LIST(o, x) \
@@ -230,6 +236,7 @@ if ((o).IsSet##x()) { \
         } \
         if ((o).Get##x().empty()) { \
             (o).Reset##x(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
     }
 
@@ -240,6 +247,7 @@ if ((o).IsSet##x()) { \
     } \
     if ((o).Get##x().empty()) { \
         (o).Reset##x(); \
+        ChangeMade(CCleanupChange::eTrimSpaces); \
     } \
 }
 
@@ -248,6 +256,7 @@ if ((o).IsSet##x()) { \
         CleanVisStringList((o).Set##x()); \
         if ((o).Get##x().empty()) { \
             (o).Reset##x(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
     }
 
@@ -259,6 +268,7 @@ if ((o).IsSet##x()) { \
         } \
         if (NStr::IsBlank(o.Get##x())) { \
             o.Reset##x(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
     }
 

@@ -54,13 +54,6 @@ use m_NewCleanup.x_CleanupStringMarkChanged {
     Affil.std.fax ,
     Affil.std.phone ,
     Affil.std.postal-code ,
-#Commented these out for now, since we should really
-# only allow them when under Seq-feat.user
-# In C as: VisitAllUserObjectsInUop ((UserObjectPtr) sfp->data.value.ptrvalue, NULL, CleanUserObject);
-##    User-field.data.str ,
-##    User-field.data.strs.E ,
-##    User-field.label.str ,
-##    User-object.type.str ,
     RNA-ref.ext.name ,
     Seq-feat.data.region ,
     Seq-feat.comment ,
@@ -198,26 +191,27 @@ use m_NewCleanup.CdregionFeatBC { Seq-feat.data.cdregion AND Seq-feat }
 use m_NewCleanup.GBblockBC { GB-block }
 use m_NewCleanup.EMBLblockBC { EMBL-block }
 
-use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc.org AND Seqdesc }
+use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc }
 
 # Biosource stuff
 use m_NewCleanup.BiosourceBC { BioSource }
 use m_NewCleanup.x_SortUniqBiosource { POST BioSource }
-use m_NewCleanup.x_ModernizePCRPrimers { BioSource }
+use m_NewCleanup.x_ModernizePCRPrimers { POST BioSource }
 use m_NewCleanup.PCRReactionSetBC { BioSource.pcr-primers }
-use m_NewCleanup.x_CleanupOrgModAndSubSourceOther { BioSource.org.orgname AND BioSource }
-
 use m_NewCleanup.x_GBQualToOrgRef {  
     Seq-feat.data.org AND Seq-feat ,
     Seq-feat.data.biosrc.org AND Seq-feat
 }
+use m_NewCleanup.x_CleanupOrgModAndSubSourceOther { BioSource.org.orgname AND BioSource }
 
-use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat.data.org AND Seq-feat }
+use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat }
 
 use m_NewCleanup.x_CopyGBBlockDivToOrgnameDiv { Seq-entry }
+use m_NewCleanup.SetupBC { Seq-entry }
 
 use m_NewCleanup.x_ExpandCombinedQuals { Seq-feat.qual }
 
+use m_NewCleanup.OrgrefBC { Org-ref }
 use m_NewCleanup.x_SortUniqOrgRef { POST Org-ref }
 
 use m_NewCleanup.x_DateStdBC { Date-std }
@@ -226,6 +220,7 @@ use m_NewCleanup.DbtagBC { Dbtag }
 
 use m_NewCleanup.DeltaExtBC { Seq-inst.ext.delta AND Seq-inst }
 
+use m_NewCleanup.MolInfoBC { MolInfo }
 use m_NewCleanup.x_FixUnsetMolFromBiomol{ Bioseq.descr.E.molinfo AND Bioseq }
 
 use m_NewCleanup.UserObjectBC { 

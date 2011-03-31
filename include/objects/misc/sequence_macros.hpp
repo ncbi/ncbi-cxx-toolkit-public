@@ -315,6 +315,14 @@ typedef CSeq_align::C_Segs::E_Choice TSEGTYPE_TYPE;
 #define NCBI_CDSFRAME(Type) CCdregion::eFrame_##Type
 typedef CCdregion::EFrame TCDSFRAME_TYPE;
 
+//  not_set  Null        Empty
+//  Whole    Int         Packed_int
+//  Pnt      Packed_pnt  Mix
+//  Equiv    Bond        Feat
+
+#define NCBI_SEQLOC(Type) CSeq_loc::e_##Type
+typedef CSeq_loc::E_Choice TSEQLOC_TYPE;
+
 /////////////////////////////////////////////////////////////////////////////
 /// Macros for obtaining closest specific CSeqdesc applying to a CBioseq
 /////////////////////////////////////////////////////////////////////////////
@@ -572,6 +580,11 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define FIELD_IS_EMPTY(Base, Var) \
     (Base##_Test(Var) && Base##_Get(Var).empty() )
 
+/// RAW_FIELD_IS_EMPTY base macro
+
+#define RAW_FIELD_IS_EMPTY(Var, Fld) \
+    ( (Var).IsSet##Fld() && (Var).Get##Fld().empty() )
+
 /// FIELD_IS_EMPTY_OR_UNSET base macro
 
 #define FIELD_IS_EMPTY_OR_UNSET(Base, Var) \
@@ -702,7 +715,7 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
     it = Base##_Set(Var).erase(it, Base##_Set(Var).end()); \
 }
 
-#define UNIQUE_WITHOUT_SORT(Base, Var, FuncType) \
+#define UNIQUE_WITHOUT_SORT(Base, Var, FuncType, CleanupChangeType) \
 { \
     if( Base##_Test(Var) ) { \
       set<Base##_Type::value_type, FuncType> valuesAlreadySeen; \
@@ -712,6 +725,9 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
               non_duplicate_items.push_back( *iter ); \
               valuesAlreadySeen.insert( *iter ); \
           } \
+      } \
+      if( Base##_Get(Var).size() != non_duplicate_items.size() ) { \
+          ChangeMade(CleanupChangeType); \
       } \
       Base##_Set(Var).swap( non_duplicate_items ); \
     } \
@@ -979,6 +995,12 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define STRING_FIELD_MATCH(Var, Fld, Str) \
     ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Get##Fld(), Str))
 
+/// STRING_FIELD_MATCH_BUT_ONLY_CASE_INSENSITIVE base macro
+
+#define STRING_FIELD_MATCH_BUT_ONLY_CASE_INSENSITIVE(Var, Fld, Str) \
+    ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Get##Fld(), (Str)) && \
+        (Var).Get##Fld() != (Str) )
+
 /// GET_STRING_FLD_OR_BLANK base macro
 
 #define GET_STRING_FLD_OR_BLANK(Var, Fld) \
@@ -996,15 +1018,19 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 /// FIELD_OUT_OF_RANGE base macro
 
-#define FIELD_UNSET_OR_OUT_OF_RANGE(Var, Fld, Lower, Upper) \
-    (! (Var).IsSet##Fld() || (Var).Get##Fld() < (Lower) || (Var).Get##Fld() > (Upper) )
+#define FIELD_OUT_OF_RANGE(Var, Fld, Lower, Upper) \
+    ( (Var).IsSet##Fld() && ( (Var).Get##Fld() < (Lower) || (Var).Get##Fld() > (Upper) ) )
 
 /// FIELD_EQUALS base macro
 
 #define FIELD_EQUALS( Var, Fld, Value ) \
     ( (Var).IsSet##Fld() && (Var).Get##Fld() == (Value) )
 
+/// FIELD_CHOICE_EQUALS base macro
 
+#define FIELD_CHOICE_EQUALS( Var, Fld, Chs, Value) \
+    ( (Var).IsSet##Fld() && (Var).Get##Fld().Is##Chs() && \
+      (Var).Get##Fld().Get##Chs() == (Value) )
 
 /// CALL_IF_SET base macro
 
@@ -1057,7 +1083,6 @@ SEQSUBMIT_CHOICE_IS (Var, NCBI_SEQSUBMIT(Annots))
 
 #define SWITCH_ON_SEQSUBMIT_CHOICE(Var) \
 SWITCH_ON (SEQSUBMIT_CHOICE, Var)
-
 
 /// SEQENTRY_ON_SEQSUBMIT macros
 
@@ -2758,7 +2783,8 @@ DO_UNIQUE (KEYWORD_ON_GENBANKBLOCK, Var, Func)
 /// UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK
 
 #define UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK(Var, FuncType) \
-UNIQUE_WITHOUT_SORT( KEYWORD_ON_GENBANKBLOCK, Var, FuncType )
+UNIQUE_WITHOUT_SORT( KEYWORD_ON_GENBANKBLOCK, Var, FuncType, \
+    CCleanupChange::eCleanQualifiers )
 
 ///
 /// CEMBL_block macros
@@ -2872,7 +2898,8 @@ DO_UNIQUE (KEYWORD_ON_EMBLBLOCK, Var, Func)
 /// UNIQUE_WITHOUT_SORT_KEYWORD_ON_EMBLBLOCK
 
 #define UNIQUE_WITHOUT_SORT_KEYWORD_ON_EMBLBLOCK(Var, FuncType) \
-UNIQUE_WITHOUT_SORT(KEYWORD_ON_EMBLBLOCK, Var, FuncType)
+UNIQUE_WITHOUT_SORT(KEYWORD_ON_EMBLBLOCK, Var, FuncType, \
+    CCleanupChange::eCleanQualifiers)
 
 ///
 /// CPDB_block macros
@@ -3716,7 +3743,8 @@ DO_UNIQUE (ACTIVITY_ON_PROTREF, Var, Func)
 /// UNIQUE_WITHOUT_SORT_ACTIVITY_ON_PROTREF(Var, Func)
 
 #define UNIQUE_WITHOUT_SORT_ACTIVITY_ON_PROTREF(Var, FuncType ) \
-UNIQUE_WITHOUT_SORT( ACTIVITY_ON_PROTREF, Var, FuncType )
+UNIQUE_WITHOUT_SORT( ACTIVITY_ON_PROTREF, Var, FuncType, \
+    CCleanupChange::eChangeProtActivities)
 
 /// REMOVE_IF_EMPTY_ACTIVITY_ON_PROTREF
 
