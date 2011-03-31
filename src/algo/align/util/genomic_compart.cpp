@@ -321,9 +321,9 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     }
                 }
 
-                if ((is_consistent  ||
-                    ( (options & fCompart_AllowIntersections)  &&
-                      is_intersecting ))  &&
+                if (is_consistent  &&
+                    ( (options & fCompart_AllowIntersections)  ||
+                      !is_intersecting )  &&
                     diff < best_diff) {
                     best_compart = compart_it;
                     best_diff = diff;
