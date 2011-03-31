@@ -1084,6 +1084,7 @@ private:
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
+    void ValidateCDSAndProtPartials (const CMappedFeat& feat);
     void ValidateFeatPartialInContext (const CMappedFeat& feat);
     bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
     bool x_SplicingNotExpected(const CMappedFeat& feat);

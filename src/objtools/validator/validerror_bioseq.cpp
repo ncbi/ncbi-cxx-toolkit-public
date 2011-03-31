@@ -1935,6 +1935,7 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
         return;
     }
 
+    string title = GetTitle(bsh);
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
     CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo);
     if (desc) {
@@ -1942,7 +1943,6 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
         tech = mi.GetTech();
         if (mi.GetCompleteness() != CMolInfo::eCompleteness_complete) {
             if (m_Imp.IsGenbank()) {
-                string title = GetTitle(bsh);
                 if (NStr::Find(title, "complete genome") != NPOS) {
                     PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteTitleProblem,
                         "Complete genome in title without complete flag set",
@@ -1955,6 +1955,24 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
             }
         }
     }
+
+    // warning if title contains complete genome but sequence contains gap features
+    if (NStr::FindNoCase (title, "complete genome") != NPOS) {
+        bool has_gap = false;
+        if ( seq.GetInst().IsSetExt()  &&  seq.GetInst().GetExt().IsDelta() ) {
+            ITERATE(CDelta_ext::Tdata, iter, seq.GetInst().GetExt().GetDelta().Get()) {
+                if ( ((*iter)->IsLiteral() && (*iter)->GetLiteral().IsSetFuzz())) {
+                    has_gap = true;
+                    break;
+                }
+            }
+        }
+        if (has_gap) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteTitleProblem, 
+                    "Title contains 'complete genome' but sequence has gaps", seq);
+        }
+    }
+
 
     // note - test for protein titles was moved to CValidError_bioseqset::ValidateNucProtSet
     // because it only applied for protein sequences in nuc-prot sets and it's more efficient
@@ -3917,8 +3935,51 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
 }
 
 
+static bool s_PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2)
+{
+    bool loc1_partial_start =
+        loc1.IsPartialStart(eExtreme_Biological);
+    bool loc1_partial_stop =
+        loc1.IsPartialStop(eExtreme_Biological);
+    bool loc2_partial_start =
+        loc2.IsPartialStart(eExtreme_Biological);
+    bool loc2_partial_stop =
+        loc2.IsPartialStop(eExtreme_Biological);
+    if (loc1_partial_start == loc2_partial_start  &&
+        loc1_partial_stop == loc2_partial_stop) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
+{
+    if (!feat.IsSetData() || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion || !feat.IsSetProduct()) {
+        return;
+    }
+    CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+    if (!prot_bsh) {
+        return;
+    }
+    CFeat_CI prot(prot_bsh, CSeqFeatData::eSubtype_prot);
+    if (!prot) {
+        return;
+    }
+    if (!s_PartialsSame(feat.GetLocation(), prot->GetLocation())) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent,
+            "Coding region and protein feature partials conflict",
+            *(feat.GetSeq_feat()));
+    }  
+}
+
+
 void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
 {
+
+    ValidateCDSAndProtPartials (feat);
+
     static const string parterr[2] = { "PartialProduct", "PartialLocation" };
     static const string parterrs[4] = {
         "Start does not include first/last residue of sequence",
@@ -5830,25 +5891,6 @@ static bool s_AreFeatureLabelsSame(const CSeq_feat& feat, const CSeq_feat& prev,
         same_label = false;
     }
     return same_label;
-}
-
-
-static bool s_PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2)
-{
-    bool loc1_partial_start =
-        loc1.IsPartialStart(eExtreme_Biological);
-    bool loc1_partial_stop =
-        loc1.IsPartialStop(eExtreme_Biological);
-    bool loc2_partial_start =
-        loc2.IsPartialStart(eExtreme_Biological);
-    bool loc2_partial_stop =
-        loc2.IsPartialStop(eExtreme_Biological);
-    if (loc1_partial_start == loc2_partial_start  &&
-        loc1_partial_stop == loc2_partial_stop) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 

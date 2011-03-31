@@ -1021,7 +1021,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
     unsigned int  partial_prod = eSeqlocPartial_Complete, 
                   partial_loc  = eSeqlocPartial_Complete;
 
-    bool is_partial = feat.CanGetPartial()  &&  feat.GetPartial();
+    bool is_partial = feat.IsSetPartial()  &&  feat.GetPartial();
     partial_loc  = SeqLocPartialCheck(feat.GetLocation(), m_Scope );
     if (feat.CanGetProduct ()) {
         partial_prod = SeqLocPartialCheck(feat.GetProduct (), m_Scope );
@@ -2392,7 +2392,7 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
             bool report_name = true;
             size_t pos = NStr::Find(*it, "[", 0, string::npos, NStr::eLast);
             if (pos == string::npos) {
-                report_name = false;
+                // no disqualifying text
             } else if (it->length() - pos < 5) {
                 // no disqualifying text
             } else if (NStr::EqualCase(*it, pos, 4, "[NAD")) {
@@ -3277,6 +3277,8 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
             subtype = CSeqFeatData::eSubtype_mutation;
         } else if (NStr::EqualNocase(key, "allele")) {
             subtype = CSeqFeatData::eSubtype_allele;
+        } else if (NStr::EqualNocase (key, "CDS")) {
+            subtype = CSeqFeatData::eSubtype_Imp_CDS;
         } else if (NStr::EqualNocase(key, "Import")) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_UnknownImpFeatKey,
                     "Feature key Import is no longer legal", feat);
@@ -3376,8 +3378,6 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                         "ImpFeat CDS with /translation found", feat);
                 }
             }
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatKey, 
-                "Unknown feature key " + key, feat);
         }
         break;
     case CSeqFeatData::eSubtype_imp:
@@ -4270,12 +4270,26 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
         return;
     }
     const CCdregion& cdr = cds->GetData().GetCdregion();
+    TSeqPos cds_start = cds->GetLocation().GetStart(eExtreme_Biological);
 
     TSeqPos pos1 = LocationOffset(cds->GetLocation(), loc, eOffset_FromStart);
+    bool pos1_not_in = false;
+    if (pos1 == ((TSeqPos)-1)) {
+        pos1_not_in = true;
+    }
     CRef<CSeq_loc> tmp(new CSeq_loc());
     tmp->SetPnt().SetId().Assign(*(loc.GetId()));
     tmp->SetPnt().SetPoint(loc.GetStop(eExtreme_Biological));
     TSeqPos pos2 = LocationOffset(cds->GetLocation(), *tmp, eOffset_FromStart);
+    bool pos2_not_in = false;
+    if (pos2 == ((TSeqPos)-1)) {
+        pos2_not_in = true;
+    }
+    if (pos1_not_in && pos2_not_in && NStr::Equal(key, "sig_peptide")) {
+    // ignore sig_peptide that is completely before coding region
+        return;
+    }
+
     unsigned int frame = 0;
     switch (cdr.GetFrame()) {
         case CCdregion::eFrame_not_set:
@@ -4322,9 +4336,7 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
         mod2 = 2;
     }
 
-    if (pos1 < frame && pos2 <= frame && NStr::Equal(key, "sig_peptide")) {
-        // ignore sig_peptide that is completely before coding region
-    } else if ( (mod1 != 0)  &&  (mod2 != 2) ) {
+    if ( (mod1 != 0)  &&  (mod2 != 2) ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
             "Start and stop of " + key + " are out of frame with CDS codons",
             feat);
@@ -4577,18 +4589,15 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
     if ( !bsh ) {
-        const CSeq_id& sid = GetId(feat.GetProduct(), m_Scope);
-        if ( sid.IsLocal() ) {
-            bsh = m_Scope->GetBioseqHandle(sid);
-            if (bsh) {
-                CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
-                if (seh.IsSet() && seh.GetSet().IsSetClass()
-                    && (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set
-                        || seh.GetSet().GetClass() == CBioseq_set::eClass_other)) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
-                        "Product Bioseq of mRNA feature is not "
-                        "packaged in the record", feat);
-                }
+        bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+        if (bsh) {
+            CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
+            if (seh.IsSet() && seh.GetSet().IsSetClass()
+                && (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set
+                    || seh.GetSet().GetClass() == CBioseq_set::eClass_other)) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
+                    "Product Bioseq of mRNA feature is not "
+                    "packaged in the record", feat);
             }
         }
     } else {
@@ -4794,7 +4803,9 @@ void CValidError_feat::ValidateCommonCDSProduct
 
 bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 {
-    if (!feat.IsSetData() || !feat.GetData().IsCdregion() || !feat.IsSetLocation() || feat.IsSetPseudo()) {
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() 
+        || !feat.IsSetLocation() 
+        || feat.IsSetPseudo() || IsOverlappingGenePseudo(feat)) {
         return false;
     }
 
@@ -4826,7 +4837,8 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
     if (!feat.IsSetData() 
         || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_intron 
         || !feat.IsSetLocation()
-        || feat.IsSetPseudo()) {
+        || feat.IsSetPseudo()
+        || IsOverlappingGenePseudo(feat)) {
         return false;
     }
 
@@ -5532,14 +5544,6 @@ bool CValidError_feat::ValidateCdRegionTranslation
 
 void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 {
-    bool is_interesting = false;
-    if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
-        int id_num = feat.GetId().GetLocal().GetId();
-        if (id_num == 46) {
-          is_interesting = true;
-        }
-    }
-
     // bail if not CDS
     if (!feat.GetData().IsCdregion()) {
         return;
@@ -5552,7 +5556,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     }
 
-    if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
+    if (feat.IsSetProduct() && m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
         m_Imp.SetFarFetchFailure();
         return;
     }
@@ -6261,6 +6265,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         return;
     }
 
+    if (feat.GetLocation().GetStart(eExtreme_Biological) == 631608) {
+        CSeqFeatData::ESubtype stype = feat.GetData().GetSubtype();
+    }
+
     const CGene_ref* gene_xref = feat.GetGeneXref();
     TSeqPos circular_len = kInvalidSeqPos;
     if (bsh.IsSetInst_Topology()
@@ -6275,8 +6283,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
     CFeat_CI prev_gene;
     string label = "?";
-    bool match_to_xref = false;
-    size_t match_to_xref_len = 0;
+    bool xref_match_same_as_overlap = false;
 
     while (gene_it) {
         if (TestForOverlap (gene_it->GetLocation(), feat.GetLocation(), eOverlap_Contained, circular_len) >= 0) {
@@ -6286,15 +6293,14 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 max = len;
                 equivalent = false;
                 prev_gene = gene_it;
+                if (gene_xref && s_GeneRefsAreEquivalent(*gene_xref, gene_it->GetData().GetGene(), label)) {
+                    xref_match_same_as_overlap = true;
+                } else {
+                    xref_match_same_as_overlap = false;
+                }
             } else if (len == max) {
                 equivalent |= s_GeneRefsAreEquivalent(gene_it->GetData().GetGene(), prev_gene->GetData().GetGene(), label);
                 num_genes++;
-            }
-            if (gene_xref && s_GeneRefsAreEquivalent(*gene_xref, gene_it->GetData().GetGene(), label)) {
-                if (!match_to_xref || match_to_xref_len < len) {
-                    match_to_xref = true;
-                    match_to_xref_len = len;
-                }
             }
         }
         ++gene_it;
@@ -6344,7 +6350,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         m_Imp.IncrementGeneXrefCount();
 
         // compare gene xref to overlapping gene
-        if (match_to_xref && num_genes == 1 && GetLength (prev_gene->GetLocation(), m_Scope) == match_to_xref_len) {
+        if (xref_match_same_as_overlap && num_genes == 1) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
                 "Unnecessary gene cross-reference " + label, feat);
         } else {

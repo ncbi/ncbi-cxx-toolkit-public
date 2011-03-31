@@ -527,7 +527,7 @@ void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset)
             break;
         }
     }
-    if (!has_title) {
+    if (!has_title && (m_Imp.IsRefSeq() || m_Imp.IsEmbl() || m_Imp.IsDdbj() || m_Imp.IsGenbank())) {
         PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
             "Pop/Phy/Mut/Eco set does not have title",
             seqset);
@@ -581,7 +581,7 @@ void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset)
                             break;
                         }
                     }
-                    if (!has_title) {
+                    if (!has_title && (m_Imp.IsRefSeq() || m_Imp.IsEmbl() || m_Imp.IsDdbj() || m_Imp.IsGenbank())) {
                         PostErr(eDiag_Warning, eErr_SEQ_PKG_ComponentMissingTitle,
                             "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title",
                             seq);

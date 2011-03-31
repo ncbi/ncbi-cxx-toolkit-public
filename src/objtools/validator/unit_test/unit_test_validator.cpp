@@ -1145,6 +1145,30 @@ static void AdjustProtFeatForNucProtSet(CRef<CSeq_entry> entry)
 }
 
 
+static void SetNucProtSetProductName (CRef<CSeq_entry> entry, string new_name)
+{
+    CRef<CSeq_feat> prot;
+    CRef<CSeq_entry> prot_seq;
+
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        prot_seq = entry;
+        prot = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    } else if (entry->IsSet()) {
+        prot_seq = entry->SetSet().SetSeq_set().back();
+        prot = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    }
+    if (prot) {
+        if (prot->SetData().SetProt().SetName().size() > 0) {
+            prot->SetData().SetProt().SetName().pop_front();
+        }
+        prot->SetData().SetProt().SetName().push_front(new_name);
+    }
+}
+
+
 static void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness completeness)
 {
     if (entry->IsSeq()) {
@@ -1355,6 +1379,12 @@ static CRef<CSeq_entry> BuildGoodGenProdSet()
     AddFeat (mrna, contig);
 
     return entry;
+}
+
+
+static CRef<CSeq_entry> GetNucProtSetFromGenProdSet(CRef<CSeq_entry> entry)
+{
+  return entry->SetSet().SetSeq_set().back();
 }
 
 
@@ -5605,10 +5635,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InconsistentBioSources",
                               "Population set contains inconsistent organisms."));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -10205,8 +10231,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtNotSegSet)
     entry->SetSet().SetSeq_set().push_back(centry);
 
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError ("", eDiag_Warning, "MissingSetTitle", 
-                                                  "Pop/Phy/Mut/Eco set does not have title"));
     expected_errors.push_back(new CExpectedError ("", eDiag_Warning, "EmptySet", 
                                                   "Pop/Phy/Mut/Eco set has no components"));
     expected_errors.push_back(new CExpectedError("", eDiag_Critical, "NucProtNotSegSet",
@@ -10225,14 +10249,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_SegSetNotParts)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError ("part1", eDiag_Warning, "MissingSetTitle", 
-                                                  "Pop/Phy/Mut/Eco set does not have title"));
-    expected_errors.push_back(new CExpectedError("part1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("part2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("part3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("part1", eDiag_Critical, "SegSetNotParts",
                                                  "Segmented set contains wrong Bioseq-set, its class is \"eco-set\"."));
     eval = validator.Validate(seh, options);
@@ -10406,6 +10422,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors[0]->SetErrCode("ProductFetchFailure");
     expected_errors[0]->SetErrMsg("Unable to fetch mRNA transcript 'lcl|nuc3'");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingMRNAproduct",
+                                                 "Product Bioseq of mRNA feature is not packaged in the record"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GenomicProductPackagingProblem",
                                                  "Product of mRNA feature (lcl|nuc3) not packaged in genomic product set"));
     eval = validator.Validate(seh, options);
@@ -10455,21 +10473,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
     expected_errors[0]->SetAccession("good1");
     expected_errors[0]->SetSeverity(eDiag_Warning);
     expected_errors[0]->SetErrMsg("Pop/phy/mut/eco set contains inconsistent MolInfo biomols");
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
 
     TESTPOPPHYMUTECO (seh, entry)
-
-    delete expected_errors[3];
-    expected_errors.pop_back();
-    delete expected_errors[2];
-    expected_errors.pop_back();
-    delete expected_errors[1];
-    expected_errors.pop_back();
 
     TESTWGS (seh, entry);
 
@@ -10510,12 +10515,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InternalGenBankSet)
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InternalGenBankSet",
                                                  "Bioseq-set contains internal GenBank Bioseq-set"));
 
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
 
@@ -10603,26 +10602,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "GPSnonGPSPackaging",
                                                  "Genomic product set and mut/pop/phy/eco set records should not be present in the same set"));
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InconsistentMolInfoBiomols",
                                                  "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "MissingSetTitle", 
-                                                  "Pop/Phy/Mut/Eco set does not have title"));
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ImproperlyNestedSets",
@@ -10634,12 +10615,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "GPSnonGPSPackaging",
                                                  "Genomic product set and mut/pop/phy/eco set records should not be present in the same set"));
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InconsistentMolInfoBiomols",
                                                  "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ImproperlyNestedSets",
@@ -10740,13 +10715,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_ImproperlyNestedSets)
     STANDARD_SETUP
 
     // no error first
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -10759,12 +10727,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_ImproperlyNestedSets)
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "SingleItemSet",
                               "Pop/Phy/Mut/Eco set has only one component and no alignments"));
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
-    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
-                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
     eval = validator.Validate(seh, options);
@@ -11054,6 +11016,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
                                                  "CDS is partial but protein is complete"));
@@ -11078,6 +11042,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
     cds->SetPartial(true);
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
@@ -11092,6 +11058,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
                                                  "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
@@ -11108,6 +11076,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
     cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
@@ -11120,6 +11090,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
                                                  "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
@@ -11171,6 +11143,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     misc_feat->SetPartial(true);
     misc_feat->SetProduct().SetWhole().SetLocal().SetStr("prot");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
         "When SeqFeat.product is a partial Bioseq, SeqFeat.location should also be partial"));
     eval = validator.Validate(seh, options);
@@ -11201,6 +11175,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
         "Gene feature on non-segmented sequence should not have multiple intervals"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSgeneRange",
         "gene overlaps CDS but does not completely contain it"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
         "Gene of 'order' with otherwise complete location should have partial flag set"));
     eval = validator.Validate(seh, options);
@@ -11215,6 +11191,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_partial);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
         "5' or 3' partial location should not have unclassified partial in product molinfo descriptor"));
     eval = validator.Validate(seh, options);
@@ -11298,6 +11276,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue '#' at position [3]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "PartialProblem",
         "PartialLocation: Start does not include first/last residue of sequence (and is at bad sequence)"));
     eval = validator.Validate(seh, options);
@@ -11315,7 +11295,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetErrMsg("Invalid residue '#' at position [25]");
-    expected_errors[1]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (and is at bad sequence)");
+    expected_errors[2]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (and is at bad sequence)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11335,6 +11315,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
         "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
     eval = validator.Validate(seh, options);
@@ -11352,6 +11334,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
         "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
     eval = validator.Validate(seh, options);
@@ -11431,6 +11415,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     CLEAR_ERRORS
 
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
                                                  "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
@@ -13067,6 +13053,339 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSgeneRange)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleMRNAproducts)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> contig = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> feat = AddMiscFeature(contig);
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    feat->SetData().SetRna().SetExt().SetName("fake protein name");
+    feat->SetProduct().SetWhole().SetLocal().SetStr("nuc");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatureProductInconsistency",
+                      "mRNA products are not unique"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "TranscriptLen", 
+                      "Transcript length [11] less than product length [27], and tail < 95% polyA"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "MultipleMRNAproducts", 
+                      "Same product Bioseq from multiple mRNA features"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_mRNAgeneRange)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("locus");
+    gene->SetLocation().SetInt().SetFrom(5);
+    CRef<CSeq_feat> mrna = AddMiscFeature(entry);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetLocation().SetInt().SetTo(10);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "mRNAgeneRange",
+                      "gene overlaps mRNA but does not completely contain it"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // if there is an overlapping gene or operon, error is suppressed
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> overlap = AddMiscFeature(entry);
+    overlap->SetData().SetGene().SetLocus("locus2");
+    overlap->SetLocation().SetInt().SetTo(10);    
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    overlap->SetData().SetImp().SetKey("operon");
+    overlap->AddQualifier ("operon", "operon name");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptLen)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> contig = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> mrna = contig->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    mrna->SetLocation().SetInt().SetTo(10);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSmRNArange",
+                      "mRNA overlaps or contains CDS but does not completely contain intervals"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "TranscriptLen", 
+                      "Transcript length [11] less than product length [27], and tail < 95% polyA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // allow for polyA tail
+    scope.RemoveTopLevelSeqEntry(seh);
+    mrna->SetLocation().SetInt().SetTo(25);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[1]->SetErrCode ("PolyATail");
+    expected_errors[1]->SetSeverity(eDiag_Info);
+    expected_errors[1]->SetErrMsg ("Transcript length [26] less than product length [27], but tail is 100% polyA");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    mrna->SetLocation().SetInt().SetTo(37);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "TranscriptLen", 
+                      "Transcript length [38] greater than product length [27]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptMismatches)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> mrna_seq = entry->SetSet().SetSeq_set().back()->SetSet().SetSeq_set().front();
+    mrna_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACAAA");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "TranscriptMismatches",
+                      "There are 1 mismatches out of 27 bases between the transcript and product sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // suppress error if exception
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> contig = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> mrna = contig->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    mrna->SetExcept(true);
+    mrna->SetExcept_text ("mismatches in transcription");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSproductPackagingProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    entry->SetSet().SetClass (CBioseq_set::eClass_eco_set);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "CDSproductPackagingProblem",
+                      "Protein product not packaged in nuc-prot set with nucleotide"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateInterval)
+{
+    // error for duplicate in tRNA anticodon location
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    CRef<CSeq_loc> anticodon_loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    anticodon_loc->SetMix().Set().front()->SetInt().SetFrom(8);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetTo(10);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetFrom(8);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*anticodon_loc);
+    AddFeat (trna, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "Range",
+                      "Anticodon is not 3 bases in length"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "DuplicateInterval",
+                      "Duplicate anticodon exons in location"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // different error for feature location
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    CRef<CSeq_loc> loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    loc->SetMix().Set().back()->SetInt().SetFrom(0);
+    loc->SetMix().Set().back()->SetInt().SetTo(15);
+    feat->SetLocation().Assign(*loc);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "DuplicateInterval", 
+                      "Duplicate exons in location"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PolyAsiteNotPoint)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetData().SetImp().SetKey("polyA_site");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PolyAsiteNotPoint", 
+                      "PolyA_site should be a single point"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    // error should go away if feature location is single point
+    feat->SetLocation().SetPnt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetPnt().SetPoint(5);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ImpFeatBadLoc)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetData().SetImp().SetLoc("one-of three");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ImpFeatBadLoc", 
+                      "ImpFeat loc one-of three has obsolete 'one-of' text for feature misc_feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    feat->SetData().SetImp().SetLoc("5..12");
+    expected_errors[0]->SetErrMsg("ImpFeat loc 5..12 does not equal feature location 1..11 for feature misc_feature");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryCitPubEquiv)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    CRef<CPub> pub(new CPub());
+    pub->SetPmid((CPub::TPmid)1);
+    feat->SetCit().SetPub().push_back(pub);
+    CRef<CPub> pub2(new CPub());
+    pub2->SetEquiv();
+    feat->SetCit().SetPub().push_back(pub2);
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnnecessaryCitPubEquiv", 
+                      "Citation on feature has unexpected internal Pub-equiv"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ImpCDShasTranslation)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetPseudo(true);
+    feat->SetData().SetImp().SetKey("CDS");
+    feat->AddQualifier("translation", "unexpected translation");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ImpCDShasTranslation", 
+                      "ImpFeat CDS with /translation found"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ImpCDSnotPseudo)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetData().SetImp().SetKey("CDS");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "ImpCDSnotPseudo", 
+                      "ImpFeat CDS should be pseudo"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // overlapping pseudogene should suppress
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(feat);
+    gene->SetPseudo (true);
+    AddFeat (gene, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingMRNAproduct)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> contig = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> feat = AddMiscFeature(contig);
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    feat->SetData().SetRna().SetExt().SetName("fake protein name");
+    feat->SetProduct().SetWhole().SetLocal().SetStr("not_present_ever");
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ProductFetchFailure", 
+                      "Unable to fetch mRNA transcript 'lcl|not_present_ever'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingMRNAproduct", 
+                      "Product Bioseq of mRNA feature is not packaged in the record"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GenomicProductPackagingProblem", 
+                      "Product of mRNA feature (lcl|not_present_ever) not packaged in genomic product set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -13350,3 +13669,195 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IdenticalGeneSymbolAndSynonym)
     CLEAR_ERRORS
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PartialProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> prot = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat> prot_feat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds_feat = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    
+    // make coding region shorter, 5' partial
+    cds_feat->SetLocation().SetInt().SetFrom(3);
+    cds_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    // shorten protein sequence
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("PRKTEIN");
+    prot->SetSeq().SetInst().SetLength(7);
+    AdjustProtFeatForNucProtSet (entry);
+    // make protein sequence 3' partial
+    SetCompleteness (prot, CMolInfo::eCompleteness_no_right);
+
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Coding region and protein feature partials conflict"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+                              "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                              "Inconsistent: Product= partial, Location= partial, Feature.partial= FALSE"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem", "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem", "CDS is 3' complete but protein is CO2 partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem", "CDS is 5' partial but protein is CO2 partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // set partial on CDS, third error should go away
+    cds_feat->SetPartial (true);
+    delete expected_errors[2];
+    expected_errors[2] = NULL;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ProteinNameEndsInBracket)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    SetNucProtSetProductName (entry, "something [ends with bracket]");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "ProteinNameEndsInBracket", 
+                              "Protein name ends with bracket and may contain organism name"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // report if no beginning bracket
+    SetNucProtSetProductName (entry, "something NAD with bracket]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    // no report if [NAD
+
+    SetNucProtSetProductName (entry, "something [NAD with bracket]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_id> id = entry->SetSeq().SetId().front();
+
+    // add gene
+    CRef<CSeq_feat> gene (new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("locus");
+    gene->SetLocation().SetInt().SetFrom(0);
+    gene->SetLocation().SetInt().SetTo(59);
+    gene->SetLocation().SetInt().SetId().Assign(*id);
+    AddFeat(gene, entry);
+
+    // add coding region
+    CRef<CSeq_feat> cds (new CSeq_feat());
+    cds->SetData().SetCdregion();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(15);
+    loc1->SetInt().SetId().Assign(*id);
+    
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetFrom(19);
+    loc2->SetInt().SetTo(59);
+    loc2->SetInt().SetId().Assign(*id);
+
+    cds->SetLocation().SetMix().Set().push_back(loc1);
+    cds->SetLocation().SetMix().Set().push_back(loc2);
+    AddFeat(cds, entry);
+
+    // add intron
+    CRef<CSeq_feat> intron (new CSeq_feat());
+    intron->SetData().SetImp().SetKey("intron");
+    intron->SetLocation().SetInt().SetFrom(16);
+    intron->SetLocation().SetInt().SetTo(18);
+    intron->SetLocation().SetInt().SetId().Assign(*id);
+    AddFeat(intron, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "StartCodon",
+                              "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NoProtein",
+                              "No protein Bioseq given"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NoStop",
+                              "Missing stop codon"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found after exon ending at position 16 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor",
+                              "Splice acceptor consensus (AG) not found before exon starting at position 20 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingCDSproduct", 
+                              "Expected CDS product absent"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ShortIntron",
+                              "Introns should be at least 10 nt long"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ShortIntron",
+                              "Introns should be at least 10 nt long"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                              "Splice acceptor consensus (AG) not found at end of intron, position 19 of lcl|good"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // set CDS pseudo, one ShortIntron error should go away
+    cds->SetPseudo();
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ShortIntron",
+                              "Introns should be at least 10 nt long"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                              "Splice acceptor consensus (AG) not found at end of intron, position 19 of lcl|good"));
+
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // make cds not pseudo, intron pseudo, should still get one ShortIntron error
+    cds->ResetPseudo();
+    intron->SetPseudo();
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "StartCodon",
+                              "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NoProtein",
+                              "No protein Bioseq given"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NoStop",
+                              "Missing stop codon"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found after exon ending at position 16 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor",
+                              "Splice acceptor consensus (AG) not found before exon starting at position 20 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingCDSproduct", 
+                              "Expected CDS product absent"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ShortIntron",
+                              "Introns should be at least 10 nt long"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                              "Splice acceptor consensus (AG) not found at end of intron, position 19 of lcl|good"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // clear both pseudo, make gene pseudo, both errors should go away
+    intron->ResetPseudo();
+    gene->SetPseudo();
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                              "Splice acceptor consensus (AG) not found at end of intron, position 19 of lcl|good"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
