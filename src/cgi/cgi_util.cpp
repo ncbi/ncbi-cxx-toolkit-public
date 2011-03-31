@@ -119,7 +119,7 @@ void CCgiUserAgent::Reset(const string& user_agent)
 
 bool CCgiUserAgent::IsBrowser(void) const
 {
-    switch ( GetPlatform() ) {
+    switch ( GetEngine() ) {
         case eEngine_IE:
         case eEngine_Gecko:
         case eEngine_KHTML:
@@ -127,9 +127,8 @@ bool CCgiUserAgent::IsBrowser(void) const
         case eEngine_Bot:
             return false;
         case eEngine_Unknown:
-            ; // see below
+            ; // check browser, see below
     }
-    // eEngine_Unknown:
     switch ( GetBrowser() ) {
         // Browsers
         case eiCab:
@@ -160,6 +159,8 @@ bool CCgiUserAgent::IsBrowser(void) const
         case eVodafone:
         case eXiino:
             return true;
+        default:
+            ; // false
     }
     return false;
 }
