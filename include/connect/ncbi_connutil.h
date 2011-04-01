@@ -233,6 +233,27 @@ typedef struct {
 #define REG_CONN_LOCAL_SERVER     DEF_CONN_REG_SECTION "_LOCAL_SERVER"
 
 
+/* Lookup "param" in the registry / environment.
+ * If "param" does not begin with "CONN_", then "CONN_" gets prepended
+ * automatically in all lookups listed below, unless otherwise noted.
+ * The order of search is the following (the first match causes to return):
+ * 1. Environment variable "service_param" (all upper-case; and if failed,
+ *    then "as-is");
+ * 2. Registry key "param" in the section "[service]";
+ * 3. Environment setting "param" (in all upper-case);
+ * 4. Registry key "param" (with "CONN_", if there was any, stripped)
+ *    in the section "[CONN]".
+ * Steps 1 & 2 skipped for "service" passed as NULL or empty ("").
+ * Steps 3 & 4 skipped for non-empty "service" and "param" already beginning
+ * with "CONN_".
+ * If the found match's value has enveloping quotes (single '', or double "")
+ * then they are stripped from the result (which may then become empty).
+ * The first "value_size" bytes (including the terminating '\0') of the result
+ * get copied to the "value" buffer (which may cause truncation!), and
+ * the passed "value" address gets returned.
+ * When no match is found, the "value" gets filled with "def_value" (or an
+ * empty string), which then gets returned.  Return 0 only on out of memory.
+ */
 extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
 (const char* service,
  const char* param,

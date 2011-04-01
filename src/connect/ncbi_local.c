@@ -87,43 +87,26 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
     const TSERV_Type type = iter->type & ~fSERV_Firewall;
+    char key[sizeof(REG_CONN_LOCAL_SERVER) + 10];
     int/*bool*/ ok = 0/*failed*/;
     SSERV_Info* info;
-    char* buf;
     int n;
 
-    if (!(buf =
-          (char*) malloc(strlen(name) + sizeof(REG_CONN_LOCAL_SERVER) + 80))) {
-        return 0/*failed*/;
-    }
-
     info = 0;
+    strcpy(key, REG_CONN_LOCAL_SERVER "_");
     for (n = 0;  n <= 100;  n++) {
-        char service[1024];
-        const char* c;
+        const char* svc;
+        char buf[1024];
 
         if (info) {
             free((void*) info);
             info = 0;
         }
-        sprintf(buf, "%s_" REG_CONN_LOCAL_SERVER "_%d", name, n);
-        if (!(c = getenv(buf))  &&  !(c = getenv(strupr(buf)))) {
-            char*  b = buf + strlen(name);
-            size_t len;
-            *b++ = '\0';
-            CORE_REG_GET(buf, b, service, sizeof(service) - 1, 0);
-            len = strlen(service);
-            if (len > 1  &&  (service[0] == '"'  ||  service[0] == '\'')
-                &&  service[len - 1] == service[0]  &&  (len -= 2) > 0) {
-                memmove(service, service + 1, len);
-                service[len] = '\0';
-            }
-            if (!len)
-                continue;
-            c = service;
-        }
+        sprintf(key + sizeof(REG_CONN_LOCAL_SERVER), "%d", n);
+        if (!(svc = ConnNetInfo_GetValue(name, key, buf, sizeof(buf), 0)))
+            continue;
         if (!(info = SERV_ReadInfoEx
-              (c, iter->ismask  ||  iter->reverse_dns ? name : ""))) {
+              (svc, iter->ismask  ||  iter->reverse_dns ? name : ""))) {
             continue;
         }
         if (iter->external  &&  info->locl)
@@ -157,7 +140,6 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
     if (info)
         free((void*) info);
 
-    free(buf);
     return ok/*whatever*/;
 }
 

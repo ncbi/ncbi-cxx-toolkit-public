@@ -75,9 +75,9 @@ static char* x_StrcatCRLF(char* dst, const char* src)
 }
 
 
-extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
-                                        char* value, size_t value_size,
-                                        const char* def_value)
+static const char* x_GetValue(const char* service, const char* param,
+                              char* value, size_t value_size,
+                              const char* def_value)
 {
     char        buf[128];
     const char* val;
@@ -92,19 +92,29 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 
     if (service  &&  *service) {
         /* Service-specific inquiry */
-        char   temp[sizeof(buf)];
-        size_t slen = strlen(service);
-        size_t plen = strlen(param) + 1;
-        size_t len  = slen + 1 + sizeof(DEF_CONN_REG_SECTION) + plen;
+        int/*bool*/ end;
+        char        temp[sizeof(buf)];
+        size_t      slen = strlen(service);
+        size_t      plen = strlen(param) + 1;
+        size_t       len = slen + 1 + plen;
+
+        if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
+                        sizeof(DEF_CONN_REG_SECTION)) != 0) {
+            len += sizeof(DEF_CONN_REG_SECTION);
+            end = 0/*false*/;
+        } else
+            end = 1/*true*/;
         if (len > sizeof(buf))
             return 0;
 
         /* First, environment search for 'service_CONN_param' */
         s = (char*) memcpy(buf, service, slen) + slen;
         *s++ = '_';
-        memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
-        s += sizeof(DEF_CONN_REG_SECTION) - 1;
-        *s++ = '_';
+        if (!end) {
+            memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
+            s += sizeof(DEF_CONN_REG_SECTION) - 1;
+            *s++ = '_';
+        }
         memcpy(s, param, plen);
         if ((val = getenv(strupr((char*) memcpy(temp, buf, len)))) != 0
             ||  (memcmp(temp, buf, len) != 0  &&  (val = getenv(buf)) != 0)) {
@@ -114,18 +124,25 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         /* Next, search for 'CONN_param' in '[service]' registry section */
         buf[slen++] = '\0';
         s = buf + slen;
-        CORE_REG_GET(buf, s, value, value_size, 0);
-        if (*value)
+        CORE_REG_GET(buf, s, value, value_size, end ? def_value : 0);
+        if (*value  ||  end)
             return value;
     } else {
         /* Common case. Form 'CONN_param' */
         size_t plen = strlen(param) + 1;
-        if (sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf))
-            return 0;
-        s = buf;
-        memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
-        s += sizeof(DEF_CONN_REG_SECTION) - 1;
-        *s++ = '_';
+        if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
+                        sizeof(DEF_CONN_REG_SECTION)) != 0) {
+            if (sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf))
+                return 0;
+            s = buf;
+            memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
+            s += sizeof(DEF_CONN_REG_SECTION) - 1;
+            *s++ = '_';
+        } else {
+            if (plen > sizeof(buf))
+                return 0;
+            s = buf;
+        }
         memcpy(s, param, plen);
         s = strupr(buf);
     }
@@ -138,6 +155,27 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     s += sizeof(DEF_CONN_REG_SECTION);
     CORE_REG_GET(DEF_CONN_REG_SECTION, s, value, value_size, def_value);
     return value;
+}
+
+
+extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
+                                        char* value, size_t value_size,
+                                        const char* def_value)
+{
+    const char* retval = x_GetValue(service, param,
+                                    value, value_size, def_value);
+    if (retval) {
+        /*strip enveloping quotes*/
+        size_t len = strlen(value);
+        if (len > 1  &&  (value[0] == '"'  ||  value[0] == '\'')
+            &&  value[0] == value[len - 1]) {
+            if (len -= 2)
+                memcpy(value, value + 1, len);
+            value[len] = '\0';
+        }
+        assert(retval == value);
+    }
+    return retval;
 }
 
 
