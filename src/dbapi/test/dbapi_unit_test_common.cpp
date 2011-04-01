@@ -423,7 +423,7 @@ string CUnitTestParams::GetServerName(void) const
 #ifdef HAVE_LIBCONNEXT
         return "DBAPI_SYB_TEST";
 #else
-        return "CLEMENTI";
+        return "DBAPI_DEV1";
 #endif
     }
 
