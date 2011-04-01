@@ -132,7 +132,7 @@ static void x_GnuTlsLogger(int level, const char* message)
     int len = message ? strlen(message) : 0;
     if (!len  ||  *message == '\n')
         return;
-    if (len >= 8  &&  strncasecmp(message, "ASSERT: ", 8) == 0)
+    if (strncasecmp(message, "ASSERT: ", 8) == 0)
         return;
     if (message[len - 1] == '\n')
         len--;
