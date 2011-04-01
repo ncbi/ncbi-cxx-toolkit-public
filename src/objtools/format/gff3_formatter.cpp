@@ -485,13 +485,16 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     // To compensate (or rather, avoid double-compentating), avoid use
     // of widths, and copy to a temporary alignment, storing the old widths
     // for lookup, but reset them in the temporary alignment.
-    const CDense_seg* ds_for_alnmix = ds.FillUnaligned().GetPointerOrNull();
+
+    CRef<CDense_seg> ds_filled = ds.FillUnaligned(); //keep ds_for_alnmix
+                                                   // alive through scope!
+    const CDense_seg* ds_for_alnmix = ds_filled.GetNCPointerOrNull();
     if ( 0 == ds_for_alnmix ) {
         ds_for_alnmix = &ds;
     }
     CDense_seg ds_no_widths;
     if (width_inverted) {
-        ds_no_widths.Assign(ds);
+        ds_no_widths.Assign(*ds_for_alnmix);
         ds_no_widths.ResetWidths();
         ds_for_alnmix = &ds_no_widths;
     }
