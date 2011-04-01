@@ -437,7 +437,7 @@ CUnitTestParams::GetServerType(void) const
     const string driver_name = GetThis().GetDriverName();
 
     if (driver_name == "dblib") {
-        if (NStr::CompareNocase(server_name, 0, 8, "DBAPI_DEV1") == 0
+        if (NStr::CompareNocase(server_name, 0, 10, "DBAPI_DEV1") == 0
             || NStr::CompareNocase(server_name, 0, 14, "DBAPI_SYB_TEST") == 0
             )
         {
