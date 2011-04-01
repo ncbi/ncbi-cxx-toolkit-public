@@ -36,7 +36,7 @@ BEGIN_NCBI_SCOPE
 
 // mapping from SGML to ASCII
 
-typedef pair<string, string> TSgmlAsciiPair;
+typedef pair<const char*, const char*> TSgmlAsciiPair;
 static const TSgmlAsciiPair sc_sgml_entity[] = {
     TSgmlAsciiPair("Agr" , "Alpha"),
     TSgmlAsciiPair("Bgr" , "Beta"),
@@ -92,7 +92,7 @@ static const TSgmlAsciiPair sc_sgml_entity[] = {
     TSgmlAsciiPair("zgr" , "zeta")
 };
 
-typedef CStaticArrayMap<string, string> TSgmlAsciiMap;
+typedef CStaticArrayMap<const char*, const char*, PCase_CStr> TSgmlAsciiMap;
 DEFINE_STATIC_ARRAY_MAP(TSgmlAsciiMap, sc_SgmlAsciiMap, sc_sgml_entity);
 
 
@@ -106,10 +106,10 @@ void Sgml2Ascii(string& sgml)
         SIZE_TYPE semi = sgml.find(';', amp);
         if (semi != NPOS) {
             size_t old_len = semi - amp - 1;
-            TSgmlAsciiMap::const_iterator it =
-                sc_SgmlAsciiMap.find(sgml.substr(amp + 1, old_len));
+            string ts = sgml.substr(amp + 1, old_len);
+            TSgmlAsciiMap::const_iterator it = sc_SgmlAsciiMap.find(ts.c_str());
             if (it != sc_SgmlAsciiMap.end()) {
-                size_t new_len = it->second.size();
+                size_t new_len = strlen(it->second);
                 sgml[amp] = '<';
                 sgml[semi] =  '>';
                 sgml.replace(amp + 1, old_len, it->second);
