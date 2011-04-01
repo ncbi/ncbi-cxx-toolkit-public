@@ -226,7 +226,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
 	                    resolver.Resolve(val_define, &resolved_def, p->second);
 	                    if ( resolved_def.empty() ) {
                             defs_unresolved.insert(val);
-		                    new_vals.push_back(val); //not resolved - keep old val
+		                    new_vals.push_back(val_define); //not resolved - keep old val
                         } else {
                             defs_resolved[val] = NStr::Join( resolved_def, " ");
                             //was resolved
