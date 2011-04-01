@@ -69,7 +69,7 @@ public:
 #ifdef HAVE_LIBCONNEXT
             return "DBAPI_SYB_TEST";
 #else
-            return "CLEMENTI";
+            return "DBAPI_DEV1";
 #endif
         }
         return m_ServerName;

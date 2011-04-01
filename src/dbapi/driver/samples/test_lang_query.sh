@@ -9,7 +9,7 @@ ulimit -n 1536 > /dev/null 2>&1
 driver_list="ctlib dblib ftds odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-    server_list="MSDEV1 CLEMENTI"
+    server_list="MSDEV1 DBAPI_DEV1"
     server_mssql="MSDEV1"
 
     server_mssql2005="MSDEV1"
