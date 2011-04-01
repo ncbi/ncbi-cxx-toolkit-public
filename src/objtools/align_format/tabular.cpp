@@ -948,12 +948,31 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     SetMinusStrand(annot->m_MinusStrand);
 
     // TODO top VDJ match sid?
+
     // Gene info coordinates are half inclusive
     SetVGene("TopV", annot->m_GeneInfo[0], annot->m_GeneInfo[1]);
     SetDGene("TopD", annot->m_GeneInfo[2], annot->m_GeneInfo[3]);
     SetJGene("TopJ", annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
 
-    // SetFrame("N/A");  
+    // Compute Frame info
+    if (annot->m_FrameInfo[1] >= 0) {
+        int off = annot->m_FrameInfo[0];
+        int len = annot->m_FrameInfo[1] - off;
+        if ( len % 3 == 0) {
+            string seq_data(m_Query, off, len);
+            string seq_trans;
+            CSeqTranslator::Translate(seq_data, seq_trans);
+            if (seq_trans.find('*') != string::npos) {
+                SetFrame("IP");
+            } else {
+                SetFrame("IF");
+            }
+        } else  {
+            SetFrame("OF");
+        }
+    } else {
+        SetFrame("N/A");
+    }
 
     // Domain info coordinates are inclusive (and always on positive strand)
     AddIgDomain("FWR1", annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1);

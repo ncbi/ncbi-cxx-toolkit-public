@@ -111,10 +111,18 @@ public:
         return "N/A";
     }
 
+    const int GetFrameOffset(const string sid) {
+        if (m_FrameOffset.find(sid) != m_FrameOffset.end()) {
+            return m_FrameOffset[sid];
+        }
+        return -1;
+    }
+
 private:
     map<string, int> m_DomainIndex;
     vector<int> m_DomainData;
     map<string, string> m_ChainType;
+    map<string, int> m_FrameOffset;
 };
 
 class NCBI_XBLAST_EXPORT CIgBlastResults : public CSearchResults 
@@ -228,19 +236,19 @@ private:
     static void s_AnnotateV(CRef<CSearchResultSet>        &results_V, 
                             vector<CRef <CIgAnnotation> > &annot);
 
-    /// Anntate the D, J genes based on blast results
-    static void s_AnnotateDJ(CRef<CSearchResultSet>        &results_D, 
-                             CRef<CSearchResultSet>        &results_J, 
-                             vector<CRef <CIgAnnotation> > &annot);
-
     /// Anntate the domains based on blast results
     void x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results, 
                           CRef<CSearchResultSet>        &dm_results, 
                           vector<CRef <CIgAnnotation> > &annot);
 
-    /// Set the chain type info
+    /// Anntate the D, J genes based on blast results
+    void x_AnnotateDJ(CRef<CSearchResultSet>        &results_D, 
+                      CRef<CSearchResultSet>        &results_J, 
+                      vector<CRef <CIgAnnotation> > &annot);
+
+    /// Set the chain type and frame info
     void x_SetChainType(CRef<CSearchResultSet>        &results, 
-                                 vector<CRef <CIgAnnotation> > &annot);
+                        vector<CRef <CIgAnnotation> > &annot);
 
     /// Append blast results to the final results
     static void s_AppendResults(CRef<CSearchResultSet> &results,

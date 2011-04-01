@@ -97,6 +97,28 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             fs.getline(line, 256);
         }
     }
+    fs.close();
+
+    // read frame info from nfm file
+    if (ig_opt->m_IsProtein) return; 
+    fn = ig_opt->m_Origin + "_gl_J.nfm";
+    fs.open(fn.c_str(), IOS_BASE::in);
+
+    if (!(! CFile(fn).Exists()) || fs.fail()) {
+        char line[256];
+        fs.getline(line, 256);
+        while(!fs.eof()) {
+            string l(line);
+            vector<string> tokens;
+            NStr::Tokenize(l, " \t\n\r", tokens, NStr::eMergeDelims);
+
+            if (!tokens.empty() && tokens[0][0] != '#') {
+                m_FrameOffset[tokens[0]] = NStr::StringToInt(tokens[1]);
+            }
+            fs.getline(line, 256);
+        }
+    }
+    fs.close();
 };
 
 CRef<CSearchResultSet>
@@ -134,7 +156,7 @@ CIgBlast::Run()
             CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
             results[gene] = blast.Run();
         }
-        s_AnnotateDJ(results[1], results[2], annots);
+        x_AnnotateDJ(results[1], results[2], annots);
     }
 
     /*** collect germline search results */
@@ -293,9 +315,6 @@ void CIgBlast::s_AnnotateV(CRef<CSearchResultSet>        &results,
             CRef<CSeq_align> align = (*result)->GetSeqAlign()->Get().front();
             annot->m_GeneInfo[0] = align->GetSeqStart(0);
             annot->m_GeneInfo[1] = align->GetSeqStop(0)+1;
-            if (align->GetSeqStrand(0) == eNa_strand_minus) {
-                annot->m_MinusStrand = true;
-            }
         } 
     }
 };
@@ -323,7 +342,7 @@ static bool s_CompareSeqAlign(const CRef<CSeq_align> &x, const CRef<CSeq_align> 
     return (sx <= sy);
 };
 
-void CIgBlast::s_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
+void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                             CRef<CSearchResultSet>        &results_J,
                             vector<CRef <CIgAnnotation> > &annots)
 {
@@ -388,6 +407,16 @@ void CIgBlast::s_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                      if (!annotated) {
                          annot->m_GeneInfo[4] = (*it)->GetSeqStart(0);
                          annot->m_GeneInfo[5] = (*it)->GetSeqStop(0)+1;
+
+                         string sid = (*it)->GetSeq_id(1).AsFastaString();
+                         if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+                         int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
+                         if (frame_offset >= 0) {
+                             int frame_adj = ((*it)->GetSeqStart(1) - frame_offset) % 3 + 3;
+                             annot->m_FrameInfo[1] = (annot->m_MinusStrand) ?
+                                                     (*it)->GetSeqStop(0)  + frame_adj 
+                                                   : (*it)->GetSeqStart(0) - frame_adj;
+                         } 
                          annotated = true;
                      }
                      ++it;
@@ -480,16 +509,24 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                             (*gl_results)[iq].GetSeqAlign()->Get().front();
             CAlnMap q_map(master_align->GetSegs().GetDenseg());
 
+            if (master_align->GetSeqStrand(0) == eNa_strand_minus) {
+                annot->m_MinusStrand = true;
+            }
+
             int q_ends[2], q_dir;
+
             if (annot->m_MinusStrand) {
                 q_ends[1] = master_align->GetSeqStart(0);
                 q_ends[0] = master_align->GetSeqStop(0);
                 q_dir = -1;
+
             } else {
                 q_ends[0] = master_align->GetSeqStart(0);
                 q_ends[1] = master_align->GetSeqStop(0);
                 q_dir = 1;
             }
+
+            annot->m_FrameInfo[0] = q_ends[1] - q_dir * (master_align->GetSeqStop(1) % 3);
 
             const CSeq_align_set::Tdata & align_list = (*result)->GetSeqAlign()->Get();
 
@@ -571,7 +608,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
     }
 };
 
-void CIgBlast::x_SetChainType(CRef<CSearchResultSet>       &results,
+void CIgBlast::x_SetChainType(CRef<CSearchResultSet>  &results,
                               vector<CRef <CIgAnnotation> > &annots) 
 {
     int iq = 0;

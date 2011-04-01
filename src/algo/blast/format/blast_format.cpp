@@ -949,6 +949,13 @@ CBlastFormat::x_ReverseQuery(blast::CIgBlastResults& results)
             annots->m_DomainInfo[i] = len - 1 - pos;
         }
     }
+
+    for (int i=0; i<2; ++i) {
+        int pos = annots->m_FrameInfo[i];
+        if (pos >= 0) {
+            annots->m_FrameInfo[i] = len -1 - pos;
+        }
+    }
 }
 
 void
