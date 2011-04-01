@@ -36,9 +36,8 @@
 
 #include <corelib/ncbiapp.hpp>
 
-#include <connect/services/netcache_api.hpp>
+#include <connect/services/grid_client.hpp>
 #include <connect/services/neticache_client.hpp>
-#include <connect/services/netschedule_api.hpp>
 
 
 #define PROGRAM_NAME "grid_cli"
@@ -75,7 +74,9 @@ enum EOption {
     eStatusOnly,
     eProgressMessageOnly,
     eDeferExpiration,
+    eForceReschedule,
     eExtendLifetime,
+    eProgressMessage,
     eAllJobs,
     eFailJob,
     eNow,
@@ -115,6 +116,7 @@ private:
         string ns_service;
         string queue;
         time_t extend_lifetime_by;
+        string progress_message;
         string error_message;
         FILE* input_stream;
         FILE* output_stream;
@@ -157,6 +159,7 @@ private:
     CNetICacheClient m_NetICacheClient;
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleAdmin m_NetScheduleAdmin;
+    auto_ptr<CGridClient> m_GridClient;
 
 // NetCache commands.
 public:
@@ -168,13 +171,15 @@ public:
 
 // NetSchedule commands.
 public:
-    int Cmd_SubmitJob();
     int Cmd_JobInfo();
+    int Cmd_SubmitJob();
     int Cmd_GetJobOutput();
     int Cmd_CancelJob();
     int Cmd_Kill();
     int Cmd_RequestJob();
     int Cmd_CommitJob();
+    int Cmd_ReturnJob();
+    int Cmd_UpdateJob();
 
 // Miscellaneous commands.
 public:
@@ -195,7 +200,8 @@ private:
         eNetICacheClient,
         eNetCacheAdmin,
         eNetScheduleAPI,
-        eNetScheduleAdmin
+        eNetScheduleAdmin,
+        eGridClient
     };
     EAPIClass SetUp_AdminCmd();
     void SetUp_NetCacheCmd(EAPIClass api_class);
@@ -204,6 +210,7 @@ private:
         bool* version_is_defined = NULL);
     void PrintICacheServerUsed();
     void SetUp_NetScheduleCmd(EAPIClass api_class);
+    void SetUp_GridClient();
     void PrintJobMeta(const CNetScheduleKey& key);
 };
 

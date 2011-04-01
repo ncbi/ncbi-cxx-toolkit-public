@@ -130,9 +130,16 @@ struct SOptionDefinition {
         "defer-expiration", "Prolong job lifetime by "
             "updating its last access timestamp."},
 
+    {CCommandLineParser::eSwitch, eForceReschedule,
+        "force-reschedule", "Reset job submission time, set the state "
+            "to 'Pending', and discard information about job runs."},
+
     {CCommandLineParser::eOptionWithParameter, eExtendLifetime,
         "extend-lifetime", "Extend job lifetime by "
             "the specified number of seconds."},
+
+    {CCommandLineParser::eOptionWithParameter, eProgressMessage,
+        "progress-message", "Set job progress message."},
 
     {CCommandLineParser::eSwitch, eAllJobs,
         "all-jobs", "Apply to all jobs in the queue."},
@@ -217,7 +224,6 @@ struct SCommandDefinition {
         {eID, eQueue, eBrief, eStatusOnly, eDeferExpiration,
             eProgressMessageOnly, eAuth, -1}},
 
-/*
     {&CGridCommandLineInterfaceApp::Cmd_SubmitJob,
         "submitjob", "Submit a job to a NetSchedule queue.",
         "Create a job by submitting input data to a NetSchedule queue. "
@@ -230,6 +236,7 @@ struct SCommandDefinition {
         "is read from the standard input stream.",
         {eNetSchedule, eQueue, eNetCache, eInputFile, eAuth, -1}},
 
+/*
     {&CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
         "getjoboutput", "Read job output if the job is completed.",
         "Retrieve and print job output to the standard output stream or "
@@ -238,13 +245,13 @@ struct SCommandDefinition {
         "to the standard error stream and the program exits with a non-zero "
         "return code.",
         {eID, eQueue, eOutputFile, eAuth, -1}},
+*/
 
     {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
         "node that may be processing this job to stop the processing.",
         {eID, eQueue, eAuth, -1}},
-*/
 
     {&CGridCommandLineInterfaceApp::Cmd_Kill,
         "kill", "Delete NetSchedule job(s).",
@@ -276,6 +283,24 @@ struct SCommandDefinition {
         "'--" FAIL_JOB_OPTION "' command line option.",
         {eID, eQueue, eNetCache, eInputFile, eFailJob, eAuth, -1}},
 */
+
+    {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
+        "returnjob", "Return a previously accepted job.",
+        "Due to insufficient resources or for any other reason, "
+        "this command can be used by a worker node to return a "
+        "previously accepted job back to the NetSchedule queue. "
+        "The job will change its state from Running back to "
+        "Pending, but the information about previous runs will "
+        "not be discarded, and the expiration time will not be "
+        "advanced.",
+        {eID, eQueue, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_UpdateJob,
+        "updatejob", "Modify attributes of an existing job.",
+        "Change one or more job properties. The outcome depends "
+        "on the current state of the job.",
+        {eID, eQueue, eForceReschedule, eExtendLifetime,
+            eProgressMessage, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print server information.",
@@ -414,6 +439,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
+                break;
+            case eProgressMessage:
+                m_Opts.progress_message = opt_value;
                 break;
             case eFailJob:
                 m_Opts.error_message = opt_value;

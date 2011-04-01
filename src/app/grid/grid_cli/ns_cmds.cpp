@@ -54,6 +54,15 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAdmin = m_NetScheduleAPI.GetAdmin();
 }
 
+void CGridCommandLineInterfaceApp::SetUp_GridClient()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAPI);
+    SetUp_NetCacheCmd(eNetCacheAPI);
+    m_GridClient.reset(new CGridClient(m_NetScheduleAPI.GetSubmitter(),
+        m_NetCacheAPI, CGridClient::eManualCleanup,
+            CGridClient::eProgressMsgOn));
+}
+
 void CGridCommandLineInterfaceApp::PrintJobMeta(const CNetScheduleKey& key)
 {
     printf("Job number: %u\n"
@@ -108,7 +117,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         if (status == CNetScheduleAPI::eJobNotFound)
             return 0;
 
-        printf("Input size: %u\n", job.input.size());
+        printf("Input size: %lu\n", (unsigned long) job.input.size());
 
         switch (status) {
         default:
@@ -120,18 +129,40 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         case CNetScheduleAPI::eReading:
         case CNetScheduleAPI::eConfirmed:
         case CNetScheduleAPI::eReadFailed:
-            printf("Output size: %u\n", job.output.size());
+            printf("Output size: %lu\n", (unsigned long) job.output.size());
             break;
         }
 
         if (!job.error_msg.empty())
-            printf("Error message: %u\n", job.error_msg.c_str());
+            printf("Error message: %s\n", job.error_msg.c_str());
     }
     return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 {
+    SetUp_GridClient();
+
+    CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
+
+    CNcbiOstream& job_input_stream = submitter.GetOStream();
+
+    char buffer[16 * 1024];
+    size_t bytes_read;
+
+    while ((bytes_read = fread(buffer, 1,
+            sizeof(buffer), m_Opts.input_stream)) > 0) {
+        job_input_stream.write(buffer, bytes_read);
+        if (job_input_stream.bad()) {
+            fprintf(stderr, PROGRAM_NAME ": error while writing job input.\n");
+            return 3;
+        }
+        if (feof(m_Opts.input_stream))
+            break;
+    }
+
+    submitter.Submit();
+
     return 0;
 }
 
@@ -142,6 +173,10 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
 
 int CGridCommandLineInterfaceApp::Cmd_CancelJob()
 {
+    SetUp_NetScheduleCmd(eNetScheduleAPI);
+
+    m_NetScheduleAPI.GetSubmitter().CancelJob(m_Opts.id);
+
     return 0;
 }
 
@@ -169,5 +204,34 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 
 int CGridCommandLineInterfaceApp::Cmd_CommitJob()
 {
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_ReturnJob()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAPI);
+
+    m_NetScheduleAPI.GetExecuter().ReturnJob(m_Opts.id);
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    if (IsOptionSet(eForceReschedule))
+        m_NetScheduleAdmin.ForceReschedule(m_Opts.id);
+    else if (IsOptionSet(eExtendLifetime))
+        m_NetScheduleAPI.GetExecuter().JobDelayExpiration(
+            m_Opts.id, (unsigned) m_Opts.extend_lifetime_by);
+
+    if (IsOptionSet(eProgressMessage)) {
+        CNetScheduleJob job;
+        job.job_id = m_Opts.id;
+        job.progress_msg = m_Opts.progress_message;
+        m_NetScheduleAPI.GetExecuter().PutProgressMsg(job);
+    }
+
     return 0;
 }
