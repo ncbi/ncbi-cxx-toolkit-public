@@ -161,7 +161,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             break;
     }
 
-    submitter.Submit();
+    printf("%s\n", submitter.Submit().c_str());
 
     return 0;
 }
