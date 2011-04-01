@@ -392,22 +392,7 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                 return idh;
             }
             else {
-                CSeq_id::EAccessionInfo info =
-                    idh.GetSeqId()->IdentifyAccession();
-                if (info != CSeq_id::eAcc_unknown) {
-                    /// additional short-cut:
-                    /// chances are, if it has an accession, it has a gi
-                    /// we can safely check for a gi since it is always
-                    /// canonical; this is a distinct advantage in many data
-                    /// loaders
-                    int gi = scope.GetGi(idh);
-                    if (gi) {
-                        ret = CSeq_id_Handle::GetHandle(gi);
-                    }
-                }
-                if ( !ret ) {
-                    ret = x_GetId(scope.GetIds(idh), type);
-                }
+                ret = x_GetId(scope.GetIds(idh), type);
                 if ( !ret ) {
                     /// failed to retrieve IDs
                     /// assume input is the best that we can do
