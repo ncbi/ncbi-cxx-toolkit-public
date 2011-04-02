@@ -190,8 +190,8 @@ net_sybase_root="/netopt/Sybase/clients"
 local_sybase_root="/export/home/sybase/clients"
 
 case "$ncbi_platform" in
-    Linux32    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32:/usr/local/intel/itt-3.1/tcheck/bin/32}
-    Linux64    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
+    Linux32    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32:/usr/local/intel/itt-3.1/tcheck/bin/32} ;;
+    Linux64    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e} ;;
 esac
 
 case "$ncbi_platform" in
