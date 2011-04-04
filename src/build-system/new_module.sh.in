@@ -8,6 +8,12 @@ build_root="@build_root@"
 bindir=$build_root/bin
 libdir=$build_root/lib
 
+if test -z "$CHECK_TIMEOUT"; then
+    CHECK_TIMEOUT=900
+    export CHECK_TIMEOUT
+    exec $top_srcdir/scripts/common/check/check_exec.sh $0 "$@"
+fi
+
 # Some useful common functions (such as COMMON_AddRunpath)
 . ${top_srcdir}/scripts/common/common.sh
 
