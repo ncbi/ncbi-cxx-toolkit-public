@@ -112,8 +112,8 @@ static void PrintVersionParts(const char* version)
                         *version_number_end == '.')
                     ++version_number_end;
                 printf("%.*sversion: %.*s\n",
-                    version - prev_part_end, prev_part_end,
-                    version_number_end - version_number, version_number);
+                    int(version - prev_part_end), prev_part_end,
+                    int(version_number_end - version_number), version_number);
                 prev_part_end = version_number_end;
                 while (isspace(*prev_part_end))
                     ++prev_part_end;
@@ -131,7 +131,7 @@ static void PrintVersionParts(const char* version)
                     while (isspace(version[-1]))
                         --version;
                     printf("Details: %.*s\n",
-                        version - prev_part_end, prev_part_end);
+                        int(version - prev_part_end), prev_part_end);
                 }
                 return;
             }
