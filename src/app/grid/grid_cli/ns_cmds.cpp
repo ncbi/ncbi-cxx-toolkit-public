@@ -147,23 +147,31 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
     CNcbiOstream& job_input_stream = submitter.GetOStream();
 
-    char buffer[16 * 1024];
-    size_t bytes_read;
+    if (IsOptionSet(eInput)) {
+        job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
+        if (job_input_stream.bad())
+            goto ErrorExit;
+    } else {
+        char buffer[16 * 1024];
+        size_t bytes_read;
 
-    while ((bytes_read = fread(buffer, 1,
-            sizeof(buffer), m_Opts.input_stream)) > 0) {
-        job_input_stream.write(buffer, bytes_read);
-        if (job_input_stream.bad()) {
-            fprintf(stderr, PROGRAM_NAME ": error while writing job input.\n");
-            return 3;
+        while ((bytes_read = fread(buffer, 1,
+                sizeof(buffer), m_Opts.input_stream)) > 0) {
+            job_input_stream.write(buffer, bytes_read);
+            if (job_input_stream.bad())
+                goto ErrorExit;
+            if (feof(m_Opts.input_stream))
+                break;
         }
-        if (feof(m_Opts.input_stream))
-            break;
     }
 
     printf("%s\n", submitter.Submit().c_str());
 
     return 0;
+
+ErrorExit:
+    fprintf(stderr, PROGRAM_NAME ": error while writing job input.\n");
+    return 3;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()

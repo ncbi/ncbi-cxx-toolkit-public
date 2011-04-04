@@ -44,6 +44,7 @@
 #define PROGRAM_VERSION "0.1.0"
 
 #define FAIL_JOB_OPTION "fail-job"
+#define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
 #define QUEUE_OPTION "queue"
 #define NOW_OPTION "now"
@@ -56,6 +57,7 @@ enum EOption {
     eOptionalID,
     eID,
     eAuth,
+    eInput,
     eInputFile,
     eOutputFile,
     eOutputFormat,
@@ -118,6 +120,7 @@ private:
         time_t extend_lifetime_by;
         string progress_message;
         string error_message;
+        string input;
         FILE* input_stream;
         FILE* output_stream;
 

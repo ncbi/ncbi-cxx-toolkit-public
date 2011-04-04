@@ -73,6 +73,10 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eAuth,
         "auth", "Authentication string (\"client_name\")."},
 
+    {CCommandLineParser::eOptionWithParameter, eInput,
+        INPUT_OPTION, "Provide input data on the command line. "
+            "The standard input stream will not be read."},
+
     {CCommandLineParser::eOptionWithParameter, eInputFile,
         INPUT_FILE_OPTION, "Read input from the specified file."},
 
@@ -201,7 +205,7 @@ struct SCommandDefinition {
         "encountered and save the received data as a NetCache blob."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eOptionalID, eNetCache, eCache, ePassword,
-            eTTL, eEnableMirroring, eInputFile, eAuth, -1}},
+            eTTL, eEnableMirroring, eInput, eInputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_RemoveBlob,
         "rmblob|rb", "Remove a NetCache blob.",
@@ -232,9 +236,10 @@ struct SCommandDefinition {
         "This command requires a NetCache server for saving job "
         "input if it exceeds the capability of the NetSchedule "
         "internal storage.\n\n"
-        "Unless '--" INPUT_FILE_OPTION "' option is given, the input "
-        "is read from the standard input stream.",
-        {eNetSchedule, eQueue, eNetCache, eInputFile, eAuth, -1}},
+        "Unless the '--" INPUT_OPTION "' or '--" INPUT_FILE_OPTION "' "
+        "options are given, the input is read from the standard input "
+        "stream.",
+        {eNetSchedule, eQueue, eNetCache, eInput, eInputFile, eAuth, -1}},
 
 /*
     {&CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
@@ -446,6 +451,9 @@ int CGridCommandLineInterfaceApp::Run()
             case eFailJob:
                 m_Opts.error_message = opt_value;
                 break;
+            case eInput:
+                m_Opts.input = opt_value;
+                break;
             case eInputFile:
                 if ((m_Opts.input_stream = fopen(opt_value, "rb")) == NULL) {
                     fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
@@ -468,6 +476,9 @@ int CGridCommandLineInterfaceApp::Run()
 #ifdef WIN32
             setmode(fileno(stdin), O_BINARY);
 #endif
+        } else if (IsOptionSet(eInput) && IsOptionSet(eInputFile)) {
+            fprintf(stderr, PROGRAM_NAME ": options '--" INPUT_FILE_OPTION
+                "' and '--" INPUT_OPTION "' are mutually exclusive.\n");
         }
         if (IsOptionAcceptedButNotSet(eOutputFile)) {
             m_Opts.output_stream = stdout;

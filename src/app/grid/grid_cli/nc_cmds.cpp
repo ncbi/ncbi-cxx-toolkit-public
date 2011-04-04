@@ -317,18 +317,25 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
         NCBI_USER_THROW_FMT("Cannot create blob stream");
     }
 
-    char buffer[16 * 1024];
-    size_t bytes_read;
     size_t bytes_written;
 
-    while ((bytes_read = fread(buffer, 1,
-            sizeof(buffer), m_Opts.input_stream)) > 0) {
-        if (writer->Write(buffer, bytes_read, &bytes_written) !=
-                eRW_Success || bytes_written != bytes_read) {
-            NCBI_USER_THROW_FMT("Error while writing to NetCache");
+    if (IsOptionSet(eInput)) {
+        if (writer->Write(m_Opts.input.data(), m_Opts.input.length(),
+                &bytes_written) != eRW_Success ||
+                bytes_written != m_Opts.input.length())
+            goto ErrorExit;
+    } else {
+        char buffer[16 * 1024];
+        size_t bytes_read;
+
+        while ((bytes_read = fread(buffer, 1,
+                sizeof(buffer), m_Opts.input_stream)) > 0) {
+            if (writer->Write(buffer, bytes_read, &bytes_written) !=
+                    eRW_Success || bytes_written != bytes_read)
+                goto ErrorExit;
+            if (feof(m_Opts.input_stream))
+                break;
         }
-        if (feof(m_Opts.input_stream))
-            break;
     }
 
     writer->Close();
@@ -339,6 +346,9 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
         PrintICacheServerUsed();
 
     return 0;
+
+ErrorExit:
+    NCBI_USER_THROW_FMT("Error while writing to NetCache");
 }
 
 int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
