@@ -166,6 +166,9 @@ cp -p "$builddir"/compilers/$compiler/*        "$cldir"/$compiler
 cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
 cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
 
+# Makefile.*.mk files
+find "$builddir/src" -type f -name 'Makefile.*.mk' -exec cp -pr {} "$srcdir"/build-system/ \;
+
 # Copy info files
 cp -p "$builddir"/*_info "$target"
 
