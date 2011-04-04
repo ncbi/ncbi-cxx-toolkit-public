@@ -741,6 +741,7 @@ CCPPToolkitConnParams::GetServerType(void) const
         || NStr::CompareNocase(server_name, "THALBERG") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUMANN") == 0
         || NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
+        || NStr::CompareNocase(server_name, 0, 10, "DBAPI_DEV1") == 0
         || NStr::CompareNocase(server_name, 0, 6, "BARTOK") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUBERT") == 0
         || NStr::CompareNocase(server_name, 0, 14, "DBAPI_SYB_TEST") == 0
