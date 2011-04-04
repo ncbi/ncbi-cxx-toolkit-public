@@ -447,6 +447,7 @@ CDataSource::FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
                                TSeqPos loc_pos,
                                const CSeq_feat& feat) const
 {
+    const_cast<CDataSource*>(this)->UpdateAnnotIndex();
     TSeq_feat_Lock ret;
     TAnnotLock::TReadLockGuard guard(m_DSAnnotLock);
     for ( int i = 0; i < 2; ++i ) {
