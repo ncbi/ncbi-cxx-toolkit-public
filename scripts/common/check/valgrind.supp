@@ -1,5 +1,5 @@
 #
-# Valgrind suppression file (versions 2.2.0, 3.0.1).
+# Valgrind suppression file (version 3.5.0).
 #
 ################################################################################
 #
@@ -25,183 +25,425 @@
 #     if Free: name of free-ing fn)
 #
 ################################################################################
+#
+# NOTE: C++ function names must be mangled.
+#       Use --gen-suppressions=all option to generate rules.
+#
+################################################################################
 
-# Important note: C++ function names must be mangled.
-# Use valgrind`s the --demangle=no option to get the mangled names
-# in error messages.
-
-
-#-------- C++ Toolkit ----------------------------------------------------------
 
 {
-    CObject::InitCounter() UMR
+    corelib/CObject/InitCounter
     Memcheck:Cond
     fun:_ZN4ncbi7CObject11InitCounterEv
-}
-
-#-------- thirdparty -----------------------------------------------------------
-
-{
-    select/dblib/dbapi
-    Memcheck:Param
-    select(writefds)
-    fun:select
-    fun:syb_tcp_open
-}
-
-{
-    deflate/zlib
-    Memcheck:Cond
     fun:*
-    fun:deflate_slow
-    fun:deflate
 }
-
 {
-    write(buf)/pthread
+    corelib/Diag/CreateDefaultHandler
+    Memcheck:Leak
+    fun:_Znwj
+    ...
+    fun:_ZN4ncbi24CreateDefaultDiagHandlerEv
+}
+{
+    corelib/SSystemMutex/InitializeDynamic
+    Memcheck:Cond
+    fun:_ZN4ncbi12SSystemMutex17InitializeDynamicEv
+    fun:*
+}
+{
+    corelib/SSystemFastMutex/InitializeDynamic
+    Memcheck:Cond
+    fun:_ZN4ncbi16SSystemFastMutex17InitializeDynamicEv
+    fun:*
+}
+{
+    corelib/CTimeout/operator ==, <
+    Memcheck:Cond
+    fun:_ZNK4ncbi8CTimeout??ERKS0_
+    fun:*
+}
+{
+    corelib/NCBI_THROW
+    Memcheck:Leak
+    fun:malloc
+    fun:__cxa_get_globals
+    fun:__cxa_allocate_exception
+}
+{
+    corelib/SetDiagStream
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_ZN4ncbi13SetDiagStreamEPSobPFvPvES1_RKSs
+}
+{
+   corelib/CNcbiEnvironment::Set
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:_ZN4ncbi16CNcbiEnvironment3SetERKSsS2_
+}
+{
+    CToolkit/COldAsnTypeInfo
+    Memcheck:Leak
+    fun:?alloc
+    fun:s_MemAllocator
+    ...
+    fun:_ZN4ncbi15COldAsnTypeInfo*
+}
+{
+    serial/TypeInfo
+    Memcheck:Leak
+    fun:_Znwm
+    ...
+    fun:*TypeInfo*
+}
+{
+    serial/CEnumDataType::CreateDefault
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_ZNK4ncbi13CEnumDataType13CreateDefaultERKNS_10CDataValueE
+    fun:_ZN4ncbi18CDataContainerType15CreateClassInfo*
+}
+{
+    serial/CIntDataType::CreateDefault
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_ZNK4ncbi12CIntDataType13CreateDefaultERKNS_10CDataValueE
+    fun:_ZN4ncbi18CDataContainerType15CreateClassInfo*
+}
+{
+    serial/CPointerTypeInfo::ReadPointer
+    Memcheck:Leak
+    fun:_Znwm
+    fun:*
+    fun:*
+    fun:_ZN4ncbi16CPointerTypeInfo11ReadPointer*
+}
+{
+    serial/member
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi18CClassTypeInfoBase9AddMemberEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/member
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi18CClassTypeInfoBase9AddMemberEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/classinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeIPN4ncbi18CClassTypeInfoBaseEEE8allocateEjPKv
+    fun:_ZNSt8_Rb_treeIPN4ncbi18CClassTypeInfoBaseES2_St9_IdentityIS2_ESt4lessIS2_ESaIS2_EE11_M_get_nodeEv
+}
+{
+    serial/iteminfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN9__gnu_cxx13new_allocatorIN4ncbi7AutoPtrINS1_9CItemInfoENS1_7DeleterIS3_EEEEE8allocateEjPKv
+    fun:_ZNSt12_Vector_baseIN4ncbi7AutoPtrINS0_9CItemInfoENS0_7DeleterIS2_EEEESaIS5_EE11_M_allocateEj
+}
+{
+    serial/iteminfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN9__gnu_cxx13new_allocatorIN4ncbi7AutoPtrINS1_9CItemInfoENS1_7DeleterIS3_EEEEE8allocateEjPKv
+}
+{
+    serial/iteminfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZNSt6vectorIN4ncbi7AutoPtrINS0_9CItemInfoENS0_7DeleterIS2_EEEESaIS5_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS5_S7_EERKS5_
+}
+{
+    serial/stltype
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:*
+    fun:_ZN4ncbi16CTypeInfoMapData11GetTypeInfoEPKNS_9CTypeInfoEPFPS1_S3_E
+}
+{
+    serial/stltype
+    Memcheck:Leak
+    fun:_Znwj
+    fun:*
+    fun:_ZN4ncbi16CTypeInfoMapData11GetTypeInfoEPKNS_9CTypeInfoEPFPS1_S3_E
+}
+{
+    serial/enumvalue
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZNK4ncbi21CEnumeratedTypeValues11ValueToNameEv
+}
+{
+    serial/enumvalue
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZNSt8_Rb_treeIiSt4pairIKiPKSsESt10_Select1stIS4_ESt4lessIiESaIS4_EE9_M_insertEPSt18_Rb_tree_node_baseSC_RKS4_
+    fun:_ZNSt8_Rb_treeIiSt4pairIKiPKSsESt10_Select1stIS4_ESt4lessIiESaIS4_EE13insert_uniqueESt17_Rb_tree_iteratorIS4_ERKS4_
+    fun:_ZNK4ncbi21CEnumeratedTypeValues11ValueToNameEv
+}
+{
+    serial/classinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase15CreateClassInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEERKSt9type_infoPFPSD_PKvE
+}
+{
+    serial/classinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase15CreateClassInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEPNS_17CObjectMemoryPoolEERKSt9type_infoPFPSF_PKvE
+}
+{
+    serial/choiceinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase16CreateChoiceInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEERKSt9type_infoPFjPKNS_15CChoiceTypeInfoEPKvEPFvSH_S6_jEPFvSH_S6_E
+}
+{
+    serial/choiceinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase16CreateChoiceInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEPNS_17CObjectMemoryPoolEERKSt9type_infoPFjPKNS_15CChoiceTypeInfoEPKvEPFvSJ_S6_jSB_EPFvSJ_S6_E
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi7objects*11GetTypeInfoEv
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi7objects*11GetTypeInfoEv
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi30CPrimitiveTypeInfoIntFunctionsI?E14CreateTypeInfoEv
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi30CPrimitiveTypeInfoIntFunctionsI?E14CreateTypeInfoEv
+}
+{
+    serial/enuminfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi24CreateEnumeratedTypeInfoI*21CEnumeratedTypeValuesE
+}
+{
+    serial/enuminfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi24CreateEnumeratedTypeInfoI*21CEnumeratedTypeValuesE
+}
+{
+    serial/choice
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi15CChoiceTypeInfo10AddVariantEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/choice
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi15CChoiceTypeInfo10AddVariantEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/std
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi12CStdTypeInfo*CreateTypeInfo*
+}
+{
+    serial/std
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi12CStdTypeInfo*CreateTypeInfo*
+}
+{
+    GProf/profil_counter
+    Memcheck:Cond
+    fun:profil_counter
+    fun:*
+}
+{
+    CSeqVector/tables
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znaj
+    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
+}
+{
+    CSeqVector/tables
+    Memcheck:Leak
+    fun:_Znaj
+    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
+}
+{
+    boost/sigaltstack
     Memcheck:Param
-    write(buf)
-    obj:/lib/libpthread-*.so
+    sigaltstack(ss)
+    fun:sigaltstack
+    fun:_ZN5boost6detail14signal_handlerD1Ev
 }
-
-#-------- libc -----------------------------------------------------------------
-
 {
-    strlen/libc
-    Memcheck:Cond
-    fun:strlen
+   boost/test_framework_impl::clear
+   Memcheck:Addr4
+   fun:_ZN5boost9unit_test14framework_impl5clearEv
+   fun:_ZN5boost9unit_test14framework_implD1Ev
+   fun:__tcf_3
 }
-
 {
-    strcat/libc
+    LZO/do_compress
     Memcheck:Cond
-    fun:strcat
+    fun:do_compress
+    fun:lzo1x_1_compress
 }
-
 {
-    __uflow/__underflow/libc
-    Memcheck:Cond
-    fun:__u*flow
+    LZO/do_compress V8
+    Memcheck:Value8
+    fun:do_compress
+    fun:lzo1x_1_compress
 }
-
 {
-    index/libc
-    Memcheck:Cond
-    fun:index
+    STL/locale
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znwj
+    fun:_ZNSt6locale7classicEv
 }
-
 {
-    vfprintf/libc
-    Memcheck:Cond
-    fun:vfprintf
-    fun:*printf             
-    fun:*printf
+    STL/uncaught_exception
+    Memcheck:Leak
+    fun:malloc
+    fun:__cxa_get_globals
+    fun:_ZSt18uncaught_exceptionv
 }
-
 {
-    _IO_vfprintf/libc
+    libc/dlrelocate
     Memcheck:Cond
-    fun:_IO_vfprintf
+    fun:_dl_relocate_object
+    fun:*
 }
-
 {
-    _IO_vfscanf/libc
-    Memcheck:Cond
-    fun:_IO_vfscanf
-    fun:*vsscanf
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:add_to_global
+    fun:dl_open_worker
 }
-
 {
-    _IO_fwrite/libc
-    Memcheck:Cond
-    fun:_IO_fwrite
+    libc/dlopen
+    Memcheck:Leak
+    fun:calloc
+    fun:_dlerror_run
 }
-
 {
-    _IO_flush_all_lockp/libc
-    Memcheck:Cond
-    fun:_IO_flush_all*
-    fun:_IO_flush_all*
-}
-
-
-#-------- glibc 2.3.2 ----------------------------------------------------------
-
-{
-    ld-2.3.2.so
-    Memcheck:Cond
-    obj:/lib/ld-2.3.2.so
-    obj:/lib/ld-2.3.2.so
-    obj:/lib/ld-2.3.2.so
-    obj:/lib/ld-2.3.2.so
-}
-
-{
-    dl_map_object/dl_open
-    Memcheck:Cond
-    obj:/lib/*-2.3.2.so
-    obj:/lib/*-2.3.2.so
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:decompose_rpath
     fun:_dl_map_object
-    obj:/lib/*-2.3.2.so
 }
-
 {
-    dl_map_object/dl_open
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:_dl_map_object_deps
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:_dl_new_object
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:calloc
+    fun:_dl_new_object
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:open_rpath
+    fun:_dl_map_object
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:calloc
+    fun:_dl_check_map_versions
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/sync_with_stdio
+    Memcheck:Leak
+    fun:_Znam
+    fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv
+    fun:_ZN9__gnu_cxx13stdio_filebuf*char_traitsI?EEC1EP8_IO_FILESt13_Ios_Openmodem
+    fun:_ZNSt8ios_base15sync_with_stdioEb
+}
+{
+    _dl_open
     Memcheck:Addr4
-    obj:/lib/*-2.3.2.so
-    obj:/lib/*-2.3.2.so
-    fun:_dl_map_object
-    obj:/lib/*-2.3.2.so
-}
-
-{
-    dl_map_object
-    Memcheck:Cond
-    obj:/lib/*-2.3.2.so
-    fun:_dl_map_object
-    obj:/lib/*-2.3.2.so
-}
-
-{
-    dl_map_object
-    Memcheck:Addr4
-    obj:/lib/*-2.3.2.so
-    fun:_dl_map_object
-    obj:/lib/*-2.3.2.so
-}
-
-{
-    dl_lookup_symbol
-    Memcheck:Addr4
-    obj:/lib/*-2.3.2.so
-    obj:/lib/*-2.3.2.so
-    fun:_dl_lookup_symbol
-    obj:/lib/*-2.3.2.so
-}
-
-{
-    dl_catch_error/dl_open
-    Memcheck:Cond
-    obj:/lib/*-2.3.2.so
-    obj:/lib/*-2.3.2.so
+    fun:*
+    fun:*
     fun:_dl_catch_error
     fun:_dl_open
 }
-
 {
-    dl_catch_error/dl_open
+    _dl_map_object
     Memcheck:Addr4
-    obj:/lib/*-2.3.2.so
-    obj:/lib/*-2.3.2.so
-    fun:_dl_catch_error
-    fun:_dl_open
-}
-
-{
-    dl_sym
-    Memcheck:Addr4
-    obj:/lib/*-2.3.2.so
-    fun:_dl_sym
-    obj:/lib/*-2.3.2.so
-    fun:_dl_catch_error
+    fun:*
+    fun:*
+    fun:_dl_map_object
 }
