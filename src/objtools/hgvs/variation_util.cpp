@@ -45,6 +45,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
+#include <objects/seqfeat/VariantProperties.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seqfeat/Ext_loc.hpp>
 
@@ -58,6 +59,7 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
@@ -66,11 +68,14 @@
 
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/hgvs/variation_util.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+const int CVariationUtil::m_variant_properties_schema_version = 1;
 
 #if 0
 CVariationUtil::ETestStatus CVariationUtil::CheckAssertedAllele(
@@ -185,7 +190,7 @@ CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CSeq_feat& v
         }
 
         const CDelta_item& first_delta = *vr1.GetData().GetInstance().GetDelta().front();
-        const CDelta_item& last_delta = *vr1.GetData().GetInstance().GetDelta().front();
+        const CDelta_item& last_delta = *vr1.GetData().GetInstance().GetDelta().back();
 
         //check intronic offsets for bio-start
         if(first_delta.IsSetAction() && first_delta.GetAction() == CDelta_item::eAction_offset) {
@@ -977,7 +982,10 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
      * 5. Attach frameshift based on (|ins|-|del|) % 3
      */
 
+
     bool verbose = false;
+
+    if(verbose) NcbiCerr << "Original variation: " << MSerial_AsnText << nuc_variation_feat;
 
     if(!nuc_variation_feat.GetData().IsVariation()) {
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-feature");
@@ -1005,7 +1013,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     }
 
     if(!prot2nuc_mapper) {
-        NCBI_THROW(CException, eUnknown, "Could not create prot->nuc mapper");
+        return CRef<CSeq_feat>(NULL); //not in cds
     }
 
     CRef<CVariation_ref> v(new CVariation_ref);
@@ -1055,8 +1063,8 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
 
     if(verbose) NcbiCerr << "Adjusted variation: " << MSerial_AsnText << *v;
 
-    string prot_delta_str("");
 
+    string prot_delta_str("");
     CSeqTranslator translator;
     translator.Translate(
             delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna(),
@@ -1067,21 +1075,41 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     literal.SetLength(prot_delta_str.size());
     literal.SetSeq_data().SetNcbieaa().Set(prot_delta_str);
 
-    CRef<CSeq_literal> ref_prot_literal = x_GetLiteralAtLoc(*prot_loc);
+
+    string prot_ref_str("");
+    CSeqVector nuc_ref_seqvector(v->GetLocation(), *m_scope, CBioseq_Handle::eCoding_Iupac);
+    translator.Translate(
+            nuc_ref_seqvector,
+            prot_ref_str,
+            CSeqTranslator::fIs5PrimePartial);
+    NStr::ReplaceInPlace(prot_ref_str, "*", "X");
+
 
     if(literal.GetLength() == 0) {
         v->SetData().SetInstance().SetType(CVariation_inst::eType_del);
         v->SetData().SetInstance().SetDelta().clear();
-    } else if(ref_prot_literal->GetLength() != literal.GetLength()) {
+    } else if(prot_delta_str.size() != prot_ref_str.size()) {
         v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_other);
     } else {
         //sequence of the same length
-        if(ref_prot_literal->GetSeq_data().GetNcbieaa().Get() == prot_delta_str) {
+        if(prot_ref_str == prot_delta_str) {
             v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_silent);
         } else if(NStr::Find(prot_delta_str, "X") != NPOS) {
             v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_nonsense);
         } else {
             v->SetData().SetInstance().SetType(CVariation_inst::eType_prot_missense);
+        }
+
+        for(size_t i = 0; i < prot_ref_str.size() && i < prot_delta_str.size(); i++) {
+            if(prot_ref_str[i] == prot_delta_str[i]) {
+                v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_synonymous;
+            } else if(prot_ref_str[i] == 'X') {
+                v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_stop_loss;
+            } else if(prot_delta_str[i] == 'X') {
+                v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_stop_gain;
+            } else {
+                v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_missense;
+            }
         }
     }
 
@@ -1091,15 +1119,19 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     v->ResetLocation();
 
     if(have_frameshift) {
-        CVariation_ref::TConsequence::value_type consequence(new CVariation_ref::TConsequence::value_type::TObjectType);
-        consequence->SetFrameshift();
-        v->SetConsequence().push_back(consequence);
+        v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_frameshift;
     }
 
+#if 0
     CRef<CUser_object> uo(new CUser_object);
     uo->SetType().SetStr("HGVS");
-    uo->AddField("reference_sequence", ref_prot_literal->GetSeq_data().GetNcbieaa());
+    uo->AddField("reference_sequence", prot_ref_str);
     v->SetExt(*uo);
+#endif
+
+    if(v->IsSetVariant_prop() && !v->GetVariant_prop().IsSetVersion()) {
+        v->SetVariant_prop().SetVersion(m_variant_properties_schema_version);
+    }
 
     return prot_variation_feat;
 }
@@ -1167,6 +1199,381 @@ bool CVariationUtil::SetReferenceSequence(CVariation_ref& v, const CSeq_loc& par
 
     return ret;
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// SO-terms calculations
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+void CVariationUtil::AsSOTerms(const CVariantProperties& p, TSOTerms& terms)
+{
+    if(p.GetGene_location() & CVariantProperties::eGene_location_near_gene_5) {
+        terms.push_back(eSO_2KB_upstream_variant);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_near_gene_3) {
+        terms.push_back(eSO_500B_downstream_variant);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_donor) {
+        terms.push_back(eSO_splice_donor_variant);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_acceptor) {
+        terms.push_back(eSO_splice_acceptor_variant);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_intron) {
+        terms.push_back(eSO_intron_variant);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_utr_5) {
+        terms.push_back(eSO_5_prime_UTR_variant);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_utr_3) {
+        terms.push_back(eSO_3_prime_UTR_variant);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_conserved_noncoding) {
+        terms.push_back(eSO_nc_transcript_variant);
+    }
+
+    if(p.GetEffect() & CVariantProperties::eEffect_frameshift) {
+        terms.push_back(eSO_frameshift_variant);
+    }
+    if(p.GetEffect() & CVariantProperties::eEffect_missense) {
+        terms.push_back(eSO_non_synonymous_codon);
+    }
+    if(p.GetEffect() & CVariantProperties::eEffect_nonsense || p.GetEffect() & CVariantProperties::eEffect_stop_gain) {
+        terms.push_back(eSO_stop_gained);
+    }
+    if(p.GetEffect() & CVariantProperties::eEffect_nonsense || p.GetEffect() & CVariantProperties::eEffect_stop_loss) {
+        terms.push_back(eSO_stop_lost);
+    }
+    if(p.GetEffect() & CVariantProperties::eEffect_synonymous) {
+        terms.push_back(eSO_synonymous_codon);
+    }
+}
+
+string CVariationUtil::AsString(ESOTerm term)
+{
+    if(term == eSO_2KB_upstream_variant) {
+        return "2KB_upstream_variant";
+    } else if(term == eSO_500B_downstream_variant) {
+        return "500B_downstream_variant";
+    } else if(term == eSO_splice_donor_variant) {
+        return "splice_donor_variant";
+    } else if(term == eSO_splice_acceptor_variant) {
+        return "splice_acceptor_varian";
+    } else if(term == eSO_intron_variant) {
+        return "intron_variant";
+    } else if(term == eSO_5_prime_UTR_variant) {
+        return "5_prime_UTR_variant";
+    } else if(term == eSO_3_prime_UTR_variant) {
+        return "3_prime_UTR_variant";
+    } else if(term == eSO_coding_sequence_variant) {
+        return "coding_sequence_variant";
+    } else if(term == eSO_nc_transcript_variant) {
+        return "nc_transcript_variant";
+    } else if(term == eSO_synonymous_codon) {
+        return "synonymous_codon";
+    } else if(term == eSO_non_synonymous_codon) {
+        return "non_synonymous_codon";
+    } else if(term == eSO_stop_gained) {
+        return "stop_gained";
+    } else if(term == eSO_stop_lost) {
+        return "stop_lost";
+    } else if(term == eSO_frameshift_variant) {
+        return "frameshift_variant";
+    } else {
+        return "other_variant";
+    }
+};
+
+/// Calculate location-specific categories
+void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CSeq_loc& orig_loc)
+{
+    if(!prop.IsSetVersion()) {
+        prop.SetVersion(m_variant_properties_schema_version);
+    }
+
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->Assign(orig_loc);
+    loc->SetStrand(eNa_strand_plus); //will set to plus temporarily to create flanks such that upstream=high and downstream=low
+    SFlankLocs flanks = CreateFlankLocs(*loc, 2); //will use 2-nt flanks to check if inside a splice-site
+
+    //Set strand to both on our query locs because we need to consider annotation on both strands
+    loc->SetStrand(eNa_strand_both);
+    flanks.downstream->SetStrand(eNa_strand_both);
+    flanks.upstream->SetStrand(eNa_strand_both);
+
+    SAnnotSelector sel;
+    sel.IncludeFeatType(CSeqFeatData::e_Gene);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    sel.SetOverlapTotalRange();
+    sel.SetIgnoreStrand();
+
+    //the following will indicate total-range overlap
+    bool overlaps_gene_range = false;
+    bool overlaps_rna_range = false;
+    bool overlaps_cds_range = false;
+
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(*loc);
+
+    for(CFeat_CI ci(*m_scope, *loc, sel); ci; ++ci) {
+        if(ci->GetData().IsGene()) {
+            overlaps_gene_range = true;
+        } if(ci->GetData().IsRna()) {
+            overlaps_rna_range = true;
+        } else if(ci->GetData().IsCdregion()) {
+            overlaps_cds_range = true;
+        }
+
+        bool have_overlap = sequence::Compare(ci->GetLocation(), *loc, m_scope) != sequence::eNoOverlap;
+
+        if((ci->GetData().IsRna() || ci->GetData().IsCdregion()) && !have_overlap)
+        {
+            //within range, but no overlap - must be intronic or splice-site.
+
+            bool is_minus_strand = (eNa_strand_minus == sequence::GetStrand(ci->GetLocation(), NULL));
+
+            if(sequence::Compare(ci->GetLocation(), *flanks.upstream, m_scope) != sequence::eNoOverlap) {
+                prop.SetGene_location() |= is_minus_strand ?
+                                          CVariantProperties::eGene_location_acceptor
+                                        : CVariantProperties::eGene_location_donor;
+            } else if(sequence::Compare(ci->GetLocation(), *flanks.downstream, m_scope) != sequence::eNoOverlap) {
+                prop.SetGene_location() |= is_minus_strand ?
+                                          CVariantProperties::eGene_location_donor
+                                        : CVariantProperties::eGene_location_acceptor;
+
+            } else {
+                prop.SetGene_location() |= CVariantProperties::eGene_location_intron;
+            }
+        }
+
+        if(have_overlap && ci->GetData().IsRna() && ci->GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
+            prop.SetGene_location() |= CVariantProperties::eGene_location_conserved_noncoding;
+        }
+
+        if(ci->GetData().IsCdregion()) {
+
+            //check if in start/stop codons. This happens iff the query location, expanded by 2nt, overlaps
+            //non-partial cds-start/cds-stop
+
+            if(   !ci->GetLocation().IsPartialStop(eExtreme_Biological)
+               && !ci->GetLocation().IsTruncatedStop(eExtreme_Biological)
+               && ci->GetLocation().GetStop(eExtreme_Biological) + 2 >= loc->GetStart(eExtreme_Positional)
+               && ci->GetLocation().GetStop(eExtreme_Biological) <= loc->GetStop(eExtreme_Positional) + 2)
+            {
+                prop.SetGene_location() |= CVariantProperties::eGene_location_in_stop_codon;
+            }
+
+            if(   !ci->GetLocation().IsPartialStart(eExtreme_Biological)
+               && !ci->GetLocation().IsTruncatedStart(eExtreme_Biological)
+               && ci->GetLocation().GetStart(eExtreme_Biological) + 2 >= loc->GetStart(eExtreme_Positional)
+               && ci->GetLocation().GetStart(eExtreme_Biological) <= loc->GetStop(eExtreme_Positional) + 2)
+            {
+                prop.SetGene_location() |= CVariantProperties::eGene_location_in_start_codon;
+            }
+        }
+    }
+
+    //We checked for noncoding RNA cases above, but if the location is on on transcript there will be
+    //no mRNA feature - we need to check either by mol subtype or by looking for annotated CDS.
+    if(bsh.GetBioseqMolType() == CSeq_inst::eMol_rna) {
+        bool found_any_cds = false;
+        for(CFeat_CI ci(bsh, sel); ci; ++ci) {
+            if(ci->GetData().IsCdregion()) {
+                found_any_cds = true;
+                break;
+            }
+        }
+        if(!found_any_cds) {
+            prop.SetGene_location() |= CVariantProperties::eGene_location_conserved_noncoding;
+        }
+    }
+
+    if(bsh.GetBioseqMolType() != CSeq_inst::eMol_rna
+       && !overlaps_rna_range
+       && !overlaps_cds_range
+       && overlaps_gene_range)
+    {
+        prop.SetGene_location(CVariantProperties::eGene_location_in_gene);
+    }
+
+    //Check if in UTR:
+    if((bsh.GetBioseqMolType() == CSeq_inst::eMol_rna || overlaps_rna_range) && !overlaps_cds_range) {
+        for(CFeat_CI ci(*m_scope, *loc, sel); ci; ++ci)  {
+            CConstRef<CSeq_feat> cds;
+
+            if(bsh.GetBioseqMolType() == CSeq_inst::eMol_rna && ci->GetData().IsCdregion()) {
+                cds.Reset(&ci->GetMappedFeature());
+            } else if(ci->GetData().IsRna()) {
+                cds = sequence::GetBestCdsForMrna(ci->GetMappedFeature(), *m_scope);
+            }
+
+            if(cds) {
+                bool is_minus_strand = (eNa_strand_minus == sequence::GetStrand(cds->GetLocation(), NULL));
+
+                if(loc->GetStop(eExtreme_Positional) < cds->GetLocation().GetStart(eExtreme_Positional)) {
+                    prop.SetGene_location() |= is_minus_strand ?
+                                               CVariantProperties::eGene_location_utr_3
+                                             : CVariantProperties::eGene_location_utr_5;
+                }
+
+                if(loc->GetStart(eExtreme_Positional) > cds->GetLocation().GetStop(eExtreme_Positional)) {
+                    prop.SetGene_location() |= is_minus_strand ?
+                                               CVariantProperties::eGene_location_utr_5
+                                             : CVariantProperties::eGene_location_utr_3;
+                }
+            }
+        }
+    }
+
+
+    //check if in neighborhood
+    if(!overlaps_rna_range
+       && !overlaps_cds_range
+       && !overlaps_gene_range
+       && bsh.GetBioseqMolType() != CSeq_inst::eMol_rna)
+    {
+        SFlankLocs flanks2k = CreateFlankLocs(*loc, 2000);
+        CRef<CSeq_loc> neighborhood_loc = sequence::Seq_loc_Add(*flanks2k.upstream, *flanks2k.downstream, CSeq_loc::fMerge_SingleRange, NULL);
+        neighborhood_loc->SetStrand(eNa_strand_both);
+
+        SAnnotSelector gene_sel;
+        gene_sel.IncludeFeatType(CSeqFeatData::e_Gene);
+        gene_sel.SetIgnoreStrand();
+
+        bool found_in_neighborhood = false;
+        for(CFeat_CI ci(*m_scope, *neighborhood_loc, gene_sel); ci; ++ci) {
+            const CSeq_loc& gene_loc = ci->GetLocation();
+            SFlankLocs flanks500 = CreateFlankLocs(gene_loc, 500);
+            SFlankLocs flanks2000 = CreateFlankLocs(gene_loc, 2000);
+
+            if(sequence::Compare(*loc, *flanks500.downstream, m_scope) != sequence::eNoOverlap) {
+                found_in_neighborhood = true;
+                prop.SetGene_location() |= CVariantProperties::eGene_location_near_gene_3;
+            }
+
+            if(sequence::Compare(*loc, *flanks2000.upstream, m_scope) != sequence::eNoOverlap) {
+                found_in_neighborhood = true;
+                prop.SetGene_location() |= CVariantProperties::eGene_location_near_gene_5;
+            }
+        }
+
+        //if there's any gene feature on the bioseq, we must be in an intergenic region;
+        if(!found_in_neighborhood) {
+            for(CFeat_CI ci(m_scope->GetBioseqHandle(*loc), gene_sel); ci; ++ci) {
+                prop.SetGene_location() |= CVariantProperties::eGene_location_intergenic;
+                break;
+            }
+        }
+    }
+}
+
+
+
+
+void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantProperties& p, int offset, const CSeq_loc& loc, CBioseq_Handle& bsh)
+{
+    if(loc.GetStop(eExtreme_Positional) + 1 >= bsh.GetInst_Length() && offset > 0) {
+        //at the 3'-end; check if near-gene or intergenic
+        if(offset <= 500) {
+            p.SetGene_location() |= CVariantProperties::eGene_location_near_gene_3;
+        } else {
+            p.SetGene_location() |= CVariantProperties::eGene_location_intergenic;
+        }
+    } else if(loc.GetStart(eExtreme_Positional) == 0 && offset < 0) {
+        //at the 5'-end; check if near-gene or intergenic
+        if(offset >= -2000) {
+            p.SetGene_location() |= CVariantProperties::eGene_location_near_gene_5;
+        } else {
+            p.SetGene_location() |= CVariantProperties::eGene_location_intergenic;
+        }
+    } else {
+        //intronic or splice
+        if(offset < 0 && offset >= -2) {
+            p.SetGene_location() |= CVariantProperties::eGene_location_acceptor;
+        } else if(offset > 0 && offset <= 2) {
+            p.SetGene_location() |= CVariantProperties::eGene_location_donor;
+        } else {
+            p.SetGene_location() |= CVariantProperties::eGene_location_intron;
+        }
+    }
+}
+
+void CVariationUtil::x_SetVariantProperties(CVariantProperties& p, const CVariation_inst& vi, const CSeq_loc& loc)
+{
+    if(!p.IsSetVersion()) {
+        p.SetVersion(m_variant_properties_schema_version);
+    }
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+
+    //if variation is cDNA/intronic, we need to calculate location-specific terms as well (intron, splice-site, etc.)
+    if(bsh.GetBioseqMolType() == CSeq_inst::eMol_rna) {
+        const CDelta_item& first_delta = *vi.GetDelta().front();
+        const CDelta_item& last_delta = *vi.GetDelta().back();
+
+        if(first_delta.IsSetAction()
+           && first_delta.GetAction() == CDelta_item::eAction_offset
+           && first_delta.GetSeq().IsLiteral())
+        {
+            x_SetVariantPropertiesForIntronic(p, first_delta.GetSeq().GetLiteral().GetLength(), loc, bsh);
+        }
+        if(last_delta.IsSetAction()
+           && last_delta.GetAction() == CDelta_item::eAction_offset
+           && last_delta.GetSeq().IsLiteral())
+        {
+            x_SetVariantPropertiesForIntronic(p, last_delta.GetSeq().GetLiteral().GetLength(), loc, bsh);
+        }
+    }
+
+
+    //Calculate protein variation and inherit the prot-variation's properties
+    if(bsh.IsAa()) {
+        ; //nothing to do here
+    } else {
+        CRef<CSeq_feat> nuc_vf(new CSeq_feat);
+        nuc_vf->SetLocation().Assign(loc);
+        nuc_vf->SetData().SetVariation().SetData().SetInstance().Assign(vi);
+        CRef<CSeq_feat> prot_variation = this->PrecursorToProt(*nuc_vf);
+
+        if(prot_variation) {
+            p.SetEffect() |= prot_variation->GetData().GetVariation().GetVariant_prop().GetEffect();
+        }
+    }
+}
+
+
+void CVariationUtil::SetVariantProperties(CVariation_ref& vr)
+{
+    s_PropagateLocsInPlace(vr);
+
+    bool found_inst = false;
+    for(CTypeIterator<CVariation_ref> it(Begin(vr)); it; ++it) {
+        CVariation_ref& vr2 = *it;
+        if(!vr2.GetData().IsInstance()) {
+            continue;
+        }
+        CVariation_inst& inst = vr2.SetData().SetInstance();
+        if(inst.IsSetObservation() && inst.GetObservation() != CVariation_inst::eObservation_variant) {
+            continue;
+        }
+
+        found_inst = true;
+        x_SetVariantProperties(vr2.SetVariant_prop(), inst, vr2.GetLocation());
+    }
+
+    s_FactorOutLocsInPlace(vr);
+    for(CTypeIterator<CVariation_ref> it(Begin(vr)); it; ++it) {
+        CVariation_ref& vr2 = *it;
+        if(vr2.IsSetLocation()) {
+            SetVariantProperties(vr2.SetVariant_prop(), vr2.GetLocation());
+        }
+    }
+}
+
+
 
 END_NCBI_SCOPE
 

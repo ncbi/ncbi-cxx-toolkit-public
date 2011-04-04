@@ -116,6 +116,11 @@ public:
             feat = m_parser->AsVariationFeat(m_expr);
             variation_util.SetReferenceSequence(feat->SetData().SetVariation(), feat->GetLocation());
 
+            feat->SetData().SetVariation().SetLocation().Assign(feat->GetLocation());
+            variation_util.SetVariantProperties(feat->SetData().SetVariation());
+            feat->SetData().SetVariation().ResetLocation();
+
+
             if(m_map_up) {
                 LOG_POST("Mapping to precursor");
                 feat = variation_util.ProtToPrecursor(*feat);
@@ -199,7 +204,7 @@ CRef<CSeq_loc> CreateLoc(const string& id, TSeqPos from = kInvalidSeqPos, TSeqPo
 #include <limits>
 NCBITEST_INIT_TREE()
 {
-    CException::SetStackTraceLevel(eDiag_Error);
+    CException::SetStackTraceLevel(eDiag_Warning);
     SetDiagPostLevel(eDiag_Warning);
 
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();

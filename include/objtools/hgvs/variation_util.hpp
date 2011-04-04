@@ -136,16 +136,57 @@ public:
 
 
     /*!
-     * Calculate location of variation-sets as union of the members.
-     * If all members have the same location, their locations are reset
-     * (recorded only at the set level)
+     * Set location of variation-sets as union of the children sub-variation locs.
+     * If all children have the same location, their locations are reset
+     * (recorded only at the parent variation level)
      */
     static void s_FactorOutLocsInPlace(CVariation_ref& v);
 
     /// Propagate parent variation location to the members of set, unles they have their own location set.
+    /// (opposite of factor-out)
     static void s_PropagateLocsInPlace(CVariation_ref& v);
 
+
+    /// Set location-specific variant-properties.
+    void SetVariantProperties(CVariantProperties& prop, const CSeq_loc& orig_loc);
+
+    /// Recursively iterate sub-variations: calculate location and variant properties for inst-type variations
+    /// unless their observation-type is asserted or reference. Calculate location properties on factored locations.
+    ///
+    /// Precondition: root location must be set.
+    void SetVariantProperties(CVariation_ref& vr);
+
+
+    /// Supported SO-terms
+    enum ESOTerm
+    {
+        //location-specific terms
+        eSO_2KB_upstream_variant    =1636,
+        eSO_500B_downstream_variant =1634,
+        eSO_splice_donor_variant    =1575,
+        eSO_splice_acceptor_variant =1574,
+        eSO_intron_variant          =1627,
+        eSO_5_prime_UTR_variant     =1623,
+        eSO_3_prime_UTR_variant     =1624,
+        eSO_coding_sequence_variant =1580,
+        eSO_nc_transcript_variant   =1619,
+
+        //variant-specific terms
+        eSO_synonymous_codon        =1588,
+        eSO_non_synonymous_codon    =1583, //missense
+        eSO_stop_gained             =1587, //nonsense
+        eSO_stop_lost               =1578,
+        eSO_frameshift_variant      =1589
+    };
+    typedef vector<ESOTerm> TSOTerms;
+    void AsSOTerms(const CVariantProperties& p, TSOTerms& terms);
+    static string AsString(ESOTerm term);
+
 private:
+
+    void x_SetVariantProperties(CVariantProperties& p, const CVariation_inst& vi, const CSeq_loc& loc);
+    void x_SetVariantPropertiesForIntronic(CVariantProperties& p, int offset, const CSeq_loc& loc, CBioseq_Handle& bsh);
+
 
     void x_ProtToPrecursor(CVariation_ref& v);
 
@@ -182,7 +223,9 @@ private:
      */
     static void s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg& ss, const CSeq_loc& parent_variation_loc);
 
+private:
     CRef<CScope> m_scope;
+    static const int m_variant_properties_schema_version;
 };
 
 END_NCBI_SCOPE;
