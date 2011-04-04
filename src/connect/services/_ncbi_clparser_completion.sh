@@ -42,7 +42,7 @@ _ncbi_clparser_completion()
         [[ -z $cmd ]] && cmd="${COMP_LINE:COMP_POINT}" && cmd="${cmd%% *}"
         COMPREPLY=($("$program" help "$cmd" 2> /dev/null | perl -wne \
             "if (!\$parse) {\$parse = m/options:/o; next}
-            if (@opt = m/^\s{2,4}(-\\S+) (?:\\[([^\\]]+)\\] )?(ARG)?/o) {
+            if (@opt = m/^\s{2,4}(-\\S+) (?:\\[([^\\]]+)\\] )?(ARG)?/io) {
                 \$eq = \$opt[2] ? '= ' : ' ';
                 print map {\$_ . \$eq} grep {length() > 4 && m/^$word/}
                     \$opt[0], split(m/[ ,]+/, \$opt[1] || '')
