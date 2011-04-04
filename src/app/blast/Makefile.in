@@ -27,26 +27,28 @@ include @builddir@/Makefile.meta
 
 .PHONY: all $(APP_PROJ)
 
-blastn:
+lib:
+	make -f Makefile.blast_app_util_lib
+blastn: lib
 	make -f Makefile.blastn_app
-blastp:
+blastp: lib
 	make -f Makefile.blastp_app
-blastx:
+blastx: lib
 	make -f Makefile.blastx_app
-tblastn:
+tblastn: lib
 	make -f Makefile.tblastn_app
-tblastx:
+tblastx: lib
 	make -f Makefile.tblastx_app
-psiblast:
+psiblast: lib
 	make -f Makefile.psiblast_app
-rpsblast:
+rpsblast: lib
 	make -f Makefile.rpsblast_app
-rpstblastn:
+rpstblastn: lib
 	make -f Makefile.rpstblastn_app
-igblastn:
+igblastn: lib
 	make -f Makefile.igblastn_app
-blast_formatter:
+blast_formatter: lib
 	make -f Makefile.blast_formatter_app
-rmblastn:
+rmblastn: lib
 	make -f Makefile.rmblastn_app
 
