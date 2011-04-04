@@ -13807,7 +13807,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     CheckErrors (*eval, expected_errors);
 
     // set CDS pseudo, one ShortIntron error should go away
-    cds->SetPseudo();
+    cds->SetPseudo(true);
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ShortIntron",
                               "Introns should be at least 10 nt long"));
@@ -13822,7 +13822,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
 
     // make cds not pseudo, intron pseudo, should still get one ShortIntron error
     cds->ResetPseudo();
-    intron->SetPseudo();
+    intron->SetPseudo(true);
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "StartCodon",
                               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
@@ -13847,7 +13847,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
 
     // clear both pseudo, make gene pseudo, both errors should go away
     intron->ResetPseudo();
-    gene->SetPseudo();
+    gene->SetPseudo(true);
     CLEAR_ERRORS
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor",
@@ -13857,7 +13857,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
     CLEAR_ERRORS
 }
 
