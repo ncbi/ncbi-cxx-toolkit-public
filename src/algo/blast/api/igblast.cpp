@@ -168,7 +168,7 @@ CIgBlast::Run()
     x_SetupDbSearch(annots, qf);
     if (m_IsLocal) {
         CLocalBlast blast(qf, m_Options, m_LocalDb);
-        // blast.SetNumberOfThreads(num_threads);
+        blast.SetNumberOfThreads(m_NumThreads);
         result = blast.Run();
     } else {
         CRef<CRemoteBlast> blast;

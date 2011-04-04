@@ -176,7 +176,7 @@ int CIgBlastnApp::Run(void)
                 results = rmt_blast.Run();
             } else {
                 CIgBlast lcl_blast(query, blastdb, opts_hndl, ig_opts);
-                //TODO:         lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = lcl_blast.Run();
             }
 

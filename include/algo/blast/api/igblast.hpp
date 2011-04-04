@@ -171,6 +171,7 @@ public:
              CRef<CBlastOptionsHandle> options,
              CConstRef<CIgBlastOptions> ig_options)
        : m_IsLocal(true),
+         m_NumThreads(1),
          m_Query(query_factory),
          m_LocalDb(blastdb),
          m_Options(options),
@@ -189,6 +190,7 @@ public:
              CRef<CBlastOptionsHandle> options,
              CConstRef<CIgBlastOptions> ig_options)
        : m_IsLocal(false),
+         m_NumThreads(1),
          m_Query(query_factory),
          m_Subject(subjects),
          m_RemoteDb(blastdb),
@@ -202,9 +204,15 @@ public:
     /// Run the Ig-BLAST engine
     CRef<CSearchResultSet> Run();
 
+    /// Set MT mode
+    void SetNumberOfThreads(size_t nthreads) {
+        m_NumThreads = nthreads;
+    }
+
 private:
 
     bool m_IsLocal;
+    size_t m_NumThreads;
     CRef<CBlastQueryVector> m_Query;
     CRef<IQueryFactory> m_Subject;
     CRef<CLocalDbAdapter> m_LocalDb;
