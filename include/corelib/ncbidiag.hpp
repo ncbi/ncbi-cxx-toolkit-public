@@ -2349,13 +2349,14 @@ public:
     /// Post message to the handler.
     virtual void Post(const SDiagMessage& mess);
 
-    bool Valid(void) { return m_Handle != -1; }
+    bool Valid(void) { return (m_Handle != -1)  ||  m_LowDiskSpace; }
 
     // Reopen file to enable log rotation.
     virtual void Reopen(TReopenFlags flags);
 
 private:
     int         m_Handle;       ///< File handle
+    bool        m_LowDiskSpace;
     CStopWatch* m_ReopenTimer;
 
     /// Save messages if the handle is unavailable

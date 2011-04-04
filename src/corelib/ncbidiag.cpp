@@ -4579,6 +4579,7 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
 
 CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
     : m_Handle(-1),
+      m_LowDiskSpace(false),
       m_ReopenTimer(new CStopWatch())
 {
     SetLogName(fname);
@@ -4599,6 +4600,7 @@ const int kLogReopenDelay = 60; // Reopen log every 60 seconds
 
 void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
 {
+    CDiagLock lock(CDiagLock::ePost);
     // Period is longer than for CFileDiagHandler to prevent double-reopening
     if (flags & fCheck  &&  m_ReopenTimer->IsRunning()) {
         if (m_ReopenTimer->Elapsed() < kLogReopenDelay + 5) {
@@ -4618,17 +4620,17 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
     }
 
     // Need at least 20K of free space to write logs
-    bool low_disk_space = false;
+    m_LowDiskSpace = false;
     try {
         CDirEntry entry(GetLogName());
-        low_disk_space = CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20;
+        m_LowDiskSpace = CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20;
     }
     catch (CException) {
         // Ignore error - could not check free space for some reason.
         // Try to open the file anyway.
     }
 
-    if ( !low_disk_space ) {
+    if ( !m_LowDiskSpace ) {
         int mode = O_WRONLY | O_APPEND | O_CREAT;
         if (flags & fTruncate) {
             mode |= O_TRUNC;
@@ -4704,11 +4706,15 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
     // If the handle is not available, collect the messages until they
     // can be written.
     if ( m_Messages.get() ) {
-        // Limit number of stored messages to 1000
-        if ( m_Messages->size() < 1000 ) {
-            m_Messages->push_back(mess);
+        CDiagLock lock(CDiagLock::ePost);
+        // Check again to make sure m_Messages still exists.
+        if ( m_Messages.get() ) {
+            // Limit number of stored messages to 1000
+            if ( m_Messages->size() < 1000 ) {
+                m_Messages->push_back(mess);
+            }
+            return;
         }
-        return;
     }
 
     // write() is atomic, no need to lock mutex. This is the only place
