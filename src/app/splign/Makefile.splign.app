@@ -2,17 +2,15 @@
 # $Id$
 #################################
 
-WATCHERS = kapustin
+WATCHERS = kiryutin kapustin
 
 APP = splign
 SRC = splign_app
 
-
-BLAST_DB_DATA_LOADER_LIBS = ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt
-LIB = xalgoalignsplign xalgoalignutil xqueryparse xalgoalignnw xalgoseq \
+LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
       $(BLAST_DB_DATA_LOADER_LIBS) \
-	  ncbi_xloader_lds lds bdb \
-      xalnmgr xregexp $(PCRE_LIB) taxon1 \
+      ncbi_xloader_lds lds bdb\
+      xalgoseq $(PCRE_LIB) \
       $(BLAST_LIBS:%=%$(STATIC)) \
       $(OBJMGR_LIBS:%=%$(STATIC))
 
