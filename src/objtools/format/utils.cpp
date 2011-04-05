@@ -434,7 +434,8 @@ string &CompressSpaces( string& str, const bool trim_beginning, const bool trim_
 }
 
 
-void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
+// returns true if it changed the string
+bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 {
     // TODO: This commented out code represents how ellipsis trimming
     // should work.  However, for compatibility with C, we're using a
@@ -492,11 +493,12 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     //}
 
     // This is based on the C function TrimSpacesAndJunkFromEnds.
-    // Although it's updated to use iterators and such, it should
+    // Although it's updated to use iterators and such and to
+    // return whether it changed the string, it should
     // have the same output.
 
     if ( str.empty() ) {
-        return;
+        return false;
     }
 
     // make start_of_junk_pos hold the beginning of the "junk" at the end
@@ -524,6 +526,8 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
         start_of_junk_pos = 0;
     }
 
+    bool changed = false;
+
     // if there's junk, chop it off (but leave period/tildes/ellipsis as appropriate)
     if ( start_of_junk_pos < (int)str.length() ) {
 
@@ -549,9 +553,13 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
                 suffix = ( doubleTilde  ? "~~" : "~" );
             }
         }
-        str.erase( start_of_junk_pos );
-        if( suffix[0] != '\0' ) {
+        if( suffix[0] != '\0' && 0 != str.compare( start_of_junk_pos, INT_MAX, suffix) ) {
+            str.erase( start_of_junk_pos );
             str += suffix;
+            changed = true;
+        } else if ( start_of_junk_pos < str.length() ) {
+            str.erase( start_of_junk_pos );
+            changed = true;
         }
     }
 
@@ -562,7 +570,10 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     }
     if( input_iter != str.begin() ) {
         str.erase( str.begin(), input_iter );
+        changed = true;
     }
+
+    return changed;
 }
 
 

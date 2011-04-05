@@ -69,7 +69,7 @@ string JoinString(const list<string>& l,
 // meet several spaces (spaces and tabs) in succession it replaces them
 // with one space. Strips all spaces after '(' and before ')'
 void StripSpaces(string& str);
-void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
+bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
 void TrimSpaces(string& str, int indent = 0);
 string &CompressSpaces( string& str, const bool trim_beginning = true, const bool trim_end = true );
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);

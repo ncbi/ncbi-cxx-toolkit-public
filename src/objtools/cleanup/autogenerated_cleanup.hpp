@@ -184,7 +184,7 @@ public:
   void BasicCleanupSeqAnnot( CSeq_annot & arg0 );
   void BasicCleanupBioseq( CBioseq & arg0 );
   void BasicCleanupBioseqSet( CBioseq_set & arg0 );
-  void BasicCleanupSeqFeat( CSeq_feat & arg0 );
+  void BasicCleanupSeqFeat( CSeq_feat & arg0_raw );
 
 private: 
   void x_BasicCleanupSeqFeat_support_support_model_evidence_E_E_dbxref_E_E_ETC( CDbtag & arg0 );
@@ -278,8 +278,8 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_E_ETC( CSeq_align & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_align_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_num_num_ref_ref_aligns_aligns_segs_disc_disc_ETC( Tcontainer_ncbi_cref_cseq_align_ & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_part_supi_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_pub_pub_std_ETC( CAffil::C_Std & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_pub_pub_str_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_pub_pub_ETC( CAffil & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_imp_imp_pub_ETC( CAffil & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_cit_cit_authors_authors_names_std_E_E_name_name_ETC( CPerson_id & arg0 );
@@ -360,9 +360,9 @@ void x_BasicCleanupSeqFeat_cit_cit_pub_ETC( Tcontainer_ncbi_cref_cpub_ & arg0 );
   void x_BasicCleanupSeqFeat_comment_ETC( std::string & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
 void x_BasicCleanupSeqFeat_support_support_model_evidence_E_E_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_mod_E_ETC( std::string & arg0 );
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_mod_ETC( Tcontainer_std_string_ & arg0 );
-  void x_BasicCleanupSeqFeat_except_text_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_mod_E_E_ETC( COrgMod & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_mod_E_ETC( COrgMod & arg0 );
   template< typename Tcontainer_ncbi_cref_corgmod_ >
@@ -380,8 +380,6 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_orgname_name_ETC( COrgName::C_Name & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org_org_orgname_orgname1728( COrgName & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org_org_orgname( COrgName & arg0 );
-  template< typename Tcontainer_std_string_ >
-void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_syn_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_pcr_primers_ETC( CPCRReactionSet & arg0 );
@@ -421,15 +419,14 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_ETC( COrgName & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org( COrg_ref & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_desc_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_E_ETC( std::string & arg0 );
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_ETC( Tcontainer_std_string_ & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_name_E_ETC( std::string & arg0 );
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_name_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqFeat_data_data_prot_prot( CProt_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_prot( CProt_ref & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_comment_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv_E( CPub & arg0 );
   template< typename Tcontainer_ncbi_cref_cpub_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_equiv_equiv( Tcontainer_ncbi_cref_cpub_ & arg0 );
@@ -441,6 +438,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_pub_pub1760_ETC( Tcontaine
   void x_BasicCleanupSeqFeat_data_data_pub_pub_pub_ETC( CPub_equiv & arg0 );
   void x_BasicCleanupSeqFeat_data_data_pub_pub_ETC( CPubdesc & arg0 );
   void x_BasicCleanupSeqFeat_data_data_pub_ETC( CPubdesc & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_name_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_E_E_ETC( CRNA_qual & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_E_ETC( CRNA_qual & arg0 );
   template< typename Tcontainer_ncbi_cref_crna_qual_ >
@@ -596,12 +594,14 @@ void x_BasicCleanupSeqEntry_seq_seq_annot( Tcontainer_ncbi_cref_cseq_annot_ & ar
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_genbank_ETC( CGB_block & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_molinfo_molinfo( CMolInfo & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E_molinfo( CMolInfo & arg0 );
+  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_name_ETC( std::string & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pdb_pdb_replace_replace_ETC( CPDB_replace & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pdb_pdb_replace_ETC( CPDB_replace & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pdb_pdb_ETC( CPDB_block & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pdb_ETC( CPDB_block & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pir_pir_ETC( CPIR_block & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_pir_ETC( CPIR_block & arg0 );
+  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_region_ETC( std::string & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_sp_sp_ETC( CSP_block & arg0 );
   void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_sp_ETC( CSP_block & arg0 );
   void x_BasicCleanupSeqEntry_seq_seq_descr_descr_E_E( CSeqdesc & arg0 );

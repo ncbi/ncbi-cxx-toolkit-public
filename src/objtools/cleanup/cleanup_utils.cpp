@@ -212,6 +212,159 @@ bool CleanString(string& str, bool rm_trailing_period)
     return false;
 }
 
+bool CleanVisString( string &str )
+{
+    bool changed = false;
+
+    if( str.empty() ) {
+        return false;
+    }
+
+    // chop off initial junk
+    {
+        string::size_type first_good_char_pos = str.find_first_not_of(" ;,");
+        if( first_good_char_pos == string::npos ) {
+            // string is completely junk
+            str.clear();
+            return true;
+        } else if( first_good_char_pos > 0 ) {
+            copy( str.begin() + first_good_char_pos, str.end(), str.begin() );
+            str.resize( str.length() - first_good_char_pos );
+            changed = true;
+        }
+    }
+
+    // chop off end junk
+
+    string::size_type last_good_char_pos = str.find_last_not_of(" ;,");
+    _ASSERT( last_good_char_pos != string::npos ); // we checked this case so it shouldn't happen
+    if( last_good_char_pos == (str.length() - 1) ) {
+        // nothing to chop of the end
+        return changed;
+    } else if( str[last_good_char_pos+1] == ';' ) {
+        // special extra logic for semicolons because it might be part of
+        // an HTML character like "&nbsp;"
+
+        // see if there's a '&' before the semicolon
+        // ( ' ' and ',' would break the '&' and make it irrelevant, though )
+        string::size_type last_ampersand_pos = str.find_last_of("& ,", last_good_char_pos );
+        if( last_ampersand_pos == string::npos ) {
+            // no ampersand, so just chop off as normal
+            str.resize( last_good_char_pos + 1 );
+            return true;
+        }
+        switch( str[last_ampersand_pos] ) {
+            case '&':
+                // can't chop semicolon, so chop just after it
+                if( (last_good_char_pos + 2) == str.length() ) {
+                    // semicolon is at end, so no chopping occurs
+                    return changed;
+                } else {
+                    // chop after semicolon
+                    str.resize( last_good_char_pos + 2 );
+                    return true;
+                }
+            case ' ':
+            case ',':
+                // ampersand (if any) is irrelevant due to intervening
+                // space or comma
+                str.resize( last_good_char_pos + 1 );
+                return true;
+            default:
+                _ASSERT(false);
+                return changed;  // should be impossible to reach here
+        }
+
+    } else {
+        str.resize( last_good_char_pos + 1 );
+        return true;
+    }
+}
+
+bool CleanVisStringJunk( string &str )
+{
+    // This is based on the C function TrimSpacesAndJunkFromEnds.
+    // Although it's updated to use iterators and such and to
+    // return whether it changed the string, it should
+    // have the same output.
+
+    // TODO: This function is copy-pasted from TrimSpacesAndJunkFromEnds,
+    // so we should do something about that since duplicate code is evil.
+
+    if ( str.empty() ) {
+        return false;
+    }
+
+    // make start_of_junk_pos hold the beginning of the "junk" at the end
+    // (where junk is defined as one of several characters)
+    // while we're at it, also check if the junk contains a tilde and/or period
+    bool isPeriod = false;
+    bool isTilde = false;
+    int start_of_junk_pos = str.length() - 1;
+    for( ; start_of_junk_pos >= 0 ; --start_of_junk_pos ) {
+        const char ch = str[start_of_junk_pos];
+        if (ch <= ' ' || ch == '.' || ch == ',' || ch == '~' || ch == ';') {
+            // found junk character
+
+            // also, keep track of whether the junk includes a period and/or tilde
+            isPeriod = (isPeriod || ch == '.');
+            isTilde = (isTilde || ch == '~');
+        } else {
+            // found non-junk character.  Last junk character is just after this
+            ++start_of_junk_pos;
+            break;
+        }
+    }
+    // special case of the whole string being junk
+    if( start_of_junk_pos < 0 ) {
+        start_of_junk_pos = 0;
+    }
+
+    bool changed = false;
+
+    // if there's junk, chop it off (but leave period/tildes/ellipsis as appropriate)
+    if ( start_of_junk_pos < (int)str.length() ) {
+
+        // holds the suffix to add after we remove the junk
+        const char * suffix = ""; // by default, just remove junk
+
+        const int chars_in_junk = ( str.length() - start_of_junk_pos );
+        _ASSERT( chars_in_junk >= 1 );
+        // allow one period at end
+        if (isPeriod) {
+            suffix = ".";
+        } else if (isTilde ) {
+            // allow tilde(s)
+            // (This should work on single- AND double-tildes because
+            // we don't know whether or not tilde-expansion was called before this 
+            // point )
+            if ( str[start_of_junk_pos] == '~' ) {
+                const bool doubleTilde = ( (chars_in_junk >= 2) && str[start_of_junk_pos+1] == '~' );
+                suffix = ( doubleTilde  ? "~~" : "~" );
+            }
+        }
+        if( suffix[0] != '\0' && 0 != str.compare( start_of_junk_pos, INT_MAX, suffix) ) {
+            str.erase( start_of_junk_pos );
+            str += suffix;
+            changed = true;
+        } else if ( start_of_junk_pos < str.length() ) {
+            str.erase( start_of_junk_pos );
+            changed = true;
+        }
+    }
+
+    // copy the part after the initial whitespace to the destination
+    string::iterator input_iter = str.begin();
+    while ( input_iter != str.end() && *input_iter <= ' ') {
+        ++input_iter;
+    }
+    if( input_iter != str.begin() ) {
+        str.erase( str.begin(), input_iter );
+        changed = true;
+    }
+
+    return changed;
+}
 
 bool CleanStringList(list< string >& string_list)
 {

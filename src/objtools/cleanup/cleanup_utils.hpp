@@ -74,6 +74,10 @@ bool ConvertDoubleQuotes(string& str)
 /// truncate spaces and other trailing characters.
 bool CleanString(string& str, bool rm_trailing_period = false);
 
+bool CleanVisString( string &str );
+
+bool CleanVisStringJunk( string &str );
+
 bool CleanStringList(list< string >& string_list);
 
 /// remove a trailing period, 
@@ -111,6 +115,44 @@ bool CleanStringContainer(C& str_cont, bool rm_trailing_junk = false)
     typename C::iterator it = str_cont.begin();
     while (it != str_cont.end()) {
         if (CleanString(*it, rm_trailing_junk)) {
+            changed = true;
+        }
+        if (NStr::IsBlank(*it)) {
+            it = str_cont.erase(it);
+            changed = true;
+        } else {
+            ++it;
+        }
+    }
+    return changed;
+}
+
+template<typename C>
+bool CleanVisStringContainer(C& str_cont)
+{
+    bool changed = false;
+    typename C::iterator it = str_cont.begin();
+    while (it != str_cont.end()) {
+        if (CleanVisString(*it)) {
+            changed = true;
+        }
+        if (NStr::IsBlank(*it)) {
+            it = str_cont.erase(it);
+            changed = true;
+        } else {
+            ++it;
+        }
+    }
+    return changed;
+}
+
+template<typename C>
+bool CleanVisStringContainerJunk(C& str_cont)
+{
+    bool changed = false;
+    typename C::iterator it = str_cont.begin();
+    while (it != str_cont.end()) {
+        if (CleanVisStringJunk(*it)) {
             changed = true;
         }
         if (NStr::IsBlank(*it)) {
@@ -189,9 +231,11 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
         } \
     }
 
-#define CLEAN_STRING_MEMBER(o, x) \
+#define COMPRESS_STRING_MEMBER(o, x) \
     if ((o).IsSet##x()) { \
-        if (CleanString((o).Set##x()) ) { \
+        const int old_len = (o).Set##x().length(); \
+        CompressSpaces((o).Set##x()); \
+        if( old_len != (o).Set##x().length() ) { \
             ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
         if (NStr::IsBlank((o).Get##x())) { \
@@ -200,9 +244,24 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
         } \
     }
 
+#define CLEAN_STRING_MEMBER(o, x) \
+    if ((o).IsSet##x()) { \
+        if (CleanVisString((o).Set##x()) ) { \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
+        if (NStr::IsBlank((o).Get##x())) { \
+            (o).Reset##x(); \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
+    }
+
+// The "do-while" forces the need for a semicolon
+#define CLEAN_AND_COMPRESS_STRING_MEMBER(o, x) \
+    do { CLEAN_STRING_MEMBER(o, x); COMPRESS_STRING_MEMBER(o, x); } while(false)
+
 #define CLEAN_STRING_MEMBER_JUNK(o, x) \
 if ((o).IsSet##x()) { \
-    if (CleanString((o).Set##x(), true) ) { \
+    if (CleanVisStringJunk((o).Set##x()) ) { \
         ChangeMade(CCleanupChange::eTrimSpaces); \
     } \
     if (NStr::IsBlank((o).Get##x())) { \
@@ -210,6 +269,10 @@ if ((o).IsSet##x()) { \
         ChangeMade(CCleanupChange::eTrimSpaces); \
     } \
 }
+
+// The "do-while" forces the need for a semicolon
+#define CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(o, x) \
+    do { CLEAN_STRING_MEMBER_JUNK(o, x); COMPRESS_STRING_MEMBER(o, x); } while(false)
 
 #define EXTENDED_CLEAN_STRING_MEMBER(o, x) \
 if ((o).IsSet##x()) { \
@@ -221,7 +284,7 @@ if ((o).IsSet##x()) { \
 }
 
 #define CLEAN_STRING_CHOICE(o, x) \
-        if (CleanString((o).Set##x()) ) { \
+        if (CleanVisString((o).Set##x()) ) { \
             ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
         if (NStr::IsBlank((o).Get##x())) { \
@@ -231,7 +294,7 @@ if ((o).IsSet##x()) { \
 
 #define CLEAN_STRING_LIST(o, x) \
     if ((o).IsSet##x()) { \
-        if (CleanStringContainer((o).Set##x()) ) { \
+        if (CleanVisStringContainer((o).Set##x()) ) { \
             ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
         if ((o).Get##x().empty()) { \
@@ -242,7 +305,7 @@ if ((o).IsSet##x()) { \
 
 #define CLEAN_STRING_LIST_JUNK(o, x) \
 if ((o).IsSet##x()) { \
-    if (CleanStringContainer((o).Set##x(), true) ) { \
+    if (CleanVisStringContainerJunk((o).Set##x()) ) { \
         ChangeMade(CCleanupChange::eTrimSpaces); \
     } \
     if ((o).Get##x().empty()) { \
@@ -263,7 +326,7 @@ if ((o).IsSet##x()) { \
 /// clean a string member 'x' of an internal object 'o'
 #define CLEAN_INTERNAL_STRING(o, x) \
     if (o.IsSet##x()) { \
-        if ( CleanString(o.Set##x()) ) { \
+        if ( CleanVisString(o.Set##x()) ) { \
             ChangeMade(CCleanupChange::eTrimSpaces); \
         } \
         if (NStr::IsBlank(o.Get##x())) { \

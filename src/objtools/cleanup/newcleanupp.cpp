@@ -63,6 +63,10 @@ BEGIN_SCOPE(objects)
 
 const int CNewCleanup_imp::NCBI_CLEANUP_VERSION = 1;
 
+// We don't want to use CompressSpaces inside the likes of COMPRESS_STRING_MEMBER;
+// we prefer our own version
+#define CompressSpaces x_CompressSpaces
+
 // Constructor
 CNewCleanup_imp::CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options)
     : m_Changes(changes),
@@ -255,7 +259,7 @@ void CNewCleanup_imp::SetupBC (
     // for cleanup Seq-entry and Seq-submit, set scope and parentize
     try {
         m_Scope->AddTopLevelSeqEntry (se);
-        se.Parentize ();
+        se.Parentize();
     } catch(const CObjMgrException &) {
         // Looks like we already did this one.
         // We still need to set m_IsEmblOrDdbj, etc., though.
@@ -516,6 +520,74 @@ bool s_RegexpReplace( string &target,
     return ( num_replacements > 0 );
 }
 
+// This is similar to lexicographical_compare_3way,
+// but we have to implement it ourselves because
+// it's an SGI extension, not in the standard.
+template <class Iter1, class Iter2, class Compare>
+static int ncbi_lexicographical_compare_3way( 
+    Iter1 first1, Iter1 last1, 
+    Iter2 first2, Iter2 last2, 
+    Compare compare )
+{
+    for( ; first1 != last1 && first2 != last2 ; ++first1, ++first2 ) {
+        int comparison = compare( *first1, *first2 );
+        if( comparison != 0 ) {
+            return comparison;
+        }
+    }
+
+    if( first1 == last1 ) {
+        if( first2 == last2 ) {
+            return 0; // they're equal
+        } else {
+            // second is longer
+            return -1;
+        }
+    } else {
+        // first is longer
+        return 1;
+    }
+}
+
+class PNocase_EqualChar
+{
+public:
+    bool operator()( const char ch1, const char ch2 ) const {
+        return toupper(ch1) == toupper(ch2);
+    }
+};
+
+class PNocase_LessChar
+{
+public:
+    bool operator()( const char ch1, const char ch2 ) const {
+        return toupper(ch1) < toupper(ch2);
+    }
+};
+
+class PNocase_CompareChar
+{
+public:
+    int operator()( const char ch1, const char ch2 ) const {
+        return ( (int)toupper(ch1) - (int)toupper(ch2) );
+    }
+};
+
+// C compares using toupper, as opposed to the built-in
+// stuff which seems to use tolower, thus producing
+// some differences in sorting order in some places.
+// Once we've fully moved away from C there's probably
+// no harm in replacing all calls to s_CompareNoCaseCStyle with
+// normal functions like NStr::CompareNocase()
+static
+int s_CompareNoCaseCStyle( const string &s1, const string &s2 ) 
+{
+    return ncbi_lexicographical_compare_3way(
+            s1.begin(), s1.end(), 
+            s2.begin(), s2.end(), 
+            PNocase_CompareChar() );
+}
+
 static
 const string &s_GenomeToPlastidName( const CBioSource& biosrc )
 {
@@ -606,7 +678,7 @@ void CNewCleanup_imp::GBblockBC (
 )
 
 {
-    CLEAN_STRING_LIST_JUNK (gbk, Extra_accessions);
+    CLEAN_STRING_LIST (gbk, Extra_accessions);
 
     if (! EXTRAACCN_ON_GENBANKBLOCK_IS_SORTED (gbk, s_AccessionCompare)) {
         SORT_EXTRAACCN_ON_GENBANKBLOCK (gbk, s_AccessionCompare);
@@ -626,12 +698,12 @@ void CNewCleanup_imp::GBblockBC (
         UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK( gbk, PNocase );
     }
 
-    CLEAN_STRING_MEMBER (gbk, Source);
+    CLEAN_STRING_MEMBER_JUNK (gbk, Source);
     if( FIELD_EQUALS(gbk, Source, ".") ) {
         RESET_FIELD(gbk, Source);
         ChangeMade(CCleanupChange::eRemoveQualifier);
     }
-    CLEAN_STRING_MEMBER (gbk, Origin);
+    CLEAN_STRING_MEMBER_JUNK (gbk, Origin);
     if( FIELD_EQUALS(gbk, Origin, ".") ) {
         RESET_FIELD(gbk, Origin);
         ChangeMade(CCleanupChange::eRemoveQualifier);
@@ -647,7 +719,7 @@ void CNewCleanup_imp::EMBLblockBC (
 )
 
 {
-    CLEAN_STRING_LIST_JUNK (emb, Extra_acc);
+    CLEAN_STRING_LIST (emb, Extra_acc);
 
     if (! EXTRAACCN_ON_EMBLBLOCK_IS_SORTED (emb, s_AccessionCompare)) {
         SORT_EXTRAACCN_ON_EMBLBLOCK (emb, s_AccessionCompare);
@@ -710,16 +782,49 @@ bool s_EraseSpacesOutsideBrackets( string &str )
 // For example, if you have a mapping that includes ("foo" to 7), then passing
 // str as "Foo something", will return the ("foo" to 7) mapping.
 template< typename TMapType >
-typename TMapType::const_iterator s_FindInMapAsPrefix( const string &str, const TMapType &the_map )
+typename TMapType::const_iterator s_FindInMapAsPrefix( const string &str_arg, const TMapType &the_map )
 {
-    typename TMapType::const_iterator it = the_map.lower_bound( str );
-    if( it != the_map.begin() && ( it == the_map.end() || ! NStr::EqualNocase(str, it->first) ) ) {
+    // holds the str we're looking at, which might be str_arg, or
+    // might be another string constructed from it
+    const string *str = &str_arg;
+
+    // use this to delete strings created in this function, if any.
+    // we don't read from it directly
+    auto_ptr<string> temp_str;
+
+    // chop off characters that can't be in the map, so they don't count
+    int first_bad_char = 0;
+    for( ; first_bad_char < str_arg.length(); ++first_bad_char ) {
+        const char ch = str_arg[first_bad_char];
+        if( ! isalnum(ch) && ch != '-' && ch != '_' && ch != ' ' ) {
+            temp_str.reset( new string(str_arg, 0, first_bad_char) );
+            str = temp_str.get();
+            break;
+        }
+    }
+
+    typename TMapType::const_iterator it = the_map.lower_bound( *str );
+    if( it != the_map.begin() && ( it == the_map.end() || ! NStr::EqualNocase(*str, it->first) ) ) {
         --it;
     }
-    if ( it != the_map.end() && NStr::StartsWith(str, it->first, NStr::eNocase)) {
+    if ( it != the_map.end() && NStr::StartsWith(*str, it->first, NStr::eNocase)) {
         return it;
     }
     return the_map.end();
+}
+
+// s_FindInMapAsPrefix, but for data structures like sets.
+template< typename TSetType >
+typename TSetType::const_iterator s_FindInSetAsPrefix( const string &str, const TSetType &the_set )
+{
+    typename TSetType::const_iterator it = the_set.lower_bound( str );
+    if( it != the_set.begin() && ( it == the_set.end() || ! NStr::EqualNocase(str, *it) ) ) {
+        --it;
+    }
+    if ( it != the_set.end() && NStr::StartsWith(str, *it, NStr::eNocase)) {
+        return it;
+    }
+    return the_set.end();
 }
 
 // copy "str" because we're changing it anyway
@@ -926,6 +1031,11 @@ void CNewCleanup_imp::BiosourceBC (
         ChangeMade ( CCleanupChange::eChangeBioSourceGenome );
     }
 
+    if( FIELD_EQUALS( biosrc, Origin, NCBI_ORIGIN(unknown) ) ) {
+        RESET_FIELD(biosrc, Origin);
+        ChangeMade ( CCleanupChange::eChangeBioSourceOrigin );
+    }
+
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
     // TODO: subsources should actually be loaded into the pcr-primers structures
     if( FIELD_IS_SET(biosrc, Subtype) ) {
@@ -943,13 +1053,12 @@ void CNewCleanup_imp::BiosourceBC (
                 }
                 CLEAN_STRING_MEMBER(sbs, Attrib);
             } else {
-                CLEAN_STRING_MEMBER_JUNK(sbs, Name);
+                CLEAN_AND_COMPRESS_STRING_MEMBER(sbs, Name);
                 if( ! FIELD_IS_SET(sbs, Name) ) {
                     // name must be set
                     SET_FIELD (sbs, Name, "");
                     ChangeMade(CCleanupChange::eCleanSubsource);
                 }
-                x_CompressStringSpacesMarkChanged( GET_MUTABLE(sbs, Name) );
                 CLEAN_STRING_MEMBER(sbs, Attrib);
             }
 
@@ -1422,8 +1531,8 @@ void CNewCleanup_imp::OrgmodBC (
     COrgMod& omd
 )
 {
-    CLEAN_STRING_MEMBER (omd, Subname);
-    CLEAN_STRING_MEMBER (omd, Attrib);
+    CLEAN_AND_COMPRESS_STRING_MEMBER (omd, Subname);
+    CLEAN_AND_COMPRESS_STRING_MEMBER (omd, Attrib);
 
     TORGMOD_SUBTYPE subtype = GET_FIELD (omd, Subtype);
 
@@ -1590,13 +1699,53 @@ static bool s_ShouldWeFixInitials(const CPub_equiv& equiv)
 void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
 {
     x_FlattenPubEquiv(pub_equiv);
+
+    // we keep the last of these because we might transfer one
+    // to the other as necessary to fill in gaps.
+    int last_pmid = 0;
+    int last_article_pubmed_id = 0; // the last from a journal
+    CRef<CCit_art> last_article;
     
     bool fix_initials = s_ShouldWeFixInitials(pub_equiv);
     EDIT_EACH_PUB_ON_PUBEQUIV(it, pub_equiv) {
-        if( PubBC(**it, fix_initials) == eAction_Erase ) {
+        CPub &pub = **it;
+
+        if( PubBC(pub, fix_initials) == eAction_Erase ) {
             ERASE_PUB_ON_PUBEQUIV(it, pub_equiv);
             ChangeMade(CCleanupChange::eRemoveEmptyPub);
+            continue;
         }
+
+        // storing these so at the end we'll know the last values
+        if( pub.IsPmid() ) {
+            last_pmid = pub.GetPmid().Get();
+        }
+        if( pub.IsArticle() ) {
+            last_article.Reset( &pub.SetArticle());
+            if( FIELD_IS_SET_AND_IS(*last_article, From, Journal) && 
+                FIELD_IS_SET(*last_article, Ids) ) 
+            {
+                FOR_EACH_ARTICLEID_ON_CITART( id_iter, *last_article ) {
+                    const CArticleId &article_id = **id_iter;
+                    if( article_id.IsPubmed() ) {
+                        last_article_pubmed_id = article_id.GetPubmed().Get();
+                    }
+                }
+            }
+        }
+    }
+
+    // Now, we might have to transfer data to fill in missing information
+    if (last_pmid == 0 && last_article_pubmed_id > 0) {
+        CRef<CPub> new_pub( new CPub );
+        new_pub->SetPmid().Set( last_article_pubmed_id );
+        pub_equiv.Set().push_back( new_pub );
+        ChangeMade(CCleanupChange::eChangePublication);
+    } else if (last_pmid > 0 && last_article_pubmed_id == 0 && last_article ) {
+        CRef<CArticleId> new_article_id( new CArticleId );
+        new_article_id->SetPubmed().Set( last_pmid );
+        last_article->SetIds().Set().push_back( new_article_id );
+        ChangeMade(CCleanupChange::eChangePublication);
     }
 }
 
@@ -1974,26 +2123,16 @@ void CNewCleanup_imp::AffilBC( CAffil& af )
         {{
             CAffil::TStd& std = GET_MUTABLE(af, Std);
 
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Affil) );
-            CLEAN_STRING_MEMBER(std, Affil);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Div) );
-            CLEAN_STRING_MEMBER(std, Div);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, City) );
-            CLEAN_STRING_MEMBER(std, City);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Sub) );
-            CLEAN_STRING_MEMBER(std, Sub);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Country) );
-            CLEAN_STRING_MEMBER(std, Country);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Street) );
-            CLEAN_STRING_MEMBER(std, Street);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Email) );
-            CLEAN_STRING_MEMBER(std, Email);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Fax) );
-            CLEAN_STRING_MEMBER(std, Fax);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Phone) );
-            CLEAN_STRING_MEMBER(std, Phone);
-            x_CompressStringSpacesMarkChanged( GET_MUTABLE(std, Postal_code) );
-            CLEAN_STRING_MEMBER(std, Postal_code);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Affil);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Div);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, City);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Sub);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Country);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Street);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Email);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Fax);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Phone);
+            CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(std, Postal_code);
 
             if (std.CanGetCountry() ) {
                 if ( NStr::EqualNocase(std.GetCountry(), "U.S.A.") ) {
@@ -2037,66 +2176,13 @@ void CNewCleanup_imp::ImprintBC( CImprint& imprint, EImprintBC is_status_change_
         }
     }
 
-    CLEAN_STRING_MEMBER(imprint, Volume);
-    CLEAN_STRING_MEMBER(imprint, Issue);
-    CLEAN_STRING_MEMBER(imprint, Pages);
-    CLEAN_STRING_MEMBER(imprint, Section);
-    CLEAN_STRING_MEMBER(imprint, Part_sup);
-    CLEAN_STRING_MEMBER(imprint, Language);
-    CLEAN_STRING_MEMBER(imprint, Part_supi);
-}
-
-class PNocase_EqualChar
-{
-public:
-    bool operator()( const char ch1, const char ch2 ) const {
-        return toupper(ch1) == toupper(ch2);
-    }
-};
-
-class PNocase_LessChar
-{
-public:
-    bool operator()( const char ch1, const char ch2 ) const {
-        return toupper(ch1) < toupper(ch2);
-    }
-};
-
-class PNocase_CompareChar
-{
-public:
-    int operator()( const char ch1, const char ch2 ) const {
-        return ( (int)toupper(ch1) - (int)toupper(ch2) );
-    }
-};
-
-// This is similar to lexicographical_compare_3way,
-// but we have to implement it ourselves because
-// it's an SGI extension, not in the standard.
-template <class Iter1, class Iter2, class Compare>
-static int ncbi_lexicographical_compare_3way( 
-    Iter1 first1, Iter1 last1, 
-    Iter2 first2, Iter2 last2, 
-    Compare compare )
-{
-    for( ; first1 != last1 && first2 != last2 ; ++first1, ++first2 ) {
-        int comparison = compare( *first1, *first2 );
-        if( comparison != 0 ) {
-            return comparison;
-        }
-    }
-
-    if( first1 == last1 ) {
-        if( first2 == last2 ) {
-            return 0; // they're equal
-        } else {
-            // second is longer
-            return -1;
-        }
-    } else {
-        // first is longer
-        return 1;
-    }
+    CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Volume);
+    CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Issue);
+    CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Pages);
+    CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Section);
+    CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Part_sup);
+    CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Language);
+    CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Part_supi);
 }
 
 typedef pair<string, CRef<CPub> >   TCit;
@@ -2105,10 +2191,7 @@ struct TSortCit {
 
         // First, try to compare case-insensitively
         // (We compare as if it were all-caps to match C's behavior )
-        const int label_compare_no_case =  ncbi_lexicographical_compare_3way(  
-            c1.first.begin(), c1.first.end(), 
-            c2.first.begin(), c2.first.end(), 
-            PNocase_CompareChar() );
+        const int label_compare_no_case =  s_CompareNoCaseCStyle(c1.first, c2.first);
         if( label_compare_no_case != 0 ) {
             return (label_compare_no_case < 0);
         }
@@ -2201,7 +2284,7 @@ void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
             satellite_qual->SetQual("satellite");
             string val;
             if( FIELD_IS_SET(feat, Comment) ) {
-                 val = x_ExtractSatelliteFromComment( GET_MUTABLE(feat, Comment) );
+                val = x_ExtractSatelliteFromComment( GET_MUTABLE(feat, Comment) );
             }
             if( val.empty() ) {
                 val = "satellite";
@@ -2214,7 +2297,7 @@ void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
         if( key == "repeat_region" && ! m_IsEmblOrDdbj ) {
             string val;
             if( FIELD_IS_SET(feat, Comment) ) {
-                 val = x_ExtractSatelliteFromComment( GET_MUTABLE(feat, Comment) );
+                val = x_ExtractSatelliteFromComment( GET_MUTABLE(feat, Comment) );
             }
             if( ! val.empty() ) {
                 CRef<CGb_qual> satellite_qual( new CGb_qual );
@@ -2273,10 +2356,12 @@ void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
             feat.SetData().SetRna( *new_rna_ref );
             ChangeMade(CCleanupChange::eAddRNAref);
 
-            // autogenerated code won't do this because 
-            // ImpFeatBC is POST.
-            RnaFeatBC( *new_rna_ref, feat );
-            RnarefBC( *new_rna_ref );
+            // autogenerated code won't traverse this.
+            // Also we create a NEW CAutogeneratedCleanup because
+            // CAutogeneratedCleanup  is stateful and we don't
+            // want to interfere with its state.
+            CAutogeneratedCleanup auto_cleanup( *this );
+            auto_cleanup.BasicCleanupSeqFeat( feat );
         } else {
             TPROTREF_PROCESSED processed = NCBI_PROTREF(not_set);
             if ( key == "proprotein" ||  key == "preprotein" ) {
@@ -2298,11 +2383,13 @@ void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
                         feat.SetData().SetProt( *new_prot_ref );
                         ChangeMade(CCleanupChange::eAddProtFeat);
 
-                        // autogenerated code won't do this because 
-                        // ImpFeatBC is POST.
-                        ProtFeatfBC( *new_prot_ref, feat );
-                        ProtrefBC( *new_prot_ref );
-                        PostProtFeatfBC( *new_prot_ref );
+                        // autogenerated code won't traverse this.
+                        // Also we create a NEW CAutogeneratedCleanup because
+                        // CAutogeneratedCleanup  is stateful and we don't
+                        // want to interfere with its state.
+                        // feat.Update();
+                        CAutogeneratedCleanup auto_cleanup( *this );
+                        auto_cleanup.BasicCleanupSeqFeat( feat );
                     }
                 }
             }
@@ -2560,7 +2647,7 @@ void CNewCleanup_imp::GBQualBC (
 )
 
 {
-    CLEAN_STRING_MEMBER_JUNK (gbq, Qual);
+    CLEAN_STRING_MEMBER (gbq, Qual);
     if (! FIELD_IS_SET (gbq, Qual)) {
         SET_FIELD (gbq, Qual, kEmptyStr);
         ChangeMade(CCleanupChange::eChangeQualifiers);
@@ -3267,7 +3354,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     // note - this should be moved to the "indexed" portion of basic cleanup,
     // because it needs to locate another sequence and feature
     if (NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::Equal (qual, "EC_number")
-        || NStr::Equal (qual, "prot_note")) 
+        || NStr::Equal (qual, "prot_note"))  
     {
         // get protein sequence for product
         CRef<CSeq_feat> prot_feat;
@@ -5087,6 +5174,8 @@ void CNewCleanup_imp::x_ModernizePCRPrimers( CBioSource &biosrc )
         SET_FIELD( biosrc, Pcr_primers, *pcr_reaction_set );
         ChangeMade(CCleanupChange::eChangePCRPrimers);
 
+        PCRReactionSetBC( GET_MUTABLE(biosrc, Pcr_primers) );
+
         // remove all old-style PCR primer subsources ( fwd_primer_seq, etc. ) 
         if( FIELD_IS_SET(biosrc, Subtype) ) {
             list< CRef< CSubSource > > &subsources = GET_MUTABLE(biosrc, Subtype);
@@ -5320,10 +5409,8 @@ CNewCleanup_imp::x_OrgnameModBC( COrgName &orgname, const string &org_ref_common
 
         bool unlink = false;
 
-        x_CompressStringSpacesMarkChanged( GET_MUTABLE(orgmod, Subname) );
-        CLEAN_STRING_MEMBER_JUNK(orgmod, Subname);
-        x_CompressStringSpacesMarkChanged( GET_MUTABLE(orgmod, Attrib) );
-        CLEAN_STRING_MEMBER(orgmod, Attrib);
+        CLEAN_AND_COMPRESS_STRING_MEMBER(orgmod, Subname);
+        CLEAN_AND_COMPRESS_STRING_MEMBER(orgmod, Attrib);
 
         const TORGMOD_SUBTYPE subtype = GET_FIELD(orgmod, Subtype);
         const string &subname = GET_FIELD(orgmod, Subname);
@@ -5938,7 +6025,7 @@ static bool s_GbQualCompare (
         return true;
     }
 
-    int comp = NStr::CompareNocase (ql1, ql2);
+    int comp = s_CompareNoCaseCStyle(ql1, ql2);
     if (comp < 0) return true;
     if (comp > 0) return false;
 
@@ -6211,7 +6298,7 @@ bool s_SplitGeneSyn( const string &syn, vector<string> &gene_syns_to_add)
     if( pieces_split_by_semicolon.size() > 1 ) {
         // copy non-empty pieces, trimming as we go
         EDIT_EACH_STRING_IN_VECTOR( piece_iter, pieces_split_by_semicolon ) {
-            NStr::TruncateSpacesInPlace( *piece_iter );
+            CleanVisString( *piece_iter );
             if( ! piece_iter->empty() ) {
                 gene_syns_to_add.push_back(*piece_iter);
             }
@@ -6786,7 +6873,7 @@ void CNewCleanup_imp::x_TranslateITSName( string &in_out_name )
     }
 }
 
-static const char* const ncrna_names [] = {
+static const string ncrna_names [] = {
     "antisense_RNA",
     "autocatalytically_spliced_intron",
     "guide_RNA",
@@ -6808,7 +6895,7 @@ static const char* const ncrna_names [] = {
     "Y_RNA"
 };
 
-typedef CStaticArraySet<const char*, PNocase_CStr> TNcrna;
+typedef CStaticArraySet<string, PNocase> TNcrna;
 DEFINE_STATIC_ARRAY_MAP(TNcrna, sc_NcrnafNames, ncrna_names);
 
 static bool s_IsNcrnaName (
@@ -6816,7 +6903,25 @@ static bool s_IsNcrnaName (
 )
 
 {
-    return sc_NcrnafNames.find(name.c_str()) != sc_NcrnafNames.end();
+    return sc_NcrnafNames.find(name) != sc_NcrnafNames.end();
+}
+
+static bool s_StartsWithNcrnaName( 
+    const string& name,
+    const string **out_ncrna_name = NULL )
+{
+    TNcrna::const_iterator suffix_finder = s_FindInSetAsPrefix<TNcrna>( name, sc_NcrnafNames );
+    if( suffix_finder == sc_NcrnafNames.end() ) {
+        if( NULL != out_ncrna_name ) {
+            *out_ncrna_name = NULL;
+        }
+        return false;
+    } else {
+        if( NULL != out_ncrna_name ) {
+            *out_ncrna_name = &*suffix_finder;
+        }
+        return true;
+    }
 }
 
 // special exception for genome pipeline rRNA names
@@ -6900,6 +7005,7 @@ void CNewCleanup_imp::RnarefBC (
                     if (NStr::IsBlank (name)) {
                         RESET_FIELD (rr, Ext);
                         ChangeMade(CCleanupChange::eChangeRNAref);
+                        break;
                     }
 
                     static const string rRNA = " rRNA";
@@ -7014,6 +7120,29 @@ void CNewCleanup_imp::RnarefBC (
                         if( QUAL_ON_RNAQSET_IS_EMPTY(qset)  ) {
                             RESET_FIELD(gen, Quals);
                             ChangeMade(CCleanupChange::eChangeRNAref);
+                        }
+                    }
+
+                    if ( FIELD_EQUALS(rr, Type, NCBI_RNAREF(miscRNA)) && 
+                        FIELD_IS_SET (gen, Product) && 
+                        ! FIELD_IS_SET (gen, Class) )
+                    {
+                        string & product = GET_MUTABLE(gen, Product);
+                        const string *ncrna_name = NULL;
+                        if( s_StartsWithNcrnaName(product, &ncrna_name) ) {
+                            _ASSERT( NULL != ncrna_name );
+                            if( product.length() > (ncrna_name->length() + 1) && 
+                                product[ncrna_name->length()] == ' ' ) 
+                            {
+                                SET_FIELD( gen, Class, *ncrna_name );
+                                SET_FIELD( gen, Product, product.substr(ncrna_name->length() + 1) );
+                                TRUNCATE_SPACES( gen, Class );
+                                TRUNCATE_SPACES( gen, Product );
+                                SET_FIELD( rr, Type, NCBI_RNAREF(ncRNA) );
+                                ChangeMade(CCleanupChange::eChangeRNAref);
+                            }
+                            // no need to erase ncrna_name because it points to 
+                            // global memory.
                         }
                     }
 
@@ -7172,18 +7301,28 @@ void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat )
 
 void CNewCleanup_imp::x_CleanupStringMarkChanged( std::string &str )
 {
-    if (CleanString (str)) {
+    if (CleanVisString (str)) {
         ChangeMade (CCleanupChange::eTrimSpaces);
     }
+}
+
+void CNewCleanup_imp::x_CleanupStringJunkMarkChanged( std::string &str )
+{
+    if (CleanVisStringJunk (str)) {
+        ChangeMade (CCleanupChange::eTrimSpaces);
+    }
+}
+
+bool CNewCleanup_imp::x_CompressSpaces( string &str )
+{
+    return s_RegexpReplace( str, " [ ]+", " " );
 }
 
 void CNewCleanup_imp::x_CompressStringSpacesMarkChanged( std::string &str )
 {
   const string::size_type old_length = str.length();
 
-  // If this turns out to be too slow, we might have to write a custom
-  // space compression algorithm instead of using regexp classes
-  s_RegexpReplace( str, " [ ]+", " " );
+  x_CompressSpaces( str );
 
   const string::size_type new_length = str.length();
   if( old_length != new_length ) {
@@ -7513,10 +7652,10 @@ void CNewCleanup_imp::RnaFeatBC (
             NON_CONST_ITERATE( CSeq_feat::TQual, qual_iter, seq_feat.SetQual() ) {
                 string &qual = (*qual_iter)->SetQual();
                 if ( qual == "ncRNA_class" ) {
-                    qual = "ncRNA";
+                    rna.SetExt().SetName( "ncRNA" );
                     ChangeMade( CCleanupChange::eChangeRNAref );
                 } else if ( qual == "tag_peptide") {
-                    qual = "tmRNA";
+                    rna.SetExt().SetName( "tmRNA" );
                     ChangeMade( CCleanupChange::eChangeRNAref );
                 } else if ( qual == "product" ) {
                     // e.g. "its1" to "internal transcribed spacer 1"

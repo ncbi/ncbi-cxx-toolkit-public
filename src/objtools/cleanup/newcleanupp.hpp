@@ -101,6 +101,7 @@ class CMedline_entry;
 class CPub_set;
 class CTrna_ext;
 class CPCRPrimerSet;
+class CPCRReactionSet;
 
 class CSeq_entry_Handle;
 class CBioseq_Handle;
@@ -110,7 +111,6 @@ class CSeq_feat_Handle;
 
 class CObjectManager;
 class CScope;
-
 
 class CNewCleanup_imp
 {
@@ -391,7 +391,10 @@ private:
 
     // string cleanup funcs
     void x_CleanupStringMarkChanged( std::string &str );
+    void x_CleanupStringJunkMarkChanged( std::string &str );
+    void x_CleanupVisStringMarkChanged( std::string &str );
     void x_ConvertDoubleQuotesMarkChanged( std::string &str );
+    bool x_CompressSpaces( string &str );
     void x_CompressStringSpacesMarkChanged( std::string &str );
     void x_StripSpacesMarkChanged( std::string& str );
     void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );

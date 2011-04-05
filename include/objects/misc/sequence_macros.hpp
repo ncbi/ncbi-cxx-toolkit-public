@@ -1644,14 +1644,14 @@ FOR_EACH (SEQFEAT_ON_SEQANNOT, Itr, Var)
 
 #define EDIT_EACH_SEQFEAT_ON_SEQANNOT(Itr, Var) \
 EDIT_EACH (SEQFEAT_ON_SEQANNOT, Itr, Var)
-
+ 
 /// ADD_SEQFEAT_TO_SEQANNOT
 
 #define ADD_SEQFEAT_TO_SEQANNOT(Var, Ref) \
 ADD_ITEM (SEQFEAT_ON_SEQANNOT, Var, Ref)
 
 /// ERASE_SEQFEAT_ON_SEQANNOT
-
+ 
 #define ERASE_SEQFEAT_ON_SEQANNOT(Itr, Var) \
 LIST_ERASE_ITEM (SEQFEAT_ON_SEQANNOT, Itr, Var)
 
@@ -2594,6 +2594,17 @@ ADD_ITEM (AUTHOR_ON_PUB, Var, Ref)
 
 #define ERASE_AUTHOR_ON_PUB(Itr, Var) \
 LIST_ERASE_ITEM (AUTHOR_ON_PUB, Itr, Var)
+
+/// 
+/// CCit_art macros
+
+#define ARTICLEID_ON_CITART_Type      CCit_art::TIds::Tdata
+#define ARTICLEID_ON_CITART_Test(Var) ( (Var).IsSetIds() && (Var).GetIds().IsSet() )
+#define ARTICLEID_ON_CITART_Get(Var)  (Var).GetIds().Get()
+#define ARTICLEID_ON_CITART_Set(Var)  (Var).SetIds().Set()
+
+#define FOR_EACH_ARTICLEID_ON_CITART(Itr, Var) \
+FOR_EACH (ARTICLEID_ON_CITART, Itr, Var)
 
 ///
 /// CAuth_list macros
