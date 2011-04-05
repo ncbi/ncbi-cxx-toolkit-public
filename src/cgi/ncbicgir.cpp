@@ -63,6 +63,7 @@ const string CCgiResponse::sm_FilenamePrefix     = "attachment; filename=\"";
 const string CCgiResponse::sm_HTTPStatusName     = "Status";
 const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
 const string CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
+const string CCgiResponse::sm_CacheControl       = "Cache-Control";
 
 NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
 
@@ -284,7 +285,27 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         CCgiResponse* self = const_cast<CCgiResponse*>(this);
         self->m_Cookies.Add(*m_TrackingCookie);
         // Prevent storing the page in puplic caches.
-        self->SetHeaderValue("Cache-Control", "private");
+        string cc = GetHeaderValue(sm_CacheControl);
+        if ( cc.empty() ) {
+            cc = "private";
+        }
+        else {
+            // 'private' already present?
+            if (NStr::FindNoCase(cc, "private") == NPOS) {
+                // no - check for 'public'
+                size_t pos = NStr::FindNoCase(cc, "public");
+                if (pos != NPOS) {
+                    ERR_POST_X_ONCE(3, Warning <<
+                        "Cache-Control already set to 'public', "
+                        "switching to 'private'");
+                    NStr::ReplaceInPlace(cc, "public", "private", pos, 1);
+                }
+                else if (NStr::FindNoCase(cc, "no-cache") == NPOS) {
+                    cc.append(", private");
+                }
+            }
+        }
+        self->SetHeaderValue(sm_CacheControl, cc);
     }
 
     // Cookies (if any)

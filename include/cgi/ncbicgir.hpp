@@ -166,7 +166,8 @@ protected:
     static const string sm_HTTPStatusName;      // Status header name:   Status
     static const string sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
     static const string sm_BoundaryPrefix;      // Start of multipart boundary
-    
+    static const string sm_CacheControl;        // Cache-Control
+
     typedef map<string, string, PNocase> TMap;
 
     bool           m_IsRawCgi;          // The "raw CGI" flag
