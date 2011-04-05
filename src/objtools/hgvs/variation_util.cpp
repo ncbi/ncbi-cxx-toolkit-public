@@ -467,6 +467,11 @@ CRef<CSeq_feat> CVariationUtil::Remap(const CSeq_feat& variation_feat, const CSe
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Can't get unique seq-id for location");
     }
 
+    //todo: propagation and factoring of locs later in this method is required for
+    //proper processing of intronic offsets. perhaps this can be addressed in the respective *IntronicOffsets
+    //functions.
+    s_PropagateLocsInPlace(vr);
+
     if(aln.GetSegs().IsSpliced() && aln.GetSegs().GetSpliced().GetGenomic_id().Equals(*vr.GetLocation().GetId())) {
         s_AddIntronicOffsets(vr, aln.GetSegs().GetSpliced(), vr.GetLocation());
     }
@@ -490,12 +495,21 @@ CRef<CSeq_feat> CVariationUtil::Remap(const CSeq_feat& variation_feat, const CSe
     ext_loc->SetLocation().Assign(vr.GetLocation());
     vr.SetExt_locs().push_back(ext_loc);
 
-
     s_Remap(vr, *mapper, vr.GetLocation());
 
-    if(aln.GetSegs().IsSpliced() && aln.GetSegs().GetSpliced().GetGenomic_id().Equals(*vr.GetLocation().GetId())) {
+    if(vr.GetLocation().GetId()
+       && aln.GetSegs().IsSpliced()
+       && aln.GetSegs().GetSpliced().GetGenomic_id().Equals(*vr.GetLocation().GetId()))
+    {
         s_ResolveIntronicOffsets(vr, vr.GetLocation());
     }
+
+    //Note that at this point, if we started with a genomic variation in an intron,
+    //if we remapped to cDNA, the remapped location for the root variation set that
+    //has no offsets applied will be NULL, but the inst-specific subvariations will
+    //have locs adjusted into exon and offsets applied. After factoring-out the root
+    //location will inherit the exonic base-locations.
+    s_FactorOutLocsInPlace(vr);
 
     //transfer the root location of the variation back to feat.location
     feat->SetLocation(feat->SetData().SetVariation().SetLocation());
@@ -1070,6 +1084,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
             delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna(),
             prot_delta_str,
             CSeqTranslator::fIs5PrimePartial);
+    prot_delta_str.resize(delta.GetSeq().GetLiteral().GetLength() / 3); //Translator may optimistically translate last partial codon
     NStr::ReplaceInPlace(prot_delta_str, "*", "X"); //Conversion to IUPAC produces "X", but Translate produces "*"
 
     literal.SetLength(prot_delta_str.size());
@@ -1082,6 +1097,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
             nuc_ref_seqvector,
             prot_ref_str,
             CSeqTranslator::fIs5PrimePartial);
+    prot_ref_str.resize(sequence::GetLength(v->GetLocation(), NULL) / 3);
     NStr::ReplaceInPlace(prot_ref_str, "*", "X");
 
 
@@ -1122,16 +1138,19 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
         v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_frameshift;
     }
 
-#if 0
     CRef<CUser_object> uo(new CUser_object);
     uo->SetType().SetStr("HGVS");
     uo->AddField("reference_sequence", prot_ref_str);
     v->SetExt(*uo);
-#endif
 
-    if(v->IsSetVariant_prop() && !v->GetVariant_prop().IsSetVersion()) {
+
+    if(!v->IsSetVariant_prop() || !v->GetVariant_prop().IsSetVersion()) {
         v->SetVariant_prop().SetVersion(m_variant_properties_schema_version);
     }
+
+    if(verbose) NcbiCerr << "protein variation:"  << MSerial_AsnText << *v;
+
+    if(verbose) NcbiCerr << "Done with protein variation\n";
 
     return prot_variation_feat;
 }
@@ -1510,6 +1529,7 @@ void CVariationUtil::x_SetVariantProperties(CVariantProperties& p, const CVariat
     CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
 
     //if variation is cDNA/intronic, we need to calculate location-specific terms as well (intron, splice-site, etc.)
+
     if(bsh.GetBioseqMolType() == CSeq_inst::eMol_rna) {
         const CDelta_item& first_delta = *vi.GetDelta().front();
         const CDelta_item& last_delta = *vi.GetDelta().back();
@@ -1532,13 +1552,15 @@ void CVariationUtil::x_SetVariantProperties(CVariantProperties& p, const CVariat
     //Calculate protein variation and inherit the prot-variation's properties
     if(bsh.IsAa()) {
         ; //nothing to do here
-    } else {
+    } else if(vi.GetDelta().size() <= 1) { //can only process simple deltas
         CRef<CSeq_feat> nuc_vf(new CSeq_feat);
         nuc_vf->SetLocation().Assign(loc);
         nuc_vf->SetData().SetVariation().SetData().SetInstance().Assign(vi);
         CRef<CSeq_feat> prot_variation = this->PrecursorToProt(*nuc_vf);
 
-        if(prot_variation) {
+        if(prot_variation
+           && prot_variation->GetData().GetVariation().GetVariant_prop().IsSetEffect()
+        ) {
             p.SetEffect() |= prot_variation->GetData().GetVariation().GetVariant_prop().GetEffect();
         }
     }
@@ -1565,6 +1587,7 @@ void CVariationUtil::SetVariantProperties(CVariation_ref& vr)
     }
 
     s_FactorOutLocsInPlace(vr);
+
     for(CTypeIterator<CVariation_ref> it(Begin(vr)); it; ++it) {
         CVariation_ref& vr2 = *it;
         if(vr2.IsSetLocation()) {
