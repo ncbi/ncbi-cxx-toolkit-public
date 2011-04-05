@@ -168,7 +168,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         /*strip enveloping quotes*/
         size_t len = strlen(value);
         if (len > 1  &&  (value[0] == '"'  ||  value[0] == '\'')
-            &&  value[0] == value[len - 1]) {
+            &&  strchr(value + 1, value[0]) == value + len - 1) {
             if (len -= 2)
                 memcpy(value, value + 1, len);
             value[len] = '\0';
