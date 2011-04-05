@@ -826,6 +826,7 @@ static string s_GetSpecimenVoucherText(
 {
     const string strAtccBase( "http://www.atcc.org/SearchCatalogs/linkin?id=" );
     const string strBcrcBase( "http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrc_no=" );
+    const string strCbsBase( "http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+" );
     const string strCcapBase( "http://www.ccap.ac.uk/strain_info.php?Strain_No=" );
     const string strCcmpBase( "https://ccmp.bigelow.org/SD/display.php?strain=CCMP" );
     const string strCcugBase( "http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=" );
@@ -851,6 +852,7 @@ static string s_GetSpecimenVoucherText(
     
     const string strAtccInst( "American Type Culture Collection" );
     const string strBcrcInst( "Bioresource Collection and Research Center" );
+    const string strCbsInst( "Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection" );
     const string strCcapInst( "Bioresource Collection and Research Center" );
     const string strCcmpInst( "Provasoli-Guillard National Center for Culture of Marine Phytoplankton" );
     const string strCcugInst( "Culture Collection, University of Goteborg, Department of Clinical Bacteriology" );
@@ -1220,6 +1222,14 @@ static string s_GetSpecimenVoucherText(
         string strId = strRawName.substr( 1 + strlen( "KU:IT" ) );
         text << "KU:IT:<a ";
         text << "href=\"" << strKuitBase << strId << "\" title=\"" << strKuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "CBS" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "CBS" ) );
+        text << "CBS:<a ";
+        text << "href=\"" << strCbsBase << strId << "\" title=\"" << strCbsInst << "\">";
         text << strId;
         text << "</a>";
     }
