@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-WATCHERS = kazimird
+WATCHERS = satskyse
 
 APP = netscheduled
 SRC = netscheduled queue_coll job_status queue_clean_thread \
