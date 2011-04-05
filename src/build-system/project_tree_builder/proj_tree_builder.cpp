@@ -1984,6 +1984,21 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             PTB_WARNING_EX(node_path, ePTB_MissingMakefile,
                            "Makefile.in missing");
         }
+
+        string bld_sys = CDirEntry::DeleteTrailingPathSeparator(
+            CDirEntry(GetApp().GetConfigPath()).GetDir());
+        if (NStr::CompareNocase(bld_sys,dir_name) == 0) {
+            CDir dir(dir_name);
+            CDir::TEntries contents;
+            contents = dir.GetEntries(GetApp().GetProjectTreeInfo().m_CustomMetaData);
+            ITERATE(CDir::TEntries, p, contents) {
+                GetApp().AddCustomMetaData( (*p)->GetPath());
+            }
+            contents = dir.GetEntries(GetApp().GetProjectTreeInfo().m_CustomConfH);
+            ITERATE(CDir::TEntries, p, contents) {
+                GetApp().AddCustomConfH( (*p)->GetPath());
+            }
+        }
         return;
     }
     if (!is_root &&

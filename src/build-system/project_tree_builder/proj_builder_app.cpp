@@ -610,7 +610,12 @@ int CProjBulderApp::Run(void)
 
     // Build projects tree
 #ifndef _DEBUG
-    GetWholeTree();
+    {
+        bool b = m_ScanWholeTree;
+        m_ScanWholeTree = true;
+        GetWholeTree();
+        m_ScanWholeTree = b;
+    }
 #endif
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
