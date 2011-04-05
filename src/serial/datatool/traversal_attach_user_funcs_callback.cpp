@@ -177,7 +177,7 @@ void CTraversalAttachUserFuncsCallback::x_DoAttachment(
 
     // create and bind the user call
     CRef<CTraversalNode::CUserCall> user_call( 
-        new CTraversalNode::CUserCall(pattern->GetFunc(), extra_arg_nodes ) );
+        new CTraversalNode::CUserCall(pattern->GetFunc(), extra_arg_nodes, pattern->GetConstantArgs() ) );
     if( pattern->GetWhen() == CTraversalSpecFileParser::CDescFileNode::eWhen_afterCallees ) {
         node->AddPostCalleesUserCall( user_call );
     } else {

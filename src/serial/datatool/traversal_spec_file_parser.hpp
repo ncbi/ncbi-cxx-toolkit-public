@@ -52,29 +52,34 @@ public:
     class CDescFileNode : public CObject {
     public:
         enum EWhen {
-            eWhen_afterCallees = 1, // default
+            eWhen_afterCallees = 1,
             eWhen_beforeCallees            
         };
 
         CDescFileNode( const string &func, const string &pattern, 
             const std::vector<std::string> &except_patterns,
             const std::vector<std::string> &arg_patterns,
+            const std::vector<std::string> &constant_args,
             EWhen when );            
 
         const std::string& GetFunc(void) const { return m_Func; }
         const TPattern & GetPattern(void) const { return m_Pattern; }
         const TPatternVec & GetExceptPatterns(void) const { return m_ExceptPatterns; }
         const TPatternVec & GetArgPatterns(void) const { return m_ArgPatterns; }
+        const vector<string> & GetConstantArgs(void) const { return m_ConstantArgs; }
         EWhen GetWhen(void) const { return m_When; }
         const int GetID(void) const { return m_ID; }
 
         string ToString(void);
+
+        void ConvertToMemberMacro(void);
 
     private:
         const std::string m_Func;
         TPattern m_Pattern;
         TPatternVec m_ExceptPatterns;
         TPatternVec m_ArgPatterns;
+        vector<string> m_ConstantArgs;
         const int m_ID; // unique ID.  Needed for proper ordering
         const EWhen m_When;
 
@@ -183,6 +188,7 @@ private:
     void x_ParseInclude( std::vector< std::string > &include_list, 
         CTokenizer &tokenizer );
     void x_ParseHeaderForwardDeclarationClause( CTokenizer &tokenizer );
+    void x_ParseMemberMacro( CTokenizer &tokenizer );
 
     bool x_IsValidPattern( const std::string & pattern );
 

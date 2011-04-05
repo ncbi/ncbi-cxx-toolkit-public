@@ -154,6 +154,15 @@ use m_NewCleanup.ProtFeatfBC { Seq-feat.data.prot AND Seq-feat }
 use m_NewCleanup.ProtFeatfBC { Seq-feat.data.prot AND ftable }
 ##### ILLEGAL SYNTAX
 
+ * 
+ * You can also specify syntax for "member macros" like CLEAN_STRING_MEMBER.  Example:
+
+membermacro CLEAN_STRING_MEMBER {
+    Gene-ref.locus
+}
+
+ * In appropriate places in the auto-generated code, you will have code like "CLEAN_STRING_MEMBER(arg0, Locus)"
+ * where arg0 is actually the name of some variable that holds Gene-ref. 
  *
  * The files are basically whitespace-insensitive, relying on commas
  * and such to tell how to parse things.  New-lines
@@ -175,8 +184,9 @@ CTraversalSpecFileParser::CDescFileNode::CDescFileNode(
     const string &func, const string &pattern, 
     const std::vector<std::string> &except_patterns,
     const std::vector<std::string> &arg_patterns,
+    const std::vector<std::string> &constant_args,
     EWhen when ) 
-    : m_Func(func), m_ID(++ms_HighestID), m_When(when)
+    : m_Func(func), m_ConstantArgs(constant_args), m_ID(++ms_HighestID), m_When(when)
 {
     NStr::Tokenize( pattern, ".", m_Pattern );
 
@@ -209,11 +219,33 @@ CTraversalSpecFileParser::CDescFileNode::ToString(void)
     ITERATE( TPatternVec, arg_iter, m_ArgPatterns ) {
         result << "    , " << NStr::Join( *arg_iter, "." ) << endl;
     }
+    ITERATE( vector<string>, arg_iter, m_ConstantArgs ) {
+        result << "    , CONSTANT \"" << *arg_iter << "\"" << endl;
+    }
     result << "}" << endl;
     // Just in case it doesn't null-terminate
     result << '\0'; 
 
     return result.str();
+}
+
+void CTraversalSpecFileParser::CDescFileNode::ConvertToMemberMacro(void)
+{
+    // chop off the last part of the main pattern and convert it into a constant arg
+    if( m_Pattern.size() < 2 ) {
+        throw runtime_error("membermacros' patterns must have a dot (e.g. 'Gene-ref.locus' but NOT 'Gene-ref') ");
+    }
+
+    // set member_arg to be the last part of the pattern
+    m_ConstantArgs.push_back(kEmptyStr);
+    string &member_arg = m_ConstantArgs.back();
+    member_arg.swap( m_Pattern.back() );
+    m_Pattern.pop_back();
+
+    // transform the member_arg to match how it should be used
+    NStr::ReplaceInPlace( member_arg, "-", "_" );
+    NStr::ToLower( member_arg );
+    member_arg[0] = toupper(member_arg[0]);
 }
 
 bool CTraversalSpecFileParser::CTokenizer::GetNextNoThrow( string& out_next_token )
@@ -357,6 +389,8 @@ CTraversalSpecFileParser::CTraversalSpecFileParser( CNcbiIstream &istream )
             m_IsPruningAllowed = false;
         } else if( next_token == "no_merging" ) {
             m_IsMergingAllowed = false;
+        } else if( next_token == "membermacro" ) {
+            x_ParseMemberMacro(tokenizer);
         } else {
             throw CParseError( "Bad top-level token '" + next_token + "'");
         }
@@ -427,7 +461,7 @@ void CTraversalSpecFileParser::x_ParseUseClause( CTokenizer &tokenizer )
             x_ParseUseArgClause( tokenizer, pattern, arg_patterns );
         }
 
-        m_DescFileNodes.push_back( CRef<CDescFileNode>(new CDescFileNode( func_name, pattern, except_patterns, arg_patterns, when )) );
+        m_DescFileNodes.push_back( CRef<CDescFileNode>(new CDescFileNode( func_name, pattern, except_patterns, arg_patterns, vector<string>(), when )) );
 
         if( tokenizer.NextWillBe(",") ) {
             tokenizer.DiscardOne(",");
@@ -552,6 +586,23 @@ void CTraversalSpecFileParser::x_ParseHeaderForwardDeclarationClause( CTokenizer
     m_HeaderForwardDeclarations.push_back(kEmptyStr);
     string &next_token = m_HeaderForwardDeclarations.back();
     tokenizer.GetNextOrThrow( next_token );
+}
+
+void CTraversalSpecFileParser::x_ParseMemberMacro( CTokenizer &tokenizer )
+{
+    // membermacro parses similar to "use" clauses, so we use the use-clause
+    // parser and then just adjust its output.
+
+    const int old_desc_file_nodes = m_DescFileNodes.size();
+    x_ParseUseClause(tokenizer);
+
+    std::vector< CRef<CDescFileNode> >::iterator desc_node_iter = m_DescFileNodes.begin();
+    desc_node_iter += old_desc_file_nodes;
+    for( ; desc_node_iter != m_DescFileNodes.end(); ++desc_node_iter ) {
+        CDescFileNode &file_node = **desc_node_iter;
+        
+        file_node.ConvertToMemberMacro();
+    }
 }
 
 bool CTraversalSpecFileParser::x_IsValidPattern( const std::string & pattern )

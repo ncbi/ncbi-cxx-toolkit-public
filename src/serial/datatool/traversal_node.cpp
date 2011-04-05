@@ -193,7 +193,7 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
         traversal_output_file << m_FuncName << "( void )";
         break;
     default:
-        traversal_output_file << m_FuncName << "( " << m_InputClassName << " & arg0 )";
+        traversal_output_file << m_FuncName << "( " << m_InputClassName << " & " << ( x_IsSeqFeat() ? "arg0_raw" : "arg0" ) << " )";
         break;
     }
 
@@ -205,6 +205,26 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
 
     traversal_output_file << endl;
     traversal_output_file << "{ // type " << GetTypeAsString() << endl;
+
+    // seq-feat functions require a little extra at the top
+    if( x_IsSeqFeat() ) {
+        traversal_output_file << "  CRef<CSeq_feat> raw_ref( &arg0_raw );" << endl;
+        traversal_output_file << "  CSeq_feat_EditHandle efh;" << endl;
+        traversal_output_file << endl;
+        traversal_output_file << "  CRef<CSeq_feat> new_feat;" << endl;
+        traversal_output_file << endl;
+        traversal_output_file << "  try {" << endl;
+        traversal_output_file << "    // Try to use an edit handle so we can update the object manager" << endl;
+        traversal_output_file << "    efh = CSeq_feat_EditHandle( m_NewCleanup.m_Scope->GetSeq_featHandle( arg0_raw ) );" << endl;
+        traversal_output_file << "    new_feat.Reset( new CSeq_feat );" << endl;
+        traversal_output_file << "    new_feat->Assign( arg0_raw );" << endl;
+        traversal_output_file << "  } catch(...) {" << endl;
+        traversal_output_file << "    new_feat.Reset( &arg0_raw );" << endl;
+        traversal_output_file << "  }" << endl;
+        traversal_output_file << endl;
+        traversal_output_file << "  CSeq_feat &arg0 = *new_feat;" << endl;
+        traversal_output_file << endl;
+    }
 
     // store our arg if we're one of the functions that are supposed to
     if( m_DoStoreArg ) {
@@ -218,6 +238,9 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
         ITERATE( CTraversalNode::TNodeVec, extra_arg_iter, (*func_iter)->GetExtraArgNodes() ) {
             _ASSERT( (*extra_arg_iter)->GetDoStoreArg() );
             traversal_output_file << ", *" << (*extra_arg_iter)->GetStoredArgVariable();
+        }
+        ITERATE( vector<string>, constant_arg_iter, (*func_iter)->GetConstantArgs() ) {
+            traversal_output_file << ", " << *constant_arg_iter;
         }
         traversal_output_file << " );" << endl;
     }
@@ -321,6 +344,9 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
             _ASSERT( (*extra_arg_iter)->GetDoStoreArg() );
             traversal_output_file << ", *" << (*extra_arg_iter)->GetStoredArgVariable();
         }
+        ITERATE( vector<string>, constant_arg_iter, (*a_func_iter)->GetConstantArgs() ) {
+            traversal_output_file << ", " << *constant_arg_iter;
+        }
         traversal_output_file << " );" << endl;
     }
 
@@ -328,6 +354,16 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
     if( m_DoStoreArg ) {
         traversal_output_file << endl;
         traversal_output_file << "  " << GetStoredArgVariable() << " = NULL;" << endl;
+    }
+
+    // a little extra logic at the end of Seq-feat functions
+    if( x_IsSeqFeat() ) {
+        traversal_output_file << endl;
+        traversal_output_file << "  if( efh ) {" << endl;
+        traversal_output_file << "    efh.Replace(arg0);" << endl;
+        traversal_output_file << "    arg0_raw.Assign( arg0 );" << endl;
+        traversal_output_file << "  }" << endl;
+        traversal_output_file << endl;
     }
 
     // end of function
@@ -368,10 +404,12 @@ void CTraversalNode::SplitByVarName(void)
 }
 
 CTraversalNode::CUserCall::CUserCall( const std::string &user_func_name,
-    std::vector< CRef<CTraversalNode> > &extra_arg_nodes ) 
-    : m_UserFuncName( user_func_name ), m_ExtraArgNodes(extra_arg_nodes) 
+    const std::vector< CRef<CTraversalNode> > &extra_arg_nodes,
+            const vector<string> &constant_args ) 
+    : m_UserFuncName( user_func_name ), m_ExtraArgNodes(extra_arg_nodes),
+      m_ConstantArgs(constant_args)
 {
-    NON_CONST_ITERATE( std::vector< CRef<CTraversalNode> >, extra_arg_iter, extra_arg_nodes ) {
+    NON_CONST_ITERATE( std::vector< CRef<CTraversalNode> >, extra_arg_iter, m_ExtraArgNodes ) {
         (*extra_arg_iter)->m_ReferencingUserCalls.push_back( CRef<CUserCall>(this) );
     }
 }
@@ -594,6 +632,11 @@ void CTraversalNode::x_TemplatizeType( string &type_name )
     result[0] = toupper(result[0]);
 
     type_name.swap( result );
+}
+
+bool CTraversalNode::x_IsSeqFeat(void)
+{
+    return ( (m_Type != eType_Reference) && (m_InputClassName == "CSeq_feat") );
 }
 
 void 

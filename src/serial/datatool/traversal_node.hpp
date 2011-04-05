@@ -118,10 +118,12 @@ public:
     class CUserCall : public CObject {
     public:
         CUserCall( const std::string &user_func_name,
-            std::vector< CRef<CTraversalNode> > &extra_arg_nodes );
+            const TNodeVec &extra_arg_nodes,
+            const vector<string> &constant_args );
 
         const std::string &GetUserFuncName() const { return m_UserFuncName; }
         const TNodeVec &GetExtraArgNodes(void) const { return m_ExtraArgNodes; }
+        const vector<string> &GetConstantArgs(void) const { return m_ConstantArgs; }
 
         bool operator==( const CUserCall & rhs ) const { return Compare(rhs) == 0; }
         bool operator!=( const CUserCall & rhs ) const { return Compare(rhs) != 0; }
@@ -130,6 +132,7 @@ public:
     private:
         const std::string m_UserFuncName;
         TNodeVec m_ExtraArgNodes;
+        vector<string> m_ConstantArgs;
 
         friend class CTraversalNode;
     };
@@ -211,6 +214,10 @@ private:
 
     // Turn type-name into a potential template typename
     void x_TemplatizeType( std::string &type_name );
+
+    // functions that accept CSeq_feat and aren't references
+    // require special handling
+    bool x_IsSeqFeat(void);
 
     // When we merge nodes, this function merges the names of the two functions
     static void x_MergeNames( string &result, const string &name1, const string &name2 );
