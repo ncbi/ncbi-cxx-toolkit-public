@@ -242,7 +242,11 @@ function FillTreeStructure(oShell, oTree)
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/src/build-system", build_files, oTree.SrcBuildSystemBranch, false);
+
     var tmp = g_usefilecopy;
+    g_usefilecopy = true;
+    GetFilesFromTree(oShell, oTree, oTask,
+        "/src/build-system", new Array("Makefile.*.mk"), oTree.SrcBuildSystemBranch, true);
     g_usefilecopy = false;
     var build_files2 = new Array (
         "project_tree_builder.ini"
