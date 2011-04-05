@@ -23,7 +23,7 @@ internal/asn_cache
 internal/blast
 internal/blast/DistribDbSupport
 internal/eutils
-internal/gnomon
+internal/sra
 internal/gnomon
 internal/gpipe
 internal/ID/utils$
