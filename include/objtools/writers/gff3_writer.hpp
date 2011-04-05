@@ -44,6 +44,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+class CGffAlignmentRecord;
+
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
 //  ============================================================================
@@ -64,6 +66,8 @@ public:
     virtual ~CGff3Writer();
 
 //    bool WriteAnnot( const CSeq_annot& );
+    bool WriteAlign( 
+        const CSeq_align& );
 
 protected:
     virtual bool x_WriteHeader();
@@ -95,10 +99,15 @@ protected:
         CMappedFeat,        
         CGff2WriteRecordSet& );
 
+    void x_WriteAlignment( 
+        const CGffAlignmentRecord& record );    
+
     string x_GetParentId(
         CMappedFeat );
 
 protected:
+    unsigned int m_uRecordId;
+ 
     typedef map< CMappedFeat, CGff3WriteRecord* > TGeneMap;
     TGeneMap m_GeneMap;
     unsigned int m_uPendingGeneId;

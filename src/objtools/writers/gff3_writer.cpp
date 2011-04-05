@@ -44,16 +44,34 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff3_alignment_data.hpp>
 #include <objtools/writers/gff3_writer.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+//  ----------------------------------------------------------------------------
+static CConstRef<CSeq_id> s_GetSourceId(
+    const CSeq_id& id, CScope& scope )
+//  ----------------------------------------------------------------------------
+{
+    try {
+        return sequence::GetId(id, scope, sequence::eGetId_ForceAcc).GetSeqId();
+    }
+    catch (CException&) {
+    }
+    return CConstRef<CSeq_id>(&id);
+}
 
 //  ----------------------------------------------------------------------------
 CGff3Writer::CGff3Writer(
@@ -63,6 +81,7 @@ CGff3Writer::CGff3Writer(
 //  ----------------------------------------------------------------------------
     CGff2Writer( scope, ostr, uFlags )
 {
+    m_uRecordId = 1;
     m_uPendingGeneId = 0;
     m_uPendingMrnaId = 0;
     m_uPendingExonId = 0;
@@ -73,6 +92,129 @@ CGff3Writer::~CGff3Writer()
 //  ----------------------------------------------------------------------------
 {
 };
+
+#define INSERTION(sf, tf) ( ((sf) &  CAlnMap::fSeq) && !((tf) &  CAlnMap::fSeq) )
+#define DELETION(sf, tf) ( !((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
+#define MATCH(sf, tf) ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::WriteAlign( 
+    const CSeq_align& align )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! align.IsSetSegs() || ! align.GetSegs().IsDenseg() ) {
+        cerr << "Object type not supported." << endl;
+        return false;
+    }
+    if ( ! (m_uFlags & fNoHeader) ) {
+        x_WriteHeader();
+    }
+    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( align, "browser" );
+    if ( pBrowserInfo ) {
+        x_WriteBrowserLine( pBrowserInfo );
+    }
+    CRef< CUser_object > pTrackInfo = x_GetDescriptor( align, "track" );
+    if ( pTrackInfo ) {
+        x_WriteTrackLine( pTrackInfo );
+    }
+
+    const CSeq_id& productId = align.GetSeq_id( 0 );
+    CBioseq_Handle bsh = m_Scope.GetBioseqHandle( productId );
+    CRef<CSeq_id> pTargetId( new CSeq_id );
+    pTargetId->Assign( *sequence::GetId(
+        bsh, sequence::eGetId_Best).GetSeqId() );
+
+    const CDense_seg& ds = align.GetSegs().GetDenseg();
+    CRef<CDense_seg> ds_filled = ds.FillUnaligned();
+    CAlnMap align_map( *ds_filled );
+
+    int iTargetRow = -1;
+    for ( int row = 0;  row < align_map.GetNumRows();  ++row ) {
+        if ( sequence::IsSameBioseq( 
+            align_map.GetSeqId( row ), *pTargetId, &m_Scope ) ) {
+            iTargetRow = row;
+            break;
+        }
+    }
+    if ( iTargetRow == -1 ) {
+        cerr << "No alignment row containing primary ID." << endl;
+        return false;
+    }
+
+    TSeqPos iTargetWidth = 1;
+    if ( static_cast<size_t>( iTargetRow ) < ds.GetWidths().size() ) {
+        iTargetWidth = ds.GetWidths()[ iTargetRow ];
+    }
+
+    ENa_strand targetStrand = eNa_strand_plus;
+    if ( align_map.StrandSign( iTargetRow ) != 1 ) {
+        targetStrand = eNa_strand_minus;
+    }
+
+    for ( int iSourceRow = 0;  iSourceRow < align_map.GetNumRows();  ++iSourceRow ) {
+        if ( iSourceRow == iTargetRow ) {
+            continue;
+        }
+        CGffAlignmentRecord record( m_uRecordId++ );
+
+        CConstRef<CSeq_id> pSourceId =
+            s_GetSourceId( align_map.GetSeqId(iSourceRow), m_Scope );
+
+        TSeqPos iSourceWidth = 1;
+        if ( static_cast<size_t>( iSourceRow ) < ds.GetWidths().size() ) {
+            iSourceWidth = ds.GetWidths()[ iSourceRow ];
+        }
+
+        ENa_strand sourceStrand = eNa_strand_plus;
+        if ( align_map.StrandSign( iSourceRow ) != 1 ) {
+            sourceStrand = eNa_strand_minus;
+        }
+
+        CAlnMap::TSignedRange targetRange;
+        CAlnMap::TSignedRange sourceRange;
+        for ( int i0 = 0;  i0 < align_map.GetNumSegs();  ++i0 ) {
+            CAlnMap::TSignedRange targetPiece = align_map.GetRange( iTargetRow, i0);
+            CAlnMap::TSignedRange sourcePiece = align_map.GetRange( iSourceRow, i0 );
+            CAlnMap::TSegTypeFlags targetFlags = align_map.GetSegType( iTargetRow, i0 );
+            CAlnMap::TSegTypeFlags sourceFlags = align_map.GetSegType( iSourceRow, i0 );
+
+            if ( INSERTION( targetFlags, sourceFlags ) ) {
+                targetPiece.SetFrom( targetPiece.GetFrom() / iTargetWidth );
+                targetPiece.SetTo( targetPiece.GetTo() / iTargetWidth );
+                targetRange += targetPiece;
+                record.AddAlignmentPiece( 'I', sourcePiece.GetLength() / iSourceWidth );
+            }
+            if ( DELETION( targetFlags, sourceFlags ) ) {
+                sourcePiece.SetFrom( sourcePiece.GetFrom() / iSourceWidth );
+                sourcePiece.SetTo( sourcePiece.GetTo() / iSourceWidth );
+                sourceRange += sourcePiece;
+                record.AddAlignmentPiece( 'D', sourcePiece.GetLength() / iSourceWidth );
+            }
+            if ( MATCH( targetFlags, sourceFlags ) ) {
+                targetPiece.SetFrom( targetPiece.GetFrom() / iTargetWidth );
+                targetPiece.SetTo( targetPiece.GetTo() / iTargetWidth );
+                targetRange += targetPiece;
+                sourcePiece.SetFrom( sourcePiece.GetFrom() / iSourceWidth );
+                sourcePiece.SetTo( sourcePiece.GetTo() / iSourceWidth );
+                sourceRange += sourcePiece;
+                record.AddAlignmentPiece( 'M', sourcePiece.GetLength() / iSourceWidth );
+            }
+        }
+        record.SetSourceLocation( 
+            *pSourceId, sourceRange.GetFrom(), sourceRange.GetTo(), sourceStrand );
+        record.SetTargetLocation(
+            *pTargetId, targetRange.GetFrom(), targetRange.GetTo(), targetStrand );
+
+        if ( ds.IsSetScores() ) {
+            ITERATE ( CDense_seg::TScores, score_it, ds.GetScores() ) {
+                record.SetScore( **score_it );
+            }
+        }
+
+        x_WriteAlignment( record );
+    }
+    return x_WriteFooter();
+}
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteHeader()
@@ -120,7 +262,7 @@ bool CGff3Writer::x_AssignObjectGene(
    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
+//    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
 
     CGff3WriteRecord* pGene = dynamic_cast< CGff3WriteRecord* >(
         x_CreateRecord( feat_tree ) );
@@ -147,7 +289,7 @@ bool CGff3Writer::x_AssignObjectMrna(
    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
+//    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
 
     CGff3WriteRecord* pMrna = dynamic_cast< CGff3WriteRecord* >(
         x_CreateRecord( feat_tree ) );
@@ -204,7 +346,7 @@ bool CGff3Writer::x_AssignObjectCds(
    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
+//    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
 
     CGff3WriteRecord* pCds = dynamic_cast< CGff3WriteRecord* >(
         x_CreateRecord( feat_tree ) );
@@ -224,7 +366,7 @@ bool CGff3Writer::x_AssignObjectCds(
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
-        unsigned int uSequenceNumber = 1;
+//        unsigned int uSequenceNumber = 1;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CGff3WriteRecord* pExon = dynamic_cast< CGff3WriteRecord* >(
@@ -246,6 +388,22 @@ CGff2WriteRecord* CGff3Writer::x_CloneRecord(
 //  ============================================================================
 {
     return new CGff3WriteRecord( other );
+}
+
+//  ============================================================================
+void CGff3Writer::x_WriteAlignment( 
+    const CGffAlignmentRecord& record )
+//  ============================================================================
+{
+    m_Os << record.StrId() << '\t';
+    m_Os << record.StrSource() << '\t';
+    m_Os << record.StrType() << '\t';
+    m_Os << record.StrSeqStart() << '\t';
+    m_Os << record.StrSeqStop() << '\t';
+    m_Os << record.StrScore() << '\t';
+    m_Os << record.StrStrand() << '\t';
+    m_Os << record.StrPhase() << '\t';
+    m_Os << record.StrAttributes() << endl;
 }
 
 END_NCBI_SCOPE

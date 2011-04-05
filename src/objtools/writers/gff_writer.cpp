@@ -127,6 +127,15 @@ bool CGff2Writer::WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
+    if ( annot.IsAlign() ) {
+        ITERATE ( list< CRef< CSeq_align > >, it, annot.GetData().GetAlign() ) {
+            if ( ! WriteAlign( **it ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     if ( ! (m_uFlags & fNoHeader) ) {
         x_WriteHeader();
     }
@@ -141,9 +150,6 @@ bool CGff2Writer::WriteAnnot(
 
     if ( annot.IsFtable() ) {
         return x_WriteAnnotFTable( annot );
-    }
-    if ( annot.IsAlign() ) {
-        return x_WriteAnnotAlign( annot );
     }
     cerr << "Unexpected!" << endl;
     return false;
@@ -185,11 +191,10 @@ SAnnotSelector CGff2Writer::x_GetAnnotSelector()
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteAnnotAlign( 
-    const CSeq_annot& annot )
+bool CGff2Writer::WriteAlign( 
+    const CSeq_align& align )
 //  ----------------------------------------------------------------------------
 {
-//    cerr << "To be done." << endl;
     return false;
 }
 
@@ -341,10 +346,28 @@ CRef< CUser_object > CGff2Writer::x_GetDescriptor(
 }
 
 //  ----------------------------------------------------------------------------
+CRef< CUser_object > CGff2Writer::x_GetDescriptor(
+    const CSeq_align& align,
+    const string& strType ) const
+//  ----------------------------------------------------------------------------
+{
+    CRef< CUser_object > pUser;
+    return pUser;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "##gff-version 2" << endl;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteFooter()
+//  ----------------------------------------------------------------------------
+{
+    m_Os << "###" << endl;
     return true;
 }
 

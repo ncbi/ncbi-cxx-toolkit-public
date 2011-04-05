@@ -36,6 +36,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
@@ -102,13 +103,15 @@ public:
         TFlags = fNormal );
     virtual ~CGff2Writer();
 
-    bool WriteAnnot( const CSeq_annot& );
+    bool WriteAnnot( 
+        const CSeq_annot& );
+    bool WriteAlign( 
+        const CSeq_align& );
 
 protected:
     virtual bool x_WriteHeader();
+    virtual bool x_WriteFooter();
     bool x_WriteAnnotFTable( 
-        const CSeq_annot& );
-    bool x_WriteAnnotAlign( 
         const CSeq_annot& );
     virtual bool x_WriteRecord( 
         const CGff2WriteRecord* );
@@ -131,6 +134,10 @@ protected:
 
     CRef< CUser_object > x_GetDescriptor(
         const CSeq_annot&,
+        const string& ) const;
+
+    CRef< CUser_object > x_GetDescriptor(
+        const CSeq_align&,
         const string& ) const;
 
     static bool x_NeedsQuoting(

@@ -52,6 +52,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
@@ -117,6 +118,10 @@ private:
 
     bool WriteBed(
         const CSeq_annot& annot,
+        CNcbiOstream& );
+
+    bool WriteGff3(
+        const CSeq_align& align,
         CNcbiOstream& );
 
     CGff2Writer::TFlags GffFlags( 
@@ -211,31 +216,41 @@ int CAnnotWriterApp::Run()
     }
 
     while ( true ) {
+        CNcbiStreampos curr = pIs->GetStreamPos();
         try {
             CRef<CSeq_annot> annot(new CSeq_annot);
             *pIs >> *annot;
             Write( *annot, *pOs );
-        }
-        catch ( CEofException& ) {
-            break;
+            continue;
         }
         catch ( ... ) {
-            try {
-                pIs.reset( x_OpenIStream( args ) );
-                CRef<CSeq_entry> entry( new CSeq_entry );
-                *pIs >> *entry;
-                CTypeIterator<CSeq_annot> annot_iter( *entry );
-                for ( ;  annot_iter;  ++annot_iter ) {
-                    CRef< CSeq_annot > annot( annot_iter.operator->() );
-                    Write( *annot, *pOs );
-                }
-                break;
+            pIs->SetStreamPos ( curr );
+        }
+        try {
+            CRef<CSeq_entry> entry( new CSeq_entry );
+            *pIs >> *entry;
+            CTypeIterator<CSeq_annot> annot_iter( *entry );
+            for ( ;  annot_iter;  ++annot_iter ) {
+                CRef< CSeq_annot > annot( annot_iter.operator->() );
+                Write( *annot, *pOs );
             }
-            catch ( ... ) {
+            continue;
+        }
+        catch ( ... ) {
+            pIs->SetStreamPos ( curr );
+        }
+        try {
+            CRef<CSeq_align> pAlign(new CSeq_align);
+            *pIs >> *pAlign;
+            WriteGff3( *pAlign, *pOs );
+        }
+        catch ( ... ) {
+            if ( ! pIs->EndOfData() ) {
                 cerr << "Object type not supported!" << endl;
             }
-        }
-    
+            break;
+        } 
+
     } 
     pOs->flush();
 
@@ -252,10 +267,12 @@ CObjectIStream* CAnnotWriterApp::x_OpenIStream(
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
     if ( args["i"] ) {
-        pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
+        pInputStream = new CNcbiIfstream( 
+            args["i"].AsString().c_str(), ios::binary  );
         bDeleteOnClose = true;
     }
-    CObjectIStream* pI = CObjectIStream::Open( serial, *pInputStream, bDeleteOnClose );
+    CObjectIStream* pI = CObjectIStream::Open( 
+        serial, *pInputStream, bDeleteOnClose );
     return pI;
 }
 
@@ -314,6 +331,23 @@ bool CAnnotWriterApp::WriteGff3(
 
     CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteGff3( 
+    const CSeq_align& align,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    DBAPI_RegisterDriver_FTDS();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr, 0, CObjectManager::eDefault,
+        1000 );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
+    return writer.WriteAlign( align );
 }
 
 //  -----------------------------------------------------------------------------
