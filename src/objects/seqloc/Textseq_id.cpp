@@ -175,33 +175,50 @@ bool CTextseq_id::Match(const CTextseq_id& tsip2) const
 int CTextseq_id::Compare(const CTextseq_id& tsip2) const
 {
     // Check Accessions first
-    if (IsSetAccession()  &&  tsip2.IsSetAccession()) {
-        int ret = PNocase().Compare(GetAccession(), tsip2.GetAccession());
-        if ( ret == 0 && IsSetVersion()  &&  tsip2.IsSetVersion() ) {
-            ret = GetVersion() - tsip2.GetVersion();
+    // no-accession before accession
+    if ( int diff = IsSetAccession() - tsip2.IsSetAccession() ) {
+        return diff;
+    }
+    if ( IsSetAccession() ) {
+        _ASSERT(tsip2.IsSetAccession());
+        // sort by accession
+        if ( int diff = PNocase().Compare(GetAccession(),
+                                          tsip2.GetAccession()) ) {
+            return diff;
         }
-        return ret;
     }
 
-    // then try name
-    if (IsSetName()  &&  tsip2.IsSetName()) {
-        int ret = PNocase().Compare(GetName(), tsip2.GetName());
-        if ( ret == 0 && IsSetVersion()  &&  tsip2.IsSetVersion() ) {
-            ret = GetVersion() - tsip2.GetVersion();
+    // Check version
+    // no-version before version
+    if ( int diff = IsSetVersion() - tsip2.IsSetVersion() ) {
+        return diff;
+    }
+    if ( IsSetVersion() ) {
+        _ASSERT(tsip2.IsSetVersion());
+        // smaller version first
+        if ( int diff = GetVersion() - tsip2.GetVersion() ) {
+            return diff;
         }
-        return ret;
+    }
+    if ( IsSetAccession() && IsSetVersion() ) {
+        // acc.ver are the same -> equal Seq-ids
+        return 0;
     }
 
-    int ret = IsSetAccession() - tsip2.IsSetAccession();
-    if ( ret == 0 ) {
-        ret = IsSetName() - tsip2.IsSetName();
-        if ( ret == 0 ) {
-            ret = IsSetVersion() - tsip2.IsSetVersion();
-            if ( ret == 0 )
-                ret = this == &tsip2? 0: this < &tsip2? -1: 1;
+    // Check name
+    // no-name before name
+    if ( int diff = IsSetName() - tsip2.IsSetName() ) {
+        return diff;
+    }
+    if ( IsSetName() ) {
+        _ASSERT(tsip2.IsSetName());
+        if ( int diff = PNocase().Compare(GetName(), tsip2.GetName()) ) {
+            return diff;
         }
     }
-    return ret;
+    
+    // All checks failed to distinguish Seq-ids.
+    return 0;
 }
 
 
