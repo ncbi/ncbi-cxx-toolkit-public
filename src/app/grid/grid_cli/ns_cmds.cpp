@@ -33,7 +33,7 @@
 
 #include "grid_cli.hpp"
 
-#include <string.h>
+#include <connect/services/grid_rw_impl.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -79,42 +79,44 @@ void CGridCommandLineInterfaceApp::PrintJobMeta(const CNetScheduleKey& key)
         printf("Queue name: %s\n", key.queue.c_str());
 }
 
+void CGridCommandLineInterfaceApp::PrintStorageType(
+    const string& data, const char* prefix)
+{
+    unsigned long data_length = (unsigned long) data.length();
+
+    if (data_length >= 2 && data[1] == ' ') {
+        if (data[0] == 'D') {
+            printf("%sstorage: embedded, size=%lu\n", prefix, data_length - 2);
+            return;
+        } else if (data[0] == 'K') {
+            printf("%sstorage: netcache, key=%s\n", prefix, data.c_str() + 2);
+            return;
+        }
+    }
+
+    printf("%sstorage: raw, size=%lu\n", prefix, data_length);
+}
+
 bool CGridCommandLineInterfaceApp::MatchPrefixAndPrintStorageTypeAndData(
     const string& line, const char* prefix, size_t prefix_length,
     const char* new_prefix)
 {
     if (line.length() <= prefix_length || line[line.length() - 1] != '\'' ||
-            memcmp(line.data(), prefix, prefix_length) != 0)
+            !NStr::StartsWith(line, CTempString(prefix, prefix_length)))
         return false;
 
-    string data(NStr::ParseEscapes(CTempString(line.data() + prefix_length,
-        line.length() - 1 - prefix_length)));
+    string data(NStr::ParseEscapes(CTempString(line.data() +
+        prefix_length, line.length() - 1 - prefix_length)));
 
-    unsigned long data_length = (unsigned long) data.length();
+    PrintStorageType(data, new_prefix);
 
-    if (data_length >= 2 && data[1] == ' ') {
-        if (data[0] == 'D') {
-            printf("%s-storage: embedded, size=%lu\n",
-                new_prefix, data_length - 2);
-            goto PrintDataAndReturn;
-        } else if (data[0] == 'K') {
-            printf("%s-storage: netcache, key=%s\n",
-                new_prefix, data.c_str() + 2);
-            goto PrintDataAndReturn;
-        }
-    }
-
-    printf("%s-storage: raw, size=%lu\n", new_prefix, data_length);
-
-PrintDataAndReturn:
-    const char* ellipsis = "";
-    if (data_length > MAX_VISIBLE_DATA_LENGTH) {
+    if (data.length() <= MAX_VISIBLE_DATA_LENGTH)
+        printf("%sdata: '%s'\n", new_prefix, NStr::PrintableString(data).c_str());
+    else {
         data.erase(data.begin() + MAX_VISIBLE_DATA_LENGTH, data.end());
-        ellipsis = "...";
+        printf("%sdata: '%s'...\n", new_prefix, NStr::PrintableString(
+            data.data(), MAX_VISIBLE_DATA_LENGTH).c_str());
     }
-
-    printf("%s-data: '%s'%s\n",
-        new_prefix, NStr::PrintableString(data).c_str(), ellipsis);
 
     return true;
 }
@@ -154,17 +156,22 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 
         string line;
 
+        static const char s_VersionString[] = "NCBI NetSchedule";
+        static const char s_IdPrefix[] = "id:";
+        static const char s_InputPrefix[] = "input: '";
+        static const char s_OutputPrefix[] = "output: '";
+
         while (output.ReadLine(line)) {
-            static const char s_VersionString[] = "NCBI NetSchedule";
-            static const char s_InputPrefix[] = "input: '";
-            static const char s_OutputPrefix[] = "output: '";
-            if (!line.empty() && line[0] != '[' &&
-                (line.length() < sizeof(s_VersionString) || memcmp(line.data(),
-                    s_VersionString, sizeof(s_VersionString) - 1) != 0) &&
+            if (!line.empty() &&
+                line[0] != '[' &&
+                !NStr::StartsWith(line, CTempString(s_VersionString,
+                    sizeof(s_VersionString) - 1)) &&
+                !NStr::StartsWith(line, CTempString(s_IdPrefix,
+                    sizeof(s_IdPrefix) - 1)) &&
                 !MatchPrefixAndPrintStorageTypeAndData(line, s_InputPrefix,
-                    sizeof(s_InputPrefix) - 1, "input") &&
+                    sizeof(s_InputPrefix) - 1, "input-") &&
                 !MatchPrefixAndPrintStorageTypeAndData(line, s_OutputPrefix,
-                    sizeof(s_OutputPrefix) - 1, "output"))
+                    sizeof(s_OutputPrefix) - 1, "output-"))
                 PrintLine(line);
         }
     } else {
@@ -177,7 +184,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         if (status == CNetScheduleAPI::eJobNotFound)
             return 0;
 
-        printf("Input size: %lu\n", (unsigned long) job.input.size());
+        PrintStorageType(job.input, "Input ");
 
         switch (status) {
         default:
@@ -189,7 +196,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         case CNetScheduleAPI::eReading:
         case CNetScheduleAPI::eConfirmed:
         case CNetScheduleAPI::eReadFailed:
-            printf("Output size: %lu\n", (unsigned long) job.output.size());
+            PrintStorageType(job.output, "Output ");
             break;
         }
 
@@ -234,9 +241,61 @@ ErrorExit:
     return 3;
 }
 
+int CGridCommandLineInterfaceApp::DumpJobInputOutput(
+    const string& data_or_blob_id)
+{
+    CStringOrBlobStorageReader reader(data_or_blob_id, m_NetCacheAPI);
+
+    char buffer[16 * 1024];
+    size_t bytes_read;
+
+    while (reader.Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
+        if (fwrite(buffer, 1, bytes_read, m_Opts.output_stream) < bytes_read) {
+            fprintf(stderr, PROGRAM_NAME ": error while writing job input.\n");
+            return 3;
+        }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_GetJobInput()
+{
+    SetUp_GridClient();
+
+    CNetScheduleJob job;
+    job.job_id = m_Opts.id;
+
+    if (m_NetScheduleAPI.GetJobDetails(job) == CNetScheduleAPI::eJobNotFound) {
+        fprintf(stderr, PROGRAM_NAME ": job %s has expired.\n", job.job_id);
+        return 3;
+    }
+
+    return DumpJobInputOutput(job.input);
+}
+
 int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
 {
-    return 0;
+    SetUp_GridClient();
+
+    CNetScheduleJob job;
+    job.job_id = m_Opts.id;
+    CNetScheduleAPI::EJobStatus status = m_NetScheduleAPI.GetJobDetails(job);
+
+    switch (status) {
+    case CNetScheduleAPI::eDone:
+    case CNetScheduleAPI::eReading:
+    case CNetScheduleAPI::eConfirmed:
+    case CNetScheduleAPI::eReadFailed:
+        break;
+
+    default:
+        fprintf(stderr, PROGRAM_NAME
+            ": cannot retrieve job output for job status %s.\n",
+            CNetScheduleAPI::StatusToString(status).c_str());
+        return 3;
+    }
+
+    return DumpJobInputOutput(job.output);
 }
 
 int CGridCommandLineInterfaceApp::Cmd_CancelJob()

@@ -176,6 +176,7 @@ public:
 public:
     int Cmd_JobInfo();
     int Cmd_SubmitJob();
+    int Cmd_GetJobInput();
     int Cmd_GetJobOutput();
     int Cmd_CancelJob();
     int Cmd_Kill();
@@ -215,9 +216,10 @@ private:
     void SetUp_NetScheduleCmd(EAPIClass api_class);
     void SetUp_GridClient();
     void PrintJobMeta(const CNetScheduleKey& key);
+    static void PrintStorageType(const string& data, const char* prefix);
     static bool MatchPrefixAndPrintStorageTypeAndData(const string& line,
         const char* prefix, size_t prefix_length, const char* new_prefix);
-
+    int DumpJobInputOutput(const string& data_or_blob_id);
 };
 
 END_NCBI_SCOPE

@@ -241,7 +241,12 @@ struct SCommandDefinition {
         "stream.",
         {eNetSchedule, eQueue, eNetCache, eInput, eInputFile, eAuth, -1}},
 
-/*
+    {&CGridCommandLineInterfaceApp::Cmd_GetJobInput,
+        "getjobinput", "Read job input.",
+        "Retrieve and print job input to the standard output stream or "
+        "save it to a file.",
+        {eID, eQueue, eOutputFile, eAuth, -1}},
+
     {&CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
         "getjoboutput", "Read job output if the job is completed.",
         "Retrieve and print job output to the standard output stream or "
@@ -250,7 +255,6 @@ struct SCommandDefinition {
         "to the standard error stream and the program exits with a non-zero "
         "return code.",
         {eID, eQueue, eOutputFile, eAuth, -1}},
-*/
 
     {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
