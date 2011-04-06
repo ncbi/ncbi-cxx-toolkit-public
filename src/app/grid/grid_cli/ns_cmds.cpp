@@ -33,7 +33,11 @@
 
 #include "grid_cli.hpp"
 
+#include <string.h>
+
 USING_NCBI_SCOPE;
+
+#define MAX_VISIBLE_DATA_LENGTH 50
 
 void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     CGridCommandLineInterfaceApp::EAPIClass api_class)
@@ -75,6 +79,46 @@ void CGridCommandLineInterfaceApp::PrintJobMeta(const CNetScheduleKey& key)
         printf("Queue name: %s\n", key.queue.c_str());
 }
 
+bool CGridCommandLineInterfaceApp::MatchPrefixAndPrintStorageTypeAndData(
+    const string& line, const char* prefix, size_t prefix_length,
+    const char* new_prefix)
+{
+    if (line.length() <= prefix_length || line[line.length() - 1] != '\'' ||
+            memcmp(line.data(), prefix, prefix_length) != 0)
+        return false;
+
+    string data(NStr::ParseEscapes(CTempString(line.data() + prefix_length,
+        line.length() - 1 - prefix_length)));
+
+    unsigned long data_length = (unsigned long) data.length();
+
+    if (data_length >= 2 && data[1] == ' ') {
+        if (data[0] == 'D') {
+            printf("%s-storage: embedded, size=%lu\n",
+                new_prefix, data_length - 2);
+            goto PrintDataAndReturn;
+        } else if (data[0] == 'K') {
+            printf("%s-storage: netcache, key=%s\n",
+                new_prefix, data.c_str() + 2);
+            goto PrintDataAndReturn;
+        }
+    }
+
+    printf("%s-storage: raw, size=%lu\n", new_prefix, data_length);
+
+PrintDataAndReturn:
+    const char* ellipsis = "";
+    if (data_length > MAX_VISIBLE_DATA_LENGTH) {
+        data.erase(data.begin() + MAX_VISIBLE_DATA_LENGTH, data.end());
+        ellipsis = "...";
+    }
+
+    printf("%s-data: '%s'%s\n",
+        new_prefix, NStr::PrintableString(data).c_str(), ellipsis);
+
+    return true;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
@@ -104,10 +148,26 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 
     PrintJobMeta(CNetScheduleKey(m_Opts.id));
 
-    if (!IsOptionSet(eBrief))
-        m_NetScheduleAdmin.DumpJob(NcbiCout, m_Opts.id);
-    else
-    {
+    if (!IsOptionSet(eBrief)) {
+        CNetServerMultilineCmdOutput output =
+            m_NetScheduleAdmin.DumpJob(m_Opts.id);
+
+        string line;
+
+        while (output.ReadLine(line)) {
+            static const char s_VersionString[] = "NCBI NetSchedule";
+            static const char s_InputPrefix[] = "input: '";
+            static const char s_OutputPrefix[] = "output: '";
+            if (!line.empty() && line[0] != '[' &&
+                (line.length() < sizeof(s_VersionString) || memcmp(line.data(),
+                    s_VersionString, sizeof(s_VersionString) - 1) != 0) &&
+                !MatchPrefixAndPrintStorageTypeAndData(line, s_InputPrefix,
+                    sizeof(s_InputPrefix) - 1, "input") &&
+                !MatchPrefixAndPrintStorageTypeAndData(line, s_OutputPrefix,
+                    sizeof(s_OutputPrefix) - 1, "output"))
+                PrintLine(line);
+        }
+    } else {
         CNetScheduleJob job;
         job.job_id = m_Opts.id;
         status = m_NetScheduleAPI.GetJobDetails(job);

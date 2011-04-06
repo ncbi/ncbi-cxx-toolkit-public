@@ -196,7 +196,7 @@ public:
 
 // Implementation details.
 private:
-    void PrintLine(const string& line);
+    static void PrintLine(const string& line);
     enum EAPIClass {
         eUnknownAPI,
         eNetCacheAPI,
@@ -215,6 +215,9 @@ private:
     void SetUp_NetScheduleCmd(EAPIClass api_class);
     void SetUp_GridClient();
     void PrintJobMeta(const CNetScheduleKey& key);
+    static bool MatchPrefixAndPrintStorageTypeAndData(const string& line,
+        const char* prefix, size_t prefix_length, const char* new_prefix);
+
 };
 
 END_NCBI_SCOPE
