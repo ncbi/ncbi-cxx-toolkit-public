@@ -1157,9 +1157,12 @@ CSeq_feat_Handle CScope_Impl::GetSeq_featHandle(const CSeq_feat& feat,
 {
     CSeq_id_Handle loc_id;
     TSeqPos loc_pos = kInvalidSeqPos;
-    if ( CSeq_loc_CI it = feat.GetLocation() ) {
-        loc_id = it.GetSeq_id_Handle();
-        loc_pos = it.GetRange().GetFrom();
+    for ( CSeq_loc_CI it = feat.GetLocation(); it; ++it ) {
+        if ( !it.GetRange().Empty() ) {
+            loc_id = it.GetSeq_id_Handle();
+            loc_pos = it.GetRange().GetFrom();
+            break;
+        }
     }
     if ( !loc_id || loc_pos == kInvalidSeqPos ) {
         if ( action == CScope::eMissing_Null ) {
