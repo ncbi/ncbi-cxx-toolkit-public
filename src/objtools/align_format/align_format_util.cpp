@@ -157,10 +157,15 @@ s_GetBlastScore(const container&  scoreList,
 ///@param out: stream to ouput
 ///
 void CAlignFormatUtil::x_WrapOutputLine(string str, size_t line_len, 
-                                        CNcbiOstream& out) 
+                                        CNcbiOstream& out, bool html) 
 {
     list<string> string_l;
-    NStr::Wrap(str, line_len, string_l, NStr::fWrap_HTMLPre);
+    NStr::TWrapFlags flags = NStr::fWrap_FlatFile;
+    if (html) {
+        flags = NStr::fWrap_HTMLPre;
+        str = NStr::XmlEncode(str);
+    }
+    NStr::Wrap(str, line_len, string_l, flags);
     list<string>::iterator iter = string_l.begin();
     while(iter != string_l.end())
     {
@@ -528,7 +533,7 @@ CAlignFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs,
     if (tabular) {
         out << all_id_str;
     } else {
-        x_WrapOutputLine(all_id_str, line_len, out);
+        x_WrapOutputLine(all_id_str, line_len, out, html);
         if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
             out << "\nLength=";
             out << cbs.GetInst().GetLength() <<"\n";

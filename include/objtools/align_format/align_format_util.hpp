@@ -1066,9 +1066,10 @@ protected:
     ///@param str: input string
     ///@param line_len: length of each line desired
     ///@param out: stream to ouput
-    ///
+    ///@param html Is this HTML output? [in]
     static void x_WrapOutputLine(string str, size_t line_len, 
-                                 CNcbiOstream& out);
+                                 CNcbiOstream& out,
+                                 bool html = false);
 };
 
 END_SCOPE(align_format)
