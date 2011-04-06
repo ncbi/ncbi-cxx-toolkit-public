@@ -117,6 +117,11 @@ void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key)
         out << line << "\n";
 }
 
+CNetServerMultilineCmdOutput CNetScheduleAdmin::DumpJob(const string& job_key)
+{
+    return m_Impl->m_API->GetServer(job_key).ExecWithRetry("DUMP " + job_key);
+}
+
 void CNetScheduleAdmin::DropQueue()
 {
     string cmd = "DROPQ";

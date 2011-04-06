@@ -667,6 +667,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void DropQueue();
 
     void DumpJob(CNcbiOstream& out, const string& job_key);
+    CNetServerMultilineCmdOutput DumpJob(const string& job_key);
 
     /// Reschedule a job
     ///
