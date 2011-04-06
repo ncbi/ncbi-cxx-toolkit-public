@@ -163,7 +163,7 @@ void CAlignFormatUtil::x_WrapOutputLine(string str, size_t line_len,
     NStr::TWrapFlags flags = NStr::fWrap_FlatFile;
     if (html) {
         flags = NStr::fWrap_HTMLPre;
-        str = NStr::XmlEncode(str);
+        str = CHTMLHelper::HTMLEncode(str);
     }
     NStr::Wrap(str, line_len, string_l, flags);
     list<string>::iterator iter = string_l.begin();
