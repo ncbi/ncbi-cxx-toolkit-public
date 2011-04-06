@@ -340,9 +340,7 @@ bool CAnnotWriterApp::WriteGff3(
 //  -----------------------------------------------------------------------------
 {
     CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    DBAPI_RegisterDriver_FTDS();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr, 0, CObjectManager::eDefault,
-        1000 );
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
     CRef< CScope > pScope( new CScope( *pObjMngr ) );
     pScope->AddDefaults();
 
