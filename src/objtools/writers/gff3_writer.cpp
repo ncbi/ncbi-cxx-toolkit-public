@@ -155,62 +155,60 @@ bool CGff3Writer::WriteAlign(
         if ( iSourceRow == iTargetRow ) {
             continue;
         }
-        CGffAlignmentRecord record( m_uRecordId++ );
+        CGffAlignmentRecord record( m_uFlags, m_uRecordId++ );
 
+        // Record basic target information:
+        record.SetTargetLocation( *pTargetId, targetStrand );
+
+        // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
             s_GetSourceId( align_map.GetSeqId(iSourceRow), m_Scope );
-
         TSeqPos iSourceWidth = 1;
         if ( static_cast<size_t>( iSourceRow ) < ds.GetWidths().size() ) {
             iSourceWidth = ds.GetWidths()[ iSourceRow ];
         }
-
         ENa_strand sourceStrand = eNa_strand_plus;
         if ( align_map.StrandSign( iSourceRow ) != 1 ) {
             sourceStrand = eNa_strand_minus;
         }
+        record.SetSourceLocation( *pSourceId, sourceStrand );
 
-        CAlnMap::TSignedRange targetRange;
-        CAlnMap::TSignedRange sourceRange;
+        // Place insertions, deletion, matches, compute resulting source and target 
+        //  ranges:
         for ( int i0 = 0;  i0 < align_map.GetNumSegs();  ++i0 ) {
+
             CAlnMap::TSignedRange targetPiece = align_map.GetRange( iTargetRow, i0);
             CAlnMap::TSignedRange sourcePiece = align_map.GetRange( iSourceRow, i0 );
             CAlnMap::TSegTypeFlags targetFlags = align_map.GetSegType( iTargetRow, i0 );
             CAlnMap::TSegTypeFlags sourceFlags = align_map.GetSegType( iSourceRow, i0 );
 
             if ( INSERTION( targetFlags, sourceFlags ) ) {
-                targetPiece.SetFrom( targetPiece.GetFrom() / iTargetWidth );
-                targetPiece.SetTo( targetPiece.GetTo() / iTargetWidth );
-                targetRange += targetPiece;
-                record.AddAlignmentPiece( 'I', sourcePiece.GetLength() / iSourceWidth );
+                record.AddInsertion( CAlnMap::TSignedRange( 
+                    targetPiece.GetFrom() / iTargetWidth, 
+                    targetPiece.GetTo() / iTargetWidth ) );
             }
             if ( DELETION( targetFlags, sourceFlags ) ) {
-                sourcePiece.SetFrom( sourcePiece.GetFrom() / iSourceWidth );
-                sourcePiece.SetTo( sourcePiece.GetTo() / iSourceWidth );
-                sourceRange += sourcePiece;
-                record.AddAlignmentPiece( 'D', sourcePiece.GetLength() / iSourceWidth );
+                record.AddDeletion( CAlnMap::TSignedRange( 
+                    sourcePiece.GetFrom() / iSourceWidth, 
+                    sourcePiece.GetTo() / iSourceWidth ) );
             }
             if ( MATCH( targetFlags, sourceFlags ) ) {
-                targetPiece.SetFrom( targetPiece.GetFrom() / iTargetWidth );
-                targetPiece.SetTo( targetPiece.GetTo() / iTargetWidth );
-                targetRange += targetPiece;
-                sourcePiece.SetFrom( sourcePiece.GetFrom() / iSourceWidth );
-                sourcePiece.SetTo( sourcePiece.GetTo() / iSourceWidth );
-                sourceRange += sourcePiece;
-                record.AddAlignmentPiece( 'M', sourcePiece.GetLength() / iSourceWidth );
+                record.AddMatch( 
+                    CAlnMap::TSignedRange( 
+                        sourcePiece.GetFrom() / iSourceWidth, 
+                        sourcePiece.GetTo() / iSourceWidth ), 
+                    CAlnMap::TSignedRange( 
+                        targetPiece.GetFrom() / iTargetWidth, 
+                        targetPiece.GetTo() / iTargetWidth ) );
             }
         }
-        record.SetSourceLocation( 
-            *pSourceId, sourceRange.GetFrom(), sourceRange.GetTo(), sourceStrand );
-        record.SetTargetLocation(
-            *pTargetId, targetRange.GetFrom(), targetRange.GetTo(), targetStrand );
 
+        // Add scores, if available:
         if ( ds.IsSetScores() ) {
             ITERATE ( CDense_seg::TScores, score_it, ds.GetScores() ) {
                 record.SetScore( **score_it );
             }
         }
-
         x_WriteAlignment( record );
     }
     return x_WriteFooter();

@@ -35,7 +35,8 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/util/feature.hpp>
+//#include <objmgr/util/feature.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -46,10 +47,10 @@ class CGffAlignmentRecord
 {
 public:
     CGffAlignmentRecord(
+            unsigned int uFlags =0,
             unsigned int uRecordId =0 ):
+        m_uFlags( uFlags ),
         m_strId( "" ),
-        m_uSeqStart( 0 ),
-        m_uSeqStop( 0 ),
         m_pdScore( 0 ),
         m_peStrand( 0 ),
         m_puPhase( 0 )
@@ -67,14 +68,10 @@ public:
 
     void SetSourceLocation( 
         const CSeq_id&,
-        TSeqPos,
-        TSeqPos,
         ENa_strand );
 
     void SetTargetLocation( 
         const CSeq_id&,
-        TSeqPos,
-        TSeqPos,
         ENa_strand );
 
     void SetScore(
@@ -83,9 +80,15 @@ public:
     void SetPhase(
         unsigned int );
 
-    void AddAlignmentPiece( 
-        char,
-        unsigned int );
+    void AddInsertion(
+        const CAlnMap::TSignedRange& targetPiece ); 
+
+    void AddDeletion(
+        const CAlnMap::TSignedRange& sourcePiece ); 
+
+    void AddMatch(
+        const CAlnMap::TSignedRange& sourcePiece,
+        const CAlnMap::TSignedRange& targetPiece ); 
 
     string StrId() const { 
         return m_strId; };
@@ -95,30 +98,18 @@ public:
         return "match";
         return ( m_strType.empty() ? "." : m_strType ); };
     string StrSeqStart() const {
-        return NStr::UIntToString( m_uSeqStart + 1 ); };
+        return NStr::UIntToString( m_sourceRange.GetFrom() + 1 ); };
     string StrSeqStop() const {
-        return NStr::UIntToString( m_uSeqStop + 1 ); };
-    string StrScore() const {
-        return ( m_pdScore ? NStr::DoubleToString( *m_pdScore, 3 ) : "." ); };
-    string StrStrand() const {
-        if ( ! m_peStrand ) {
-            return ".";
-        }
-        switch ( *m_peStrand ) {
-            default: return ".";
-            case eNa_strand_plus: return "+";
-            case eNa_strand_minus: return "-";
-        }
-    }
+        return NStr::UIntToString( m_sourceRange.GetTo() + 1 ); };
+    string StrScore() const;
+    string StrStrand() const;
     string StrPhase() const {
         return ( m_puPhase ? NStr::UIntToString( *m_puPhase ) : "." ); };
-    string StrAttributes() const {
-        return m_strAttributes + ";Gap=" + m_strAlignment; };
+    string StrAttributes() const;
 
 protected:
+    unsigned int m_uFlags;
     string m_strId;
-    size_t m_uSeqStart;
-    size_t m_uSeqStop;
     string m_strSource;
     string m_strType;
     double* m_pdScore;
@@ -126,6 +117,10 @@ protected:
     unsigned int* m_puPhase;
     string m_strAttributes;    
     string m_strAlignment;
+    string m_strOtherScores;
+
+    CAlnMap::TSignedRange m_targetRange;
+    CAlnMap::TSignedRange m_sourceRange;
 };
 
 END_objects_SCOPE

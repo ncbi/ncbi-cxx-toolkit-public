@@ -44,10 +44,48 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+string CGffAlignmentRecord::StrStrand() const
+//  ----------------------------------------------------------------------------
+{
+    if ( ! m_peStrand ) {
+        return ".";
+    }
+    switch ( *m_peStrand ) {
+        default: return ".";
+        case eNa_strand_plus: return "+";
+        case eNa_strand_minus: return "-";
+    }
+}
+
+//  ----------------------------------------------------------------------------
+string CGffAlignmentRecord::StrAttributes() const 
+//  ----------------------------------------------------------------------------
+{
+    string str = m_strAttributes;
+    if ( !m_strOtherScores.empty() ) {
+        str += ";";
+        str += m_strOtherScores;
+    }
+    if ( !m_strAlignment.empty() ) {
+        str += ";Gap=";
+        str += m_strAlignment;
+    }
+    return str; 
+};
+
+//  ----------------------------------------------------------------------------
+string CGffAlignmentRecord::StrScore() const
+//  ---------------------------------------------------------------------------- 
+{
+    if ( 0 == m_pdScore ) {
+        return ".";
+    }
+    return NStr::DoubleToString( *m_pdScore );
+};
+
+//  ----------------------------------------------------------------------------
 void CGffAlignmentRecord::SetTargetLocation(
     const CSeq_id& id,
-    TSeqPos uFrom,
-    TSeqPos uTo,
     ENa_strand eStrand )
 //  ----------------------------------------------------------------------------
 {
@@ -57,9 +95,9 @@ void CGffAlignmentRecord::SetTargetLocation(
     string strTarget;
     id.GetLabel( &strTarget, CSeq_id::eContent );
     strTarget += " ";
-    strTarget += NStr::UIntToString( uFrom+1 );
+    strTarget += NStr::UIntToString( m_targetRange.GetFrom()+1 );
     strTarget += " ";
-    strTarget += NStr::UIntToString( uTo+1 );
+    strTarget += NStr::UIntToString( m_targetRange.GetTo()+1 );
     strTarget += " ";
     strTarget += (eStrand == eNa_strand_plus) ? "+" : "-";
     m_strAttributes += ( "Target=\"" + strTarget + "\"" );
@@ -100,15 +138,11 @@ void CGffAlignmentRecord::SetTargetLocation(
 //  ----------------------------------------------------------------------------
 void CGffAlignmentRecord::SetSourceLocation(
     const CSeq_id& id,
-    TSeqPos uFrom,
-    TSeqPos uTo,
     ENa_strand eStrand )
 //  ----------------------------------------------------------------------------
 {
     id.GetLabel( &m_strId, CSeq_id::eContent );
     m_peStrand = new ENa_strand( eStrand );
-    m_uSeqStart = uFrom;
-    m_uSeqStop = uTo;
 }
 
 //  ----------------------------------------------------------------------------
@@ -116,18 +150,27 @@ void CGffAlignmentRecord::SetScore(
     const CScore& score )
 //  ----------------------------------------------------------------------------
 {
-    if ( score.IsSetId() && score.GetId().IsStr() && score.IsSetValue() ) {
-        if ( score.GetId().GetStr() == "score" ) {
-            if ( score.GetValue().IsInt() ) {
-                m_pdScore = new double( score.GetValue().GetInt() );
-            }
-            else {
-                m_pdScore = new double( score.GetValue().GetReal() );
-            }
+    if ( !score.IsSetId() || !score.GetId().IsStr() || !score.IsSetValue() ) {
+        return;
+    }
+    string key = score.GetId().GetStr();
+    double dValue( 0 );
+    if ( score.GetValue().IsInt() ) {
+            dValue = double( score.GetValue().GetInt() );
+    }
+    else {
+        dValue = score.GetValue().GetReal();
+    }
+    if ( key == "score" ) {
+        m_pdScore = new double( dValue );
+    }
+    else {
+        if ( ! m_strOtherScores.empty() ) {
+            m_strOtherScores += ";";
         }
-        else {
-            cerr << "FIXME: " << "CGffAlignmentRecord::SetScore" << endl;
-        }
+        m_strOtherScores += key;
+        m_strOtherScores += "=";
+        m_strOtherScores += NStr::DoubleToString( dValue );
     }
 }
 
@@ -140,20 +183,60 @@ void CGffAlignmentRecord::SetPhase(
 }
 
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::AddAlignmentPiece(
-    char cType,
-    unsigned int uSize )
+void CGffAlignmentRecord::AddInsertion(
+    const CAlnMap::TSignedRange& targetPiece )
 //  ----------------------------------------------------------------------------
 {
+    unsigned int uSize = targetPiece.GetLength();
     if ( 0 == uSize ) {
         return;
     }
+    m_targetRange += targetPiece;
+
     if ( ! m_strAlignment.empty() ) {
         m_strAlignment += "+";
     }
-    m_strAlignment += cType;
+    m_strAlignment += "I";
     m_strAlignment += NStr::IntToString( uSize );
 }
+    
+//  ----------------------------------------------------------------------------
+void CGffAlignmentRecord::AddDeletion(
+    const CAlnMap::TSignedRange& sourcePiece )
+//  ----------------------------------------------------------------------------
+{
+    unsigned int uSize = sourcePiece.GetLength();
+    if ( 0 == uSize ) {
+        return;
+    }
+    m_sourceRange += sourcePiece;
 
+    if ( ! m_strAlignment.empty() ) {
+        m_strAlignment += "+";
+    }
+    m_strAlignment += "D";
+    m_strAlignment += NStr::IntToString( uSize );
+}
+    
+//  ----------------------------------------------------------------------------
+void CGffAlignmentRecord::AddMatch(
+    const CAlnMap::TSignedRange& sourcePiece,
+    const CAlnMap::TSignedRange& targetPiece )
+//  ----------------------------------------------------------------------------
+{
+    unsigned int uSize = sourcePiece.GetLength();
+    if ( 0 == uSize ) {
+        return;
+    }
+    m_sourceRange += sourcePiece;
+    m_targetRange += targetPiece;
+
+    if ( ! m_strAlignment.empty() ) {
+        m_strAlignment += "+";
+    }
+    m_strAlignment += "M";
+    m_strAlignment += NStr::IntToString( uSize );
+}
+    
 END_objects_SCOPE
 END_NCBI_SCOPE
