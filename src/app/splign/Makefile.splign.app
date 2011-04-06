@@ -10,7 +10,7 @@ SRC = splign_app
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
       $(BLAST_DB_DATA_LOADER_LIBS) \
       ncbi_xloader_lds lds bdb\
-      xalgoseq $(PCRE_LIB) \
+      xqueryparse xalgoseq $(PCRE_LIB) \
       $(BLAST_LIBS:%=%$(STATIC)) \
       $(OBJMGR_LIBS:%=%$(STATIC))
 
