@@ -104,7 +104,15 @@ protected:
 
 
 ////////////////////////////////////////////////////////////////////////////
-// Default locker class for CRef/CConstRef templates
+/// CObjectCounterLocker --
+///     Default locker class for CRef/CConstRef templates,
+///     all other locker classes should be subclasses of CObjectCounterLocker
+///     and use its locking methods.
+/// The CObjectCounterLocker in Debug mode allows to monitor locking/unlocking
+/// of some object class. The locking methods are non-inlined for this purpose.
+/// Monitored class is controlled by static methods MonitorObjectType() and
+/// StopMonitoring(). Currently locked objects and CRef<> pointers to them
+/// can be printed by calling static method ReportLockedObjects().
 ////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
@@ -140,10 +148,15 @@ public:
     void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
 
     /// Set monitored object type, e.g. typeid(CScope)
+    /// The method has no effect in Release mode.
     static
     void NCBI_XNCBI_EXPORT MonitorObjectType(const type_info& type);
+    /// Stop lock/unlock monitoring.
+    /// The method has no effect in Release mode.
     static
     void NCBI_XNCBI_EXPORT StopMonitoring(void);
+    /// Print all currently locked objects of monitored type.
+    /// The method has no effect in Release mode.
     static
     void NCBI_XNCBI_EXPORT ReportLockedObjects(bool clear = false);
 };
