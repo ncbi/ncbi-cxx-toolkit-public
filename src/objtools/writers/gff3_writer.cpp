@@ -98,24 +98,13 @@ CGff3Writer::~CGff3Writer()
 #define MATCH(sf, tf) ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::WriteAlign( 
+bool CGff3Writer::x_WriteAlign( 
     const CSeq_align& align )
 //  ----------------------------------------------------------------------------
 {
     if ( ! align.IsSetSegs() || ! align.GetSegs().IsDenseg() ) {
         cerr << "Object type not supported." << endl;
         return false;
-    }
-    if ( ! (m_uFlags & fNoHeader) ) {
-        x_WriteHeader();
-    }
-    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( align, "browser" );
-    if ( pBrowserInfo ) {
-        x_WriteBrowserLine( pBrowserInfo );
-    }
-    CRef< CUser_object > pTrackInfo = x_GetDescriptor( align, "track" );
-    if ( pTrackInfo ) {
-        x_WriteTrackLine( pTrackInfo );
     }
 
     const CSeq_id& productId = align.GetSeq_id( 0 );
@@ -211,7 +200,8 @@ bool CGff3Writer::WriteAlign(
         }
         x_WriteAlignment( record );
     }
-    return x_WriteFooter();
+    return true;
+//    return x_WriteFooter();
 }
 
 //  ----------------------------------------------------------------------------
@@ -222,94 +212,74 @@ bool CGff3Writer::x_WriteHeader()
     return true;
 }
 
-//  ============================================================================
-CGff2WriteRecord* CGff3Writer::x_CreateRecord(
-    feature::CFeatTree& feat_tree )
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteFeature(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
 {
-    return new CGff3WriteRecord( feat_tree );
+    switch( mf.GetFeatSubtype() ) {
+        default:
+            return x_WriteFeatureGeneric( ftree, mf );
+        case CSeqFeatData::eSubtype_gene: 
+            return x_WriteFeatureGene( ftree, mf );
+        case CSeqFeatData::eSubtype_mRNA:
+            return x_WriteFeatureMrna( ftree, mf );
+        case CSeqFeatData::eSubtype_cdregion:
+            return x_WriteFeatureCds( ftree, mf );
+    }
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::x_AssignObject(
-   feature::CFeatTree& feat_tree,
-   CMappedFeat mapped_feature,        
-   CGff2WriteRecordSet& set )
+bool CGff3Writer::x_WriteFeatureGene(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    switch( mapped_feature.GetFeatSubtype() ) {
+    CRef<CGff3WriteRecord> pRecord( new CGff3WriteRecord( ftree ) );
 
-    default:
-        return CGff2Writer::x_AssignObject( feat_tree, mapped_feature, set ); 
-
-    case CSeqFeatData::eSubtype_gene:
-        return x_AssignObjectGene( feat_tree, mapped_feature, set );
-
-    case CSeqFeatData::eSubtype_mRNA:
-        return x_AssignObjectMrna( feat_tree, mapped_feature, set );
-
-    case CSeqFeatData::eSubtype_cdregion:
-        return x_AssignObjectCds( feat_tree, mapped_feature, set );
-    }   
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::x_AssignObjectGene(
-   feature::CFeatTree& feat_tree,
-   CMappedFeat mapped_feature,        
-   CGff2WriteRecordSet& set )
-//  ----------------------------------------------------------------------------
-{
-//    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
-
-    CGff3WriteRecord* pGene = dynamic_cast< CGff3WriteRecord* >(
-        x_CreateRecord( feat_tree ) );
-    if ( ! pGene->AssignFromAsn( mapped_feature ) ) {
+    if ( ! pRecord->AssignFromAsn( mf ) ) {
         return false;
     }
-
     string strId;
-    if ( ! pGene->GetAttribute( "ID", strId ) ) {
-        pGene->ForceAttributeID( 
+    if ( ! pRecord->GetAttribute( "ID", strId ) ) {
+        pRecord->ForceAttributeID( 
             string( "gene" ) + NStr::UIntToString( m_uPendingGeneId++ ) );
     }
-
-    set.AddRecord( pGene );
-    m_GeneMap[ mapped_feature ] = pGene;
-    return true;
-
+    m_GeneMap[ mf ] = pRecord;
+    return x_WriteRecord( pRecord );
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::x_AssignObjectMrna(
-   feature::CFeatTree& feat_tree,
-   CMappedFeat mapped_feature,        
-   CGff2WriteRecordSet& set )
+bool CGff3Writer::x_WriteFeatureMrna(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-//    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
+    CRef< CGff3WriteRecord > pMrna( new CGff3WriteRecord( ftree ) );
 
-    CGff3WriteRecord* pMrna = dynamic_cast< CGff3WriteRecord* >(
-        x_CreateRecord( feat_tree ) );
-    if ( ! pMrna->AssignFromAsn( mapped_feature ) ) {
+    if ( ! pMrna->AssignFromAsn( mf ) ) {
         return false;
     }
-    CMappedFeat gene = feature::GetBestGeneForMrna( mapped_feature, &feat_tree );
+    CMappedFeat gene = feature::GetBestGeneForMrna( mf, &ftree );
     TGeneMap::iterator it = m_GeneMap.find( gene );
     if ( it != m_GeneMap.end() ) {
-        pMrna->AssignParent( *(it->second) );
+        pMrna->AssignParent( *( it->second ) );
     }
-
     string strId;
     if ( ! pMrna->GetAttribute( "ID", strId ) ) {
         pMrna->ForceAttributeID( 
             string( "mrna" ) + NStr::UIntToString( m_uPendingMrnaId++ ) );
     }
-    set.AddRecord( pMrna );
-    m_MrnaMap[ mapped_feature ] = pMrna;
+    m_MrnaMap[ mf ] = pMrna;
+
+    if ( ! x_WriteRecord( pMrna ) ) {
+        return false;
+    }
 
     CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pPackedInt->Add( mapped_feature.GetLocation() );
+    pPackedInt->Add( mf.GetLocation() );
     pPackedInt->ChangeToPackedInt();
 
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
@@ -318,74 +288,93 @@ bool CGff3Writer::x_AssignObjectMrna(
         unsigned int uSequenceNumber = 1;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CGff3WriteRecord* pExon = dynamic_cast< CGff3WriteRecord* >(
-                x_CloneRecord( *pMrna ) );
+            CRef< CGff3WriteRecord > pExon( new CGff3WriteRecord( *pMrna ) );
             pExon->AssignType( "exon" );
             pExon->AssignParent( *pMrna );
             pExon->AssignLocation( subint );
             pExon->AssignSequenceNumber( uSequenceNumber++, "E" );
+
             string strId;
             if ( ! pExon->GetAttribute( "ID", strId ) ) {
                 pExon->ForceAttributeID( 
                     string( "exon" ) + NStr::UIntToString( m_uPendingExonId++ ) );
             }
-            set.AddRecord( pExon );
+            if ( ! x_WriteRecord( pExon ) ) {
+                return false;
+            }
         }
-        return true;
     }
-
-    return true;    
+    return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::x_AssignObjectCds(
-   feature::CFeatTree& feat_tree,
-   CMappedFeat mapped_feature,        
-   CGff2WriteRecordSet& set )
+bool CGff3Writer::x_WriteFeatureCds(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-//    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
+    CRef< CGff3WriteRecord > pCds( new CGff3WriteRecord( ftree ) );
 
-    CGff3WriteRecord* pCds = dynamic_cast< CGff3WriteRecord* >(
-        x_CreateRecord( feat_tree ) );
-    if ( ! pCds->AssignFromAsn( mapped_feature ) ) {
+    if ( ! pCds->AssignFromAsn( mf ) ) {
         return false;
     }
-    CMappedFeat mrna = feature::GetBestMrnaForCds( mapped_feature, &feat_tree );
+    CMappedFeat mrna = feature::GetBestMrnaForCds( mf, &ftree );
     TMrnaMap::iterator it = m_MrnaMap.find( mrna );
     if ( it != m_MrnaMap.end() ) {
         pCds->AssignParent( *(it->second) );
     }
 
     CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pPackedInt->Add( mapped_feature.GetLocation() );
+    pPackedInt->Add( mf.GetLocation() );
     pPackedInt->ChangeToPackedInt();
 
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
-//        unsigned int uSequenceNumber = 1;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CGff3WriteRecord* pExon = dynamic_cast< CGff3WriteRecord* >(
-                x_CloneRecord( *pCds ) );
+            CRef<CGff3WriteRecord> pExon( new CGff3WriteRecord( *pCds ) );
             pExon->AssignType( "CDS" );
             pExon->AssignLocation( subint );
-//            pExon->AssignSequenceNumber( uSequenceNumber++, "C" );
-            set.AddRecord( pExon );
+            if ( ! x_WriteRecord( pExon ) ) {
+                return false;
+            }
         }
     }
-
-    delete pCds;
-    return true;    
+    return true;
 }
 
-//  ============================================================================
-CGff2WriteRecord* CGff3Writer::x_CloneRecord(
-    const CGff2WriteRecord& other )
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteFeatureGeneric(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
 {
-    return new CGff3WriteRecord( other );
+    CRef<CGff3WriteRecord> pParent( new CGff3WriteRecord( ftree ) );
+    if ( ! pParent->AssignFromAsn( mf ) ) {
+        return false;
+    }
+
+    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
+    pPackedInt->Add( mf.GetLocation() );
+    pPackedInt->ChangeToPackedInt();
+
+    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
+        list< CRef< CSeq_interval > >::const_iterator it;
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            const CSeq_interval& subint = **it;
+            CRef<CGff3WriteRecord> pChild( new CGff3WriteRecord( *pParent ) );
+            pChild->AssignLocation( subint );
+            if ( ! x_WriteRecord( pChild ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // default behavior:
+    return x_WriteRecord( pParent );    
 }
 
 //  ============================================================================

@@ -43,6 +43,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class CGff2WriteRecord
 //  ----------------------------------------------------------------------------
+    : public CObject
 {
 public:
     typedef CCdregion::EFrame TFrame;
@@ -261,6 +262,7 @@ protected:
     //
     // Data:
     //
+    feature::CFeatTree& m_feat_tree;
     string m_strId;
     size_t m_uSeqStart;
     size_t m_uSeqStop;
@@ -271,8 +273,6 @@ protected:
     unsigned int* m_puPhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
-
-    feature::CFeatTree& m_feat_tree;
 };
 
 END_objects_SCOPE

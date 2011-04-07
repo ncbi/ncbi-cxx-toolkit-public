@@ -84,8 +84,11 @@ string CGff2WriteRecord::x_MakeGffDbtag(
 CGff2WriteRecord::CGff2WriteRecord(
     feature::CFeatTree& feat_tree ):
     m_feat_tree( feat_tree ),
+    m_strId( "" ),
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
+    m_strSource( "" ),
+    m_strType( "" ),
     m_pdScore( 0 ),
     m_peStrand( 0 ),
     m_puPhase( 0 )
@@ -98,10 +101,10 @@ CGff2WriteRecord::CGff2WriteRecord(
     const CGff2WriteRecord& other ):
     m_feat_tree( other.m_feat_tree ),
     m_strId( other.m_strId ),
-    m_strSource( other.m_strSource ),
-    m_strType( other.m_strType ),
     m_uSeqStart( other.m_uSeqStart ),
     m_uSeqStop( other.m_uSeqStop ),
+    m_strSource( other.m_strSource ),
+    m_strType( other.m_strType ),
     m_pdScore( 0 ),
     m_peStrand( 0 ),
     m_puPhase( 0 )
@@ -469,7 +472,6 @@ bool CGff2WriteRecord::x_AssignPhaseFromAsn(
     }
     const CSeq_feat::TData& data = feature.GetData();
     if ( data.GetSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
-        const CCdregion& cdr = data.GetCdregion();
         m_puPhase = new unsigned int( 0 );
         return true;
     }

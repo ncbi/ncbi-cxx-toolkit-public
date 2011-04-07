@@ -66,38 +66,28 @@ public:
     virtual ~CGff3Writer();
 
 //    bool WriteAnnot( const CSeq_annot& );
-    bool WriteAlign( 
+protected:
+    bool x_WriteAlign( 
         const CSeq_align& );
 
-protected:
     virtual bool x_WriteHeader();
-    TFlags m_uFlags;
+//    TFlags m_uFlags;
 
-    virtual CGff2WriteRecord* x_CreateRecord(
-        feature::CFeatTree& );
-
-    virtual CGff2WriteRecord* x_CloneRecord(
-        const CGff2WriteRecord& );
-
-    virtual bool x_AssignObject( 
+    virtual bool x_WriteFeature(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    virtual bool x_AssignObjectMrna( 
+        CMappedFeat );
+    virtual bool x_WriteFeatureGene(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    virtual bool x_AssignObjectGene( 
+        CMappedFeat );
+    virtual bool x_WriteFeatureMrna(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    virtual bool x_AssignObjectCds( 
+        CMappedFeat );
+    virtual bool x_WriteFeatureCds(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
+        CMappedFeat );
+    virtual bool x_WriteFeatureGeneric(
+        feature::CFeatTree&,
+        CMappedFeat );
 
     void x_WriteAlignment( 
         const CGffAlignmentRecord& record );    

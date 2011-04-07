@@ -46,6 +46,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
@@ -54,55 +55,6 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-
-//  ---------------------------------------------------------------------------
-bool CGff2WriteRecordSet::PGff2WriteRecordPtrLess::operator()( 
-	const CGff2WriteRecord* x, 
-	const CGff2WriteRecord* y ) const
-//  ---------------------------------------------------------------------------
-{
-	if ( x->Type() != y->Type() )
-		return ( x->Type() < y->Type() );
-	
-	if ( x->Id() != y->Id() )
-		return ( x->Id() < y->Id() );
-	
-    if ( x->SeqStart() != y->SeqStart() )
-		return ( x->SeqStart() < y->SeqStart() );
-	
-	if ( x->SeqStop() != y->SeqStop() )
-		return ( x->SeqStop() < y->SeqStop() );
-
-    if ( x->SortTieBreaker() != y->SortTieBreaker() )
-        return ( x->SortTieBreaker() < y->SortTieBreaker() );
-
-    // equivalent
-	return false;
-}
-
-//  ---------------------------------------------------------------------------
-void CGff2WriteRecordSet::AddRecord(
-    CGff2WriteRecord* pRecord ) 
-//  ---------------------------------------------------------------------------
-{ 
-    m_Set.push_back( pRecord ); 
-};
-
-//  ---------------------------------------------------------------------------
-void CGff2WriteRecordSet::AddOrMergeRecord(
-	CGff2WriteRecord* pRecord )
-//  ---------------------------------------------------------------------------
-{
-	TMergeMap::iterator merge = m_MergeMap.find(pRecord);
-	if( merge != m_MergeMap.end() ) {
-		merge->second->MergeRecord( *pRecord );
-		delete pRecord;
-	} else {
-		m_MergeMap[pRecord] = pRecord;
-		m_Set.push_back( pRecord );
-	}
-}
 
 //  ----------------------------------------------------------------------------
 CGff2Writer::CGff2Writer(
@@ -127,15 +79,6 @@ bool CGff2Writer::WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( annot.IsAlign() ) {
-        ITERATE ( list< CRef< CSeq_align > >, it, annot.GetData().GetAlign() ) {
-            if ( ! WriteAlign( **it ) ) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     if ( ! (m_uFlags & fNoHeader) ) {
         x_WriteHeader();
     }
@@ -147,12 +90,10 @@ bool CGff2Writer::WriteAnnot(
     if ( pTrackInfo ) {
         x_WriteTrackLine( pTrackInfo );
     }
-
-    if ( annot.IsFtable() ) {
-        return x_WriteAnnotFTable( annot );
+    if ( ! x_WriteAnnot( annot ) ) {
+        return false;
     }
-    cerr << "Unexpected!" << endl;
-    return false;
+    return x_WriteFooter();
 }
 
 //  ----------------------------------------------------------------------------
@@ -164,19 +105,48 @@ bool CGff2Writer::x_WriteAnnotFTable(
         return false;
     }
 
-    CGff2WriteRecordSet recordSet;
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
 
     SAnnotSelector sel = x_GetAnnotSelector();
-
     feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
-
     for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
-        x_AssignObject( feat_tree, *mf, recordSet );
+        x_WriteFeature( feat_tree, *mf );
     }
     m_Scope.RemoveSeq_annot( sah );
-    x_WriteRecords( recordSet );
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteFeature(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CGff2WriteRecord> pParent( new CGff2WriteRecord( ftree ) );
+    if ( ! pParent->AssignFromAsn( mf ) ) {
+        return false;
+    }
+
+    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
+    pPackedInt->Add( mf.GetLocation() );
+    pPackedInt->ChangeToPackedInt();
+
+    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
+        list< CRef< CSeq_interval > >::const_iterator it;
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            const CSeq_interval& subint = **it;
+            CRef<CGff2WriteRecord> pChild( new CGff2WriteRecord( *pParent ) );
+            pChild->AssignLocation( subint );
+            if ( ! x_WriteRecord( pChild ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // default behavior:
+    return x_WriteRecord( pParent );    
 }
 
 //  ----------------------------------------------------------------------------
@@ -184,6 +154,7 @@ SAnnotSelector CGff2Writer::x_GetAnnotSelector()
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel;
+    sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
 //    sel.IncludeFeatType(CSeqFeatData::e_Gene);
 //    sel.IncludeFeatType(CSeqFeatData::e_Rna);
 //    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
@@ -192,6 +163,50 @@ SAnnotSelector CGff2Writer::x_GetAnnotSelector()
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteAlign( 
+    const CSeq_align& align )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! (m_uFlags & fNoHeader) ) {
+        x_WriteHeader();
+    }
+    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( align, "browser" );
+    if ( pBrowserInfo ) {
+        x_WriteBrowserLine( pBrowserInfo );
+    }
+    CRef< CUser_object > pTrackInfo = x_GetDescriptor( align, "track" );
+    if ( pTrackInfo ) {
+        x_WriteTrackLine( pTrackInfo );
+    }
+    if ( ! x_WriteAlign( align ) ) {
+        return false;
+    }
+    return x_WriteFooter();
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteAnnot( 
+    const CSeq_annot& annot )
+//  ----------------------------------------------------------------------------
+{
+    if ( annot.IsAlign() ) {
+        CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
+        for ( CAlign_CI it( sah ); it; ++it ) {
+            if ( ! x_WriteAlign( *it ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    if ( annot.IsFtable() ) {
+        return x_WriteAnnotFTable( annot );
+    }
+    cerr << "Unexpected!" << endl;
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteAlign( 
     const CSeq_align& align )
 //  ----------------------------------------------------------------------------
 {
@@ -252,60 +267,10 @@ bool CGff2Writer::x_WriteTrackLine(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::x_AssignObject(
-   feature::CFeatTree& feat_tree,
-   CMappedFeat mapped_feature,        
-   CGff2WriteRecordSet& set )
-//  ----------------------------------------------------------------------------
-{
-    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
-
-    CGff2WriteRecord* pParent = x_CreateRecord( feat_tree );
-    if ( ! pParent->AssignFromAsn( mapped_feature ) ) {
-        return false;
-    }
-
-    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pPackedInt->Add( mapped_feature.GetLocation() );
-    pPackedInt->ChangeToPackedInt();
-
-    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
-        list< CRef< CSeq_interval > >::const_iterator it;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CGff2WriteRecord* pChild = x_CloneRecord( *pParent );
-            pChild->AssignLocation( subint );
-            set.AddRecord( pChild );
-        }
-        return true;
-    }
-    
-    // default behavior:
-    set.AddRecord( pParent );
-    return true;    
-}
-    
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteRecords(
-    const CGff2WriteRecordSet& set )
-//  ----------------------------------------------------------------------------
-{
-    for ( CGff2WriteRecordSet::TCit cit = set.begin(); cit != set.end(); ++cit ) {
-        if ( ! x_WriteRecord( *cit ) ) {
-            return false;
-        }
-    }
-    return true;
-}    
-    
-//  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteRecord( 
     const CGff2WriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
-    const CGff2WriteRecord& record = *pRecord;
-
     m_Os << pRecord->StrId() << '\t';
     m_Os << pRecord->StrSource() << '\t';
     m_Os << pRecord->StrType() << '\t';
@@ -450,22 +415,6 @@ void CGff2Writer::x_PriorityProcess(
 	if ( m_uFlags & fSoQuirks ) {
         strAttributes += "; ";
     }
-}
-
-//  ============================================================================
-CGff2WriteRecord* CGff2Writer::x_CreateRecord(
-    feature::CFeatTree& feat_tree )
-//  ============================================================================
-{
-    return new CGff2WriteRecord( feat_tree );
-}
-
-//  ============================================================================
-CGff2WriteRecord* CGff2Writer::x_CloneRecord(
-    const CGff2WriteRecord& other )
-//  ============================================================================
-{
-    return new CGff2WriteRecord( other );
 }
 
 END_NCBI_SCOPE

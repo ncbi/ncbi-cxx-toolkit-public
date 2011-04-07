@@ -71,25 +71,21 @@ protected:
     bool x_WriteRecord( 
         const CGff2WriteRecord* );
 
-    bool x_AssignObject( 
+    virtual bool x_WriteFeature(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    bool x_AssignObjectGene( 
+        CMappedFeat );
+    virtual bool x_WriteFeatureGene(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    bool x_AssignObjectMrna( 
+        CMappedFeat );
+    virtual bool x_WriteFeatureMrna(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    bool x_AssignObjectCds( 
+        CMappedFeat );
+    virtual bool x_WriteFeatureCds(
         feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
+        CMappedFeat );
+    virtual bool x_WriteFeatureCdsFragments(
+        CGtfRecord&,
+        const CSeq_loc& );
 
     bool x_SplitCdsLocation(
         const CSeq_feat&,
@@ -97,15 +93,7 @@ protected:
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >& ) const;
 
-    void x_AddMultipleRecords(
-        CGtfRecord&,
-        CRef< CSeq_loc >,
-        CGff2WriteRecordSet& );
-
     SAnnotSelector x_GetAnnotSelector();
-
-    virtual CGff2WriteRecord* x_CreateRecord(
-        feature::CFeatTree& );
 
     typedef map< int, CRef< CSeq_interval > > TExonMap;
     typedef TExonMap::const_iterator TExonCit;

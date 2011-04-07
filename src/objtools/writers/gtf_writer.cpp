@@ -87,8 +87,6 @@ bool CGtfWriter::x_WriteRecord(
     const CGff2WriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
-    const CGff2WriteRecord& record = *pRecord;
-
     m_Os << pRecord->StrId() << '\t';
     m_Os << pRecord->StrSource() << '\t';
     m_Os << pRecord->StrType() << '\t';
@@ -108,68 +106,53 @@ bool CGtfWriter::x_WriteRecord(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::x_AssignObject(
-    feature::CFeatTree& feat_tree,
-    CMappedFeat mapped_feature,        
-    CGff2WriteRecordSet& set )
+bool CGtfWriter::x_WriteFeature(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
-       
-    if ( ! feature.CanGetData() ) {
-        return false;
+    switch( mf.GetFeatSubtype() ) {
+        default:
+            // GTF is not interested --- ignore
+            return true;
+        case CSeqFeatData::eSubtype_gene: 
+            return x_WriteFeatureGene( ftree, mf );
+        case CSeqFeatData::eSubtype_mRNA:
+            return x_WriteFeatureMrna( ftree, mf );
+        case CSeqFeatData::eSubtype_cdregion:
+            return x_WriteFeatureCds( ftree, mf );
     }
-    switch ( feature.GetData().GetSubtype() ) {
-    default:
-        // GTF is not interested --- ignore
-        return true;
-
-    case CSeq_feat::TData::eSubtype_mRNA: 
-        return x_AssignObjectMrna( feat_tree, mapped_feature, set );       
-
-    case CSeq_feat::TData::eSubtype_cdregion:
-        return x_AssignObjectCds( feat_tree, mapped_feature, set );
-
-    case CSeq_feat::TData::eSubtype_gene:
-            return x_AssignObjectGene( feat_tree, mapped_feature, set );
-    }
-}
-    
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::x_AssignObjectGene(
-    feature::CFeatTree& feat_tree,
-    CMappedFeat mapped_feature,
-    CGff2WriteRecordSet& set )
-//  ----------------------------------------------------------------------------
-{
-    const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
-       
-    CGff2WriteRecord* pRecord = x_CreateRecord( feat_tree );
-    if ( ! pRecord->AssignFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    set.AddRecord( pRecord );
-    return true;
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::x_AssignObjectMrna(
-    feature::CFeatTree& feat_tree,
-    CMappedFeat mapped_feature,
-    CGff2WriteRecordSet& set )
+bool CGtfWriter::x_WriteFeatureGene(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
-       
+    CRef<CGtfRecord> pRecord( new CGtfRecord( ftree ) );
+    if ( ! pRecord->AssignFromAsn( mf ) ) {
+        return false;
+    }
+    return x_WriteRecord( pRecord );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::x_WriteFeatureMrna(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
     m_exonMap.clear();
 
-    CGtfRecord* pParent = dynamic_cast< CGtfRecord* >(
-        x_CreateRecord( feat_tree ) );
-    if ( ! pParent->AssignFromAsn( mapped_feature ) ) {
-        delete pParent;
+    CRef<CGtfRecord> pMrna( new CGtfRecord( ftree ) );
+    if ( ! pMrna->AssignFromAsn( mf ) ) {
         return false;
     }
+    pMrna->AssignType( "exon" );
 
+    const CSeq_feat& feature = mf.GetOriginalFeature();
     const CSeq_loc& loc = feature.GetLocation();
     unsigned int uExonNumber = 1;
 
@@ -182,31 +165,30 @@ bool CGtfWriter::x_AssignObjectMrna(
         list< CRef< CSeq_interval > >::iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             CSeq_interval& subint = **it;
-            CGtfRecord* pExon = new CGtfRecord( feat_tree );
-            pParent->AssignType( "exon" );
-            pExon->MakeChildRecord( *pParent, subint, uExonNumber );
-            set.AddOrMergeRecord( pExon );
-            m_exonMap[ uExonNumber++ ] = CRef< CSeq_interval >( 
-                new CSeq_interval( subint.SetId(), subint.SetFrom(), subint.SetTo() ) );
+            CRef<CGtfRecord> pExon( new CGtfRecord( ftree ) );
+            pExon->MakeChildRecord( *pMrna, subint, uExonNumber++ );
+            x_WriteRecord( pExon );
+//            set.AddOrMergeRecord( pExon );
+//            m_exonMap[ uExonNumber++ ] = CRef< CSeq_interval >( 
+//                new CSeq_interval( subint.SetId(), subint.SetFrom(), subint.SetTo() ) );
         }
     }
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::x_AssignObjectCds(
-    feature::CFeatTree& feat_tree,
-    CMappedFeat mapped_feature,        
-    CGff2WriteRecordSet& set )
+bool CGtfWriter::x_WriteFeatureCds(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
+    const CSeq_feat& feature = mf.GetOriginalFeature();
        
-    CGtfRecord* pParent = dynamic_cast< CGtfRecord* >( x_CreateRecord( feat_tree ) );
-    if ( ! pParent->AssignFromAsn( mapped_feature ) ) {
-        delete pParent;
+    CRef<CGtfRecord> pParent( new CGtfRecord( ftree ) );
+    if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
+
     CRef< CSeq_loc > pLocStartCodon;
     CRef< CSeq_loc > pLocCode;
     CRef< CSeq_loc > pLocStopCodon;
@@ -216,18 +198,48 @@ bool CGtfWriter::x_AssignObjectCds(
 
     if ( pLocCode ) {
         pParent->AssignType( "CDS" );
-        x_AddMultipleRecords( *pParent, pLocCode, set );
+        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocCode ) ) {
+            return false;
+        }
     }
     if ( pLocStartCodon ) {
         pParent->AssignType( "start_codon" );
-        x_AddMultipleRecords( *pParent, pLocStartCodon, set );
+        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStartCodon ) ) {
+            return false;
+        }
     }
     if ( pLocStopCodon ) {
         pParent->AssignType( "stop_codon" );
-        x_AddMultipleRecords( *pParent, pLocStopCodon, set );
+        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStopCodon ) ) {
+            return false;
+        }
     }
+    return true;
+}
 
-    delete pParent;
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::x_WriteFeatureCdsFragments(
+    CGtfRecord& record,
+    const CSeq_loc& location )
+//  ----------------------------------------------------------------------------
+{
+    typedef list<CRef<CSeq_interval> > SUBINTS;
+    const SUBINTS& subints = location.GetPacked_int().Get();
+    for ( SUBINTS::const_iterator it = subints.begin(); it != subints.end(); ++it ) {
+        const CSeq_interval& subint = **it;
+        unsigned int uExonNumber = 0;
+        for ( TExonCit xit = m_exonMap.begin(); xit != m_exonMap.end(); ++xit ) {
+            const CSeq_interval& compint = *(xit->second);
+            if ( compint.GetFrom() <= subint.GetFrom()  &&  compint.GetTo() >= subint.GetTo() ) {
+                uExonNumber = xit->first;
+                break;
+            }
+        }
+        CGtfRecord* pRecord = new CGtfRecord( record.FeatTree() );
+        pRecord->MakeChildRecord( record, subint, uExonNumber );
+        pRecord->SetCdsPhase( subints, location.GetStrand() );
+        x_WriteRecord( pRecord );
+    }
     return true;
 }
 
@@ -294,40 +306,6 @@ bool CGtfWriter::x_SplitCdsLocation(
 }
 
 //  ----------------------------------------------------------------------------
-void CGtfWriter::x_AddMultipleRecords(
-    CGtfRecord& parent,
-    CRef< CSeq_loc > pLocation,
-    CGff2WriteRecordSet& set )
-//  ----------------------------------------------------------------------------
-{
-    const list< CRef< CSeq_interval > >& sublocs =
-        pLocation->GetPacked_int().Get();
-    list< CRef< CSeq_interval > >::const_iterator it;
-    for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-        const CSeq_interval& subint = **it;
-
-        unsigned int uExonNumber = 0;
-        for ( TExonCit xit = m_exonMap.begin(); xit != m_exonMap.end(); ++xit ) {
-            const CSeq_interval& compint = *(xit->second);
-            if ( compint.GetFrom() <= subint.GetFrom()  &&  compint.GetTo() >= subint.GetTo() ) {
-                uExonNumber = xit->first;
-                break;
-            }
-        }
-            
-        CGtfRecord* pRecord = new CGtfRecord( parent.FeatTree() );
-        pRecord->MakeChildRecord( parent, subint, uExonNumber );
-
-        if ( pRecord->Type() == "CDS" ||
-            pRecord->Type() == "start_codon" || pRecord->Type() == "stop_codon" ) 
-        {
-            pRecord->SetCdsPhase( sublocs, pLocation->GetStrand() );
-        }
-        set.AddOrMergeRecord( pRecord );
-    }
-}
-
-//  ----------------------------------------------------------------------------
 SAnnotSelector CGtfWriter::x_GetAnnotSelector()
 //  ----------------------------------------------------------------------------
 {
@@ -335,15 +313,8 @@ SAnnotSelector CGtfWriter::x_GetAnnotSelector()
     sel.IncludeFeatType(CSeqFeatData::e_Gene);
     sel.IncludeFeatType(CSeqFeatData::e_Rna);
     sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
     return sel;
-}
-
-//  ============================================================================
-CGff2WriteRecord* CGtfWriter::x_CreateRecord(
-    feature::CFeatTree& feat_tree )
-//  ============================================================================
-{
-    return new CGtfRecord( feat_tree );
 }
 
 END_NCBI_SCOPE

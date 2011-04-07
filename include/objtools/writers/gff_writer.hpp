@@ -44,47 +44,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-//  ----------------------------------------------------------------------------
-class CGff2WriteRecordSet
-//  ----------------------------------------------------------------------------
-{
-public:
-    typedef vector< CGff2WriteRecord* > TRecords;
-    typedef TRecords::const_iterator TCit;
-    typedef TRecords::iterator TIt;
-
-public:
-    CGff2WriteRecordSet() {};
-    ~CGff2WriteRecordSet() {
-        for ( TRecords::iterator it = begin(); it != end(); ++it ) {
-//            delete *it;
-        }
-    };
- 
-    void AddRecord(
-        CGff2WriteRecord* pRecord );
-
-	void AddOrMergeRecord( CGff2WriteRecord* );
-
-    const TRecords& Set() const { return m_Set; };
-    TCit begin() const { return Set().begin(); };
-    TCit end() const { return Set().end(); }; 
-    TIt begin() { return m_Set.begin(); };
-    TIt end() { return m_Set.end(); };
-
-protected:
-    TRecords m_Set;
-
-	struct PGff2WriteRecordPtrLess {
-    	bool operator()(const CGff2WriteRecord* x, const CGff2WriteRecord* y) const; 
-	};
-
-	typedef map< const CGff2WriteRecord*, CGff2WriteRecord*, 
-				 PGff2WriteRecordPtrLess > TMergeMap;
-	TMergeMap m_MergeMap;
-};
-
-
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff2Writer
 //  ============================================================================
@@ -109,23 +68,25 @@ public:
         const CSeq_align& );
 
 protected:
+    virtual bool x_WriteAnnot( 
+        const CSeq_annot& );
+    virtual bool x_WriteAlign( 
+        const CSeq_align& );
+
     virtual bool x_WriteHeader();
     virtual bool x_WriteFooter();
-    bool x_WriteAnnotFTable( 
+    virtual bool x_WriteAnnotFTable( 
         const CSeq_annot& );
+    virtual bool x_WriteFeature(
+        feature::CFeatTree&,
+        CMappedFeat );
+
+    virtual bool x_WriteBrowserLine(
+        const CRef< CUser_object > );
+    virtual bool x_WriteTrackLine(
+        const CRef< CUser_object > );
     virtual bool x_WriteRecord( 
         const CGff2WriteRecord* );
-    bool x_WriteRecords( 
-        const CGff2WriteRecordSet& );
-    bool x_WriteBrowserLine(
-        const CRef< CUser_object > );
-    bool x_WriteTrackLine(
-        const CRef< CUser_object > );
-
-    virtual bool x_AssignObject( 
-        feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
 
     virtual void x_PriorityProcess(
         const string&,
@@ -144,12 +105,6 @@ protected:
         const string& );
 
     virtual SAnnotSelector x_GetAnnotSelector();
-
-    virtual CGff2WriteRecord* x_CreateRecord(
-        feature::CFeatTree& );
-
-    virtual CGff2WriteRecord* x_CloneRecord(
-        const CGff2WriteRecord& );
 
     CScope& m_Scope;
     CNcbiOstream& m_Os;
