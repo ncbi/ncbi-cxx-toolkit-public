@@ -301,7 +301,6 @@ CPsiBlastInputData::x_ExtractAlignmentData()
     unsigned int msa_index = kQueryIndex + 1;  
     
     CSeq_id* last_sid=NULL;
-    int hit_no = 0;
         
     // For each HSP...
     ITERATE(CSeq_align_set::Tdata, itr, m_SeqAlignSet->Get()) {
