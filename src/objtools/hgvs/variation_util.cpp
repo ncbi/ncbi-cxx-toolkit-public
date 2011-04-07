@@ -1588,7 +1588,7 @@ void CVariationUtil::x_SetVariantProperties(CVariantProperties& p, const CVariat
         if(prot_variation
            && prot_variation->GetData().GetVariation().GetVariant_prop().IsSetEffect()
         ) {
-            p.SetEffect() |= prot_variation->GetData().GetVariation().GetVariant_prop().GetEffect();
+            p.SetEffect() = prot_variation->GetData().GetVariation().GetVariant_prop().GetEffect();
         }
     }
 }
