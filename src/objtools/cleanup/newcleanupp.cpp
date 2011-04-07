@@ -2851,6 +2851,11 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
     string& qual = GET_MUTABLE(gb_qual, Qual);
     string& val  = GET_MUTABLE(gb_qual, Val);
 
+    if( FIELD_EQUALS(feat, Pseudo, false) ) {
+        RESET_FIELD(feat, Pseudo);
+        ChangeMade (CCleanupChange::eChangeQualifiers);
+    }
+
     if (NStr::EqualNocase(qual, "cons_splice")) {
         return eAction_Erase;
     } else if (NStr::EqualNocase(qual, "replace")) {
@@ -6399,9 +6404,15 @@ void CNewCleanup_imp::GeneFeatBC (
 {
     // move gene.pseudo to feat.pseudo
     if (FIELD_IS_SET (gene_ref, Pseudo)) {
-        SET_FIELD (seq_feat, Pseudo, true);
-        RESET_FIELD (gene_ref, Pseudo);
-        ChangeMade (CCleanupChange::eChangeQualifiers);
+        if( GET_FIELD(gene_ref, Pseudo) ) {
+            SET_FIELD (seq_feat, Pseudo, true);
+            RESET_FIELD (gene_ref, Pseudo);
+            ChangeMade (CCleanupChange::eChangeQualifiers);
+        } else {
+            RESET_FIELD(seq_feat, Pseudo);
+            RESET_FIELD(gene_ref, Pseudo);
+            ChangeMade (CCleanupChange::eChangeQualifiers);
+        }
     }
 
     // remove feat.comment if equal to various gene fields
