@@ -39,7 +39,7 @@
 #include <algo/blast/api/blast_options_builder.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 
-#include <psiblast_aux_priv.hpp>
+#include "psiblast_aux_priv.hpp"
 
 #include <objects/blast/blast__.hpp>
 #include <objects/blast/names.hpp>
