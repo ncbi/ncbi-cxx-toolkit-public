@@ -84,7 +84,7 @@ bool CGtfWriter::x_WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteRecord( 
-    const CGff2WriteRecord* pRecord )
+    const CGffWriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
     m_Os << pRecord->StrId() << '\t';

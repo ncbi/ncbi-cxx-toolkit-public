@@ -53,17 +53,18 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 CGff3WriteRecord::CGff3WriteRecord(
-    feature::CFeatTree& feat_tree ):
-    CGff2WriteRecord( feat_tree )
+    feature::CFeatTree& feat_tree )
 //  ----------------------------------------------------------------------------
+    : m_feat_tree( feat_tree )
 {
 };
 
 //  ----------------------------------------------------------------------------
 CGff3WriteRecord::CGff3WriteRecord(
-    const CGff2WriteRecord& other ) :
-    CGff2WriteRecord( other )
+    const CGff3WriteRecord& other )
 //  ----------------------------------------------------------------------------
+    : CGffWriteRecord( other ),
+      m_feat_tree( other.m_feat_tree )
 {
 };
 
@@ -128,7 +129,7 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnCore(
 
     if ( feature.CanGetId() ) {
         const CSeq_feat::TId& id = feature.GetId();
-        string value = CGff2WriteRecord::x_FeatIdString( id );
+        string value = CGffWriteRecord::x_FeatIdString( id );
         m_Attributes[ "ID" ] = value;
         bIdAssigned = true;
     }
@@ -142,7 +143,7 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnCore(
                 if ( ! value.empty() ) {
                     value += ",";
                 }
-                value += CGff2WriteRecord::x_FeatIdString( id );
+                value += CGffWriteRecord::x_FeatIdString( id );
             }
         }
         if ( ! value.empty() ) {
@@ -188,9 +189,9 @@ string CGff3WriteRecord::StrAttributes() const
 {
     string strAttributes;
     strAttributes.reserve(256);
-    CGff2WriteRecord::TAttributes attrs;
+    CGffWriteRecord::TAttributes attrs;
     attrs.insert( Attributes().begin(), Attributes().end() );
-    CGff2WriteRecord::TAttrIt it;
+    CGffWriteRecord::TAttrIt it;
 
     x_PriorityProcess( "ID", attrs, strAttributes );
     x_PriorityProcess( "Name", attrs, strAttributes );
@@ -226,6 +227,112 @@ string CGff3WriteRecord::StrAttributes() const
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::x_AssignAttributes(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    if ( Type() == "gene" ) {
+        return x_AssignAttributesGene( mapped_feat );
+    }
+    if ( Type() == "mRNA" ) {
+        return x_AssignAttributesMrna( mapped_feat );
+    }
+    if ( Type() == "CDS" ) {
+        return x_AssignAttributesCds( mapped_feat );
+    }
+    return x_AssignAttributesMiscFeature( mapped_feat );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::x_AssignAttributesGene(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    return (
+        x_AssignAttributeGene( mapped_feat )  &&
+        x_AssignAttributeGeneSynonym( mapped_feat )  &&
+        x_AssignAttributeLocusTag( mapped_feat )  &&
+        x_AssignAttributeDbXref( mapped_feat )  &&
+        x_AssignAttributePartial( mapped_feat )  &&
+        x_AssignAttributePseudo( mapped_feat )  &&
+        x_AssignAttributeProduct( mapped_feat )  &&
+        x_AssignAttributeNote( mapped_feat ) );
+}
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::x_AssignAttributesMrna(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    return (
+        x_AssignAttributeGene( mapped_feat )  &&
+        x_AssignAttributeDbXref( mapped_feat )  &&
+        x_AssignAttributePartial( mapped_feat )  &&
+        x_AssignAttributePseudo( mapped_feat )  &&
+        x_AssignAttributeNote( mapped_feat ) );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::x_AssignAttributesCds(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    return (
+        x_AssignAttributeGene( mapped_feat )  &&
+        x_AssignAttributeDbXref( mapped_feat )  &&
+        x_AssignAttributeCodonStart( mapped_feat )  &&
+        x_AssignAttributePartial( mapped_feat )  &&
+        x_AssignAttributePseudo( mapped_feat )  &&
+        x_AssignAttributeNote( mapped_feat ) );
+}
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::x_AssignAttributesMiscFeature(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    return (
+        x_AssignAttributeGene( mapped_feat )  &&
+        x_AssignAttributeDbXref( mapped_feat )  &&
+        x_AssignAttributePseudo( mapped_feat )  &&
+        x_AssignAttributeNote( mapped_feat ) );
+}
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::x_AssignAttributeGene(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    string strGene;
+    if ( Type() == "gene" ) {
+        const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
+        strGene = x_GeneRefToGene( gene_ref );
+    }
+
+    if ( strGene.empty() && mapped_feat.IsSetXref() ) {
+        const vector< CRef< CSeqFeatXref > > xrefs = mapped_feat.GetXref();
+        for ( vector< CRef< CSeqFeatXref > >::const_iterator it = xrefs.begin();
+            it != xrefs.end();
+            ++it ) {
+            const CSeqFeatXref& xref = **it;
+            if ( xref.CanGetData() && xref.GetData().IsGene() ) {
+                strGene = x_GeneRefToGene( xref.GetData().GetGene() );
+                break;
+            }
+        }
+    }
+
+    if ( strGene.empty() ) {
+        CMappedFeat gene = x_GetGeneParent( mapped_feat );
+        if ( gene.IsSetData()  &&  gene.GetData().IsGene() ) {
+            strGene = x_GeneRefToGene( gene.GetData().GetGene() );
+        }
+    }
+
+    if ( ! strGene.empty() ) {
+        m_Attributes[ "gene" ] = strGene;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::AssignParent(
     const CGff3WriteRecord& parent )
 //  ----------------------------------------------------------------------------
@@ -246,6 +353,21 @@ void CGff3WriteRecord::ForceAttributeID(
 {
     m_Attributes[ "ID" ] = strId;
 }  
+
+//  ----------------------------------------------------------------------------
+CMappedFeat CGff3WriteRecord::x_GetGeneParent(
+    CMappedFeat mapped_feat ) 
+//  ----------------------------------------------------------------------------
+{
+    switch( mapped_feat.GetFeatSubtype() ) {
+
+    default:
+        return feature::GetBestGeneForFeat( mapped_feat, &m_feat_tree );
+
+    case CSeq_feat::TData::eSubtype_mRNA:
+        return feature::GetBestGeneForMrna( mapped_feat, &m_feat_tree );
+    }
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE

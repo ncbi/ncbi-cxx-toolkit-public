@@ -44,7 +44,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class CGff3WriteRecord
 //  ----------------------------------------------------------------------------
-    : public CGff2WriteRecord
+    : public CGffWriteRecord
 {
 public:
     typedef CCdregion::EFrame TFrame;
@@ -58,7 +58,7 @@ public:
     );
 
     CGff3WriteRecord(
-        const CGff2WriteRecord&
+        const CGff3WriteRecord&
     );
 
     virtual ~CGff3WriteRecord();
@@ -75,10 +75,31 @@ public:
         const string& );
 
 protected:
+    virtual bool x_AssignAttributes(
+        CMappedFeat );
     virtual bool x_AssignAttributesFromAsnCore(
         CMappedFeat );
     virtual bool x_AssignAttributesFromAsnExtended(
         CMappedFeat );
+
+    virtual bool x_AssignAttributesMrna(
+        CMappedFeat );
+
+    virtual bool x_AssignAttributesCds(
+        CMappedFeat );
+    virtual bool x_AssignAttributesMiscFeature(
+        CMappedFeat );
+    virtual bool x_AssignAttributesGene(
+        CMappedFeat );
+
+    virtual bool x_AssignAttributeGene(
+        CMappedFeat );
+
+    CMappedFeat x_GetGeneParent(
+        CMappedFeat );
+
+protected:
+    feature::CFeatTree& m_feat_tree;
 };
 
 END_objects_SCOPE

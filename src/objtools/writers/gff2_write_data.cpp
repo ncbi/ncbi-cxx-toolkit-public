@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::x_MakeGffDbtag( 
+string CGffWriteRecord::x_MakeGffDbtag( 
     const CDbtag& dbtag )
 //
 //  Currently, simply produce "DB:TAG" (which is different from 
@@ -81,9 +81,21 @@ string CGff2WriteRecord::x_MakeGffDbtag(
 }
         
 //  ----------------------------------------------------------------------------
-CGff2WriteRecord::CGff2WriteRecord(
-    feature::CFeatTree& feat_tree ):
-    m_feat_tree( feat_tree ),
+string CGffWriteRecord::StrId() const
+//  ----------------------------------------------------------------------------
+{
+    return Id();
+}
+
+//  ----------------------------------------------------------------------------
+string CGffWriteRecord::StrSource() const
+//  ----------------------------------------------------------------------------
+{
+    return Source();
+}
+
+//  ----------------------------------------------------------------------------
+CGffWriteRecord::CGffWriteRecord():
     m_strId( "" ),
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
@@ -97,9 +109,8 @@ CGff2WriteRecord::CGff2WriteRecord(
 };
 
 //  ----------------------------------------------------------------------------
-CGff2WriteRecord::CGff2WriteRecord(
-    const CGff2WriteRecord& other ):
-    m_feat_tree( other.m_feat_tree ),
+CGffWriteRecord::CGffWriteRecord(
+    const CGffWriteRecord& other ):
     m_strId( other.m_strId ),
     m_uSeqStart( other.m_uSeqStart ),
     m_uSeqStop( other.m_uSeqStop ),
@@ -125,7 +136,7 @@ CGff2WriteRecord::CGff2WriteRecord(
 };
 
 //  ----------------------------------------------------------------------------
-CGff2WriteRecord::~CGff2WriteRecord()
+CGffWriteRecord::~CGffWriteRecord()
 //  ----------------------------------------------------------------------------
 {
     delete m_pdScore;
@@ -134,7 +145,7 @@ CGff2WriteRecord::~CGff2WriteRecord()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::GetAttribute(
+bool CGffWriteRecord::GetAttribute(
     const string& strKey,
     string& strValue ) const
 //  ----------------------------------------------------------------------------
@@ -148,8 +159,8 @@ bool CGff2WriteRecord::GetAttribute(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::MergeRecord(
-    const CGff2WriteRecord& other )
+bool CGffWriteRecord::MergeRecord(
+    const CGffWriteRecord& other )
 //  ----------------------------------------------------------------------------
 {
     const TAttributes& newAttrs = other.Attributes(); 
@@ -166,21 +177,7 @@ bool CGff2WriteRecord::MergeRecord(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrId() const
-//  ----------------------------------------------------------------------------
-{
-    return Id();
-}
-
-//  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrSource() const
-//  ----------------------------------------------------------------------------
-{
-    return Source();
-}
-
-//  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrType() const
+string CGffWriteRecord::StrType() const
 //  ----------------------------------------------------------------------------
 {
     string strGffType;
@@ -191,21 +188,21 @@ string CGff2WriteRecord::StrType() const
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrSeqStart() const
+string CGffWriteRecord::StrSeqStart() const
 //  ----------------------------------------------------------------------------
 {
     return NStr::UIntToString( SeqStart() + 1 );;
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrSeqStop() const
+string CGffWriteRecord::StrSeqStop() const
 //  ----------------------------------------------------------------------------
 {
     return NStr::UIntToString( SeqStop() + 1 );
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrScore() const
+string CGffWriteRecord::StrScore() const
 //  ----------------------------------------------------------------------------
 {
     if ( ! IsSetScore() ) {
@@ -219,7 +216,7 @@ string CGff2WriteRecord::StrScore() const
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrStrand() const
+string CGffWriteRecord::StrStrand() const
 //  ----------------------------------------------------------------------------
 {
     if ( ! IsSetStrand() ) {
@@ -236,7 +233,7 @@ string CGff2WriteRecord::StrStrand() const
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrPhase() const
+string CGffWriteRecord::StrPhase() const
 //  ----------------------------------------------------------------------------
 {
     if ( ! IsSetPhase() ) {
@@ -246,14 +243,14 @@ string CGff2WriteRecord::StrPhase() const
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::StrAttributes() const
+string CGffWriteRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
 	strAttributes.reserve(256);
-    CGff2WriteRecord::TAttributes attrs;
+    CGffWriteRecord::TAttributes attrs;
     attrs.insert( Attributes().begin(), Attributes().end() );
-    CGff2WriteRecord::TAttrIt it;
+    CGffWriteRecord::TAttrIt it;
 
     for ( it = attrs.begin(); it != attrs.end(); ++it ) {
         string strKey = it->first;
@@ -276,7 +273,7 @@ string CGff2WriteRecord::StrAttributes() const
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_NeedsQuoting(
+bool CGffWriteRecord::x_NeedsQuoting(
     const string& str )
 //  ----------------------------------------------------------------------------
 {
@@ -294,7 +291,7 @@ bool CGff2WriteRecord::x_NeedsQuoting(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignSeqIdFromAsn(
+bool CGffWriteRecord::x_AssignSeqIdFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -314,7 +311,7 @@ bool CGff2WriteRecord::x_AssignSeqIdFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignTypeFromAsn(
+bool CGffWriteRecord::x_AssignTypeFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -369,7 +366,7 @@ bool CGff2WriteRecord::x_AssignTypeFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignStartFromAsn(
+bool CGffWriteRecord::x_AssignStartFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -384,7 +381,7 @@ bool CGff2WriteRecord::x_AssignStartFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignStopFromAsn(
+bool CGffWriteRecord::x_AssignStopFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -399,7 +396,7 @@ bool CGff2WriteRecord::x_AssignStopFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignSourceFromAsn(
+bool CGffWriteRecord::x_AssignSourceFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -424,7 +421,7 @@ bool CGff2WriteRecord::x_AssignSourceFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignScoreFromAsn(
+bool CGffWriteRecord::x_AssignScoreFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -448,7 +445,7 @@ bool CGff2WriteRecord::x_AssignScoreFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignStrandFromAsn(
+bool CGffWriteRecord::x_AssignStrandFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -461,7 +458,7 @@ bool CGff2WriteRecord::x_AssignStrandFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignPhaseFromAsn(
+bool CGffWriteRecord::x_AssignPhaseFromAsn(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -479,7 +476,7 @@ bool CGff2WriteRecord::x_AssignPhaseFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_IsParentOf(
+bool CGffWriteRecord::x_IsParentOf(
     CSeq_feat::TData::ESubtype maybe_parent,
     CSeq_feat::TData::ESubtype maybe_child )
 //  ----------------------------------------------------------------------------
@@ -541,7 +538,7 @@ bool CGff2WriteRecord::x_IsParentOf(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::x_FeatIdString(
+string CGffWriteRecord::x_FeatIdString(
     const CFeat_id& id )
 //  ----------------------------------------------------------------------------
 {
@@ -564,7 +561,7 @@ string CGff2WriteRecord::x_FeatIdString(
 }
 
 //  ----------------------------------------------------------------------------
-void CGff2WriteRecord::x_PriorityProcess(
+void CGffWriteRecord::x_PriorityProcess(
     const string& strKey,
     map<string, string >& attrs,
     string& strAttributes ) const
@@ -615,7 +612,7 @@ void CGff2WriteRecord::x_PriorityProcess(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::AssignFromAsn(
+bool CGffWriteRecord::AssignFromAsn(
     CMappedFeat mapped_feature )
 //  ----------------------------------------------------------------------------
 {
@@ -650,7 +647,7 @@ bool CGff2WriteRecord::AssignFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignType(
+bool CGffWriteRecord::x_AssignType(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -676,7 +673,7 @@ bool CGff2WriteRecord::x_AssignType(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::AssignLocation(
+bool CGffWriteRecord::AssignLocation(
     const CSeq_interval& interval ) 
 //  ----------------------------------------------------------------------------
 {
@@ -698,7 +695,7 @@ bool CGff2WriteRecord::AssignLocation(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::AssignSequenceNumber(
+bool CGffWriteRecord::AssignSequenceNumber(
     unsigned int uSequenceNumber,
     const string& strPrefix ) 
 //  ----------------------------------------------------------------------------
@@ -712,79 +709,16 @@ bool CGff2WriteRecord::AssignSequenceNumber(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributes(
+bool CGffWriteRecord::x_AssignAttributes(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    if ( Type() == "gene" ) {
-        return x_AssignAttributesGene( mapped_feat );
-    }
-    if ( Type() == "mRNA" ) {
-        return x_AssignAttributesMrna( mapped_feat );
-    }
-    if ( Type() == "CDS" ) {
-        return x_AssignAttributesCds( mapped_feat );
-    }
-    return x_AssignAttributesMiscFeature( mapped_feat );
+    cerr << "FIXME: CGffWriteRecord::x_AssignAttributes" << endl;
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributesMiscFeature(
-    CMappedFeat mapped_feat )
-//  ----------------------------------------------------------------------------
-{
-    return (
-        x_AssignAttributeGene( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributesGene(
-    CMappedFeat mapped_feat )
-//  ----------------------------------------------------------------------------
-{
-    return (
-        x_AssignAttributeGene( mapped_feat )  &&
-        x_AssignAttributeGeneSynonym( mapped_feat )  &&
-        x_AssignAttributeLocusTag( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePartial( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributesMrna(
-    CMappedFeat mapped_feat )
-//  ----------------------------------------------------------------------------
-{
-    return (
-        x_AssignAttributeGene( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePartial( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributesCds(
-    CMappedFeat mapped_feat )
-//  ----------------------------------------------------------------------------
-{
-    return (
-        x_AssignAttributeGene( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributeCodonStart( mapped_feat )  &&
-        x_AssignAttributePartial( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeNote(
+bool CGffWriteRecord::x_AssignAttributeNote(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -795,7 +729,7 @@ bool CGff2WriteRecord::x_AssignAttributeNote(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributePseudo(
+bool CGffWriteRecord::x_AssignAttributePseudo(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -806,7 +740,7 @@ bool CGff2WriteRecord::x_AssignAttributePseudo(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributePartial(
+bool CGffWriteRecord::x_AssignAttributePartial(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -817,7 +751,7 @@ bool CGff2WriteRecord::x_AssignAttributePartial(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeDbXref(
+bool CGffWriteRecord::x_AssignAttributeDbXref(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -838,44 +772,7 @@ bool CGff2WriteRecord::x_AssignAttributeDbXref(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeGene(
-    CMappedFeat mapped_feat )
-//  ----------------------------------------------------------------------------
-{
-    string strGene;
-    if ( Type() == "gene" ) {
-        const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
-        strGene = x_GeneRefToGene( gene_ref );
-    }
-
-    if ( strGene.empty() && mapped_feat.IsSetXref() ) {
-        const vector< CRef< CSeqFeatXref > > xrefs = mapped_feat.GetXref();
-        for ( vector< CRef< CSeqFeatXref > >::const_iterator it = xrefs.begin();
-            it != xrefs.end();
-            ++it ) {
-            const CSeqFeatXref& xref = **it;
-            if ( xref.CanGetData() && xref.GetData().IsGene() ) {
-                strGene = x_GeneRefToGene( xref.GetData().GetGene() );
-                break;
-            }
-        }
-    }
-
-    if ( strGene.empty() ) {
-        CMappedFeat gene = x_GetGeneParent( mapped_feat );
-        if ( gene.IsSetData()  &&  gene.GetData().IsGene() ) {
-            strGene = x_GeneRefToGene( gene.GetData().GetGene() );
-        }
-    }
-
-    if ( ! strGene.empty() ) {
-        m_Attributes[ "gene" ] = strGene;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeGeneSynonym(
+bool CGffWriteRecord::x_AssignAttributeGeneSynonym(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -888,7 +785,7 @@ bool CGff2WriteRecord::x_AssignAttributeGeneSynonym(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeLocusTag(
+bool CGffWriteRecord::x_AssignAttributeLocusTag(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -901,7 +798,7 @@ bool CGff2WriteRecord::x_AssignAttributeLocusTag(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeAllele(
+bool CGffWriteRecord::x_AssignAttributeAllele(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -917,7 +814,7 @@ bool CGff2WriteRecord::x_AssignAttributeAllele(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeCodonStart(
+bool CGffWriteRecord::x_AssignAttributeCodonStart(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -949,7 +846,7 @@ bool CGff2WriteRecord::x_AssignAttributeCodonStart(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeMap(
+bool CGffWriteRecord::x_AssignAttributeMap(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -966,7 +863,7 @@ bool CGff2WriteRecord::x_AssignAttributeMap(
 
 
 //  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::x_AssignAttributeProduct(
+bool CGffWriteRecord::x_AssignAttributeProduct(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -983,7 +880,7 @@ bool CGff2WriteRecord::x_AssignAttributeProduct(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::x_GeneRefToGene(
+string CGffWriteRecord::x_GeneRefToGene(
     const CGene_ref& gene_ref )
 //  ----------------------------------------------------------------------------
 {
@@ -1003,7 +900,7 @@ string CGff2WriteRecord::x_GeneRefToGene(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::x_GeneRefToLocusTag(
+string CGffWriteRecord::x_GeneRefToLocusTag(
     const CGene_ref& gene_ref )
 //  ----------------------------------------------------------------------------
 {
@@ -1014,7 +911,7 @@ string CGff2WriteRecord::x_GeneRefToLocusTag(
 }
     
 //  ----------------------------------------------------------------------------
-string CGff2WriteRecord::x_GeneRefToGeneSyn(
+string CGffWriteRecord::x_GeneRefToGeneSyn(
     const CGene_ref& gene_ref )
 //  ----------------------------------------------------------------------------
 {
@@ -1040,22 +937,6 @@ string CGff2WriteRecord::x_GeneRefToGeneSyn(
     }
     return strGeneSyn;
 }
-
-//  ----------------------------------------------------------------------------
-CMappedFeat CGff2WriteRecord::x_GetGeneParent(
-    CMappedFeat mapped_feat ) 
-//  ----------------------------------------------------------------------------
-{
-    switch( mapped_feat.GetFeatSubtype() ) {
-
-    default:
-        return feature::GetBestGeneForFeat( mapped_feat, &m_feat_tree );
-
-    case CSeq_feat::TData::eSubtype_mRNA:
-        return feature::GetBestGeneForMrna( mapped_feat, &m_feat_tree );
-    }
-}
-
-    
+  
 END_objects_SCOPE
 END_NCBI_SCOPE

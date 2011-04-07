@@ -40,8 +40,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
 //  ----------------------------------------------------------------------------
-class CGff2WriteRecord
+class CGffWriteRecord
 //  ----------------------------------------------------------------------------
     : public CObject
 {
@@ -52,15 +53,14 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
-    CGff2WriteRecord(
-        feature::CFeatTree&
+    CGffWriteRecord(
     );
 
-    CGff2WriteRecord(
-        const CGff2WriteRecord&
+    CGffWriteRecord(
+        const CGffWriteRecord&
     );
 
-    virtual ~CGff2WriteRecord();
+    virtual ~CGffWriteRecord();
 
     //
     //  Input/output:
@@ -72,7 +72,7 @@ public:
         const CSeq_interval& );
 
     bool MergeRecord(
-        const CGff2WriteRecord& );
+        const CGffWriteRecord& );
 
     bool AssignType(
         const string& strType ) {
@@ -154,17 +154,6 @@ protected:
     //
     //  Feature level:
     //
-    virtual bool x_AssignAttributesGene(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributesMrna(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributesCds(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributesMiscFeature(
-        CMappedFeat );
 
     //
     //  Qualifier level:
@@ -179,9 +168,6 @@ protected:
         CMappedFeat );
 
     virtual bool x_AssignAttributeDbXref(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeGene(
         CMappedFeat );
 
     virtual bool x_AssignAttributeGeneSynonym(
@@ -213,9 +199,6 @@ protected:
 
     static string x_GeneRefToGeneSyn(
         const CGene_ref& );
-
-    CMappedFeat x_GetGeneParent(
-        CMappedFeat );
 
     //
     //
@@ -262,7 +245,6 @@ protected:
     //
     // Data:
     //
-    feature::CFeatTree& m_feat_tree;
     string m_strId;
     size_t m_uSeqStart;
     size_t m_uSeqStop;

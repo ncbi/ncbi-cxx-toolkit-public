@@ -122,7 +122,7 @@ bool CGff2Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff2WriteRecord> pParent( new CGff2WriteRecord( ftree ) );
+    CRef<CGffWriteRecord> pParent( new CGffWriteRecord );
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
@@ -136,7 +136,7 @@ bool CGff2Writer::x_WriteFeature(
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef<CGff2WriteRecord> pChild( new CGff2WriteRecord( *pParent ) );
+            CRef<CGffWriteRecord> pChild( new CGffWriteRecord( *pParent ) );
             pChild->AssignLocation( subint );
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
@@ -268,7 +268,7 @@ bool CGff2Writer::x_WriteTrackLine(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteRecord( 
-    const CGff2WriteRecord* pRecord )
+    const CGffWriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
     m_Os << pRecord->StrId() << '\t';

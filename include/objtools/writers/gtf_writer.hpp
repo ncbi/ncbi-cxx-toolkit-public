@@ -69,7 +69,7 @@ protected:
     bool x_WriteHeader();
 
     bool x_WriteRecord( 
-        const CGff2WriteRecord* );
+        const CGffWriteRecord* );
 
     virtual bool x_WriteFeature(
         feature::CFeatTree&,
