@@ -1101,6 +1101,8 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     NStr::ReplaceInPlace(prot_ref_str, "*", "X");
 
 
+    v->SetVariant_prop().SetEffect(0);
+
     if(literal.GetLength() == 0) {
         v->SetData().SetInstance().SetType(CVariation_inst::eType_del);
         v->SetData().SetInstance().SetDelta().clear();
@@ -1146,6 +1148,10 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
 
     if(!v->IsSetVariant_prop() || !v->GetVariant_prop().IsSetVersion()) {
         v->SetVariant_prop().SetVersion(m_variant_properties_schema_version);
+    }
+
+    if(v->IsSetVariant_prop() && v->GetVariant_prop().GetEffect() == 0) {
+        v->SetVariant_prop().ResetEffect();
     }
 
     if(verbose) NcbiCerr << "protein variation:"  << MSerial_AsnText << *v;
@@ -1314,6 +1320,12 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CSeq_l
         prop.SetVersion(m_variant_properties_schema_version);
     }
 
+    if(!prop.IsSetGene_location()) {
+        //need to zero-out the bitmask, otherwise in debug mode it will be preset to a magic value,
+        //and then modifying it with "|=" will produce garbage.
+        prop.SetGene_location(0);
+    }
+
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->Assign(orig_loc);
     loc->SetStrand(eNa_strand_plus); //will set to plus temporarily to create flanks such that upstream=high and downstream=low
@@ -1337,6 +1349,7 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CSeq_l
     bool overlaps_cds_range = false;
 
     CBioseq_Handle bsh = m_scope->GetBioseqHandle(*loc);
+
 
     for(CFeat_CI ci(*m_scope, *loc, sel); ci; ++ci) {
         if(ci->GetData().IsGene()) {
@@ -1488,6 +1501,10 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CSeq_l
             }
         }
     }
+
+    if(prop.GetGene_location() == 0) {
+        prop.ResetGene_location();
+    }
 }
 
 
@@ -1495,6 +1512,12 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CSeq_l
 
 void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantProperties& p, int offset, const CSeq_loc& loc, CBioseq_Handle& bsh)
 {
+    if(!p.IsSetGene_location()) {
+        //need to zero-out the bitmask, otherwise in debug mode it will be preset to a magic value,
+        //and then modifying it with "|=" will produce garbage.
+        p.SetGene_location(0);
+    }
+
     if(loc.GetStop(eExtreme_Positional) + 1 >= bsh.GetInst_Length() && offset > 0) {
         //at the 3'-end; check if near-gene or intergenic
         if(offset <= 500) {
@@ -1518,6 +1541,10 @@ void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantProperties& p, in
         } else {
             p.SetGene_location() |= CVariantProperties::eGene_location_intron;
         }
+    }
+
+    if(p.GetGene_location() == 0) {
+        p.ResetGene_location();
     }
 }
 
