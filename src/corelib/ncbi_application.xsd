@@ -202,6 +202,8 @@
         <xs:enumeration value="Real"/>
         <xs:enumeration value="File_In"/>
         <xs:enumeration value="File_Out"/>
+        <xs:enumeration value="File_IO"/>
+        <xs:enumeration value="Directory"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:attribute>

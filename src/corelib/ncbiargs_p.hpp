@@ -71,6 +71,7 @@ public:
     virtual int            AsInteger(void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
+    virtual const CDir&    AsDirectory(void) const;
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
@@ -91,6 +92,7 @@ public:
     virtual int            AsInteger(void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
+    virtual const CDir&    AsDirectory(void) const;
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
@@ -110,6 +112,7 @@ public:
     virtual int            AsInteger(void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
+    virtual const CDir&    AsDirectory(void) const;
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
@@ -167,6 +170,19 @@ public:
     virtual bool AsBoolean(void) const;
 private:
     bool m_Boolean;
+};
+
+
+class CArg_Dir : public CArg_String
+{
+public:
+    CArg_Dir(const string& name, const string& value,
+                    CArgDescriptions::TFlags flags);
+    virtual ~CArg_Dir(void);
+    virtual const CDir&  AsDirectory() const;
+protected:
+    CDir         m_Dir;
+    TFileFlags   m_DescriptionFlags;
 };
 
 

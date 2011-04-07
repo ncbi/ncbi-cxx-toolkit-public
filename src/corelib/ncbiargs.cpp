@@ -182,6 +182,7 @@ Int8          CArg_NoValue::AsInt8      (void) const { THROW_CArg_NoValue; }
 int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
 double        CArg_NoValue::AsDouble    (void) const { THROW_CArg_NoValue; }
 bool          CArg_NoValue::AsBoolean   (void) const { THROW_CArg_NoValue; }
+const CDir&   CArg_NoValue::AsDirectory (void) const { THROW_CArg_NoValue; }
 CNcbiIstream& CArg_NoValue::AsInputFile (CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
 CNcbiOstream& CArg_NoValue::AsOutputFile(CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
 CNcbiIostream& CArg_NoValue::AsIOFile(CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
@@ -213,6 +214,7 @@ Int8          CArg_ExcludedValue::AsInt8      (void) const { THROW_CArg_Excluded
 int           CArg_ExcludedValue::AsInteger   (void) const { THROW_CArg_ExcludedValue; }
 double        CArg_ExcludedValue::AsDouble    (void) const { THROW_CArg_ExcludedValue; }
 bool          CArg_ExcludedValue::AsBoolean   (void) const { THROW_CArg_ExcludedValue; }
+const CDir&   CArg_ExcludedValue::AsDirectory (void) const { THROW_CArg_ExcludedValue; }
 CNcbiIstream& CArg_ExcludedValue::AsInputFile (CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
 CNcbiOstream& CArg_ExcludedValue::AsOutputFile(CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
 CNcbiIostream& CArg_ExcludedValue::AsIOFile(CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
@@ -271,6 +273,10 @@ double CArg_String::AsDouble(void) const
 bool CArg_String::AsBoolean(void) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (Boolean) type", AsString()));}
+
+const CDir& CArg_String::AsDirectory (void) const
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (CDir) type", AsString()));}
 
 CNcbiIstream& CArg_String::AsInputFile(CArgValue::TFileFlags) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
@@ -379,6 +385,29 @@ inline CArg_Boolean::CArg_Boolean(const string& name, const string& value)
 bool CArg_Boolean::AsBoolean(void) const
 {
     return m_Boolean;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArg_Dir::
+
+CArg_Dir::CArg_Dir(const string& name, const string& value,
+                CArgDescriptions::TFlags flags)
+    : CArg_String(name, value), m_Dir(value), m_DescriptionFlags(flags)
+{
+}
+
+CArg_Dir::~CArg_Dir(void)
+{
+}
+
+const CDir&  CArg_Dir::AsDirectory() const
+{
+    if (m_DescriptionFlags & CArgDescriptions::fCreatePath) {
+        m_Dir.CreatePath();
+    }
+    return m_Dir;
 }
 
 
@@ -891,9 +920,9 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
     switch ( type ) {
     case CArgDescriptions::eBoolean:
     case CArgDescriptions::eOutputFile:
+    case CArgDescriptions::eIOFile:
         return;
     case CArgDescriptions::eInputFile:
-    case CArgDescriptions::eIOFile:
         if((flags &
             (CArgDescriptions::fAllowMultiple | CArgDescriptions::fAppend)) == 0)
             return;
@@ -903,6 +932,10 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
         NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
             "Invalid argument type", "k_EType_Size"));
         /*NOTREACHED*/
+        break;
+    case CArgDescriptions::eDirectory:
+        if ( (flags & ~CArgDescriptions::fCreatePath) == 0 )
+            return;
         break;
     default:
         if ( (flags & CArgDescriptions::fFileFlags) == 0 )
@@ -969,6 +1002,10 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
     }
     case CArgDescriptions::eIOFile: {
         arg_value = new CArg_IOFile(GetName(), value, GetFlags());
+        break;
+    }
+    case CArgDescriptions::eDirectory: {
+        arg_value = new CArg_Dir(GetName(), value, GetFlags());
         break;
     }
     case CArgDescriptions::k_EType_Size: {
@@ -1113,7 +1150,8 @@ void CArgDescDefault::VerifyDefault(void) const
 {
     if (GetType() == CArgDescriptions::eInputFile  ||
         GetType() == CArgDescriptions::eOutputFile ||
-        GetType() == CArgDescriptions::eIOFile) {
+        GetType() == CArgDescriptions::eIOFile ||
+        GetType() == CArgDescriptions::eDirectory) {
         return;
     }
 
@@ -1747,7 +1785,9 @@ const char* CArgDescriptions::GetTypeName(EType type)
         "Integer",
         "Real",
         "File_In",
-        "File_Out"
+        "File_Out",
+        "File_IO",
+        "Directory"
     };
 
     if (type == k_EType_Size) {

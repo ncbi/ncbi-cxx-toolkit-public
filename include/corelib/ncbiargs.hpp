@@ -102,6 +102,7 @@ BEGIN_NCBI_SCOPE
 // Some necessary forward declarations.
 class CNcbiArguments;
 class CArgAllow;
+class CDir;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -248,6 +249,9 @@ public:
 
     /// Get the argument as a file stream.
     virtual CNcbiIostream& AsIOFile(TFileFlags flags = 0) const = 0;
+
+    /// Get the argument as a directory.
+    virtual const CDir& AsDirectory(void) const = 0;
 
     /// Close the file.
     virtual void CloseFile (void) const = 0;
@@ -471,6 +475,7 @@ public:
         eInputFile,  ///< Name of file (must exist and be readable)
         eOutputFile, ///< Name of file (must be writeable)
         eIOFile,     ///< Name of file (must be writeable)
+        eDirectory,  ///< Name of file directory
 
         k_EType_Size ///< For internal use only
     };
