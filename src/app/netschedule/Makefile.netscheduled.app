@@ -7,7 +7,7 @@ WATCHERS = satskyse
 APP = netscheduled
 SRC = netscheduled queue_coll job_status queue_clean_thread \
       notif_thread ns_affinity ns_queue access_list ns_util ns_format \
-      worker_node job
+      worker_node job ns_server_params
 
 REQUIRES = MT bdb
 

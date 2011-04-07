@@ -61,6 +61,7 @@
 #include "access_list.hpp"
 #include "background_host.hpp"
 #include "worker_node.hpp"
+#include "ns_server_params.hpp"
 
 #include "netschedule_version.hpp"
 
@@ -536,119 +537,6 @@ private:
     CNetScheduleServer* m_Server;
 };
 
-
-//////////////////////////////////////////////////////////////////////////
-/// Parameters for server
-struct SNS_Parameters : SServer_Parameters
-{
-    bool reinit;
-    unsigned short port;
-    unsigned short udp_port;
-
-    bool use_hostname;
-    unsigned network_timeout;
-
-    bool is_daemon;
-    bool is_log;
-
-    string admin_hosts;
-
-    void Read(const IRegistry& reg, const string& sname);
-
-    unsigned GetNumParams() const;
-    string GetParamName(unsigned n) const;
-    string GetParamValue(unsigned n) const;
-};
-
-
-void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
-{
-#define GetIntNoErr(name, dflt) \
-    reg.GetInt(sname, name, dflt, 0, IRegistry::eReturn)
-#define GetBoolNoErr(name, dflt) \
-    reg.GetBool(sname, name, dflt, 0, IRegistry::eReturn)
-
-    reinit = GetBoolNoErr("reinit", false);
-    max_connections = GetIntNoErr("max_connections", 100);
-    max_threads = GetIntNoErr("max_threads", 25);
-    init_threads = GetIntNoErr("init_threads", 10);
-    if (init_threads > max_threads)
-        init_threads = max_threads;
-
-    port = (unsigned short) GetIntNoErr("port", 9100);
-
-    int u_port = GetIntNoErr("udp_port", 0);
-    if (u_port == 0) {
-        u_port = port + 1;
-        LOG_POST(Info << "UDP notification port: " << u_port);
-    }
-    if (u_port < 1024 || u_port > 65535) {
-        LOG_POST(Error << "Invalid UDP port value: " << u_port
-                       << ". Notification will be disabled.");
-        u_port = -1;
-    }
-    if (u_port < 0) {
-        LOG_POST(Info << "UDP notification disabled.");
-    }
-    udp_port = u_port > 0 ? (unsigned short) u_port : 0;
-
-    use_hostname = GetBoolNoErr("use_hostname", false);
-    network_timeout = GetIntNoErr("network_timeout", 10);
-    if (network_timeout == 0) {
-        LOG_POST(Warning <<
-            "INI file sets 0 sec. network timeout. Assume 10 seconds.");
-        network_timeout =  10;
-    }
-
-    is_log = GetBoolNoErr("log", false);
-    is_daemon = GetBoolNoErr("daemon", false);
-
-    admin_hosts = reg.GetString(sname, "admin_host", kEmptyStr);
-}
-
-
-unsigned SNS_Parameters::GetNumParams() const
-{
-    return 11;
-}
-
-
-string SNS_Parameters::GetParamName(unsigned n) const
-{
-    switch (n) {
-    case 0:  return "reinit";
-    case 1:  return "max_connections";
-    case 2:  return "max_threads";
-    case 3:  return "init_threads";
-    case 4:  return "port";
-    case 5:  return "udp_port";
-    case 6:  return "use_hostname";
-    case 7:  return "network_timeout";
-    case 8:  return "log";
-    case 9:  return "daemon";
-    case 10: return "admin_host";
-    default: return "";
-    }
-}
-
-
-string SNS_Parameters::GetParamValue(unsigned n) const
-{
-    switch (n) {
-    case 0:  return NStr::BoolToString(reinit);
-    case 1:  return NStr::UIntToString(max_connections);
-    case 2:  return NStr::UIntToString(max_threads);
-    case 3:  return NStr::UIntToString(init_threads);
-    case 4:  return NStr::UIntToString(port);
-    case 5:  return NStr::UIntToString(udp_port);
-    case 6:  return NStr::BoolToString(use_hostname);
-    case 7:  return NStr::UIntToString(network_timeout);
-    case 8:  return NStr::BoolToString(is_log);
-    case 9:  return NStr::BoolToString(is_daemon);
-    case 10: return admin_hosts;
-    default: return "";
-    }
-}
 
 struct CRequestContextPoolFactory
 {
