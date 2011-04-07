@@ -2856,6 +2856,11 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         ChangeMade (CCleanupChange::eChangeQualifiers);
     }
 
+    if( FIELD_EQUALS(feat, Partial, false) ) {
+        RESET_FIELD(feat, Partial);
+        ChangeMade (CCleanupChange::eChangeQualifiers);
+    }
+
     if (NStr::EqualNocase(qual, "cons_splice")) {
         return eAction_Erase;
     } else if (NStr::EqualNocase(qual, "replace")) {
@@ -6064,6 +6069,16 @@ void CNewCleanup_imp::SeqfeatBC (
         ChangeMade (CCleanupChange::eRemoveException);
     }
 
+    if( FIELD_EQUALS( sf, Pseudo, false ) ) {
+        RESET_FIELD( sf, Pseudo );
+        ChangeMade (CCleanupChange::eRemoveException);
+    }
+
+    if( FIELD_EQUALS( sf, Partial, false ) ) {
+        RESET_FIELD( sf, Partial );
+        ChangeMade (CCleanupChange::eRemoveException);
+    }
+
     CLEAN_STRING_MEMBER (sf, Except_text);
     if (FIELD_IS_SET (sf, Except_text)) {
         string &et = GET_MUTABLE (sf, Except_text);
@@ -8368,6 +8383,11 @@ void CNewCleanup_imp::MolInfoBC( CMolInfo &molinfo )
 {
     if( FIELD_EQUALS(molinfo, Tech, NCBI_BIOMOL(unknown) ) ) {
         RESET_FIELD(molinfo, Tech);
+        ChangeMade(CCleanupChange::eChangeMolInfo);
+    }
+
+    if( FIELD_EQUALS(molinfo, Completeness, NCBI_COMPLETENESS(unknown) ) ) {
+        RESET_FIELD(molinfo, Completeness);
         ChangeMade(CCleanupChange::eChangeMolInfo);
     }
 }
