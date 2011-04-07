@@ -407,8 +407,8 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_ET
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqFeat_data_data_gene_gene( CGene_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_gene( CGene_ref & arg0 );
-  void x_BasicCleanupSeqFeat_data_data_imp_imp( CImp_feat & arg0 );
-  void x_BasicCleanupSeqFeat_data_data_imp( CImp_feat & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_imp_imp_ETC( CImp_feat & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_imp_ETC( CImp_feat & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ref_ref_aligns_aligns1775_ETC( CSeq_align & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ref_ref_aligns_ETC( CSeq_align & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ref_ref_ETC( CNum_ref & arg0 );
@@ -541,8 +541,6 @@ void x_BasicCleanupSeqFeat_support_support_model_evidence_ETC( Tcontainer_ncbi_c
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_ETC( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_cdregion_ETC( CCdregion & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_ETC( CCdregion & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_imp_imp_ETC( CImp_feat & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_imp_ETC( CImp_feat & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_pub_pub_E_E_equiv_ETC( CPub_equiv & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_ETC( CPubdesc & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_ETC( CPubdesc & arg0 );

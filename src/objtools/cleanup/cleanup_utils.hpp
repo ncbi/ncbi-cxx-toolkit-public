@@ -257,7 +257,7 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
 
 // The "do-while" forces the need for a semicolon
 #define CLEAN_AND_COMPRESS_STRING_MEMBER(o, x) \
-    do { CLEAN_STRING_MEMBER(o, x); COMPRESS_STRING_MEMBER(o, x); } while(false)
+    do { COMPRESS_STRING_MEMBER(o, x); CLEAN_STRING_MEMBER(o, x); } while(false)
 
 #define CLEAN_STRING_MEMBER_JUNK(o, x) \
 if ((o).IsSet##x()) { \
@@ -272,7 +272,7 @@ if ((o).IsSet##x()) { \
 
 // The "do-while" forces the need for a semicolon
 #define CLEAN_AND_COMPRESS_STRING_MEMBER_JUNK(o, x) \
-    do { CLEAN_STRING_MEMBER_JUNK(o, x); COMPRESS_STRING_MEMBER(o, x); } while(false)
+    do { COMPRESS_STRING_MEMBER(o, x); CLEAN_STRING_MEMBER_JUNK(o, x); } while(false)
 
 #define EXTENDED_CLEAN_STRING_MEMBER(o, x) \
 if ((o).IsSet##x()) { \

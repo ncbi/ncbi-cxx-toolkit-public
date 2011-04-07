@@ -171,6 +171,12 @@ use m_NewCleanup.ConvertSeqLocWholeToInt {
 
 use m_NewCleanup.SeqsetBC { Bioseq-set }
 
+# This really works on the Imp-feat inside the Seq-feat, if any.
+# It's here so we convert Seq-feat's imp to another type (e.g. cdregion)
+# if necessary.  And, we put it before SeqfeatBC, etc. so it happens
+# as soon as possible.
+use m_NewCleanup.ImpFeatBC { Seq-feat }
+
 use m_NewCleanup.SeqfeatBC { Seq-feat }
 use m_NewCleanup.x_SortUniqSeqFeat { POST Seq-feat }
 
@@ -183,7 +189,6 @@ use m_NewCleanup.ProtrefBC { Prot-ref }
 use m_NewCleanup.RnaFeatBC { POST Seq-feat.data.rna AND Seq-feat }
 use m_NewCleanup.RnarefBC { POST RNA-ref }
 use m_NewCleanup.PubdescBC { POST Pubdesc }
-use m_NewCleanup.ImpFeatBC { POST Seq-feat.data.imp AND Seq-feat }
 use m_NewCleanup.SiteFeatBC { Seq-feat.data.site AND Seq-feat }
 use m_NewCleanup.CdregionFeatBC { Seq-feat.data.cdregion AND Seq-feat }
 

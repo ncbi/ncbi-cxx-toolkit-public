@@ -36,6 +36,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -63,7 +64,7 @@ BEGIN_SCOPE(objects)
 
 const int CNewCleanup_imp::NCBI_CLEANUP_VERSION = 1;
 
-// We don't want to use CompressSpaces inside the likes of COMPRESS_STRING_MEMBER;
+// We don't want to use CompressSpaces inside the likes of COMPRESS_STRING_MEMBER
 // we prefer our own version
 #define CompressSpaces x_CompressSpaces
 
@@ -171,15 +172,20 @@ void CNewCleanup_imp::BasicCleanupSeqEntryHandle (
     CSeq_entry_Handle& seh
 )
 {
-    CFeat_CI feat_iter(seh);
-    for (; feat_iter; ++feat_iter) {
-        BasicCleanupSeqFeatHandle(
-            const_cast<CSeq_feat_Handle&>(feat_iter->GetSeq_feat_Handle()));
-    }
+    // clean a copy, and then update via the edit handle
 
-    CConstRef<CSeq_entry> seq_entry = seh.GetCompleteSeq_entry();
-    if( seq_entry ) {
-        BasicCleanupSeqEntry( const_cast<CSeq_entry&>(*seq_entry) );
+    CRef<CSeq_entry> new_seq_entry( new CSeq_entry );
+    new_seq_entry->Assign( *seh.GetCompleteSeq_entry() );
+
+    CSeq_entry_EditHandle edit_handle( seh );
+
+    BasicCleanupSeqEntry( *new_seq_entry );
+
+    edit_handle.SelectNone();
+    if( new_seq_entry->IsSeq() ) {
+        edit_handle.SelectSeq( new_seq_entry->SetSeq() );
+    } else if( new_seq_entry->IsSet() ) {
+        edit_handle.SelectSet( new_seq_entry->SetSet() );
     }
 }
 
@@ -187,14 +193,34 @@ void CNewCleanup_imp::BasicCleanupBioseqHandle (
     CBioseq_Handle& bsh
 )
 {
-    CFeat_CI feat_iter(bsh);
-    for (; feat_iter; ++feat_iter) {
-        BasicCleanupSeqFeatHandle(const_cast<CSeq_feat_Handle&>(feat_iter->GetSeq_feat_Handle()));
+    // clean a copy, and then update via the edit handle
+
+    CRef<CBioseq> new_bioseq( new CBioseq );
+    new_bioseq->Assign( *bsh.GetCompleteBioseq() );
+
+    CBioseq_EditHandle edit_handle( bsh );
+
+    BasicCleanupBioseq( *new_bioseq );
+
+    // get each part from the copy
+
+    edit_handle.ResetId();
+    FOR_EACH_SEQID_ON_BIOSEQ( seq_id_iter, *new_bioseq ) {
+        edit_handle.AddId( CSeq_id_Handle::GetHandle(**seq_id_iter) );
     }
-    // do the non-handle stuff
-    CConstRef<CBioseq> bioseq = bsh.GetCompleteBioseq();
-    if( bioseq ) {
-        BasicCleanupBioseq(const_cast<CBioseq&>(*bioseq));
+
+    edit_handle.ResetDescr();
+    if( new_bioseq->IsSetDescr() ) {
+        edit_handle.SetDescr( new_bioseq->SetDescr() );
+    }
+
+    edit_handle.SetInst( new_bioseq->SetInst() );
+    while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bsh.GetCompleteBioseq(), Annot ) )  {
+        CSeq_annot_CI annot_ci( bsh );
+        CSeq_annot_EditHandle( *annot_ci ).Remove();
+    }
+    EDIT_EACH_SEQANNOT_ON_BIOSEQ( annot_iter, *new_bioseq ) {
+        edit_handle.AttachAnnot( **annot_iter );
     }
 }
 
@@ -202,15 +228,48 @@ void CNewCleanup_imp::BasicCleanupBioseqSetHandle (
     CBioseq_set_Handle& bssh
 )
 {
-    CBioseq_CI bioseq_iter(bssh);
-    for (; bioseq_iter; ++bioseq_iter) {
-        BasicCleanupBioseqHandle(const_cast<CBioseq_Handle&>(*bioseq_iter));
+    // clean a copy, and then update via the edit handle
+
+    CRef<CBioseq_set> new_bioseq_set( new CBioseq_set );
+    new_bioseq_set->Assign( *bssh.GetCompleteBioseq_set() );
+
+    CBioseq_set_EditHandle edit_handle( bssh );
+
+    BasicCleanupBioseqSet( *new_bioseq_set );
+
+    // get each part from the copy
+
+#define BC_COPY_FIELD(Fld) \
+    edit_handle.Reset##Fld(); \
+    if( new_bioseq_set->IsSet##Fld() ) { \
+        edit_handle.Set##Fld( new_bioseq_set->Set##Fld() ); \
     }
-    // do the non-handle stuff
-    CConstRef<CBioseq_set> bioseq_set = bssh.GetCompleteBioseq_set();
-    if( bioseq_set ) {
-        BasicCleanupBioseqSet(
-            const_cast<CBioseq_set&>(*bioseq_set));
+
+    BC_COPY_FIELD(Id);
+    BC_COPY_FIELD(Coll);
+    BC_COPY_FIELD(Level);
+    BC_COPY_FIELD(Class);
+    BC_COPY_FIELD(Release);
+    BC_COPY_FIELD(Date);
+    BC_COPY_FIELD(Descr);
+
+#undef BC_COPY_FIELD
+
+    while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bssh.GetCompleteBioseq_set(), Seq_set ) )  {
+        CSeq_entry_CI entry_ci( bssh );
+        CSeq_entry_EditHandle( *entry_ci ).Remove();
+    }
+    EDIT_EACH_SEQENTRY_ON_SEQSET( entry_iter, *new_bioseq_set ) {
+        edit_handle.AttachEntry( **entry_iter );
+    }
+
+    // copy annot field
+    while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bssh.GetCompleteBioseq_set(), Annot ) )  {
+        CSeq_annot_CI annot_ci( bssh );
+        CSeq_annot_EditHandle( *annot_ci ).Remove();
+    }
+    EDIT_EACH_SEQANNOT_ON_SEQSET( annot_iter, *new_bioseq_set ) {
+        edit_handle.AttachAnnot( **annot_iter );
     }
 }
 
@@ -218,17 +277,25 @@ void CNewCleanup_imp::BasicCleanupSeqAnnotHandle (
     CSeq_annot_Handle& sah
 )
 {
-    CFeat_CI feat_iter(sah);
-    for (; feat_iter; ++feat_iter) {
-        BasicCleanupSeqFeatHandle(
-            const_cast<CSeq_feat_Handle&>(feat_iter->GetSeq_feat_Handle()));
-    }
-    // do the non-handle stuff
+    // clean a copy, and then update via the edit handle
 
-    CConstRef<CSeq_annot> seq_annot = sah.GetCompleteSeq_annot();
-    if( seq_annot ) {
-        BasicCleanupSeqAnnot(
-            const_cast<CSeq_annot&>(*seq_annot));
+    CRef<CSeq_annot> new_seq_annot( new CSeq_annot );
+    new_seq_annot->Assign( *sah.GetCompleteSeq_annot() );
+
+    CSeq_annot_EditHandle edit_handle( sah );
+
+    BasicCleanupSeqAnnot( *new_seq_annot );
+
+    // Since CSeq_annot_EditHandle doesn't have ".Set[Fld]()" methods or
+    // a Replace() method, it's a little more tricky than the others.
+    CSeq_entry_EditHandle annot_parent = edit_handle.GetParentEntry();
+    if( annot_parent ) {
+        edit_handle.Remove();
+        sah = annot_parent.AttachAnnot( *new_seq_annot );
+    } else {
+        // if not part of anything else, a simple swap will do
+        CSeq_annot_Handle new_sah = m_Scope->AddSeq_annot( *new_seq_annot );
+        edit_handle.Swap( new_sah );
     }
 }
 
@@ -236,10 +303,16 @@ void CNewCleanup_imp::BasicCleanupSeqFeatHandle (
     CSeq_feat_Handle& sfh
 )
 {
-    CConstRef<CSeq_feat> feat = sfh.GetSeq_feat();
-    if( feat ) {
-        BasicCleanupSeqFeat(const_cast<CSeq_feat&> (*feat));
-    }
+    // clean a copy, and then update via the edit handle
+
+    CRef<CSeq_feat> new_seq_feat( new CSeq_feat );
+    new_seq_feat->Assign( *sfh.GetOriginalSeq_feat() );
+
+    CSeq_feat_EditHandle edit_handle( sfh );
+
+    BasicCleanupSeqFeat( *new_seq_feat );
+
+    edit_handle.Replace( *new_seq_feat );
 }
 
 // Implementation methods
@@ -256,13 +329,15 @@ void CNewCleanup_imp::SetupBC (
 )
 
 {
-    // for cleanup Seq-entry and Seq-submit, set scope and parentize
+    // for cleanup Seq-entry and Seq-submit, set scope and parentize.
+    // We use exceptions for AddTopLevelSeqEntry because we need to detect
+    // if we've already processed the given Seq-entry.
     try {
         m_Scope->AddTopLevelSeqEntry (se);
         se.Parentize();
     } catch(const CObjMgrException &) {
-        // Looks like we already did this one.
-        // We still need to set m_IsEmblOrDdbj, etc., though.
+        // Looks like we already did this one, so we don't reset.
+        return;
     }
 
     // a few differences based on sequence identifier type
@@ -331,8 +406,8 @@ void CNewCleanup_imp::x_StripSpacesMarkChanged(string& str)
     while (it != end) {
         *new_str++ = *it;
         if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
-            for (++it; *it == ' ' || *it == '\t'; ++it) continue;
-            if (*it == ')' || *it == ',') {
+            for (++it; (it != end) && (*it == ' ' || *it == '\t'); ++it) continue;
+            if ((it != end) && (*it == ')' || *it == ',') ) {
                 // this "if" protects against the case "(...bunch of spaces and tabs...)".
                 // Otherwise, the first '(' is unintentionally erased
                 if( *(new_str - 1) != '(' ) { 
@@ -927,47 +1002,6 @@ static CSubSource* s_StringToSubSource (
     result->SetName( str.substr(val_start_pos) );
 
     return result;
-
-    //size_t pos = str.find('=');
-    //if (pos == NPOS) {
-    //    pos = str.find(' ');
-    //}
-    //string subtype = str.substr(0, pos);
-
-    //try {
-    //    TSUBSOURCE_SUBTYPE val = CSubSource::GetSubtypeValue(subtype);
-    //    
-    //    string name;
-    //    if (pos != NPOS) {
-    //        name = str.substr(pos + 1);
-    //    }
-    //    NStr::TruncateSpacesInPlace(name);
-    //    
-    //    if (CSubSource::NeedsNoText (val) ) {
-    //        name = "";
-    //    } else if (NStr::IsBlank (name)) {
-    //        return NULL;
-    //    }
-    //    
-    //    size_t num_spaces = 0;
-    //    bool has_comma = false;
-    //    FOR_EACH_CHAR_IN_STRING (it, name) {
-    //        const char& ch = *it;
-    //        if (isspace((unsigned char) ch)) {
-    //            ++num_spaces;
-    //        } else if (ch == ',') {
-    //            has_comma = true;
-    //            break;
-    //        }
-    //    }
-    //    
-    //    if (num_spaces > 4  ||  has_comma) {
-    //        return NULL;
-    //    }
-    //    return new CSubSource(val, name);
-    //} catch (CSerialException&) {}
-
-    //return NULL;
 }
 
 // is st1 < st2
@@ -989,7 +1023,7 @@ static bool s_SubsourceCompare (
 
     if (FIELD_IS_SET (sbs2, Name)) {
         if (! FIELD_IS_SET (sbs1, Name)) return true;
-        if (NStr::CompareNocase (GET_FIELD (sbs1, Name), GET_FIELD (sbs2, Name)) < 0) return true;
+        if (s_CompareNoCaseCStyle(GET_FIELD (sbs1, Name), GET_FIELD (sbs2, Name)) < 0) return true;
     }
 
     return false;
@@ -1236,6 +1270,8 @@ void CNewCleanup_imp::x_SortUniqBiosource( CBioSource& biosrc )
             UNIQUE_SUBSOURCE_ON_BIOSOURCE (biosrc, s_SubsourceEqual);
             ChangeMade (CCleanupChange::eCleanSubsource);
         }
+
+        REMOVE_IF_EMPTY_SUBSOURCE_ON_BIOSOURCE(biosrc);
     }
 }
 
@@ -1261,40 +1297,6 @@ static COrgMod* s_StringToOrgMod (
     result->SetSubname( str.substr(val_start_pos) );
 
     return result;
-
-    //try {
-    //    size_t pos = str.find_first_of("=: ");
-    //    if (pos == NPOS) {
-    //        pos = str.find(' ');
-    //    }
-    //    if (pos == NPOS) {
-    //        return NULL;
-    //    }
-
-    //    string subtype = str.substr(0, pos);
-    //    string subname = str.substr(pos + 1);
-    //    NStr::TruncateSpacesInPlace(subname);
-
-
-    //    size_t num_spaces = 0;
-    //    bool has_comma = false;
-    //    FOR_EACH_CHAR_IN_STRING (it, subname) {
-    //        const char& ch = *it;
-    //        if (isspace((unsigned char) ch)) {
-    //            ++num_spaces;
-    //        } else if (ch == ',') {
-    //            has_comma = true;
-    //            break;
-    //        }
-    //    }
-    //    if (num_spaces > 4  ||  has_comma) {
-    //        return NULL;
-    //    }
-
-    //    return new COrgMod(subtype, subname);
-    //} catch (CSerialException&) {}
-
-    //return NULL;
 }
 
 static bool s_DbtagIsBad (
@@ -1458,7 +1460,7 @@ void CNewCleanup_imp::OrgnameBC (
 
 {
     CLEAN_STRING_MEMBER (onm, Attrib);
-    CLEAN_STRING_MEMBER_JUNK (onm, Lineage);
+    CLEAN_STRING_MEMBER (onm, Lineage);
     CLEAN_STRING_MEMBER_JUNK (onm, Div);
 
     EDIT_EACH_ORGMOD_ON_ORGNAME (it, onm) {
@@ -1675,9 +1677,6 @@ void CNewCleanup_imp::PubdescBC (
     if ( FIELD_IS_SET(pubdesc, Pub) ) {
         PubEquivBC( GET_MUTABLE(pubdesc, Pub) );
     }
-    
-    // TODO: do we clean it? Looks like C doesn't.
-    // CLEAN_STRING_MEMBER(pubdesc, Name);
 }
 
 static bool s_ShouldWeFixInitials(const CPub_equiv& equiv)
@@ -2090,7 +2089,10 @@ void CNewCleanup_imp::AuthListBC( CAuth_list& al, bool fix_initials )
             case TNames::e_Str:
             {{
                 TNames& names = GET_MUTABLE(al, Names);
-                if (CleanStringContainer( GET_MUTABLE(names, Str) )) {
+                EDIT_EACH_STRING_IN_LIST( str_iter, GET_MUTABLE(names, Str) ) {
+                    x_CompressStringSpacesMarkChanged(*str_iter);
+                }
+                if (CleanVisStringContainer( GET_MUTABLE(names, Str) )) {
                     ChangeMade(CCleanupChange::eChangePublication);
                 }
                 if (names.GetStr().empty()) {
@@ -2256,8 +2258,14 @@ void CNewCleanup_imp::PubSetBC( CPub_set &pub_set )
     }
 }
 
-void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
+void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
 {
+    if( ! FIELD_IS_SET_AND_IS(feat, Data, Imp) ) {
+        return;
+    }
+
+    CImp_feat &imf = GET_MUTABLE( feat.SetData(), Imp );
+
     CLEAN_STRING_MEMBER_JUNK(imf, Key);
     CLEAN_STRING_MEMBER(imf, Loc);
     CLEAN_STRING_MEMBER(imf, Descr);
@@ -2318,6 +2326,8 @@ void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
                 }
                 feat.SetData().SetCdregion( *new_cdregion );
                 ChangeMade(CCleanupChange::eChangeKeywords);
+
+                CdregionFeatBC( *new_cdregion, feat );
                 return;
             }
         }
@@ -2387,7 +2397,6 @@ void CNewCleanup_imp::ImpFeatBC( CImp_feat& imf, CSeq_feat& feat )
                         // Also we create a NEW CAutogeneratedCleanup because
                         // CAutogeneratedCleanup  is stateful and we don't
                         // want to interfere with its state.
-                        // feat.Update();
                         CAutogeneratedCleanup auto_cleanup( *this );
                         auto_cleanup.BasicCleanupSeqFeat( feat );
                     }
@@ -2541,7 +2550,10 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
                 } else if (strand == eNa_strand_both_rev) {
                     pnt.SetStrand(eNa_strand_minus);
                     ChangeMade(CCleanupChange::eChangeStrand);
-                }                
+                } else if( strand == eNa_strand_unknown ) {
+                    pnt.ResetStrand();
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                }
             }
         }
         break;
@@ -2614,10 +2626,6 @@ void CNewCleanup_imp::ConvertSeqLocWholeToInt( CSeq_loc &loc )
         id->Assign(loc.GetWhole());
         CBioseq_Handle bsh;
 
-        // TODO: this used to be wrapped in a try-catch.
-        // could an exception actually occur?
-        // we always prefer not to trigger exceptions since
-        // they can be *very* slow.
         if( id ) {
             bsh = m_Scope->GetBioseqHandle(*id);
         }
@@ -3518,13 +3526,14 @@ const static CAminoAcidCharToSymbol sm_TrnaInverseKeys
 
 static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const CSeq_feat& feat, CScope *scope)
 {
-    CRef<CTrna_ext> trna (new CTrna_ext());
+    CRef<CTrna_ext> trna;
     
     if (NStr::IsBlank (str)) return trna;
 
     if (NStr::StartsWith (str, "(pos:")) {
         string::size_type pos_end = NStr::Find (str, ")");
         if (pos_end != string::npos) {
+            trna.Reset( new CTrna_ext );
             string pos_str = str.substr (5, pos_end - 5);
             string::size_type aa_start = NStr::FindNoCase (pos_str, "aa:");
             if (aa_start != string::npos) {
@@ -3544,6 +3553,7 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const 
                 }
             }
             CRef<CSeq_loc> anticodon = ReadLocFromText (pos_str, feat.GetLocation().GetId(), scope);
+            anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
             if (anticodon == NULL) {
                 trna->ResetAa();
             } else {
@@ -3632,7 +3642,7 @@ void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_l
         string &tRNA_token = *tRNA_token_iter;
         // remove initial "tRNA", if any
         if ( NStr::StartsWith(tRNA_token, "tRNA", NStr::eNocase) ) {
-            tRNA_token = tRNA_token.substr(3);
+            tRNA_token = tRNA_token.substr(4);
         }
         static CRegexp threeLettersPlusDigits("^[A-Za-z][A-Za-z][A-Za-z]\\d*$");
         if (! tRNA_token.empty() ) {
@@ -3676,6 +3686,7 @@ bool s_ParseDegenerateCodon( CTrna_ext & tRNA, string & codon )
   char ch = *iter;
   int tRNA_codon_idx = 0;
   codon.erase(3);
+  tRNA.SetCodon().clear();
   while ( *iter != '\0' && tRNA_codon_idx < 6 ) {
     codon [2] = ch;
     tRNA.SetCodon().push_back( CGen_code_table::CodonToIndex(codon) ); // TODO: make sure Seq_code_iupacna
@@ -3941,6 +3952,10 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
              rna.GetExt().Which() == NCBI_RNAEXT(TRNA) ) {
             
             CRef<CTrna_ext> trna = s_ParseTRnaFromAnticodonString( gb_qual.GetVal(), feat, m_Scope );
+            if( ! trna ) {
+                return eAction_Nothing;
+            }
+
             x_SeqFeatTRNABC( feat, *trna );
             if (trna->IsSetAa() || trna->IsSetAnticodon()) {
                 // don't apply at all if there are conflicts
@@ -4044,8 +4059,13 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat
     if (end_pos == string::npos) {
         end_pos = str.length();
     }
-    break_loc = ReadLocFromText (str.substr(loc_pos, end_pos - loc_pos), feat_loc_seq_id, m_Scope) ;
 
+    break_loc = ReadLocFromText (str.substr(loc_pos, end_pos - loc_pos), feat_loc_seq_id, m_Scope);
+    if( FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) != eNa_strand_unknown ) {
+        break_loc->SetStrand( GET_FIELD( feat.GetLocation(), Strand) );
+    } else {
+        RESET_FIELD( *break_loc, Strand );
+    }
     
     if (break_loc == NULL 
         || (break_loc->IsInt() && sequence::Compare (*break_loc, feat.GetLocation(), m_Scope) != sequence::eContained )
@@ -4503,21 +4523,6 @@ void CNewCleanup_imp::x_FixEtAl(CName_std& name)
     }
 }
 
-//void CNewCleanup_imp::x_FixSuffix(CName_std& name)
-//{
-//    _ASSERT( FIELD_IS_SET(name, Suffix) );
-//
-//    CName_std::TSuffix& suffix = GET_MUTABLE(name, Suffix);
-//
-//    ITERATE (TSuffixMap, it, sc_BadSuffixes) {
-//        if (NStr::EqualNocase(suffix, it->first)) {
-//            SET_FIELD(name, Suffix, it->second);
-//            ChangeMade(CCleanupChange::eNormalizeAuthors);
-//            break;
-//        }
-//    }
-//}
-
 static bool s_ShouldWeFixInitials(string& initials)
 {
     string fixed;
@@ -4568,123 +4573,6 @@ static bool s_ShouldWeFixInitials(string& initials)
     return false;
 }
 
-//static
-//CName_std::TInitials s_GetInitialsFromFirst(const CName_std& name)
-//{
-//    _ASSERT( FIELD_IS_SET(name, First) );
-//    
-//    const CName_std::TFirst& first = GET_FIELD(name, First);
-//    if (NStr::IsBlank(first)) {
-//        return kEmptyStr;
-//    }
-//    
-//    bool up = FIELD_IS_SET(name, Initials)  &&  
-//        ! GET_FIELD(name, Initials).empty()  &&  
-//        isupper((unsigned char) name.GetInitials()[0]);
-//    
-//    string initials;
-//    string::const_iterator end = first.end();
-//    string::const_iterator it = first.begin();
-//    while (it != end) {
-//        // skip "junk"
-//        for ( ; it != end  &&  !isalpha((unsigned char)(*it)) ; ++it ) {
-//            // regard words in parentheses as nick names. Nick names do not contribute
-//            // to the initials
-//            if( *it == '(' ) {
-//                it = find( it, end, ')' );
-//            }
-//        }
-//        // copy the first character of each word
-//        if (it != end) {
-//            if (!initials.empty()) {
-//                char c = *initials.rbegin();
-//                if (isupper((unsigned char)(*it))  &&  c != '.'  &&  c != '-') {
-//                    initials += '.';
-//                }
-//            }
-//            initials += up ? toupper((unsigned char)(*it)) : *it;
-//        }
-//        // skip the rest of the word
-//        while (it != end  &&  !isspace((unsigned char)(*it))  &&  *it != ','  &&  *it != '-') {
-//            ++it;
-//        }
-//        if (it != end  &&  *it == '-') {
-//            initials += '.';
-//            initials += *it++;
-//        }
-//        up = false;
-//    }
-//    if (!initials.empty()  &&  !(*initials.rbegin() == '-')) {
-//        initials += '.';
-//    }
-//    
-//    return initials;
-//}
-
-//void CNewCleanup_imp::x_FixInitials(CName_std& name)
-//{
-//    if (name.IsSetInitials()) {
-//        if (s_ShouldWeFixInitials(name.SetInitials())) {
-//            ChangeMade(CCleanupChange::eNormalizeAuthors);
-//        }
-//        
-//        if (name.SetInitials().empty()) {
-//            RESET_FIELD(name, Initials);
-//            ChangeMade(CCleanupChange::eNormalizeAuthors);
-//        }
-//    }
-//    if ( FIELD_IS_SET(name, First)  &&  ! FIELD_IS_SET(name, Initials) ) {
-//        string new_initials = s_GetInitialsFromFirst(name);
-//        if ( ! new_initials.empty() ) {
-//            SET_FIELD(name, Initials, new_initials);
-//            ChangeMade(CCleanupChange::eNormalizeAuthors);
-//        }
-//        return;
-//    }
-//    if (! FIELD_IS_SET(name, Initials) ) {
-//        return;
-//    }
-//
-//    if (! FIELD_IS_SET(name, Suffix) ) {
-//        CName_std::TInitials& initials = GET_MUTABLE(name, Initials);
-//        if (NStr::EndsWith (initials, ".Jr.")) {
-//            initials.erase (initials.end() - 3);
-//            SET_FIELD(name, Suffix, "Jr.");
-//        } else if (NStr::EndsWith (initials, ".Sr.")) {
-//            initials.erase (initials.end() - 3);
-//            SET_FIELD(name, Suffix, "Sr.");
-//        }
-//    }
-//
-//    if (! FIELD_IS_SET(name, First) ) {
-//        return;
-//    }
-//    _ASSERT(FIELD_IS_SET(name, First)  &&  FIELD_IS_SET(name, Initials));
-//
-//    CName_std::TInitials& initials = GET_MUTABLE(name, Initials);
-//    string f_initials = s_GetInitialsFromFirst(name);
-//    if (initials == f_initials) {
-//        return;
-//    }
-//    string::iterator it1 = f_initials.begin();
-//    string::iterator it2 = initials.begin();
-//    while (it1 != f_initials.end()  &&  it2 != initials.end()  &&
-//        toupper((unsigned char)(*it1)) == toupper((unsigned char)(*it2))) {
-//        ++it1;
-//        ++it2;
-//    }
-//    if (it2 != initials.end()  &&  it1 != f_initials.end()  &&  *it1 == '.'  &&  islower((unsigned char)(*it2))) {
-//        f_initials.erase(it1);
-//    }
-//    while (it2 != initials.end()) {
-//        f_initials += *it2++;
-//    }
-//    if (f_initials != initials) {
-//        initials.swap(f_initials);
-//        ChangeMade(CCleanupChange::eNormalizeAuthors);
-//    }
-//}
-
 void CNewCleanup_imp::x_AddReplaceQual(CSeq_feat& feat, const string& str)
 {
     if (!NStr::EndsWith(str, ')')) {
@@ -4719,7 +4607,10 @@ void CNewCleanup_imp::x_SeqIntervalBC( CSeq_interval & seq_interval )
         } else if (strand == eNa_strand_both_rev) {
             seq_interval.SetStrand(eNa_strand_minus);
             ChangeMade(CCleanupChange::eChangeStrand);
-        }        
+        } else if (strand == eNa_strand_unknown ) {
+            seq_interval.ResetStrand();
+            ChangeMade(CCleanupChange::eChangeStrand);
+        }
     }
 }
 
@@ -5185,6 +5076,8 @@ void CNewCleanup_imp::x_ModernizePCRPrimers( CBioSource &biosrc )
                 subsources.erase( first_bad_element, subsources.end() );
                 ChangeMade(CCleanupChange::eChangeSubsource);
             }
+
+            REMOVE_IF_EMPTY_SUBSOURCE_ON_BIOSOURCE(biosrc);
         }
     }
 }
@@ -6255,7 +6148,7 @@ void CNewCleanup_imp::x_SortUniqSeqFeat( CSeq_feat& sf )
 }
 
 static bool
-s_GeneSynCompare(
+s_GeneSynCompareCS(
     const string &syn1,
     const string &syn2 )
 {
@@ -6268,6 +6161,21 @@ s_GeneSynEqual(
     const string &syn2 )
 {
     return syn1 == syn2;
+}
+
+// CILCFirst stands for "case-insensitive, lower-case first"
+static bool
+s_GeneSynCompareCILCFirst(
+    const string &syn1,
+    const string &syn2 )
+{
+    int nocase_compare = s_CompareNoCaseCStyle( syn1, syn2 );
+    if( nocase_compare != 0 ) {
+        return nocase_compare < 0;
+    }
+
+    // notice reversal, so that lowercase is first
+    return ( syn2 < syn1 );
 }
 
 class CStringIsEmpty
@@ -6331,12 +6239,16 @@ void CNewCleanup_imp::GenerefBC (
 
 
     // TODO: shouldn't this be done POST Gene-ref so we're sorting/uniquing the cleaned up data?
-    if( ! SYNONYM_ON_GENEREF_IS_SORTED(gr, s_GeneSynCompare) ) {
-        SORT_SYNONYM_ON_GENEREF( gr, s_GeneSynCompare );
+    if( ! SYNONYM_ON_GENEREF_IS_SORTED(gr, s_GeneSynCompareCS) ) {
+        SORT_SYNONYM_ON_GENEREF( gr, s_GeneSynCompareCS );
         ChangeMade (CCleanupChange::eChangeGeneRef);
     }
     if (! SYNONYM_ON_GENEREF_IS_UNIQUE (gr, s_GeneSynEqual)) {
         UNIQUE_SYNONYM_ON_GENEREF(gr, s_GeneSynEqual);
+        ChangeMade (CCleanupChange::eChangeGeneRef);
+    }
+    if( ! SYNONYM_ON_GENEREF_IS_SORTED(gr, s_GeneSynCompareCILCFirst) ) {
+        SORT_SYNONYM_ON_GENEREF( gr, s_GeneSynCompareCILCFirst );
         ChangeMade (CCleanupChange::eChangeGeneRef);
     }
 
@@ -7849,7 +7761,7 @@ void CNewCleanup_imp::CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat)
         FOR_EACH_CODEBREAK_ON_CDREGION(code_break_iter, cds) {
             const CCode_break &code_break = **code_break_iter;
             // We only check ncbieaa since that seems to be how the C
-            // toolkit behaves.  Maybe in the future, we can also catch
+            // toolkit behaves.  Maybe in the future, we can also check for
             // ncbi8aa, ncbistdaa, etc.
             if( FIELD_IS_SET_AND_IS(code_break, Aa, Ncbieaa) ) {
                 if( GET_FIELD(code_break.GetAa(), Ncbieaa) == 'U' && 
@@ -8315,7 +8227,7 @@ void CNewCleanup_imp::x_PostProcessing(void)
                     const string &cit = GET_FIELD(gen, Cit);
                     if( (cit.length() > 1) && NStr::EndsWith(cit, ">") ) {
                         string cit_copy = cit;
-                        cit_copy.resize( cit_copy.length() - 1 ); // chop off final ">";
+                        cit_copy.resize( cit_copy.length() - 1 ); // chop off final ">"
                         s_RegexpReplace( cit_copy, "Unpublished[ ]+", "Unpublished", 1 );
 
                         // check if the cit is a strict prefix of any of the cit-gen labels from before

@@ -244,7 +244,7 @@ private:
     void ImprintBC( CImprint& imprint, EImprintBC is_status_change_allowed );
     void PubSetBC( CPub_set &pub_set );
 
-    void ImpFeatBC( CImp_feat& imf, CSeq_feat& sf );
+    void ImpFeatBC( CSeq_feat& sf );
 
     void SiteFeatBC( CSeqFeatData::ESite &site, CSeq_feat& sf );
 
