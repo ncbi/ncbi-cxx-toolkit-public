@@ -47,8 +47,8 @@ static CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
 #define KEY_PREFIX "NCID_"
 #define KEY_PREFIX_LENGTH (sizeof(KEY_PREFIX) - 1)
 
-#define SERVICE_PREFIX "_0MetA0_S_"
-#define SERVICE_PREFIX_LENGTH (sizeof(SERVICE_PREFIX) - 1)
+#define KEY_EXTENSION_MARKER "_0MetA0"
+#define KEY_EXTENSION_MARKER_LENGTH (sizeof(KEY_EXTENSION_MARKER) - 1)
 
 #define PARSE_NUMERIC_KEY_PART(part_name) \
     const char* const part_name = ch; \
@@ -106,14 +106,35 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
     }
 
     // Key extensions
-    if (ch == ch_end) {
-        if (key_obj)
-            key_obj->m_ServiceName = kEmptyStr;
-    } else {
-        if (memcmp(ch, SERVICE_PREFIX, SERVICE_PREFIX_LENGTH) != 0)
+    if (key_obj)
+        key_obj->m_ServiceName = kEmptyStr;
+
+    if (ch < ch_end) {
+        if (ch + KEY_EXTENSION_MARKER_LENGTH > ch_end || memcmp(ch,
+                KEY_EXTENSION_MARKER, KEY_EXTENSION_MARKER_LENGTH) != 0)
             return false;
-        if (key_obj)
-            key_obj->m_ServiceName = ch + SERVICE_PREFIX_LENGTH;
+        if ((ch += KEY_EXTENSION_MARKER_LENGTH) == ch_end)
+            return true;
+        if (*ch != '_')
+            return false;
+        do {
+            int underscores_to_skip = 0;
+            for (;;) {
+                if (++ch == ch_end)
+                    return false;
+                if (*ch != '_')
+                    break;
+                ++underscores_to_skip;
+            }
+            char tag = *ch;
+            if (++ch == ch_end || *ch != '_')
+                return false;
+            const char* extension = ++ch;
+            while (ch < ch_end && (*ch != '_' || --underscores_to_skip >= 0))
+                ++ch;
+            if (key_obj != NULL && tag == 'S')
+                key_obj->m_ServiceName.assign(extension, ch - extension);
+        } while (ch < ch_end);
     }
 
     return true;
@@ -127,14 +148,23 @@ string CNetCacheKey::StripKeyExtensions() const
 void CNetCacheKey::AppendServiceName(string& blob_id,
     const string& service_name)
 {
-    blob_id.append(SERVICE_PREFIX);
+    blob_id.append(KEY_EXTENSION_MARKER);
+    int underscore_count = 1;
+    const char* underscore = strchr(service_name.c_str(), '_');
+    while (underscore != NULL) {
+        ++underscore_count;
+        underscore = strchr(underscore + 1, '_');
+    }
+    blob_id.append(underscore_count, '_');
+    blob_id.append("S_");
     blob_id.append(service_name);
 }
 
 void CNetCacheKey::SetServiceName(const string& service_name)
 {
     if (HasExtensions()) {
-        int old_service_name_pos = m_PrimaryKeyLength + SERVICE_PREFIX_LENGTH;
+        int old_service_name_pos =
+            m_PrimaryKeyLength + KEY_EXTENSION_MARKER_LENGTH;
         m_Key.replace(old_service_name_pos,
             m_Key.length() - old_service_name_pos, service_name);
     } else
@@ -193,8 +223,7 @@ void CNetCacheKey::GenerateBlobKey(string* key, unsigned id,
     const string& host, unsigned short port, const string& service_name)
 {
     GenerateBlobKey(key, id, host, port);
-    key->append(SERVICE_PREFIX);
-    key->append(service_name);
+    AppendServiceName(*key, service_name);
 }
 
 unsigned int
