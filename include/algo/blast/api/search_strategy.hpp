@@ -136,6 +136,71 @@ private:
 };
 
 
+class NCBI_XBLAST_EXPORT CExportStrategy : public CObject
+{
+public:
+	/// Construct search strategy with :-.
+    /// @param opts_handle Blast options handle
+	///        (Note: only eRemote or eBoth mode are supported)
+    CExportStrategy(CRef<CBlastOptionsHandle>  	opts_handle,
+    			    const string & 				client_id = kEmptyStr);
+
+    /// Construct search strategy with :-.
+    /// @param queries Queries corresponding to Seq-loc-list or Bioseq-set.
+    /// @param opts_handle Blast options handle.
+	///        (Note: only eRemote or eBoth mode are supported)
+    /// @param db Database used for this search.
+    CExportStrategy(CRef<IQueryFactory>         query,
+                 	CRef<CBlastOptionsHandle>  	opts_handle,
+                 	CRef<CSearchDatabase> 		db,
+    			    const string & 				client_id = kEmptyStr);
+
+    /// Construct search strategy with :-.
+    /// @param queries Queries corresponding to Seq-loc-list or Bioseq-set.
+    /// @param opts_handle Blast options handle.
+	///        (Note: only eRemote or eBoth mode are supported)
+    /// @param subjects Subject corresponding to Seq-loc-list or Bioseq-set.
+    CExportStrategy(CRef<IQueryFactory>       	query,
+                 	CRef<CBlastOptionsHandle> 	opts_handle,
+                 	CRef<IQueryFactory>       	subject,
+    			    const string & 				client_id = kEmptyStr);
+
+    /// Construct search strategy with :-.
+    /// @param pssm Search matrix for a PSSM search.
+    /// @param opts_handle Blast options handle.
+	///        (Note: only eRemote or eBoth mode are supported)
+    /// @param db Database used for this search.
+    CExportStrategy(CRef<CPssmWithParameters>	pssm,
+                 	CRef<CBlastOptionsHandle>   opts_handle,
+                 	CRef<CSearchDatabase> 		db,
+    			    const string & 				client_id = kEmptyStr);
+
+    // Return Search Strategy constructed by calling one of the constructors above
+    CRef<objects::CBlast4_request> GetSearchStrategy(void);
+
+    // Export Search Strategy (Blast4-request) in ASN1 format
+    void ExportSearchStrategy_ASN1(CNcbiOstream* out);
+
+private:
+	// Prohibit copy and assign constructors
+	CExportStrategy(const CExportStrategy & );
+	CExportStrategy & operator=(const CExportStrategy & );
+
+	void x_Process_BlastOptions(CRef<CBlastOptionsHandle> & opts_handle);
+	void x_Process_Query(CRef<IQueryFactory> & query);
+	void x_Process_Pssm(CRef<CPssmWithParameters> & pssm);
+	void x_Process_SearchDb(CRef<CSearchDatabase> & db);
+	void x_Process_Subject(CRef<IQueryFactory> & subject);
+
+	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
+	                   	 	    		const int int_value);
+	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
+										const vector<int> & int_list);
+
+	CRef<CBlast4_queue_search_request>   	m_QueueSearchRequest;
+	string									m_ClientId;
+};
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

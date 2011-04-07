@@ -35,10 +35,10 @@
 #include <algo/blast/api/search_strategy.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
-#include <algo/blast/api/blast_nucl_options.hpp>
-#include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/blast_advprot_options.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
+#include <objmgr/object_manager.hpp>
 
 #include "test_objmgr.hpp"
 #include <serial/serial.hpp>
@@ -144,6 +144,259 @@ BOOST_AUTO_TEST_CASE(testBlastnBl2seq)
     CBlastNucleotideOptionsHandle* blastn_opts = dynamic_cast<CBlastNucleotideOptionsHandle*> (&*opts_handle);
     BOOST_REQUIRE_EQUAL(blastn_opts->GetMatchReward(), 2); 
     BOOST_REQUIRE_EQUAL(blastn_opts->GetMismatchPenalty(), -3); 
+}
+
+/*
+ * Export Search Strategy Tests
+ */
+
+// Test that when a query with a range restriction is NOT provided, no
+// RequiredEnd and RequiredStart fields are sent over the network
+BOOST_AUTO_TEST_CASE(ExportStrategy_FullQuery) {
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
+    auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id));
+    TSeqLocVector queries(1, *sl.get());
+    CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
+    const string kDbName("nt");
+    CSearchDatabase db(kDbName,
+                       CSearchDatabase::eBlastDbIsNucleotide);
+
+    CRef<CSearchDatabase> target_db(&db);
+    CRef<CBlastOptionsHandle> opts
+        (CBlastOptionsFactory::Create(eBlastn, CBlastOptions::eRemote));
+
+    CExportStrategy exp_ss(qf, opts, target_db);
+    CRef<CBlast4_request> ss = exp_ss.GetSearchStrategy();
+    BOOST_REQUIRE(ss.NotEmpty());
+
+    bool found_query_range = false;
+
+    const CBlast4_request_body& body = ss->GetBody();
+    BOOST_REQUIRE(body.IsQueue_search());
+    const CBlast4_queue_search_request& qsr = body.GetQueue_search();
+
+    // These are the parameters that we are looking for
+    vector<string> param_names;
+    param_names.push_back(B4Param_RequiredStart.GetName());
+    param_names.push_back(B4Param_RequiredEnd.GetName());
+
+    // Get the program options
+    if (qsr.CanGetProgram_options()) {
+        const CBlast4_parameters& prog_options = qsr.GetProgram_options();
+        ITERATE(vector<string>, pname, param_names) {
+            CRef<CBlast4_parameter> p = prog_options.GetParamByName(*pname);
+            if (p.NotEmpty()) {
+                found_query_range = true;
+                break;
+            }
+        }
+    }
+    BOOST_REQUIRE(found_query_range == false);
+
+    // (check also the algorithm options, just in case they ever get misplaced)
+    if (qsr.CanGetAlgorithm_options()) {
+        const CBlast4_parameters& algo_options = qsr.GetAlgorithm_options();
+        ITERATE(vector<string>, pname, param_names) {
+            CRef<CBlast4_parameter> p = algo_options.GetParamByName(*pname);
+            if (p.NotEmpty()) {
+                found_query_range = true;
+                break;
+            }
+        }
+    }
+    BOOST_REQUIRE(found_query_range == false);
+
+    // just as a bonus, check the database
+    BOOST_REQUIRE(qsr.CanGetSubject());
+    BOOST_REQUIRE(qsr.GetSubject().GetDatabase() == kDbName);
+}
+
+// Test that when a query with a range restriction is provided, the appropriate
+// RequiredEnd and RequiredStart fields are sent over the network
+BOOST_AUTO_TEST_CASE(ExportStrategy_QueryWithRange) {
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
+    TSeqRange query_range(1,200);
+    auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id,
+                                query_range));
+    TSeqLocVector queries(1, *sl.get());
+    CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
+    const string kDbName("nt");
+    CSearchDatabase db(kDbName,
+                       CSearchDatabase::eBlastDbIsNucleotide);
+
+    CRef<CSearchDatabase> target_db(&db);
+    CRef<CBlastOptionsHandle> opts
+        (CBlastOptionsFactory::Create(eBlastn, CBlastOptions::eRemote));
+
+    CExportStrategy exp_ss(qf, opts, target_db);
+    CRef<CBlast4_request> ss = exp_ss.GetSearchStrategy();
+    BOOST_REQUIRE(ss.NotEmpty());
+
+    bool found_query_range = false;
+
+    const CBlast4_request_body& body = ss->GetBody();
+    BOOST_REQUIRE(body.IsQueue_search());
+    const CBlast4_queue_search_request& qsr = body.GetQueue_search();
+
+    // These are the parameters that we are looking for
+    vector<string> param_names;
+    param_names.push_back(B4Param_RequiredStart.GetName());
+    param_names.push_back(B4Param_RequiredEnd.GetName());
+
+    // Get the program options
+    if (qsr.CanGetProgram_options()) {
+        const CBlast4_parameters& prog_options = qsr.GetProgram_options();
+        ITERATE(vector<string>, pname, param_names) {
+            CRef<CBlast4_parameter> p = prog_options.GetParamByName(*pname);
+            if (p.NotEmpty()) {
+                BOOST_REQUIRE(p->CanGetValue());
+                found_query_range = true;
+                if (*pname == B4Param_RequiredStart.GetName()) {
+                    BOOST_REQUIRE_EQUAL((int)query_range.GetFrom(),
+                                        (int)p->GetValue().GetInteger());
+                }
+                if (*pname == B4Param_RequiredEnd.GetName()) {
+                    BOOST_REQUIRE_EQUAL((int)query_range.GetTo(),
+                                        (int)p->GetValue().GetInteger());
+                }
+            }
+        }
+    }
+    BOOST_REQUIRE(found_query_range == true);
+
+    found_query_range = false;
+    // Check that this option is NOT specified in the algorithm options
+    if (qsr.CanGetAlgorithm_options()) {
+        const CBlast4_parameters& algo_options = qsr.GetAlgorithm_options();
+        ITERATE(vector<string>, pname, param_names) {
+            CRef<CBlast4_parameter> p = algo_options.GetParamByName(*pname);
+            if (p.NotEmpty()) {
+                found_query_range = true;
+                break;
+            }
+        }
+    }
+    BOOST_REQUIRE(found_query_range == false);
+
+    // just as a bonus, check the database
+    BOOST_REQUIRE(qsr.CanGetSubject());
+    BOOST_REQUIRE(qsr.GetSubject().GetDatabase() == kDbName);
+}
+
+// Test that when no identifier is provided for the sequence data, a Bioseq
+// should be submitted
+BOOST_AUTO_TEST_CASE(ExportStrategy_QueryWithLocalIds) {
+
+    CSeq_entry seq_entry;
+    ifstream in("data/seq_entry_lcl_id.asn");
+    in >> MSerial_AsnText >> seq_entry;
+    CSeq_id& id = const_cast<CSeq_id&>(*seq_entry.GetSeq().GetFirstId());
+    in.close();
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddTopLevelSeqEntry(seq_entry);
+    CRef<CSeq_loc> sl(new CSeq_loc(id, (TSeqPos)0, (TSeqPos)11));
+    TSeqLocVector query_loc(1, SSeqLoc(sl, scope));
+    CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_loc));
+    const string kDbName("nt");
+    CSearchDatabase db(kDbName,
+                       CSearchDatabase::eBlastDbIsNucleotide);
+
+    CRef<CSearchDatabase> target_db(&db);
+    CRef<CBlastOptionsHandle> opts
+        (CBlastOptionsFactory::Create(eBlastn, CBlastOptions::eRemote));
+
+    CExportStrategy exp_ss(qf, opts, target_db);
+    CRef<CBlast4_request> ss = exp_ss.GetSearchStrategy();
+    BOOST_REQUIRE(ss.NotEmpty());
+
+    const CBlast4_request_body& body = ss->GetBody();
+    BOOST_REQUIRE(body.IsQueue_search());
+    const CBlast4_queue_search_request& qsr = body.GetQueue_search();
+    BOOST_REQUIRE(qsr.CanGetQueries());
+    const CBlast4_queries& b4_queries = qsr.GetQueries();
+    BOOST_REQUIRE_EQUAL(query_loc.size(), b4_queries.GetNumQueries());
+    BOOST_REQUIRE(b4_queries.IsBioseq_set());
+    BOOST_REQUIRE( !b4_queries.IsPssm() );
+    BOOST_REQUIRE( !b4_queries.IsSeq_loc_list() );
+
+    // just as a bonus, check the database
+    BOOST_REQUIRE(qsr.CanGetSubject());
+    BOOST_REQUIRE(qsr.GetSubject().GetDatabase() == kDbName);
+}
+
+// Test that when GIs are provided as the queries, no bioseq
+// should be submitted, instead a list of seqlocs should be sent
+BOOST_AUTO_TEST_CASE(ExportStrategy_QueryWithGIs) {
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    typedef pair<int, int> TGiLength;
+    vector<TGiLength> gis;
+    gis.push_back(TGiLength(555, 624));
+    gis.push_back(TGiLength(556, 310));
+    ifstream in("data/seq_entry_gis.asn");
+    TSeqLocVector query_loc;
+
+    ITERATE(vector<TGiLength>, gi, gis) {
+        CRef<CSeq_entry> seq_entry(new CSeq_entry);
+        in >> MSerial_AsnText >> *seq_entry;
+        scope->AddTopLevelSeqEntry(*seq_entry);
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi->first));
+        CRef<CSeq_loc> sl(new CSeq_loc(*id, 0, gi->second));
+        query_loc.push_back(SSeqLoc(sl, scope));
+    }
+    in.close();
+
+    CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_loc));
+    const string kDbName("nt");
+    CSearchDatabase db(kDbName,
+                             CSearchDatabase::eBlastDbIsNucleotide);
+
+    CRef<CSearchDatabase> target_db(&db);
+    CRef<CBlastOptionsHandle> opts
+        (CBlastOptionsFactory::Create(eBlastn, CBlastOptions::eRemote));
+
+    CExportStrategy exp_ss(qf, opts, target_db);
+    CRef<CBlast4_request> ss = exp_ss.GetSearchStrategy();
+    BOOST_REQUIRE(ss.NotEmpty());
+
+
+    const CBlast4_request_body& body = ss->GetBody();
+    BOOST_REQUIRE(body.IsQueue_search());
+    const CBlast4_queue_search_request& qsr = body.GetQueue_search();
+    BOOST_REQUIRE(qsr.CanGetQueries());
+    const CBlast4_queries& b4_queries = qsr.GetQueries();
+    BOOST_REQUIRE_EQUAL(query_loc.size(), b4_queries.GetNumQueries());
+    BOOST_REQUIRE( !b4_queries.IsBioseq_set() );
+    BOOST_REQUIRE( !b4_queries.IsPssm() );
+    BOOST_REQUIRE( b4_queries.IsSeq_loc_list() );
+
+    // just as a bonus, check the database
+    BOOST_REQUIRE(qsr.CanGetSubject());
+    BOOST_REQUIRE(qsr.GetSubject().GetDatabase() == kDbName);
+}
+
+BOOST_AUTO_TEST_CASE(ExportStrategy_CBlastOptions)
+{
+	CRef<CBlastOptionsHandle> optsHandle;
+	optsHandle = CBlastOptionsFactory::Create(eBlastp, CBlastOptions::eRemote);
+    const CBlastOptions& opts = optsHandle->SetOptions();
+
+    CExportStrategy exp_ss(optsHandle);
+    CRef<CBlast4_request> ss = exp_ss.GetSearchStrategy();
+    BOOST_REQUIRE(ss.NotEmpty());
+
+    const CBlast4_request_body& body = ss->GetBody();
+    BOOST_REQUIRE(body.IsQueue_search());
+    const CBlast4_queue_search_request& qsr = body.GetQueue_search();
+
+    string program;
+    string service;
+    opts.GetRemoteProgramAndService_Blast3(program, service);
+
+    BOOST_REQUIRE(qsr.GetProgram() == program);
+    BOOST_REQUIRE(qsr.GetService() == service);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

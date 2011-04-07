@@ -39,6 +39,7 @@
 #include <algo/blast/api/blast_options_builder.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_results.hpp>
+#include <algo/blast/api/search_strategy.hpp>
 
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -79,13 +80,13 @@ s_Convert_to_CBlast_ka_block(const Blast_KarlinBlk* kablk, bool gapped)
 }
 
 static CRef<objects::CBlast4_archive>
-s_BuildArchiveAll(CRef<CRemoteBlast> rmt_blast, 
+s_BuildArchiveAll(CRef<CExportStrategy>  export_strategy,
                      blast::CBlastOptionsHandle& options_handle,
                      const CSearchResultSet& results)
 {
         CRef<objects::CBlast4_archive> archive(new objects::CBlast4_archive());
 
-        CRef<CBlast4_request> net_request = rmt_blast->GetSearchStrategy();
+        CRef<CBlast4_request> net_request = export_strategy->GetSearchStrategy();
         net_request->SetIdent("");
 
         archive->SetRequest(*net_request);
@@ -149,13 +150,14 @@ BlastBuildArchive(blast::IQueryFactory& queries,
 	else
         	mol_type = CSearchDatabase::eBlastDbIsProtein;
 
-       	CSearchDatabase search_db(dbname, mol_type);
+       	CSearchDatabase db(dbname, mol_type);
 
         CRef<blast::IQueryFactory> iquery_ref(&queries);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
-        CRef<CRemoteBlast> rmt_blast(new CRemoteBlast(iquery_ref, options_ref, search_db));
+        CRef<blast::CSearchDatabase> search_db(&db);
+        CRef<CExportStrategy> export_strategy(new CExportStrategy(iquery_ref, options_ref, search_db));
 
-        CRef<objects::CBlast4_archive> archive = s_BuildArchiveAll(rmt_blast, options_handle, results);
+        CRef<objects::CBlast4_archive> archive = s_BuildArchiveAll(export_strategy, options_handle, results);
         return archive;
 
 }
@@ -175,9 +177,9 @@ BlastBuildArchive(blast::IQueryFactory& queries,
         CRef<blast::IQueryFactory> iquery_ref(&queries);
         CRef<blast::IQueryFactory> isubject_ref(&subjects);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
-        CRef<CRemoteBlast> rmt_blast(new CRemoteBlast(iquery_ref, options_ref, isubject_ref));
+        CRef<CExportStrategy> export_strategy(new CExportStrategy(iquery_ref, options_ref, isubject_ref));
 
-        return s_BuildArchiveAll(rmt_blast, options_handle, results);
+        return s_BuildArchiveAll(export_strategy, options_handle, results);
 }
 
 END_SCOPE(blast)

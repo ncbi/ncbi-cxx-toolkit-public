@@ -1240,8 +1240,8 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
     x_InitQueries(queries);
 }
 
-static void
-s_FlattenBioseqSet(const CBioseq_set & bss, list< CRef<CBioseq> > & seqs)
+void
+FlattenBioseqSet(const CBioseq_set & bss, list< CRef<CBioseq> > & seqs)
 {
     if (bss.CanGetSeq_set()) {
         ITERATE(CBioseq_set::TSeq_set, iter, bss.GetSeq_set()) {
@@ -1253,7 +1253,7 @@ s_FlattenBioseqSet(const CBioseq_set & bss, list< CRef<CBioseq> > & seqs)
                     seqs.push_back(CRef<CBioseq>(& bs));
                 } else {
                     _ASSERT(entry.IsSet());
-                    s_FlattenBioseqSet(entry.GetSet(), seqs);
+                    FlattenBioseqSet(entry.GetSet(), seqs);
                 }
             }
         }
@@ -1488,7 +1488,7 @@ void CRemoteBlast::SetSubjectSequences(CRef<IQueryFactory> subjects)
     }
     
     list< CRef<CBioseq> > seqs;
-    s_FlattenBioseqSet(*bss, seqs);
+    FlattenBioseqSet(*bss, seqs);
     
     SetSubjectSequences(seqs);
 }

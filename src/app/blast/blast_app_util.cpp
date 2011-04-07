@@ -213,6 +213,52 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle)
     return retval;
 }
 
+
+static CRef<blast::CExportStrategy>
+s_InitializeExportStrategy(CRef<blast::IQueryFactory> queries,
+                      	 CRef<blast::CBlastDatabaseArgs> db_args,
+                      	 CRef<blast::CBlastOptionsHandle> opts_hndl,
+                      	 const string& client_id /* = kEmptyStr */,
+                      	 CRef<objects::CPssmWithParameters> pssm
+                         /* = CRef<objects::CPssmWithParameters>() */)
+{
+    _ASSERT(queries || pssm);
+    _ASSERT(db_args);
+    _ASSERT(opts_hndl);
+
+    CRef<CExportStrategy> retval;
+
+    CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
+    if (search_db.NotEmpty())
+    {
+        if (pssm.NotEmpty())
+        {
+            _ASSERT(queries.Empty());
+            retval.Reset(new blast::CExportStrategy(pssm, opts_hndl, search_db, client_id));
+        }
+        else
+        {
+            retval.Reset(new blast::CExportStrategy(queries, opts_hndl, search_db, client_id));
+        }
+    }
+    else
+    {
+        if (pssm.NotEmpty())
+        {
+            NCBI_THROW(CInputException, eInvalidInput,
+                       "Remote PSI-BL2SEQ is not supported");
+        }
+        else
+        {
+            retval.Reset(new blast::CExportStrategy(queries, opts_hndl,
+            								 db_args->GetSubjects(), client_id));
+        }
+    }
+
+    return retval;
+}
+
+
 /// Real implementation of search strategy extraction
 /// @todo refactor this code so that it can be reused in other contexts
 static void
@@ -223,21 +269,21 @@ s_ExportSearchStrategy(CNcbiOstream* out,
                      CRef<objects::CPssmWithParameters> pssm 
                        /* = CRef<objects::CPssmWithParameters>() */)
 {
-    if ( !out ) {
+    if ( !out )
         return;
-    }
+
     _ASSERT(db_args);
     _ASSERT(options_handle);
 
-    try { 
-        CRef<CRemoteBlast> rmt_blast =
-            InitializeRemoteBlast(queries, db_args, options_handle, false,
-                                  kEmptyStr, pssm);
-        CRef<CBlast4_request> req = rmt_blast->GetSearchStrategy(); 
-        // N.B.: If writing XML, be sure to call SetEnforcedStdXml on the
-        // stream!
-        *out << MSerial_AsnText << *req;
-    } catch (const CBlastException& e) {
+    try
+    {
+        CRef<CExportStrategy> export_strategy =
+        			s_InitializeExportStrategy(queries, db_args, options_handle,
+                                  	 	 	   kEmptyStr, pssm);
+        export_strategy->ExportSearchStrategy_ASN1(out);
+    }
+    catch (const CBlastException& e)
+    {
         if (e.GetErrCode() == CBlastException::eNotSupported) {
             NCBI_THROW(CInputException, eInvalidInput, 
                        "Saving search strategies with gi lists is currently "

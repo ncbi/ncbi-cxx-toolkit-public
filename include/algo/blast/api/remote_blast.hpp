@@ -812,6 +812,9 @@ NCBI_XBLAST_EXPORT
 CRef<objects::CBlast4_request> 
 ExtractBlast4Request(CNcbiIstream& in);
 
+void
+FlattenBioseqSet(const CBioseq_set & bss, list< CRef<CBioseq> > & seqs);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
