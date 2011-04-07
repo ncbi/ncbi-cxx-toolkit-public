@@ -43,6 +43,7 @@
 
 #include <objects/blast/blast__.hpp>
 #include <objects/blast/names.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 #if defined(NCBI_OS_UNIX)
