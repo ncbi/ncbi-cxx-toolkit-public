@@ -7950,6 +7950,8 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqf
     // get the protein
 
     // get protein sequence for product
+    CSeq_feat_EditHandle feat_with_prot_ref_handle;
+    CRef<CSeq_feat> new_feat_with_prot_ref;
     CRef<CProt_ref> prot_ref;
     {
         SAnnotSelector sel;
@@ -7958,7 +7960,12 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqf
         if( ! feat_ci ) {
             return;
         }
-        prot_ref.Reset( const_cast<CProt_ref*>(&feat_ci->GetOriginalFeature().GetData().GetProt()) );
+        feat_with_prot_ref_handle = CSeq_feat_EditHandle( feat_ci->GetSeq_feat_Handle() );
+
+        new_feat_with_prot_ref.Reset( new CSeq_feat );
+        new_feat_with_prot_ref->Assign( feat_ci->GetOriginalFeature() );
+
+        prot_ref.Reset( &new_feat_with_prot_ref->SetData().SetProt() );
         if( ! prot_ref ) {
             return;
         }
@@ -7973,6 +7980,8 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqf
             ChangeMade(CCleanupChange::eMoveToProtXref);
         }
     }
+
+    feat_with_prot_ref_handle.Replace( *new_feat_with_prot_ref );
 }
 
 void CNewCleanup_imp::DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst )
