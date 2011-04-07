@@ -250,7 +250,7 @@ protected:
     void x_PrintSubjectLength();
 
     CNcbiOstream& m_Ostream; ///< Stream to write output to
-    char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
+    char m_FieldDelimiter;   ///< Delimiter character for fields to print.
     string m_QuerySeq;       ///< Aligned part of the query sequence
     string m_SubjectSeq;     ///< Aligned part of the subject sequence
     int m_QueryStart;        ///< Starting offset in query
