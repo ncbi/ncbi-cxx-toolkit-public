@@ -85,7 +85,7 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
     printf("Blob number: %u\n"
         "Created by: %s:%u\n"
         "Creation time: %8lX\n"
-        "Random: %d\n",
+        "Random: %u\n",
         key.GetId(),
         g_NetService_TryResolveHost(key.GetHost()).c_str(),
         key.GetPort(),
