@@ -85,7 +85,7 @@ public:
     string StripKeyExtensions() const;
 
     /// Unconditionally append a service name to the specified string.
-    static void AppendServiceName(string& blob_id, const string& service_name);
+    static void AddExtensions(string& blob_id, const string& service_name);
 
     /// Extend this key with the specified service name.
     void SetServiceName(const string& service_name);
@@ -138,6 +138,8 @@ private:
     Uint4 m_Random;
     size_t m_PrimaryKeyLength;
     string m_ServiceName;
+    size_t m_ServiceNameExtPos;
+    size_t m_ServiceNameExtLen;
 };
 
 

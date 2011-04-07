@@ -106,8 +106,10 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
     }
 
     // Key extensions
-    if (key_obj)
+    if (key_obj) {
         key_obj->m_ServiceName = kEmptyStr;
+        key_obj->m_ServiceNameExtLen = key_obj->m_ServiceNameExtPos = 0;
+    }
 
     if (ch < ch_end) {
         if (ch + KEY_EXTENSION_MARKER_LENGTH > ch_end || memcmp(ch,
@@ -119,6 +121,7 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
             return false;
         do {
             int underscores_to_skip = 0;
+            const char* extension = ch;
             for (;;) {
                 if (++ch == ch_end)
                     return false;
@@ -126,14 +129,17 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
                     break;
                 ++underscores_to_skip;
             }
-            char tag = *ch;
+            char ext_tag = *ch;
             if (++ch == ch_end || *ch != '_')
                 return false;
-            const char* extension = ++ch;
+            const char* ext_value = ++ch;
             while (ch < ch_end && (*ch != '_' || --underscores_to_skip >= 0))
                 ++ch;
-            if (key_obj != NULL && tag == 'S')
-                key_obj->m_ServiceName.assign(extension, ch - extension);
+            if (key_obj != NULL && ext_tag == 'S') {
+                key_obj->m_ServiceName.assign(ext_value, ch - ext_value);
+                key_obj->m_ServiceNameExtPos = extension - key_str;
+                key_obj->m_ServiceNameExtLen = ch - extension;
+            }
         } while (ch < ch_end);
     }
 
@@ -145,30 +151,45 @@ string CNetCacheKey::StripKeyExtensions() const
     return HasExtensions() ? string(m_Key.data(), m_PrimaryKeyLength) : m_Key;
 }
 
-void CNetCacheKey::AppendServiceName(string& blob_id,
-    const string& service_name)
+static unsigned CountUnderscores(const string& extension_value)
 {
-    blob_id.append(KEY_EXTENSION_MARKER);
-    int underscore_count = 1;
-    const char* underscore = strchr(service_name.c_str(), '_');
+    unsigned underscore_count = 1;
+    const char* underscore = strchr(extension_value.c_str(), '_');
     while (underscore != NULL) {
         ++underscore_count;
         underscore = strchr(underscore + 1, '_');
     }
-    blob_id.append(underscore_count, '_');
+    return underscore_count;
+}
+
+static void AppendServiceNameExtension(string& blob_id,
+    const string& service_name)
+{
+    blob_id.append(CountUnderscores(service_name), '_');
     blob_id.append("S_");
     blob_id.append(service_name);
+}
+
+void CNetCacheKey::AddExtensions(string& blob_id, const string& service_name)
+{
+    blob_id.append(KEY_EXTENSION_MARKER, KEY_EXTENSION_MARKER_LENGTH);
+    AppendServiceNameExtension(blob_id, service_name);
 }
 
 void CNetCacheKey::SetServiceName(const string& service_name)
 {
     if (HasExtensions()) {
-        int old_service_name_pos =
-            m_PrimaryKeyLength + KEY_EXTENSION_MARKER_LENGTH;
-        m_Key.replace(old_service_name_pos,
-            m_Key.length() - old_service_name_pos, service_name);
-    } else
-        AppendServiceName(m_Key, service_name);
+        string service_name_ext;
+        AppendServiceNameExtension(service_name_ext, service_name);
+        m_Key.replace(m_ServiceNameExtPos, m_ServiceNameExtLen,
+            service_name_ext);
+        m_ServiceNameExtLen = service_name_ext.length();
+    } else {
+        AddExtensions(m_Key, service_name);
+        m_ServiceNameExtPos = m_PrimaryKeyLength + KEY_EXTENSION_MARKER_LENGTH;
+        m_ServiceNameExtLen = m_Key.length() - m_ServiceNameExtPos;
+    }
+    m_ServiceName = service_name;
 }
 
 CNetCacheKey::CNetCacheKey(const string& key_str)
@@ -223,7 +244,7 @@ void CNetCacheKey::GenerateBlobKey(string* key, unsigned id,
     const string& host, unsigned short port, const string& service_name)
 {
     GenerateBlobKey(key, id, host, port);
-    AppendServiceName(*key, service_name);
+    AddExtensions(*key, service_name);
 }
 
 unsigned int

@@ -325,20 +325,20 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
     cmd.append(NStr::IntToString(time_to_live));
 
     bool write_existing_blob = !blob_id->empty();
-    bool append_service_name;
+    bool add_extensions;
     CNetCacheKey key;
     string stripped_blob_id;
 
     if (write_existing_blob) {
         key.Assign(*blob_id);
         cmd.push_back(' ');
-        stripped_blob_id = (append_service_name = !key.HasExtensions()) ?
+        stripped_blob_id = (add_extensions = !key.HasExtensions()) ?
             *blob_id : key.StripKeyExtensions();
         cmd.append(stripped_blob_id);
         if (!m_EnableMirroring)
-            append_service_name = false;
+            add_extensions = false;
     } else
-        append_service_name = m_EnableMirroring;
+        add_extensions = m_EnableMirroring;
 
     AppendClientIPSessionIDPassword(&cmd);
 
@@ -387,8 +387,8 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
     } else
         *blob_id = exec_result.response;
 
-    if (append_service_name && m_Service.IsLoadBalanced())
-        CNetCacheKey::AppendServiceName(*blob_id, m_Service->m_ServiceName);
+    if (add_extensions && m_Service.IsLoadBalanced())
+        CNetCacheKey::AddExtensions(*blob_id, m_Service->m_ServiceName);
 
     return exec_result.conn;
 }
