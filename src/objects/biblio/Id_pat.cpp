@@ -39,7 +39,6 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/biblio/Id_pat.hpp>
-#include <objects/biblio/label_util.hpp>
 
 // generated classes
 
@@ -80,10 +79,17 @@ bool CId_pat::Match(const CId_pat& idp2) const
 }
 
 
-void CId_pat::GetLabel(string* label) const
+bool CId_pat::GetLabelV1(string* label, TLabelFlags) const
 {
-    GetLabelContent(label, false, 0, 0, 0, 0, 0,
-                    &GetCountry(), &GetSomeNumber());
+    return x_GetLabelV1(label, false, 0, 0, 0, 0, 0,
+                        &GetCountry(), &GetSomeNumber());
+}
+
+
+bool CId_pat::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    // Not handled in asn2gnb5.c; another option might be to return false.
+    return GetLabelV1(label, flags);
 }
 
 

@@ -39,7 +39,6 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/biblio/Cit_gen.hpp>
-#include <objects/biblio/label_util.hpp>
 #include <objects/general/Date.hpp>
 
 // generated classes
@@ -54,8 +53,10 @@ CCit_gen::~CCit_gen(void)
 }
 
 
-void CCit_gen::GetLabel(string* label, bool unique) const
+bool CCit_gen::GetLabelV1(string* label, TLabelFlags flags) const
 {
+    bool unique = (flags & fLabel_Unique) != 0;
+
     if (IsSetSerial_number()) {
         *label += "[" + NStr::IntToString(GetSerial_number()) + "]";
     }
@@ -105,12 +106,118 @@ void CCit_gen::GetLabel(string* label, bool unique) const
             }   
             *label += cit;
         }
-        return;
+        return true;
     }
 
-    GetLabelContent(label, unique,
+    return x_GetLabelV1(label, unique,
         authors, 0, title, 0, 0, 0, title2, titleunique,
         date_ptr, volume, issue, pages, unpublished);
+}
+
+
+// Based on FormatCitGen from the C Toolkit's api/asn2gnb5.c.
+bool CCit_gen::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    if ( !CanGetCit()  &&  !CanGetJournal()  &&  !CanGetDate()
+        &&  CanGetSerial_number() ) {
+        return false;
+    }
+
+    if ( !CanGetJournal()  &&  CanGetCit()  &&  SWNC(GetCit(), "unpublished")) {
+        if ((flags & fLabel_NoUnpubAffil) != 0) {
+            MaybeAddSpace(label);
+            *label += "Unpublished";
+            return true;
+        }
+
+        if (CanGetAuthors()  &&  GetAuthors().CanGetAffil()) {
+            MaybeAddSpace(label);
+            *label += "Unpublished ";
+            GetAuthors().GetAffil().GetLabel(label, flags, eLabel_V2);
+            NStr::TruncateSpacesInPlace(*label, NStr::eTrunc_End);
+            return true;
+        }
+
+        if (CanGetCit()  &&  HasText(GetCit())) {
+            MaybeAddSpace(label);
+            *label += NStr::TruncateSpaces(GetCit());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    string year  = CanGetDate()  ? GetParenthesizedYear(GetDate()) : kEmptyStr;
+    string pages = CanGetPages() ? FixPages(GetPages())            : kEmptyStr;
+    string journal, inpress;
+    SIZE_TYPE pos;
+
+    if (CanGetJournal()) {
+        journal = GetJournal().GetTitle();
+    }
+
+    if (CanGetCit()) {
+        pos = GetCit().find("Journal=\"");
+        if (pos != NPOS) {
+            journal = GetCit().substr(pos + 9);
+        } else if (SWNC(GetCit(), "submitted")
+                   ||  SWNC(GetCit(), "unpublished")) {
+            if ((flags & fLabel_NoBadCitGen) == 0  ||  !journal.empty()) {
+                inpress = GetCit();
+            } else {
+                inpress = "Unpublished";
+            }
+        } else if (SWNC(GetCit(), "Online Publication")
+                   ||  SWNC(GetCit(), "Published Only in DataBase")
+                   ||  SWNC(GetCit(), "In press")) {
+            inpress = GetCit();
+        } else if (SWNC(GetCit(), "(er) ")) {
+            journal = GetCit();
+        } else if ((flags & fLabel_NoBadCitGen) == 0  &&  journal.empty()) {
+            journal = GetCit();
+        }
+    }
+
+    if ((!HasText(pages) || (flags & (fLabel_FlatNCBI | fLabel_FlatEMBL) == 0))
+        &&  journal.empty()  &&  !HasText(inpress)  &&  !HasText(year)
+        &&  (!CanGetVolume() || !HasText(GetVolume()))) {
+        return false;
+    }
+
+    string prefix;
+    MaybeAddSpace(label);
+
+    if ( !journal.empty() ) {
+        pos = journal.find_first_of("=\"");
+        if (pos != NPOS) {
+            journal.resize(pos);
+        }
+        *label += journal;
+        prefix = " ";
+    }
+
+    if (HasText(inpress)) {
+        *label += prefix + inpress;
+        prefix = " ";
+    }
+
+    if (CanGetVolume()  &&  HasText(GetVolume())) {
+        *label += prefix + GetVolume();
+    }
+
+    if (HasText(pages)) {
+        if ((flags & fLabel_FlatNCBI) != 0) {
+            *label += ", " + pages;
+        } else if ((flags & fLabel_FlatEMBL) != 0) {
+            *label += ':' + pages;
+        }
+    }
+
+    if (HasText(year)) {
+        *label += ' ' + year;
+    }
+
+    return true;
 }
 
 

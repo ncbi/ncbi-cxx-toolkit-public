@@ -39,7 +39,6 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/biblio/Cit_pat.hpp>
-#include <objects/biblio/label_util.hpp>
 #include <objects/general/Date.hpp>
 
 // generated classes
@@ -54,7 +53,7 @@ CCit_pat::~CCit_pat(void)
 }
 
 
-void CCit_pat::GetLabel(string* label) const
+bool CCit_pat::GetLabelV1(string* label, TLabelFlags) const
 {
     string date;
     string* date_ptr = &date;
@@ -68,12 +67,143 @@ void CCit_pat::GetLabel(string* label) const
         date_ptr = 0;
     }
 
-    GetLabelContent(label, false, &GetAuthors(), 0, 0, 0, 0,
+    return x_GetLabelV1(label, false, &GetAuthors(), 0, 0, 0, 0,
         &GetCountry(),
         IsSetNumber() ? &GetNumber() :
             (IsSetApp_number() ? &GetApp_number() : 0),
         0, date_ptr);
 }
+
+
+bool CCit_pat::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    // The C equivalent (FormatCitPat from asn2gnb5.c) additionally
+    // consults Patent-seq-id objects, which are neither available nor
+    // usable here.  This implementation necessarily treats them as
+    // absent. :-/
+    MaybeAddSpace(label);
+
+    if ((flags & fLabel_FlatNCBI) != 0) {
+        *label += "Patent: ";
+    } else if ((flags & fLabel_FlatEMBL) != 0) {
+        *label += "Patent number ";
+    }
+
+    if (HasText(GetCountry())) {
+        *label += GetCountry();
+        if ((flags & (fLabel_FlatNCBI | fLabel_FlatEMBL)) != 0) {
+            *label += ' ';
+        }
+    }
+
+    if (CanGetNumber()  &&  HasText(GetNumber())) {
+        *label += GetNumber();
+    } else if (CanGetApp_number()  &&  HasText(GetApp_number())) {
+        *label += '(' + GetApp_number() + ')';
+    }
+
+    if (HasText(GetDoc_type())) {
+        *label += '-' + GetDoc_type();
+    }
+
+    *label += ' ';
+    {{
+        string date;
+        if (CanGetDate_issue()) {
+            GetDate_issue().GetDate(&date, "%{%2D%|01%}-%{%3N%|JAN%}-%Y");
+        } else if (CanGetApp_date()) {
+            GetApp_date().GetDate(&date, "%{%2D%|01%}-%{%3N%|JAN%}-%Y");
+        }
+        *label += date;
+    }}
+
+    if ((flags & fLabel_FlatNCBI) != 0) {
+        *label += ';';
+    } else if ((flags & fLabel_FlatEMBL) != 0) {
+        *label += '.';
+    }
+
+    x_GetLabelV2(label, GetAuthors(), "\n");
+
+    if (CanGetAssignees()) {
+        string assignees, consortia, prefix = "\n";
+        GetAssignees().GetLabel(&assignees, flags, eLabel_V2);
+        GetAssignees().GetLabel(&consortia, flags | fLabel_Consortia,
+                                eLabel_V2);
+        if (HasText(assignees)) {
+            *label += prefix + assignees + ';';
+            prefix = HasText(consortia) ? kEmptyStr : " ";
+        }
+        if (HasText(consortia)) {
+            *label += prefix + consortia + ';';
+            prefix = " ";
+        }
+        x_GetLabelV2(label, GetAssignees(), prefix);
+    }
+
+    return true;
+}
+
+
+// Based on FormatCitPat from the C Toolkit's api/asn2gnb5.c.
+bool CCit_pat::x_GetLabelV2(string* label, const CAuth_list& authors,
+                            string prefix)
+{
+    if ( !authors.CanGetAffil() ) {
+        return false;
+    }
+
+    switch (authors.GetAffil().Which()) {
+    case CAffil::e_Str:
+        if (HasText(authors.GetAffil().GetStr())) {
+            if (prefix == "\n") {
+                *label += prefix;
+            }
+            *label += authors.GetAffil().GetStr();
+        }
+        return true;
+
+    case CAffil::e_Std:
+    {
+        const CAffil::TStd& std = authors.GetAffil().GetStd();
+        if (std.CanGetAffil()  &&  HasText(std.GetAffil())) {
+            if (prefix == "\n") {
+                *label += prefix;
+            }
+            *label += std.GetAffil() + ';';
+            prefix = " ";
+        }
+        if (std.CanGetStreet()  &&  HasText(std.GetStreet())) {
+            *label += prefix + std.GetStreet() + ';';
+            prefix = " ";
+        }
+        if (std.CanGetDiv()  &&  HasText(std.GetDiv())) {
+            *label += prefix + std.GetDiv() + ';';
+            prefix = " ";
+        }
+        if (std.CanGetCity()  &&  HasText(std.GetCity())) {
+            *label += prefix + std.GetCity();
+            prefix = ", ";
+        }
+        if (std.CanGetSub()  &&  HasText(std.GetSub())) {
+            *label += prefix + std.GetSub();
+        }
+        if (std.CanGetCountry()  &&  HasText(std.GetCountry())) {
+            if (prefix == "\n") {
+                *label += prefix;
+            }
+            *label += ";\n" + std.GetCountry() + ';';
+        }
+        return true;
+    }
+
+    default:
+        return false;
+    }
+
+    return false;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

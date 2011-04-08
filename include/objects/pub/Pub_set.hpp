@@ -41,13 +41,15 @@
 // generated includes
 #include <objects/pub/Pub_set_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_PUB_EXPORT CPub_set : public CPub_set_Base
+class NCBI_PUB_EXPORT CPub_set : public CPub_set_Base, public IAbstractCitation
 {
     typedef CPub_set_Base Tparent;
 public:
@@ -56,9 +58,10 @@ public:
     // destructor
     ~CPub_set(void);
     
-    // Get a label that is the concatenation of the pub labels for
-    // the pubs in the set.
-    void GetLabel(string* label) const;
+    /// Get a label that is the concatenation of the pub labels for
+    /// the pubs in the set.
+    bool GetLabel(string* label, TLabelFlags flags = 0,
+                  ELabelVersion version = eLabel_DefaultVersion) const;
 
 private:
     // Prohibit copy constructor and assignment operator

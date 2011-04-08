@@ -52,6 +52,19 @@ CCit_proc::~CCit_proc(void)
 }
 
 
+bool CCit_proc::GetLabelV1(string* label, TLabelFlags flags) const
+{
+    // return GetBook().GetLabelV1(label, flags);
+    return GetBook().GetLabel(label, flags, eLabel_V1);
+}
+
+
+bool CCit_proc::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    return GetBook().GetLabel(label, flags, eLabel_V2);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -55,52 +55,47 @@ CPub_set::~CPub_set(void)
 // proceeding, or patent, creating a label by concatenting labels
 // for objects in the list
 template <class T>
-static void s_GetLabel(string* label, const list<CRef<T> >& the_list)
+static bool s_GetLabel(string* label, const list<CRef<T> >& the_list,
+                       CPub_set::TLabelFlags flags,
+                       CPub_set::ELabelVersion version)
 {
     bool first = true;
     ITERATE(typename list<CRef<T> >, it, the_list) {
         if (!first) {
             *label += ",";
-        } else {
-            first = false;
         }
-        (*it)->GetLabel(label);
-    }        
+        first &= !(*it)->GetLabel(label, flags, version);
+    }
+    return !first;
 }
 
 // Determines the type of set and calls the appropriately instantiated
 // s_GetLabel
-void CPub_set::GetLabel(string* label) const
+bool CPub_set::GetLabel(string* label, TLabelFlags flags,
+                        ELabelVersion version) const
 {
     // Ensure label exists
     if (!label) {
-        return;
+        return false;
     }
     
     switch (Which()) {
     case e_Pub:
-        s_GetLabel<CPub>(label, GetPub());
-        break;
+        return s_GetLabel<CPub>(label, GetPub(), flags, version);
     case e_Medline:
-        s_GetLabel<CMedline_entry>(label, GetMedline());
-        break;
+        return s_GetLabel<CMedline_entry>(label, GetMedline(), flags, version);
     case e_Article:
-        s_GetLabel<CCit_art>(label, GetArticle());
-        break;
+        return s_GetLabel<CCit_art>(label, GetArticle(), flags, version);
     case e_Journal:
-        s_GetLabel<CCit_jour>(label, GetJournal());
-        break;
+        return s_GetLabel<CCit_jour>(label, GetJournal(), flags, version);
     case e_Book:
-        s_GetLabel<CCit_book>(label, GetBook());
-        break;
+        return s_GetLabel<CCit_book>(label, GetBook(), flags, version);
     case e_Proc:
-        s_GetLabel<CCit_proc>(label, GetProc());
-        break;
+        return s_GetLabel<CCit_proc>(label, GetProc(), flags, version);
     case e_Patent:
-        s_GetLabel<CCit_pat>(label, GetPatent());
-        break;
+        return s_GetLabel<CCit_pat>(label, GetPatent(), flags, version);
     default:
-        break;
+        return false;
     }
 }
 

@@ -41,13 +41,15 @@
 // generated includes
 #include <objects/biblio/Cit_art_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_BIBLIO_EXPORT CCit_art : public CCit_art_Base
+class NCBI_BIBLIO_EXPORT CCit_art : public CCit_art_Base, public ICitationBase
 {
     typedef CCit_art_Base Tparent;
 public:
@@ -56,14 +58,18 @@ public:
     // destructor
     ~CCit_art(void);
     
+protected:
     // Appends a label onto "label" based on content
-    void GetLabel(string* label, bool unique = false) const;
+    bool GetLabelV1(string* label, TLabelFlags flags) const;
+    bool GetLabelV2(string* label, TLabelFlags flags) const;
 
 private:
     // Prohibit copy constructor and assignment operator
     CCit_art(const CCit_art& value);
     CCit_art& operator=(const CCit_art& value);
 
+    static bool x_GetLabelV2(string* label, TLabelFlags flags,
+                             const CCit_book& book);
 };
 
 

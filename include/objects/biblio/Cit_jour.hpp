@@ -41,13 +41,15 @@
 // generated includes
 #include <objects/biblio/Cit_jour_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_BIBLIO_EXPORT CCit_jour : public CCit_jour_Base
+class NCBI_BIBLIO_EXPORT CCit_jour : public CCit_jour_Base, public ICitationBase
 {
     typedef CCit_jour_Base Tparent;
 public:
@@ -56,8 +58,10 @@ public:
     // destructor
     ~CCit_jour(void);
     
+protected:    
     // Appends a label to "label" based on content
-    void GetLabel(string* label) const;
+    bool GetLabelV1(string* label, TLabelFlags flags) const;
+    bool GetLabelV2(string* label, TLabelFlags flags) const;
 
 private:
     // Prohibit copy constructor and assignment operator

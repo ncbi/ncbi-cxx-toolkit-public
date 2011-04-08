@@ -39,7 +39,6 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/biblio/Cit_jour.hpp>
-#include <objects/biblio/label_util.hpp>
 
 // generated classes
 
@@ -53,9 +52,97 @@ CCit_jour::~CCit_jour(void)
 }
 
 
-void CCit_jour::GetLabel(string* label) const
+bool CCit_jour::GetLabelV1(string* label, TLabelFlags) const
 {
-    GetLabelContent(label, false, 0, &GetImp(), &GetTitle(), 0, this);
+    return x_GetLabelV1(label, false, 0, &GetImp(), &GetTitle(), 0, this);
+}
+
+
+// Based on FormatCitJour from the C Toolkit's api/asn2gnb5.c.
+bool CCit_jour::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    const CImprint& imp = GetImp();
+
+    int prepub = imp.CanGetPrepub()    ? imp.GetPrepub()    : 0;
+    int status = imp.CanGetPubstatus() ? imp.GetPubstatus() : 0;
+
+    bool is_electronic = (status == ePubStatus_epublish
+                          ||  status == ePubStatus_aheadofprint);
+
+    const string* jtitle;
+    try {
+        jtitle = &GetTitle().GetTitle(CTitle::C_E::e_Iso_jta);
+    } catch (CException&) {
+        try {
+            jtitle = &GetTitle().GetTitle();
+            if (NStr::StartsWith(*jtitle, "(er)")) {
+                is_electronic = true;
+            }
+            if ((flags & fLabel_ISO_JTA) != 0  &&  !is_electronic) {
+                return false;
+            }
+        } catch (CException&) {
+            jtitle = NULL;
+        }
+    }
+
+    string year = GetParenthesizedYear(imp.GetDate());
+
+    MaybeAddSpace(label);
+
+    if (prepub == CImprint::ePrepub_submitted
+        ||  prepub == CImprint::ePrepub_other) {
+        *label += "Unpublished " + year;
+        return true;
+    }
+
+    if (jtitle == NULL  ||  jtitle->size() < 3) {
+        *label += '.';
+        return false;
+    }
+
+    *label += *jtitle;
+
+    const string* volume = imp.CanGetVolume() ? &imp.GetVolume() : NULL;
+    string        pages  = imp.CanGetPages()  ? imp.GetPages()   : kEmptyStr;
+    if ( !pages.empty()  &&  !is_electronic ) {
+        pages = FixPages(pages);
+    }
+
+    if (HasText(volume)) {
+        MaybeAddSpace(label);
+        *label += *volume;
+    }
+
+    if ((flags & fLabel_FlatNCBI) != 0
+        &&  (HasText(volume)  ||  HasText(pages))) {
+        NoteSup(label, imp);
+    }
+
+    if ((flags & fLabel_FlatNCBI) != 0) {
+        if (HasText(pages)) {
+            *label += ", " + pages;
+        }
+    } else if ((flags & fLabel_FlatEMBL) != 0) {
+        if (HasText(pages)) {
+            *label += ':' + pages;
+        } else if (prepub == CImprint::ePrepub_in_press  ||  !HasText(volume)) {
+            MaybeAddSpace(label);
+            *label += "0:0-0";
+        }
+    }
+
+    *label += ' ' + year;
+    
+    if ((flags & fLabel_FlatNCBI) != 0) {
+        if (prepub == CImprint::ePrepub_in_press
+            ||  (status == ePubStatus_aheadofprint  &&  !HasText(pages))) {
+            MaybeAddSpace(label);
+            *label += "In press";
+        }
+    }
+
+    return true;
 }
 
 

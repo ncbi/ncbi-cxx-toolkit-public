@@ -52,6 +52,46 @@ CCit_let::~CCit_let(void)
 }
 
 
+bool CCit_let::GetLabelV1(string* label, TLabelFlags flags) const
+{
+    // return GetCit().GetLabelV1(label, flags);
+    return GetCit().GetLabel(label, flags, eLabel_V1);
+}
+
+
+bool CCit_let::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    if ( !CanGetType()  ||  GetType() != eType_thesis ) {
+        // return GetCit().GetLabel(label, flags, eLabel_V2);
+        return false;
+    }
+
+    const CCit_book& cit = GetCit();
+    const CImprint&  imp = cit.GetImp();
+
+    MaybeAddSpace(label);
+
+    *label += "Thesis " + GetParenthesizedYear(imp.GetDate());
+
+    if (imp.CanGetPub()) {
+        SIZE_TYPE pos = label->size();
+        *label += ' ';
+        if (imp.GetPub().GetLabel(label, flags, eLabel_V1)) { // sic
+            // "V1" taken over by MakeAffilStr translation
+            NStr::ReplaceInPlace(*label, "\"", "'", pos);
+        } else {
+            label->resize(pos);
+        }
+    }
+
+    if (imp.CanGetPrepub()  &&  imp.GetPrepub() == CImprint::ePrepub_in_press) {
+        *label += ", In press";
+    }
+
+    return true;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

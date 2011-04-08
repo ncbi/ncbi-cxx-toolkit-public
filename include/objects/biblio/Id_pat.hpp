@@ -41,13 +41,15 @@
 // generated includes
 #include <objects/biblio/Id_pat_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_BIBLIO_EXPORT CId_pat : public CId_pat_Base
+class NCBI_BIBLIO_EXPORT CId_pat : public CId_pat_Base, public ICitationBase
 {
     typedef CId_pat_Base Tparent;
 public:
@@ -60,11 +62,13 @@ public:
     bool Match(const CId_pat& idp2) const;
     static bool Id_Match(const C_Id& id1, const C_Id& id2);
 
-    // Appends a label onto "label" based on content
-    void GetLabel(string* label) const;
-
     // may return either actual number or application number
     const string& GetSomeNumber(void) const;
+
+protected:
+    // Appends a label onto "label" based on content
+    bool GetLabelV1(string* label, TLabelFlags flags) const;
+    bool GetLabelV2(string* label, TLabelFlags flags) const;
 
 private:
     // Prohibit copy constructor & assignment operator

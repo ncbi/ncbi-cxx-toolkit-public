@@ -52,6 +52,76 @@ CAffil::~CAffil(void)
 }
 
 
+// Corresponds to the C Toolkit's internal MakeAffilStr
+bool CAffil::GetLabelV1(string* label, TLabelFlags) const
+{
+    switch (Which()) {
+    case e_not_set:
+        return false;
+
+    case e_Str:
+        *label += GetStr();
+        return HasText(GetStr());
+
+    case e_Std:
+    {
+        string sep;
+#define ADD_AFFIL_FIELD(X) \
+        if (GetStd().CanGet##X()  &&  HasText(GetStd().Get##X())) { \
+            *label += sep + GetStd().Get##X(); \
+            sep = ", "; \
+        }
+        ADD_AFFIL_FIELD(Affil)
+        ADD_AFFIL_FIELD(Div)
+        ADD_AFFIL_FIELD(Street)
+        ADD_AFFIL_FIELD(City)
+        ADD_AFFIL_FIELD(Sub)
+        ADD_AFFIL_FIELD(Country)
+#undef ADD_AFFIL_FIELD
+        return !sep.empty();
+    }
+    }
+    return false;
+}
+
+
+// Corresponds to the C Toolkit's exported GetFlatFileAffilString (aka GetAffil)
+bool CAffil::GetLabelV2(string* label, TLabelFlags) const
+{
+    switch (Which()) {
+    case e_not_set:
+        return false;
+
+    case e_Str:
+        *label += NStr::Replace(GetStr(), "\"", "'");
+        return HasText(GetStr());
+
+    case e_Std:
+    {
+        string sep;
+#define ADD_AFFIL_FIELD(X) \
+        if (GetStd().CanGet##X()  &&  HasText(GetStd().Get##X())) { \
+            *label += sep + NStr::Replace(GetStd().Get##X(), "\"", "'"); \
+            sep = ", "; \
+        }
+        ADD_AFFIL_FIELD(Div)
+        ADD_AFFIL_FIELD(Affil)
+        ADD_AFFIL_FIELD(Street)
+        ADD_AFFIL_FIELD(City)
+        ADD_AFFIL_FIELD(Sub)
+        if (GetStd().CanGetPostal_code()
+            &&  HasText(GetStd().GetPostal_code())) {
+            *label += ' ' + NStr::Replace(GetStd().GetPostal_code(), "\"", "'");
+        }
+        ADD_AFFIL_FIELD(Country)
+#undef ADD_AFFIL_FIELD
+        return !sep.empty()  ||  GetStd().CanGetPostal_code();
+    }
+    }    
+    return false;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

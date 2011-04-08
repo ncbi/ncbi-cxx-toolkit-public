@@ -1,2 +1,2 @@
 LIB = biblio
-SRC = biblio__ biblio___ label_util
+SRC = biblio__ biblio___ citation_base

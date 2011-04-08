@@ -41,6 +41,8 @@
 // generated includes
 #include <objects/pub/Pub_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -49,7 +51,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CAuth_list;
 
-class NCBI_PUB_EXPORT CPub : public CPub_Base
+class NCBI_PUB_EXPORT CPub : public CPub_Base, public IAbstractCitation
 {
     typedef CPub_Base Tparent;
 public:
@@ -63,15 +65,27 @@ public:
         eContent,
         eBoth};
      
-    // Concatenates a label for this pub to label. If unique is true,
-    // adds a unique tag to the end of the concatenated label. 
-    void GetLabel(string*          label, 
-                  ELabelType       type   = eContent, 
+    /// Concatenate a label for this pub to label. If flags contains
+    /// fCitLabel_Unique, add a unique tag to the end of the
+    /// concatenated label.
+    bool GetLabel(string*          label, 
+                  ELabelType       type    = eContent,
+                  TLabelFlags      flags   = 0,
+                  ELabelVersion    version = eLabel_DefaultVersion) const;
+
+    bool GetLabel(string*          label,
+                  ELabelType       type,
                   bool             unique = false) const;
+
+    bool GetLabel(string* label, TLabelFlags flags = 0,
+                  ELabelVersion version = eLabel_DefaultVersion) const;
 
     // convenience functions to get author list from underlying pub
     bool IsSetAuthors(void) const;
     const CAuth_list& GetAuthors(void) const;
+
+
+protected:
   
 	private:
     // Prohibit copy constructor and assignment operator
@@ -88,6 +102,19 @@ public:
 inline
 CPub::CPub(void)
 {
+}
+
+inline
+bool CPub::GetLabel(string* label, ELabelType type, bool unique) const
+{
+    return GetLabel(label, type, unique ? fLabel_Unique : 0);
+}
+
+inline
+bool CPub::GetLabel(string* label, TLabelFlags flags, ELabelVersion version)
+    const
+{
+    return GetLabel(label, eContent, flags, version);
 }
 
 

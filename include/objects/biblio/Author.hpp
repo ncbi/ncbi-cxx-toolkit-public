@@ -43,14 +43,18 @@
 // generated includes
 #include <objects/biblio/Author_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CAuth_list;
+
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_BIBLIO_EXPORT CAuthor : public CAuthor_Base
+class NCBI_BIBLIO_EXPORT CAuthor : public CAuthor_Base, public ICitationBase
 {
     typedef CAuthor_Base Tparent;
 public:
@@ -59,11 +63,20 @@ public:
     // destructor
     ~CAuthor(void);
 
+protected:
+    bool GetLabelV1(string* label, TLabelFlags flags) const;
+    bool GetLabelV2(string* label, TLabelFlags flags) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CAuthor(const CAuthor& value);
     CAuthor& operator=(const CAuthor& value);
 
+    static bool x_GetLabelV2(string* label, TLabelFlags flags, CTempString name,
+                             CTempString initials = kEmptyStr,
+                             CTempString suffix = kEmptyStr);
+
+    friend class CAuth_list;
 };
 
 /////////////////// CAuthor inline methods

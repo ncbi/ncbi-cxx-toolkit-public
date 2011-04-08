@@ -41,13 +41,16 @@
 // generated includes
 #include <objects/pub/Pub_equiv_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_PUB_EXPORT CPub_equiv : public CPub_equiv_Base
+class NCBI_PUB_EXPORT CPub_equiv
+    : public CPub_equiv_Base, public IAbstractCitation
 {
     typedef CPub_equiv_Base Tparent;
 public:
@@ -56,8 +59,9 @@ public:
     // destructor
     ~CPub_equiv(void);
     
-    // Appends a label to "label" based on content
-    void GetLabel(string* label) const;
+    /// Append a label to "label" based on content
+    bool GetLabel(string* label, TLabelFlags flags = 0,
+                  ELabelVersion version = eLabel_DefaultVersion) const;
 
 private:
     // Prohibit copy constructor and assignment operator

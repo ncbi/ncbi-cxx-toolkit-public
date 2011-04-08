@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/biblio/Auth_list_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -50,7 +52,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_BIBLIO_EXPORT CAuth_list : public CAuth_list_Base
+class NCBI_BIBLIO_EXPORT CAuth_list
+    : public CAuth_list_Base, public ICitationBase
 {
     typedef CAuth_list_Base Tparent;
 public:
@@ -59,11 +62,16 @@ public:
     // destructor
     ~CAuth_list(void);
 
+    size_t GetNameCount(void) const;
+
+protected:
+    bool GetLabelV1(string* label, TLabelFlags flags) const;
+    bool GetLabelV2(string* label, TLabelFlags flags) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CAuth_list(const CAuth_list& value);
     CAuth_list& operator=(const CAuth_list& value);
-
 };
 
 /////////////////// CAuth_list inline methods

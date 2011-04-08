@@ -55,6 +55,131 @@ CAuth_list::~CAuth_list(void)
 }
 
 
+size_t CAuth_list::GetNameCount(void) const
+{
+    switch (GetNames().Which()) {
+    case TNames::e_not_set:  return 0;
+    case TNames::e_Std:      return GetNames().GetStd().size();
+    case TNames::e_Ml:       return GetNames().GetMl().size();
+    case TNames::e_Str:      return GetNames().GetStr().size();
+    }
+    return 0;
+}
+
+
+bool CAuth_list::GetLabelV1(string* label, TLabelFlags flags) const
+{
+    const C_Names& names = GetNames();
+    switch (names.Which()) {
+    case C_Names::e_not_set:
+        break;
+    case C_Names::e_Std:
+        if (names.GetStd().size() > 0) {
+            return names.GetStd().front()->GetLabel(label, flags, eLabel_V1);
+        }
+        break;
+    case C_Names::e_Ml:
+        if (names.GetMl().size() > 0) {
+            *label += names.GetMl().front();
+            return true;
+        }
+        break;
+    case C_Names::e_Str:
+        if (names.GetStr().size() > 0) {
+            *label += names.GetStr().front();
+            return true;
+        }
+        break;
+    }
+
+    return false;
+}
+
+
+bool CAuth_list::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    const C_Names& names = GetNames();
+    string         prefix;
+    unsigned int   count = 0;
+
+    switch (names.Which()) {
+    case C_Names::e_not_set:
+        return false;
+
+    case C_Names::e_Std:
+    {
+        C_Names::TStd individuals;
+        ITERATE (C_Names::TStd, it, names.GetStd()) {
+            switch ((*it)->GetName().Which()) {
+            case CPerson_id::e_Name:
+            case CPerson_id::e_Ml:
+            case CPerson_id::e_Str:
+                if ((flags & fLabel_Consortia) == 0) {
+                    individuals.push_back(*it);
+                }
+                break;
+            case CPerson_id::e_Consortium:
+                if ((flags & fLabel_Consortia) != 0) {
+                    if ((*it)->GetLabel(label, flags, eLabel_V2)) {
+                        ++count;
+                    }
+                    prefix = "; ";
+                }
+                break;
+            default:
+                break;
+            }
+        }
+        
+        if ((flags & fLabel_Consortia) == 0) {
+            ITERATE (C_Names::TStd, it, individuals) {
+                if (count > 0) {
+                    if (&*it == &individuals.back()
+                        &&  (flags & fLabel_FlatNCBI) != 0) {
+                        prefix = " and ";
+                    } else {
+                        prefix = ", ";
+                    }
+                }
+                *label += prefix;
+                if ((*it)->GetLabel(label, flags, eLabel_V2)) {
+                    ++count;
+                } else if (NStr::EndsWith(*label, prefix)) { // It should!
+                    label->resize(label->size() - prefix.size());
+                }
+            }
+        }
+
+        break;
+    }
+
+    case C_Names::e_Ml:
+    case C_Names::e_Str:
+        if ((flags & fLabel_Consortia) == 0) {
+            C_Names::TMl nl = names.IsMl() ? names.GetMl() : names.GetStr();
+            ITERATE (C_Names::TMl, it, nl) {
+                if (count > 0) {
+                    if (&*it == &nl.back() && (flags & fLabel_FlatNCBI) != 0) {
+                        prefix = " and ";
+                    } else {
+                        prefix = ", ";
+                    }
+                }
+                *label += prefix;
+                if (CAuthor::x_GetLabelV2(label, flags, *it)) {
+                    ++count;
+                } else if (NStr::EndsWith(*label, prefix)) { // It should!
+                    label->resize(label->size() - prefix.size());
+                }
+            }
+        }
+        break;
+    }
+
+    return count > 0;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

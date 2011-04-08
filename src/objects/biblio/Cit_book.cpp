@@ -39,7 +39,6 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/biblio/Cit_book.hpp>
-#include <objects/biblio/label_util.hpp>
 
 // generated classes
 
@@ -53,11 +52,39 @@ CCit_book::~CCit_book(void)
 }
 
 
-void CCit_book::GetLabel(string* label, bool unique) const
+bool CCit_book::GetLabelV1(string* label, TLabelFlags flags) const
 {
-    GetLabelContent(label, unique, &GetAuthors(), &GetImp(), &GetTitle(), this, 0);
+    return x_GetLabelV1(label, (flags & fLabel_Unique) != 0, &GetAuthors(),
+                        &GetImp(), &GetTitle(), this, 0);
 }
 
+
+// Based on FormatCitJour from the C Toolkit's api/asn2gnb5.c.
+bool CCit_book::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    const CImprint& imp = GetImp();
+
+    MaybeAddSpace(label);
+    string title = GetTitle().GetTitle();
+    *label += "(in) " + NStr::ToUpper(title) + '.';
+
+    if (imp.CanGetPub()) {
+        *label += ' ';
+        imp.GetPub().GetLabel(label, flags, eLabel_V1); // sic
+        // "V1" taken over by MakeAffilStr translation
+    }
+
+    string year = GetParenthesizedYear(imp.GetDate());
+    if ( !year.empty() ) {
+        *label += ' ' + year;
+    }
+
+    if (imp.CanGetPrepub()  &&  imp.GetPrepub() == CImprint::ePrepub_in_press) {
+        *label += ", In press";
+    }
+
+    return true;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

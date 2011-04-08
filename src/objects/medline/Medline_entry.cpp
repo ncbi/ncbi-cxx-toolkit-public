@@ -53,7 +53,7 @@ CMedline_entry::~CMedline_entry(void)
 }
 
 
-void CMedline_entry::GetLabel(string* label, bool unique) const
+bool CMedline_entry::GetLabelV1(string* label, TLabelFlags flags) const
 {
     // Add Medline specific label, then treat as cit-art
     if ( IsSetPmid() ) {
@@ -66,7 +66,15 @@ void CMedline_entry::GetLabel(string* label, bool unique) const
         *label += "No Medline found";
     }
     *label += " ";
-    GetCit().GetLabel(label, unique);
+    // GetCit().GetLabelV1(label, flags);
+    GetCit().GetLabel(label, flags, eLabel_V1);
+    return true;
+}
+
+
+bool CMedline_entry::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    return GetCit().GetLabel(label, flags, eLabel_V2);
 }
 
 

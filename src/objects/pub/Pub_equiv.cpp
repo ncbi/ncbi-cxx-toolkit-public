@@ -53,8 +53,10 @@ CPub_equiv::~CPub_equiv(void)
 }
 
 // Appends a label to "label" based on content
-void CPub_equiv::GetLabel(string* label) const
+bool CPub_equiv::GetLabel(string* label, TLabelFlags flags,
+                          ELabelVersion version) const
 {
+    bool found = false;
     const CPub* pubs[5];
     int i;
     for(i = 0; i < 5; i++) {
@@ -103,9 +105,10 @@ void CPub_equiv::GetLabel(string* label) const
             *label += " ";
         }
         // Append a label to "label"
-        pubs[i]->GetLabel(label);
+        found |= pubs[i]->GetLabel(label, flags, version);
     }
-        
+
+    return found;
 }
 
 

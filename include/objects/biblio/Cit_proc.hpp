@@ -41,13 +41,15 @@
 // generated includes
 #include <objects/biblio/Cit_proc_.hpp>
 
+#include <objects/biblio/Cit_book.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_BIBLIO_EXPORT CCit_proc : public CCit_proc_Base
+class NCBI_BIBLIO_EXPORT CCit_proc : public CCit_proc_Base, public ICitationBase
 {
     typedef CCit_proc_Base Tparent;
 public:
@@ -56,8 +58,10 @@ public:
     // destructor
     ~CCit_proc(void);
     
+protected:    
     // Appends a label to "label" based on content
-    void GetLabel(string* label) const;
+    bool GetLabelV1(string* label, TLabelFlags flags) const;
+    bool GetLabelV2(string* label, TLabelFlags flags) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -74,12 +78,6 @@ private:
 inline
 CCit_proc::CCit_proc(void)
 {
-}
-
-inline
-void CCit_proc::GetLabel(string* label) const
-{
-    GetBook().GetLabel(label);
 }
 
 /////////////////// end of CCit_proc inline methods

@@ -44,7 +44,7 @@
 #include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/Cit_book.hpp>
 #include <objects/biblio/Cit_proc.hpp>
-#include <objects/biblio/label_util.hpp>
+#include <objects/general/Date.hpp>
 
 // generated classes
 
@@ -58,7 +58,7 @@ CCit_art::~CCit_art(void)
 }
 
 
-void CCit_art::GetLabel(string* label, bool unique) const
+bool CCit_art::GetLabelV1(string* label, TLabelFlags flags) const
 {
     const CCit_jour*  journal = 0;
     const CCit_book*  book = 0;
@@ -70,56 +70,22 @@ void CCit_art::GetLabel(string* label, bool unique) const
         authors = &GetAuthors();
     }
     if ( IsSetTitle() ) {
-        const CRef<CTitle::C_E>& ce = GetTitle().Get().front();
-        switch ( ce->Which() ) {
-        case CTitle::C_E::e_Name:
-            titleunique = &ce->GetName();
-            break;
-        case CTitle::C_E::e_Tsub:
-            titleunique = &ce->GetTsub();
-            break;
-        case CTitle::C_E::e_Trans:
-            titleunique = &ce->GetTrans();
-            break;
-        case CTitle::C_E::e_Jta:
-            titleunique = &ce->GetJta();
-            break;
-        case CTitle::C_E::e_Iso_jta:
-            titleunique = &ce->GetIso_jta();
-            break;
-        case CTitle::C_E::e_Ml_jta:
-            titleunique = &ce->GetMl_jta();
-            break;
-        case CTitle::C_E::e_Coden:
-            titleunique = &ce->GetCoden();
-            break;
-        case CTitle::C_E::e_Issn:
-            titleunique = &ce->GetIssn();
-            break;
-        case CTitle::C_E::e_Abr:
-            titleunique = &ce->GetAbr();
-            break;
-        case CTitle::C_E::e_Isbn:
-            titleunique = &ce->GetIsbn();
-            break;
-        default:
-            break;
-        }
+        titleunique = &GetTitle().GetTitle();
     }
     switch ( GetFrom().Which() ) {
-    case CCit_art::C_From::e_Journal:
+    case C_From::e_Journal:
         journal = &GetFrom().GetJournal();
         imprint = &journal->GetImp();
         title = &journal->GetTitle();
         break;
-    case CCit_art::C_From::e_Book:
+    case C_From::e_Book:
         book = &GetFrom().GetBook();
         imprint = &book->GetImp();
         if (!authors) {
             authors = &book->GetAuthors();
         }
         break;
-    case CCit_art::C_From::e_Proc:
+    case C_From::e_Proc:
         book = &GetFrom().GetProc().GetBook();
         imprint = &book->GetImp();
         if (!authors) {
@@ -128,9 +94,93 @@ void CCit_art::GetLabel(string* label, bool unique) const
     default:
         break;
     }
-    GetLabelContent(label, unique, authors, imprint, title, book, journal,
-        0, 0, titleunique);
+    return x_GetLabelV1(label, (flags & fLabel_Unique) != 0, authors, imprint,
+                        title, book, journal, 0, 0, titleunique);
 }   
+
+
+// Based on FormatCit(Book)Art from the C Toolkit's api/asn2gnb5.c.
+bool CCit_art::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    switch (GetFrom().Which()) {
+    case C_From::e_not_set:
+        return false;
+    case C_From::e_Journal:
+        return GetFrom().GetJournal()
+            .GetLabel(label, flags | fLabel_ISO_JTA, eLabel_V2);
+    case C_From::e_Book:
+        return x_GetLabelV2(label, flags, GetFrom().GetBook());
+    case C_From::e_Proc:
+        return x_GetLabelV2(label, flags, GetFrom().GetProc().GetBook());
+    }
+
+    return false;
+}
+
+
+bool CCit_art::x_GetLabelV2(string* label, TLabelFlags flags,
+                            const CCit_book& book)
+{
+    const CImprint& imp    = book.GetImp();
+    int             prepub = imp.CanGetPrepub() ? imp.GetPrepub() : 0;
+    string          year   = GetParenthesizedYear(imp.GetDate());
+
+    MaybeAddSpace(label);
+
+    if (prepub == CImprint::ePrepub_submitted
+        ||  prepub == CImprint::ePrepub_other) {
+        *label += "Unpublished " + year;
+        return true;
+    }
+
+    string title = book.GetTitle().GetTitle();
+    if (title.size() < 3) {
+        *label += '.';
+        return false;
+    }
+
+    *label += "(in) ";
+    if (book.GetAuthors().GetLabel(label, flags, eLabel_V2)) {
+        size_t n = book.GetAuthors().GetNameCount();
+        if (n > 1) {
+            *label += " (Eds.);";
+        } else if (n == 1) {
+            *label += " (Ed.);";
+        }
+        *label += '\n';
+    }
+
+    *label += NStr::ToUpper(title);
+
+    const string* volume = imp.CanGetVolume() ? &imp.GetVolume() : NULL;
+    if (HasText(volume)  &&  *volume != "0") {
+        *label += ", Vol. " + *volume;
+        if ((flags & fLabel_FlatNCBI) != 0) {
+            NoteSup(label, imp);
+        }
+    }
+    if (imp.CanGetPages()) {
+        string pages = FixPages(imp.GetPages());
+        if (HasText(pages)) {
+            *label += ": " + pages;
+        }
+    }
+    *label += ";\n";
+
+    if (imp.CanGetPub()
+        &&  imp.GetPub().GetLabel(label, flags, eLabel_V1)) { // sic
+        // "V1" taken over by MakeAffilStr translation
+        *label += ' ';
+    }
+    *label += year;
+
+    if ((flags & fLabel_FlatNCBI) != 0
+        &&  prepub == CImprint::ePrepub_in_press) {
+        *label += " In press";
+    }
+
+    return true;
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::

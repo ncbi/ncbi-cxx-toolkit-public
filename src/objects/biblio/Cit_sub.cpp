@@ -39,7 +39,6 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/biblio/Cit_sub.hpp>
-#include <objects/biblio/label_util.hpp>
 #include <objects/general/Date.hpp>
 
 // generated classes
@@ -54,15 +53,50 @@ CCit_sub::~CCit_sub(void)
 }
 
 
-void CCit_sub::GetLabel(string* label, bool unique) const
+bool CCit_sub::GetLabelV1(string* label, TLabelFlags flags) const
 {
     string date;
     if ( IsSetDate() ) {
         GetDate().GetDate(&date, "%{%M-%D-%}%Y");
     }
-    GetLabelContent(label, unique, &GetAuthors(),
+    return x_GetLabelV1(label, (flags & fLabel_Unique) != 0, &GetAuthors(),
         IsSetImp() ? &GetImp() : 0,
         0, 0, 0, 0, 0, 0, IsSetDate() ? &date : 0);
+}
+
+
+// Based on FormatCitSub from the C Toolkit's api/asn2gnb5.c.
+bool CCit_sub::GetLabelV2(string* label, TLabelFlags flags) const
+{
+    static const string kToINSD = " to the EMBL/GenBank/DDBJ databases.";
+
+    MaybeAddSpace(label);
+
+    string date;
+    if (CanGetDate()) {
+        GetDate().GetDate(&date, "%{%2D%|\?\?%}-%{%3N%|\?\?%}-%4Y");
+        NStr::ToUpper(date);
+    }
+    if ( !HasText(date) ) {
+        date = "\?\?-\?\?\?-\?\?\?\?";
+    }
+    *label += "Submitted (" + date + ')';
+
+    if (GetAuthors().CanGetAffil()) {
+        string affil;
+        GetAuthors().GetAffil().GetLabel(&affil, flags, eLabel_V2);
+        if ((flags & fLabel_FlatEMBL) != 0
+            &&  !NStr::StartsWith(affil, kToINSD)) {
+            *label += kToINSD + '\n';
+        } else {
+            *label += ' ';
+        }
+        *label += affil;
+    } else if ((flags & fLabel_FlatEMBL) != 0) {
+        *label += kToINSD + '\n';
+    }
+
+    return true;
 }
 
 

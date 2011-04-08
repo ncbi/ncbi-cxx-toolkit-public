@@ -66,9 +66,10 @@ CPub::~CPub(void)
 
 
 // Appends a label to "label"
-void CPub::GetLabel(string*    label,
-                    ELabelType type,
-                    bool       unique) const
+bool CPub::GetLabel(string*        label,
+                    ELabelType     type,
+                    TLabelFlags    flags,
+                    ELabelVersion  version) const
 {
     static const char* s_PubTypes[14] = {
         "Unknown",
@@ -88,7 +89,7 @@ void CPub::GetLabel(string*    label,
 
     // Check that label exists
     if (!label) {
-        return;
+        return false;
     }
 
     // Get the index into the s_PubTypes array corresponding to pub type
@@ -98,7 +99,7 @@ void CPub::GetLabel(string*    label,
     if (type == eType) {
         // Append pub type to label and return
         *label += s_PubTypes[idx];
-        return;
+        return true;
     }
 
     if (type == eBoth) {
@@ -109,47 +110,34 @@ void CPub::GetLabel(string*    label,
     switch (Which()) {
     case e_Muid:
         *label += "NLM" + NStr::IntToString(GetMuid());
-        break;
+        return true;
     case e_Pmid:
         *label += "PM" + NStr::IntToString(GetPmid().Get());
-        break;
+        return true;
     case e_Equiv:
-        GetEquiv().GetLabel(label);
-        break;
+        return GetEquiv().GetLabel(label, flags, version);
     case e_Medline:
-        GetMedline().GetLabel(label, unique);
-        break;   
+        return GetMedline().GetLabel(label, flags, version);
     case e_Article:
-        GetArticle().GetLabel(label, unique);
-        break;
+        return GetArticle().GetLabel(label, flags, version);
     case e_Journal:
-        GetJournal().GetLabel(label);
-        break;
+        return GetJournal().GetLabel(label, flags, version);
     case e_Book:
-        GetBook().GetLabel(label);
-        break;
+        return GetBook().GetLabel(label, flags, version);
     case e_Proc:
-        GetProc().GetLabel(label);
-        break;
+        return GetProc().GetLabel(label, flags, version);
     case e_Man:
-        GetMan().GetLabel(label);
-        break;
+        return GetMan().GetLabel(label, flags, version);
     case e_Sub:
-        GetSub().GetLabel(label, unique);
-        break;
+        return GetSub().GetLabel(label, flags, version);
     case e_Patent:
-        GetPatent().GetLabel(label);
-        break;
+        return GetPatent().GetLabel(label, flags, version);
     case e_Pat_id:
-    {
-        GetPat_id().GetLabel(label);
-        break;
-    }
+        return GetPat_id().GetLabel(label, flags, version);
     case e_Gen:
-        GetGen().GetLabel(label, unique);
-        break;       
+        return GetGen().GetLabel(label, flags, version);
     default:
-        break;
+        return false;
     }
 }
 

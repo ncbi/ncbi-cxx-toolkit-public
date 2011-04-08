@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/biblio/Affil_.hpp>
 
+#include <objects/biblio/citation_base.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -50,7 +52,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_BIBLIO_EXPORT CAffil : public CAffil_Base
+class NCBI_BIBLIO_EXPORT CAffil : public CAffil_Base, public ICitationBase
 {
     typedef CAffil_Base Tparent;
 public:
@@ -58,6 +60,10 @@ public:
     CAffil(void);
     // destructor
     ~CAffil(void);
+
+protected:
+    bool GetLabelV1(string* label, TLabelFlags flags) const;
+    bool GetLabelV2(string* label, TLabelFlags flags) const;
 
 private:
     // Prohibit copy constructor and assignment operator
