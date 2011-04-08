@@ -358,7 +358,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
             }
 
             ERR_POST_X(3, "Could not connect to " <<
-                m_Service.GetServiceName() << ":" << e.what() <<
+                m_Service->m_ServiceName << ":" << e.what() <<
                 ". Connecting to backup server " << backup->AsString() << ".");
 
             exec_result = m_Service->GetServer(*backup).ExecWithRetry(cmd);

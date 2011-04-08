@@ -367,7 +367,7 @@ const string& CNetScheduleExecuter::GetClientName()
 
 const string& CNetScheduleExecuter::GetServiceName()
 {
-    return m_Impl->m_API->m_Service.GetServiceName();
+    return m_Impl->m_API->m_Service->m_ServiceName;
 }
 
 END_NCBI_SCOPE

@@ -1346,7 +1346,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
         CNcbiOstrstream os;
         os << GetJobVersion() << endl;
         os << GetNetScheduleAPI().GetQueueName()  <<";"
-           << GetNetScheduleAPI().GetService().GetServiceName();
+           << GetServiceName();
         os << endl;
         os << "GETLOAD" << ends;
         if (socket.Write(os.str(), os.pcount()) != eIO_Success) {

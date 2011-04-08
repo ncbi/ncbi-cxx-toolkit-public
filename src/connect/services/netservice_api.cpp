@@ -492,7 +492,7 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
     }
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-        "Couldn't find any available servers for the " + GetServiceName() +
+        "Couldn't find any available servers for the " + m_Impl->m_ServiceName +
         (!throttled ? " service." : " service (some servers are throttled)."));
 }
 

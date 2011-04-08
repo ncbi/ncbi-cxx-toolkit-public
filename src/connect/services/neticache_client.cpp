@@ -292,8 +292,8 @@ CNetServer::SExecResult
     }
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-        "Couldn't find any availbale servers for the " +
-            m_Service.GetServiceName() + " service.");
+        "Couldn't find any available servers for the " +
+            m_Service->m_ServiceName + " service.");
 }
 
 void CNetICacheClient::RegisterSession(unsigned pid)
