@@ -113,34 +113,10 @@ bool CGtfRecord::MakeChildRecord(
 };
 
 //  ----------------------------------------------------------------------------
-bool CGtfRecord::AssignFromAsn(
+bool CGtfRecord::x_AssignAttributes(
     CMappedFeat mapped_feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_AssignTypeFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    if ( ! x_AssignSeqIdFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    if ( ! x_AssignSourceFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    if ( ! x_AssignStartFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    if ( ! x_AssignStopFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    if ( ! x_AssignScoreFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    if ( ! x_AssignStrandFromAsn( mapped_feature ) ) {
-        return false;
-    }
-    if ( ! x_AssignPhaseFromAsn( mapped_feature ) ) {
-        return false;
-    }
     if ( ! x_AssignAttributesFromAsnCore( mapped_feature ) ) {
         return false;
     }
@@ -148,8 +124,8 @@ bool CGtfRecord::AssignFromAsn(
         return false;
     }
     return true;
-};
-
+}
+    
 //  ----------------------------------------------------------------------------
 string CGtfRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------

@@ -98,11 +98,11 @@ protected:
 protected:
     unsigned int m_uRecordId;
  
-    typedef map< CMappedFeat, CRef<CGff3WriteRecord> > TGeneMap;
+    typedef map< CMappedFeat, CRef<CGff3WriteRecordFeature> > TGeneMap;
     TGeneMap m_GeneMap;
     unsigned int m_uPendingGeneId;
 
-    typedef map< CMappedFeat, CRef<CGff3WriteRecord> > TMrnaMap;
+    typedef map< CMappedFeat, CRef<CGff3WriteRecordFeature> > TMrnaMap;
     TMrnaMap m_MrnaMap;
     unsigned int m_uPendingMrnaId;
     unsigned int m_uPendingExonId;

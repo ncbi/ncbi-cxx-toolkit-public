@@ -237,7 +237,7 @@ bool CGff3Writer::x_WriteFeatureGene(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3WriteRecord> pRecord( new CGff3WriteRecord( ftree ) );
+    CRef<CGff3WriteRecordFeature> pRecord( new CGff3WriteRecordFeature( ftree ) );
 
     if ( ! pRecord->AssignFromAsn( mf ) ) {
         return false;
@@ -257,7 +257,7 @@ bool CGff3Writer::x_WriteFeatureMrna(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CGff3WriteRecord > pMrna( new CGff3WriteRecord( ftree ) );
+    CRef< CGff3WriteRecordFeature > pMrna( new CGff3WriteRecordFeature( ftree ) );
 
     if ( ! pMrna->AssignFromAsn( mf ) ) {
         return false;
@@ -288,7 +288,7 @@ bool CGff3Writer::x_WriteFeatureMrna(
         unsigned int uSequenceNumber = 1;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef< CGff3WriteRecord > pExon( new CGff3WriteRecord( *pMrna ) );
+            CRef< CGff3WriteRecordFeature > pExon( new CGff3WriteRecordFeature( *pMrna ) );
             pExon->AssignType( "exon" );
             pExon->AssignParent( *pMrna );
             pExon->AssignLocation( subint );
@@ -313,7 +313,7 @@ bool CGff3Writer::x_WriteFeatureCds(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CGff3WriteRecord > pCds( new CGff3WriteRecord( ftree ) );
+    CRef< CGff3WriteRecordFeature > pCds( new CGff3WriteRecordFeature( ftree ) );
 
     if ( ! pCds->AssignFromAsn( mf ) ) {
         return false;
@@ -333,7 +333,7 @@ bool CGff3Writer::x_WriteFeatureCds(
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef<CGff3WriteRecord> pExon( new CGff3WriteRecord( *pCds ) );
+            CRef<CGff3WriteRecordFeature> pExon( new CGff3WriteRecordFeature( *pCds ) );
             pExon->AssignType( "CDS" );
             pExon->AssignLocation( subint );
             if ( ! x_WriteRecord( pExon ) ) {
@@ -350,7 +350,7 @@ bool CGff3Writer::x_WriteFeatureGeneric(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3WriteRecord> pParent( new CGff3WriteRecord( ftree ) );
+    CRef<CGff3WriteRecordFeature> pParent( new CGff3WriteRecordFeature( ftree ) );
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
@@ -364,7 +364,8 @@ bool CGff3Writer::x_WriteFeatureGeneric(
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef<CGff3WriteRecord> pChild( new CGff3WriteRecord( *pParent ) );
+            CRef<CGff3WriteRecordFeature> pChild( 
+                new CGff3WriteRecordFeature( *pParent ) );
             pChild->AssignLocation( subint );
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;

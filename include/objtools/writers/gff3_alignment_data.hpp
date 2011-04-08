@@ -37,6 +37,7 @@
 #include <objmgr/scope.hpp>
 //#include <objmgr/util/feature.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -44,6 +45,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class CGffAlignmentRecord
 //  ----------------------------------------------------------------------------
+    : public CGffWriteRecord
 {
 public:
     CGffAlignmentRecord(
@@ -90,8 +92,6 @@ public:
         const CAlnMap::TSignedRange& sourcePiece,
         const CAlnMap::TSignedRange& targetPiece ); 
 
-    string StrId() const { 
-        return m_strId; };
     string StrSource() const { 
         return ( m_strSource.empty() ? "." : m_strSource ); };
     string StrType() const { 

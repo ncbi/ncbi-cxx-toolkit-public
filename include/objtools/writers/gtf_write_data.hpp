@@ -43,7 +43,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ============================================================================
 class CGtfRecord
 //  ============================================================================
-    : public CGffWriteRecord
+    : public CGffWriteRecordFeature
 {
 public: 
     CGtfRecord(
@@ -53,9 +53,6 @@ public:
     ~CGtfRecord() {};
 
 public:
-    bool AssignFromAsn(
-        CMappedFeat );
-
     void SetCdsPhase(
         const list< CRef< CSeq_interval > >&,
         ENa_strand );
@@ -79,10 +76,11 @@ public:
     FeatTree() { return m_feat_tree; };
 
 protected:
-    bool x_AssignAttributesFromAsnCore(
+    virtual bool x_AssignAttributes(
         CMappedFeat );
-
-    bool x_AssignAttributesFromAsnExtended(
+    virtual bool x_AssignAttributesFromAsnCore(
+        CMappedFeat );
+    virtual bool x_AssignAttributesFromAsnExtended(
         CMappedFeat );
 
     static string x_GenericTranscriptId(

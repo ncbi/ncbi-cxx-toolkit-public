@@ -42,9 +42,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class CGff3WriteRecord
+class CGff3WriteRecordFeature
 //  ----------------------------------------------------------------------------
-    : public CGffWriteRecord
+    : public CGffWriteRecordFeature
 {
 public:
     typedef CCdregion::EFrame TFrame;
@@ -53,23 +53,20 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
-    CGff3WriteRecord(
+    CGff3WriteRecordFeature(
         feature::CFeatTree&
     );
 
-    CGff3WriteRecord(
-        const CGff3WriteRecord&
+    CGff3WriteRecordFeature(
+        const CGff3WriteRecordFeature&
     );
 
-    virtual ~CGff3WriteRecord();
-
-    virtual bool AssignFromAsn(
-        CMappedFeat );
+    virtual ~CGff3WriteRecordFeature();
 
     virtual string StrAttributes() const;
 
     bool AssignParent(
-        const CGff3WriteRecord& );
+        const CGff3WriteRecordFeature& );
 
     void ForceAttributeID(
         const string& );
@@ -94,9 +91,28 @@ protected:
 
     virtual bool x_AssignAttributeGene(
         CMappedFeat );
-
-    CMappedFeat x_GetGeneParent(
+    virtual bool x_AssignAttributeNote(
         CMappedFeat );
+    virtual bool x_AssignAttributePartial(
+        CMappedFeat );
+    virtual bool x_AssignAttributePseudo(
+        CMappedFeat );
+    virtual bool x_AssignAttributeDbXref(
+        CMappedFeat );
+    virtual bool x_AssignAttributeGeneSynonym(
+        CMappedFeat );
+    virtual bool x_AssignAttributeLocusTag(
+        CMappedFeat );
+    virtual bool x_AssignAttributeProduct(
+        CMappedFeat );
+    virtual bool x_AssignAttributeCodonStart(
+        CMappedFeat );
+
+    //
+    //  Helper functions:
+    //
+//    static string x_MakeGffDbtag( 
+//        const CDbtag& dbtag );
 
 protected:
     feature::CFeatTree& m_feat_tree;

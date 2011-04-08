@@ -122,7 +122,7 @@ bool CGff2Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffWriteRecord> pParent( new CGffWriteRecord );
+    CRef<CGffWriteRecordFeature> pParent( new CGffWriteRecordFeature );
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }

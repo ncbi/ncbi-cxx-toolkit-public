@@ -47,7 +47,6 @@ class CGffWriteRecord
     : public CObject
 {
 public:
-    typedef CCdregion::EFrame TFrame;
     typedef map<string, string> TAttributes;
     typedef TAttributes::iterator TAttrIt;
     typedef TAttributes::const_iterator TAttrCit;
@@ -65,9 +64,6 @@ public:
     //
     //  Input/output:
     //
-    virtual bool AssignFromAsn(
-        CMappedFeat );
-
     virtual bool AssignLocation(
         const CSeq_interval& );
 
@@ -139,103 +135,13 @@ public:
     const TAttributes& Attributes() const { 
         return m_Attributes; 
     };
-
     bool GetAttribute(
         const string&,
         string& ) const;
 
 protected:
-    virtual bool x_AssignType(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributes(
-        CMappedFeat );
-
-    //
-    //  Feature level:
-    //
-
-    //
-    //  Qualifier level:
-    //
-    virtual bool x_AssignAttributeNote(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributePartial(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributePseudo(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeDbXref(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeGeneSynonym(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeLocusTag(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeProduct(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeAllele(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeMap(
-        CMappedFeat );
-
-    virtual bool x_AssignAttributeCodonStart(
-        CMappedFeat );
-
-    //
-    //  Helper functions:
-    //
-    static string x_GeneRefToGene(
-        const CGene_ref& );
-
-    static string x_GeneRefToLocusTag(
-        const CGene_ref& );
-
-    static string x_GeneRefToGeneSyn(
-        const CGene_ref& );
-
-    //
-    //
-    //
-    bool x_AssignTypeFromAsn(
-        CMappedFeat );
-    bool x_AssignSeqIdFromAsn(
-        CMappedFeat );
-    bool x_AssignStartFromAsn(
-        CMappedFeat );
-    bool x_AssignStopFromAsn(
-        CMappedFeat );
-    bool x_AssignSourceFromAsn(
-        CMappedFeat );
-    bool x_AssignScoreFromAsn(
-        CMappedFeat );
-    bool x_AssignStrandFromAsn(
-        CMappedFeat );
-    bool x_AssignPhaseFromAsn(
-        CMappedFeat );
-
-    static string x_FeatIdString(
-        const CFeat_id& id );
-
-    CSeq_feat::TData::ESubtype x_GetSubtypeOf(
-//        const CSeq_annot&,
-        const CFeat_id& );
-        
-    static bool x_IsParentOf(
-        CSeq_feat::TData::ESubtype,
-        CSeq_feat::TData::ESubtype );
-
     static bool x_NeedsQuoting(
         const string& );
-
-    static string x_MakeGffDbtag( 
-        const CDbtag& dbtag );
 
     virtual void x_PriorityProcess(
         const string&,
@@ -255,6 +161,38 @@ protected:
     unsigned int* m_puPhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
+};
+
+//  ----------------------------------------------------------------------------
+class CGffWriteRecordFeature
+//  ----------------------------------------------------------------------------
+    : public CGffWriteRecord
+{
+public:
+    virtual bool AssignFromAsn(
+        CMappedFeat );
+
+protected:
+    virtual bool x_AssignType(
+        CMappedFeat );
+    virtual bool x_AssignSeqId(
+        CMappedFeat );
+    virtual bool x_AssignStart(
+        CMappedFeat );
+    virtual bool x_AssignStop(
+        CMappedFeat );
+    virtual bool x_AssignSource(
+        CMappedFeat );
+    virtual bool x_AssignScore(
+        CMappedFeat );
+    virtual bool x_AssignStrand(
+        CMappedFeat );
+    virtual bool x_AssignPhase(
+        CMappedFeat );
+    virtual bool x_AssignAttributes(
+        CMappedFeat );
+    static string x_FeatIdString(
+        const CFeat_id& id );
 };
 
 END_objects_SCOPE
