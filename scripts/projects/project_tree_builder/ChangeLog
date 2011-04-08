@@ -165,3 +165,12 @@ February 25, 2011
 version 3.3.1
 Corrected handling of INCLUDE directives on XCode.
 
+April 08, 2011
+version 3.4.0
+Added possibility to collect settings from several makefiles.
+Changed build settings to give each project its own intermediate directory and
+to create disabled dummy build configuration when it should be omitted in fact.
+Corrected handling of unresolved macros.
+Make PTB look into src/build-system for custom metadata.
+Tuned up manifest generation.
+
