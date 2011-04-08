@@ -378,7 +378,7 @@ bool CNetService::IsLoadBalanced() const
 
 void CNetService::StickToServer(const string& host, unsigned port)
 {
-    m_Impl->m_EnforcedServerHost = host;
+    m_Impl->m_EnforcedServerHost = g_NetService_gethostip(host);
     m_Impl->m_EnforcedServerPort = port;
 }
 
