@@ -112,7 +112,7 @@
  <!ATTLIST Tool	FixedBaseAddress                CDATA #IMPLIED>
  <!ATTLIST Tool	GenerateManifest                CDATA #IMPLIED>
  <!ATTLIST Tool	EmbedManifest                   CDATA #IMPLIED>
-
+ <!ATTLIST Tool	ManifestFile                    CDATA #IMPLIED>
 
 
  <!ATTLIST Filter Name              CDATA #REQUIRED>

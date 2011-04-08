@@ -292,6 +292,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 #else
             BIND_TOOLS(tool, msvc_tool.Linker(), GenerateManifest);
 #endif
+            tool->SetAttlist().SetManifestFile("$(TargetPath).manifest");
 
             conf->SetTool().push_back(tool);
         }}
@@ -352,6 +353,17 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         {{
             CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.PostBuildEvent(), Name);
+#if 0
+// This is workaround:
+// if EXE is newer than its manifest, MT.EXE keeps "re-generating" the manifest.
+// In fact, MT.EXE does nothing; but what is worse, it does not update the time stamp of the manifest
+            if (!disabled_cfg && (prj.m_ProjType == CProjKey::eApp || prj.m_ProjType == CProjKey::eDll)) {
+                if (NStr::CompareNocase(msvc_tool.Linker()->GenerateManifest(),"true") == 0 &&
+                    NStr::CompareNocase(msvc_tool.Linker()->EmbedManifest(),"false") == 0) {
+                    m_pkg_export_command += "copy /b /y \"$(IntDir)\\$(TargetFileName).intermediate.manifest\" \"$(TargetPath).manifest\"\n";
+                }
+            }
+#endif
             if (!m_pkg_export_command.empty()) {
                 tool->SetAttlist().SetCommandLine( m_pkg_export_command);
             }
