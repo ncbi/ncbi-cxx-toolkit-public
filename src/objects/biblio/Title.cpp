@@ -53,37 +53,40 @@ CTitle::~CTitle(void)
 {
 }
 
-const string& CTitle::GetTitle() const
+const string& CTitle::GetTitle(C_E::E_Choice type) const
 {
-    if (Get().size() == 0) {
+    if (Get().empty()) {
+        NCBI_THROW(CException, eUnknown, "Title not set");
+    } else if (type == C_E::e_not_set) {
+        return GetTitle(*Get().front());
+    } else {
+        ITERATE (Tdata, it, Get()) {
+            if ((*it)->Which() == type) {
+                return GetTitle(**it);
+            }
+        }
         NCBI_THROW(CException, eUnknown,
-            "Title not set");
+                   "No title of requested type " + C_E::SelectionName(type));
     }
-    
-    switch (Get().front()->Which()) {
-    case C_E::e_Name:
-        return Get().front()->GetName();
-    case C_E::e_Tsub:
-        return Get().front()->GetTsub();
-    case C_E::e_Trans:
-        return Get().front()->GetTrans();
-    case C_E::e_Jta:
-        return Get().front()->GetJta();
-    case C_E::e_Iso_jta:
-        return Get().front()->GetIso_jta();
-    case C_E::e_Ml_jta:
-        return Get().front()->GetMl_jta();
-    case C_E::e_Coden:
-        return Get().front()->GetCoden();
-    case C_E::e_Issn:
-        return Get().front()->GetIssn();
-    case C_E::e_Abr:
-        return Get().front()->GetAbr();
-    case C_E::e_Isbn:
-        return Get().front()->GetIsbn();
+}
+
+
+const string& CTitle::GetTitle(const C_E& t)
+{
+    switch (t.Which()) {
+    case C_E::e_Name:     return t.GetName();
+    case C_E::e_Tsub:     return t.GetTsub();
+    case C_E::e_Trans:    return t.GetTrans();
+    case C_E::e_Jta:      return t.GetJta();
+    case C_E::e_Iso_jta:  return t.GetIso_jta();
+    case C_E::e_Ml_jta:   return t.GetMl_jta();
+    case C_E::e_Coden:    return t.GetCoden();
+    case C_E::e_Issn:     return t.GetIssn();
+    case C_E::e_Abr:      return t.GetAbr();
+    case C_E::e_Isbn:     return t.GetIsbn();
     default:
         NCBI_THROW(CException, eUnknown,
-            "Title not set");
+                   "Unsupported title type" + C_E::SelectionName(t.Which()));
     }
 }
 

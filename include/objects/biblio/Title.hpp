@@ -56,9 +56,13 @@ public:
     // destructor
     ~CTitle(void);
     
-    // Returns a string title of the type found first in internal list. 
-    // Throws exception if title is not set
-    const string& GetTitle() const;
+    /// If the internal list contains a title (of the specified type,
+    /// if given), returns the corresponding string; otherwise, throws
+    /// an exception.
+    const string& GetTitle(C_E::E_Choice type = C_E::e_not_set) const;
+
+    /// Extracts the title string from the given internal element.
+    static const string& GetTitle(const C_E& t);
 
 private:
     // Prohibit copy constructor and assignment operator
