@@ -178,7 +178,7 @@ bool CCit_gen::GetLabelV2(string* label, TLabelFlags flags) const
         }
     }
 
-    if ((!HasText(pages) || (flags & (fLabel_FlatNCBI | fLabel_FlatEMBL) == 0))
+    if ((!HasText(pages) || (flags & (fLabel_FlatNCBI | fLabel_FlatEMBL)) == 0)
         &&  journal.empty()  &&  !HasText(inpress)  &&  !HasText(year)
         &&  (!CanGetVolume() || !HasText(GetVolume()))) {
         return false;
