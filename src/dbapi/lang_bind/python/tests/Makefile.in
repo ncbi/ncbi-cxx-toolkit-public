@@ -3,6 +3,7 @@
 UNIX_USR_PROJ = symlink
 
 APP_PROJ = python_ncbi_dbapi_test
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

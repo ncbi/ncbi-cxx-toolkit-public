@@ -1,6 +1,7 @@
 # $Id$
 
 APP_PROJ = dbapi_cache_test
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
