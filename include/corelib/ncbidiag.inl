@@ -48,6 +48,11 @@
 // and created only by GetDiagBuffer())
 //
 
+
+// Forward declaration
+class CTimeSpan;
+
+
 class CDiagBuffer
 {
     CDiagBuffer(const CDiagBuffer&);
@@ -197,6 +202,11 @@ private:
     // Error codes info
     static CDiagErrCodeInfo* sm_ErrCodeInfo;
     static bool              sm_CanDeleteErrCodeInfo;
+
+    friend NCBI_XNCBI_EXPORT
+        void g_PostPerf(int                       status,
+                        const CTimeSpan&          span,
+                        SDiagMessage::TExtraArgs& args);
 };
 
 extern CDiagBuffer& GetDiagBuffer(void);
@@ -609,5 +619,13 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 {
     return diag.SetFunction(function.m_Function);
 }
+
+
+// The function should not be called directly, use performance guard instead.
+// The args will be modifies (emptied) by the function.
+NCBI_XNCBI_EXPORT
+extern void g_PostPerf(int                       status,
+                       const CTimeSpan&          span,
+                       SDiagMessage::TExtraArgs& args);
 
 #endif /* def CORELIB___NCBIDIAG__HPP  &&  ndef CORELIB___NCBIDIAG__INL */

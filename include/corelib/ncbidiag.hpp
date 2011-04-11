@@ -1539,7 +1539,8 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
         eEvent_Stop,         ///< Application exit
         eEvent_Extra,        ///< Other application events
         eEvent_RequestStart, ///< Start processing request
-        eEvent_RequestStop   ///< Finish processing request
+        eEvent_RequestStop,  ///< Finish processing request
+        eEvent_PerfLog       ///< Performance log
     };
 
     static string GetEventName(EEventType event);
@@ -1568,7 +1569,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     EEventType       m_Event;
 
     typedef pair<string, string> TExtraArg;
-    typedef vector<TExtraArg>    TExtraArgs;
+    typedef list<TExtraArg>      TExtraArgs;
 
     /// If event type is "extra", contains the list of arguments
     TExtraArgs       m_ExtraArgs;
@@ -1949,7 +1950,7 @@ public:
     /// Create a temporary CDiagContext_Extra object. The object will print
     /// arguments automatically from destructor. Can be used like:
     ///   Extra().Print(name1, val1).Print(name2, val2);
-    CDiagContext_Extra Extra(void)
+    CDiagContext_Extra Extra(void) const
     {
         return CDiagContext_Extra(SDiagMessage::eEvent_Extra);
     }
@@ -2349,7 +2350,10 @@ public:
     /// Post message to the handler.
     virtual void Post(const SDiagMessage& mess);
 
-    bool Valid(void) { return (m_Handle != -1)  ||  m_LowDiskSpace; }
+    bool Valid(void)
+    {
+        return (m_Handle != -1)  ||  m_LowDiskSpace;
+    }
 
     // Reopen file to enable log rotation.
     virtual void Reopen(TReopenFlags flags);
@@ -2381,6 +2385,7 @@ enum EDiagFileType
     eDiagFile_Err,    ///< Error log file
     eDiagFile_Log,    ///< Access log file
     eDiagFile_Trace,  ///< Trace log file
+    eDiagFile_Perf,   ///< Perf log file
     eDiagFile_All     ///< All log files
 };
 
@@ -2450,6 +2455,8 @@ private:
     bool                     m_OwnLog;
     CStreamDiagHandler_Base* m_Trace;
     bool                     m_OwnTrace;
+    CStreamDiagHandler_Base* m_Perf;
+    bool                     m_OwnPerf;
     CStopWatch*              m_ReopenTimer;
 };
 

@@ -1726,9 +1726,8 @@ void CDiagContext_Extra::Flush(void)
                       NULL,
                       0, 0, 0); // module/class/function
     mess.m_Event = m_EventType;
-    mess.m_ExtraArgs = *m_Args;
+    mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), *m_Args);
     mess.m_TypedExtra = m_Typed;
-    m_Args->clear();
     GetDiagBuffer().DiagHandler(mess);
 }
 
@@ -3013,7 +3012,8 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
         m_RequestId = message.m_RequestId;
         m_Event = message.m_Event;
         m_TypedExtra = message.m_TypedExtra;
-        m_ExtraArgs = message.m_ExtraArgs;
+        m_ExtraArgs.assign(message.m_ExtraArgs.begin(),
+            message.m_ExtraArgs.end());
 
         m_Buffer = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.c_str();
         m_BufferLen = m_Data->m_Message.empty() ?
@@ -3403,6 +3403,26 @@ bool SDiagMessage::ParseMessage(const string& message)
                     }
                 }
             }
+            else if (tmp == GetEventName(eEvent_PerfLog)) {
+                m_Event = eEvent_PerfLog;
+                if (pos < message.length()) {
+                    // Put status and time to the message,
+                    // parse all the rest as extra.
+                    size_t msg_end = message.find_first_not_of(' ', pos);
+                    msg_end = message.find_first_of(' ', msg_end);
+                    msg_end = message.find_first_not_of(' ', msg_end);
+                    msg_end = message.find_first_of(' ', msg_end);
+                    size_t extra_pos = message.find_first_not_of(' ', msg_end);
+                    m_Data->m_Message = string(message.c_str() + pos).
+                        substr(0, msg_end - pos);
+                    m_BufferLen = m_Data->m_Message.length();
+                    m_Buffer = m_Data->m_Message.empty() ?
+                        0 : &m_Data->m_Message[0];
+                    if ( x_ParseExtraArgs(message, extra_pos) ) {
+                        pos = message.length();
+                    }
+                }
+            }
             else {
                 return false;
             }
@@ -3646,6 +3666,8 @@ string SDiagMessage::GetEventName(EEventType event)
         return "request-start";
     case eEvent_RequestStop:
         return "request-stop";
+    case eEvent_PerfLog:
+        return "perf";
     }
     return kEmptyStr;
 }
@@ -4577,7 +4599,7 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
 
 // CFileDiagHandler
 
-CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
+CFileHandleDiagHandler::CFileHandleDiagHandler(const string&   fname)
     : m_Handle(-1),
       m_LowDiskSpace(false),
       m_ReopenTimer(new CStopWatch())
@@ -4649,27 +4671,6 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
     // Restart the timer even if failed to reopen the file.
     m_ReopenTimer->Restart();
     if (m_Handle == -1) {
-        /*
-        string msg;
-        switch ( errno ) {
-        case EACCES:
-            msg = "access denied";
-            break;
-        case EEXIST:
-            msg = "file already exists";
-            break;
-        case EINVAL:
-            msg = "invalid open mode";
-            break;
-        case EMFILE:
-            msg = "too many open files";
-            break;
-        case ENOENT:
-            msg = "invalid file or directory name";
-            break;
-        }
-        ERR_POST_X(6, Info << "Failed to reopen log: " << msg);
-        */
         if ( !m_Messages.get() ) {
             m_Messages.reset(new TMessages);
         }
@@ -4758,6 +4759,8 @@ CFileDiagHandler::CFileDiagHandler(void)
       m_OwnLog(false),
       m_Trace(0),
       m_OwnTrace(false),
+      m_Perf(0),
+      m_OwnPerf(false),
       m_ReopenTimer(new CStopWatch())
 {
     SetLogFile("-", eDiagFile_All, true);
@@ -4769,6 +4772,7 @@ CFileDiagHandler::~CFileDiagHandler(void)
     x_ResetHandler(&m_Err, &m_OwnErr);
     x_ResetHandler(&m_Log, &m_OwnLog);
     x_ResetHandler(&m_Trace, &m_OwnTrace);
+    x_ResetHandler(&m_Perf, &m_OwnPerf);
     delete m_ReopenTimer;
 }
 
@@ -4795,6 +4799,11 @@ void CFileDiagHandler::x_ResetHandler(CStreamDiagHandler_Base** ptr,
         else if (ptr != &m_Trace  &&  *ptr == m_Trace) {
             _ASSERT(!m_OwnTrace);
             m_OwnTrace = true;
+            *owned = false;
+        }
+        else if (ptr != &m_Perf  &&  *ptr == m_Perf) {
+            _ASSERT(!m_OwnPerf);
+            m_OwnPerf = true;
             *owned = false;
         }
         if (*owned) {
@@ -4835,6 +4844,11 @@ void CFileDiagHandler::x_SetHandler(CStreamDiagHandler_Base** member,
                 own = false;
             }
         }
+        if (member != &m_Perf) {
+            if (handler == m_Perf  &&  m_OwnPerf) {
+                own = false;
+            }
+        }
     }
     *member = handler;
     *own_member = own;
@@ -4856,6 +4870,10 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
     }
     if (m_Trace == handler) {
         m_OwnTrace = own;
+        own = false;
+    }
+    if (m_Perf == handler) {
+        m_OwnPerf = own;
         own = false;
     }
 }
@@ -4888,7 +4906,9 @@ bool s_CanOpenLogFile(const string& file_name)
 }
 
 
-CStreamDiagHandler_Base* s_CreateHandler(const string& fname, bool& failed)
+CStreamDiagHandler_Base*
+s_CreateHandler(const string& fname,
+                bool&         failed)
 {
     if ( fname.empty()  ||  fname == "/dev/null") {
         return 0;
@@ -4921,18 +4941,23 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                 CDirEntry entry(file_name);
                 string ext = entry.GetExt();
                 adj_name = file_name;
-                if (ext == ".log"  ||  ext == ".err"  ||  ext == ".trace") {
+                if (ext == ".log"  ||
+                    ext == ".err"  ||
+                    ext == ".trace"  ||
+                    ext == ".perf") {
                     adj_name = entry.GetDir() + entry.GetBase();
                 }
             }
             string err_name = special ? adj_name : adj_name + ".err";
             string log_name = special ? adj_name : adj_name + ".log";
             string trace_name = special ? adj_name : adj_name + ".trace";
+            string perf_name = special ? adj_name : adj_name + ".perf";
 
             if (!special  &&
                 (!s_CanOpenLogFile(err_name)  ||
                 !s_CanOpenLogFile(log_name)  ||
-                !s_CanOpenLogFile(trace_name))) {
+                !s_CanOpenLogFile(trace_name)  ||
+                !s_CanOpenLogFile(perf_name))) {
                 return false;
             }
             x_SetHandler(&m_Err, &m_OwnErr,
@@ -4941,6 +4966,8 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                 s_CreateHandler(log_name, failed), true);
             x_SetHandler(&m_Trace, &m_OwnTrace,
                 s_CreateHandler(trace_name, failed), true);
+            x_SetHandler(&m_Perf, &m_OwnPerf,
+                s_CreateHandler(perf_name, failed), true);
             m_ReopenTimer->Restart();
             break;
         }
@@ -4963,6 +4990,13 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             return false;
         }
         x_SetHandler(&m_Trace, &m_OwnTrace,
+            s_CreateHandler(file_name, failed), true);
+        break;
+    case eDiagFile_Perf:
+        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+            return false;
+        }
+        x_SetHandler(&m_Perf, &m_OwnPerf,
             s_CreateHandler(file_name, failed), true);
         break;
     }
@@ -4988,6 +5022,8 @@ string CFileDiagHandler::GetLogFile(EDiagFileType file_type) const
         return m_Log->GetLogName();
     case eDiagFile_Trace:
         return m_Trace->GetLogName();
+    case eDiagFile_Perf:
+        return m_Perf->GetLogName();
     case eDiagFile_All:
         break;  // kEmptyStr
     }
@@ -5005,6 +5041,8 @@ CNcbiOstream* CFileDiagHandler::GetLogStream(EDiagFileType file_type)
         handler = m_Log;
     case eDiagFile_Trace:
         handler = m_Trace;
+    case eDiagFile_Perf:
+        handler = m_Perf;
     case eDiagFile_All:
         return 0;
     }
@@ -5027,6 +5065,8 @@ void CFileDiagHandler::SetSubHandler(CStreamDiagHandler_Base* handler,
         if (file_type != eDiagFile_All) break;
     case eDiagFile_Trace:
         x_SetHandler(&m_Trace, &m_OwnTrace, handler, own);
+    case eDiagFile_Perf:
+        x_SetHandler(&m_Perf, &m_OwnPerf, handler, own);
     }
 }
 
@@ -5047,6 +5087,9 @@ void CFileDiagHandler::Reopen(TReopenFlags flags)
     if ( m_Trace ) {
         m_Trace->Reopen(flags);
     }
+    if ( m_Perf ) {
+        m_Perf->Reopen(flags);
+    }
     m_ReopenTimer->Restart();
 }
 
@@ -5066,7 +5109,8 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
     // Output the message
     CStreamDiagHandler_Base* handler = 0;
     if ( IsSetDiagPostFlag(eDPF_AppLog, mess.m_Flags) ) {
-        handler = m_Log;
+        handler = mess.m_Event == SDiagMessage::eEvent_PerfLog
+            ? m_Perf : m_Log;
     }
     else {
         switch ( mess.m_Severity ) {
@@ -5867,6 +5911,31 @@ bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code,
 const char* g_DiagUnknownFunction(void)
 {
     return kEmptyCStr;
+}
+
+
+void g_PostPerf(int                       status,
+                const CTimeSpan&          span,
+                SDiagMessage::TExtraArgs& args)
+{
+    if ( CDiagContext::IsSetOldPostFormat() ) {
+        return;
+    }
+
+    CNcbiOstrstream ostr;
+    ostr << status << " " << span.AsString();
+    SDiagMessage mess(eDiag_Info,
+                      ostr.str(), ostr.pcount(),
+                      0, 0, // file, line
+                      CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
+                      NULL,
+                      0, 0, // err code/subcode
+                      NULL,
+                      0, 0, 0); // module/class/function
+    mess.m_Event = SDiagMessage::eEvent_PerfLog;
+    mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), args);
+    CDiagBuffer::DiagHandler(mess);
+    ostr.rdbuf()->freeze(false);
 }
 
 
