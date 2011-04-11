@@ -330,11 +330,15 @@ GC-TypedSeqId ::= CHOICE {
 
 -- sequence-role: what role(s) does this sequence have in the assembly
 -- a sequence may have more than one role. e.g. a complete-sequence is all 4 roles
+-- pseudo-scaffold - this is for UCSC chr1_random etc
+-- submitter-pseudo-scaffold - this is for FlyBase pseudo scaffolds.
 GC-SequenceRole ::= INTEGER {
         chromosome (2),
         scaffold (3),
         component(4),
-        top-level (10)
+        top-level (10),
+        pseudo-scaffold (20),
+        submitter-pseudo-scaffold (21)
 }
 
 -- GC-Sequence:
