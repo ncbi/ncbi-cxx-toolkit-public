@@ -423,7 +423,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         x_IsFieldRequested(eSubjectStart) || x_IsFieldRequested(eSubjectEnd) ||
         x_IsFieldRequested(eAlignmentLength) || x_IsFieldRequested(eGaps) ||
         x_IsFieldRequested(eGapOpenings) || x_IsFieldRequested(eQuerySeq) ||
-        x_IsFieldRequested(eSubjectSeq) || (x_IsFieldRequested(eNumIdentical) && num_ident <0 ) ||
+        x_IsFieldRequested(eSubjectSeq) || (x_IsFieldRequested(eNumIdentical) && num_ident > 0 ) ||
         x_IsFieldRequested(ePositives) || x_IsFieldRequested(eMismatches) || 
         x_IsFieldRequested(ePercentPositives) || x_IsFieldRequested(ePercentIdentical) ||
         x_IsFieldRequested(eBTOP)) {
