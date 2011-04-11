@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <algorithm>
 
 #ifdef LOCAL_SVN
 #include "sequence_istream_bdb.hpp"
@@ -47,6 +48,17 @@ CSequenceIStreamBlastDB::CSequenceIStreamBlastDB(
     : seqdb_( new CSeqDB( dbname, CSeqDB::eNucleotide ) ), oid_( 0 ),
       filter_algo_id_( filter_algo_id ), use_filter_( use_filter )
 {
+    if( use_filter_ ) {
+        std::vector< int > alg_ids;
+        seqdb_->GetAvailableMaskAlgorithms( alg_ids );
+
+        if( std::find( alg_ids.begin(), alg_ids.end(), filter_algo_id_ ) == 
+                alg_ids.end() ) {
+            NCBI_THROW( CSequenceIStream_Exception, eParam,
+                    std::string( "unrecognized filter algorithm id" ) + 
+                    seqdb_->GetAvailableMaskAlgorithmDescriptions() );
+        }
+    }
 }
 
 //------------------------------------------------------------------------------

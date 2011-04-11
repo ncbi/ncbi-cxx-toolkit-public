@@ -87,7 +87,8 @@ class NCBI_XBLAST_EXPORT CSequenceIStream
                     eOpNotSupported,    /**< The requested operation is not implemented
                                              by this kind of sequence stream (e.g. the
                                              stream can not rewind). */
-                    eIO                 /**< System io error. */
+                    eIO,                /**< System io error. */
+                    eParam              /**< Parameter error. */
                 };
 
                 /** Get the exception description string.
@@ -100,6 +101,8 @@ class NCBI_XBLAST_EXPORT CSequenceIStream
                             return "stream operation is not supported";
                         case eIO:
                             return "I/O error";
+                        case eParam:
+                            return "database parameter error";
                         default: return CException::GetErrCodeString();
                     }
                 }
