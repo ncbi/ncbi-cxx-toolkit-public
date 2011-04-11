@@ -8,3 +8,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 REQUIRES = Boost.Test.Included
 
 WATCHERS = ivanovp
+PROJ_TAG = test
