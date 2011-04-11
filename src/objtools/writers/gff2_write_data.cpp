@@ -58,14 +58,14 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 string CGffWriteRecord::StrId() const
 //  ----------------------------------------------------------------------------
 {
-    return Id();
+    return m_strId;
 }
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrSource() const
 //  ----------------------------------------------------------------------------
 {
-    return Source();
+    return m_strSource;
 }
 
 //  ----------------------------------------------------------------------------
@@ -73,8 +73,8 @@ CGffWriteRecord::CGffWriteRecord():
     m_strId( "" ),
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
-    m_strSource( "" ),
-    m_strType( "" ),
+    m_strSource( "." ),
+    m_strType( "." ),
     m_pdScore( 0 ),
     m_peStrand( 0 ),
     m_puPhase( 0 )
@@ -95,14 +95,14 @@ CGffWriteRecord::CGffWriteRecord(
     m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
 {
-    if ( other.IsSetScore() ) {
-        m_pdScore = new double( other.Score() );
+    if ( other.m_pdScore ) {
+        m_pdScore = new double( *(other.m_pdScore) );
     }
-    if ( other.IsSetStrand() ) {
-        m_peStrand = new ENa_strand( other.Strand() );
+    if ( other.m_peStrand ) {
+        m_peStrand = new ENa_strand( *(other.m_peStrand) );
     }
-    if ( other.IsSetPhase() ) {
-        m_puPhase = new unsigned int( other.Phase() );
+    if ( other.m_puPhase ) {
+        m_puPhase = new unsigned int( *(other.m_puPhase) );
     }
 
     this->m_Attributes.insert( 
@@ -158,45 +158,41 @@ string CGffWriteRecord::StrType() const
     if ( GetAttribute( "gff_type", strGffType ) ) {
         return strGffType;
     }
-    return Type();
+    return m_strType;
 }
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrSeqStart() const
 //  ----------------------------------------------------------------------------
 {
-    return NStr::UIntToString( SeqStart() + 1 );;
+    return NStr::UIntToString( m_uSeqStart + 1 );;
 }
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrSeqStop() const
 //  ----------------------------------------------------------------------------
 {
-    return NStr::UIntToString( SeqStop() + 1 );
+    return NStr::UIntToString( m_uSeqStop + 1 );
 }
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrScore() const
 //  ----------------------------------------------------------------------------
 {
-    if ( ! IsSetScore() ) {
+    if ( ! m_pdScore ) {
         return ".";
     }
-
-    //  can NStr format floating point numbers? Didn't see ...
-    char pcBuffer[ 16 ];
-    ::sprintf( pcBuffer, "%6.6f", Score() );
-    return string( pcBuffer );
+    return NStr::DoubleToString( *m_pdScore );
 }
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrStrand() const
 //  ----------------------------------------------------------------------------
 {
-    if ( ! IsSetStrand() ) {
+    if ( ! m_peStrand ) {
         return ".";
     }
-    switch ( Strand() ) {
+    switch ( *m_peStrand ) {
     default:
         return ".";
     case eNa_strand_plus:
@@ -210,10 +206,10 @@ string CGffWriteRecord::StrStrand() const
 string CGffWriteRecord::StrPhase() const
 //  ----------------------------------------------------------------------------
 {
-    if ( ! IsSetPhase() ) {
+    if ( ! m_puPhase ) {
         return ".";
     }
-    return NStr::UIntToString( Phase() );
+    return NStr::UIntToString( *m_puPhase );
 }
 
 //  ----------------------------------------------------------------------------

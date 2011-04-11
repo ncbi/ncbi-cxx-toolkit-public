@@ -44,20 +44,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-string CGffAlignmentRecord::StrStrand() const
-//  ----------------------------------------------------------------------------
-{
-    if ( ! m_peStrand ) {
-        return ".";
-    }
-    switch ( *m_peStrand ) {
-        default: return ".";
-        case eNa_strand_plus: return "+";
-        case eNa_strand_minus: return "-";
-    }
-}
-
-//  ----------------------------------------------------------------------------
 string CGffAlignmentRecord::StrAttributes() const 
 //  ----------------------------------------------------------------------------
 {
@@ -71,16 +57,6 @@ string CGffAlignmentRecord::StrAttributes() const
         str += m_strAlignment;
     }
     return str; 
-};
-
-//  ----------------------------------------------------------------------------
-string CGffAlignmentRecord::StrScore() const
-//  ---------------------------------------------------------------------------- 
-{
-    if ( 0 == m_pdScore ) {
-        return ".";
-    }
-    return NStr::DoubleToString( *m_pdScore );
 };
 
 //  ----------------------------------------------------------------------------
@@ -210,6 +186,8 @@ void CGffAlignmentRecord::AddDeletion(
         return;
     }
     m_sourceRange += sourcePiece;
+    m_uSeqStart = m_sourceRange.GetFrom();
+    m_uSeqStop = m_sourceRange.GetTo();
 
     if ( ! m_strAlignment.empty() ) {
         m_strAlignment += "+";
@@ -230,6 +208,8 @@ void CGffAlignmentRecord::AddMatch(
     }
     m_sourceRange += sourcePiece;
     m_targetRange += targetPiece;
+    m_uSeqStart = m_sourceRange.GetFrom();
+    m_uSeqStop = m_sourceRange.GetTo();
 
     if ( ! m_strAlignment.empty() ) {
         m_strAlignment += "+";

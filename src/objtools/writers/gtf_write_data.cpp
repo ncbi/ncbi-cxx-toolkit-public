@@ -90,19 +90,19 @@ bool CGtfRecord::MakeChildRecord(
     if ( ! location.CanGetFrom() || ! location.CanGetTo() ) {
         return false;
     }
-    m_strId = parent.Id();
-    m_strSource = parent.Source();
-    m_strType = parent.Type();
+    m_strId = parent.m_strId;
+    m_strSource = parent.m_strSource;
+    m_strType = parent.m_strType;
     m_strGeneId = parent.GeneId();
     m_strTranscriptId = parent.TranscriptId();
 
     m_uSeqStart = location.GetFrom();
     m_uSeqStop = location.GetTo();
-    if ( parent.IsSetScore() ) {
-        m_pdScore = new double( parent.Score() );
+    if ( parent.m_pdScore ) {
+        m_pdScore = new double( *(parent.m_pdScore) );
     }
-    if ( parent.IsSetStrand() ) {
-        m_peStrand = new ENa_strand( parent.Strand() );
+    if ( parent.m_peStrand ) {
+        m_peStrand = new ENa_strand( *(parent.m_peStrand) );
     }
 
     m_Attributes.insert( parent.m_Attributes.begin(), parent.m_Attributes.end() );
@@ -137,7 +137,7 @@ string CGtfRecord::StrAttributes() const
     CGtfRecord::TAttrIt it;
 
     strAttributes += x_AttributeToString( "gene_id", GeneId() );
-    if ( Type() != "gene" ) {
+    if ( StrType() != "gene" ) {
         strAttributes += x_AttributeToString( "transcript_id", TranscriptId() );
     }
 
@@ -171,7 +171,7 @@ string CGtfRecord::StrStructibutes() const
     CGtfRecord::TAttrIt it;
 
     strAttributes += x_AttributeToString( "gene_id", GeneId() );
-    if ( Type() != "gene" ) {
+    if ( StrType() != "gene" ) {
         strAttributes += x_AttributeToString( "transcript_id", TranscriptId() );
     }
 
@@ -307,7 +307,7 @@ void CGtfRecord::SetCdsPhase(
     if ( cdsLocs.empty() ) {
         return;
     }
-    if ( ! IsSetPhase() ) {
+    if ( ! m_puPhase ) {
         m_puPhase = new unsigned int( 0 );
     }
     if ( eStrand == eNa_strand_minus ) {

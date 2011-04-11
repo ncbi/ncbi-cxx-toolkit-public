@@ -68,12 +68,7 @@ public:
     string GeneId() const { return m_strGeneId; };
     string TranscriptId() const { return m_strTranscriptId; };
 
-    string SortTieBreaker() const { 
-        return GeneId() + "|" + TranscriptId(); 
-    };
-
-    feature::CFeatTree&
-    FeatTree() { return m_feat_tree; };
+    feature::CFeatTree& FeatTree() { return m_feat_tree; };
 
 protected:
     virtual bool x_AssignAttributes(

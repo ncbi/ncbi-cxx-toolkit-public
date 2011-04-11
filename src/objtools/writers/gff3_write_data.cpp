@@ -234,13 +234,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
         return false;
     }
 
-    if ( Type() == "gene" ) {
+    if ( StrType() == "gene" ) {
         return x_AssignAttributesGene( mapped_feat );
     }
-    if ( Type() == "mRNA" ) {
+    if ( StrType() == "mRNA" ) {
         return x_AssignAttributesMrna( mapped_feat );
     }
-    if ( Type() == "CDS" ) {
+    if ( StrType() == "CDS" ) {
         return x_AssignAttributesCds( mapped_feat );
     }
     return x_AssignAttributesMiscFeature( mapped_feat );
@@ -304,7 +304,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGene(
 //  ----------------------------------------------------------------------------
 {
     string strGene;
-    if ( Type() == "gene" ) {
+    if ( StrType() == "gene" ) {
         const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
         strGene = s_GeneRefToGene( gene_ref );
     }

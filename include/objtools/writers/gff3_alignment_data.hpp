@@ -35,7 +35,6 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-//#include <objmgr/util/feature.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
 
@@ -51,22 +50,15 @@ public:
     CGffAlignmentRecord(
             unsigned int uFlags =0,
             unsigned int uRecordId =0 ):
-        m_uFlags( uFlags ),
-        m_strId( "" ),
-        m_pdScore( 0 ),
-        m_peStrand( 0 ),
-        m_puPhase( 0 )
+        m_uFlags( uFlags )
     {
+        m_strType = "match";
         if ( uRecordId ) {
             m_strAttributes = string( "ID=" ) + NStr::UIntToString( uRecordId );
         }
     };
 
-    virtual ~CGffAlignmentRecord() {
-        delete m_pdScore;
-        delete m_peStrand;
-        delete m_puPhase;
-    };
+    virtual ~CGffAlignmentRecord() {};
 
     void SetSourceLocation( 
         const CSeq_id&,
@@ -92,30 +84,10 @@ public:
         const CAlnMap::TSignedRange& sourcePiece,
         const CAlnMap::TSignedRange& targetPiece ); 
 
-    string StrSource() const { 
-        return ( m_strSource.empty() ? "." : m_strSource ); };
-    string StrType() const { 
-        return "match";
-        return ( m_strType.empty() ? "." : m_strType ); };
-    string StrSeqStart() const {
-        return NStr::UIntToString( m_sourceRange.GetFrom() + 1 ); };
-    string StrSeqStop() const {
-        return NStr::UIntToString( m_sourceRange.GetTo() + 1 ); };
-    string StrScore() const;
-    string StrStrand() const;
-    string StrPhase() const {
-        return ( m_puPhase ? NStr::UIntToString( *m_puPhase ) : "." ); };
     string StrAttributes() const;
 
 protected:
     unsigned int m_uFlags;
-    string m_strId;
-    string m_strSource;
-    string m_strType;
-    double* m_pdScore;
-    ENa_strand* m_peStrand;
-    unsigned int* m_puPhase;
-    string m_strAttributes;    
     string m_strAlignment;
     string m_strOtherScores;
 

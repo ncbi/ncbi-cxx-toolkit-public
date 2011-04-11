@@ -97,26 +97,6 @@ bool CGff2Writer::WriteAnnot(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteAnnotFTable( 
-    const CSeq_annot& annot )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! annot.IsFtable() ) {
-        return false;
-    }
-
-    CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
-
-    SAnnotSelector sel = x_GetAnnotSelector();
-    feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
-    for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
-        x_WriteFeature( feat_tree, *mf );
-    }
-    m_Scope.RemoveSeq_annot( sah );
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteFeature(
     feature::CFeatTree& ftree,
     CMappedFeat mf )
@@ -188,8 +168,8 @@ bool CGff2Writer::x_WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
+    CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
     if ( annot.IsAlign() ) {
-        CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
         for ( CAlign_CI it( sah ); it; ++it ) {
             if ( ! x_WriteAlign( *it ) ) {
                 return false;
@@ -198,11 +178,14 @@ bool CGff2Writer::x_WriteAnnot(
         return true;
     }
 
-    if ( annot.IsFtable() ) {
-        return x_WriteAnnotFTable( annot );
+    SAnnotSelector sel = x_GetAnnotSelector();
+    feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
+    for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
+        if ( ! x_WriteFeature( feat_tree, *mf ) ) {
+            return false;
+        }
     }
-    cerr << "Unexpected!" << endl;
-    return false;
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

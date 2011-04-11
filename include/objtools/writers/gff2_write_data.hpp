@@ -52,13 +52,9 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
+    CGffWriteRecord();
     CGffWriteRecord(
-    );
-
-    CGffWriteRecord(
-        const CGffWriteRecord&
-    );
-
+        const CGffWriteRecord& );
     virtual ~CGffWriteRecord();
 
     //
@@ -91,47 +87,6 @@ public:
     virtual string StrPhase() const;
     virtual string StrStructibutes() const { return ""; };
 
-    //
-    // Accessors:
-    //        
-    string Id() const { 
-        return m_strId; 
-    };
-    size_t SeqStart() const { 
-        return m_uSeqStart; 
-    };
-    size_t SeqStop() const { 
-        return m_uSeqStop; 
-    };
-    string Source() const { 
-        return m_strSource; 
-    };
-    string Type() const { 
-        return m_strType; 
-    };
-    double Score() const { 
-        return IsSetScore() ? *m_pdScore : 0.0; 
-    };
-    ENa_strand Strand() const { 
-        return IsSetStrand() ? *m_peStrand : eNa_strand_unknown; 
-    };
-    unsigned int Phase() const {
-        return IsSetPhase() ? *m_puPhase : 0; 
-    };
-    virtual string SortTieBreaker() const { 
-        return ""; 
-    };
-
-    bool IsSetScore() const { 
-        return m_pdScore != 0; 
-    };
-    bool IsSetStrand() const { 
-        return m_peStrand != 0; 
-    };
-    bool IsSetPhase() const { 
-        return m_puPhase != 0; 
-    };
-
     const TAttributes& Attributes() const { 
         return m_Attributes; 
     };
@@ -148,9 +103,6 @@ protected:
         map<string, string >&,
         string& ) const;
 
-    //
-    // Data:
-    //
     string m_strId;
     size_t m_uSeqStart;
     size_t m_uSeqStop;

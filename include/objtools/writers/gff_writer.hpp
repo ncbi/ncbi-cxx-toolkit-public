@@ -62,10 +62,21 @@ public:
         TFlags = fNormal );
     virtual ~CGff2Writer();
 
+    //  ------------------------------------------------------------------------
+    //  Supported object types:
+    //  ------------------------------------------------------------------------
     bool WriteAnnot( 
         const CSeq_annot& );
     bool WriteAlign( 
         const CSeq_align& );
+
+    //  ------------------------------------------------------------------------
+    //  Supported handle types:
+    //  ------------------------------------------------------------------------
+//    bool WriteAnnotHandle(
+//        );
+//    bool WriteBioseqHandle(
+//        );
 
 protected:
     virtual bool x_WriteAnnot( 
@@ -75,8 +86,6 @@ protected:
 
     virtual bool x_WriteHeader();
     virtual bool x_WriteFooter();
-    virtual bool x_WriteAnnotFTable( 
-        const CSeq_annot& );
     virtual bool x_WriteFeature(
         feature::CFeatTree&,
         CMappedFeat );
