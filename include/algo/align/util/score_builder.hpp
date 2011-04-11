@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <util/range_coll.hpp>
 #include <algo/blast/api/blast_types.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -117,9 +118,19 @@ public:
     /// Compute percent coverage of the query (sequence 0) (range 0-100)
     double GetPercentCoverage(CScope& scope, const CSeq_align& align);
 
-    /// Compute percent coverage of the query within specified range (sequence 0) (range 0-100)
+    /// Compute percent identity or coverage of the query within specified range
+    double GetPercentIdentity(CScope& scope, const CSeq_align& align,
+                              const TSeqRange &range,
+                              EPercentIdentityType type = eGapped);
     double GetPercentCoverage(CScope& scope, const CSeq_align& align,
                               const TSeqRange &range);
+
+    /// Compute percent identity or coverage of the query within specified collection of ranges
+    double GetPercentIdentity(CScope& scope, const CSeq_align& align,
+                              const CRangeCollection<TSeqPos> &ranges,
+                              EPercentIdentityType type = eGapped);
+    double GetPercentCoverage(CScope& scope, const CSeq_align& align,
+                              const CRangeCollection<TSeqPos> &ranges);
 
     /// Compute the number of identities in the alignment
     int GetIdentityCount  (CScope& scope, const CSeq_align& align);

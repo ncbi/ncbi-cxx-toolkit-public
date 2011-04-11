@@ -139,72 +139,11 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* s) const
     {
-        double longest_gap = 0;
-        switch (align.GetSegs().Which()) {
-        case CSeq_align::TSegs::e_Denseg:
-            {{
-                 const CDense_seg& ds = align.GetSegs().GetDenseg();
-                 for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                     bool is_gapped = false;
-                     for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
-                         if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
-                             is_gapped = true;
-                             break;
-                         }
-                     }
-                     if (is_gapped) {
-                         longest_gap = max<double>(longest_gap,
-                                                   ds.GetLens()[i]);
-                     }
-                 }
-             }}
-            break;
-
-        case CSeq_align::TSegs::e_Disc:
-            {{
-                 ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
-                         align.GetSegs().GetDisc().Get()) {
-                     double d = Get(**iter, s);
-                     longest_gap = max<double>(longest_gap, d);
-                 }
-             }}
-            break;
-
-        case CSeq_align::TSegs::e_Spliced:
-            {{
-                 ITERATE (CSpliced_seg::TExons, iter,
-                          align.GetSegs().GetSpliced().GetExons()) {
-                     const CSpliced_exon& exon = **iter;
-                     if (exon.IsSetParts()) {
-                         ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                             const CSpliced_exon_chunk& chunk = **it;
-                             switch (chunk.Which()) {
-                             case CSpliced_exon_chunk::e_Product_ins:
-                                 longest_gap = max<double>
-                                     (longest_gap, chunk.GetProduct_ins());
-                                 break;
-
-                             case CSpliced_exon_chunk::e_Genomic_ins:
-                                 longest_gap = max<double>
-                                     (longest_gap, chunk.GetGenomic_ins());
-                                 break;
-
-                             default:
-                                 break;
-                             }
-                         }
-                     }
-                 }
-             }}
-            break;
-
-        default:
-            NCBI_THROW(CSeqalignException, eUnsupported,
-                       "CScore_LongestGapLength currently does not handle "
-                       "this type of alignment.");
+        try {
+            return align.GapLengthRange().second;
+        } catch (CSeqalignException &e) {
+            return numeric_limits<double>::quiet_NaN();
         }
-
-        return longest_gap;
     }
 };
 
@@ -463,25 +402,34 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope*) const
     {
-        double score = numeric_limits<double>::quiet_NaN();
-        if (align.GetSegs().IsSpliced()) {
-            int min_exon_len = 0;
-            ITERATE (CSpliced_seg::TExons, iter,
-                     align.GetSegs().GetSpliced().GetExons()) {
-                const CSpliced_exon& exon = **iter;
-                int this_len =
-                    exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
-
-                if ( !min_exon_len ) {
-                    min_exon_len = this_len;
-                } else {
-                    min_exon_len = min(min_exon_len, this_len);
-                }
-            }
-
-            score = min_exon_len;
+        try {
+            return align.ExonLengthRange().first;
+        } catch (CSeqalignException &e) {
+            return numeric_limits<double>::quiet_NaN();
         }
-        return score;
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_MaxIntronLength : public CAlignFilter::IScore
+{
+public:
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Length of the longest intron.  Note that this score has "
+            "meaning only for Spliced-seg alignments, as would be generated "
+            "by Splign or ProSplign.";
+    }
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        try {
+            return align.IntronLengthRange().second;
+        } catch (CSeqalignException &e) {
+            return numeric_limits<double>::quiet_NaN();
+        }
     }
 };
 
@@ -543,6 +491,98 @@ public:
     }
 };
 
+/////////////////////////////////////////////////////////////////////////////
+
+class CScore_CdsScore : public CAlignFilter::IScore
+{
+public:
+    CScore_CdsScore(CScoreBuilder::EScoreType type)
+    : m_ScoreType(type)
+    {
+        NCBI_ASSERT(type == CScoreBuilder::eScore_PercentIdentity ||
+                    type == CScoreBuilder::eScore_PercentCoverage,
+                    "Unexpected CDS score type");
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        switch (m_ScoreType) {
+        case CScoreBuilder::eScore_PercentIdentity:
+            ostr <<
+                "Percent-identity score confined to the coding region "
+                "associated with the align transcipt. Not supported "
+                "for standard-seg alignments.";
+            break;
+        case CScoreBuilder::eScore_PercentCoverage:
+            ostr <<
+                "Percent-coverage score confined to the coding region "
+                "associated with the align transcipt.";
+            break;
+        default:
+            NCBI_ASSERT(false, "Unexpected CDS score type");
+        }
+        ostr << " Note that this has meaning only if product has a coding "
+                "region annotation.";
+    }
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        double score = numeric_limits<double>::quiet_NaN();
+        if (align.GetSegs().IsStd()) {
+            return score;
+        }
+
+        CBioseq_Handle product = scope->GetBioseqHandle(align.GetSeq_id(0));
+        CFeat_CI cds(product, CSeqFeatData::eSubtype_cdregion);
+
+        if (cds) {
+            CRangeCollection<TSeqPos> cds_ranges;
+            for (CSeq_loc_CI it(cds->GetLocation()); it; ++it) {
+                cds_ranges += it.GetRange();
+            }
+            score = m_ScoreType == CScoreBuilder::eScore_PercentIdentity
+                    ? CScoreBuilder().GetPercentIdentity(*scope, align,
+                                                        cds_ranges)
+                    : CScoreBuilder().GetPercentCoverage(*scope, align,
+                                                        cds_ranges);
+        }
+        return score;
+    }
+
+private:
+    const CScoreBuilder::EScoreType m_ScoreType;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_Taxid : public CAlignFilter::IScore
+{
+public:
+    CScore_Taxid(int row)
+        : m_Row(row)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        if (m_Row == 0) {
+            ostr << "Taxid of query sequence";
+        }
+        else if (m_Row == 1) {
+            ostr << "Taxid of subject sequence";
+        }
+    }
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        return sequence::GetTaxId(
+                   scope->GetBioseqHandle(align.GetSeq_id(m_Row)));
+    }
+
+private:
+    int m_Row;
+};
+
 //////////////////////////////////////////////////////////////////////////////
 
 CAlignFilter::CAlignFilter()
@@ -582,6 +622,16 @@ void CAlignFilter::x_Init()
          ("min_exon_len",
           CIRef<IScore>(new CScore_MinExonLength)));
 
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("max_intron_len",
+          CIRef<IScore>(new CScore_MaxIntronLength)));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("longest_gap",
+          CIRef<IScore>(new CScore_LongestGapLength)));
+
     {{
          CIRef<IScore> score(new CScore_AlignStartStop(0, true));
          m_Scores.insert
@@ -603,13 +653,16 @@ void CAlignFilter::x_Init()
 
     m_Scores.insert
         (TScoreDictionary::value_type
-         ("longest_gap",
-          CIRef<IScore>(new CScore_LongestGapLength)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
          ("cds_internal_stops",
           CIRef<IScore>(new CScore_CdsInternalStops)));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("cds_pct_identity",
+          CIRef<IScore>(new CScore_CdsScore(CScoreBuilder::eScore_PercentIdentity))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("cds_pct_coverage",
+          CIRef<IScore>(new CScore_CdsScore(CScoreBuilder::eScore_PercentCoverage))));
 
     m_Scores.insert
         (TScoreDictionary::value_type
@@ -638,6 +691,15 @@ void CAlignFilter::x_Init()
               ("subject_length",
                CIRef<IScore>(new CScore_SequenceLength(1))));
      }}
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_taxid",
+          CIRef<IScore>(new CScore_Taxid(0))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_taxid",
+          CIRef<IScore>(new CScore_Taxid(1))));
 }
 
 

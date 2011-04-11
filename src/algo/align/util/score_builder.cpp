@@ -196,6 +196,7 @@ static void s_GetNucIdentityMismatch(const vector<string>& data,
 
 static void s_GetSplicedSegIdentityMismatch(CScope& scope,
                                             const CSeq_align& align,
+                                            const CRangeCollection<TSeqPos> &ranges,
                                             int* identities,
                                             int* mismatches)
 {
@@ -226,28 +227,36 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
                  const CPairwiseAln::TAlnRng& range = *it;
                  TSeqRange r1(range.GetFirstFrom(), range.GetFirstTo());
                  TSeqRange r2(range.GetSecondFrom(), range.GetSecondTo());
-
                  string prod_data;
-                 prod.GetSeqData(r1.GetFrom(), r1.GetTo() + 1,
-                                 prod_data);
+                 prod.GetSeqData(r1.GetFrom(), r1.GetTo() + 1, prod_data);
                  string gen_data;
-                 gen.GetSeqData(r2.GetFrom(), r2.GetTo() + 1,
-                                 gen_data);
+                 gen.GetSeqData(r2.GetFrom(), r2.GetTo() + 1, gen_data);
                  if (range.IsReversed()) {
                      CSeqManip::ReverseComplement(gen_data,
                                                   CSeqUtil::e_Iupacna,
                                                   0, gen_data.size());
                  }
 
-                 string::const_iterator pit = prod_data.begin();
-                 string::const_iterator pit_end = prod_data.end();
-                 string::const_iterator git = gen_data.begin();
-                 string::const_iterator git_end = gen_data.end();
-
-                 for ( ;  pit != pit_end  &&  git != git_end;  ++pit, ++git) {
-                     bool match = (*pit == *git);
-                     *identities +=  match;
-                     *mismatches += !match;
+                 CRangeCollection<TSeqPos> seg_ranges = ranges;
+                 seg_ranges.IntersectWith(r1);
+                 ITERATE (CRangeCollection<TSeqPos>, range_it, seg_ranges) {
+                     TSeqPos start_offset = range_it->GetFrom() - r1.GetFrom(),
+                             end_offset = range_it->GetToOpen() - r1.GetFrom();
+                     string::const_iterator pit = prod_data.begin()
+                                                + start_offset;
+                     string::const_iterator pit_end = prod_data.begin()
+                                                + end_offset;
+                     string::const_iterator git = gen_data.begin()
+                                                + start_offset;
+                     string::const_iterator git_end = gen_data.begin()
+                                                + end_offset;
+    
+                     for ( ;  pit != pit_end  &&  git != git_end;  ++pit, ++git)
+                     {
+                         bool match = (*pit == *git);
+                         *identities +=  match;
+                         *mismatches += !match;
+                     }
                  }
              }
          }}
@@ -344,16 +353,23 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
 
 
 static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
-                                       int* identities, int* mismatches)
+                                       int* identities, int* mismatches,
+                                       const CRangeCollection<TSeqPos> &ranges =
+                                            CRangeCollection<TSeqPos>(TSeqRange::GetWhole()))
 {
     _ASSERT(identities  &&  mismatches);
+    if (ranges.empty()) {
+        return;
+    }
 
     {{
          ///
          /// shortcut: if 'num_ident' is present, we trust it
          ///
          int num_ident = 0;
-         if (align.GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident)) {
+         if (ranges.begin()->IsWhole() &&
+             align.GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident))
+         {
              size_t len     = align.GetAlignLength(false /*ignore gaps*/);
              *identities += num_ident;
              *mismatches += (len - num_ident);
@@ -365,29 +381,38 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
     case CSeq_align::TSegs::e_Denseg:
         {{
             const CDense_seg& ds = align.GetSegs().GetDenseg();
+            vector<string> data;
             CAlnVec vec(ds, scope);
+            data.resize(vec.GetNumRows());
             for (int seg = 0;  seg < vec.GetNumSegs();  ++seg) {
-                vector<string> data;
-                for (int i = 0;  i < vec.GetNumRows();  ++i) {
-                    TSeqPos start = vec.GetStart(i, seg);
-                    if (start == (TSeqPos)(-1)) {
-                        /// we compute ungapped identities
-                        /// gap on at least one row, so we skip this segment
-                        break;
+                bool has_gap = false;
+                for (int i = 0;  !has_gap && i < vec.GetNumRows();  ++i) {
+                    if (vec.GetStart(i, seg) == -1) {
+                        has_gap = true;
                     }
-                    TSeqPos stop  = vec.GetStop(i, seg);
-                    if (start == stop) {
-                        break;
-                    }
-
-                    data.push_back(string());
-                    vec.GetSeqString(data.back(), i, start, stop);
+                }
+                if (has_gap) {
+                    /// we compute ungapped identities
+                    /// gap on at least one row, so we skip this segment
+                    continue;
                 }
 
-                if (data.size() == (size_t)ds.GetDim()) {
-                    s_GetNucIdentityMismatch(data, identities, mismatches);
+                TSeqPos seg_start = vec.GetStart(0, seg),
+                        seg_stop = vec.GetStop(0, seg);
+                CRangeCollection<TSeqPos> seg_ranges = ranges;
+                seg_ranges.IntersectWith(TSeqRange(seg_start, seg_stop));
+                for (int i = 0;  i < vec.GetNumRows();  ++i) {
+                    TSeqPos offset = vec.GetStart(i, seg) - seg_start;
+                    ITERATE (CRangeCollection<TSeqPos>, range_it, seg_ranges) {
+                        string seq_string; 
+                        vec.GetSeqString(seq_string, i,
+                                         range_it->GetFrom()+offset,
+                                         range_it->GetTo()+offset);
+                        data[i] += seq_string;
+                    }
                 }
             }
+            s_GetNucIdentityMismatch(data, identities, mismatches);
         }}
         break;
 
@@ -396,13 +421,13 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
             ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter,
                      align.GetSegs().GetDisc().Get()) {
                 s_GetCountIdentityMismatch(scope, **iter,
-                                           identities, mismatches);
+                                           identities, mismatches, ranges);
             }
         }}
         break;
 
     case CSeq_align::TSegs::e_Std:
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqalignException, eUnsupported,
                    "identity + mismatch function unimplemented for std-seg");
         break;
 
@@ -411,43 +436,45 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
              int aln_identities = 0;
              int aln_mismatches = 0;
              bool has_non_standard = false;
-             ITERATE (CSpliced_seg::TExons, iter,
-                      align.GetSegs().GetSpliced().GetExons()) {
-                 const CSpliced_exon& exon = **iter;
-                 if (exon.IsSetParts()) {
-                     ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                         const CSpliced_exon_chunk& chunk = **it;
-                         switch (chunk.Which()) {
-                         case CSpliced_exon_chunk::e_Match:
-                             aln_identities += chunk.GetMatch();
-                             break;
-                         case CSpliced_exon_chunk::e_Mismatch:
-                             aln_mismatches += chunk.GetMismatch();
-                             break;
-
-                         case CSpliced_exon_chunk::e_Diag:
-                             has_non_standard = true;
-                             break;
-
-                         default:
-                             break;
+             if (ranges.begin()->IsWhole()) {
+                 ITERATE (CSpliced_seg::TExons, iter,
+                          align.GetSegs().GetSpliced().GetExons()) {
+                     const CSpliced_exon& exon = **iter;
+                     if (exon.IsSetParts()) {
+                         ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                             const CSpliced_exon_chunk& chunk = **it;
+                             switch (chunk.Which()) {
+                             case CSpliced_exon_chunk::e_Match:
+                                 aln_identities += chunk.GetMatch();
+                                 break;
+                             case CSpliced_exon_chunk::e_Mismatch:
+                                 aln_mismatches += chunk.GetMismatch();
+                                 break;
+    
+                             case CSpliced_exon_chunk::e_Diag:
+                                 has_non_standard = true;
+                                 break;
+    
+                             default:
+                                 break;
+                             }
                          }
+                     } else {
+                         aln_identities +=
+                             exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
                      }
-                 } else {
-                     aln_identities +=
-                         exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+                 }
+                 if ( !has_non_standard ) {
+                     *identities += aln_identities;
+                     *mismatches += aln_mismatches;
+                     break;
                  }
              }
 
-             if ( !has_non_standard ) {
-                 *identities += aln_identities;
-                 *mismatches += aln_mismatches;
-             } else {
-                 /// we must compute match and mismatch based on first
-                 /// prinicples
-                 s_GetSplicedSegIdentityMismatch(scope, align,
-                                                 identities, mismatches);
-             }
+             /// we must compute match and mismatch based on first
+             /// prinicples
+             s_GetSplicedSegIdentityMismatch(scope, align, ranges,
+                                             identities, mismatches);
          }}
         break;
 
@@ -467,25 +494,31 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
                                  int* identities,
                                  int* mismatches,
                                  double* pct_identity,
-                                 CScoreBuilder::EPercentIdentityType type)
+                                 CScoreBuilder::EPercentIdentityType type,
+                                 const CRangeCollection<TSeqPos> &ranges =
+                                      CRangeCollection<TSeqPos>(TSeqRange::GetWhole()))
 {
     size_t count_aligned = 0;
     switch (type) {
     case CScoreBuilder::eGapped:
-        count_aligned = align.GetAlignLength(true /* include gaps */);
+        count_aligned = align.GetAlignLengthWithinRanges(ranges, true /* include gaps */);
         break;
 
     case CScoreBuilder::eUngapped:
-        count_aligned = align.GetAlignLength(false /* omit gaps */);
+        count_aligned = align.GetAlignLengthWithinRanges(ranges, false /* omit gaps */);
         break;
 
     case CScoreBuilder::eGBDNA:
+        if (ranges.empty() || !ranges.begin()->IsWhole()) {
+            NCBI_THROW(CSeqalignException, eUnsupported,
+                "Can't calculate GBDNA-type pct identity within a range");
+        }
         count_aligned  = align.GetAlignLength(false /* omit gaps */);
         count_aligned += align.GetNumGapOpenings();
         break;
     }
 
-    s_GetCountIdentityMismatch(scope, align, identities, mismatches);
+    s_GetCountIdentityMismatch(scope, align, identities, mismatches, ranges);
     if (count_aligned) {
         *pct_identity = 100.0f * double(*identities) / count_aligned;
     } else {
@@ -498,19 +531,20 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
 /// calculate the percent coverage
 ///
 static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
-                                 const TSeqRange& range, double* pct_coverage)
+                                 const CRangeCollection<TSeqPos>& ranges,
+                                 double* pct_coverage)
 {
-    if (range.IsWhole() &&
+    if (!ranges.empty() && ranges.begin()->IsWhole() &&
         align.GetNamedScore(CSeq_align::eScore_PercentCoverage,
                             *pct_coverage)) {
         return;
     }
 
-    size_t covered_bases = align.GetAlignLengthWithinRange
-                               (range, false /* don't include gaps */);
+    size_t covered_bases = align.GetAlignLengthWithinRanges
+                               (ranges, false /* don't include gaps */);
     size_t seq_len = 0;
-    if(!range.IsWhole()){
-        seq_len = range.GetLength();
+    if(ranges.empty() || !ranges.begin()->IsWhole()){
+        seq_len = ranges.GetCoveredLength();
     } else {
         if (align.GetSegs().IsSpliced()  &&
             align.GetSegs().GetSpliced().IsSetPoly_a()) {
@@ -574,11 +608,42 @@ double CScoreBuilder::GetPercentIdentity(CScope& scope,
 }
 
 
+double CScoreBuilder::GetPercentIdentity(CScope& scope,
+                                         const CSeq_align& align,
+                                         const TSeqRange &range,
+                                         EPercentIdentityType type)
+{
+    int identities = 0;
+    int mismatches = 0;
+    double pct_identity = 0;
+    s_GetPercentIdentity(scope, align,
+                         &identities, &mismatches, &pct_identity, type,
+                          CRangeCollection<TSeqPos>(range));
+    return pct_identity;
+}
+
+
+double CScoreBuilder::GetPercentIdentity(CScope& scope,
+                                         const CSeq_align& align,
+                                         const CRangeCollection<TSeqPos> &ranges,
+                                         EPercentIdentityType type)
+{
+    int identities = 0;
+    int mismatches = 0;
+    double pct_identity = 0;
+    s_GetPercentIdentity(scope, align,
+                         &identities, &mismatches, &pct_identity, type, ranges);
+    return pct_identity;
+}
+
+
 double CScoreBuilder::GetPercentCoverage(CScope& scope,
                                          const CSeq_align& align)
 {
     double pct_coverage = 0;
-    s_GetPercentCoverage(scope, align, TSeqRange::GetWhole(), &pct_coverage);
+    s_GetPercentCoverage(scope, align,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
+                         &pct_coverage);
     return pct_coverage;
 }
 
@@ -587,7 +652,16 @@ double CScoreBuilder::GetPercentCoverage(CScope& scope,
                                          const TSeqRange& range)
 {
     double pct_coverage = 0;
-    s_GetPercentCoverage(scope, align, range, &pct_coverage);
+    s_GetPercentCoverage(scope, align, CRangeCollection<TSeqPos>(range), &pct_coverage);
+    return pct_coverage;
+}
+
+double CScoreBuilder::GetPercentCoverage(CScope& scope,
+                                         const CSeq_align& align,
+                                         const CRangeCollection<TSeqPos>& ranges)
+{
+    double pct_coverage = 0;
+    s_GetPercentCoverage(scope, align, ranges, &pct_coverage);
     return pct_coverage;
 }
 
@@ -941,7 +1015,9 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
     case CSeq_align::eScore_PercentCoverage:
         {{
             double pct_coverage = 0;
-            s_GetPercentCoverage(scope, align, TSeqRange::GetWhole(), &pct_coverage);
+            s_GetPercentCoverage(scope, align,
+                                 CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
+                                 &pct_coverage);
             align.SetNamedScore("pct_coverage", pct_coverage);
         }}
         break;
@@ -950,7 +1026,7 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
         {{
             if(align.GetSegs().Which() == CSeq_align::TSegs::e_Std)
                 /// high-quality-coverage calculatino is not possbile for standard segs
-                NCBI_THROW(CException, eUnknown,
+                NCBI_THROW(CSeqalignException, eUnsupported,
                             "High-quality percent coverage not supported "
                             "for standard seg representation");
 
@@ -970,7 +1046,9 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                 }
             }
             double pct_coverage = 0;
-            s_GetPercentCoverage(scope, align, alignable_range, &pct_coverage);
+            s_GetPercentCoverage(scope, align,
+                                 CRangeCollection<TSeqPos>(alignable_range),
+                                 &pct_coverage);
             align.SetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage,
                                 pct_coverage);
         }}
