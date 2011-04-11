@@ -266,7 +266,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobInput()
     job.job_id = m_Opts.id;
 
     if (m_NetScheduleAPI.GetJobDetails(job) == CNetScheduleAPI::eJobNotFound) {
-        fprintf(stderr, PROGRAM_NAME ": job %s has expired.\n", job.job_id);
+        fprintf(stderr, PROGRAM_NAME ": job %s has expired.\n", job.job_id.c_str());
         return 3;
     }
 
