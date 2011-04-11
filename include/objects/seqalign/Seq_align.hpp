@@ -41,7 +41,7 @@
 // generated includes
 #include <objects/seqalign/Seq_align_.hpp>
 #include <objects/seqloc/Na_strand.hpp>
-#include <util/range.hpp>
+#include <util/range_coll.hpp>
 
 // generated classes
 
@@ -174,6 +174,8 @@ public:
         eScore_PercentIdentity = eScore_PercentIdentity_Gapped
     };
 
+    typedef pair<TSeqPos, TSeqPos> TLengthRange;
+
     /// constructor
     CSeq_align(void);
     /// destructor
@@ -217,6 +219,12 @@ public:
     /// including all gap segments.
     TSeqPos         GetAlignLengthWithinRange(const TSeqRange &range,
                                               bool include_gaps = true) const;
+
+    /// Get the length of this alignment within a specified range
+    /// By default, this function computes an alignment length
+    /// including all gap segments.
+    TSeqPos         GetAlignLengthWithinRanges(const CRangeCollection<TSeqPos> &ranges,
+                                               bool include_gaps = true) const;
 
     /// Get score
     bool GetNamedScore(const string& id, int &score) const;
@@ -280,6 +288,12 @@ public:
                                     bool ignore_strand = false);
 
     CRef<CSeq_loc> CreateRowSeq_loc(TDim row) const;
+
+    TLengthRange GapLengthRange() const;
+
+    TLengthRange IntronLengthRange() const;
+
+    TLengthRange ExonLengthRange() const;
 
 protected:
     /// retrieve a named score object
