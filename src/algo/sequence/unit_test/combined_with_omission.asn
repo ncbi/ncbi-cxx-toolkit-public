@@ -804,6 +804,12 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_569712.2"
         }
       },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS42971.1"
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -2185,6 +2191,12 @@ Seq-annot ::= {
         {
           qual "inference",
           val "similar to AA sequence (same species):RefSeq:NP_569712.2"
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS42971.1"
         }
       },
       except-text "annotated by transcript or proteomic data"
@@ -6454,7 +6466,10 @@ Seq-annot ::= {
     {
       data rna {
         type ncRNA,
-        ext name "Homo sapiens microRNA 155 (MIR155), microRNA"
+        ext gen {
+          class "miRNA",
+          product "Homo sapiens microRNA 155 (MIR155), microRNA"
+        }
       },
       product whole gi 269846817,
       location packed-int {

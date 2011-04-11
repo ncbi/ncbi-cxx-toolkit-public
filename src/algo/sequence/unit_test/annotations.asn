@@ -1009,6 +1009,12 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_569712.2"
         }
       },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS42971.1"
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     }
   }
@@ -2458,6 +2464,12 @@ Seq-annot ::= {
         {
           qual "inference",
           val "similar to AA sequence (same species):RefSeq:NP_569712.2"
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS42971.1"
         }
       },
       except-text "annotated by transcript or proteomic data"

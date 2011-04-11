@@ -1957,6 +1957,12 @@ A4994A78512449411917974A1E61805AEA9EBDEC3EEEE3B8250F484A40C02E17FC4780'H
                 to 4059,
                 strand plus,
                 id gi 110611232
+              },
+              dbxref {
+                {
+                  db "CCDS",
+                  tag str "CCDS42971.1"
+                }
               }
             }
           }
@@ -5456,6 +5462,12 @@ EAB7A49754D4A955374E55E9EA1BA749491FB5278994A3A046944D0229E29E91284E6B252444A9
                 to 4059,
                 strand plus,
                 id gi 110611232
+              },
+              dbxref {
+                {
+                  db "CCDS",
+                  tag str "CCDS42971.1"
+                }
               }
             }
           }
