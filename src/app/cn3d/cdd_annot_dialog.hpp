@@ -126,7 +126,7 @@ class CDDTypedAnnotDialog : public wxDialog
 {
 public:
     //  If 'initial' is non-NULL, it defines the initial state of the dialog.
-    CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::CAlign_annot& initial, const string& title);
+    CDDTypedAnnotDialog(wxWindow *parent, const ncbi::objects::CAlign_annot& initial, const std::string& title);
 
 private:
     bool changed;
@@ -135,8 +135,8 @@ private:
     //  Each wxArrayString in TTypeNamesPair is ordered as it is to appear in pulldown widgets.
     //  The key of TPredefinedSites corresponds to the 'type' field in the Align_annot ASN.1 spec
     //  and is also used to define the position of the type in the wxChoice widget.
-    typedef pair<wxString, wxArrayString> TTypeNamesPair;
-    typedef map<int, TTypeNamesPair> TPredefinedSites;
+    typedef std::pair<wxString, wxArrayString> TTypeNamesPair;
+    typedef std::map<int, TTypeNamesPair> TPredefinedSites;
     static TPredefinedSites predefinedSites;
 
     //  Populate the 'predefinedSites' map from the cd_utils::CStdAnnotTypes class.
