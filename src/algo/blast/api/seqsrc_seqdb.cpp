@@ -58,7 +58,7 @@ struct SSeqDB_SeqSrc_Data {
     }
     
     /// Constructor.
-    SSeqDB_SeqSrc_Data(CSeqDB * ptr, int id, int type)
+    SSeqDB_SeqSrc_Data(CSeqDB * ptr, int id, ESubjectMaskingType type)
         : seqdb((CSeqDBExpert*) ptr), 
           mask_algo_id(id),
           mask_type(type),
@@ -91,7 +91,7 @@ struct SSeqDB_SeqSrc_Data {
     
     /// Algorithm ID and type for mask data fetching.
     int mask_algo_id;
-    int mask_type;
+    ESubjectMaskingType mask_type;
     bool copied;
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -302,7 +302,7 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    if (datap->mask_type) { 
+    if (datap->mask_type != eNoSubjMasking) { 
         ASSERT(datap->mask_algo_id != -1);
         seqdb.GetMaskData(oid, datap->mask_algo_id, datap->seq_ranges);
     }
@@ -312,7 +312,7 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     
     if ( args->encoding == eBlastEncodingNucleotide 
       || args->encoding == eBlastEncodingNcbi4na 
-      || (datap->mask_type == DB_MASK_HARD 
+      || (datap->mask_type == eHardSubjMasking 
               && !(datap->seq_ranges.empty())
               && args->check_oid_exclusion))  datap->copied = true;
 
@@ -335,7 +335,7 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
                                   const_cast<char **>(&buf), 
                                   has_sentinel_byte, 
                                   eMalloc,
-                                  ((datap->mask_type == DB_MASK_HARD) ?
+                                  ((datap->mask_type == eHardSubjMasking) ?
                                        &(datap->seq_ranges) : NULL))
         :  seqdb.GetSequence(oid, &buf);
     
@@ -360,7 +360,7 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /* If masks have not been consumed (scanning phase), pass on to engine */
-    if (datap->mask_type) {
+    if (datap->mask_type != eNoSubjMasking) {
         if (BlastSeqBlkSetSeqRanges(args->seq, 
                                 (SSeqRange*) datap->seq_ranges.get_data(),
                                 datap->seq_ranges.size() + 1, false, datap->mask_type) != 0) {
@@ -532,7 +532,8 @@ public:
     /// Constructor
     CSeqDbSrcNewArgs(const string& db, bool is_prot,
                      Uint4 first_oid = 0, Uint4 final_oid = 0,
-                     Int4 mask_algo_id = -1, Int4 mask_type = DB_MASK_NONE)
+                     Int4 mask_algo_id = -1, 
+                     ESubjectMaskingType mask_type = eNoSubjMasking)
         : m_DbName(db), m_IsProtein(is_prot), 
           m_FirstDbSeq(first_oid), m_FinalDbSeq(final_oid),
           m_MaskAlgoId(mask_algo_id), m_MaskType(mask_type)
@@ -549,7 +550,7 @@ public:
     /// Returns the default filtering algorithm to use with sequence data
     /// extracted from this BlastSeqSrc
     Int4 GetMaskAlgoId() const { return m_MaskAlgoId; }
-    Int4 GetMaskType() const { return m_MaskType; }
+    ESubjectMaskingType GetMaskType() const { return m_MaskType; }
 
 private:
     string m_DbName;        ///< Database name
@@ -558,7 +559,7 @@ private:
     Uint4 m_FinalDbSeq;     ///< Ordinal id of the last sequence to search
     /// filtering algorithm ID to use when retrieving sequence data
     Int4 m_MaskAlgoId;
-    Int4 m_MaskType;
+    ESubjectMaskingType m_MaskType;
 };
 
 extern "C" {
@@ -721,7 +722,7 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
                  Uint4 first_seq, Uint4 last_seq,
-                 Int4 mask_algo_id, Int4 mask_type)
+                 Int4 mask_algo_id, ESubjectMaskingType mask_type)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc* seq_src = NULL;
@@ -737,7 +738,7 @@ SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(CSeqDB * seqdb,
                      Int4 mask_algo_id,
-                     Int4 mask_type)
+                     ESubjectMaskingType mask_type)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc * seq_src = NULL;

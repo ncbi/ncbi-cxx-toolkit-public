@@ -1578,9 +1578,9 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
         if (args.Exist(kArgDbSoftMask) && args[kArgDbSoftMask]) {
-            m_SearchDb->SetFilteringAlgorithm(args[kArgDbSoftMask].AsString(), DB_MASK_SOFT);
+            m_SearchDb->SetFilteringAlgorithm(args[kArgDbSoftMask].AsString(), eSoftSubjMasking);
         } else if (args.Exist(kArgDbHardMask) && args[kArgDbHardMask]) {
-            m_SearchDb->SetFilteringAlgorithm(args[kArgDbHardMask].AsString(), DB_MASK_HARD);
+            m_SearchDb->SetFilteringAlgorithm(args[kArgDbHardMask].AsString(), eHardSubjMasking);
         }
 #endif
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {

@@ -162,12 +162,12 @@ static void s_BackupSubject(BLAST_SequenceBlk* subject,
     backup->num_soft_ranges = 1;
     backup->sm_index = 0;
 
-    if (subject->mask_type == DB_MASK_SOFT) {
+    if (subject->mask_type == eSoftSubjMasking) {
         ASSERT (backup->seq_ranges);
         ASSERT (backup->num_seq_ranges >= 1);
         backup->soft_ranges = backup->seq_ranges;
         backup->num_soft_ranges = backup->num_seq_ranges;
-    } else if (subject->mask_type == DB_MASK_HARD) {
+    } else if (subject->mask_type == eHardSubjMasking) {
         ASSERT (backup->seq_ranges);
         ASSERT (backup->num_seq_ranges >= 1);
         backup->hard_ranges = backup->seq_ranges;
@@ -259,7 +259,7 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
     }
 
     /* if soft masking is off */
-    if (subject->mask_type != DB_MASK_SOFT) {
+    if (subject->mask_type != eSoftSubjMasking) {
         s_AllocateSeqRange(subject, backup, 1);
         subject->seq_ranges[0].left = residual;
         subject->seq_ranges[0].right = subject->length;
@@ -649,7 +649,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
     if (kTranslatedSubject) {
 
         s_BackupSubject(subject, &backup);
-        if (subject->mask_type) {
+        if (subject->mask_type != eNoSubjMasking) {
             s_AllocateSeqRange(subject, &backup, backup.num_seq_ranges);
         } else {
             subject->num_seq_ranges = 0;

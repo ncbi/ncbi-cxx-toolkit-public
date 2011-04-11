@@ -52,7 +52,7 @@ BEGIN_SCOPE(blast)
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type)
     : m_DbName(dbname), m_MolType(mol_type), m_GiListSet(false),
-      m_FilteringAlgorithmId(-1), m_MaskType(DB_MASK_NONE),
+      m_FilteringAlgorithmId(-1), m_MaskType(eNoSubjMasking),
       m_NeedsFilteringTranslation(false), m_DbInitialized(false)
 {}
 
@@ -60,7 +60,7 @@ CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const string& entrez_query)
     : m_DbName(dbname), m_MolType(mol_type),
       m_EntrezQueryLimitation(entrez_query), m_GiListSet(false),
-      m_FilteringAlgorithmId(-1), m_MaskType(DB_MASK_NONE),
+      m_FilteringAlgorithmId(-1), m_MaskType(eNoSubjMasking),
       m_NeedsFilteringTranslation(false), m_DbInitialized(false)
 {}
 
@@ -151,7 +151,8 @@ CSearchDatabase::GetNegativeGiListLimitation() const
 }
 
 void 
-CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm, int mask_type)
+CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm,
+                                       ESubjectMaskingType mask_type)
 {
     m_FilteringAlgorithmId = NStr::StringToNumeric(filt_algorithm);
     m_MaskType = mask_type;
@@ -166,11 +167,12 @@ CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm, int mask_ty
 void 
 CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id)
 {
-    SetFilteringAlgorithm(filt_algorithm_id, DB_MASK_SOFT);
+    SetFilteringAlgorithm(filt_algorithm_id, eSoftSubjMasking);
 }
 
 void 
-CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id, int mask_type)
+CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id,
+                                       ESubjectMaskingType mask_type)
 {
     m_FilteringAlgorithmId = filt_algorithm_id;
     m_MaskType = mask_type;
@@ -187,7 +189,7 @@ CSearchDatabase::GetFilteringAlgorithm() const
     return m_FilteringAlgorithmId;
 }
 
-int
+ESubjectMaskingType
 CSearchDatabase::GetMaskType() const
 {
     return m_MaskType;

@@ -359,7 +359,8 @@ CSetupFactory::CreateBlastSeqSrc(const CSearchDatabase& db)
 }
 
 BlastSeqSrc*
-CSetupFactory::CreateBlastSeqSrc(CSeqDB * db, int filt_algo, int mask_type)
+CSetupFactory::CreateBlastSeqSrc(CSeqDB * db, int filt_algo,
+                                 ESubjectMaskingType mask_type)
 {
     BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db, filt_algo, mask_type);
     char* error_str = BlastSeqSrcGetInitError(retval);

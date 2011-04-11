@@ -149,7 +149,7 @@ Int2 BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
                              SSeqRange* seq_ranges,
                              Uint4 num_seq_ranges,
                              Boolean copy_seq_ranges,
-                             Int4 mask_type);
+                             ESubjectMaskingType mask_type);
                             
 /** Adds a specialized representation of sequence data to a sequence
  * block. In the specialized representation, the byte at offset i 

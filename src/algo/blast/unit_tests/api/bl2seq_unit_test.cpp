@@ -1354,7 +1354,7 @@ BOOST_AUTO_TEST_CASE(InvalidMaskingAlgorithm) {
     CRef<blast::CSearchDatabase> m_SearchDb;
     m_SearchDb.Reset(new CSearchDatabase("ecoli",
                                          CSearchDatabase::eBlastDbIsProtein));
-    m_SearchDb->SetFilteringAlgorithm(66, DB_MASK_SOFT);
+    m_SearchDb->SetFilteringAlgorithm(66, eSoftSubjMasking);
     CRef<CLocalDbAdapter> subject_adapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastp));
     vector<int> q_gis;

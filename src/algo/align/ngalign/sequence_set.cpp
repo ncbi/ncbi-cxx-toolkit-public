@@ -121,7 +121,7 @@ CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
     SearchDb.Reset(new CSearchDatabase(m_BlastDb, CSearchDatabase::eBlastDbIsNucleotide));
 
     if(m_Filter != -1) {
-        SearchDb->SetFilteringAlgorithm(m_Filter, DB_MASK_SOFT);
+        SearchDb->SetFilteringAlgorithm(m_Filter, eSoftSubjMasking);
     }
 
     if(!m_NegativeGiList.IsNull() && !m_NegativeGiList->NotEmpty()) {

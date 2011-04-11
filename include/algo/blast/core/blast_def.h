@@ -231,9 +231,12 @@ typedef struct BlastMaskLoc {
    BlastSeqLoc** seqloc_array; 
 } BlastMaskLoc;
 
-#define DB_MASK_NONE 0   /* no db mask */
-#define DB_MASK_SOFT 1   /* soft db mask */
-#define DB_MASK_HARD 2   /* hard db mask */
+/** Define the possible subject masking types */
+typedef enum ESubjectMaskingType {
+    eNoSubjMasking,
+    eSoftSubjMasking,
+    eHardSubjMasking
+} ESubjectMaskingType;
 
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
@@ -278,7 +281,7 @@ typedef struct BLAST_SequenceBlk {
    Uint4 num_seq_ranges;    /**< Number of elements in seq_ranges */
    Boolean seq_ranges_allocated;   /**< TRUE if memory has been allocated for
                                       seq_ranges */
-   Int4 mask_type;          /**< type of subject masking */
+   ESubjectMaskingType mask_type;          /**< type of subject masking */
    /* END: Data members needed for masking subjects from a BLAST database */
 } BLAST_SequenceBlk;
 

@@ -170,14 +170,15 @@ public:
     /// Mutator for the filtering algorithm
     /// @param filt_algorithm_id filtering algorithm ID [in]
     /// @param mask_type type of mask [in]
-    void SetFilteringAlgorithm(int filt_algorithm_id, int mask_type);
+    void SetFilteringAlgorithm(int filt_algorithm_id, ESubjectMaskingType mask_type);
     /// Mutator for the filtering algorithm
     /// @param filt_algorithm filtering algorithm string [in]
     /// @param mask_type type of mask [in]
-    void SetFilteringAlgorithm(const string &filt_algorithm, int mask_type);
+    void SetFilteringAlgorithm(const string &filt_algorithm,
+                               ESubjectMaskingType mask_type);
     /// Accessor for the filtering algorithm ID
     int GetFilteringAlgorithm() const;
-    int GetMaskType() const;
+    ESubjectMaskingType GetMaskType() const;
 
     /// Mutator for the seqdb
     /// @param seqdb reference to an initialized db [in]
@@ -196,8 +197,8 @@ private:
     /// filtering to apply to database sequences
     string          m_FilteringAlgorithmString;
     mutable int     m_FilteringAlgorithmId;       
+    ESubjectMaskingType m_MaskType;
     mutable bool    m_NeedsFilteringTranslation;
-    int             m_MaskType;
     mutable bool    m_DbInitialized;
     mutable CRef<CSeqDB>    m_SeqDb;
 

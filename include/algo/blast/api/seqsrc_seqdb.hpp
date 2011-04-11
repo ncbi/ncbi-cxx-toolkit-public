@@ -62,7 +62,7 @@ BlastSeqSrc*
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
                      Uint4 first_seq = 0, Uint4 last_seq = 0,
                      Int4 mask_algo_id  = -1,
-                     Int4 mask_type = DB_MASK_NONE);
+                     ESubjectMaskingType mask_type = eNoSubjMasking);
 
 /** Initialize the sequence source structure using an existing SeqDB object.
  * @param seqdb CSeqDB object [in]
@@ -73,7 +73,7 @@ NCBI_XBLAST_EXPORT
 BlastSeqSrc*
 SeqDbBlastSeqSrcInit(CSeqDB * seqdb,
                      Int4 mask_algo_id  = -1,
-                     Int4 mask_type = DB_MASK_NONE);
+                     ESubjectMaskingType mask_type = eNoSubjMasking);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -187,7 +187,7 @@ BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
                         SSeqRange* seq_ranges,
                         Uint4 num_seq_ranges,
                         Boolean copy_seq_ranges,
-                        Int4 mask_type)
+                        ESubjectMaskingType mask_type)
 {
     SSeqRange* tmp;
 

@@ -161,7 +161,7 @@ struct AascanTestFixture {
         SSeqRange full_range;
         full_range.left = 0;
         full_range.right = subject_blk->length;
-        status = BlastSeqBlkSetSeqRanges(subject_blk, &full_range, 1, true, DB_MASK_NONE);
+        status = BlastSeqBlkSetSeqRanges(subject_blk, &full_range, 1, true, eNoSubjMasking);
         BOOST_REQUIRE_EQUAL(0, status);
 
         BOOST_REQUIRE(subject_blk != NULL);
@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
 
     SSeqRange ranges2scan[] = { {0, 501}, {700, 1001}, {subject_length, subject_length} };
     const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
-    BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE, DB_MASK_SOFT);
+    BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE, eSoftSubjMasking);
 
     scan_range[0] = 0;
     scan_range[1] = 0;
