@@ -390,27 +390,21 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
 {
     const CSeq_feat& feature = mf.GetOriginalFeature();
 
-    m_strId = "<unknown>";
-    
     if ( feature.CanGetLocation() ) {
     	const CSeq_loc& loc = feature.GetLocation();
 	    CConstRef<CSeq_id> id(loc.GetId());
 		if (id) {
-            try {
-                CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle( *id );
-                const CTextseq_id* pId 
-                    = sequence::GetId( bsh ).GetSeqId()->GetTextseq_Id();
-                m_strId = pId->GetAccession();
-                if ( pId->CanGetVersion() ) {
-                    m_strId += ".";
-                    m_strId += NStr::IntToString( pId->GetVersion() );
-                }
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *id ); 
+            CSeq_id_Handle best_idh = 
+                sequence::GetId(idh, mf.GetScope(), sequence::eGetId_Best); 
+            if ( !best_idh ) {
+                best_idh = idh;
             }
-            catch ( ... ) {
-			    m_strId.clear();
-			    id->GetLabel(&m_strId, CSeq_id::eContent);
-            }
+            best_idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
 		}
+    }
+    if (m_strId.empty() ) {
+        m_strId = "<unknown>";
     }
     return true;
 }
