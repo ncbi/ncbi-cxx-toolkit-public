@@ -4222,7 +4222,7 @@ void init_common(const string& module_name)
 
 #if PY_VERSION_HEX >= 0x02040000
     // Initialize DateTime module ...
-    PyDateTime_IMPORT;
+    PyDateTime_IMPORT;      // NCBI_FAKE_WARNING
 #endif
 
     // Declare CBinary

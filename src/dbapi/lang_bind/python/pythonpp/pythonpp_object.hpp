@@ -57,7 +57,7 @@ class CString;
 // Strong-typed operation ...
 inline PyObject* IncRefCount(PyObject* obj)
 {
-    Py_INCREF(obj);
+    Py_INCREF(obj);     // NCBI_FAKE_WARNING
     return obj;
 }
 inline PyObject* DecRefCount(PyObject* obj)
@@ -170,7 +170,7 @@ public:
     {
         // PyAPI_FUNC(void) IncRefCount(PyObject *);
         // PyAPI_FUNC(void) Py_DecRef(PyObject *);
-        Py_XDECREF(m_PyObject);
+        Py_XDECREF(m_PyObject);     // NCBI_FAKE_WARNING
         m_PyObject = NULL;
     }
 

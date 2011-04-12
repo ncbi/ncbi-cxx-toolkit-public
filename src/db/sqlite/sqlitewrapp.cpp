@@ -605,7 +605,7 @@ CSQLITE_Statement::x_Prepare(CTempString sql)
         m_ConnHandle = m_Conn->LockHandle();
     }
 
-    SQLITE_SAFE_CALL((sqlite3_prepare_v2(m_ConnHandle, sql.data(), sql.size(),
+    SQLITE_SAFE_CALL((sqlite3_prepare_v2(m_ConnHandle, sql.data(), int(sql.size()),
                                          &m_StmtHandle, NULL)),
                      m_ConnHandle, eStmtPrepare,
                      "Error preparing statement for \"" << sql << "\""
@@ -660,19 +660,19 @@ void
 CSQLITE_Statement::Bind(int index, CTempString val)
 {
     STMT_BIND3(text, string, index,
-               val.data(), val.size(), SQLITE_TRANSIENT);
+               val.data(), int(val.size()), SQLITE_TRANSIENT);
 }
 
 void
 CSQLITE_Statement::Bind(int index, const char* data, size_t size)
 {
-    STMT_BIND3(text, static string, index, data, size, SQLITE_STATIC);
+    STMT_BIND3(text, static string, index, data, int(size), SQLITE_STATIC);
 }
 
 void
 CSQLITE_Statement::Bind(int index, const void* data, size_t size)
 {
-    STMT_BIND3(blob, blob, index, data, size, SQLITE_STATIC);
+    STMT_BIND3(blob, blob, index, data, int(size), SQLITE_STATIC);
 }
 
 void
@@ -912,7 +912,8 @@ CSQLITE_Blob::Write(const void* data, size_t size)
         if (m_Position < m_Size) {
             size_t to_write = min(m_Size - m_Position, size);
             BLOB_SAFE_CALL((sqlite3_blob_write(m_BlobHandle,
-                                               data, to_write, m_Position)),
+                                               data, int(to_write),
+                                               int(m_Position))),
                            eBlobWrite,
                            "Error writing to position " << m_Position
                                 << " " << to_write << " bytes for blob"

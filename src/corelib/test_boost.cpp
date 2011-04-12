@@ -186,6 +186,8 @@ public:
     virtual
     void log_exception    (ostream& ostr, but::log_checkpoint_data const& lcd,
                                           boost::execution_exception const& ex);
+    // Next line is necessary for compiling with ICC and Boost 1.41.0 and up
+    using TBoostLogFormatter::log_exception;
 #else
     virtual
     void log_exception    (ostream& ostr, but::log_checkpoint_data const& lcd,
