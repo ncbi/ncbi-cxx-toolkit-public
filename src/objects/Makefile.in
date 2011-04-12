@@ -10,7 +10,8 @@ SUB_PROJ = general biblio medline pub seqcode seq seqset submit \
            scoremat blast blastdb blastxml mmdb cn3d cdd ncbimime \
            pcsubstance pcassay gbseq insdseq tinyseq biotree entrezgene \
            omssa remap seqtest taxon1 taxon3 valerr valid \
-           access docsum featdef genomecoll homologene mim objprt
+           access docsum featdef genomecoll homologene mim objprt \
+		   variation
 
 REQUIRES = objects
 

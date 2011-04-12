@@ -1,0 +1,295 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence Feature elements
+--  by James Ostell, 1990
+--  Version 3.0 - June 1994
+--
+--**********************************************************************
+
+NCBI-VariationPackage DEFINITIONS ::=
+BEGIN
+
+EXPORTS Variation;
+
+IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
+        Phenotype, Variation-inst, VariantProperties FROM NCBI-Variation
+        Seq-loc FROM NCBI-Seqloc
+        SubSource FROM NCBI-BioSource
+        Seq-literal FROM NCBI-Sequence
+        Pub FROM NCBI-Pub;
+
+
+VariantPlacement ::= SEQUENCE
+{
+    -- actual concrete placement we are considering
+    loc Seq-loc,
+
+    -- type of location
+    loc-type INTEGER {
+        genomic(1),
+        rna(2),
+        protein(3)
+    },
+
+    -- location flags
+    placement-method INTEGER {
+        projected(1),
+        asserted(2),
+        aligned(3)
+    } OPTIONAL,
+
+    -- location refinements
+    start-offset INTEGER OPTIONAL,
+    start-offset-fuzz Int-fuzz OPTIONAL,
+    stop-offset INTEGER OPTIONAL,
+    stop-offset-fuzz Int-fuzz OPTIONAL,
+
+    -- for situations in which a raw location isn't sufficient
+    seq Seq-literal OPTIONAL, 
+
+    -- reference to the assembly (GenColl ID) for this location
+    assembly Dbtag OPTIONAL,
+
+    hgvs-name VisibleString OPTIONAL,
+
+    -- the reference location for this variant
+    comment VisibleString OPTIONAL
+}
+
+Population-data ::= SEQUENCE {
+    -- assayed population (e.g. HAPMAP-CEU)
+    population VisibleString,
+    genotype-frequency REAL OPTIONAL,
+    chromosomes-tested INTEGER OPTIONAL,
+    sample-ids SET OF Object-id OPTIONAL,
+    allele-frequency REAL OPTIONAL,
+
+    -- This field is an explicit bit-field
+    -- Valid values should be a bitwise combination (= simple sum)
+    -- of any of the values below
+    flags INTEGER {
+        is-default-population   (1),
+        is-minor-allele         (2),
+        is-rare-allele          (4)
+    } OPTIONAL
+}
+
+
+VariationMethod ::= SEQUENCE
+{
+    -- sequencing / acuisition method
+    method SET OF INTEGER {
+        unknown             (0),
+        bac-acgh            (1),
+        computational       (2),
+        curated             (3),
+        digital-array       (4),
+        expression-array    (5),
+        fish                (6),
+        flanking-sequence   (7),
+        maph                (8),
+        mcd-analysis        (9),
+        mlpa                (10),
+        oea-assembly        (11),
+        oligo-acgh          (12),
+        paired-end          (13),
+        pcr                 (14),
+        qpcr                (15),
+        read-depth          (16),
+        roma                (17),
+        rt-pcr              (18),
+        sage                (19),
+        sequence-alignment  (20),
+        sequencing          (21),
+        snp-array           (22),
+        snp-genoytyping     (23),
+        southern            (24),
+        western             (25),
+        optical-mapping     (26),
+
+        other               (255)
+    },
+
+    -- if sequence-based validation metyhods are used,
+    -- what reference sequence location validated the presence of this?
+    reference-location Seq-loc OPTIONAL
+}
+
+
+Variation ::= SEQUENCE
+{
+    -- ids (i.e., SNP rsid / ssid, dbVar nsv/nssv)
+    -- expected values include 'dbSNP|rs12334', 'dbSNP|ss12345', 'dbVar|nsv1'
+    --
+    -- we relate three kinds of IDs here:
+    --  - our current object's id
+    --  - the id of this object's parent, if it exists
+    --  - the sample ID that this item originates from
+    id        Dbtag,
+    parent-id Dbtag OPTIONAL,
+    sample-id SET OF Object-id OPTIONAL,
+    other-ids SET OF Dbtag OPTIONAL,
+
+    -- names and synonyms
+    -- some variants have well-known canonical names and possible accepted
+    -- synonyms
+    name VisibleString OPTIONAL,
+    synonyms SET OF VisibleString OPTIONAL,
+
+    -- tag for comment and descriptions
+    description VisibleString OPTIONAL,
+
+    -- where this beast is seen
+    -- note that this is a set of locations, and there are no restrictions to
+    -- the contents to this set
+    placements SET OF VariantPlacement,
+
+    -- phenotype
+    phenotype SET OF Phenotype OPTIONAL,
+
+    -- sequencing / acuisition method
+    method SET OF INTEGER {
+        unknown             (0),
+        bac-acgh            (1),
+        computational       (2),
+        curated             (3),
+        digital-array       (4),
+        expression-array    (5),
+        fish                (6),
+        flanking-sequence   (7),
+        maph                (8),
+        mcd-analysis        (9),
+        mlpa                (10),
+        oea-assembly        (11),
+        oligo-acgh          (12),
+        paired-end          (13),
+        pcr                 (14),
+        qpcr                (15),
+        read-depth          (16),
+        roma                (17),
+        rt-pcr              (18),
+        sage                (19),
+        sequence-alignment  (20),
+        sequencing          (21),
+        snp-array           (22),
+        snp-genoytyping     (23),
+        southern            (24),
+        western             (25),
+        optical-mapping     (26),
+
+        other               (255)
+    } OPTIONAL,
+
+    -- Note about SNP representation and pretinent fields: allele-frequency,
+    -- population, quality-codes:
+    -- The case of multiple alleles for a SNP would be described by
+    -- parent-feature of type Variation-set.diff-alleles, where the child
+    -- features of type Variation-inst, all at the same location, would
+    -- describe individual alleles.
+
+    -- population data
+    population-data SET OF Population-data OPTIONAL,
+
+    -- variant properties bit fields
+    variant-prop VariantProperties OPTIONAL,
+
+    -- publication support.
+    -- Note: made this pub instead of pub-equiv, since
+    -- Pub can be pub-equiv and pub-equiv is a set of pubs, but it looks like
+    -- Pub is more often used as top-level container
+    pub SET OF Pub OPTIONAL,
+
+    -- References to external 
+    dbxref SET OF CHOICE {
+        pub Dbtag,
+        clinical-test Dbtag,
+        phenotype Dbtag
+    } OPTIONAL,
+
+    data CHOICE {
+        unknown NULL,
+        note    VisibleString, --free-form
+        uniparental-disomy NULL,
+
+        -- actual sequence-edit at feat.location
+        instance        Variation-inst,
+
+        -- Set of related Variations.
+        -- Location of the set equals to the union of member locations
+        set SEQUENCE {
+            type INTEGER {
+                unknown     (0),
+                compound    (1), -- complex change at the same location on the
+                                 -- same molecule
+                products    (2), -- different products arising from the same
+                                 -- variation in a precursor, e.g. r.[13g>a,
+                                 -- 13_88del]
+                haplotype   (3), -- changes on the same allele, e.g
+                                 -- r.[13g>a;15u>c]
+                genotype    (4), -- changes on different alleles in the same
+                                 -- genotype, e.g. g.[476C>T]+[476C>T]
+                mosaic      (5), -- different genotypes in the same individual
+                individual  (6), -- same organism; allele relationship unknown,
+                                 -- e.g. g.[476C>T(+)183G>C]
+                population  (7), -- population
+                alleles     (8), -- set represents a set of observed alleles
+                package     (9), -- set represents a package of observations at
+                                 -- a given location, generally containing
+                                 -- asserted + reference
+                other       (255)
+            },
+            variations SET OF Variation,
+            name  VisibleString OPTIONAL
+        },
+
+        -- variant is a complex and undescribed change at the location
+        -- This type of variant is known to occur in dbVar submissions
+        complex NULL
+    },
+
+    consequence SET OF CHOICE {
+        unknown     NULL,
+        splicing    NULL, --some effect on splicing
+        note        VisibleString,  --freeform
+
+        -- Describe resulting variation in the product, e.g. missense,
+        -- nonsense, silent, neutral, etc in a protein, that arises from
+        -- THIS variation.
+        variation   Variation,
+
+        -- see http://www.hgvs.org/mutnomen/recs-prot.html
+        frameshift SEQUENCE {
+            phase INTEGER OPTIONAL,
+            x-length INTEGER OPTIONAL
+        },
+
+        loss-of-heterozygosity SEQUENCE {
+            -- In germline comparison, it will be reference genome assembly
+            -- (default) or reference/normal population. In somatic mutation,
+            -- it will be a name of the normal tissue.
+            reference VisibleString OPTIONAL,
+
+            -- Name of the testing subject type or the testing tissue.
+            test VisibleString OPTIONAL
+        }
+    } OPTIONAL,
+
+    -- Additional undescribed extensions
+    ext             SET OF User-object OPTIONAL,
+
+    somatic-origin SET OF SEQUENCE {
+        -- description of the somatic origin itself
+        source SubSource OPTIONAL,
+        -- condition related to this origin's type
+        condition SEQUENCE {
+            description VisibleString OPTIONAL,
+            -- reference to BioTerm / other descriptive database
+            object-id SET OF Dbtag OPTIONAL
+        } OPTIONAL
+    } OPTIONAL
+}
+
+
+END
+
