@@ -45,27 +45,16 @@ struct SCompareServerAddress {
     }
 };
 
-typedef vector<SNetServerImpl*> TNetServerList;
+typedef pair<SNetServerImpl*, double> TServerRate;
+typedef vector<TServerRate> TNetServerList;
 typedef set<SNetServerImpl*, SCompareServerAddress> TNetServerSet;
-
-struct SNetServerGroupIteratorImpl : public CObject
-{
-    SNetServerGroupIteratorImpl(SNetServerGroupImpl* server_group_impl,
-        TNetServerList::const_iterator position);
-
-    CNetServerGroup m_ServerGroup;
-
-    TNetServerList::const_iterator m_Position;
-};
 
 struct SNetServerGroupImpl : public CObject
 {
-    void Reset(CNetService::EDiscoveryMode discovery_mode,
-        unsigned discovery_iteration)
+    void Reset(unsigned discovery_iteration)
     {
         m_NextGroupInPool = NULL;
         m_Servers.clear();
-        m_DiscoveryMode = discovery_mode;
         m_DiscoveryIteration = discovery_iteration;
     }
 
@@ -83,17 +72,47 @@ struct SNetServerGroupImpl : public CObject
     // that contains this NetServerGroup.
     CNetService m_Service;
 
-    CNetService::EDiscoveryMode m_DiscoveryMode;
     unsigned m_DiscoveryIteration;
 };
 
-inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
-    SNetServerGroupImpl* server_group_impl,
-    TNetServerList::const_iterator position) :
-        m_ServerGroup(server_group_impl),
-        m_Position(position)
+struct SNetServiceIteratorImpl : public CObject
 {
-}
+    SNetServiceIteratorImpl(SNetServerGroupImpl* server_group_impl,
+            TNetServerList::const_iterator position) :
+        m_ServerGroup(server_group_impl), m_Position(position)
+    {
+    }
+
+    virtual bool Next();
+
+    CRef<SNetServerGroupImpl> m_ServerGroup;
+
+    TNetServerList::const_iterator m_Position;
+};
+
+struct SNetServiceIterator_OmitPenalized : public SNetServiceIteratorImpl
+{
+    SNetServiceIterator_OmitPenalized(SNetServerGroupImpl* server_group_impl,
+            TNetServerList::const_iterator position) :
+        SNetServiceIteratorImpl(server_group_impl, position)
+    {
+    }
+
+    virtual bool Next();
+};
+
+struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
+{
+    SNetServiceIterator_RandomPivot(SNetServerGroupImpl* server_group_impl,
+        TNetServerList::const_iterator position) :
+    SNetServiceIteratorImpl(server_group_impl, position)
+    {
+    }
+
+    virtual bool Next();
+
+    TNetServerList::const_iterator m_InitialPosition;
+};
 
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
@@ -117,16 +136,12 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     CNetServer GetServer(const SServerAddress& server_address);
     CNetServer GetSingleServer(const string& cmd);
 
-    // Utility method for commands that require single server (that is,
-    // a host:port pair) to be specified (not a load-balanced service
-    // name).
+    // Utility method for commands that require a single server (that is,
+    // a host:port pair) to be specified (not a load-balanced service name).
     CNetServer RequireStandAloneServerSpec(const string& cmd);
 
-    SNetServerGroupImpl* AllocServerGroup(
-        CNetService::EDiscoveryMode discovery_mode);
-
-    SNetServerGroupImpl* DiscoverServers(
-        CNetService::EDiscoveryMode discovery_mode);
+    void DiscoverServers();
+    void ForceDiscovery();
 
     void Monitor(CNcbiOstream& out, const string& cmd);
 
@@ -139,9 +154,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     string m_EnforcedServerHost;
     unsigned m_EnforcedServerPort;
 
-    // Connection event listening. In fact, this listener implements
+    // Connection event listening. This listener implements
     // the authentication part of both NS and NC protocols.
     CRef<INetServerConnectionListener> m_Listener;
+
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
     string m_LBSMAffinityName;
@@ -149,12 +165,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     unsigned m_LatestDiscoveryIteration;
 
     SNetServerGroupImpl* m_ServerGroupPool;
-
-    union {
-        SNetServerGroupImpl* m_SingleServerGroup;
-        SNetServerGroupImpl* m_ServerGroups[
-            CNetService::eNumberOfDiscoveryModes];
-    };
+    SNetServerGroupImpl* m_ServerGroup;
     CFastMutex m_ServerGroupMutex;
 
     TNetServerSet m_Servers;

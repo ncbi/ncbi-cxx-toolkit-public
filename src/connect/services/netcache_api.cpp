@@ -237,7 +237,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         }
 
         CNetServer srv(primary_server);
-        CNetServerGroupIterator it = m_Service.DiscoverServers().Iterate();
+        CNetServiceIterator it = m_Service.Iterate();
 
         for (;;) {
             try {

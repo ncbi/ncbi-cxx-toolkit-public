@@ -278,8 +278,7 @@ CNetServer::SExecResult
         }
     }
 
-    for (CNetServerGroupIterator it =
-            m_Service.DiscoverServers().Iterate(); it; ++it) {
+    for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
         try {
             return (m_SelectedServer = *it).ExecWithRetry(cmd);
         }

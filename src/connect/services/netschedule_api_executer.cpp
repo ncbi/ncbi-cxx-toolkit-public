@@ -312,15 +312,15 @@ bool SNetScheduleExecuterImpl::GetJobImpl(
 {
     CGetJobCmdExecutor get_executor(cmd, job);
 
-    return m_API->m_Service.DiscoverServers(CNetService::eIncludePenalized).
-        FindServer(&get_executor);
+    return m_API->m_Service.FindServer(&get_executor,
+        CNetService::eIncludePenalized);
 }
 
 
 void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd)
 {
-    for (CNetServerGroupIterator it = m_API->m_Service.DiscoverServers(
-            CNetService::eIncludePenalized).Iterate(); it; ++it) {
+    for (CNetServiceIterator it = m_API->m_Service.
+            Iterate(CNetService::eIncludePenalized); it; ++it) {
         CNetServer server = *it;
 
         try {

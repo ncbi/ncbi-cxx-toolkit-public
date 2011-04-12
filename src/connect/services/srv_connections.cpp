@@ -409,11 +409,8 @@ void SNetServerImpl::CheckIfThrottled()
                         discovery_validity_time.AddSecond(m_Service->
                             m_ForceRebalanceAfterThrottleWithin);
 
-                        if (discovery_validity_time < current_time) {
-                            ++m_Service->m_LatestDiscoveryIteration;
-                            m_Service.DiscoverServers(
-                                CNetService::eIncludePenalized);
-                        }
+                        if (discovery_validity_time < current_time)
+                            m_Service->ForceDiscovery();
                     }
                     if (m_DiscoveryIteration ==
                             m_Service->m_LatestDiscoveryIteration) {

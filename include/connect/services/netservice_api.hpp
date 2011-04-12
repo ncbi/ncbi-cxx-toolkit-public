@@ -38,17 +38,17 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SNetServerGroupIteratorImpl;
+struct SNetServiceIteratorImpl;
 
-class NCBI_XCONNECT_EXPORT CNetServerGroupIterator
+class NCBI_XCONNECT_EXPORT CNetServiceIterator
 {
-    NCBI_NET_COMPONENT(NetServerGroupIterator);
+    NCBI_NET_COMPONENT(NetServiceIterator);
 
     CNetServer GetServer();
     CNetServer operator *() {return GetServer();}
 
     bool Next();
-    CNetServerGroupIterator& operator ++() {Next(); return *this;}
+    CNetServiceIterator& operator ++() {Next(); return *this;}
 };
 
 class INetServerFinder
@@ -57,17 +57,6 @@ public:
     virtual bool Consider(CNetServer server) = 0;
 
     virtual ~INetServerFinder() {}
-};
-
-struct SNetServerGroupImpl;
-
-class NCBI_XCONNECT_EXPORT CNetServerGroup
-{
-    NCBI_NET_COMPONENT(NetServerGroup);
-
-    CNetServerGroupIterator Iterate();
-
-    bool FindServer(INetServerFinder* finder);
 };
 
 struct SNetServiceImpl;
@@ -79,16 +68,16 @@ class NCBI_XCONNECT_EXPORT CNetService
     const string& GetClientName() const;
     const string& GetServiceName() const;
 
-    enum EDiscoveryMode {
+    enum EIterationMode {
         eSortByLoad,
         eRandomize,
-        eSortByAddress,
-        eIncludePenalized,
-        eNumberOfDiscoveryModes
+        eIncludePenalized
     };
 
-    CNetServerGroup DiscoverServers(
-        EDiscoveryMode discovery_mode = eSortByLoad);
+    CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad);
+
+    bool FindServer(INetServerFinder* finder,
+        EIterationMode mode = eSortByLoad);
 
     bool IsLoadBalanced() const;
 

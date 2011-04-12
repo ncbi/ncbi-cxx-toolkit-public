@@ -162,8 +162,9 @@ CNSInfoCollector::CNSInfoCollector(CNetCacheAPI::TInstance nc_api)
 void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
-    for (CNetServerGroupIterator it = x_GetNetScheduleAPI().GetService().DiscoverServers(
-            CNetService::eIncludePenalized).Iterate(); it; ++it) {
+    for (CNetServiceIterator it = x_GetNetScheduleAPI().GetService().
+        Iterate(CNetService::eIncludePenalized); it; ++it) {
+
         CNetServerMultilineCmdOutput output((*it).ExecWithRetry("QPRT " +
                 CNetScheduleAPI::StatusToString(status)));
 

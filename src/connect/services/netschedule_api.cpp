@@ -419,8 +419,7 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 
     bool was_called = false;
 
-    for (CNetServerGroupIterator it =
-            m_Service.DiscoverServers().Iterate(); it; ++it) {
+    for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
         was_called = true;
 
         string resp;
