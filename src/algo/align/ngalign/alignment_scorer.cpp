@@ -414,7 +414,8 @@ void CClippedScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
                     ClipAlign->GetNamedScore(CSeq_align::eScore_PercentCoverage, Temp);
                     Curr->SetNamedScore("pct_coverage_clip", Temp);
             
-                    TSeqPos AlignLen, AlignedLen;
+                    TSeqPos AlignLen = 0;
+                    TSeqPos AlignedLen = 0;
                     AlignedLen = Scorer.GetAlignLength(*ClipAlign, true);
                     try {
                         // Sometimes the clipped region ends up being entirely gap, on the subject side.

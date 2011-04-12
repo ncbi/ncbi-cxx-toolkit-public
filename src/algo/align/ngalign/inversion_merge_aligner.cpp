@@ -231,8 +231,8 @@ void CInversionMergeAligner::x_HandleSingleStrandMerging(CSeq_align_set& Source,
         Out = x_MergeSeqAlignSet(Source, Scope);
         if(!Out.IsNull() && Out->CanGet() && !Out->Get().empty()) {
             NON_CONST_ITERATE(CSeq_align_set::Tdata, MergedIter, Out->Set()) {
-                Scorer.AddScore(Scope, **MergedIter, CScoreBuilder::eScore_PercentIdentity);
-                Scorer.AddScore(Scope, **MergedIter, CScoreBuilder::eScore_PercentCoverage);
+                Scorer.AddScore(Scope, **MergedIter, CSeq_align::eScore_PercentIdentity);
+                Scorer.AddScore(Scope, **MergedIter, CSeq_align::eScore_PercentCoverage);
                 Source.Set().push_back(*MergedIter);
                 Results.Set().push_back(*MergedIter);
             }

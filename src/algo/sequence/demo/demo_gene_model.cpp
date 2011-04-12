@@ -95,7 +95,6 @@ int CGeneModelDemoApp::Run(void)
     CScope scope(*om);
     scope.AddDefaults();
 
-    int counter = 0;
     while (istr) {
         CSeq_align align;
         try {

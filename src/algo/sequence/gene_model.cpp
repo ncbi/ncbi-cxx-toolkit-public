@@ -1485,21 +1485,6 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
     return mapped_loc;
 }
 
-static void s_SetGeneId(CSeq_feat& feat, int gene_id)
-{
-    bool added = false;
-    NON_CONST_ITERATE (CSeq_feat::TDbxref, it, feat.SetDbxref()) {
-        if ((*it)->GetDb() == "GeneID") {
-            (*it)->SetTag().SetId(gene_id);
-            added = true;
-            break;
-        }
-    }
-    if ( !added ) {
-        feat.AddDbxref("GeneID", gene_id);
-    }
-}
-
 void CFeatureGenerator::
 SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
                                  CRef<CSeq_feat> mrna_feat,
