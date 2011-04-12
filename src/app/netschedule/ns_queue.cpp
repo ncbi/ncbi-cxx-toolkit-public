@@ -2823,7 +2823,7 @@ CQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
 
     unsigned time_start = 0;
     unsigned run_timeout = 0;
-    time_t   exp_time;
+    time_t   exp_time = 0;
     {{
         CQueueGuard guard(this, &trans);
 
