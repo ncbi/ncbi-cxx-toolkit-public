@@ -60,6 +60,10 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#define INSERTION(sf, tf) ( ((sf) &  CAlnMap::fSeq) && !((tf) &  CAlnMap::fSeq) )
+#define DELETION(sf, tf) ( !((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
+#define MATCH(sf, tf) ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
+
 //  ----------------------------------------------------------------------------
 static CConstRef<CSeq_id> s_GetSourceId(
     const CSeq_id& id, CScope& scope )
@@ -77,9 +81,22 @@ static CConstRef<CSeq_id> s_GetSourceId(
 CGff3Writer::CGff3Writer(
     CScope& scope,
     CNcbiOstream& ostr,
-    TFlags uFlags ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
     CGff2Writer( scope, ostr, uFlags )
+{
+    m_uRecordId = 1;
+    m_uPendingGeneId = 0;
+    m_uPendingMrnaId = 0;
+    m_uPendingExonId = 0;
+};
+
+//  ----------------------------------------------------------------------------
+CGff3Writer::CGff3Writer(
+    CNcbiOstream& ostr,
+    unsigned int uFlags ) :
+//  ----------------------------------------------------------------------------
+    CGff2Writer( ostr, uFlags )
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -93,10 +110,6 @@ CGff3Writer::~CGff3Writer()
 {
 };
 
-#define INSERTION(sf, tf) ( ((sf) &  CAlnMap::fSeq) && !((tf) &  CAlnMap::fSeq) )
-#define DELETION(sf, tf) ( !((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
-#define MATCH(sf, tf) ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
-
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlign( 
     const CSeq_align& align )
@@ -104,11 +117,11 @@ bool CGff3Writer::x_WriteAlign(
 {
     if ( ! align.IsSetSegs() || ! align.GetSegs().IsDenseg() ) {
         cerr << "Object type not supported." << endl;
-        return false;
+        return true;
     }
 
     const CSeq_id& productId = align.GetSeq_id( 0 );
-    CBioseq_Handle bsh = m_Scope.GetBioseqHandle( productId );
+    CBioseq_Handle bsh = m_pScope->GetBioseqHandle( productId );
     CRef<CSeq_id> pTargetId( new CSeq_id );
     pTargetId->Assign( *sequence::GetId(
         bsh, sequence::eGetId_Best).GetSeqId() );
@@ -120,7 +133,7 @@ bool CGff3Writer::x_WriteAlign(
     int iTargetRow = -1;
     for ( int row = 0;  row < align_map.GetNumRows();  ++row ) {
         if ( sequence::IsSameBioseq( 
-            align_map.GetSeqId( row ), *pTargetId, &m_Scope ) ) {
+            align_map.GetSeqId( row ), *pTargetId, m_pScope ) ) {
             iTargetRow = row;
             break;
         }
@@ -151,7 +164,7 @@ bool CGff3Writer::x_WriteAlign(
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
-            s_GetSourceId( align_map.GetSeqId(iSourceRow), m_Scope );
+            s_GetSourceId( align_map.GetSeqId(iSourceRow), *m_pScope );
         TSeqPos iSourceWidth = 1;
         if ( static_cast<size_t>( iSourceRow ) < ds.GetWidths().size() ) {
             iSourceWidth = ds.GetWidths()[ iSourceRow ];

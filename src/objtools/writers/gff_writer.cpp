@@ -47,6 +47,7 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
@@ -60,12 +61,22 @@ USING_SCOPE(objects);
 CGff2Writer::CGff2Writer(
     CScope& scope,
     CNcbiOstream& ostr,
-    TFlags uFlags ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    m_Scope( scope ),
-    m_Os( ostr ),
-    m_uFlags( uFlags )
+    CWriter( ostr, uFlags )
 {
+    m_pScope.Reset( &scope );
+};
+
+//  ----------------------------------------------------------------------------
+CGff2Writer::CGff2Writer(
+    CNcbiOstream& ostr,
+    unsigned int uFlags ) :
+//  ----------------------------------------------------------------------------
+    CWriter( ostr, uFlags )
+{
+    m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
+    m_pScope->AddDefaults();
 };
 
 //  ----------------------------------------------------------------------------
@@ -82,18 +93,63 @@ bool CGff2Writer::WriteAnnot(
     if ( ! (m_uFlags & fNoHeader) ) {
         x_WriteHeader();
     }
-    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( annot, "browser" );
-    if ( pBrowserInfo ) {
-        x_WriteBrowserLine( pBrowserInfo );
-    }
-    CRef< CUser_object > pTrackInfo = x_GetDescriptor( annot, "track" );
-    if ( pTrackInfo ) {
-        x_WriteTrackLine( pTrackInfo );
-    }
     if ( ! x_WriteAnnot( annot ) ) {
         return false;
     }
     return x_WriteFooter();
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::WriteBioseqHandle(
+    CBioseq_Handle bsh )
+//  ----------------------------------------------------------------------------
+{
+    for ( CAnnot_CI aci( bsh ); aci; ++aci ) {
+        if ( ! WriteSeqAnnotHandle( *aci ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::WriteSeqAnnotHandle(
+    CSeq_annot_Handle sah )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! (m_uFlags & fNoHeader) ) {
+        x_WriteHeader();
+    }
+    if ( ! x_WriteSeqAnnotHandle( sah ) ) {
+        return false;
+    }
+    return x_WriteFooter();
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteSeqAnnotHandle(
+    CSeq_annot_Handle sah )
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CSeq_annot> pAnnot = sah.GetCompleteSeq_annot();
+
+    if ( pAnnot->IsAlign() ) {
+        for ( CAlign_CI it( sah ); it; ++it ) {
+            if ( ! x_WriteAlign( *it ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    SAnnotSelector sel = x_GetAnnotSelector();
+    feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
+    for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
+        if ( ! x_WriteFeature( feat_tree, *mf ) ) {
+            return false;
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -135,9 +191,6 @@ SAnnotSelector CGff2Writer::x_GetAnnotSelector()
 {
     SAnnotSelector sel;
     sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
-//    sel.IncludeFeatType(CSeqFeatData::e_Gene);
-//    sel.IncludeFeatType(CSeqFeatData::e_Rna);
-//    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
     return sel;
 }
 
@@ -168,24 +221,18 @@ bool CGff2Writer::x_WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
-    if ( annot.IsAlign() ) {
-        for ( CAlign_CI it( sah ); it; ++it ) {
-            if ( ! x_WriteAlign( *it ) ) {
-                return false;
-            }
-        }
-        return true;
+    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( annot, "browser" );
+    if ( pBrowserInfo ) {
+        x_WriteBrowserLine( pBrowserInfo );
     }
-
-    SAnnotSelector sel = x_GetAnnotSelector();
-    feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
-    for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
-        if ( ! x_WriteFeature( feat_tree, *mf ) ) {
-            return false;
-        }
+    CRef< CUser_object > pTrackInfo = x_GetDescriptor( annot, "track" );
+    if ( pTrackInfo ) {
+        x_WriteTrackLine( pTrackInfo );
     }
-    return true;
+    CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
+    bool bWrite = x_WriteSeqAnnotHandle( sah );
+    m_pScope->RemoveSeq_annot( sah );
+    return bWrite;
 }
 
 //  ----------------------------------------------------------------------------

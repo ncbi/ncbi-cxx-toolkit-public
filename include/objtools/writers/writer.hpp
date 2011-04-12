@@ -25,108 +25,70 @@
  *
  * Authors:  Frank Ludwig
  *
- * File Description:  Write gff file
+ * File Description:  Stubs for various writer mdules
  *
  */
 
-#ifndef OBJTOOLS_READERS___GFF_WRITER__HPP
-#define OBJTOOLS_READERS___GFF_WRITER__HPP
+#ifndef OBJTOOLS_WRITERS___WRITER__HPP
+#define OBJTOOLS_WRITERS___WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff2_write_data.hpp>
-#include <objtools/writers/writer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGff2Writer:
-    public CWriter
+class NCBI_XOBJWRITE_EXPORT CWriter
 //  ============================================================================
 {
 public:
-    typedef enum {
-        fNormal =       0,
-        fNoHeader =     1<<0,
-        fSoQuirks =     1<<15,
-    } TFlags;
-    
-public:
-    CGff2Writer(
-        CScope&,
-        CNcbiOstream&,
-        unsigned int = fNormal );
-    CGff2Writer(
-        CNcbiOstream&,
-        unsigned int = fNormal );
-    virtual ~CGff2Writer();
+    CWriter(
+        CNcbiOstream& ostr,
+        unsigned int uFlags=0 ) :
+        m_Os( ostr ),
+        m_uFlags( uFlags )
+    {};
+    virtual ~CWriter()
+    {};
 
     //  ------------------------------------------------------------------------
     //  Supported object types:
     //  ------------------------------------------------------------------------
-    bool WriteAnnot( 
-        const CSeq_annot& );
-    bool WriteAlign( 
-        const CSeq_align& );
+    virtual bool WriteAnnot( 
+        const CSeq_annot& )
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
+    virtual bool WriteAlign( 
+        const CSeq_align& )
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
 
     //  ------------------------------------------------------------------------
     //  Supported handle types:
     //  ------------------------------------------------------------------------
     virtual bool WriteBioseqHandle(
-        CBioseq_Handle );
-
+        CBioseq_Handle )
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
     virtual bool WriteSeqAnnotHandle(
-        CSeq_annot_Handle );
+        CSeq_annot_Handle )
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
 
 protected:
-    virtual bool x_WriteAnnot( 
-        const CSeq_annot& );
-    virtual bool x_WriteAlign( 
-        const CSeq_align& );
-    virtual bool x_WriteSeqAnnotHandle(
-        CSeq_annot_Handle );
-
-    virtual bool x_WriteHeader();
-    virtual bool x_WriteFooter();
-    virtual bool x_WriteFeature(
-        feature::CFeatTree&,
-        CMappedFeat );
-
-    virtual bool x_WriteBrowserLine(
-        const CRef< CUser_object > );
-    virtual bool x_WriteTrackLine(
-        const CRef< CUser_object > );
-    virtual bool x_WriteRecord( 
-        const CGffWriteRecord* );
-
-    virtual void x_PriorityProcess(
-        const string&,
-        map<string, string >&,
-        string& ) const;
-
-    CRef< CUser_object > x_GetDescriptor(
-        const CSeq_annot&,
-        const string& ) const;
-
-    CRef< CUser_object > x_GetDescriptor(
-        const CSeq_align&,
-        const string& ) const;
-
-    static bool x_NeedsQuoting(
-        const string& );
-
-    virtual SAnnotSelector x_GetAnnotSelector();
-
-    CRef<CScope> m_pScope;
+    CNcbiOstream& m_Os;
+    unsigned int m_uFlags;
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GFF_WRITER__HPP
+#endif  // OBJTOOLS_WRITERS___WRITER__HPP

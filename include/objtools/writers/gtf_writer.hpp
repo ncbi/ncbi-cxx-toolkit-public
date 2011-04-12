@@ -63,6 +63,9 @@ public:
         CScope&,
         CNcbiOstream&,
         unsigned int = 0 );
+    CGtfWriter(
+        CNcbiOstream&,
+        unsigned int = 0 );
     ~CGtfWriter();
 
 protected:
@@ -98,7 +101,7 @@ protected:
     typedef map< int, CRef< CSeq_interval > > TExonMap;
     typedef TExonMap::const_iterator TExonCit;
     TExonMap m_exonMap;
-    unsigned int m_uFlags;
+//    unsigned int m_uFlags;
 };
 
 END_objects_SCOPE

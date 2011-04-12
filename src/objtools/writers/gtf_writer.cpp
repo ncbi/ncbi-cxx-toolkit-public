@@ -59,12 +59,20 @@ USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 CGtfWriter::CGtfWriter(
-    CScope& scope,
+    CScope&scope,
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGff2Writer( scope, ostr ),
-    m_uFlags( uFlags )
+    CGff2Writer( scope, ostr, m_uFlags )
+{
+};
+
+//  ----------------------------------------------------------------------------
+CGtfWriter::CGtfWriter(
+    CNcbiOstream& ostr,
+    unsigned int uFlags ) :
+//  ----------------------------------------------------------------------------
+    CGff2Writer( ostr, uFlags )
 {
 };
 

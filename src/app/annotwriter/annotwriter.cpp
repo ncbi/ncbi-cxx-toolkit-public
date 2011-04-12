@@ -51,6 +51,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <dbapi/driver/drivers.hpp>
 
@@ -96,6 +97,18 @@ private:
     CObjectIStream* x_OpenIStream(
         const CArgs& args );
 
+    bool TrySeqAnnot(
+        CObjectIStream&,
+        CNcbiOstream& );
+
+    bool TrySeqEntry(
+        CObjectIStream&,
+        CNcbiOstream& );
+
+    bool TrySeqAlign(
+        CObjectIStream&,
+        CNcbiOstream& );
+
     bool Write(
         const CSeq_annot& annot,
         CNcbiOstream& );
@@ -124,8 +137,14 @@ private:
         const CSeq_align& align,
         CNcbiOstream& );
 
+    bool WriteHandleGff3(
+        CBioseq_Handle bsh,
+        CNcbiOstream& );
+
     CGff2Writer::TFlags GffFlags( 
         const CArgs& );
+
+    bool TestHandles() const;
 };
 
 //  ----------------------------------------------------------------------------
@@ -181,7 +200,12 @@ void CAnnotWriterApp::Init()
         "so-quirks",
         "recreate sequence ontology funniness in output",
         true );
-        
+
+    //  testing
+    arg_desc->AddFlag(
+        "test-handle",
+        "call writer interface with handle object",
+        true );
     arg_desc->AddFlag(
         "structibutes",
         "limit attributes to inter feature relationships",
@@ -197,7 +221,6 @@ void CAnnotWriterApp::Init()
 int CAnnotWriterApp::Run()
 //  ----------------------------------------------------------------------------
 {
-	// initialize conn library
 	CONNECT_Init(&GetConfig());
 
     const CArgs& args = GetArgs();
@@ -216,46 +239,102 @@ int CAnnotWriterApp::Run()
     }
 
     while ( true ) {
-        CNcbiStreampos curr = pIs->GetStreamPos();
-        try {
-            CRef<CSeq_annot> annot(new CSeq_annot);
-            *pIs >> *annot;
-            Write( *annot, *pOs );
+        if ( TrySeqAnnot( *pIs, *pOs ) ) {
             continue;
         }
-        catch ( ... ) {
-            pIs->SetStreamPos ( curr );
-        }
-        try {
-            CRef<CSeq_entry> entry( new CSeq_entry );
-            *pIs >> *entry;
-            CTypeIterator<CSeq_annot> annot_iter( *entry );
-            for ( ;  annot_iter;  ++annot_iter ) {
-                CRef< CSeq_annot > annot( annot_iter.operator->() );
-                Write( *annot, *pOs );
-            }
+        if ( TrySeqEntry( *pIs, *pOs ) ) {
             continue;
         }
-        catch ( ... ) {
-            pIs->SetStreamPos ( curr );
+        if ( TrySeqAlign( *pIs, *pOs ) ) {
+            continue;
         }
-        try {
-            CRef<CSeq_align> pAlign(new CSeq_align);
-            *pIs >> *pAlign;
-            WriteGff3( *pAlign, *pOs );
+        if ( ! pIs->EndOfData() ) {
+            cerr << "Object type not supported!" << endl;
         }
-        catch ( ... ) {
-            if ( ! pIs->EndOfData() ) {
-                cerr << "Object type not supported!" << endl;
-            }
-            break;
-        } 
-
+        break;
     } 
     pOs->flush();
 
     pIs.reset();
     return 0;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::TrySeqAnnot(
+    CObjectIStream& istr,
+    CNcbiOstream& ostr )
+//  -----------------------------------------------------------------------------
+{
+    CNcbiStreampos curr = istr.GetStreamPos();
+    try {
+        CRef<CSeq_annot> annot(new CSeq_annot);
+        istr >> *annot;
+        return Write( *annot, ostr );
+    }
+    catch ( ... ) {
+        istr.SetStreamPos ( curr );
+        return false;
+    }
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::TrySeqEntry(
+    CObjectIStream& istr,
+    CNcbiOstream& ostr )
+//  -----------------------------------------------------------------------------
+{
+    CNcbiStreampos curr = istr.GetStreamPos();
+    try {
+        // special case: test writer handling of bioseq handles
+        CRef<CSeq_entry> pEntry( new CSeq_entry );
+        istr >> *pEntry;
+        if ( TestHandles() ) {
+            CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+            CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+            CRef< CScope > pScope( new CScope( *pObjMngr ) );
+            pScope->AddDefaults();
+
+            CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( *pEntry );
+            for ( CBioseq_CI bci( seh ); bci; ++bci ) {
+                if ( ! WriteHandleGff3( *bci, ostr ) ) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // normal case: just dump all the annots
+        CTypeIterator<CSeq_annot> annot_iter( *pEntry );
+        for ( ;  annot_iter;  ++annot_iter ) {
+            CRef< CSeq_annot > annot( annot_iter.operator->() );
+            if ( ! Write( *annot, ostr ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    catch ( ... ) {
+        istr.SetStreamPos ( curr );
+        return false;
+    }
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::TrySeqAlign(
+    CObjectIStream& istr,
+    CNcbiOstream& ostr )
+//  -----------------------------------------------------------------------------
+{
+    CNcbiStreampos curr = istr.GetStreamPos();
+    try {
+        CRef<CSeq_align> pAlign(new CSeq_align);
+        istr >> *pAlign;
+        return WriteGff3( *pAlign, ostr );
+    }
+    catch ( ... ) {
+        istr.SetStreamPos ( curr );
+        return false;
+    }
 }
 
 //  -----------------------------------------------------------------------------
@@ -309,12 +388,7 @@ bool CAnnotWriterApp::WriteGff2(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CGff2Writer writer( *pScope, os, GffFlags( GetArgs() ) );
+    CGff2Writer writer( os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 
@@ -324,13 +398,18 @@ bool CAnnotWriterApp::WriteGff3(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
+    CGff3Writer writer( os, GffFlags( GetArgs() ) ); // to make it fail
     return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteHandleGff3(
+    CBioseq_Handle bsh,
+    CNcbiOstream& ostr )
+//  -----------------------------------------------------------------------------
+{
+    CGff3Writer writer( ostr, GffFlags( GetArgs() ) );
+    return writer.WriteBioseqHandle( bsh ) || true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -339,12 +418,7 @@ bool CAnnotWriterApp::WriteGff3(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
+    CGff3Writer writer( os, GffFlags( GetArgs() ) );
     return writer.WriteAlign( align );
 }
 
@@ -354,12 +428,7 @@ bool CAnnotWriterApp::WriteGtf(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CGtfWriter writer( *pScope, os, GffFlags( GetArgs() ) );
+    CGtfWriter writer( os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 
@@ -401,6 +470,13 @@ CGff2Writer::TFlags CAnnotWriterApp::GffFlags(
         eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fStructibutes );
     }
     return eFlags;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotWriterApp::TestHandles() const
+//  ----------------------------------------------------------------------------
+{
+    return GetArgs()["test-handle"];
 }
 
 END_NCBI_SCOPE

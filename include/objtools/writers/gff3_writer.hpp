@@ -52,20 +52,15 @@ class NCBI_XOBJWRITE_EXPORT CGff3Writer
     : public CGff2Writer
 {
 public:
-//    typedef enum {
-//        fNormal =       0,
-//        fNoHeader =     1<<0,
-//        fSoQuirks =     1<<15,
-//    } TFlags;
-    
-public:
     CGff3Writer(
         CScope&,
         CNcbiOstream&,
-        TFlags = fNormal );
+        unsigned int = fNormal );
+    CGff3Writer(
+        CNcbiOstream&,
+        unsigned int = fNormal );
     virtual ~CGff3Writer();
 
-//    bool WriteAnnot( const CSeq_annot& );
 protected:
     bool x_WriteAlign( 
         const CSeq_align& );
