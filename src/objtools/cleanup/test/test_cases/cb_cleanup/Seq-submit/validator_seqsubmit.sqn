@@ -1,0 +1,61 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "q" ,
+            first "q" ,
+            initials "qq" } ,
+        affil
+          std {
+            affil "  inst  " ,
+            div "  dept  " ,
+            city "  city  " ,
+            street "  address  " ,
+            email "  email  " ,
+            fax "  fax  " ,
+            phone "  phone  " ,
+            postal-code "  code  " } } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "q" ,
+                  first "q" ,
+                  initials "qq." } } } ,
+        affil
+          std {
+            affil "  inst  " ,
+            div "  dept  " ,
+            city "  city  " ,
+            street "  address  " ,
+            email "  email  " ,
+            fax "  fax  " ,
+            phone "  phone  " ,
+            postal-code "  code  " } } ,
+      date
+        std {
+          year 2005 ,
+          month 7 ,
+          day 25 } } ,
+    subtype new ,
+    tool "Sequin 5.52 - MS WINDOWS 2000/XP" } ,
+  data
+    entrys {
+      set {
+        class conset ,
+        seq-set {
+          seq {
+            id {
+              local
+                str "ssp1" } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 18 ,
+              seq-data
+                iupacna "AATTGGCCAATTGGCCNN" } } } } } }

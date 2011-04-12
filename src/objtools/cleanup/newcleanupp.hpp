@@ -399,9 +399,9 @@ private:
     void x_StripSpacesMarkChanged( std::string& str );
     void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );
 
-    void x_SortUniqSeqFeat( CSeq_feat& seq_feat );
-    void x_SortUniqOrgRef( COrg_ref& org );
-    void x_SortUniqBiosource( CBioSource& biosrc );
+    void x_PostSeqFeat( CSeq_feat& seq_feat );
+    void x_PostOrgRef( COrg_ref& org );
+    void x_PostBiosource( CBioSource& biosrc );
 
     void x_TranslateITSName( string &in_out_name ) ;
 

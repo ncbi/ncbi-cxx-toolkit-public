@@ -1,0 +1,3 @@
+#!/bin/bash
+
+egrep "$@" $( find -name '*.raw_test' -o -name '*.template' -o -iname '*TODO*' )

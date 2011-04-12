@@ -191,7 +191,7 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se,  Uint4 optio
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
     CNewCleanup_imp clean_i(changes, options);
-    clean_i.ExtendedCleanupSeqEntry(se); // (m_Scope->GetSeq_entryHandle(se));
+    clean_i.ExtendedCleanupSeqEntry(se);
     
     return changes;
 }

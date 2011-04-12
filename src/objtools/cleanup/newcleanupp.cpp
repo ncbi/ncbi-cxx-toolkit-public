@@ -441,7 +441,6 @@ void CNewCleanup_imp::SeqsetBC (
         GET_FIELD(bss, Class) == CBioseq_set::eClass_not_set || 
         GET_FIELD(bss, Class) == CBioseq_set::eClass_other ) 
     { 
-        // TODO: check the first param for NULL
         int num_nucs = 0;
         int num_prots = 0;
         CBioseq_set_Handle handle = m_Scope->GetBioseq_setHandle( bss );
@@ -721,8 +720,7 @@ static
 bool s_RemoveInitial( string &str, const string &prefix, NStr::ECase case_to_use )
 {
     if( NStr::StartsWith( str, prefix, case_to_use ) ) {
-        copy( str.begin() + prefix.length(), str.end(), str.begin() );
-        str.resize( str.length() - prefix.length() );
+        str.erase( 0, prefix.length() );
         return true;
     }
     return false;
@@ -1071,7 +1069,6 @@ void CNewCleanup_imp::BiosourceBC (
     }
 
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
-    // TODO: subsources should actually be loaded into the pcr-primers structures
     if( FIELD_IS_SET(biosrc, Subtype) ) {
         SUBSOURCE_ON_BIOSOURCE_Type::iterator prev = 
             SUBSOURCE_ON_BIOSOURCE_Set(biosrc).end();
@@ -1187,14 +1184,13 @@ void CNewCleanup_imp::BiosourceBC (
     }
 }
 
-void CNewCleanup_imp::x_SortUniqBiosource( CBioSource& biosrc )
+void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
 {
     if( FIELD_EQUALS(biosrc, Genome, NCBI_GENOME(unknown) ) ) {
         RESET_FIELD(biosrc, Genome);
         ChangeMade(CCleanupChange::eChangeBioSourceGenome);
     }
 
-    // TODO: see 10585 of sqnutil1.c (Jan 25, 2011)
     if (BIOSOURCE_HAS_ORGREF (biosrc)) {
         COrg_ref& org = GET_MUTABLE (biosrc, Org);
 
@@ -1369,7 +1365,7 @@ void CNewCleanup_imp::OrgrefBC (
     }
 }
 
-void CNewCleanup_imp::x_SortUniqOrgRef( COrg_ref& org )
+void CNewCleanup_imp::x_PostOrgRef( COrg_ref& org )
 {
     EDIT_EACH_DBXREF_ON_ORGREF (it, org) {
         CDbtag& dbt = **it;
@@ -2720,7 +2716,7 @@ const char *s_FindImpFeatType( const CImp_feat &imp )
     static const char *kFeatBad = "???";
     
     if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(imp, Key) ) {
-        // TODO: the C logic is more complex than this
+        // the C logic is more complex than this
         const char *key = GET_FIELD(imp, Key).c_str();
         if( binary_search( allowed_types, allowed_types + kAllowedTypesNumElems,
             key, PCase_CStr() ) ) 
@@ -3710,7 +3706,7 @@ bool s_ParseDegenerateCodon( CTrna_ext & tRNA, string & codon )
   return true;
 }
 
-// based on C's ParseTRnaString (TODO: remove that comment)
+// based on C's ParseTRnaString
 static 
 char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, string &tRNA_codon, bool noSingleLetter )
 {
@@ -3922,7 +3918,7 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
             // subsequent /product now added to comment
             if ( ! feat.IsSetComment() ) {
                 feat.SetComment( gb_qual_val );
-                gb_qual.ResetVal(); // TODO: invalidates gb_qual_val.  Make unavailable?
+                gb_qual.ResetVal();
             } else if ( NStr::Find(gb_qual_val, feat.GetComment()) == NPOS) {
                 feat.SetComment() += "; ";
                 feat.SetComment() += gb_qual_val;
@@ -4302,14 +4298,21 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
         }
 
         if (fix_initials) {
-            if( FIELD_IS_SET(name, Initials) ) {
+            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(name, Initials) ) {
                 string & initials = GET_MUTABLE(name, Initials);
+
                 // skip part of initials that matches first_initials
-                string::iterator initial_begin = mismatch( 
-                    first_initials.begin(),  first_initials.end(), 
-                    initials.begin(), PNocase_EqualChar() ).second;
-                if( initial_begin != initials.begin() ) {
-                    initials.erase( initials.begin(), initial_begin );
+                string::size_type initials_first_good_idx = 0;
+                for( ; initials_first_good_idx < initials.length() &&
+                        initials_first_good_idx < first_initials.length() && 
+                        initials[initials_first_good_idx] == first_initials[initials_first_good_idx] ; 
+                    ++initials_first_good_idx )
+                {
+                    // do nothing
+                }
+
+                if( initials_first_good_idx > 0 ) {
+                    initials.erase( 0, initials_first_good_idx );
                 }
             }
         } else if ( RAW_FIELD_IS_EMPTY_OR_UNSET(name, Initials) && ! first_initials.empty() ) {
@@ -4432,7 +4435,6 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
             initials[0] = toupper(initials[0]);
         }
     }
-    // TODO: check: does this erase the periods in Initials that we want to keep?
     CLEAN_STRING_MEMBER(name, Last);
     CLEAN_STRING_MEMBER(name, First);
     CLEAN_STRING_MEMBER(name, Middle);
@@ -4442,7 +4444,9 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
     CLEAN_STRING_MEMBER(name, Title);
     x_FixEtAl( name );
 
-    _ASSERT( FIELD_IS_SET(name, Last) );
+    if( ! FIELD_IS_SET(name, Last) ) {
+        SET_FIELD(name, Last, kEmptyCStr );
+    }
     string &last = GET_MUTABLE(name, Last);
     if( RAW_FIELD_IS_EMPTY_OR_UNSET(name, Suffix) &&
         ( NStr::EndsWith(last, " Jr.") || NStr::EndsWith(last, " Sr.") ) ) 
@@ -4996,7 +5000,7 @@ CRef<CPCRPrimerSet> s_ModernizePCRPrimerHalf (const string &seq, const string &n
             last_primer->SetName().Set() += ":" + *name_iter;
         }
     } else {
-        // TODO: This differs from C.  C breaks as soon as it's looked at the
+        // This differs from C.  C breaks as soon as it's looked at the
         // first name, but this version will create CPCRPrimer for all names.
         for ( ; name_iter != name_list.end() ; ++name_iter ) {
             CRef<CPCRPrimer> curr_primer( new CPCRPrimer );
@@ -6011,8 +6015,6 @@ void CNewCleanup_imp::Except_textBC (
 static
 bool s_SeqLocAllEmpty( const CSeq_loc & loc )
 {
-    // TODO: would it be faster to use the "empty" allow iterator and just iterate through it to
-    // look for empty seqlocs?
     CSeq_loc_CI completeIter( loc, CSeq_loc_CI::eEmpty_Allow);
     CSeq_loc_CI gapSkippingIter( loc, CSeq_loc_CI::eEmpty_Skip);
 
@@ -6101,9 +6103,7 @@ void CNewCleanup_imp::SeqfeatBC (
     CALL_IF_SET( PubSetBC, sf, Cit );
 }
 
-// TODO: rename this and other sortuniq funcs 
-// that do more than just sortuniq
-void CNewCleanup_imp::x_SortUniqSeqFeat( CSeq_feat& sf )
+void CNewCleanup_imp::x_PostSeqFeat( CSeq_feat& sf )
 {
     // need to clean this up in case it was changed by our children
     CLEAN_STRING_MEMBER (sf, Comment);
@@ -6257,8 +6257,6 @@ void CNewCleanup_imp::GenerefBC (
         ChangeMade (CCleanupChange::eChangeGeneRef);
     }
 
-
-    // TODO: shouldn't this be done POST Gene-ref so we're sorting/uniquing the cleaned up data?
     if( ! SYNONYM_ON_GENEREF_IS_SORTED(gr, s_GeneSynCompareCS) ) {
         SORT_SYNONYM_ON_GENEREF( gr, s_GeneSynCompareCS );
         ChangeMade (CCleanupChange::eChangeGeneRef);
@@ -6971,11 +6969,6 @@ void CNewCleanup_imp::RnarefBC (
 
                                 break;
                             }}
-                            case CRNA_ref::eType_tRNA:
-                            {{
-                                // !!! TODO parse tRNA string. lines 6791:6827, api/sqnutil1.c
-                                break;
-                            }}
                             case CRNA_ref::eType_other:
                             case CRNA_ref::eType_miscRNA:
                                 {{
@@ -6989,7 +6982,6 @@ void CNewCleanup_imp::RnarefBC (
                                 }}
                                 break;
                             default:
-                                // TODO ???
                                 break;
                         }
                     }
@@ -7114,7 +7106,6 @@ void CNewCleanup_imp::RnarefBC (
                 break;
             case NCBI_RNAREF(other):
                 {
-                    // TODO
                     if (FIELD_IS_SET (rr, Ext)) {
                         CRNA_ref::C_Ext& ext = GET_MUTABLE (rr, Ext);
                         const TRNAREF_EXT chs = ext.Which();
@@ -8469,6 +8460,8 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntry (
         SORT_SEQDESC_ON_SEQENTRY(seq_entry, s_SeqDescLessThan);
         ChangeMade( CCleanupChange::eMoveDescriptor );
     }
+
+    // TODO: implement more of ExtendedCleanup
 }
 
 void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
@@ -8478,7 +8471,7 @@ void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
     // extended cleanup includes basic cleanup
     BasicCleanupSeqSubmit( ss );
 
-    // TODO
+    // TODO: implement more of ExtendedCleanup
 }
 
 void CNewCleanup_imp::ExtendedCleanupSeqAnnot (
@@ -8489,7 +8482,7 @@ void CNewCleanup_imp::ExtendedCleanupSeqAnnot (
     // extended cleanup includes basic cleanup
     BasicCleanupSeqAnnot( sa );
 
-    // TODO
+    // TODO: implement more of ExtendedCleanup
 }
 
 END_SCOPE(objects)

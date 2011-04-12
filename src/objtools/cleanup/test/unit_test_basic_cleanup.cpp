@@ -23,14 +23,10 @@
 *
 * ===========================================================================
 *
-* Author:  Colleen Bollin, NCBI
+* Author:  Colleen Bollin, Michael Kornbluh, NCBI
 *
 * File Description:
 *   Sample unit tests file for basic cleanup.
-*
-* This file represents basic most common usage of Ncbi.Test framework based
-* on Boost.Test framework. For more advanced techniques look into another
-* sample - unit_test_alt_sample.cpp.
 *
 * ===========================================================================
 */
@@ -67,8 +63,25 @@
 #include <objects/misc/sequence_macros.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
+#include <serial/objistrasn.hpp>
+
+#include <util/compress/zlib.hpp>
+#include <util/compress/stream.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+// Needed under windows for some reason.
+#ifdef BOOST_NO_EXCEPTIONS
+
+namespace boost
+{
+void throw_exception( std::exception const & e ) {
+    throw e;
+}
+}
+
+#endif
 
 extern const char* sc_TestEntryCleanRptUnitSeq;
 
@@ -95,7 +108,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
         BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
 	} else {
         BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
-        for (int i = 2; i < changes_str.size(); i++) {
+        for (size_t i = 2; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
 	}
@@ -111,8 +124,6 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
         }
         ++f;
     }
-
-
 }
 
 
@@ -165,3 +176,198 @@ Seq-entry ::= seq {\
                               val \"AATT;GCC\" } } } } } } } \
 ";
 
+typedef vector< CRef<CSeq_entry> > TSeqEntryVec;
+
+static
+CObjectIStreamAsn *s_OpenCompressedFile( const string &file_name )
+{
+    const static ESerialDataFormat kFormat = eSerial_AsnText;
+
+    // owned by pUnzipStream
+    CZipStreamDecompressor* pDecompressor = 
+        new CZipStreamDecompressor(512, 512, kZlibDefaultWbits, CZipCompression::fGZip );
+
+    // owned by pUnzipStream
+    CNcbiIfstream *input_file = new CNcbiIfstream( file_name.c_str(), ios_base::binary | ios_base::in );
+
+    // owned by the returned CObjectIStreamAsn
+    CCompressionIStream* pUnzipStream = new CCompressionIStream(
+        *input_file, pDecompressor, CCompressionIStream::fOwnAll );
+
+    return new CObjectIStreamAsn( *pUnzipStream, eTakeOwnership );
+}
+
+void s_LoadAllSeqEntries( 
+    TSeqEntryVec &out_expected_seq_entries, 
+    CObjectIStreamAsn *in_stream )
+{
+    if( ! in_stream ) {
+        return;
+    }
+
+    try {
+        while( in_stream->InGoodState() ) {
+            // get our expected output
+            CRef<CSeq_entry> expected_output_seq_entry( new CSeq_entry );
+            // The following line throws CEofException if we reach the end
+            in_stream->Read( ObjectInfo(*expected_output_seq_entry) );
+            if( expected_output_seq_entry ) {
+                out_expected_seq_entries.push_back( expected_output_seq_entry );
+            }
+        }
+    } catch(const CEofException &) {
+        // okay, no problem
+    }
+}
+
+static
+CObjectIStreamAsn *s_LoadExpectedOutput( 
+    TSeqEntryVec &out_expected_seq_entries, 
+    string input_file_name ) // yes, COPY input_file_name since we're going to change it
+{
+    // remove the part after the second to last period
+    string::size_type last_period_pos = input_file_name.find_last_of(".");
+    _ASSERT(last_period_pos != string::npos);
+    input_file_name.resize( last_period_pos );
+    last_period_pos = input_file_name.find_last_of(".");
+    _ASSERT(last_period_pos != string::npos);
+    input_file_name.resize( last_period_pos );
+
+    auto_ptr<CObjectIStreamAsn> result;
+
+    // now, find answer file (which could be a .answer file
+    // or a .cleanasns_output file )
+    string answer_file = input_file_name + ".answer.gz";
+    // expected_output_file.open( answer_file.c_str() );
+    result.reset( s_OpenCompressedFile(answer_file) );
+    s_LoadAllSeqEntries( out_expected_seq_entries, result.get() );
+    if( out_expected_seq_entries.empty() ) {
+        string cleanasns_output_file = input_file_name + ".cleanasns_output.gz";
+        result.reset( s_OpenCompressedFile(cleanasns_output_file) );
+        s_LoadAllSeqEntries( out_expected_seq_entries, result.get() );
+        if( out_expected_seq_entries.empty() ) {
+            result.reset();
+            BOOST_CHECK_EQUAL("Could not open answer file for", input_file_name );
+        }
+    }
+
+    return result.release();
+}
+
+static
+void s_ProcessOneEntry( 
+    CSeq_entry &input_seq_entry, 
+    const CSeq_entry &expected_output_seq_entry )
+{
+    // clean input, then compare to output
+    CCleanup cleanup;
+    cleanup.BasicCleanup( input_seq_entry );
+    BOOST_CHECK( input_seq_entry.Equals(expected_output_seq_entry) );
+}
+
+static
+bool s_IsInputFileNameOkay( string file_name ) // yes, COPY file_name because we're changing it
+{
+    // normalize slashes (might be needed later)
+    NStr::ReplaceInPlace( file_name, "\\", "/" );
+
+    if( ! NStr::EndsWith( file_name, ".raw_test.gz" ) &&
+        ! NStr::EndsWith( file_name, ".template_expanded.gz") ) 
+    {
+        return false;
+    }
+
+    const char *kBadSubstrings[] = {
+        "highest_level", // don't process non-Seq-entry files (they can be done manually, if desired)
+        "unusable",
+        NULL // last must be NULL to mark end
+    };
+
+    // a file_name is bad if it contains any of the bad substrings
+    for( int str_idx = 0; kBadSubstrings[str_idx] != NULL; ++str_idx ) {
+        if( NStr::FindNoCase(file_name, kBadSubstrings[str_idx]) != NPOS ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static
+void s_ProcessInputFile( const string &input_file_name )
+{
+    // load all uncleaned input Seq-entries
+    TSeqEntryVec seq_entries;
+    auto_ptr<CObjectIStreamAsn> input_obj_stream(
+        s_OpenCompressedFile( input_file_name ) );
+    if( input_obj_stream.get() ) {
+        s_LoadAllSeqEntries( 
+            seq_entries, 
+            input_obj_stream.get() );
+    }
+    BOOST_CHECK( ! seq_entries.empty() );
+
+    // load all expected cleaned output Seq-entries
+    TSeqEntryVec expected_seq_entries;
+    s_LoadExpectedOutput( expected_seq_entries, input_file_name );
+    BOOST_CHECK( ! expected_seq_entries.empty() );
+
+    BOOST_CHECK( seq_entries.size() == expected_seq_entries.size() );
+
+    // The file might contain multiple test cases
+    const size_t num_entries_to_check = 
+        min( seq_entries.size(), expected_seq_entries.size() );
+    size_t curr_idx = 0;
+    for( ; curr_idx < num_entries_to_check; ++curr_idx ) {
+        s_ProcessOneEntry( *seq_entries[curr_idx], 
+            *expected_seq_entries[curr_idx] );
+    }
+}
+
+// Holds all the matching files
+class CFileRememberer : public set<string> {
+public:
+    void operator() (CDirEntry& de) {
+        if( de.IsFile() ) {
+            insert( de.GetPath() );
+        }
+    }
+};
+
+// This will load up various files, clean them, and
+// make sure they match expected output.
+BOOST_AUTO_TEST_CASE(Test_CornerCaseFiles)
+{
+    const static string kTestDir = "../../../../../src/objtools/cleanup/test/test_cases";
+    CDir test_dir( kTestDir );
+
+    // get all input files
+    CFileRememberer file_rememberer;
+    {
+        vector<string> kInputFileMasks;
+        kInputFileMasks.push_back( "*.raw_test.gz" );
+        kInputFileMasks.push_back( "*.template_expanded.gz" );
+
+        vector<string> kInputDirMasks;
+
+        FindFilesInDir( test_dir, kInputFileMasks, kInputDirMasks, file_rememberer, fFF_Default | fFF_Recursive );
+    }
+
+    // process each input file
+    BOOST_CHECK( ! file_rememberer.empty() );
+    ITERATE( CFileRememberer, file_name_iter, file_rememberer ) {
+
+        const string &input_file_name = *file_name_iter;
+
+        if( s_IsInputFileNameOkay(input_file_name) ) {
+            cout << "Processing file \"" << input_file_name << "\"" << endl;
+        } else {
+            // it's okay to skip  a file if it's justified
+            cout << "Skipping file   \"" << input_file_name << "\"" << endl;
+            continue;
+        }
+
+        // process this set of inputs and expected outputs:
+        BOOST_CHECK_NO_THROW( s_ProcessInputFile(input_file_name) );
+    }
+}

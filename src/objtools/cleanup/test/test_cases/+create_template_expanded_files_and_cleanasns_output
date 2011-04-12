@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Does what its name implies.
+# additionally, it also erases
+# .test files. and old .cleanasns_output files.
+
+TEST_DIR=/home/kornbluh/asn2flat/asnfiles/cleanup
+EASY_AUTO_REPLACE=/home/kornbluh/bin/easy_auto_replace
+
+must()
+{
+    "$@" && return 0
+    echo FAILURE: "$@"
+    exit 1
+}
+
+must cd $TEST_DIR
+
+# create template_expanded files
+for template_file in $(find -name '*.template') ; do
+    echo expanding $template_file
+    must $EASY_AUTO_REPLACE -1 $template_file
+done
+
+# create .cleanasns_output files, when a .answer file doesn't exist
+
+# first, erase existing .cleanasns_output files:
+find . -name '*.cleanasns_output' -exec rm {} \;
+
+# now, create new .cleanasns_output files where they
+# don't already exist
+for file in $(find -name '*.template' -o -name '*.raw_test' ) ; do
+    answer_file=${file%.*}.answer
+
+    if [[ ! -f $answer_file ]] ; then
+        echo creating .cleanasns_output for: $file
+        ./+run_tests $file -wco
+    fi
+done
+
+# clean up .test files that are lying around
+find . -name '*.test' -exec rm {} \;
+
+exit 0

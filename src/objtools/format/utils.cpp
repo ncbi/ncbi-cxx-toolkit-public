@@ -553,10 +553,12 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
                 suffix = ( doubleTilde  ? "~~" : "~" );
             }
         }
-        if( suffix[0] != '\0' && 0 != str.compare( start_of_junk_pos, INT_MAX, suffix) ) {
-            str.erase( start_of_junk_pos );
-            str += suffix;
-            changed = true;
+        if( suffix[0] != '\0' ) {
+            if( 0 != str.compare( start_of_junk_pos, INT_MAX, suffix) ) {
+                str.erase( start_of_junk_pos );
+                str += suffix;
+                changed = true;
+            }
         } else if ( start_of_junk_pos < str.length() ) {
             str.erase( start_of_junk_pos );
             changed = true;
