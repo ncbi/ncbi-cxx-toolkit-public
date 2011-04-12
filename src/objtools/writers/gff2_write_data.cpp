@@ -49,6 +49,7 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -384,19 +385,31 @@ bool CGffWriteRecordFeature::AssignFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignSeqId(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+    const CSeq_feat& feature = mf.GetOriginalFeature();
 
     m_strId = "<unknown>";
-
+    
     if ( feature.CanGetLocation() ) {
     	const CSeq_loc& loc = feature.GetLocation();
 	    CConstRef<CSeq_id> id(loc.GetId());
 		if (id) {
-			m_strId.clear();
-			id->GetLabel(&m_strId, CSeq_id::eContent);
+            try {
+                CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle( *id );
+                const CTextseq_id* pId 
+                    = sequence::GetId( bsh ).GetSeqId()->GetTextseq_Id();
+                m_strId = pId->GetAccession();
+                if ( pId->CanGetVersion() ) {
+                    m_strId += ".";
+                    m_strId += NStr::IntToString( pId->GetVersion() );
+                }
+            }
+            catch ( ... ) {
+			    m_strId.clear();
+			    id->GetLabel(&m_strId, CSeq_id::eContent);
+            }
 		}
     }
     return true;
