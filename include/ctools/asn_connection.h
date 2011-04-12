@@ -29,7 +29,7 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *    Build C Toolkit ANS streams on top of CONN (connection).
+ *   Build C Toolkit ASN.1 streams on top of CONN (connection).
  *
  */
 
