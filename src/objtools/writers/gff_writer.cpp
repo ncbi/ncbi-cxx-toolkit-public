@@ -63,7 +63,7 @@ CGff2Writer::CGff2Writer(
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CWriter( ostr, uFlags )
+    CWriterBase( ostr, uFlags )
 {
     m_pScope.Reset( &scope );
 };
@@ -73,7 +73,7 @@ CGff2Writer::CGff2Writer(
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CWriter( ostr, uFlags )
+    CWriterBase( ostr, uFlags )
 {
     m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
     m_pScope->AddDefaults();

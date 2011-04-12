@@ -47,7 +47,7 @@ BEGIN_objects_SCOPE
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff2Writer:
-    public CWriter
+    public CWriterBase
 //  ============================================================================
 {
 public:

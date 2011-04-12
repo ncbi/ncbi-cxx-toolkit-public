@@ -38,17 +38,17 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CWriter
+class NCBI_XOBJWRITE_EXPORT CWriterBase
 //  ============================================================================
 {
 public:
-    CWriter(
+    CWriterBase(
         CNcbiOstream& ostr,
         unsigned int uFlags=0 ) :
         m_Os( ostr ),
         m_uFlags( uFlags )
     {};
-    virtual ~CWriter()
+    virtual ~CWriterBase()
     {};
 
     //  ------------------------------------------------------------------------
