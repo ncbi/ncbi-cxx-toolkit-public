@@ -182,7 +182,7 @@ CODBC_BCPInCmd::x_GetDataTerminator(EDB_Type type)
     case eDB_VarChar:
     case eDB_LongChar:
     case eDB_Text:
-        return _T("");
+        return _T_NCBI_ODBC("");
     default:
         break;
     }
