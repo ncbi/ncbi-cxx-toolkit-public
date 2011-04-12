@@ -325,13 +325,15 @@ END
 NCBI-Variation DEFINITIONS ::=
 BEGIN
 
-EXPORTS Variation-ref, Variation-inst;
+EXPORTS Variation-ref, Variation-inst, VariantProperties,
+        Population-data, Phenotype;
 
 IMPORTS Int-fuzz, User-object, Object-id, Dbtag FROM NCBI-General
         Seq-literal FROM NCBI-Sequence
         SubSource FROM NCBI-BioSource
         Seq-loc FROM NCBI-Seqloc
         Pub FROM NCBI-Pub;
+
 
 -- --------------------------------------------------------------------------
 -- Historically, the dbSNP definitions document data structures used in the
@@ -344,10 +346,11 @@ VariantProperties ::= SEQUENCE {
     version INTEGER,
 
     -- NOTE:
-    -- The format for each of these values is as an integer
-    -- Unless otherwise noted, these integers represent a bitwise OR of the
-    -- possible values, and as such, these values represent the specific bit
-    -- flags that may be set for each of the possible attributes here.
+    -- The format for most of these values is as an integer
+    -- Unless otherwise noted, these integers represent a bitwise OR (= simple
+    -- sum) of the possible values, and as such, these values represent the
+    -- specific bit flags that may be set for each of the possible attributes
+    -- here.
 
     resource-link INTEGER {
         preserved        (1), -- Clinical, Pubmed, Cited, (0x01)
@@ -413,7 +416,8 @@ VariantProperties ::= SEQUENCE {
         is-assembly-specific  (4)  -- Only maps to 1 assembly (0x04)
     } OPTIONAL,
 
-    -- This is *NOT* a bitfield
+    -- map-weight captures specificity of placement
+    -- NOTE: This is *NOT* a bitfield
     map-weight INTEGER {
         is-uniquely-placed(1),
         placed-twice-on-same-chrom(2),
@@ -471,7 +475,53 @@ VariantProperties ::= SEQUENCE {
         unknown         (0),
         likely-artifact (1),
         other           (255)
-    } OPTIONAL
+    } OPTIONAL,
+
+    -- has this variant been validated?
+    -- While a boolean flag offers no subtle distinctions of validation
+    -- methods, occasionally it is only known as a single boolean value
+    -- NOTE: this flag is redundant and should be omitted if more comprehensive
+    -- validation information is present
+    other-validation BOOLEAN OPTIONAL,
+
+    -- origin of this allele, if known
+    -- note that these are powers-of-two, and represent bits; thus, we can
+    -- represent more than one state simultaneously through a bitwise OR
+    allele-origin INTEGER {
+        unknown         (0),
+        germline        (1),
+        somatic         (2),
+        inherited       (4),
+        paternal        (8),
+        maternal        (16),
+        de-novo         (32),
+        biparental      (64),
+        uniparental     (128),
+        not-tested      (256),
+        tested-inconclusive (512),
+
+        -- stopper - 2^31
+        other           (1073741824)
+    } OPTIONAL,
+
+    -- observed allele state, if known
+    -- NOTE: THIS IS NOT A BITFIELD!
+    allele-state INTEGER {
+        unknown         (0),
+        homozygous      (1),
+        heterozygous    (2),
+        hemizygous      (3),
+        nullizygous     (4),
+        other           (255)
+    } OPTIONAL,
+
+    -- NOTE:
+    -- 'allele-frequency' here refers to the minor allele frequency of the
+    -- default population
+    allele-frequency REAL OPTIONAL,
+
+    -- is this variant the ancestral allele?
+    is-ancestral-allele BOOLEAN OPTIONAL
 }
 
 Phenotype ::= SEQUENCE {
@@ -515,6 +565,7 @@ Ext-loc ::= SEQUENCE {
     id Object-id,
     location Seq-loc
 }
+
 
 Variation-ref ::= SEQUENCE {
     -- ids (i.e., SNP rsid / ssid, dbVar nsv/nssv)
@@ -582,20 +633,24 @@ Variation-ref ::= SEQUENCE {
     -- describe individual alleles.
 
     -- population data
+    -- DEPRECATED - do not use
     population-data SET OF Population-data OPTIONAL,
 
     -- variant properties bit fields
     variant-prop VariantProperties OPTIONAL,
 
     -- has this variant been validated?
+    -- DEPRECATED: new field = VariantProperties.other-validation
     validated BOOLEAN OPTIONAL,
 
     -- link-outs to GeneTests database
+    -- DEPRECATED - do not use
     clinical-test SET OF Dbtag OPTIONAL,
 
     -- origin of this allele, if known
     -- note that these are powers-of-two, and represent bits; thus, we can
     -- represent more than one state simultaneously through a bitwise OR
+    -- DEPRECATED: new field = VariantProperties.allele-origin
     allele-origin INTEGER {
         unknown         (0),
         germline        (1),
@@ -614,6 +669,7 @@ Variation-ref ::= SEQUENCE {
     } OPTIONAL,
 
     -- observed allele state, if known
+    -- DEPRECATED: new field = VariantProperties.allele-state
     allele-state INTEGER {
         unknown         (0),
         homozygous      (1),
@@ -626,15 +682,18 @@ Variation-ref ::= SEQUENCE {
     -- NOTE:
     -- 'allele-frequency' here refers to the minor allele frequency of the
     -- default population
+    -- DEPRECATED: new field = VariantProperties.allele-frequency
     allele-frequency REAL OPTIONAL,
 
     -- is this variant the ancestral allele?
+    -- DEPRECATED: new field = VariantProperties.is-ancestral-allele
     is-ancestral-allele BOOLEAN OPTIONAL,
 
     -- publication support.
     -- Note: made this pub instead of pub-equiv, since
     -- Pub can be pub-equiv and pub-equiv is a set of pubs, but it looks like
     -- Pub is more often used as top-level container
+    -- DEPRECATED - do not use; use Seq-feat.dbxref instead
     pub Pub OPTIONAL,
 
     data CHOICE {
@@ -706,11 +765,14 @@ Variation-ref ::= SEQUENCE {
     } OPTIONAL,
 
     -- Observed location, if different from the parent set or feature.location.
+    -- DEPRECATED - do not use
     location        Seq-loc OPTIONAL,
 
     -- reference other locs, e.g. mapped source
+    -- DEPRECATED - do not use
     ext-locs SET OF Ext-loc OPTIONAL,
 
+    -- DEPRECATED - do not use; use Seq-feat.exts instead
     ext             User-object OPTIONAL,
 
     somatic-origin SET OF SEQUENCE {
@@ -725,6 +787,7 @@ Variation-ref ::= SEQUENCE {
     } OPTIONAL
 
 }
+
 
 Delta-item ::= SEQUENCE {
     seq CHOICE {
