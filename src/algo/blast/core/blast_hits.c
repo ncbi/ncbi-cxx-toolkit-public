@@ -2176,6 +2176,37 @@ Blast_HSPListReevaluateUngapped(EBlastProgramType program,
    return 0;
 }
 
+Int2 
+Blast_HSPListUpdate(BlastHSPList *hsp_list, BlastHSP *hsp)
+{
+    /* try reallocating hsp array if necessary */
+    if (hsp_list->hspcnt >= hsp_list->allocated) {
+
+        BlastHSP** hsp_array;
+        Int4 new_size = MIN(2*hsp_list->allocated, hsp_list->hsp_max);
+
+        /* FIXME: what if this is not the least significant HSP?? */
+        if (hsp_list->do_not_reallocate)  return -1;
+
+        if (new_size == hsp_list->hsp_max)
+            hsp_list->do_not_reallocate = TRUE;
+       
+        hsp_array = realloc(hsp_list->hsp_array, 
+                            new_size*sizeof(BlastHSP*));
+        if (!hsp_array) {
+            hsp_list->do_not_reallocate = TRUE;
+            return -1;
+        } else {
+            hsp_list->hsp_array = hsp_array;
+            hsp_list->allocated = new_size;
+        } 
+    }
+
+    /* insert the hsp into hsp array */
+    hsp_list->hsp_array[hsp_list->hspcnt++] = hsp;
+    return 0;
+}
+
 /** Combine two HSP lists, without altering the individual HSPs, and without 
  * reallocating the HSP array. 
  * @param hsp_list New HSP list [in]

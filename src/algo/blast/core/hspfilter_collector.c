@@ -113,7 +113,6 @@ s_BlastHSPCollectorRun(void* data, BlastHSPList* hsp_list)
          return -1;
 
       for (index = 0; index < hsp_list->hspcnt; index++) {
-         Boolean can_insert = TRUE;
          Int4 query_index;
          hsp = hsp_list->hsp_array[index];
          query_index = Blast_GetQueryIndexFromContext(hsp->context, program);
@@ -129,33 +128,7 @@ s_BlastHSPCollectorRun(void* data, BlastHSPList* hsp_list)
             tmp_hsp_list->oid = hsp_list->oid;
          }
 
-         if (tmp_hsp_list->hspcnt >= tmp_hsp_list->allocated) {
-            if (tmp_hsp_list->do_not_reallocate == FALSE) {
-               BlastHSP** new_hsp_array;
-               Int4 new_size = 
-                  MIN(2*tmp_hsp_list->allocated, tmp_hsp_list->hsp_max);
-               if (new_size == tmp_hsp_list->hsp_max)
-                  tmp_hsp_list->do_not_reallocate = TRUE;
-            
-               new_hsp_array = realloc(tmp_hsp_list->hsp_array, 
-                                    new_size*sizeof(BlastHSP*));
-               if (!new_hsp_array) {
-                  tmp_hsp_list->do_not_reallocate = TRUE;
-                  can_insert = FALSE;
-               } else {
-                  tmp_hsp_list->hsp_array = new_hsp_array;
-                  tmp_hsp_list->allocated = new_size;
-               }
-            }
-            else
-            {
-               can_insert = FALSE;
-            }
-         }
-         if (can_insert) {
-            tmp_hsp_list->hsp_array[tmp_hsp_list->hspcnt++] = hsp;
-         } else {
-            /* FIXME: what if this is not the least significant HSP?? */
+         if (Blast_HSPListUpdate(tmp_hsp_list, hsp)) {
             /* Cannot add more HSPs; free the memory */
             hsp_list->hsp_array[index] = Blast_HSPFree(hsp);
          }

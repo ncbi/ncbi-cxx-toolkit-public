@@ -540,6 +540,15 @@ Blast_HSPListReevaluateUngapped(EBlastProgramType program,
    BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
    const BlastSeqSrc* seq_src, const Uint1* gen_code_string);
 
+/** Insert a new HSP into the HSP List
+ * Before capacity of the hit list is reached, just add to the end;
+ * After that, simply drop (TODO: what if it is not the least significant HSP??)
+ * @param hsp_list HSP list containing hsp saved so far [in] [out]
+ * @param hsp A new HSP to be inserted into the HSP list [in]
+*/
+NCBI_XBLAST_EXPORT
+Int2 Blast_HSPListUpdate(BlastHSPList* hsp_list, BlastHSP* hsp);
+
 /** Append one HSP list to the other. Discard lower scoring HSPs if there is
  * not enough space to keep all.
  * @param old_hsp_list_ptr list of HSPs, will be NULLed out on return [in|out]
