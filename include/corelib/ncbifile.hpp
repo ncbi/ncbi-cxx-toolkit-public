@@ -885,7 +885,14 @@ public:
 
     /// What path version of IsNewer() should do if the dir entry or specified
     /// path does not exist or is not accessible. Default flags (0) mean
-    /// throwing an exceptions if one of dir entries does not exists.
+    /// throwing an exceptions if one of dir entries does not exists. 
+    /// But if you don't like to have an exception here, you can change IsNewer()
+    /// behavior specifying flags. There are three cases: there's a problem only
+    /// with the argument (HasThis-NoPath), there's a problem only with original
+    /// entry (NoThis-HasPath), or there are problems with both (NoThis-NoPath). 
+    /// The EIfAbsent2 lets you independently select what to do in each of those
+    /// scenarios: throw an exception (no flags set), return true (f*_Newer),
+    /// or return false (f*_NotNewer).
     /// @sa IsNewer
     enum EIfAbsent2 {
         fHasThisNoPath_Newer    = (1 << 0),
@@ -905,8 +912,7 @@ public:
     ///   TRUE if the modification time of the current entry is newer than
     ///   the modification time of the specified entry, or if that entry
     ///   doesn't exist. Return FALSE otherwise.
-    /// @sa
-    ///   GetTime
+    /// @sa GetTime, EIfAbsent2
     bool IsNewer(const string& path,
                  TIfAbsent2    if_absent /* = 0 throw*/) const;
 
