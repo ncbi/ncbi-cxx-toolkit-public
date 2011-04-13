@@ -163,6 +163,7 @@ typedef EIO_Status (*FConnectorStatus)
  * NOTE 1:  FConnectorClose is guaranteed to be called after FConnectorOpen,
  *          and only if the latter succeeded (returned "eIO_Success").
  * NOTE 2:  FConnectorFlush gets called before FConnectorClose automatically.
+ * NOTE 3:  It may return eIO_Closed to indicate an unusual close condition.
  */
 typedef EIO_Status (*FConnectorClose)
 (CONNECTOR       connector,
