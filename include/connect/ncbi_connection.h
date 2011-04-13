@@ -83,8 +83,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
 /* Reinit using new "connector".
  * If "conn" is already opened then close the current connection at first,
  * even if "connector" is just the same as the current connector.
- * If "connector" is NULL then close and destroy the incumbent,
- * and leave connection empty (effective way to destroy connector(s)).
+ * If "connector" is NULL then close and destroy the incumbent, and leave
+ * the connection empty (effective way to destroy connector(s)).
  * NOTE:  Although it closes the previous connection immediately, however it
  *        does not open the new connection right away:  see notes on "Create".
  */
@@ -296,6 +296,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * been actually called), so the code that wants to get callbacks repeatedly
  * must reinstate them as necessary with CONN_SetCallback() calls
  * (e.g. from inside the callbacks themselves).
+ * Normally, callback would return eIO_Success;  non-eIO_Success return
+ * value causes return to the caller level (with possibly some processing
+ * already completed by then, such as a partial read before for eCONN_OnRead).
  */
 typedef enum {
     eCONN_OnClose  = 0,  /* NB: connection has been flushed prior to the call*/
@@ -305,7 +308,7 @@ typedef enum {
 } ECONN_Callback;
 #define CONN_N_CALLBACKS 4
 
-typedef void (*FConnCallback)(CONN conn, ECONN_Callback type, void* data);
+typedef EIO_Status (*FConnCallback)(CONN conn, ECONN_Callback type, void*data);
 
 typedef struct {
     FConnCallback func;  /* Function to call on the event                */
