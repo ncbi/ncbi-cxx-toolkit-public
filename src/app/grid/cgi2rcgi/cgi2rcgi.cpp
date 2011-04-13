@@ -623,8 +623,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
                     DefineRefreshTags(grid_ctx.GetSelfURL(), m_RefreshDelay);
                 }
-            }
-            else {
+            } else {
                 // Get a job submitter
                 CGridJobSubmitter& submitter = m_GridClient->GetJobSubmitter();
                 // Submit a job
@@ -664,6 +663,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                         os.write(saved_content.data(), saved_content.length());
                     job_key = submitter.Submit();
                     grid_ctx.DefinePersistentEntry("job_key", job_key);
+                    phase = ePending;
 
                     unsigned long wait_time = m_FirstDelay*1000;
                     unsigned long sleep_time = 6;
