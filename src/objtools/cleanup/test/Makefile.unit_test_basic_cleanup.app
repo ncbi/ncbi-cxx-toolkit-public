@@ -11,5 +11,7 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
+CHECK_COPY = test_cases
+CHECK_TIMEOUT = 300
 
 WATCHERS = bollin

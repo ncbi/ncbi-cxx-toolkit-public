@@ -338,7 +338,7 @@ public:
 // make sure they match expected output.
 BOOST_AUTO_TEST_CASE(Test_CornerCaseFiles)
 {
-    const static string kTestDir = "../../../../../src/objtools/cleanup/test/test_cases";
+    const static string kTestDir = "test_cases";
     CDir test_dir( kTestDir );
 
     // get all input files
