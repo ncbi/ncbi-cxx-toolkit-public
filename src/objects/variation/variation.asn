@@ -13,7 +13,7 @@ BEGIN
 EXPORTS Variation;
 
 IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
-        Phenotype, Variation-inst, VariantProperties FROM NCBI-Variation
+        Population-data, Phenotype, Variation-inst, VariantProperties FROM NCBI-Variation
         Seq-loc FROM NCBI-Seqloc
         SubSource FROM NCBI-BioSource
         Seq-literal FROM NCBI-Sequence
@@ -56,25 +56,6 @@ VariantPlacement ::= SEQUENCE
     -- the reference location for this variant
     comment VisibleString OPTIONAL
 }
-
-Population-data ::= SEQUENCE {
-    -- assayed population (e.g. HAPMAP-CEU)
-    population VisibleString,
-    genotype-frequency REAL OPTIONAL,
-    chromosomes-tested INTEGER OPTIONAL,
-    sample-ids SET OF Object-id OPTIONAL,
-    allele-frequency REAL OPTIONAL,
-
-    -- This field is an explicit bit-field
-    -- Valid values should be a bitwise combination (= simple sum)
-    -- of any of the values below
-    flags INTEGER {
-        is-default-population   (1),
-        is-minor-allele         (2),
-        is-rare-allele          (4)
-    } OPTIONAL
-}
-
 
 VariationMethod ::= SEQUENCE
 {
