@@ -125,7 +125,7 @@ private:
 double CDownloadCallbackData::GetElapsed(bool update)
 {
     double next = m_Sw.Elapsed();
-    if (!update  &&  m_Last + 0.5 > next) {
+    if (!update  &&  next < m_Last + 1.0) {
         return 0.0;
     }
     m_Last = next;
@@ -407,7 +407,8 @@ static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
 }
 
 
-static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
+static EIO_Status x_ConnectionCallback(CONN conn,
+                                       ECONN_Callback type, void* data)
 {
     bool update;
 
@@ -440,7 +441,7 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
     double time = dlcbdata->GetElapsed(update);
 
     if (!update  &&  !time) {
-        return;
+        return eIO_Success;
     }
 
     if (s_IsATTY()) {
@@ -452,11 +453,11 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
             os << "Downloaded " << NStr::UInt8ToString(pos)
                << '/' << NStr::UInt8ToString(size)
                << " (" << fixed << setprecision(2) << percent << "%)"
-                  " in " << fixed << setprecision(2) << time << 's';
+                  " in " << fixed << setprecision(1) << time << 's';
         } else {
             os << "Downloaded " << NStr::UInt8ToString(pos)
                << "/unknown"
-                  " in " << fixed << setprecision(2) << time << 's';
+                  " in " << fixed << setprecision(1) << time << 's';
         }
         if (time) {
             dlcbdata->Mark(pos, time);
@@ -486,6 +487,7 @@ static void x_ConnectionCallback(CONN conn, ECONN_Callback type, void* data)
     } else if (s_Signaled) {
         cerr << endl << "Canceled" << endl;
     }
+    return eIO_Success;
 }
 }
 
@@ -667,7 +669,8 @@ int main(int argc, const char* argv[])
     size_t files = processor->Run();
 
     // These should not matter, and can be issued in any order
-    ftp.Close();  // ...so do the "wrong" order on purpose to prove it works!
+    // ...so do the "wrong" order on purpose to prove it works!
+    _ASSERT(ftp.Close() == eIO_Success);
     delete processor;
 
     // Conclude the test
