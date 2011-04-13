@@ -77,6 +77,26 @@ static inline unsigned long udiff(unsigned long a, unsigned long b)
 }
 
 
+static bool s_GetFtpCreds(string& user, string& pass)
+{
+    user.clear();
+    pass.clear();
+    ifstream ifs("/am/ncbiapdata/test_data/ftp/test_ncbi_ftp_upload");
+    if (ifs) {
+        string src;
+        ifs >> src;
+        ifs.close();
+        string dst(src.size(), '\0');
+        size_t n_read, n_written;
+        BASE64_Decode(src.c_str(), src.size(), &n_read,
+                      &dst[0], dst.size(), &n_written);
+        dst.resize(n_written);
+        NStr::SplitInTwo(dst, ":", user, pass);
+    }
+    return !user.empty()  &&  !pass.empty();
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -112,13 +132,13 @@ int main(int argc, const char* argv[])
     CONNECT_Init(reg);
 
 
-    LOG_POST(Info << "Test 0 of 7: Checking error log setup");
+    LOG_POST(Info << "Test 0 of 8: Checking error log setup");
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
     LOG_POST(Info << "Test 0 passed\n");
 
 
-    LOG_POST("Test 1 of 7: Memory stream");
+    LOG_POST("Test 1 of 8: Memory stream");
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
     size = 0;
@@ -225,62 +245,53 @@ int main(int argc, const char* argv[])
              (int) size << " byte(s) transferred\n");
 
 
-    LOG_POST("Test 2 of 7:  FTP download");
+    LOG_POST("Test 2 of 8:  FTP download");
     if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
         flag |= fFTP_LogControl;
-    else {
+    else if (net_info->debug_printout == eDebugPrintout_Data) {
         char val[32];
         ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
                              DEF_CONN_DEBUG_PRINTOUT);
         flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
-    CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
-                                "Misc/test_ncbi_conn_stream.FTP.data",
-                                "ftp"/*default*/, "-none"/*default*/,
-                                "/toolbox/ncbi_tools++/DATA",
-                                0/*port = default*/, flag,
-                                0/*offset*/, 0/*cmcb*/, net_info->timeout);
+    CConn_FTPDownloadStream download("ftp.ncbi.nlm.nih.gov",
+                                     "Misc/test_ncbi_conn_stream.FTP.data",
+                                     "ftp"/*default*/, "-none"/*default*/,
+                                     "/toolbox/ncbi_tools++/DATA",
+                                     0/*port = default*/, flag,
+                                     0/*offset*/, 0/*cmcb*/,
+                                     net_info->timeout);
 
-    for (size = 0;  ftp.good();  size += ftp.gcount()) {
+    for (size = 0;  download.good();  size += download.gcount()) {
         char buf[512];
-        ftp.read(buf, sizeof(buf));
+        download.read(buf, sizeof(buf));
     }
-    ftp.Close();
-    if (size) {
-        LOG_POST("Test 2 passed: " <<
-                 size << " bytes downloaded via FTP\n");
-    } else
-        ERR_POST(Fatal << "Test 2 failed: no file downloaded");
+    download.Close();
+    if (!size)
+        ERR_POST(Fatal << "No file downloaded");
+
+    LOG_POST("Test 2 passed: " << size << " byte(s) downloaded via FTP\n");
 
 
-    LOG_POST("Test 3 of 7:  FTP upload");
-    ifstream ifs("/am/ncbiapdata/test_data/ftp/test_ncbi_ftp_upload");
-    if (ifs) {
-        string src;
-        ifs >> src;
-        ifs.close();
-        string dst(src.size(), '\0');
-        size_t n_read, n_written;
-        BASE64_Decode(src.c_str(), src.size(), &n_read,
-                      &dst[0], dst.size(), &n_written);
-        dst.resize(n_written);
-        CTempString user, pass;
-        NStr::SplitInTwo(dst, ":", user, pass);
-        CTime  start(CTime::eCurrent);
-        string filename("test_ncbi_conn_stream");
-        filename += '-' + CSocketAPI::gethostname();
-        filename += '-' + NStr::UInt8ToString(CProcess::GetCurrentPid());
-        filename += '-' + start.AsString("YMDhms");
-        filename += ".tmp";
+    LOG_POST("Test 3 of 8:  FTP upload");
+    CTime  start(CTime::eCurrent);
+    string ftpfilename("test_ncbi_conn_stream");
+    ftpfilename += '-' + CSocketAPI::gethostname();
+    ftpfilename += '-' + NStr::UInt8ToString(CProcess::GetCurrentPid());
+    ftpfilename += '-' + start.AsString("YMDhms");
+    ftpfilename += ".tmp";
+    string ftpuser, ftppass;
+    if (s_GetFtpCreds(ftpuser, ftppass)) {
         // to use advanced xfer modes if available
         if (rand() & 1)
             flag |= fFTP_UseFeatures;
         if (rand() & 1)
             flag |= fFTP_UseActive;
         CConn_FTPUploadStream upload("ftp-private.ncbi.nlm.nih.gov",
-                                     user, pass, filename, "test_upload",
+                                     ftpuser, ftppass, ftpfilename,
+                                     "test_upload",
                                      0/*port = default*/, flag,
                                      0/*offset*/, net_info->timeout);
         size = 0;
@@ -302,10 +313,10 @@ int main(int argc, const char* argv[])
             string speedstr;
             string filetime;
             upload.clear();
-            upload << "SIZE " << filename << NcbiEndl;
+            upload << "SIZE " << ftpfilename << NcbiEndl;
             upload >> filesize;
             upload.clear();
-            upload << "MDTM " << filename << NcbiEndl;
+            upload << "MDTM " << ftpfilename << NcbiEndl;
             upload >> filetime;
             speedstr = (NStr::UInt8ToString(Uint8(size))
                         + " bytes uploaded via FTP");
@@ -329,18 +340,36 @@ int main(int argc, const char* argv[])
                 LOG_POST(speedstr);
         }
         upload.clear();
-        upload << "DELE " << filename << NcbiEndl;
+        upload << "DELE " << ftpfilename << NcbiEndl;
         if (!size  ||  size != (unsigned long) size) {
-            ERR_POST(Fatal << "Test 3 failed: " <<
+            ERR_POST(Fatal << "Only " <<
                      val << " out of " << size << " byte(s) uploaded");
         } else if (delta >= 1800) {
-            ERR_POST(Fatal << "Test 3 failed: " <<
-                     "file timezone is off by " <<
+            ERR_POST(Fatal << "File timezone is off by " <<
                      NStr::UIntToString((unsigned int) delta) <<
                      " seconds");
         }
     } else
         LOG_POST("Test 3 skipped\n");
+
+
+    LOG_POST("Test 4 of 8: FTP peculiarities");
+    if (!ftpuser.empty()  &&  !ftppass.empty()) {
+        CConn_FtpStream ftp("ftp-private.ncbi.nlm.nih.gov",
+                            ftpuser, ftppass, "test_download",
+                            0/*port = default*/, flag, 0/*cmcb*/,
+                            net_info->timeout);
+        ftp << "RETR \377\377 special file downloadable" << endl;
+        if (!ftp)
+            ERR_POST(Fatal << "Test 4 failed in RETR");
+        ftp << "STOR " << "../test_upload/" << ftpfilename << ".0" << endl;
+        if (!ftp)
+            ERR_POST(Fatal << "Test 4 failed in STOR");
+        if (ftp.Close() == eIO_Success)
+            ERR_POST(Fatal << "Test 4 failed");
+        LOG_POST("Test 4 done\n");
+    } else
+        LOG_POST("Test 4 skipped\n");
 
     ConnNetInfo_Destroy(net_info);
 
@@ -354,7 +383,7 @@ int main(int argc, const char* argv[])
     }}
 
 
-    LOG_POST("Test 4 of 7: Big buffer bounce");
+    LOG_POST("Test 5 of 8: Big buffer bounce via HTTP");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHCC_UrlEncodeArgs | fHCC_AutoReconnect |
                          fHCC_Flushable);
@@ -369,24 +398,19 @@ int main(int argc, const char* argv[])
     }
     buf1[kBufferSize] = '\0';
 
-    if (!(ios << buf1)) {
-        ERR_POST("Cannot send data");
-        return 1;
-    }
+    if (!(ios << buf1))
+        ERR_POST(Fatal << "Cannot send data");
+
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(kBufferSize)));
 
-    if (!ios.flush()) {
-        ERR_POST("Cannot flush data");
-        return 1;
-    }
+    if (!ios.flush())
+        ERR_POST(Fatal << "Cannot flush data");
 
     ios.read(buf2, kBufferSize + 1);
     streamsize buflen = ios.gcount();
 
-    if (!ios.good() && !ios.eof()) {
-        ERR_POST("Cannot receive data");
-        return 2;
-    }
+    if (!ios.good() && !ios.eof())
+        ERR_POST(Fatal << "Cannot receive data");
 
     LOG_POST(buflen << " bytes obtained" << (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
@@ -398,22 +422,21 @@ int main(int argc, const char* argv[])
             break;
     }
     if (i < kBufferSize)
-        ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
-    else if ((size_t) buflen > kBufferSize)
-        ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
-    else
-        LOG_POST("Test 4 passed\n");
+        ERR_POST(Fatal << "Not entirely bounced, mismatch position: " << i+1);
+    if ((size_t) buflen > kBufferSize)
+        ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
+
+    LOG_POST("Test 5 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
 
-    LOG_POST("Test 5 of 7: Random bounce");
+    LOG_POST("Test 6 of 8: Random bounce");
 
-    if (!(ios << buf1)) {
-        ERR_POST("Cannot send data");
-        return 1;
-    }
+    if (!(ios << buf1))
+        ERR_POST(Fatal << "Cannot send data");
+
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(2*kBufferSize)));
 
     j = 0;
@@ -448,36 +471,33 @@ int main(int argc, const char* argv[])
             break;
     }
     if (i < kBufferSize)
-        ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
-    else if ((size_t) buflen > kBufferSize)
-        ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
-    else
-        LOG_POST("Test 5 passed\n");
+        ERR_POST(Fatal << "Not entirely bounced, mismatch position: " << i+1);
+    if ((size_t) buflen > kBufferSize)
+        ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
+
+    LOG_POST("Test 6 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
 
-    LOG_POST("Test 6 of 7: Truly binary bounce");
+    LOG_POST("Test 7 of 8: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
         buf1[i] = (char)(255/*rand()%256*/);
 
     ios.write(buf1, kBufferSize);
 
-    if (!ios.good()) {
-        ERR_POST("Cannot send data");
-        return 1;
-    }
+    if (!ios.good())
+        ERR_POST(Fatal << "Cannot send data");
+
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(3*kBufferSize)));
 
     ios.read(buf2, kBufferSize + 1);
     buflen = ios.gcount();
 
-    if (!ios.good() && !ios.eof()) {
-        ERR_POST("Cannot receive data");
-        return 2;
-    }
+    if (!ios.good() && !ios.eof())
+        ERR_POST(Fatal << "Cannot receive data");
 
     LOG_POST(buflen << " bytes obtained" << (ios.eof() ? " (EOF)" : ""));
 
@@ -486,17 +506,17 @@ int main(int argc, const char* argv[])
             break;
     }
     if (i < kBufferSize)
-        ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
-    else if ((size_t) buflen > kBufferSize)
-        ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
-    else
-        LOG_POST("Test 6 passed\n");
+        ERR_POST(Fatal << "Not entirely bounced, mismatch position: " << i+1);
+    if ((size_t) buflen > kBufferSize)
+        ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
+
+    LOG_POST("Test 7 passed\n");
 
     delete[] buf1;
     delete[] buf2;
 
 
-    LOG_POST("Test 7 of 7: NcbiStreamCopy()");
+    LOG_POST("Test 8 of 8: NcbiStreamCopy()");
 
     ofstream null(DEV_NULL);
     assert(null);
@@ -507,9 +527,10 @@ int main(int argc, const char* argv[])
     http << "Sample input -- should be ignored";
 
     if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))
-        ERR_POST(Fatal << "Test 7 failed");
+        ERR_POST(Fatal << "Test 8 failed");
     else
-        LOG_POST("Test 7 passed\n");
+        LOG_POST("Test 8 passed\n");
+
 
     CORE_SetREG(0);
     delete reg;
