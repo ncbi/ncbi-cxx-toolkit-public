@@ -26,7 +26,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *     Build C Toolkit ASN streams on top of CONN (connection).
+ *   Build C Toolkit ASN.1 streams on top of CONN (connection).
  *
  */
 
@@ -42,7 +42,7 @@
 extern "C" {
     static Int2 LIBCALLBACK s_AsnRead (Pointer conn, CharPtr buf, Uint2 len);
     static Int2 LIBCALLBACK s_AsnWrite(Pointer conn, CharPtr buf, Uint2 len);
-    static void s_CloseAsnConn(CONN conn, ECONN_Callback type, void* data);
+    static EIO_Status s_AsnClose(CONN conn, ECONN_Callback type, void* data);
 }
 #endif
 
@@ -69,34 +69,38 @@ struct SAsnConn_Cbdata {
 };
 
 
-static void s_CloseAsnConn(CONN conn, ECONN_Callback type, void* data)
+static EIO_Status s_AsnClose(CONN conn, ECONN_Callback type, void* data)
 {
+    EIO_Status status;
     struct SAsnConn_Cbdata* cbdata = (struct SAsnConn_Cbdata*) data;
 
-    assert(type == eCONN_OnClose && cbdata && cbdata->aip);
+    assert(type == eCONN_OnClose  &&  cbdata  &&  cbdata->aip);
     AsnIoFree(cbdata->aip, FALSE/*not a file - don't close*/);
-    if ( cbdata->cb.func )
-        (*cbdata->cb.func)(conn, type, cbdata->cb.data);
+    status = cbdata->cb.func
+        ? cbdata->cb.func(conn, type, cbdata->cb.data)
+        : eIO_Success;
     free(cbdata);
+    return status;
 }
 
 
-static void s_SetAsnConn_CloseCb(CONN conn, AsnIoPtr aip)
+static int/*bool*/ s_AsnSetCloseCb(CONN conn, AsnIoPtr aip)
 {
     struct SAsnConn_Cbdata* cbdata =
         (struct SAsnConn_Cbdata*) malloc(sizeof(*cbdata));
 
-    assert( aip );
     if ( cbdata ) {
         SCONN_Callback cb;
         cbdata->aip = aip;
-        cb.func     = s_CloseAsnConn;
+        cb.func     = s_AsnClose;
         cb.data     = cbdata;
         CONN_SetCallback(conn, eCONN_OnClose, &cb, &cbdata->cb);
-    } else {
-        CORE_LOG_X(1, eLOG_Error,
-                   "Cannot create cleanup callback for ASN conn-based stream");
+        return 1/*success*/;
     }
+
+    CORE_LOG_X(1, eLOG_Error,
+               "Cannot create close callback for ASN.1 CONN-based stream");
+    return 0/*failure*/;
 }
 
 
@@ -130,8 +134,10 @@ AsnIoPtr CreateAsnConn(CONN               conn,
         return 0;
     }
 
-    if (aip)
-        s_SetAsnConn_CloseCb(conn, aip);
+    if (aip  &&  !s_AsnSetCloseCb(conn, aip)) {
+        AsnIoFree(aip, FALSE/*not a file*/);
+        aip = 0;
+    }
     return aip;
 }
 
