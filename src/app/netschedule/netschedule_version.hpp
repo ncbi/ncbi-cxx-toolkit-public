@@ -37,5 +37,15 @@
 #define NETSCHEDULED_STORAGE_VERSION  "4.0.0"
 #define NETSCHEDULED_PROTOCOL_VERSION "1.2.0"
 
+#define NETSCHEDULED_FULL_VERSION \
+    "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
+    " Storage version " NETSCHEDULED_STORAGE_VERSION \
+    " Protocol version " NETSCHEDULED_PROTOCOL_VERSION \
+    " build " __DATE__ " " __TIME__
+
+#define NETSCHEDULED_FEATURES \
+    "fast_status=1;dyn_queues=1;tags=1;read_confirm=1;version=" NETSCHEDULED_VERSION
+
 
 #endif /* NETSCHEDULE_VERSION__HPP */
+

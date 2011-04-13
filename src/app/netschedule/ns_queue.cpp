@@ -1525,19 +1525,19 @@ void CQueue::x_ChangeGroupStatus(unsigned            group_id,
 }
 
 
-void CQueue::ConfirmJobs(unsigned read_id, TNSBitVector& jobs)
+void CQueue::ConfirmJobs(unsigned read_id, const TNSBitVector& jobs)
 {
     x_ChangeGroupStatus(read_id, jobs, CNetScheduleAPI::eConfirmed);
 }
 
 
-void CQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
+void CQueue::FailReadingJobs(unsigned read_id, const TNSBitVector& jobs)
 {
     x_ChangeGroupStatus(read_id, jobs, CNetScheduleAPI::eReadFailed);
 }
 
 
-void CQueue::ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs)
+void CQueue::ReturnReadingJobs(unsigned read_id, const TNSBitVector& jobs)
 {
     x_ChangeGroupStatus(read_id, jobs, CNetScheduleAPI::eDone);
 }

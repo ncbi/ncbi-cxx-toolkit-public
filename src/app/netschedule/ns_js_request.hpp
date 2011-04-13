@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_SERVER_PARAMS__HPP
-#define NETSCHEDULE_SERVER_PARAMS__HPP
+#ifndef NETSCHEDULE_JS_REQUEST__HPP
+#define NETSCHEDULE_JS_REQUEST__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,38 +28,40 @@
  *
  * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
- * File Description: [server] section of the configuration
+ * File Description: job request parameters
  *
  */
 
-#include <corelib/ncbireg.hpp>
-#include <connect/server.hpp>
-
+#include <connect/services/netservice_protocol_parser.hpp>
 #include <string>
+
+#include "ns_types.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
-//////////////////////////////////////////////////////////////////////////
-/// Parameters for server
-struct SNS_Parameters : SServer_Parameters
+
+struct SJS_Request
 {
-    bool            reinit;
-    unsigned short  port;
-    unsigned short  udp_port;
+    TNSJobId        job_id;
+    int             job_return_code;
+    unsigned        port;
+    unsigned        timeout;
+    unsigned        job_mask;
+    unsigned        count;
 
-    bool            use_hostname;
-    unsigned        network_timeout;
+    std::string     input;
+    std::string     output;
+    std::string     affinity_token;
+    std::string     job_key;
+    std::string     err_msg;
+    std::string     param1;
+    std::string     param2;
+    std::string     param3;
+    std::string     tags;
 
-    bool            is_daemon;
-    bool            is_log;
-
-    std::string     admin_hosts;
-
-    void Read(const IRegistry& reg, const std::string& sname);
-
-    unsigned GetNumParams() const;
-    std::string GetParamName(unsigned n) const;
-    std::string GetParamValue(unsigned n) const;
+    void Init();
+    void SetParamFields(TNSProtoParams& params);
 };
 
 END_NCBI_SCOPE

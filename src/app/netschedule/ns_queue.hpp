@@ -360,11 +360,11 @@ public:
                   unsigned count, unsigned timeout,
                   unsigned& read_id, TNSBitVector& jobs);
     /// Confirm reading of these jobs
-    void ConfirmJobs(unsigned read_id, TNSBitVector& jobs);
+    void ConfirmJobs(unsigned read_id, const TNSBitVector& jobs);
     /// Fail (negative acknowledge) reading of these jobs
-    void FailReadingJobs(unsigned read_id, TNSBitVector& jobs);
+    void FailReadingJobs(unsigned read_id, const TNSBitVector& jobs);
     /// Return jobs to unread state without reservation
-    void ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs);
+    void ReturnReadingJobs(unsigned read_id, const TNSBitVector& jobs);
 
 
     /// Erase job from all structures, request delayed db deletion
