@@ -519,7 +519,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             s_DoubleTimeout(&r_to);
             status = SOCK_SetTimeout(sock, eIO_Read, &r_to);
             assert(status == eIO_Success);
-            assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
+            assert(SOCK_Status(sock, eIO_Read) == eIO_Timeout);
             break;
 
         default:
