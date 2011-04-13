@@ -86,7 +86,12 @@ Blast4-request-body ::= CHOICE {
     queue-search            Blast4-queue-search-request,
     get-request-info        Blast4-get-request-info-request,
     get-sequence-parts      Blast4-get-seq-parts-request,
-    get-windowmasked-taxids NULL
+    get-windowmasked-taxids NULL,
+    -- Get version and info about some extended methods
+    get-protocol-info	    Blast4-get-protocol-info-request,
+    -- Get search info: status, title and etc.
+    get-search-info	    Blast4-get-search-info-request
+
 }
 
 Blast4-finish-params-request ::= SEQUENCE {
@@ -227,8 +232,14 @@ Blast4-get-seq-parts-request ::= SEQUENCE {
     -- cases where the length is not yet known).
     seq-locations           SEQUENCE OF Seq-interval
 }
+-- support for version and checking availability of methods
+Blast4-get-protocol-info-request ::= Blast4-parameters
 
-
+-- variose search information
+Blast4-get-search-info-request   ::= SEQUENCE {
+    request-id              VisibleString,
+    info		    Blast4-parameters OPTIONAL
+}
 --  --------------------------------------------------------------------
 --
 --  Replies
@@ -253,7 +264,9 @@ Blast4-reply-body ::= CHOICE {
     get-queries             Blast4-get-queries-reply,
     get-request-info        Blast4-get-request-info-reply,
     get-sequence-parts      Blast4-get-seq-parts-reply,
-    get-windowmasked-taxids Blast4-get-windowmasked-taxids-reply
+    get-windowmasked-taxids Blast4-get-windowmasked-taxids-reply,
+    get-protocol-info	    Blast4-get-protocol-info-reply,
+    get-search-info	    Blast4-get-search-info-reply
 }
 
 Blast4-finish-params-reply ::= Blast4-parameters
@@ -306,6 +319,12 @@ Blast4-get-queries-reply ::= SEQUENCE {
     queries                 Blast4-queries
 }
 
+Blast4-get-protocol-info-reply ::= Blast4-parameters
+
+Blast4-get-search-info-reply   ::= SEQUENCE {
+    request-id              VisibleString,
+    info		    Blast4-parameters OPTIONAL
+}
 --  --------------------------------------------------------------------
 --
 --  Errors
