@@ -38,17 +38,20 @@
 
 /* Standard logging message
  */
-#define METACONN_LOG(subcode, level, descr)                \
-  CORE_LOGF_X(subcode, level,                              \
-              ("%s (connector \"%s\", error \"%s\")",      \
-               descr, (*meta->get_type)(meta->c_get_type), \
-               IO_StatusStr(status)))
+#define METACONN_LOG(subcode, level, message)                   \
+  CORE_LOGF_X(subcode, level,                                   \
+              ("%s (connector \"%s\", error \"%s\")", message,  \
+               meta->get_type                                   \
+               ? meta->get_type(meta->c_get_type)               \
+               : "UNDEF", IO_StatusStr(status)))
 
 
 extern EIO_Status METACONN_Remove
 (SMetaConnector* meta,
  CONNECTOR       connector)
 {
+    assert(meta);
+
     if (connector) {
         CONNECTOR x_conn;
         
@@ -67,7 +70,7 @@ extern EIO_Status METACONN_Remove
     while (meta->list) {
         CONNECTOR victim = meta->list;
 
-        meta->list = victim->next;
+        meta->list   = victim->next;
         victim->meta = 0;
         victim->next = 0;
         if (victim->destroy)
@@ -75,7 +78,6 @@ extern EIO_Status METACONN_Remove
         if (victim == connector)
             break;
     }
-
     return eIO_Success;
 }
 
@@ -84,12 +86,12 @@ extern EIO_Status METACONN_Add
 (SMetaConnector* meta,
  CONNECTOR       connector)
 {
-    assert(connector && meta);
+    assert(meta  &&  connector);
 
     if (connector->next  ||  !connector->setup) {
         EIO_Status status = eIO_Unknown;
         METACONN_LOG(2, eLOG_Error,
-                     "[METACONN_Add]  Input connector is in use/uninitable");
+                     "[METACONN_Add]  Connector is in use/uninitable");
         return status;
     }
 
@@ -97,6 +99,5 @@ extern EIO_Status METACONN_Add
     connector->meta = meta;
     connector->next = meta->list;
     meta->list = connector;
-
     return eIO_Success;
 }
