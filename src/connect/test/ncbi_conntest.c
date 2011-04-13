@@ -32,6 +32,7 @@
  */
 
 #include <connect/ncbi_connection.h>
+#include <connect/ncbi_connector.h>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
 #include <string.h>
@@ -329,6 +330,13 @@ static void s_SingleBounceCheck
 }
 
 
+/*ARGSUSED*/
+static void s_DummySetup(SMetaConnector* meta, CONNECTOR connector)
+{
+    meta->default_timeout = kInfiniteTimeout;
+}
+
+
 
 /***********************************************************************
  *  EXTERNAL
@@ -342,19 +350,39 @@ extern void CONN_TestConnector
  TTestConnFlags  flags)
 {
     EIO_Status status;
+    SConnector dummy;
     CONN       conn;
+
+    memset(&dummy, 0, sizeof(dummy));
 
     TEST_LOG(eIO_Success, "[CONN_TestConnector]  Starting...");
 
+    /* Play around with dummy connector / connection */
+    assert(CONN_Create(0,      &conn) != eIO_Success  &&  !conn);
+    assert(CONN_Create(&dummy, &conn) != eIO_Success  &&  !conn);
+    dummy.setup = s_DummySetup;
+    assert(CONN_Create(&dummy, &conn) == eIO_Success);
+    assert(CONN_Flush (conn)          != eIO_Success);
+    assert(CONN_ReInit(conn, 0)       == eIO_Success);
+    assert(CONN_ReInit(conn, 0)       != eIO_Success);
+    assert(CONN_ReInit(conn, &dummy)  == eIO_Success);
+    assert(CONN_Flush (conn)          != eIO_Success);
+    assert(CONN_ReInit(conn, &dummy)  == eIO_Success);
+    assert(CONN_ReInit(conn, 0)       == eIO_Success);
+    assert(CONN_Close (conn)          == eIO_Success);
 
     /* CREATE new connection on the base of the connector, set
      * TIMEOUTs, try to RECONNECT, WAIT for the connection is writable
      */
     assert(CONN_Create(connector, &conn) == eIO_Success);
 
-    assert(CONN_SetTimeout(conn, eIO_Open,      timeout) == eIO_Success);
-    assert(CONN_SetTimeout(conn, eIO_ReadWrite, timeout) == eIO_Success);
-    assert(CONN_SetTimeout(conn, eIO_Close,     timeout) == eIO_Success);
+    assert(CONN_SetTimeout (conn, eIO_Open,      timeout) == eIO_Success);
+    assert(CONN_SetTimeout (conn, eIO_ReadWrite, timeout) == eIO_Success);
+    assert(CONN_SetTimeout (conn, eIO_Close,     timeout) == eIO_Success);
+
+    /* NOTE: invalid argument usage in the following two calls */
+    assert(CONN_GetTimeout (conn, eIO_ReadWrite)          != 0);
+    assert(CONN_GetPosition(conn, eIO_Close)              == 0);
 
     assert(CONN_ReInit(conn, connector) == eIO_Success);
 
