@@ -115,14 +115,17 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, streamsize buf_size,
 }
 
 
-void CConn_Streambuf::x_Close(bool close)
+EIO_Status CConn_Streambuf::x_Close(bool close)
 {
     if ( !m_Conn )
-        return;
-
-    // Flush only if data pending
-    if (pbase()  &&  pptr() > pbase())
-        sync();
+        return close ? eIO_Closed : eIO_Success;
+ 
+    EIO_Status status = eIO_Success;
+    // flush only if some data pending
+    if (pbase()  &&  pptr() > pbase()) {
+        if (CONN_Status(m_Conn, eIO_Write) == eIO_Success  &&  sync() != 0)
+            status = m_Status != eIO_Success ? m_Status : eIO_Unknown;
+    }
 
     setg(0, 0, 0);
     setp(0, 0);
@@ -131,47 +134,57 @@ void CConn_Streambuf::x_Close(bool close)
     m_Conn = 0;  // NB: no re-entry
 
     if ( close ) {
-        // here: not called from close callback
+        // here: not called from the close callback x_OnClose
         if ( m_CbValid ) {
             SCONN_Callback cb;
             CONN_SetCallback(c, eCONN_OnClose, &m_Cb, &cb);
             if ((void*) cb.func != (void*) x_OnClose  ||  cb.data != this)
                 CONN_SetCallback(c, eCONN_OnClose, &cb, 0);
         }
-
-        if (m_Close  &&  (m_Status = CONN_Close(c)) != eIO_Success)
+        if (m_Close  &&  (m_Status = CONN_Close(c)) != eIO_Success) {
             _TRACE(x_Message("x_Close(): CONN_Close() failed"));
-    } else if (m_CbValid  &&  m_Cb.func)
-        m_Cb.func(c, eCONN_OnClose, m_Cb.data);
+            if (status == eIO_Success)
+                status  = m_Status;
+        }
+    } else if (m_CbValid  &&  m_Cb.func) {
+        EIO_Status cbstat = m_Cb.func(c, eCONN_OnClose, m_Cb.data);
+        if (cbstat != eIO_Success)
+            status  = cbstat;
+    }
+    return status;
 }
 
 
-void CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
-                                ECONN_Callback _DEBUG_ARG(type),
-                                void*          data)
+EIO_Status CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
+                                      ECONN_Callback _DEBUG_ARG(type),
+                                      void*          data)
 {
     CConn_Streambuf* sb = static_cast<CConn_Streambuf*>(data);
 
     _ASSERT(type == eCONN_OnClose  &&  sb  &&  conn);
     _ASSERT(!sb->m_Conn  ||  sb->m_Conn == conn);
-    sb->x_Close(false);
+    return sb->x_Close(false);
 }
 
 
 string CConn_Streambuf::x_Message(const char* msg)
 {
-    const char* type = m_Conn ? CONN_GetType(m_Conn)     : 0;
-    char* descr      = m_Conn ? CONN_Description(m_Conn) : 0;
+    const char* type = m_Conn ? CONN_GetType    (m_Conn) : 0;
+    char*       text = m_Conn ? CONN_Description(m_Conn) : 0;
     string result("CConn_Streambuf::");
     result += msg;
-    result += " (";
-    result += type ? type : "UNKNOWN";
-    if (descr) {
-        result += "; ";
-        result += descr;
-        free(descr);
+    if (type  ||  text) {
+        result += " (";
+        result += type ? type : "UNDEF";
+        if (text) {
+            _ASSERT(*text);
+            result += "; ";
+            result += text;
+            free(text);
+        }
+        result += ')';
     }
-    result += "): ";
+    result += ": ";
     result += IO_StatusStr(m_Status);
     return result;
 }

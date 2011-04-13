@@ -213,7 +213,7 @@ public:
     /// would be impractical.
     /// @sa
     ///   CONN_Close
-    void            Close(void);
+    EIO_Status      Close(void);
 
     /// @return
     ///   Internal CONNection handle (NULL if unset)

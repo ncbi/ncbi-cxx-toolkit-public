@@ -59,9 +59,9 @@ public:
                     streamsize buf_size, bool tie,
                     CT_CHAR_TYPE* ptr, size_t size);
     virtual   ~CConn_Streambuf()   { Close();  delete[] m_WriteBuf; }
-    CONN       GetCONN(void) const { return m_Conn;   }
-    EIO_Status Status(void)  const { return m_Status; }
-    void       Close(void)         { x_Close(true);   }
+    CONN       GetCONN(void) const { return m_Conn;        }
+    EIO_Status Status(void)  const { return m_Status;      }
+    EIO_Status Close(void)         { return x_Close(true); }
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -100,9 +100,9 @@ private:
     void                x_Init(const STimeout* timeout, streamsize buf_size,
                                CT_CHAR_TYPE* ptr, size_t size);
 
-    void                x_Close(bool close);
+    EIO_Status          x_Close(bool close);
 
-    static void         x_OnClose(CONN conn, ECONN_Callback type, void* data);
+    static EIO_Status   x_OnClose(CONN conn, ECONN_Callback type, void* data);
 
     string              x_Message(const char* msg);
 

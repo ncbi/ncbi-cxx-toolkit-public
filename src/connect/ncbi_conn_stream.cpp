@@ -142,11 +142,9 @@ EIO_Status CConn_IOStream::Status(void) const
 }
 
 
-void CConn_IOStream::Close(void)
+EIO_Status CConn_IOStream::Close(void)
 {
-    if (m_CSb) {
-        m_CSb->Close();
-    }
+    return m_CSb ? m_CSb->Close() : eIO_Closed;
 }
 
 
