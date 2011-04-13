@@ -14,4 +14,4 @@ CHECK_CMD =
 CHECK_COPY = test_cases
 CHECK_TIMEOUT = 300
 
-WATCHERS = bollin
+WATCHERS = bollin kornbluh

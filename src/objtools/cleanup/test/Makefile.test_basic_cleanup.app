@@ -8,4 +8,4 @@ LIB = xcleanup xregexp xobjutil submit $(OBJMGR_LIBS) $(PCRE_LIB)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
-WATCHERS = bollin
+WATCHERS = bollin kornbluh

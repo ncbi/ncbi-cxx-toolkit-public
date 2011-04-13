@@ -17,4 +17,4 @@ SRC = accession_item basecount_item comment_item contig_item date_item \
       gbseq_formatter flat_file_config alignment_item gff3_formatter \
       gap_item genome_project_item sam_formatter cigar_formatter
 
-WATCHERS = ludwigf dicuccio
+WATCHERS = ludwigf dicuccio kornbluh
