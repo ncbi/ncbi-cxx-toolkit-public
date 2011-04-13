@@ -495,7 +495,7 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 
     bool throttled = false;
 
-    for (CNetServiceIterator it = Iterate(); it; ++it) {
+    for (CNetServiceIterator it = Iterate(eRandomize); it; ++it) {
         try {
             return (*it).ExecWithRetry(cmd);
         }
