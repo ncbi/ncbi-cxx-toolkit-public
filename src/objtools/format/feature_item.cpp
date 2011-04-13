@@ -3814,7 +3814,6 @@ void CFeatureItem::x_ImportQuals(
     DEFINE_STATIC_ARRAY_MAP(TLegalImportMap, kLegalImportMap, kLegalImports);
 
     bool check_qual_syntax = ctx.Config().CheckQualSyntax();
-    bool is_operon = (m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_operon);
 
     vector<string> replace_quals;
     const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
@@ -3830,12 +3829,6 @@ void CFeatureItem::x_ImportQuals(
         if ( li != kLegalImportMap.end() ) {
             slot = li->second;
         } else if (check_qual_syntax) {
-            continue;
-        }
-
-        // operon quals for non-operon feature is obtained from 
-        // overlapping operon feature.
-        if (!is_operon  &&  slot == eFQ_operon) {
             continue;
         }
 
@@ -3959,6 +3952,14 @@ void CFeatureItem::x_ImportQuals(
                  string s(val);
                  replace_quals.push_back(s);
              }}
+            break;
+
+        case eFQ_operon:
+            {{
+                if( ! x_HasQual(eFQ_operon) ) {
+                    x_AddQual(slot, new CFlatStringQVal(val));
+                }
+            }}
             break;
 
         default:

@@ -552,9 +552,9 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
          << wgsaccn << ".  This version of the project (" << version 
          << ") has the accession number " << wgsname << ",";
     if (*first != *last) {
-        text << " and consists of sequences " << *first << "-" << *last;
+        text << " and consists of sequences " << *first << "-" << *last << ".";
     } else {
-        text << " and consists of sequence " << *first;
+        text << " and consists of sequence " << *first << ".";
     }
 
     return CNcbiOstrstreamToString(text);

@@ -159,7 +159,7 @@ void CGenbankFormatter::FormatLocus
 
     string units = "bp";
     if ( !ctx.IsProt() ) {
-        if ( ctx.IsWGSMaster()  &&  ctx.IsRSWGSNuc() ) {
+        if ( ctx.IsWGSMaster()  && ! ctx.IsRSWGSNuc() ) {
             units = "rc";
         }
     } else {

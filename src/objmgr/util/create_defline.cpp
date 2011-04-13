@@ -241,15 +241,19 @@ void CDeflineGenerator::x_SetFlags (
                 if (tsid.IsSetAccession()) {
                     const string& acc = tsid.GetAccession ();
                     TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
-                    if (type == NCBI_ACCN(wgs_master)) {
-                        m_WGSMaster = true;
-                    } else if (type == NCBI_ACCN(refseq_chromosome)) {
+                    if ( (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(wgs) ||
+                         (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(wgs_intermed) ) 
+                    {
+                        if( (type & CSeq_id::fAcc_master) != 0 ) {
+                            m_WGSMaster = true;
+                        }
+                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_chromosome)) {
                         m_IsNC = true;
-                    } else if (type == NCBI_ACCN(refseq_mrna)) {
+                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_mrna)) {
                         m_IsNM = true;
-                    } else if (type == NCBI_ACCN(refseq_mrna_predicted)) {
+                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_mrna_predicted)) {
                         m_IsNM = true;
-                    } else if (type == NCBI_ACCN(refseq_ncrna)) {
+                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_ncrna)) {
                         m_IsNR = true;
                     }
                 }

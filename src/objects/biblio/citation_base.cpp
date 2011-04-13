@@ -248,9 +248,8 @@ bool ICitationBase::x_GetLabelV1(string*            label,
 
     if (title2) {
         if (book) {
-            *label += "(in) " + *title2;
-        }
-        else if (title1) {
+            *label += "(in) " + *title2 + " ";
+        } else if (title1) {
             *label += *title1 + *title2 + " ";
         }
         else {

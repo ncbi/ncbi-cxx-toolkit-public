@@ -627,7 +627,7 @@ bool CReferenceItem::Matches(const CPub& pub) const
                 const string& uniquestr = m_UniqueStr;
 
                 string pub_unique;
-                pub.GetLabel(&pub_unique, CPub::eContent, true);
+                pub.GetLabel(&pub_unique, CPub::eContent, CPub::fLabel_Unique, CPub::eLabel_V1 );
 
                 size_t len = pub_unique.length();
                 if (len > 0  &&  pub_unique[len - 1] == '>') {
