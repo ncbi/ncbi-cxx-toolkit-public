@@ -276,14 +276,14 @@ int main(int argc, const char* argv[])
 
 
     LOG_POST("Test 3 of 8:  FTP upload");
-    CTime  start(CTime::eCurrent);
-    string ftpfilename("test_ncbi_conn_stream");
-    ftpfilename += '-' + CSocketAPI::gethostname();
-    ftpfilename += '-' + NStr::UInt8ToString(CProcess::GetCurrentPid());
-    ftpfilename += '-' + start.AsString("YMDhms");
-    ftpfilename += ".tmp";
-    string ftpuser, ftppass;
+    string ftpuser, ftppass, ftpfilename;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
+        CTime start(CTime::eCurrent);
+        ftpfilename  = "test_ncbi_conn_stream";
+        ftpfilename += '-' + CSocketAPI::gethostname();
+        ftpfilename += '-' + NStr::UInt8ToString(CProcess::GetCurrentPid());
+        ftpfilename += '-' + start.AsString("YMDhms");
+        ftpfilename += ".tmp";
         // to use advanced xfer modes if available
         if (rand() & 1)
             flag |= fFTP_UseFeatures;
@@ -355,6 +355,7 @@ int main(int argc, const char* argv[])
 
     LOG_POST("Test 4 of 8: FTP peculiarities");
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
+        _ASSERT(!ftpfilename.empty());
         CConn_FtpStream ftp("ftp-private.ncbi.nlm.nih.gov",
                             ftpuser, ftppass, "test_download",
                             0/*port = default*/, flag, 0/*cmcb*/,
