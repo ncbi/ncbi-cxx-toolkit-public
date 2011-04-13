@@ -932,6 +932,15 @@ case "$host_os:$compiler" in
              [ncbi_cv_prog_cc_wl_e=yes], [ncbi_cv_prog_cc_wl_e=no])
           LDFLAGS=$orig_LDFLAGS])
       test "$ncbi_cv_prog_cc_wl_e" = no  ||  APP_LDFLAGS="-Wl,-E $APP_LDFLAGS"
+      AC_CACHE_CHECK([whether $CC supports -Wl,--enable-new-dtags],
+         ncbi_cv_prog_cc_new_dtags,
+         [orig_LDFLAGS=$LDFLAGS
+          LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+             [ncbi_cv_prog_cc_new_dtags=yes], [ncbi_cv_prog_cc_new_dtags=no])
+          LDFLAGS=$orig_LDFLAGS])
+      test "$ncbi_cv_prog_cc_new_dtags" = no \
+          ||  LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
       ;;
 esac
 
