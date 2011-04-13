@@ -134,8 +134,10 @@ static string s_WinError(DWORD error, string& message)
 		errstr = NULL;
 	}
     int dynamic = 0/*false*/;
-    const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
-                                                (int) error, _T_CSTRING(errstr));
+    const char* result = ::NcbiMessagePlusError(&dynamic,
+                                                message.c_str(),
+                                                (int) error,
+                                                _T_CSTRING(errstr));
     if (errstr) {
         ::LocalFree(errstr);
     }
@@ -506,9 +508,11 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                 } // else NB:  status == eIO_Success
             }
             *n_read = bytes_avail;
-        } else if (status != eIO_Unknown) {
-            _ASSERT(status == eIO_Closed  ||  status == eIO_Timeout);
-            // NB:  eIO_Closed also updates m_{Read|Write}Status
+        } else if (status == eIO_Timeout) {
+            m_ReadStatus = eIO_Timeout;
+            return status;
+        } else if (status == eIO_Closed) {
+            // NB:  m_{Read|Write}Status have been updated
             return status;
         } else {
             NAMEDPIPE_THROW(::GetLastError(), "PeekNamedPipe() failed");
@@ -569,6 +573,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
             }
 
             if ( !x_timeout ) {
+                m_WriteStatus = eIO_Timeout;
                 return eIO_Timeout;
             }
 

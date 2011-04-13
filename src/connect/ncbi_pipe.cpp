@@ -409,7 +409,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                (LPTSTR)(_T_XCSTRING(cmd_line)),
                                NULL, NULL, TRUE, 0,
                                env_block.get(),
-                               current_dir.empty() ? 0 : _T_XCSTRING(current_dir),
+                               current_dir.empty() ? 0
+                              : _T_XCSTRING(current_dir),
                                &sinfo, &pinfo) ) {
             status = eIO_Closed;
             PIPE_THROW(::GetLastError(),
