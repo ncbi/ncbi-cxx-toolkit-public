@@ -1,0 +1,18 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Alexey Rafanovich
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: fwdaemon
+
+DEFAULT_CONFIGURATIONS:  Linux32-Suse:GCC Linux64-Suse:GCC
+
+Linux32-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux64-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+
