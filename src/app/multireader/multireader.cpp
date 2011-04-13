@@ -60,6 +60,7 @@
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gtf_reader.hpp>
+#include <objtools/readers/gvf_reader.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
@@ -189,7 +190,8 @@ void CMultiReaderApp::Init(void)
             "bed", 
             "microarray", "bed15", 
             "wig", "wiggle", 
-            "gtf", "gff3", "gff2", 
+            "gtf", "gff3", "gff2",
+            "gvf", 
             "newick", "tree", "tre",
             "guess") );
 
@@ -409,6 +411,10 @@ void CMultiReaderApp::SetFormat(
         format == "gtf" || format == "gff3" || format == "gff2" ) {
         m_uFormat = CFormatGuess::eGtf;
     }
+    if ( NStr::StartsWith( strProgramName, "gvf" ) || 
+        format == "gvf" ) {
+        m_uFormat = CFormatGuess::eGtf;
+    }
     if ( NStr::StartsWith( strProgramName, "newick" ) || 
         format == "newick" || format == "tree" || format == "tre" ) {
         m_uFormat = CFormatGuess::eNewick;
@@ -498,24 +504,27 @@ void CMultiReaderApp::ReadObject(
         }
 
         case CFormatGuess::eGtf: {
+            string strFormat = GetArgs()[ "format" ].AsString();
             CStreamLineReader lr( *m_pInput );
-            if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
+            if ( strFormat == "gtf" ) {
                 CGtfReader reader( 
                     (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadObject( lr, m_pErrors );
                 break;
             }
-            if ( GetArgs()[ "format" ].AsString() == "gff2" ) {
+            if ( strFormat == "gff2" ) {
                 CGff2Reader reader( 
                     (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadObject( lr, m_pErrors );
                 break;
             }
-            else {
-                CGff3Reader reader( 
+            if ( strFormat == "gvf" ) {
+                CGvfReader reader( 
                     (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadObject( lr, m_pErrors );
                 break;
+            }
+            else {
             }
         }
 
@@ -546,24 +555,29 @@ void CMultiReaderApp::ReadAnnots(
             break;
         }    
         case CFormatGuess::eGtf: {
-            if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
+            string strFormat = GetArgs()[ "format" ].AsString();
+            if ( strFormat == "gtf" ) {
                 CGtfReader reader( 
                     (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
                 break;
             }
-            if ( GetArgs()[ "format" ].AsString() == "gff2" ) {
+            if ( strFormat == "gff2" ) {
                 CGff2Reader reader( 
                     (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
                 break;
             }
-            else {
-                CGff3Reader reader( 
+            if ( strFormat == "gvf" ) {
+                CGvfReader reader( 
                     (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
                 reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
                 break;
             }
+            CGff3Reader reader( 
+                (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
+            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+            break;
         }
     }
 }

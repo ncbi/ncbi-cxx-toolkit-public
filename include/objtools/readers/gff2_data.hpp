@@ -53,7 +53,7 @@ public:
     //
     //  Input/output:
     //
-    bool AssignFromGff(
+    virtual bool AssignFromGff(
         const string& );
 
     //
