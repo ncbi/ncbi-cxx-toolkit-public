@@ -39,6 +39,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbidiag.hpp>
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp> // FIXME: remove
@@ -60,9 +61,11 @@
 #include "ns_server.hpp"
 #include "netschedule_version.hpp"
 
+#if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_process.hpp>
 # include <signal.h>
 # include <unistd.h>
+#endif
 
 
 USING_NCBI_SCOPE;
@@ -138,9 +141,11 @@ int CNetScheduleDApp::Run(void)
     const CNcbiRegistry& reg = GetConfig();
 
     try {
-        // attempt to get server gracefully shutdown on signal
-        signal( SIGINT, Threaded_Server_SignalHandler);
-        signal( SIGTERM, Threaded_Server_SignalHandler);
+        #if defined(NCBI_OS_UNIX)
+            // attempt to get server gracefully shutdown on signal
+            signal( SIGINT, Threaded_Server_SignalHandler);
+            signal( SIGTERM, Threaded_Server_SignalHandler);
+        #endif
 
         // [bdb] section
         SNSDBEnvironmentParams bdb_params;
@@ -205,24 +210,28 @@ int CNetScheduleDApp::Run(void)
         LOG_POST(Info << "Mounting database at " << bdb_params.db_path);
 
         {{
-            // To be able to open pollable sockets we need to allocate
-            // all of file descriptors < 1024 before opening the database.
-            int fds[1024];
-            int fd = 0;
-            int n = 0;
-            do {
-                fd = dup(0);
-                if (fd < 0) break;
-                fds[n++] = fd;
-            } while (n < 1024  &&  fd < 1024);
-            if (fd < 0) {
-                for (int i = 0; i < n; ++i) close(fds[i]);
-                ERR_POST("Too few file descriptors, use \"ulimit -n\""
-                         " to expand the number");
-                return 1;
-            }
+            #if defined(NCBI_OS_UNIX)
+                // To be able to open pollable sockets we need to allocate
+                // all of file descriptors < 1024 before opening the database.
+                int fds[1024];
+                int fd = 0;
+                int n = 0;
+                do {
+                    fd = dup(0);
+                    if (fd < 0) break;
+                    fds[n++] = fd;
+                } while (n < 1024  &&  fd < 1024);
+                if (fd < 0) {
+                    for (int i = 0; i < n; ++i) close(fds[i]);
+                    ERR_POST("Too few file descriptors, use \"ulimit -n\""
+                             " to expand the number");
+                    return 1;
+                }
+            #endif
 
-            bool res = qdb->Open(bdb_params, reinit);
+            #if defined(NCBI_OS_UNIX)
+                bool res = qdb->Open(bdb_params, reinit);
+            #endif
 
             for (int i = 0; i < n; ++i) close(fds[i]);
 
@@ -233,14 +242,17 @@ int CNetScheduleDApp::Run(void)
             qdb->SetUdpPort(params.udp_port);
         }
 
-        if (params.is_daemon) {
-            LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
-            if (!daemon) {
-                return 0;
+        #if defined(NCBI_OS_UNIX)
+            if (params.is_daemon) {
+                LOG_POST("Entering UNIX daemon mode...");
+                bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
+                if (!daemon) {
+                    return 0;
+                }
             }
-
-        }
+        #else
+            params.is_daemon = false;
+        #endif
 
         // [queue_*], [qclass_*] and [queues] sections
         // Scan and mount queues
@@ -290,11 +302,12 @@ int CNetScheduleDApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    g_Diag_Use_RWLock();
     CDiagContext::SetOldPostFormat(false);
-//    CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
+    CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
     // Main thread request context already created, so is not affected
     // by just set default, so set it manually.
-//    CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
+    CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
     return CNetScheduleDApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }
 
