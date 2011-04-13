@@ -2660,8 +2660,10 @@ static EIO_Status s_Recv(SOCK    sock,
             EIO_Status status;
             SSOCK_Poll poll;
 
-            if (tv  &&  !(tv->tv_sec | tv->tv_usec))
+            if (tv  &&  !(tv->tv_sec | tv->tv_usec)) {
+                sock->r_status = eIO_Timeout;
                 return eIO_Timeout;
+            }
             if (readable) {
                 CORE_TRACEF(("%s[SOCK::Recv] "
                              " Spurious false indication of data ready",
@@ -2672,6 +2674,10 @@ static EIO_Status s_Recv(SOCK    sock,
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, tv, 1/*asis*/);
             assert(poll.event == eIO_Read);
+            if (status == eIO_Timeout) {
+                sock->r_status = eIO_Timeout;
+                return status;
+            }
             if (status != eIO_Success)
                 return status;
             if (poll.revent == eIO_Close)
@@ -2741,10 +2747,10 @@ static EIO_Status s_Read(SOCK    sock,
                    ? BUF_Peek(sock->r_buf, buf, size)
                    : BUF_Read(sock->r_buf, buf, size));
         if (sock->type == eDatagram) {
-            sock->r_status = *n_read  ||  !size ? eIO_Success : eIO_Closed;
+            if (size  &&  !*n_read)
+                sock->r_status = eIO_Closed;
             return (EIO_Status) sock->r_status;
         }
-
         if (*n_read  &&  (*n_read == size  ||  !peek))
             return eIO_Success;
     }
@@ -3053,8 +3059,10 @@ static EIO_Status s_Send(SOCK        sock,
             if (x_error == WSAENOBUFS) {
                 if (size < SOCK_BUF_CHUNK_SIZE) {
                     s_AddTimeout(&waited, wait_buf_ms);
-                    if (s_IsSmallerTimeout(sock->w_timeout, &waited))
+                    if (s_IsSmallerTimeout(sock->w_timeout, &waited)) {
+                        sock->w_status = eIO_Timeout;
                         return eIO_Timeout;
+                    }
                     if (wait_buf_ms == 0)
                         wait_buf_ms = 10;
                     else if (wait_buf_ms < 160)
@@ -3076,6 +3084,10 @@ static EIO_Status s_Send(SOCK        sock,
 #else
             {
                 timeout = sock->w_timeout;
+                if (timeout  &&  !(timeout->tv_sec | timeout->tv_usec)) {
+                    sock->w_status = eIO_Timeout;
+                    return eIO_Timeout;
+                }
             }
 #endif /*NCBI_OS_MSWIN*/
 
@@ -3091,8 +3103,12 @@ static EIO_Status s_Send(SOCK        sock,
                 sock->writable = writable/*restore*/;
                 if (status == eIO_Timeout)
                     continue/*try to write again*/;
-            }
+            } else
 #endif /*NCBI_OS_MSWIN*/
+            if (status == eIO_Timeout) {
+                sock->w_status = eIO_Timeout;
+                return status;
+            }
             if (status != eIO_Success)
                 return status;
             if (poll.revent == eIO_Close)
@@ -6683,6 +6699,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
     if (!(x_msg = (x_msgsize <= buflen
                    ? buf : (x_msgsize <= sizeof(w)
                             ? w : malloc(x_msgsize))))) {
+        sock->r_status = eIO_Unknown;
         return eIO_Unknown;
     }
 
@@ -6749,7 +6766,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                 break;
             if (poll.revent != eIO_Close) {
                 assert(poll.revent == eIO_Read);
-                continue;
+                continue/*read again*/;
             }
         } else if (x_error == SOCK_EINTR) {
             if (sock->i_on_sig == eOn  ||
@@ -6772,7 +6789,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         break;
     }
 
-    if (x_msgsize > buflen && x_msg != w)
+    if (x_msgsize > buflen  &&  x_msg != w)
         free(x_msg);
     return status;
 }
