@@ -69,24 +69,23 @@ typedef enum {
 typedef unsigned int TFTP_Flags;
 
 
-/* Even though many FTP server implementations provide SIZE command
- * these days, some FTPDs still lack this feature and can post the file size
- * only when the actual download starts.  For them, and for connections that
- * do not want to get the size inserted into the data stream
- * (which is the default behavior upon a successful SIZE command),
- * the following callback is provided as an alternative solution.
- * The callback gets activated when downloads start, and also upon
- * successful SIZE commands (without causing the file size to appear
- * within the connection data as usual) but only if fFTP_NotifySize
- * has been set in the "flag" parameter of FTP_CreateConnectorEx().
+/* Even though many FTP server implementations provide SIZE command these days,
+ * some FTPDs still lack this feature and can post the file size only when the
+ * actual download starts.  For them, and for connections that  do not want to
+ * get the size inserted into the data stream (which is the default behavior
+ * upon a successful SIZE command), the following callback is provided as an
+ * alternative solution.
+ * The callback gets activated when downloads start, and also upon successful
+ * SIZE commands (without causing the file size to appear in the connection
+ * data as it usually would otherwise) but only if fFTP_NotifySize has been
+ * set in the "flag" parameter of FTP_CreateConnectorEx().
  * Each time the size gets passed in as a '\0'-terminated character string.
- * The callback remains effective for the entire lifetime span
- * of the connector.
+ * The callback remains effective for the entire lifetime of the connector.
  *
- * NOTE:  With restarted data retrievals (REST) the size reported in the
- * server response to transfer initiation can be either the true size of
- * the data to be transferred or the entire size of the original file
- * (without the restart offset taken into account).
+ * NOTE:  With restarted data retrievals (REST) the size reported in the server
+ * response to transfer initiation can be either the true size of the data to
+ * be transferred or the entire size of the original file (without the restart
+ * offset taken into account), and the latter should be considered as a bug.
  */
 typedef EIO_Status (*FFTP_Callback)(void* data,
                                     const char* cmd, const char* arg);
