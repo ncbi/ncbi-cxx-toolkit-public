@@ -571,6 +571,9 @@ private:
     CSerial_FilterObjectsHook<TObject>* m_processor;
 };
 
+NCBI_XSERIAL_EXPORT
+void Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype);
+
 class CEofException;
 /// Scan input stream, finding objects of requested type (TObject) only
 template<typename TRoot, typename TObject>
@@ -584,7 +587,7 @@ void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>
     do {
         TRoot obj;
         try {
-            in.Skip( root );
+            Serial_FilterSkip(in,root);
         } catch ( CEofException& ) {
             return;
         }
@@ -602,7 +605,7 @@ void Serial_FilterStdObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObje
     do {
         TRoot obj;
         try {
-            in.Skip( root );
+            Serial_FilterSkip(in,root);
         } catch ( CEofException& ) {
             return;
         }

@@ -72,6 +72,11 @@ void Read(CObjectIStream& in, TObjectPtr object, TTypeInfo type)
     in.Read(object, type);
 }
 
+void Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype)
+{
+    in.Skip(ctype);
+}
+
 DEFINE_STATIC_FAST_MUTEX(s_ModuleNameMutex);
 
 static const string& GetModuleName(const char* moduleName)
