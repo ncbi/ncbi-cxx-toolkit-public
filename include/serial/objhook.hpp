@@ -534,15 +534,6 @@ public:
         }
 };
 
-// Helper hook for Serial_FilterObjects function template
-class CSerial_FilterRootHook : public CReadObjectHook
-{
-public:
-    void ReadObject(CObjectIStream& in,const CObjectInfo& object)
-    {
-        DefaultSkip(in,object);
-    }
-};
 
 /// Helper hook for Serial_FilterObjects function template;
 /// User hook class should be derived from this base class
@@ -556,9 +547,28 @@ public:
         type.GetTypeInfo()->DefaultReadData(in, &obj);
         Process(obj);
     }
-    /// This meathod will be called when the object of the
+    /// This method will be called when the object of the
     /// requested class is read
     virtual void Process(const TObject& obj) = 0;
+};
+
+template<typename TObject>
+class CSerial_FilterReadObjectsHook : public CReadObjectHook
+{
+public:
+    CSerial_FilterReadObjectsHook<TObject>(
+        CSerial_FilterObjectsHook<TObject>* processor)
+        : m_processor(processor)
+    {
+    }
+    void ReadObject(CObjectIStream& in,const CObjectInfo& object)
+    {
+        DefaultRead(in,object);
+        TObject* obj = (TObject*)(object.GetObjectPtr()); 
+        m_processor->Process(*obj);
+    }
+private:
+    CSerial_FilterObjectsHook<TObject>* m_processor;
 };
 
 class CEofException;
@@ -568,13 +578,13 @@ void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>
                           bool readall=true)
 {
     CObjectTypeInfo root = CType<TRoot>();
-    root.SetLocalReadHook(in, new CSerial_FilterRootHook);
     CObjectTypeInfo request = CType<TObject>();
     request.SetLocalSkipHook(in, hook);
+    request.SetLocalReadHook(in, new CSerial_FilterReadObjectsHook<TObject>(hook));
     do {
         TRoot obj;
         try {
-            in >> obj;
+            in.Skip( root );
         } catch ( CEofException& ) {
             return;
         }
@@ -587,13 +597,12 @@ void Serial_FilterStdObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObje
                           bool readall=true)
 {
     CObjectTypeInfo root = CType<TRoot>();
-    root.SetLocalReadHook(in, new CSerial_FilterRootHook);
     CObjectTypeInfo request = CStdTypeInfo<TObject>::GetTypeInfo();
     request.SetLocalSkipHook(in, hook);
     do {
         TRoot obj;
         try {
-            in >> obj;
+            in.Skip( root );
         } catch ( CEofException& ) {
             return;
         }
