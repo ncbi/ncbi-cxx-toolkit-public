@@ -167,7 +167,7 @@ static CSeqVector s_GetCdregionPlusUpstream(CFeat_CI feat_iter,
 {
     CScope& scope = ctx->GetScope();
     const CSeq_loc& first_cds_loc
-        = CSeq_loc_CI(feat_iter->GetLocation()).GetSeq_loc();
+        = CSeq_loc_CI(feat_iter->GetLocation()).GetEmbeddingSeq_loc();
     CRef<CSeq_loc> upstr(new CSeq_loc);
     const CSeq_id& id = sequence::GetId(first_cds_loc, 0);
     upstr->SetInt().SetId().Assign(id);
