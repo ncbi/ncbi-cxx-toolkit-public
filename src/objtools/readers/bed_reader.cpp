@@ -382,7 +382,7 @@ void CBedReader::x_SetFeatureLocation(
         throw( err );
     }
     try {
-        interval.SetTo( NStr::StringToInt( fields[2] ) - 2 );
+        interval.SetTo( NStr::StringToInt( fields[2] ) - 1 );
     }
     catch ( ... ) {
         CObjReaderLineException err( 
