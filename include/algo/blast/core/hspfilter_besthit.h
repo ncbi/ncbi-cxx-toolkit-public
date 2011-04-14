@@ -95,6 +95,7 @@ typedef struct BlastHSPBestHitParams {
    EBlastProgramType program;/**< program type. */
    Int4 prelim_hitlist_size; /**< number of hits saved during preliminary
                                   part of search. */
+   Int4 hsp_num_max;         /**< number of HSPs to save per db sequence. */
    double overhang;          /**< overhang used in condition 1. */
    double score_edge;        /**< fraction of score margin in condition 4*/
 } BlastHSPBestHitParams;
@@ -103,14 +104,18 @@ typedef struct BlastHSPBestHitParams {
  * @param program Blast program type.[in]
  * @param hit_options field hitlist_size and hsp_num_max needed, a pointer to 
  *      this structure will be stored on resulting structure.[in]
- * @param overhang Specifies the ratio of overhang to length, which is used to
+ * @param best_hit_opts Specifies the ratio of overhang to length, which is used to
         determine if hit A is contained in hit B
+ * @param compostionBasedStats the compsotion based stats needed. [in]
+ * @param gapped_calculation if gapped_calculation is needed. [in]
  * @return the pointer to the allocated parameter
  */
 NCBI_XBLAST_EXPORT
 BlastHSPBestHitParams*
 BlastHSPBestHitParamsNew(const BlastHitSavingOptions* hit_options,
-                         const BlastHSPBestHitOptions* best_hit_opts);
+                         const BlastHSPBestHitOptions* best_hit_opts,
+                         Int4 compositionBasedStats,
+                         Boolean gapped_calculation);
 
 /** Deallocates the BlastHSPBestHitParams structure passed in
  * @param opts structure to deallocate [in]

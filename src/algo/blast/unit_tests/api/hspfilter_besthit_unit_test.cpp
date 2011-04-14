@@ -52,7 +52,7 @@ BlastHSPBestHitParams* s_GetBestHitParams()
     BlastHSPBestHitOptions* best_hit_opts =
         BlastHSPBestHitOptionsNew(kOverhang, kBestHit_ScoreEdgeDflt);
     BlastHSPBestHitParams* best_hit_params = 
-         BlastHSPBestHitParamsNew(hit_options, best_hit_opts);
+         BlastHSPBestHitParamsNew(hit_options, best_hit_opts, false, kIsGapped);
     best_hit_opts = BlastHSPBestHitOptionsFree(best_hit_opts);
     hit_options = BlastHitSavingOptionsFree(hit_options);
     return best_hit_params;

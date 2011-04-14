@@ -282,7 +282,9 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
         {
             BlastHSPBestHitParams* params = 
                 BlastHSPBestHitParamsNew(opts_memento->m_HitSaveOpts,
-                                         filt_opts->best_hit);
+                     filt_opts->best_hit,
+                     opts_memento->m_ExtnOpts->compositionBasedStats, 
+                     opts_memento->m_ScoringOpts->gapped_calculation);
             writer_info = BlastHSPBestHitInfoNew(params);
             hsp_writer_found = true;
         }
@@ -328,7 +330,9 @@ CSetupFactory::CreateHspPipe(const CBlastOptionsMemento* opts_memento,
             (filt_opts->best_hit_stage & eTracebackSearch)) {
             BlastHSPBestHitParams* params = 
                 BlastHSPBestHitParamsNew(opts_memento->m_HitSaveOpts,
-                                         filt_opts->best_hit);
+                     filt_opts->best_hit,
+                     opts_memento->m_ExtnOpts->compositionBasedStats,
+                     opts_memento->m_ScoringOpts->gapped_calculation);
             BlastHSPPipeInfo_Add(&pipe_info, 
                                  BlastHSPBestHitPipeInfoNew(params));
         } else if (filt_opts->culling_opts &&

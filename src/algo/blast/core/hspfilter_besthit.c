@@ -57,7 +57,9 @@ typedef struct LinkedHSP_BH {
 typedef struct BlastHSPBestHitData {
    BlastHSPBestHitParams* params;       /**< parameters to control overhang */
    BlastQueryInfo* query_info;          /**< query info */
-   LinkedHSP_BH** best_list;               /**< buffer to store best hits */
+   LinkedHSP_BH** best_list;            /**< buffer to store best hits */
+   Int4* num_hsps;                      /**< field to record the number of hsps in each list */
+   Int4* max_hsps;                      /**< max number of hsps to hold before pruning */
 } BlastHSPBestHitData;
 
 /*************************************************************/
@@ -70,81 +72,155 @@ typedef struct BlastHSPBestHitData {
 static int 
 s_BlastHSPBestHitInit(void* data, BlastHSPResults* results)
 {
+   int i;
    BlastHSPBestHitData * bh_data = data;
    bh_data->best_list = calloc(results->num_queries, sizeof(LinkedHSP_BH *));
+   bh_data->num_hsps = calloc(results->num_queries, sizeof(Int4));
+   bh_data->max_hsps = calloc(results->num_queries, sizeof(Int4));
+   for (i=0; i<results->num_queries; ++i) 
+      /* initially set this to 5 times num_seqs to keep */
+      /* the max hsps to keep will eventually be determined adaptively */
+      bh_data->max_hsps[i] = bh_data->params->prelim_hitlist_size * 2;
    return 0;
 }
 
+/** Export best_list to hitlist
+ * @param qid The query index [in]
+ * @param data The buffered data structure [in][out]
+ * @param hit_list The hitlist to be populated [in][out]
+ */
+static int
+s_ExportToHitlist(int qid,
+                  BlastHSPBestHitData *bh_data,
+                  BlastHitList * hit_list)
+{
+   int sid;
+   Boolean allocated;
+   LinkedHSP_BH *best_list = bh_data->best_list[qid], *p;
+   BlastHSPList *list;
+   BlastHitList *tmp_hit_list = Blast_HitListNew(bh_data->num_hsps[qid]);
+   tmp_hit_list->hsplist_array = calloc(bh_data->num_hsps[qid], 
+                                   sizeof(BlastHSPList *));
+
+   while (best_list) {
+
+      p = best_list;
+      allocated = FALSE;
+      for (sid = 0; sid < tmp_hit_list->hsplist_count; ++sid) {
+         list = tmp_hit_list->hsplist_array[sid];
+         if (p->sid == list->oid) {
+            allocated = TRUE;
+            break;
+         }
+      }
+
+      if (! allocated) {
+         list = Blast_HSPListNew(bh_data->params->hsp_num_max);
+         list->oid = p->sid;
+         list->query_index = qid;
+         ASSERT(sid < tmp_hit_list->hsplist_current);
+         tmp_hit_list->hsplist_array[sid] = list;
+         tmp_hit_list->hsplist_count++;
+      }
+
+      if (Blast_HSPListUpdate(list, p->hsp)) {
+         p->hsp = Blast_HSPFree(p->hsp);
+      }
+
+      best_list = p->next;
+      free(p);
+   }
+
+   bh_data->best_list[qid] = NULL;
+   bh_data->num_hsps[qid] = 0;
+
+   for (sid = 0; sid < tmp_hit_list->hsplist_count; ++sid) {
+      Blast_HitListUpdate(hit_list, tmp_hit_list->hsplist_array[sid]);
+      tmp_hit_list->hsplist_array[sid] = NULL;
+   }
+
+   Blast_HitListFree(tmp_hit_list);
+   return 0;
+}
+
+/** Import hitlist to best_list (assuming all hsps are besthits)
+ * @param qid The query index [in]
+ * @param data The buffered data structure [in][out]
+ * @param hit_list The hitlist to be populated [in][out]
+ */
+static int
+s_ImportFromHitlist(int qid,
+                  BlastHSPBestHitData *bh_data,
+                  BlastHitList * hit_list)
+{
+   int sid, id;
+   LinkedHSP_BH *best_list = bh_data->best_list[qid], *p, *q, *r;
+   BlastHSPList *list;
+   BlastHSP *hsp;
+   int qlen = BlastQueryInfoGetQueryLength(bh_data->query_info, 
+                                           bh_data->params->program, qid);
+
+   for (sid=0; sid < hit_list->hsplist_count; ++sid) {
+
+      list = hit_list->hsplist_array[sid];
+      for (id =0; id < list->hspcnt; ++id) {
+
+         hsp = list->hsp_array[id];
+         r = malloc(sizeof(LinkedHSP_BH));
+         r->hsp = hsp;
+         r->sid = list->oid; 
+         r->begin = (bh_data->query_info->contexts[hsp->context].frame < 0 ) ? 
+                    qlen - hsp->query.end : hsp->query.offset;
+         r->len = hsp->query.end - hsp->query.offset;
+         r->end = r->begin + r->len;
+         for (q=NULL, p=best_list; p && p->begin < r->begin; q=p, p=p->next);
+         r->next = p;
+         list->hsp_array[id] = NULL; /* remove it from hsp_list */
+         if (q) {
+            q->next = r;     
+         } else {
+            best_list = bh_data->best_list[qid] = r;
+         }
+         ++(bh_data->num_hsps[qid]);
+      }
+      hit_list->hsplist_array[sid] = Blast_HSPListFree(list);
+   }
+
+   bh_data->max_hsps[qid] = bh_data->num_hsps[qid] * 2;
+
+   return 0; 
+}
+
+
 /** Perform post-run clean-ups
+   Blast_HSPListFree(hsp_list);
  * @param data The buffered data structure [in]
  * @param results The HSP results to propagate [in][out]
  */ 
 static int 
 s_BlastHSPBestHitFinal(void* data, BlastHSPResults* results)
 {
-   int qid, sid, id, new_allocated;
+   int qid, sid, id;
    BlastHSPBestHitData *bh_data = data;
-   BlastHSPBestHitParams* params = bh_data->params;
-   LinkedHSP_BH **best_list = bh_data->best_list, *p;
+   LinkedHSP_BH **best_list = bh_data->best_list;
    BlastHitList* hitlist;
    BlastHSPList* list;
-   Boolean allocated;
    double best_evalue, worst_evalue;
    Int4 low_score;
-   const int kStartValue = 100;
 
    /* rip best hits off the best_list and put them to results */
    for (qid=0; qid<results->num_queries; ++qid) {
       if (best_list[qid]) {
 
          if (!results->hitlist_array[qid]) {
-            results->hitlist_array[qid] = Blast_HitListNew(params->prelim_hitlist_size);
+            results->hitlist_array[qid] = 
+                Blast_HitListNew(bh_data->params->prelim_hitlist_size);
          }
          hitlist = results->hitlist_array[qid];
 
-         while (best_list[qid]) {
-            p = best_list[qid];
-            /* test to see if new hsplist has already been allocated */
-            allocated = FALSE;
-            for (sid=0; sid<hitlist->hsplist_count; ++sid) {
-                list = hitlist->hsplist_array[sid];
-                if (p->sid == list->oid) {
-                   allocated = TRUE;
-                   break;
-                }
-            }
-            if (!allocated) {
-                /* we must allocate a new hsplist*/
-                list = Blast_HSPListNew(0);
-                list->oid = p->sid;
-                list->query_index = qid;
-                if (sid >= hitlist->hsplist_current) {
-                   /* we must increase the pool size as well */
-                   new_allocated = MAX(kStartValue, 2*sid);
-                   hitlist->hsplist_array = (BlastHSPList **) 
-                      realloc(hitlist->hsplist_array, new_allocated*sizeof(BlastHSPList*));
-                   hitlist->hsplist_current = new_allocated;
-                }
-                hitlist->hsplist_array[sid] = list;
-                hitlist->hsplist_count++;
-            }
-            /* put the new hsp into the array */
-            id = list->hspcnt;
-            if (id >= list->allocated) {
-                /* we must increase the list size */
-                new_allocated = 2*id;
-                list->hsp_array = (BlastHSP**) 
-                      realloc(list->hsp_array, new_allocated*sizeof(BlastHSP*));
-                list->allocated = new_allocated;
-            }
-            p = best_list[qid];
-            list->hsp_array[id] = p->hsp;
-            list->hspcnt++;
-            best_list[qid] = p->next;
-            free(p);
-         }
+         s_ExportToHitlist(qid, bh_data, hitlist);
 
-         /* sort hsplist */
+         /* sort hsplists */
          worst_evalue = 0.0;
          low_score = INT4_MAX;
          for (sid=0; sid < hitlist->hsplist_count; ++sid) {
@@ -163,9 +239,12 @@ s_BlastHSPBestHitFinal(void* data, BlastHSPResults* results)
       }
    }
    sfree(bh_data->best_list);
+   sfree(bh_data->num_hsps);
+   sfree(bh_data->max_hsps);
    bh_data->best_list = NULL;
    return 0;
 }
+
 
 /** Perform writing task, will save best hits to best_list
  * @param data To store results to [in][out]
@@ -251,6 +330,7 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
              p = p->next;
              r->hsp = Blast_HSPFree(r->hsp);
              free(r);
+             --(bh_data->num_hsps[qid]);
          } else {
              q = p;
              p = p->next;
@@ -271,6 +351,14 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
          q->next = r;     
       } else {
          best_list[qid] = r;
+      }
+
+      /* If hsps exceed max limit, prune */
+      if ( ++(bh_data->num_hsps[qid]) > bh_data->max_hsps[qid]) {
+         BlastHitList *hitlist = Blast_HitListNew(bh_data->params->prelim_hitlist_size);
+         s_ExportToHitlist(qid, bh_data, hitlist);
+         s_ImportFromHitlist(qid, bh_data, hitlist);
+         Blast_HitListFree(hitlist);
       }
    }
 
@@ -517,14 +605,25 @@ s_BlastHSPBestHitPipeNew(void* params, BlastQueryInfo* query_info)
 
 BlastHSPBestHitParams*
 BlastHSPBestHitParamsNew(const BlastHitSavingOptions* hit_options,
-                         const BlastHSPBestHitOptions* best_hit_opts)
+                         const BlastHSPBestHitOptions* best_hit_opts,
+                         Int4 compositionBasedStats,
+                         Boolean gapped_calculation)
 {
     BlastHSPBestHitParams* retval = NULL;
+    Int4 prelim_hitlist_size = hit_options->hitlist_size;
+
+    if (compositionBasedStats)
+         prelim_hitlist_size = prelim_hitlist_size * 2 + 50;
+    else if (gapped_calculation)
+         prelim_hitlist_size = MIN(2 * prelim_hitlist_size,
+                                   prelim_hitlist_size + 50);
+
     retval = (BlastHSPBestHitParams*) malloc(sizeof(BlastHSPBestHitParams));
     retval->prelim_hitlist_size = MAX(hit_options->hitlist_size, 10);
+    retval->hsp_num_max = BlastHspNumMax(gapped_calculation, hit_options);
+    retval->program = hit_options->program_number;
     retval->overhang = best_hit_opts->overhang;
     retval->score_edge = best_hit_opts->score_edge;
-    retval->program = hit_options->program_number;
     return retval;
 }
 
