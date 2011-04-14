@@ -107,6 +107,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeCodonStart(
         CMappedFeat );
+    virtual bool x_AssignAttributeEvidence(
+        CMappedFeat );
 
     //
     //  Helper functions:

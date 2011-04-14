@@ -125,8 +125,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
     // If feature ids are present then they are likely used to show parent/child
     // relationships, via corresponding xrefs. Thus, any feature ids override
     // gb ID tags (feature ids and ID tags should agree in the first place, but
@@ -134,15 +132,15 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
     //
     bool bIdAssigned = false;
 
-    if ( feature.CanGetId() ) {
-        const CSeq_feat::TId& id = feature.GetId();
+    if ( mapped_feat.IsSetId() ) {
+        const CSeq_feat::TId& id = mapped_feat.GetId();
         string value = CGffWriteRecordFeature::x_FeatIdString( id );
         m_Attributes[ "ID" ] = value;
         bIdAssigned = true;
     }
 
-    if ( feature.CanGetXref() ) {
-        const CSeq_feat::TXref& xref = feature.GetXref();
+    if ( mapped_feat.IsSetXref() ) {
+        const CSeq_feat::TXref& xref = mapped_feat.GetXref();
         string value;
         for ( size_t i=0; i < xref.size(); ++i ) {
             if ( xref[i]->CanGetId() /* && xref[i]->CanGetData() */ ) {
@@ -165,16 +163,23 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnExtended(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
-    if ( feature.CanGetComment() ) {
-        m_Attributes[ "Note" ] = feature.GetComment();
+    // collection of feature attribute that we want to propagate to every feature
+    //  type under the sun
+    //
+    if ( ! x_AssignAttributeGene( mapped_feat ) ) {
+        return false;
     }
-    if ( feature.CanGetPseudo()  &&  feature.GetPseudo() ) {
-        m_Attributes[ "pseudo" ] = "";
+    if ( ! x_AssignAttributePseudo( mapped_feat ) ) {
+        return false;
     }
-    if ( feature.CanGetPartial()  &&  feature.GetPartial() ) {
-        m_Attributes[ "partial" ] = "";
+    if ( ! x_AssignAttributePartial( mapped_feat ) ) {
+        return false;
+    }
+    if ( ! x_AssignAttributeEvidence( mapped_feat ) ) {
+        return false;
+    }
+    if ( ! x_AssignAttributeNote( mapped_feat ) ) {
+        return false;
     }
     return true;
 }
@@ -256,10 +261,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesGene(
         x_AssignAttributeGeneSynonym( mapped_feat )  &&
         x_AssignAttributeLocusTag( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePartial( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeProduct( mapped_feat ) );
 }
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
@@ -267,11 +269,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePartial( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeProduct( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -280,24 +279,21 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributeCodonStart( mapped_feat )  &&
-        x_AssignAttributePartial( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeProduct( mapped_feat ) );
 }
+
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributePseudo( mapped_feat ) );
 }
+
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeGene(
     CMappedFeat mapped_feat )
@@ -485,6 +481,51 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeEvidence(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    const string strExperimentDefault(
+        "experimental evidence, no additional details recorded" );
+    const string strInferenceDefault(
+        "non-experimental evidence, no additional details recorded" );
+
+    bool bExperiment = false;
+    bool bInference = false;
+    const CSeq_feat::TQual& quals = mapped_feat.GetQual();
+    for ( CSeq_feat::TQual::const_iterator it = quals.begin(); 
+            ( it != quals.end() ) && ( !bExperiment && !bInference ); 
+            ++it ) {
+        if ( ! (*it)->CanGetQual() ) {
+            continue;
+        }
+        string strKey = (*it)->GetQual();
+        if ( strKey == "experiment" ) {
+            m_Attributes[ "experiment" ] = (*it)->GetVal();
+            bExperiment = true;
+        }
+        if ( strKey == "inference" ) {
+            m_Attributes[ "inference" ] = (*it)->GetVal();
+            bInference = true;
+        }
+    }
+
+    // "exp_ev" only enters if neither "experiment" nor "inference" qualifiers
+    //  present
+    if ( !bExperiment && !bInference ) {
+        if ( mapped_feat.IsSetExp_ev() ) {
+            if ( mapped_feat.GetExp_ev() == CSeq_feat::eExp_ev_not_experimental ) {
+                m_Attributes[ "inference" ] = strInferenceDefault;
+            }
+            else if ( mapped_feat.GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
+                m_Attributes[ "experiment" ] = strExperimentDefault;
+            }
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::AssignParent(
     const CGff3WriteRecordFeature& parent )
 //  ----------------------------------------------------------------------------
@@ -494,7 +535,7 @@ bool CGff3WriteRecordFeature::AssignParent(
         cerr << "Fix me: Parent record without GFF3 ID tag!" << endl;
         return false;
     }
-    this->m_Attributes[ "Parent" ] = strParentId;
+    m_Attributes[ "Parent" ] = strParentId;
     return true;
 }
 
