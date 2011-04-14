@@ -243,7 +243,8 @@ public:
     /// @return
     ///   - Convert "str" to "int" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
+    ///     errno is set to EINVAL or ERANGE in this case.
     ///   - Throw an exception otherwise.
     static int StringToInt(const CTempString& str,
                            TStringToNumFlags  flags = 0,
@@ -260,7 +261,8 @@ public:
     /// @return
     ///   - Convert "str" to "unsigned int" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
+    ///     errno is set to EINVAL or ERANGE in this case.
     ///   - Throw an exception otherwise.
     static unsigned int StringToUInt(const CTempString& str,
                                      TStringToNumFlags  flags = 0,
@@ -277,7 +279,8 @@ public:
     /// @return
     ///   - Convert "str" to "long" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
+    ///     errno is set to EINVAL or ERANGE in this case.
     ///   - Throw an exception otherwise.
     static long StringToLong(const CTempString& str,
                              TStringToNumFlags  flags = 0,
@@ -329,7 +332,8 @@ public:
     /// @return
     ///   - Convert "str" to "double" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
+    ///     errno is set to EINVAL or ERANGE in this case.
     ///   - Throw an exception otherwise.
     static double StringToDouble(const CTempStringEx& str,
                                  TStringToNumFlags    flags = 0);
@@ -351,7 +355,8 @@ public:
     /// @return
     ///   - Convert "str" to "Int8" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
+    ///     errno is set to EINVAL or ERANGE in this case.
     ///   - Throw an exception otherwise.
     static Int8 StringToInt8(const CTempString& str,
                              TStringToNumFlags  flags = 0,
