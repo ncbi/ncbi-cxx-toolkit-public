@@ -1688,8 +1688,26 @@ CDiagContext_Extra::CDiagContext_Extra(SDiagMessage::EEventType event_type)
     : m_EventType(event_type),
       m_Args(0),
       m_Counter(new int(1)),
-      m_Typed(false)
+      m_Typed(false),
+      m_PerfStatus(0),
+      m_PerfTime(0)
 {
+}
+
+
+CDiagContext_Extra::CDiagContext_Extra(int         status,
+                                       double      timespan,
+                                       TExtraArgs& args)
+    : m_EventType(SDiagMessage::eEvent_PerfLog),
+      m_Args(0),
+      m_Counter(new int(1)),
+      m_Typed(false),
+      m_PerfStatus(status),
+      m_PerfTime(timespan)
+{
+    if (args.empty()) return;
+    m_Args = new TExtraArgs;
+    m_Args->splice(m_Args->end(), args);
 }
 
 
@@ -1697,7 +1715,9 @@ CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
     : m_EventType(const_cast<CDiagContext_Extra&>(args).m_EventType),
       m_Args(const_cast<CDiagContext_Extra&>(args).m_Args),
       m_Counter(const_cast<CDiagContext_Extra&>(args).m_Counter),
-      m_Typed(args.m_Typed)
+      m_Typed(args.m_Typed),
+      m_PerfStatus(args.m_PerfStatus),
+      m_PerfTime(args.m_PerfTime)
 {
     (*m_Counter)++;
 }
@@ -1717,8 +1737,18 @@ void CDiagContext_Extra::Flush(void)
         CDiagContext::x_StartRequest();
     }
 
+    auto_ptr<CNcbiOstrstream> ostr;
+    char* buf = "";
+    size_t buflen = 0;
+    if (m_EventType == SDiagMessage::eEvent_PerfLog) {
+        ostr.reset(new CNcbiOstrstream);
+        *ostr << m_PerfStatus << " " << m_PerfTime;
+        buf = ostr->str();
+        buflen = ostr->pcount();
+    }
+
     SDiagMessage mess(eDiag_Info,
-                      "", 0, // no message
+                      buf, buflen,
                       0, 0, // file, line
                       CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
                       NULL,
@@ -1728,7 +1758,11 @@ void CDiagContext_Extra::Flush(void)
     mess.m_Event = m_EventType;
     mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), *m_Args);
     mess.m_TypedExtra = m_Typed;
+
     GetDiagBuffer().DiagHandler(mess);
+    if ( ostr.get() ) {
+        ostr->rdbuf()->freeze(false);
+    }
 }
 
 
@@ -1750,6 +1784,8 @@ CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
         m_Args = const_cast<CDiagContext_Extra&>(args).m_Args;
         m_Counter = const_cast<CDiagContext_Extra&>(args).m_Counter;
         m_Typed = args.m_Typed;
+        m_PerfStatus = args.m_PerfStatus;
+        m_PerfTime = args.m_PerfTime;
         (*m_Counter)++;
     }
     return *this;
@@ -5914,28 +5950,11 @@ const char* g_DiagUnknownFunction(void)
 }
 
 
-void g_PostPerf(int                       status,
-                const CTimeSpan&          span,
-                SDiagMessage::TExtraArgs& args)
+CDiagContext_Extra g_PostPerf(int                       status,
+                              double                    timespan,
+                              SDiagMessage::TExtraArgs& args)
 {
-    if ( CDiagContext::IsSetOldPostFormat() ) {
-        return;
-    }
-
-    CNcbiOstrstream ostr;
-    ostr << status << " " << span.AsString();
-    SDiagMessage mess(eDiag_Info,
-                      ostr.str(), ostr.pcount(),
-                      0, 0, // file, line
-                      CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
-                      NULL,
-                      0, 0, // err code/subcode
-                      NULL,
-                      0, 0, 0); // module/class/function
-    mess.m_Event = SDiagMessage::eEvent_PerfLog;
-    mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), args);
-    CDiagBuffer::DiagHandler(mess);
-    ostr.rdbuf()->freeze(false);
+    return CDiagContext_Extra(status, timespan, args);
 }
 
 

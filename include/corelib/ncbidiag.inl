@@ -49,10 +49,6 @@
 //
 
 
-// Forward declaration
-class CTimeSpan;
-
-
 class CDiagBuffer
 {
     CDiagBuffer(const CDiagBuffer&);
@@ -204,9 +200,9 @@ private:
     static bool              sm_CanDeleteErrCodeInfo;
 
     friend NCBI_XNCBI_EXPORT
-        void g_PostPerf(int                       status,
-                        const CTimeSpan&          span,
-                        SDiagMessage::TExtraArgs& args);
+        CDiagContext_Extra g_PostPerf(int                       status,
+                                      double                    timespan,
+                                      SDiagMessage::TExtraArgs& args);
 };
 
 extern CDiagBuffer& GetDiagBuffer(void);
@@ -622,10 +618,10 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 
 
 // The function should not be called directly, use performance guard instead.
-// The args will be modifies (emptied) by the function.
+// The 'args' list elements will be moved to the CDiagContext_Extra.
 NCBI_XNCBI_EXPORT
-extern void g_PostPerf(int                       status,
-                       const CTimeSpan&          span,
-                       SDiagMessage::TExtraArgs& args);
+extern CDiagContext_Extra g_PostPerf(int                       status,
+                                     double                    timespan,
+                                     SDiagMessage::TExtraArgs& args);
 
 #endif /* def CORELIB___NCBIDIAG__HPP  &&  ndef CORELIB___NCBIDIAG__INL */

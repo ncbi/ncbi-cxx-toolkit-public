@@ -1810,17 +1810,29 @@ public:
 private:
     void x_Release(void);
 
-    // Can be created only by CDiagContext.
-    CDiagContext_Extra(SDiagMessage::EEventType event_type);
-    friend class CDiagContext;
-
     typedef SDiagMessage::TExtraArg  TExtraArg;
     typedef SDiagMessage::TExtraArgs TExtraArgs;
+
+    // Can be created only by CDiagContext.
+    CDiagContext_Extra(SDiagMessage::EEventType event_type);
+    // Initialize performance log entry.
+    CDiagContext_Extra(int         status,
+                       double      timespan,
+                       TExtraArgs& args);
+
+    friend class CDiagContext;
+    friend NCBI_XNCBI_EXPORT
+        CDiagContext_Extra g_PostPerf(int                       status,
+                                      double                    timespan,
+                                      SDiagMessage::TExtraArgs& args);
 
     SDiagMessage::EEventType m_EventType;
     TExtraArgs*              m_Args;
     int*                     m_Counter;
     bool                     m_Typed;
+    // PerfLog data
+    int                      m_PerfStatus;
+    double                   m_PerfTime;
 };
 
 
