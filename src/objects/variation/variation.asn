@@ -30,7 +30,7 @@ VariantPlacement ::= SEQUENCE
         genomic(1),
         rna(2),
         protein(3)
-    },
+    } OPTIONAL,
 
     -- location flags
     placement-method INTEGER {
@@ -107,7 +107,7 @@ Variation ::= SEQUENCE
     --  - our current object's id
     --  - the id of this object's parent, if it exists
     --  - the sample ID that this item originates from
-    id        Dbtag,
+    id        Dbtag OPTIONAL,
     parent-id Dbtag OPTIONAL,
     sample-id SET OF Object-id OPTIONAL,
     other-ids SET OF Dbtag OPTIONAL,
@@ -123,8 +123,8 @@ Variation ::= SEQUENCE
 
     -- where this beast is seen
     -- note that this is a set of locations, and there are no restrictions to
-    -- the contents to this set
-    placements SET OF VariantPlacement,
+    -- the contents to this set. 
+    placements SET OF VariantPlacement OPTIONAL,
 
     -- phenotype
     phenotype SET OF Phenotype OPTIONAL,
