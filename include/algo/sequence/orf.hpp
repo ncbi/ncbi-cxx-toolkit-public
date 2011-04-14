@@ -67,19 +67,22 @@ public:
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1,
-                         const vector<string>& allowable_starts = vector<string>());
+                         const vector<string>& allowable_starts = vector<string>(),
+                         bool longest_orfs = true);
 
     static void FindOrfs(const vector<char>& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1,
-                         const vector<string>& allowable_starts = vector<string>());
+                         const vector<string>& allowable_starts = vector<string>(),
+                         bool longest_orfs = true);
 
     static void FindOrfs(const objects::CSeqVector& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1,
-                         const vector<string>& allowable_starts = vector<string>());
+                         const vector<string>& allowable_starts = vector<string>(),
+                         bool longest_orfs = true);
 
     /**
     /// This version returns an annot full of CDS features.
