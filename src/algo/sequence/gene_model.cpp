@@ -915,9 +915,9 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                ) {
         completeness = CMolInfo::eCompleteness_no_ends;
     } else if (cds_loc->IsPartialStart(eExtreme_Biological)) {
-        completeness = CMolInfo::eCompleteness_has_left;
-    } else if (cds_loc->IsPartialStop(eExtreme_Biological)) {
         completeness = CMolInfo::eCompleteness_has_right;
+    } else if (cds_loc->IsPartialStop(eExtreme_Biological)) {
+        completeness = CMolInfo::eCompleteness_has_left;
     } else {
         completeness = CMolInfo::eCompleteness_complete;
     }
