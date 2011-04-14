@@ -585,7 +585,6 @@ void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>
     request.SetLocalSkipHook(in, hook);
     request.SetLocalReadHook(in, new CSerial_FilterReadObjectsHook<TObject>(hook));
     do {
-        TRoot obj;
         try {
             Serial_FilterSkip(in,root);
         } catch ( CEofException& ) {
@@ -603,7 +602,6 @@ void Serial_FilterStdObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObje
     CObjectTypeInfo request = CStdTypeInfo<TObject>::GetTypeInfo();
     request.SetLocalSkipHook(in, hook);
     do {
-        TRoot obj;
         try {
             Serial_FilterSkip(in,root);
         } catch ( CEofException& ) {
