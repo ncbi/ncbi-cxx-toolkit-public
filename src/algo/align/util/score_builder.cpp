@@ -168,6 +168,17 @@ CScoreBuilder::~CScoreBuilder()
     m_ScoreBlk = BlastScoreBlkFree(m_ScoreBlk);
 }
 
+/// Get length of intersection between a range and a range collection
+static inline TSeqPos s_IntersectionLength(const CRangeCollection<TSeqPos> &ranges,
+                                           const TSeqRange &range)
+{
+    TSeqPos length = 0;
+    ITERATE (CRangeCollection<TSeqPos>, it, ranges) {
+        length += it->IntersectionWith(range).GetLength();
+    }
+    return length;
+}
+
 ///
 /// calculate mismatches and identities in a seq-align
 ///
@@ -212,7 +223,10 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
     CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(align.GetSeq_id(0));
     CBioseq_Handle genomic_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
     if ( !prod_bsh  ||  !genomic_bsh ) {
-        return;
+        const CSeq_id &failed_id = align.GetSeq_id(genomic_bsh ? 0 : 1);
+        NCBI_THROW(CException, eUnknown,
+                   "Can't get sequence data for " + failed_id.AsFastaString() +
+                   " in order to count identities/mismatches");
     }
 
     CSeqVector prod(prod_bsh, CBioseq_Handle::eCoding_Iupac);
@@ -436,45 +450,94 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
              int aln_identities = 0;
              int aln_mismatches = 0;
              bool has_non_standard = false;
-             if (ranges.begin()->IsWhole()) {
-                 ITERATE (CSpliced_seg::TExons, iter,
-                          align.GetSegs().GetSpliced().GetExons()) {
-                     const CSpliced_exon& exon = **iter;
-                     if (exon.IsSetParts()) {
-                         ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                             const CSpliced_exon_chunk& chunk = **it;
-                             switch (chunk.Which()) {
-                             case CSpliced_exon_chunk::e_Match:
-                                 aln_identities += chunk.GetMatch();
-                                 break;
-                             case CSpliced_exon_chunk::e_Mismatch:
-                                 aln_mismatches += chunk.GetMismatch();
-                                 break;
-    
-                             case CSpliced_exon_chunk::e_Diag:
+             ITERATE (CSpliced_seg::TExons, iter,
+                      align.GetSegs().GetSpliced().GetExons()) {
+                 const CSpliced_exon& exon = **iter;
+                 TSeqRange product_span;
+                 if (exon.GetProduct_start().IsNucpos()) {
+                     product_span.Set(exon.GetProduct_start().GetNucpos(),
+                                      exon.GetProduct_end().GetNucpos()-1);
+                 } else if (exon.GetProduct_start().IsProtpos()) {
+                     TSeqPos start_frame =
+                         exon.GetProduct_start().GetProtpos().GetFrame();
+                     if(start_frame > 0)
+                         --start_frame;
+                     TSeqPos end_frame =
+                         exon.GetProduct_start().GetProtpos().GetFrame();
+                     if(end_frame > 0)
+                         --end_frame;
+                     product_span.Set(
+                         exon.GetProduct_start().GetProtpos().GetAmin()*3
+                             + start_frame,
+                         exon.GetProduct_end().GetProtpos().GetAmin()*3
+                             + end_frame - 1);
+                 } else {
+                     NCBI_THROW(CException, eUnknown,
+                                "Spliced-exon is neither nuc nor prot");
+                 }
+                 if (exon.IsSetParts()) {
+                     TSeqPos part_start = product_span.GetFrom();
+                     ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                         const CSpliced_exon_chunk& chunk = **it;
+                         int part_len = 0;
+                         switch (chunk.Which()) {
+                         case CSpliced_exon_chunk::e_Match:
+                             part_len = chunk.GetMatch();
+                             aln_identities += s_IntersectionLength(ranges,
+                                                TSeqRange(part_start,
+                                                          part_start+part_len-1));
+                             break;
+     
+                         case CSpliced_exon_chunk::e_Mismatch:
+                             part_len = chunk.GetMismatch();
+                             aln_mismatches += s_IntersectionLength(ranges,
+                                                TSeqRange(part_start,
+                                                          part_start+part_len-1));
+                             break;
+     
+                         case CSpliced_exon_chunk::e_Diag:
+                             part_len = chunk.GetDiag();
+                             if (s_IntersectionLength(ranges,
+                                     TSeqRange(part_start,
+                                               part_start+part_len-1)))
+                             {
                                  has_non_standard = true;
-                                 break;
-    
-                             default:
-                                 break;
                              }
+                             break;
+     
+                         case CSpliced_exon_chunk::e_Product_ins:
+                             part_len = chunk.GetProduct_ins();
+                             break;
+     
+                         default:
+                             break;
                          }
-                     } else {
-                         aln_identities +=
-                             exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+                         part_start += part_len;
                      }
+                 } else {
+                     aln_identities += s_IntersectionLength(ranges, product_span);
                  }
-                 if ( !has_non_standard ) {
-                     *identities += aln_identities;
-                     *mismatches += aln_mismatches;
-                     break;
-                 }
+             }
+             if ( !has_non_standard ) {
+                 *identities += aln_identities;
+                 *mismatches += aln_mismatches;
+                 break;
              }
 
              /// we must compute match and mismatch based on first
-             /// prinicples
-             s_GetSplicedSegIdentityMismatch(scope, align, ranges,
-                                             identities, mismatches);
+             /// prinicples. Sometimes loader will fail in getting
+             /// all components of the genomic sequence; in that case
+             /// throw an exception, but make it somewhat more informative
+             try {
+                 s_GetSplicedSegIdentityMismatch(scope, align, ranges,
+                                                 identities, mismatches);
+             } catch (CLoaderException &) {
+                 NCBI_THROW(CException, eUnknown,
+                            "Can't calculate identities/mismatches for "
+                            "alignment with genomic sequence " +
+                            align.GetSeq_id(1).AsFastaString() +
+                            "; Loader can't load all required components of sequence");
+             }
          }}
         break;
 
