@@ -221,7 +221,7 @@ void s_LoadAllSeqEntries(
 }
 
 static
-CObjectIStreamAsn *s_LoadExpectedOutput( 
+void s_LoadExpectedOutput( 
     TSeqEntryVec &out_expected_seq_entries, 
     string input_file_name ) // yes, COPY input_file_name since we're going to change it
 {
@@ -250,8 +250,6 @@ CObjectIStreamAsn *s_LoadExpectedOutput(
             BOOST_CHECK_EQUAL("Could not open answer file for", input_file_name );
         }
     }
-
-    return result.release();
 }
 
 static
