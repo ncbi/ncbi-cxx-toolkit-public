@@ -202,6 +202,7 @@ public:
                     TLen min_len = 0;
                     TLen max_len = 0;
                     ITERATE(TLenVec, len_i, seg_lens) {
+                        if (*len_i == 0) continue;
                         if (min_len == 0  ||  min_len > *len_i) {
                             min_len = *len_i;
                         }
@@ -217,7 +218,7 @@ public:
                             id_vec[i]->SetBaseWidth(nuc_prot_diag ? 
                                                     (seg_lens[i] == min_len ? 3 : 1) :
                                                     -1);
-                        }                                
+                        }
                     }
 
                     first_seg = false;
