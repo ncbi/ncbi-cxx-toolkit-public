@@ -496,30 +496,32 @@ public:
 class CScore_CdsScore : public CAlignFilter::IScore
 {
 public:
-    CScore_CdsScore(CScoreBuilder::EScoreType type)
+    enum EScoreType {ePercentIdentity, ePercentCoverage, eStart, eEnd};
+
+    CScore_CdsScore(EScoreType type)
     : m_ScoreType(type)
-    {
-        NCBI_ASSERT(type == CScoreBuilder::eScore_PercentIdentity ||
-                    type == CScoreBuilder::eScore_PercentCoverage,
-                    "Unexpected CDS score type");
-    }
+    {}
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         switch (m_ScoreType) {
-        case CScoreBuilder::eScore_PercentIdentity:
+        case ePercentIdentity:
             ostr <<
                 "Percent-identity score confined to the coding region "
                 "associated with the align transcipt. Not supported "
                 "for standard-seg alignments.";
             break;
-        case CScoreBuilder::eScore_PercentCoverage:
+        case ePercentCoverage:
             ostr <<
                 "Percent-coverage score confined to the coding region "
                 "associated with the align transcipt.";
             break;
-        default:
-            NCBI_ASSERT(false, "Unexpected CDS score type");
+        case eStart:
+            ostr << "Start position of product's coding region.";
+            break; 
+        case eEnd:
+            ostr << "End position of product's coding region.";
+            break; 
         }
         ostr << " Note that this has meaning only if product has a coding "
                 "region annotation.";
@@ -536,21 +538,35 @@ public:
         CFeat_CI cds(product, CSeqFeatData::eSubtype_cdregion);
 
         if (cds) {
-            CRangeCollection<TSeqPos> cds_ranges;
-            for (CSeq_loc_CI it(cds->GetLocation()); it; ++it) {
-                cds_ranges += it.GetRange();
+            switch (m_ScoreType) {
+            case eStart:
+                score = cds->GetLocation().GetStart(eExtreme_Positional);
+                break;
+
+            case eEnd:
+                score = cds->GetLocation().GetStop(eExtreme_Positional);
+                break;
+
+            default:
+            {{
+                CRangeCollection<TSeqPos> cds_ranges;
+                for (CSeq_loc_CI it(cds->GetLocation()); it; ++it) {
+                    cds_ranges += it.GetRange();
+                }
+                score = m_ScoreType == ePercentIdentity
+                        ? CScoreBuilder().GetPercentIdentity(*scope, align,
+                                                            cds_ranges)
+                        : CScoreBuilder().GetPercentCoverage(*scope, align,
+                                                            cds_ranges);
+                break;
+            }}
             }
-            score = m_ScoreType == CScoreBuilder::eScore_PercentIdentity
-                    ? CScoreBuilder().GetPercentIdentity(*scope, align,
-                                                        cds_ranges)
-                    : CScoreBuilder().GetPercentCoverage(*scope, align,
-                                                        cds_ranges);
         }
         return score;
     }
 
 private:
-    const CScoreBuilder::EScoreType m_ScoreType;
+    const EScoreType m_ScoreType;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -577,6 +593,51 @@ public:
     {
         return sequence::GetTaxId(
                    scope->GetBioseqHandle(align.GetSeq_id(m_Row)));
+    }
+
+private:
+    int m_Row;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_LastSpliceSite : public CAlignFilter::IScore
+{
+public:
+    CScore_LastSpliceSite()
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Position of last splice site.  Note that this has meaning only "
+            "for Spliced-seg transcript alignments, and only if the alignment "
+            "has at least two exons.";
+    }
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        double score = numeric_limits<double>::quiet_NaN();
+        if (align.GetSegs().IsSpliced())
+        {
+            const CSpliced_seg &seg = align.GetSegs().GetSpliced();
+            if (seg.CanGetExons() && seg.GetExons().size() > 1 &&
+                seg.CanGetProduct_type() &&
+                seg.GetProduct_type() == CSpliced_seg::eProduct_type_transcript &&
+                seg.CanGetProduct_strand() &&
+                seg.GetProduct_strand() != eNa_strand_unknown)
+            {
+                const CSpliced_exon &last_spliced_exon =
+                    seg.GetProduct_strand() == eNa_strand_minus
+                        ? **++align.GetSegs().GetSpliced().GetExons().begin()
+                        : **++align.GetSegs().GetSpliced().GetExons().rbegin();
+                if (last_spliced_exon.CanGetProduct_end()) {
+                    score = last_spliced_exon.GetProduct_end().GetNucpos();
+                }
+            }
+        }
+        return score;
     }
 
 private:
@@ -657,12 +718,20 @@ void CAlignFilter::x_Init()
           CIRef<IScore>(new CScore_CdsInternalStops)));
     m_Scores.insert
         (TScoreDictionary::value_type
+         ("cds_start",
+          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::eStart))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("cds_end",
+          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::eEnd))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
          ("cds_pct_identity",
-          CIRef<IScore>(new CScore_CdsScore(CScoreBuilder::eScore_PercentIdentity))));
+          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::ePercentIdentity))));
     m_Scores.insert
         (TScoreDictionary::value_type
          ("cds_pct_coverage",
-          CIRef<IScore>(new CScore_CdsScore(CScoreBuilder::eScore_PercentCoverage))));
+          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::ePercentCoverage))));
 
     m_Scores.insert
         (TScoreDictionary::value_type
@@ -700,6 +769,11 @@ void CAlignFilter::x_Init()
         (TScoreDictionary::value_type
          ("subject_taxid",
           CIRef<IScore>(new CScore_Taxid(1))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("last_splice_site",
+          CIRef<IScore>(new CScore_LastSpliceSite)));
 }
 
 
