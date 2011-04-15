@@ -65,7 +65,7 @@ typedef enum {
     fFTP_UseFeatures  = 0x08,
     fFTP_UsePassive   = 0x10,  /* use only passive mode for data connection */
     fFTP_UseActive    = 0x20,  /* use only active  mode for data connection */
-    fFTP_UseCork      = 0x40   /* use TCP_CORK for data connection upload   */
+    fFTP_UncorkUpload = 0x40   /* do not use TCP_CORK for uploads           */
 } EFTP_Flags;
 typedef unsigned int TFTP_Flags;
 
