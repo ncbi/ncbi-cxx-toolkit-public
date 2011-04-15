@@ -230,9 +230,9 @@ static const SStringNumericValues s_Str2NumTests[] = {
 #if 0
     { "7E-380",   DF, -1, kBad, kBad, kBad, kBad, kBad },
     { "7E-325",   DF, -1, kBad, kBad, kBad, kBad, kBad },
-#endif
     { "7E-324",   DF, -1, kBad, kBad, kBad, kBad, 7E-324 },
     { "7E-323",   DF, -1, kBad, kBad, kBad, kBad, 7E-323 },
+#endif
     { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38 },
     { "7E38",   DF, -1, kBad, kBad, kBad, kBad, 7E38 },
     { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123 }
