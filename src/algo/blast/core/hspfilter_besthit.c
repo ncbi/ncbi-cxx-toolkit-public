@@ -123,10 +123,7 @@ s_ExportToHitlist(int qid,
          tmp_hit_list->hsplist_count++;
       }
 
-      if (Blast_HSPListUpdate(list, p->hsp)) {
-         p->hsp = Blast_HSPFree(p->hsp);
-      }
-
+      Blast_HSPListSaveHSP(list, p->hsp);
       best_list = p->next;
       free(p);
    }

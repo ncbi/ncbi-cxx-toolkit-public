@@ -128,11 +128,14 @@ s_BlastHSPCollectorRun(void* data, BlastHSPList* hsp_list)
             tmp_hsp_list->oid = hsp_list->oid;
          }
 
-         if (Blast_HSPListUpdate(tmp_hsp_list, hsp)) {
-            /* Cannot add more HSPs; free the memory */
-            hsp_list->hsp_array[index] = Blast_HSPFree(hsp);
-         }
+         Blast_HSPListSaveHSP(tmp_hsp_list, hsp);
+         hsp_list->hsp_array[index] = NULL;
       }
+
+      /* All HSPs from the hsp_list structure are now moved to the results 
+         structure, so set the HSP count back to 0 */
+      hsp_list->hspcnt = 0;
+      Blast_HSPListFree(hsp_list);
 
       /* Insert the hit list(s) into the appropriate places in the results 
          structure */
@@ -147,10 +150,6 @@ s_BlastHSPCollectorRun(void* data, BlastHSPList* hsp_list)
          }
       }
       sfree(hsp_list_array);
-      /* All HSPs from the hsp_list structure are now moved to the results 
-         structure, so set the HSP count back to 0 */
-      hsp_list->hspcnt = 0;
-      Blast_HSPListFree(hsp_list);
    } else if (hsp_list->hspcnt > 0) {
       /* Single query; save the HSP list directly into the results 
          structure */
