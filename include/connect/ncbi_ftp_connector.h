@@ -63,8 +63,9 @@ typedef enum {
     fFTP_LogAll       = fFTP_LogControl | fFTP_LogData,
     fFTP_NotifySize   = 0x04,  /* use CB to communicate file size to user   */
     fFTP_UseFeatures  = 0x08,
-    fFTP_UsePassive   = 0x10,  /* use only passive mode for data            */
-    fFTP_UseActive    = 0x20   /* use only active  mode for data            */
+    fFTP_UsePassive   = 0x10,  /* use only passive mode for data connection */
+    fFTP_UseActive    = 0x20,  /* use only active  mode for data connection */
+    fFTP_UseCork      = 0x40   /* use TCP_CORK for data connection upload   */
 } EFTP_Flags;
 typedef unsigned int TFTP_Flags;
 
@@ -82,9 +83,9 @@ typedef unsigned int TFTP_Flags;
  * Each time the size gets passed in as a '\0'-terminated character string.
  * The callback remains effective for the entire lifetime of the connector.
  *
- * NOTE:  With restarted data retrievals (REST) the size reported in the server
- * response to transfer initiation can be either the true size of the data to
- * be transferred or the entire size of the original file (without the restart
+ * NOTE:  With restarted data retrievals (REST) the size reported by the server
+ * in response to transfer initiation can be either the true size of the data
+ * to be received or the entire size of the original file (without the restart
  * offset taken into account), and the latter should be considered as a bug.
  */
 typedef EIO_Status (*FFTP_Callback)(void* data,
