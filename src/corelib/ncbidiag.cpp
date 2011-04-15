@@ -2024,6 +2024,8 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
             need_space = true;
             break;
         }
+    default:
+        return; // Prevent warning about other event types.
     }
     if ( !message.empty() ) {
         if (need_space) {
