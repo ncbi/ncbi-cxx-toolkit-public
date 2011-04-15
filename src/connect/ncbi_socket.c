@@ -6145,23 +6145,73 @@ extern ESwitch SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
 
 
 /*ARGSUSED*/
+extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
+{
+    char _id[MAXIDLEN];
+
+    if (sock->sock == SOCK_INVALID) {
+        CORE_LOGF_X(158, eLOG_Warning,
+                    ("%s[SOCK::SetCork] "
+                     " Invalid socket",
+                     s_ID(sock, _id)));
+        return;
+    }
+    if (sock->type == eDatagram) {
+        CORE_LOGF_X(159, eLOG_Error,
+                    ("%s[SOCK::SetCork] "
+                     " Datagram socket",
+                     s_ID(sock, _id)));
+        assert(0);
+    }
+
+#ifdef TCP_CORK
+    if (setsockopt(sock->sock, IPPROTO_TCP, TCP_CORK,
+                   (char*) &on_off, sizeof(on_off)) != 0) {
+        int x_error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(x_error);
+        CORE_LOGF_ERRNO_EXX(160, eLOG_Warning,
+                            x_error, strerr,
+                            ("%s[SOCK::SetCork] "
+                             " Failed setsockopt(%sTCP_CORK)",
+                             s_ID(sock, _id), on_off ? "" : "!"));
+        UTIL_ReleaseBuffer(strerr);
+    }
+#endif /*TCP_CORK*/
+}
+
+
+/*ARGSUSED*/
 extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
 {
+    char _id[MAXIDLEN];
+
+    if (sock->sock == SOCK_INVALID) {
+        CORE_LOGF_X(156, eLOG_Warning,
+                    ("%s[SOCK::DisableOSSendDelay] "
+                     " Invalid socket",
+                     s_ID(sock, _id)));
+        return;
+    }
+    if (sock->type == eDatagram) {
+        CORE_LOGF_X(157, eLOG_Error,
+                    ("%s[SOCK::DisableOSSendDelay] "
+                     " Datagram socket",
+                     s_ID(sock, _id)));
+        assert(0);
+        return;
+    }
+
 #ifdef TCP_NODELAY
-    if (sock->sock != SOCK_INVALID) {
-        int n = (int) on_off;
-        if (setsockopt(sock->sock, IPPROTO_TCP, TCP_NODELAY,
-                       (void*)&n, sizeof(n)) != 0) {
-            int x_error = SOCK_ERRNO;
-            char _id[MAXIDLEN];
-            const char* strerr = SOCK_STRERROR(x_error);
-            CORE_LOGF_ERRNO_EXX(75, eLOG_Warning,
-                                x_error, strerr,
-                                ("%s[SOCK::DisableOSSendDelay] "
-                                 " Failed setsockopt(%sTCP_NODELAY)",
-                                 s_ID(sock, _id), on_off ? "" : "!"));
-            UTIL_ReleaseBuffer(strerr);
-        }
+    if (setsockopt(sock->sock, IPPROTO_TCP, TCP_NODELAY,
+                   (char*) &on_off, sizeof(on_off)) != 0) {
+        int x_error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(x_error);
+        CORE_LOGF_ERRNO_EXX(75, eLOG_Warning,
+                            x_error, strerr,
+                            ("%s[SOCK::DisableOSSendDelay] "
+                             " Failed setsockopt(%sTCP_NODELAY)",
+                             s_ID(sock, _id), on_off ? "" : "!"));
+        UTIL_ReleaseBuffer(strerr);
     }
 #endif /*TCP_NODELAY*/
 }

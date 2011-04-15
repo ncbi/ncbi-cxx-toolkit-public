@@ -83,6 +83,7 @@
  *  SOCK_GetOSHandle
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
+ *  SOCK_SetCork
  *  SOCK_DisableOSSendDelay
  *
  * Datagram Socket:
@@ -1242,18 +1243,39 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
 
 
 /** Control OS-defined send strategy by disabling/enabling TCP
+ * layer to send incomplete network frames (packets).
+ * With the "cork" set on, data gets always buffered until a complete
+ * hardware packet is full (or connection is about to close), and only
+ * then is sent out to the medium.
+ * The setting cancels any effects of SOCK_DisableOSSendDelay().
+ * @param sock
+ *  [in]  socket handle [stream socket only]
+ * @param on_off
+ *  [in]  1 to set the cork; 0 to remove the cork
+ * @sa
+ *  SOCK_DisableOSSendDelay
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
+(SOCK         sock,
+ int/**bool*/ on_off  
+ );
+
+
+/** Control OS-defined send strategy by disabling/enabling TCP
  * Nagle algorithm that packs multiple requests into a single
- * frame and thus transferring data in fewer transactions,
+ * packet and thus transferring data in fewer transactions,
  * miminizing the network traffic and bursting the throughput.
  * Some applications, however, may find it useful to disable this
  * default behavior for the sake of their performance increase
  * (like in case of short transactions otherwise held by the system
  * to be possibly coalesced into larger chunks).
+ * The setting cancels any effects of SOCK_SetCork().
  * @param sock
- *  [in]  socket handle
+ *  [in]  socket handle [stream socket only]
  * @param on_off
- *
- * NB: use true to disable; false to enable
+ *  [in]  1 to disable the send delay; 0 to enable the send delay
+ * @sa
+ *  SOCK_SetCork
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
 (SOCK         sock,

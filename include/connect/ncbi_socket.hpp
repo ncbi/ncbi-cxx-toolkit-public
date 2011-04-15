@@ -326,6 +326,12 @@ public:
     ///
     void    SetReuseAddress(ESwitch reuse = eOff);
 
+    /// @note  see comments for SOCK_SetCork() in "ncbi_socket.h"
+    ///
+    /// @param on_off
+    ///
+    void    SetCork(bool on_off = true);
+
     /// @note  see comments for SOCK_DisableOSSendDelay() in "ncbi_socket.h"
     ///
     /// @param on_off
@@ -835,6 +841,13 @@ inline void CSocket::SetReuseAddress(ESwitch reuse)
 {
     if ( m_Socket )
         SOCK_SetReuseAddress(m_Socket, reuse);
+}
+
+
+inline void CSocket::SetCork(bool on_off)
+{
+    if ( m_Socket )
+        SOCK_SetCork(m_Socket, on_off);
 }
 
 
