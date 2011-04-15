@@ -153,8 +153,6 @@ void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec, \
     CBufferWriter< Type > bw(data); \
     CBufferWriterStream< Type > ostr(bw); \
  \
-    Uint4 uid = vec.GetId(); \
-    ostr.write((const char*)&uid, sizeof(uid)); \
     ostr.write((const char*)&vec.Get()[0],  \
                sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.Get().size()); \
 }
@@ -192,16 +190,6 @@ void Decode<Uint4, float>(const void* data, size_t size,
                      sizeof(CRawScoreVector<Uint4, float>::TIdxScore));
 
     CNcbiIstrstream istr((const char*)data, size);
-
-    /// uid should be guaranteed
-    Uint4 uid = 0;
-    istr.read((char*)&uid, sizeof(uid));
-    vec.SetId(uid);
-
-    if ( !uid ) {
-        /// invalid UID; no data returned
-        return;
-    }
 
     /// data strip while valid
     while (istr) {

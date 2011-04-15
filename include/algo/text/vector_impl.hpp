@@ -34,6 +34,8 @@
 #include <math.h>
 #include <set>
 
+#include <corelib/ncbiutil.hpp>
+
 
 #ifndef ALGO_TEXT___VECTOR__HPP
 #  error  This file should never be included directly
@@ -65,13 +67,7 @@ struct SSortByFirst : public binary_function< pair<T,U>,  pair<T,U>, bool>
 {
     bool operator()(const pair<T,U>& it1, const pair<T,U>& it2) const
     {
-        if (it1.first < it2.first) {
-            return true;
-        } else if (it2.first < it1.first) {
-            return false;
-        } else {
-            return it2.second < it1.second;
-        }
+        return (it1.first < it2.first);
     }
 };
 
@@ -81,13 +77,7 @@ struct SSortBySecond : public binary_function<pair<T,U>, pair<T,U>, bool>
 {
     bool operator()(const pair<T,U>& it1, const pair<T,U>& it2) const
     {
-        if (it2.second < it1.second) {
-            return true;
-        } else if (it1.second < it2.second) {
-            return false;
-        } else {
-            return it1.first < it1.first;
-        }
+        return (it2.second < it1.second);
     }
 };
 
@@ -447,9 +437,11 @@ void CRawScoreVector<Key, Score>::TrimCount(size_t max_words)
     /// erase and re-sort
     if (iter != m_Data.end()) {
         m_Data.erase(iter, m_Data.end());
-        std::sort(m_Data.begin(), m_Data.end(),
-                  SSortByFirst<Key, Score>());
     }
+
+    /// first, sort by score
+    /// this sorts in descending order!
+    SortByIndex();
 }
 
 
@@ -567,10 +559,11 @@ CRawScoreVector<Key, Score>::operator+=(const CRawScoreVector<Key, Score>& other
 
     bool need_sort = false;
     for ( ;  begin != end;  ++begin) {
+        iterator pseudo_end = m_Data.begin() + orig_size;
         iterator iter =
-            lower_bound(m_Data.begin(), m_Data.begin() + orig_size,
+            lower_bound(m_Data.begin(), pseudo_end,
                         *begin, SSortByFirst<Key, Score>());
-        if (iter == m_Data.end()  ||  iter->first != begin->first) {
+        if (iter == pseudo_end  ||  iter->first != begin->first) {
             m_Data.push_back(*begin);
             need_sort = true;
         } else {
@@ -579,7 +572,7 @@ CRawScoreVector<Key, Score>::operator+=(const CRawScoreVector<Key, Score>& other
     }
 
     if (need_sort) {
-        if (is_sorted(m_Data.begin() + orig_size, m_Data.end())) {
+        if (std::is_sorted(m_Data.begin() + orig_size, m_Data.end())) {
             std::inplace_merge(m_Data.begin(),
                                m_Data.begin() + orig_size,
                                m_Data.end(),
