@@ -457,8 +457,8 @@ static inline streamsize s_Readsome(CNcbiIstream& is,
 {
 #  ifdef NCBI_COMPILER_WORKSHOP
     /* Rogue Wave does not always return correct value from is.readsome() :-/
-     * In particular, when streambuf::showmanyc() returns 1 followed by
-     * a failed read() [which implements extraction from the stream], which
+     * In particular, when streambuf::showmanyc() returns 1 followed by a
+     * failed read() [that implements the extraction from the stream], which
      * encounters the EOF, the readsome() will blindly return 1, and in
      * general, always exactly the number of bytes showmanyc() reported,
      * regardless of actually extracted by subsequent read operation.  Bug!
@@ -487,10 +487,10 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
     streamsize avail = is.rdbuf()->in_avail();
-    if (avail == 0)
-        avail++; // we still must read
+    if (avail <= 0)
+        avail  = 1; // we still must read
     else if (buf_size < avail)
-        avail = buf_size;
+        avail  = buf_size;
     // Protect read() from throwing any exceptions
     IOS_BASE::iostate save = is.exceptions();
     if (save)
