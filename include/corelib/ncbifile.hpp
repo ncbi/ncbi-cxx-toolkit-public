@@ -822,9 +822,9 @@ public:
     ///   TRUE if the time(s) changed successfully, FALSE otherwise.
     /// @sa
     ///   SetTimeT, GetTime
-    bool SetTime(CTime* modification = 0,
-                 CTime* last_access  = 0,
-                 CTime* creation     = 0) const;
+    bool SetTime(const CTime* modification = 0,
+                 const CTime* last_access  = 0,
+                 const CTime* creation     = 0) const;
 
     /// Set time stamp(s) of a directory entry (time_t version).
     ///
@@ -841,9 +841,9 @@ public:
     ///   TRUE if the time(s) changed successfully, FALSE otherwise.
     /// @sa
     ///   SetTime, GetTimeT
-    bool SetTimeT(time_t* modification = 0,
-                  time_t* last_access  = 0,
-                  time_t* creation     = 0) const;
+    bool SetTimeT(const time_t* modification = 0,
+                  const time_t* last_access  = 0,
+                  const time_t* creation     = 0) const;
 
 
     /// What IsNewer() should do if the dir entry does not exist or

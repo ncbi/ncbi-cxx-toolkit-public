@@ -1374,9 +1374,9 @@ bool CDirEntry::GetTime(CTime* modification,
 }
 
 
-bool CDirEntry::SetTime(CTime* modification,
-                        CTime* last_access,
-                        CTime* creation) const
+bool CDirEntry::SetTime(const CTime* modification,
+                        const CTime* last_access,
+                        const CTime* creation) const
 {
 #ifdef NCBI_OS_MSWIN
     if ( !modification  &&  !last_access  &&  !creation ) {
@@ -1512,9 +1512,9 @@ bool CDirEntry::GetTimeT(time_t* modification,
 }
 
 
-bool CDirEntry::SetTimeT(time_t* modification,
-                         time_t* last_access,
-                         time_t* creation) const
+bool CDirEntry::SetTimeT(const time_t* modification,
+                         const time_t* last_access,
+                         const time_t* creation) const
 {
 #ifdef NCBI_OS_MSWIN
     if ( !modification  &&  !last_access  &&  !creation ) {
