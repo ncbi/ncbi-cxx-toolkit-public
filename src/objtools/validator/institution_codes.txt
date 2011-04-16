@@ -5917,6 +5917,7 @@ UNAC	s	Universidad Nacional Agraria
 UNAD	s	Universidad Nacional Agraria
 UNAF	s	University of North Alabama, Department of Biology
 UNAM	s	Universidad Nacional Autonoma de Mexico
+UNAM:CNPGG	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green
 UNAN	s	Universidad Nacional Autonoma de Nicaragua
 UNB	s	University of New Brunswick, Biology Department
 UNC-B	s	University of Northern Colorado
@@ -6074,7 +6075,7 @@ USTK	s	University of Science and Technology, Museum of Natural History
 USU	s	United States Department of Agriculture
 USZ	s	Universidad Autonoma Gabriel Rene Moreno
 UT<USA-TN>	s	University of Tennessee
-UT<USA-UT>	s	University of Utah
+UT<USA-UT>	s	University of Utah Herbarium
 UTA	s	University of Texas at Arlington
 UTAI	s	Tel Aviv University
 UTC	s	Utah State University, Biology Department
@@ -6094,10 +6095,10 @@ UTV	s	Universita degli Studi della Tuscia, Dipartimento di Agrobiologia e Agroch
 UTZM	s	University of Tsukubo
 UU<SWE>	s	University of Uppsala
 UU<UKR>	s	Uzhgorod State University, Botany Department
-UU<USA-UT>	s	University of Utah
+UU<USA-UT>	s	University of Utah, Department of Biology
 UUC	c	Janet A. Robertson Collection of Ureaplasma urealyticum Cultures
 UUH	s	Institute of General and Experimental Biology, Department of Floristics and Geobotany
-UUVP	s	University of Utah
+UUVP	s	University of Utah, Vertebrate Paleontology
 UUZM	s	Uppsala University, Zoological Museum
 UV<CHL>	s	University of Valparaiso
 UV<COL>	s	Departamento de Biologia de la Universidad del Valle
