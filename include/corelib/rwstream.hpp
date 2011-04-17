@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 /// Note about the "buf_size" parameter for the streams in this API.
 ///
 /// CRWStream implementation is targeted at minimizing in-memory data
-/// copy operations assosiated with I/O for intermediate buffering.
+/// copy operations associated with I/O for intermediate buffering.
 /// For that, the following policies apply:
 ///
 /// 1.  No read operation from the output device shall be requested less than
@@ -96,7 +96,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// @param flags
 ///     controls whether IReader is destroyed upon stream destruction,
-///     and whether exceptions cause logging (or caught silently).
+///     and whether exceptions cause logging (or leaked, or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
@@ -132,7 +132,7 @@ private:
 ///
 /// @param flags
 ///     controls whether IWriter is destroyed upon stream destruction,
-///     and whether exceptions cause logging (or caught silently).
+///     and whether exceptions cause logging (or leaked, or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
@@ -169,7 +169,7 @@ private:
 ///
 /// @param flags
 ///     controls whether IReader is destroyed upon stream destruction,
-///     and whether exceptions cause logging (or caught silently).
+///     and whether exceptions cause logging (or leaked, or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///

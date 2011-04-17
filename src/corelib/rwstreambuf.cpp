@@ -90,6 +90,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 const char* g_RW_ResultToString(ERW_Result res)
 {
     _ASSERT(res >= eRW_NotImplemented && res <= eRW_Eof);
@@ -172,10 +173,10 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     }
 
     if (gptr()  &&  gptr() != egptr()) {
-        ERR_POST_X(3, Error << "CRWStreambuf::setbuf(): Read data pending");
+        ERR_POST_X(3,Critical << "CRWStreambuf::setbuf(): Read data pending");
     }
     if (pptr()  &&  pptr() != pbase()) {
-        ERR_POST_X(4, Error << "CRWStreambuf::setbuf(): Write data pending");
+        ERR_POST_X(4,Critical << "CRWStreambuf::setbuf(): Write data pending");
     }
 
     delete[] m_pBuf;
