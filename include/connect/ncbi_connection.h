@@ -63,10 +63,17 @@ struct SConnectionTag;
 typedef struct SConnectionTag* CONN;      /* connection handle */
 
 
-/* Compose all data necessary to establish a new connection
- * (merely bind it to the specified connector). Unsuccessful completion
- * sets conn to 0, and leaves connector intact (can be used again).
- * NOTE1:  The real connection will not be established right away. Instead,
+typedef enum {
+    fCONN_Untie      = 1,  /* do not call flush method prior to every read   */
+    fCONN_Supplement = 2   /* supplement I/O with extended return codes      */
+} ECONN_Flags;
+typedef unsigned int TCONN_Flags;  /* bitwise OR of ECONN_Flags   */
+
+
+/* Create all data necessary to establish a new connection (merely bind it to
+ * the specified connector). Unsuccessful completion  sets conn to 0, and
+ * leaves the connector intact (can be used again).
+ * NOTE1:  The real connection will not be established right away.  Instead,
  *         it will be established at the moment of the first call to one of
  *         "Flush", "Wait", "Write", or "Read" methods.
  * NOTE2:  "Connection establishment" at this level of abstraction may differ
@@ -74,9 +81,16 @@ typedef struct SConnectionTag* CONN;      /* connection handle */
  * NOTE3:  Initial timeout values are set to kDefaultTimeout, meaning
  *         that connector-specific timeouts are in force for the connection.
  */
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_CreateEx
+(CONNECTOR   connector,  /* [in]  connector                        */
+ TCONN_Flags flags,      /* [in]  connection flags                 */
+ CONN*       conn        /* [out] handle of the created connection */
+ );
+
+/* Same as CONN_CreateEx() called with 0 in the "flags" parameter */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
-(CONNECTOR connector,  /* [in]  connector                        */
- CONN*     conn        /* [out] handle of the created connection */
+(CONNECTOR   connector,  /* [in]  connector                        */
+ CONN*       conn        /* [out] handle of the created connection */
  );
 
 
