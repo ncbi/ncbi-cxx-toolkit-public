@@ -271,7 +271,8 @@ int main(int argc, const char* argv[])
     if (!size)
         ERR_POST(Fatal << "No file downloaded");
 
-    LOG_POST("Test 2 passed: 1024+" << size << " byte(s) downloaded via FTP\n");
+    LOG_POST("Test 2 passed: 1024+" << size <<
+             " byte(s) downloaded via FTP\n");
 
 
     LOG_POST("Test 3 of 8: FTP upload");
@@ -302,11 +303,11 @@ int main(int argc, const char* argv[])
             if (upload.write(buf, n))
                 size += n;
         }
-        unsigned long val = 0;
+        if (!upload)
+            ERR_POST(Fatal << "Test 3 failed: FTP upload error");
         unsigned long filesize = 0;
-        if (upload) {
-            upload >> val;
-        }
+        unsigned long val = 0;
+        upload >> val;
         time_t delta = 0;
         if (size  &&  val == (unsigned long) size) {
             string speedstr;
