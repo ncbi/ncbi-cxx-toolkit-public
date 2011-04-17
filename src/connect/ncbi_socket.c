@@ -5702,12 +5702,12 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 
     if (sock->sock != SOCK_INVALID) {
         switch (how) {
-        case eIO_ReadPlain:
-            status = s_Read(sock, buf, size, &x_read, 0/*read*/);
-            break;
-
         case eIO_ReadPeek:
             status = s_Read(sock, buf, size, &x_read, 1/*peek*/);
+            break;
+
+        case eIO_ReadPlain:
+            status = s_Read(sock, buf, size, &x_read, 0/*read*/);
             break;
 
         case eIO_ReadPersist:
@@ -5724,11 +5724,11 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         default:
             CORE_LOGF_X(65, eLOG_Error,
                         ("%s[SOCK::Read] "
-                         " Invalid read method #%u",
+                         " Unsupported read method #%u",
                          s_ID(sock, _id), (unsigned int) how));
-            assert(0);
+            status = eIO_NotSupported;
             x_read = 0;
-            status = eIO_InvalidArg;
+            assert(0);
             break;
         }
     } else {
@@ -5736,8 +5736,8 @@ extern EIO_Status SOCK_Read(SOCK           sock,
                     ("%s[SOCK::Read] "
                      " Invalid socket",
                      s_ID(sock, _id)));
-        x_read = 0;
         status = eIO_Closed;
+        x_read = 0;
     }
 
     if (n_read)
@@ -5928,11 +5928,11 @@ extern EIO_Status SOCK_Write(SOCK            sock,
         default:
             CORE_LOGF_X(69, eLOG_Error,
                         ("%s[SOCK::Write] "
-                         " Invalid write method #%u",
+                         " Unsupported write method #%u",
                          s_ID(sock, _id), (unsigned int) how));
-            assert(0);
+            status = eIO_NotSupported;
             x_written = 0;
-            status = eIO_InvalidArg;
+            assert(0);
             break;
         }
     } else {
@@ -5940,8 +5940,8 @@ extern EIO_Status SOCK_Write(SOCK            sock,
                     ("%s[SOCK::Write] "
                      " Invalid socket",
                      s_ID(sock, _id)));
-        x_written = 0;
         status = eIO_Closed;
+        x_written = 0;
     }
 
     if (n_written)
