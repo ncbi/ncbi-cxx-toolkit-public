@@ -59,9 +59,9 @@ public:
                     streamsize buf_size, bool tie,
                     CT_CHAR_TYPE* ptr, size_t size);
     virtual   ~CConn_Streambuf()   { Close();  delete[] m_WriteBuf; }
-    CONN       GetCONN(void) const { return m_Conn;        }
-    EIO_Status Status(void)  const { return m_Status;      }
-    EIO_Status Close(void)         { return x_Close(true); }
+    CONN       GetCONN(void) const { return m_Conn;                 }
+    EIO_Status Close  (void)       { return x_Close(true);          }
+    EIO_Status Status (EIO_Event direction = eIO_Open) const;
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -87,7 +87,7 @@ private:
     CT_CHAR_TYPE*       m_WriteBuf;  // m_ReadBuf + m_BufSize (0 if unbuffered)
     streamsize          m_BufSize;   // of m_ReadBuf, m_WriteBuf (if buffered)
 
-    EIO_Status          m_Status;    // Status of last IO as returned from CONN
+    EIO_Status          m_Status;    // status of last I/O completed by CONN
 
     bool                m_Tie;       // always flush before reading
     bool                m_Close;     // if to actually close CONN in dtor

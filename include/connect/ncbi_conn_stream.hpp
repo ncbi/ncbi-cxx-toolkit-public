@@ -98,17 +98,17 @@ const streamsize kConn_DefaultBufSize = 4096;
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Base class, inherited from "std::iostream", does both input
-/// and output, using the specified CONNECTOR.  Input operations
-/// can be tied to the output ones by setting "do_tie" to "true"
-/// (default), which means that any input attempt first flushes
-/// the output queue from the internal buffers.  "Buf_size" designates
-/// the size of internal I/O buffers, which reside in between
-/// stream and underlying connector (which in turn may do
+/// and output, using the specified CONNECTOR.
+/// "Buf_size" designates the size of internal I/O buffers, which reside in
+/// between the stream and an underlying connector (which in turn may do
 /// further buffering, if needed).
+/// Input operations can be tied to the output ones by setting "tie" to "true"
+/// (default), which means that any input attempt first flushes any pending
+/// output from the internal buffers.
 ///
-/// Note: CConn_IOStream implementation utilizes the eCONN_OnClose callback
+/// @note CConn_IOStream implementation utilizes the eCONN_OnClose callback
 ///       on the underlying CONN object.  Care must be taken when intercepting
-///       the callback later using the native CONN API.
+///       the callback using the native CONN API.
 /// @sa
 ///    CONN_SetCallback, eCONN_OnClose
 
@@ -128,7 +128,7 @@ public:
     ///  Default I/O timeout
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
-    /// @param do_tie
+    /// @param tie
     ///  Specifies whether to tie output to input -- a tied stream flushes
     ///  all pending output prior to doing any input.
     /// @sa
@@ -139,7 +139,7 @@ public:
      bool            close    = false,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize,
-     bool            do_tie   = true,
+     bool            tie      = true,
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
 
@@ -155,7 +155,7 @@ protected:
     ///  Default I/O timeout
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
-    /// @param do_tie
+    /// @param tie
     ///  Specifies whether to tie output to input -- a tied stream flushes
     ///  all pending output prior to doing any input.
     /// @sa
@@ -164,7 +164,7 @@ protected:
     (CONNECTOR       connector,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize,
-     bool            do_tie   = true,
+     bool            tie      = true,
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
 
@@ -183,29 +183,31 @@ public:
     ///   CONN_Description
     string          GetDescription(void) const;
 
-    /// @return
-    ///   Connection timeout for "direction"
-    /// @sa
-    ///   CONN_GetTimeout
-    const STimeout* GetTimeout(EIO_Event direction) const;
-
     /// Set connection timeout for "direction"
     /// @sa
     ///   CONN_SetTimeout
     EIO_Status      SetTimeout(EIO_Event       direction,
                                const STimeout* timeout= kDefaultTimeout) const;
 
+    /// @return
+    ///   Connection timeout for "direction"
+    /// @sa
+    ///   CONN_GetTimeout
+    const STimeout* GetTimeout(EIO_Event direction) const;
+
+    /// @return
+    ///   Status of last performed I/O from the underlying CONN in
+    ///   the specified "direction" (either eIO_Read or eIO_Write);
+    ///   if "direction" is not specified (eIO_Open), return status
+    ///   of the last CONN I/O performed by the stream.
+    /// @sa
+    ///   CONN_Status
+    EIO_Status      Status(EIO_Event direction = eIO_Open) const;
+
     /// Cancel stream connection
     /// @sa
     ///   CONN_Cancel
     EIO_Status      Cancel(void) const;
-    
-    /// Note this is *not* CONN_Status
-    /// @return
-    ///   Status of last performed I/O (regardless direction)
-    /// @sa
-    ///   CONN, ncbi_connection.h, EIO_Status
-    EIO_Status      Status(void) const;
 
     /// Close CONNection, free all internal buffers and underlying structures,
     /// and render stream unusable for further I/O.
@@ -603,13 +605,16 @@ public:
     (const string&        host,
      const string&        user,
      const string&        pass,
-     const string&        path     = kEmptyStr,
-     unsigned short       port     = 0,
-     TFTP_Flags           flag     = 0,
-     const SFTP_Callback* cmcb     = 0,
-     const STimeout*      timeout  = kDefaultTimeout,
-     streamsize           buf_size = kConn_DefaultBufSize
+     const string&        path    = kEmptyStr,
+     unsigned short       port    = 0,
+     TFTP_Flags           flag    = 0,
+     const SFTP_Callback* cmcb    = 0,
+     const STimeout*      timeout = kDefaultTimeout
      );
+
+    // Abort any command in progress, read and discard all input data
+    // NB:  The call empties both the stream and the underlying CONN
+    virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
 
 private:
     // Disable copy constructor and assignment.
@@ -624,16 +629,15 @@ class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 public:
     CConn_FTPDownloadStream
     (const string&        host,
-     const string&        file     = kEmptyStr,
-     const string&        user     = "ftp",
-     const string&        pass     = "-none",  // "-" helps make login quieter
-     const string&        path     = kEmptyStr,
-     unsigned short       port     = 0,
-     TFTP_Flags           flag     = 0,
-     const SFTP_Callback* cmcb     = 0,
-     streamsize           offset   = 0,
-     const STimeout*      timeout  = kDefaultTimeout,
-     streamsize           buf_size = kConn_DefaultBufSize
+     const string&        file    = kEmptyStr,
+     const string&        user    = "ftp",
+     const string&        pass    = "-none",  // "-" helps make login quieter
+     const string&        path    = kEmptyStr,
+     unsigned short       port    = 0,
+     TFTP_Flags           flag    = 0,
+     const SFTP_Callback* cmcb    = 0,
+     streamsize           offset  = 0,
+     const STimeout*      timeout = kDefaultTimeout
      );
 
 private:
@@ -650,13 +654,12 @@ public:
     (const string&   host,
      const string&   user,
      const string&   pass,
-     const string&   file     = kEmptyStr,
-     const string&   path     = kEmptyStr,
-     unsigned short  port     = 0,
-     TFTP_Flags      flag     = 0,
-     streamsize      offset   = 0,
-     const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize
+     const string&   file    = kEmptyStr,
+     const string&   path    = kEmptyStr,
+     unsigned short  port    = 0,
+     TFTP_Flags      flag    = 0,
+     streamsize      offset  = 0,
+     const STimeout* timeout = kDefaultTimeout
      );
 
 private:

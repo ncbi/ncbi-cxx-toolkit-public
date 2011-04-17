@@ -39,6 +39,7 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/stream_utils.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Connect_Stream
@@ -48,12 +49,12 @@ BEGIN_NCBI_SCOPE
 
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
-                               streamsize buf_size, bool do_tie,
+                               streamsize buf_size, bool tie,
                                CT_CHAR_TYPE* ptr, size_t size) :
     CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie,
+        csb(new CConn_Streambuf(connector, timeout, buf_size, tie,
                                 ptr, size));
     if (csb->GetCONN()) {
         init(csb.get());
@@ -64,13 +65,13 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
 
 
 CConn_IOStream::CConn_IOStream(CONN conn, bool close, const STimeout* timeout,
-                               streamsize buf_size, bool do_tie,
+                               streamsize buf_size, bool tie,
                                CT_CHAR_TYPE* ptr, size_t size) :
     CNcbiIostream(0), m_CSb(0)
 {
     if (conn) {
         auto_ptr<CConn_Streambuf>
-            csb(new CConn_Streambuf(conn, close, timeout, buf_size, do_tie,
+            csb(new CConn_Streambuf(conn, close, timeout, buf_size, tie,
                                     ptr, size));
         init(csb.get());
         m_CSb = csb.release();
@@ -114,13 +115,6 @@ string CConn_IOStream::GetDescription(void) const
 }
 
 
-const STimeout* CConn_IOStream::GetTimeout(EIO_Event direction) const
-{
-    CONN conn = GET_CONN(m_CSb);
-    return conn ? CONN_GetTimeout(conn, direction) : 0;
-}
-
-
 EIO_Status CConn_IOStream::SetTimeout(EIO_Event       direction,
                                       const STimeout* timeout) const
 {
@@ -129,16 +123,23 @@ EIO_Status CConn_IOStream::SetTimeout(EIO_Event       direction,
 }
 
 
+const STimeout* CConn_IOStream::GetTimeout(EIO_Event direction) const
+{
+    CONN conn = GET_CONN(m_CSb);
+    return conn ? CONN_GetTimeout(conn, direction) : 0;
+}
+
+
+EIO_Status CConn_IOStream::Status(EIO_Event dir) const
+{
+    return m_CSb ? m_CSb->Status(dir) : eIO_NotSupported;
+}
+
+
 EIO_Status CConn_IOStream::Cancel(void) const
 {
     CONN conn = GET_CONN(m_CSb);
     return conn ? CONN_Cancel(conn) : eIO_Closed;
-}
-
-
-EIO_Status CConn_IOStream::Status(void) const
-{
-    return m_CSb ? m_CSb->Status() : eIO_NotSupported;
 }
 
 
@@ -647,14 +648,47 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
                                  unsigned short       port,
                                  TFTP_Flags           flag,
                                  const SFTP_Callback* cmcb,
-                                 const STimeout*      timeout,
-                                 streamsize           buf_size)
+                                 const STimeout*      timeout)
     : CConn_IOStream(FTP_CreateConnectorEx(host.c_str(), port,
                                            user.c_str(), pass.c_str(),
                                            path.c_str(), flag, cmcb),
-                     timeout, buf_size)
+                     timeout, 0/*must be unbuffered*/, false/*untied*/)
 {
     return;
+}
+
+
+EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
+{
+    const STimeout* r_timeout = 0;
+    const STimeout* w_timeout = 0;
+    CONN conn = GetCONN();
+    char block[1024];
+    if (conn) {
+        size_t n;
+        r_timeout = CONN_GetTimeout(conn, eIO_Read);
+        w_timeout = CONN_GetTimeout(conn, eIO_Write);
+        _VERIFY(SetTimeout(eIO_Read,  timeout) == eIO_Success);
+        _VERIFY(SetTimeout(eIO_Write, timeout) == eIO_Success);
+        // Cause any upload-in-progress to abort
+        CONN_Read (conn, block, sizeof(block), &n, eIO_ReadPlain);
+        // Cause any command-in-progress to abort
+        CONN_Write(conn, "NOOP\n", 5, &n, eIO_WritePersist);
+    }
+    clear();
+    while (read(block, sizeof(block)))
+        ;
+    if (!conn)
+        return eIO_Closed;
+    EIO_Status status;
+    do {
+        size_t n;
+        status = CONN_Read(conn, block, sizeof(block), &n, eIO_ReadPersist);
+    } while (status == eIO_Success);
+    _VERIFY(CONN_SetTimeout(conn, eIO_Read,  r_timeout) == eIO_Success);
+    _VERIFY(CONN_SetTimeout(conn, eIO_Write, w_timeout) == eIO_Success);
+    clear();
+    return status == eIO_Closed ? eIO_Success : status;
 }
 
 
@@ -667,16 +701,17 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
                                                  TFTP_Flags           flag,
                                                  const SFTP_Callback* cmcb,
                                                  streamsize           offset,
-                                                 const STimeout*      timeout,
-                                                 streamsize           buf_size)
-    : CConn_FtpStream(host, user, pass, path, port, flag, cmcb,
-                      timeout, buf_size)
+                                                 const STimeout*      timeout)
+    : CConn_FtpStream(host, user, pass, path, port, flag, cmcb, timeout)
 {
     if (file != kEmptyStr) {
+        EIO_Status status;
         if (offset != 0) {
             write("REST ", 5) << offset << endl;
-        }
-        if (good()) {
+            status = Status(eIO_Write);
+        } else
+            status = eIO_Success;
+        if (good()  &&  status == eIO_Success) {
             write("RETR ", 5) << file   << endl;
         }
     }
@@ -691,16 +726,17 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
                                              unsigned short  port,
                                              TFTP_Flags      flag,
                                              streamsize      offset,
-                                             const STimeout* timeout,
-                                             streamsize      buf_size)
-    : CConn_FtpStream(host, user, pass, path, port, flag, 0/*cmcb*/,
-                      timeout, buf_size)
+                                             const STimeout* timeout)
+    : CConn_FtpStream(host, user, pass, path, port, flag, 0/*cmcb*/, timeout)
 {
     if (file != kEmptyStr) {
+        EIO_Status status;
         if (offset != 0) {
             write("REST ", 5) << offset << endl;
-        }
-        if (good()) {
+            status = Status(eIO_Write);
+        } else
+            status = eIO_Success;
+        if (good()  &&  status == eIO_Success) {
             write("STOR ", 5) << file   << endl;
         }
     }
