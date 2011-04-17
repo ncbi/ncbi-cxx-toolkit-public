@@ -86,13 +86,14 @@ extern "C" {
  *  EIO_WriteMethod
  */
 typedef enum {
-    eIO_ReadPlain,   /**< read presently available data only                 */
-    eIO_ReadPeek,    /**< same eIO_ReadPlain but leave data in input queue   */
-    eIO_ReadPersist, /**< try to read exactly "n" bytes; wait for enough data*/
-    /* deprecated */
-    eIO_Plain   = eIO_ReadPlain,
-    eIO_Peek    = eIO_ReadPeek,
-    eIO_Persist = eIO_ReadPersist
+    eIO_ReadPlain,      /**< read readily available data only, wait if none  */
+    eIO_ReadPeek,       /**< do eIO_ReadPlain but leave data in input queue  */
+    eIO_ReadPersist,    /**< read exactly as much as requested, w/waits      */
+    eIO_ReadSupplement  /**< do eIO_ReadPlain but return extended status     */
+    /* deprecated -- DO NOT USE! */
+    /*eIO_Plain   = eIO_ReadPlain,*/
+    /*eIO_Peek    = eIO_ReadPeek,*/
+    /*eIO_Persist = eIO_ReadPersist*/
 } EIO_ReadMethod;
 
 
@@ -101,9 +102,10 @@ typedef enum {
  *  EIO_ReadMethod
  */
 typedef enum {
-    eIO_WritePlain,    /**< write as much as possible, report back how much  */
-    eIO_WritePersist,  /**< write exactly as much as specified               */
-    eIO_WriteOutOfBand /**< write out-of-band chunk of urgent data           */
+    eIO_WritePlain,     /**< write as much as possible, report back how much */
+    eIO_WritePersist,   /**< write exactly as much as specified              */
+    eIO_WriteOutOfBand, /**< write out-of-band chunk of urgent data          */
+    eIO_WriteSupplement /**< do eIO_WritePlain but return extended status    */
 } EIO_WriteMethod;
 
 
