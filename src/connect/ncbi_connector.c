@@ -26,15 +26,15 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   This is generally not for the public use.
  *   Implementation of functions of meta-connector.
+ *   This is generally not a public interface.
  *
  */
 
 #include "ncbi_priv.h"
 #include <connect/ncbi_connector.h>
 
-#define NCBI_USE_ERRCODE_X   Connect_MetaConn
+#define NCBI_USE_ERRCODE_X   Connect_Conn
 
 /* Standard logging message
  */
@@ -61,7 +61,7 @@ extern EIO_Status METACONN_Remove
         }
         if (!x_conn) {
             EIO_Status status = eIO_Unknown;
-            METACONN_LOG(1, eLOG_Error,
+            METACONN_LOG(34, eLOG_Error,
                          "[METACONN_Remove]  Connector is not in connection");
             return status;
         }
@@ -69,10 +69,9 @@ extern EIO_Status METACONN_Remove
 
     while (meta->list) {
         CONNECTOR victim = meta->list;
-
-        meta->list   = victim->next;
-        victim->meta = 0;
-        victim->next = 0;
+        meta->list       = victim->next;
+        victim->meta     = 0;
+        victim->next     = 0;
         if (victim->destroy)
             victim->destroy(victim);
         if (victim == connector)
@@ -90,7 +89,7 @@ extern EIO_Status METACONN_Add
 
     if (connector->next  ||  !connector->setup) {
         EIO_Status status = eIO_Unknown;
-        METACONN_LOG(2, eLOG_Error,
+        METACONN_LOG(35, eLOG_Error,
                      "[METACONN_Add]  Connector is in use/uninitable");
         return status;
     }
