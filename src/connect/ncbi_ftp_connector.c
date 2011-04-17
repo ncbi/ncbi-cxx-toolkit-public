@@ -214,8 +214,8 @@ static EIO_Status x_FTPCloseData(SFTPConnector* xxx,
                              xxx->size, &"s"[xxx->size == 1]));
             }
             status = eIO_Unknown;
-        } else if (how != eIO_ReadWrite)
-            CORE_TRACE("[FTP; %s]  Transfer size confirmed");            
+        } else if (size  &&  how != eIO_ReadWrite)
+            CORE_TRACEF(("[FTP; %s]  Transfer size verified", xxx->what));
         xxx->sync = 0/*false*/;
     } else {
         if (!xxx->cntl) {
