@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
                                             TEST_USER, TEST_PASS,
                                             TEST_PATH, flag);
 
-    if (CONN_Create(connector, &conn) != eIO_Success)
+    if (CONN_CreateEx(connector, fCONN_Supplement, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot create FTP download connection");
 
     assert(CONN_SetTimeout(conn, eIO_Open,      net_info->timeout)
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "Test failed to reject multiple commands");
     CORE_LOG(eLOG_Note, "Multiple commands correctly rejected");
 
-    status = CONN_Write(conn, "SIZE 1GB\n", 9, &n, eIO_WritePersist);
+    status = CONN_Write(conn, "SIZE 1GB\n", 9, &n, eIO_WritePlain);
     if (status == eIO_Success) {
         char buf[128];
         CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
@@ -180,11 +180,10 @@ int main(int argc, char* argv[])
         fflush(stdout);
     }
 
-    if (CONN_Write(conn, "SIZE ", 5, &n, eIO_WritePlain) != eIO_Success)
+    if (CONN_Write(conn, "SIZE ", 5, &n, eIO_WritePersist) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot write SIZE directory command");
     size = strlen(kChdir + 4);
-    if (CONN_Write(conn, kChdir + 4, size, &n, eIO_WritePersist)==eIO_Success){
-        char buf[128];
+    if (CONN_Write(conn, kChdir + 4, size, &n, eIO_WritePlain) == eIO_Success){
         CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
         CORE_LOGF(eLOG_Note, ("SIZE directory returned: %.*s", (int) n, buf));
     } else {
@@ -197,11 +196,27 @@ int main(int argc, char* argv[])
         CORE_LOGF(eLOG_Fatal, ("Cannot execute %.*s",
                                (int) sizeof(kChdir) - 2, kChdir));
     }
+    if (CONN_Write(conn, "PWD\n", 4, &n, eIO_WritePlain) == eIO_Success) {
+        CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
+        CORE_LOGF(eLOG_Note, ("PWD returned: %.*s", (int) n, buf));
+    } else
+        CORE_LOG(eLOG_Fatal, "Cannot execute PWD");
+
+    if (CONN_Write(conn, "CDUP\n", 5, &n, eIO_WritePlain) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Cannot execute CDUP"); 
+    if (CONN_Write(conn, "XCUP\n", 5, &n, eIO_WritePlain) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Cannot execute XCUP");
+
+    if (CONN_Write(conn, kChdir, sizeof(kChdir) - 1, &n, eIO_WritePlain)
+        != eIO_Success) {
+        CORE_LOGF(eLOG_Fatal, ("Cannot re-execute %.*s",
+                               (int) sizeof(kChdir) - 2, kChdir));
+    }
 
     size = strlen(kFile + 5);
-    if ((status = CONN_Write(conn, "MDTM ", 5, &n, eIO_WritePlain))
-        == eIO_Success  &&
-        (status = CONN_Write(conn, kFile + 5, size, &n, eIO_WritePersist))
+    if ((status = CONN_Write(conn, "MDTM ", 5, &n, eIO_WritePersist))
+        == eIO_Success  &&  n == 5  &&
+        (status = CONN_Write(conn, kFile + 5, size, &n, eIO_WritePlain))
         == eIO_Success) {
         unsigned long val;
         char buf[128];
