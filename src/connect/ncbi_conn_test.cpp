@@ -183,16 +183,16 @@ EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
         return eIO_Interrupt;
     if (!failure)
         return eIO_Success;
-    EIO_Status status = io ? io->Status() : eIO_Unknown;
-    if (status == eIO_Success) {
-        _ASSERT(io);
-        CONN conn = io->GetCONN();
-        if (conn) {
-            EIO_Status r_status = CONN_Status(conn, eIO_Read);
-            EIO_Status w_status = CONN_Status(conn, eIO_Write);
-            status = r_status > w_status ? r_status : w_status;
-        }
-    }
+    if (!io)
+        return eIO_Unknown;
+    if (!io->GetCONN())
+        return eIO_Closed;
+    EIO_Status status = io->Status();
+    if (status != eIO_Success)
+        return status;
+    EIO_Status r_status = io->Status(eIO_Read);
+    EIO_Status w_status = io->Status(eIO_Write);
+    status = r_status > w_status ? r_status : w_status;
     return status == eIO_Success ? eIO_Unknown : status;
 }
 
@@ -1015,12 +1015,10 @@ void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
 
 EIO_Status CConnTest::x_CheckTrap(string* reason)
 {
-    EIO_Status status = eIO_NotSupported;
-    string temp("Runaway check");
     m_CheckPoint.clear();
 
-    PreCheck(EStage(0), 0, temp);
-    PostCheck(EStage(0), 0, status, "Check usage");
+    PreCheck(EStage(0), 0, "Runaway check");
+    PostCheck(EStage(0), 0, eIO_NotSupported, "Check usage");
 
     if (reason)
         reason->clear();
