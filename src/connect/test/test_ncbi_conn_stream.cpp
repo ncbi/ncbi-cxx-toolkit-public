@@ -267,9 +267,16 @@ int main(int argc, const char* argv[])
         char buf[512];
         download.read(buf, sizeof(buf));
     }
+    download.clear();
+    download << "SIZE " <<
+        "/toolbox/ncbi_tools++/DATA/Misc/test_ncbi_conn_stream.FTP.data";
+    n = 0;
+    download >> n;
     download.Close();
     if (!size)
         ERR_POST(Fatal << "No file downloaded");
+    if (n  &&  n != size + 1024)
+        ERR_POST(Fatal << "File size mismatch");
 
     LOG_POST("Test 2 passed: 1024+" << size <<
              " byte(s) downloaded via FTP\n");
@@ -304,22 +311,22 @@ int main(int argc, const char* argv[])
                 size += n;
         }
         if (!upload)
-            ERR_POST(Fatal << "Test 3 failed: FTP upload error");
-        unsigned long filesize = 0;
+            ERR_POST(Fatal << "FTP upload error");
+        _ASSERT(size != 0);
+        time_t delta = 0;
         unsigned long val = 0;
         upload >> val;
-        time_t delta = 0;
-        if (size  &&  val == (unsigned long) size) {
-            string speedstr;
-            string filetime;
+        if (val == (unsigned long) size) {
+            unsigned long filesize = 0;
             upload.clear();
             upload << "SIZE " << ftpfilename << NcbiEndl;
             upload >> filesize;
+            string filetime;
             upload.clear();
             upload << "MDTM " << ftpfilename << NcbiEndl;
             upload >> filetime;
-            speedstr = (NStr::UInt8ToString(Uint8(size))
-                        + " bytes uploaded via FTP");
+            string speedstr = (NStr::UInt8ToString(Uint8(size))
+                               + " bytes uploaded via FTP");
             if (val == filesize)
                 speedstr += " and verified";
             if (!filetime.empty()) {
@@ -346,11 +353,11 @@ int main(int argc, const char* argv[])
             LOG_POST("REN failed");
         upload << "DELE " << ftpfilename        << NcbiEndl;
         upload << "DELE " << ftpfilename << '~' << NcbiEndl;
-        if (!size  ||  size != (unsigned long) size) {
-            ERR_POST(Fatal << "Only " <<
+        if (val != (unsigned long) size) {
+            ERR_POST(Fatal << "FTP upload incomplete: " <<
                      val << " out of " << size << " byte(s) uploaded");
         } else if (delta >= 1800) {
-            ERR_POST(Fatal << "File timezone is off by " <<
+            ERR_POST(Fatal << "FTP file time is off by " <<
                      NStr::UIntToString((unsigned int) delta) <<
                      " seconds");
         }

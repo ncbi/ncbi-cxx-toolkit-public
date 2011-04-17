@@ -63,8 +63,8 @@ static double s_GetTime(void)
 
 int main(int argc, char* argv[])
 {
-    static const char kChdir[] = "CWD /toolbox/ncbi_tools\n";
-    static const char kFile[] = "RETR CURRENT/ncbi.tar.gz";
+    static const char kChdir[] = "CWD /toolbox/ncbi_tools++\n";
+    static const char kFile[] = "DATA/Misc/test_ncbi_conn_stream.FTP.data";
     int/*bool*/   cancel = 0, first;
     TFTP_Flags    flag = 0;
     SConnNetInfo* net_info;
@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
     CONNECTOR     connector;
     FILE*         data_file;
     size_t        size, n;
+    double        elapsed;
     EIO_Status    status;
-    double        elapse;
     CONN          conn;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
@@ -215,11 +215,11 @@ int main(int argc, char* argv[])
                                (int) sizeof(kChdir) - 2, kChdir));
     }
 
-    size = strlen(kFile + 5);
+    size = sizeof(kFile) - 1;
     if ((status = CONN_Write(conn, "MDTM ", 5, &n, eIO_WritePersist))
         == eIO_Success  &&  n == 5  &&
-        (status = CONN_Write(conn, kFile + 5, size, &n, eIO_WritePlain))
-        == eIO_Success) {
+        (status = CONN_Write(conn, kFile, size, &n, eIO_WritePlain))
+        == eIO_Success  &&  n == size) {
         unsigned long val;
         char buf[128];
         CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
@@ -235,13 +235,16 @@ int main(int argc, char* argv[])
                               IO_StatusStr(status)));
     }
 
-    if (CONN_Write(conn, kFile, sizeof(kFile) - 1, &n, eIO_WritePersist)
-        != eIO_Success) {
-        CORE_LOGF(eLOG_Fatal, ("Cannot write %s", kFile));
+    if ((status = CONN_Write(conn, "RETR ", 5, &n, eIO_WritePersist))
+        != eIO_Success  ||  n != 5  ||
+        (status = CONN_Write(conn, kFile, size, &n, eIO_WritePersist))
+        != eIO_Success  ||  n != size) {
+        CORE_LOGF(eLOG_Fatal, ("Cannot write 'RETR %s': %s",
+                               kFile, IO_StatusStr(status)));
     }
 
     size = 0;
-    elapse = s_GetTime();
+    elapsed = s_GetTime();
     do {
         status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
         if (n != 0) {
@@ -261,7 +264,7 @@ int main(int argc, char* argv[])
     } while (status == eIO_Success);
     if (status != eIO_Success)
         cancel = 0;
-    elapse = s_GetTime() - elapse;
+    elapsed = s_GetTime() - elapsed;
 
     if (!cancel  ||  !(rand() & 1)) {
         if (cancel)
@@ -296,8 +299,8 @@ int main(int argc, char* argv[])
     if (!cancel) {
         CORE_LOGF(size ? eLOG_Note : eLOG_Fatal,
                   ("%lu byte(s) downloaded in %.2f second(s) @ %.2fKB/s",
-                   (unsigned long) size, elapse,
-                   (unsigned long) size / (1024 * (elapse ? elapse : 1.0))));
+                   (unsigned long) size, elapsed,
+                   (unsigned long) size / (1024 * (elapsed ? elapsed : 1.0))));
     } else
         remove("test_ncbi_ftp_connector.dat");
     ConnNetInfo_Destroy(net_info);
