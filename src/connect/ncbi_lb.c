@@ -34,7 +34,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#define NCBI_USE_ERRCODE_X   Connect_LB
+#define NCBI_USE_ERRCODE_X   Connect_LBSM
 
 
 size_t LB_Select(SERV_ITER     iter,          void*  data,
