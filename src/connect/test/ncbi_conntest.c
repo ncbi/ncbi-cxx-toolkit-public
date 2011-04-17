@@ -357,7 +357,8 @@ extern void CONN_TestConnector
 
     TEST_LOG(eIO_Success, "[CONN_TestConnector]  Starting...");
 
-    /* Play around with dummy connector / connection */
+    /* Fool around with dummy connector / connection
+     */
     assert(CONN_Create(0,      &conn) != eIO_Success  &&  !conn);
     assert(CONN_Create(&dummy, &conn) != eIO_Success  &&  !conn);
     dummy.setup = s_DummySetup;
@@ -376,13 +377,9 @@ extern void CONN_TestConnector
      */
     assert(CONN_Create(connector, &conn) == eIO_Success);
 
-    assert(CONN_SetTimeout (conn, eIO_Open,      timeout) == eIO_Success);
-    assert(CONN_SetTimeout (conn, eIO_ReadWrite, timeout) == eIO_Success);
-    assert(CONN_SetTimeout (conn, eIO_Close,     timeout) == eIO_Success);
-
-    /* NOTE: invalid argument usage in the following two calls */
-    assert(CONN_GetTimeout (conn, eIO_ReadWrite)          != 0);
-    assert(CONN_GetPosition(conn, eIO_Close)              == 0);
+    assert(CONN_SetTimeout(conn, eIO_Open,      timeout) == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_ReadWrite, timeout) == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_Close,     timeout) == eIO_Success);
 
     assert(CONN_ReInit(conn, connector) == eIO_Success);
 
