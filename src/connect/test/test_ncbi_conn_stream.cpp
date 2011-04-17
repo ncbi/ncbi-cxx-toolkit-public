@@ -245,7 +245,7 @@ int main(int argc, const char* argv[])
              (int) size << " byte(s) transferred\n");
 
 
-    LOG_POST("Test 2 of 8:  FTP download");
+    LOG_POST("Test 2 of 8: FTP download");
     if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
@@ -260,9 +260,8 @@ int main(int argc, const char* argv[])
                                      "Misc/test_ncbi_conn_stream.FTP.data",
                                      "ftp"/*default*/, "-none"/*default*/,
                                      "/toolbox/ncbi_tools++/DATA",
-                                     0/*port = default*/, flag,
-                                     0/*offset*/, 0/*cmcb*/,
-                                     net_info->timeout);
+                                     0/*port = default*/, flag, 0/*cmcb*/,
+                                     1024/*offset*/, net_info->timeout);
 
     for (size = 0;  download.good();  size += download.gcount()) {
         char buf[512];
@@ -272,10 +271,10 @@ int main(int argc, const char* argv[])
     if (!size)
         ERR_POST(Fatal << "No file downloaded");
 
-    LOG_POST("Test 2 passed: " << size << " byte(s) downloaded via FTP\n");
+    LOG_POST("Test 2 passed: 1024+" << size << " byte(s) downloaded via FTP\n");
 
 
-    LOG_POST("Test 3 of 8:  FTP upload");
+    LOG_POST("Test 3 of 8: FTP upload");
     string ftpuser, ftppass, ftpfilename;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
         CTime start(CTime::eCurrent);
@@ -340,7 +339,12 @@ int main(int argc, const char* argv[])
                 LOG_POST(speedstr);
         }
         upload.clear();
-        upload << "DELE " << ftpfilename << NcbiEndl;
+        upload << "REN " << ftpfilename << '\t'
+               << '"' << ftpfilename << "~\"" << NcbiEndl;
+        if (!upload  ||  upload.Status(eIO_Write) != eIO_Success)
+            LOG_POST("REN failed");
+        upload << "DELE " << ftpfilename        << NcbiEndl;
+        upload << "DELE " << ftpfilename << '~' << NcbiEndl;
         if (!size  ||  size != (unsigned long) size) {
             ERR_POST(Fatal << "Only " <<
                      val << " out of " << size << " byte(s) uploaded");
@@ -356,15 +360,48 @@ int main(int argc, const char* argv[])
     LOG_POST("Test 4 of 8: FTP peculiarities");
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfilename.empty());
+        // Note that FTP streams are not buffered for the sake of command
+        // responses;  for file xfers the use of read() and write() does
+        // the adequate buffering at user-level (and FTP connection).
         CConn_FtpStream ftp("ftp-private.ncbi.nlm.nih.gov",
                             ftpuser, ftppass, "test_download",
                             0/*port = default*/, flag, 0/*cmcb*/,
                             net_info->timeout);
-        ftp << "RETR \377\377 special file downloadable" << endl;
-        if (!ftp)
-            ERR_POST(Fatal << "Test 4 failed in RETR");
-        ftp << "STOR " << "../test_upload/" << ftpfilename << ".0" << endl;
-        if (!ftp)
+        string temp;
+        ftp << "SYST" << NcbiEndl;
+        ftp >> temp;  // dangerous: may leave some putback behind
+        if (temp.empty())
+            ERR_POST(Fatal << "Test 4 failed in SYST");
+        LOG_POST("SYST command returned: '" << temp << '\'');
+        _ASSERT(ftp.Drain() == eIO_Success);
+        ftp << "CWD \"dir\"ect\"ory\"" << NcbiEndl;
+        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
+            ERR_POST(Fatal << "Test 4 failed in CWD");
+        getline(ftp, temp);  // better: does not leave putback behind
+        LOG_POST("CWD command returned: '" << temp << '\'');
+        _ASSERT(temp == "250");
+        _ASSERT(ftp.eof());
+        ftp.clear();
+        ftp << "PWD" << NcbiEndl;
+        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
+            ERR_POST(Fatal << "Test 4 failed in PWD");
+        ftp >> temp;
+        LOG_POST("PWD command returned: '" << temp << '\'');
+        if (temp != "/test_download/\"dir\"ect\"ory\"")
+            ERR_POST(Fatal << "Test 4 failed in PWD response");
+        ftp.clear();
+        ftp << "XCUP" << NcbiEndl;
+        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
+            ERR_POST(Fatal << "Test 4 failed in XCUP");
+        ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
+        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
+            ERR_POST(Fatal << "Test 4 failed in RETR IAC");
+        ftp << "RETR \357\273\277\320\237\321\200\320"
+            << "\270\320\262\320\265\321\202" << NcbiEndl;
+        if (!ftp  ||  ftp.Status (eIO_Write) != eIO_Success)
+            ERR_POST(Fatal << "Test 4 failed in RETR UTF-8");
+        ftp << "STOR " << "../test_upload/" << ftpfilename << ".0" << NcbiEndl;
+        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in STOR");
         if (ftp.Close() == eIO_Success)
             ERR_POST(Fatal << "Test 4 failed");
