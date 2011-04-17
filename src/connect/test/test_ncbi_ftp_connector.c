@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 {
     static const char kChdir[] = "CWD /toolbox/ncbi_tools\n";
     static const char kFile[] = "RETR CURRENT/ncbi.tar.gz";
-    int/*bool*/   aborting = 0, first;
+    int/*bool*/   cancel = 0, first;
     TFTP_Flags    flag = 0;
     SConnNetInfo* net_info;
     char          buf[1024];
@@ -109,8 +109,10 @@ int main(int argc, char* argv[])
                                             TEST_USER, TEST_PASS,
                                             TEST_PATH, flag);
 
-    if (CONN_CreateEx(connector, fCONN_Supplement, &conn) != eIO_Success)
+    if (CONN_CreateEx(connector,
+                      fCONN_Supplement | fCONN_Untie, &conn) != eIO_Success) {
         CORE_LOG(eLOG_Fatal, "Cannot create FTP download connection");
+    }
 
     assert(CONN_SetTimeout(conn, eIO_Open,      net_info->timeout)
            == eIO_Success);
@@ -133,7 +135,7 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "Test failed to reject multiple commands");
     CORE_LOG(eLOG_Note, "Multiple commands correctly rejected");
 
-    status = CONN_Write(conn, "SIZE 1GB\n", 9, &n, eIO_WritePlain);
+    status = CONN_Write(conn, "SIZE 1GB", 9, &n, eIO_WritePlain);
     if (status == eIO_Success) {
         char buf[128];
         CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
@@ -247,8 +249,8 @@ int main(int argc, char* argv[])
             fflush(data_file);
             size += n;
             rand();
-            if (argc > 1  &&  rand() % 100 == 0) {
-                aborting = 1;
+            if (argc > 1  &&  rand() % 100000 == 55555) {
+                cancel = 1;
                 break;
             }
         } else {
@@ -257,15 +259,19 @@ int main(int argc, char* argv[])
                 CORE_LOGF(eLOG_Error, ("Read error: %s",IO_StatusStr(status)));
         }
     } while (status == eIO_Success);
+    if (status != eIO_Success)
+        cancel = 0;
     elapse = s_GetTime() - elapse;
 
-    if (!aborting  ||  (rand() & 1) == 0) {
+    if (!cancel  ||  !(rand() & 1)) {
+        if (cancel)
+            CORE_LOG(eLOG_Note, "Cancelling download by a command");
         if (CONN_Write(conn, "NLST blah*", 10, &n, eIO_WritePlain)
             != eIO_Success) {
             CORE_LOG(eLOG_Fatal, "Cannot write garbled NLST command");
         }
 
-        CORE_LOG(eLOG_Note, "Garbled NLST command output (should be empty):");
+        CORE_LOG(eLOG_Note, "Garbled NLST command output (expected empty):");
         first = 1/*true*/;
         do {
             status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
@@ -279,16 +285,15 @@ int main(int argc, char* argv[])
             printf("<EOF>\n");
             fflush(stdout);
         }
-    }
+    } else if (cancel)
+        CORE_LOG(eLOG_Note, "Closing with download still in progress");
 
-    if (CONN_Close(conn) != eIO_Success) {
-        CORE_LOGF(eLOG_Fatal, ("Error %s FTP connection",
-                               aborting ? "aborting" : "closing"));
-    }
+    if (CONN_Close(conn) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Error in closing FTP connection");
 
     /* Cleanup and exit */
     fclose(data_file);
-    if (!aborting) {
+    if (!cancel) {
         CORE_LOGF(size ? eLOG_Note : eLOG_Fatal,
                   ("%lu byte(s) downloaded in %.2f second(s) @ %.2fKB/s",
                    (unsigned long) size, elapse,
