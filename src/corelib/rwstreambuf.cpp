@@ -293,8 +293,9 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     ERW_Result result = eRW_Success;
     size_t n_written = 0;
+    x_Err = false;
 
-    for (;;) {
+    do {
         size_t x_written;
 
         if ( pbase() ) {
@@ -308,14 +309,11 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                     pbump(int(x_written));
                     n_written += x_written;
                     n         -= x_written;
-                    x_Err      = false;
-                    if (!n)
+                    if ( !n )
                         return n_written;
                     buf       += x_written;
                 }
             }
-            if (result != eRW_Success)
-                break;
 
             size_t x_towrite = (size_t)(pptr() - pbase());
             if ( x_towrite ) {
@@ -332,7 +330,6 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 memmove(pbase(), pbase() + x_written, x_towrite - x_written);
                 x_PPos += (CT_OFF_TYPE) x_written;
                 pbump(-int(x_written));
-                x_Err   = false;
                 continue;
             }
         }
@@ -345,8 +342,6 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         if ( !x_written ) {
             x_Err    = true;
             x_ErrPos = x_GetPPos();
-            if ( !pbase() )
-                return (streamsize) n_written;
             break;
         }
         _ASSERT(x_written <= n);
@@ -354,23 +349,22 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         n_written += x_written;
         n         -= x_written;
         x_Err      = false;
-        if (!n  ||  !pbase())
+        if ( !n )
             return (streamsize) n_written;
         buf       += x_written;
-        if (result != eRW_Success)
-            break;
-    }
+    } while (result == eRW_Success);
 
-    _ASSERT(n  &&  pbase());
-    if (pptr() < epptr()) {
-        size_t x_written = (size_t)(epptr() - pptr());
-        if (x_written > n)
-            x_written = n;
-        memcpy(pptr(), buf, x_written);
-        n_written += x_written;
-        pbump(int(x_written));
+    if ( pbase() ) {
+        _ASSERT( n );
+        if (pptr() < epptr()) {
+            size_t x_written = (size_t)(epptr() - pptr());
+            if (x_written > n)
+                x_written = n;
+            memcpy(pptr(), buf, x_written);
+            n_written += x_written;
+            pbump(int(x_written));
+        }
     }
-
     return (streamsize) n_written;
 }
 
