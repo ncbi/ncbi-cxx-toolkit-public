@@ -983,11 +983,12 @@ static EIO_Status x_FTPOpenData(SFTPConnector*  xxx,
         status = x_FTPPassive(xxx, timeout);
         if (status == eIO_Success  ||  (xxx->flag & fFTP_UsePassive))
             return status;
-    }
+    } else
+        status = eIO_Closed;
     if ((xxx->feat & (fFtpFeature_EPSV | fFtpFeature_APSV))
         == fFtpFeature_APSV) {
         /* seems like the impossible case; still, better safe than sorry */
-        return eIO_Closed;
+        return status;
     }
     status = x_FTPActive(xxx, lsock, timeout);
     if (status != eIO_Success) {
