@@ -178,9 +178,40 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
     return true;
 }
 
+
+static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
+                                    string* owner, string* group,
+                                    unsigned int* uid, unsigned int* gid)
+{
+    // Get numeric owner
+    if ( uid ) {
+        *uid = *GetSidSubAuthority(sid_owner,
+                                   *GetSidSubAuthorityCount(sid_owner) - 1);
+    }
+    // Get numeric group
+    if ( gid ) {
+        *gid = *GetSidSubAuthority(sid_group,
+                                   *GetSidSubAuthorityCount(sid_group) - 1);
+    }
+    // Get owner
+    if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
+        return false;
+    }
+    // Get group
+    if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
+        // This is not an error, because the group name on Windows
+        // is an auxiliary information. Sometimes accounts cannot
+        // belong to groups, or we don't have permissions to get
+        // such information.
+        group->clear();
+    }
+}
+
+
 bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
                                   SE_OBJECT_TYPE objtype,
-                                  string* owner, string* group)
+                                  string* owner, string* group,
+                                  unsigned int* uid, unsigned int* gid)
 {
     PSID sid_owner;
     PSID sid_group;
@@ -193,27 +224,18 @@ bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
          != ERROR_SUCCESS ) {
         return false;
     }
-    // Get owner
-    if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
-        LocalFree(sd);
-        return false;
-    }
-    // Get group
-    if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
-        // This is not an error, because the group name on Windows
-        // is an auxiliary information. Sometimes accounts cannot
-        // belong to groups, or we don't have permissions to get
-        // such information.
-        group->clear();
-    }
+
+    bool retval = s_GetOwnerGroupFromSids(sid_owner, sid_group,
+                                          owner, group, uid, gid);
     LocalFree(sd);
-    return true;
+    return retval;
 }
 
 
 bool CWinSecurity::GetObjectOwner(const string&  objname,
                                   SE_OBJECT_TYPE objtype,
-                                  string* owner, string* group)
+                                  string* owner, string* group,
+                                  unsigned int* uid, unsigned int* gid)
 {
     PSID sid_owner;
     PSID sid_group;
@@ -226,21 +248,11 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
          != ERROR_SUCCESS ) {
         return false;
     }
-    // Get owner
-    if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
-        LocalFree(sd);
-        return false;
-    }
-    // Get group
-    if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
-        // This is not an error, because the group name on Windows
-        // is an auxiliary information. Sometimes accounts cannot
-        // belong to groups, or we don't have permissions to get
-        // such information.
-        group->clear();
-    }
+
+    bool retval = s_GetOwnerGroupFromSids(sid_owner, sid_group,
+                                          owner, group, uid, gid);
     LocalFree(sd);
-    return true;
+    return retval;
 }
 
 

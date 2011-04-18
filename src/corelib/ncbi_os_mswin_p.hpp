@@ -112,15 +112,21 @@ public:
     ///   Pointer to a string to receive an owner name.
     /// @param group
     ///   Pointer to a string to receive a group name. 
+    /// @param uid
+    ///   Pointer to an int to receive a (fake) user id.
+    /// @param gid
+    ///   Pointer to an int to received a(fake) group id.
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     static bool GetObjectOwner(const string& objname, SE_OBJECT_TYPE objtype,
-                               string* owner, string* group = 0);
+                               string* owner, string* group = 0,
+                               unsigned int* uid = 0, unsigned int* gid = 0);
 
     /// Same as GetObjectOwner(objname) but gets the owner/group information
     /// by the handle rather than name.
     static bool GetObjectOwner(HANDLE        objhndl, SE_OBJECT_TYPE objtype,
-                               string* owner, string* group = 0);
+                               string* owner, string* group = 0,
+                               unsigned int* uid = 0, unsigned int* gid = 0);
 
 
     /// Get file object owner name.
