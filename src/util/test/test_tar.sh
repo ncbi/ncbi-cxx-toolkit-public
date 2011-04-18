@@ -186,11 +186,11 @@ cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                  
 cmp -l $test_base.out.1 $test_base.out.2                                                                   ||  exit 1
 
 echo
-echo "`date` *** Checking stream update"
+echo "`date` *** Checking stream append"
 echo
 
 test_tar -r -s -v -f $test_base.tar $test_base.out.1 $test_base.out.2                   ||  exit 1
-test_tar -T -f $test_base.tar                                                           ||  exit 1
+test_tar -T       -f $test_base.tar                                                     ||  exit 1
 
 if [ "`uname`" = "Linux" ]; then
   # Note that at least gtar 1.15.1 suffers from the following shortcoming:
