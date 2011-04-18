@@ -2162,7 +2162,74 @@ ExtractBlast4Request(CNcbiIstream& in)
 
     return retval;
 }
+//
+// Get search title. use member or provided RID 
+// if title is unset or search is unknown empty string will be 
+// returned. The "unknown_search" parameter could be used
+// to distinguish cases.
+string CRemoteBlast::GetTitle(const char *RID, bool *unknown_search)
+{
+    string local_RID = m_RID;
+    string return_title;
+    if( RID ){
+	local_RID = RID;
+    }
+    bool l_unknown_search_flag = true;
+    CRef<CBlast4_request> request(new CBlast4_request);
+    CRef<CBlast4_get_search_info_request> info_request( new CBlast4_get_search_info_request );
+    info_request->ResetRequest_id();
+    info_request->SetRequest_id( local_RID );
 
+    CRef< CBlast4_parameter > one_param( new CBlast4_parameter());
+    one_param->SetName( "search" );
+    one_param->SetValue().SetString( "title" );
+
+    info_request->ResetInfo();
+    info_request->SetInfo().Set().push_back( one_param ); 
+
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_search_info( *info_request );
+    request->SetBody(*body);
+
+    CRef<CBlast4_reply> reply(new CBlast4_reply);
+    CBlast4Client().Ask(*request, *reply);
+
+    if( reply->CanGetBody() ){
+	if( reply->GetBody().Which() ==  CBlast4_reply_body::e_Get_search_info ){
+	    const CBlast4_get_search_info_reply &info_reply = reply->GetBody().GetGet_search_info();
+	    if( info_reply.CanGetRequest_id() && ( info_reply.GetRequest_id() == local_RID ) ){
+		if( info_reply.CanGetInfo() ){
+		    const CBlast4_parameters &params = info_reply.GetInfo();
+		    // get title first
+		    {
+		        CRef< CBlast4_parameter >    search_param = params.GetParamByName ( "search-title" );
+		        if( search_param.NotEmpty() ){
+		           l_unknown_search_flag = false; // any title means search is known
+			   if( search_param->GetValue().IsString() ){
+			      return_title = search_param->GetValue().GetString();
+			 }
+		       }
+		    }
+		    // get search status if no title
+		    if( return_title.empty() ){
+			CRef< CBlast4_parameter >    search_param = params.GetParamByName ( "search-status" );
+		        if( search_param.NotEmpty() ){
+			  if( search_param->GetValue().IsString() ){
+			     string search_status =  search_param->GetValue().GetString();
+			     if( NStr::CompareNocase(search_status,"UNKNOWN" ) ){
+				 l_unknown_search_flag = false; // search hash other status then UNKNOWN
+			     }
+			  }
+			}
+		    }
+		}
+	    }
+	}
+    }
+
+    if( unknown_search ) *unknown_search = l_unknown_search_flag;
+    return return_title;
+}
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

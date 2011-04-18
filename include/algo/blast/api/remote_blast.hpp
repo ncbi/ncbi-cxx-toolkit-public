@@ -454,6 +454,12 @@ public:
 
     /// Loads next chunk of archive from file.
     bool LoadFromArchive();
+    /// Get the title assigned for this search. 
+    /// @param RID [in] -- use this RID for title retrieval, no side effect on the object  
+    /// @param unknown_search[out] -- set true/false if search is unknown/known
+    /// @return a search title, empty string if not set or unknown search.
+    /// 
+    string GetTitle(const char *RID=NULL, bool *unknown_search=NULL);
     
 private:
 
