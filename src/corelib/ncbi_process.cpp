@@ -224,7 +224,7 @@ TPid CProcess::sx_GetPid(EGetPidFlag flag)
 }
 #endif //NCBI_THREAD_PID_WORKAROUND
 
-TProcessHandle CProcess::GetGurrentHandle(void)
+TProcessHandle CProcess::GetCurrentHandle(void)
 {
 #if   defined(NCBI_OS_MSWIN)
     return GetCurrentProcess();

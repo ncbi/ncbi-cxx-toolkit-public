@@ -116,7 +116,7 @@ public:
     /// On UNIX returns the same that GetCurrentPid() does.
     /// @sa
     ///   GetCurrentPid
-    static TProcessHandle GetGurrentHandle(void);
+    static TProcessHandle GetCurrentHandle(void);
 
     /// Get process identifier for the current process.
     static TPid           GetCurrentPid(void);
