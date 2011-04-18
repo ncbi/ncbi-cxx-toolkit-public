@@ -78,7 +78,9 @@ void CIdMapperConfig::Initialize(CNcbiIstream& istr)
         reg.Read(is);
     }
     catch (CException& e) {
-        ERR_POST(Error << "error reading config file: " << e);
+        ERR_POST(Warning << "CIdMapperConfig: "
+                 "error reading config file in registry format: " << e <<
+                 "; trying to read in old format...");
 
         //
         // older config file support
