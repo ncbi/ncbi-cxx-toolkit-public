@@ -182,11 +182,7 @@ Variation ::= SEQUENCE
     pub SET OF Pub OPTIONAL,
 
     -- References to external 
-    dbxref SET OF CHOICE {
-        pub Dbtag,
-        clinical-test Dbtag,
-        phenotype Dbtag
-    } OPTIONAL,
+    clinical-test Dbtag OPTIONAL,
 
     data CHOICE {
         unknown NULL,
