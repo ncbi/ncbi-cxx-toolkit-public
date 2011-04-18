@@ -1,9 +1,13 @@
 --$Revision$
 --**********************************************************************
 --
---  NCBI Sequence Feature elements
---  by James Ostell, 1990
---  Version 3.0 - June 1994
+--  NCBI Variation container
+--  by Variation Working Group, 2011
+--
+--  The Variation type describes a sequence change at location(s),
+--  or a hierarchical combination thereof.
+--
+--  Related location-centric type is SeqFeatData.Variation-ref
 --
 --**********************************************************************
 
