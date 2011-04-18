@@ -225,7 +225,7 @@ bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
         return false;
     }
 
-    bool retval = s_GetOwnerGroupFromSids(sid_owner, sid_group,
+    bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group,
                                           owner, group, uid, gid);
     LocalFree(sd);
     return retval;
@@ -249,7 +249,7 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
         return false;
     }
 
-    bool retval = s_GetOwnerGroupFromSids(sid_owner, sid_group,
+    bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group,
                                           owner, group, uid, gid);
     LocalFree(sd);
     return retval;
