@@ -205,6 +205,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
         // such information.
         group->clear();
     }
+	return true;
 }
 
 
