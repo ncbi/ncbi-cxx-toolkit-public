@@ -377,7 +377,19 @@ string CCommentItem::GetStringForRefTrack
         }
     }
 
+    string identical_to_start;
+    string identical_to_end;
     string identical_to;
+
+    // "accession" overrides "name", which in turn overrides "gi"
+    enum EIdenticalToPriority {
+        eIdenticalToPriority_Nothing = 1,
+        eIdenticalToPriority_Gi,
+        eIdenticalToPriority_Name,
+        eIdenticalToPriority_Accn
+    };
+    int identical_to_priority = eIdenticalToPriority_Nothing;
+
     if (uo.HasField("IdenticalTo")) {
         const CUser_field& uf = uo.GetField("IdenticalTo");
         ITERATE (CUser_field::TData::TFields, it, uf.GetData().GetFields()) {
@@ -386,13 +398,24 @@ string CCommentItem::GetStringForRefTrack
             }
             ITERATE (CUser_field::TData::TFields, i, (**it).GetData().GetFields()) {
                 const CUser_field& sub = **i;
-                if (sub.GetLabel().GetStr() == "accession") {
-                    identical_to = sub.GetData().GetStr();
-                    break;
+                if (sub.GetLabel().GetStr() == "from") {
+                    identical_to_start = NStr::IntToString(sub.GetData().GetInt());
                 }
-                if (sub.GetLabel().GetStr() == "gi") {
+                if (sub.GetLabel().GetStr() == "to") {
+                    identical_to_end   = NStr::IntToString(sub.GetData().GetInt());
+                }
+                if (sub.GetLabel().GetStr() == "accession" && identical_to_priority <= eIdenticalToPriority_Accn ) {
+                    identical_to = sub.GetData().GetStr();
+                    identical_to_priority = eIdenticalToPriority_Accn;
+                }
+                if (sub.GetLabel().GetStr() == "name" && identical_to_priority <= eIdenticalToPriority_Name ) {
+                    identical_to = sub.GetData().GetStr();
+                    identical_to_priority = eIdenticalToPriority_Name;
+                }
+                if (sub.GetLabel().GetStr() == "gi" && identical_to_priority <=  eIdenticalToPriority_Gi ) {
                     identical_to = "gi:" +
                         NStr::IntToString(sub.GetData().GetInt());
+                    identical_to_priority = eIdenticalToPriority_Gi;
                 }
             }
         }
@@ -466,7 +489,12 @@ string CCommentItem::GetStringForRefTrack
 
     if ( !identical_to.empty() ) {
         oss << " The reference sequence is identical to "
-            << identical_to << ".";
+            << identical_to;
+        if( ! identical_to_start.empty() && ! identical_to_end.empty() ) {
+            oss << " (range: " << identical_to_start << "-" << 
+                identical_to_end << ")";
+        }
+        oss << ".";
     }
 
     {{

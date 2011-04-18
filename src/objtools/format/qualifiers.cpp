@@ -578,7 +578,6 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
     static const char* kOTHER = "OTHER";
 
     ITERATE (CCdregion::TCode_break, it, m_Value) {
-        string pos = CFlatSeqLoc((*it)->GetLoc(), ctx).GetString();
         const char* aa  = kOTHER;
         switch ((*it)->GetAa().Which()) {
         case CCode_break::C_Aa::e_Ncbieaa:
@@ -593,8 +592,15 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
         default:
             return;
         }
-        x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
-            CFormatQual::eUnquoted);
+
+        // Example accession where we have to iterate due to multiple pieces:
+        // NW_001468136
+        CSeq_loc_CI loc_ci( (*it)->GetLoc() );
+        for( ; loc_ci; ++loc_ci ) {
+            string pos = CFlatSeqLoc( *loc_ci.GetRangeAsSeq_loc(), ctx).GetString();
+            x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
+                CFormatQual::eUnquoted);
+        }
     }
 }
 

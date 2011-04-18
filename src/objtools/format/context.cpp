@@ -55,6 +55,7 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 
 #include <objtools/format/context.hpp>
 
@@ -72,7 +73,8 @@ USING_SCOPE(sequence);
 CBioseqContext::CBioseqContext
 (const CBioseq_Handle& seq,
  CFlatFileContext& ffctx,
- CMasterContext* mctx) :
+ CMasterContext* mctx,
+ CTopLevelSeqEntryContext *tlsec) :
     m_Handle(seq),
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
@@ -105,8 +107,10 @@ CBioseqContext::CBioseqContext
     m_PatSeqid(0),
     m_HasOperon(false),
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
+    m_IsGenomeAssembly(false),
     m_FFCtx(ffctx),
-    m_Master(mctx)
+    m_Master(mctx),
+    m_TLSeqEntryCtx(tlsec)
 {
     x_Init(seq, m_FFCtx.GetLocation());
 }
@@ -166,6 +170,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     x_SetLocation(user_loc);
     
     m_Encode.Reset(x_GetEncode());
+
+    x_SetFinishingStatusAndIsGenomeAssembly();
     
     m_HasOperon = x_HasOperon();
 
@@ -262,6 +268,55 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void)
         }
     }
 }
+
+void CBioseqContext::x_SetFinishingStatusAndIsGenomeAssembly(void)
+{
+    // we find both values at once since they're easier to both find at once
+
+    // translate finishing status
+    typedef pair<const string, const string>  TFinStatElem;
+    static const TFinStatElem sc_finstat_map[] = {
+        TFinStatElem("Annotation-directed-improvement", "ANNOTATION_DIRECTED_IMPROVEMENT"),
+        TFinStatElem("High-quality-draft",              "HIGH_QUALITY_DRAFT"),
+        TFinStatElem("Improved-high-quality-draft",     "IMPROVED_HIGH_QUALITY_DRAFT"),
+        TFinStatElem("Noncontiguous-finished",          "NONCONTIGUOUS_FINISHED"),
+        TFinStatElem("Standard-draft",                  "STANDARD_DRAFT")
+    };
+    typedef CStaticArrayMap<const string, const string, PNocase> TFinStatMap;
+    DEFINE_STATIC_ARRAY_MAP(TFinStatMap, sc_FinStatMap, sc_finstat_map);
+
+    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& uo = it->GetUser();
+        if (uo.IsSetType()  &&  uo.GetType().IsStr()) {
+            if (NStr::EqualNocase(uo.GetType().GetStr(), "StructuredComment")) {
+                if( uo.IsSetData() ) {
+                    ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
+                        const CUser_field &field = **field_iter;
+                        if( ! field.IsSetData() || ! field.GetData().IsStr() ||
+                            ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
+                            continue;
+                        }
+                        if( field.GetLabel().GetStr() == "StructuredCommentPrefix" && 
+                            field.GetData().GetStr() == "##Genome-Assembly-Data-START##" ) 
+                        {
+                            m_IsGenomeAssembly = true;
+                        }
+                        if( field.GetLabel().GetStr() == "Current Finishing Status" )
+                        {
+                            string asn_fin_stat = field.GetData().GetStr();
+                            replace( asn_fin_stat.begin(), asn_fin_stat.end(), ' ', '-' ); 
+                            TFinStatMap::const_iterator new_fin_stat_iter = sc_FinStatMap.find(asn_fin_stat);
+                            if( new_fin_stat_iter != sc_FinStatMap.end() ) {
+                                m_FinishingStatus = new_fin_stat_iter->second;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 bool CBioseqContext::x_HasOperon(void) const
 {
@@ -702,6 +757,58 @@ void CMasterContext::x_SetBaseName(void)
     }
 
     m_BaseName = parent_name;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// CTopLevelSeqEntryContext
+
+CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle )
+{
+    m_CanSourcePubsBeFused = false;
+
+    CBioseq_CI bioseq_iter( entry_handle.GetScope(), *entry_handle.GetSeq_entryCore() );
+    for( ; bioseq_iter; ++bioseq_iter ) {
+        ITERATE( CBioseq_Handle::TId, it, bioseq_iter->GetId() )  {
+            CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
+            if( ! seqId.IsNull() ) {
+                switch( seqId->Which() ) {
+                        case CSeq_id_Base::e_Gibbsq:
+                        case CSeq_id_Base::e_Gibbmt:
+                        case CSeq_id_Base::e_Embl:
+                        case CSeq_id_Base::e_Pir:
+                        case CSeq_id_Base::e_Swissprot:
+                        case CSeq_id_Base::e_Patent:        
+                        case CSeq_id_Base::e_Ddbj:
+                        case CSeq_id_Base::e_Prf:
+                        case CSeq_id_Base::e_Pdb:
+                        case CSeq_id_Base::e_Tpe:
+                        case CSeq_id_Base::e_Tpd:
+                        case CSeq_id_Base::e_Gpipe:
+                            // with some types, it's okay to merge
+                            m_CanSourcePubsBeFused = true;
+                            break;                        
+                        case CSeq_id_Base::e_Genbank:
+                        case CSeq_id_Base::e_Tpg:
+                            // Genbank allows merging only if it's the old-style 1 + 5 accessions
+                            if( NULL != seqId->GetTextseq_Id() &&
+                                seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
+                                    m_CanSourcePubsBeFused = true;
+                            }
+                            break;
+                        case CSeq_id_Base::e_not_set:
+                        case CSeq_id_Base::e_Local:
+                        case CSeq_id_Base::e_Other:
+                        case CSeq_id_Base::e_General:
+                        case CSeq_id_Base::e_Giim:                        
+                        case CSeq_id_Base::e_Gi:
+                            break;
+                        default:
+                            break;
+                }
+            }
+        }
+    }
 }
 
 

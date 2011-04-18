@@ -388,57 +388,10 @@ static void s_MergeDuplicates
         return;
     }
 
-    // see if merging is allowed (set sourcePubFuse)
-    bool sourcePubFuse = false;
-    {{
-        if( ctx.GetHandle().CanGetId() ) {
-            CBioseq_CI bioseq_iter( ctx.GetScope(), *ctx.GetTopLevelEntry().GetSeq_entryCore() );
-            for( ; bioseq_iter; ++bioseq_iter ) {
-                ITERATE( CBioseq_Handle::TId, it, bioseq_iter->GetId() )  { // old: ctx.GetHandle().GetId() , then .GetBioseqIds()
-                    CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
-                    if( ! seqId.IsNull() ) {
-                        switch( seqId->Which() ) {
-                        case CSeq_id_Base::e_Gibbsq:
-                        case CSeq_id_Base::e_Gibbmt:
-                        case CSeq_id_Base::e_Embl:
-                        case CSeq_id_Base::e_Pir:
-                        case CSeq_id_Base::e_Swissprot:
-                        case CSeq_id_Base::e_Patent:        
-                        case CSeq_id_Base::e_Ddbj:
-                        case CSeq_id_Base::e_Prf:
-                        case CSeq_id_Base::e_Pdb:
-                        case CSeq_id_Base::e_Tpe:
-                        case CSeq_id_Base::e_Tpd:
-                        case CSeq_id_Base::e_Gpipe:
-                            // with some types, it's okay to merge
-                            sourcePubFuse = true;
-                            break;                        
-                        case CSeq_id_Base::e_Genbank:
-                        case CSeq_id_Base::e_Tpg:
-                            // Genbank allows merging only if it's the old-style 1 + 5 accessions
-                            if( NULL != seqId->GetTextseq_Id() &&
-                                seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
-                                    sourcePubFuse = true;
-                            }
-                            break;
-                        case CSeq_id_Base::e_not_set:
-                        case CSeq_id_Base::e_Local:
-                        case CSeq_id_Base::e_Other:
-                        case CSeq_id_Base::e_General:
-                        case CSeq_id_Base::e_Giim:                        
-                        case CSeq_id_Base::e_Gi:
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }}       
-
-    // no merging allowed in this case
-    if( ! sourcePubFuse ) {
+    // see if merging is allowed
+    if( ! ctx.CanGetTLSeqEntryCtx() || 
+        ! ctx.GetTLSeqEntryCtx().GetCanSourcePubsBeFused() )
+    {
       return;
     }
 
@@ -597,7 +550,7 @@ void CReferenceItem::x_CreateUniqueStr(void) const
             continue;
         }
         if (!s_IsOnlySerial(pub)) {
-            pub.GetLabel(&m_UniqueStr, CPub::eContent, true);
+            pub.GetLabel(&m_UniqueStr, CPub::eContent, CPub::fLabel_Unique, CPub::eLabel_V1 );
         }
     }
 }

@@ -1698,13 +1698,6 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 //  could not be found.
 //  ----------------------------------------------------------------------------
 {
-    // This commented-out code is left here because it is very convenient
-    // for debugging purposes.
-    /* if( ! m_Loc.IsNull() && m_Loc->IsInt() && 
-        m_Loc->GetInt().GetFrom() == 29829 ) { // change the num
-            cerr << "";
-    } */
-
     s_feat.Reset();
     g_ref = NULL;
 

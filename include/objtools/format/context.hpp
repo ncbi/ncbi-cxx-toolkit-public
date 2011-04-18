@@ -60,6 +60,7 @@ BEGIN_SCOPE(objects)
 class CScope;
 class CMasterContext;
 class CFlatFileContext;
+class CTopLevelSeqEntryContext;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -78,7 +79,8 @@ public:
 
     // constructor
     CBioseqContext(const CBioseq_Handle& seq, CFlatFileContext& ffctx,
-        CMasterContext* mctx = 0);
+        CMasterContext* mctx = 0,
+        CTopLevelSeqEntryContext *tlsec = 0);
     // destructor
     ~CBioseqContext(void);
 
@@ -115,6 +117,10 @@ public:
     CMasterContext& GetMaster (void) { return *m_Master; }
     bool CanGetMaster         (void) const { return m_Master.NotNull(); }
     void SetMaster(CMasterContext& mctx);
+
+    // top-level Seq-entry info
+    CTopLevelSeqEntryContext& GetTLSeqEntryCtx(void) { return *m_TLSeqEntryCtx; }
+    bool CanGetTLSeqEntryCtx                  (void) const { return m_TLSeqEntryCtx.NotNull(); }
 
     // delta sequence
     bool IsDelta(void) const { return m_Repr == CSeq_inst::eRepr_delta; }
@@ -171,6 +177,9 @@ public:
     bool IsEncode             (void) const;  // provided by the ENCODE project
     const CUser_object& GetEncode(void) const;
 
+    const string &GetFinishingStatus(void) const;
+    bool IsGenomeAssembly(void) const;
+
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
 
     // patent seqid
@@ -201,6 +210,7 @@ private:
     void x_SetLocation(const CSeq_loc* user_loc = 0);
     void x_SetMapper(const CSeq_loc& loc);
     void x_SetHasMultiIntervalGenes(void);
+    void x_SetFinishingStatusAndIsGenomeAssembly(void);
     
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
@@ -214,6 +224,7 @@ private:
     string                m_Accession;
     string                m_WGSMasterAccn;
     string                m_WGSMasterName;
+    string                m_FinishingStatus;
 
     CSeq_inst::TRepr      m_Repr;
     CSeq_inst::TMol       m_Mol;
@@ -252,6 +263,7 @@ private:
     int  m_PatSeqid;
     bool m_HasOperon;
     bool m_HasMultiIntervalGenes;
+    bool m_IsGenomeAssembly;
 
     CConstRef<CUser_object> m_Encode;
     
@@ -261,6 +273,7 @@ private:
     CBioseq_Handle          m_Virtual;
     CFlatFileContext&       m_FFCtx;
     CRef<CMasterContext>    m_Master;
+    CRef<CTopLevelSeqEntryContext> m_TLSeqEntryCtx;
 };
 
 
@@ -312,7 +325,7 @@ public:
     typedef vector< CRef<CBioseqContext> >  TSections;
 
     // constructor
-    CFlatFileContext(const CFlatFileConfig& cfg) : m_Cfg(cfg) {}
+    CFlatFileContext(const CFlatFileConfig& cfg) : m_Cfg(cfg) { }
     // destructor
     ~CFlatFileContext(void) {}
 
@@ -343,6 +356,26 @@ private:
     CConstRef<CSubmit_block>    m_Submit;
     auto_ptr<SAnnotSelector>    m_Selector;
     CConstRef<CSeq_loc>         m_Loc;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// CTopLevelSeqEntryContext
+
+// This class is for information about a top-level Seq-entry which
+// doesn't belong in the entry itself because it has to be calculated
+// from it. Also, it doesn't belong in CFlatFileContext because it's
+// not formatting information.
+
+class CTopLevelSeqEntryContext  : public CObject
+{
+public:
+    CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle );
+
+    bool GetCanSourcePubsBeFused(void) const { return m_CanSourcePubsBeFused; }
+
+private:
+    bool m_CanSourcePubsBeFused;
 };
 
 
@@ -454,6 +487,18 @@ const CUser_object& CBioseqContext::GetEncode(void)  const
 }
 
 inline
+const string &CBioseqContext::GetFinishingStatus(void) const
+{
+    return m_FinishingStatus;
+}
+
+inline
+bool CBioseqContext::IsGenomeAssembly(void) const
+{
+    return m_IsGenomeAssembly;
+}
+
+inline
 const CFlatFileConfig& CBioseqContext::Config(void) const
 {
     return m_FFCtx.GetConfig();
@@ -524,7 +569,6 @@ bool CBioseqContext::HasMultiIntervalGenes(void) const
 {
     return m_HasMultiIntervalGenes;
 }
-
 
 // -------- CFlatFileContext
 

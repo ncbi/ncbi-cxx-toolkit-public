@@ -784,7 +784,7 @@ void CAsn2FlatApp::x_GetLocation
     }
     TSeqPos length = h.GetInst_Length();
     TSeqPos from   = x_GetFrom(args);
-    TSeqPos to     = min(x_GetTo(args), length);
+    TSeqPos to     = min(x_GetTo(args), length-1);
 
     if ( from == CRange<TSeqPos>::GetWholeFrom()  &&  to == length ) {
         // whole

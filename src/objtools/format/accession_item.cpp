@@ -85,7 +85,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
     // if no accession, do not show local or general in ACCESSION
     if ((id.IsGeneral()  ||  id.IsLocal())  &&
         (ctx.Config().IsModeEntrez()  ||  ctx.Config().IsModeGBench())) {
-        return;
+            return;
     }
     m_Accession = id.GetSeqIdString();
 
@@ -102,38 +102,42 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
             m_WGSAccession.erase();
         }
     }
-    
-    const list<string>* xtra = 0;
-    CSeqdesc_CI gb_desc(ctx.GetHandle(), CSeqdesc::e_Genbank);
-    if ( gb_desc ) {
-        x_SetObject(*gb_desc);
-        xtra = &gb_desc->GetGenbank().GetExtra_accessions();
-    }
 
-    CSeqdesc_CI embl_desc(ctx.GetHandle(), CSeqdesc::e_Embl);
-    if ( embl_desc ) {
-        x_SetObject(*embl_desc);
-        xtra = &embl_desc->GetEmbl().GetExtra_acc();
-    }
+    // extra accessions not done if we're taking a slice 
+    // (i.e. command-line args "-from" and "-to" )
+    if( ctx.GetLocation().IsWhole() ) {
 
-    if ( xtra != 0 ) {
-        ITERATE (list<string>, it, *xtra) {
-            if ( IsValidAccession(*it) ) {
-                m_ExtraAccessions.push_back(*it);
+        const list<string>* xtra = 0;
+        CSeqdesc_CI gb_desc(ctx.GetHandle(), CSeqdesc::e_Genbank);
+        if ( gb_desc ) {
+            x_SetObject(*gb_desc);
+            xtra = &gb_desc->GetGenbank().GetExtra_accessions();
+        }
+
+        CSeqdesc_CI embl_desc(ctx.GetHandle(), CSeqdesc::e_Embl);
+        if ( embl_desc ) {
+            x_SetObject(*embl_desc);
+            xtra = &embl_desc->GetEmbl().GetExtra_acc();
+        }
+
+        if ( xtra != 0 ) {
+            ITERATE (list<string>, it, *xtra) {
+                if ( IsValidAccession(*it) ) {
+                    m_ExtraAccessions.push_back(*it);
+                }
             }
         }
-    }
 
-    /// add GPipe accessions as extra
-    ITERATE (CBioseq::TId, it, ctx.GetHandle().GetBioseqCore()->GetId()) {
-        if ((*it)->IsGpipe()) {
-            m_ExtraAccessions.push_back((*it)->GetGpipe().GetAccession());
+        /// add GPipe accessions as extra
+        ITERATE (CBioseq::TId, it, ctx.GetHandle().GetBioseqCore()->GetId()) {
+            if ((*it)->IsGpipe()) {
+                m_ExtraAccessions.push_back((*it)->GetGpipe().GetAccession());
+            }
         }
-    }
 
-    sort(m_ExtraAccessions.begin(), m_ExtraAccessions.end());
+        sort(m_ExtraAccessions.begin(), m_ExtraAccessions.end());
 
-    if ( !ctx.GetLocation().IsWhole() ) {
+    } else {
         // specific region is set
         m_Region.Reset(&ctx.GetLocation());
         m_IsSetRegion = true;

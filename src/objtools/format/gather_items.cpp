@@ -204,10 +204,12 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
     m_ItemOS.Reset(&os);
     m_Context.Reset(&ctx);
 
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext( new CTopLevelSeqEntryContext(ctx.GetEntry()) );
+
     CConstRef<IFlatItem> item;
     item.Reset( new CStartItem() );
     os << item;
-    x_GatherSeqEntry(ctx.GetEntry());
+    x_GatherSeqEntry(ctx.GetEntry(), topLevelSeqEntryContext);
     item.Reset( new CEndItem() );
     os << item;
 }
@@ -223,7 +225,8 @@ CFlatGatherer::~CFlatGatherer(void)
 // Protected:
 
 
-void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry) const
+void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry,
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
 {
     if ( entry.IsSet()  &&  entry.GetSet().IsSetClass() ) {
         CBioseq_set::TClass clss = entry.GetSet().GetClass();
@@ -235,7 +238,7 @@ void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry) const
              clss == CBioseq_set::eClass_wgs_set  ||
              clss == CBioseq_set::eClass_gen_prod_set ) {
             for ( CSeq_entry_CI it(entry); it; ++it ) {
-                x_GatherSeqEntry(*it);
+                x_GatherSeqEntry(*it, topLevelSeqEntryContext);
             }
             return;
         }
@@ -260,7 +263,7 @@ void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry) const
         if (id.GetSeqId()->IsLocal()  &&  cfg.SuppressLocalId()) {
             continue;
         }
-        x_GatherBioseq(*seq_iter);
+        x_GatherBioseq(*seq_iter, topLevelSeqEntryContext);
     }
 } 
 
@@ -323,7 +326,8 @@ bool s_BioSeqHasContig(
 }
 
 // a default implementation for GenBank /  DDBJ formats
-void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
+void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq,
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext ) const
 {
     const CFlatFileConfig& cfg = Config();
     if ( cfg.IsModeRelease() && cfg.IsStyleContig() && 
@@ -347,10 +351,11 @@ void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
         x_DoMultipleSections(seq);
     } else {
         // display as a single bioseq (single section)
-        m_Current.Reset(new CBioseqContext(seq, *m_Context));
+        m_Current.Reset(new CBioseqContext(seq, *m_Context, 0, 
+            (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : NULL)));
         m_Context->AddSection(m_Current);
         x_DoSingleSection(*m_Current);
-    }   
+    }
 }
 
 
@@ -1071,7 +1076,7 @@ void CFlatGatherer::x_GatherSequence(void) const
 
     bool first = true;
     CConstRef<IFlatItem> item;
-    for ( TSeqPos pos = from; pos <= to; pos += kChunkSize ) {
+    for ( TSeqPos pos = 1; pos <= to; pos += kChunkSize ) {
         TSeqPos end = min( pos + kChunkSize - 1, to );
         item.Reset( new CSequenceItem( pos, end, first, *m_Current ) );
         *m_ItemOS << item;
@@ -1756,6 +1761,72 @@ static string s_GetFeatDesc(const CSeq_feat_Handle& feat)
     return desc.c_str();
 }
 
+// If the loc contains NULLs between any parts, put NULLs between
+// *every* part.
+// If no normalization occurred, we return the original loc.
+static
+CConstRef<CSeq_loc> s_NormalizeNullsBetween( CConstRef<CSeq_loc> loc )
+{
+    if( ! loc ) {
+        return loc;
+    }
+
+    if( ! loc->IsMix() || ! loc->GetMix().IsSet() ) {
+        return loc;
+    }
+
+    if( loc->GetMix().Get().size() < 2 ) {
+        return loc;
+    }
+
+    // first check for the common cases of not having to normalize anything
+    bool need_to_normalize = false;
+    {{
+        CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Allow );
+        bool saw_multiple_non_nulls_in_a_row = false;
+        bool last_was_null = true; // edges considered NULL for our purposes here
+        bool any_null_seen = false; // edges don't count here, though
+        for ( ; loc_ci ; ++loc_ci ) {
+            if( loc_ci.IsEmpty() ) {
+                last_was_null = true;
+                any_null_seen = true;
+            } else {
+                if( last_was_null ) {
+                    last_was_null = false;
+                } else {
+                    // two non-nulls in a row
+                    saw_multiple_non_nulls_in_a_row = true;
+                }
+            }
+        }
+
+        need_to_normalize = ( any_null_seen && saw_multiple_non_nulls_in_a_row );
+    }}
+
+    if( ! need_to_normalize ) {
+        return loc;
+    }
+
+    // normalization is needed
+    // it's very rare that we actually have to do the normalization.
+    CRef<CSeq_loc> null_loc( new CSeq_loc );
+    null_loc->SetNull();
+
+    CRef<CSeq_loc> new_loc( new CSeq_loc );
+    CSeq_loc_mix::Tdata &mix_data = new_loc->SetMix().Set();
+    CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Skip );
+    for( ; loc_ci ; ++loc_ci ) {
+        if( ! mix_data.empty() ) {
+            mix_data.push_back( null_loc );
+        }
+        CRef<CSeq_loc> loc_piece( new CSeq_loc );
+        loc_piece->Assign( *loc_ci.GetRangeAsSeq_loc() );
+        mix_data.push_back( loc_piece );
+    }
+
+    return new_loc;
+}
+
 
 static void s_CleanCDDFeature(const CSeq_feat& feat)
 {
@@ -1862,6 +1933,30 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
 
+    // logic to handle offsets that occur when user sets 
+    // the -from and -to command-line parameters
+    CRef<CSeq_loc_Mapper> slice_mapper; // NULL (unset) if no slicing
+    if( ! ctx.GetLocation().IsWhole() ) {
+        // build slice_mapper for mapping locations
+
+        CSeq_id seq_id;
+        seq_id.Assign( *ctx.GetHandle().GetSeqId() );
+
+        const size_t new_len = sequence::GetLength( ctx.GetLocation(), &scope );
+
+        CSeq_loc old_loc;
+        old_loc.SetInt().SetId( seq_id );
+        old_loc.SetInt().SetFrom( 0 );
+        old_loc.SetInt().SetTo( new_len - 1 );
+
+        slice_mapper.Reset( new CSeq_loc_Mapper( loc, old_loc ) );
+        slice_mapper->SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
+        slice_mapper->TruncateNonmappingRanges();
+
+        // skip gaps when we take slices
+        gap_it = CSeqMap_CI();
+    }
+
     // Gaps of length zero are only shown for SwissProt Genpept records
     const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
 
@@ -1889,6 +1984,11 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             /// HACK HACK HACK
             /// we may need to assert proper product resolution
             ///
+
+            if( slice_mapper && (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) ) {
+                // skip gaps when we take slices (i.e. "-from" and "-to" command-line args)
+                continue;
+            }
 
             if (it->GetData().IsRna()  &&  it->IsSetProduct()) {
                 vector<CMappedFeat> children =
@@ -1921,14 +2021,22 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
             prev_feat = feat;
 
-            CConstRef<CSeq_loc> feat_loc(&it->GetLocation());
+            CConstRef<CSeq_loc> feat_loc(&it->GetLocation()); 
+
+            // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
+            if( slice_mapper )
+            {
+                feat_loc.Reset( slice_mapper->Map( *feat_loc ) );
+            }
+
+            feat_loc = s_NormalizeNullsBetween( feat_loc );
         
             // make sure location ends on the current bioseq
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
                     if (!ctx.Config().IsFormatFTable()) {
-                        x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx);
+                        x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx, slice_mapper);
                     }
                 }
                 continue;
@@ -1975,6 +2083,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                         // map features from protein
                         if (!ctx.Config().IsFormatFTable()) {
                             x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx, 
+                                slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
                         }
                         break;
@@ -2293,6 +2402,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
     const CSeq_feat& feat,
     const CSeq_loc& mapped_loc,
     CBioseqContext& ctx,
+    CRef<CSeq_loc_Mapper> slice_mapper,
     CConstRef<CFeatureItem> cdsFeatureItem ) const
 //  ============================================================================
 {
@@ -2327,7 +2437,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
 
     // map from cds product to nucleotide
     CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
-    prot_to_cds.SetFuzzOption( CSeq_loc_Mapper::eFuzzOption_CStyle );
+    prot_to_cds.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle );
     
     CSeq_feat_Handle prev;  // keep track of the previous feature
     for ( ; it; ++it ) {
@@ -2365,7 +2475,6 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
                 // s_FixIntervalProtToCds( feat, curr_loc, loc ); // This line appears to be unnecessary, but I'm leaving it in in case further testing reveals I'm wrong.
             }
         }
-
         if (loc) {
             if (loc->IsMix()  ||  loc->IsPacked_int()) {
                 loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);
@@ -2378,17 +2487,17 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
             continue;
         }
 
-        // make sure feature is within sublocation
-        if ( ctx.GetMasterLocation() != 0 ) {
-            const CSeq_loc& mloc = *ctx.GetMasterLocation();
-            if ( Compare(mloc, *loc, &scope) != eContains ) {
+        // for command-line args "-from" and "-to"
+        if( slice_mapper && loc ) {
+            loc = slice_mapper->Map( *loc );
+            if( loc->IsNull() ) {
                 continue;
             }
         }
-                    
+
         CConstRef<IFlatItem> item
             ( x_NewFeatureItem(*it, ctx, 
-                               loc, CFeatureItem::eMapped_from_prot,
+                               s_NormalizeNullsBetween(loc), CFeatureItem::eMapped_from_prot,
                                cdsFeatureItem ) );
         *m_ItemOS << item;
 

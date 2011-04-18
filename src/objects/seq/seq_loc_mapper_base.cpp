@@ -518,7 +518,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_FuzzOption(eFuzzOption_Normal),
+      m_FuzzOption(0),
       m_SeqInfo(seqinfo ? seqinfo : new CDefault_Mapper_Sequence_Info)
 {
 }
@@ -535,7 +535,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
       m_LastTruncated(false),
       m_Mappings(mapping_ranges),
       m_CurrentGroup(0),
-      m_FuzzOption(eFuzzOption_Normal),
+      m_FuzzOption(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
 }
@@ -553,7 +553,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_FuzzOption(eFuzzOption_Normal),
+      m_FuzzOption(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeFeat(map_feat, dir);
@@ -572,7 +572,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_FuzzOption(eFuzzOption_Normal),
+      m_FuzzOption(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeLocs(source, target);
@@ -592,7 +592,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_FuzzOption(eFuzzOption_Normal),
+      m_FuzzOption(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeAlign(map_align, to_id, opts);
@@ -612,7 +612,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
-      m_FuzzOption(eFuzzOption_Normal),
+      m_FuzzOption(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeAlign(map_align, to_row, opts);
@@ -624,7 +624,7 @@ CSeq_loc_Mapper_Base::~CSeq_loc_Mapper_Base(void)
     return;
 }
 
-void CSeq_loc_Mapper_Base::SetFuzzOption( EFuzzOption newOption )
+void CSeq_loc_Mapper_Base::SetFuzzOption( TFuzzOption newOption )
 {
     m_FuzzOption = newOption;
 }
@@ -2283,6 +2283,16 @@ void CSeq_loc_Mapper_Base::x_OptimizeSeq_loc(CRef<CSeq_loc>& loc) const
         return;
     case CSeq_loc::e_Mix:
         {
+            // remove final NULL, if any
+            {{
+                CSeq_loc_mix::Tdata &mix_locs = loc->SetMix().Set();
+                while( (mix_locs.size() > 1) && 
+                       (mix_locs.back()->IsNull()) ) 
+                {
+                    mix_locs.pop_back();
+                }
+            }}
+
             switch ( loc->GetMix().Get().size() ) {
             case 0:
                 // Empty mix - convert to Null.
@@ -2395,7 +2405,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
 
     TRangeFuzz fuzz;
 
-    if( m_FuzzOption != eFuzzOption_CStyle ) {
+    if( (m_FuzzOption & fFuzzOption_CStyle) == 0 ) {
         //// Indicate partial ranges using fuzz.
         if ( partial_left ) {
             // Set fuzz-from if a range was skipped on the left.
@@ -2427,10 +2437,22 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     // If the previous range could not be mapped and was removed,
     // indicate it using fuzz.
     if ( m_LastTruncated ) {
-        if ( (m_FuzzOption != eFuzzOption_CStyle) && !fuzz.first ) {         // TODO: Consider uncommenting this "if" after we switch permanntly to C++
-            // lim tl - always indicates left, regardless of the strand
-            fuzz.first.Reset(new CInt_fuzz);
-            fuzz.first->SetLim(CInt_fuzz::eLim_tl);
+        // TODO: Reconsider this "if" after we switch permanntly to C++
+        if ( ((m_FuzzOption & fFuzzOption_CStyle) == 0) && !fuzz.first ) {
+            if( (m_FuzzOption & fFuzzOption_RemoveLimTlOrTr) != 0 ) {
+                // we set lt or gt, as appropriate for strand
+                if( reverse && ! fuzz.second ) {
+                    fuzz.second.Reset( new CInt_fuzz );
+                    fuzz.second->SetLim(CInt_fuzz::eLim_gt);
+                } else if( ! reverse && ! fuzz.first ) {
+                    fuzz.first.Reset( new CInt_fuzz );
+                    fuzz.first->SetLim(CInt_fuzz::eLim_lt);
+                }
+            } else {
+                // lim tl - always indicates left, regardless of the strand
+                fuzz.first.Reset(new CInt_fuzz);
+                fuzz.first->SetLim(CInt_fuzz::eLim_tl);
+            }
         }
         // Reset the flag - current range is mapped at least partially.
         m_LastTruncated = false;
@@ -2478,7 +2500,9 @@ void CSeq_loc_Mapper_Base::x_SetLastTruncated(void)
     // If the mapped location does not have any fuzz set, set it to
     // indicate the truncated part.
     if ( m_Dst_loc  &&  !m_Dst_loc->IsPartialStop(eExtreme_Biological) ) {
-        m_Dst_loc->SetTruncatedStop(true, eExtreme_Biological);
+        if( (m_FuzzOption & fFuzzOption_RemoveLimTlOrTr) == 0 ) {
+            m_Dst_loc->SetTruncatedStop(true, eExtreme_Biological);
+        }
     }
 }
 
@@ -2973,7 +2997,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::Map(const CSeq_loc& src_loc)
     // Push any remaining mapped ranges to the mapped location.
     x_PushRangesToDstMix();
     // C-style generates less fuzz, so we would then have to remove some
-    if( m_FuzzOption == eFuzzOption_CStyle ) {
+    if( (m_FuzzOption & fFuzzOption_CStyle) != 0 ) {
         x_StripExtraneousFuzz(m_Dst_loc);
     }
     // Optimize mapped location.

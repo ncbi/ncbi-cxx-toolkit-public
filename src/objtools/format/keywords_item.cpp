@@ -233,6 +233,10 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     if (ctx.IsEncode()) {
         x_AddKeyword("ENCODE");
     }
+
+    if( ctx.IsGenomeAssembly() && ! ctx.GetFinishingStatus().empty() ) {
+        x_AddKeyword( ctx.GetFinishingStatus() );
+    }
     
     for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
         const list<string>* keywords = NULL;

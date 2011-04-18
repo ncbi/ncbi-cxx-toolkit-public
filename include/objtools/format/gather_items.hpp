@@ -70,8 +70,10 @@ protected:
     CBioseqContext& Context      (void) const { return *m_Current; }
     const CFlatFileConfig& Config(void) const { return m_Context->GetConfig(); }
 
-    virtual void x_GatherSeqEntry(const CSeq_entry_Handle& entry) const;
-    virtual void x_GatherBioseq(const CBioseq_Handle& seq) const;
+    virtual void x_GatherSeqEntry(const CSeq_entry_Handle& entry, 
+        CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
+    virtual void x_GatherBioseq(const CBioseq_Handle& seq, 
+        CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
     virtual void x_DoMultipleSections(const CBioseq_Handle& seq) const;
     virtual void x_DoSingleSection(CBioseqContext& ctx) const = 0;
 
@@ -94,6 +96,7 @@ protected:
     // features
     void x_GatherFeatures  (void) const;
     void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, const CSeq_loc& mapped_loc, CBioseqContext& ctx,
+        CRef<CSeq_loc_Mapper> slice_mapper,
         CConstRef<CFeatureItem> cdsFeatureItem = CConstRef<CFeatureItem>() ) const;
     void x_CopyCDSFromCDNA(const CSeq_feat& feat, CBioseqContext& ctx) const;
     bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
