@@ -3049,7 +3049,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             // the most recent entry (if any) first
             string temp;
             REVERSE_ITERATE(TEntries, e, *toc) {
-                if (temp) {
+                if (!temp.empty()) {
                     if (e->GetType() == CTarEntryInfo::eHardLink
                         ||  temp != x_ToFilesystemPath(e->GetName())) {
                         continue;
