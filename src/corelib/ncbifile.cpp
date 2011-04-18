@@ -2180,7 +2180,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     if ( owner ) {
         struct passwd *pw = getpwuid(st.st_uid);
         if (pw) {
-            (*owner).assign(pw->pw_name);
+            owner->assign(pw->pw_name);
         } else {
             NStr::UIntToString(*owner, st.st_uid);
         }
@@ -2188,7 +2188,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     if ( group ) {
         struct group *gr = getgrgid(st.st_gid);
         if ( gr ) {
-            (*group).assign(gr->gr_name);
+            group->assign(gr->gr_name);
         } else {
             NStr::UIntToString(*group, st.st_gid);
         }
