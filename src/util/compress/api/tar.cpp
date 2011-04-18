@@ -3174,15 +3174,20 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
         = m_Current.m_Stat.st_ctime
         = CTime(CTime::eCurrent).GetTimeT();
 
+#ifdef NCBI_OS_UNIX
+    // use regular file mode, adjusted with umask()
     mode_t mode = s_TarToMode(fTarURead | fTarUWrite |
                               fTarGRead | fTarGWrite |
                               fTarORead | fTarOWrite);
-#ifdef NCBI_OS_UNIX
     mode_t u = umask(0);
     umask(u);
     mode &= ~u;
-#endif // NCBI_OS_UNIX
     m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(mode);
+#else
+    // safe mode
+    m_Current.m_Stat.st_mode = (fTarURead | fTarUWrite |
+                                fTarGRead | fTarORead);
+#endif // NCBI_OS_UNIX
 
 #ifdef NCBI_OS_UNIX
     struct passwd *pw = getpwuid(m_Current.m_Stat.st_uid);
@@ -3199,8 +3204,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                                  &m_Current.m_GroupName,
                                  &uid, &gid);
     /* these are fake but we don't want to leave plain 0 (root) in there */
-    m_Current.m_Stat.st_uid = uid;
-    m_Current.m_Stat.st_gid = gid;
+    m_Current.m_Stat.st_uid = (uid_t) uid;
+    m_Current.m_Stat.st_gid = (uid_t) gid;
 #endif // NCBI_OS_UNIX
 
     x_AppendStream(entry.GetName(), is);
