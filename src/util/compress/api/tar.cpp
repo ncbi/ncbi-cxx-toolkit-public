@@ -3049,7 +3049,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             // the most recent entry (if any) first
             string temp;
             REVERSE_ITERATE(TEntries, e, *toc) {
-                if (!temp.empty()) {
+                if (temp) {
                     if (e->GetType() == CTarEntryInfo::eHardLink
                         ||  temp != x_ToFilesystemPath(e->GetName())) {
                         continue;
@@ -3057,7 +3057,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                 } else if (path == x_ToFilesystemPath(e->GetName())) {
                     found = true;
                     if (e->GetType() == CTarEntryInfo::eHardLink) {
-                        temp = x_ToFilesystemPath(e->GetLinkName());
+                        temp.swap(x_ToFilesystemPath(e->GetLinkName()));
                         continue;
                     }
                 } else {
@@ -3194,10 +3194,15 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     if (gr)
         m_Current.m_GroupName.assign(gr->gr_name);
 #else
+    unsigned int uid = 0, gid = 0;
     CWinSecurity::GetObjectOwner(GetCurrentProcess(),
                                  SE_KERNEL_OBJECT,
                                  &m_Current.m_UserName,
-                                 &m_Current.m_GroupName);
+                                 &m_Current.m_GroupName,
+                                 &uid, &gid);
+    /* these are fake but we don't want to leave plain 0 (root) in there */
+    m_Current.m_Stat.st_uid = uid;
+    m_Current.m_Stat.st_gid = gid;
 #endif // NCBI_OS_UNIX
 
     x_AppendStream(entry.GetName(), is);
