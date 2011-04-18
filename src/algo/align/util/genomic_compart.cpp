@@ -35,9 +35,13 @@
 
 #include <algo/align/util/genomic_compart.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+//#define _VERBOSE_DEBUG
+
 
 bool IsIntersecting(const pair<TSeqRange, TSeqRange>& r1,
                     const pair<TSeqRange, TSeqRange>& r2)
@@ -46,7 +50,7 @@ bool IsIntersecting(const pair<TSeqRange, TSeqRange>& r1,
         (r1.first.IntersectingWith(r2.first)  ||
          r1.second.IntersectingWith(r2.second));
 
-    /**
+#ifdef _VERBOSE_DEBUG
     cerr << "("
         << r1.first << ", "
         << r1.second
@@ -58,7 +62,7 @@ bool IsIntersecting(const pair<TSeqRange, TSeqRange>& r1,
         << ": is_intersecting = "
         << (is_intersecting ? "true" : "false")
         << endl;
-        **/
+#endif
 
     return is_intersecting;
 }
@@ -77,19 +81,19 @@ bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
                         (r2.first < r1.first  &&  r1.second < r2.second);
     }
 
-    /**
+#ifdef _VERBOSE_DEBUG
     cerr << "("
         << r1.first << ", "
         << r1.second
-        << ", " << s1 << ")"
+        << ", " << (s1 == eNa_strand_minus ? '-' : '+') << ")"
         << " x ("
         << r2.first << ", "
         << r2.second
-        << ", " << s2 << ")"
+        << ", " << (s2 == eNa_strand_minus ? '-' : '+') << ")"
         << ": is_consistent = "
         << (is_consistent ? "true" : "false")
         << endl;
-        **/
+#endif
 
     return is_consistent;
 }
@@ -136,7 +140,7 @@ TSeqPos Difference(const pair<TSeqRange, TSeqRange>& r1,
     }
     **/
 
-    /**
+#ifdef _VERBOSE_DEBUG
     cerr << "("
         << r1.first << ", "
         << r1.second << ")"
@@ -145,7 +149,7 @@ TSeqPos Difference(const pair<TSeqRange, TSeqRange>& r1,
         << r2.second << ")"
         << ": diff = " << diff
         << endl;
-        **/
+#endif
 
     return diff;
 }
@@ -167,6 +171,16 @@ struct SRangesBySize
 };
 
 
+struct SSeqAlignsBySize
+{
+    bool operator()(const CRef<CSeq_align>& al_ref1,
+                    const CRef<CSeq_align>& al_ref2) const
+    {
+        return al_ref1->GetAlignLength() > al_ref2->GetAlignLength();
+    };
+};
+
+
 void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                       list< CRef<CSeq_align_set> >& align_sets,
                       TCompartOptions options)
@@ -176,13 +190,53 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
     //
     typedef pair<CSeq_id_Handle, ENa_strand> TIdStrand;
     typedef pair<TIdStrand, TIdStrand> TIdPair;
-    typedef map<TIdPair, list< CRef<CSeq_align> > > TAlignments;
+    typedef map<TIdPair, vector< CRef<CSeq_align> > > TAlignments;
     TAlignments alignments;
     ITERATE (list< CRef<CSeq_align> >, it, aligns) {
+        /**
+        CRef<CSeq_align> align = *it;
+        if (align->GetSegs().IsDenseg()) {
+            if (align->GetSeqStrand(0) == eNa_strand_minus) {
+                 cerr << "  before flip: ("
+                     << align->GetSeqRange(0) << ", "
+                     << (align->GetSeqStrand(0) == eNa_strand_minus ? '-' : '+')
+                     << ") - ("
+                     << align->GetSeqRange(1) << ", "
+                     << (align->GetSeqStrand(1) == eNa_strand_minus ? '-' : '+')
+                     << ")"
+                     << endl;
+
+                align->SetSegs().SetDenseg().Reverse();
+
+                 cerr << "  after flip: ("
+                     << align->GetSeqRange(0) << ", "
+                     << (align->GetSeqStrand(0) == eNa_strand_minus ? '-' : '+')
+                     << ") - ("
+                     << align->GetSeqRange(1) << ", "
+                     << (align->GetSeqStrand(1) == eNa_strand_minus ? '-' : '+')
+                     << ")"
+                     << endl;
+
+            }
+        }
+        **/
+
+
         CSeq_id_Handle qid = CSeq_id_Handle::GetHandle((*it)->GetSeq_id(0));
         ENa_strand q_strand = (*it)->GetSeqStrand(0);
         CSeq_id_Handle sid = CSeq_id_Handle::GetHandle((*it)->GetSeq_id(1));
         ENa_strand s_strand = (*it)->GetSeqStrand(1);
+
+        // strand normalization
+        if (q_strand != s_strand  &&  q_strand == eNa_strand_minus) {
+            std::swap(q_strand, s_strand);
+        }
+        else if (q_strand == eNa_strand_minus) {
+            q_strand = eNa_strand_plus;
+            s_strand = eNa_strand_plus;
+        }
+
+
         TIdPair p(TIdStrand(qid, q_strand), TIdStrand(sid, s_strand));
         alignments[p].push_back(*it);
     }
@@ -193,12 +247,29 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 
 
     // we only compartmentalize within each sequence id / strand pair
-    ITERATE (TAlignments, align_it, alignments) {
+    NON_CONST_ITERATE (TAlignments, align_it, alignments) {
         const TIdPair& id_pair = align_it->first;
         ENa_strand q_strand = id_pair.first.second;
         ENa_strand s_strand = id_pair.second.second;
 
-        const list< CRef<CSeq_align> >& aligns = align_it->second;
+        vector< CRef<CSeq_align> >& aligns = align_it->second;
+        std::sort(aligns.begin(), aligns.end(), SSeqAlignsBySize());
+#ifdef _VERBOSE_DEBUG
+        {{
+             cerr << "ids: " << id_pair.first.first << " x "
+                 << id_pair.second.first << endl;
+             ITERATE (vector< CRef<CSeq_align> >, it, aligns) {
+                 cerr << "  ("
+                     << (*it)->GetSeqRange(0) << ", "
+                     << ((*it)->GetSeqStrand(0) == eNa_strand_minus ? '-' : '+')
+                     << ") - ("
+                     << (*it)->GetSeqRange(1) << ", "
+                     << ((*it)->GetSeqStrand(1) == eNa_strand_minus ? '-' : '+')
+                     << ")"
+                     << endl;
+             }
+         }}
+#endif
 
         //
         // reduce the list to a set of overall ranges
@@ -208,39 +279,41 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 
         vector<TAlignRange> align_ranges;
 
-        ITERATE (list< CRef<CSeq_align> >, iter, aligns) {
+        ITERATE (vector< CRef<CSeq_align> >, iter, aligns) {
             TSeqRange q_range = (*iter)->GetSeqRange(0);
             TSeqRange s_range = (*iter)->GetSeqRange(1);
             TRange r(q_range, s_range);
             align_ranges.push_back(TAlignRange(r, *iter));
         }
 
-        /**
-        cerr << "ranges: "
-            << id_pair.first.first << "/" << q_strand
-            << " x "
-            << id_pair.second.first << "/" << s_strand
-            << ":"<< endl;
-        vector<TAlignRange>::const_iterator prev_it = align_ranges.end();
-        ITERATE (vector<TAlignRange>, it, align_ranges) {
-            cerr << "  ("
-                << it->first.first << ", "
-                << it->first.second << ")"
-                << " [" << it->first.first.GetLength()
-                << ", " << it->first.second.GetLength() << "]";
-            if (prev_it != align_ranges.end()) {
-                cerr << "  consistent="
-                    << (IsConsistent(prev_it->first, it->first,
-                                     q_strand, s_strand) ? "true" : "false");
-                cerr << "  diff="
-                    << Difference(prev_it->first, it->first,
-                                  q_strand, s_strand);
-            }
+#if 0//def _VERBOSE_DEBUG
+        {{
+             cerr << "ranges: "
+                 << id_pair.first.first << "/" << q_strand
+                 << " x "
+                 << id_pair.second.first << "/" << s_strand
+                 << ":"<< endl;
+             vector<TAlignRange>::const_iterator prev_it = align_ranges.end();
+             ITERATE (vector<TAlignRange>, it, align_ranges) {
+                 cerr << "  ("
+                     << it->first.first << ", "
+                     << it->first.second << ")"
+                     << " [" << it->first.first.GetLength()
+                     << ", " << it->first.second.GetLength() << "]";
+                 if (prev_it != align_ranges.end()) {
+                     cerr << "  consistent="
+                         << (IsConsistent(prev_it->first, it->first,
+                                          q_strand, s_strand) ? "true" : "false");
+                     cerr << "  diff="
+                         << Difference(prev_it->first, it->first,
+                                       q_strand, s_strand);
+                 }
 
-            cerr << endl;
-            prev_it = it;
-        }
-        **/
+                 cerr << endl;
+                 prev_it = it;
+             }
+         }}
+#endif
 
         //
         // sort by descending hit size
@@ -260,8 +333,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
             list< multiset<TAlignRange> >::iterator best_compart =
                 compartments.end();
             TSeqPos best_diff = kMax_Int;
+            size_t comp_id = 0;
             NON_CONST_ITERATE (list< multiset<TAlignRange> >,
                                compart_it, compartments) {
+                ++comp_id;
                 multiset<TAlignRange>::iterator place =
                     compart_it->lower_bound(*it);
 
@@ -321,9 +396,20 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     }
                 }
 
-                if (is_consistent  &&
-                    ( (options & fCompart_AllowIntersections)  ||
-                      !is_intersecting )  &&
+#ifdef _VERBOSE_DEBUG
+                cerr << "  comp_id=" << comp_id
+                    << "  is_consistent=" << (is_consistent ? "true" : "false")
+                    << "  is_intersecting=" << (is_intersecting ? "true" : "false")
+                    << "  allow intersect="
+                    << ((options & fCompart_AllowIntersections) ? "true" : "false")
+                    << "  diff=" << diff
+                    << "  best_diff=" << best_diff
+                    << endl;
+#endif
+
+                if ( (is_consistent  ||
+                      ( (options & fCompart_AllowIntersections)  &&
+                        is_intersecting ))  &&
                     diff < best_diff) {
                     best_compart = compart_it;
                     best_diff = diff;
@@ -339,25 +425,27 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                 best_compart->insert(*it);
             }
 
-            /**
-            cerr << "compartments: found " << compartments.size() << endl;
-            size_t count = 0;
-            ITERATE (list< multiset<TAlignRange> >, it, compartments) {
-                ++count;
-                cerr << "  compartment " << count << endl;
-                ITERATE (multiset<TAlignRange>, i, *it) {
-                    cerr << "    ("
-                        << i->first.first << ", "
-                        << i->first.second << ")"
-                        << " [" << i->first.first.GetLength()
-                        << ", " << i->first.second.GetLength() << "]"
-                        << endl;
-                }
-            }
-            **/
+#ifdef _VERBOSE_DEBUG
+            {{
+                 cerr << "compartments: found " << compartments.size() << endl;
+                 size_t count = 0;
+                 ITERATE (list< multiset<TAlignRange> >, it, compartments) {
+                     ++count;
+                     cerr << "  compartment " << count << endl;
+                     ITERATE (multiset<TAlignRange>, i, *it) {
+                         cerr << "    ("
+                             << i->first.first << ", "
+                             << i->first.second << ")"
+                             << " [" << i->first.first.GetLength()
+                             << ", " << i->first.second.GetLength() << "]"
+                             << endl;
+                     }
+                 }
+             }}
+#endif
         }
 
-        /**
+#ifdef _VERBOSE_DEBUG
         {{
              cerr << "found " << compartments.size() << endl;
              size_t count = 0;
@@ -374,7 +462,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                  }
              }
          }}
-         **/
+#endif
 
         // pack into seq-align-sets
         ITERATE (list< multiset<TAlignRange> >, it, compartments) {
