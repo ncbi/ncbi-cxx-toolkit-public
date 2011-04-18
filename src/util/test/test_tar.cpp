@@ -74,14 +74,15 @@ protected:
     CTar::TFlags m_Flags;
 
     enum EAction {
-        eNone    =  0,
-        eCreate  = (1 << 0),
-        eAppend  = (1 << 1),
-        eUpdate  = (1 << 2),
-        eList    = (1 << 3),
-        eExtract = (1 << 4),
-        eStream  = (1 << 5),
-        eTest    = (1 << 6)
+        eNone      =  0,
+        eCreate    = (1 << 0),
+        eAppend    = (1 << 1),
+        eUpdate    = (1 << 2),
+        eList      = (1 << 3),
+        eExtract   = (1 << 4),
+        eStreamIn  = (1 << 5),
+        eStreamOut = (1 << 6),
+        eTest      = (1 << 7)
     };
     typedef unsigned int TAction;
 };
@@ -119,7 +120,6 @@ void CTarTest::Init(void)
     args->AddFlag("u", "Update archive");
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
-    args->AddFlag("X", "Stream extract single entry [non-standard]");
     args->AddFlag("T", "Test archive [non-standard]");
     args->AddKey ("f", "archive_file_name",
                   "Archive file name;  use '-' for stdin/stdout",
@@ -144,6 +144,7 @@ void CTarTest::Init(void)
     args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
     args->AddFlag("k", "Keep old files when extracting");
     args->AddFlag("v", "Turn on debugging information");
+    args->AddFlag("s", "Use stream operations with archive");
     args->AddFlag("lfs", "Large File Support check [non-standard]");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of files to process", CArgDescriptions::eString);
@@ -278,26 +279,26 @@ int CTarTest::Run(void)
     if (args["x"].HasValue()) {
         action |= eExtract;
     }
-    if (args["X"].HasValue()) {
-        action |= eStream;
-    }
     if (args["T"].HasValue()) {
         action |= eTest;
     }
     if (!action  ||  (action & (action - 1))) {
         NCBI_THROW(CArgException, eInvalidArg,
-                   "You must specify exactly one of c, r, u, t, x, X, T");
+                   "You must specify exactly one of c, r, u, t, x, T");
     }
+    size_t n = args.GetNExtra();
+
+    bool stream = args["s"].HasValue();
 
     size_t blocking_factor = args["b"].AsInteger();
 
     auto_ptr<CTar> tar;
 
-    if (action != eStream  ||  args.GetNExtra() != 1) {
+    if (action != eExtract  ||  !stream  ||  n != 1) {
         if (file.empty()) {
             CNcbiIos* io = 0;
-            if (action == eList  ||  action == eExtract ||  action == eTest) {
-                io = &cin;
+            if (action == eList ||  action == eExtract  ||  action == eTest) {
+                io = &NcbiCin;
 #ifdef NCBI_OS_MSWIN
                 _setmode(_fileno(stdin), _O_BINARY);
 #endif // NCBI_OS_MSWIN
@@ -310,7 +311,7 @@ int CTarTest::Run(void)
                 NCBI_THROW(CArgException, eInvalidArg, "Cannot update pipe");
             }
             _ASSERT(io);
-            tar.reset(new CTar(*io, blocking_factor));
+            tar.reset(new CTar(*io,  blocking_factor));
         } else {
             tar.reset(new CTar(file, blocking_factor));
         }
@@ -371,85 +372,93 @@ int CTarTest::Run(void)
         }
     }
 
-    auto_ptr<CTar::TEntries> entries;
     if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
-        size_t n = args.GetNExtra();
-        if (n == 0) {
+        if (!n) {
             NCBI_THROW(CArgException, eInvalidArg, "Must specify file(s)");
         }
-        for (size_t i = 1;  i <= n;  i++) {
-            const string& name   = args[i].AsString();
-            const string& what   = action == eUpdate ? "Updating " : "Adding ";
-            const string& prefix = action == eUpdate ? "u "        : "a ";
+        const string& what   =   action == eUpdate ? "Updating " : "Adding ";
+        const string& prefix = (stream ?
+                                (action == eUpdate ? "U "        : "A ") :
+                                (action == eUpdate ? "u "        : "a "));
+        CTar::TEntries entries;
+        for (size_t i = 1;  i <= n;  ++i) {
+            string name = args[i].AsString();
+            auto_ptr<CTar::TEntries> add;
             LOG_POST(what << name);
             if (action == eUpdate) {
-                entries = tar->Update(name);
+                _ASSERT(n);
+                add = tar->Update(name);
+            } else if (stream) {
+                Uint8 size = CFile(name).GetLength();
+                ifstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
+                add = tar->Append(CTarUserEntryInfo(name, size), ifs);
             } else {
-                entries = tar->Append(name);
+                add = tar->Append(name);
             }
-            if (m_Flags & fVerbose) {
-                ITERATE(CTar::TEntries, it, *entries.get()) {
-                    LOG_POST(prefix << it->GetName() + x_Pos(*it));
-                }
+            entries.splice(entries.end(), *add);
+        }
+        if (m_Flags & fVerbose) {
+            ITERATE(CTar::TEntries, it, entries) {
+                LOG_POST(prefix << it->GetName() + x_Pos(*it));
             }
         }
     } else if (action == eTest) {
-        if (args.GetNExtra()) {
+        if (n) {
             NCBI_THROW(CArgException, eInvalidArg, "Extra args not allowed");
         }
         NcbiCerr << "Testing archive... " << flush;
         tar->Test();
         NcbiCerr << "Done." << endl;
+    } else if (action == eExtract  &&  stream  &&  n == 1) {
+        ifstream ifs;
+        istream& is = file.empty() ? cin : dynamic_cast<istream&>(ifs);
+        if (!file.empty()) {
+            ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        }
+        if (!is.good()) {
+            NCBI_THROW(CTarException, eOpen, "Archive not found");
+        }
+        IReader* ir = CTar::Extract(is, args[1].AsString(), m_Flags);
+        if (!ir) {
+            NCBI_THROW(CTarException, eBadName,
+                       "Entry either not found or has a non-file type");
+        }
+        CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
+                               CRWStreambuf::fLogExceptions));
+        NcbiStreamCopy(NcbiCout, rs);
     } else {
-        size_t n = args.GetNExtra();
-        if (action == eStream  &&  n == 1) {
-            ifstream ifs;
-            istream& is = file.empty() ? cin : dynamic_cast<istream&>(ifs);
-            if (!file.empty()) {
-                ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        if (n) {
+            auto_ptr<CMaskFileName> mask(new CMaskFileName);
+            for (size_t i = 1;  i <= n;  i++) {
+                mask->Add(args[i].AsString());
             }
-            if (!is.good()) {
-                NCBI_THROW(CTarException, eOpen, "Archive not found");
+            tar->SetMask(mask.release(), eTakeOwnership);
+        }
+        if (action == eList) {
+            auto_ptr<CTar::TEntries> entries = tar->List();
+            ITERATE(CTar::TEntries, it, *entries.get()) {
+                LOG_POST(*it << x_Pos(*it));
             }
-            IReader* ir = CTar::Extract(is, args[1].AsString(), m_Flags);
-            if (!ir) {
-                NCBI_THROW(CTarException, eBadName,
-                           "Entry either not found or has a non-file type");
+        } else if (stream) {
+            _ASSERT(action == eExtract);
+            const CTarEntryInfo* info;
+            while ((info = tar->GetNextEntryInfo()) != 0) {
+                if (info->GetType() != CTarEntryInfo::eFile) {
+                    continue;
+                }
+                LOG_POST("X " << info->GetName() + x_Pos(*info));
+                IReader* ir = tar->GetNextEntryData();
+                _ASSERT(ir);
+                CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
+                                       CRWStreambuf::fLogExceptions));
+                NcbiStreamCopy(NcbiCout, rs);
             }
-            CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
-                                   CRWStreambuf::fLogExceptions));
-            NcbiStreamCopy(NcbiCout, rs);
         } else {
-            if (n) {
-                auto_ptr<CMaskFileName> mask(new CMaskFileName);
-                for (size_t i = 1;  i <= n;  i++) {
-                    mask->Add(args[i].AsString());
-                }
-                tar->SetMask(mask.release(), eTakeOwnership);
-            }
-            if (action == eStream) {
-                const CTarEntryInfo* info;
-                while ((info = tar->GetNextEntryInfo()) != 0) {
-                    if (info->GetType() != CTarEntryInfo::eFile)
-                        continue;
-                    LOG_POST("X " << info->GetName() + x_Pos(*info));
-                    IReader* ir = tar->GetNextEntryData();
-                    _ASSERT(ir);
-                    CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
-                                           CRWStreambuf::fLogExceptions));
-                    NcbiStreamCopy(NcbiCout, rs);
-                }
-            } else if (action == eList) {
-                entries = tar->List();
+            _ASSERT(action == eExtract);
+            auto_ptr<CTar::TEntries> entries = tar->Extract();
+            if (m_Flags & fVerbose) {
                 ITERATE(CTar::TEntries, it, *entries.get()) {
-                    LOG_POST(*it << x_Pos(*it));
-                }
-            } else {
-                entries = tar->Extract();
-                if (m_Flags & fVerbose) {
-                    ITERATE(CTar::TEntries, it, *entries.get()) {
-                        LOG_POST("x " << it->GetName() + x_Pos(*it));
-                    }
+                    LOG_POST("x " << it->GetName() + x_Pos(*it));
                 }
             }
         }

@@ -152,17 +152,17 @@ class NCBI_XUTIL_EXPORT CTarEntryInfo
 public:
     /// Archive entry type.
     enum EType {
-        eFile        = CDirEntry::eFile,        ///< Regular file
-        eDir         = CDirEntry::eDir,         ///< Directory
-        eSymLink     = CDirEntry::eLink,        ///< Symbolic link
-        ePipe        = CDirEntry::ePipe,        ///< Pipe (FIFO)
-        eCharDev     = CDirEntry::eCharSpecial, ///< Character device
-        eBlockDev    = CDirEntry::eBlockSpecial,///< Block device
-        eUnknown     = CDirEntry::eUnknown,     ///< Unknown type
-        eHardLink    = eUnknown + 1,            ///< Hard link
-        ePAXHeader,                             ///< PAX extended header
-        eGNULongName,                           ///< GNU long name
-        eGNULongLink                            ///< GNU long link
+        eFile        = CDirEntry::eFile,         ///< Regular file
+        eDir         = CDirEntry::eDir,          ///< Directory
+        eSymLink     = CDirEntry::eLink,         ///< Symbolic link
+        ePipe        = CDirEntry::ePipe,         ///< Pipe (FIFO)
+        eCharDev     = CDirEntry::eCharSpecial,  ///< Character device
+        eBlockDev    = CDirEntry::eBlockSpecial, ///< Block device
+        eUnknown     = CDirEntry::eUnknown,      ///< Unknown type
+        eHardLink    = eUnknown + 1,             ///< Hard link
+        ePAXHeader,                              ///< PAX extended header
+        eGNULongName,                            ///< GNU long name
+        eGNULongLink                             ///< GNU long link
     };
 
     /// Position type.
@@ -206,17 +206,31 @@ public:
     // Comparison operator
     bool operator == (const CTarEntryInfo& info) const;
 
-private:
-    EType        m_Type;       ///< Type
-    string       m_Name;       ///< Entry name
-    string       m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
-    string       m_UserName;   ///< User name
-    string       m_GroupName;  ///< Group name (empty string for MSWin)
-    streamsize   m_HeaderSize; ///< Total size of all headers for this entry
-    TNcbiSys_stat m_Stat;      ///< Direntry-compatible info (as applicable)
-    Uint8        m_Pos;        ///< Entry (not data!) position within archive
+protected:
+    EType         m_Type;       ///< Type
+    string        m_Name;       ///< Entry name
+    string        m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
+    string        m_UserName;   ///< User name
+    string        m_GroupName;  ///< Group name (empty string for MSWin)
+    streamsize    m_HeaderSize; ///< Total size of all headers for this entry
+    TNcbiSys_stat m_Stat;       ///< Direntry-compatible info (as applicable)
+    Uint8         m_Pos;        ///< Entry (not data!) position within archive
 
-    friend class CTar;         // Setter
+    friend class CTar;          // Setter
+};
+
+
+// User creatable info for streaming into TAR
+class CTarUserEntryInfo : protected CTarEntryInfo
+{
+public:
+    CTarUserEntryInfo(const string& name, Uint8 size)
+    {
+        m_Name         = name;
+        m_Stat.st_size = size;
+    }
+
+    friend class CTar;          // Accessor
 };
 
 
@@ -352,22 +366,24 @@ public:
     /// (not always EOF) of the archive, when appending to non-empty one.
     ///
     /// @return
-    ///   A list of the appended entries.
+    ///   A list of entries appended.
     /// @sa
     ///   Create, Update, SetBaseDir
     auto_ptr<TEntries> Append(const string& name);
 
-/*
-    // Suggested future API extension
-    auto_ptr<TEntries> Append(const CTarEntryInfo& info, istream& is);
-*/
+    /// Append an entry from stream (exactly entry.GetSize() bytes)
+    /// @return
+    ///   A list (containing one entry) with full acrhive info filled in
+    /// @sa
+    ///   Append
+    auto_ptr<TEntries> Append(const CTarUserEntryInfo& entry, istream& is);
 
     /// Look for more recent copies, if available, of archive members,
     /// and place them at the end of the archive:
     ///
     /// if fUpdate is set in processing flags, only the existing archive
     /// entries (including directories) will be updated;  that is, Update(".")
-    /// won't recursively add "." if "." is not the archive member;  it will,
+    /// won't recursively add "." if "." is not an archive member;  it will,
     /// however, do the recursive update should "." be found in the archive.
     ///
     /// if fUpdate is unset, the existing entries will be updated (if their
@@ -381,15 +397,6 @@ public:
     /// @sa
     ///   Append, SetBaseDir, SetFlags
     auto_ptr<TEntries> Update(const string& name);
-
-/*
-    // Delete an entry from the archive (not for use on magnetic tapes :-)
-    void Delete(const string& name);
-
-    // Find file system entries that differ from corresponding
-    // entries already in the archive.
-    auto_ptr<TEntries> Diff(const string& diff_dir);
-*/
 
     /// Extract the entire archive (into either current directory or
     /// a directory otherwise specified by SetBaseDir()).
@@ -626,9 +633,15 @@ private:
     // Convert from entry name to path in filesystem.
     string x_ToFilesystemPath(const string& name) const;
 
-    // Append an entry to the archive.
-    auto_ptr<TEntries> x_Append(const string&   name,
-                                const TEntries* toc = 0);
+    // Append an entry from filesystem to the archive.
+    auto_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
+
+    // Append an entry from istream to the archive.
+    auto_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry, istream& is);
+
+    // Append data from istream to the archive.
+    void x_AppendStream(const string& name, istream& is);
+
     // Append a regular file (current entry) to the archive.
     void x_AppendFile(const string& file);
 
@@ -682,6 +695,14 @@ auto_ptr<CTar::TEntries> CTar::Append(const string& name)
 {
     x_Open(eAppend);
     return x_Append(name);
+}
+
+inline
+auto_ptr<CTar::TEntries> CTar::Append(const CTarUserEntryInfo& entry,
+                                      istream& is)
+{
+    x_Open(eAppend);
+    return x_Append(entry, is);
 }
 
 inline

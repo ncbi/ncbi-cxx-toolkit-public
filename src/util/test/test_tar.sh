@@ -100,7 +100,7 @@ echo
 
 ( cd $test_base.1  &&  $tar  xf $test_base.tar )
 
-echo "`date` *** Testing the resultant archive"
+echo "`date` *** Checking the resultant archive"
 echo
 
 dd if=$test_base.tar bs=123 2>/dev/null | test_tar -T -f -                              ||  exit 1
@@ -112,7 +112,7 @@ date 2>/dev/null | tee -a $test_base.1/testdir.$$/datefile $test_base.1/newdir/d
 cp -fp $test_base.1/newdir/datefile $test_base.1/newdir/dummyfile 2>/dev/null
 
 echo
-echo "`date` *** Testing simple update"
+echo "`date` *** Checking simple update"
 echo
 
 test_tar -C $test_base.1 -u -v -f $test_base.tar ./datefile ./newdir                    ||  exit 1
@@ -124,7 +124,7 @@ sleep 1
 date >>$test_base.1/newdir/datefile 2>/dev/null
 
 echo
-echo "`date` *** Testing incremental update"
+echo "`date` *** Checking incremental update"
 echo
 
 test_tar -C $test_base.1 -u -U -v -E -f $test_base.tar ./newdir ./datefile ./phonyfile  ||  exit 1
@@ -135,7 +135,7 @@ mv -f $test_base.1/phonyfile $test_base.1/datefile 2>/dev/null
 mkdir $test_base.2                                                                      ||  exit 1
 
 echo
-echo "`date` *** Testing piping in and extraction"
+echo "`date` *** Checking piping in and extraction"
 echo
 
 dd if=$test_base.tar bs=4567 | test_tar -C $test_base.2 -v -x -f -                      ||  exit 1
@@ -143,19 +143,19 @@ rm -f $test_base.1/.testfifo $test_base.2/.testfifo
 diff -r $test_base.1 $test_base.2 2>/dev/null                                           ||  exit 1
 
 echo
-echo "`date` *** Testing piping out and compatibility with native tar utility"
+echo "`date` *** Checking piping out and compatibility with native tar utility"
 echo
 
 mkfifo -m 0567 $test_base.2/.testfifo >/dev/null 2>&1
 test_tar -C $test_base.2 -c -f - . 2>/dev/null | $tar tBvf -                            ||  exit 1
 
 echo
-echo "`date` *** Testing safe extraction implementation"
+echo "`date` *** Checking safe extraction implementation"
 echo
 
 test_tar -C $test_base.2 -x    -f $test_base.tar                                        ||  exit 1
 
-echo "`date` *** Testing backup feature"
+echo "`date` *** Checking backup feature"
 echo
 
 test_tar -C $test_base.2 -x -B -f $test_base.tar '*testdir/?*'                          ||  exit 1
@@ -172,18 +172,25 @@ echo "+++ Files: $files --- Backups: $bkups"
 test _"$files" = _"$bkups"                                                              ||  exit 1
 
 echo
-echo "`date` *** Testing single entry streaming feature"
+echo "`date` *** Checking single entry streaming feature"
 echo
 
-test_tar -X -v -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_exe                 ||  exit 1
+test_tar -x -s -v -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_exe              ||  exit 1
 
-echo "`date` *** Testing multiple entry streaming feature"
+echo "`date` *** Checking multiple entry streaming feature"
 echo
 
-test_tar -X -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1   ||  exit 1
-head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                          ||  exit 1
-cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                     > $test_base.out.2   ||  exit 1
-cmp -l $test_base.out.1 $test_base.out.2                                                                ||  exit 1
+test_tar -x -s -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1   ||  exit 1
+head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                             ||  exit 1
+cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                        > $test_base.out.2   ||  exit 1
+cmp -l $test_base.out.1 $test_base.out.2                                                                   ||  exit 1
+
+echo
+echo "`date` *** Checking stream update"
+echo
+
+test_tar -r -s -v -f $test_base.tar $test_base.out.1 $test_base.out.2                   ||  exit 1
+test_tar -T -f $test_base.tar                                                           ||  exit 1
 
 if [ "`uname`" = "Linux" ]; then
   # Note that at least gtar 1.15.1 suffers from the following shortcoming:
@@ -203,7 +210,7 @@ if [ "`uname`" = "Linux" ]; then
   size="`expr $nseek '*' $spabs + $spabs`"
 
   echo
-  echo "`date` *** Testing sparse file tolerance (seek: ${nseek}, bs: ${spabs}, size: ${size})"
+  echo "`date` *** Checking sparse file tolerance (seek: ${nseek}, bs: ${spabs}, size: ${size})"
   echo
 
   dd of=$test_base.1/newdir/pre-sparse  bs="$prebs" count=1               if=/dev/urandom               ||  exit 1
@@ -219,8 +226,8 @@ if [ "`uname`" = "Linux" ]; then
 
   ( cd $test_base.1/newdir  &&  $tar ${format}Srvf $test_base.tar pre-sparse sparse-file post-sparse )  ||  exit 1
 
-  test_tar -T -f $test_base.tar                                                                         ||  exit 1
-  test_tar -X -f $test_base.tar sparse-file > $test_base.2/newdir/sparse-file                           ||  exit 1
+  test_tar -T    -f $test_base.tar                                                                      ||  exit 1
+  test_tar -x -s -f $test_base.tar sparse-file > $test_base.2/newdir/sparse-file                        ||  exit 1
 
   temp="`ls -l $test_base.2/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
   if [ "$temp" = "$real" ]; then
@@ -237,7 +244,7 @@ if [ "`uname`" = "Linux" ]; then
     free="`df -k /tmp | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
     if [ "$free" -gt "4200000" ]; then
       echo
-      echo "`date` *** ${free}KiB available in /tmp:  Testing 4GiB barrier"
+      echo "`date` *** ${free}KiB available in /tmp:  Checking 4GiB barrier"
       echo
 
       dd of=$test_base.1/newdir/huge-file bs=1 count="`expr $$ % 10000`" seek=4G if=/dev/urandom        ||  exit 1

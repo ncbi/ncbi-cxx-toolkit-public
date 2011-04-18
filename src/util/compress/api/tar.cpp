@@ -59,6 +59,8 @@
 #endif
 
 #if   defined(NCBI_OS_UNIX)
+#  include <grp.h>
+#  include <pwd.h>
 #  include <unistd.h>
 #  ifdef NCBI_OS_IRIX
 #    include <sys/mkdev.h>
@@ -67,6 +69,7 @@
 #    endif
 #  endif
 #elif defined(NCBI_OS_MSWIN)
+#  include "../../../corelib/ncbi_os_mswin_p.hpp"
 #  include <io.h>
 typedef unsigned int mode_t;
 typedef short        uid_t;
@@ -1603,7 +1606,7 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
     m_Current.m_Stat.st_size  = (off_t)  size;
     m_Current.m_Stat.st_uid   = (uid_t)  uid;
     m_Current.m_Stat.st_gid   = (gid_t)  gid;
-    m_Current.m_Pos = parsed;
+    m_Current.m_Pos           = parsed;
 
     return eContinue;
 }
@@ -2504,7 +2507,7 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
                         time_t dst_time;
                         // Make sure that dst is not older than the entry
                         if (dst->GetTimeT(&dst_time)
-                            &&  dst_time >= m_Current.GetModificationTime()) {
+                            &&  m_Current.GetModificationTime() <= dst_time) {
                             extract = false;
                         }
                     }
@@ -3045,31 +3048,31 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             // Start searching from the end of the list, to find
             // the most recent entry (if any) first
             string temp;
-            REVERSE_ITERATE(TEntries, i, *toc) {
+            REVERSE_ITERATE(TEntries, e, *toc) {
                 if (!temp.empty()) {
-                    if (i->GetType() == CTarEntryInfo::eHardLink
-                        ||  temp != x_ToFilesystemPath(i->GetName())) {
+                    if (e->GetType() == CTarEntryInfo::eHardLink
+                        ||  temp != x_ToFilesystemPath(e->GetName())) {
                         continue;
                     }
-                } else if (path == x_ToFilesystemPath(i->GetName())) {
+                } else if (path == x_ToFilesystemPath(e->GetName())) {
                     found = true;
-                    if (i->GetType() == CTarEntryInfo::eHardLink) {
-                        temp = x_ToFilesystemPath(i->GetLinkName());
+                    if (e->GetType() == CTarEntryInfo::eHardLink) {
+                        temp = x_ToFilesystemPath(e->GetLinkName());
                         continue;
                     }
                 } else {
                     continue;
                 }
-                if (m_Current.GetType() != i->GetType()) {
+                if (m_Current.GetType() != e->GetType()) {
                     if (m_Flags & fEqualTypes) {
                         goto out;
                     }
                 } else if (m_Current.GetType() == CTarEntryInfo::eSymLink
-                           &&  m_Current.GetLinkName() == i->GetLinkName()) {
+                           &&  m_Current.GetLinkName() == e->GetLinkName()) {
                     goto out;
                 }
                 if (m_Current.GetModificationTime() <=
-                    i->GetModificationTime()) {
+                    e->GetModificationTime()) {
                     update = false; // same(or older), no update
                 }
                 break;
@@ -3111,7 +3114,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                                                        CDir::eIgnoreRecursive);
             ITERATE(CDir::TEntries, i, dir) {
                 auto_ptr<TEntries> e = x_Append((*i)->GetPath(), toc);
-                entries->splice(entries->end(), *e.get());
+                entries->splice(entries->end(), *e);
             }
         }
         break;
@@ -3142,27 +3145,78 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 }
 
 
-// Regular files only!
-void CTar::x_AppendFile(const string& file)
+auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
+                                        istream& is)
 {
-    // FIXME:  Switch to CFileIO eventually to avoid ifstream
-    // obscurity w.r.t. errors, an extra layer of buffering etc.
-    CNcbiIfstream ifs;
+    auto_ptr<TEntries> entries(new TEntries);
 
-    _ASSERT(m_Current.GetType() == CTarEntryInfo::eFile);
+    // Create the entry info
+    m_Current = entry;
+    m_Current.m_Pos = m_StreamPos;
+    m_Current.m_Type = CTarEntryInfo::eFile;
 
-    // Open file
-    ifs.open(file.c_str(), IOS_BASE::binary | IOS_BASE::in);
-    if (!ifs) {
-        int x_errno = errno;
-        TAR_THROW(this, eOpen,
-                  "Cannot open file '" + file + '\'' + s_OSReason(x_errno));
+    while (NStr::EndsWith(m_Current.m_Name, '/'))
+        m_Current.m_Name.resize(m_Current.m_Name.size() - 1);
+    if (m_Current.m_Name.empty()) {
+        TAR_THROW(this, eBadName,
+                  "Empty entry name not allowed");
+    }
+    if (!is.good()) {
+        TAR_THROW(this, eRead,
+                  "Bad input file stream");
     }
 
-    // Write file header
-    x_WriteEntryInfo(file);
+#ifdef NCBI_OS_UNIX
+    m_Current.m_Stat.st_uid = geteuid();
+    m_Current.m_Stat.st_gid = getegid();
+#endif // NCBI_OS_UNIX
+
+    m_Current.m_Stat.st_mtime
+        = m_Current.m_Stat.st_atime
+        = m_Current.m_Stat.st_ctime
+        = CTime(CTime::eCurrent).GetTimeT();
+
+    mode_t mode = s_TarToMode(fTarURead | fTarUWrite |
+                              fTarGRead | fTarGWrite |
+                              fTarORead | fTarOWrite);
+#ifdef NCBI_OS_UNIX
+    mode_t u = umask(0);
+    umask(u);
+    mode &= ~u;
+#endif // NCBI_OS_UNIX
+    m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(mode);
+
+#ifdef NCBI_OS_UNIX
+    struct passwd *pw = getpwuid(m_Current.m_Stat.st_uid);
+    if (pw)
+        m_Current.m_UserName.assign(pw->pw_name);
+    struct group  *gr = getgrgid(m_Current.m_Stat.st_gid);
+    if (gr)
+        m_Current.m_GroupName.assign(gr->gr_name);
+#else
+    CWinSecurity::GetObjectOwner(GetCurrentProcess(),
+                                 SE_KERNEL_OBJECT,
+                                 &m_Current.m_UserName,
+                                 &m_Current.m_GroupName);
+#endif // NCBI_OS_UNIX
+
+    x_AppendStream(entry.GetName(), is);
+
+    entries->push_back(m_Current);
+    return entries;
+}
+
+
+// Regular entries only!
+void CTar::x_AppendStream(const string& name, istream& is)
+{
+    _ASSERT(m_Current.GetType() == CTarEntryInfo::eFile);
+
+    // Write entry header
+    x_WriteEntryInfo(name);
 
     Uint8 size = m_Current.GetSize();
+    errno = 0;
     while (size) {
         // Write file contents
         size_t avail = m_BufferSize - m_BufferPos;
@@ -3170,12 +3224,15 @@ void CTar::x_AppendFile(const string& file)
             avail = (size_t) size;
         }
         // Read file
-        if (!ifs.read(m_Buffer + m_BufferPos, (streamsize) avail)) {
-            int x_errno = errno;
+        if (!is.read(m_Buffer + m_BufferPos, (streamsize) avail)) {
+            ifstream* ifs = dynamic_cast<ifstream*>(&is);
+            int x_errno = ifs ? errno : 0;
             TAR_THROW(this, eRead,
-                      "Error reading file '" +file+ '\''+ s_OSReason(x_errno));
+                      "Error reading "
+                      + string(ifs ? "file" : kEmptyStr)
+                      + '\'' + name + '\'' + s_OSReason(x_errno));
         }
-        avail = (size_t) ifs.gcount();
+        avail = (size_t) is.gcount();
         // Write buffer to the archive
         x_WriteArchive(avail);
         size -= avail;
@@ -3186,6 +3243,27 @@ void CTar::x_AppendFile(const string& file)
     memset(m_Buffer + m_BufferPos, 0, zero);
     x_WriteArchive(zero);
     _ASSERT(!OFFSET_OF(m_BufferPos));
+}
+
+
+// Regular files only!
+void CTar::x_AppendFile(const string& file)
+{
+    _ASSERT(m_Current.GetType() == CTarEntryInfo::eFile);
+
+    // FIXME:  Switch to CFileIO eventually to avoid ifstream
+    // obscurity w.r.t. errors, an extra layer of buffering etc.
+    CNcbiIfstream ifs;
+
+    // Open file
+    ifs.open(file.c_str(), IOS_BASE::binary | IOS_BASE::in);
+    if (!ifs) {
+        int x_errno = errno;
+        TAR_THROW(this, eOpen,
+                  "Cannot open file '" + file + '\'' + s_OSReason(x_errno));
+    }
+
+    x_AppendStream(file, ifs);
 }
 
 
