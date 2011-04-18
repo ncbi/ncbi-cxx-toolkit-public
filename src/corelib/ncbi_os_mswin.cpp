@@ -74,8 +74,8 @@ PSID CWinSecurity::GetUserSID(const string& username)
         }
         // Reallocate memory for the buffers
         sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
-        domain = (TXChar*)malloc(domain_size * sizeof(TXChar));
-        if ( !sid  || !domain ) {
+        domain = (TXChar*) malloc(domain_size * sizeof(TXChar));
+        if ( !sid  ||  !domain ) {
             throw(0);
         }
         // Second call to LookupAccountName to get the account info
@@ -116,19 +116,19 @@ bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
     TXChar domain_name [MAX_ACCOUNT_LEN];
     DWORD  account_size = MAX_ACCOUNT_LEN;
     DWORD  domain_size  = MAX_ACCOUNT_LEN;
-    SID_NAME_USE use   = SidTypeUnknown;
+    SID_NAME_USE use    = SidTypeUnknown;
 
     if ( !LookupAccountSid(NULL /*local computer*/, sid, 
-                            account_name, (LPDWORD)&account_size,
-                            domain_name,  (LPDWORD)&domain_size,
+                            account_name, (LPDWORD) &account_size,
+                            domain_name,  (LPDWORD) &domain_size,
                             &use) ) {
         return false;
     }
     // Save account information
-    if ( account )
-        *account = _T_STDSTRING(account_name);
-    if ( domain )
-        *domain = _T_STDSTRING(domain_name);
+    if (account)
+        account->assign( _T_STDSTRING(account_name) );
+    if (domain)
+        domain->assign( _T_STDSTRING(domain_name) );
 
     return true;
 }
@@ -178,8 +178,7 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
     return true;
 }
 
-
-bool CWinSecurity::GetObjectOwner(const string&  objname,
+bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
                                   SE_OBJECT_TYPE objtype,
                                   string* owner, string* group)
 {
@@ -187,12 +186,12 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
     PSID sid_group;
     PSECURITY_DESCRIPTOR sd = NULL;
 
-    if ( GetNamedSecurityInfo(
-            (LPTSTR)(_T_XCSTRING(objname)), objtype,
-            OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-            &sid_owner, &sid_group, NULL, NULL, &sd )
-            != ERROR_SUCCESS ) {
-      return false;
+    if ( GetSecurityInfo
+         ( objhndl, objtype,
+           OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+           &sid_owner, &sid_group, NULL, NULL, &sd )
+         != ERROR_SUCCESS ) {
+        return false;
     }
     // Get owner
     if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
@@ -202,10 +201,43 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
     // Get group
     if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
         // This is not an error, because the group name on Windows
-        // is an auxiliary information. Sometimes accounts can not
-        // belongs to groups, or we don't have permissions to get
+        // is an auxiliary information. Sometimes accounts cannot
+        // belong to groups, or we don't have permissions to get
         // such information.
-        *group = kEmptyStr;
+        group->clear();
+    }
+    LocalFree(sd);
+    return true;
+}
+
+
+bool CWinSecurity::GetObjectOwner(const string&  objname,
+                                  SE_OBJECT_TYPE objtype,
+                                  string* owner, string* group)
+{
+    PSID sid_owner;
+    PSID sid_group;
+    PSECURITY_DESCRIPTOR sd = NULL;
+
+    if ( GetNamedSecurityInfo
+         ( (LPTSTR)(_T_XCSTRING(objname)), objtype,
+           OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+           &sid_owner, &sid_group, NULL, NULL, &sd )
+         != ERROR_SUCCESS ) {
+        return false;
+    }
+    // Get owner
+    if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
+        LocalFree(sd);
+        return false;
+    }
+    // Get group
+    if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
+        // This is not an error, because the group name on Windows
+        // is an auxiliary information. Sometimes accounts cannot
+        // belong to groups, or we don't have permissions to get
+        // such information.
+        group->clear();
     }
     LocalFree(sd);
     return true;
@@ -226,7 +258,7 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
         return false;
     }
 
-    // Enable privilegies, if failed try without it
+    // Enable privilegies, if failed try without them
     s_EnablePrivilege(token, SE_TAKE_OWNERSHIP_NAME);
     s_EnablePrivilege(token, SE_RESTORE_NAME);
     s_EnablePrivilege(token, SE_BACKUP_NAME);
@@ -244,17 +276,16 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
         // First call to LookupAccountName() to get the buffer sizes
         DWORD        sid_size    = 0;
         DWORD        domain_size = 0;
-        SID_NAME_USE use  = SidTypeUnknown;
-        BOOL res;
-        res = LookupAccountName(NULL, _T_XCSTRING(owner),
-                                NULL, &sid_size, 
-                                NULL, &domain_size, &use);
+        SID_NAME_USE use         = SidTypeUnknown;
+        BOOL res = LookupAccountName(NULL, _T_XCSTRING(owner),
+                                     NULL, &sid_size, 
+                                     NULL, &domain_size, &use);
         if ( !res  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER )
             throw(0);
 
         // Reallocate memory for the buffers
         sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
-        domain = (TXChar*)malloc(domain_size * sizeof(TXChar));
+        domain = (TXChar*) malloc(domain_size * sizeof(TXChar));
         if ( !sid  || !domain ) {
             throw(0);
         }

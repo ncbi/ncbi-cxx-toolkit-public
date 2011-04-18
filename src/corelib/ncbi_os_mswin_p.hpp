@@ -100,7 +100,7 @@ public:
 
     /// Get owner name of specified system object.
     ///
-    /// Retrieve the name of the file object owner and the name of the first
+    /// Retrieve the name of the named object owner and the name of the first
     /// group, which the account belongs to. The obtained group name may
     /// be an empty string, if we don't have permissions to get it.
     /// Win32 really does not use groups, but they exist for the sake
@@ -115,6 +115,11 @@ public:
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     static bool GetObjectOwner(const string& objname, SE_OBJECT_TYPE objtype,
+                               string* owner, string* group = 0);
+
+    /// Same as GetObjectOwner(objname) but gets the owner/group information
+    /// by the handle rather than name.
+    static bool GetObjectOwner(HANDLE        objhndl, SE_OBJECT_TYPE objtype,
                                string* owner, string* group = 0);
 
 
