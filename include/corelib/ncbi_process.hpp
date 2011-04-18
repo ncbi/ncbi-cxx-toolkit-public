@@ -112,11 +112,17 @@ public:
     CProcess(TProcessHandle process, EProcessType type = eHandle);
 #endif
 
+    /// Get process handle for the current process (esp. on Windows).
+    /// On UNIX returns the same that GetCurrentPid() does.
+    /// @sa
+    ///   GetCurrentPid
+    static TProcessHandle GetGurrentHandle(void);
+
     /// Get process identifier for the current process.
-    static TPid GetCurrentPid(void);
+    static TPid           GetCurrentPid(void);
 
     /// Get process identifier for the parent of the current process.
-    static TPid GetParentPid(void);
+    static TPid           GetParentPid(void);
 
     /// Check for process existence.
     ///

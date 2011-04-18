@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include "ncbisys.hpp"
 
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
 #  include <errno.h>
 #  include <fcntl.h>
 #  include <signal.h>
@@ -49,9 +49,6 @@
 #  include <corelib/ncbitime.hpp>  // for CStopWatch
 #  include <process.h>
 #  include <tlhelp32.h>
-#endif
-
-#if defined(NCBI_OS_MSWIN)
 #  pragma warning (disable : 4191)
 #endif
 
@@ -109,7 +106,7 @@ bool CProcess::CExitInfo::IsExited(void) const
     if (state != eExitInfo_Terminated) {
         return false;
     }
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
     return WIFEXITED(status) != 0;
 #elif defined(NCBI_OS_MSWIN)
     // The process always terminates with exit code
@@ -124,7 +121,7 @@ bool CProcess::CExitInfo::IsSignaled(void) const
     if (state != eExitInfo_Terminated) {
         return false;
     }
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
     return WIFSIGNALED(status) != 0;
 #elif defined(NCBI_OS_MSWIN)
     // The process always terminates with exit code
@@ -138,7 +135,7 @@ int CProcess::CExitInfo::GetExitCode(void) const
     if ( !IsExited() ) {
         return -1;
     }
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
     return WEXITSTATUS(status);
 #elif defined(NCBI_OS_MSWIN)
     return status;
@@ -151,7 +148,7 @@ int CProcess::CExitInfo::GetSignal(void) const
     if ( !IsSignaled() ) {
         return -1;
     }
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
     return WTERMSIG(status);
 #elif defined(NCBI_OS_MSWIN)
     return -1;
@@ -175,7 +172,7 @@ CProcess::CProcess(TPid process, EProcessType type)
     return;
 }
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 // The helper constructor for MS Windows to avoid cast from
 // TProcessHandle to TPid
 CProcess::CProcess(TProcessHandle process, EProcessType type)
@@ -183,10 +180,13 @@ CProcess::CProcess(TProcessHandle process, EProcessType type)
 {
     return;
 }
-#endif
+#endif //NCBI_OS_MSWIN
 
 
-#if defined NCBI_THREAD_PID_WORKAROUND
+#ifdef NCBI_THREAD_PID_WORKAROUND
+#  ifndef NCBI_OS_UNIX
+#    error "NCBI_THREAD_PID_WORKAROUND should only be defined on UNIX!"
+#  endif
 TPid CProcess::sx_GetPid(EGetPidFlag flag)
 {
     if ( flag == ePID_GetThread ) {
@@ -222,28 +222,33 @@ TPid CProcess::sx_GetPid(EGetPidFlag flag)
     }
     return flag == ePID_GetCurrent ? s_CurrentPid : s_ParentPid;
 }
+#endif //NCBI_THREAD_PID_WORKAROUND
+
+TProcessHandle CProcess::GetGurrentHandle(void)
+{
+#if   defined(NCBI_OS_MSWIN)
+    return GetCurrentProcess();
+#elif defined(NCBI_OS_UNIX)
+    return GetCurrentPid();
 #endif
+}
 
 
 TPid CProcess::GetCurrentPid(void)
 {
-#if   defined NCBI_THREAD_PID_WORKAROUND
+#if   defined(NCBI_OS_MSWIN)
+    return GetCurrentProcessId();
+#elif defined NCBI_THREAD_PID_WORKAROUND
     return sx_GetPid(ePID_GetCurrent);
 #elif defined(NCBI_OS_UNIX)
     return getpid();
-#elif defined(NCBI_OS_MSWIN)
-    return GetCurrentProcessId();
 #endif
 }
 
 
 TPid CProcess::GetParentPid(void)
 {
-#if   defined NCBI_THREAD_PID_WORKAROUND
-    return sx_GetPid(ePID_GetParent);
-#elif defined(NCBI_OS_UNIX)
-    return getppid();
-#elif defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)
     TPid ppid = (TPid)(-1);
     // Open snapshot handle
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -268,6 +273,10 @@ TPid CProcess::GetParentPid(void)
         CloseHandle(hSnapshot);
     }
     return ppid;
+#elif defined NCBI_THREAD_PID_WORKAROUND
+    return sx_GetPid(ePID_GetParent);
+#elif defined(NCBI_OS_UNIX)
+    return getppid();
 #endif
 }
 
@@ -416,7 +425,7 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
 
 bool CProcess::IsAlive(void) const
 {
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
     return kill((TPid)m_Process, 0) == 0  ||  errno == EPERM;
 
 #elif defined(NCBI_OS_MSWIN)
@@ -443,7 +452,7 @@ bool CProcess::IsAlive(void) const
 
 bool CProcess::Kill(unsigned long timeout) const
 {
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
 
     TPid pid = (TPid)m_Process;
 
@@ -725,12 +734,12 @@ static bool s_KillGroup(DWORD pid,
     return res;
 }
 
-#endif
+#endif //NCBI_OS_MSWIN
 
 
 bool CProcess::KillGroup(unsigned long timeout) const
 {
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
 
     TPid pgid = getpgid((TPid)m_Process);
     if (pgid == (TPid)(-1)) {
@@ -785,7 +794,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
 
 bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
 {
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
 
     // Try to kill the process group with SIGTERM first
     if (kill(-pgid, SIGTERM) < 0  &&  errno == EPERM) {
@@ -852,7 +861,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
         info->status = 0;
     }
 
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
 
     TPid pid     = (TPid)m_Process;
     int  options = timeout == kInfiniteTimeoutMs ? 0 : WNOHANG;
