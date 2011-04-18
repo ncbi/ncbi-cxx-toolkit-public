@@ -108,12 +108,11 @@ public:
     /// Constructor.
     CProcess(TPid process, EProcessType type = eHandle);
 #if defined(NCBI_OS_MSWIN)
-    // NB: On MS Windows process identifiers and process handles
-    // are different.
+    // NB: On MS Windows process identifiers and process handles are different.
     CProcess(TProcessHandle process, EProcessType type = eHandle);
 #endif
 
-    /// Get process identifier for the current running process.
+    /// Get process identifier for the current process.
     static TPid GetCurrentPid(void);
 
     /// Get process identifier for the parent of the current process.
