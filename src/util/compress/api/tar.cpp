@@ -3057,7 +3057,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                 } else if (path == x_ToFilesystemPath(e->GetName())) {
                     found = true;
                     if (e->GetType() == CTarEntryInfo::eHardLink) {
-                        temp.swap(x_ToFilesystemPath(e->GetLinkName()));
+                        temp = x_ToFilesystemPath(e->GetLinkName());
                         continue;
                     }
                 } else {
