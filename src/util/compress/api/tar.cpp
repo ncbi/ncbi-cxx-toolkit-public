@@ -48,8 +48,6 @@
 #  undef _FORTIFY_SOURCE
 #endif /*_FORTIFY_SOURCE*/
 #define  _FORTIFY_SOURCE 0
-#include <corelib/ncbi_limits.h>
-#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <util/compress/tar.hpp>
 #include <util/error_codes.hpp>
@@ -3195,7 +3193,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
         m_Current.m_GroupName.assign(gr->gr_name);
 #else
     unsigned int uid = 0, gid = 0;
-    CWinSecurity::GetObjectOwner(GetCurrentProcess(),
+    CWinSecurity::GetObjectOwner(CProcess::GetCurrentHandle(),
                                  SE_KERNEL_OBJECT,
                                  &m_Current.m_UserName,
                                  &m_Current.m_GroupName,
