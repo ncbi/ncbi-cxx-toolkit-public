@@ -67,7 +67,8 @@ void SDiscoveredServers::DeleteThis()
     CFastMutexGuard discovery_mutex_lock(service_impl->m_DiscoveryMutex);
 
     if (!Referenced() && m_Service) {
-        if (m_ActualService->m_DiscoveredServers != this) {
+        if (m_ActualService == NULL ||
+                m_ActualService->m_DiscoveredServers != this) {
             m_NextGroupInPool = m_Service->m_ServerGroupPool;
             m_Service->m_ServerGroupPool = this;
         }
@@ -653,8 +654,9 @@ void SNetServiceImpl::GetDiscoveredServers(const string* service_name,
     CRef<SDiscoveredServers>& discovered_servers)
 {
     CFastMutexGuard discovery_mutex_lock(m_DiscoveryMutex);
-    SActualService* actual_service = service_name == NULL ? m_MainService :
-        FindOrCreateActualService(*service_name);
+    SActualService* actual_service =
+        service_name == NULL || service_name->empty() ?
+            m_MainService : FindOrCreateActualService(*service_name);
     DiscoverServersIfNeeded(actual_service);
     discovered_servers = actual_service->m_DiscoveredServers;
     discovered_servers->m_Service = this;
@@ -774,7 +776,7 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
     for (TNetServerList::const_iterator it = servers->m_Servers.begin();
             it != servers->m_Servers.end(); ++it)
         if (!LBSMD_IS_PENALIZED_RATE(it->second)) {
-            if (non_penalized_server != servers->m_Servers.end())
+            if (non_penalized_server == servers->m_Servers.end())
                 non_penalized_server = it;
             if (it->first == priority_server)
                 return new SNetServiceIterator_RandomPivot(servers, it);
@@ -791,6 +793,8 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
         CFastMutexGuard discovery_mutex_lock(m_Impl->m_DiscoveryMutex);
         (servers = m_Impl->AllocServerGroup(0))->m_Servers.push_back(
             TServerRate(priority_server, 1));
+        servers->m_Service = m_Impl;
+        servers->m_ActualService = NULL;
         return new SNetServiceIterator_OmitPenalized(servers,
             servers->m_Servers.begin());
     }
