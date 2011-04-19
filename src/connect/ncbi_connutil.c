@@ -415,7 +415,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         path    = host + hostlen;
 
         /* username:password */
-        if (!(s = (const char*) memchr(host, '@', hostlen))) {
+        if (!(s = (const char*) memrchr(host, '@', hostlen))) {
             user    = pass    = "";
             userlen = passlen = 0;
         } else {
