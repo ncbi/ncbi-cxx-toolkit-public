@@ -156,11 +156,12 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         const string& service_name, const string& client_name,
         const string& queue_name) :
     m_Service(new SNetServiceImpl(s_NetScheduleAPIName,
-        service_name, client_name, new CNetScheduleServerListener)),
+        client_name, new CNetScheduleServerListener)),
     m_Queue(queue_name),
     m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
 {
-    m_Service->Init(this, config, section, s_NetScheduleConfigSections);
+    m_Service->Init(this, service_name,
+        config, section, s_NetScheduleConfigSections);
 }
 
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;

@@ -49,7 +49,9 @@ typedef pair<SNetServerImpl*, double> TServerRate;
 typedef vector<TServerRate> TNetServerList;
 typedef set<SNetServerImpl*, SCompareServerAddress> TNetServerSet;
 
-struct SNetServerGroupImpl : public CObject
+struct SActualService;
+
+struct SDiscoveredServers : public CObject
 {
     void Reset(unsigned discovery_iteration)
     {
@@ -63,21 +65,24 @@ struct SNetServerGroupImpl : public CObject
     // will be deleted.
     virtual void DeleteThis();
 
-    SNetServerGroupImpl* m_NextGroupInPool;
+    SDiscoveredServers* m_NextGroupInPool;
 
     // A list of servers discovered by the load balancer.
     TNetServerList m_Servers;
 
-    // A smart pointer to the NetService object
-    // that contains this NetServerGroup.
+    // A smart pointer to the SNetServiceImpl object
+    // that contains this object.
     CNetService m_Service;
+    // Actual LBSM service name that was used to
+    // discover this group of servers.
+    SActualService* m_ActualService;
 
     unsigned m_DiscoveryIteration;
 };
 
 struct SNetServiceIteratorImpl : public CObject
 {
-    SNetServiceIteratorImpl(SNetServerGroupImpl* server_group_impl,
+    SNetServiceIteratorImpl(SDiscoveredServers* server_group_impl,
             TNetServerList::const_iterator position) :
         m_ServerGroup(server_group_impl), m_Position(position)
     {
@@ -85,14 +90,14 @@ struct SNetServiceIteratorImpl : public CObject
 
     virtual bool Next();
 
-    CRef<SNetServerGroupImpl> m_ServerGroup;
+    CRef<SDiscoveredServers> m_ServerGroup;
 
     TNetServerList::const_iterator m_Position;
 };
 
 struct SNetServiceIterator_OmitPenalized : public SNetServiceIteratorImpl
 {
-    SNetServiceIterator_OmitPenalized(SNetServerGroupImpl* server_group_impl,
+    SNetServiceIterator_OmitPenalized(SDiscoveredServers* server_group_impl,
             TNetServerList::const_iterator position) :
         SNetServiceIteratorImpl(server_group_impl, position)
     {
@@ -103,7 +108,7 @@ struct SNetServiceIterator_OmitPenalized : public SNetServiceIteratorImpl
 
 struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
 {
-    SNetServiceIterator_RandomPivot(SNetServerGroupImpl* server_group_impl,
+    SNetServiceIterator_RandomPivot(SDiscoveredServers* server_group_impl,
         TNetServerList::const_iterator position) :
     SNetServiceIteratorImpl(server_group_impl, position)
     {
@@ -114,18 +119,45 @@ struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
     TNetServerList::const_iterator m_InitialPosition;
 };
 
+enum EServiceType {
+    eServiceNotDefined,
+    eLoadBalancedService,
+    eSingleServerService
+};
+
+struct SActualService
+{
+    SActualService(const string& service_name) : m_ServiceName(service_name) {}
+
+    string m_ServiceName;
+    EServiceType m_ServiceType;
+    SDiscoveredServers* m_DiscoveredServers;
+    unsigned m_LatestDiscoveryIteration;
+};
+
+struct SCompareServiceName {
+    bool operator()(const SActualService* l, const SActualService* r) const
+    {
+        return l->m_ServiceName < r->m_ServiceName;
+    }
+};
+
+typedef set<SActualService*, SCompareServiceName> TActualServiceSet;
+
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
     // Construct a new object.
     SNetServiceImpl(
         const string& api_name,
-        const string& service_name,
         const string& client_name,
         INetServerConnectionListener* listener);
 
-    void Init(CObject* api_impl,
+    void Init(CObject* api_impl, const string& service_name,
         CConfig* config, const string& config_section,
         const char* const* default_config_sections);
+
+    SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
+    SActualService* FindOrCreateActualService(const string& service_name);
 
     string MakeAuthString();
 
@@ -140,16 +172,19 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     // a host:port pair) to be specified (not a load-balanced service name).
     CNetServer RequireStandAloneServerSpec(const string& cmd);
 
-    void DiscoverServers();
-    void ForceDiscovery();
+    void DiscoverServersIfNeeded(SActualService* actual_service);
+    void GetDiscoveredServers(const string* service_name,
+        CRef<SDiscoveredServers>& discovered_servers);
 
     void Monitor(CNcbiOstream& out, const string& cmd);
 
     virtual ~SNetServiceImpl();
 
     string m_APIName;
-    string m_ServiceName;
     string m_ClientName;
+
+    TActualServiceSet m_ActualServices;
+    SActualService* m_MainService;
 
     string m_EnforcedServerHost;
     unsigned m_EnforcedServerPort;
@@ -162,23 +197,15 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     string m_LBSMAffinityName;
     const char* m_LBSMAffinityValue;
-    unsigned m_LatestDiscoveryIteration;
 
-    SNetServerGroupImpl* m_ServerGroupPool;
-    SNetServerGroupImpl* m_ServerGroup;
-    CFastMutex m_ServerGroupMutex;
+    SDiscoveredServers* m_ServerGroupPool;
+    CFastMutex m_DiscoveryMutex;
 
     TNetServerSet m_Servers;
     CFastMutex m_ServerMutex;
 
     STimeout m_Timeout;
     ESwitch m_PermanentConnection;
-
-    enum EServiceType {
-        eNotDefined,
-        eLoadBalanced,
-        eSingleServer
-    } m_ServiceType;
 
     int m_MaxSubsequentConnectionFailures;
     int m_ReconnectionFailureThresholdNumerator;

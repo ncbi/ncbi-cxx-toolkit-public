@@ -97,6 +97,9 @@ public:
     virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
 };
 
+struct SActualService;
+
+typedef map<SActualService*, unsigned> TActualServiceDiscoveryIteration;
 
 struct SNetServerImpl : public CObject
 {
@@ -129,7 +132,7 @@ struct SNetServerImpl : public CObject
 
     SServerAddress m_Address;
 
-    unsigned m_DiscoveryIteration;
+    TActualServiceDiscoveryIteration m_ActualServiceDiscoveryIteration;
 
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;

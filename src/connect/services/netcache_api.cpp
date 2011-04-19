@@ -174,10 +174,10 @@ static const string s_NetCacheAPIName("NetCacheAPI");
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name) :
-    m_Service(new SNetServiceImpl(s_NetCacheAPIName, service, client_name,
+    m_Service(new SNetServiceImpl(s_NetCacheAPIName, client_name,
         new CNetCacheServerListener))
 {
-    m_Service->Init(this, config, section, s_NetCacheConfigSections);
+    m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
 }
 
 void SNetCacheAPIImpl::SetPassword(const string& password)
@@ -227,46 +227,37 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     if (!m_EnableMirroring)
         return primary_server.ExecWithRetry(cmd);
-    else {
-        if (key.HasExtensions() &&
-                key.GetServiceName() != m_Service->m_ServiceName) {
-            ERR_POST_ONCE("Service name in the key " << key.GetKey() <<
-                " does not match the service name of the API object (" <<
-                m_Service->m_ServiceName << "); the latter will be used "
-                "to find a mirror.");
+
+    string last_error;
+
+    CNetServiceIterator it = m_Service.Iterate(primary_server,
+        key.HasExtensions() && key.GetServiceName() !=
+            m_Service.GetServiceName() ? &key.GetServiceName() : NULL);
+
+    do {
+        try {
+            return (*it).ExecWithRetry(cmd);
         }
+        catch (CNetSrvConnException& ex) {
+            switch (ex.GetErrCode()) {
+            case CNetSrvConnException::eConnectionFailure:
+                last_error = ex.what();
+                break;
 
-        CNetServer srv(primary_server);
-        CNetServiceIterator it = m_Service.Iterate();
+            case CNetSrvConnException::eServerThrottle:
+                if (last_error.empty())
+                    last_error = ex.what();
+                break;
 
-        for (;;) {
-            try {
-                return srv.ExecWithRetry(cmd);
+            default:
+                throw;
             }
-            catch (CNetSrvConnException& ex) {
-                switch (ex.GetErrCode()) {
-                case CNetSrvConnException::eConnectionFailure:
-                    ERR_POST_X(2, ex.what());
-                    break;
-
-                case CNetSrvConnException::eServerThrottle:
-                    break;
-
-                default:
-                    throw;
-                }
-            }
-            do {
-                if (!it) {
-                    NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-                        "No NetCache mirrors available for " <<
-                            m_Service->m_ServiceName << " to exec " << cmd);
-                }
-                srv = *it;
-                ++it;
-            } while ((SNetServerImpl*) srv == (SNetServerImpl*) primary_server);
         }
-    }
+    } while (!++it);
+
+    NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+        "Unable to execute '" << cmd <<
+        "' on any of the mirrors; last error seen: " << last_error);
 }
 
 CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
@@ -358,7 +349,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
             }
 
             ERR_POST_X(3, "Could not connect to " <<
-                m_Service->m_ServiceName << ":" << e.what() <<
+                m_Service.GetServiceName() << ":" << e.what() <<
                 ". Connecting to backup server " << backup->AsString() << ".");
 
             exec_result = m_Service->GetServer(*backup).ExecWithRetry(cmd);
@@ -388,7 +379,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
         *blob_id = exec_result.response;
 
     if (add_extensions && m_Service.IsLoadBalanced())
-        CNetCacheKey::AddExtensions(*blob_id, m_Service->m_ServiceName);
+        CNetCacheKey::AddExtensions(*blob_id, m_Service.GetServiceName());
 
     return exec_result.conn;
 }

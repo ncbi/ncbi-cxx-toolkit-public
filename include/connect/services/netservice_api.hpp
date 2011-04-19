@@ -74,7 +74,10 @@ class NCBI_XCONNECT_EXPORT CNetService
         eIncludePenalized
     };
 
-    CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad);
+    CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad,
+        const string* service_name = NULL);
+    CNetServiceIterator Iterate(CNetServer::TInstance priority_server,
+        const string* service_name = NULL);
 
     bool FindServer(INetServerFinder* finder,
         EIterationMode mode = eSortByLoad);

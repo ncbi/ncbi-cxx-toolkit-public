@@ -125,10 +125,11 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& client_name,
             const string& cache_name) :
         SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
-            service_name, client_name, new CNetICacheServerListener)),
+            client_name, new CNetICacheServerListener)),
         m_CacheName(cache_name)
     {
-        m_Service->Init(this, config, section, s_NetICacheConfigSections);
+        m_Service->Init(this, service_name,
+            config, section, s_NetICacheConfigSections);
     }
 
     CNetServer::SExecResult StickToServerAndExec(const string& cmd);
@@ -292,7 +293,7 @@ CNetServer::SExecResult
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
         "Couldn't find any available servers for the " +
-            m_Service->m_ServiceName + " service.");
+            m_Service.GetServiceName() + " service.");
 }
 
 void CNetICacheClient::RegisterSession(unsigned pid)

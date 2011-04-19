@@ -219,7 +219,6 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 SNetServerImplReal::SNetServerImplReal(const string& host,
     unsigned short port) : SNetServerImpl(host, port)
 {
-    m_DiscoveryIteration = 0;
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
 
@@ -401,21 +400,39 @@ void SNetServerImpl::CheckIfThrottled()
                 if (!m_Service->m_ThrottleUntilDiscoverable) {
                     ResetThrottlingParameters();
                     return;
-                } else {
-                    if (m_Service->m_ForceRebalanceAfterThrottleWithin > 0) {
-                        CTime discovery_validity_time(m_Service->
-                            m_RebalanceStrategy->GetLastRebalanceTime());
+                } else if (m_Service->m_ForceRebalanceAfterThrottleWithin > 0) {
+                    CTime discovery_validity_time(m_Service->
+                        m_RebalanceStrategy->GetLastRebalanceTime());
 
-                        discovery_validity_time.AddSecond(m_Service->
-                            m_ForceRebalanceAfterThrottleWithin);
+                    discovery_validity_time.AddSecond(m_Service->
+                        m_ForceRebalanceAfterThrottleWithin);
 
-                        if (discovery_validity_time < current_time)
-                            m_Service->ForceDiscovery();
+                    if (discovery_validity_time < current_time) {
+                        // Force service discovery and rebalancing.
+                        CFastMutexGuard discovery_mutex_lock(
+                            m_Service->m_DiscoveryMutex);
+                        ITERATE(TActualServiceDiscoveryIteration, it,
+                                m_ActualServiceDiscoveryIteration) {
+                            // Force discovery:
+                            ++it->first->m_LatestDiscoveryIteration;
+                            m_Service->DiscoverServersIfNeeded(it->first);
+                            if (it->first->m_LatestDiscoveryIteration ==
+                                    it->second) {
+                                ResetThrottlingParameters();
+                                return;
+                            }
+                        }
                     }
-                    if (m_DiscoveryIteration ==
-                            m_Service->m_LatestDiscoveryIteration) {
-                        ResetThrottlingParameters();
-                        return;
+                } else {
+                    CFastMutexGuard discovery_mutex_lock(
+                        m_Service->m_DiscoveryMutex);
+                    ITERATE(TActualServiceDiscoveryIteration, it,
+                            m_ActualServiceDiscoveryIteration) {
+                        if (it->first->m_LatestDiscoveryIteration ==
+                                it->second) {
+                            ResetThrottlingParameters();
+                            return;
+                        }
                     }
                 }
             }
