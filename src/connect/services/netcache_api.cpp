@@ -253,7 +253,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 throw;
             }
         }
-    } while (!++it);
+    } while (++it);
 
     NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
         "Unable to execute '" << cmd <<
