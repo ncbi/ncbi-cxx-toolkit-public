@@ -109,8 +109,9 @@ struct SNetServiceIterator_OmitPenalized : public SNetServiceIteratorImpl
 struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
 {
     SNetServiceIterator_RandomPivot(SDiscoveredServers* server_group_impl,
-        TNetServerList::const_iterator position) :
-    SNetServiceIteratorImpl(server_group_impl, position)
+            TNetServerList::const_iterator position) :
+        SNetServiceIteratorImpl(server_group_impl, position),
+        m_InitialPosition(position)
     {
     }
 
