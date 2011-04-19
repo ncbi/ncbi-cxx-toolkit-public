@@ -233,8 +233,8 @@ static const SStringNumericValues s_Str2NumTests[] = {
     { "7E-324",   DF, -1, kBad, kBad, kBad, kBad, 7E-324 },
     { "7E-323",   DF, -1, kBad, kBad, kBad, kBad, 7E-323 },
 #endif
-    { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38 },
-    { "7E38",   DF, -1, kBad, kBad, kBad, kBad, 7E38 },
+    { "7E-38",    DF, -1, kBad, kBad, kBad, kBad, 7E-38 },
+    { "7E38",     DF, -1, kBad, kBad, kBad, kBad, 7E38 },
     { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123 }
 };
 
@@ -630,11 +630,11 @@ struct SStringDoublePosixTest
 };
 
 static const SStringDoublePosixTest s_StrToDoublePosix[] = {
-    {"123",                123.,                 0.},
-    {"123.",               123.,                 0.},
-    {"123.456",            123.456,              0.},
-    {"-123.456",          -123.456,              0.},
-    {"-12.45",            -12.45,                0.},
+    {"123",                 123.,                0.},
+    {"123.",                123.,                0.},
+    {"123.456",             123.456,             0.},
+    {"-123.456",           -123.456,             0.},
+    {"-12.45",             -12.45,               0.},
     {"0.01",                0.01,                0.},
     {"0.01456000",          0.01456,             0.},
     {"2147483649",          2147483649.,         0.},
@@ -644,20 +644,20 @@ static const SStringDoublePosixTest s_StrToDoublePosix[] = {
     {"123456789123.45",     123456789123.45,     0.},
     {"1234.5678912345",     1234.5678912345,     0.},
     {"1.23456789123456789", 1.23456789123456789, 0.},
-    {".123456789",     .123456789,    0.},
-    {".123456789123",  .123456789123, 0.},
-    {"12e12",          12.e12,        0.},
-    {"123.e2",         123.e2,        0.},
-    {"123.456e+2",     123.456e+2,    0.},
-    {"+123.456e-2",    123.456e-2,    0.},
-    {"-123.456e+2",   -123.456e+2,    0.},
-    {"-123.456e+12",  -123.456e+12,   0.},
-    {"-123.456e+25",  -123.456e+25,   0.},
-    {"-123.456e+78",  -123.456e+78,   0.},
-    {"-123.456e-2",   -123.456e-2,    0.},
-    {"-123.456e-12",  -123.456e-12,   0.},
-    {"-123.456e-25",  -123.456e-25,   0.},
-    {"-123.456e-78",  -123.456e-78,   0.00000000000002e-078},
+    {".123456789",          .123456789,          0.},
+    {".123456789123",       .123456789123,       0.},
+    {"12e12",               12.e12,              0.},
+    {"123.e2",              123.e2,              0.},
+    {"123.456e+2",          123.456e+2,          0.},
+    {"+123.456e-2",         123.456e-2,          0.},
+    {"-123.456e+2",        -123.456e+2,          0.},
+    {"-123.456e+12",       -123.456e+12,         0.},
+    {"-123.456e+25",       -123.456e+25,         0.},
+    {"-123.456e+78",       -123.456e+78,         0.},
+    {"-123.456e-2",        -123.456e-2,          0.},
+    {"-123.456e-12",       -123.456e-12,         0.},
+    {"-123.456e-25",       -123.456e-25,         0.},
+    {"-123.456e-78",       -123.456e-78,         0.00000000000002e-078},
     {"-9223372036854775809",      -9223372036854775809.,       0.},
     {"-922337.2036854775809",     -922337.2036854775809,       0.},
     {"-92233720368547.75809",     -92233720368547.75809,       0.},
@@ -2156,11 +2156,13 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
 
 BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
 {
-    cout << endl;
+    NcbiCout << NcbiEndl << "NStr:: String to Int speed tests...";
+
     const int COUNT = 10000000;
     const int TESTS = 6;
     const string ss[TESTS] = { "", "0", "1", "12345", "1234567890", "TRACE" };
     const int ssr[TESTS] = { -1, 0, 1, 12345, 1234567890, -1 };
+
     for ( int t = 0; t < TESTS; ++t ) {
         int v = NStr::StringToNumeric(ss[t]);
         if ( v != ssr[t] ) Abort();
@@ -2190,7 +2192,7 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
                 NStr::StringToNumeric(ss[t]);
             }
             time = sw.Elapsed();
-            cout << "StringToNumeric("<<ss[t]<<") time: " << time << endl;
+            NcbiCout << "StringToNumeric("<<ss[t]<<") time: " << time << endl;
         }
         if ( 1 ) {
             sw.Restart();
@@ -2199,7 +2201,7 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
                 if ( !v && errno ) v = Uint8(-1);
             }
             time = sw.Elapsed();
-            cout << "StringToInt8("<<ss[t]<<") time: " << time << endl;
+            NcbiCout << "StringToInt8("<<ss[t]<<") time: " << time << endl;
         }
         if ( 0 ) {
             sw.Restart();
@@ -2213,7 +2215,13 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
                 }
             }
             time = sw.Elapsed();
-            cout << "StringToInt8("<<ss[t]<<") time: " << time << endl;
+            NcbiCout << "StringToInt8("<<ss[t]<<") time: " << time << endl;
         }
     }
+}
+
+
+NCBITEST_INIT_TREE()
+{
+    NCBITEST_DISABLE(s_StringToIntSpeed);
 }
