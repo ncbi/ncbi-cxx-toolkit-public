@@ -350,7 +350,7 @@ CPerfLogGuard::~CPerfLogGuard()
 {
     try {
         if ( !m_Logger.m_IsDiscarded ) {
-            Post(CRequestStatus::e500_InternalServerError, m_Resource);
+            Post(CRequestStatus::e500_InternalServerError);
         }
     } 
     catch (CCoreException&) {
