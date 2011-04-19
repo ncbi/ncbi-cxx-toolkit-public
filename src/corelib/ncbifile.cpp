@@ -2590,12 +2590,13 @@ CFile::~CFile(void)
 
 Int8 CFile::GetLength(void) const
 {
-    TNcbiSys_stat buf;
-    if (NcbiSys_stat(_T_XCSTRING(GetPath()), &buf) != 0) {
+    TNcbiSys_stat st;
+    if (NcbiSys_stat(_T_XCSTRING(GetPath()), &st) != 0  ||
+        GetType(st) != eFile ) {
         //LOG_ERROR("CFile:GetLength(): stat() failed for " << GetPath());
         return -1;
     }
-    return buf.st_size;
+    return st.st_size;
 }
 
 
