@@ -215,6 +215,8 @@ void CDeflineGenerator::x_SetFlags (
     m_Isolate.clear();
     m_Strain.clear();
 
+    m_IsUnverified = false;
+
     // now start setting member variables
     m_IsNA = bsh.IsNa();
     m_IsAA = bsh.IsAa();
@@ -346,6 +348,17 @@ void CDeflineGenerator::x_SetFlags (
 
             // take first, then break to skip remainder
             break;
+        }
+    }
+
+    // process Unverified user object
+    {
+        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, User) {
+            const CUser_object& user_obj = desc_it->GetUser();
+            if (FIELD_IS_SET_AND_IS(user_obj, Type, Str) && user_obj.GetType().GetStr() == "Unverified" ) {
+                m_IsUnverified = true;
+                break;
+            }
         }
     }
 
@@ -1425,12 +1438,18 @@ string CDeflineGenerator::x_TitleFromWGS (void)
 }
 
 // generate TPA or TSA prefix
-string CDeflineGenerator::x_SetPrefix (void)
+string CDeflineGenerator::x_SetPrefix (
+    const string& title
+)
 
 {
     string prefix;
 
-    if (m_IsTSA) {
+    if (m_IsUnverified) {
+        if (title.find ("UNVERIFIED") == NPOS) {
+            prefix = "UNVERIFIED: ";
+        }
+    } else if (m_IsTSA) {
         prefix = "TSA: ";
     } else if (m_ThirdParty) {
         if (m_TPAExp) {
@@ -1626,6 +1645,8 @@ string CDeflineGenerator::GenerateDefline (
         title.erase (0, 10);
     } else if (NStr::StartsWith (title, "TSA:", NStr::eNocase)) {
         title.erase (0, 4);
+    } else if (NStr::StartsWith (title, "UNVERIFIED:", NStr::eNocase)) {
+        title.erase (0, 11);
     }
 
     // strip leading spaces remaining after removal of old TPA or TSA prefixes
@@ -1649,7 +1670,7 @@ string CDeflineGenerator::GenerateDefline (
     */
 
     // calculate prefix
-    prefix = x_SetPrefix ();
+    prefix = x_SetPrefix (title);
 
     // calculate suffix
     suffix = x_SetSuffix (bsh, title);

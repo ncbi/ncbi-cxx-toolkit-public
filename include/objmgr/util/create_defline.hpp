@@ -144,7 +144,9 @@ private:
     );
     string x_TitleFromWGS (void);
 
-    string x_SetPrefix (void);
+    string x_SetPrefix (
+        const string& title
+    );
     string x_SetSuffix (
         const CBioseq_Handle& bsh,
         const string& title
@@ -223,6 +225,9 @@ private:
     /// orgmod fields
     string m_Isolate;
     string m_Strain;
+
+    /// user object fields
+    bool m_IsUnverified;
 
     /// exception fields
     CTextFsm<int> m_Low_Quality_Fsa;
