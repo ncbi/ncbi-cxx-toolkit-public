@@ -741,7 +741,7 @@ CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode,
                 return new SNetServiceIterator_OmitPenalized(servers, it);
     } else if (mode == eRandomize) {
         if (!servers->m_Servers.empty()) {
-            static CRandom s_PivotGen;
+            static CRandom s_PivotGen((CRandom::TValue) time(NULL));
             TNetServerList::const_iterator initial_it =
                 servers->m_Servers.begin() +
                     s_PivotGen.GetRand(0, servers->m_Servers.size() - 1);
