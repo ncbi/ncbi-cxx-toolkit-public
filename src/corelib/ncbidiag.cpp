@@ -1738,7 +1738,7 @@ void CDiagContext_Extra::Flush(void)
     }
 
     auto_ptr<CNcbiOstrstream> ostr;
-    char* buf = "";
+    char* buf = 0;
     size_t buflen = 0;
     if (m_EventType == SDiagMessage::eEvent_PerfLog) {
         ostr.reset(new CNcbiOstrstream);
