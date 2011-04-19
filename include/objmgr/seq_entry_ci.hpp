@@ -69,12 +69,12 @@ public:
     /// Create an empty iterator
     CSeq_entry_CI(void);
 
-    /// Create an iterator that enumerates seq-entries
-    /// related to the given seq-entry
+    /// Create an iterator that enumerates Seq-entries
+    /// inside the given Seq-entry.
     CSeq_entry_CI(const CSeq_entry_Handle& entry);
 
-    /// Create an iterator that enumerates seq-entries
-    /// related to the given seq-set
+    /// Create an iterator that enumerates Seq-entries
+    /// inside the given Bioseq-set.
     CSeq_entry_CI(const CBioseq_set_Handle& set);
 
     /// Check if iterator points to an object
