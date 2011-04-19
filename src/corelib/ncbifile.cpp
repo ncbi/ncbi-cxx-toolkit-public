@@ -2152,7 +2152,8 @@ bool CDirEntry::IsIdentical(const string& entry_name,
 
 
 bool CDirEntry::GetOwner(string* owner, string* group,
-                         EFollowLinks follow) const
+                         EFollowLinks follow, 
+                         unsigned int* uid, unsigned int* gid) const
 {
     if ( !owner  &&  !group ) {
         return false;
@@ -2160,7 +2161,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
 
 #if defined(NCBI_OS_MSWIN)
 
-    return CWinSecurity::GetFileOwner(GetPath(), owner, group);
+    return CWinSecurity::GetFileOwner(GetPath(), owner, group, uid, gid);
 
 #elif defined(NCBI_OS_UNIX)
 
@@ -2168,7 +2169,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     int errcode;
     
     if ( follow == eFollowLinks ) {
-        errcode = stat(GetPath().c_str(), &st);
+        errcode = stat (GetPath().c_str(), &st);
     } else {
         errcode = lstat(GetPath().c_str(), &st);
     }
@@ -2177,6 +2178,8 @@ bool CDirEntry::GetOwner(string* owner, string* group,
                                    " stat() failed for " << GetPath());
     }
     
+    if ( uid )
+        *uid = st.st_uid;
     if ( owner ) {
         struct passwd *pw = getpwuid(st.st_uid);
         if (pw) {
@@ -2185,6 +2188,9 @@ bool CDirEntry::GetOwner(string* owner, string* group,
             NStr::UIntToString(*owner, st.st_uid);
         }
     }
+
+    if ( gid )
+        *gid = st.st_gid;
     if ( group ) {
         struct group *gr = getgrgid(st.st_gid);
         if ( gr ) {
@@ -2193,7 +2199,9 @@ bool CDirEntry::GetOwner(string* owner, string* group,
             NStr::UIntToString(*group, st.st_gid);
         }
     }
+
     return true;
+
 #endif
 }
 
@@ -2214,9 +2222,9 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 
     struct stat st;
     int errcode;
-    
+
     if ( follow == eFollowLinks ) {
-        errcode = stat(GetPath().c_str(), &st);
+        errcode = stat (GetPath().c_str(), &st);
     } else {
         errcode = lstat(GetPath().c_str(), &st);
     }
@@ -2252,7 +2260,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             gid = gr->gr_gid;
         }
     }
-    
+
     if ( follow == eFollowLinks ) {
         if ( chown(GetPath().c_str(), uid, gid) ) {
             LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
