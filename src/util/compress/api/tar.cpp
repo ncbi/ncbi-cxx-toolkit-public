@@ -3256,8 +3256,8 @@ void CTar::x_AppendStream(const string& name, istream& is)
             int x_errno = ifs ? errno : 0;
             TAR_THROW(this, eRead,
                       "Error reading "
-                      + string(ifs ? "file " : kEmptyStr)
-                      + '\'' + name + '\'' + s_OSReason(x_errno));
+                      + string(ifs ? "file" : "stream")
+                      + " '" + name + '\'' + s_OSReason(x_errno));
         }
         avail = (size_t) is.gcount();
         // Write buffer to the archive
