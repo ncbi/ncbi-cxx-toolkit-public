@@ -787,6 +787,7 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
     } else {
         // The service is empty, allocate a server group to contain
         // solely the requested server.
+        servers.Reset();
         CFastMutexGuard discovery_mutex_lock(m_Impl->m_DiscoveryMutex);
         (servers = m_Impl->AllocServerGroup(0))->m_Servers.push_back(
             TServerRate(priority_server, 1));
