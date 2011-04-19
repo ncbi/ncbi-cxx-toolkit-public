@@ -76,16 +76,47 @@ bool CObject_id::Match(const CObject_id& oid2) const
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+
+inline
+CObject_id::E_Choice s_GetInteger(const CObject_id& id, Int8& value)
+{
+    switch ( id.Which() ) {
+    case CObject_id::e_Id:
+        value = id.GetId();
+        return CObject_id::e_Id;
+    case CObject_id::e_Str:
+        value = NStr::StringToInt8(id.GetStr(), NStr::fConvErr_NoThrow);
+        if ( !value && errno ) {
+            // not convertible to integer
+            return CObject_id::e_Str;
+        }
+        else {
+            return CObject_id::e_Id;
+        }
+    default:
+        value = 0;
+        return CObject_id::e_not_set;
+    }
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
 // match for identity
 int CObject_id::Compare(const CObject_id& oid2) const
 {
-    E_Choice type = Which();
-    E_Choice type2 = oid2.Which();
-    if ( type != type2 )
-        return type - type2;
+    Int8 value, value2;
+    E_Choice type = s_GetInteger(*this, value);
+    E_Choice type2 = s_GetInteger(oid2, value2);
+    if ( int diff = type - type2 ) {
+        return diff;
+    }
     switch ( type ) {
     case e_Id:
-        return GetId() - oid2.GetId();
+        return value < value2? -1: value > value2? 1: 0;
     case e_Str:
         return PNocase().Compare(GetStr(), oid2.GetStr());
     default:

@@ -53,6 +53,7 @@
 #include <boost/test/parameterized_test.hpp>
 #include <util/util_exception.hpp>
 #include <util/util_misc.hpp>
+#include <util/random_gen.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -997,3 +998,67 @@ Seq-id ::= patent {\
 #endif
 
 
+BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
+{
+    static const char* const sc_Ids[] = {
+        "gnl|ti|12312",
+        "gnl|ti|-12312",
+        "gnl|ti|0",
+        "gnl|ti|22312-234",
+        "gnl|ti|3231212",
+        "gnl|ti|42312324",
+        "gnl|TI|52312123124",
+        "gnl|ti|623121231214",
+        "gnl|TI|str",
+        "gnl|TRACE|12312",
+        "gnl|TRACE|0",
+        "gnl|TRACE|-12312",
+        "gnl|TRACE|22312-234",
+        "gnl|trace|3231212",
+        "gnl|TRACE|42312324",
+        "gnl|TRACE|52312123124",
+        "gnl|trace|623121231214",
+        "gnl|trace|str",
+        "NC_000001",
+        "NC_000001.8",
+        "nc_000001.8",
+        "NC_000001.9",
+        "Nc_000001.9",
+        "ref|NC_000001.9|chr1_build36",
+        "ref|NC_000001|chr1_build35",
+        "ref|NC_000001|chr1_build36"
+    };
+
+    typedef CRef<CSeq_id> TRef;
+    vector<TRef> ids;
+    for ( size_t i = 0; i < ArraySize(sc_Ids); ++i ) {
+        ids.push_back(TRef(new CSeq_id(sc_Ids[i])));
+    }
+    CRandom rnd(1);
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        swap(ids[i], ids[rnd.GetRand(i, ids.size()-1)]);
+    }
+    vector<TRef> sorted_ids = ids;
+    sort(sorted_ids.begin(), sorted_ids.end(), PPtrLess<TRef>());
+    for ( size_t i = 0; i < sorted_ids.size(); ++i ) {
+        BOOST_CHECK(sorted_ids[i]->CompareOrdered(*sorted_ids[i]) == 0);
+        for ( size_t j = 0; j < i; ++j ) {
+            BOOST_CHECK(sorted_ids[j]->CompareOrdered(*sorted_ids[i]) <= 0);
+            BOOST_CHECK(sorted_ids[i]->CompareOrdered(*sorted_ids[j]) >= 0);
+        }
+    }
+    typedef set<TRef, PPtrLess<TRef> > TSet;
+    TSet ids_set(ids.begin(), ids.end());
+    BOOST_CHECK(ids_set.size() < sorted_ids.size());
+    ITERATE ( TSet, it, ids_set ) {
+        //NcbiCout << (*it)->AsFastaString() << NcbiEndl;
+        BOOST_CHECK((*it)->CompareOrdered(**it) == 0);
+        ITERATE ( TSet, it2, ids_set ) {
+            if ( it2 == it ) {
+                break;
+            }
+            BOOST_CHECK((*it2)->CompareOrdered(**it) < 0);
+            BOOST_CHECK((*it)->CompareOrdered(**it2) > 0);
+        }
+    }
+}
