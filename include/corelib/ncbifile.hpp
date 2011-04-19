@@ -945,13 +945,31 @@ public:
     /// @param owner
     ///   Pointer to a string to receive an owner name.
     /// @param group
-    ///   Pointer to a string to receive a group name. 
+    ///   Pointer to a string to receive a group name.
+    /// @param follow
+    ///   Whether to follow symbolic links when getting the information.
+    /// @param uid
+    ///   Pointer to an unsigned int to receive numeric user id
+    ///   (this information is purely supplemental).
+    /// @param gid
+    ///   Pointer to an unsigned int to receive numeric group id
+    ///   (this information is purely supplemental).
+    /// @note
+    ///   Numeric uid/gid may be the fake ones on Windows (and may be 0).
+    /// @note
+    ///   The call will fail if neither owner nor group is provided non-NULL
+    ///   (even though uid and/or gid may be non-NULL).
+    /// @note
+    ///   It is in best interest of the caller to clear all strings and
+    ///   integers that are expected to get values out of this call prior
+    ///   to making the actual call.
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     /// @sa
     ///   SetOwner
     bool GetOwner(string* owner, string* group = 0,
-                  EFollowLinks follow = eFollowLinks) const;
+                  EFollowLinks follow = eFollowLinks,
+                  unsigned int* uid = 0, unsigned int* gid = 0) const;
 
     /// Set an entry owner.
     ///
