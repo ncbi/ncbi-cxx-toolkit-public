@@ -75,6 +75,44 @@ static const char* kData_Gtf =
     "gene_id \"001\"; transcript_id \"001.1\";\n"
     "381 Twinscan  start_codon  380   382   .   +   0  "
     "gene_id \"001\"; transcript_id \"001.1\";\n";
+static const char* kData_Gff3 =
+	"NC_000008.9	dbVar	CNV	151699	186841	.	.	.	ID=nsv6034;Name=nsv6034(CNV);Var_type=CNV\n"
+	"NC_000008.9	dbVar	CNV	212185	257141	.	.	.	ID=nsv6035;Name=nsv6035(CNV);Var_type=CNV\n"
+    "NC_000008.9	dbVar	CNV	577296	606629	.	.	.	ID=nsv6036;Name=nsv6036(CNV);Var_type=CNV\n";
+static const char* kData_Gff2 =
+	"NC_000008.9	dbVar	CNV	151699	186841	.	.	.	feat=a\n"
+	"NC_000008.9	dbVar	CNV	212185	257141	.	.	.	feat=b\n"
+    "NC_000008.9	dbVar	CNV	577296	606629	.	.	.	feat=c\n";
+// Test for handling cases with huge comments
+static const char* kData_Gff3_Comment = 
+	"##gff-version 3\n"
+	"##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606\n"
+	"##date 2009-11-04\n"
+	"# Study_accession: nstd17\n"
+	"# Display_name: Conrad et al 2006\n"
+	"# PMID: 16327808\n"
+	"# Study_description: We report a new method that uses SNP genotype data"
+	" from parent-offspring trios to identify polymorphic deletions. We applied"
+	" this method to data from the International HapMap Project to produce the first"
+	" high-resolution population surveys of deletion polymorphism. Approximately"
+	" 100 of these deletions have been experimentally validated using comparative"
+	" genome hybridization on tiling-resolution oligonucleotide microarrays. Our"
+	" analysis identifies a total of 586 distinct regions that harbor deletion"
+	" polymorphisms in one or more of the families.\n"
+	"# Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam elementum"
+	" arcu feugiat risus pharetra pellentesque. Suspendisse potenti. Curabitur"
+	" non arcu cursus tortor consequat bibendum vel in nisl. Sed sagittis"
+	" consequat velit, vel lacinia orci vestibulum vel. Sed in sapien vel"
+	" lectus consequat dignissim nec a neque. Quisque eget dolor tellus,"
+	" eget mollis enim. Nam laoreet cursus enim, ut auctor sapien sodales quis."
+	" Duis dolor eros, dictum aliquet bibendum quis, consectetur quis sem."
+	" Nullam a arcu eget diam gravida aliquet a nec est. Proin ac vehicula"
+	" mauris. Sed non erat lectus. Nullam id sollicitudin urna. Nullam"
+	" placerat, justo in lacinia consectetur, lectus nulla vehicula est,"
+	" eu aliquam mauris velit interdum lorem.\n"
+	"NC_000001.7	dbVar	CNV	10415637	10427143	.	.	.	ID=nsv436924;Name=nsv436924(CNV);Var_type=CNV\n"
+	"NC_000001.7	dbVar 	CNV	101474397	101476638	.	.	.	ID=nsv436925;Name=nsv436925(CNV);Var_type=CNV\n"
+	"NC_000003.8	dbVar 	CNV	164983304	164985198	.	.	.	ID=nsv436926;Name=nsv436926(CNV);Var_type=CNV\n";
 static const char* kData_Glimmer3 =
     ">gms:3447|cmr:632 chromosome 1 {Mycobacterium smegmatis MC2}\n"
     "orf00001 499 1692 +1 13.14\n"
@@ -234,6 +272,10 @@ static const char* kData_TableHint_Preferred =
     "DNA        a         b         c         d         f         g\n"
     "-0.465000 -0.141000  0.507000 -0.462000 -0.464000  0.570000  1.356000\n"
     " 0.559000 -0.459000 -0.464000 -0.458000  0.000000  0.322000 -0.454000\n";
+static const char* kData_Hgvs =
+	"NC_000023.9:g.107688969G>A\n"
+	"NC_000023.9:g.107693786delG\n"
+	"NG_008472.1:g.10295_10296insT\n";
 
 
 BOOST_AUTO_TEST_CASE(TestBinaryAsn)
@@ -265,6 +307,27 @@ BOOST_AUTO_TEST_CASE(TestGtf)
     CNcbiIstrstream str(kData_Gtf);
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eGtf);
+}
+
+BOOST_AUTO_TEST_CASE(TestGff3)
+{
+    CNcbiIstrstream str(kData_Gff3);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eGff3);
+}
+
+BOOST_AUTO_TEST_CASE(TestGff2)
+{
+    CNcbiIstrstream str(kData_Gff2);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eGff2);
+}
+
+BOOST_AUTO_TEST_CASE(TestGff3Comment)
+{
+    CNcbiIstrstream str(kData_Gff3_Comment);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eGff3);
 }
 
 BOOST_AUTO_TEST_CASE(TestGlimmer3)
@@ -428,3 +491,12 @@ BOOST_AUTO_TEST_CASE(TestTableHint_Disabled)
     guess.GetFormatHints().AddDisabledFormat(CFormatGuess::eFlatFileSequence);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eTable);
 }
+
+BOOST_AUTO_TEST_CASE(TestHgvs)
+{
+    CNcbiIstrstream str(kData_Hgvs);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eHgvs);
+}
+
+

@@ -152,6 +152,7 @@ CFormatGuess::s_CheckOrder[] =
     eBed,
     eBed15,
     eNewick,
+	eHgvs,
     eAlignment,
     eDistanceMatrix,
     eFlatFileSequence,
@@ -173,7 +174,7 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "unknown",
     "binary ASN.1",
     "RepeatMasker",
-    "GFF/GTF",
+    "GFF/GTF Poisoned",
     "Glimmer3",
     "AGP",
     "XML",
@@ -191,9 +192,10 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "Taxplot",
     "Phrap ACE",
     "table",
-    "GTF",
-    "GFF3",
-    "GFF2"
+	"GTF",
+	"GFF3",
+	"GFF2",
+	"HGVS"
 };
 
 const char*
@@ -450,6 +452,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatPhrapAce( mode );
     case eTable:
         return TestFormatTable( mode );
+	case eHgvs:
+		return TestFormatHgvs( mode );
 
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
@@ -488,12 +492,33 @@ CFormatGuess::EnsureTestBuffer()
     if ( ! m_Stream.good() ) {
         return false;
     }
-    m_pTestBuffer = new char[ s_iTestBufferSize ];
-    m_Stream.read( m_pTestBuffer, s_iTestBufferSize );
-    m_iTestDataSize = m_Stream.gcount();
-    m_Stream.clear();  // in case we reached eof
-    CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
-    return true;
+
+	// Fix to the all-comment problem.
+	// Read a test buffer,
+	// Test it for being all comment
+	// If its all comment, read a twice as long buffer
+	// Stop when its no longer all comment, end of the stream,
+	//   or Multiplier hits 1024 
+	int Multiplier = 1;
+    while(true) {
+		m_pTestBuffer = new char[ Multiplier * s_iTestBufferSize ];
+    	m_Stream.read( m_pTestBuffer, Multiplier * s_iTestBufferSize );
+    	m_iTestDataSize = m_Stream.gcount();
+    	m_Stream.clear();  // in case we reached eof
+    	CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
+    	
+		if(IsAllComment()) {
+			Multiplier *= 2;
+			delete [] m_pTestBuffer;
+			m_pTestBuffer = NULL;
+			if(Multiplier >= 1024 || m_iTestDataSize < ((Multiplier/2) * s_iTestBufferSize) ) 
+				return false;
+			continue;
+		} else {
+			break;
+		}
+	}
+	return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -616,18 +641,16 @@ CFormatGuess::TestFormatGtf(
 
     unsigned int uGtfLineCount = 0;
     list<string>::iterator it = m_TestLines.begin();
-    for ( ;  it != m_TestLines.end();  ++it) {
-        if ( !it->empty()  &&  (*it)[0] != '#') {
-            break;
-        }
-    }
 
     for ( ;  it != m_TestLines.end();  ++it) {
         //
         //  Make sure to ignore any UCSC track and browser lines prior to the
         //  start of data
         //
-        if ( !uGtfLineCount && NStr::StartsWith( *it, "browser " ) ) {
+        if ( it->empty() || (*it)[0] == '#' ) {
+			continue;
+		}
+		if ( !uGtfLineCount && NStr::StartsWith( *it, "browser " ) ) {
             continue;
         }
         if ( !uGtfLineCount && NStr::StartsWith( *it, "track " ) ) {
@@ -653,18 +676,16 @@ CFormatGuess::TestFormatGff3(
 
     unsigned int uGffLineCount = 0;
     list<string>::iterator it = m_TestLines.begin();
-    for ( ;  it != m_TestLines.end();  ++it) {
-        if ( !it->empty()  &&  (*it)[0] != '#') {
-            break;
-        }
-    }
 
     for ( ;  it != m_TestLines.end();  ++it) {
         //
         //  Make sure to ignore any UCSC track and browser lines prior to the
         //  start of data
         //
-        if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
+        if ( it->empty() || (*it)[0] == '#' ) {
+			continue;
+		}
+		if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
             continue;
         }
         if ( !uGffLineCount && NStr::StartsWith( *it, "track " ) ) {
@@ -690,18 +711,16 @@ CFormatGuess::TestFormatGff2(
 
     unsigned int uGffLineCount = 0;
     list<string>::iterator it = m_TestLines.begin();
-    for ( ;  it != m_TestLines.end();  ++it) {
-        if ( !it->empty()  &&  (*it)[0] != '#') {
-            break;
-        }
-    }
 
     for ( ;  it != m_TestLines.end();  ++it) {
         //
         //  Make sure to ignore any UCSC track and browser lines prior to the
         //  start of data
         //
-        if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
+        if ( it->empty() || (*it)[0] == '#' ) {
+			continue;
+		}
+		if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
             continue;
         }
         if ( !uGffLineCount && NStr::StartsWith( *it, "track " ) ) {
@@ -749,12 +768,16 @@ CFormatGuess::TestFormatAgp(
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
+	bool LineFound = false;
     ITERATE( list<string>, it, m_TestLines ) {
-        if ( ! IsLineAgp( *it ) ) {
-            return false;
+        if ( it->empty() || (*it)[0] == '#' ) {
+			continue;
+		}
+		if ( IsLineAgp( *it ) ) {
+			LineFound = true;
         }
     }
-    return true;
+    return LineFound;
 }
 
 //  -----------------------------------------------------------------------------
@@ -1210,6 +1233,7 @@ CFormatGuess::TestFormatBed15(
         return false;
     }
 
+	bool LineFound = false;
     size_t columncount = 15;
     ITERATE( list<string>, it, m_TestLines ) {
         if ( NStr::TruncateSpaces( *it ).empty() ) {
@@ -1233,9 +1257,11 @@ CFormatGuess::TestFormatBed15(
         NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
         if ( columns.size() != columncount ) {
             return false;
-        }
+        } else {
+			LineFound = true;
+		}
     }
-    return true;
+    return LineFound;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1257,6 +1283,30 @@ CFormatGuess::TestFormatWiggle(
         }
     }
     return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatHgvs(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    unsigned int uHgvsLineCount = 0;
+    list<string>::iterator it = m_TestLines.begin();
+
+    for ( ;  it != m_TestLines.end();  ++it) {
+        if ( it->empty() || (*it)[0] == '#' ) {
+			continue;
+		}
+        if ( ! IsLineHgvs( *it ) ) {
+            return false;
+        }
+        ++uHgvsLineCount;
+    }
+    return (uHgvsLineCount != 0);
 }
 
 
@@ -1701,6 +1751,9 @@ bool CFormatGuess::IsLineGff3(
     if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
         return false;
     }
+	if ( tokens.size() < 9 || tokens[8].empty()) {
+		return false;
+	}
 	if ( tokens.size() >= 9 && tokens[8].size() > 1) {
 		const string& col9 = tokens[8];
 		if ( NPOS == NStr::FindNoCase(col9, "ID") &&
@@ -1908,5 +1961,67 @@ CFormatGuess::EnsureSplitLines()
     }
     return !m_TestLines.empty();
 }
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::IsAllComment()
+{
+	m_bSplitDone = false;
+	m_TestLines.clear();
+	EnsureSplitLines();
+
+	bool NonCommentFound = false;
+	ITERATE(list<string>, it, m_TestLines) {
+		if(it->empty())
+			continue;
+		else if(NStr::StartsWith(*it, "#"))
+			continue;
+		else if(NStr::StartsWith(*it, "--"))
+			continue;
+		else {
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::IsLineHgvs(
+    const string& line )
+{
+	// This simple check can mistake Newwick, so Newwick is checked first
+	//  /:(g|c|r|p|m|mt)\./  as in NC_000001.9:g.1234567C>T
+	int State = 0;
+	ITERATE(string, Iter, line) {
+		char Char = *Iter;
+		char Next = '\0';
+		string::const_iterator NextI = Iter;
+		++NextI;
+		if(NextI != line.end())
+			Next = *NextI;
+		
+		if(State == 0) {
+			if(Char == ':')
+				State = 1;
+		} else if(State == 1) {
+			if (Char == 'g' ||
+				Char == 'c' ||
+				Char == 'r' ||
+				Char == 'p' ||
+			   (Char == 'm' && Next == 't') ||
+			    Char == 'm' ) {
+				State = 2;
+			}
+		} else if(State == 2) {
+			if(Char == '.') 
+				State = 3;
+		}
+	}
+	
+	return (State == 3);	
+}
+
+
 
 END_NCBI_SCOPE

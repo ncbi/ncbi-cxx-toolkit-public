@@ -59,10 +59,10 @@ public:
         eRmo                 =  2, ///< RepeatMasker Output
         eGtf_POISENED        =  3, ///< Old and Dead GFF/GTF style annotations
         eGlimmer3            =  4, ///< Glimmer3 predictions
-        eAgp                 =  5, ///< AGP format assembly
+        eAgp                 =  5, ///< AGP format assembly, AgpRead
         eXml                 =  6, ///< XML
         eWiggle              =  7, ///< UCSC WIGGLE file format
-        eBed                 =  8, ///< UCSC BED file format
+        eBed                 =  8, ///< UCSC BED file format, CBedReader
         eBed15               =  9, ///< UCSC BED15 or microarray format
         eNewick              = 10, ///< Newick file
         eAlignment           = 11, ///< Text alignment
@@ -71,14 +71,15 @@ public:
                                    ///< sequence portion
         eFiveColFeatureTable = 14, ///< Five-column feature table
         eSnpMarkers          = 15, ///< SNP Marker flat file
-        eFasta               = 16, ///< FASTA format sequence record
+        eFasta               = 16, ///< FASTA format sequence record, CFastaReader
         eTextASN             = 17, ///< Text ASN.1
         eTaxplot             = 18, ///< Taxplot file
         ePhrapAce            = 19, ///< Phrap ACE assembly file
         eTable               = 20, ///< Generic table
         eGtf                 = 21, ///< New GTF, CGtfReader
 		eGff3                = 22, ///< GFF3, CGff3Reader
-		eGff2                = 23, ///< GFF2, CGff2Reader
+		eGff2                = 23, ///< GFF2, CGff2Reader, any GFF-like that doesn't fit the others
+		eHgvs                = 24, ///< HGVS, CHgvsParser
 		/// Max value of EFormat
         eFormat_max
     };
@@ -198,6 +199,7 @@ protected:
     bool EnsureTestBuffer();
     bool EnsureStats();
     bool EnsureSplitLines();
+	bool IsAllComment();
 
     bool TestFormatRepeatMasker(
         EMode );
@@ -243,6 +245,9 @@ protected:
         EMode );
     bool TestFormatWiggle(
         EMode );
+	bool TestFormatHgvs(
+        EMode );
+
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
@@ -269,7 +274,9 @@ protected:
         const std::string& );
     static bool IsAsnComment(
         const vector<string>& );
-
+	static bool IsLineHgvs(
+		const std::string& );
+	
 private:
     static bool x_TestInput( CNcbiIstream& input, EOnError onerror );
 
