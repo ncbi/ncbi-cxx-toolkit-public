@@ -590,6 +590,8 @@ void SNetServiceImpl::DiscoverServersIfNeeded(SActualService* actual_service)
             // Query the Load Balancer.
             SERV_ITER srv_it;
 
+            // FIXME Retry logic can be removed as soon as LBSMD with
+            // packet compression is installed universally.
             int try_count = TServConn_MaxFineLBNameRetries::GetDefault();
             for (;;) {
                 SConnNetInfo* net_info =
@@ -602,14 +604,9 @@ void SNetServiceImpl::DiscoverServersIfNeeded(SActualService* actual_service)
 
                 ConnNetInfo_Destroy(net_info);
 
-                if (srv_it != 0)
+                if (srv_it != 0 || --try_count < 0)
                     break;
 
-                if (--try_count < 0) {
-                    NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-                        "Load balancer cannot find service name '" +
-                            actual_service->m_ServiceName + "'");
-                }
                 ERR_POST_X(4, "Could not find LB service name '" <<
                     actual_service->m_ServiceName <<
                         "', will retry after delay");
