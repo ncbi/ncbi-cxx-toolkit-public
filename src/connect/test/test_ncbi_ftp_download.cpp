@@ -672,7 +672,7 @@ int main(int argc, const char* argv[])
 
     // These should not matter, and can be issued in any order
     // ...so do the "wrong" order on purpose to prove it works!
-    _ASSERT(ftp.Close() == eIO_Success);
+    _VERIFY(ftp.Close() == eIO_Success);
     delete processor;
 
     // Conclude the test
