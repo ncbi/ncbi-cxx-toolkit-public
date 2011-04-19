@@ -802,10 +802,10 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
         
         if (m_Configs.size() != m_AllConfigs.size() &&
             find(m_Configs.begin(), m_Configs.end(), *iconfig) == m_Configs.end()) {
-            file_config->SetAttlist().SetExcludedFromBuild("TRUE");
+            file_config->SetAttlist().SetExcludedFromBuild("true");
         }
         else if ( !enable_cfg.empty()  &&  enable_cfg != config ) {
-            file_config->SetAttlist().SetExcludedFromBuild("TRUE");
+            file_config->SetAttlist().SetExcludedFromBuild("true");
         }
 
         CRef<CTool> compilerl_tool(new CTool());

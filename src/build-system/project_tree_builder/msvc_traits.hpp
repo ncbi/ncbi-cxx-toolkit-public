@@ -178,7 +178,7 @@ struct SDebug
     }
     static string GenerateDebugInformation(void)
     {
-	    return "TRUE";
+	    return "true";
     }
     static string OptimizeReferences(void)
     {
@@ -191,7 +191,7 @@ struct SDebug
 
     static string GlobalOptimizations(void)
     {
-	    return "FALSE";
+	    return "false";
     }
     static string FavorSizeOrSpeed(void)
     {
@@ -232,19 +232,19 @@ struct SRelease
     }
     static string OmitFramePointers(void)
     {
-	    return "FALSE";
+	    return "false";
     }
     static string StringPooling(void)
     {
-	    return "TRUE";
+	    return "true";
     }
     static string EnableFunctionLevelLinking(void)
     {
-	    return "TRUE";
+	    return "true";
     }
     static string GenerateDebugInformation(void)
     {
-	    return "FALSE";
+	    return "false";
     }
     static string OptimizeReferences(void)
     {
@@ -257,7 +257,7 @@ struct SRelease
 
     static string GlobalOptimizations(void)
     {
-	    return "TRUE";
+	    return "true";
     }
     static string FavorSizeOrSpeed(void)
     {

@@ -406,7 +406,7 @@ public:
     virtual string GenerateDebugInformation(void) const
     {
         if (m_Config.m_VTuneAddon) {
-            return "TRUE";
+            return "true";
         }
         return GetLinkerOpt(m_MsvcMetaMakefile,
                             m_MsvcProjectMakefile,
@@ -523,7 +523,7 @@ public:
 
     virtual string IgnoreAllDefaultLibraries(void) const
     {
-        return "FALSE";
+        return "false";
     }
     virtual string IgnoreDefaultLibraryNames(void) const
     {

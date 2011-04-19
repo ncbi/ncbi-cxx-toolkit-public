@@ -507,7 +507,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
                             const string& config = (*p).GetConfigFullName();
                             CRef<CFileConfiguration> file_config(new CFileConfiguration());
                             file_config->SetAttlist().SetName(ConfigName(config));
-                            file_config->SetAttlist().SetExcludedFromBuild("TRUE");
+                            file_config->SetAttlist().SetExcludedFromBuild("true");
 
                             CRef<CTool> rescl_tool(new CTool());
                             rescl_tool->SetAttlist().SetName("VCResourceCompilerTool");
@@ -1556,7 +1556,7 @@ void CreateUtilityProject(const string&            name,
                           "$(ConfigurationName)");
             SET_ATTRIBUTE(conf, ConfigurationType,  "10");
             SET_ATTRIBUTE(conf, CharacterSet,       "2");
-            SET_ATTRIBUTE(conf, ManagedExtensions,  "TRUE");
+            SET_ATTRIBUTE(conf, ManagedExtensions,  "true");
         }}
 
         {{

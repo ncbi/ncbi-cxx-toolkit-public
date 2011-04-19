@@ -9,23 +9,23 @@ StructMemberAlignment=0
 UsePrecompiledHeader=0
 CallingConvention=0
 CompileAs=0
-IgnoreStandardIncludePath=FALSE
-StringPooling=FALSE
+IgnoreStandardIncludePath=false
+StringPooling=false
 MinimalRebuild=
 ExceptionHandling=1
-BufferSecurityCheck=TRUE
-RuntimeTypeInfo=TRUE
+BufferSecurityCheck=true
+RuntimeTypeInfo=true
 DisableSpecificWarnings=
 UndefinePreprocessorDefinitions=
 AdditionalOptions=
 
 [Compiler.800]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-Detect64BitPortabilityProblems=FALSE
+Detect64BitPortabilityProblems=false
 
 [Compiler.900]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-Detect64BitPortabilityProblems=FALSE
+Detect64BitPortabilityProblems=false
 
 [Compiler.1000]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
@@ -35,15 +35,15 @@ PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
 [Compiler.debug]
 DebugInformationFormat=3
 Optimization=0
-MinimalRebuild=TRUE
-GlobalOptimizations=FALSE
+MinimalRebuild=true
+GlobalOptimizations=false
 InlineFunctionExpansion=0
 FavorSizeOrSpeed=0
-OmitFramePointers=FALSE
+OmitFramePointers=false
 # use "0" to 'purify', 'quantify', 'vtune' etc; "3" - otherwise
 BasicRuntimeChecks=3
 BrowseInformation=0
-EnableFunctionLevelLinking=FALSE
+EnableFunctionLevelLinking=false
 
 
 
@@ -51,14 +51,14 @@ EnableFunctionLevelLinking=FALSE
 DebugInformationFormat=0
 OptimizeForProcessor=3
 Optimization=2
-MinimalRebuild=FALSE
-GlobalOptimizations=TRUE
+MinimalRebuild=false
+GlobalOptimizations=true
 InlineFunctionExpansion=2
 FavorSizeOrSpeed=1
-OmitFramePointers=TRUE
+OmitFramePointers=true
 BasicRuntimeChecks=0
 BrowseInformation=0
-EnableFunctionLevelLinking=TRUE
+EnableFunctionLevelLinking=true
 
 [Compiler.800.release]
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
@@ -81,7 +81,7 @@ SubSystem=1
 AdditionalOptions=
 ProgramDatabaseFile=
 ImportLibrary=
-IgnoreAllDefaultLibraries=FALSE
+IgnoreAllDefaultLibraries=false
 IgnoreDefaultLibraryNames=
 GenerateManifest=true
 EmbedManifest=false
@@ -95,13 +95,13 @@ AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 TargetMachine=17
 
 [Linker.debug]
-GenerateDebugInformation=TRUE
+GenerateDebugInformation=true
 OptimizeReferences=2
 EnableCOMDATFolding=1
 
 
 [Linker.release]
-GenerateDebugInformation=FALSE
+GenerateDebugInformation=false
 OptimizeReferences=2
 EnableCOMDATFolding=2
 
@@ -109,7 +109,7 @@ EnableCOMDATFolding=2
 
 [Librarian]
 AdditionalOptions=
-IgnoreAllDefaultLibraries=FALSE
+IgnoreAllDefaultLibraries=false
 IgnoreDefaultLibraryNames=
 AdditionalLibraryDirectories=
 
