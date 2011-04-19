@@ -259,8 +259,7 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
 
 bool CHandleRange::IntersectingWith_NoStrand(const CHandleRange& hr) const
 {
-    if ( !m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus) &&
-         !m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus) ) {
+    if ( !IntersectingWithTotalRange(hr) ) {
         return false;
     }
     ITERATE(TRanges, it1, m_Ranges) {
