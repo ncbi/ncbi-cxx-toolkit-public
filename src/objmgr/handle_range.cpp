@@ -230,7 +230,7 @@ bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
 
 bool CHandleRange::IntersectingWithTotalRange(const CHandleRange& hr) const
 {
-    return
+    return IsCircular() || hr.IsCircular() ||
         m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus) ||
         m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus);
 }
