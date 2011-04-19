@@ -193,6 +193,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
         *gid = *GetSidSubAuthority(sid_group,
                                    *GetSidSubAuthorityCount(sid_group) - 1);
     }
+
     // Get owner
     if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
         return false;

@@ -123,19 +123,22 @@ public:
                                unsigned int* uid = 0, unsigned int* gid = 0);
 
     /// Same as GetObjectOwner(objname) but gets the owner/group information
-    /// by the handle rather than name.
+    /// by an arbitrary handle rather than by name.
     static bool GetObjectOwner(HANDLE        objhndl, SE_OBJECT_TYPE objtype,
                                string* owner, string* group = 0,
                                unsigned int* uid = 0, unsigned int* gid = 0);
 
 
-    /// Get file object owner name.
+    /// Get file owner name.
     ///
     /// @sa 
     ///   GetObjectOwner, SetFileOwner
     static bool GetFileOwner(const string& filename,
-                             string* owner, string* group = 0)
-        { return GetObjectOwner(filename, SE_FILE_OBJECT, owner, group);  }
+                             string* owner, string* group = 0,
+                             unsigned int* uid = 0, unsigned int* gid = 0)
+    {
+        return GetObjectOwner(filename, SE_FILE_OBJECT, owner, group, uid,gid);
+    }
 
 
     /// Set file object owner.
