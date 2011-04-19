@@ -2553,8 +2553,7 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
         }
         if (extract) {
 #ifdef NCBI_OS_UNIX
-            mode_t u;
-            u = umask(0);
+            mode_t u = umask(0);
             umask(u & 077);
             try {
 #endif // NCBI_OS_UNIX
@@ -3188,8 +3187,14 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     mode_t mode = s_TarToMode(fTarURead | fTarUWrite |
                               fTarGRead | fTarGWrite |
                               fTarORead | fTarOWrite);
-    mode_t u = umask(0);
+    mode_t u;
+#  ifdef HAVE_GETUMASK
+    // NB: thread-safe
+    u = getumask();
+#  else
+    u = umask(0);
     umask(u);
+#  endif // HAVE_GETUMASK
     mode &= ~u;
     m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(mode);
 
@@ -3203,7 +3208,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     if (grp)
         m_Current.m_GroupName.assign(grp->gr_name);
 #else
-    // safe mode
+    // safe file mode
     m_Current.m_Stat.st_mode = (fTarURead | fTarUWrite |
                                 fTarGRead | fTarORead);
 
@@ -3251,7 +3256,7 @@ void CTar::x_AppendStream(const string& name, istream& is)
             int x_errno = ifs ? errno : 0;
             TAR_THROW(this, eRead,
                       "Error reading "
-                      + string(ifs ? "file" : kEmptyStr)
+                      + string(ifs ? "file " : kEmptyStr)
                       + '\'' + name + '\'' + s_OSReason(x_errno));
         }
         avail = (size_t) is.gcount();
