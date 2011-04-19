@@ -70,8 +70,8 @@
 #  include "../../../corelib/ncbi_os_mswin_p.hpp"
 #  include <io.h>
 typedef unsigned int mode_t;
-typedef short        uid_t;
-typedef short        gid_t;
+typedef unsigned int uid_t;
+typedef unsigned int gid_t;
 #endif // NCBI_OS
 
 
@@ -2483,9 +2483,9 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
         if (dst_type != CDirEntry::eUnknown) {
             bool found = false;  // check if ours (prev. revision extracted)
             if (done) {
-                ITERATE(TEntries, i, *done) {
-                    if (i->GetName() == m_Current.GetName()  &&
-                        i->GetType() == m_Current.GetType()) {
+                ITERATE(TEntries, e, *done) {
+                    if (e->GetName() == m_Current.GetName()  &&
+                        e->GetType() == m_Current.GetType()) {
                         found = true;
                         break;
                     }
@@ -2535,7 +2535,7 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
                                   "Failed to backup '" + dst->GetPath() +'\'');
                     }
                 } else if (type != CTarEntryInfo::eDir) {
-                    // Do removal safely -- until extraction is confirmed
+                    // Do removal safely until extraction is confirmed
                     CDirEntry tmp(*dst);
                     pending.reset(new CDirEntry(CDirEntry::GetTmpNameEx
                                                 (dst->GetDir(), "xNCBItArX")));
@@ -3015,6 +3015,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
     // Create the entry info
     m_Current = CTarEntryInfo(m_StreamPos);
+
     m_Current.m_Name = x_ToArchiveName(path);
     if (type == CDirEntry::eDir  &&  m_Current.m_Name != "/") {
         m_Current.m_Name += '/';
@@ -3023,6 +3024,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         TAR_THROW(this, eBadName,
                   "Empty entry name not allowed");
     }
+
     m_Current.m_Type = CTarEntryInfo::EType(type);
     if (m_Current.GetType() == CTarEntryInfo::eSymLink) {
         _ASSERT(!follow_links);
@@ -3032,7 +3034,19 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                       "Empty link name not allowed");
         }
     }
-    entry.GetOwner(&m_Current.m_UserName, &m_Current.m_GroupName);
+
+    unsigned int uid = 0, gid = 0;
+    entry.GetOwner(&m_Current.m_UserName, &m_Current.m_GroupName,
+                   follow_links, &uid, &gid);
+    if (uid == 0  &&  st.orig.st_uid)
+        uid  = (unsigned int) st.orig.st_uid;
+    if (gid == 0  &&  st.orig.st_gid)
+        gid  = (unsigned int) st.orig.st_uid;
+    if (m_Current.m_UserName.empty()   &&  uid)
+        NStr::UIntToString(m_Current.m_UserName,  uid);
+    if (m_Current.m_GroupName.empty()  &&  gid)
+        NStr::UIntToString(m_Current.m_GroupName, gid);
+
     m_Current.m_Stat = st.orig;
     // Fixup for mode bits
     m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
@@ -3164,11 +3178,6 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                   "Bad input file stream");
     }
 
-#ifdef NCBI_OS_UNIX
-    m_Current.m_Stat.st_uid = geteuid();
-    m_Current.m_Stat.st_gid = getegid();
-#endif // NCBI_OS_UNIX
-
     m_Current.m_Stat.st_mtime
         = m_Current.m_Stat.st_atime
         = m_Current.m_Stat.st_ctime
@@ -3183,20 +3192,21 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     umask(u);
     mode &= ~u;
     m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(mode);
+
+    m_Current.m_Stat.st_uid = geteuid();
+    m_Current.m_Stat.st_gid = getegid();
+
+    struct passwd *pwd = getpwuid(m_Current.m_Stat.st_uid);
+    if (pwd)
+        m_Current.m_UserName.assign(pwd->pw_name);
+    struct group  *grp = getgrgid(m_Current.m_Stat.st_gid);
+    if (grp)
+        m_Current.m_GroupName.assign(grp->gr_name);
 #else
     // safe mode
     m_Current.m_Stat.st_mode = (fTarURead | fTarUWrite |
                                 fTarGRead | fTarORead);
-#endif // NCBI_OS_UNIX
 
-#ifdef NCBI_OS_UNIX
-    struct passwd *pw = getpwuid(m_Current.m_Stat.st_uid);
-    if (pw)
-        m_Current.m_UserName.assign(pw->pw_name);
-    struct group  *gr = getgrgid(m_Current.m_Stat.st_gid);
-    if (gr)
-        m_Current.m_GroupName.assign(gr->gr_name);
-#else
     unsigned int uid = 0, gid = 0;
     CWinSecurity::GetObjectOwner(CProcess::GetCurrentHandle(),
                                  SE_KERNEL_OBJECT,
@@ -3205,7 +3215,11 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                                  &uid, &gid);
     /* these are fake but we don't want to leave plain 0 (root) in there */
     m_Current.m_Stat.st_uid = (uid_t) uid;
-    m_Current.m_Stat.st_gid = (uid_t) gid;
+    m_Current.m_Stat.st_gid = (gid_t) gid;
+    if (m_Current.m_UserName.empty()   &&  uid)
+        NStr::UIntToString(m_Current.m_UserName,  uid);
+    if (m_Current.m_GroupName.empty()  &&  gid)
+        NStr::UIntToString(m_Current.m_GroupName, gid);
 #endif // NCBI_OS_UNIX
 
     x_AppendStream(entry.GetName(), is);
