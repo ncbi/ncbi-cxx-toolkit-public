@@ -1303,18 +1303,18 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
 
 auto_ptr<CTar::TEntries> CTar::Extract(void)
 {
-    auto_ptr<TEntries> done = x_Open(eExtract);
+    auto_ptr<TEntries> entries = x_Open(eExtract);
 
     // Restore attributes of "postponed" directory entries
     if (m_Flags & fPreserveAll) {
-        ITERATE(TEntries, i, *done.get()) {
-            if (i->GetType() == CTarEntryInfo::eDir) {
-                x_RestoreAttrs(*i);
+        ITERATE(TEntries, e, *entries) {
+            if (e->GetType() == CTarEntryInfo::eDir) {
+                x_RestoreAttrs(*e);
             }
         }
     }
 
-    return done;
+    return entries;
 }
 
 
@@ -1340,12 +1340,12 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files) const
 {
     Uint8 result = 0;
 
-    ITERATE(TFiles, it, files) {
+    ITERATE(TFiles, f, files) {
         // Count in the file size
-        result += BLOCK_SIZE/*header*/ + ALIGN_SIZE(it->second);
+        result += BLOCK_SIZE/*header*/ + ALIGN_SIZE(f->second);
 
         // Count in the long name (if any)
-        string path = x_ToFilesystemPath(it->first);
+        string path = x_ToFilesystemPath(f->first);
         string name = x_ToArchiveName(path);
         size_t namelen = name.length() + 1;
         if (namelen > sizeof(((SHeader*) 0)->name)) {
@@ -2453,7 +2453,7 @@ struct CTmpDirEntryDeleter {
 };
 
 
-bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
+bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* entries)
 {
     Uint8                size = m_Current.GetSize();
     CTarEntryInfo::EType type = m_Current.GetType();
@@ -2482,8 +2482,8 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
         // Look if extraction is allowed (when the destination exists)
         if (dst_type != CDirEntry::eUnknown) {
             bool found = false;  // check if ours (prev. revision extracted)
-            if (done) {
-                ITERATE(TEntries, e, *done) {
+            if (entries) {
+                ITERATE(TEntries, e, *entries) {
                     if (e->GetName() == m_Current.GetName()  &&
                         e->GetType() == m_Current.GetType()) {
                         found = true;
@@ -3123,9 +3123,9 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             // Append/Update all files from that directory
             CDir::TEntries dir = CDir(path).GetEntries("*",
                                                        CDir::eIgnoreRecursive);
-            ITERATE(CDir::TEntries, i, dir) {
-                auto_ptr<TEntries> e = x_Append((*i)->GetPath(), toc);
-                entries->splice(entries->end(), *e);
+            ITERATE(CDir::TEntries, e, dir) {
+                auto_ptr<TEntries> add = x_Append((*e)->GetPath(), toc);
+                entries->splice(entries->end(), *add);
             }
         }
         break;
