@@ -3,7 +3,14 @@ serial$
 serial/impl$
 serial/datatool
 algo$
-algo/blast
+algo/blast$
+algo/blast/api
+algo/blast/core
+algo/blast/blastinput
+algo/blast/composition_adjustment
+algo/blast/dbindex
+algo/blast/format
+algo/blast/unit_tests
 algo/dustmask$
 algo/winmask$
 algo/segmask$
@@ -23,7 +30,6 @@ util/compress$
 util/compress/bzip2$
 util/compress/zlib$
 util/compress/api$
-util/regexp
 util/xregexp$
 util/sequtil$
 util/bitset$
@@ -54,6 +60,7 @@ dbapi/driver/odbc/unix_odbc$
 dbapi/driver/util$ update-only
 objmgr
 -objmgr/test
+-objmgr/util/unit_test
 objtools/data_loaders/genbank
 -objtools/data_loaders/genbank/test
 objtools/data_loaders$
