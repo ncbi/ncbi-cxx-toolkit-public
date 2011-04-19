@@ -4,7 +4,7 @@
 # Customize configure's default behavior; see config.site.ex or
 # config.site.ncbi for examples of how to do so.
 
-if [ -d "$NCBI" ]; then
+if [ -r $srcdir/src/build-system/config.site.ncbi ] && [ -d "$NCBI" ]; then
     . $srcdir/src/build-system/config.site.ncbi
 elif [ -r /usr/local/etc/config.site ]; then
     . /usr/local/etc/config.site
