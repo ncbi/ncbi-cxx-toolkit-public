@@ -85,6 +85,8 @@ protected:
         eTest      = (1 << 7)
     };
     typedef unsigned int TAction;
+
+    auto_ptr<CTar::TEntries> x_Append(CTar& tar, const string& name);
 };
 
 
@@ -247,6 +249,28 @@ string CTarTest::x_Pos(const CTarEntryInfo& info)
 }
 
 
+auto_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
+{
+    CDirEntry entry(name);
+    CDirEntry::EType type = entry.GetType(eFollowLinks);
+    if (type == CDirEntry::eDir) {
+        auto_ptr<CTar::TEntries> entries(new CTar::TEntries);
+        CDir::TEntries dir = CDir(name).GetEntries("*",CDir::eIgnoreRecursive);
+        ITERATE(CDir::TEntries, e, dir) {
+            auto_ptr<CTar::TEntries> add = x_Append(tar, (*e)->GetPath());
+            entries->splice(entries->end(), *add);
+        }
+        return entries;
+    }
+    if (type == CDirEntry::eFile) {
+        Uint8 size = CFile(name).GetLength();
+        ifstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        return tar.Append(CTarUserEntryInfo(name, size), ifs);
+    }
+    return tar.Append(name);
+}
+
+
 int CTarTest::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -389,9 +413,7 @@ int CTarTest::Run(void)
                 _ASSERT(n);
                 add = tar->Update(name);
             } else if (stream) {
-                Uint8 size = CFile(name).GetLength();
-                ifstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
-                add = tar->Append(CTarUserEntryInfo(name, size), ifs);
+                add = x_Append(*tar, name);
             } else {
                 add = tar->Append(name);
             }
