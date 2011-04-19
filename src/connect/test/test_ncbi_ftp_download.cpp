@@ -45,6 +45,8 @@
 #elif defined(NCBI_OS_MSWIN)
 #  include <io.h>      // _isatty()
 #endif // NCBI_OS
+/* This header must go last */
+#include "test_assert.h"
 
 
 #define SCREEN_COLS (80 - 1)
@@ -494,7 +496,7 @@ static EIO_Status x_ConnectionCallback(CONN conn,
 
 static void s_TryAskFtpFilesize(iostream& ios, const char* filename)
 {
-    _DEBUG_ARG(size_t testval);
+    size_t testval;
     ios << "SIZE " << filename << endl;
     // If the SIZE command is not understood, the file size can
     // be captured at download start (RETR) if reported by the server
