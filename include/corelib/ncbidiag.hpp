@@ -1791,10 +1791,17 @@ class NCBI_XNCBI_EXPORT CDiagContext_Extra
 public:
     /// Prints all arguments as "name1=value1&name2=value2...".
     ~CDiagContext_Extra(void);
+
     /// The method does not print the argument, but adds it to the string.
     /// Name must contain only alphanumeric chars or '_'.
     /// Value is URL-encoded before printing.
     CDiagContext_Extra& Print(const string& name, const string& value);
+
+    /// The method does not print the arguments, but adds it to the string.
+    /// Name must contain only alphanumeric chars or '_'.
+    /// Value is URL-encoded before printing.
+    /// The args will be modifies (emptied) by the function.
+    CDiagContext_Extra& Print(SDiagMessage::TExtraArgs& args);
 
     /// Copying the object will prevent printing it on destruction.
     /// The new copy should take care of printing.

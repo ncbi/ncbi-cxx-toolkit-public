@@ -1813,6 +1813,16 @@ CDiagContext_Extra::Print(const string& name,
     return *this;
 }
 
+CDiagContext_Extra&
+CDiagContext_Extra::Print(SDiagMessage::TExtraArgs& args)
+{
+    if ( !m_Args ) {
+        m_Args = new TExtraArgs;
+    }
+    m_Args->splice(m_Args->end(), args);
+    return *this;
+}
+
 
 static const char* kExtraTypeArgName = "NCBIEXTRATYPE";
 
