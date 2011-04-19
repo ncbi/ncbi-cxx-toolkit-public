@@ -1742,7 +1742,8 @@ void CDiagContext_Extra::Flush(void)
     size_t buflen = 0;
     if (m_EventType == SDiagMessage::eEvent_PerfLog) {
         ostr.reset(new CNcbiOstrstream);
-        *ostr << m_PerfStatus << " " << m_PerfTime;
+        *ostr << m_PerfStatus << " " <<
+            NStr::DoubleToString(m_PerfTime, -1, NStr::fDoubleFixed);
         buf = ostr->str();
         buflen = ostr->pcount();
     }
