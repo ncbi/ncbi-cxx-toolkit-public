@@ -3,7 +3,7 @@
 # Meta-makefile ("objtools/readers" project)
 ############################################
 
-APP_PROJ = unit_test_idmapper
+APP_PROJ = unit_test_idmapper  unit_test_format_guess_ex
 PROJ_TAG = test
 
 srcdir = @srcdir@
