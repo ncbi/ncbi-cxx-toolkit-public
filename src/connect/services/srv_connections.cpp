@@ -330,6 +330,8 @@ CNetServerConnection SNetServerImpl::Connect()
 void SNetServerImpl::ConnectAndExec(const string& cmd,
     CNetServer::SExecResult& exec_result)
 {
+    CheckIfThrottled();
+
     // Silently reconnect if the connection was taken
     // from the pool and it was closed by the server
     // due to inactivity.
@@ -484,14 +486,13 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
     unsigned attempt = 0;
 
     for (;;) {
-        m_Impl->CheckIfThrottled();
-
         try {
             m_Impl->ConnectAndExec(cmd, exec_result);
             return exec_result;
         }
         catch (CNetSrvConnException& e) {
-            if (++attempt > TServConn_ConnMaxRetries::GetDefault())
+            if (++attempt > TServConn_ConnMaxRetries::GetDefault() ||
+                    e.GetErrCode() == CNetSrvConnException::eServerThrottle)
                 throw;
 
             if (m_Impl->m_Service->m_MaxQueryTime > 0 &&
