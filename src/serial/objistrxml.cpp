@@ -53,7 +53,7 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 CObjectIStreamXml::CObjectIStreamXml(void)
     : CObjectIStream(eSerial_Xml),
       m_TagState(eTagOutside), m_Attlist(false),
-      m_StdXml(false), m_EnforcedStdXml(false),
+      m_StdXml(false), m_EnforcedStdXml(false), m_Doctype_found(false),
       m_Encoding( eEncoding_Unknown ),
       m_StringEncoding( eEncoding_Unknown )
 {
@@ -364,7 +364,7 @@ CTempString CObjectIStreamXml::ReadName(char c)
     // find end of tag name
     size_t i = 1, iColon = 0;
     while ( IsNameChar(c = m_Input.PeekChar(i)) ) {
-        if (c == ':') {
+        if (!m_Doctype_found && c == ':') {
             iColon = i+1;
         }
         ++i;
@@ -519,6 +519,7 @@ string CObjectIStreamXml::ReadFileHeader(void)
         }
     }
     
+    m_Doctype_found = false;
     for ( ;; ) {
         switch ( BeginOpeningTag() ) {
         case '?':
@@ -529,8 +530,8 @@ string CObjectIStreamXml::ReadFileHeader(void)
                 m_Input.SkipChar();
                 CTempString tagName = ReadName(m_Input.PeekChar());
                 if ( tagName == "DOCTYPE" ) {
+                    m_Doctype_found = true;
                     CTempString docType = ReadName(SkipWS());
-                    string typeName = docType;
                     // skip the rest of !DOCTYPE
                     for ( ;; ) {
                         char c = SkipWS();
@@ -557,6 +558,23 @@ string CObjectIStreamXml::ReadFileHeader(void)
         default:
             {
                 string typeName = ReadName(m_Input.PeekChar());
+                if (!m_Doctype_found && !StackIsEmpty()) {
+                    // verify typename
+                    const CObjectStack::TFrame& top = TopFrame();
+                    if (top.GetFrameType() == CObjectStackFrame::eFrameNamed &&
+                        top.HasTypeInfo()) {
+                        const string& tname = top.GetTypeInfo()->GetName();
+                        if ( !typeName.empty() && !tname.empty() && typeName != tname ) {
+                            string tmp = m_CurrNsPrefix + ":" + typeName;
+                            if (tmp == tname) {
+                                typeName = tmp;
+                                m_LastTag = tmp;
+                                m_CurrNsPrefix.erase();
+                                m_Doctype_found = true;
+                            }
+                        }
+                    }
+                }
                 UndoClassMember();
                 return typeName;
             }

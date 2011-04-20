@@ -288,6 +288,7 @@ private:
     bool m_Attlist;
     bool m_StdXml;
     bool m_EnforcedStdXml;
+    bool m_Doctype_found;
     string m_LastPrimitive;
     EEncoding m_Encoding;
     EEncoding m_StringEncoding;

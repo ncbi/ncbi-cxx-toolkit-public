@@ -377,6 +377,12 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
         case K_PCDATA:
             id_name = s_SpecialName;
             break;
+        case K_EMPTY:
+            node.SetType(DTDElement::eEmpty);
+            ConsumeToken();
+            GetNextToken();
+            EndElementContent( node);
+            return;
         case T_SYMBOL:
             switch (symbol = NextToken().GetSymbol()) {
             case '(':
@@ -545,7 +551,9 @@ string DTDParser::CreateEmbeddedName(const DTDElement& node, int depth) const
                 refname = *i;
             }
             if (!refname.empty()) {
-                new_var += toupper((unsigned char) refname[0]);;
+                string::size_type name = refname.find(':');
+                name = (name != string::npos && (name+1) < refname.size()) ? (name+1) : 0;
+                new_var += toupper((unsigned char) refname[name]);;
 // try to avoid very long names
                 if (new_var.size() > 8) {
                     break;

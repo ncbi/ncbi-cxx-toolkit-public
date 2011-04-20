@@ -240,6 +240,9 @@ void CObjectOStreamXml::EndOfWrite(void)
 
 void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
 {
+    if (type->GetName().find(':') != string::npos) {
+        return;
+    }
     OpenTagEndBack();
 
     if (m_UseSchemaLoc) {
