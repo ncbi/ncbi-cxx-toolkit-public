@@ -154,3 +154,18 @@ extern char* strrncpy0(char* s1, const char* s2, size_t n)
         *--s1 = *--s2;
     return s1;
 }
+
+
+#ifndef __GLIBC__
+/* suboptimal but working implementation */
+void* memrchr(const void* s, int c, size_t n)
+{
+    unsigned char* e = (unsigned char*) s + n;
+    size_t i;
+    for (i = 0;  i < n;  i++) {
+        if (*--e == (unsigned char) c)
+            return e;
+    }
+    return 0;
+}
+#endif/*!__GLIBC__*/

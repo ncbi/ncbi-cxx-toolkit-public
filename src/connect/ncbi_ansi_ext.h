@@ -143,6 +143,22 @@ extern NCBI_XCONNECT_EXPORT
 char* strrncpy0(char* s1, const char* s2, size_t n);
 
 
+#ifndef __GLIBC__
+
+#ifdef   memrchr
+#  undef memrchr
+#endif
+#define  memrchr       NCBI_memrchr
+
+/* Find address of last occurrence of char "c" within "n" bytes of a memory
+ * block beginning at the address "s".  Return NULL if no such byte found.
+ */
+extern NCBI_XCONNECT_EXPORT
+void* memrchr(const void* s, int c, size_t n);
+
+#endif/*!__GLIBC__*/
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
