@@ -470,6 +470,7 @@ static CRef<CSeq_id> IdFromEntry(CRef<CSeq_entry> entry)
 CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, size_t right_end)
 {
     CRef<CSeq_feat> feat = MakeMiscFeature(IdFromEntry(entry), right_end);
+    feat->SetComment("misc_feature needs a comment");
     AddFeat (feat, entry);
     return feat;
 }
@@ -1054,6 +1055,49 @@ static CRef<CSeq_entry> BuildGoodProtSeq(void)
 }
 
 
+static CRef<CSeq_entry> MakeProteinForGoodNucProtSet (string id)
+{
+    // make protein
+    CRef<CBioseq> pseq(new CBioseq());
+    pseq->SetInst().SetMol(CSeq_inst::eMol_aa);
+    pseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    pseq->SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
+    pseq->SetInst().SetLength(8);
+
+    CRef<CSeq_id> pid(new CSeq_id());
+    pid->SetLocal().SetStr (id);
+    pseq->SetId().push_back(pid);
+
+    CRef<CSeqdesc> mpdesc(new CSeqdesc());
+    mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);    
+    pseq->SetDescr().Set().push_back(mpdesc);
+
+    CRef<CSeq_entry> pentry(new CSeq_entry());
+    pentry->SetSeq(*pseq);
+
+    CRef<CSeq_feat> feat (new CSeq_feat());
+    feat->SetData().SetProt().SetName().push_back("fake protein name");
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr(id);
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(7);
+    AddFeat (feat, pentry);
+
+    return pentry;
+}
+
+
+static CRef<CSeq_feat> MakeCDSForGoodNucProtSet (string nuc_id, string prot_id)
+{
+    CRef<CSeq_feat> cds (new CSeq_feat());
+    cds->SetData().SetCdregion();
+    cds->SetProduct().SetWhole().SetLocal().SetStr(prot_id);
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr(nuc_id);
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(26);
+    return cds;
+}
+
+
 static CRef<CSeq_entry> BuildGoodNucProtSet(void)
 {
     CRef<CBioseq_set> set(new CBioseq_set());
@@ -1080,42 +1124,14 @@ static CRef<CSeq_entry> BuildGoodNucProtSet(void)
     set->SetSeq_set().push_back(nentry);
 
     // make protein
-    CRef<CBioseq> pseq(new CBioseq());
-    pseq->SetInst().SetMol(CSeq_inst::eMol_aa);
-    pseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
-    pseq->SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
-    pseq->SetInst().SetLength(8);
-
-    CRef<CSeq_id> pid(new CSeq_id());
-    pid->SetLocal().SetStr ("prot");
-    pseq->SetId().push_back(pid);
-
-    CRef<CSeqdesc> mpdesc(new CSeqdesc());
-    mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);    
-    pseq->SetDescr().Set().push_back(mpdesc);
-
-    CRef<CSeq_entry> pentry(new CSeq_entry());
-    pentry->SetSeq(*pseq);
-
-    CRef<CSeq_feat> feat (new CSeq_feat());
-    feat->SetData().SetProt().SetName().push_back("fake protein name");
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("prot");
-    feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(7);
-    AddFeat (feat, pentry);
-
+    CRef<CSeq_entry> pentry = MakeProteinForGoodNucProtSet("prot");
 
     set->SetSeq_set().push_back(pentry);
 
     CRef<CSeq_entry> set_entry(new CSeq_entry());
     set_entry->SetSet(*set);
 
-    CRef<CSeq_feat> cds (new CSeq_feat());
-    cds->SetData().SetCdregion();
-    cds->SetProduct().SetWhole().SetLocal().SetStr("prot");
-    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("nuc");
-    cds->SetLocation().SetInt().SetFrom(0);
-    cds->SetLocation().SetInt().SetTo(26);
+    CRef<CSeq_feat> cds = MakeCDSForGoodNucProtSet("nuc", "prot");
     AddFeat (cds, set_entry);
 
     AddGoodSource (set_entry);
@@ -1169,6 +1185,59 @@ static void SetNucProtSetProductName (CRef<CSeq_entry> entry, string new_name)
 }
 
 
+static CRef<CSeq_feat> GetCDSFromGoodNucProtSet (CRef<CSeq_entry> entry)
+{
+    return entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+}
+
+
+static CRef<CSeq_entry> GetNucleotideSequenceFromGoodNucProtSet (CRef<CSeq_entry> entry)
+{
+    return entry->SetSet().SetSeq_set().front();
+}
+
+
+static CRef<CSeq_entry> GetProteinSequenceFromGoodNucProtSet (CRef<CSeq_entry> entry)
+{
+    return entry->SetSet().SetSeq_set().back();
+}
+
+
+static CRef<CSeq_feat> GetProtFeatFromGoodNucProtSet (CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
+    return pentry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+}
+
+
+static void ChangeNucProtSetProteinId (CRef<CSeq_entry> entry, CRef<CSeq_id> id)
+{
+    CRef<CSeq_entry> pseq = GetProteinSequenceFromGoodNucProtSet(entry);
+    pseq->SetSeq().SetId().front()->Assign(*id);
+
+    CRef<CSeq_feat> pfeat = GetProtFeatFromGoodNucProtSet(entry);
+    pfeat->SetLocation().SetInt().SetId().Assign(*id);
+
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetProduct().SetWhole().Assign(*id);
+}
+
+
+static void ChangeNucProtSetNucId (CRef<CSeq_entry> entry, CRef<CSeq_id> id)
+{
+    CRef<CSeq_entry> nseq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    nseq->SetSeq().SetId().front()->Assign(*id);
+
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    if(cds->GetLocation().IsInt()) {
+        cds->SetLocation().SetInt().SetId().Assign(*id);
+    } else if (cds->GetLocation().IsMix()) {
+        cds->SetLocation().SetMix().Set().front()->SetInt().SetId().Assign(*id);
+        cds->SetLocation().SetMix().Set().back()->SetInt().SetId().Assign(*id);
+    }
+}
+
+
 static void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness completeness)
 {
     if (entry->IsSeq()) {
@@ -1195,7 +1264,7 @@ static void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness comp
 
 static void MakeNucProtSet3Partial (CRef<CSeq_entry> entry)
 {
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetTo(59);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     cds->SetPartial(true);
@@ -1264,7 +1333,7 @@ static void ChangeProtId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
     }
 
     CRef<CSeq_entry> prot_entry = np_set->SetSet().SetSeq_set().back();
-    CRef<CSeq_feat> cds = np_set->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(np_set);
 
     prot_entry->SetSeq().SetId().front()->Assign(*id);
     EDIT_EACH_SEQANNOT_ON_BIOSEQ (annot_it, prot_entry->SetSeq()) {
@@ -1349,6 +1418,33 @@ static void ChangeId(CRef<CSeq_entry> entry, string suffix)
 }
 
 
+static CRef<CSeq_entry> BuildGenProdSetNucProtSet (CRef<CSeq_id> nuc_id, CRef<CSeq_id> prot_id)
+{
+    CRef<CSeq_entry> np = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(np);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAA");
+    nuc->SetSeq().SetInst().SetLength(27);
+    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol(nuc, CMolInfo::eBiomol_mRNA);
+    if (nuc_id) {
+        ChangeNucProtSetNucId(np, nuc_id);
+    }
+    if (prot_id) {
+        ChangeNucProtSetProteinId(np, prot_id);
+    }
+    return np;
+}
+
+
+static CRef<CSeq_feat> MakemRNAForCDS (CRef<CSeq_feat> feat)
+{
+    CRef<CSeq_feat> mrna(new CSeq_feat());
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetLocation().Assign(feat->GetLocation());
+    return mrna;
+}
+
+
 static CRef<CSeq_entry> BuildGoodGenProdSet()
 {
     CRef<CSeq_entry> entry(new CSeq_entry());
@@ -1357,34 +1453,50 @@ static CRef<CSeq_entry> BuildGoodGenProdSet()
     contig->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
     contig->SetSeq().SetInst().SetLength(60);
     entry->SetSet().SetSeq_set().push_back (contig);
-    CRef<CSeq_entry> np = BuildGoodNucProtSet();
-    CRef<CSeq_entry> nuc = np->SetSet().SetSeq_set().front();
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAA");
-    nuc->SetSeq().SetInst().SetLength(27);
-    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    SetBiomol(nuc, CMolInfo::eBiomol_mRNA);
+    CRef<CSeq_id> nuc_id(new CSeq_id());
+    nuc_id->SetLocal().SetStr("nuc");
+    CRef<CSeq_id> prot_id(new CSeq_id());
+    prot_id->SetLocal().SetStr("prot");
+    CRef<CSeq_entry> np = BuildGenProdSetNucProtSet(nuc_id, prot_id);
     entry->SetSet().SetSeq_set().push_back (np);
-    CRef<CSeq_annot> annot = np->SetSet().SetAnnot().front();
-    contig->SetSeq().SetAnnot().push_back(annot);
-    np->SetSet().SetAnnot().pop_front();
-    CRef<CSeq_feat> cds = annot->SetData().SetFtable().front();
+
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    cds->Assign (*(GetCDSFromGoodNucProtSet(np)));
     cds->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
-    CRef<CSeq_feat> mrna(new CSeq_feat());
-    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-    mrna->SetData().SetRna().SetExt().SetName("fake protein name");
-    mrna->SetLocation().SetInt().SetFrom(0);
-    mrna->SetLocation().SetInt().SetTo(26);
-    mrna->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
-    mrna->SetProduct().SetWhole().SetLocal().SetStr("nuc");
+    AddFeat (cds, contig);
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetProduct().SetWhole().Assign(*nuc_id);
     AddFeat (mrna, contig);
 
     return entry;
 }
 
 
+static CRef<CSeq_entry> GetGenomicFromGenProdSet (CRef<CSeq_entry> entry)
+{
+    return entry->SetSet().SetSeq_set().front();
+}
+
+
+static CRef<CSeq_feat> GetmRNAFromGenProdSet(CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
+    CRef<CSeq_feat> mrna = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    return mrna;
+}
+
+
 static CRef<CSeq_entry> GetNucProtSetFromGenProdSet(CRef<CSeq_entry> entry)
 {
-  return entry->SetSet().SetSeq_set().back();
+    return entry->SetSet().SetSeq_set().back();
+}
+
+
+static CRef<CSeq_feat> GetCDSFromGenProdSet (CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
+    CRef<CSeq_feat> cds = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    return cds;
 }
 
 
@@ -1433,6 +1545,27 @@ static void RevComp (CBioseq& bioseq)
 }
 
 
+static void RevComp (CSeq_loc& loc, size_t len)
+{
+    if (loc.IsInt()) {
+        TSeqPos new_from = len - loc.GetInt().GetTo() - 1;
+        TSeqPos new_to = len - loc.GetInt().GetFrom() - 1;
+        loc.SetInt().SetFrom(new_from);
+        loc.SetInt().SetTo(new_to);
+        if (loc.GetInt().IsSetStrand()
+            && loc.GetInt().GetStrand() == eNa_strand_minus) {
+            loc.SetInt().SetStrand(eNa_strand_plus);
+        } else {
+            loc.SetInt().SetStrand(eNa_strand_minus);
+        }
+    } else if (loc.IsMix()) {
+        NON_CONST_ITERATE (CSeq_loc_mix::Tdata, it, loc.SetMix().Set()) {
+            RevComp (**it, len);
+        }
+    }
+}
+
+
 static void RevComp (CRef<CSeq_entry> entry)
 {
     if (entry->IsSeq()) {
@@ -1443,16 +1576,7 @@ static void RevComp (CRef<CSeq_entry> entry)
             RevComp(entry->SetSet().SetSeq_set().front());
             size_t len = entry->GetSet().GetSeq_set().front()->GetSeq().GetLength();
             EDIT_EACH_SEQFEAT_ON_SEQANNOT (feat_it, *(entry->SetSet().SetAnnot().front())) {
-                TSeqPos new_from = len - (*feat_it)->GetLocation().GetInt().GetTo() - 1;
-                TSeqPos new_to = len - (*feat_it)->GetLocation().GetInt().GetFrom() - 1;
-                (*feat_it)->SetLocation().SetInt().SetFrom(new_from);
-                (*feat_it)->SetLocation().SetInt().SetTo(new_to);
-                if ((*feat_it)->GetLocation().GetInt().IsSetStrand()
-                    && (*feat_it)->GetLocation().GetInt().GetStrand() == eNa_strand_minus) {
-                    (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_plus);
-                } else {
-                    (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_minus);
-                }
+                RevComp ((*feat_it)->SetLocation(), len);
             }
         }
     }
@@ -1669,6 +1793,16 @@ CRef<CSeq_feat> BuildtRNA(CRef<CSeq_id> id)
 }
 
 
+CRef<CSeq_feat> BuildGoodtRNA(CRef<CSeq_id> id)
+{
+    CRef<CSeq_feat> trna = BuildtRNA(id);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(8);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('F');
+    return trna;
+}
+
+
 CRef<CSeq_loc> MakeMixLoc (CRef<CSeq_id> id)
 {
     CRef<CSeq_loc> loc1(new CSeq_loc());
@@ -1683,6 +1817,17 @@ CRef<CSeq_loc> MakeMixLoc (CRef<CSeq_id> id)
     mixloc->SetMix().Set().push_back(loc1);
     mixloc->SetMix().Set().push_back(loc2);
     return mixloc;
+}
+
+
+CRef<CSeq_feat> MakeIntronForMixLoc (CRef<CSeq_id> id)
+{
+    CRef<CSeq_feat> intron (new CSeq_feat());
+    intron->SetData().SetImp().SetKey("intron");
+    intron->SetLocation().SetInt().SetFrom(16);
+    intron->SetLocation().SetInt().SetTo(45);
+    intron->SetLocation().SetInt().SetId().Assign(*id);
+    return intron;
 }
 
 
@@ -2642,8 +2787,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 
     entry->SetSet().SetSeq_set().back()->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MP*K*E*N");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("GTGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
-    entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept(true);
-    entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept_text("unclassified translation discrepancy");
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetExcept(true);
+    cds->SetExcept_text("unclassified translation discrepancy");
 
     // list of expected errors
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
@@ -2654,8 +2800,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
-    entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept();
-    entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept_text();
+    cds->ResetExcept();
+    cds->ResetExcept_text();
 
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
@@ -3469,7 +3615,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_TrailingX)
     CRef<CSeq_entry> nuc = entry->SetSet().SetSeq_set().front();
     CRef<CSeq_entry> prot = entry->SetSet().SetSeq_set().back();
     CRef<CSeq_feat> prot_feat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
-    CRef<CSeq_feat> cds_feat = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds_feat = GetCDSFromGoodNucProtSet(entry);
     nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATANNNNNN");
     nuc->SetSeq().SetInst().SetLength(27);
     prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIXX");
@@ -3517,7 +3663,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     CRef<CSeq_entry> nuc_entry = entry->SetSet().SetSeq_set().front();
     CRef<CSeq_entry> prot_entry = entry->SetSet().SetSeq_set().back();
     CRef<CSeq_feat> prot_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
 
     STANDARD_SETUP
 
@@ -4866,8 +5012,9 @@ BOOST_AUTO_TEST_CASE(Test_ProteinsHaveGeneralID)
     entry->SetSet().SetSeq_set().back()->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("b");
     entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetDb("a");
     entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetTag().SetStr("b");
-    entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetProduct().SetWhole().SetGeneral().SetDb("a");
-    entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetProduct().SetWhole().SetGeneral().SetTag().SetStr("b");
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetProduct().SetWhole().SetGeneral().SetDb("a");
+    cds->SetProduct().SetWhole().SetGeneral().SetTag().SetStr("b");
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "ProteinsHaveGeneralID", "INDEXER_ONLY - Protein bioseqs have general seq-id."));
@@ -7021,7 +7168,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     SetDiv(entry, "BCT");
     SetGenome(entry, CBioSource::eGenome_apicoplast);
-    expected_errors[0]->SetErrMsg("Bacterial source should not have organelle location");
+    expected_errors[0]->SetErrMsg("Bacterial or viral source should not have organelle location");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetDiv(entry, "VRL");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8680,8 +8830,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
     SetTaxon(entry, 0);
     SetTaxon(entry, 227086);
     SetLineage(entry, "some lineage; Chlorarachniophyceae");
-    expected_errors.push_back(new CExpectedError("AC_123456", eDiag_Warning, "TaxonomyLookupProblem",
-                              "Taxonomy lookup does not have expected nucleomorph flag"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
@@ -9739,6 +9887,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     feat->ResetComment();
+    feat->SetComment("misc_feature needs a comment");
 
     feat->SetTitle("<applet");
     eval = validator.Validate(seh, options);
@@ -10107,7 +10256,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
     CRef<CSeq_entry> nentry = entry->SetSet().SetSeq_set().front();
     entry->SetSet().SetSeq_set().pop_front();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().pop_front();
 
     STANDARD_SETUP
@@ -10978,7 +11127,7 @@ static CRef<CSeq_entry> BuildGoodSpliceNucProtSet (void)
     CRef<CSeq_entry> entry = BuildGoodNucProtSet ();
     CRef<CSeq_entry> nseq = entry->SetSet().SetSeq_set().front();
     CRef<CSeq_entry> pseq = entry->SetSet().SetSeq_set().back();
-    CRef<CSeq_feat>  cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat>  cds = GetCDSFromGoodNucProtSet(entry);
     CRef<CSeq_feat>  prot = pseq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
 
     nseq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGGTATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
@@ -11006,7 +11155,7 @@ static CRef<CSeq_entry> BuildGoodSpliceNucProtSet (void)
 BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
     cds->SetPartial(true);
     SetCompleteness (entry->SetSet().SetSeq_set().back(), CMolInfo::eCompleteness_complete);
@@ -11262,7 +11411,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetFrom(3);
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
     cds->SetPartial(true);
@@ -11285,7 +11434,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetTo(23);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     cds->SetPartial(true);
@@ -11303,7 +11452,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetFrom(3);
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
     cds->SetPartial(true);
@@ -11326,7 +11475,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetTo(23);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     cds->SetPartial(true);
@@ -11371,7 +11520,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetPartial(true);
     prot_seq = entry->SetSet().SetSeq_set().back();
     prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("KPRKTEIN");
@@ -11390,7 +11539,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetPartial(true);
     cds->SetLocation().SetInt().SetTo(23);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -11404,7 +11553,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetPartial(true);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -11477,7 +11626,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+
     CRef<CCode_break> codebreak(new CCode_break());
     codebreak->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
     codebreak->SetLoc().SetInt().SetFrom(27);
@@ -11618,7 +11768,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_SeqLocOrder)
 BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetFrom(27);
     STANDARD_SETUP
 
@@ -11638,7 +11788,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
 BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetFrom(1);
     cds->SetLocation().SetInt().SetTo(27);
 
@@ -11671,7 +11821,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetExcept(false);
     cds->ResetExcept_text();
     CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
@@ -11703,7 +11853,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetFrom(1);
     cds->SetLocation().SetInt().SetTo(27);
 
@@ -11725,7 +11875,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[9] = 'T';
     entry->SetSet().SetSeq_set().back()->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPR*TEIN");
@@ -11816,7 +11966,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
     CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[27] = 'A';
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[28] = 'T';
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetTo(28);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
@@ -11829,7 +11979,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetExcept(true);
     cds->SetExcept_text("annotated by transcript or proteomic data");
     cds->AddQualifier("inference", "similar to DNA sequence:INSD:AY123456.1");
@@ -11851,7 +12001,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
 BOOST_AUTO_TEST_CASE(Test_FEAT_NoStop)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetTo(23);
 
     STANDARD_SETUP
@@ -11869,7 +12019,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoStop)
 BOOST_AUTO_TEST_CASE(Test_FEAT_TranslExcept)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->AddQualifier("transl_except", "abc");
     CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
     prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[4] = 'E';
@@ -11887,7 +12037,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TranslExcept)
     CLEAR_ERRORS
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->AddQualifier("transl_except", "abc");
     seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -11932,7 +12082,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtRefFound)
 BOOST_AUTO_TEST_CASE(Test_FEAT_OrfCdsHasProduct)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetData().SetCdregion().SetOrf(true);
 
     STANDARD_SETUP
@@ -11970,7 +12120,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_ExceptInconsistent)
 {
     string except_text = "trans-splicing";
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->AddQualifier("exception", except_text);
 
     STANDARD_SETUP
@@ -12023,7 +12173,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_ProtRefHasNoData)
 BOOST_AUTO_TEST_CASE(Test_FEAT_GenCodeMismatch)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
     ce->SetId(3);
     CRef<CGenetic_code> gcode(new CGenetic_code());
@@ -12216,7 +12366,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_MissingQualOnImpFeat)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsHasProduct)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetPseudo(true);
     CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
     gene->SetPseudo(true);
@@ -12234,7 +12384,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsHasProduct)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetPseudo(true);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
@@ -12693,7 +12843,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryGeneXref)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     CRef<CCode_break> codebreak(new CCode_break());
     codebreak->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
     codebreak->SetLoc().SetInt().SetFrom(4);
@@ -12823,7 +12973,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
     SetSpliceForMixLoc (nuc_seq->SetSeq());
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().Assign(*MakeMixLoc(nuc_seq->SetSeq().SetId().front()));
     CRef<CSeq_feat> mrna(new CSeq_feat());
     mrna->SetLocation().Assign(*MakeMixLoc(nuc_seq->SetSeq().SetId().front()));
@@ -12862,7 +13012,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
     entry = BuildGoodNucProtSet();
     nuc_seq = entry->SetSet().SetSeq_set().front();
     SetSpliceForMixLoc (nuc_seq->SetSeq());
-    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().Assign(*MakeMixLoc(nuc_seq->SetSeq().SetId().front()));
     mrna = new CSeq_feat();
     mrna->SetLocation().Assign(cds->GetLocation());
@@ -13037,7 +13187,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PeptideFeatOutOfFrame)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSgeneRange)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     CRef<CSeq_feat> gene = MakeGeneForFeature (cds);
     gene->SetLocation().SetInt().SetFrom(1);
     AddFeat (gene, entry->SetSet().SetSeq_set().front());
@@ -13159,8 +13309,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptLen)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptMismatches)
 {
     CRef<CSeq_entry> entry = BuildGoodGenProdSet();
-    CRef<CSeq_entry> mrna_seq = entry->SetSet().SetSeq_set().back()->SetSet().SetSeq_set().front();
-    mrna_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACAAA");
+    CRef<CSeq_entry> np = GetNucProtSetFromGenProdSet(entry);
+    CRef<CSeq_entry> mrna_seq = GetNucleotideSequenceFromGoodNucProtSet(np);
+    mrna_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAATTAA");
 
     STANDARD_SETUP
 
@@ -13386,6 +13537,521 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingMRNAproduct)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_AbuttingIntervals)
+{
+    // error for abutting tRNA anticodon location
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    CRef<CSeq_loc> anticodon_loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    anticodon_loc->SetMix().Set().front()->SetInt().SetFrom(8);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetTo(8);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetFrom(9);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*anticodon_loc);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('F');
+    AddFeat (trna, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "AbuttingIntervals",
+                      "Adjacent intervals in Anticodon"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // different error for feature location
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    CRef<CSeq_loc> loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    loc->SetMix().Set().front()->SetInt().SetFrom(0);
+    loc->SetMix().Set().front()->SetInt().SetTo(7);
+    loc->SetMix().Set().back()->SetInt().SetFrom(8);
+    loc->SetMix().Set().back()->SetInt().SetTo(15);
+    feat->SetLocation().Assign(*loc);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "AbuttingIntervals", 
+      "Location: Adjacent intervals in SeqLoc [(lcl|good:1-8, 9-16)]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CollidingGeneNames)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene1 = AddMiscFeature(entry);
+    gene1->SetLocation().SetInt().SetFrom(0);
+    gene1->SetLocation().SetInt().SetTo(7);
+    gene1->SetData().SetGene().SetLocus("see_it_twice");
+
+    CRef<CSeq_feat> gene2 = AddMiscFeature(entry);
+    gene2->SetLocation().SetInt().SetFrom(15);
+    gene2->SetLocation().SetInt().SetTo(20);
+    gene2->SetData().SetGene().SetLocus("see_it_twice");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CollidingGeneNames", 
+      "Colliding names in gene features"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    gene2->SetData().SetGene().SetLocus("See_It_Twice");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Colliding names (with different capitalization) in gene features");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    gene2->SetLocation().SetInt().SetFrom(0);
+    gene2->SetLocation().SetInt().SetTo(7);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup",
+           "Duplicate feature"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "MultiplyAnnotatedGenes", 
+          "Colliding names (with different capitalization) in gene features, but feature locations are identical"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    gene2->SetLocation().SetInt().SetFrom(10);
+    gene2->SetLocation().SetInt().SetTo(17);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "ReplicatedGeneSequence", 
+          "Colliding names (with different capitalization) in gene features, but underlying sequences are identical"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultiIntervalGene)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("multi-interval");   
+    CRef<CSeq_loc> loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    gene->SetLocation().Assign (*loc);
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultiIntervalGene", 
+          "Gene feature on non-segmented sequence should not have multiple intervals"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat1 = AddMiscFeature(entry);
+    CRef<CSeq_feat> feat2 = AddMiscFeature(entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup", 
+      "Duplicate feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // many suppression conditions
+    // region
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat1->SetData().SetRegion("region");
+    feat2->SetData().SetRegion("region");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    //suppress if different dbxrefs
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetDbxref (feat1, "ASAP", "first");
+    SetDbxref (feat2, "ASAP", "second");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // variation
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat1->SetData().SetImp().SetKey("variation");
+    feat2->SetData().SetImp().SetKey("variation");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup", 
+      "Duplicate feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    // suppress if different replace qualifiers
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat1->AddQualifier("replace", "a");
+    feat2->AddQualifier("replace", "t");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // coding regions/mRNAs with different links
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds1 = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds2 = MakeCDSForGoodNucProtSet("nuc", "prot2");
+    AddFeat (cds2, entry);
+    CRef<CSeq_entry> pentry = MakeProteinForGoodNucProtSet("prot2");
+    entry->SetSet().SetSeq_set().push_back(pentry);
+    CRef<CSeq_entry> nentry = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> mrna1 = MakeCDSForGoodNucProtSet("nuc", "prot1");
+    mrna1->ResetProduct();
+    mrna1->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    AddFeat (mrna1, nentry);
+    CRef<CSeq_feat> mrna2 = MakeCDSForGoodNucProtSet("nuc", "prot1");
+    mrna2->ResetProduct();
+    mrna2->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    AddFeat (mrna2, nentry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    // two duplicate feature errors, one for cds, one for mRNA
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
+      "CDS overlapped by 2 mRNAs, but product locations are unique"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
+      "CDS overlapped by 2 mRNAs, but product locations are unique"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "FeatContentDup", 
+      "Duplicate feature"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "FeatContentDup", 
+      "Duplicate feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    // suppress errors if cdss and mrnas are linked
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    cds1->SetId().SetLocal().SetId(1);
+    cds2->SetId().SetLocal().SetId(2);
+    mrna1->SetId().SetLocal().SetId(3);
+    mrna2->SetId().SetLocal().SetId(4);
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    x1->SetId().SetLocal().SetId(3);
+    cds1->SetXref().push_back(x1);
+    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
+    x2->SetId().SetLocal().SetId(4);
+    cds2->SetXref().push_back(x2);
+    CRef<CSeqFeatXref> x3(new CSeqFeatXref());
+    x3->SetId().SetLocal().SetId(1);
+    mrna1->SetXref().push_back(x3);
+    CRef<CSeqFeatXref> x4(new CSeqFeatXref());
+    x4->SetId().SetLocal().SetId(2);
+    mrna2->SetXref().push_back(x4);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+static void ChangeGoodNucProtSetIdToGenbankName (CRef<CSeq_entry> entry, string name)
+{
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc_seq = GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_entry> prot_seq = GetProteinSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> prot_feat = GetProtFeatFromGoodNucProtSet (entry);
+
+    cds->SetProduct().SetWhole().SetGenbank().SetName(name);
+    prot_seq->SetSeq().SetId().front()->SetGenbank().SetName(name);
+    prot_feat->SetLocation().SetInt().SetId().SetGenbank().SetName(name);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadProductSeqId)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    // try one that looks like a valid ID
+    ChangeGoodNucProtSetIdToGenbankName(entry, "AY123456");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BadProductSeqId",
+              "Feature product should not put an accession in the Textseq-id 'name' slot"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BadProductSeqId",
+              "Protein bioseq has Textseq-id 'name' that looks like it is derived from a nucleotide accession"));      
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    // try one that looks like a local ID
+    scope.RemoveTopLevelSeqEntry(seh);
+    ChangeGoodNucProtSetIdToGenbankName(entry, "prot");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BadProductSeqId",
+              "Feature product should not use Textseq-id 'name' slot"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BadProductSeqId",
+              "Protein bioseq has Textseq-id 'name' and no accession"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RnaProductMismatch)
+{
+    CRef<CSeq_entry> nuc = BuildGoodSeq();
+    CRef<CSeq_feat> rna_feat = AddMiscFeature (nuc);
+    rna_feat->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    rna_feat->SetLocation().SetInt().SetTo(59);
+    rna_feat->SetProduct().SetWhole().SetLocal().SetStr("rna");
+
+    CRef<CSeq_entry> rna_seq = BuildGoodSeq();
+    rna_seq->SetSeq().SetId().front()->SetLocal().SetStr("rna");
+    
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    entry->SetSet().SetSeq_set().push_back (nuc);
+    entry->SetSet().SetSeq_set().push_back (rna_seq);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "RnaProductMismatch",
+              "Type of RNA does not match MolInfo of product Bioseq"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // make error go away
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    rna_seq->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol (rna_seq, CMolInfo::eBiomol_mRNA);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // also get errors for tRNA
+    scope.RemoveTopLevelSeqEntry(seh);
+    rna_feat->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    rna_feat->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('N');
+    rna_feat->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetId().SetLocal().SetStr("good");
+    rna_feat->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(11);
+    rna_feat->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(13);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "RnaProductMismatch",
+              "Type of RNA does not match MolInfo of product Bioseq"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // make error go away
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetBiomol (rna_seq, CMolInfo::eBiomol_tRNA);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // also get errors for rRNA
+    scope.RemoveTopLevelSeqEntry(seh);
+    rna_feat->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna_feat->SetData().SetRna().SetExt().SetName("a ribosomal RNA");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "RnaProductMismatch",
+              "Type of RNA does not match MolInfo of product Bioseq"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // make error go away
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetBiomol (rna_seq, CMolInfo::eBiomol_rRNA);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingCDSproduct)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    CRef<CSeq_entry> nuc = BuildGoodSeq();
+    CRef<CSeq_feat> cds = AddMiscFeature(nuc);
+    cds->SetData().SetCdregion();
+    cds->SetProduct().SetWhole().SetLocal().SetStr("not_present_ever");
+    entry->SetSet().SetSeq_set().push_back (nuc);
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "StartCodon",
+              "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NoStop",
+              "Missing stop codon"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingCDSproduct",
+              "Unable to find product Bioseq from CDS feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    cds->ResetProduct();
+    expected_errors[2]->SetErrMsg("Expected CDS product absent");
+    expected_errors[2]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // ok if pseudo
+    CLEAR_ERRORS
+    cds->SetPseudo(true);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // also ok if exception
+    cds->ResetPseudo();
+    cds->SetExcept(true);
+    cds->SetExcept_text("rearrangement required for product");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // also ok if CDS contains just stop codon
+    scope.RemoveTopLevelSeqEntry(seh);
+    cds->ResetExcept();
+    cds->ResetExcept_text();
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATAAGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+    cds->SetLocation().SetInt().SetTo(4);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrnaCodon)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildGoodtRNA(entry->SetSeq().SetId().front());
+    trna->SetData().SetRna().SetExt().SetTRNA().SetCodon().push_back(64);
+    AddFeat (trna, entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadTrnaCodon", 
+                  "tRNA codon value 64 is greater than maximum 63"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrnaAA)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildGoodtRNA(entry->SetSeq().SetId().front());
+    trna->SetData().SetRna().SetExt().SetTRNA().ResetAa();
+    AddFeat (trna, entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadTrnaAA", 
+                  "Missing tRNA amino acid"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa(29);
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadAnticodonAA",
+                  "Codons predicted from anticodon (AAA) cannot produce amino acid ( /OTHER)"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadTrnaAA", 
+                  "Invalid tRNA amino acid"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_OnlyGeneXrefs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetGeneXref().SetLocus("foo");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GeneXrefWithoutGene",
+                  "Feature has gene locus cross-reference but no equivalent gene feature exists"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OnlyGeneXrefs", 
+                  "There are 1 gene xrefs and no gene features in this record."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UTRdoesNotAbutCDS)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_entry> nseq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> pseq = GetProteinSequenceFromGoodNucProtSet(entry);
+    cds->SetLocation().SetInt().SetFrom(3);
+    nseq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("CCCATGAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    pseq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MRKTEIN");
+    pseq->SetSeq().SetInst().SetLength(7);
+    AdjustProtFeatForNucProtSet (entry);
+
+    CRef<CSeq_feat> utr5 = AddMiscFeature(nseq);
+    utr5->SetData().SetImp().SetKey("5'UTR");
+    utr5->SetLocation().SetInt().SetTo(1);
+
+    CRef<CSeq_feat> utr3 = AddMiscFeature(nseq);
+    utr3->SetData().SetImp().SetKey("3'UTR");
+    utr3->SetLocation().SetInt().SetFrom(28);
+    utr3->SetLocation().SetInt().SetTo(59);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc",eDiag_Warning,"UTRdoesNotAbutCDS",
+                              "5'UTR does not abut CDS"));
+    expected_errors.push_back(new CExpectedError("nuc",eDiag_Warning,"UTRdoesNotAbutCDS",
+                              "CDS does not abut 3'UTR"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    utr5->SetLocation().SetInt().SetTo(2);
+    utr5->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    utr3->SetLocation().SetInt().SetFrom(27);
+    utr3->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors[0]->SetErrMsg("5'UTR is not on plus strand");
+    expected_errors[1]->SetErrMsg("3'UTR is not on plus strand");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("3'UTR is not on minus strand");
+    expected_errors[1]->SetErrMsg("5'UTR is not on minus strand");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -13436,7 +14102,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
 
     // multiple ref-seq exceptions
     feat->SetExcept_text("unclassified transcription discrepancy, RNA editing");
-    feat->ResetComment();
+    feat->SetComment("misc_feature needs a comment");
     expected_errors[0]->SetErrMsg("Genome processing exception should not be combined with other explanations");
     expected_errors[0]->SetAccession("NC_123456");
     expected_errors[0]->SetSeverity(eDiag_Warning);
@@ -13604,7 +14270,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadConflictFlag)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds_feat = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds_feat = GetCDSFromGoodNucProtSet(entry);
     cds_feat->SetData().SetCdregion().SetConflict(true);
 
     STANDARD_SETUP
@@ -13621,7 +14287,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadConflictFlag)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ConflictFlagSet)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds_feat = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds_feat = GetCDSFromGoodNucProtSet(entry);
     cds_feat->SetData().SetCdregion().SetConflict(true);
     CRef<CSeq_entry> prot = entry->SetSet().SetSeq_set().back();
     prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIXX");
@@ -13635,6 +14301,2324 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ConflictFlagSet)
                               "Coding region conflict flag is set"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat>gene = AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus_tag("a b c");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LocusTagProblem",
+                              "Gene locus_tag 'a b c' should be a single word without any spaces"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gene->AddQualifier("old_locus_tag", "a b c");
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "RedundantFields",
+                       "old_locus_tag has same value as gene locus_tag"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "LocusTagProblem",
+                       "Gene locus_tag and old_locus_tag 'a b c' match"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    gene->ResetQual();
+    gene->SetData().SetGene().SetLocus_tag("abc");
+    gene->SetData().SetGene().SetLocus("abc");
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "LocusTagProblem",
+                       "Gene locus and locus_tag 'abc' match"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    gene->SetData().SetGene().ResetLocus();
+    gene->AddQualifier ("old_locus_tag", "a, b, c");
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "LocusTagProblem",
+                       "old_locus_tag has comma, may contain multiple values"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_AltStartCodon)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nseq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetExcept(true);
+    cds->SetExcept_text("alternative start codon");
+    
+    STANDARD_SETUP
+
+    // first, no errors because not refseq
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // report error if refseq
+    scope.RemoveTopLevelSeqEntry(seh);
+    nseq->SetSeq().SetId().front()->SetOther().SetAccession("NM_123456");
+    cds->SetLocation().SetInt().SetId().SetOther().SetAccession("NM_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("NM_123456", eDiag_Warning, "AltStartCodon",
+                              "Unnecessary alternative start codon exception"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GenesInconsistent)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> np = GetNucProtSetFromGenProdSet(entry);
+    CRef<CSeq_entry> mrna_seq = GetNucleotideSequenceFromGoodNucProtSet(np);
+    CRef<CSeq_feat> mgene = AddMiscFeature(mrna_seq);
+    mgene->SetLocation().SetInt().SetTo(26);
+    mgene->SetData().SetGene().SetLocus("locus1");
+
+    CRef<CSeq_entry> g_seq = GetGenomicFromGenProdSet(entry);
+    CRef<CSeq_feat> cgene = AddMiscFeature (g_seq);
+    cgene->SetLocation().SetInt().SetTo(26);
+    cgene->SetData().SetGene().SetLocus("locus2");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "GenesInconsistent",
+                              "Gene on mRNA bioseq does not match gene on genomic bioseq"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateTranslExcept)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CCode_break> codebreak1(new CCode_break());
+    codebreak1->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
+    codebreak1->SetLoc().SetInt().SetFrom(24);
+    codebreak1->SetLoc().SetInt().SetTo(26);
+    cds->SetData().SetCdregion().SetCode_break().push_back(codebreak1);
+    CRef<CCode_break> codebreak2(new CCode_break());
+    codebreak2->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
+    codebreak2->SetLoc().SetInt().SetFrom(24);
+    codebreak2->SetLoc().SetInt().SetTo(26);
+    cds->SetData().SetCdregion().SetCode_break().push_back(codebreak2);
+
+    STANDARD_SETUP
+
+    
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "DuplicateTranslExcept",
+                               "Multiple code-breaks at same location [lcl|nuc:25-27]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptAndRnaEditing)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CCode_break> codebreak1(new CCode_break());
+    codebreak1->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
+    codebreak1->SetLoc().SetInt().SetFrom(24);
+    codebreak1->SetLoc().SetInt().SetTo(26);
+    cds->SetData().SetCdregion().SetCode_break().push_back(codebreak1);
+    cds->SetExcept(true);
+    cds->SetExcept_text("RNA editing");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TranslExceptAndRnaEditing",
+                               "CDS has both RNA editing /exception and /transl_except qualifiers"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryException",
+                               "CDS has exception but passes translation test"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NoNameForProtein)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot_feat = GetProtFeatFromGoodNucProtSet (entry);
+    prot_feat->SetData().SetProt().ResetName();
+    prot_feat->SetData().SetProt().SetDesc("protein description");
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "NoNameForProtein",
+                               "Protein feature has description but no name"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    prot_feat->SetData().SetProt().ResetDesc();
+    prot_feat->SetData().SetProt().SetActivity().push_back ("activity");
+    expected_errors[0]->SetErrMsg("Protein feature has function but no name");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    prot_feat->SetData().SetProt().ResetActivity();
+    prot_feat->SetData().SetProt().SetEc().push_back("1.2.3.4");
+    expected_errors[0]->SetErrMsg("Protein feature has EC number but no name");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "ProtRefHasNoData",
+                               "There is a protein feature where all fields are empty"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "NoNameForProtein",
+                               "Protein feature has no name"));
+
+    prot_feat->SetData().SetProt().ResetEc();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNAmismatch)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nseq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds1 = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = MakeGeneForFeature (cds1);
+    gene->SetLocation().SetInt().SetTo(40);
+    AddFeat(gene, nseq);
+    CRef<CSeq_feat> mrna1 = MakemRNAForCDS (cds1);
+    mrna1->SetData().SetRna().SetExt().SetName("product 1");
+    AddFeat (mrna1, nseq);
+
+    CRef<CSeq_feat>mrna2 = MakemRNAForCDS (cds1);
+    mrna2->SetData().SetRna().SetExt().SetName("product 2");
+    mrna2->SetLocation().SetInt().SetTo(40);
+    AddFeat (mrna2, nseq);
+    
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSmRNAmismatch",
+                               "mRNA count (2) does not match CDS (1) count for gene"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
+                               "CDS overlapped by 2 mRNAs, but product locations are unique"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryException)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_feat> cds = GetCDSFromGenProdSet(entry);
+    CRef<CSeq_feat> mrna = GetmRNAFromGenProdSet (entry);
+    cds->SetExcept(true);
+    cds->SetExcept_text("RNA editing");
+    mrna->SetExcept(true);
+    mrna->SetExcept_text("transcribed product replaced");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnnecessaryException",
+                               "CDS has exception but passes translation test"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnnecessaryException",
+                               "mRNA has exception but passes transcription test"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc_seq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    SetSpliceForMixLoc (nuc_seq->SetSeq());
+    cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetLocation().Assign(*MakeMixLoc(nuc_seq->SetSeq().SetId().front()));
+    mrna = MakemRNAForCDS (cds);
+    AddFeat (mrna, nuc_seq);
+    CRef<CSeq_feat> exon = AddMiscFeature(nuc_seq);
+    exon->SetData().SetImp().SetKey("exon");
+    exon->SetLocation().Assign(*(cds->SetLocation().SetMix().Set().front()));
+    cds->SetExcept(true);
+    cds->SetExcept_text("ribosomal slippage");
+    mrna->SetExcept(true);
+    mrna->SetExcept_text("ribosomal slippage");
+    exon->SetExcept(true);
+    exon->SetExcept_text("ribosomal slippage");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryException",
+                               "feature has exception but passes splice site test"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryException",
+                               "feature has exception but passes splice site test"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryException",
+                               "feature has exception but passes splice site test"));
+ 
+    options |= CValidator::eVal_val_exons;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProductMismatch)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetGeneral().SetDb("a");
+    id->SetGeneral().SetTag().SetStr("good");
+    ChangeNucProtSetProteinId(entry, id);
+
+    CRef<CSeq_id> ref_id = BuildRefSeqId();
+    ChangeNucProtSetNucId (entry, ref_id);
+
+    CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus_tag("something");
+    AddFeat(gene, nuc);
+
+    STANDARD_SETUP
+
+    options |= CValidator::eVal_locus_tag_general_match;
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "LocusTagProductMismatch",
+                               "Gene locus_tag does not match general ID of product"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsViaGeneHasProduct)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
+    gene->SetPseudo(true);
+    AddFeat(gene, nuc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "PseudoCdsViaGeneHasProduct",
+                               "A coding region overlapped by a pseudogene should not have a product"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingGeneXref)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetLocation().SetInt().SetFrom (5);
+
+    CRef<CSeq_feat> gene1 = MakeGeneForFeature(misc);
+    gene1->SetData().SetGene().SetLocus("first");
+    gene1->SetLocation().SetInt().SetFrom (0);
+    AddFeat(gene1, entry);
+    CRef<CSeq_feat> gene2 = MakeGeneForFeature(misc);
+    gene2->SetData().SetGene().SetLocus("second");
+    gene2->SetLocation().SetInt().SetTo(misc->GetLocation().GetInt().GetTo() + 5);
+    AddFeat(gene2, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MissingGeneXref",
+                               "Feature overlapped by 2 identical-length genes but has no cross-reference"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCitationProblem) 
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    CRef<CPub> pub(new CPub());
+    pub->SetPmid((CPub::TPmid)2);
+    misc->SetCit().SetPub().push_back(pub);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureCitationProblem",
+                               "Citation on feature refers to uid [2] not on a publication in the record"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NestedSeqLocMix)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetId().SetLocal().SetStr("good");
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(10);
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetId().SetLocal().SetStr("good");
+    loc2->SetInt().SetFrom(20);
+    loc2->SetInt().SetTo(30);
+    CRef<CSeq_loc> loc3(new CSeq_loc());
+    loc3->SetInt().SetId().SetLocal().SetStr("good");
+    loc3->SetInt().SetFrom(40);
+    loc3->SetInt().SetTo(50);
+    CRef<CSeq_loc> loc4(new CSeq_loc());
+    loc4->SetMix().Set().push_back (loc2);
+    loc4->SetMix().Set().push_back(loc3);
+    
+    misc->SetLocation().SetMix().Set().push_back (loc1);
+    misc->SetLocation().SetMix().Set().push_back (loc4);
+    misc->SetProduct().Assign (misc->SetLocation());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "NestedSeqLocMix",
+    "Location: SeqLoc [[lcl|good:1-11, [21-31, 41-51]]] has nested SEQLOC_MIX elements"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "NestedSeqLocMix",
+                               "Product: SeqLoc [[lcl|good:1-11, [21-31, 41-51]]] has nested SEQLOC_MIX elements"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "SelfReferentialProduct",
+                               "Self-referential feature product"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CodonQualifierUsed)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->AddQualifier("codon", "1");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "CodonQualifierUsed",
+                               "Use the proper genetic code, if available, or set transl_excepts on specific codons"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadCharInAuthorName)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    CRef<CPub> pub = BuildGoodArticlePub();
+    CRef<CAuthor> auth = BuildGoodAuthor();
+    auth->SetName().SetName().SetFirst("F1rst");
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(auth);
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetSeq().SetDescr().Set().push_back (desc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadCharInAuthorName",
+                               "Bad characters in author F1rst"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PolyATail)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> contig = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> mrna = contig->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    mrna->SetLocation().SetInt().SetTo(25);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSmRNArange",
+                      "mRNA overlaps or contains CDS but does not completely contain intervals"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "PolyATail", 
+                      "Transcript length [26] less than product length [27], but tail is 100% polyA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> np = GetNucProtSetFromGenProdSet(entry);
+    CRef<CSeq_entry> transcript = GetNucleotideSequenceFromGoodNucProtSet(np);
+    transcript->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAAAAAAAAAAAAAAAAATAA");
+    transcript->SetSeq().SetInst().SetLength(46);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[1]->SetErrMsg("Transcript length [26] less than product length [46], but tail >= 95% polyA");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGenProdSet(entry);
+    CRef<CSeq_feat> second_mrna = MakemRNAForCDS(cds);
+    second_mrna->SetProduct().SetWhole().SetLocal().SetStr("nuc");
+    AddFeat (second_mrna, genomic);
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatureProductInconsistency",
+                              "mRNA products are not unique"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSwithMultipleMRNAs",
+                              "CDS overlapped by 2 mRNAs"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup",
+                              "Duplicate feature"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "MultipleMRNAproducts",
+                              "Same product Bioseq from multiple mRNA features"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // now try with unique products
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> nuc_id(new CSeq_id());
+    nuc_id->SetLocal().SetStr("nuc2");
+    CRef<CSeq_id> prot_id(new CSeq_id());
+    prot_id->SetLocal().SetStr("prot2");
+    CRef<CSeq_entry> np = BuildGenProdSetNucProtSet (nuc_id, prot_id);
+    entry->SetSet().SetSeq_set().push_back (np);
+    second_mrna->SetProduct().SetWhole().Assign(*nuc_id);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "CDSwithMultipleMRNAs",
+                              "CDS overlapped by 2 mRNAs, but product locations are unique"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup", "Duplicate feature"));
+    expected_errors.push_back(new CExpectedError("prot2", eDiag_Warning, "GenomicProductPackagingProblem",
+                              "Protein bioseq should be product of CDS feature on contig, but is not"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivBioSources)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> src1 = AddMiscFeature (entry);
+    src1->SetData().SetBiosrc().SetOrg().SetTaxname("Homo sapiens");
+    src1->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    CRef<CSeq_feat> src2 = AddMiscFeature (entry);
+    src2->SetData().SetBiosrc().SetOrg().SetTaxname("Homo sapiens");
+    src2->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    src2->SetLocation().SetInt().SetFrom(30);
+    src2->SetLocation().SetInt().SetTo(40);
+    SetTransgenic(entry, true);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MultipleEquivBioSources",
+                               "Multiple equivalent source features should be combined into one multi-interval feature"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivPublications)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat1 = AddMiscFeature (entry);
+    CRef<CPub> pub1(new CPub());
+    pub1->SetPmid((CPub::TPmid)2);
+    feat1->SetData().SetPub().SetPub().Set().push_back(pub1);
+    CRef<CSeq_feat> feat2 = AddMiscFeature (entry);
+    CRef<CPub> pub2(new CPub());
+    pub2->SetPmid((CPub::TPmid)2);
+    feat2->SetData().SetPub().SetPub().Set().push_back(pub2);
+    feat2->SetLocation().SetInt().SetFrom(30);
+    feat2->SetLocation().SetInt().SetTo(40);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MultipleEquivPublications",
+                               "Multiple equivalent publication features should be combined into one multi-interval feature"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadFullLengthFeature)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> src1 = AddMiscFeature (entry);
+    src1->SetData().SetBiosrc().SetOrg().SetTaxname("Homo sapiens");
+    src1->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    src1->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    CRef<CSeq_feat> feat1 = AddMiscFeature (entry);
+    CRef<CPub> pub1(new CPub());
+    pub1->SetPmid((CPub::TPmid)2);
+    feat1->SetData().SetPub().SetPub().Set().push_back(pub1);
+    feat1->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    SetTransgenic(entry, true);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadFullLengthFeature",
+                               "Source feature is full length, should be descriptor"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadFullLengthFeature",
+                               "Publication feature is full length, should be descriptor"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> src2 = AddMiscFeature (entry);
+    src2->SetData().SetBiosrc().SetOrg().SetTaxname("Drosophila melanogaster");
+    src2->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    src2->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "DuplicateFeat",
+                               "Features have identical intervals, but labels differ"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadFullLengthFeature",
+                               "Source feature is full length, should be descriptor"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadFullLengthFeature",
+                               "Multiple full-length source features, should only be one if descriptor is transgenic"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadFullLengthFeature",
+                               "Publication feature is full length, should be descriptor"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RedundantFields)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = MakeGeneForFeature (cds);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    AddFeat (gene, nuc);
+    gene->SetData().SetGene().SetLocus ("redundant_g");
+    gene->SetComment ("redundant_g");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "RedundantFields",
+                               "Comment has same value as gene locus"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+ 
+    CLEAR_ERRORS
+    gene->SetData().SetGene().ResetLocus();
+    gene->SetData().SetGene().SetLocus_tag("redundant_g");
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "RedundantFields",
+                               "Comment has same value as gene locus_tag"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+ 
+    CLEAR_ERRORS
+
+    gene->ResetComment();
+    gene->AddQualifier("old_locus_tag", "redundant_g");
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "RedundantFields",
+                               "old_locus_tag has same value as gene locus_tag"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "LocusTagProblem",
+                               "Gene locus_tag and old_locus_tag 'redundant_g' match"));
+  
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+ 
+    CLEAR_ERRORS
+
+    gene->ResetQual();
+
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().push_back("redundant_p");
+    prot->SetComment("redundant_p");
+    prot->SetData().SetProt().SetDesc("redundant_p");
+
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "RedundantFields",
+                               "Comment has same value as protein name"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "RedundantFields",
+                               "Comment has same value as protein description"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+static void AddCDSAndProtForBigGoodNucProtSet (CRef<CSeq_entry> entry, string nuc_id, string prot_id, TSeqPos offset)
+{
+    CRef<CSeq_feat> cds (new CSeq_feat());
+    cds->SetData().SetCdregion();
+    cds->SetProduct().SetWhole().SetLocal().SetStr(prot_id);
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr(nuc_id);
+    cds->SetLocation().SetInt().SetFrom(offset + 0);
+    cds->SetLocation().SetInt().SetTo(offset + 26);
+    AddFeat (cds, entry);
+
+    CRef<CSeq_entry> pentry = MakeProteinForGoodNucProtSet(prot_id);
+
+    entry->SetSet().SetSeq_set().push_back(pentry);
+
+}
+
+
+static CRef<CSeq_entry> BuildBigGoodNucProtSet(void)
+{
+    CRef<CBioseq_set> set(new CBioseq_set());
+    set->SetClass(CBioseq_set::eClass_nuc_prot);
+
+    // make nucleotide
+    CRef<CBioseq> nseq(new CBioseq());
+    nseq->SetInst().SetMol(CSeq_inst::eMol_dna);
+    nseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    nseq->SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    nseq->SetInst().SetLength(360);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr ("nuc");
+    nseq->SetId().push_back(id);
+
+    CRef<CSeqdesc> mdesc(new CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);    
+    nseq->SetDescr().Set().push_back(mdesc);
+
+    CRef<CSeq_entry> nentry(new CSeq_entry());
+    nentry->SetSeq(*nseq);
+
+    set->SetSeq_set().push_back(nentry);
+
+    CRef<CSeq_entry> set_entry(new CSeq_entry());
+    set_entry->SetSet(*set);
+
+    int i = 1;
+    for (TSeqPos offset = 0; offset < nseq->GetInst().GetLength() - 26; offset += 30, i++) { 
+        string prot_id = "prot" + NStr::IntToString(i);
+        AddCDSAndProtForBigGoodNucProtSet (set_entry, "nuc", prot_id, offset);
+    }
+
+    AddGoodSource (set_entry);
+    AddGoodPub(set_entry);
+    return set_entry;
+}
+
+
+BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
+{
+    CRef<CSeq_entry> entry = BuildBigGoodNucProtSet();
+    // make mRNA for first CDS
+    CRef<CSeq_feat> first_cds = GetCDSFromGoodNucProtSet(entry);
+
+    CSeq_annot::TData::TFtable::iterator cds_it = entry->SetSet().SetAnnot().front()->SetData().SetFtable().begin();
+
+    CRef<CSeq_feat> mrna = MakemRNAForCDS (*cds_it);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    AddFeat (mrna, nuc);
+    CRef<CSeq_feat> gene = MakeGeneForFeature (*cds_it);
+    AddFeat (gene, nuc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
+                "11 out of 12 CDSs overlapped by 0 mRNAs"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS    
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    for (int i = 0; i < 3; i++) {
+        ++cds_it;
+        CRef<CSeq_feat> new_mrna = MakemRNAForCDS (*cds_it);
+        AddFeat (new_mrna, nuc);
+    }
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    for (int i = 0; i < 8; i++) {
+        expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
+                "CDS overlapped by 0 mRNAs"));
+    }
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    AddFeat (mrna, nuc);
+    CRef<CSeq_feat> bad_cds = AddMiscFeature(nuc);
+    bad_cds->SetData().SetCdregion();
+    bad_cds->SetLocation().SetInt().SetFrom(30);
+    bad_cds->SetLocation().SetInt().SetTo(56);
+    CRef<CSeq_feat> bad_mrna = MakemRNAForCDS(bad_cds);
+    AddFeat (bad_mrna, nuc);
+
+    STANDARD_SETUP_NO_DATABASE
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "FeatureProductInconsistency",
+                                "2 CDS features have 1 product references"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "NoProtein", "No protein Bioseq given"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "MissingCDSproduct", "Expected CDS product absent"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    bad_cds->SetProduct().SetWhole().SetLocal().SetStr("prot");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "FeatureProductInconsistency",
+                                "CDS products are not unique"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "MultipleCDSproducts",
+                                "Same product Bioseq from multiple CDS features"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    nuc->SetSeq().ResetAnnot();
+    AddCDSAndProtForBigGoodNucProtSet (entry, "nuc", "prot1", 30);
+    bad_mrna = MakemRNAForCDS(entry->SetSet().SetAnnot().front()->SetData().SetFtable().back());
+    AddFeat (bad_mrna, nuc);
+    mrna = MakemRNAForCDS (cds);
+    mrna->SetProduct().SetWhole().SetGenbank().SetAccession("AY123456");
+    AddFeat (mrna, nuc);
+    
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "FeatureProductInconsistency",
+                                "2 mRNA features have 1 product references"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "ProductFetchFailure", 
+                                "Unable to fetch mRNA transcript 'gb|AY123456'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    bad_mrna->SetProduct().SetWhole().SetGenbank().SetAccession("AY123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "FeatureProductInconsistency",
+                                "mRNA products are not unique"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "ProductFetchFailure", 
+                                "Unable to fetch mRNA transcript 'gb|AY123456'"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "ProductFetchFailure", 
+                                "Unable to fetch mRNA transcript 'gb|AY123456'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+static void SetFeatureLocationBond (CRef<CSeq_feat> feat, string id, TSeqPos pt1, TSeqPos pt2)
+{
+    feat->SetLocation().SetBond().SetA().SetId().SetLocal().SetStr(id);
+    feat->SetLocation().SetBond().SetA().SetPoint(0);
+    feat->SetLocation().SetBond().SetB().SetId().SetLocal().SetStr(id);
+    feat->SetLocation().SetBond().SetB().SetPoint(5);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ImproperBondLocation)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> f1 = AddMiscFeature(entry);
+    SetFeatureLocationBond(f1, "good", 0, 5);
+
+    CRef<CSeq_feat> f2 = AddMiscFeature(entry);
+    f2->SetData().SetHet();
+    SetFeatureLocationBond(f2, "good", 0, 5);
+
+    CRef<CSeq_feat> f3 = AddMiscFeature(entry);
+    f3->SetData().SetCdregion();
+    f3->SetPseudo(true);
+    SetFeatureLocationBond(f3, "good", 0, 5);
+
+    CRef<CSeq_feat> f4 = AddMiscFeature(entry);
+    f4->SetData().SetBond();
+    SetFeatureLocationBond(f4, "good", 0, 5);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ImproperBondLocation",
+                                "Bond location should only be on bond features"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ImproperBondLocation",
+                                "Bond location should only be on bond features"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ImproperBondLocation",
+                                "Bond location should only be on bond features"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefWithoutGene)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature (entry);
+    feat->SetGeneXref().SetLocus("missing");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "GeneXrefWithoutGene",
+                                "Feature has gene locus cross-reference but no equivalent gene feature exists"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "OnlyGeneXrefs",
+                                "There are 1 gene xrefs and no gene features in this record."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS    
+
+    feat->SetGeneXref().ResetLocus();
+    feat->SetGeneXref().SetLocus_tag("missing");
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "GeneXrefWithoutGene",
+                                "Feature has gene locus_tag cross-reference but no equivalent gene feature exists"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "OnlyGeneXrefs",
+                                "There are 1 gene xrefs and no gene features in this record."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetId().SetLocal().SetId(1);
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    cds->SetXref().push_back(x1);
+    
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
+    gene->SetId().SetLocal().SetId(3);
+    AddFeat (gene, nuc);
+    
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
+                                "SeqFeatXref with no id or data field"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+
+    cds->SetXref().front()->SetId().SetLocal().SetId(3);
+    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
+    x2->SetId().SetLocal().SetId(1);
+    gene->SetXref().push_back(x2);
+
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
+                                "Cross-references are not between CDS and mRNA pair"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
+                                "Cross-references are not between CDS and mRNA pair"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetId().SetLocal().SetId(2);
+    AddFeat (mrna, nuc);
+    gene->ResetXref();
+    cds->SetXref().front()->SetId().SetLocal().SetId(2);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
+                                "CDS/mRNA unambiguous pair have erroneous cross-references"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
+                                "Cross-referenced feature does not have its own cross-reference"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousGeneXref)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetTaxname(entry, "Drosophila melanogaster");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 7227);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NT_123456");
+
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    CRef<CSeq_feat> gene1 = MakeGeneForFeature (feat);
+    AddFeat (gene1, entry);
+    CRef<CSeq_feat> gene2 = MakeGeneForFeature (feat);
+    gene2->SetData().SetGene().SetLocus("other gene");
+    gene2->SetLocation().SetInt().SetTo(entry->GetSeq().GetLength() - 1);
+    gene2->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    AddFeat (gene2, entry);
+    feat->SetGeneXref().SetLocus("other gene");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("NT_123456", eDiag_Warning, "SuspiciousGeneXref",
+                                "Curated Drosophila record should not have gene cross-reference other gene"));
+    expected_errors.push_back (new CExpectedError("NT_123456", eDiag_Warning, "GeneXrefStrandProblem",
+                                "Gene cross-reference is not on expected strand"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_MissingTrnaAA)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature (entry);
+    feat->SetData().SetRna().SetType (CRNA_ref::eType_tRNA);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MissingTrnaAA",
+                                "Missing encoded amino acid qualifier in tRNA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CollidingFeatureIDs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature (entry);
+    feat->SetId().SetLocal().SetId(1);
+    CRef<CSeq_feat> gene = MakeGeneForFeature (feat);
+    gene->SetId().SetLocal().SetId(1);
+    AddFeat (gene, entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Critical, "CollidingFeatureIDs",
+                                "Colliding feature ID 1"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Critical, "CollidingFeatureIDs",
+                                "Colliding feature ID 1"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_PolyAsignalNotRange)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature (entry);
+    feat->SetData().SetImp().SetKey("polyA_signal");
+    feat->SetLocation().SetInt().SetTo(0);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "PolyAsignalNotRange",
+                                "PolyA_signal should be a range"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_OldLocusTagMismtach)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->AddQualifier("old_locus_tag", "one value");
+
+    CRef<CSeq_feat> gene = MakeGeneForFeature (feat);
+    gene->AddQualifier ("old_locus_tag", "another value");
+    AddFeat (gene, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "OldLocusTagMismtach",
+                                "Old locus tag on feature (one value) does not match that on gene (another value)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+static CRef<CUser_field> MakeGoTerm (void)
+{
+    CRef<CUser_field> go_term (new CUser_field());
+    go_term->SetLabel().SetStr("a go term");
+
+    CRef<CUser_field> go_id(new CUser_field());
+    go_id->SetLabel().SetStr("go id");
+    go_id->SetData().SetStr("123");
+    go_term->SetData().SetFields().push_back (go_id);
+
+    CRef<CUser_field> pmid(new CUser_field());
+    pmid->SetLabel().SetStr("pubmed id");
+    pmid->SetData().SetInt(4);
+    go_term->SetData().SetFields().push_back (pmid);
+
+    CRef<CUser_field> term(new CUser_field());
+    term->SetLabel().SetStr("text string");
+    term->SetData().SetStr("something");
+    go_term->SetData().SetFields().push_back (term);
+
+    CRef<CUser_field> ev(new CUser_field());
+    ev->SetLabel().SetStr("evidence");
+    ev->SetData().SetStr("some evidence");
+    go_term->SetData().SetFields().push_back (ev);
+
+    return go_term;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateGeneOntologyTerm)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetExt().SetType().SetStr("GeneOntology");
+    CRef<CUser_field> go_list(new CUser_field());
+    go_list->SetLabel().SetStr("Process");
+    go_list->SetData().SetFields().push_back(MakeGoTerm());
+    go_list->SetData().SetFields().push_back(MakeGoTerm());
+    feat->SetExt().SetData().push_back(go_list);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "DuplicateGeneOntologyTerm",
+                                "Duplicate GO term on feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidInferenceValue)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->AddQualifier("inference", " ");
+
+    STANDARD_SETUP
+
+    feat->SetQual().front()->SetVal("bad");
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "InvalidInferenceValue",
+                                 "Inference qualifier problem - bad inference prefix (bad)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    feat->SetQual().front()->SetVal("similar to sequence");
+    expected_errors[0]->SetErrMsg("Inference qualifier problem - bad inference body (similar to sequence)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    feat->SetQual().front()->SetVal("profile(same species): INSD:AY123456.1");
+    expected_errors[0]->SetErrMsg("Inference qualifier problem - same species misused (profile(same species): INSD:AY123456.1)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    feat->SetQual().front()->SetVal("similar to RNA sequence: INSD:AY123456.1 INSD:AY123457");
+    expected_errors[0]->SetErrMsg("Inference qualifier problem - spaces in inference (similar to RNA sequence: INSD:AY123456.1 INSD:AY123457)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    feat->SetQual().front()->SetVal("similar to RNA sequence: INSD:AY123456");
+    expected_errors[0]->SetErrMsg("Inference qualifier problem - bad inference accession version (similar to RNA sequence: INSD:AY123456)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    feat->SetQual().front()->SetVal("similar to RNA sequence: RefSeq:AY123456.1");
+    expected_errors[0]->SetErrMsg("Inference qualifier problem - bad accession type (similar to RNA sequence: RefSeq:AY123456.1)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_HpotheticalProteinMismatch) {
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+
+    CRef<CSeq_id> protid(new CSeq_id());
+    protid->SetOther().SetAccession("XP_654321");
+    ChangeProtId (entry, protid);
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("hypothetical protein XP_123");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("XP_654321", eDiag_Warning, "HpotheticalProteinMismatch",
+                               "Hypothetical protein reference does not match accession"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureRefersToAccession)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_id> gi(new CSeq_id());
+    gi->SetGi(21914627);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    nuc->SetSeq().SetId().push_back (gi);
+    CRef<CSeq_id> acc(new CSeq_id());
+    acc->SetGenbank().SetAccession("AY123456");
+    acc->SetGenbank().SetVersion(1);
+    nuc->SetSeq().SetId().push_back (acc);
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_id> acc2(new CSeq_id());
+    acc2->SetGenbank().SetAccession("XYZ12345");
+    prot->SetSeq().SetId().push_back(acc2);
+
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetProduct().SetWhole().Assign(*acc2);
+    cds->SetLocation().SetInt().SetId().Assign(*gi);
+    CRef<CSeq_feat> misc = AddMiscFeature(nuc);
+    misc->SetLocation().SetInt().SetId().Assign(*acc);
+   
+    AddCDSAndProtForBigGoodNucProtSet (entry, "nuc", "prot2", 30);
+    CRef<CSeq_id> acc3(new CSeq_id());
+    acc3->SetGenbank().SetAccession("XYZ12346");
+    acc3->SetGenbank().SetVersion(1);
+    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().push_back(acc3);
+    CRef<CSeq_id> gi2(new CSeq_id());
+    gi2->SetGi(123456);
+    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().push_back(gi2);
+    entry->SetSet().SetAnnot().front()->SetData().SetFtable().back()->SetProduct().SetWhole().Assign (*gi2);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back (new CExpectedError("AY123456.1", eDiag_Warning, "FeatureRefersToAccession",
+                               "Feature location refers to accession"));
+    expected_errors.push_back (new CExpectedError("XYZ12346.1", eDiag_Warning, "UnexpectedIdentifierChange",
+                               "Gain of accession (gb|XYZ12346.1|) on gi (123456) compared to the NCBI sequence repository"));
+    expected_errors.push_back (new CExpectedError("AY123456.1", eDiag_Warning, "FeatureRefersToAccession",
+                               "Feature product refers to accession"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SelfReferentialProduct)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> cds = AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+    cds->SetLocation().SetInt().SetTo(59);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    cds->SetProduct().SetWhole().Assign(*(entry->SetSeq().SetId().front()));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "SelfReferentialProduct",
+                               "Self-referential feature product"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "PartialsInconsistent", 
+                               "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "CDSproductPackagingProblem",
+                               "Protein product not packaged in nuc-prot set with nucleotide"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ITSdoesNotAbutRRNA)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> rrna = AddMiscFeature (entry);
+    rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rrna->SetData().SetRna().SetExt().SetName("18s ribosomal subunit");
+
+    CRef<CSeq_feat> its = AddMiscFeature (entry);
+    its->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    its->SetData().SetRna().SetExt().SetName("internal transcribed spacer 1");
+    its->SetLocation().SetInt().SetFrom(rrna->GetLocation().GetInt().GetTo() + 2);
+    its->SetLocation().SetInt().SetTo(rrna->GetLocation().GetInt().GetTo() + 12);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ITSdoesNotAbutRRNA",
+                               "ITS does not abut adjacent rRNA component"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp (entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    rrna->SetData().SetRna().SetExt().SetName("5.8S ribosomal subunit");
+    its->SetData().SetRna().SetExt().SetName("internal transcribed spacer 2");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp (entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureSeqIDCaseDifference)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("GOOD");
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "FeatureSeqIDCaseDifference",
+                               "Sequence identifier in feature location differs in capitalization with identifier on Bioseq"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureLocationIsGi0)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGi(0);
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("0", eDiag_Critical, "ZeroGiNumber",
+                               "Invalid GI number"));
+    expected_errors.push_back (new CExpectedError("0", eDiag_Error, "GiWithoutAccession",
+                               "No accession on sequence with gi number"));
+    expected_errors.push_back (new CExpectedError("0", eDiag_Critical, "FeatureLocationIsGi0",
+                               "Feature has 1 gi|0 location on Bioseq gi|0"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GapFeatureProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("CNCATGATGATG");
+
+    CRef<CSeq_feat> gap = AddMiscFeature(entry);
+    gap->SetData().SetImp().SetKey("gap");
+    gap->AddQualifier("estimated_length", "11");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "GapFeatureProblem",
+                               "Gap feature over 11 real bases"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gap->SetLocation().SetInt().SetFrom(10);
+    gap->SetLocation().SetInt().SetTo(20);
+    expected_errors[0]->SetErrMsg("Gap feature over 2 real bases");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gap->SetLocation().SetInt().SetFrom(20);
+    gap->SetLocation().SetInt().SetTo(30);
+    expected_errors[0]->SetErrMsg("Gap feature over 8 real bases and 1 Ns");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gap->SetLocation().SetInt().SetFrom(12);
+    gap->SetLocation().SetInt().SetTo(21);
+    expected_errors[0]->SetErrMsg("Gap feature estimated_length 11 does not match 10 feature length");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsHasProtXref)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> cds = AddMiscFeature (entry);
+    cds->SetData().SetCdregion();
+    cds->SetPseudo(true);
+    CRef<CSeqFeatXref> x1 (new CSeqFeatXref());
+    x1->SetData().SetProt().SetName().push_back("a name");
+    cds->SetXref().push_back(x1);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "PseudoCdsHasProtXref",
+                               "A pseudo coding region should not have a protein xref"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+static CRef<CSeq_entry> BuildGenProdSetBigNucProtSet (CRef<CSeq_id> nuc_id, CRef<CSeq_id> prot_id)
+{
+    CRef<CSeq_entry> np = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(np);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATAA");
+    nuc->SetSeq().SetInst().SetLength(366);
+    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol(nuc, CMolInfo::eBiomol_mRNA);
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(np);
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MFFFFFFFFFFPPPPPPPPPPGGGGGGGGGGKKKKKKKKKKFFFFFFFFFFPPPPPPPPPPGGGGGGGGGGKKKKKKKKKKFFFFFFFFFFPPPPPPPPPPGGGGGGGGGGKKKKKKKKKK");
+    prot->SetSeq().SetInst().SetLength(121);
+    AdjustProtFeatForNucProtSet (np);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(np);
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(nuc->GetSeq().GetInst().GetLength()-1);
+    if (nuc_id) {
+        ChangeNucProtSetNucId(np, nuc_id);
+    }
+    if (prot_id) {
+        ChangeNucProtSetProteinId(np, prot_id);
+    }
+    return np;
+}
+
+
+static CRef<CSeq_entry> BuildGenProdSetWithBigProduct()
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_gen_prod_set);
+    CRef<CSeq_entry> contig = BuildGoodSeq();
+    contig->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATAAGGGCCCTTT");
+    contig->SetSeq().SetInst().SetLength(375);
+    entry->SetSet().SetSeq_set().push_back (contig);
+    CRef<CSeq_id> nuc_id(new CSeq_id());
+    nuc_id->SetLocal().SetStr("nuc");
+    CRef<CSeq_id> prot_id(new CSeq_id());
+    prot_id->SetLocal().SetStr("prot");
+    CRef<CSeq_entry> np = BuildGenProdSetBigNucProtSet(nuc_id, prot_id);
+    entry->SetSet().SetSeq_set().push_back (np);
+
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    cds->Assign (*(GetCDSFromGoodNucProtSet(np)));
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    AddFeat (cds, contig);
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetProduct().SetWhole().Assign(*nuc_id);
+    AddFeat (mrna, contig);
+
+    return entry;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ErroneousException)
+{
+    CRef<CSeq_entry> entry = BuildGenProdSetWithBigProduct();
+    CRef<CSeq_feat> cds = GetCDSFromGenProdSet (entry);
+    cds->SetExcept(true);
+    cds->SetExcept_text("unclassified translation discrepancy");
+    CRef<CSeq_feat> mrna = GetmRNAFromGenProdSet(entry);
+    mrna->SetExcept(true);
+    mrna->SetExcept_text("unclassified transcription discrepancy");
+    CRef<CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
+    genomic->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGTTTCTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATAAGGGCCCTTT");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ErroneousException",
+                               "CDS has unclassified exception but only difference is 1 mismatches out of 121 residues"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ErroneousException",
+                               "mRNA has unclassified exception but only difference is 1 mismatches out of 366 bases"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WholeLocation)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetLocation().SetWhole().Assign(*(entry->SetSeq().SetId().front()));
+    CRef<CSeq_feat> cds = AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+    cds->SetLocation().SetWhole().Assign(*(entry->SetSeq().SetId().front()));
+    cds->SetPseudo(true);
+
+    CRef<CSeq_feat> mrna = AddMiscFeature(entry);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetLocation().SetWhole().Assign(*(entry->SetSeq().SetId().front()));
+    mrna->SetPseudo(true);
+
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "WholeLocation",
+                               "Feature may not have whole location"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "WholeLocation",
+                               "CDS may not have whole location"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "WholeLocation",
+                               "mRNA may not have whole location"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_EcNumberProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetComment("EC:1.1.1.10");
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().front().append("; EC:1.1.1.10");
+    prot->SetComment("EC:1.1.1.10");
+    prot->SetData().SetProt().SetEc().push_back("");
+
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> exon = AddMiscFeature(nuc);
+    exon->SetData().SetImp().SetKey("exon");
+    exon->AddQualifier("EC_number", ""); 
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "InvalidQualifierValue",
+                               "Qualifier other than replace has just quotation marks"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "EcNumberProblem",
+                               "EC number should not be empty"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "EcNumberProblem",
+                               "Apparent EC number in protein title"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "EcNumberProblem",
+                               "Apparent EC number in protein comment"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "EcNumberProblem",
+                               "EC number should not be empty"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+
+    prot->SetData().SetProt().ResetEc();
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "InvalidQualifierValue",
+                               "Qualifier other than replace has just quotation marks"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "EcNumberProblem",
+                               "EC number should not be empty"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "EcNumberProblem",
+                               "Apparent EC number in protein title"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "EcNumberProblem",
+                               "Apparent EC number in protein comment"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "EcNumberProblem",
+                               "Apparent EC number in CDS comment"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_VectorContamination)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->AddQualifier("standard_name", "Vector Contamination");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "VectorContamination",
+                               "Vector Contamination region should be trimmed from sequence"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MinusStrandProtein)
+{
+    CRef<CSeq_entry> entry = BuildGoodProtSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    misc->SetLocation().SetInt().SetTo(5);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MinusStrandProtein",
+                               "Feature on protein indicates negative strand"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadProteinName)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("Hypothetical protein");
+    prot->SetData().SetProt().SetEc().push_back("1.1.1.20");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "BadProteinName",
+                               "Unknown or hypothetical protein should not have EC number"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("hypothetical protein");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("Unknown protein");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("unknown protein");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefWithoutLocus)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat>  misc = AddMiscFeature(entry);
+    CRef<CSeq_feat> gene1 = MakeGeneForFeature (misc);
+    AddFeat(gene1, entry);
+    CRef<CSeq_feat> gene2 = MakeGeneForFeature (misc);
+    gene2->SetData().SetGene().SetLocus_tag("locus_tag");
+    gene2->SetData().SetGene().SetLocus ("second locus");
+    gene2->SetLocation().SetInt().SetTo(misc->GetLocation().GetInt().GetTo() + 5);
+    AddFeat(gene2, entry);
+    CRef<CSeqFeatXref> x(new CSeqFeatXref());
+    x->SetData().SetGene().SetLocus_tag("locus_tag");
+    misc->SetXref().push_back(x);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "GeneXrefWithoutLocus",
+                               "Feature has Gene Xref with locus_tag but no locus, gene with locus_tag and locus exists"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UTRdoesNotExtendToEnd)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAAAAGGGAAA");
+    nuc->SetSeq().SetInst().SetLength(36);
+    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol(nuc, CMolInfo::eBiomol_mRNA);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> utr3 = AddMiscFeature(nuc);
+    utr3->SetData().SetImp().SetKey("3'UTR");
+    utr3->SetLocation().SetInt().SetFrom(cds->GetLocation().GetInt().GetTo() + 1);
+    utr3->SetLocation().SetInt().SetTo(30);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "UTRdoesNotExtendToEnd",
+                               "3'UTR does not extend to end of mRNA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDShasTooManyXs)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGNNNNNNNNNNNNNNNATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MXXXXXIN");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "CDShasTooManyXs",
+                               "CDS translation consists of more than 50% X residues"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousFrame)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    cds->SetLocation().SetInt().SetTo(21);
+
+    STANDARD_SETUP
+    string tmp;
+    CSeqTranslator::Translate(*cds, scope, tmp, false, false);
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(tmp);
+    prot->SetSeq().SetInst().SetLength(tmp.length());
+    AdjustProtFeatForNucProtSet (entry);
+    CRef<CSeq_feat> prot_feat = GetProtFeatFromGoodNucProtSet(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SuspiciousFrame",
+                               "Suspicious CDS location - frame > 1 but not 5' partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    cds->SetLocation().SetInt().SetFrom(1);
+    cds->SetLocation().SetInt().SetTo(26);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    tmp.clear();
+    CSeqTranslator::Translate(*cds, scope, tmp, false, false);
+    scope.RemoveTopLevelSeqEntry(seh);
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(tmp);
+    prot->SetSeq().SetInst().SetLength(tmp.length());
+    AdjustProtFeatForNucProtSet (entry);
+    SetCompleteness (prot, CMolInfo::eCompleteness_no_left);
+    prot_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    prot_feat->SetPartial(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS    
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+                               "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "SuspiciousFrame",
+                               "Suspicious CDS location - frame > 1 and not at consensus splice site"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TerminalXDiscrepancy)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACNAAGGG");
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetPartial(true);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetLocation().SetInt().SetFrom(30);
+    cds->SetLocation().SetInt().SetTo(nuc->GetSeq().GetInst().GetLength() - 1);
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEINXX");
+    prot->SetSeq().SetInst().SetLength(10);
+    SetCompleteness (prot, CMolInfo::eCompleteness_no_right);
+    CRef<CSeq_feat> prot_feat = GetProtFeatFromGoodNucProtSet(entry);
+    AdjustProtFeatForNucProtSet (entry);
+    prot_feat->SetPartial(true);
+    prot_feat->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "TransLen", 
+                               "Given protein length [8] does not match translation length [10]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "TerminalXDiscrepancy",
+                               "Terminal X count for CDS translation (0) and protein product sequence (2) are not equal"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryTranslExcept)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CCode_break> codebreak(new CCode_break());
+    codebreak->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
+    codebreak->SetLoc().SetInt().SetFrom(3);
+    codebreak->SetLoc().SetInt().SetTo(5);
+    codebreak->SetAa().SetNcbieaa('P');
+    cds->SetData().SetCdregion().SetCode_break().push_back(codebreak);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
+                               "Unnecessary transl_except P at position 2"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousQualifierValue)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetData().SetImp().SetKey("misc_difference");
+    feat->AddQualifier("replace", "aattggccaaa");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "SuspiciousQualifierValue",
+                               "/replace already matches underlying sequence (aattggccaaa)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusDonor)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    cds->SetLocation().Assign(*MakeMixLoc(nuc->SetSeq().SetId().front()));
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 'A';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 'G';
+    CRef<CSeq_feat> intron = MakeIntronForMixLoc(nuc->SetSeq().SetId().front());
+    AddFeat(intron, nuc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor",
+                               "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor",
+                               "Splice donor consensus (GT) not found after exon ending at position 16 of lcl|nuc"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Splice donor consensus (GT) not found at start of intron, position 44 of lcl|nuc");
+    expected_errors[1]->SetErrMsg("Splice donor consensus (GT) not found after exon ending at position 45 of lcl|nuc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 251;
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[17] = 251;
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [17]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [18]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Bad sequence at splice donor after exon ending at position 16 of lcl|nuc"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [43]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [44]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Splice donor consensus (GT) not found at start of intron, position 44 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Bad sequence at splice donor after exon ending at position 45 of lcl|nuc"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    intron = AddMiscFeature(entry);
+    intron->SetData().SetImp().SetKey("intron");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "NotSpliceConsensusDonor",
+                               "Splice donor consensus (GT) not found at start of terminal intron, position 1 of lcl|good"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                               "Splice acceptor consensus (AG) not found at end of intron, position 11 of lcl|good"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "NotSpliceConsensusDonor",
+                               "Splice donor consensus (GT) not found at start of terminal intron, position 60 of lcl|good"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                               "Splice acceptor consensus (AG) not found at end of intron, position 50 of lcl|good"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusAcceptor)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    cds->SetLocation().Assign(*MakeMixLoc(nuc->SetSeq().SetId().front()));
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 'G';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[17] = 'T';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 'T';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 'C';
+    CRef<CSeq_feat> intron = MakeIntronForMixLoc(nuc->SetSeq().SetId().front());
+    AddFeat(intron, nuc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor",
+                               "Splice acceptor consensus (AG) not found at end of intron, position 46 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor",
+                               "Splice acceptor consensus (AG) not found before exon starting at position 47 of lcl|nuc"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Splice acceptor consensus (AG) not found at end of intron, position 15 of lcl|nuc");
+    expected_errors[1]->SetErrMsg("Splice acceptor consensus (AG) not found before exon starting at position 14 of lcl|nuc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 251;
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 251;
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", 
+                                                  "Invalid residue [251] at position [45]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", 
+                                                  "Invalid residue [251] at position [46]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                                                  "Splice acceptor consensus (AG) not found at end of intron, position 46 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                                                  "Bad sequence at splice acceptor before exon starting at position 47 of lcl|nuc"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, 
+                               "InvalidResidue", "Invalid residue [251] at position [15]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", 
+                               "Invalid residue [251] at position [16]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                               "Splice acceptor consensus (AG) not found at end of intron, position 15 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                               "Bad sequence at splice acceptor before exon starting at position 14 of lcl|nuc"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    intron = AddMiscFeature(entry);
+    intron->SetData().SetImp().SetKey("intron");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "NotSpliceConsensusDonor",
+                               "Splice donor consensus (GT) not found at start of terminal intron, position 1 of lcl|good"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                               "Splice acceptor consensus (AG) not found at end of intron, position 11 of lcl|good"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "NotSpliceConsensusDonor",
+                               "Splice donor consensus (GT) not found at start of terminal intron, position 60 of lcl|good"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                               "Splice acceptor consensus (AG) not found at end of intron, position 50 of lcl|good"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    cds->SetLocation().Assign(*MakeMixLoc(nuc->SetSeq().SetId().front()));
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 'G';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[17] = 'C';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 'A';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 'G';
+    CRef<CSeq_feat> intron = MakeIntronForMixLoc(nuc->SetSeq().SetId().front());
+    AddFeat(intron, nuc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "RareSpliceConsensusDonor",
+                               "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position 16 of lcl|nuc"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "RareSpliceConsensusDonor",
+                               "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position 45 of lcl|nuc"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefNotReciprocal)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetId().SetLocal().SetId(1);
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    x1->SetId().SetLocal().SetId(2);
+    cds->SetXref().push_back(x1);
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetId().SetLocal().SetId(2);
+    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
+    x2->SetId().SetLocal().SetId(3);
+    mrna->SetXref().push_back(x2);
+    AddFeat (mrna, nuc);
+    CRef<CSeq_feat> gene = MakeGeneForFeature (mrna);
+    AddFeat (gene, nuc);
+    gene->SetId().SetLocal().SetId(3);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
+                               "CDS/mRNA unambiguous pair have erroneous cross-references"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
+                               "Cross-referenced feature does not have its own cross-reference"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
+                               "Cross-referenced feature does not link reciprocally"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefFeatureMissing)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetId().SetLocal().SetId(1);
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    x1->SetId().SetLocal().SetId(2);
+    cds->SetXref().push_back(x1);
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefFeatureMissing",
+                               "Cross-referenced feature cannot be found"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureInsideGap)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetLocation().SetInt().SetFrom(12);
+    misc->SetLocation().SetInt().SetTo(20);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureInsideGap",
+                               "Feature inside sequence gap"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CDelta_seq> gap_seg(new CDelta_seq());
+    gap_seg->SetLiteral().SetSeq_data().SetGap();
+    gap_seg->SetLiteral().SetLength(10);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNTGATGATG", CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetLength(116);
+    misc->SetLocation().SetInt().SetFrom(48);
+    misc->SetLocation().SetInt().SetTo(98);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "HighNContentPercent",
+                               "Sequence contains 51 percent Ns"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureInsideGap",
+                               "Feature inside gap of Ns"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    NON_CONST_ITERATE (CDelta_ext::Tdata, it, entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if ((*it)->IsLiteral() && (*it)->GetLiteral().GetSeq_data().IsGap()) {
+            (*it)->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+        }
+    }
+
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    misc->SetLocation().SetInt().SetFrom(5);
+    misc->SetLocation().SetInt().SetTo(30);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureCrossesGap",
+                               "Feature crosses gap of unknown length"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAuthorSuffix)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CPub> pub = BuildGoodArticlePub();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+    pub->SetArticle().SetAuthors().SetNames().SetStd().front()->SetName().SetName().SetSuffix("foo");
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadAuthorSuffix",
+                               "Bad author suffix foo"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAnticodonAA)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(8);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('S');
+    AddFeat(trna, entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadAnticodonAA",
+                               "Codons predicted from anticodon (AAA) cannot produce amino acid (S/Ser)"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAnticodonCodon)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(8);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('K');
+    trna->SetData().SetRna().SetExt().SetTRNA().SetCodon().push_back(42);
+    AddFeat(trna, entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadAnticodonAA",
+                               "Codons predicted from anticodon (AAA) cannot produce amino acid (K/Lys)"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadAnticodonCodon",
+                               "Codon recognized cannot be produced from anticodon (AAA)"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAnticodonStrand)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(8);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetStrand (eNa_strand_minus);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('K');
+    AddFeat(trna, entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "BadAnticodonStrand",
+                               "Anticodon should be on plus strand"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().ResetStrand();
+    trna->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('F');
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Anticodon should be on minus strand");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+#define test_gene_syn(name) \
+    gene->SetData().SetGene().ResetSyn(); \
+    gene->SetData().SetGene().SetSyn().push_back(name); \
+    msg = "Uninformative gene synonym '"; \
+    msg.append(name); \
+    msg.append("'"); \
+    expected_errors[0]->SetErrMsg(msg); \
+    eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors);
+    
+
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredGeneSynonym)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("something");
+    string msg = "";
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("NC_123456", eDiag_Warning, "UndesiredGeneSynonym", ""));
+
+    test_gene_syn("alpha")
+    test_gene_syn("alternative")
+    test_gene_syn("beta")
+    test_gene_syn("cellular")
+    test_gene_syn("cytokine")
+    test_gene_syn("delta")
+    test_gene_syn("drosophila")
+    test_gene_syn("epsilon")
+    test_gene_syn("gamma")
+    test_gene_syn("HLA")
+    test_gene_syn("homolog")
+    test_gene_syn("mouse")
+    test_gene_syn("orf")
+    test_gene_syn("partial")
+    test_gene_syn("plasma")
+    test_gene_syn("precursor")
+    test_gene_syn("pseudogene")
+    test_gene_syn("putative")
+    test_gene_syn("rearranged")
+    test_gene_syn("small")
+    test_gene_syn("trna")
+    test_gene_syn("unknown")
+    test_gene_syn("unknown function")
+    test_gene_syn("unknown protein")
+    test_gene_syn("unnamed")
+
+
+    gene->SetData().SetGene().ResetSyn();
+    gene->SetData().SetGene().SetSyn().push_back("same_as");
+    gene->SetData().SetGene().SetLocus("same_as");
+    expected_errors[0]->SetErrMsg("gene synonym has same value as gene locus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gene->SetData().SetGene().ResetSyn();
+    gene->SetData().SetGene().SetDesc("same_as");
+    expected_errors[0]->SetErrMsg("gene description has same value as gene locus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gene->SetData().SetGene().ResetDesc();
+    gene->SetData().SetGene().ResetLocus();
+    gene->SetData().SetGene().SetSyn().push_back("only_syn");
+    expected_errors[0]->SetErrMsg("gene synonym without gene locus or description");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 
     CLEAR_ERRORS
 }
@@ -13671,13 +16655,30 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IdenticalGeneSymbolAndSynonym)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NeedsNote)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->ResetComment();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NeedsNote",
+                              "A note is required for a misc_feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PartialProblem)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc = entry->SetSet().SetSeq_set().front();
     CRef<CSeq_entry> prot = entry->SetSet().SetSeq_set().back();
     CRef<CSeq_feat> prot_feat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
-    CRef<CSeq_feat> cds_feat = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds_feat = GetCDSFromGoodNucProtSet(entry);
     
     // make coding region shorter, 5' partial
     cds_feat->SetLocation().SetInt().SetFrom(3);

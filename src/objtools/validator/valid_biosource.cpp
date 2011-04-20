@@ -1265,14 +1265,18 @@ void CValidError_imp::ValidateBioSource
 
         if (orgname.IsSetDiv()) {
             const string& div = orgname.GetDiv();
-            if (NStr::EqualCase(div, "BCT")
+            if ((NStr::EqualCase(div, "BCT") || NStr::EqualCase(div, "VRL"))
                 && bsrc.GetGenome() != CBioSource::eGenome_unknown
                 && bsrc.GetGenome() != CBioSource::eGenome_genomic
                 && bsrc.GetGenome() != CBioSource::eGenome_plasmid
                 && bsrc.GetGenome() != CBioSource::eGenome_chromosome) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                           "Bacterial source should not have organelle location",
-                           obj, ctx);
+                if (NStr::EqualCase(div, "VRL") && bsrc.GetGenome() == CBioSource::eGenome_proviral) {
+                    // it's ok
+                } else {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                               "Bacterial or viral source should not have organelle location",
+                               obj, ctx);
+                }
             } else if (NStr::EqualCase(div, "ENV") && !env_sample) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, 
                            "BioSource with ENV division is missing environmental sample subsource",

@@ -1412,7 +1412,7 @@ bool CValidError_bioseq::IsDifferentDbxrefs(const TDbtags& list1,
     TDbtags::const_iterator it1 = list1.begin();
     TDbtags::const_iterator it2 = list2.begin();
     for (; it1 != list1.end(); ++it1, ++it2) {
-        if ((*it1)->GetDb() != (*it2)->GetDb()) {
+        if (!NStr::EqualNocase((*it1)->GetDb(), (*it2)->GetDb())) {
             return true;
         }
         string str1 =
@@ -1429,6 +1429,8 @@ bool CValidError_bioseq::IsDifferentDbxrefs(const TDbtags& list1,
             } else {
                 return true;
             }
+        } else if (!str1.empty() && !str2.empty() && !NStr::EqualNocase(str1, str2)) {
+            return true;
         }
     }
     return false;
@@ -4560,13 +4562,23 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
     }
 
     // iterate coding regions and mRNAs
-    SAnnotSelector as;
-    as.IncludedFeatType(CSeqFeatData::e_Cdregion);
-    as.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    if (!m_AllFeatIt) {
+        return;
+    }
 
-    for (CFeat_CI it(seq, as); it; ++it) {
-        const CSeq_feat& feat = it->GetOriginalFeature();
+    CFeat_CI fi = *m_AllFeatIt;
+    fi.Rewind();
+
+    while (fi) {
+        CSeqFeatData::ESubtype stype = fi->GetData().GetSubtype();
+        if (stype != CSeqFeatData::eSubtype_cdregion
+            && stype != CSeqFeatData::eSubtype_mRNA) {
+            ++fi;
+            continue;
+        }
+        const CSeq_feat& feat = fi->GetOriginalFeature();
         if (!feat.IsSetProduct()) {
+            ++fi;
             continue;
         }
         
@@ -4613,6 +4625,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
                 }
             }
         }
+        ++fi;
     }
 }
 

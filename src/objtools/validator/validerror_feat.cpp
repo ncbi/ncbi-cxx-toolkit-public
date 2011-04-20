@@ -252,45 +252,46 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
                          "Qualifier other than replace has just quotation marks", feat);
-            }
-        } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
-			if (!(*it)->IsSetVal() || NStr::IsBlank((*it)->GetVal())) {
-				PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
-			} else if (!s_IsValidECNumberFormat((*it)->GetVal())) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
-                        (*it)->GetVal() + " is not in proper EC_number format", feat);
-			} else {
-				string ec_number = (*it)->GetVal();
-			    CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
-				switch (status) {
-					case CProt_ref::eEC_deleted:
-						PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-							     "EC_number " + ec_number + " was deleted",
-								 feat);
-					    break;
-					case CProt_ref::eEC_replaced:
-						PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-							     "EC_number " + ec_number + " was replaced",
-								 feat);
-						break;
-					case CProt_ref::eEC_unknown:
-            {
-                size_t pos = NStr::Find (ec_number, "n");
-                if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
-						        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-							               ec_number + " is not a legal value for qualifier EC_number",
-								             feat);
-                } else {
-						        PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
-							               ec_number + " is not a legal preliminary value for qualifier EC_number",
-								             feat);
+                if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
+	                  PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
                 }
             }
-						break;
-					default:
-						break;
-				}
-			}
+        } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
+            if (!s_IsValidECNumberFormat((*it)->GetVal())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
+                        (*it)->GetVal() + " is not in proper EC_number format", feat);
+            } else {
+	              string ec_number = (*it)->GetVal();
+                CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+	              switch (status) {
+		              case CProt_ref::eEC_deleted:
+			              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+				                   "EC_number " + ec_number + " was deleted",
+					               feat);
+		                  break;
+		              case CProt_ref::eEC_replaced:
+			              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+				                   "EC_number " + ec_number + " was replaced",
+					               feat);
+			              break;
+		              case CProt_ref::eEC_unknown:
+                    {
+                        size_t pos = NStr::Find (ec_number, "n");
+                        if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
+			                      PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+				                             ec_number + " is not a legal value for qualifier EC_number",
+					                           feat);
+                        } else {
+			                      PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
+				                             ec_number + " is not a legal preliminary value for qualifier EC_number",
+					                           feat);
+                        }
+                    }
+			              break;
+		              default:
+			              break;
+	              }
+            }
         } else if (NStr::EqualNocase ((*it)->GetQual(), "inference")) {
             /* TODO: Validate inference */
             string val = "";
@@ -1296,12 +1297,12 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 		    if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
 			      && NStr::EqualNocase(locus_tag, gene.GetLocus())) {
 			      PostErr (eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
-				             "Gene locus and locus_tag '" + locus_tag + "' match",
+				             "Gene locus and locus_tag '" + gene.GetLocus() + "' match",
 					           feat);
 		    }
         if (feat.IsSetComment() && NStr::EqualCase (feat.GetComment(), locus_tag)) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
-                     "Comment has same value as gene locus", feat);
+                     "Comment has same value as gene locus_tag", feat);
         }
         FOR_EACH_GBQUAL_ON_SEQFEAT (it, feat) {
             if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "old_locus_tag") && (*it)->IsSetVal()) {
@@ -1331,6 +1332,12 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
             if (sc_BadGeneSyn.find (*it) != sc_BadGeneSyn.end()) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym, 
                          "Uninformative gene synonym '" + *it + "'",
+                         feat);
+            }
+            if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
+                && NStr::Equal(gene.GetLocus(), *it)) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
+                         "gene synonym has same value as gene locus",
                          feat);
             }
         }
@@ -1847,7 +1854,7 @@ void CValidError_feat::ValidateDonor
                 // ok, location abuts gap
                 // suppress warning about UnnecessaryException
                 has_errors = true;
-            } else if (!IsResidue (vec[stop - 1] || !IsResidue (vec[stop - 2]))) {
+            } else if (vec[stop - 1] > 250 || vec[stop - 2] > 250) {
                 has_errors = true;
                 if (report_errors) {
                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
@@ -1891,7 +1898,7 @@ void CValidError_feat::ValidateDonor
                 // ok, location abuts gap
                 // suppress warning about UnnecessaryException
                 has_errors = true;
-            } else if (!IsResidue (vec[stop + 1] || !IsResidue (vec[stop + 2]))) {
+            } else if (vec[stop + 1] > 250 || vec[stop + 2] > 250) {
                 has_errors = true;
                 if (report_errors) {
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
@@ -1951,7 +1958,7 @@ void CValidError_feat::ValidateAcceptor
                 // ok, location abuts gap
                 // suppress warning about UnnecessaryException
                 has_errors = true;
-            } else if (!IsResidue (vec[start + 1] || !IsResidue (vec[start + 2]))) {
+            } else if (vec[start + 1] > 250 || vec[start + 2] > 250) {
                 has_errors = true;
                 if (report_errors) {
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
@@ -1984,7 +1991,7 @@ void CValidError_feat::ValidateAcceptor
                 // ok, location abuts gap
                 // suppress warning about UnnecessaryException
                 has_errors = true;
-            } else if (!IsResidue (vec[start - 2] || !IsResidue (vec[start - 1]))) {
+            } else if (vec[start - 2] > 250 || vec[start - 1] > 250) {
                 has_errors = true;
                 if (report_errors) {
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
@@ -3306,7 +3313,12 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         PostErr(eDiag_Error, eErr_SEQ_FEAT_UnknownImpFeatKey,
             "Feature key " + key + " is no longer legal", feat);
         break;
-
+    case CSeqFeatData::eSubtype_misc_feature:
+        if (!feat.IsSetComment() || NStr::IsBlank (feat.GetComment())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NeedsNote,
+                    "A note is required for a misc_feature", feat);
+        }
+        break;
     case CSeqFeatData::eSubtype_polyA_site:
         {
             CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
@@ -6164,27 +6176,54 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                 has_errors = true;
             } else if ((*cbr)->IsSetAa()) {
                 size_t prot_pos = from / 3;
-                char ex = (*cbr)->GetAa().GetNcbieaa();
-                string except_char = "";
-                except_char += ex;
-                if (prot_pos < transl_prot.length()) {
-                    if (len - from < 2 && NStr::Equal (except_char, "*")) {
-                        // this is a necessary terminal transl_except
-                    } else if (NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
-                        string msg = "Unnecessary transl_except ";
-                        msg += ex;
-                        msg += " at position ";
-                        msg += NStr::IntToString (prot_pos + 1);
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                 msg,
-                                 feat);
-                    }
-                } else if (prot_pos == transl_prot.length()) {
-                    if (!NStr::Equal (except_char, "*")) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                 "Unexpected transl_except " + except_char
-                                 + " at position " + NStr::IntToString (prot_pos + 1),
-                                 feat);
+                unsigned char ex = 0;
+                vector<char> seqData;
+                string str = "";
+                bool not_set = false;
+    
+                switch ((*cbr)->GetAa().Which()) {
+                    case CCode_break::C_Aa::e_Ncbi8aa:
+                        str = (*cbr)->GetAa().GetNcbi8aa();
+                        CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+                        ex = seqData[0];
+                        break;
+                    case CCode_break::C_Aa::e_Ncbistdaa:
+                        str = (*cbr)->GetAa().GetNcbi8aa();
+                        CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+                        ex = seqData[0];
+                        break;
+                    case CCode_break::C_Aa::e_Ncbieaa:
+                        seqData.push_back((*cbr)->GetAa().GetNcbieaa());
+                        ex = seqData[0];
+                        break;
+                    default:
+                        // do nothing, code break wasn't actually set
+                        not_set = true;
+                        break;
+                }
+
+                if (!not_set) {
+                    string except_char = "";
+                    except_char += ex;
+                    if (prot_pos < transl_prot.length()) {
+                        if (len - from < 2 && NStr::Equal (except_char, "*")) {
+                            // this is a necessary terminal transl_except
+                        } else if (NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
+                            string msg = "Unnecessary transl_except ";
+                            msg += ex;
+                            msg += " at position ";
+                            msg += NStr::IntToString (prot_pos + 1);
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                     msg,
+                                     feat);
+                        }
+                    } else if (prot_pos == transl_prot.length()) {
+                        if (!NStr::Equal (except_char, "*")) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                     "Unexpected transl_except " + except_char
+                                     + " at position " + NStr::IntToString (prot_pos + 1),
+                                     feat);
+                        }
                     }
                 }
             }
