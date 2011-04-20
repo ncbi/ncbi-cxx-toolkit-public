@@ -322,6 +322,10 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         retry_delay_until = GetFastLocalTime();
         retry_delay_until.AddNanoSecond(retry_delay);
         it = m_Service.Iterate(primary_server, service_name);
+
+        LOG_POST("Unable to execute '" << cmd <<
+            "' on any of the mirrors; last error seen: " << last_error <<
+            "; remaining attempts: " << retry_count);
     }
 
     NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
