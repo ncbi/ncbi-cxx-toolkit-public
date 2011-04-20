@@ -371,6 +371,9 @@ int CGridCommandLineInterfaceApp::Run()
     const string max_find_lbname_retries("max_find_lbname_retries");
     if (!reg.HasEntry(netservice_api_section, max_find_lbname_retries))
         reg.Set(netservice_api_section, max_find_lbname_retries, "0");
+    const string connection_max_retries("connection_max_retries");
+    if (!reg.HasEntry(netservice_api_section, connection_max_retries))
+        reg.Set(netservice_api_section, connection_max_retries, "0");
 
     const SCommandDefinition* cmd_def;
 
