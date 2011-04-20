@@ -154,6 +154,9 @@ namespace impl {
     struct SBufferWriter_SupportedType<std::vector<signed char> >
     { typedef int TUnsupportedType; };
     template<>
+    struct SBufferWriter_SupportedType<std::vector<char> >
+    { typedef int TUnsupportedType; };
+    template<>
     struct SBufferWriter_SupportedType<std::string >
     { typedef int TUnsupportedType; };
     template<>
@@ -161,6 +164,9 @@ namespace impl {
     { typedef int TUnsupportedType; };
     template<>
     struct SBufferWriter_SupportedType<CSimpleBufferT<signed char> >
+    { typedef int TUnsupportedType; };
+    template<>
+    struct SBufferWriter_SupportedType<CSimpleBufferT<char> >
     { typedef int TUnsupportedType; };
 
     template<typename T>
