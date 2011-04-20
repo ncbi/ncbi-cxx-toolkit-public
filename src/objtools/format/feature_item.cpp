@@ -2959,6 +2959,14 @@ void CFeatureItem::x_AddProductIdQuals(
         return;
     }
     x_AddQual(slot, new CFlatSeqIdQVal(*best.GetSeqId()));
+
+    if( m_Feat.GetData().IsCdregion() || ! GetContext()->IsProt() ) {
+        ITERATE( CBioseq_Handle::TId, id_iter, ids ) {
+            if( id_iter->IsGi() ) {
+                x_AddQual( eFQ_db_xref, new CFlatStringQVal("GI:" + NStr::IntToString(id_iter->GetGi()) ));
+            }
+        }
+    }
 }
 
 //  ---------------------------------------------------------------------------
@@ -4668,7 +4676,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_cons_splice, CSeqFeatData::eQual_cons_splice),
     TQualPair(eFQ_cyt_map, CSeqFeatData::eQual_map),
     TQualPair(eFQ_db_xref, CSeqFeatData::eQual_db_xref),
-    TQualPair(eFQ_derived_from, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_derived_from, CSeqFeatData::eQual_derived_from),
     TQualPair(eFQ_direction, CSeqFeatData::eQual_direction),
     TQualPair(eFQ_EC_number, CSeqFeatData::eQual_EC_number),
     TQualPair(eFQ_encodes, CSeqFeatData::eQual_note),

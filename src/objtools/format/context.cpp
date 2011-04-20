@@ -110,7 +110,8 @@ CBioseqContext::CBioseqContext
     m_IsGenomeAssembly(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
-    m_TLSeqEntryCtx(tlsec)
+    m_TLSeqEntryCtx(tlsec),
+    m_IsUnverified(false)
 {
     x_Init(seq, m_FFCtx.GetLocation());
 }
@@ -171,7 +172,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     
     m_Encode.Reset(x_GetEncode());
 
-    x_SetFinishingStatusAndIsGenomeAssembly();
+    x_SetDataFromUserObjects();
     
     m_HasOperon = x_HasOperon();
 
@@ -269,10 +270,8 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void)
     }
 }
 
-void CBioseqContext::x_SetFinishingStatusAndIsGenomeAssembly(void)
+void CBioseqContext::x_SetDataFromUserObjects(void)
 {
-    // we find both values at once since they're easier to both find at once
-
     // translate finishing status
     typedef pair<const string, const string>  TFinStatElem;
     static const TFinStatElem sc_finstat_map[] = {
@@ -312,11 +311,12 @@ void CBioseqContext::x_SetFinishingStatusAndIsGenomeAssembly(void)
                         }
                     }
                 }
+            } else if(NStr::EqualNocase(uo.GetType().GetStr(), "Unverified")) {
+                m_IsUnverified = true;
             }
         }
     }
 }
-
 
 bool CBioseqContext::x_HasOperon(void) const
 {
@@ -600,6 +600,7 @@ bool CBioseqContext::DoContigStyle(void) const
 
 const CUser_object* CBioseqContext::x_GetEncode(void) const
 {
+    // We might consider merging this functionality into x_SetDataFromUserObjects
     for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
         const CUser_object& uo = it->GetUser();
         if (uo.IsSetType()  &&  uo.GetType().IsStr()) {

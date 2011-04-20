@@ -766,6 +766,7 @@ START_SUBTYPE(mat_peptide_aa)
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(derived_from);
     ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
@@ -1623,6 +1624,7 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(derived_from);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(exception);

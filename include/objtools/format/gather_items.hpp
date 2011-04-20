@@ -127,6 +127,7 @@ protected:
     void x_AddComment(CCommentItem* comment) const;
     void x_AddGSDBComment(const CDbtag& dbtag, CBioseqContext& ctx) const;
     void x_FlushComments(void) const;
+    void x_UnverifiedComment(CBioseqContext& ctx) const;
     void x_IdComments(CBioseqContext& ctx) const;
     void x_RefSeqComments(CBioseqContext& ctx) const;
     void x_HistoryComments(CBioseqContext& ctx) const;

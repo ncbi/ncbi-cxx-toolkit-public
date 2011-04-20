@@ -682,6 +682,8 @@ void CFlatGatherer::x_GatherComments(void) const
 {
     CBioseqContext& ctx = *m_Current;
 
+    x_UnverifiedComment(ctx);
+
     // Gather comments related to the seq-id
     x_IdComments(ctx);
     x_RefSeqComments(ctx);
@@ -768,6 +770,15 @@ bool s_HasRefTrackStatus(const CBioseq_Handle& bsh) {
     return false;
 }
 
+void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
+{
+    static const string kUnverifiedNote = 
+        "GenBank staff is unable to verify sequence and/or annotation provided by the submitter.";
+
+    if( ctx.IsUnverified() ) {
+        x_AddComment( new CCommentItem(kUnverifiedNote, ctx) );
+    }
+}
 
 void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
 {

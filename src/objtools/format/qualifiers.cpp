@@ -1477,11 +1477,18 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
                     CFormatQual::eUnquoted);
                 pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
                 break; // break so we don't show the same ref more than once
-            } else if( ctx.IsRefSeq() && (*pub_iter)->IsPmid() && ! ctx.Config().IsModeRelease() ) {
-                x_AddFQ(q, name, "[PUBMED " + NStr::IntToString( (*pub_iter)->GetPmid().Get() ) + ']',
-                    CFormatQual::eUnquoted);
-                pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
             }
+        }
+    }
+
+    // out of the pubs which are still unused, we may still be able to salvage some 
+    // under certain conditions.
+    CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
+    for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
+        if( ctx.IsRefSeq() && (*pub_iter)->IsPmid() && ! ctx.Config().IsModeRelease() ) {
+            x_AddFQ(q, name, "[PUBMED " + NStr::IntToString( (*pub_iter)->GetPmid().Get() ) + ']',
+                CFormatQual::eUnquoted);
+            pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
         }
     }
 }

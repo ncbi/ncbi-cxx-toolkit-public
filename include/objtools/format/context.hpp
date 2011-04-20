@@ -62,7 +62,6 @@ class CMasterContext;
 class CFlatFileContext;
 class CTopLevelSeqEntryContext;
 
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // CBioseqContext
@@ -179,6 +178,7 @@ public:
 
     const string &GetFinishingStatus(void) const;
     bool IsGenomeAssembly(void) const;
+    bool IsUnverified(void) const;
 
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
 
@@ -210,8 +210,8 @@ private:
     void x_SetLocation(const CSeq_loc* user_loc = 0);
     void x_SetMapper(const CSeq_loc& loc);
     void x_SetHasMultiIntervalGenes(void);
-    void x_SetFinishingStatusAndIsGenomeAssembly(void);
-    
+    void x_SetDataFromUserObjects(void);
+
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
     bool x_HasOperon(void) const;
@@ -264,6 +264,7 @@ private:
     bool m_HasOperon;
     bool m_HasMultiIntervalGenes;
     bool m_IsGenomeAssembly;
+    bool m_IsUnverified;
 
     CConstRef<CUser_object> m_Encode;
     
@@ -496,6 +497,12 @@ inline
 bool CBioseqContext::IsGenomeAssembly(void) const
 {
     return m_IsGenomeAssembly;
+}
+
+inline
+bool CBioseqContext::IsUnverified(void) const
+{
+    return m_IsUnverified;
 }
 
 inline

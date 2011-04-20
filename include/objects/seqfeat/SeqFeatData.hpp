@@ -310,6 +310,7 @@ public:
         eQual_culture_collection,
         eQual_cyanelle,
         eQual_db_xref,
+        eQual_derived_from,
         eQual_dev_stage,
         eQual_direction,
         eQual_EC_number,

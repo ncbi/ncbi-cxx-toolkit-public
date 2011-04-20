@@ -81,6 +81,9 @@ void CPerson_id::GetLabel(string* label, ETypeLabel type) const
     case e_Str:
         *label += GetStr();
         break;
+    case e_Consortium:
+        *label += GetConsortium();
+        break;
     default:
         *label += "Unsupported PersonID";
         return;

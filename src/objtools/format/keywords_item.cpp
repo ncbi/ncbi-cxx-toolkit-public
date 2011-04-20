@@ -160,74 +160,81 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 
     // add keywords based on mol-info
     ETechFlags tech = e_not_set;
-    switch ( ctx.GetTech() ) {
-    case CMolInfo::eTech_est:
-        tech = eEST;
-        x_AddKeyword("EST");
-        if (is_env_sample) {
-            x_AddKeyword("ENV");
-        }
-        break;
-        
-    case CMolInfo::eTech_sts:
-        tech = eSTS;
-        x_AddKeyword("STS");
-        break;
-        
-    case CMolInfo::eTech_survey:
-        tech = eGSS;
-        x_AddKeyword("GSS");
-        if (is_env_sample) {
-            x_AddKeyword("ENV");
-        }
-        break;
-        
-    case CMolInfo::eTech_htgs_0:
-        x_AddKeyword("HTG");
-        x_AddKeyword("HTGS_PHASE0");
-        break;
-        
-    case CMolInfo::eTech_htgs_1:
-        x_AddKeyword("HTG");
-        x_AddKeyword("HTGS_PHASE1");
-        break;
-        
-    case CMolInfo::eTech_htgs_2:
-        x_AddKeyword("HTG");
-        x_AddKeyword("HTGS_PHASE2");
-        break;
-        
-    case CMolInfo::eTech_htgs_3:
-        x_AddKeyword("HTG");
-        break;
-        
-    case CMolInfo::eTech_fli_cdna:
-        x_AddKeyword("FLI_CDNA");
-        break;
-        
-    case CMolInfo::eTech_htc:
-        x_AddKeyword("HTC");
-        break;
-        
-    case CMolInfo::eTech_wgs:
-        x_AddKeyword("WGS");
-        break;
+    // don't do tech-related keywords if molinfo isn't set
+    if( ctx.GetMolinfo() != NULL ) {
+        switch ( ctx.GetTech() ) {
+        case CMolInfo::eTech_est:
+            tech = eEST;
+            x_AddKeyword("EST");
+            if (is_env_sample) {
+                x_AddKeyword("ENV");
+            }
+            break;
 
-    case CMolInfo::eTech_tsa:
-        x_AddKeyword("TSA");
-        x_AddKeyword("Transcriptome Shotgun Assembly");
-        break;
+        case CMolInfo::eTech_sts:
+            tech = eSTS;
+            x_AddKeyword("STS");
+            break;
 
-    case CMolInfo::eTech_unknown:
-    case CMolInfo::eTech_standard:
-    case CMolInfo::eTech_other:
-        if (is_env_sample) {
-            x_AddKeyword("ENV");
+        case CMolInfo::eTech_survey:
+            tech = eGSS;
+            x_AddKeyword("GSS");
+            if (is_env_sample) {
+                x_AddKeyword("ENV");
+            }
+            break;
+
+        case CMolInfo::eTech_htgs_0:
+            x_AddKeyword("HTG");
+            x_AddKeyword("HTGS_PHASE0");
+            break;
+
+        case CMolInfo::eTech_htgs_1:
+            x_AddKeyword("HTG");
+            x_AddKeyword("HTGS_PHASE1");
+            break;
+
+        case CMolInfo::eTech_htgs_2:
+            x_AddKeyword("HTG");
+            x_AddKeyword("HTGS_PHASE2");
+            break;
+
+        case CMolInfo::eTech_htgs_3:
+            x_AddKeyword("HTG");
+            break;
+
+        case CMolInfo::eTech_fli_cdna:
+            x_AddKeyword("FLI_CDNA");
+            break;
+
+        case CMolInfo::eTech_htc:
+            x_AddKeyword("HTC");
+            break;
+
+        case CMolInfo::eTech_wgs:
+            x_AddKeyword("WGS");
+            break;
+
+        case CMolInfo::eTech_tsa:
+            x_AddKeyword("TSA");
+            x_AddKeyword("Transcriptome Shotgun Assembly");
+            break;
+
+        case CMolInfo::eTech_unknown:
+        case CMolInfo::eTech_standard:
+        case CMolInfo::eTech_other:
+            if (is_env_sample) {
+                x_AddKeyword("ENV");
+            }
+            break;
+
+        default:
+            break;
         }
-        break;
+    }
 
-    default:
-        break;
+    if( ctx.IsUnverified() ) {
+        x_AddKeyword("UNVERIFIED");
     }
 
     if (ctx.IsEncode()) {

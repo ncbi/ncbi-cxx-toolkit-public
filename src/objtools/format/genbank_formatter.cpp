@@ -991,13 +991,10 @@ void CGenbankFormatter::FormatSequence
     TSeqPos from = seq.GetFrom();
     TSeqPos to = seq.GetTo();
     TSeqPos base_count = from;
-    TSeqPos total = to - from + 1;
+
+    
     TSeqPos vec_pos = from-1;
-    TSeqPos vec_size = vec.size();
-    TSeqPos vec_remaining = vec_pos < to ? to - vec_pos : 0;
-    if ( vec_remaining < total ) {
-        total = vec_remaining;
-    }
+    TSeqPos total = from <= to? to - from + 1: 0;
     
     // format of sequence position
     const size_t kSeqPosWidth = 9;
