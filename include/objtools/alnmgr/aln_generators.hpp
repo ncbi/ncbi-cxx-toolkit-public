@@ -55,11 +55,17 @@ NCBI_XALNMGR_EXPORT
 CRef<CDense_seg>
 CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln);
 
+NCBI_XALNMGR_EXPORT
+CRef<CSeq_align_set>
+CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln);
 
 NCBI_XALNMGR_EXPORT
 CRef<CDense_seg>
 CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln);
 
+NCBI_XALNMGR_EXPORT
+CRef<CSeq_align_set>
+CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln);
 
 NCBI_XALNMGR_EXPORT
 CRef<CSpliced_seg>
