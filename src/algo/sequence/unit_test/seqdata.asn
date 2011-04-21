@@ -2649,7 +2649,7 @@ Bioseq-set ::= {
       descr {
         molinfo {
           biomol peptide,
-          completeness has-right
+          completeness no-left
         }
       },
       inst {
@@ -3223,7 +3223,7 @@ B9B66B88D7A38E63A38E2FF179A6DE867A1DF6F7D279DEF330EBA237B967A2F5D2F12488B5348D
       descr {
         molinfo {
           biomol peptide,
-          completeness has-left
+          completeness no-right
         }
       },
       inst {
@@ -5481,7 +5481,7 @@ EAB7A49754D4A955374E55E9EA1BA749491FB5278994A3A046944D0229E29E91284E6B252444A9
       descr {
         molinfo {
           biomol peptide,
-          completeness has-right
+          completeness no-left
         }
       },
       inst {
