@@ -269,6 +269,10 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
 
 #ifdef FTDS_IN_USE
         param_fmt.datatype = CS_VARCHAR_TYPE;
+        if (GetConnection().GetCTLibContext().GetClientEncoding() == eEncoding_UTF8) {
+            CStringUTF8 str_check(CTempString(par.Value(), par.Size()),
+                                  eEncoding_UTF8, CStringUTF8::eValidate);
+        }
 #else
         param_fmt.datatype = CS_CHAR_TYPE;
 #endif
