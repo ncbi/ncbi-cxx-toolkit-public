@@ -1842,31 +1842,13 @@ void CId2ReaderBase::x_ProcessGetBlobId(
         if ( blob_info.m_AnnotInfo.size() == 1 ) {
             const CID2S_Seq_annot_Info& info = *blob_info.m_AnnotInfo.front();
             if ( info.IsSetName() && NStr::StartsWith(info.GetName(), "NA") ) {
-#if 0
-                // test named annot code
-                // remove after fixing annot-info in data from ID2
-                if ( 0 &&
-                     !info.IsSetAlign() &&
-                     !info.IsSetGraph() &&
-                     !info.IsSetFeat() &&
-                     !info.IsSetSeq_loc() &&
-                     info.GetName() == "NA000000016.1" ) {
-                    CID2S_Seq_annot_Info& info2 =
-                        const_cast<CID2S_Seq_annot_Info&>(info);
-                    info2.SetGraph();
-                    CID2S_Gi_Interval& loc =
-                        info2.SetSeq_loc().SetGi_interval();
-                    loc.SetGi(224589800);
-                    loc.SetStart(10000);
-                    loc.SetLength(249230600);
-                }
-#endif
 #if 1
-                if ( 1 &&
-                     info.IsSetGraph() &&
+                // Add artificial zoom annot-info describing zoom graphs.
+                // Remove after fixing annot-info in data from ID2.
+                if ( info.IsSetGraph() &&
                      (info.IsSetFeat() || info.IsSetAlign()) &&
                      info.IsSetSeq_loc() ) {
-                    ERR_POST("DEBUG: Adding zoom annot-info");
+                    LOG_POST(Warning<<"CId2ReaderBase: Adding zoom graphs annot-info");
                     CID2S_Seq_annot_Info& finfo =
                         const_cast<CID2S_Seq_annot_Info&>(info);
                     for ( int zoom = 10; zoom <= 1000000; zoom *= 10 ) {
