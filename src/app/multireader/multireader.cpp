@@ -337,6 +337,9 @@ CMultiReaderApp::Run(void)
     default:    
         try {
             ReadObject( object );
+            if ( ! object ) {
+                break;
+            }
             MapObject( *object );
             DumpObject( *object );       
         }
