@@ -182,7 +182,7 @@ string SCacheInfo::GetBlobSubkey(CLoadLockBlob& blob, int chunk_id)
         return "ext";
     else {
         CNcbiOstrstream oss;
-        oss << chunk_id << '/' << blob->GetSplitInfo().GetSplitVersion();
+        oss << chunk_id << '-' << blob->GetSplitInfo().GetSplitVersion();
         return CNcbiOstrstreamToString(oss);;
     }
 }
