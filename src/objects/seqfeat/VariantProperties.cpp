@@ -46,6 +46,15 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// constructor
+CVariantProperties::CVariantProperties(void)
+{
+    // Per Ming Ward and Lon Phan, 4/21/2011
+    // the current bitfield version is 5
+    SetVersion(5);
+}
+
+
 // destructor
 CVariantProperties::~CVariantProperties(void)
 {

@@ -76,13 +76,6 @@ private:
 
 /////////////////// CVariantProperties inline methods
 
-// constructor
-inline
-CVariantProperties::CVariantProperties(void)
-{
-}
-
-
 /////////////////// end of CVariantProperties inline methods
 
 
