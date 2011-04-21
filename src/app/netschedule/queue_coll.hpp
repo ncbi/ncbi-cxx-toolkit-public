@@ -58,6 +58,7 @@
 BEGIN_NCBI_SCOPE
 
 class CQueueDataBase;
+class CNetScheduleServer;
 
 
 /// Queue database manager
@@ -242,7 +243,9 @@ struct SNSDBEnvironmentParams
 class CQueueDataBase
 {
 public:
-    CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor);
+    CQueueDataBase(CBackgroundHost& host,
+                   CRequestExecutor& executor,
+                   CNetScheduleServer* server);
     ~CQueueDataBase();
 
     /// @param params
@@ -363,6 +366,7 @@ private:
 
     CRef<CJobNotificationThread>             m_NotifThread;
     CRef<CJobQueueExecutionWatcherThread>    m_ExeWatchThread;
+    CNetScheduleServer*                      m_Server;
 
 }; // CQueueDataBase
 

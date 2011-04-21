@@ -40,11 +40,12 @@ BEGIN_NCBI_SCOPE
 
 string NS_EncodeBitVector(TNSBitVector& bv)
 {
-    string str;
-    TNSBitVector::enumerator en(bv.first());
-    unsigned range_cur = 0;
-    int range_cnt = 0;
-    unsigned id = 0;
+    string                      str;
+    TNSBitVector::enumerator    en(bv.first());
+    unsigned                    range_cur = 0;
+    int                         range_cnt = 0;
+    unsigned                    id = 0;
+
     for (; en.valid(); ++en) {
         id = *en;
         if (range_cnt) {
@@ -71,12 +72,10 @@ string NS_EncodeBitVector(TNSBitVector& bv)
         }
     }
     if (range_cnt > 1) {
-        if (range_cnt > 2) {
-            // True range
-            str += '-';
-        } else {
+        if (range_cnt > 2)
+            str += '-';     // True range
+        else
             str += ',';
-        }
         str += NStr::UIntToString(id);
     }
     return str;
@@ -127,3 +126,4 @@ string NS_FormatIPAddress(unsigned int ipaddr)
 
 
 END_NCBI_SCOPE
+

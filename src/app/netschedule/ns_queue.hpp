@@ -58,6 +58,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CNetScheduleServer;
+
 
 /// Queue databases
 // BerkeleyDB does not like to mix DB open/close with regular operations,
@@ -235,10 +237,11 @@ public:
 
 public:
     // Constructor/destructor
-    CQueue(CRequestExecutor& executor,
-           const string&     queue_name,
-           const string&     qclass_name,
-           TQueueKind        queue_kind);
+    CQueue(CRequestExecutor&     executor,
+           const string&         queue_name,
+           const string&         qclass_name,
+           TQueueKind            queue_kind,
+           CNetScheduleServer *  server);
     ~CQueue();
 
     void Attach(SQueueDbBlock* block);
@@ -557,9 +560,7 @@ public:
     void PrintJobStatusMatrix(CNcbiOstream& out) const;
 
     void PrintQueue(CNcbiOstream& out,
-        TJobStatus    job_status,
-        const string& host,
-        unsigned      port);
+                    TJobStatus    job_status);
 
     /// Queue dump
     void PrintJobDbStat(unsigned      job_id,
@@ -602,6 +603,7 @@ public:
     typedef unsigned TStatEvent;
     void CountEvent(TStatEvent event, int num=1);
     double GetAverage(TStatEvent event);
+    string MakeKey(unsigned job_id) const;
 
 private:
     friend class CNS_Transaction;
@@ -657,8 +659,6 @@ private:
                         const char*   fsp = "\n",
                         bool          fflag = true);
     void x_PrintShortJobStat(const CJob&   job,
-                             const string& host,
-                             unsigned      port,
                              CNcbiOstream& out,
                              const char*   fsp = "\t");
 
@@ -793,6 +793,8 @@ private:
     CNetSchedule_AccessList      m_SubmHosts;
     /// Host access list for job execution (workers)
     CNetSchedule_AccessList      m_WnodeHosts;
+
+    CNetScheduleKeyGenerator     m_KeyGenerator;
 };
 
 

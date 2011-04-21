@@ -34,6 +34,7 @@
 
 #include "job.hpp"
 #include "ns_queue.hpp"
+#include "ns_js_request.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -55,15 +56,17 @@ static string FormatTime(time_t t)
 // CJobRun implementation
 
 CJobRun::CJobRun() :
-m_Dirty(false),
-m_Status(CNetScheduleAPI::eJobNotFound),
-m_TimeStart(0),
-m_TimeDone(0),
-m_NodeAddr(0),
-m_NodePort(0),
-m_RetCode(0)
-{
-}
+    m_Dirty(false),
+    m_Status(CNetScheduleAPI::eJobNotFound),
+    m_TimeStart(0),
+    m_TimeDone(0),
+    m_NodeAddr(0),
+    m_NodePort(0),
+    m_RetCode(0)
+{}
+
+
+
 
 
 void CJobRun::SetStatus(TJobStatus status)
@@ -185,9 +188,29 @@ CJob::CJob() :
     m_ReadGroup(0),
     m_AffinityId(0),
     m_Mask(0)
-{
-}
+{}
 
+CJob::CJob(const SJS_Request&  request, unsigned submAddr) :
+    m_New(true), m_Deleted(false), m_Dirty(fJobPart),
+    m_Id(0),
+    m_Status(CNetScheduleAPI::ePending),
+    m_TimeSubmit(0),
+    m_Timeout(0),
+    m_RunTimeout(0),
+    m_SubmAddr(submAddr),
+    m_SubmPort(request.port),
+    m_SubmTimeout(request.timeout),
+    m_RunCount(0),
+    m_ReadGroup(0),
+    m_ProgressMsg(request.param1),
+    m_AffinityId(0),
+    m_AffinityToken(NStr::ParseEscapes(request.affinity_token)),
+    m_Mask(request.job_mask),
+    m_ClientSID(request.param2)
+{
+    SetInput(NStr::ParseEscapes(request.input));
+    SetTags(request.tags);
+}
 
 void CJob::SetId(unsigned id)
 {

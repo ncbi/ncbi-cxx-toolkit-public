@@ -61,11 +61,9 @@
 #include "ns_server.hpp"
 #include "netschedule_version.hpp"
 
-#if defined(NCBI_OS_UNIX)
-# include <corelib/ncbi_process.hpp>
-# include <signal.h>
-# include <unistd.h>
-#endif
+#include <corelib/ncbi_process.hpp>
+#include <signal.h>
+#include <unistd.h>
 
 
 USING_NCBI_SCOPE;
@@ -74,8 +72,9 @@ USING_NCBI_SCOPE;
 /// @internal
 extern "C" void Threaded_Server_SignalHandler(int signum)
 {
-    CNetScheduleServer* server = CNetScheduleServer::GetInstance();
+    signal(signum, Threaded_Server_SignalHandler);
 
+    CNetScheduleServer* server = CNetScheduleServer::GetInstance();
     if (server &&
         (!server->ShutdownRequested()) ) {
         server->SetShutdownFlag(signum);
@@ -102,14 +101,13 @@ private:
 
 void CNetScheduleDApp::Init(void)
 {
-    SetDiagPostFlag(eDPF_DateTime);
-
     // Convert multi-line diagnostic messages into one-line ones by default.
-    SetDiagPostFlag(eDPF_PreMergeLines);
-    SetDiagPostFlag(eDPF_MergeLines);
+    // The two diagnostics flags meka difference for the local logs only.
+    // When the code is run on production hosts the logs are saved in /logs and
+    // in this case the diagnostics switches the flags unconditionally.
+    // SetDiagPostFlag(eDPF_PreMergeLines);
+    // SetDiagPostFlag(eDPF_MergeLines);
 
-
-    // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -141,11 +139,9 @@ int CNetScheduleDApp::Run(void)
     const CNcbiRegistry& reg = GetConfig();
 
     try {
-        #if defined(NCBI_OS_UNIX)
-            // attempt to get server gracefully shutdown on signal
-            signal( SIGINT, Threaded_Server_SignalHandler);
-            signal( SIGTERM, Threaded_Server_SignalHandler);
-        #endif
+        // attempt to get server gracefully shutdown on signal
+        signal(SIGINT, Threaded_Server_SignalHandler);
+        signal(SIGTERM, Threaded_Server_SignalHandler);
 
         // [bdb] section
         SNSDBEnvironmentParams bdb_params;
@@ -183,57 +179,50 @@ int CNetScheduleDApp::Run(void)
 
         bool reinit = params.reinit || args["reinit"];
 
-        m_ServerAcceptTimeout.sec = 1;
+        m_ServerAcceptTimeout.sec  = 1;
         m_ServerAcceptTimeout.usec = 0;
-        params.accept_timeout  = &m_ServerAcceptTimeout;
+        params.accept_timeout      = &m_ServerAcceptTimeout;
 
         auto_ptr<CNetScheduleServer>    server(new CNetScheduleServer());
-
         server->SetNSParameters(params);
 
         // Use port passed through parameters
         server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));
-
         server->StartListening();
-
-        NcbiCout << "Server listening on port " << params.port << NcbiEndl;
-        LOG_POST(Info << "Server listening on port " << params.port);
+        LOG_POST("Server listening on port " << params.port);
 
         // two transactions per thread should be enough
         bdb_params.max_trans = params.max_threads * 2;
 
         auto_ptr<CQueueDataBase> qdb(
             new CQueueDataBase(server->GetBackgroundHost(),
-                               server->GetRequestExecutor()));
+                               server->GetRequestExecutor(),
+                               server.get()));
 
-        NcbiCout << "Mounting database at " << bdb_params.db_path << NcbiEndl;
-        LOG_POST(Info << "Mounting database at " << bdb_params.db_path);
+        LOG_POST("Mounting database at " << bdb_params.db_path);
 
         {{
-            #if defined(NCBI_OS_UNIX)
-                // To be able to open pollable sockets we need to allocate
-                // all of file descriptors < 1024 before opening the database.
-                int fds[1024];
-                int fd = 0;
-                int n = 0;
-                do {
-                    fd = dup(0);
-                    if (fd < 0) break;
-                    fds[n++] = fd;
-                } while (n < 1024  &&  fd < 1024);
-                if (fd < 0) {
-                    for (int i = 0; i < n; ++i) close(fds[i]);
-                    ERR_POST("Too few file descriptors, use \"ulimit -n\""
-                             " to expand the number");
-                    return 1;
-                }
-            #endif
+            // To be able to open pollable sockets we need to allocate
+            // all of file descriptors < 1024 before opening the database.
+            int fds[1024];
+            int fd = 0;
+            int n = 0;
+            do {
+                fd = dup(0);
+                if (fd < 0) break;
+                fds[n++] = fd;
+            } while (n < 1024  &&  fd < 1024);
+            if (fd < 0) {
+                for (int i = 0; i < n; ++i) close(fds[i]);
+                ERR_POST("Too few file descriptors, use \"ulimit -n\""
+                         " to expand the number");
+                return 1;
+            }
 
-            #if defined(NCBI_OS_UNIX)
-                bool res = qdb->Open(bdb_params, reinit);
-            #endif
+            bool res = qdb->Open(bdb_params, reinit);
 
-            for (int i = 0; i < n; ++i) close(fds[i]);
+            for (int i = 0; i < n; ++i)
+                close(fds[i]);
 
             if (!res) return 1;
         }}
@@ -242,17 +231,14 @@ int CNetScheduleDApp::Run(void)
             qdb->SetUdpPort(params.udp_port);
         }
 
-        #if defined(NCBI_OS_UNIX)
-            if (params.is_daemon) {
-                LOG_POST("Entering UNIX daemon mode...");
-                bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
-                if (!daemon) {
-                    return 0;
-                }
-            }
-        #else
-            params.is_daemon = false;
-        #endif
+        if (params.is_daemon) {
+            LOG_POST("Entering UNIX daemon mode...");
+            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
+            if (!daemon)
+                return 0;
+        }
+        else
+            LOG_POST("Operating in non-daemon mode...");
 
         // [queue_*], [qclass_*] and [queues] sections
         // Scan and mount queues
@@ -271,28 +257,26 @@ int CNetScheduleDApp::Run(void)
 
         if (!params.is_daemon)
             NcbiCout << "Server started" << NcbiEndl;
-        LOG_POST("Server started");
 
         server->Run();
 
         if (!params.is_daemon)
             NcbiCout << "Server stopped" << NcbiEndl;
-        LOG_POST("Server stopped");
 
     }
     catch (CBDB_ErrnoException& ex)
     {
-        LOG_POST(Error << "Error: DBD errno exception:" << ex.what());
+        ERR_POST("Error: DBD errno exception:" << ex.what());
         return ex.BDB_GetErrno();
     }
     catch (CBDB_LibException& ex)
     {
-        LOG_POST(Error << "Error: DBD library exception:" << ex.what());
+        ERR_POST("Error: DBD library exception:" << ex.what());
         return 1;
     }
     catch (exception& ex)
     {
-        LOG_POST(Error << "Error: STD exception:" << ex.what());
+        ERR_POST("Error: STD exception:" << ex.what());
         return 1;
     }
 
@@ -304,9 +288,14 @@ int main(int argc, const char* argv[])
 {
     g_Diag_Use_RWLock();
     CDiagContext::SetOldPostFormat(false);
+
     CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
     // Main thread request context already created, so is not affected
     // by just set default, so set it manually.
+
+
+    // TODO: Move this call as well to the background threads which could produce
+    // LOG_POSTs
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
     return CNetScheduleDApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }

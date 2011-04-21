@@ -36,6 +36,11 @@
 #include "ns_server.hpp"
 #include "ns_server_misc.hpp"
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+
 
 USING_NCBI_SCOPE;
 
@@ -244,6 +249,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
 };
 
 
+static SNSProtoArgument s_AuthArgs[] = {
+    { "client", eNSPT_Str, eNSPA_Optional, "Unknown client" },
+    { "params", eNSPT_Str, eNSPA_Ellipsis },
+    { NULL }
+};
+
+
 
 static void s_BufReadHelper(void* data, void* ptr, size_t size)
 {
@@ -253,22 +265,31 @@ static void s_BufReadHelper(void* data, void* ptr, size_t size)
 
 static void s_ReadBufToString(BUF buf, string& str)
 {
-    str.erase();
+    size_t      size = BUF_Size(buf);
 
-    size_t size = BUF_Size(buf);
+    str.erase();
     str.reserve(size);
+
     BUF_PeekAtCB(buf, 0, s_BufReadHelper, &str, size);
     BUF_Read(buf, NULL, size);
 }
 
 
 CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
-    : m_PeerAddr(0), m_Server(server),
+    : m_MsgBufferSize(kInitialMessageBufferSize),
+      m_MsgBuffer(new char[kInitialMessageBufferSize]),
+      m_PeerAddr(0), m_Server(server),
       m_Incaps(~0L), m_Unreported(~0L),
       m_VersionControl(false),
       m_RequestContextFactory(new CNSRequestContextFactory(server)),
       m_ReqParser(sm_CommandMap)
 {}
+
+
+CNetScheduleHandler::~CNetScheduleHandler()
+{
+    delete [] m_MsgBuffer;
+}
 
 
 EIO_Event
@@ -278,6 +299,7 @@ CNetScheduleHandler::GetEventsToPollFor(const CTime** /*alarm_time*/) const
     return eIO_Read;
 }
 
+
 void CNetScheduleHandler::OnOpen(void)
 {
     CSocket&        socket = GetSocket();
@@ -285,6 +307,9 @@ void CNetScheduleHandler::OnOpen(void)
 
     socket.DisableOSSendDelay();
     socket.SetTimeout(eIO_ReadWrite, &to);
+    int fd = 0, val = 1;
+    socket.GetOSHandle(&fd, sizeof(fd));
+    setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &val, sizeof(val));
 
     socket.GetPeerAddress(&m_PeerAddr, 0, eNH_NetworkByteOrder);
     // always use localhost(127.0*) address for clients coming from
@@ -295,13 +320,30 @@ void CNetScheduleHandler::OnOpen(void)
 
     m_WorkerNode = new CWorkerNode_Real(m_PeerAddr);
 
-    m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
+    m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgAuth;
     m_DelayedOutput = NULL;
+
+    // Log the fact of opened connection
+    m_ConnContext.Reset(new CRequestContext());
+    m_ConnContext->SetRequestID();
+
+    CDiagnosticsGuard   guard(this);
+    if (m_Server->IsLog()) {
+        CDiagContext_Extra diag_extra = GetDiagContext().PrintRequestStart();
+        diag_extra.Print("_type", "conn");
+        diag_extra.Print("peer", socket.GetPeerAddress(eSAF_IP));
+        diag_extra.Print("pport", socket.GetPeerAddress(eSAF_Port));
+        diag_extra.Print("port", NStr::UIntToString(socket.GetLocalPort(eNH_HostByteOrder)));
+        diag_extra.Flush();
+    }
+    m_ConnContext->SetRequestStatus(eStatus_OK);
 }
 
 
 void CNetScheduleHandler::OnWrite()
 {
+    CDiagnosticsGuard   guard(this);
+
     if (m_DelayedOutput)
         (this->*m_DelayedOutput)();
 }
@@ -309,28 +351,73 @@ void CNetScheduleHandler::OnWrite()
 
 void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
 {
-//    LOG_POST(Warning << "Socket closed by " <<
-//        (peer == IServer_ConnectionHandler::eOurClose ? "server" : "client"));
+    // It's possible that this method will be called before OnOpen - when
+    // connection is just created and server is shutting down. In this case
+    // OnOpen will never be called.
+    if (m_ConnContext.IsNull())
+        return;
+
+
+    CDiagnosticsGuard   guard(this);
+
+    switch (peer)
+    {
+    case IServer_ConnectionHandler::eOurClose:
+        if (m_DiagContext.NotNull()) {
+            m_ConnContext->SetRequestStatus(m_DiagContext->GetRequestStatus());
+        } else {
+            m_ConnContext->SetRequestStatus(eStatus_Inactive);
+        }
+        break;
+    case IServer_ConnectionHandler::eClientClose:
+        if (m_DiagContext.NotNull()) {
+            m_DiagContext->SetRequestStatus(eStatus_BadCmd);
+            m_ConnContext->SetRequestStatus(eStatus_BadCmd);
+        }
+        break;
+    }
+
+
+    if (m_Server->IsLog()) {
+        CSocket&        socket = GetSocket();
+        CDiagContext::SetRequestContext(m_ConnContext);
+        m_ConnContext->SetBytesRd(socket.GetCount(eIO_Read));
+        m_ConnContext->SetBytesWr(socket.GetCount(eIO_Write));
+        GetDiagContext().PrintRequestStop();
+    }
+
+    m_ConnContext.Reset();
 }
 
 
 void CNetScheduleHandler::OnTimeout()
 {
-//    ERR_POST("OnTimeout!");
+    CDiagnosticsGuard       guard(this);
+
+    if (m_Server->IsLog()) {
+        LOG_POST(Info << "Inactivity timeout expired, closing connection");
+        if (m_DiagContext)
+            m_ConnContext->SetRequestStatus(eStatus_CmdTimeout);
+        else
+            m_ConnContext->SetRequestStatus(eStatus_Inactive);
+    }
 }
 
 
 void CNetScheduleHandler::OnOverflow(EOverflowReason reason)
 {
-//    ERR_POST("OnOverflow!");
     switch (reason) {
     case eOR_ConnectionPoolFull:
-        WriteErr("eCommunicationError:Connection pool full");
+        ERR_POST("eCommunicationError:Connection pool full");
         break;
     case eOR_UnpollableSocket:
-        WriteErr("eCommunicationError:Unpollable connection");
+        ERR_POST("eCommunicationError:Unpollable connection");
+        break;
+    case eOR_RequestQueueFull:
+        ERR_POST("eCommunicationError:Request queue full");
         break;
     default:
+        ERR_POST("eCommunicationError:Unknown overflow error");
         break;
     }
 }
@@ -338,79 +425,108 @@ void CNetScheduleHandler::OnOverflow(EOverflowReason reason)
 
 void CNetScheduleHandler::OnMessage(BUF buffer)
 {
+    CDiagnosticsGuard   guard(this);
+
     if (m_Server->ShutdownRequested()) {
-        WriteErr("NetSchedule server is shutting down. Session aborted.");
+        x_WriteMessageNoThrow("ERR:", "NetSchedule server is shutting down. "
+                                      "Session aborted.");
         return;
     }
-    CRequestContextGuard guard;
+
     try {
+        // Single line user input processor
         (this->*m_ProcessMessage)(buffer);
     }
-    catch (CNetScheduleException &ex)
-    {
-        WriteErr(string(ex.GetErrCodeString()) + ":" + ex.GetMsg());
-        string msg = x_FormatErrorMessage("Server error", ex.what());
-        ERR_POST(msg);
-        x_WriteErrorToMonitor(msg);
-        throw;
+    catch (CNetScheduleException &  ex) {
+        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
+                                      ":" + ex.GetMsg());
+        ERR_POST("Server error: " << ex);
+        x_PrintRequestStop(eStatus_ServerError);
     }
-    catch (CNSProtoParserException &ex)
-    {
-        WriteErr(string(ex.GetErrCodeString()) + ":" + ex.GetMsg());
-        string msg = x_FormatErrorMessage("Server error", ex.what());
-        ERR_POST(msg);
-        x_WriteErrorToMonitor(msg);
-        throw;
+    catch (CNSProtoParserException &  ex) {
+        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
+                                      ":" + ex.GetMsg());
+        ERR_POST("Server error: " << ex);
+        x_PrintRequestStop(eStatus_ServerError);
     }
-    catch (CNetServiceException &ex)
-    {
-        WriteErr(string(ex.GetErrCodeString()) + ":" + ex.GetMsg());
-        string msg = x_FormatErrorMessage("Server error", ex.what());
-        ERR_POST(msg);
-        x_WriteErrorToMonitor(msg);
-        throw;
+    catch (CNetServiceException &  ex) {
+        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
+                                      ":" + ex.GetMsg());
+        ERR_POST("Server error: " << ex);
+        x_PrintRequestStop(eStatus_ServerError);
     }
-    catch (CBDB_ErrnoException& ex)
-    {
-        if (ex.IsRecovery()) {
-            string msg = x_FormatErrorMessage(
-                "Fatal Berkeley DB error: DB_RUNRECOVERY. "
-                "Emergency shutdown initiated!", ex.what());
-            ERR_POST(msg);
-            x_WriteErrorToMonitor(msg);
+    catch (CBDB_ErrnoException &  ex) {
+        string  error;
+        if (ex.IsRecovery())
+            error = NStr::PrintableString("Fatal Berkeley DB error "
+                                          "(DB_RUNRECOVERY). Emergency "
+                                          "shutdown initiated. " +
+                                          string(ex.what()));
+        else
+            error = NStr::PrintableString("Internal database error - " +
+                                          string(ex.what()));
+
+        x_WriteMessageNoThrow("ERR:", "eInternalError:" + error);
+        ERR_POST("BDB error: " << ex);
+        x_PrintRequestStop(eStatus_ServerError);
+
+        if (ex.IsRecovery())
             m_Server->SetShutdownFlag();
-        } else {
-            string msg = x_FormatErrorMessage("BDB error", ex.what());
-            ERR_POST(msg);
-            x_WriteErrorToMonitor(msg);
-
-            string err = "eInternalError:Internal database error - " + 
-                         string(ex.what());
-            WriteErr(NStr::PrintableString(err));
-        }
-        throw;
     }
-    catch (CBDB_Exception &ex)
-    {
-        string err = "eInternalError:Internal database (BDB) error - " +
-                     string(ex.what());
-        WriteErr(NStr::PrintableString(err));
-
-        string msg = x_FormatErrorMessage("BDB error", ex.what());
-        ERR_POST(msg);
-        x_WriteErrorToMonitor(msg);
-        throw;
+    catch (CBDB_Exception &  ex) {
+        string  error = NStr::PrintableString("eInternalError:Internal "
+                                              "database (BDB) error - " +
+                                              string(ex.what()));
+        x_WriteMessageNoThrow("ERR:", error);
+        ERR_POST("BDB error: " << ex);
+        x_PrintRequestStop(eStatus_ServerError);
     }
-    catch (exception& ex)
-    {
-        string err = "eInternalError:Internal error - " +
-                     string(ex.what());
-        WriteErr(NStr::PrintableString(err));
+    catch (exception &  ex) {
+        string  error = NStr::PrintableString("eInternalError:Internal "
+                                              "error - " + string(ex.what()));
+        x_WriteMessageNoThrow("ERR:", error);
+        ERR_POST("STL exception: " << ex.what());
+        x_PrintRequestStop(eStatus_ServerError);
+    }
+}
 
-        string msg = x_FormatErrorMessage("STL exception", ex.what());
-        ERR_POST(msg);
-        x_WriteErrorToMonitor(msg);
-        throw;
+
+void CNetScheduleHandler::x_WriteMessage(CTempString  prefix,
+                                         CTempString  msg)
+{
+    size_t  prefix_size = prefix.size();
+    size_t  msg_size = msg.size();
+    size_t  required_size = prefix_size + msg_size + 1;
+
+    if (required_size > m_MsgBufferSize) {
+        delete [] m_MsgBuffer;
+        while (required_size > m_MsgBufferSize)
+            m_MsgBufferSize += kMessageBufferIncrement;
+        m_MsgBuffer = new char[m_MsgBufferSize];
+    }
+
+    memcpy(m_MsgBuffer, prefix.data(), prefix_size);
+    memcpy(m_MsgBuffer + prefix_size, msg.data(), msg_size);
+    m_MsgBuffer[required_size-1] = '\n';
+
+    // Write to the socket as a single transaction
+    size_t      n_written;
+    if (GetSocket().Write(m_MsgBuffer, required_size,
+                          &n_written) != eIO_Success) {
+        NCBI_THROW(CNetServiceException,
+                   eCommunicationError, "Socket write error.");
+    }
+}
+
+
+void CNetScheduleHandler::x_WriteMessageNoThrow(CTempString  prefix,
+                                                CTempString  msg)
+{
+    try {
+        x_WriteMessage(prefix, msg);
+    }
+    catch (CNetServiceException&  ex) {
+        ERR_POST(ex.what());
     }
 }
 
@@ -425,7 +541,7 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
     string          buffer;
     size_t          prefix_size = strlen(prefix);
 
-    if (prefix_size + msg.size() + 2 > kMaxMessageSize) {
+    if (prefix_size + msg.size() + 2 > kInitialMessageBufferSize) {
         buffer = prefix + msg + "\r\n";
         msg_length = buffer.size();
         buf_ptr = buffer.data();
@@ -442,8 +558,7 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
         buf_ptr = m_MsgBuffer;
     }
 
-    bool    is_log = m_Server->IsLog();
-    if (is_log || IsMonitoring()) {
+    if (m_Server->IsLog()) {
         size_t  log_length = min(msg_length, (size_t) 1024);
         bool    shortened = log_length < msg_length;
         while (log_length > 0 && (buf_ptr[log_length-1] == '\n' ||
@@ -451,24 +566,21 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
                 log_length--;
         }
 
-        if (is_log) {
-            {{
-            CDiagContext_Extra extra = GetDiagContext().Extra();
-            extra.Print("answer", string(buf_ptr, log_length));
-            }}
-            if (!interim) {
-                // TODO: remove prefix, replace with success/failure, reflect it
-                // in request status.
-                CDiagContext::GetRequestContext().SetRequestStatus(200);
-                GetDiagContext().PrintRequestStop();
-            }
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("answer", string(buf_ptr, log_length));
+        extra.Flush();
+
+        if (!interim) {
+            // TODO: remove prefix, replace with success/failure, reflect it
+            // in request status.
+            CDiagContext::GetRequestContext().SetRequestStatus(200);
+            GetDiagContext().PrintRequestStop();
         }
-        if (IsMonitoring()) {
-            string lmsg;
-            x_MakeLogMessage(lmsg, "ANS", string(buf_ptr, log_length));
-            if (shortened) lmsg += "...";
-            MonitorPost(lmsg + "\n");
-        }
+    }
+
+    if (!interim) {
+        CDiagContext::SetRequestContext(m_ConnContext);
+        m_DiagContext.Reset();
     }
 
     size_t          n_written;
@@ -498,70 +610,143 @@ void CNetScheduleHandler::WriteErr(const string& msg)
 }
 
 
-void CNetScheduleHandler::ProcessMsgAuth(BUF buffer)
+void CNetScheduleHandler::InitDiagnostics(void)
 {
-    s_ReadBufToString(buffer, m_AuthString);
+    if (m_DiagContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_DiagContext);
+    }
+    else if (m_ConnContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_ConnContext);
+    }
+}
+
+
+void CNetScheduleHandler::ResetDiagnostics(void)
+{
+    CDiagContext::SetRequestContext(NULL);
+}
+
+
+void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
+{
+    // This should only memorize the received string.
+    // The x_ProcessMsgQueue(...)  will parse it.
+    // This is done to avoid copying parsed parameters and to have exactly one
+    // diagnostics extra with both auth parameters and queue name.
+    s_ReadBufToString(buffer, m_RawAuthString);
+    m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgQueue;
+}
+
+
+void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
+{
+    s_ReadBufToString(buffer, m_QueueName);
+
+    // Parse saved raw authorization string and produce log output
+    TNSProtoParams      params;
+    try {
+        m_AuthProgName = "";
+        m_ReqParser.ParseArguments(m_RawAuthString, s_AuthArgs, &params);
+        if (params.find("prog") != params.end())
+            m_AuthProgName = params["prog"];
+        m_AuthClientName = params["client"];
+    }
+    catch (CNSProtoParserException &  ex) {
+        ERR_POST("Error authenticating client: '" <<
+                 m_RawAuthString << "': " << ex);
+        params["client"] = m_RawAuthString;
+        m_AuthClientName = m_RawAuthString;
+    }
 
     if (m_Server->AdminHostValid(m_PeerAddr) &&
-        (m_AuthString == "netschedule_control" ||
-         m_AuthString == "netschedule_admin"))
+        (m_AuthClientName == "netschedule_control" ||
+         m_AuthClientName == "netschedule_admin"))
     {
         // TODO: queue admin should be checked in ProcessMsgQueue,
         // when queue info is available
         m_Incaps &= ~(eNSAC_Admin | eNSAC_QueueAdmin);
     }
-    m_WorkerNode->SetAuth(m_AuthString);
-    m_ProcessMessage = &CNetScheduleHandler::ProcessMsgQueue;
-}
+    m_WorkerNode->SetAuth(m_AuthClientName);
 
 
-void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
-{
-    s_ReadBufToString(buffer, m_QueueName);
+    // Produce the log output if required
+    if (m_Server->IsLog()) {
+        CDiagContext_Extra diag_extra = GetDiagContext().Extra();
+        diag_extra.Print("queue", m_QueueName);
+        ITERATE(TNSProtoParams, it, params) {
+            diag_extra.Print(it->first, it->second);
+        }
+    }
 
-    if (m_QueueName != "noname" && !m_QueueName.empty()) {
-        m_QueueRef.Reset(m_Server->OpenQueue(m_QueueName));
-        m_Incaps &= ~eNSAC_Queue;
-        CRef<CQueue> q(GetQueue());
-        if (q->IsWorkerAllowed(m_PeerAddr))
-            m_Incaps &= ~eNSAC_Worker;
-        if (q->IsSubmitAllowed(m_PeerAddr))
-            m_Incaps &= ~eNSAC_Submitter;
-        if (q->IsVersionControl())
-            m_VersionControl = true;
+
+    // Handle the queue name
+    try {
+        if (m_QueueName != "noname" && !m_QueueName.empty()) {
+            m_QueueRef.Reset(m_Server->OpenQueue(m_QueueName));
+            m_Incaps &= ~eNSAC_Queue;
+            CRef<CQueue> q(GetQueue());
+            if (q->IsWorkerAllowed(m_PeerAddr))
+                m_Incaps &= ~eNSAC_Worker;
+            if (q->IsSubmitAllowed(m_PeerAddr))
+                m_Incaps &= ~eNSAC_Submitter;
+            if (q->IsVersionControl())
+                m_VersionControl = true;
+        }
+    }
+    catch (CNetScheduleException &  ex) {
+        // There is no such a queue, do not produce stop request
+        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
+                                      ":" + ex.GetMsg());
+        ERR_POST(ex);
+        return;
     }
 
     // TODO: When all worker nodes will learn to send the INIT command,
     // the following line has to be changed to something like
     // m_ProcessMessage = &CNetScheduleHandler::ProcessInitWorkerNode.
-    m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
+    m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+
 }
 
 
 // Workhorse method
-void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
+void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 {
+    SParsedCmd      cmd;
+
+
     s_ReadBufToString(buffer, m_Request);
 
     m_CommandNumber = m_Server->GetCommandNumber();
 
-    m_JobReq.Init();
-    SParsedCmd cmd;
+    m_DiagContext.Reset(new CRequestContext());
+    m_DiagContext->SetRequestID();
+    InitDiagnostics();
+
     try {
-        cmd = x_ParseCommand(m_Request);
+        cmd = m_ReqParser.ParseCommand(m_Request);
+        x_PrintRequestStart(cmd);
     }
     catch (const CNSProtoParserException& ex) {
         // Rewrite error in usual terms
         // To prevent stall due to possible very long message (which
         // quotes original, arbitrarily long user input) we truncate it here
         // to the value long enough for diagnostics.
-        WriteErr("eProtocolSyntaxError:" + ex.GetMsg().substr(0, 128));
+
+        // Parsing is done before PrintRequestStart(...) so a diag context is
+        // not created here - create it just to provide an error output
+        x_PrintRequestStart("Invalid command");
+        ERR_POST("Error parsing command: " << ex);
+        x_PrintRequestStop(eStatus_BadCmd);
+        x_WriteMessage("ERR:", "eProtocolSyntaxError:" + ex.GetMsg().substr(0, 128));
         return;
     }
 
     const SCommandExtra&    extra = cmd.command->extra;
 
     x_CheckAccess(extra.role);
+
+    m_JobReq.Init();
     m_JobReq.SetParamFields(cmd.params);
 
     if (extra.processor == &CNetScheduleHandler::ProcessQuitSession) {
@@ -579,7 +764,7 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
         if (!x_CheckVersion()) {
             WriteErr("eInvalidClientOrVersion:");
             CSocket& socket = GetSocket();
-            socket.Close();
+            m_Server->CloseConnection(&socket);
             return;
         }
         // One check per session is enough
@@ -647,7 +832,7 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
             WriteErr("eProtocolSyntaxError:" + ex.GetMsg().substr(0, 128) +
                     ", BTCH or ENDS expected");
             m_BatchJobs.clear();
-            m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
+            m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
         }
         m_ReqParser.SetCommandMap(sm_CommandMap);
     }
@@ -679,13 +864,13 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
         // quotes original, arbitrarily long user input) we truncate it here
         // to the value long enough for diagnostics.
         WriteErr("eProtocolSyntaxError:" + ex.GetMsg().substr(0, 128));
-        m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
         return;
     }
     catch (const CException&) {
         WriteErr("eProtocolSyntaxError:"
                  "Invalid batch submission, syntax error");
-        m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
         // Shouldn't we return here? Why process further?
         return;
     }
@@ -754,7 +939,7 @@ void CNetScheduleHandler::ProcessMsgBatchSubmit(BUF buffer)
         }
         MonitorPost("::ProcessMsgSubmitBatch " +
                     m_LocalTimer.GetLocalTime().AsString() + " ==> " +
-                    GetSocket().GetPeerAddress() + " " + m_AuthString +
+                    GetSocket().GetPeerAddress() + " " + m_AuthClientName +
                     " batch block size=" + NStr::UIntToString(m_BatchSize) +
                     " comm.time=" +
                     NStr::DoubleToString(comm_elapsed, 4, NStr::fDoubleFixed) +
@@ -806,30 +991,35 @@ void CNetScheduleHandler::ProcessError(const CException& ex)
 
 void CNetScheduleHandler::ProcessFastStatusS(CQueue* q)
 {
-    TJobStatus status = q->GetJobStatus(m_JobReq.job_id);
+    TJobStatus      status = q->GetJobStatus(m_JobReq.job_id);
     // TODO: update timestamp
-    WriteOK(NStr::IntToString((int) status));
+
+    x_WriteMessage("OK:", NStr::IntToString((int) status));
+    if (m_Server->IsLog()) {
+        GetDiagContext().Extra().Print("job_status",
+                                       CNetScheduleAPI::StatusToString(status));
+        x_PrintRequestStop(eStatus_OK);
+    }
 }
 
 
 void CNetScheduleHandler::ProcessFastStatusW(CQueue* q)
 {
-    TJobStatus status = q->GetJobStatus(m_JobReq.job_id);
-    WriteOK(NStr::IntToString((int) status));
+    TJobStatus      status = q->GetJobStatus(m_JobReq.job_id);
+
+    x_WriteMessage("OK:", NStr::IntToString((int) status));
+    if (m_Server->IsLog()) {
+        GetDiagContext().Extra().Print("job_status",
+                                       CNetScheduleAPI::StatusToString(status));
+        x_PrintRequestStop(eStatus_OK);
+    }
 }
 
 
 void CNetScheduleHandler::ProcessSubmit(CQueue* q)
 {
-    CJob    job;
-    job.SetInput(NStr::ParseEscapes(m_JobReq.input));
-    job.SetAffinityToken(NStr::ParseEscapes(m_JobReq.affinity_token));
-    job.SetTags(m_JobReq.tags);
-    job.SetMask(m_JobReq.job_mask);
-    job.SetSubmAddr(m_PeerAddr);
-    job.SetSubmPort(m_JobReq.port);
-    job.SetSubmTimeout(m_JobReq.timeout);
-    job.SetProgressMsg(m_JobReq.param1);
+    CJob        job(m_JobReq, m_PeerAddr);
+
     // Never leave Client IP empty, if we're not provided with a real one,
     // use peer address as a last resort. See also ProcessSubmitBatch.
     if (!m_JobReq.param3.empty())
@@ -839,20 +1029,13 @@ void CNetScheduleHandler::ProcessSubmit(CQueue* q)
         NS_FormatIPAddress(m_PeerAddr, s_ip);
         job.SetClientIP(s_ip);
     }
-    job.SetClientSID(m_JobReq.param2);
 
     unsigned    job_id = q->Submit(job);
-    string      str_job_id(CNetScheduleKey(job_id,
-                                           m_Server->GetHost(),
-                                           m_Server->GetPort()));
-    WriteOK(str_job_id);
-
-    if (IsMonitoring()) {
-        MonitorPost("::ProcessSubmit " +
-                    m_LocalTimer.GetLocalTime().AsString() + str_job_id +
-                    " ==> " + GetSocket().GetPeerAddress() + " " +
-                    m_AuthString);
-        x_MonitorJob(job);
+    string      str_job_id(q->MakeKey(job_id));
+    x_WriteMessage("OK:", str_job_id);
+    if (m_Server->IsLog()) {
+        GetDiagContext().Extra().Print("job_key", str_job_id);
+        x_PrintRequestStop(eStatus_OK);
     }
 }
 
@@ -886,7 +1069,7 @@ void CNetScheduleHandler::ProcessBatchStart(CQueue*)
     if (IsMonitoring()) {
         MonitorPost("::ProcessMsgBatchHeader " +
                     m_LocalTimer.GetLocalTime().AsString() + " " +
-                    GetSocket().GetPeerAddress() + " " + m_AuthString);
+                    GetSocket().GetPeerAddress() + " " + m_AuthClientName);
     }
 }
 
@@ -894,7 +1077,7 @@ void CNetScheduleHandler::ProcessBatchStart(CQueue*)
 void CNetScheduleHandler::ProcessBatchSequenceEnd(CQueue*)
 {
     m_BatchJobs.clear();
-    m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
+    m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
     WriteOK();
 }
 
@@ -902,7 +1085,9 @@ void CNetScheduleHandler::ProcessBatchSequenceEnd(CQueue*)
 void CNetScheduleHandler::ProcessCancel(CQueue* q)
 {
     q->Cancel(m_JobReq.job_id);
-    WriteOK();
+
+    x_WriteMessage("OK:","");
+    x_PrintRequestStop(eStatus_OK);
 }
 
 
@@ -940,7 +1125,7 @@ void CNetScheduleHandler::ProcessGetJob(CQueue* q)
 
     unsigned        job_id = job.GetId();
     if (job_id) {
-        x_MakeGetAnswer(job);
+        x_MakeGetAnswer(q, job);
         WriteOK(m_Answer);
     } else {
         WriteOK();
@@ -950,7 +1135,7 @@ void CNetScheduleHandler::ProcessGetJob(CQueue* q)
         MonitorPost("::ProcessGetJob " +
                     m_LocalTimer.GetLocalTime().AsString() + m_Answer +
                     " ==> " + GetSocket().GetPeerAddress() +
-                    " " + m_AuthString);
+                    " " + m_AuthClientName);
     }
 
     // We don't call UnRegisterNotificationListener here
@@ -977,7 +1162,7 @@ void CNetScheduleHandler::ProcessWaitGet(CQueue* q)
 
     unsigned job_id = job.GetId();
     if (job_id) {
-        x_MakeGetAnswer(job);
+        x_MakeGetAnswer(q, job);
         WriteOK(m_Answer);
         return;
     }
@@ -1021,7 +1206,7 @@ void CNetScheduleHandler::ProcessJobExchange(CQueue* q)
 
     unsigned job_id = job.GetId();
     if (job_id) {
-        x_MakeGetAnswer(job);
+        x_MakeGetAnswer(q, job);
         WriteOK(m_Answer);
     } else {
         WriteOK();
@@ -1031,7 +1216,7 @@ void CNetScheduleHandler::ProcessJobExchange(CQueue* q)
         MonitorPost("::ProcessJobExchange " +
                     m_LocalTimer.GetLocalTime().AsString() + " " + m_Answer +
                     " ==> " + GetSocket().GetPeerAddress() + " " +
-                    m_AuthString);
+                    m_AuthClientName);
     }
 }
 
@@ -1332,10 +1517,10 @@ void CNetScheduleHandler::ProcessStatistics(CQueue* q)
 
 void CNetScheduleHandler::ProcessStatusSnapshot(CQueue* q)
 {
-    CJobStatusTracker::TStatusSummaryMap st_map;
+    CJobStatusTracker::TStatusSummaryMap    st_map;
+    bool                                    aff_exists = q->CountStatus(&st_map,
+                                                                        NStr::ParseEscapes(m_JobReq.affinity_token));
 
-    bool aff_exists = q->CountStatus(&st_map,
-        NStr::ParseEscapes(m_JobReq.affinity_token));
     if (!aff_exists) {
         WriteErr(string("eProtocolSyntaxError:Unknown affinity token \"")
                  + m_JobReq.affinity_token + "\"");
@@ -1437,10 +1622,7 @@ void CNetScheduleHandler::ProcessPrintQueue(CQueue* q)
 
     CConn_SocketStream ios(sock, eTakeOwnership);  // sock is being passed and used exclusively
 
-    q->PrintQueue(ios,
-                  job_status,
-                  m_Server->GetHost(),
-                  m_Server->GetPort());
+    q->PrintQueue(ios, job_status);
 
     ios << "OK:END" << endl;
 }
@@ -1478,7 +1660,13 @@ void CNetScheduleHandler::ProcessUnRegisterClient(CQueue* q)
 
 void CNetScheduleHandler::ProcessQList(CQueue*)
 {
-    WriteOK(m_Server->GetQueueNames(";"));
+    string      qlist(m_Server->GetQueueNames(";"));
+
+    x_WriteMessage("OK:", qlist);
+    if (m_Server->IsLog()) {
+        GetDiagContext().Extra().Print("queue_list", qlist);
+        x_PrintRequestStop(eStatus_OK);
+    }
 }
 
 
@@ -1506,7 +1694,15 @@ void CNetScheduleHandler::ProcessQuitSession(CQueue*)
     STimeout to; to.sec = to.usec = 0;
     socket.SetTimeout(eIO_Read, &to);
     socket.Read(NULL, 1024);
-    socket.Close();
+    m_Server->CloseConnection(&socket);
+
+    // Log the close request
+    if (m_Server->IsLog()) {
+        CDiagContext::SetRequestContext(m_DiagContext);
+        GetDiagContext().PrintRequestStop();
+    }
+    CDiagContext::SetRequestContext(NULL);
+    m_DiagContext.Reset();
 }
 
 
@@ -1811,33 +2007,19 @@ void CNetScheduleHandler::x_MonitorJob(const CJob& job)
 
 bool CNetScheduleHandler::x_CheckVersion()
 {
-    string::size_type   pos = m_AuthString.find("prog='");
-    if (pos == string::npos) {
+    if (m_AuthProgName.empty())
         return false;
-    }
-    string auth_prog;
-    const char* prog_str = m_AuthString.c_str();
-    prog_str += pos + 6;
-    for (; *prog_str && *prog_str != '\''; ++prog_str) {
-        char ch = *prog_str;
-        auth_prog.push_back(ch);
-    }
-    if (auth_prog.empty()) {
-        return false;
-    }
+
     try {
-        CQueueClientInfo auth_prog_info;
-        ParseVersionString(auth_prog,
+        CQueueClientInfo    auth_prog_info;
+        ParseVersionString(m_AuthProgName,
                            &auth_prog_info.client_name,
                            &auth_prog_info.version_info);
-        if (!GetQueue()->IsMatchingClient(auth_prog_info))
-            return false;
+        return GetQueue()->IsMatchingClient(auth_prog_info);
     }
-    catch (exception&)
-    {
+    catch (exception&) {
         return false;
     }
-    return true;
 }
 
 
@@ -1865,7 +2047,7 @@ void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
     if (report) {
         m_Unreported &= ~deficit;
         string msg = "Unauthorized access from: " +
-                     GetSocket().GetPeerAddress() + " " + m_AuthString;
+                     GetSocket().GetPeerAddress() + " " + m_AuthClientName;
         x_AccessViolationMessage(deficit, msg);
         LOG_POST(Warning << msg);
     } else {
@@ -1895,19 +2077,42 @@ void CNetScheduleHandler::x_AccessViolationMessage(unsigned deficit,
 }
 
 
-string CNetScheduleHandler::x_FormatErrorMessage(const string& header, const string& what)
+void CNetScheduleHandler::x_PrintRequestStart(const SParsedCmd& cmd)
 {
-    return header + ": " + what + " Peer=" + GetSocket().GetPeerAddress() +
-           " " + m_AuthString + m_Request;
+    if (m_Server->IsLog()) {
+        CDiagContext_Extra      ctxt_extra = GetDiagContext().PrintRequestStart();
+        ctxt_extra.Print("_type", "cmd");
+        ctxt_extra.Print("cmd", cmd.command->cmd);
+        ctxt_extra.Print("peer", GetSocket().GetPeerAddress(eSAF_IP));
+        ITERATE(TNSProtoParams, it, cmd.params) {
+            ctxt_extra.Print(it->first, it->second);
+        }
+    }
+    m_DiagContext->SetRequestStatus(eStatus_OK);
 }
 
 
-void CNetScheduleHandler::x_WriteErrorToMonitor(const string& msg)
+void CNetScheduleHandler::x_PrintRequestStart(CTempString  msg)
 {
-    if (IsMonitoring()) {
-        MonitorPost(m_LocalTimer.GetLocalTime().AsString() + msg);
+    if (m_Server->IsLog()) {
+        CDiagContext_Extra      ctxt_extra = GetDiagContext().PrintRequestStart();
+        ctxt_extra.Print("_type", "cmd");
+        ctxt_extra.Print("info", msg);
     }
 }
+
+
+void CNetScheduleHandler::x_PrintRequestStop(EHTTPStatus  status)
+{
+    if (m_Server->IsLog()) {
+        CDiagContext::GetRequestContext().SetRequestStatus(status);
+        GetDiagContext().PrintRequestStop();
+        CDiagContext::SetRequestContext(m_ConnContext);
+        m_DiagContext.Reset();
+    }
+}
+
+
 
 
 CNetScheduleHandler::SParsedCmd
@@ -1944,15 +2149,14 @@ void CNetScheduleHandler::x_MakeLogMessage(string&       lmsg,
     }
 
     lmsg = op + ':' + NStr::IntToString(m_CommandNumber) + ';' + peer + ';' +
-           m_AuthString + ';' + m_QueueName + ';' + text;
+           m_AuthClientName + ';' + m_QueueName + ';' + text;
 }
 
 
-void CNetScheduleHandler::x_MakeGetAnswer(const CJob& job)
+void CNetScheduleHandler::x_MakeGetAnswer(CQueue* q, const CJob& job)
 {
     string& answer = m_Answer;
-    answer = CNetScheduleKey(job.GetId(),
-        m_Server->GetHost(), m_Server->GetPort());
+    answer = q->MakeKey(job.GetId());
     answer.append(" \"");
     answer.append(NStr::PrintableString(job.GetInput()));
     answer.append("\"");

@@ -46,6 +46,8 @@
 #include "queue_coll.hpp"
 #include "ns_util.hpp"
 #include "netschedule_version.hpp"
+#include "ns_server.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -237,7 +239,7 @@ string SNSDBEnvironmentParams::GetParamValue(unsigned n) const
 /////////////////////////////////////////////////////////////////////////////
 // CQueueDataBase implementation
 
-CQueueDataBase::CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor)
+CQueueDataBase::CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor, CNetScheduleServer* server)
 : m_Host(host),
   m_Executor(executor),
   m_Env(0),
@@ -245,7 +247,8 @@ CQueueDataBase::CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
-  m_UdpPort(0)
+  m_UdpPort(0),
+  m_Server(server)
 {
 }
 
@@ -691,7 +694,7 @@ void CQueueDataBase::MountQueue(const string& qname,
 {
     _ASSERT(m_Env);
 
-    auto_ptr<CQueue> q(new CQueue(m_Executor, qname, qclass, kind));
+    auto_ptr<CQueue> q(new CQueue(m_Executor, qname, qclass, kind, m_Server));
     q->Attach(queue_db_block);
     q->SetParameters(params);
 

@@ -52,7 +52,8 @@ class CNetScheduleServer;
 class CNSRequestContextFactory;
 
 //
-const unsigned kMaxMessageSize = kNetScheduleMaxDBErrSize * 4;
+const size_t    kInitialMessageBufferSize = 16 * 1024;
+const size_t    kMessageBufferIncrement = 2 * 1024;
 
 
 
@@ -63,14 +64,19 @@ class CNetScheduleHandler : public IServer_LineMessageHandler
 {
 public:
     CNetScheduleHandler(CNetScheduleServer* server);
+    ~CNetScheduleHandler();
+
     // MessageHandler protocol
     virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
-    virtual void OnOpen(void);
-    virtual void OnWrite(void);
-    virtual void OnClose(IServer_ConnectionHandler::EClosePeer peer);
-    virtual void OnTimeout(void);
-    virtual void OnOverflow(EOverflowReason reason);
-    virtual void OnMessage(BUF buffer);
+    virtual void      OnOpen(void);
+    virtual void      OnWrite(void);
+    virtual void      OnClose(IServer_ConnectionHandler::EClosePeer peer);
+    virtual void      OnTimeout(void);
+    virtual void      OnOverflow(EOverflowReason reason);
+    virtual void      OnMessage(BUF buffer);
+
+    void x_WriteMessage(CTempString prefix, CTempString msg);
+    void x_WriteMessageNoThrow(CTempString  prefix, CTempString msg);
 
     void WriteMsg(const char*           prefix,
                   const std::string&    msg = kEmptyStr,
@@ -81,11 +87,34 @@ public:
     void WriteOK(const std::string& msg = kEmptyStr);
     void WriteErr(const std::string& msg = kEmptyStr);
 
+    /// Init diagnostics Client IP and Session ID for proper logging
+    void InitDiagnostics(void);
+    /// Reset diagnostics Client IP and Session ID to avoid logging
+    /// not related to the request
+    void ResetDiagnostics(void);
+
+    /// Statuses of commands to be set in diagnostics' request context
+    /// Additional statuses can be taken from
+    /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+    enum EHTTPStatus {
+        eStatus_OK          = 200,  ///< Command is ok and execution is good
+        eStatus_Inactive    = 204,  ///< Connection was closed due to inactivity
+                                    ///< timeout
+        eStatus_FailedLock  = 304,
+        eStatus_BadCmd      = 400,  ///< Command is incorrect
+        eStatus_BadAuth     = 401,  ///< Operation is not permitted
+        eStatus_NotFound    = 404,  ///< Job is not found
+        eStatus_CmdTimeout  = 408,  ///< Command timeout is exceeded
+        eStatus_ServerError = 500,  ///< Internal server error
+        eStatus_NoImpl      = 501   ///< Command is not implemented
+    };
+
+
 private:
     // Message processing phases
-    void ProcessMsgAuth(BUF buffer);
-    void ProcessMsgQueue(BUF buffer);
-    void ProcessMsgRequest(BUF buffer);
+    void x_ProcessMsgAuth(BUF buffer);
+    void x_ProcessMsgQueue(BUF buffer);
+    void x_ProcessMsgRequest(BUF buffer);
     // Message processing for ProcessSubmitBatch phases
     void ProcessMsgBatchHeader(BUF buffer);
     void ProcessMsgBatchJob(BUF buffer);
@@ -211,26 +240,31 @@ private:
     bool x_CheckVersion(void);
     void x_CheckAccess(TNSClientRole role);
     void x_AccessViolationMessage(unsigned deficit, std::string& msg);
-    std::string x_FormatErrorMessage(const std::string& header,
-                                     const std::string& what);
-    void x_WriteErrorToMonitor(const std::string& msg);
     SParsedCmd x_ParseCommand(CTempString command);
     // Moved from CNetScheduleServer
     void x_MakeLogMessage(std::string&       lmsg,
                           const std::string& op,
                           const std::string& text);
-    void x_MakeGetAnswer(const CJob& job);
+    void x_MakeGetAnswer(CQueue* q, const CJob& job);
     void x_StatisticsNew(CQueue* q, const std::string& what, time_t curr);
+
+    void x_PrintRequestStart(const SParsedCmd& cmd);
+    void x_PrintRequestStart(CTempString  msg);
+    void x_PrintRequestStop(EHTTPStatus  status);
 
     // Data
     std::string                     m_Request;
     std::string                     m_Answer;
-    char                            m_MsgBuffer[kMaxMessageSize];
+    size_t                          m_MsgBufferSize;
+    char*                           m_MsgBuffer;
 
     unsigned                        m_PeerAddr;
     // CWorkerNode contains duplicates of m_AuthString and m_PeerAddr
     TWorkerNodeRef                  m_WorkerNode;
-    std::string                     m_AuthString;
+    std::string                     m_RawAuthString;
+    std::string                     m_AuthClientName;
+    std::string                     m_AuthProgName;
+
     CNetScheduleServer*             m_Server;
     std::string                     m_QueueName;
     CWeakRef<CQueue>                m_QueueRef;
@@ -272,6 +306,12 @@ private:
 
     /// Parser for incoming commands
     TProtoParser                    m_ReqParser;
+
+
+    /// Diagnostics context for the current connection
+    CRef<CRequestContext>           m_ConnContext;
+    /// Diagnostics context for the currently executed command
+    CRef<CRequestContext>           m_DiagContext;
 
 }; // CNetScheduleHandler
 

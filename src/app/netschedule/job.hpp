@@ -38,7 +38,6 @@
 //#include "ns_types.hpp"
 #include "job_status.hpp"
 
-
 BEGIN_NCBI_SCOPE
 
 
@@ -48,6 +47,7 @@ typedef list<TNSTag> TNSTagList;
 // Forward for CJob/CJobRun friendship
 class CQueue;
 class CAffinityDictGuard;
+struct SJS_Request;
 
 // Instantiation of a Job on a Worker Node
 class CJob;
@@ -92,18 +92,18 @@ public:
 private:
     friend class CJob;
     // Service fields
-    bool      m_Dirty;
+    bool            m_Dirty;
 
     // SRunsDB fields
     // id, run - implicit
-    TJobStatus m_Status;      ///< final job status for this run
-    unsigned   m_TimeStart;   ///< job start time
-    unsigned   m_TimeDone;    ///< job result submission time
-    unsigned   m_NodeAddr;    ///< IP of a client (typically, worker node)
-    unsigned short m_NodePort; ///< Notification port of a client
-    int        m_RetCode;     ///< Return code
-    string     m_NodeId;      //
-    string     m_ErrorMsg;    ///< Error message (exception::what())
+    TJobStatus      m_Status;      ///< final job status for this run
+    unsigned        m_TimeStart;   ///< job start time
+    unsigned        m_TimeDone;    ///< job result submission time
+    unsigned        m_NodeAddr;    ///< IP of a client (typically, worker node)
+    unsigned short  m_NodePort; ///< Notification port of a client
+    int             m_RetCode;     ///< Return code
+    string          m_NodeId;      //
+    string          m_ErrorMsg;    ///< Error message (exception::what())
 };
 
 class CBDB_Transaction;
@@ -120,11 +120,12 @@ public:
         fRunsPart    = 1 << 2  ///< SRunsDB part
     };
     enum EJobFetchResult {
-        eJF_Ok = 0,
+        eJF_Ok       = 0,
         eJF_NotFound = 1,
-        eJF_DBErr = 2
+        eJF_DBErr    = 2
     };
     CJob();
+    CJob(const SJS_Request&  request, unsigned submAddr);
 
     // Getter/setters
     unsigned       GetId() const
@@ -238,9 +239,9 @@ public:
 private:
     void x_ParseTags(const string& strtags, TNSTagList& tags);
     // Service flags
-    bool     m_New;     ///< Object should be inserted, not updated
-    bool     m_Deleted; ///< Object with this id should be deleted
-    unsigned m_Dirty;
+    bool            m_New;     ///< Object should be inserted, not updated
+    bool            m_Deleted; ///< Object with this id should be deleted
+    unsigned        m_Dirty;
 
     // Reflection of database structures
 
@@ -280,3 +281,4 @@ private:
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_JOB__HPP */
+

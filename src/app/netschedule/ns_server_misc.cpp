@@ -149,4 +149,19 @@ CRequestContextSubmitGuard::~CRequestContextSubmitGuard()
 }
 
 
+//////////////////////////////////////////////////////////////////////////
+// CDiagnosticsGuard implementation
+
+CDiagnosticsGuard::CDiagnosticsGuard(CNetScheduleHandler*  handler)
+    : m_Handler(handler)
+{
+    m_Handler->InitDiagnostics();
+}
+
+
+CDiagnosticsGuard::~CDiagnosticsGuard(void)
+{
+    m_Handler->ResetDiagnostics();
+}
+
 

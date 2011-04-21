@@ -34,6 +34,7 @@
 #include "background_host.hpp"
 #include "ns_util.hpp"
 #include "ns_format.hpp"
+#include "ns_server.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -300,10 +301,11 @@ CQueueEnumCursor::CQueueEnumCursor(CQueue* queue)
 //////////////////////////////////////////////////////////////////////////
 // CQueue
 
-CQueue::CQueue(CRequestExecutor& executor,
-               const string&     queue_name,
-               const string&     qclass_name,
-               TQueueKind        queue_kind)
+CQueue::CQueue(CRequestExecutor&     executor,
+               const string&         queue_name,
+               const string&         qclass_name,
+               TQueueKind            queue_kind,
+               CNetScheduleServer *  server)
   :
     m_RunTimeLine(NULL),
     m_HasNotificationPort(false),
@@ -334,7 +336,8 @@ CQueue::CQueue(CRequestExecutor& executor,
     m_DenyAccessViolations(false),
     m_LogAccessViolations(true),
     m_LogJobState(0),
-    m_KeepAffinity(false)
+    m_KeepAffinity(false),
+    m_KeyGenerator(server->GetHost(), server->GetPort())
 {
     _ASSERT(!queue_name.empty());
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
@@ -355,6 +358,10 @@ CQueue::~CQueue()
     m_StatThread->Join(NULL);
 }
 
+string CQueue::MakeKey(unsigned job_id) const
+{
+    m_KeyGenerator.GenerateV1(job_id);
+}
 
 void CQueue::Attach(SQueueDbBlock* block)
 {
@@ -3269,12 +3276,10 @@ void CQueue::x_PrintJobStat(const CJob&   job,
 
 
 void CQueue::x_PrintShortJobStat(const CJob&   job,
-                                 const string& host,
-                                 unsigned      port,
                                  CNcbiOstream& out,
                                  const char*   fsp)
 {
-    out << string(CNetScheduleKey(job.GetId(), host, port)) << fsp;
+    out << MakeKey(job.GetId()) << fsp;
     TJobStatus status = job.GetStatus();
     out << CNetScheduleAPI::StatusToString(status) << fsp;
 
@@ -3347,9 +3352,7 @@ void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
 
 
 void CQueue::PrintQueue(CNcbiOstream& out,
-                        TJobStatus    job_status,
-                        const string& host,
-                        unsigned      port)
+                        TJobStatus    job_status)
 {
     TNSBitVector bv;
     JobsWithStatus(job_status, &bv);
@@ -3360,7 +3363,7 @@ void CQueue::PrintQueue(CNcbiOstream& out,
         CQueueGuard guard(this);
 
         if (job.Fetch(this, *en) == CJob::eJF_Ok)
-            x_PrintShortJobStat(job, host, port, out);
+            x_PrintShortJobStat(job, out);
     }
 }
 
