@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -97,6 +98,49 @@ string s_MakeGffDbtag(
     return strGffTag;
 }
         
+//  ----------------------------------------------------------------------------
+string s_MakeGffDbtag( 
+    const CSeq_id& id )
+//  ----------------------------------------------------------------------------
+{
+    string strGffTag;
+    switch( id.Which() ) {
+        case CSeq_id::e_Gi:
+            return string( "GI:" ) + NStr::IntToString( id.GetGi() );
+        default:
+            return "???";
+    }
+}
+        
+//  ----------------------------------------------------------------------------
+CConstRef<CUser_object> s_GetUserObjectByType(
+    const CUser_object& uo,
+    const string& strType )
+//  ----------------------------------------------------------------------------
+{
+    if ( uo.IsSetType() && uo.GetType().IsStr() && 
+            uo.GetType().GetStr() == strType ) {
+        return CConstRef<CUser_object>( &uo );
+    }
+    const CUser_object::TData& fields = uo.GetData();
+    for ( CUser_object::TData::const_iterator it = fields.begin(); 
+            it != fields.end(); 
+            ++it ) {
+        const CUser_field& field = **it;
+        if ( field.IsSetData() ) {
+            const CUser_field::TData& data = field.GetData();
+            if ( data.Which() == CUser_field::TData::e_Object ) {
+                CConstRef<CUser_object> recur = s_GetUserObjectByType( 
+                    data.GetObject(), strType );
+                if ( recur ) {
+                    return recur;
+                }
+            }
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+    
 //  ----------------------------------------------------------------------------
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     feature::CFeatTree& feat_tree )
@@ -163,22 +207,38 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnExtended(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    string str = StrSeqStart();
+    if ( StrSeqStart() == "10316" ) {
+        cerr << "";
+    }
     // collection of feature attribute that we want to propagate to every feature
     //  type under the sun
     //
-    if ( ! x_AssignAttributeGene( mapped_feat ) ) {
+//    if ( ! x_AssignAttributeGene( mapped_feat ) ) {
+//        return false;
+//    }
+    if ( ! x_AssignAttributeGbKey( mapped_feat ) ) {
         return false;
     }
     if ( ! x_AssignAttributePseudo( mapped_feat ) ) {
         return false;
     }
-    if ( ! x_AssignAttributePartial( mapped_feat ) ) {
-        return false;
-    }
+//    if ( ! x_AssignAttributePartial( mapped_feat ) ) {
+//        return false;
+//    }
     if ( ! x_AssignAttributeEvidence( mapped_feat ) ) {
         return false;
     }
+    if ( ! x_AssignAttributeModelEvidence( mapped_feat ) ) {
+        return false;
+    }
     if ( ! x_AssignAttributeNote( mapped_feat ) ) {
+        return false;
+    }
+    if ( ! x_AssignAttributeDbXref( mapped_feat ) ) {
+        return false;
+    }
+    if ( ! x_AssignAttributeTranscriptId( mapped_feat ) ) {
         return false;
     }
     return true;
@@ -257,10 +317,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributesGene(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeGeneSynonym( mapped_feat )  &&
         x_AssignAttributeLocusTag( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
+//        x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributeProduct( mapped_feat ) );
 }
 //  ----------------------------------------------------------------------------
@@ -269,7 +328,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributeProduct( mapped_feat ) );
 }
 
@@ -279,8 +337,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributeCodonStart( mapped_feat )  &&
+//        x_AssignAttributeDbXref( mapped_feat )  &&
+//        x_AssignAttributeCodonStart( mapped_feat )  &&
         x_AssignAttributeProduct( mapped_feat ) );
 }
 
@@ -290,8 +348,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat ) );
+//        x_AssignAttributeDbXref( mapped_feat ) &&
+        true );
 }
 
 //  ----------------------------------------------------------------------------
@@ -375,16 +433,31 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
     if ( ! mapped_feat.IsSetDbxref() ) {
         return true;
     }
+
+    vector<string> values;
+    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Cdregion  &&
+        mapped_feat.IsSetProduct() ) {
+        const CSeq_id* pProdId = mapped_feat.GetProduct().GetId();
+        values.push_back( s_MakeGffDbtag( *pProdId ) );
+    }
     const CSeq_feat::TDbxref& dbxrefs = mapped_feat.GetDbxref();
-    if ( dbxrefs.size() == 0 ) {
-        return true;
+    for ( size_t i=0; i < dbxrefs.size(); ++i ) {
+        values.push_back( s_MakeGffDbtag( *dbxrefs[ i ] ) );
     }
-    string value = s_MakeGffDbtag( *dbxrefs[ 0 ] );
-    for ( size_t i=1; i < dbxrefs.size(); ++i ) {
-        value += ";";
-        value += s_MakeGffDbtag( *dbxrefs[ i ] );
+    if ( m_feat_tree.GetParent( mapped_feat ) ) {
+        const CSeq_feat::TDbxref& more_dbxrefs = 
+            m_feat_tree.GetParent( mapped_feat ).GetDbxref();
+        for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
+            string str = s_MakeGffDbtag( *more_dbxrefs[ i ] );
+            if ( values.end() == find( values.begin(), values.end(), str ) ) {
+                values.push_back( s_MakeGffDbtag( *more_dbxrefs[ i ] ) );
+            }
+        }
     }
-    m_Attributes[ "db_xref" ] = value;
+
+    if ( ! values.empty() ) {
+        m_Attributes[ "Dbxref" ] = NStr::Join( values, ";" );
+    }
     return true;
 }
 
@@ -468,6 +541,12 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CProt_ref* pProtRef = mapped_feat.GetProtXref();
+    if ( pProtRef && pProtRef->IsSetName() ) {
+        const list<string>& names = pProtRef->GetName();
+        m_Attributes[ "product" ] = x_Encode( *names.begin() );
+        return true;
+    }
     if ( ! mapped_feat.IsSetProduct() ) {
         return true;
     }
@@ -475,7 +554,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
     if ( pProductId ) {
         string strProduct;
         pProductId->GetLabel( &strProduct );
-        m_Attributes[ "product" ] = strProduct;
+        m_Attributes[ "product" ] = x_Encode( strProduct );
     }
     return true;
 }
@@ -526,6 +605,108 @@ bool CGff3WriteRecordFeature::x_AssignAttributeEvidence(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeModelEvidence(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    if ( mapped_feat.IsSetExt() ) {
+        CConstRef<CUser_object> model_evidence = s_GetUserObjectByType( 
+            mapped_feat.GetExt(), "ModelEvidence" );
+        if ( model_evidence ) {
+            string strNote;
+            if ( model_evidence->HasField( "Method" ) ) {
+                GetAttribute( "Note", strNote );
+                if ( ! strNote.empty() ) {
+                    strNote += "; ";
+                }               
+                strNote += "Derived by automated computational analysis";
+                strNote += " using gene prediction method: ";
+                strNote += model_evidence->GetField( "Method" ).GetData().GetStr();
+                strNote += ".";
+            }
+            if ( model_evidence->HasField( "Counts" ) ) {
+                const CUser_field::TData::TFields& fields =
+                    model_evidence->GetField( "Counts" ).GetData().GetFields();
+                unsigned int uCountMrna = 0;
+                unsigned int uCountEst = 0;
+                unsigned int uCountProtein = 0;
+                for ( CUser_field::TData::TFields::const_iterator cit = fields.begin();
+                    cit != fields.end();
+                    ++cit ) {
+                    string strLabel = (*cit)->GetLabel().GetStr();
+                    if ( strLabel == "mRNA" ) {
+                        uCountMrna = (*cit)->GetData().GetInt();
+                        continue;
+                    }
+                    if ( strLabel == "EST" ) {
+                        uCountEst = (*cit)->GetData().GetInt();
+                        continue;
+                    }
+                    if ( strLabel == "Protein" ) {
+                        uCountProtein = (*cit)->GetData().GetInt();
+                        continue;
+                    }
+                }
+                if ( uCountMrna || uCountEst || uCountProtein ) {
+                    string strSupport = " Supporting evidence includes similarity to:";
+                    string strPrefix = " ";
+                    if ( uCountMrna ) {
+                        strSupport += strPrefix;
+                        strSupport += NStr::UIntToString( uCountMrna );
+                        strSupport += ( uCountMrna > 1 ? " mRNAs" : " mRNA" );
+                        strPrefix = "%2C ";
+                    }
+                    if ( uCountEst ) {
+                        strSupport += strPrefix;
+                        strSupport += NStr::UIntToString( uCountEst );
+                        strSupport += ( uCountEst > 1 ? " ESTs" : " EST" );
+                        strPrefix = "%2C ";
+                    }
+                    if ( uCountProtein ) {
+                        strSupport += strPrefix;
+                        strSupport += NStr::UIntToString( uCountProtein );
+                        strSupport += ( uCountProtein > 1 ? " Proteins" : " Protein" );
+                    }
+                    strNote += strSupport;
+                }
+            }
+            if ( ! strNote.empty() ) {
+                m_Attributes[ "Note" ] = strNote;
+            }
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeGbKey(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! mapped_feat.GetData().IsRna() ) {
+        return true;
+    }
+    m_Attributes[ "gbkey" ] = mapped_feat.GetData().GetKey();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_feat::TQual& quals = mapped_feat.GetQual();
+    for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
+      cit != quals.end(); ++cit ) {
+        if ( (*cit)->GetQual() == "transcript_id" ) {
+            m_Attributes[ "transcript_id" ] = (*cit)->GetVal();
+            return true;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::AssignParent(
     const CGff3WriteRecordFeature& parent )
 //  ----------------------------------------------------------------------------
@@ -547,5 +728,51 @@ void CGff3WriteRecordFeature::ForceAttributeID(
     m_Attributes[ "ID" ] = strId;
 }  
 
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecordFeature::x_Encode(
+    const string& strRaw )
+//  ----------------------------------------------------------------------------
+{
+    static const char s_Table[256][4] = {
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+        " ",   "!",   "%22", "%23", "$",   "%25", "%26", "%27",
+        "%28", "%29", "%2A", "%2B", "%2C", "-",   ".",   "%2F",
+        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+        "8",   "9",   ":",   "%3B", "%3C", "%3D", "%3E", "%3F",
+        "@",   "A",   "B",   "C",   "D",   "E",   "F",   "G",
+        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "^",   "_",
+        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+        "%F8", "%F9", "%FA", "%FB", "|", "%FD", "%FE", "%FF"
+    };
+    string strEncoded;
+    for ( size_t i = 0;  i < strRaw.size();  ++i ) {
+        strEncoded += s_Table[static_cast<unsigned char>( strRaw[i] )];
+    }
+    return strEncoded;
+}
+    
 END_objects_SCOPE
 END_NCBI_SCOPE

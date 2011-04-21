@@ -109,10 +109,19 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeEvidence(
         CMappedFeat );
+    virtual bool x_AssignAttributeModelEvidence(
+        CMappedFeat );
+    virtual bool x_AssignAttributeGbKey(
+        CMappedFeat );
+    virtual bool x_AssignAttributeTranscriptId(
+        CMappedFeat );
 
     //
     //  Helper functions:
     //
+    static string x_Encode( 
+        const string& );
+
 //    static string x_MakeGffDbtag( 
 //        const CDbtag& dbtag );
 
