@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors: Maxim Didenko, Victor Joukov
+ * Authors: Maxim Didenko, Victor Joukov, Dmitry Kazimirov
  *
  * File Description:
  *   NetSchedule client API.
@@ -65,12 +65,7 @@ BEGIN_NCBI_SCOPE
 ///
 struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 {
-    CNetScheduleKey(unsigned _id, const string& _host, unsigned _port, unsigned ver = 1)
-        : version(ver), host(_host), port(_port), id(_id), run(-1) {}
-
     explicit CNetScheduleKey(const string& str_key);
-
-    operator string() const;
 
     unsigned     version;   ///< Key version
     string       host;      ///< Server name
@@ -79,6 +74,38 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
     unsigned     id;        ///< Job id
     int          run;       ///< Job run number, -1 - no run
 };
+
+class NCBI_XCONNECT_EXPORT CNetScheduleKeyGenerator
+{
+public:
+    CNetScheduleKeyGenerator(const string& host, unsigned port);
+
+    string GenerateV1(unsigned id) const;
+    void GenerateV1(string* key, unsigned id) const;
+
+    string GenerateV2(unsigned id, const string& queue, int run = -1) const;
+    void GenerateV2(string* key, unsigned id,
+        const string& queue, int run = -1) const;
+
+private:
+    string m_V1HostPort;
+    string m_V2Prefix;
+};
+
+inline string CNetScheduleKeyGenerator::GenerateV1(unsigned id) const
+{
+    string key;
+    GenerateV1(&key, id);
+    return key;
+}
+
+inline string CNetScheduleKeyGenerator::GenerateV2(unsigned id,
+    const string& queue, int run /* = -1 */) const
+{
+    string key;
+    GenerateV2(&key, id, queue, run);
+    return key;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////
@@ -122,11 +149,11 @@ public:
             return ! operator==(other);
         }
 
-        CNetScheduleKey operator*() const
+        string operator*() const
         {
             _ASSERT(m_Keys != NULL);
-            return CNetScheduleKey((unsigned)*m_BVEnum, m_SrvIter->first.first,
-                                   m_SrvIter->first.second);
+            return CNetScheduleKeyGenerator(m_SrvIter->first.first,
+                m_SrvIter->first.second).GenerateV1((unsigned) *m_BVEnum);
         }
 
         const_iterator& operator++()

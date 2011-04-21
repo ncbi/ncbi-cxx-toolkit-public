@@ -249,9 +249,9 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
         // assign job ids, protocol guarantees all jobs in batch will
         // receive sequential numbers, so server sends only first job id
         //
+        CNetScheduleKeyGenerator key_gen(host, port);
         for (unsigned j = 0; j < batch_size; ++j) {
-            CNetScheduleKey key(first_job_id, host, port);
-            jobs[batch_start].job_id = string(key);
+            key_gen.GenerateV1(&jobs[batch_start].job_id, first_job_id);
             ++first_job_id;
             ++batch_start;
         }
@@ -299,9 +299,11 @@ bool CReadCmdExecutor::Consider(CNetServer server)
 
     unsigned from, to;
 
+    CNetScheduleKeyGenerator key_gen(host, port);
+
     while (bvdec.GetNextRange(from, to))
         while (from <= to)
-            m_JobIds.push_back(CNetScheduleKey(from++, host, port));
+            m_JobIds.push_back(key_gen.GenerateV1(from++));
 
     return true;
 }

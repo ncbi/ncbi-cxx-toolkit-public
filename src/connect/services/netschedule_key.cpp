@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Maxim Didenko, Victor Joukov
+ * Author:  Anatoliy Kuznetsov, Maxim Didenko, Victor Joukov, Dmitry Kazimirov
  *
  * File Description:
  *   Implementation of NetSchedule API.
@@ -40,8 +40,11 @@
 
 BEGIN_NCBI_SCOPE
 
-static const string kNetScheduleKeyPrefix = "JSID";
-static const string kNetScheduleKeySchema = "nsid";
+#define NS_KEY_V1_PREFIX "JSID_01_"
+#define NS_KEY_V1_PREFIX_LEN (sizeof(NS_KEY_V1_PREFIX) - 1)
+
+#define NS_KEY_V2_PREFIX "nsid|"
+#define NS_KEY_V2_PREFIX_LEN (sizeof(NS_KEY_V2_PREFIX) - 1)
 
 CNetScheduleKey::CNetScheduleKey(const string& key_str)
 {
@@ -58,7 +61,7 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
     //   num[/run]
 
     const char* ch = key_str.c_str();
-    if (key_str.compare(0, 8, "JSID_01_") == 0) {
+    if (key_str.compare(0, NS_KEY_V1_PREFIX_LEN, NS_KEY_V1_PREFIX) == 0) {
         // Old (version 1) key
         version = 1;
         ch += 8;
@@ -69,7 +72,8 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
             ++ch;
         }
         if (*ch == 0 || id == 0) {
-            NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+            NCBI_THROW(CNetScheduleException,
+                eKeyFormatError, "Key syntax error.");
         }
         ++ch;
 
@@ -78,14 +82,15 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
             host += *ch;
         }
         if (*ch == 0) {
-            NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+            NCBI_THROW(CNetScheduleException,
+                eKeyFormatError, "Key syntax error.");
         }
         ++ch;
 
         // port
         port = atoi(ch);
         return;
-    } else if (key_str.compare(0, 5, "nsid|") == 0) {
+    } else if (key_str.compare(0, 5, NS_KEY_V2_PREFIX) == 0) {
         version = 2;
         ch += 5;
         do {
@@ -122,7 +127,8 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
         if (*ch) {
             ch += 1;
             if (!isdigit(*ch))
-                NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+                NCBI_THROW(CNetScheduleException,
+                    eKeyFormatError, "Key syntax error.");
             // run
             run = atoi(ch);
         } else {
@@ -133,29 +139,54 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
     NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
 }
 
-CNetScheduleKey::operator string() const
+#define MAX_INT_TO_STR_LEN(type) (sizeof(type) * 3 / 2)
+
+CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
+    const string& host, unsigned port)
 {
-    string key;
-    if (version == 1) {
-        key = "JSID_01_";
-        key += NStr::IntToString(id);
-        key += '_';
-        key += host;
-        key += '_';
-        key += NStr::IntToString(port);
-    } else if (version == 2) {
-        key = "nsid|";
-        key += host + '/';
-        key += NStr::IntToString(port);
-        key += '/';
-        key += queue + '/';
-        key += NStr::IntToString(id);
-        if (run >= 0) {
-            key += '/';
-            key += NStr::IntToString(run);
-        }
+    string port_str(NStr::IntToString(port));
+
+    m_V1HostPort.reserve(1 + host.size() + 1 + port_str.size());
+    m_V1HostPort.push_back('_');
+    m_V1HostPort.append(host);
+    m_V1HostPort.push_back('_');
+    m_V1HostPort.append(port_str);
+
+    m_V2Prefix.reserve(NS_KEY_V2_PREFIX_LEN + m_V1HostPort.size());
+    m_V2Prefix.append(NS_KEY_V2_PREFIX, NS_KEY_V2_PREFIX_LEN);
+    m_V2Prefix.append(host);
+    m_V2Prefix.push_back('/');
+    m_V2Prefix.append(port_str);
+    m_V2Prefix.push_back('/');
+}
+
+void CNetScheduleKeyGenerator::GenerateV1(string* key, unsigned id) const
+{
+    key->reserve(NS_KEY_V1_PREFIX_LEN +
+        MAX_INT_TO_STR_LEN(unsigned) +
+        m_V1HostPort.size());
+    key->append(NS_KEY_V1_PREFIX, NS_KEY_V1_PREFIX_LEN);
+    key->append(NStr::IntToString(id));
+    key->append(m_V1HostPort);
+}
+
+void CNetScheduleKeyGenerator::GenerateV2(string* key, unsigned id,
+    const string& queue, int run /* = -1 */) const
+{
+    key->reserve(m_V2Prefix.size() +
+        queue.size() +
+        1 +
+        MAX_INT_TO_STR_LEN(unsigned) +
+        1 +
+        MAX_INT_TO_STR_LEN(int));
+    key->append(m_V2Prefix);
+    key->append(queue);
+    key->push_back('/');
+    key->append(NStr::IntToString(id));
+    if (run >= 0) {
+        key->push_back('/');
+        key->append(NStr::IntToString(run));
     }
-    return key;
 }
 
 
