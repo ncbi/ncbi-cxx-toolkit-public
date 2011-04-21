@@ -26979,9 +26979,9 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
     GLEW_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lGLEW"
  fi
          else
-            GLEW_LIBS=-lGLEW
+            GLEW_LIBS=-lGLEWmx
          fi
-         glew_libs_l=-lGLEW
+         glew_libs_l=-lGLEWmx
       fi
       CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
       LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LDFLAGS"

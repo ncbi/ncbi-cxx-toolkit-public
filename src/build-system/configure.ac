@@ -4818,9 +4818,9 @@ else
             GLEW_INCLUDE=-I$GLEW_PATH/include
             NCBI_RPATHIFY(GLEW_LIBS, [$GLEW_PATH/lib], [ -lGLEW])
          else
-            GLEW_LIBS=-lGLEW
+            GLEW_LIBS=-lGLEWmx
          fi
-         glew_libs_l=-lGLEW
+         glew_libs_l=-lGLEWmx
       fi
       CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
       LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LDFLAGS"
