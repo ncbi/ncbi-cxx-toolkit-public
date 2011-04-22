@@ -10,7 +10,7 @@ SRC = netscheduled queue_coll job_status queue_clean_thread \
       worker_node job ns_server_misc ns_server_params ns_js_request ns_handler \
       ns_server
 
-REQUIRES = MT bdb unix
+REQUIRES = MT bdb Linux
 
 
 LIB =  $(BDB_LIB) xconnserv xthrserv xconnect xqueryparse xutil xncbi
