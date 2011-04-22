@@ -67,6 +67,7 @@ struct SStringNumericValues
     Int8        i8;
     Uint8       u8;
     double      d;
+    double      delta;
 
     bool IsGoodInt(void) const {
         return i != kBad;
@@ -98,13 +99,13 @@ struct SStringNumericValues
 #define DF 0
 
 //                str  flags  num   int   uint  Int8  Uint8  double
-#define BAD(v)   {  v, DF, -1, kBad, kBad, kBad, kBad, kBad }
-#define STR(v)   { #v, DF, NCBI_CONST_INT8(v), NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), v##. }
-#define STRI(v)  { #v, DF, -1, NCBI_CONST_INT8(v), kBad, NCBI_CONST_INT8(v), kBad, v##. }
-#define STRU(v)  { #v, DF, -1, kBad, NCBI_CONST_UINT8(v), NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), v##. }
-#define STR8(v)  { #v, DF, -1, kBad, kBad, NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), v##. }
-#define STRI8(v) { #v, DF, -1, kBad, kBad, NCBI_CONST_INT8(v), kBad, v##. }
-#define STRU8(v) { #v, DF, -1, kBad, kBad, kBad, NCBI_CONST_UINT8(v), v##. }
+#define BAD(v)   {  v, DF, -1, kBad, kBad, kBad, kBad, kBad, 0. }
+#define STR(v)   { #v, DF, NCBI_CONST_INT8(v), NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), v##., 0. }
+#define STRI(v)  { #v, DF, -1, NCBI_CONST_INT8(v), kBad, NCBI_CONST_INT8(v), kBad, v##. , 0.}
+#define STRU(v)  { #v, DF, -1, kBad, NCBI_CONST_UINT8(v), NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), v##. , 0.}
+#define STR8(v)  { #v, DF, -1, kBad, kBad, NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), v##. , 0.}
+#define STRI8(v) { #v, DF, -1, kBad, kBad, NCBI_CONST_INT8(v), kBad, v##., 0.}
+#define STRU8(v) { #v, DF, -1, kBad, kBad, kBad, NCBI_CONST_UINT8(v), v##., 0. }
 #define STRD(v)  { #v, DF, -1, kBad, kBad, kBad, kBad, v##. }
 
 static const SStringNumericValues s_Str2NumTests[] = {
@@ -163,7 +164,7 @@ static const SStringNumericValues s_Str2NumTests[] = {
     STR8(1000000000000000000),
 #endif
     STRD(-9223372036854775809),
-    { "-9223372036854775808", DF, -1, kBad, kBad, NCBI_CONST_INT8(-9223372036854775807)-1, kBad, -9223372036854775808. },
+    { "-9223372036854775808", DF, -1, kBad, kBad, NCBI_CONST_INT8(-9223372036854775807)-1, kBad, -9223372036854775808., 0. },
     STRI8(-9223372036854775807),
     STR8(9223372036854775806),
     STR8(9223372036854775807),
@@ -178,64 +179,64 @@ static const SStringNumericValues s_Str2NumTests[] = {
     BAD("."),
     BAD(".."),
     BAD("abc"),
-    { ".0",  DF, -1, kBad, kBad, kBad, kBad,  .0  },
+    { ".0",  DF, -1, kBad, kBad, kBad, kBad,  .0, 0.  },
     BAD(".0."),
     BAD("..0"),
-    { ".01", DF, -1, kBad, kBad, kBad, kBad,  .01 },
-    { "1.",  DF, -1, kBad, kBad, kBad, kBad,  1.  },
-    { "1.1", DF, -1, kBad, kBad, kBad, kBad,  1.1 },
+    { ".01", DF, -1, kBad, kBad, kBad, kBad,  .01, 0. },
+    { "1.",  DF, -1, kBad, kBad, kBad, kBad,  1. , 0. },
+    { "1.1", DF, -1, kBad, kBad, kBad, kBad,  1.1, 0. },
     BAD("1.1."),
     BAD("1.."),
     STRI(-123),
     BAD("--123"),
-    { "+123", DF, 123, 123, 123, 123, 123, 123 },
+    { "+123", DF, 123, 123, 123, 123, 123, 123, 0. },
     BAD("++123"),
     BAD("- 123"),
     BAD(" 123"),
 
-    { " 123",     NStr::fAllowLeadingSpaces,  -1, 123,  123,  123,  123,  123. },
-    { " 123",     NStr::fAllowLeadingSymbols, -1, 123,  123,  123,  123,  123. },
+    { " 123",     NStr::fAllowLeadingSpaces,  -1, 123,  123,  123,  123,  123., 0.},
+    { " 123",     NStr::fAllowLeadingSymbols, -1, 123,  123,  123,  123,  123., 0. },
     BAD("123 "),
-    { "123 ",     NStr::fAllowTrailingSpaces,  -1, 123,  123,  123,  123,  123. },
-    { "123 ",     NStr::fAllowTrailingSymbols, -1, 123,  123,  123,  123,  123. },
-    { "123(45) ", NStr::fAllowTrailingSymbols, -1, 123,  123,  123,  123,  123. },
-    { " 123 ",    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces, -1, 123,  123,  123,  123,  123. },
+    { "123 ",     NStr::fAllowTrailingSpaces,  -1, 123,  123,  123,  123,  123., 0. },
+    { "123 ",     NStr::fAllowTrailingSymbols, -1, 123,  123,  123,  123,  123., 0. },
+    { "123(45) ", NStr::fAllowTrailingSymbols, -1, 123,  123,  123,  123,  123., 0. },
+    { " 123 ",    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces, -1, 123,  123,  123,  123,  123., 0. },
     
-    { "1,234",    NStr::fAllowCommas, -1,    1234,    1234,    1234,    1234, kBad },
-    { "1,234,567",NStr::fAllowCommas, -1, 1234567, 1234567, 1234567, 1234567, kBad },
-    { "12,34",    NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad },
-    { ",123",     NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad },
-    { ",123",     NStr::fAllowCommas | NStr::fAllowLeadingSymbols, -1, 123, 123, 123, 123, 123 },
+    { "1,234",    NStr::fAllowCommas, -1,    1234,    1234,    1234,    1234, kBad, 0. },
+    { "1,234,567",NStr::fAllowCommas, -1, 1234567, 1234567, 1234567, 1234567, kBad, 0. },
+    { "12,34",    NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad, 0. },
+    { ",123",     NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad, 0. },
+    { ",123",     NStr::fAllowCommas | NStr::fAllowLeadingSymbols, -1, 123, 123, 123, 123, 123, 0. },
 #if (SIZEOF_INT > 4)
-    {  "4,294,967,294", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), kBad },
-    {  "4,294,967,295", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), kBad },
-    {  "4,294,967,296", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), kBad },
-    { "-4,294,967,294", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967294), kBad,                         NCBI_CONST_INT8(-4294967294), kBad,                         kBad },
-    { "-4,294,967,295", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967295), kBad,                         NCBI_CONST_INT8(-4294967295), kBad,                         kBad },
-    { "-4,294,967,296", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967296), kBad,                         NCBI_CONST_INT8(-4294967296), kBad,                         kBad },
+    {  "4,294,967,294", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), kBad, 0. },
+    {  "4,294,967,295", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), kBad, 0. },
+    {  "4,294,967,296", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), kBad, 0. },
+    { "-4,294,967,294", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967294), kBad,                         NCBI_CONST_INT8(-4294967294), kBad,                         kBad, 0. },
+    { "-4,294,967,295", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967295), kBad,                         NCBI_CONST_INT8(-4294967295), kBad,                         kBad, 0. },
+    { "-4,294,967,296", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967296), kBad,                         NCBI_CONST_INT8(-4294967296), kBad,                         kBad, 0. },
 #else
-    {  "4,294,967,294", NStr::fAllowCommas, -1, kBad,                         NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), kBad },
-    {  "4,294,967,295", NStr::fAllowCommas, -1, kBad,                         NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), kBad },
-    {  "4,294,967,296", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), kBad },
-    { "-4,294,967,294", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967294), kBad,                         kBad },
-    { "-4,294,967,295", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967295), kBad,                         kBad },
-    { "-4,294,967,296", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967296), kBad,                         kBad },
+    {  "4,294,967,294", NStr::fAllowCommas, -1, kBad,                         NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), kBad, 0. },
+    {  "4,294,967,295", NStr::fAllowCommas, -1, kBad,                         NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), kBad, 0. },
+    {  "4,294,967,296", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), kBad, 0. },
+    { "-4,294,967,294", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967294), kBad,                         kBad, 0. },
+    { "-4,294,967,295", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967295), kBad,                         kBad, 0. },
+    { "-4,294,967,296", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967296), kBad,                         kBad, 0. },
 #endif
 
-    { "+123",     0, 123, 123, 123, 123, 123, 123 },
-    { "123",      NStr::fMandatorySign, 123, kBad, kBad, kBad, kBad, kBad },
-    { "+123",     NStr::fMandatorySign, 123,  123,  123,  123,  123, 123 },
-    { "-123",     NStr::fMandatorySign,  -1, -123, kBad, -123, kBad, -123 },
-    { "+123",     NStr::fAllowLeadingSymbols, 123,  123,  123,  123,  123,  123 },
+    { "+123",     0, 123, 123, 123, 123, 123, 123, 0. },
+    { "123",      NStr::fMandatorySign, 123, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "+123",     NStr::fMandatorySign, 123,  123,  123,  123,  123, 123, 0. },
+    { "-123",     NStr::fMandatorySign,  -1, -123, kBad, -123, kBad, -123, 0. },
+    { "+123",     NStr::fAllowLeadingSymbols, 123,  123,  123,  123,  123,  123, 0. },
 #if 0
-    { "7E-380",   DF, -1, kBad, kBad, kBad, kBad, kBad },
-    { "7E-325",   DF, -1, kBad, kBad, kBad, kBad, kBad },
-    { "7E-324",   DF, -1, kBad, kBad, kBad, kBad, 7E-324 },
-    { "7E-323",   DF, -1, kBad, kBad, kBad, kBad, 7E-323 },
+    { "7E-380",   DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "7E-325",   DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "7E-324",   DF, -1, kBad, kBad, kBad, kBad, 7E-324, 0. },
+    { "7E-323",   DF, -1, kBad, kBad, kBad, kBad, 7E-323, 0. },
 #endif
-    { "7E-38",    DF, -1, kBad, kBad, kBad, kBad, 7E-38 },
-    { "7E38",     DF, -1, kBad, kBad, kBad, kBad, 7E38 },
-    { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123 }
+    { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38, 0. },
+    { "7E38",   DF, -1, kBad, kBad, kBad, kBad, 7E38, 0. },
+    { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123, 0. }
 };
 
 BOOST_AUTO_TEST_CASE(s_StringToNum)
@@ -569,12 +570,20 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             double value = NStr::StringToDouble(str, flags);
             double valueP = NStr::StringToDouble(str, flags | NStr::fDecimalPosix);
-            BOOST_CHECK_EQUAL(value, valueP);
+//            BOOST_CHECK_EQUAL(value, valueP);
+            BOOST_CHECK(    valueP == value ||
+                            valueP == value+test->delta ||
+                            valueP == value-test->delta ||
+                           (valueP <  value+test->delta && valueP > value-test->delta));
             NcbiCout << "double value: " << value << ", toString: '"
-                     << NStr::DoubleToString(value, str_flags) << "'"
+                     << NStr::DoubleToString(value, -1, str_flags) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodDouble());
-            BOOST_CHECK_EQUAL(value, test->d);
+//            BOOST_CHECK_EQUAL(value, test->d);
+            BOOST_CHECK(    value == test->d ||
+                            value == test->d+test->delta ||
+                            value == test->d-test->delta ||
+                           (value <  test->d+test->delta && value > test->d-test->delta));
         }
         catch (CException&) {
             if ( test->IsGoodDouble() ) {
@@ -588,12 +597,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             double value = NStr::StringToDouble(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "double value: " << value << ", toString: '"
-                     << NStr::DoubleToString(value, str_flags) << "'"
+                     << NStr::DoubleToString(value, -1, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodDouble());
-                BOOST_CHECK_EQUAL(value, test->d);
+//                BOOST_CHECK_EQUAL(value, test->d);
+                BOOST_CHECK(    value == test->d ||
+                                value == test->d+test->delta ||
+                                value == test->d-test->delta ||
+                               (value <  test->d+test->delta && value > test->d-test->delta));
             }
             else {
                 BOOST_CHECK(err);
@@ -606,12 +619,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             double value = NStr::StringToDouble(str, flags | NStr::fDecimalPosix | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "double value: " << value << ", toString: '"
-                     << NStr::DoubleToString(value, str_flags) << "'"
+                     << NStr::DoubleToString(value, -1, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodDouble());
-                BOOST_CHECK_EQUAL(value, test->d);
+//                BOOST_CHECK_EQUAL(value, test->d);
+                BOOST_CHECK(    value == test->d ||
+                                value == test->d+test->delta ||
+                                value == test->d-test->delta ||
+                               (value <  test->d+test->delta && value > test->d-test->delta));
             }
             else {
                 BOOST_CHECK(err);
@@ -766,45 +783,45 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 }
 
 static const SStringNumericValues s_Str2NumNonPosixTests[] = {
-    {  ",",   DF,                         -1, kBad, kBad, kBad, kBad, kBad },
-    {  ",,",  DF,                         -1, kBad, kBad, kBad, kBad, kBad },
-    {  ".,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
-    {  ",.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
-    { ",0",   DF,                         -1, kBad, kBad, kBad, kBad,  .0  },
-    { ",0.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
-    { ".0,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
-    { ",01",  DF,                         -1, kBad, kBad, kBad, kBad,  .01 },
-    { "1,",   DF,                         -1, kBad, kBad, kBad, kBad,  1.  },
-    { "1,1",  DF,                         -1, kBad, kBad, kBad, kBad,  1.1 },
-    { "1,1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1 },
-    { "1,1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1.1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1 },
-    { "1.1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  1.1 },
-    { "1,1.", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1,1,", DF,                         -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1.1,", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1.1,", NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1.,",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad },
+    {  ",",   DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    {  ",,",  DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    {  ".,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    {  ",.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { ",0",   DF,                         -1, kBad, kBad, kBad, kBad,  .0 , 0. },
+    { ",0.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { ".0,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { ",01",  DF,                         -1, kBad, kBad, kBad, kBad,  .01, 0. },
+    { "1,",   DF,                         -1, kBad, kBad, kBad, kBad,  1. , 0. },
+    { "1,1",  DF,                         -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1,1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1,1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1.1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1,1.", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1,1,", DF,                         -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.1,", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.1,", NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.,",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
 
-    { "12,34",  DF,                            -1, kBad, kBad, kBad, kBad,  12.34 },
-    { "12,34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34 },
-    { "12.34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34 },
-    { "12.34",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  12.34 },
-    { "12,34e-2",  DF,                         -1, kBad, kBad, kBad, kBad,  .1234 },
-    { "12,34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234 },
-    { "12.34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234 },
-    { "12.34e-2",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  .1234 },
-    { "1234,",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234. },
-    { "1234.",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  1234. },
-    { "1234",   NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234. },
-    { "0,0",    NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0. },
-    { "0,000",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0. },
-    { "0.000",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  0. },
-    { ",,1234", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1234,,", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad },
-    { "12,,34", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad }
+    { "12,34",  DF,                            -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    { "12,34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    { "12.34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    { "12.34",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    { "12,34e-2",  DF,                         -1, kBad, kBad, kBad, kBad,  .1234, 0. },
+    { "12,34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 0. },
+    { "12.34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 0. },
+    { "12.34e-2",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  .1234, 0. },
+    { "1234,",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234., 0. },
+    { "1234.",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  1234., 0. },
+    { "1234",   NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234., 0. },
+    { "0,0",    NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0., 0. },
+    { "0,000",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0., 0. },
+    { "0.000",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  0., 0. },
+    { ",,1234", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1234,,", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "12,,34", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad, 0. }
 
 };
 
