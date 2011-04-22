@@ -787,6 +787,7 @@ START_SUBTYPE(mat_peptide_aa)
 END_SUBTYPE
 
 START_SUBTYPE(sig_peptide_aa)
+    ADD_QUAL(EC_number);
     ADD_QUAL(allele);
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);

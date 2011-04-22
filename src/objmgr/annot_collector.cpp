@@ -1732,11 +1732,11 @@ void CAnnot_Collector::x_Sort(void)
     _ASSERT(!m_MappingCollector.get());
     switch ( m_Selector->m_SortOrder ) {
     case SAnnotSelector::eSortOrder_Normal:
-        sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+        stable_sort(m_AnnotSet.begin(), m_AnnotSet.end(),
              CAnnotObject_Less(m_Selector, m_Scope));
         break;
     case SAnnotSelector::eSortOrder_Reverse:
-        sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+        stable_sort(m_AnnotSet.begin(), m_AnnotSet.end(),
              CAnnotObject_LessReverse(m_Selector, m_Scope));
         break;
     default:
@@ -2401,7 +2401,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
             }
             if ( need_unique  ||  hr.end() - hr.begin() > 1 ) {
                 TAnnotSet::iterator first_added = m_AnnotSet.begin() + start_size;
-                sort(first_added, m_AnnotSet.end());
+                stable_sort(first_added, m_AnnotSet.end());
                 m_AnnotSet.erase(unique(first_added, m_AnnotSet.end()),
                                 m_AnnotSet.end());
             }

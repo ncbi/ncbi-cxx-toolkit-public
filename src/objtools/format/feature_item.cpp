@@ -1576,8 +1576,8 @@ public:
         // candidate_feat_loc = bioseq_handle.MapLocation( *candidate_feat_loc );
         candidate_feat_original_strand = s_GeneSearchNormalizeLoc( bioseq_handle, candidate_feat_loc, circular_length ) ;
 
-        if( feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" &&
-            candidate_feat_is_mixed && annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) {
+        // !!!!!TODO: maybe uncomment?
+        if( candidate_feat_is_mixed && annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) {
                 // force strand matching
                 candidate_feat_original_strand = loc_original_strand;
                 if( overlap_type_this_iteration == eOverlap_Contained ) {
@@ -1968,12 +1968,6 @@ bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_l
         length_before_decimal_point = ctx.GetAccession().length();
     }
     if( length_before_decimal_point == 6 ) {
-        return true;
-    }
-
-    if( ! ctx.HasMultiIntervalGenes() ) {
-        // it's debatable whether we should allow this, but
-        // it's here for backward compatibility with C
         return true;
     }
 
@@ -3278,7 +3272,7 @@ void CFeatureItem::x_AddQualDbXref(
 //  ----------------------------------------------------------------------------
 {
     if ( m_Feat.IsSetProduct()  &&
-         ( !m_Feat.GetData().IsCdregion()  &&  ctx.IsProt()) ) {
+        ( !m_Feat.GetData().IsCdregion()  &&  ctx.IsProt() && ! IsMappedFromProt() ) ) {
         CBioseq_Handle prod = 
             ctx.GetScope().GetBioseqHandle( m_Feat.GetProduct() );
         if ( prod ) {
@@ -3584,7 +3578,7 @@ void CFeatureItem::x_AddQualsProt(
     ///
     /// report molecular weights
     ///
-    if (ctx.IsProt() && ctx.IsRefSeq() ) {
+    if (ctx.IsProt() && ctx.IsRefSeq() && ! IsMappedFromProt() ) {
         double wt = 0;
         bool has_mat_peptide = false;
         bool has_signal_peptide = false;

@@ -190,6 +190,7 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     TDbxrefPair("FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB),
     TDbxrefPair("FLYBASE", CDbtag::eDbtagType_FLYBASE),
     TDbxrefPair("GRIN", CDbtag::eDbtagType_GRIN),
+    TDbxrefPair("Greengenes", CDbtag::eDbtagType_Greengenes),
     TDbxrefPair("HMP", CDbtag::eDbtagType_HMP),
     TDbxrefPair("HOMD", CDbtag::eDbtagType_HOMD),
     TDbxrefPair("IKMC", CDbtag::eDbtagType_IKMC),

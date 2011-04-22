@@ -457,6 +457,10 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         }
     }
 
+    if (is_transgenic && tech == CMolInfo::eTech_survey) {
+        m_Division = "GSS";
+    }
+
     ITERATE (CBioseq_Handle::TId, iter, bsh.GetId()) {
         if (*iter  &&  iter->GetSeqId()->IsPatent()) {
             m_Division = "PAT";
