@@ -360,7 +360,7 @@ CQueue::~CQueue()
 
 string CQueue::MakeKey(unsigned job_id) const
 {
-    m_KeyGenerator.GenerateV1(job_id);
+    return m_KeyGenerator.GenerateV1(job_id);
 }
 
 void CQueue::Attach(SQueueDbBlock* block)
