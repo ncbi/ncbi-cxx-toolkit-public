@@ -77,6 +77,7 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
     case CSeq_align::TSegs::e_Std:
         break;
     case CSeq_align::TSegs::e_Packed:
+        sa->SetSegs().SetPacked(*CreatePackedsegFromAnchoredAln(anchored_aln));
         break;
     case CSeq_align::TSegs::e_Disc:
         sa->SetSegs().SetDisc(*CreateAlignSetFromAnchoredAln(anchored_aln));
@@ -455,9 +456,13 @@ CreateSeqAlignFromEachPairwiseAln
                 sa->SetSegs().SetDisc(*disc);
                 break;
             }
+            case CSeq_align::TSegs::e_Packed: {
+                CRef<CPacked_seg> ps = CreatePackedsegFromPairwiseAln(*p);
+                sa->SetSegs().SetPacked(*ps);
+                break;
+            }
             case CSeq_align::TSegs::e_Dendiag:
             case CSeq_align::TSegs::e_Std:
-            case CSeq_align::TSegs::e_Packed:
             case CSeq_align::TSegs::e_Spliced:
             case CSeq_align::TSegs::e_Sparse:
                 NCBI_THROW(CAlnException, eInvalidRequest,
@@ -622,6 +627,177 @@ CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln)
     }
 
     return disc;
+}
+
+
+CRef<CPacked_seg>
+CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln) 
+{
+    const CAnchoredAln::TPairwiseAlnVector& pairwises = anchored_aln.GetPairwiseAlns();
+
+    typedef CSegmentedRangeCollection TAnchorSegments;
+    TAnchorSegments anchor_segments;
+    ITERATE(CAnchoredAln::TPairwiseAlnVector, pairwise_aln_i, pairwises) {
+        ITERATE (CPairwiseAln::TAlnRngColl, rng_i, **pairwise_aln_i) {
+            anchor_segments.insert(CPairwiseAln::TRng(rng_i->GetFirstFrom(), rng_i->GetFirstTo()));
+        }
+    }
+
+    // Create a packed-seg
+    CRef<CPacked_seg> ps(new CPacked_seg);
+
+    // Determine dimensions
+    CPacked_seg::TNumseg& numseg = ps->SetNumseg();
+    numseg = anchor_segments.size();
+    CPacked_seg::TDim& dim = ps->SetDim();
+    dim = anchored_aln.GetDim();
+
+    // Tmp vars
+    CPacked_seg::TDim row;
+    CPacked_seg::TNumseg seg;
+
+    // Ids
+    CPacked_seg::TIds& ids = ps->SetIds();
+    ids.resize(dim);
+    for (row = 0;  row < dim;  ++row) {
+        ids[row].Reset(new CSeq_id);
+        SerialAssign<CSeq_id>(*ids[row], anchored_aln.GetId(dim - row - 1)->GetSeqId());
+    }
+
+    // Lens
+    CPacked_seg::TLens& lens = ps->SetLens();
+    lens.resize(numseg);
+    TAnchorSegments::const_iterator seg_i = anchor_segments.begin();
+    for (seg = 0; seg < numseg; ++seg, ++seg_i) {
+        lens[seg] = seg_i->GetLength();
+    }
+
+    int matrix_size = dim * numseg;
+
+    // Present
+    CPacked_seg::TPresent& present = ps->SetPresent();
+    present.resize(matrix_size);
+
+    // Strands (just resize, will set while setting starts)
+    CPacked_seg::TStrands& strands = ps->SetStrands();
+    strands.resize(matrix_size, eNa_strand_unknown);
+
+    // Starts and strands
+    CPacked_seg::TStarts& starts = ps->SetStarts();
+    starts.resize(matrix_size, -1);
+    for (row = 0;  row < dim;  ++row) {
+        seg = 0;
+        int matrix_row_pos = row;  // optimization to eliminate multiplication
+        seg_i = anchor_segments.begin();
+        CPairwiseAln::TAlnRngColl::const_iterator aln_rng_i = pairwises[dim - row - 1]->begin();
+        bool direct = aln_rng_i->IsDirect();
+        TSignedSeqPos left_delta = 0;
+        TSignedSeqPos right_delta = aln_rng_i->GetLength();
+        while (seg_i != anchor_segments.end()) {
+            _ASSERT(seg < numseg);
+            _ASSERT(matrix_row_pos == row + dim * seg);
+            if (aln_rng_i != pairwises[dim - row - 1]->end()  &&
+                seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
+                _ASSERT(seg_i->GetToOpen() <= aln_rng_i->GetFirstToOpen());
+                if (seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()) {
+                    NCBI_THROW(CAlnException, eInternalFailure,
+                               "seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()");
+                }
+
+                // dec right_delta
+                _ASSERT(right_delta >= seg_i->GetLength());
+                if (right_delta < seg_i->GetLength()) {
+                    NCBI_THROW(CAlnException, eInternalFailure,
+                               "right_delta < seg_i->GetLength()");
+                }
+                right_delta -= seg_i->GetLength();
+
+                CPacked_seg::TStarts::value_type start = (direct ?
+                    aln_rng_i->GetSecondFrom() + left_delta
+                    : aln_rng_i->GetSecondFrom() + right_delta);
+                starts[matrix_row_pos] = start;
+
+                present[matrix_row_pos] = (start != kInvalidSeqPos);
+
+                // inc left_delta
+                left_delta += seg_i->GetLength();
+
+                if (right_delta == 0) {
+                    _ASSERT(left_delta == aln_rng_i->GetLength());
+                    ++aln_rng_i;
+                    if (aln_rng_i != pairwises[dim - row - 1]->end()) {
+                        direct = aln_rng_i->IsDirect();
+                        left_delta = 0;
+                        right_delta = aln_rng_i->GetLength();
+                    }
+                }
+            }
+            strands[matrix_row_pos] = (direct ? eNa_strand_plus : eNa_strand_minus);
+            ++seg_i;
+            ++seg;
+            matrix_row_pos += dim;
+        }
+    }
+    return ps;
+}
+
+
+CRef<CPacked_seg>
+CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
+{
+    // Create a packed-seg
+    CRef<CPacked_seg> ps(new CPacked_seg);
+
+
+    // Determine dimensions
+    CPacked_seg::TNumseg& numseg = ps->SetNumseg();
+    numseg = pairwise_aln.size();
+    ps->SetDim(2);
+    int matrix_size = 2 * numseg;
+
+    CPacked_seg::TLens& lens = ps->SetLens();
+    lens.resize(numseg);
+
+    CPacked_seg::TStarts& starts = ps->SetStarts();
+    starts.resize(matrix_size, -1);
+
+    CPacked_seg::TPresent& present = ps->SetPresent();
+    present.resize(matrix_size, 0);
+
+    CPacked_seg::TIds& ids = ps->SetIds();
+    ids.resize(2);
+
+    // Ids
+    ids[0].Reset(new CSeq_id);
+    SerialAssign<CSeq_id>(*ids[0], pairwise_aln.GetFirstId()->GetSeqId());
+    ids[1].Reset(new CSeq_id);
+    SerialAssign<CSeq_id>(*ids[1], pairwise_aln.GetSecondId()->GetSeqId());
+
+
+    // Tmp vars
+    CPacked_seg::TNumseg seg = 0;
+    int matrix_pos = 0;
+
+    // Main loop to set all values
+    ITERATE(CPairwiseAln::TAlnRngColl, aln_rng_i, pairwise_aln) {
+        CPacked_seg::TStarts::value_type start = aln_rng_i->GetFirstFrom();
+        present[matrix_pos] = (start != kInvalidSeqPos);
+        starts[matrix_pos++] = start;
+        if ( !aln_rng_i->IsDirect() ) {
+            if ( !ps->IsSetStrands() ) {
+                ps->SetStrands().resize(matrix_size, eNa_strand_plus);
+            }
+            ps->SetStrands()[matrix_pos] = eNa_strand_minus;
+        }
+        start = aln_rng_i->GetSecondFrom();
+        present[matrix_pos] = (start != kInvalidSeqPos);
+        starts[matrix_pos++] = start;
+        lens[seg++] = aln_rng_i->GetLength();
+    }
+    _ASSERT(matrix_pos == matrix_size);
+    _ASSERT(seg == numseg);
+
+    return ps;
 }
 
 
