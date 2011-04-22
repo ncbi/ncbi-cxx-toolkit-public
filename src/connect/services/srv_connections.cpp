@@ -40,6 +40,12 @@
 
 #include <corelib/ncbi_system.hpp>
 
+#ifdef NCBI_OS_LINUX
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <netinet/tcp.h>
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
@@ -202,6 +208,13 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
 string CNetServerConnection::Exec(const string& cmd)
 {
     m_Impl->WriteLine(cmd);
+
+    m_Impl->m_Socket.SetCork(false);
+#ifdef NCBI_OS_LINUX
+    int fd = 0, val = 1;
+    m_Impl->m_Socket.GetOSHandle(&fd, sizeof(fd));
+    setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &val, sizeof(val));
+#endif
 
     string output;
     m_Impl->ReadCmdOutputLine(output);

@@ -37,6 +37,12 @@
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
 
+#ifdef NCBI_OS_LINUX
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <netinet/tcp.h>
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   ConnServ_NetCache
 
@@ -92,6 +98,12 @@ ERW_Result CNetServerReader::PendingCount(size_t* count)
 
 void CNetServerReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
 {
+#ifdef NCBI_OS_LINUX
+    int fd = 0, val = 1;
+    m_Connection->m_Socket.GetOSHandle(&fd, sizeof(fd));
+    setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &val, sizeof(val));
+#endif
+
     EIO_Status status = m_Connection->m_Socket.Read(buf, count, bytes_read);
 
     switch (status) {
@@ -127,6 +139,8 @@ CNetServerWriter::CNetServerWriter(const CNetServer::SExecResult& exec_result) :
     m_Connection(exec_result.conn),
     m_ResponseType(eNetCache_Wait)
 {
+    m_Connection->m_Socket.SetCork(true);
+
     m_SocketReaderWriter.reset(
         new CSocketReaderWriter(&m_Connection->m_Socket));
 
@@ -164,6 +178,8 @@ void CNetServerWriter::Close()
                 "IO error while sending EOF packet");
         }
     }
+
+    m_Connection->m_Socket.SetCork(false);
 
     if (m_ResponseType == eNetCache_Wait) {
         try {
