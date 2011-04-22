@@ -1971,7 +1971,10 @@ bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
         // only 'included' annots
         ITERATE ( SAnnotSelector::TAnnotsNames, iter,
                   m_Selector->m_IncludeAnnotsNames ) {
-            _ASSERT(!m_Selector->ExcludedAnnotName(*iter)); //consistency check
+            if ( m_Selector->ExcludedAnnotName(*iter) ) {
+                // it may happen e.g. when another zoom level is selected
+                continue;
+            }
             const SIdAnnotObjs* objs = tse.x_GetIdObjects(*iter, id);
             if ( objs ) {
                 x_SearchObjects(tseh, objs, guard, *iter, id, hr, cvt);
