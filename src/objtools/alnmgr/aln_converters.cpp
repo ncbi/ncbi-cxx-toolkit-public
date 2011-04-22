@@ -67,7 +67,7 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                              CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
-    _ALNMGR_ASSERT( !sa.IsSetDim()  ||  sa.GetDim() > max(row_1, row_2));
+    _ALNMGR_ASSERT(sa.CheckNumRows() > max(row_1, row_2));
 
     typedef CSeq_align::TSegs TSegs;
     const TSegs& segs = sa.GetSegs();
@@ -905,7 +905,7 @@ CreateAnchoredAlnVec(TAlnStats& aln_stats,           ///< input
 CRef<CPairwiseAln>
 CreatePairwiseAlnFromSeqAlign(const CSeq_align& sa)
 {
-    _ALNMGR_ASSERT(sa.GetDim() == 2);
+    _ALNMGR_ASSERT(sa.CheckNumRows() == 2);
 
     TAlnSeqIdIRef id1(new CAlnSeqId(sa.GetSeq_id(0)));
     TAlnSeqIdIRef id2(new CAlnSeqId(sa.GetSeq_id(1)));
