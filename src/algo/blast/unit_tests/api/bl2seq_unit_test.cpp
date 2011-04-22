@@ -1196,6 +1196,15 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithInvalidSeqId) {
     // Verify that the alignments corresponding to the 2nd query are indeed empty
     // in older version this was sas_v[1], order has changed
     BOOST_REQUIRE_EQUAL(0, (int) sas_v[2]->Size());
+
+    CRef<CSearchResultSet> res = blaster4all.RunEx();
+    BOOST_REQUIRE(res.NotEmpty());
+    BOOST_REQUIRE_EQUAL(q_gis.size()*s_gis.size(), res->GetNumResults());
+    BOOST_REQUIRE(res->GetResults(0,0).HasAlignments());
+    BOOST_REQUIRE(!res->GetResults(0,1).HasAlignments());
+    BOOST_REQUIRE(!res->GetResults(1,0).HasAlignments());
+    BOOST_REQUIRE(!res->GetResults(1,1).HasAlignments());
+
 }
 
 BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueriesWithInvalidSeqId) {
