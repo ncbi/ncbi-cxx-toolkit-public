@@ -272,6 +272,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         if (GetConnection().GetCTLibContext().GetClientEncoding() == eEncoding_UTF8) {
             CStringUTF8 str_check(CTempString(par.Value(), par.Size()),
                                   eEncoding_UTF8, CStringUTF8::eValidate);
+            str_check.AsUCS2();
         }
 #else
         param_fmt.datatype = CS_CHAR_TYPE;
