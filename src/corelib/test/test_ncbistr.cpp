@@ -234,7 +234,11 @@ static const SStringNumericValues s_Str2NumTests[] = {
     { "7E-324",   DF, -1, kBad, kBad, kBad, kBad, 7E-324, 0. },
     { "7E-323",   DF, -1, kBad, kBad, kBad, kBad, 7E-323, 0. },
 #endif
+#if defined(NCBI_OS_LINUX) && (NCBI_PLATFORM_BITS == 32) && !defined(_DEBUG)
+    { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38, 0.000000000000002e-38 },
+#else
     { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38, 0. },
+#endif
     { "7E38",   DF, -1, kBad, kBad, kBad, kBad, 7E38, 0. },
     { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123, 0. }
 };
