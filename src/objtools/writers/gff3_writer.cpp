@@ -302,9 +302,9 @@ bool CGff3Writer::x_WriteFeatureMrna(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef< CGff3WriteRecordFeature > pExon( new CGff3WriteRecordFeature( *pMrna ) );
-            pExon->AssignType( "exon" );
+            pExon->CorrectType( "exon" );
             pExon->AssignParent( *pMrna );
-            pExon->AssignLocation( subint );
+            pExon->CorrectLocation( subint );
             pExon->AssignSequenceNumber( uSequenceNumber++, "E" );
 
             string strId;
@@ -341,17 +341,20 @@ bool CGff3Writer::x_WriteFeatureCds(
     pPackedInt->Add( mf.GetLocation() );
     pPackedInt->ChangeToPackedInt();
 
+    unsigned int uTotSize = 0;
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3WriteRecordFeature> pExon( new CGff3WriteRecordFeature( *pCds ) );
-            pExon->AssignType( "CDS" );
-            pExon->AssignLocation( subint );
+            pExon->CorrectType( "CDS" );
+            pExon->CorrectLocation( subint );
+            pExon->CorrectPhase( uTotSize );
             if ( ! x_WriteRecord( pExon ) ) {
                 return false;
             }
+            uTotSize += subint.GetLength();
         }
     }
     return true;
@@ -379,7 +382,7 @@ bool CGff3Writer::x_WriteFeatureGeneric(
             const CSeq_interval& subint = **it;
             CRef<CGff3WriteRecordFeature> pChild( 
                 new CGff3WriteRecordFeature( *pParent ) );
-            pChild->AssignLocation( subint );
+            pChild->CorrectLocation( subint );
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }

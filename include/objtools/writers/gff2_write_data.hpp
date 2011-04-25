@@ -60,17 +60,17 @@ public:
     //
     //  Input/output:
     //
-    virtual bool AssignLocation(
+    virtual bool CorrectLocation(
         const CSeq_interval& );
 
-    bool MergeRecord(
-        const CGffWriteRecord& );
-
-    bool AssignType(
+    bool CorrectType(
         const string& strType ) {
         m_strType = strType;
         return true;
     };
+
+    bool CorrectPhase(
+        int );
 
     bool AssignSequenceNumber(
         unsigned int,

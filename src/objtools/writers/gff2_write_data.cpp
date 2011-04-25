@@ -135,24 +135,6 @@ bool CGffWriteRecord::GetAttribute(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriteRecord::MergeRecord(
-    const CGffWriteRecord& other )
-//  ----------------------------------------------------------------------------
-{
-    const TAttributes& newAttrs = other.Attributes(); 
-    for ( TAttrCit cit  = newAttrs.begin(); cit != newAttrs.end(); ++cit ) {
-        if ( cit->first == "gff_score" ) {
-            delete m_pdScore;
-            m_pdScore = new double( NStr::StringToDouble( cit->second ) );
-            continue;
-        }
-        m_Attributes[ cit->first ] = cit->second;
-    }
-
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrType() const
 //  ----------------------------------------------------------------------------
 {
@@ -314,7 +296,7 @@ void CGffWriteRecord::x_PriorityProcess(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriteRecord::AssignLocation(
+bool CGffWriteRecord::CorrectLocation(
     const CSeq_interval& interval ) 
 //  ----------------------------------------------------------------------------
 {
@@ -330,6 +312,24 @@ bool CGffWriteRecord::AssignLocation(
         }
         else {
             *m_peStrand = interval.GetStrand();
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffWriteRecord::CorrectPhase(
+    int iShift )
+//  ----------------------------------------------------------------------------
+{
+    if ( 0 == m_puPhase ) {
+        cerr << "CorrctPhase ???" << endl;
+        return false;
+    }
+    else {
+        *m_puPhase = (*m_puPhase+iShift)%3;
+        if ( *m_puPhase ) {
+            *m_puPhase = 3 - *m_puPhase;
         }
     }
     return true;
@@ -608,24 +608,11 @@ bool CGffWriteRecordFeature::x_AssignPhase(
     if ( data.GetSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
         const CCdregion& cds = data.GetCdregion();
         int frame = max( int(cds.GetFrame())-1, 0 );
-        if ( frame ) {
-            cerr << "";
-        }
         m_puPhase = new unsigned int( frame );
         return true;
     }
     return true;
 }
-/*
-    int frame = -1;
-    if (seqfeat.GetData().IsCdregion()  &&  !ctx.IsProt() ) {
-        const CCdregion& cds = seqfeat.GetData().GetCdregion();
-        frame = max(cds.GetFrame() - 1, 0);
-    }
-        if (frame >= 0) {
-            frame = (frame + to - from + 1) % 3;
-        }
-*/
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignAttributes(

@@ -173,7 +173,7 @@ bool CGff2Writer::x_WriteFeature(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffWriteRecord> pChild( new CGffWriteRecord( *pParent ) );
-            pChild->AssignLocation( subint );
+            pChild->CorrectLocation( subint );
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }

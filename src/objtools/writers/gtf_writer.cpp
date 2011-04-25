@@ -158,7 +158,7 @@ bool CGtfWriter::x_WriteFeatureMrna(
     if ( ! pMrna->AssignFromAsn( mf ) ) {
         return false;
     }
-    pMrna->AssignType( "exon" );
+    pMrna->CorrectType( "exon" );
 
     const CSeq_feat& feature = mf.GetOriginalFeature();
     const CSeq_loc& loc = feature.GetLocation();
@@ -205,19 +205,19 @@ bool CGtfWriter::x_WriteFeatureCds(
     }
 
     if ( pLocCode ) {
-        pParent->AssignType( "CDS" );
+        pParent->CorrectType( "CDS" );
         if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocCode ) ) {
             return false;
         }
     }
     if ( pLocStartCodon ) {
-        pParent->AssignType( "start_codon" );
+        pParent->CorrectType( "start_codon" );
         if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStartCodon ) ) {
             return false;
         }
     }
     if ( pLocStopCodon ) {
-        pParent->AssignType( "stop_codon" );
+        pParent->CorrectType( "stop_codon" );
         if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStopCodon ) ) {
             return false;
         }
