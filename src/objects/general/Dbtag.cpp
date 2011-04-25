@@ -136,6 +136,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("SGN", CDbtag::eDbtagType_SGN),
     TDbxrefPair("SoyBase", CDbtag::eDbtagType_SoyBase),
     TDbxrefPair("SubtiList", CDbtag::eDbtagType_SubtiList),
+    TDbxrefPair("TAIR", CDbtag::eDbtagType_TAIR),
     TDbxrefPair("TIGRFAM", CDbtag::eDbtagType_TIGRFAM),
     TDbxrefPair("UNILIB", CDbtag::eDbtagType_UNILIB),
     TDbxrefPair("UNITE", CDbtag::eDbtagType_UNITE),
@@ -175,7 +176,6 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("PBR", CDbtag::eDbtagType_PBR),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
     TDbxrefPair("SK-FST", CDbtag::eDbtagType_SK_FST),
-    TDbxrefPair("TAIR", CDbtag::eDbtagType_TAIR),
     TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC),
     TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
 };
