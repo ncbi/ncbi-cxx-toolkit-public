@@ -253,6 +253,40 @@ static string s_MakePcrPrimerNote(
     return note;
 }
 
+static
+bool s_StrEqualDisregardFinalPeriod( 
+    const string &s1, const string &s2, 
+    NStr::ECase use_case )
+{
+    if( s1.empty() || s2.empty() ) {
+        return s1.empty() && s2.empty();
+    }
+
+    // set length to disregard final period, if any
+    int s1_len = s1.length();
+    if( s1[s1_len-1] == '.' ) {
+        --s1_len;
+    }
+    int s2_len = s2.length();
+    if( s2[s2_len-1] == '.' ) {
+        --s2_len;
+    }
+
+    if( s1_len != s2_len ) {
+        return false;
+    }
+
+    // NStr::Equal does not have exactly the function I want,
+    // so I have to make my own.
+    for( size_t ii = 0; ii < s1_len ; ++ii ) {
+        const char ch1 = ( use_case == NStr::eNocase ? toupper(ch1) : ch1 );
+        const char ch2 = ( use_case == NStr::eNocase ? toupper(ch2) : ch2 );
+        if( ch1 != ch2 ) {
+            return false;
+        }
+    }
+    return true;
+}
 
 static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
                                   const CSeq_loc& loc,
@@ -1356,6 +1390,22 @@ void CFeatureItem::x_AddQualExceptions(
         //  as exceptions, while others are turned into notes.
         //
         else {
+            if ( s_IsValidExceptionText( cur ) ) {
+                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() || data.IsCdregion() ) {
+                    output_exceptions.push_back( cur );
+                } else {
+                    output_notes.push_back( cur );
+                }
+                continue;
+            }
+            if ( ctx.IsRefSeq() && s_IsValidRefSeqExceptionText( cur ) ) {
+                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() ) {
+                    output_exceptions.push_back( cur );
+                } else {
+                    output_notes.push_back( cur );
+                }
+                continue;
+            }
             if ( cur == "ribosomal slippage" ) {
                 if( data.IsCdregion() ) {
                     x_AddQual( eFQ_ribosomal_slippage, new CFlatBoolQVal( true ) );
@@ -1402,20 +1452,6 @@ void CFeatureItem::x_AddQualExceptions(
                     output_notes.push_back( cur );
                 }
                 continue;
-            }
-            if ( s_IsValidExceptionText( cur ) ) {
-                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() || data.IsCdregion() ) {
-                    output_exceptions.push_back( cur );
-                } else {
-                    output_notes.push_back( cur );
-                }
-            }
-            else if ( ctx.IsRefSeq() && s_IsValidRefSeqExceptionText( cur ) ) {
-                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() ) {
-                    output_exceptions.push_back( cur );
-                } else {
-                    output_notes.push_back( cur );
-                }
             }
             else {
                 if ( cfg.DropIllegalQuals() ) {
@@ -1574,16 +1610,18 @@ public:
         const bool candidate_feat_is_mixed = ( candidate_feat_loc->GetStrand() == eNa_strand_other );
 
         // candidate_feat_loc = bioseq_handle.MapLocation( *candidate_feat_loc );
-        candidate_feat_original_strand = s_GeneSearchNormalizeLoc( bioseq_handle, candidate_feat_loc, circular_length ) ;
+        candidate_feat_original_strand = s_GeneSearchNormalizeLoc( bioseq_handle, candidate_feat_loc, circular_length );
 
         // !!!!!TODO: maybe uncomment?
         if( candidate_feat_is_mixed && annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) {
+            if( feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" ) {
                 // force strand matching
                 candidate_feat_original_strand = loc_original_strand;
-                if( overlap_type_this_iteration == eOverlap_Contained ) {
-                    overlap_type_this_iteration = eOverlap_SubsetRev;
-                    revert_locations_this_iteration = true;
-                }
+            }
+            if( overlap_type_this_iteration == eOverlap_Contained ) {
+                overlap_type_this_iteration = eOverlap_SubsetRev;
+                revert_locations_this_iteration = true ;
+            }
         }
 
         if( candidate_feat_original_strand == loc_original_strand
@@ -3291,7 +3329,7 @@ void CFeatureItem::x_AddQualDbXref(
         }
     }
     if ( ! m_Feat.IsSetDbxref() ) {
-        return;
+        return ;
     }
     x_AddQual( eFQ_db_xref, new CFlatXrefQVal( m_Feat.GetDbxref(), &m_Quals ) );
 }
@@ -3578,7 +3616,11 @@ void CFeatureItem::x_AddQualsProt(
     ///
     /// report molecular weights
     ///
-    if (ctx.IsProt() && ctx.IsRefSeq() && ! IsMappedFromProt() ) {
+    if (ctx.IsProt() && ctx.IsRefSeq() && ! IsMappedFromProt() && 
+        ! ( m_Feat.IsSetPartial() && m_Feat.GetPartial() ) && 
+        ! ( m_Feat.GetLocation().IsPartialStart(eExtreme_Biological) || 
+            m_Feat.GetLocation().IsPartialStop(eExtreme_Biological)) )
+    {
         double wt = 0;
         bool has_mat_peptide = false;
         bool has_signal_peptide = false;
@@ -4550,7 +4592,9 @@ void CFeatureItem::x_CleanQuals(
 
         // remove protein description that equals the standard name
         if (prot_desc != NULL  &&  standard_name != NULL) {
-            if (NStr::EqualNocase(pdesc, standard_name->GetValue())) {
+            // We use s_StrEqualDisregardFinalPeriod rather than plain NStr::EqualNoCase
+            // because of, e.g., CU638784
+            if (s_StrEqualDisregardFinalPeriod(pdesc, standard_name->GetValue(), NStr::eNocase )) {
                 x_RemoveQuals(eFQ_prot_desc);
                 prot_desc = NULL;
             }

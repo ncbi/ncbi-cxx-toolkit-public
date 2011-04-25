@@ -121,10 +121,17 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
         }
 
         if ( xtra != 0 ) {
+            // no validation done if less than a certain number of accessions
+            // TODO: When we've switched completely away from C, we should
+            //       probably *always* validate accessions.
+            const int kAccessionValidationCutoff = 20;
             ITERATE (list<string>, it, *xtra) {
-                if ( IsValidAccession(*it) ) {
-                    m_ExtraAccessions.push_back(*it);
+                if( xtra->size() >= kAccessionValidationCutoff ) {
+                    if ( ! IsValidAccession(*it) ) { 
+                        continue;
+                    }
                 }
+                m_ExtraAccessions.push_back(*it);
             }
         }
 

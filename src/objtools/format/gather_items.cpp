@@ -1971,6 +1971,9 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     // Gaps of length zero are only shown for SwissProt Genpept records
     const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
 
+    // cache to avoid repeated calculations
+    const int loc_len = sequence::GetLength(*loc.GetId(), &ctx.GetScope() ) ;
+
     CSeq_feat_Handle prev_feat;
     CConstRef<IFlatItem> item;
     CFeat_CI it(scope, loc, sel);
@@ -2054,10 +2057,14 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
 
             // handle gaps
-            const TSeqPos feat_start = feat_loc->GetStart(eExtreme_Positional);
+            const int feat_end   = feat_loc->GetStop(eExtreme_Positional);
+            int feat_start = feat_loc->GetStart(eExtreme_Positional);
+            if( feat_start > feat_end ) {
+                feat_start -= loc_len;
+            }
             while (gap_it) {
-                const TSeqPos gap_start = gap_it.GetPosition();
-                const TSeqPos gap_end   = (gap_it.GetEndPosition() - 1);
+                const int gap_start = gap_it.GetPosition();
+                const int gap_end   = (gap_it.GetEndPosition() - 1);
 
                 // if feature after gap first output the gap 
                 if ( feat_start >= gap_start ) {

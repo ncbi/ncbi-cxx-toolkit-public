@@ -837,9 +837,13 @@ void s_GetStrForStructuredComment(
     int &out_prefix_len,
     const bool is_first )
 {
+    static const int kFieldLenThreshold = 45;
+
     // default prefix and suffix
     const char* prefix = "##Metadata-START##";
     const char* suffix = "##Metadata-END##";
+
+    bool fieldOverThreshold = false;
 
     // First, figure out the longest label so we know how to format it
     // (and set the prefix and suffix while we're at it)
@@ -855,8 +859,11 @@ void s_GetStrForStructuredComment(
                 suffix = (*it_for_len)->GetData().GetStr().c_str();
             } else {
                 const string::size_type label_len = label.length();
-                if( (label_len > longest_label_len) && (label_len <= 45) ) {
+                if( (label_len > longest_label_len) && (label_len <= kFieldLenThreshold) ) {
                     longest_label_len = label_len;
+                }
+                if( label_len > kFieldLenThreshold ) {
+                    fieldOverThreshold = true;
                 }
             }
         }
@@ -887,11 +894,17 @@ void s_GetStrForStructuredComment(
             continue;
         }
 
-        // crate the next line that we're going to set the contents of
+        // create the next line that we're going to set the contents of
         out_lines.push_back( (*it)->GetLabel().GetStr() );
         string &next_line = out_lines.back();
 
-        next_line.resize( max( next_line.size(), longest_label_len), ' ' );
+        // TODO: remove this if-statement once we move to C++ completely.  it just makes
+        // formatting look like C even though C++'s formatting is superior
+        // (example: JF320002).  We might even be able to remove the variable fieldOverThreshold 
+        // completely.
+        if( ! fieldOverThreshold ) {
+            next_line.resize( max( next_line.size(), longest_label_len), ' ' );
+        }
         next_line.append( " :: " );
         next_line.append( (*it)->GetData().GetStr() );
         next_line.append( "\n" );

@@ -442,12 +442,18 @@ static void s_FixPages( string& pages )
 //  bug for bug compatible with the C toolkit version. 
 //
 {
-    // hack: special case for "doi" pages.
+    // hack: special case "doi" pages.
     // This actually chops information away from the user, 
     // but we do this to be compatible with C.
     // Once we move away from C, we should remove this code
-    if( NStr::StartsWith(pages, "doi:") ) {
-        pages = "doi";
+    if( NStr::StartsWith(pages, "doi") ) {
+        // keep only the digits after "doi", if there are any digits
+        // (e.g. GR875377)
+        string::size_type after_digits = pages.find_first_not_of("0123456789", 3);
+        if( after_digits == string::npos ) {
+            after_digits = pages.length();
+        }
+        pages = pages.substr(0, after_digits);
         return;
     }
 
@@ -1006,16 +1012,18 @@ static void s_FormatCitSub
         if (sub.GetAuthors().IsSetAffil()) {
             string affil;
             CReferenceItem::FormatAffil(sub.GetAuthors().GetAffil(), affil, true);
-            bool embl_affil =
-                affil.find("to the EMBL/GenBank/DDBJ databases") != string::npos;
             if (do_embl) {
+                bool embl_affil =
+                    NStr::StartsWith( affil, " to the EMBL/GenBank/DDBJ databases." );
                 if ( !embl_affil ) {
                     journal += " to the EMBL/GenBank/DDBJ databases.\n";
+                } else {
+                    journal += ' ';
                 }
-            } else if ( !embl_affil ) {
+            } else {
                 journal += ' ';
-                journal += affil;
             }
+            journal += affil;
         } else if (do_embl) {
             journal += " to the EMBL/GenBank/DDBJ databases.\n";
         }
