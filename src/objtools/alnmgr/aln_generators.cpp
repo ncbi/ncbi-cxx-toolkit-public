@@ -684,7 +684,7 @@ CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
 
     // Starts and strands
     CPacked_seg::TStarts& starts = ps->SetStarts();
-    starts.resize(matrix_size, -1);
+    starts.resize(matrix_size, 0);
     for (row = 0;  row < dim;  ++row) {
         seg = 0;
         int matrix_row_pos = row;  // optimization to eliminate multiplication
@@ -759,7 +759,7 @@ CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
     lens.resize(numseg);
 
     CPacked_seg::TStarts& starts = ps->SetStarts();
-    starts.resize(matrix_size, -1);
+    starts.resize(matrix_size, 0);
 
     CPacked_seg::TPresent& present = ps->SetPresent();
     present.resize(matrix_size, 0);
