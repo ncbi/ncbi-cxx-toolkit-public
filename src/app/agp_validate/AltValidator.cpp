@@ -127,6 +127,13 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
           bioseq_handle, sequence::eGetId_ForceGi
         );
         acc_data.gi=seq_id_handle.GetGi();
+
+        // seq_id_handle.GetSeqId()->GetSeqIdString(sequence::eWithAccessionVersion);
+        string acc_ver = sequence::GetAccessionForGi( acc_data.gi, *m_Scope );
+        SIZE_TYPE pos_dot = acc_ver.find('.');
+        if( pos_dot!=NPOS && pos_dot<acc_ver.size()-1 ) {
+          acc_data.ver = NStr::StringToNumeric( acc_ver.substr(pos_dot+1) );
+        }
       }
       catch (...) {
         agpErr.Msg(CAgpErrEx::G_DataError,
