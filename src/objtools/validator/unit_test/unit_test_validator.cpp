@@ -12530,6 +12530,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     src_strings.push_back ("BOLD");
     src_strings.push_back ("FANTOM_DB");
     src_strings.push_back ("FLYBASE");
+    src_strings.push_back ("Greengenes");
     src_strings.push_back ("GRIN");
     src_strings.push_back ("HMP");
     src_strings.push_back ("HOMD");
