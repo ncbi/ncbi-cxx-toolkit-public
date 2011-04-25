@@ -548,6 +548,23 @@ private:
 };
 
 
+class NCBI_XNCBI_EXPORT CThreadException : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    enum EErrCode {
+        eRunError,          ///< Failed to run thread
+        eControlError,      ///< Failed to control thread's state
+        eOther              ///< Other thread errors
+    };
+
+    /// Translate from the error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const;
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CThreadException, CException);
+};
+
+
 /* @} */
 
 

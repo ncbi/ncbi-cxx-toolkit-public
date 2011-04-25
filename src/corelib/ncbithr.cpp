@@ -566,14 +566,17 @@ void CThread::sx_SetThreadPid(TPid pid)
 #endif
 
 
+#define NCBI_THREAD_VALIDATE(cond, error_code, message) \
+    if ( !(cond) ) NCBI_THROW(CThreadException, error_code, message)
+
 bool CThread::Run(TRunMode flags)
 {
     // Do not allow the new thread to run until m_Handle is set
     CFastMutexGuard state_guard(s_ThreadMutex);
 
     // Check
-    xncbi_Validate(!m_IsRun,
-                   "CThread::Run() -- called for already started thread");
+    NCBI_THREAD_VALIDATE(!m_IsRun, eRunError,
+        "CThread::Run() -- called for already started thread");
 
     m_IsDetached = (flags & fRunDetached) != 0;
 
@@ -592,8 +595,8 @@ bool CThread::Run(TRunMode flags)
         DWORD creation_flags = (flags & fRunNice) == 0 ? 0 : CREATE_SUSPENDED;
         m_Handle = CreateThread(NULL, 0, ThreadWrapperCallerImpl,
                                 this, creation_flags, &thread_id);
-        xncbi_Validate(m_Handle != NULL,
-                       "CThread::Run() -- error creating thread");
+        NCBI_THREAD_VALIDATE(m_Handle != NULL, eRunError,
+            "CThread::Run() -- error creating thread");
         if (flags & fRunNice) {
             // Adjust priority and resume the thread
             SetThreadPriority(m_Handle, THREAD_PRIORITY_BELOW_NORMAL);
@@ -606,47 +609,47 @@ bool CThread::Run(TRunMode flags)
         else {
             // duplicate handle to adjust security attributes
             HANDLE oldHandle = m_Handle;
-            xncbi_Validate(DuplicateHandle(GetCurrentProcess(), oldHandle,
-                                           GetCurrentProcess(), &m_Handle,
-                                           0, FALSE, DUPLICATE_SAME_ACCESS),
-                           "CThread::Run() -- error getting thread handle");
-            xncbi_Validate(CloseHandle(oldHandle),
-                           "CThread::Run() -- error closing thread handle");
+            NCBI_THREAD_VALIDATE(DuplicateHandle(GetCurrentProcess(), oldHandle,
+                GetCurrentProcess(), &m_Handle,
+                0, FALSE, DUPLICATE_SAME_ACCESS),
+                eRunError, "CThread::Run() -- error getting thread handle");
+            NCBI_THREAD_VALIDATE(CloseHandle(oldHandle),
+                eRunError, "CThread::Run() -- error closing thread handle");
         }
 #elif defined(NCBI_POSIX_THREADS)
         pthread_attr_t attr;
-        xncbi_Validate(pthread_attr_init (&attr) == 0,
-                       "CThread::Run() - error initializing thread attributes");
+        NCBI_THREAD_VALIDATE(pthread_attr_init(&attr) == 0, eRunError,
+            "CThread::Run() - error initializing thread attributes");
         if ( ! (flags & fRunUnbound) ) {
 #if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)  ||  defined(NCBI_OS_IRIX)
-            xncbi_Validate(pthread_attr_setscope(&attr,
-                                                 PTHREAD_SCOPE_PROCESS) == 0,
-                           "CThread::Run() - error setting thread scope");
+            NCBI_THREAD_VALIDATE(pthread_attr_setscope(&attr,
+                PTHREAD_SCOPE_PROCESS) == 0, eRunError,
+                "CThread::Run() - error setting thread scope");
 #else
-            xncbi_Validate(pthread_attr_setscope(&attr,
-                                                 PTHREAD_SCOPE_SYSTEM) == 0,
-                           "CThread::Run() - error setting thread scope");
+            NCBI_THREAD_VALIDATE(pthread_attr_setscope(&attr,
+                PTHREAD_SCOPE_SYSTEM) == 0, eRunError,
+                "CThread::Run() - error setting thread scope");
 #endif
         }
         if ( m_IsDetached ) {
-            xncbi_Validate(pthread_attr_setdetachstate(&attr,
-                                                       PTHREAD_CREATE_DETACHED) == 0,
-                           "CThread::Run() - error setting thread detach state");
+            NCBI_THREAD_VALIDATE(pthread_attr_setdetachstate(&attr,
+                PTHREAD_CREATE_DETACHED) == 0, eRunError,
+                "CThread::Run() - error setting thread detach state");
         }
-        xncbi_Validate(pthread_create(&m_Handle, &attr,
-                                      ThreadWrapperCallerImpl, this) == 0,
-                       "CThread::Run() -- error creating thread");
+        NCBI_THREAD_VALIDATE(pthread_create(&m_Handle, &attr,
+            ThreadWrapperCallerImpl, this) == 0, eRunError,
+            "CThread::Run() -- error creating thread");
 
-        xncbi_Validate(pthread_attr_destroy(&attr) == 0,
-                       "CThread::Run() - error destroying thread attributes");
+        NCBI_THREAD_VALIDATE(pthread_attr_destroy(&attr) == 0, eRunError,
+            "CThread::Run() - error destroying thread attributes");
 
 #else
         if (flags & fRunAllowST) {
             Wrapper(this);
         }
         else {
-            xncbi_Validate(0,
-                           "CThread::Run() -- system does not support threads");
+            NCBI_THREAD_VALIDATE(0, eRunError,
+                "CThread::Run() -- system does not support threads");
         }
 #endif
 
@@ -671,19 +674,19 @@ void CThread::Detach(void)
     CFastMutexGuard state_guard(s_ThreadMutex);
 
     // Check the thread state: it must be run, but not detached yet
-    xncbi_Validate(m_IsRun,
-                   "CThread::Detach() -- called for not yet started thread");
-    xncbi_Validate(!m_IsDetached,
-                   "CThread::Detach() -- called for already detached thread");
+    NCBI_THREAD_VALIDATE(m_IsRun, eControlError,
+        "CThread::Detach() -- called for not yet started thread");
+    NCBI_THREAD_VALIDATE(!m_IsDetached, eControlError,
+        "CThread::Detach() -- called for already detached thread");
 
     // Detach the thread
 #if defined(NCBI_WIN32_THREADS)
-    xncbi_Validate(CloseHandle(m_Handle),
-                   "CThread::Detach() -- error closing thread handle");
+    NCBI_THREAD_VALIDATE(CloseHandle(m_Handle), eControlError,
+        "CThread::Detach() -- error closing thread handle");
     m_Handle = NULL;
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_detach(m_Handle) == 0,
-                   "CThread::Detach() -- error detaching thread");
+    NCBI_THREAD_VALIDATE(pthread_detach(m_Handle) == 0, eControlError,
+        "CThread::Detach() -- error detaching thread");
 #endif
 
     // Indicate the thread is detached
@@ -701,29 +704,29 @@ void CThread::Join(void** exit_data)
     // Check the thread state: it must be run, but not detached yet
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
-        xncbi_Validate(m_IsRun,
-                       "CThread::Join() -- called for not yet started thread");
-        xncbi_Validate(!m_IsDetached,
-                       "CThread::Join() -- called for detached thread");
-        xncbi_Validate(!m_IsJoined,
-                       "CThread::Join() -- called for already joined thread");
+        NCBI_THREAD_VALIDATE(m_IsRun, eControlError,
+            "CThread::Join() -- called for not yet started thread");
+        NCBI_THREAD_VALIDATE(!m_IsDetached, eControlError,
+            "CThread::Join() -- called for detached thread");
+        NCBI_THREAD_VALIDATE(!m_IsJoined, eControlError,
+            "CThread::Join() -- called for already joined thread");
         m_IsJoined = true;
     }}
 
     // Join (wait for) and destroy
 #if defined(NCBI_WIN32_THREADS)
-    xncbi_Validate(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0,
-                   "CThread::Join() -- can not join thread");
+    NCBI_THREAD_VALIDATE(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0,
+        eControlError, "CThread::Join() -- can not join thread");
     DWORD status;
-    xncbi_Validate(GetExitCodeThread(m_Handle, &status) &&
-                   status != DWORD(STILL_ACTIVE),
-                   "CThread::Join() -- thread is still running after join");
-    xncbi_Validate(CloseHandle(m_Handle),
-                   "CThread::Join() -- can not close thread handle");
+    NCBI_THREAD_VALIDATE(GetExitCodeThread(m_Handle, &status) &&
+        status != DWORD(STILL_ACTIVE), eControlError,
+        "CThread::Join() -- thread is still running after join");
+    NCBI_THREAD_VALIDATE(CloseHandle(m_Handle), eControlError,
+        "CThread::Join() -- can not close thread handle");
     m_Handle = NULL;
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_join(m_Handle, 0) == 0,
-                   "CThread::Join() -- can not join thread");
+    NCBI_THREAD_VALIDATE(pthread_join(m_Handle, 0) == 0, eControlError,
+        "CThread::Join() -- can not join thread");
 #endif
 
     // Set exit_data value
@@ -743,8 +746,8 @@ void CThread::Exit(void* exit_data)
 {
     // Don't exit from the main thread
     CThread* x_this = GetCurrentThread();
-    xncbi_Validate(x_this != 0,
-                   "CThread::Exit() -- attempt to call for the main thread");
+    NCBI_THREAD_VALIDATE(x_this != 0, eControlError,
+        "CThread::Exit() -- attempt to call for the main thread");
 
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
@@ -827,6 +830,17 @@ void CThread::GetSystemID(TThreadSystemID* id)
     *id = 0;
 #endif
     return;
+}
+
+
+const char* CThreadException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eRunError:     return "eRunError";
+    case eControlError: return "eControlError";
+    case eOther:        return "eOther";
+    default:            return CException::GetErrCodeString();
+    }
 }
 
 
