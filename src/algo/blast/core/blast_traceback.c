@@ -1026,7 +1026,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    BlastQueryInfo* concat_db_info = NULL;
    Boolean make_up_kbp = FALSE;
    Int4 index;
-   Int4 valid_kb_index;
+   Int4 valid_kb_index = -1;
 
    if (!hsp_stream || !seq_src || !results) {
       return -1;
@@ -1061,6 +1061,8 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
          break;
          }
       }
+
+   ASSERT(valid_kb_index != -1);
 
    /* ensure that the first six Karlin blocks are populated */
    for (index = 0 ; index < 6; index++) {

@@ -778,13 +778,6 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp);
 NCBI_XBLAST_EXPORT 
 SNCBIPackedScoreMatrix* BlastScoreBlkGetCompiledInMatrix(const char* name);
 
-/** 
- * Prints the BlastScoreBlk data structure to stdout for debuging purposes.
- * -RMH-
- * @param sbp The BlastScoreBlk to print.
- */
-void printBlastScoreBlk( BlastScoreBlk* sbp );
-
 #ifdef __cplusplus
 }
 #endif
