@@ -473,7 +473,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
                 queue_size = NStr::StringToUInt(param);
             }
         }
-        catch ( CException& exc ) {
+        catch ( CException& /*ignored*/ ) {
         }
     }
     m_LoadMapSeq_ids.SetMaxSize(queue_size);
@@ -503,7 +503,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
                     preopen = CGBLoaderParams::ePreopenNever;
             }
         }
-        catch ( CException& ) {
+        catch ( CException& /*ignored*/ ) {
         }
     }
     
