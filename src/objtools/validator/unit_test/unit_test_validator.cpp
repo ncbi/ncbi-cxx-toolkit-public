@@ -12506,6 +12506,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("SGN");
     legal_strings.push_back ("SoyBase");
     legal_strings.push_back ("SubtiList");
+    legal_strings.push_back ("TAIR");
     legal_strings.push_back ("taxon");
     legal_strings.push_back ("TIGRFAM");
     legal_strings.push_back ("UniGene");
@@ -12555,7 +12556,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     refseq_strings.push_back ("PBR");
     refseq_strings.push_back ("REBASE");
     refseq_strings.push_back ("SK-FST");
-    refseq_strings.push_back ("TAIR");
     refseq_strings.push_back ("VBRC");
     refseq_strings.push_back ("EMBL");
     refseq_strings.push_back ("DDBJ");
