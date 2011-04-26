@@ -4105,6 +4105,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NMBZ	s	Natural History Museum of Zimbabwe",
 "NMC	s	New Mexico State University, Department of Biology",
 "NMC<CAN>	s	Canadian Museum of Nature",
+"NMCC<IND>	c	North Maharashtra Microbial Culture Collection Centre",
 "NMCL	s	Naturkunde-Museum",
 "NMCR	s	New Mexico State University, Department of Animal and Range Sciences",
 "NME	s	Sammlung des Naturkundemseum Erfurt",
