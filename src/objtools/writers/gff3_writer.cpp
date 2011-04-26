@@ -45,6 +45,8 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
 
 #include <objmgr/feat_ci.hpp>
@@ -115,11 +117,60 @@ bool CGff3Writer::x_WriteAlign(
     const CSeq_align& align )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! align.IsSetSegs() || ! align.GetSegs().IsDenseg() ) {
+    if ( ! align.IsSetSegs() ) {
         cerr << "Object type not supported." << endl;
         return true;
     }
 
+    switch( align.GetSegs().Which() ) {
+    default:
+//        cerr << "CGff3Writer::x_WriteAlign: Alignment of strange type!" << endl;
+        break;
+    case CSeq_align::TSegs::e_Denseg:
+//        cerr << "CGff3Writer::x_WriteAlign: Alignment of Denseg type!" << endl;
+        return x_WriteAlignDenseg( align );
+    case CSeq_align::TSegs::e_Spliced:
+//        cerr << "CGff3Writer::x_WriteAlign: Alignment of Spliced type!" << endl;
+        return x_WriteAlignSpliced( align );
+    case CSeq_align::TSegs::e_Disc:
+//        cerr << "CGff3Writer::x_WriteAlign: Alignment of Disc type!" << endl;
+        return x_WriteAlignDisc( align );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteAlignDisc( 
+    const CSeq_align& align )
+//  ----------------------------------------------------------------------------
+{
+    typedef CSeq_align_set::Tdata::const_iterator CASCIT;
+
+    const CSeq_align_set::Tdata& data = align.GetSegs().GetDisc().Get();
+    for ( CASCIT cit = data.begin(); cit != data.end(); ++cit ) {
+        x_WriteAlign( **cit );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteAlignSpliced( 
+    const CSeq_align& align )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_align> pSa = align.GetSegs().GetSpliced().AsDiscSeg();
+    if ( align.IsSetScore() ) {
+        pSa->SetScore().insert( pSa->SetScore().end(),
+            align.GetScore().begin(), align.GetScore().end() );
+    }
+    return x_WriteAlign(*pSa);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteAlignDenseg( 
+    const CSeq_align& align )
+//  ----------------------------------------------------------------------------
+{
     const CSeq_id& productId = align.GetSeq_id( 0 );
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle( productId );
     CRef<CSeq_id> pTargetId( new CSeq_id );
@@ -214,7 +265,6 @@ bool CGff3Writer::x_WriteAlign(
         x_WriteAlignment( record );
     }
     return true;
-//    return x_WriteFooter();
 }
 
 //  ----------------------------------------------------------------------------

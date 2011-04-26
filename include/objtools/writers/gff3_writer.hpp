@@ -64,6 +64,12 @@ public:
 protected:
     bool x_WriteAlign( 
         const CSeq_align& );
+    bool x_WriteAlignDenseg(
+        const CSeq_align& );    
+    bool x_WriteAlignSpliced(
+        const CSeq_align& );    
+    bool x_WriteAlignDisc(
+        const CSeq_align& );    
 
     virtual bool x_WriteHeader();
 //    TFlags m_uFlags;
@@ -85,7 +91,7 @@ protected:
         CMappedFeat );
 
     void x_WriteAlignment( 
-        const CGffAlignmentRecord& record );    
+        const CGffAlignmentRecord& record );
 
     string x_GetParentId(
         CMappedFeat );
