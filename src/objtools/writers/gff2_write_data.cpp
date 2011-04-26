@@ -462,6 +462,7 @@ bool CGffWriteRecordFeature::x_AssignType(
         m_strType = "scRNA";
         break;
 
+//    case CSeq_feat::TData::eSubtype_otherRNA:
     case CSeq_feat::TData::eSubtype_exon:
         m_strType = "exon";
         break;

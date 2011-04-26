@@ -88,7 +88,8 @@ protected:
     virtual bool x_WriteAnnot( 
         const CSeq_annot& );
     virtual bool x_WriteAlign( 
-        const CSeq_align& );
+        const CSeq_align&,
+        bool=false );
     virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
 

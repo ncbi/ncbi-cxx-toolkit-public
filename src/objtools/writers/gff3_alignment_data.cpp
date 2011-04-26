@@ -108,7 +108,7 @@ void CGffAlignmentRecord::SetTargetLocation(
         case CSeq_id::e_General:
             m_strSource = id.GetGeneral().GetDb();
             return;
-    };
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -217,6 +217,6 @@ void CGffAlignmentRecord::AddMatch(
     m_strAlignment += "M";
     m_strAlignment += NStr::IntToString( uSize );
 }
-    
+
 END_objects_SCOPE
 END_NCBI_SCOPE

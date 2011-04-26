@@ -63,13 +63,17 @@ public:
 
 protected:
     bool x_WriteAlign( 
-        const CSeq_align& );
+        const CSeq_align&,
+        bool=false );                   // invert width 
     bool x_WriteAlignDenseg(
-        const CSeq_align& );    
+        const CSeq_align&,
+        bool=false );                   // invert width 
     bool x_WriteAlignSpliced(
-        const CSeq_align& );    
+        const CSeq_align&,    
+        bool=false );                   // invert width 
     bool x_WriteAlignDisc(
-        const CSeq_align& );    
+        const CSeq_align&,    
+        bool=false );                   // invert width 
 
     virtual bool x_WriteHeader();
 //    TFlags m_uFlags;

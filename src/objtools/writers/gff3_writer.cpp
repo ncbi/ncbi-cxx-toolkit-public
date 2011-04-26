@@ -114,7 +114,8 @@ CGff3Writer::~CGff3Writer()
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlign( 
-    const CSeq_align& align )
+    const CSeq_align& align,
+    bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
     if ( ! align.IsSetSegs() ) {
@@ -128,34 +129,36 @@ bool CGff3Writer::x_WriteAlign(
         break;
     case CSeq_align::TSegs::e_Denseg:
 //        cerr << "CGff3Writer::x_WriteAlign: Alignment of Denseg type!" << endl;
-        return x_WriteAlignDenseg( align );
+        return x_WriteAlignDenseg( align, bInvertWidth );
     case CSeq_align::TSegs::e_Spliced:
 //        cerr << "CGff3Writer::x_WriteAlign: Alignment of Spliced type!" << endl;
-        return x_WriteAlignSpliced( align );
+        return x_WriteAlignSpliced( align, bInvertWidth );
     case CSeq_align::TSegs::e_Disc:
 //        cerr << "CGff3Writer::x_WriteAlign: Alignment of Disc type!" << endl;
-        return x_WriteAlignDisc( align );
+        return x_WriteAlignDisc( align, bInvertWidth );
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlignDisc( 
-    const CSeq_align& align )
+    const CSeq_align& align,
+    bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
     typedef CSeq_align_set::Tdata::const_iterator CASCIT;
 
     const CSeq_align_set::Tdata& data = align.GetSegs().GetDisc().Get();
     for ( CASCIT cit = data.begin(); cit != data.end(); ++cit ) {
-        x_WriteAlign( **cit );
+        x_WriteAlign( **cit, bInvertWidth );
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlignSpliced( 
-    const CSeq_align& align )
+    const CSeq_align& align,
+    bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_align> pSa = align.GetSegs().GetSpliced().AsDiscSeg();
@@ -163,12 +166,13 @@ bool CGff3Writer::x_WriteAlignSpliced(
         pSa->SetScore().insert( pSa->SetScore().end(),
             align.GetScore().begin(), align.GetScore().end() );
     }
-    return x_WriteAlign(*pSa);
+    return x_WriteAlign(*pSa, bInvertWidth );
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlignDenseg( 
-    const CSeq_align& align )
+    const CSeq_align& align,
+    bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_id& productId = align.GetSeq_id( 0 );
@@ -179,6 +183,10 @@ bool CGff3Writer::x_WriteAlignDenseg(
 
     const CDense_seg& ds = align.GetSegs().GetDenseg();
     CRef<CDense_seg> ds_filled = ds.FillUnaligned();
+    if ( bInvertWidth ) {
+//        ds_filled->ResetWidths();
+    }
+
     CAlnMap align_map( *ds_filled );
 
     int iTargetRow = -1;
@@ -209,9 +217,6 @@ bool CGff3Writer::x_WriteAlignDenseg(
             continue;
         }
         CGffAlignmentRecord record( m_uFlags, m_uRecordId++ );
-
-        // Record basic target information:
-        record.SetTargetLocation( *pTargetId, targetStrand );
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
@@ -256,11 +261,17 @@ bool CGff3Writer::x_WriteAlignDenseg(
             }
         }
 
+        // Record basic target information:
+        record.SetTargetLocation( *pTargetId, targetStrand );
+
         // Add scores, if available:
         if ( ds.IsSetScores() ) {
             ITERATE ( CDense_seg::TScores, score_it, ds.GetScores() ) {
                 record.SetScore( **score_it );
             }
+        }
+        if ( bInvertWidth ) {
+//            record.InvertWidth( 0 );
         }
         x_WriteAlignment( record );
     }
