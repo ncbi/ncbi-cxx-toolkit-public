@@ -359,6 +359,8 @@ static const char* const kBuiltInGuide[] = {
     "2+6  HT  ddbj_tpa_con",
     "2+6  HU  ddbj_tpa_nuc # fallback to placate older clients",
     "2+6  HU  ddbj_tpa_chromosome",
+    "2+6  HV  gb_patent",
+    "2+6  HW  gb_patent",
     "2+6  JA  embl_patent",
     "2+6  JB  embl_patent",
     "2+6  JC  embl_patent",
