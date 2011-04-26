@@ -52,7 +52,7 @@ string CGffAlignmentRecord::StrAttributes() const
         str += ";";
         str += m_strOtherScores;
     }
-    if ( !m_strAlignment.empty() ) {
+    if ( !m_bIsTrivial ) {
         str += ";Gap=";
         str += m_strAlignment;
     }
@@ -167,6 +167,7 @@ void CGffAlignmentRecord::AddInsertion(
     if ( 0 == uSize ) {
         return;
     }
+    m_bIsTrivial = false;
     m_targetRange += targetPiece;
 
     if ( ! m_strAlignment.empty() ) {
@@ -185,6 +186,7 @@ void CGffAlignmentRecord::AddDeletion(
     if ( 0 == uSize ) {
         return;
     }
+    m_bIsTrivial = false;
     m_sourceRange += sourcePiece;
     m_uSeqStart = m_sourceRange.GetFrom();
     m_uSeqStop = m_sourceRange.GetTo();

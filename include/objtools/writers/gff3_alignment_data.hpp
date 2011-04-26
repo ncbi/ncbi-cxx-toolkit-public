@@ -50,7 +50,8 @@ public:
     CGffAlignmentRecord(
             unsigned int uFlags =0,
             unsigned int uRecordId =0 ):
-        m_uFlags( uFlags )
+        m_uFlags( uFlags ),
+        m_bIsTrivial( true )
     {
         m_strType = "match";
         if ( uRecordId ) {
@@ -93,6 +94,7 @@ protected:
 
     CAlnMap::TSignedRange m_targetRange;
     CAlnMap::TSignedRange m_sourceRange;
+    bool m_bIsTrivial;
 };
 
 END_objects_SCOPE
