@@ -277,6 +277,8 @@ AC_ARG_WITH(glew,
    [ --without-glew          do not use GLEW])
 AC_ARG_WITH(glew2,
    [ --with-glew=DIR         use GLEW installation in DIR])
+AC_ARG_WITH(glew-mx,
+   [ --with-glew-mx          insist on a multi-context-ready GLEW installation])
 AC_ARG_WITH(wxwidgets,
    [ --without-wxwidgets     do not use wxWidgets (2.6+)])
 AC_ARG_WITH(wxwidgets2,
@@ -451,7 +453,7 @@ check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
-ftds mysql orbacus freetype fltk opengl mesa glut glew \
+ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl 3psw \
@@ -520,7 +522,7 @@ done
 
 
 if test "$with_gbench" = "yes" ; then
-   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo],
+   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew,glew_mx],
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
@@ -4809,33 +4811,22 @@ else
          fi
          if test -n "$glew_config"; then
             GLEW_INCLUDE=`$glew_config --cflags | sed 's:/GL *$::'`
-            NCBI_RPATHIFY_OUTPUT(GLEW_LIBS, [$glew_config --libs])
-            glew_libs_l=`$glew_config --libs-only-l`
+            GLEW_LDFLAGS=`$glew_config --libs-only-L`
+            glew_libname=`$glew_config --libs-only-l | sed -e 's/-l//'`
          fi
       fi
-      if test -z "$GLEW_LIBS"; then
-         if test -d "$GLEW_PATH"; then
-            GLEW_INCLUDE=-I$GLEW_PATH/include
-            NCBI_RPATHIFY(GLEW_LIBS, [$GLEW_PATH/lib], [ -lGLEW])
-         else
-            GLEW_LIBS=-lGLEWmx
-         fi
-         glew_libs_l=-lGLEWmx
-      fi
-      CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
-      LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LDFLAGS"
-      AC_CACHE_CHECK([for glewGetExtension in $glew_libs_l],
-         ncbi_cv_lib_glew,
-         [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-            [[#include <GL/glew.h>]],
-            [[return glewGetExtension("foo");]])],
-            ncbi_cv_lib_glew=yes, ncbi_cv_lib_glew=no)])
-      if test "$ncbi_cv_lib_glew" != yes; then
+      LDFLAGS="$orig_LDFLAGS ${GLEW_LDFLAGS=-L$GLEW_LIBDIR}"
+      LIBS="$OPENGL_LIBS $DL_LIBS $orig_LIBS"
+      NCBI_CHECK_LIBS(GLEW, [$glew_libname GLEWmx GLEW], glewGetExtension)
+      if test "$ac_cv_search_glewGetExtension" = no; then
          GLEW_LIBS=
          NCBI_MISSING_PACKAGE(glew)
       else
-         NCBI_PACKAGE(GLEW);
-         AC_DEFINE(HAVE_LIBGLEW, 1, [Define to 1 if you have libGLEW.])
+         NCBI_RPATHIFY_OUTPUT_COND(tmp_LIBS, [echo $GLEW_LDFLAGS $GLEW_LIBS])
+         GLEW_LIBS=$tmp_LIBS
+         NCBI_PACKAGE(GLEW)
+         CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
+         LIBS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LIBS"
          AC_CACHE_CHECK([for GLEW multi-context (MX) support (recommended)],
             ncbi_cv_lib_glew_mx,
             [AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -4845,8 +4836,10 @@ else
              [ncbi_cv_lib_glew_mx=yes], [ncbi_cv_lib_glew_mx=no])])
           if test $ncbi_cv_lib_glew_mx = yes; then
              GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
+          else
+             NCBI_MISSING_PACKAGE(glew-mx)
           fi
-          : ${GLEW_STATIC_LIBS=$GLEW_PATH/lib/libGLEW-static.a}
+          : ${GLEW_STATIC_LIBS=$GLEW_LIBDIR/libGLEW-static.a}
           test -f "$GLEW_STATIC_LIBS"  ||  GLEW_STATIC_LIBS=$GLEW_LIBS
       fi
    fi

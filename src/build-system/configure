@@ -951,6 +951,7 @@ Optional Packages:
  --with-glut=DIR         use GLUT installation in DIR
  --without-glew          do not use GLEW
  --with-glew=DIR         use GLEW installation in DIR
+ --with-glew-mx          insist on a multi-context-ready GLEW installation
  --without-wxwidgets     do not use wxWidgets (2.6+)
  --with-wxwidgets=DIR    use wxWidgets installation in DIR
  --with-wxwidgets-ucs    use Unicode builds of wxWidgets
@@ -2316,6 +2317,12 @@ if test "${with_glew2+set}" = set; then
 
 fi;
 
+# Check whether --with-glew-mx or --without-glew-mx was given.
+if test "${with_glew_mx+set}" = set; then
+  withval="$with_glew_mx"
+
+fi;
+
 # Check whether --with-wxwidgets or --without-wxwidgets was given.
 if test "${with_wxwidgets+set}" = set; then
   withval="$with_wxwidgets"
@@ -2805,7 +2812,7 @@ check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
-ftds mysql orbacus freetype fltk opengl mesa glut glew \
+ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl 3psw \
@@ -2924,6 +2931,13 @@ echo "$as_me: error: incompatible options: --without-algo but --with-gbench" >&2
    { (exit 1); exit 1; }; }
       else
          with_algo=yes
+      fi
+     if test "$with_glew_mx" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-glew_mx but --with-gbench" >&5
+echo "$as_me: error: incompatible options: --without-glew_mx but --with-gbench" >&2;}
+   { (exit 1); exit 1; }; }
+      else
+         with_glew_mx=yes
       fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
@@ -26927,80 +26941,38 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
          fi
          if test -n "$glew_config"; then
             GLEW_INCLUDE=`$glew_config --cflags | sed 's:/GL *$::'`
-            if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    GLEW_LIBS=`$glew_config --libs | sed -e ""`
- else
-    GLEW_LIBS=
-    ncbi_rp_L_sep=
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$glew_config --libs | sed -e ""`; do
-       case "$x" in
-          -L*)
-             GLEW_LIBS="$GLEW_LIBS${ncbi_rp_L_sep}$x"
-             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
-             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-             ncbi_rp_R_sep=:
-             ;;
-          *)
-             GLEW_LIBS="$GLEW_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
-             ncbi_rp_R_flags=
-             ncbi_rp_R_sep=" $CONF_f_runpath"
-             ;;
-       esac
-       ncbi_rp_L_sep=" "
-    done
-    GLEW_LIBS="$GLEW_LIBS${ncbi_rp_R_flags}"
- fi
-            glew_libs_l=`$glew_config --libs-only-l`
+            GLEW_LDFLAGS=`$glew_config --libs-only-L`
+            glew_libname=`$glew_config --libs-only-l | sed -e 's/-l//'`
          fi
       fi
-      if test -z "$GLEW_LIBS"; then
-         if test -d "$GLEW_PATH"; then
-            GLEW_INCLUDE=-I$GLEW_PATH/include
-            ncbi_rp_L_flags=
- ncbi_rp_L_sep=$CONF_f_libpath
- if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $GLEW_PATH/lib; do
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-    done
-    GLEW_LIBS="${ncbi_rp_L_flags} -lGLEW"
- else
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $GLEW_PATH/lib; do
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-       x=`echo $x | sed -e "$ncbi_rpath_sed"`
-       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-       ncbi_rp_R_sep=:
-    done
-    GLEW_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lGLEW"
- fi
-         else
-            GLEW_LIBS=-lGLEWmx
-         fi
-         glew_libs_l=-lGLEWmx
-      fi
-      CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
-      LDFLAGS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LDFLAGS"
-      echo "$as_me:$LINENO: checking for glewGetExtension in $glew_libs_l" >&5
-echo $ECHO_N "checking for glewGetExtension in $glew_libs_l... $ECHO_C" >&6
-if test "${ncbi_cv_lib_glew+set}" = set; then
+      LDFLAGS="$orig_LDFLAGS ${GLEW_LDFLAGS=-L$GLEW_LIBDIR}"
+      LIBS="$OPENGL_LIBS $DL_LIBS $orig_LIBS"
+      saved_LIBS=$LIBS
+ echo "$as_me:$LINENO: checking for library containing glewGetExtension" >&5
+echo $ECHO_N "checking for library containing glewGetExtension... $ECHO_C" >&6
+if test "${ac_cv_search_glewGetExtension+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_glewGetExtension=no
+cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <GL/glew.h>
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char glewGetExtension ();
 int
 main ()
 {
-return glewGetExtension("foo");
+glewGetExtension ();
   ;
   return 0;
 }
@@ -27027,19 +26999,89 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ncbi_cv_lib_glew=yes
+  ac_cv_search_glewGetExtension="none required"
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ncbi_cv_lib_glew=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_glewGetExtension" = no; then
+  for ac_lib in "$GLEW_LIBS" $glew_libname GLEWmx GLEW; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char glewGetExtension ();
+int
+main ()
+{
+glewGetExtension ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_glewGetExtension="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
 fi
-echo "$as_me:$LINENO: result: $ncbi_cv_lib_glew" >&5
-echo "${ECHO_T}$ncbi_cv_lib_glew" >&6
-      if test "$ncbi_cv_lib_glew" != yes; then
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_glewGetExtension" >&5
+echo "${ECHO_T}$ac_cv_search_glewGetExtension" >&6
+if test "$ac_cv_search_glewGetExtension" != no; then
+  test "$ac_cv_search_glewGetExtension" = "none required" || LIBS="$ac_cv_search_glewGetExtension $LIBS"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGLEW 1
+_ACEOF
+
+   test "x$ac_cv_search_glewGetExtension" = "xnone required" || GLEW_LIBS=$ac_cv_search_glewGetExtension
+fi
+
+ LIBS=$saved_LIBS
+
+      if test "$ac_cv_search_glewGetExtension" = no; then
          GLEW_LIBS=
          if test "${with_glew:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-glew explicitly specified, but no usable version found." >&5
@@ -27047,12 +27089,37 @@ echo "$as_me: error: --with-glew explicitly specified, but no usable version fou
    { (exit 1); exit 1; }; }
     fi
       else
-                   WithPackages="$WithPackages${WithPackagesSep}GLEW"; WithPackagesSep=" ";
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBGLEW 1
-_ACEOF
-
+         if test -z "${tmp_LIBS+set}"; then
+    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    tmp_LIBS=`echo $GLEW_LDFLAGS $GLEW_LIBS | sed -e ""`
+ else
+    tmp_LIBS=
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `echo $GLEW_LDFLAGS $GLEW_LIBS | sed -e ""`; do
+       case "$x" in
+          -L*)
+             tmp_LIBS="$tmp_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             tmp_LIBS="$tmp_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    tmp_LIBS="$tmp_LIBS${ncbi_rp_R_flags}"
+ fi
+ fi
+         GLEW_LIBS=$tmp_LIBS
+                   WithPackages="$WithPackages${WithPackagesSep}GLEW"; WithPackagesSep=" "
+         CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
+         LIBS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LIBS"
          echo "$as_me:$LINENO: checking for GLEW multi-context (MX) support (recommended)" >&5
 echo $ECHO_N "checking for GLEW multi-context (MX) support (recommended)... $ECHO_C" >&6
 if test "${ncbi_cv_lib_glew_mx+set}" = set; then
@@ -27110,6 +27177,12 @@ echo "$as_me:$LINENO: result: $ncbi_cv_lib_glew_mx" >&5
 echo "${ECHO_T}$ncbi_cv_lib_glew_mx" >&6
           if test $ncbi_cv_lib_glew_mx = yes; then
              GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
+          else
+             if test "${with_glew_mx:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-glew-mx explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-glew-mx explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
           fi
           : ${GLEW_STATIC_LIBS=$GLEW_PATH/lib/libGLEW-static.a}
           test -f "$GLEW_STATIC_LIBS"  ||  GLEW_STATIC_LIBS=$GLEW_LIBS
