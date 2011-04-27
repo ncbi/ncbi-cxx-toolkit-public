@@ -1701,6 +1701,11 @@ void CAnnot_Collector::x_AddPostMappings(void)
     NON_CONST_ITERATE(CAnnotMappingCollector::TAnnotMappingSet, amit,
                       m_MappingCollector->m_AnnotMappingSet) {
         CAnnotObject_Ref annot_ref = amit->first;
+        if ( !amit->second ) {
+            // no actual mapping, just filtering duplicates
+            x_AddObject(annot_ref);
+            continue;
+        }
         amit->second->Convert(annot_ref,
             m_Selector->m_FeatProduct ? CSeq_loc_Conversion::eProduct :
                                         CSeq_loc_Conversion::eLocation);
@@ -2016,10 +2021,10 @@ void CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
     }
     CRef<CSeq_loc_Conversion_Set>& mapping_set =
         m_MappingCollector->m_AnnotMappingSet[object_ref];
-    if ( !mapping_set ) {
-        mapping_set.Reset(new CSeq_loc_Conversion_Set(m_Scope));
-    }
     if ( cvt ) {
+        if ( !mapping_set ) {
+            mapping_set.Reset(new CSeq_loc_Conversion_Set(m_Scope));
+        }
         _ASSERT(cvt->IsPartial() || object_ref.IsAlign());
         CRef<CSeq_loc_Conversion> cvt_copy(new CSeq_loc_Conversion(*cvt));
         mapping_set->Add(*cvt_copy, loc_index);
