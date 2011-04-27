@@ -2932,6 +2932,13 @@ echo "$as_me: error: incompatible options: --without-algo but --with-gbench" >&2
       else
          with_algo=yes
       fi
+     if test "$with_glew" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-glew but --with-gbench" >&5
+echo "$as_me: error: incompatible options: --without-glew but --with-gbench" >&2;}
+   { (exit 1); exit 1; }; }
+      else
+         with_glew=yes
+      fi
      if test "$with_glew_mx" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-glew_mx but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-glew_mx but --with-gbench" >&2;}
@@ -27184,7 +27191,7 @@ echo "$as_me: error: --with-glew-mx explicitly specified, but no usable version 
    { (exit 1); exit 1; }; }
     fi
           fi
-          : ${GLEW_STATIC_LIBS=$GLEW_PATH/lib/libGLEW-static.a}
+          : ${GLEW_STATIC_LIBS=$GLEW_LIBDIR/libGLEW-static.a}
           test -f "$GLEW_STATIC_LIBS"  ||  GLEW_STATIC_LIBS=$GLEW_LIBS
       fi
    fi
