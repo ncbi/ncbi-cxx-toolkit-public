@@ -330,7 +330,7 @@ CNetServerConnection SNetServerImpl::Connect()
 
     RegisterConnectionEvent(false);
 
-    conn->m_Socket.SetDataLogging(eDefault);
+    conn->m_Socket.SetDataLogging(eOff);
     conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_Service->m_Timeout);
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
