@@ -1065,7 +1065,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    ASSERT(valid_kb_index != -1);
 
    /* ensure that the first six Karlin blocks are populated */
-   for (index = 0 ; index < 6; index++) {
+   for (index = 0 ; index < 6 && index < sbp->number_of_contexts; index++) {
       if (sbp->kbp_gap[index] == NULL) {
          sbp->kbp_gap[index] = Blast_KarlinBlkNew();
          Blast_KarlinBlkCopy(sbp->kbp_gap[index], sbp->kbp_gap[valid_kb_index]);
