@@ -478,7 +478,8 @@ CreateSeqAlignFromEachPairwiseAln
 }
 
 
-CRef<CSeq_align_set> CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln)
+CRef<CSeq_align_set>
+CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln)
 {
     CRef<CSeq_align_set> disc(new CSeq_align_set);
 
@@ -502,12 +503,8 @@ CRef<CSeq_align_set> CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_
     vector< CRef<CDense_seg> > dsegs;
     dsegs.resize(numseg);
     for (size_t i = 0; i < dsegs.size(); ++i) {
-        CRef<CSeq_align> seg_aln(new CSeq_align);
-        seg_aln->SetType(CSeq_align::eType_not_set);
-        seg_aln->SetDim(dim);
-        disc->Set().push_back(seg_aln);
-        CDense_seg& dseg = seg_aln->SetSegs().SetDenseg();
-        dsegs[i].Reset(&dseg);
+        dsegs[i].Reset(new CDense_seg);
+        CDense_seg& dseg = *dsegs[i];
         dseg.SetDim(dim);
         dseg.SetNumseg(1);
         // Ids
@@ -534,6 +531,7 @@ CRef<CSeq_align_set> CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_
             _ASSERT(seg < numseg);
             CDense_seg& dseg = *dsegs[seg];
             dseg.SetLens()[0] = seg_i->GetLength();
+            CDense_seg::TStarts& starts = dseg.SetStarts();
 
             if (aln_rng_i != pairwises[dim - row - 1]->end()  &&
                 seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
@@ -551,7 +549,7 @@ CRef<CSeq_align_set> CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_
                 }
                 right_delta -= seg_i->GetLength();
 
-                dseg.SetStarts()[row] = 
+                starts[row] = 
                     (direct ?
                      aln_rng_i->GetSecondFrom() + left_delta :
                      aln_rng_i->GetSecondFrom() + right_delta);
@@ -570,6 +568,14 @@ CRef<CSeq_align_set> CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_
                 }
             }
             dseg.SetStrands()[row] = (direct ? eNa_strand_plus : eNa_strand_minus);
+            // Add only densegs with both rows non-empty
+            if (starts[0] >= 0  &&  starts[1] >= 0) {
+                CRef<CSeq_align> seg_aln(new CSeq_align);
+                seg_aln->SetType(CSeq_align::eType_not_set);
+                seg_aln->SetDim(dim);
+                disc->Set().push_back(seg_aln);
+                seg_aln->SetSegs().SetDenseg(dseg);
+            }
             ++seg_i;
             ++seg;
         }
