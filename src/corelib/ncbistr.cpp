@@ -816,11 +816,12 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
     for ( ; isspace(*ptr); ++ptr)
         ;
     const char* start = ptr;
-    double ret = 0.;
-    bool sign= false, negate= false, dot= false, expn=false;
-    int digits = 0, dot_position = -1, exponent = 0;
+    long double ret = NCBI_CONST_LONGDOUBLE(0.);
+    bool sign= false, negate= false, dot= false, expn=false, anydigits=false;
+    int digits = 0, dot_position = 0, exponent = 0;
     unsigned int first=0, second=0, first_exp=1;
-    double second_exp=1., third = 0.;
+    long double second_exp=NCBI_CONST_LONGDOUBLE(1.),
+                third    = NCBI_CONST_LONGDOUBLE(0.);
     char c;
 // up to exponent
     for( ; ; ++ptr) {
@@ -836,15 +837,21 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
         }
         // digits: accumulate
         else if (c >= '0' && c <= '9') {
+            anydigits = true;
             ++digits;
-            if (digits <= 9) {
+            if (first == 0 && c == '0') {
+                --digits;
+                if (dot) {
+                    --dot_position;
+                }
+            } else if (digits <= 9) {
                 first = first*10 + (c-'0');
             } else if (digits <= 18) {
                 first_exp *= 10;
                 second = second*10 + (c-'0');
             } else {
-                second_exp *= 10;
-                third = third*10 + (c-'0');
+                second_exp *= NCBI_CONST_LONGDOUBLE(10.);
+                third = third * NCBI_CONST_LONGDOUBLE(10.) + (c-'0');
             }
         }
         // dot
@@ -890,14 +897,14 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
         }
     }
     // if no digits, stop now - error
-    if (!digits) {
+    if (!anydigits) {
         if (endptr) {
             *endptr = (char*)start;
         }
         errno = EINVAL;
         return 0.;
     }
-    exponent = dot_position >=0 ? dot_position - digits : 0;
+    exponent = dot ? dot_position - digits : 0;
 // read exponent
     if (expn && *ptr) {
         int expvalue = 0;
@@ -917,7 +924,10 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
             // digits: accumulate
             else if (c >= '0' && c <= '9') {
                 ++expdigits;
-                expvalue = expvalue*10 + (c-'0');
+                int newexpvalue = expvalue*10 + (c-'0');
+                if (newexpvalue > expvalue) {
+                    expvalue = newexpvalue;
+                }
             }
             else {
                 break;
@@ -938,7 +948,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
             exponent = expnegate ? exponent - expvalue : exponent + expvalue;
         }
     }
-    ret = ((double)first * first_exp + second)* second_exp + third;
+    ret = ((long double)first * first_exp + second)* second_exp + third;
     // calculate exponent
     if ((first || second) && exponent) {
         if (exponent > 2*DBL_MAX_10_EXP) {
@@ -949,9 +959,10 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
             errno = ERANGE;
         } else {
             for (; exponent < -256; exponent += 256) {
-                ret /= 1.e256;
+                ret /= NCBI_CONST_LONGDOUBLE(1.e256);
             }
-            double power = 1., power_mult = 10.;
+            long double power      = NCBI_CONST_LONGDOUBLE(1.),
+                        power_mult = NCBI_CONST_LONGDOUBLE(10.);
             unsigned int mask = 1;
             unsigned int uexp = exponent < 0 ? -exponent : exponent;
             int count = 1;
@@ -959,17 +970,23 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                 if (mask & uexp) {
                     switch (mask) {
                     case   0: break;
-                    case   1: power *= 10.;   break;
-                    case   2: power *= 100.;  break;
-                    case   4: power *= 1.e4;  break;
-                    case   8: power *= 1.e8;  break;
-                    case  16: power *= 1.e16; break;
-                    case  32: power *= 1.e32; break;
-                    case  64: power *= 1.e64; break;
-                    case 128: power *= 1.e128;  power_mult =1.e256;                    break;
-                    case 256: power *= 1.e256;  power_mult = power_mult*power_mult;    break;
-                    default:  power *= power_mult; power_mult = power_mult*power_mult; break;
+                    case   1: power *= NCBI_CONST_LONGDOUBLE(10.);    break;
+                    case   2: power *= NCBI_CONST_LONGDOUBLE(100.);   break;
+                    case   4: power *= NCBI_CONST_LONGDOUBLE(1.e4);   break;
+                    case   8: power *= NCBI_CONST_LONGDOUBLE(1.e8);   break;
+                    case  16: power *= NCBI_CONST_LONGDOUBLE(1.e16);  break;
+                    case  32: power *= NCBI_CONST_LONGDOUBLE(1.e32);  break;
+                    case  64: power *= NCBI_CONST_LONGDOUBLE(1.e64);  break;
+                    case 128: power *= NCBI_CONST_LONGDOUBLE(1.e128); break;
+                    case 256: power *= NCBI_CONST_LONGDOUBLE(1.e256); break;
+                    default:  power *= power_mult;                    break;
                     }
+                }
+                if (mask >= 256) {
+                    if (mask == 256) {
+                        power_mult = NCBI_CONST_LONGDOUBLE(1.e256);
+                    }
+                    power_mult = power_mult*power_mult;
                 }
             }
             if (exponent < 0) {

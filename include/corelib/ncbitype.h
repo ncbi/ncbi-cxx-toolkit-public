@@ -186,6 +186,11 @@ typedef unsigned long long uintptr_t;
 #  define NCBI_CONST_INT8(v)   v
 #  define NCBI_CONST_UINT8(v)  v
 #endif
+#if (SIZEOF_LONG_DOUBLE > SIZEOF_DOUBLE)
+#  define NCBI_CONST_LONGDOUBLE(v)   v##L
+#else
+#  define NCBI_CONST_LONGDOUBLE(v)   v
+#endif
 
 
 /* Undef auxiliaries
