@@ -4814,8 +4814,11 @@ else
             GLEW_LDFLAGS=`$glew_config --libs-only-L`
             glew_libname=`$glew_config --libs-only-l | sed -e 's/-l//'`
          fi
+      elif test -d "$GLEW_PATH"; then
+         GLEW_INCLUDE=-I$GLEW_PATH/include
+         GLEW_LDFLAGS=-L$GLEW_LIBDIR
       fi
-      LDFLAGS="$orig_LDFLAGS ${GLEW_LDFLAGS=-L$GLEW_LIBDIR}"
+      LDFLAGS="$orig_LDFLAGS $GLEW_LDFLAGS"
       LIBS="$OPENGL_LIBS $DL_LIBS $orig_LIBS"
       NCBI_CHECK_LIBS(GLEW, [$glew_libname GLEWmx GLEW], glewGetExtension)
       if test "$ac_cv_search_glewGetExtension" = no; then
