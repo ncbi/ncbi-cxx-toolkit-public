@@ -1684,7 +1684,7 @@ void CAnnot_Collector::x_AddObject(CAnnotObject_Ref&    object_ref,
                                    unsigned int         loc_index)
 {
     // Always map aligns through conv. set
-    if ( cvt && (cvt->IsPartial() || object_ref.IsAlign()) ) {
+    if ( (cvt && cvt->IsPartial()) || object_ref.IsAlign() ) {
         x_AddObjectMapping(object_ref, cvt, loc_index);
     }
     else {
