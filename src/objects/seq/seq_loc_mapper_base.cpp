@@ -2225,8 +2225,7 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
 
 void CSeq_loc_Mapper_Base::x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const
 {
-    // only process multi-interval locations
-    if( loc && ( (loc->Which() == CSeq_loc::e_Mix) || (loc->Which() == CSeq_loc::e_Packed_int) ) ) {
+    if( loc ) {
         CRef<CSeq_loc> new_loc( new CSeq_loc );
         bool is_first = true;
         const ESeqLocExtremes extreme = eExtreme_Biological;
@@ -2234,6 +2233,10 @@ void CSeq_loc_Mapper_Base::x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const
         CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Allow );
         for( ; loc_iter; ++loc_iter ) {
             CConstRef<CSeq_loc> loc_piece( loc_iter.GetRangeAsSeq_loc() );
+
+            // remove any "range fuzz" from result
+            loc_piece = x_RemoveFuzzWithRange(loc_piece);
+            
             if( loc_piece && ( loc_piece->IsPartialStart(extreme) || loc_piece->IsPartialStop(extreme) ) ) {
                 const bool is_last = ( ++CSeq_loc_CI(loc_iter) == loc->end() );
 
@@ -2257,6 +2260,59 @@ void CSeq_loc_Mapper_Base::x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const
 
         loc = new_loc;
     }
+}
+
+CConstRef<CSeq_loc> 
+CSeq_loc_Mapper_Base::x_RemoveFuzzWithRange( 
+    CConstRef<CSeq_loc> loc_piece ) const
+{
+    switch( loc_piece->Which() ) {
+    case CSeq_loc::e_Int:
+        {
+            const CSeq_interval &seq_int = loc_piece->GetInt();
+
+            const bool from_is_fuzz_range = 
+                ( seq_int.IsSetFuzz_from() && seq_int.GetFuzz_from().IsRange() );
+            const bool to_is_fuzz_range = 
+                ( seq_int.IsSetFuzz_to()   && seq_int.GetFuzz_to().IsRange()   );
+
+            if( from_is_fuzz_range || to_is_fuzz_range ) {
+                CRef<CSeq_loc> new_loc( new CSeq_loc );
+                new_loc->Assign( *loc_piece );
+
+                if( from_is_fuzz_range ) {
+                    new_loc->SetInt().ResetFuzz_from();
+                }
+
+                if( to_is_fuzz_range ) {
+                    new_loc->SetInt().ResetFuzz_to();
+                }
+
+                return new_loc;
+            }
+        }
+        break;
+    case CSeq_loc::e_Pnt:
+        {
+            const CSeq_point &pnt = loc_piece->GetPnt();
+
+            const bool is_fuzz_range =
+                ( pnt.IsSetFuzz() && pnt.GetFuzz().IsRange() );
+            if( is_fuzz_range ) {
+                CRef<CSeq_loc> new_loc( new CSeq_loc );
+                new_loc->Assign( *loc_piece );
+
+                new_loc->SetPnt().ResetFuzz();
+
+                return new_loc;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+
+    return loc_piece;
 }
 
 // Check location type, optimize if possible (empty mix to NULL,

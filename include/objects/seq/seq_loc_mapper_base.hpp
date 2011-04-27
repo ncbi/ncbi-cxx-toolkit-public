@@ -722,6 +722,10 @@ private:
     // For mix locations, we remove fuzz from in-between the parts.
     void x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const;
 
+    // This removes fuzz of type "range" if any.
+    // Don't give this mix locations; it won't do anything.
+    CConstRef<CSeq_loc> x_RemoveFuzzWithRange( CConstRef<CSeq_loc> loc_piece ) const;
+
     // Try to optimize the mapped location if it's a mix.
     // The allowed optimizations are:
     // - empty mix is converted to Null
