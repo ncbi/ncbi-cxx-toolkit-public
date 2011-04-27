@@ -58,8 +58,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
                     host, NStr::StringToInt(port));
             else {
                 NCBI_THROW(CArgException, eInvalidArg,
-                    "This operation requires the \"service_name\" "
-                    "argument to be a host:port server address.");
+                    "When blob ID is given, '--netcache' "
+                    "must be a host:port server address.");
             }
         }
         break;

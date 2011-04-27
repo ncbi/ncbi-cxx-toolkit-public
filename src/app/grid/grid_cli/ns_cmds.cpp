@@ -49,6 +49,19 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service, m_Opts.auth, queue);
 
+    if (!m_Opts.id.empty() && !m_Opts.ns_service.empty()) {
+        string host, port;
+
+        if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
+            NCBI_THROW(CArgException, eInvalidArg,
+                "When job ID is given, '--netschedule' "
+                "must be a host:port server address.");
+        }
+
+        m_NetScheduleAPI.GetService().StickToServer(host,
+            NStr::StringToInt(port));
+    }
+
     if (IsOptionSet(eCompatMode))
         m_NetScheduleAPI.UseOldStyleAuth();
 

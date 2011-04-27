@@ -225,7 +225,7 @@ struct SCommandDefinition {
         "jobinfo|ji", "Retrieve meta information on a NetSchedule job.",
         "Print vital information about the specified NetSchedule job. "
         "Expired jobs will be reported as not found.",
-        {eID, eQueue, eBrief, eStatusOnly, eDeferExpiration,
+        {eID, eNetSchedule, eQueue, eBrief, eStatusOnly, eDeferExpiration,
             eProgressMessageOnly, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_SubmitJob,
@@ -236,7 +236,7 @@ struct SCommandDefinition {
         "This command requires a NetCache server for saving job "
         "input if it exceeds the capability of the NetSchedule "
         "internal storage.\n\n"
-        "Unless the '--" INPUT_OPTION "' or '--" INPUT_FILE_OPTION "' "
+        "Unless the '--" INPUT_FILE_OPTION "' or '--" INPUT_OPTION "' "
         "options are given, the input is read from the standard input "
         "stream.",
         {eNetSchedule, eQueue, eNetCache, eInput, eInputFile, eAuth, -1}},
@@ -245,7 +245,7 @@ struct SCommandDefinition {
         "getjobinput", "Read job input.",
         "Retrieve and print job input to the standard output stream or "
         "save it to a file.",
-        {eID, eQueue, eOutputFile, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
         "getjoboutput", "Read job output if the job is completed.",
@@ -254,13 +254,13 @@ struct SCommandDefinition {
         "completed successfully, an appropriate error message is printed "
         "to the standard error stream and the program exits with a non-zero "
         "return code.",
-        {eID, eQueue, eOutputFile, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
         "node that may be processing this job to stop the processing.",
-        {eID, eQueue, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Kill,
         "kill", "Delete NetSchedule job(s).",
@@ -290,7 +290,7 @@ struct SCommandDefinition {
         "is read from the standard input stream or a file. If the job is being "
         "reported as failed, an error message must be provided along with the "
         "'--" FAIL_JOB_OPTION "' command line option.",
-        {eID, eQueue, eNetCache, eInputFile, eFailJob, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eNetCache, eInputFile, eFailJob, eAuth, -1}},
 */
 
     {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
@@ -302,13 +302,13 @@ struct SCommandDefinition {
         "Pending, but the information about previous runs will "
         "not be discarded, and the expiration time will not be "
         "advanced.",
-        {eID, eQueue, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_UpdateJob,
         "updatejob", "Modify attributes of an existing job.",
         "Change one or more job properties. The outcome depends "
         "on the current state of the job.",
-        {eID, eQueue, eForceReschedule, eExtendLifetime,
+        {eID, eNetSchedule, eQueue, eForceReschedule, eExtendLifetime,
             eProgressMessage, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ServerInfo,
@@ -502,7 +502,16 @@ int CGridCommandLineInterfaceApp::Run()
         }
     }
 
-    return (this->*cmd_def->cmd_proc)();
+    try {
+        return (this->*cmd_def->cmd_proc)();
+    }
+    catch (CArgException& e) {
+        if (e.GetErrCode() == CArgException::eInvalidArg) {
+            fprintf(stderr, "%s\n", e.GetMsg().c_str());
+            return 2;
+        }
+        throw;
+    }
 }
 
 CGridCommandLineInterfaceApp::~CGridCommandLineInterfaceApp()
