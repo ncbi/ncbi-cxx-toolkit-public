@@ -221,14 +221,28 @@ string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const CNetCacheKey& key)
     return result;
 }
 
-static void SleepUntil(const CTime& time)
+class SNCMirrorIterationBeginner : public IIterationBeginner
 {
-    CTime current_time(GetFastLocalTime());
-    if (time > current_time) {
-        CTimeSpan diff(time - current_time);
-        SleepMicroSec(diff.GetCompleteSeconds() * 1000 * 1000 +
-            diff.GetNanoSecondsAfterSecond() / 1000);
+public:
+    SNCMirrorIterationBeginner(CNetService& service,
+            CNetServer::TInstance primary_server,
+            const string* service_name) :
+        m_Service(service),
+        m_PrimaryServer(primary_server),
+        m_ServiceName(service_name)
+    {
     }
+
+    virtual CNetServiceIterator BeginIteration();
+
+    CNetService& m_Service;
+    CNetServer::TInstance m_PrimaryServer;
+    const string* m_ServiceName;
+};
+
+CNetServiceIterator SNCMirrorIterationBeginner::BeginIteration()
+{
+    return m_Service.Iterate(m_PrimaryServer, m_ServiceName);
 }
 
 CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
@@ -239,98 +253,15 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     if (!m_EnableMirroring)
         return primary_server.ExecWithRetry(cmd);
 
-    const string* service_name = key.HasExtensions() && key.GetServiceName() !=
-        m_Service.GetServiceName() ? &key.GetServiceName() : NULL;
-
-    CNetServiceIterator it = m_Service.Iterate(primary_server, service_name);
-
     CNetServer::SExecResult exec_result;
 
-    CTime max_query_time(GetFastLocalTime());
-    CTime retry_delay_until(max_query_time);
+    SNCMirrorIterationBeginner iteration_beginner(m_Service, primary_server,
+        key.HasExtensions() && key.GetServiceName() !=
+            m_Service.GetServiceName() ? &key.GetServiceName() : NULL);
 
-    unsigned retry_count;
+    m_Service->ExecUntilSucceded(cmd, exec_result, &iteration_beginner);
 
-    try {
-        (*it)->ConnectAndExec(cmd, exec_result);
-        return exec_result;
-    }
-    catch (CNetSrvConnException& ex) {
-        switch (ex.GetErrCode()) {
-        case CNetSrvConnException::eConnectionFailure:
-        case CNetSrvConnException::eServerThrottle:
-            if ((++it || (retry_count =
-                        TServConn_ConnMaxRetries::GetDefault()) > 0) &&
-                    (m_Service->m_MaxQueryTime == 0 || GetFastLocalTime() <
-                        max_query_time.AddNanoSecond(
-                            m_Service->m_MaxQueryTime * 1000 * 1000)))
-                break;
-            /* else: FALL THROUGH */
-
-        default:
-            throw;
-        }
-    }
-
-    // At this point, 'it' points to the next server (or NULL);
-    // variable 'retry_count' is set from the respective configuration
-    // parameter; 'max_query_time' is set correctly unless
-    // m_Service->m_MaxQueryTime is zero.
-
-    unsigned long retry_delay = s_GetRetryDelay() * 1000 * 1000;
-    retry_delay_until.AddNanoSecond(retry_delay);
-
-    string last_error;
-
-    for (;;) {
-        while (it) {
-            try {
-                (*it)->ConnectAndExec(cmd, exec_result);
-                return exec_result;
-            }
-            catch (CNetSrvConnException& ex) {
-                switch (ex.GetErrCode()) {
-                case CNetSrvConnException::eConnectionFailure:
-                    last_error = ex.what();
-                    break;
-
-                case CNetSrvConnException::eServerThrottle:
-                    if (last_error.empty())
-                        last_error = ex.what();
-                    break;
-
-                default:
-                    throw;
-                }
-            }
-            ++it;
-        }
-        if (retry_count == 0)
-            break;
-        --retry_count;
-
-        if (m_Service->m_MaxQueryTime > 0 &&
-                GetFastLocalTime() >= max_query_time) {
-            LOG_POST(Error <<
-                "Timeout (max_query_time=" << m_Service->m_MaxQueryTime <<
-                "); cmd=" << cmd <<
-                "; exception=" << last_error);
-            break;
-        }
-
-        SleepUntil(retry_delay_until);
-        retry_delay_until = GetFastLocalTime();
-        retry_delay_until.AddNanoSecond(retry_delay);
-        it = m_Service.Iterate(primary_server, service_name);
-
-        LOG_POST("Unable to execute '" << cmd <<
-            "' on any of the mirrors; last error seen: " << last_error <<
-            "; remaining attempts: " << retry_count);
-    }
-
-    NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-        "Unable to execute '" << cmd <<
-        "' on any of the mirrors; last error seen: " << last_error);
+    return exec_result;
 }
 
 CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,

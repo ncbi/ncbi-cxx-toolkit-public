@@ -169,7 +169,8 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
 
     s_AppendClientIPAndSessionID(cmd);
 
-    CNetServer::SExecResult exec_result(m_Impl->m_API->m_Service.FindServerAndExec(cmd));
+    CNetServer::SExecResult exec_result(
+        m_Impl->m_API->m_Service.FindServerAndExec(cmd));
 
     cmd.reserve(max_input_size * 6);
     string host;

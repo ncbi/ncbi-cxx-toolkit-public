@@ -110,14 +110,16 @@ struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
 {
     SNetServiceIterator_RandomPivot(SDiscoveredServers* server_group_impl,
             TNetServerList::const_iterator position) :
-        SNetServiceIteratorImpl(server_group_impl, position),
-        m_InitialPosition(position)
+        SNetServiceIteratorImpl(server_group_impl, position)
     {
     }
 
     virtual bool Next();
 
-    TNetServerList::const_iterator m_InitialPosition;
+    typedef vector<TNetServerList::const_iterator> TRandomIterators;
+
+    TRandomIterators m_RandomIterators;
+    TRandomIterators::const_iterator m_RandomIterator;
 };
 
 enum EServiceType {
@@ -128,7 +130,13 @@ enum EServiceType {
 
 struct SActualService
 {
-    SActualService(const string& service_name) : m_ServiceName(service_name) {}
+    SActualService(const string& service_name) :
+        m_ServiceName(service_name),
+        m_ServiceType(eServiceNotDefined),
+        m_DiscoveredServers(NULL),
+        m_LatestDiscoveryIteration(0)
+    {
+    }
 
     string m_ServiceName;
     EServiceType m_ServiceType;
@@ -144,6 +152,14 @@ struct SCompareServiceName {
 };
 
 typedef set<SActualService*, SCompareServiceName> TActualServiceSet;
+
+class IIterationBeginner
+{
+public:
+    virtual CNetServiceIterator BeginIteration() = 0;
+
+    virtual ~IIterationBeginner() {}
+};
 
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
@@ -178,6 +194,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         CRef<SDiscoveredServers>& discovered_servers);
 
     void Monitor(CNcbiOstream& out, const string& cmd);
+
+    void ExecUntilSucceded(const string& cmd,
+        CNetServer::SExecResult& exec_result,
+        IIterationBeginner* iteration_beginner);
 
     virtual ~SNetServiceImpl();
 

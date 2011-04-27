@@ -106,14 +106,31 @@ bool SNetServiceIterator_OmitPenalized::Next()
     return true;
 }
 
+static CRandom s_RandomIteratorGen((CRandom::TValue) time(NULL));
+
 bool SNetServiceIterator_RandomPivot::Next()
 {
-    do {
-        if (++m_Position == m_ServerGroup->m_Servers.end())
-            m_Position = m_ServerGroup->m_Servers.begin();
-        if (m_Position == m_InitialPosition)
+    if (m_RandomIterators.empty()) {
+        m_RandomIterators.reserve(m_ServerGroup->m_Servers.size());
+        ITERATE(TNetServerList, it, m_ServerGroup->m_Servers) {
+            if (it != m_Position && !LBSMD_IS_PENALIZED_RATE(it->second))
+                m_RandomIterators.push_back(it);
+        }
+        if (m_RandomIterators.empty())
             return false;
-    } while (LBSMD_IS_PENALIZED_RATE(m_Position->second));
+        // Shuffle m_RandomIterators.
+        if (m_RandomIterators.size() > 1) {
+            NON_CONST_ITERATE(TRandomIterators, it, m_RandomIterators) {
+                swap(*it, m_RandomIterators[s_RandomIteratorGen.GetRand(0,
+                    m_RandomIterators.size() - 1)]);
+            }
+        }
+        m_RandomIterator = m_RandomIterators.begin();
+    } else
+        if (++m_RandomIterator == m_RandomIterators.end())
+            return false;
+
+    m_Position = *m_RandomIterator;
 
     return true;
 }
@@ -374,24 +391,19 @@ SActualService* SNetServiceImpl::FindOrCreateActualService(
     SActualService* actual_service = new SActualService(service_name);
     m_ActualServices.insert(actual_service);
 
-    actual_service->m_LatestDiscoveryIteration = 0;
+    if (!actual_service_name.empty()) {
+        string host, port_str;
 
-    if (actual_service_name.empty()) {
-        actual_service->m_ServiceType = eServiceNotDefined;
-    } else {
-        string host, port;
-
-        if (NStr::SplitInTwo(actual_service_name, ":", host, port)) {
+        if (NStr::SplitInTwo(actual_service_name, ":", host, port_str)) {
+            host = g_NetService_gethostip(host);
+            unsigned short port = NStr::StringToInt(port_str);
             actual_service->m_ServiceType = eSingleServerService;
+            actual_service->m_DiscoveredServers = AllocServerGroup(0);
             CFastMutexGuard server_mutex_lock(m_ServerMutex);
-            (actual_service->m_DiscoveredServers = AllocServerGroup(0))->
-                m_Servers.push_back(TServerRate(
-                    FindOrCreateServerImpl(g_NetService_gethostip(host),
-                        NStr::StringToInt(port)), 1));
-        } else {
+            actual_service->m_DiscoveredServers->m_Servers.push_back(
+                TServerRate(FindOrCreateServerImpl(host, port), 1));
+        } else
             actual_service->m_ServiceType = eLoadBalancedService;
-            actual_service->m_DiscoveredServers = NULL;
-        }
     }
 
     return actual_service;
@@ -524,37 +536,36 @@ CNetServer SNetServiceImpl::GetSingleServer(const string& cmd)
         m_Servers.front().first);
 }
 
+class SRandomIterationBeginner : public IIterationBeginner
+{
+public:
+    SRandomIterationBeginner(CNetService& service) :
+        m_Service(service)
+    {
+    }
+
+    virtual CNetServiceIterator BeginIteration();
+
+    CNetService& m_Service;
+};
+
+CNetServiceIterator SRandomIterationBeginner::BeginIteration()
+{
+    return m_Service.Iterate(CNetService::eRandomize);
+}
+
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 {
     if (m_Impl->m_MainService->m_ServiceType != eLoadBalancedService)
         return m_Impl->GetSingleServer(cmd).ExecWithRetry(cmd);
 
-    bool throttled = false;
+    CNetServer::SExecResult exec_result;
 
-    for (CNetServiceIterator it = Iterate(eRandomize); it; ++it) {
-        try {
-            return (*it).ExecWithRetry(cmd);
-        }
-        catch (CNetSrvConnException& ex) {
-            switch (ex.GetErrCode()) {
-            case CNetSrvConnException::eConnectionFailure:
-                ERR_POST_X(2, ex.what());
-                break;
+    SRandomIterationBeginner iteration_beginner(*this);
 
-            case CNetSrvConnException::eServerThrottle:
-                throttled = true;
-                break;
+    m_Impl->ExecUntilSucceded(cmd, exec_result, &iteration_beginner);
 
-            default:
-                throw;
-            }
-        }
-    }
-
-    NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-        "Couldn't find any available servers for the " +
-        m_Impl->m_MainService->m_ServiceName +
-        (!throttled ? " service." : " service (some servers are throttled)."));
+    return exec_result;
 }
 
 CNetServer SNetServiceImpl::RequireStandAloneServerSpec(const string& cmd)
@@ -685,6 +696,118 @@ void SNetServiceImpl::Monitor(CNcbiOstream& out, const string& cmd)
     exec_result.conn->Close();
 }
 
+static void SleepUntil(const CTime& time)
+{
+    CTime current_time(GetFastLocalTime());
+    if (time > current_time) {
+        CTimeSpan diff(time - current_time);
+        SleepMicroSec(diff.GetCompleteSeconds() * 1000 * 1000 +
+            diff.GetNanoSecondsAfterSecond() / 1000);
+    }
+}
+
+void SNetServiceImpl::ExecUntilSucceded(const string& cmd,
+    CNetServer::SExecResult& exec_result,
+    IIterationBeginner* iteration_beginner)
+{
+    CNetServiceIterator it = iteration_beginner->BeginIteration();
+
+    CTime max_query_time(GetFastLocalTime());
+    CTime retry_delay_until(max_query_time);
+
+    unsigned retry_count;
+
+    try {
+        (*it)->ConnectAndExec(cmd, exec_result);
+        return;
+    }
+    catch (CNetSrvConnException& ex) {
+        switch (ex.GetErrCode()) {
+        case CNetSrvConnException::eConnectionFailure:
+        case CNetSrvConnException::eServerThrottle:
+            retry_count = TServConn_ConnMaxRetries::GetDefault();
+            if ((++it || retry_count > 0) &&
+                    (m_MaxQueryTime == 0 || GetFastLocalTime() <
+                        max_query_time.AddNanoSecond(
+                            m_MaxQueryTime * 1000 * 1000)))
+                break;
+            /* else: FALL THROUGH */
+
+        default:
+            throw;
+        }
+    }
+
+    // At this point, 'it' points to the next server (or NULL);
+    // variable 'retry_count' is set from the respective configuration
+    // parameter; 'max_query_time' is set correctly unless
+    // m_MaxQueryTime is zero.
+
+    unsigned long retry_delay = s_GetRetryDelay() * 1000 * 1000;
+    retry_delay_until.AddNanoSecond(retry_delay);
+
+    string last_error;
+    bool throttled;
+
+    for (;;) {
+        throttled = false;
+        while (it) {
+            try {
+                (*it)->ConnectAndExec(cmd, exec_result);
+                return;
+            }
+            catch (CNetSrvConnException& ex) {
+                switch (ex.GetErrCode()) {
+                case CNetSrvConnException::eConnectionFailure:
+                    last_error = ex.what();
+                    break;
+
+                case CNetSrvConnException::eServerThrottle:
+                    throttled = true;
+                    if (last_error.empty())
+                        last_error = ex.what();
+                    break;
+
+                default:
+                    throw;
+                }
+            }
+            ++it;
+        }
+        if (retry_count == 0)
+            break;
+        --retry_count;
+
+        if (m_MaxQueryTime > 0 &&
+                GetFastLocalTime() >= max_query_time) {
+            LOG_POST(Error <<
+                "Timeout (max_query_time=" << m_MaxQueryTime <<
+                "); cmd=" << cmd <<
+                "; exception=" << last_error);
+            break;
+        }
+
+        SleepUntil(retry_delay_until);
+        retry_delay_until = GetFastLocalTime();
+        retry_delay_until.AddNanoSecond(retry_delay);
+        it = iteration_beginner->BeginIteration();
+
+        LOG_POST("Unable to execute '" << cmd <<
+            (!throttled ?
+                "' on any of the discovered servers; last error seen: " :
+                "' on any of the discovered servers (some servers are "
+                    "throttled); last error seen: ") << last_error <<
+            "; remaining attempts: " << retry_count);
+    }
+
+    NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+        "Unable to execute '" << cmd <<
+        (!throttled ?
+            "' on any of the discovered servers; last error seen: " :
+            "' on any of the discovered servers (some servers are "
+                "throttled); last error seen: ") << last_error);
+}
+
 SNetServiceImpl::~SNetServiceImpl()
 {
     // Clean up m_Servers
@@ -727,31 +850,38 @@ void CNetService::SetPermanentConnection(ESwitch type)
     m_Impl->m_PermanentConnection = type;
 }
 
+static SNetServiceIteratorImpl* s_CreateRandomIterator(
+    SDiscoveredServers* servers)
+{
+    if (!servers->m_Servers.empty()) {
+        TNetServerList::const_iterator initial_it =
+            servers->m_Servers.begin() +
+            s_RandomIteratorGen.GetRand(0, servers->m_Servers.size() - 1);
+        TNetServerList::const_iterator it = initial_it;
+        do {
+            if (!LBSMD_IS_PENALIZED_RATE(it->second))
+                return new SNetServiceIterator_RandomPivot(servers, it);
+            if (++it == servers->m_Servers.end())
+                it = servers->m_Servers.begin();
+        } while (it != initial_it);
+    }
+
+    return NULL;
+}
+
 CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode,
     const string* service_name)
 {
     CRef<SDiscoveredServers> servers;
     m_Impl->GetDiscoveredServers(service_name, servers);
 
-    if (mode == eSortByLoad) {
+    if (mode == eRandomize)
+        return s_CreateRandomIterator(servers);
+    else if (mode == eSortByLoad) {
         for (TNetServerList::const_iterator it = servers->m_Servers.begin();
                 it != servers->m_Servers.end(); ++it)
             if (!LBSMD_IS_PENALIZED_RATE(it->second))
                 return new SNetServiceIterator_OmitPenalized(servers, it);
-    } else if (mode == eRandomize) {
-        if (!servers->m_Servers.empty()) {
-            static CRandom s_PivotGen((CRandom::TValue) time(NULL));
-            TNetServerList::const_iterator initial_it =
-                servers->m_Servers.begin() +
-                    s_PivotGen.GetRand(0, servers->m_Servers.size() - 1);
-            TNetServerList::const_iterator it = initial_it;
-            do {
-                if (!LBSMD_IS_PENALIZED_RATE(it->second))
-                    return new SNetServiceIterator_RandomPivot(servers, it);
-                if (++it == servers->m_Servers.end())
-                    it = servers->m_Servers.begin();
-            } while (it != initial_it);
-        }
     } else { /* mode == eIncludePenalized. */
         TNetServerList::const_iterator it = servers->m_Servers.begin();
         if (it != servers->m_Servers.end())
@@ -782,8 +912,7 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
     if (non_penalized_server != servers->m_Servers.end()) {
         // The requested server is not found in this service,
         // however there are non-penalized servers, so return them.
-        return new SNetServiceIterator_OmitPenalized(servers,
-            non_penalized_server);
+        return s_CreateRandomIterator(servers);
     } else {
         // The service is empty, allocate a server group to contain
         // solely the requested server.
@@ -793,8 +922,7 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
             TServerRate(priority_server, 1));
         servers->m_Service = m_Impl;
         servers->m_ActualService = NULL;
-        return new SNetServiceIterator_OmitPenalized(servers,
-            servers->m_Servers.begin());
+        return new SNetServiceIteratorImpl(servers, servers->m_Servers.begin());
     }
 
     return NULL;
