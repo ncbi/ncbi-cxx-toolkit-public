@@ -754,6 +754,9 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
     ESupportedInputFormats hint = eUnsupported;
     if ( (hint = x_GetUserInputTypeHint()) != eUnsupported) {
         input_types.assign(names.size(), hint);
+        if (hint == eBlastDb) {
+            copy(names.begin(), names.end(), back_inserter(blastdb));
+        }
     } else {
         input_types = x_GuessInputType(names, blastdb);
     }
