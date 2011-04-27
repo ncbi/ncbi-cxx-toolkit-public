@@ -991,12 +991,12 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
             }
             if (exponent < 0) {
                 ret /= power;
-                if (ret == 0.) {
+                if (double(ret) == 0.) {
                     errno = ERANGE;
                 }
             } else {
                 ret *= power;
-                if (!finite(ret)) {
+                if (!finite(double(ret))) {
                     errno = ERANGE;
                 }
             }
