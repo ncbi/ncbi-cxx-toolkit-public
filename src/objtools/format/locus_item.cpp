@@ -279,7 +279,7 @@ void CLocusItem::x_SetStrand(CBioseqContext& ctx)
         
         // ss-any RNA don't show ss
         const bool is_nucleic_acid = bmol <= CSeq_inst::eMol_rna;
-        const bool is_in_set_1 = (m_Biomol >= CMolInfo::eBiomol_mRNA && 
+        const bool is_in_set_1 = (m_Biomol >= CMolInfo::eBiomol_pre_RNA && 
             m_Biomol <= CMolInfo::eBiomol_peptide);
         const bool is_in_set_2 = (m_Biomol >= CMolInfo::eBiomol_cRNA && 
             m_Biomol <= CMolInfo::eBiomol_tmRNA);
@@ -306,7 +306,7 @@ void CLocusItem::x_SetBiomol(CBioseqContext& ctx)
     }
 
     const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
-    if ( molinfo  &&  molinfo->GetBiomol() <= CMolInfo::eBiomol_transcribed_RNA ) {
+    if ( molinfo  &&  molinfo->GetBiomol() <= CMolInfo::eBiomol_tmRNA ) {
         m_Biomol = molinfo->GetBiomol();
     }
 

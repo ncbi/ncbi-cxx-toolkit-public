@@ -178,7 +178,7 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
         } else {
             go_text.clear();
         }
-        if ( text_string != 0 ) {
+        if ( text_string != 0 && text_string->length() > 0 ) {
             // Yes, we have the dash here even if there's no go_id (compatibility with C)
             go_text += string( " - " ) + *text_string;
         }
@@ -1474,7 +1474,7 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
         for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
             if( (*ref_iter)->Matches( **pub_iter ) ) {
                 x_AddFQ(q, name, '[' + NStr::IntToString((*ref_iter)->GetSerial()) + ']',
-                    CFormatQual::eUnquoted);
+                   CFormatQual::eUnquoted);
                 pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
                 break; // break so we don't show the same ref more than once
             }
@@ -1488,7 +1488,6 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
         if( ctx.IsRefSeq() && (*pub_iter)->IsPmid() && ! ctx.Config().IsModeRelease() ) {
             x_AddFQ(q, name, "[PUBMED " + NStr::IntToString( (*pub_iter)->GetPmid().Get() ) + ']',
                 CFormatQual::eUnquoted);
-            pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
         }
     }
 }

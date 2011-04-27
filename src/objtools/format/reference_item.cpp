@@ -325,7 +325,8 @@ static bool s_ShouldRemoveRef
 
 static void s_CombineRefs
 ( CReferenceItem& prev_ref,
-  CReferenceItem& curr_ref)
+  CReferenceItem& curr_ref,
+  CBioseqContext &ctx)
 {
     // merge locations
     {{
@@ -335,8 +336,12 @@ static void s_CombineRefs
         CConstRef<CSeq_id> prev_id( prev_loc->GetId() );
         CConstRef<CSeq_id> curr_id( curr_loc->GetId() );
 
+        const bool is_circular = 
+            ( ctx.GetHandle().CanGetInst_Topology() && ctx.GetHandle().GetInst_Topology() == CSeq_inst_Base::eTopology_circular );
+
         CRef<CSeq_loc> new_loc = Seq_loc_Add( *prev_loc, *curr_loc,
-            CSeq_loc::fMerge_All, &prev_ref.GetContext()->GetScope() );
+            ( is_circular ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ),
+            &prev_ref.GetContext()->GetScope() );
 
         // save the old id because sometimes the merging changes it
         // We check for sameness to make sure it's reasonable to do this.
@@ -441,7 +446,7 @@ static void s_MergeDuplicates
 
             if( s_ShouldRemoveRef( prev_ref, curr_ref ) ) {
                 if( combine_allowed ) {
-                    s_CombineRefs( prev_ref, curr_ref );
+                    s_CombineRefs( prev_ref, curr_ref, ctx );
                 }
                 remove = true;
             }

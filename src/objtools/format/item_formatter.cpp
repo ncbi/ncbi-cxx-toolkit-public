@@ -942,13 +942,12 @@ static void s_FormatCitGen
         prefix = ' ';
     }
 
-    if (!NStr::IsBlank(pages)) {
+    if (!NStr::IsBlank(pages) ) {
         if (cfg.IsFormatGenbank()) {
-            journal += ", ";
+            journal += ", " + pages;
         } else if (cfg.IsFormatEMBL()) {
-            journal += ':';
+            journal += ':' + pages;
         }
-        journal+= pages;
     }
 
     if (!NStr::IsBlank(year)) {

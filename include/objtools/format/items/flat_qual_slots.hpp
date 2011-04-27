@@ -214,6 +214,7 @@ enum ESourceQualifier {
     eSQ_macronuclear,
     eSQ_mating_type,
     eSQ_map,
+    eSQ_metagenome_source,
     eSQ_metagenomic,
     eSQ_mobile_element,
     eSQ_mol_type,

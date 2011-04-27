@@ -117,7 +117,9 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
         CSeqdesc_CI embl_desc(ctx.GetHandle(), CSeqdesc::e_Embl);
         if ( embl_desc ) {
             x_SetObject(*embl_desc);
-            xtra = &embl_desc->GetEmbl().GetExtra_acc();
+            if( embl_desc->GetEmbl().GetExtra_acc().size() > 0 ) {
+                xtra = &embl_desc->GetEmbl().GetExtra_acc();
+            }
         }
 
         if ( xtra != 0 ) {

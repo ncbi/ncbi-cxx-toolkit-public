@@ -299,7 +299,7 @@ static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
     CScope& scope = ctx.GetScope();
 
     // non-pseudo CDS must have /product
-    bool pseudo = feat.IsSetPseudo()  &&  feat.GetPseudo();
+    bool pseudo = feat.IsSetPseudo()  &&  feat.GetPseudo() ;
     if ( !pseudo ) {
         const CGene_ref* grp = feat.GetGeneXref();
         if ( grp == NULL ) {
@@ -916,16 +916,17 @@ static void s_SplitCommaSeparatedStringInParens( vector<string> &output_vec, con
 }
 
 static const string sc_ValidExceptionText[] = {
-    "RNA editing",
     "annotated by transcript or proteomic data",
     "rearrangement required for product",
-    "reasons given in citation"
+    "reasons given in citation",
+    "RNA editing"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegatExceptText, sc_ValidExceptionText);
+typedef CStaticArraySet<string, PNocase> TLegalExceptText;
+DEFINE_STATIC_ARRAY_MAP(TLegalExceptText, sc_LegalExceptText, sc_ValidExceptionText);
 
 static bool s_IsValidExceptionText(const string& text)
 {
-    return sc_LegatExceptText.find(text) != sc_LegatExceptText.end();
+    return sc_LegalExceptText.find(text) != sc_LegalExceptText.end();
 }
 
 
@@ -946,7 +947,8 @@ static const string sc_ValidRefSeqExceptionText[] = {
     "unclassified translation discrepancy",
     "unextendable partial coding region"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegalRefSeqExceptText, sc_ValidRefSeqExceptionText);
+typedef CStaticArraySet<string, PNocase> TLegalRefSeqExceptText;
+DEFINE_STATIC_ARRAY_MAP(TLegalRefSeqExceptText, sc_LegalRefSeqExceptText, sc_ValidRefSeqExceptionText);
 
 static bool s_IsValidRefSeqExceptionText(const string& text)
 {
@@ -1147,6 +1149,8 @@ bool CFeatureItem::x_ExceptionIsLegalForFeature() const
     case CSeqFeatData::eSubtype_5UTR:
     case CSeqFeatData::eSubtype_sig_peptide_aa:
     case CSeqFeatData::eSubtype_mat_peptide_aa:
+    case CSeqFeatData::eSubtype_C_region:
+    case CSeqFeatData::eSubtype_V_segment:
         return true;
 
     default:
@@ -1269,10 +1273,26 @@ void CFeatureItem::x_AddQualPseudo(
 void CFeatureItem::x_AddQualSeqfeatNote()
 //  ----------------------------------------------------------------------------
 {
+    string precursor_comment;
+    // set precursor_comment, if needed.
+    // It's set from the feature's product's best protein's comment
+    if( GetContext()->IsProt() && IsMappedFromProt() && m_Feat.IsSetProduct() ) {
+        const CSeq_id* prod_id = m_Feat.GetProduct().GetId();
+        if( prod_id != NULL ) {
+            CBioseq_Handle prod_bioseq = GetContext()->GetScope().GetBioseqHandle(*prod_id);
+            if( prod_bioseq ) {
+                CMappedFeat best_prot_feat = s_GetBestProtFeature( prod_bioseq );
+                if( best_prot_feat && best_prot_feat.IsSetComment() ) {
+                    precursor_comment = best_prot_feat.GetComment() ;
+                }
+            }
+        }
+    }
+
     if (m_Feat.IsSetComment()) {
         string comment = m_Feat.GetComment();
 
-        if ( ! comment.empty() ) {
+        if ( ! comment.empty() && comment != precursor_comment) {
             TrimSpacesAndJunkFromEnds( comment, true );
             bool bAddPeriod = RemovePeriodFromEnd( comment, true );
             ConvertQuotes(comment);
@@ -2411,6 +2431,10 @@ void CFeatureItem::x_AddQualsRna(
             vec.GetSeqData(0, vec.size(), transcription);
             x_AddQual(eFQ_transcription, new CFlatStringQVal(transcription));
         }
+        if ( rna.IsSetExt() && rna.GetExt().IsGen() && rna.GetExt().GetGen().IsSetProduct() ) {
+            x_AddQual( eFQ_product, 
+                new CFlatStringQVal( rna.GetExt().GetGen().GetProduct() ) );
+        }
         // intentional fall through
     }
     default:
@@ -3083,7 +3107,7 @@ void CFeatureItem::x_AddQualsRegion(
             CConstRef<CUser_field> f = obj.GetFieldRef("definition");
             if (f) {
                 const CUser_field_Base::C_Data::TStr& definition_str = f->GetData().GetStr();
-                if( definition_str != region ) {
+                if( ! NStr::EqualNocase(definition_str, region) ) {
                     x_AddQual(eFQ_region,
                         new CFlatStringQVal(definition_str));
                     found = true;
@@ -5459,7 +5483,9 @@ static ESourceQualifier s_OrgModToSlot(const COrgMod& om)
         CASE_ORGMOD(gb_acronym);
         CASE_ORGMOD(gb_anamorph);
         CASE_ORGMOD(gb_synonym);
-    case COrgMod::eSubtype_metagenome_source: return eSQ_metagenomic;
+        CASE_ORGMOD(metagenome_source);
+        // TODO: remove the following line once we've tested that it's not needed
+     // case COrgMod::eSubtype_metagenome_source: return eSQ_metagenome_source;
         CASE_ORGMOD(old_lineage);
         CASE_ORGMOD(old_name);
 #undef CASE_ORGMOD
@@ -5648,10 +5674,6 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
     bool insertion_seq_name = false,
          plasmid_name = false,
          transposon_name = false;
-    string primer_fwd_seq, 
-        primer_fwd_name, 
-        primer_rev_seq, 
-        primer_rev_name;
 
     ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
         ESourceQualifier slot = s_SubSourceToSlot(**it);
@@ -5673,24 +5695,8 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
             x_AddQual(slot, new CFlatSubSourceQVal(**it));
             break;
 
-        case eSQ_fwd_primer_seq:
-            primer_fwd_seq = (**it).GetName();
-            break;
-
-        case eSQ_fwd_primer_name:
-            primer_fwd_name = (**it).GetName();
-            break;
-
-        case eSQ_rev_primer_seq:
-            primer_rev_seq = (**it).GetName();
-            break;
-
-        case eSQ_rev_primer_name:
-            primer_rev_name = (**it).GetName();
-            break;
-
         case eSQ_metagenomic:
-            x_AddQual( eSQ_seqfeat_note, new CFlatStringQVal( "metagenomic" ) );
+            x_AddQual( eSQ_metagenomic, new CFlatStringQVal( "metagenomic") );
             break;
 
         default:
@@ -5700,74 +5706,6 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
             break;
         }
     }
-
-    // TODO: once we've done heavy testing, we should be able to confirm that
-    // we can remove this commented-out code.
- 
-    //  ------------------------------------------------------------------------
-    //  PCR primer rules:
-    //
-    //  In general, primer_fwd_name, primer_fwd_seq, primer_rev_name, and
-    //  primer_rev_seq are combined into a single PCR_primer qualifier in the
-    //  flat file. However, for this to happen, some criteria on presence of
-    //  certain fields and their cardinalities have to be met.
-    //
-    //  If those criteria are not met, then there will not be a PCR_primer
-    //  qualifier, and the existing *_name and *_seq are instead appended to
-    //  the feature /note.
-    //  ------------------------------------------------------------------------
-    /* if ( s_QualifiersMeetPrimerReqs( 
-        primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) ) 
-    {
-        x_AddQual( eSQ_PCR_primers, new CFlatSubSourcePrimer( 
-            primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) );
-    } 
-    else 
-    {
-        //
-        //  Alert:
-        //  We have potentially four constituents all of which go into /notes.
-        //  /notes is composed of substrings that are separated by semicolons.
-        //  The problem is that the PCR_primer pieces are supposed to be a single
-        //  atomic substring of /notes, internally using commas to separate
-        //  sub components.
-        //  The easy way out is to compose the entire PCR-primer subnote all at
-        //  once, and then stuff that string into a single slot for the /note
-        //  formatter to pick up.
-        //  The following combines any of /fwd_primer_name, /fwd_primer_seq,
-        //  /rev/primer_name, /rev_primer_seq into a /pcr_primer_note qualifier.
-        //
-        //  We also handle the paren syntax (e.g. EF559246.1) that requires us
-        //  to split into multiple /pcr_primer_note qualifiers.
-        vector<string> primer_fwd_name_vec;
-        s_SplitCommaSeparatedStringInParens( primer_fwd_name_vec, primer_fwd_name );
-        vector<string> primer_fwd_seq_vec;
-        s_SplitCommaSeparatedStringInParens( primer_fwd_seq_vec, primer_fwd_seq );
-        vector<string> primer_rev_name_vec;
-        s_SplitCommaSeparatedStringInParens( primer_rev_name_vec, primer_rev_name );
-        vector<string> primer_rev_seq_vec;
-        s_SplitCommaSeparatedStringInParens( primer_rev_seq_vec, primer_rev_seq );
-
-        // if one is shorter than the others, expand them all to be the same length as the maximum
-        // one, filling with empty strings if necessary
-        const size_t longest_vec = max( primer_fwd_name_vec.size(), 
-            max( primer_fwd_seq_vec.size(), 
-            max( primer_rev_name_vec.size(), primer_rev_seq_vec.size() ) ) );
-        primer_fwd_name_vec.resize( longest_vec );
-        primer_fwd_seq_vec.resize( longest_vec );
-        primer_rev_name_vec.resize( longest_vec );
-        primer_rev_seq_vec.resize( longest_vec );
-
-        for( size_t idx = 0; idx < primer_fwd_name_vec.size(); ++idx ) {
-            string primer_value = s_MakePcrPrimerNote( 
-                primer_fwd_name_vec[idx], primer_fwd_seq_vec[idx], 
-                primer_rev_name_vec[idx], primer_rev_seq_vec[idx]);
-            if ( !primer_value.empty() ) {
-                x_AddQual( eSQ_pcr_primer_note, new CFlatStringQVal( primer_value ) );
-            }
-        }
-     } */
-    //< end of special PCR_primer handling
 
     // Gets direct "pcr-primers" tag from file and adds the quals from that
     x_AddPcrPrimersQuals(src, ctx);
@@ -5850,6 +5788,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 
     x_FormatQual(eSQ_plasmid_name, "plasmid", qvec);
     x_FormatQual(eSQ_mobile_element, "mobile_element", qvec);
+    x_FormatQual(eSQ_insertion_seq_name, "insertion_seq", qvec);
 
     DO_QUAL(country);
 
@@ -5934,8 +5873,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(unstructured);
     }
 
-    // DO_NOTE(metagenomic);
-    x_FormatNoteQual(eSQ_metagenomic, "derived from metagenome", qvec);
+    DO_NOTE(metagenomic);
     if ( GetContext()->Config().SrcQualsToNote() ) {
         DO_NOTE(linkage_group);
         DO_NOTE(type);
@@ -5958,6 +5896,8 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(anamorph);
         DO_NOTE(teleomorph);
         DO_NOTE(breed);
+
+        x_FormatNoteQual(eSQ_metagenome_source, "derived from metagenome", qvec);
         
         DO_NOTE(genotype);
         x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);

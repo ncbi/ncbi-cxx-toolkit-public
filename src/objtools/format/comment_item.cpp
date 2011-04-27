@@ -751,7 +751,7 @@ static bool s_GetEncodeValues
     if (uo.HasField("NcbiAnnotation")) {
         const CUser_field& na = uo.GetField("NcbiAnnotation");
         if (na.IsSetData()  &&  na.GetData().IsStr()) {
-            assembly_date = na.GetData().GetStr();
+            ncbi_annotation = na.GetData().GetStr();
         }
     } else {
         return false;
@@ -797,9 +797,9 @@ string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
 
     string chromosome, assembly_date, ncbi_annotation;
     if (s_GetEncodeValues(chromosome, assembly_date, ncbi_annotation, ctx)) {
-        str << "  It is defined by coordinates on the sequence of chromosome"
-            << chromosome << "from the" << assembly_date
-            << "assembly of the human genome (NCBI build" << ncbi_annotation
+        str << "  It is defined by coordinates on the sequence of chromosome "
+            << chromosome << " from the " << assembly_date
+            << " assembly of the human genome (NCBI build " << ncbi_annotation
             << ").";
     }
     return CNcbiOstrstreamToString(str);
