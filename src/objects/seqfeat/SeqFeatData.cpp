@@ -653,6 +653,7 @@ START_SUBTYPE(gene)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
+    ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1103,6 +1104,7 @@ START_SUBTYPE(C_region)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
+    ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -2078,6 +2080,7 @@ START_SUBTYPE(V_segment)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
