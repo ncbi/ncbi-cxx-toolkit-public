@@ -1102,6 +1102,7 @@ CQBG	s	Chongqing Botanical Garden
 CQNM	s	Chongqing Natural History Museum
 CR	s	Museo Nacional de Costa Rica
 CRA-OLI	b	Centro di Ricerca per l'Olivicoltura e l'Industria Olearia
+CRA-PAV <ITA>	c	Centro di Ricerca per la Patologia Vegetale
 CRAF	s	University of Craiova, Phytopathology Department
 CRAI	s	University of Craiova
 CRBF	c	Collection de genomes d'organismes symbiotiques
@@ -2571,7 +2572,7 @@ ISMC	s	Indiana Department of Natural Resources
 ISNHC	s	State Historical Society of Iowa
 ISNP	s	Istituto Sperimentale per la Nutrizione delle Piante
 ISP	c	International Cooperative Project for Description and Deposition of Type Cultures
-ISPaVe	c	Centro di Ricerca per la Patologia Vegetale
+ISPaVe	c	Istituto Sperimentale per la Patologia Vegetale
 ISRA	s	Royal Academy
 ISRI	c	Indonesian Sugar Research Institute, Pusat Penelitian Perkebunan Gula Indonesia
 ISS	c	Collection of Bacteria
