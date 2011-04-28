@@ -1015,6 +1015,7 @@ START_SUBTYPE(ncRNA)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
+    ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -1179,6 +1180,7 @@ START_SUBTYPE(conflict)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
+    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
@@ -1358,6 +1360,7 @@ START_SUBTYPE(LTR)
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
@@ -1553,6 +1556,7 @@ END_SUBTYPE
 //END_SUBTYPE
 
 START_SUBTYPE(N_region)
+    ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
@@ -1581,6 +1585,7 @@ START_SUBTYPE(old_sequence)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
+    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
@@ -2043,6 +2048,7 @@ END_SUBTYPE
 START_SUBTYPE(unsure)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
+    ADD_QUAL(compare);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
@@ -2251,6 +2257,7 @@ START_SUBTYPE(operon)
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -2286,6 +2293,7 @@ START_SUBTYPE(region)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
+    ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
@@ -2295,6 +2303,7 @@ START_SUBTYPE(region)
     ADD_QUAL(note);
     ADD_QUAL(number);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(region_name);
@@ -2431,6 +2440,7 @@ START_SUBTYPE(het)  //  same as misc_feature
 END_SUBTYPE
 
 START_SUBTYPE(mobile_element)
+    ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
@@ -2440,6 +2450,7 @@ START_SUBTYPE(mobile_element)
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(insertion_seq);
+    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(mobile_element_type);

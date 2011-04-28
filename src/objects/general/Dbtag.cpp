@@ -288,7 +288,8 @@ bool CDbtag::IsApproved( EIsRefseq refseq, EIsSource is_source, EIsEstOrGss is_e
         bool found = ( sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end() );
         if ( ! found && (is_est_or_gss == eIsEstOrGss_Yes) ) {
             // special case: for EST or GSS, source features are allowed non-src dbxrefs
-            found = ( sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end() );
+            found = ( sc_ApprovedDb.find(db.c_str())       != sc_ApprovedDb.end() || 
+                      sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end() );
         }
         return found;
     } else {
