@@ -2948,6 +2948,22 @@ echo "$as_me: error: incompatible options: --without-glew_mx but --with-gbench" 
       fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
+elif test "$with_jni" = "yes" ; then
+   if test "$with_dll" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-dll but --with-jni" >&5
+echo "$as_me: error: incompatible options: --without-dll but --with-jni" >&2;}
+   { (exit 1); exit 1; }; }
+      else
+         with_dll=yes
+      fi
+     if test "$with_mt" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-mt but --with-jni" >&5
+echo "$as_me: error: incompatible options: --without-mt but --with-jni" >&2;}
+   { (exit 1); exit 1; }; }
+      else
+         with_mt=yes
+      fi
+
 fi
 
 if test "$with_bin_release" = "yes" ; then

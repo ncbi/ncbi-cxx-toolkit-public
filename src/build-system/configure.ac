@@ -530,6 +530,14 @@ if test "$with_gbench" = "yes" ; then
       fi
      ])
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
+elif test "$with_jni" = "yes" ; then
+   m4_foreach(OPT, [dll,mt],
+     [if test "$[with_]OPT" = "no"; then
+         AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-jni])
+      else
+         [with_]OPT=yes
+      fi
+     ])
 fi
 
 if test "$with_bin_release" = "yes" ; then
