@@ -603,7 +603,8 @@ bool CMsvcPrjProjectContext::IsRequiresOk(const CProjItem& prj, string* unmet)
 {
     ITERATE(list<string>, p, prj.m_Requires) {
         const string& requires = *p;
-        if ( !GetApp().GetSite().IsProvided(requires) ) {
+        if ( !GetApp().GetSite().IsProvided(requires) &&
+             !GetApp().GetSite().IsProvided(requires, false) ) {
             if (unmet) {
                 *unmet = requires;
             }
