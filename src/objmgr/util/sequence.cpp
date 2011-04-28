@@ -918,7 +918,9 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                      continue;
              }
 
-            TFeatScore sc(cur_diff,
+            const int feat_location_len = sequence::GetLength( feat_it->GetOriginalFeature().GetLocation(), &scope );
+
+            TFeatScore sc(feat_location_len,
                 ConstRef(&feat_it->GetMappedFeature()));
             feats.push_back(sc);
         }

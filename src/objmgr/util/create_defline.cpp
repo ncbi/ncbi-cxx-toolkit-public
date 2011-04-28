@@ -243,8 +243,7 @@ void CDeflineGenerator::x_SetFlags (
                 if (tsid.IsSetAccession()) {
                     const string& acc = tsid.GetAccession ();
                     TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
-                    if ( (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(wgs) ||
-                         (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(wgs_intermed) ) 
+                    if ( (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(wgs) ) 
                     {
                         if( (type & CSeq_id::fAcc_master) != 0 ) {
                             m_WGSMaster = true;
