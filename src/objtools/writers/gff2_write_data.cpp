@@ -45,6 +45,7 @@
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -381,6 +382,108 @@ bool CGffWriteRecordFeature::AssignFromAsn(
     if ( ! x_AssignAttributes( mapped_feature ) ) {
         return false;
     }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffWriteRecordFeature::AssignSource(
+    CBioseq_Handle bsh,
+    const CSeqdesc& desc )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! desc.IsSource() ) {
+        return false;
+    }
+    const CBioSource& bs = desc.GetSource();
+
+    // id
+    CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
+    if ( pId ) {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *pId ); 
+        CSeq_id_Handle best_idh = 
+            sequence::GetId(idh, bsh.GetScope(), sequence::eGetId_Best); 
+        if ( !best_idh ) {
+            best_idh = idh;
+        }
+        best_idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
+    }
+    if ( m_strId.empty() ) {
+        m_strId = "<unknown>";
+    }
+
+    // type
+    m_strType = "source";
+
+    // source
+    const CSeq_id* pBigId = sequence::GetId( bsh, sequence::eGetId_Best).GetSeqId();
+    switch ( pBigId->Which() ) {
+        default:
+            m_strSource = CSeq_id::SelectionName( pBigId->Which() );
+            NStr::ToUpper( m_strSource );
+            break;
+        case CSeq_id::e_Local:
+            m_strSource = "Local";
+            break;
+        case CSeq_id::e_Gibbsq:
+        case CSeq_id::e_Gibbmt:
+        case CSeq_id::e_Giim:
+        case CSeq_id::e_Gi:
+            m_strSource = "GenInfo";
+            break;
+        case CSeq_id::e_Genbank:
+            m_strSource = "Genbank";
+            break;
+        case CSeq_id::e_Swissprot:
+            m_strSource = "SwissProt";
+            break;
+        case CSeq_id::e_Patent:
+            m_strSource = "Patent";
+            break;
+        case CSeq_id::e_Other:
+            m_strSource = "RefSeq";
+            break;
+        case CSeq_id::e_General:
+            m_strSource = pBigId->GetGeneral().GetDb();
+            break;
+    }
+
+    // start
+    m_uSeqStart = 0;
+
+    // stop
+    m_uSeqStop = bsh.GetBioseqLength() - 1;
+
+    //score
+    0;
+
+    // strand
+    if ( bsh.CanGetInst_Strand() ) {
+        m_peStrand = new ENa_strand( eNa_strand_plus );
+    }
+
+    // phase
+    0;
+
+    //  attributes:
+    if ( bs.IsSetTaxname() ) {
+        m_Attributes["organism"] = bs.GetTaxname();
+    }
+    if ( bs.IsSetOrg() ) {
+        const CBioSource::TOrg& org = bs.GetOrg();
+        if ( org.IsSetDb() ) {
+            const vector< CRef< CDbtag > >& tags = org.GetDb();
+            string strTag;
+            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); it != tags.end(); ++it ) {
+                if ( ! strTag.empty() ) {
+                    strTag += ';';
+                }
+                (**it).GetLabel( &strTag );
+            }
+            m_Attributes["Dbxref"] = strTag;
+        }       
+    }
+    CBioseq_Handle::TMol mol = bsh.GetBioseqMolType();
+
     return true;
 }
 

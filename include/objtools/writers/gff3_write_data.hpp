@@ -115,6 +115,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeTranscriptId(
         CMappedFeat );
+    virtual bool x_AssignAttributeProteinId(
+        CMappedFeat );
 
     //
     //  Helper functions:

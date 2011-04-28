@@ -123,6 +123,9 @@ class CGffWriteRecordFeature
 public:
     virtual bool AssignFromAsn(
         CMappedFeat );
+    virtual bool AssignSource(
+        CBioseq_Handle,
+        const CSeqdesc& );
 
 protected:
     virtual bool x_AssignType(

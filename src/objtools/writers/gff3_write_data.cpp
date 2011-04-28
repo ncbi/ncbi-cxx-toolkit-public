@@ -47,6 +47,7 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -338,7 +339,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 {
     return (
 //        x_AssignAttributeDbXref( mapped_feat )  &&
-//        x_AssignAttributeCodonStart( mapped_feat )  &&
+        x_AssignAttributeProteinId( mapped_feat )  &&
         x_AssignAttributeProduct( mapped_feat ) );
 }
 
@@ -702,6 +703,29 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
             m_Attributes[ "transcript_id" ] = (*cit)->GetVal();
             return true;
         }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeProteinId(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! mapped_feat.IsSetProduct() ) {
+        return true;
+    }
+    const CSeq_id* pProductId = mapped_feat.GetProduct().GetId();
+    if ( pProductId ) {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *pProductId );
+        CSeq_id_Handle best_idh = 
+            sequence::GetId(idh, mapped_feat.GetScope(), sequence::eGetId_Best); 
+        if ( !best_idh ) {
+            best_idh = idh;
+        }
+        string strProduct;
+        best_idh.GetSeqId()->GetLabel(&strProduct, CSeq_id::eContent);
+        m_Attributes[ "protein_id" ] = x_Encode( strProduct );
     }
     return true;
 }

@@ -44,10 +44,13 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
@@ -104,6 +107,18 @@ bool CGff2Writer::WriteBioseqHandle(
     CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
+    if ( bsh.CanGetDescr() ) {
+        const CSeq_descr& descr = bsh.GetDescr();
+        if ( descr.IsSet() ) {
+            const list< CRef< CSeqdesc > >& desc = descr.Get();
+            for ( list< CRef< CSeqdesc > >::const_iterator it = desc.begin(); it != desc.end(); ++it ) {
+                CGffWriteRecordFeature src_feat;
+                if ( src_feat.AssignSource( bsh, **it ) ) {
+                    x_WriteRecord( &src_feat );
+                }
+            }
+        }
+    }
     for ( CAnnot_CI aci( bsh ); aci; ++aci ) {
         if ( ! WriteSeqAnnotHandle( *aci ) ) {
             return false;
