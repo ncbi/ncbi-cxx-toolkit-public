@@ -1,4 +1,4 @@
-WATCHERS = slottad
+WATCHERS = lewisg slottad
 
 LIB = pepXML
 SRC = pepXML__ pepXML___
