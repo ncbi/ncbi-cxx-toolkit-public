@@ -311,7 +311,24 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     TAlnStats aln_stats(aln_id_map);
 
+
+    // auto-detect self-alignments
+    // if the input set of sequences correspond to one and only one sequence,
+    // force row preservation
+    bool preserve_rows = m_PreserveRows;
+    {{
+         set<CSeq_id_Handle> ids;
+         ITERATE (TAlnStats::TIdVec, i, aln_stats.GetIdVec()) {
+             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle((*i)->GetSeqId());
+             ids.insert(idh);
+         }
+         if (ids.size() == 1) {
+             preserve_rows = true;
+         }
+     }}
+
     CAlnUserOptions opts;
+
 
     /// always merge both directions
     opts.m_Direction = CAlnUserOptions::eBothDirections;
@@ -324,7 +341,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
 
     /// always merge all sequences
     opts.m_MergeAlgo = CAlnUserOptions::eMergeAllSeqs;
-    if (m_PreserveRows) {
+    if (preserve_rows) {
         opts.m_MergeAlgo = CAlnUserOptions::ePreserveRows;
     }
 
