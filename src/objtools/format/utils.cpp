@@ -762,12 +762,17 @@ bool IsValidAccession(const string& accn, EAccValFlag flag)
 }
 
 
-void DateToString(const CDate& date, string& str,  bool is_cit_sub)
+void DateToString(const CDate& date, string& str, EDateToString format_choice )
 {
+    // One day we should make regular format default to JAN, since "JUN" seems
+    // kind of arbitrary.
     static const string regular_format  = "%{%2D%|01%}-%{%3N%|JUN%}-%Y";
     static const string cit_sub_format = "%{%2D%|??%}-%{%3N%|???%}-%{%4Y%|/???%}";
+    static const string patent_format  = "%{%2D%|01%}-%{%3N%|JAN%}-%Y";
 
-    const string& format = is_cit_sub ? cit_sub_format : regular_format;
+    const string& format = ( format_choice == eDateToString_cit_sub ?
+        cit_sub_format :
+        ( format_choice == eDateToString_patent ? patent_format : regular_format ) );
 
     string date_str;
     date.GetDate(&date_str, format);

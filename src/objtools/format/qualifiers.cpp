@@ -1382,6 +1382,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
         subname = kEmptyStr;
     }
     ConvertQuotes(subname);
+    ExpandTildes(subname, eTilde_space);
     
     if (s_IsNote(flags, ctx)) {
         bool add_period = RemovePeriodFromEnd(subname, true);

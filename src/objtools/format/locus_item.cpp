@@ -279,7 +279,7 @@ void CLocusItem::x_SetStrand(CBioseqContext& ctx)
         
         // ss-any RNA don't show ss
         const bool is_nucleic_acid = bmol <= CSeq_inst::eMol_rna;
-        const bool is_in_set_1 = (m_Biomol >= CMolInfo::eBiomol_pre_RNA && 
+        const bool is_in_set_1 = (m_Biomol >= CMolInfo::eBiomol_mRNA && 
             m_Biomol <= CMolInfo::eBiomol_peptide);
         const bool is_in_set_2 = (m_Biomol >= CMolInfo::eBiomol_cRNA && 
             m_Biomol <= CMolInfo::eBiomol_tmRNA);

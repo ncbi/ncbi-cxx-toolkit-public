@@ -83,7 +83,12 @@ enum EAccValFlag
 
 bool IsValidAccession(const string& accn, EAccValFlag flag = eValidateAcc);
 // example: "10-SEP-2010"
-void DateToString(const CDate& date, string& str, bool is_cit_sub = false);
+enum EDateToString {
+    eDateToString_regular = 1,
+    eDateToString_cit_sub,
+    eDateToString_patent
+};
+void DateToString(const CDate& date, string& str, EDateToString format_choice = eDateToString_regular );
 
 struct SDeltaSeqSummary
 {

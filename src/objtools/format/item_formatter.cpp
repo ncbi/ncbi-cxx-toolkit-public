@@ -1001,7 +1001,7 @@ static void s_FormatCitSub
 
     string date;
     if (sub.IsSetDate()) {
-        DateToString(sub.GetDate(), date, true);
+        DateToString(sub.GetDate(), date, eDateToString_cit_sub);
     } else {
         date = "~?~????";
     }
@@ -1113,9 +1113,9 @@ static void s_FormatPatent
     // Date 
     string date;
     if (pat.IsSetDate_issue()) {
-        DateToString(pat.GetDate_issue(), date);        
+        DateToString(pat.GetDate_issue(), date, eDateToString_patent );        
     } else if (pat.IsSetApp_date()) {
-        DateToString(pat.GetApp_date(), date);
+        DateToString(pat.GetApp_date(), date, eDateToString_patent);
     }
     if (!NStr::IsBlank(date)) {
         jour << date;

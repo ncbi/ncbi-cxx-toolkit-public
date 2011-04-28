@@ -513,8 +513,14 @@ void CGenbankFormatter::x_Authors
     if (ref.IsSetAuthors()) {
         CReferenceItem::FormatAuthors(ref.GetAuthors(), authors);
     }
-    if ( authors.empty() ) {
-        /* supress AUTHOR line */
+    if( authors.empty() ) {
+        if( NStr::IsBlank(ref.GetConsortium()) ) {
+            if( ctx.Config().IsFormatGenbank() ) {
+                Wrap(l, "AUTHORS", ".", eSubp);
+            } else if( ctx.Config().IsFormatEMBL() ) {
+                Wrap(l, "AUTHORS", ";", eSubp);
+            }
+        }
         return;
     }
     // chop off extra periods at the end (e.g. AAA16431)

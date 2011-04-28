@@ -465,6 +465,23 @@ static bool s_CheckQuals_gap(const CMappedFeat& feat)
     return !feat.GetNamedQual("estimated_length").empty();
 }
 
+static bool s_CheckQuals_ncRNA(const CMappedFeat& feat)
+{
+    if( !NStr::IsBlank(feat.GetNamedQual("ncRNA_class")) ) {
+        return true;
+    }
+
+    // Look at this mess; if only we could use sequence_macros.hpp
+    if( feat.GetData().GetRna().IsSetExt() && 
+        feat.GetData().GetRna().GetExt().IsGen() && 
+        feat.GetData().GetRna().GetExt().GetGen().IsSetClass() && 
+        !NStr::IsBlank(feat.GetData().GetRna().GetExt().GetGen().GetClass()) )
+    {
+        return true;
+    }
+
+    return false;
+}
 
 static bool s_CheckMandatoryQuals(const CMappedFeat& feat,
                                   const CSeq_loc& loc,
@@ -499,6 +516,10 @@ static bool s_CheckMandatoryQuals(const CMappedFeat& feat,
     case CSeqFeatData::eSubtype_gap:
         {
             return s_CheckQuals_gap(feat);
+        }
+    case CSeqFeatData::eSubtype_ncRNA:
+        {
+            return s_CheckQuals_ncRNA(feat);
         }
     default:
         break;
@@ -1426,7 +1447,7 @@ void CFeatureItem::x_AddQualExceptions(
                 }
                 continue;
             }
-            if ( cur == "ribosomal slippage" ) {
+            if ( NStr::EqualNocase(cur, "ribosomal slippage") ) {
                 if( data.IsCdregion() ) {
                     x_AddQual( eFQ_ribosomal_slippage, new CFlatBoolQVal( true ) );
                 } else {
@@ -1434,7 +1455,7 @@ void CFeatureItem::x_AddQualExceptions(
                 }
                 continue;
             }
-            if ( cur == "trans-splicing" ) {
+            if ( NStr::EqualNocase(cur, "trans-splicing") ) {
                 if( s_TransSplicingFeatureAllowed( data ) ) {
                     x_AddQual( eFQ_trans_splicing, new CFlatBoolQVal( true ) );
                 } else {
@@ -1442,11 +1463,11 @@ void CFeatureItem::x_AddQualExceptions(
                 }
                 continue;
             }
-            if ( cur == "nonconsensus splice site" ) {
+            if ( NStr::EqualNocase(cur, "nonconsensus splice site") ) {
                 x_AddQual( eFQ_exception_note, new CFlatStringQVal( cur ) );
                 continue;
             }
-            if ( cur == "reasons given in citation" ) {
+            if ( NStr::EqualNocase(cur, "reasons given in citation") ) {
                 if ( data.IsCdregion() || data.IsGene() ) {
                     output_exceptions.push_back( cur );
                 }
@@ -1457,7 +1478,7 @@ void CFeatureItem::x_AddQualExceptions(
             }
             const bool is_cds_or_mrna = ( data.IsCdregion() || 
                 data.GetSubtype() == CSeqFeatData::eSubtype_mRNA );
-            if( cur == "artificial location" ) {
+            if( NStr::EqualNocase(cur, "artificial location") ) {
                 if( is_cds_or_mrna ) {
                     x_AddQual( eFQ_artificial_location, new CFlatBoolQVal( true ) );
                 } else {
@@ -1465,7 +1486,9 @@ void CFeatureItem::x_AddQualExceptions(
                 }
                 continue;
             }
-            if( cur == "heterogeneous population sequenced" || cur == "low-quality sequence region" ) {
+            if( NStr::EqualNocase(cur, "heterogeneous population sequenced") || 
+                NStr::EqualNocase(cur, "low-quality sequence region") ) 
+            {
                 if( is_cds_or_mrna ) {
                     x_AddQual( eFQ_artificial_location, new CFlatStringQVal( cur ) );
                 } else {
@@ -1801,37 +1824,13 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             /// genpept report; we need to do something different
             CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
             if (cds) {
-                SAnnotSelector sel = ctx.SetAnnotSelector();
-                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                    .IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-                CFeat_CI feat_it(ctx.GetScope(), cds.GetLocation(), sel);
-                feature::CFeatTree ft(feat_it);
-                feat = ft.GetParent(cds, CSeqFeatData::e_Gene);
-                if( ! feat ) {
-                    s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
-                        ctx, cds.GetFeatType(), cds.GetFeatSubtype(), cds.GetLocation(), CSeqFeatData::e_Gene );
-                }
+                s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                    ctx, cds.GetFeatType(), cds.GetFeatSubtype(), cds.GetLocation(), CSeqFeatData::e_Gene );
             }
         }
         else {
-            CSeq_id_Handle id3 = sequence::GetIdHandle(*m_Loc,
-                &ctx.GetScope());
-            if (sequence::IsSameBioseq(id2, id3, &ctx.GetScope())) {
-                /// slow path
-                SAnnotSelector sel = ctx.SetAnnotSelector();
-                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                    .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
-                CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
-                feature::CFeatTree ft(feat_it);
-                feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
-                if( ! feat ) {
-                    s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
-                        ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Gene );
-                }
-            } else {
-                s_feat = x_GetFeatViaSubsetThenExtremesIfPossible(
-                    ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Gene );
-            }
+            s_feat = x_GetFeatViaSubsetThenExtremesIfPossible(
+                ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Gene );
         }
 
         // special cases for some subtypes
@@ -1848,16 +1847,8 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                 bool ownGeneIsOkay = false;
                 if( s_feat ) {
                     const CSeq_loc &gene_loc = s_feat->GetLocation();
-                    /* if( ctx.CanGetMaster() ) {
-                        // gene_loc already mapped to master, if possible
-                        CRef<CSeq_loc> loc_on_master = ctx.GetMaster().GetHandle().MapLocation( *m_Loc );
-                        if( sequence::Compare(gene_loc, *loc_on_master, &ctx.GetScope()) == sequence::eSame ) {
-                            ownGeneIsOkay = true;
-                        }
-                    } else */ {
-                        if( sequence::Compare(gene_loc, *m_Loc, &ctx.GetScope()) == sequence::eSame ) {
-                            ownGeneIsOkay = true;
-                        }
+                    if( sequence::Compare(gene_loc, *m_Loc, &ctx.GetScope()) == sequence::eSame ) {
+                        ownGeneIsOkay = true;
                     }
                 }
 
@@ -1871,9 +1862,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                     s_feat.Reset();
                     if( ! parentFeatureItem->m_GeneRef->IsSuppressed() ) {
                         g_ref = parentFeatureItem->m_GeneRef;
-                        if( xref_g_ref != NULL ) {
-                            xref_g_ref = NULL; // TODO: is it right to ignore mat_peptide gene xrefs?
-                        }
+                        xref_g_ref = NULL; // TODO: is it right to ignore mat_peptide gene xrefs?
                     }
                 } else if( ownGeneIsOkay ) {
                     // do nothing; it's already set
@@ -2199,11 +2188,7 @@ void CFeatureItem::x_AddQuals(
          subtype != CSeqFeatData::eSubtype_gap && 
          (  is_not_genbank || (subtype != CSeqFeatData::eSubtype_repeat_region && subtype != CSeqFeatData::eSubtype_mobile_element) ) )
     {
-        try {
-            x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat, parentFeatureItem );
-        } catch(const CObjMgrException & ) {
-            // maybe put a warning here?  We end up here in, e.g., accession AAY81715.1
-        }
+      x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat, parentFeatureItem );
     }
     bool pseudo = x_GetPseudo(gene_ref, gene_feat );
 
@@ -3876,6 +3861,8 @@ void CFeatureItem::x_ImportQuals(
 
     bool check_qual_syntax = ctx.Config().CheckQualSyntax();
 
+    const bool old_locus_tag_added_elsewhere = x_HasQual(eFQ_old_locus_tag);
+
     vector<string> replace_quals;
     const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
     ITERATE( CSeq_feat::TQual, it, qual ) {
@@ -3939,12 +3926,22 @@ void CFeatureItem::x_ImportQuals(
             }
             break;
         case eFQ_usedin:
-        case eFQ_old_locus_tag:
         {{
             list<string> vals;
             s_ParseParentQual(**it, vals);
             ITERATE (list<string>, i, vals) {
                 x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eQuoted));
+            }
+            break;
+        }}
+        case eFQ_old_locus_tag:
+        {{
+            if( ! old_locus_tag_added_elsewhere ) {
+                list<string> vals;
+                s_ParseParentQual(**it, vals);
+                ITERATE (list<string>, i, vals) {
+                    x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eQuoted));
+                }
             }
             break;
         }}
