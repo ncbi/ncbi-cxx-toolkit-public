@@ -107,11 +107,15 @@ bool CGff2Writer::WriteBioseqHandle(
     CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
+    if ( ! (m_uFlags & fNoHeader) ) {
+        x_WriteHeader();
+    }
     if ( bsh.CanGetDescr() ) {
         const CSeq_descr& descr = bsh.GetDescr();
         if ( descr.IsSet() ) {
             const list< CRef< CSeqdesc > >& desc = descr.Get();
-            for ( list< CRef< CSeqdesc > >::const_iterator it = desc.begin(); it != desc.end(); ++it ) {
+            for ( list< CRef< CSeqdesc > >::const_iterator it = desc.begin(); 
+                    it != desc.end(); ++it ) {
                 CGffWriteRecordFeature src_feat;
                 if ( src_feat.AssignSource( bsh, **it ) ) {
                     x_WriteRecord( &src_feat );
@@ -119,8 +123,19 @@ bool CGff2Writer::WriteBioseqHandle(
             }
         }
     }
+    if ( ! x_WriteBioseqHandle( bsh ) ) {
+        return false;
+    }
+    return x_WriteFooter();
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteBioseqHandle(
+    CBioseq_Handle bsh )
+//  ----------------------------------------------------------------------------
+{
     for ( CAnnot_CI aci( bsh ); aci; ++aci ) {
-        if ( ! WriteSeqAnnotHandle( *aci ) ) {
+        if ( ! x_WriteSeqAnnotHandle( *aci ) ) {
             return false;
         }
     }

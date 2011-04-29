@@ -90,6 +90,8 @@ protected:
     virtual bool x_WriteAlign( 
         const CSeq_align&,
         bool=false );
+    virtual bool x_WriteBioseqHandle(
+        CBioseq_Handle );
     virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
 
