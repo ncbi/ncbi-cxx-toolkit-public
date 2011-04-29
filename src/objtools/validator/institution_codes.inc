@@ -2272,6 +2272,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HWB	s	Harrow School, Biology Department",
 "HWBA	s	Benedictine College, Biology Department",
 "HWD	s	Hollinwood Botanists' and Field Naturalists' Society",
+"HWML<USA>	s	Howard W. Manter Laboratory of Parasitology",
 "HXBH	s	Fundacao CETEC",
 "HXC	s	Hendrix College, Biology Department",
 "HY	s	Osmania University, Botany Department",
