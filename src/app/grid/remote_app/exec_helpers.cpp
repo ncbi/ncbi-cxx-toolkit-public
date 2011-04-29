@@ -505,7 +505,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                 tmp_path.replace(subst_pos, 2, context.GetJobKey());
                 break;
             case 'r':
-                tmp_path.replace(subst_pos, 2, NStr::UIntToString(
+                tmp_path.replace(subst_pos, 2, NStr::UInt8ToString(
                     GetDiagContext().GetRequestContext().GetRequestID()));
                 break;
             case 't':
