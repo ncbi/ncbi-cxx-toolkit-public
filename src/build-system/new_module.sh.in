@@ -156,7 +156,11 @@ done
 # detect datatool program path
 datatool=
 
-if test -x "$NCBI_DATATOOL_PATH/datatool"; then
+if test "$PREBUILT_DATATOOL_EXE" = bootstrap; then
+    : # Don't otherwise look for prebuilt installations
+elif test -n "$PREBUILT_DATATOOL_EXE"; then
+    datatool=$PREBUILT_DATATOOL_EXE
+elif test -x "$NCBI_DATATOOL_PATH/datatool"; then
     datatool=$NCBI_DATATOOL_PATH/datatool
 else # elif test -n "$NCBI"; then
     ncbi_platform=`COMMON_DetectPlatform`
