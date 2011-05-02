@@ -778,7 +778,9 @@ void CValidError_feat::ValidateGoTerms (CUser_object::TData field_list, const CS
 
     ITERATE (CUser_object::TData, it, field_list) {
         if (!(*it)->IsSetData() || !(*it)->GetData().IsFields()) {
-            break;
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                     "Bad GO term format", feat);
+            continue;
         }
         CUser_object::TData sublist = (*it)->GetData().GetFields();
         string textstr = "";
@@ -788,26 +790,42 @@ void CValidError_feat::ValidateGoTerms (CUser_object::TData field_list, const CS
         ITERATE (CUser_object::TData, sub_it, sublist) {
             if (!(*sub_it)->IsSetLabel() || !(*sub_it)->GetLabel().IsStr()) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
-                         "Unrecognized label on GO term qualifier field [blank]",
+                         "No label on GO term qualifier field",
                          feat);
                 continue;
             } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermText)) {
                 if ((*sub_it)->GetData().IsStr()) {
                     textstr = (*sub_it)->GetData().GetStr();
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                             "Bad data format for GO term qualifier term",
+                             feat);
                 }
             } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermID)) {
                 if ((*sub_it)->GetData().IsInt()) {
                     goid = NStr::IntToString ((*sub_it)->GetData().GetInt());
                 } else if ((*sub_it)->GetData().IsStr()) {
                     goid = (*sub_it)->GetData().GetStr();
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                             "Bad data format for GO term qualifier GO ID",
+                             feat);
                 }
             } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermPubMedID)) {
                 if ((*sub_it)->GetData().IsInt()) {
                     pmid = (*sub_it)->GetData().GetInt();
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                             "Bad data format for GO term qualifier PMID",
+                             feat);
                 }
             } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermEvidence)) {
                 if ((*sub_it)->GetData().IsStr()) {
                     evidence = (*sub_it)->GetData().GetStr();
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                             "Bad data format for GO term qualifier evidence",
+                             feat);
                 }
             } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermRef)) {
                 // recognized term
@@ -859,8 +877,10 @@ void CValidError_feat::ValidateExtUserObject (const CUser_object& user_object, c
         // iterate through fields
         ITERATE (CUser_object::TData, it, user_object.GetData()) {
             // validate terms if match accepted type
-            if (!(*it)->IsSetLabel() || !(*it)->GetLabel().IsStr() || !(*it)->IsSetData() || !(*it)->GetData().IsFields()) {
+            if (!(*it)->GetData().IsFields()) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat, "Bad data format for GO term", feat);
+            } else if (!(*it)->IsSetLabel() || !(*it)->GetLabel().IsStr() || !(*it)->IsSetData()) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat, "Unrecognized GO term label [blank]", feat);
             } else {
                 string qualtype = (*it)->GetLabel().GetStr();
                 if (NStr::EqualNocase (qualtype, "Process")
@@ -3314,7 +3334,9 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
             "Feature key " + key + " is no longer legal", feat);
         break;
     case CSeqFeatData::eSubtype_misc_feature:
-        if (!feat.IsSetComment() || NStr::IsBlank (feat.GetComment())) {
+        if ((!feat.IsSetComment() || NStr::IsBlank (feat.GetComment()))
+            && (!feat.IsSetQual() || feat.GetQual().empty())
+            && (!feat.IsSetDbxref() || feat.GetDbxref().empty())) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_NeedsNote,
                     "A note is required for a misc_feature", feat);
         }

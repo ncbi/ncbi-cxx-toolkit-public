@@ -915,7 +915,9 @@ void CValidError_imp::PostErr
 {
     // Append Alignment label
     string desc = "ALIGNMENT: ";
-    desc += align.ENUM_METHOD_NAME(EType)()->FindName(align.GetType(), true);
+    if (align.IsSetType()) {
+        desc += align.ENUM_METHOD_NAME(EType)()->FindName(align.GetType(), true);
+    }
     try {
         CSeq_align::TDim dim = align.GetDim();
         desc += ", dim=" + NStr::IntToString(dim);
@@ -923,8 +925,10 @@ void CValidError_imp::PostErr
         desc += ", dim=UNASSIGNED";
     }
 
-    desc += " SEGS: ";
-    desc += align.GetSegs().SelectionName(align.GetSegs().Which());
+    if (align.IsSetSegs()) {
+        desc += " SEGS: ";
+        desc += align.GetSegs().SelectionName(align.GetSegs().Which());
+    }
 
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, GetAccessionFromObjects(&align, NULL, *m_Scope));
 }

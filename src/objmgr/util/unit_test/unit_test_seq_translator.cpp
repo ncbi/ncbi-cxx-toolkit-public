@@ -69,6 +69,7 @@
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1228,6 +1229,195 @@ BOOST_AUTO_TEST_CASE(Test_Translate_CodeBreakForStopCodon)
     e->SetSet().SetSeq_set().push_back(prot_se);
     cerr << MSerial_AsnText << *e;
     **/
+}
+
+
+const char * sc_MinusOrigin = "\
+Seq-entry ::= seq {\
+  id { \
+    local str \"test\" } , \
+    inst { \
+      repr raw , \
+      mol dna , \
+      length 20 , \
+      topology circular , \
+      seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } , \
+    annot {\
+      {\
+        data ftable {\
+          {\
+            data cdregion {\
+            },\
+            location mix { \
+              int {\
+                from 0,\
+                to 8,\
+                strand minus,\
+                id local str \"test\" } , \
+              int { \
+                from 17 , \
+                to 19 , \
+                strand minus,\
+                id local str \"test\" } }  } , \
+          {\
+            data gene {\
+            },\
+            location mix { \
+              int {\
+                from 0,\
+                to 8,\
+                strand minus,\
+                id local str \"test\" } , \
+              int { \
+                from 17 , \
+                to 19 , \
+                strand minus,\
+                id local str \"test\" } \
+            } \
+          }\
+        }\
+      }\
+    }\
+  }\
+}";
+
+
+BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeatureForMinusStrandCrossingOrigin)
+{
+
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_MinusOrigin);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    for (CBioseq_CI bs_iter(seh);  bs_iter;  ++bs_iter) {
+        CBioseq_Handle bsh = *bs_iter;
+        CFeat_CI feat_iter(*bs_iter,
+                           SAnnotSelector().IncludeFeatSubtype
+                           (CSeqFeatData::eSubtype_gene));
+        for ( ;  feat_iter;  ++feat_iter) {
+            size_t num_cds = 0;
+            sequence::TFeatScores cds;
+            GetOverlappingFeatures (feat_iter->GetLocation(), CSeqFeatData::e_Cdregion,
+                CSeqFeatData::eSubtype_cdregion, sequence::eOverlap_Contained, cds, scope);
+            ITERATE (sequence::TFeatScores, s, cds) {
+                num_cds++;
+            }
+            BOOST_CHECK_EQUAL(num_cds, 1);
+            num_cds = 0;
+            cds.clear();
+            GetOverlappingFeatures (feat_iter->GetLocation(), CSeqFeatData::e_Cdregion,
+                CSeqFeatData::eSubtype_cdregion, sequence::eOverlap_Simple, cds, scope);
+            ITERATE (sequence::TFeatScores, s, cds) {
+                num_cds++;
+            }
+            BOOST_CHECK_EQUAL(num_cds, 1);
+        }
+    }
+}
+
+
+const char * sc_TooManyOverlap = "\
+Seq-entry ::= seq {\
+  id { \
+    local str \"test\" } , \
+    inst { \
+      repr raw , \
+      mol dna , \
+      length 20 , \
+      topology circular , \
+      seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } , \
+    annot {\
+      {\
+        data ftable {\
+          {\
+            data rna {\
+              type mRNA },\
+            partial TRUE , \
+            location mix { \
+              int {\
+                from 0,\
+                to 19,\
+                id local str \"test\" } , \
+              null NULL , \
+              int { \
+                from 0 , \
+                to 19 , \
+                id gi 1213148 } }  } , \
+          {\
+            data gene {\
+            },\
+            location mix { \
+              int {\
+                from 0,\
+                to 19,\
+                id local str \"test\" } , \
+              null NULL , \
+              int { \
+                from 0 , \
+                to 19 , \
+                id gi 1213148 } \
+            } \
+          }\
+        }\
+      }\
+    }\
+  }\
+}";
+
+
+BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeaturesOnMultipleSeqs)
+{
+
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TooManyOverlap);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+
+    FOR_EACH_ANNOT_ON_BIOSEQ (annot, entry.GetSeq()) {
+        if ((*annot)->IsFtable()) {
+            FOR_EACH_FEATURE_ON_ANNOT (feat, **annot) {
+                if ((*feat)->GetData().IsRna()) {
+                    sequence::TFeatScores gene;
+                    GetOverlappingFeatures ((*feat)->GetLocation(), CSeqFeatData::e_Gene,
+                        CSeqFeatData::eSubtype_gene, sequence::eOverlap_Contained, gene, scope);
+                    BOOST_CHECK_EQUAL(gene.size(), 1);
+                } else if ((*feat)->GetData().IsGene()) {
+                    BOOST_CHECK_EQUAL((*feat)->IsSetPartial(), false);
+                }
+            }
+        }
+    }
+
+
+    for (CBioseq_CI bs_iter(seh);  bs_iter;  ++bs_iter) {
+        CBioseq_Handle bsh = *bs_iter;
+
+        CFeat_CI mrna_iter(*bs_iter,
+                           SAnnotSelector().IncludeFeatSubtype
+                           (CSeqFeatData::eSubtype_mRNA));
+        for ( ;  mrna_iter;  ++mrna_iter) {
+            sequence::TFeatScores gene;
+            GetOverlappingFeatures (mrna_iter->GetLocation(), CSeqFeatData::e_Gene,
+                CSeqFeatData::eSubtype_gene, sequence::eOverlap_Contained, gene, scope);
+            BOOST_CHECK_EQUAL(gene.size(), 1);
+        }
+
+        CFeat_CI gene_iter(*bs_iter,
+                           SAnnotSelector().IncludeFeatSubtype
+                           (CSeqFeatData::eSubtype_gene));
+        for ( ;  gene_iter;  ++gene_iter) {            
+            BOOST_CHECK_EQUAL(gene_iter->IsSetPartial(), false);
+        }
+
+    }
 }
 
 

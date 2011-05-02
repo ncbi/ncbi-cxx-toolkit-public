@@ -15386,7 +15386,7 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_OldLocusTagMismtach)
 }
 
 
-static CRef<CUser_field> MakeGoTerm (void)
+static CRef<CUser_field> MakeGoTerm (string text = "something", string evidence = "some evidence")
 {
     CRef<CUser_field> go_term (new CUser_field());
     go_term->SetLabel().SetStr("a go term");
@@ -15403,12 +15403,12 @@ static CRef<CUser_field> MakeGoTerm (void)
 
     CRef<CUser_field> term(new CUser_field());
     term->SetLabel().SetStr("text string");
-    term->SetData().SetStr("something");
+    term->SetData().SetStr(text);
     go_term->SetData().SetFields().push_back (term);
 
     CRef<CUser_field> ev(new CUser_field());
     ev->SetLabel().SetStr("evidence");
-    ev->SetData().SetStr("some evidence");
+    ev->SetData().SetStr(evidence);
     go_term->SetData().SetFields().push_back (ev);
 
     return go_term;
@@ -16625,6 +16625,750 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredGeneSynonym)
 }
 
 
+#define test_undesired_protein_name(name) \
+    prot->SetData().SetProt().ResetName(); \
+    prot->SetData().SetProt().SetName().push_back(name); \
+    msg = "Uninformative protein name '"; \
+    msg.append(name); \
+    msg.append("'"); \
+    expected_errors[0]->SetErrMsg(msg); \
+    eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors);
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredProteinName) 
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_id> id (new CSeq_id());
+    id->SetOther().SetAccession("NC_123456");
+    ChangeNucProtSetNucId(entry, id);
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+
+    STANDARD_SETUP
+    
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
+                              ""));
+    string msg;
+
+    test_undesired_protein_name("a=b")
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadInternalCharacter",
+                              "Protein name contains undesired character"));
+    test_undesired_protein_name("a~b")
+    delete expected_errors[1];
+    expected_errors.pop_back();
+    test_undesired_protein_name("uniprot protein")
+    test_undesired_protein_name("uniprotkb protein")
+    test_undesired_protein_name("refers to pmid 23")
+    test_undesired_protein_name("refers to dbxref")
+    test_undesired_protein_name("hypothetical protein")
+    test_undesired_protein_name("uncharacterized conserved membrane protein")
+    test_undesired_protein_name("unknown; predicted coding region")
+    test_undesired_protein_name("unnamed")
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureBeginsOrEndsInGap)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    NON_CONST_ITERATE (CDelta_ext::Tdata, it, entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if ((*it)->IsLiteral() && (*it)->GetLiteral().GetSeq_data().IsGap()) {
+            (*it)->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+        }
+    }
+
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetLocation().SetInt().SetFrom(5);
+    misc->SetLocation().SetInt().SetTo(20);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureBeginsOrEndsInGap",
+                               "Feature begins or ends in gap"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    misc->SetLocation().SetInt().SetFrom(14);
+    misc->SetLocation().SetInt().SetTo(30);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneOntologyTermMissingGOID)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetExt().SetType().SetStr("GeneOntology");
+    CRef<CUser_field> go_list(new CUser_field());
+    go_list->SetLabel().SetStr("Process");
+    CRef<CUser_field> go_term (new CUser_field());
+    go_term->SetLabel().SetStr("a go term");
+
+    CRef<CUser_field> pmid(new CUser_field());
+    pmid->SetLabel().SetStr("pubmed id");
+    pmid->SetData().SetInt(4);
+    go_term->SetData().SetFields().push_back (pmid);
+
+    CRef<CUser_field> term(new CUser_field());
+    term->SetLabel().SetStr("text string");
+    term->SetData().SetStr("something");
+    go_term->SetData().SetFields().push_back (term);
+
+    CRef<CUser_field> ev(new CUser_field());
+    ev->SetLabel().SetStr("evidence");
+    ev->SetData().SetStr("some evidence");
+    go_term->SetData().SetFields().push_back (ev);
+
+    go_list->SetData().SetFields().push_back(go_term);
+    feat->SetExt().SetData().push_back(go_list);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "GeneOntologyTermMissingGOID",
+                                "GO term does not have GO identifier"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+// note - this test also covers PseudoRnaViaGeneHasProduct
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoRnaHasProduct)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> rna = AddMiscFeature(entry);
+    rna->ResetComment();
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna->SetPseudo(true);
+    rna->SetProduct().SetWhole().SetGenbank().SetAccession("AY123456");
+
+    STANDARD_SETUP_NO_DATABASE
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "PseudoRnaHasProduct",
+                                "A pseudo RNA should not have a product"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    /* this exception should turn off the warning */
+    rna->SetExcept(true);
+    rna->SetExcept_text("transcribed pseudogene");
+    CLEAR_ERRORS
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    /* should get error if overlapping gene is pseudo (and not except text)*/
+    scope.RemoveTopLevelSeqEntry(seh);
+    rna->ResetExcept();
+    rna->ResetExcept_text();
+    CRef<CSeq_feat> gene = MakeGeneForFeature(rna);
+    gene->SetPseudo(true);
+    AddFeat(gene, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "PseudoRnaHasProduct",
+                                "A pseudo RNA should not have a product"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    // now get PseudoRnaViaGeneHasProduct when rna is not pseudo itself
+    rna->ResetPseudo();
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "PseudoRnaViaGeneHasProduct",
+                                "An RNA overlapped by a pseudogene should not have a product"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadRRNAcomponentOrder)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> r1(new CSeq_feat());
+    r1->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    r1->SetData().SetRna().SetExt().SetName("26S ribosomal RNA");
+    r1->SetLocation().SetInt().SetId().Assign(*(entry->SetSeq().SetId().front()));
+    r1->SetLocation().SetInt().SetFrom(0);
+    r1->SetLocation().SetInt().SetTo(10);
+    AddFeat(r1, entry);
+    CRef<CSeq_feat> r2(new CSeq_feat());
+    r2->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    r2->SetData().SetRna().SetExt().SetName("internal transcribed spacer 2");
+    r2->SetLocation().SetInt().SetId().Assign(*(entry->SetSeq().SetId().front()));
+    r2->SetLocation().SetInt().SetFrom(11);
+    r2->SetLocation().SetInt().SetTo(20);
+    AddFeat(r2, entry);
+    CRef<CSeq_feat> r3(new CSeq_feat());
+    r3->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    r3->SetData().SetRna().SetExt().SetName("16S ribosomal RNA");
+    r3->SetLocation().SetInt().SetId().Assign(*(entry->SetSeq().SetId().front()));
+    r3->SetLocation().SetInt().SetFrom(21);
+    r3->SetLocation().SetInt().SetTo(30);
+    AddFeat(r3, entry);
+
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadRRNAcomponentOrder",
+                                "Problem with order of abutting rRNA components"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingGeneLocusTag)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    CRef<CSeq_feat> gene1 = AddMiscFeature (entry);
+    gene1->ResetComment();
+    gene1->SetData().SetGene().SetLocus("a");
+    gene1->SetData().SetGene().SetLocus_tag("tag1");
+    CRef<CSeq_feat> gene2 = AddMiscFeature (entry);
+    gene2->ResetComment();
+    gene2->SetData().SetGene().SetLocus("b");
+    gene2->SetLocation().SetInt().SetFrom(20);
+    gene2->SetLocation().SetInt().SetTo(30);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("NC_123456", eDiag_Warning, "MissingGeneLocusTag",
+                                "Missing gene locus tag"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleProtRefs)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot_seq = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> prot2 = AddMiscFeature(prot_seq);
+    prot2->SetData().SetProt().SetName().push_back("a second protein name");
+    prot2->SetLocation().SetInt().SetTo(prot_seq->GetSeq().GetInst().GetLength()-1);
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "MultipleProtRefs",
+                               "2 full-length protein features present on protein"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "DuplicateFeat", 
+                              "Features have identical intervals, but labels differ"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadInternalCharacter)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("name~something");
+    CRef<CSeq_feat>  cds = GetCDSFromGoodNucProtSet(entry);
+
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetData().SetRna().SetExt().SetName("name~something");
+    AddFeat(mrna, nuc);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(mrna);
+    gene->SetData().SetGene().SetLocus("gene?something");
+    AddFeat(gene, nuc);
+
+    CRef<CSeq_feat> rrna = AddMiscFeature(entry);
+    rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rrna->SetData().SetRna().SetExt().SetName("rna!something");
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadInternalCharacter", 
+                              "mRNA name contains undesired character"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadInternalCharacter", 
+                              "Gene locus contains undesired character"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "BadInternalCharacter", 
+                              "Protein name contains undesired character"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadInternalCharacter", 
+                              "rRNA name contains undesired character"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrailingCharacter)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("name something,");
+    CRef<CSeq_feat>  cds = GetCDSFromGoodNucProtSet(entry);
+
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetData().SetRna().SetExt().SetName("name something_");
+    AddFeat(mrna, nuc);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(mrna);
+    gene->SetData().SetGene().SetLocus("gene something;");
+    AddFeat(gene, nuc);
+
+    CRef<CSeq_feat> rrna = AddMiscFeature(entry);
+    rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rrna->SetData().SetRna().SetExt().SetName("rna something:");
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingCharacter", 
+                              "mRNA name ends with undesired character"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingCharacter", 
+                              "Gene locus ends with undesired character"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "BadTrailingCharacter", 
+                              "Protein name ends with undesired character"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingCharacter", 
+                              "rRNA name ends with undesired character"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrailingHyphen)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().ResetName();
+    prot->SetData().SetProt().SetName().push_back("name something-");
+    CRef<CSeq_feat>  cds = GetCDSFromGoodNucProtSet(entry);
+
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetData().SetRna().SetExt().SetName("name something-");
+    AddFeat(mrna, nuc);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(mrna);
+    gene->SetData().SetGene().SetLocus("gene something-");
+    AddFeat(gene, nuc);
+
+    CRef<CSeq_feat> rrna = AddMiscFeature(entry);
+    rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rrna->SetData().SetRna().SetExt().SetName("rna something-");
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingHyphen", 
+                              "mRNA name ends with hyphen"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingHyphen", 
+                              "Gene locus ends with hyphen"));
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "BadTrailingHyphen", 
+                              "Protein name ends with hyphen"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingHyphen", 
+                              "rRNA name ends with hyphen"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleGeneOverlap)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene1 = AddMiscFeature(entry);
+    gene1->SetData().SetGene().SetLocus("a");
+    gene1->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
+    CRef<CSeq_feat> gene2 = AddMiscFeature(entry);
+    gene2->SetData().SetGene().SetLocus("b");
+    CRef<CSeq_feat> gene3 = AddMiscFeature(entry);
+    gene3->SetData().SetGene().SetLocus("c");
+    gene3->SetLocation().SetInt().SetFrom(11);
+    gene3->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MultipleGeneOverlap", 
+                              "Gene contains 2 other genes"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadCharInAuthorLastName)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CAuthor> author(new CAuthor());
+    author->SetName().SetName().SetLast("Gr@nt");
+    CRef<CPub> pub(new CPub());
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+    CRef<CCit_art::TTitle::C_E> art_title(new CCit_art::TTitle::C_E());
+    art_title->SetName("article title");
+    pub->SetArticle().SetTitle().Set().push_back(art_title);
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadCharInAuthorLastName", 
+                              "Bad characters in author Gr@nt"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCDSmRNArange)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> cds = AddMiscFeature(entry);
+    cds->ResetComment();
+    cds->SetData().SetCdregion();
+    cds->SetPseudo(true);
+    cds->SetLocation().Assign(*MakeMixLoc(entry->SetSeq().SetId().front()));
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetLocation().SetMix().Set().front()->SetInt().SetTo(16);
+    AddFeat(mrna, entry);
+    mrna->SetPseudo(true);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "PseudoCDSmRNArange", 
+                              "mRNA contains CDS but internal intron-exon boundaries do not match"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    mrna->SetLocation().SetMix().Set().back()->SetInt().SetTo(55);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("mRNA overlaps or contains CDS but does not completely contain intervals");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefNeeded)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    AddCDSAndProtForBigGoodNucProtSet(entry, "nuc", "prot2", 30);
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().back();
+    CRef<CSeq_feat> gene1 = MakeGeneForFeature(cds);
+    gene1->SetLocation().SetInt().SetFrom(gene1->GetLocation().GetInt().GetFrom() - 3);
+    gene1->SetData().SetGene().SetLocus_tag("a1");
+    AddFeat(gene1, nuc);
+    CRef<CSeq_feat> gene2 = MakeGeneForFeature(cds);
+    gene2->SetData().SetGene().SetLocus_tag("a2");
+    gene2->SetLocation().SetInt().SetTo(gene2->GetLocation().GetInt().GetTo() + 3);
+    AddFeat(gene2, nuc);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "CollidingGeneNames",
+                               "Colliding names in gene features"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "GeneXrefNeeded", 
+                              "Feature overlapped by 2 identical-length equivalent genes but has no cross-reference"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RubiscoProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().pop_back();
+    prot->SetData().SetProt().SetName().push_back("ribulose bisphosphate");
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "RubiscoProblem", 
+                              "Nonstandard ribulose bisphosphate protein name"));
+    options |= CValidator::eVal_do_rubisco_test;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnqualifiedException)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_feat> mrna = GetmRNAFromGenProdSet(entry);
+    mrna->SetExcept(true);
+    mrna->SetExcept_text("transcribed product replaced");
+    CRef<CSeq_feat> cds = GetCDSFromGenProdSet(entry);
+    cds->SetExcept(true);
+    cds->SetExcept_text("translated product replaced");
+    CRef<CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
+    genomic->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGGGGAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "UnqualifiedException", 
+                              "CDS has unqualified translated product replaced exception"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "UnqualifiedException", 
+                              "mRNA has unqualified transcribed product replaced exception"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ProteinNameHasPMID)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().push_back("(PMID 1234)");
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "ProteinNameHasPMID", 
+                              "Protein name has internal PMID"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadGeneOntologyFormat)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetExt().SetType().SetStr("GeneOntology");
+    CRef<CUser_field> go_list(new CUser_field());
+    go_list->SetData().SetStr("something");
+    feat->SetExt().SetData().push_back(go_list);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadGeneOntologyFormat", 
+                              "Bad data format for GO term"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CRef<CUser_field> go_term (new CUser_field());
+    go_list->SetData().SetFields().push_back (go_term);
+    expected_errors[0]->SetErrMsg("Unrecognized GO term label [blank]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    go_list->SetLabel().SetStr("something");
+    expected_errors[0]->SetErrMsg("Unrecognized GO term label something");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    go_list->SetLabel().SetStr("Process");
+    expected_errors[0]->SetErrMsg("Bad GO term format");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CRef<CUser_field> go_field(new CUser_field());
+    go_term->SetData().SetFields().push_back(go_field);
+    expected_errors[0]->SetErrMsg("No label on GO term qualifier field");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GeneOntologyTermMissingGOID", 
+                              "GO term does not have GO identifier"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    go_field->SetLabel().SetStr("notlabel");
+    expected_errors[0]->SetErrMsg("Unrecognized label on GO term qualifier field notlabel");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    go_field->SetLabel().SetStr("go id");
+    expected_errors[0]->SetErrMsg("Bad data format for GO term qualifier GO ID");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    go_field->SetData().SetInt(123);
+    CRef<CUser_field> go_field2(new CUser_field());
+    go_field2->SetLabel().SetStr("text string");
+    go_field2->SetData().SetInt(123);
+    go_term->SetData().SetFields().push_back(go_field2);
+    expected_errors[0]->SetErrMsg("Bad data format for GO term qualifier term");
+    delete expected_errors[1];
+    expected_errors.pop_back();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    go_field2->SetData().SetStr("some text");
+    CRef<CUser_field> go_field3(new CUser_field());
+    go_field3->SetLabel().SetStr("pubmed id");
+    go_field3->SetData().SetStr("some text");
+    go_term->SetData().SetFields().push_back(go_field3);
+    expected_errors[0]->SetErrMsg("Bad data format for GO term qualifier PMID");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    go_field3->SetData().SetInt(123);
+    CRef<CUser_field> go_field4(new CUser_field());
+    go_field4->SetLabel().SetStr("evidence");
+    go_field4->SetData().SetInt(123);
+    go_term->SetData().SetFields().push_back(go_field4);
+    expected_errors[0]->SetErrMsg("Bad data format for GO term qualifier evidence");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InconsistentGeneOntologyTermAndId)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetExt().SetType().SetStr("GeneOntology");
+    CRef<CUser_field> go_list(new CUser_field());
+    go_list->SetLabel().SetStr("Process");
+    go_list->SetData().SetFields().push_back(MakeGoTerm("a1", "evidence 1"));
+    go_list->SetData().SetFields().push_back(MakeGoTerm("a2", "evidence 2"));
+    feat->SetExt().SetData().push_back(go_list);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "InconsistentGeneOntologyTermAndId", 
+                              "Inconsistent GO terms for GO ID 123"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultiplyAnnotatedGenes)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene1 = AddMiscFeature(entry);
+    gene1->SetData().SetGene().SetLocus("gene1");
+    CRef<CSeq_feat> gene2 = AddMiscFeature(entry);
+    gene2->SetData().SetGene().SetLocus("gene1");
+
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatContentDup", 
+                               "Duplicate feature"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "MultiplyAnnotatedGenes", 
+                              "Colliding names in gene features, but feature locations are identical"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gene2->SetData().SetGene().SetLocus("GENE1");
+    expected_errors[1]->SetErrMsg("Colliding names (with different capitalization) in gene features, but feature locations are identical");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ReplicatedGeneSequence)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene1 = AddMiscFeature(entry);
+    gene1->SetData().SetGene().SetLocus("gene1");
+    CRef<CSeq_feat> gene2 = AddMiscFeature(entry);
+    gene2->SetData().SetGene().SetLocus("gene1");
+    gene2->SetLocation().SetInt().SetFrom(30);
+    gene2->SetLocation().SetInt().SetTo(30 + gene1->GetLocation().GetInt().GetTo());
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Info, "ReplicatedGeneSequence", 
+                              "Colliding names in gene features, but underlying sequences are identical"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gene2->SetData().SetGene().SetLocus("GENE1");
+    expected_errors[0]->SetErrMsg("Colliding names (with different capitalization) in gene features, but underlying sequences are identical");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefStrandProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    feat->SetGeneXref().SetLocus("gene locus");
+    CRef<CSeq_feat> gene = MakeGeneForFeature (feat);
+    gene->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    gene->SetData().SetGene().SetLocus("gene locus");
+    AddFeat(gene, entry);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "GeneXrefStrandProblem", 
+                              "Gene cross-reference is not on expected strand"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    feat->SetGeneXref().ResetLocus();
+    feat->SetGeneXref().SetLocus_tag("LOCUSTAG");
+    gene->SetData().SetGene().ResetLocus();
+    gene->SetData().SetGene().SetLocus_tag("LOCUSTAG");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNAXrefLocationProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetId().SetLocal().SetId(1);
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    x1->SetId().SetLocal().SetId(2);
+    cds->SetXref().push_back(x1);
+
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
+    mrna->SetId().SetLocal().SetId(2);
+    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
+    x2->SetId().SetLocal().SetId(1);
+    mrna->SetXref().push_back(x2);
+    mrna->SetLocation().SetInt().SetTo(mrna->GetLocation().GetInt().GetTo() - 1);
+    AddFeat(mrna, nuc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "CDSmRNAXrefLocationProblem", 
+                               "CDS not contained within cross-referenced mRNA"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "CDSmRNArange",
+                               "mRNA overlaps or contains CDS but does not completely contain intervals"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IdenticalGeneSymbolAndSynonym)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -16862,3 +17606,864 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     CLEAR_ERRORS
 }
 
+
+static CRef<CSeq_align> BuildSetAlign(CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetType(CSeq_align::eType_global);
+    align->SetSegs().SetDenseg().SetNumseg(1);
+
+    int dim = 0;
+    int len = 0;
+
+    FOR_EACH_SEQENTRY_ON_SEQSET (s, entry->GetSet()) {
+        dim++;
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*((*s)->GetSeq().GetId().front()));
+        align->SetSegs().SetDenseg().SetIds().push_back(id);
+        align->SetSegs().SetDenseg().SetStarts().push_back(0);
+
+        len = (*s)->GetSeq().GetInst().GetLength();
+    }
+    align->SetDim(dim);
+    align->SetSegs().SetDenseg().SetDim(dim);
+    align->SetSegs().SetDenseg().SetLens().push_back(len);
+
+    return align;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SeqIdProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+    align->SetSegs().SetDenseg().SetIds().back()->SetLocal().SetStr("good4");
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "FastaLike", 
+      "Fasta: This may be a fasta-like alignment for SeqId: lcl|good1 in the context of good1"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SeqIdProblem", 
+                              "The sequence corresponding to SeqId lcl|good4 could not be found."));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "PercentIdentity", 
+      "PercentIdentity: This alignment has a percent identity of 0%"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_DensegLenStart)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetType(CSeq_align::eType_global);
+    align->SetSegs().SetDenseg().SetNumseg(2);
+
+    int dim = 0;
+    int len = 0;
+
+    FOR_EACH_SEQENTRY_ON_SEQSET (s, entry->GetSet()) {
+        dim++;
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*((*s)->GetSeq().GetId().front()));
+        align->SetSegs().SetDenseg().SetIds().push_back(id);
+        align->SetSegs().SetDenseg().SetStarts().push_back(0);
+    }
+    align->SetDim(dim);
+    align->SetSegs().SetDenseg().SetDim(dim);
+
+    align->SetSegs().SetDenseg().SetLens().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(6);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetLens().push_back(10);
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "DensegLenStart", 
+             "Start/Length: There is a problem with sequence lcl|good2, in segment 2 (near sequence position 0), context lcl|good2: the segment is too long or short or the next segment has an incorrect start position"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SumLenStart)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+    align->SetSegs().SetDenseg().SetNumseg(2);
+    align->SetSegs().SetDenseg().SetLens()[0] = 5;
+    align->SetSegs().SetDenseg().SetLens().push_back(60);
+
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SumLenStart", 
+                  "Start: In sequence lcl|good1, segment 2 (near sequence position 5), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SumLenStart", 
+                  "Start: In sequence lcl|good2, segment 2 (near sequence position 5), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SumLenStart", 
+                  "Start: In sequence lcl|good3, segment 2 (near sequence position 5), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimSeqIdNotMatch)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+    align->SetSegs().SetDenseg().SetDim(4);
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "AlignDimSeqIdNotMatch", 
+                  "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment (context lcl|good1).  Look for possible formatting errors in the ids."));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SegsStartsMismatch", 
+                  "The number of Starts (3) does not match the expected size of dim * numseg (4)"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_FastaLike)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    RevComp(entry->SetSet().SetSeq_set().front());
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "FastaLike", 
+                  "Fasta: This may be a fasta-like alignment for SeqId: lcl|good1 in the context of good1"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "PercentIdentity", 
+                  "PercentIdentity: This alignment has a percent identity of 0%"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // fasta like error should disappear if there are 5' gaps or internal gaps
+    align->SetSegs().SetDenseg().SetNumseg(2);
+    align->SetSegs().SetDenseg().SetLens()[0] = 5;
+    align->SetSegs().SetDenseg().SetLens().push_back(55);
+    align->SetSegs().SetDenseg().SetStarts()[2] = -1;
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "PercentIdentity", 
+                  "PercentIdentity: This alignment has a percent identity of 0%"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_NullSegs)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+    align->ResetSegs();
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Error, "NullSegs", 
+                  "Segs: This alignment is missing all segments.  This is a non-correctable error -- look for serious formatting problems."));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SegmentGap)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+    align->SetSegs().SetDenseg().SetNumseg(3);
+    align->SetSegs().SetDenseg().SetLens()[0] = 5;
+    align->SetSegs().SetDenseg().SetLens().push_back(10);    
+    align->SetSegs().SetDenseg().SetLens().push_back(55);    
+    align->SetSegs().SetDenseg().SetStarts().push_back(-1);
+    align->SetSegs().SetDenseg().SetStarts().push_back(-1);
+    align->SetSegs().SetDenseg().SetStarts().push_back(-1);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    align->SetSegs().SetDenseg().SetStarts().push_back(5);
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SegmentGap", 
+                  "Segs: Segment 2 (near alignment position 5) in the context of good1 contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them."));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimOne)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+    align->SetSegs().SetDenseg().SetDim(1);
+    align->SetSegs().SetDenseg().SetIds().pop_back();
+    align->SetSegs().SetDenseg().SetIds().pop_back();
+    align->SetSegs().SetDenseg().SetStarts().pop_back();
+    align->SetSegs().SetDenseg().SetStarts().pop_back();
+    
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "AlignDimOne", 
+                  "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences."));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_Segtype)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetSegs().SetSparse();
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Error, "Segtype", 
+                  "Segs: This alignment has an undefined or unsupported Seqalign segtype 7"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_BlastAligns)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+
+    CRef<CAnnotdesc> ad(new CAnnotdesc());
+    ad->SetUser().SetType().SetStr("Blast Type");
+    annot->SetDesc().Set().push_back(ad);
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "BlastAligns", 
+                  "Record contains BLAST alignments"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_PercentIdentity)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCTTGGCCAAAATTGGCCAA");
+    CRef<CSeq_align> align = BuildSetAlign(entry);
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "FastaLike", 
+      "Fasta: This may be a fasta-like alignment for SeqId: lcl|good1 in the context of good1"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "PercentIdentity", 
+                              "PercentIdentity: This alignment has a percent identity of 43%"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+
+static CRef<CSeq_align> BuildSetDendiagAlign(CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetType(CSeq_align::eType_global);
+
+    CRef<CDense_diag> diag(new CDense_diag());
+
+
+    int dim = 0;
+    int len = 0;
+
+    FOR_EACH_SEQENTRY_ON_SEQSET (s, entry->GetSet()) {
+        dim++;
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*((*s)->GetSeq().GetId().front()));
+        diag->SetIds().push_back(id);
+        diag->SetStarts().push_back(0);
+
+        len = (*s)->GetSeq().GetInst().GetLength();
+    }
+    align->SetDim(dim);
+    diag->SetDim(dim);
+    diag->SetLen(len);
+    align->SetSegs().SetDendiag().push_back(diag);
+
+    return align;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_UnexpectedAlignmentType)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_align> align = BuildSetDendiagAlign(entry);
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+
+    entry->SetSet().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "UnexpectedAlignmentType", 
+                              "UnexpectedAlignmentType: This is not a DenseSeg alignment."));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "PercentIdentity", 
+                              "PercentIdentity: This alignment has a percent identity of 0%"));
+    options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+static CRef<CSeq_graph> BuildGoodByteGraph(CRef<CSeq_entry> entry, TSeqPos offset = 0, TSeqPos len = -1)
+{
+    CRef<CSeq_graph> graph (new CSeq_graph());
+    graph->SetTitle("Phrap Quality");
+    if (len == -1) {
+      len = entry->GetSeq().GetInst().GetLength() - offset;
+    }
+    graph->SetNumval(len);
+    graph->SetLoc().SetInt().SetFrom(offset);
+    graph->SetLoc().SetInt().SetTo(offset + len - 1);
+    graph->SetLoc().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+
+    for (size_t pos = 0; pos < len; pos++) {
+        graph->SetGraph().SetByte().SetValues().push_back(40);
+    }
+
+
+    graph->SetGraph().SetByte().SetMax(40);
+    graph->SetGraph().SetByte().SetMin(40);
+    graph->SetGraph().SetByte().SetAxis(40);
+    return graph;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphMin)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry);
+    graph->SetGraph().SetByte().SetMin(-1);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(graph);
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphMin", 
+                              "Graph min (-1) out of range"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    graph->SetGraph().SetByte().SetMin(101);
+    expected_errors[0]->SetErrMsg("Graph min (101) out of range");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphBelow", 
+                              "60 quality scores have values below the reported minimum or 0"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphMax)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry);
+    graph->SetGraph().SetByte().SetMax(-1);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(graph);
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphMax", 
+                              "Graph max (-1) out of range"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphAbove", 
+                              "60 quality scores have values above the reported maximum or 100"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    delete expected_errors[1];
+    expected_errors.pop_back();
+
+    graph->SetGraph().SetByte().SetMax(101);
+    expected_errors[0]->SetErrMsg("Graph max (101) out of range");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphByteLen)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry);
+    graph->SetNumval(40);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(graph);
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphByteLen", 
+                              "SeqGraph (40) and ByteStore (60) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphBioseqLen", 
+                              "SeqGraph (40) and Bioseq (60) length mismatch"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphOutOfOrder)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 20, 20));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 20));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 40, 20));
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphOutOfOrder", 
+                              "Graph components are out of order - may be a software bug"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLitLen)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 11));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphBioseqLen", 
+                              "SeqGraph (23) and Bioseq (24) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphSeqLitLen", 
+                              "SeqGraph (11) and SeqLit (12) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphStopPhase", 
+                              "SeqGraph (10) and SeqLit (11) stop do not coincide"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLocLen)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGenbank().SetAccession("AY123456");
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetFrom(0);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(11);
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 13));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphGapScore", 
+                              "1 gap bases have positive score value"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphBioseqLen", 
+                              "SeqGraph (25) and Bioseq (24) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphSeqLocLen", 
+                              "SeqGraph (13) and SeqLoc (12) length mismatch"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphStartPhase)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 12));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 21, 13));
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphGapScore", 
+                              "1 gap bases have positive score value"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphBioseqLen", 
+                              "SeqGraph (25) and Bioseq (24) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphSeqLitLen", 
+                              "SeqGraph (13) and SeqLit (12) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphStartPhase", 
+                              "SeqGraph (21) and SeqLit (22) start do not coincide"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+// note - GraphStopPhase exercised in Test_SEQ_GRAPH_GraphSeqLitLen
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphDiffNumber)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 6));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 6, 6));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphSeqLitLen", 
+                              "SeqGraph (6) and SeqLit (12) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphStopPhase", 
+                              "SeqGraph (5) and SeqLit (11) stop do not coincide"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphSeqLitLen", 
+                              "SeqGraph (6) and SeqLit (12) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphStartPhase", 
+                              "SeqGraph (6) and SeqLit (22) start do not coincide"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphStopPhase", 
+                              "SeqGraph (11) and SeqLit (33) stop do not coincide"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphDiffNumber", 
+                              "Different number of SeqGraph (3) and SeqLit (2) components"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphACGTScore)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 12));
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry, 22, 12);
+    graph->SetGraph().SetByte().SetValues().pop_back();
+    graph->SetGraph().SetByte().SetValues().push_back(0);
+    graph->SetGraph().SetByte().SetMin(0);
+    annot->SetData().SetGraph().push_back(graph);
+
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphACGTScore", 
+                              "1 ACGT bases have zero score value - first one at position 34"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphNScore)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("CCCATNATGATG");
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 12));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
+
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphNScore", 
+                              "1 N bases have positive score value - first one at position 28"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphGapScore)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 12));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 12, 10));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
+
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphGapScore", 
+                              "10 gap bases have positive score value"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphSeqLitLen", 
+                              "SeqGraph (10) and SeqLit (12) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphStartPhase", 
+                              "SeqGraph (12) and SeqLit (22) start do not coincide"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphStopPhase", 
+                              "SeqGraph (21) and SeqLit (33) stop do not coincide"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphDiffNumber", 
+                              "Different number of SeqGraph (3) and SeqLit (2) components"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphOverlap)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 31));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 30, 30));
+
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphOverlap", 
+                              "Graph components overlap, with multiple scores for a single base"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphBioseqLen", 
+                              "SeqGraph (61) and Bioseq (60) length mismatch"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphBioseqId)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry);
+    graph->SetLoc().SetInt().SetId().SetLocal().SetStr("good2");
+    annot->SetData().SetGraph().push_back(graph);
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "GraphBioseqId", 
+                              "Bioseq not found for Graph location good2"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "GraphPackagingProblem",
+                              "There is 1 mispackaged graph in this record."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphACGTScoreMany)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 12));
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry, 22, 12);
+    graph->SetGraph().SetByte().ResetValues();
+    for (int i = 0; i < graph->GetNumval(); i++) {
+        graph->SetGraph().SetByte().SetValues().push_back(0);
+    }
+    graph->SetGraph().SetByte().SetMin(0);
+    annot->SetData().SetGraph().push_back(graph);
+
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphACGTScoreMany", 
+                              "12 ACGT bases (50.00%) have zero score value - first one at position 23"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphNScoreMany)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("ANNNNNNTGATG");
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 12));
+    annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
+
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphNScoreMany", 
+                              "6 N bases (25.00%) have positive score value - first one at position 24"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphLocInvalid)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry);
+    graph->SetLoc().SetInt().SetTo(61);
+    annot->SetData().SetGraph().push_back(graph);
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphLocInvalid", 
+                           "SeqGraph location (lcl|good:1-62) is invalid"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    graph->ResetLoc();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors[0]->SetErrMsg("SeqGraph location (Unknown) is invalid");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "GraphPackagingProblem",
+                              "There is 1 mispackaged graph in this record."));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ANNOT_AnnotIDs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetIds();
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "AnnotIDs", 
+                              "Record contains Seq-annot.data.ids"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_ANNOT_AnnotLOCs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetLocs();
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "AnnotLOCs", 
+                              "Record contains Seq-annot.data.locs"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}

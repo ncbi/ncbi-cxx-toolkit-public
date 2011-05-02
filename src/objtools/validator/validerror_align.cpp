@@ -114,10 +114,16 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
         return;
 
     case CSeq_align::C_Segs::e_not_set:
+        PostErr (eDiag_Error, eErr_SEQ_ALIGN_NullSegs, 
+                 "Segs: This alignment is missing all segments.  This is a non-correctable error -- look for serious formatting problems.",
+                 align);
+        return;
+        break;
     default:
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_Segtype,
-                "Segs: This alignment has a undefined or unsupported Seqalign segtype "
+                "Segs: This alignment has an undefined or unsupported Seqalign segtype "
                 + NStr::IntToString(segtype), align);
+        return;
         break;
     }  // end of switch statement
 
@@ -125,7 +131,7 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
         && align.IsSetType() 
         && (align.GetType() == CSeq_align::eType_partial
             || align.GetType() == CSeq_align::eType_global)) {
-		    PostErr(eDiag_Error, eErr_SEQ_ALIGN_UnexpectedAlignmentType, "This is not a DenseSeg alignment.", align);
+		    PostErr(eDiag_Error, eErr_SEQ_ALIGN_UnexpectedAlignmentType, "UnexpectedAlignmentType: This is not a DenseSeg alignment.", align);
     }
 	  try {
         x_ValidateAlignPercentIdentity (align, false);
@@ -282,7 +288,11 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                   // the above is impossible
                   // report 0 %, same as C Toolkit
                   col = aln_len;
-                  ids_missing = true;
+                  if (NStr::StartsWith(x1.GetMsg(), "iterator out of range")) {
+                      // bad offsets
+                  } else {
+                      ids_missing = true;
+                  }
 	          } catch (std::exception &x2) {
                   // if sequence is not in scope,
                   // the above is impossible
@@ -1270,7 +1280,11 @@ void CValidError_align::x_ValidateSeqLength
     const CDense_seg::TLens& lens      = denseg.GetLens();
     bool minus = false;
 
-    for ( int id = 0; id < dim; ++id ) {
+    if (numseg > lens.size()) {
+        numseg = lens.size();
+    }
+
+    for ( int id = 0; id < ids.size(); ++id ) {
         TSeqPos bslen = GetLength(*(ids[id]), m_Scope);
         minus = denseg.IsSetStrands()  &&
             denseg.GetStrands()[id] == eNa_strand_minus;
@@ -1318,7 +1332,7 @@ void CValidError_align::x_ValidateSeqLength
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_DensegLenStart,
                         "Start/Length: There is a problem with sequence " + label + 
                         ", in segment " + NStr::IntToString (curr_index + 1)
-                        + "(near sequence position " + NStr::IntToString (starts[curr_index])
+                        + " (near sequence position " + NStr::IntToString (starts[curr_index])
                         + "), context " + label + ": the segment is too long or short or the next segment has an incorrect start position", align);
             }
         }

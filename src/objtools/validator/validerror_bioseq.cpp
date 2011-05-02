@@ -7760,7 +7760,7 @@ void CValidError_bioseq::ValidateGraphOrderOnBioseq (const CBioseq& seq, vector 
     TSeqPos last_left = graph_list[0]->GetLoc().GetStart(eExtreme_Positional);
     TSeqPos last_right = graph_list[0]->GetLoc().GetStop(eExtreme_Positional);
 
-    for (size_t i = 1; i < graph_list.size() - 1; i++) {
+    for (size_t i = 1; i < graph_list.size(); i++) {
         TSeqPos left = graph_list[i]->GetLoc().GetStart(eExtreme_Positional);
         TSeqPos right = graph_list[i]->GetLoc().GetStop(eExtreme_Positional);
 
@@ -7773,6 +7773,30 @@ void CValidError_bioseq::ValidateGraphOrderOnBioseq (const CBioseq& seq, vector 
         }
         last_left = left;
         last_right = right;
+    }
+}
+
+
+bool s_CompareTwoSeqGraphs(const CRef <CSeq_graph> g1,
+                                    const CRef <CSeq_graph> g2)
+{
+    if (!g1->IsSetLoc()) {
+        return true;
+    } else if (!g2->IsSetLoc()) {
+        return false;
+    }
+
+    TSeqPos start1 = g1->GetLoc().GetStart(eExtreme_Positional);
+    TSeqPos stop1 = g1->GetLoc().GetStop(eExtreme_Positional);
+    TSeqPos start2 = g2->GetLoc().GetStart(eExtreme_Positional);
+    TSeqPos stop2 = g2->GetLoc().GetStop(eExtreme_Positional);
+    
+    if (start1 < start2) {
+        return true;
+    } else if (start1 == start2 && stop1 < stop2) {
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -7809,6 +7833,9 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
     const CSeq_inst& inst = seq.GetInst();  
 
     ValidateGraphOrderOnBioseq (seq, graph_list);
+
+    // now sort, so that we can look for coverage
+    sort (graph_list.begin(), graph_list.end(), s_CompareTwoSeqGraphs);
 
     SIZE_TYPE Ns_with_score = 0,
         gaps_with_score = 0,
@@ -7952,8 +7979,8 @@ bool CValidError_bioseq::IsSupportedGraphType(const CSeq_graph& graph) const
 
 bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
 {
-    if (!graph.IsSetLoc()) {
-        PostErr (eDiag_Error, eErr_SEQ_GRAPH_GraphLocInvalid, "Graph location is missing", graph);
+    if (!graph.IsSetLoc() || graph.GetLoc().Which() == CSeq_loc::e_not_set) {
+        PostErr (eDiag_Error, eErr_SEQ_GRAPH_GraphLocInvalid, "SeqGraph location (Unknown) is invalid", graph);
         return false;
     } else {
         const CSeq_loc& loc = graph.GetLoc();
@@ -7966,7 +7993,7 @@ bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
             if (NStr::IsBlank(label)) {
                 label = "unknown";
             }
-            PostErr (eDiag_Error, eErr_SEQ_GRAPH_GraphBioseqId, 
+            PostErr (eDiag_Warning, eErr_SEQ_GRAPH_GraphBioseqId, 
                      "Bioseq not found for Graph location " + label, graph);
             return false;
         }
@@ -8113,7 +8140,7 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
         next = curr,
         end = delta.Get().end();
 
-    SIZE_TYPE   num_delta_seq = 0;
+    SIZE_TYPE   num_delta_seq = 0, num_grp = 0;
     TSeqPos offset = 0;
 
     CGraph_CI grp(m_CurrentHandle);
@@ -8150,7 +8177,7 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
                     const CSeq_literal& lit = (*curr)->GetLiteral();
                     TSeqPos litlen = lit.GetLength(),
                         nextlen = 0;
-                    if ( lit.IsSetSeq_data() ) {
+                    if ( lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap() ) {
                         while (next != end  &&  GetLitLength(**next, nextlen)) {
                             litlen += nextlen;
                             ++next;
@@ -8234,17 +8261,19 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
     }
 
     SIZE_TYPE num_graphs = 0;
-    for ( CGraph_CI i(m_CurrentHandle); i; ++i ) {
-        if (IsSupportedGraphType (i->GetOriginalGraph())) {
+    grp.Rewind();
+    while (grp) {
+        if (IsSupportedGraphType(grp->GetOriginalGraph())) {
             ++num_graphs;
         }
+        ++grp;
     }
 
     if ( num_delta_seq != num_graphs ) {
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphDiffNumber,
             "Different number of SeqGraph (" + 
-            NStr::IntToString(num_delta_seq) + ") and SeqLit (" +
-            NStr::IntToString(num_graphs) + ") components",
+            NStr::IntToString(num_graphs) + ") and SeqLit (" +
+            NStr::IntToString(num_delta_seq) + ") components",
             seq);
     }
 }
@@ -8255,7 +8284,7 @@ bool CValidError_bioseq::GetLitLength(const CDelta_seq& delta, TSeqPos& len)
     len = 0;
     if ( delta.IsLiteral() ) {
         const CSeq_literal& lit = delta.GetLiteral();
-        if ( lit.IsSetSeq_data() ) {
+        if ( lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap()) {
             len = lit.GetLength();
             return true;
         }
@@ -8264,6 +8293,7 @@ bool CValidError_bioseq::GetLitLength(const CDelta_seq& delta, TSeqPos& len)
 }
 
 
+// NOTE - this returns the length of the non-gap portions of the sequence
 SIZE_TYPE CValidError_bioseq::GetSeqLen(const CBioseq& seq)
 {
     SIZE_TYPE seq_len = 0;
@@ -8280,7 +8310,7 @@ SIZE_TYPE CValidError_bioseq::GetSeqLen(const CBioseq& seq)
                 break;
                 
             case CDelta_seq::e_Literal:
-                if ( (*dseq)->GetLiteral().IsSetSeq_data() ) {
+                if ( (*dseq)->GetLiteral().IsSetSeq_data() && !(*dseq)->GetLiteral().GetSeq_data().IsGap() ) {
                     seq_len += (*dseq)->GetLiteral().GetLength();
                 }
                 break;

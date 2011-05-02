@@ -1491,7 +1491,7 @@ same id type")),
    TErrStrs( "ShortAln",
 "Alignment is shorter than expected.")),
    TErrTypStrs ( eErr_SEQ_ALIGN_UnexpectedAlignmentType ,
-   TErrStrs( "UnexpectedAlignmentType ",
+   TErrStrs( "UnexpectedAlignmentType",
 "Only DenseSeg alignments are expected.")),
 
     TErrTypStrs( eErr_SEQ_ALIGN_SegsDimMismatch,
