@@ -864,7 +864,7 @@ void CAlnVec::TranslateNAToAA(const string& na,
 
     unsigned int i, j = 0, state = 0;
 
-    if (aa != na) {
+    if (&aa != &na) {
         aa.resize(na.size() / 3);
     }
 
@@ -876,7 +876,7 @@ void CAlnVec::TranslateNAToAA(const string& na,
         aa[j++] = tbl.GetCodonResidue(state);
     }
 
-    if (aa == na) {
+    if (&aa == &na) {
         aa[j] = 0;
         aa.resize(j);
     }

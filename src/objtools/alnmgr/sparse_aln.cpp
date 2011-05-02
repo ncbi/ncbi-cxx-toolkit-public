@@ -299,10 +299,10 @@ void CSparseAln::TranslateNAToAA(const string& na,
     size_t na_remainder = na.size() % 3;
     size_t na_size = na.size() - na_remainder;
 
-    if (aa != na) {
+    if (&aa != &na) {
         aa.resize(na_size / 3 + (na_remainder ? 1 : 0));
     }
-    
+
     size_t aa_i = 0;
     int state = 0;
     for (size_t na_i = 0;  na_i < na_size; ) {
@@ -314,8 +314,8 @@ void CSparseAln::TranslateNAToAA(const string& na,
     if (na_remainder) {
         aa[aa_i++] = '\\';
     }
-    
-    if (aa == na) {
+
+    if (&aa == &na) {
         aa[aa_i] = 0;
         aa.resize(aa_i);
     }
