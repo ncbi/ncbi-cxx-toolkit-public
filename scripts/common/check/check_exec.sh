@@ -39,10 +39,11 @@ ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 # Run command.
 "$@" &
 pid=$!
-trap 'kill $pid' 1 2 15
+trap 'kill $pid $guard_pid' 1 2 15
 
 # Execute time-guard
 $script_dir/check_exec_guard.sh $timeout $pid &
+guard_pid=$!
 
 # Wait ending of execution
 wait $pid > /dev/null 2>&1
@@ -69,6 +70,8 @@ if [ $status -gt 128  -a  ! -f core ]; then
    done
 fi
 rm $timestamp_file > /dev/null 2>&1
+
+kill $guard_pid >/dev/null 2>&1
 
 # Return test exit code
 exit $status
