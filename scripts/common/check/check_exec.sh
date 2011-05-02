@@ -71,7 +71,10 @@ if [ $status -gt 128  -a  ! -f core ]; then
 fi
 rm $timestamp_file > /dev/null 2>&1
 
-kill $guard_pid >/dev/null 2>&1
+case `uname -s` in
+   CYGWIN* ) ;;
+   *) kill $guard_pid >/dev/null 2>&1 ;;
+esac
 
 # Return test exit code
 exit $status
