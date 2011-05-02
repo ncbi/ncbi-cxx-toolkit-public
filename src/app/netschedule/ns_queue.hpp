@@ -59,6 +59,7 @@
 BEGIN_NCBI_SCOPE
 
 class CNetScheduleServer;
+class CNetScheduleHandler;
 
 
 /// Queue databases
@@ -489,9 +490,9 @@ public:
     void ClearWorkerNode(const string& node_id, const string& reason);
 
     void NotifyListeners(bool unconditional, unsigned aff_id);
-    void PrintWorkerNodeStat(CNcbiOstream& out,
-                             time_t curr,
-                             EWNodeFormat fmt = eWNF_Old) const;
+    void PrintWorkerNodeStat(CNetScheduleHandler &  handler,
+                             time_t                 curr,
+                             EWNodeFormat           fmt = eWNF_Old) const;
     void UnRegisterNotificationListener(CWorkerNode* worker_node);
     void AddJobToWorkerNode(CWorkerNode*            worker_node,
                             CRequestContextFactory* rec_ctx_f,
@@ -555,20 +556,20 @@ public:
     /// Send string to monitor
     void MonitorPost(const string& msg);
 
-    void PrintSubmHosts(CNcbiOstream& out) const;
-    void PrintWNodeHosts(CNcbiOstream& out) const;
+    void PrintSubmHosts(CNetScheduleHandler &  handler) const;
+    void PrintWNodeHosts(CNetScheduleHandler &  handler) const;
     void PrintJobStatusMatrix(CNcbiOstream& out) const;
 
-    void PrintQueue(CNcbiOstream& out,
-                    TJobStatus    job_status);
+    void PrintQueue(CNetScheduleHandler &   handler,
+                    TJobStatus              job_status);
 
     /// Queue dump
-    void PrintJobDbStat(unsigned      job_id,
-        CNcbiOstream& out,
-        TJobStatus    status
-        = CNetScheduleAPI::eJobNotFound);
+    size_t PrintJobDbStat(CNetScheduleHandler &   handler,
+                          unsigned                job_id,
+                          TJobStatus              status
+                                = CNetScheduleAPI::eJobNotFound);
     /// Dump all job records
-    void PrintAllJobDbStat(CNcbiOstream & out);
+    void PrintAllJobDbStat(CNetScheduleHandler &   handler);
 
     unsigned CountStatus(TJobStatus) const;
     void StatusStatistics(TJobStatus status,
@@ -653,14 +654,14 @@ private:
                       map<string, string>& tags,
                       const CJobRun* run,
                       int run_num);
-    void x_PrintJobStat(const CJob&   job,
-                        unsigned      queue_run_timeout,
-                        CNcbiOstream& out,
-                        const char*   fsp = "\n",
-                        bool          fflag = true);
-    void x_PrintShortJobStat(const CJob&   job,
-                             CNcbiOstream& out,
-                             const char*   fsp = "\t");
+    void x_PrintJobStat(CNetScheduleHandler &   handler,
+                        const CJob&             job,
+                        unsigned                queue_run_timeout);
+    void x_PrintShortJobStat(CNetScheduleHandler &  handler,
+                             const CJob&            job);
+    void x_LogSubmit(const CJob &   job,
+                     unsigned int   batch_id,
+                     bool           separate_request);
 
 private:
     friend class CQueueGuard;
@@ -795,6 +796,7 @@ private:
     CNetSchedule_AccessList      m_WnodeHosts;
 
     CNetScheduleKeyGenerator     m_KeyGenerator;
+    bool                         m_IsLog;
 };
 
 

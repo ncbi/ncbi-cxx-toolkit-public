@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "ns_util.hpp"
+#include "ns_queue.hpp"
 #include <util/bitset/bmalgo.h>
 #include <connect/ncbi_socket.hpp>
 
@@ -79,6 +80,18 @@ string NS_EncodeBitVector(TNSBitVector& bv)
         str += NStr::UIntToString(id);
     }
     return str;
+}
+
+
+list<string>  BitVectorToJobKeys(const CQueue *        queue,
+                                 const TNSBitVector &  bv)
+{
+    list<string>    result;
+
+    TNSBitVector::enumerator    en(bv.first());
+    for (; en.valid(); ++en)
+        result.push_back(queue->MakeKey(*en));
+    return result;
 }
 
 

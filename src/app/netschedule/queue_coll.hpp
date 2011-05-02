@@ -243,9 +243,7 @@ struct SNSDBEnvironmentParams
 class CQueueDataBase
 {
 public:
-    CQueueDataBase(CBackgroundHost& host,
-                   CRequestExecutor& executor,
-                   CNetScheduleServer* server);
+    CQueueDataBase(CNetScheduleServer* server);
     ~CQueueDataBase();
 
     /// @param params

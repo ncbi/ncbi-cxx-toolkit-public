@@ -123,31 +123,6 @@ private:
 };
 
 
-class CRequestContextGuard
-{
-public:
-    CRequestContextGuard();
-    ~CRequestContextGuard();
-
-private:
-    CRequestContext*        m_Ctx;
-};
-
-
-class CRequestContextSubmitGuard
-{
-public:
-    CRequestContextSubmitGuard(CNetScheduleServer*  server,
-                               const string&        client_ip,
-                               const string&        session_id);
-    ~CRequestContextSubmitGuard();
-
-private:
-    CNetScheduleServer*     m_Server;
-    CRequestContext*        m_Ctx;
-};
-
-
 /// Special guard to properly initialize and de-initialize diagnostics
 class CDiagnosticsGuard
 {

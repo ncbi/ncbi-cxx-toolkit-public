@@ -106,50 +106,6 @@ void CNSRequestContextFactory::Return(CRequestContext* req_ctx)
 
 
 //////////////////////////////////////////////////////////////////////////
-// CRequestContextGuard implementation
-
-CRequestContextGuard::CRequestContextGuard()
-{
-    m_Ctx = &CDiagContext::GetRequestContext();
-}
-
-CRequestContextGuard::~CRequestContextGuard()
-{
-    CRequestContext* ctx = &CDiagContext::GetRequestContext();
-    if (ctx != m_Ctx)
-        CDiagContext::SetRequestContext(m_Ctx);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// CRequestContextSubmitGuard implementation
-
-CRequestContextSubmitGuard::CRequestContextSubmitGuard(
-                                        CNetScheduleServer* server,
-                                        const string&       client_ip,
-                                        const string&       session_id)
-      : m_Server(server)
-{
-    m_Ctx = &CDiagContext::GetRequestContext();
-    CRequestContext* ctx = m_Server->GetRequestContextFromPool();
-    if (!client_ip.empty())
-        ctx->SetClientIP(client_ip);
-    ctx->SetSessionID(session_id);
-    ctx->SetRequestID(CRequestContext::GetNextRequestID());
-    CDiagContext::SetRequestContext(ctx);
-}
-
-CRequestContextSubmitGuard::~CRequestContextSubmitGuard()
-{
-    CRequestContext* ctx = &CDiagContext::GetRequestContext();
-    if (ctx != m_Ctx) {
-        CDiagContext::SetRequestContext(m_Ctx);
-        m_Server->ReturnRequestContextToPool(ctx);
-    }
-}
-
-
-//////////////////////////////////////////////////////////////////////////
 // CDiagnosticsGuard implementation
 
 CDiagnosticsGuard::CDiagnosticsGuard(CNetScheduleHandler*  handler)

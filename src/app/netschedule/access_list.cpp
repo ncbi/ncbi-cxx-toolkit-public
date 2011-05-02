@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 
 #include "access_list.hpp"
+#include "ns_handler.hpp"
 
 #include <connect/ncbi_socket.hpp>
 
@@ -81,15 +82,13 @@ void CNetSchedule_AccessList::SetHosts(const string& host_names)
 }
 
 
-void CNetSchedule_AccessList::PrintHosts(CNcbiOstream & out) const
+void CNetSchedule_AccessList::PrintHosts(CNetScheduleHandler &  handler) const
 {
-    CReadLockGuard guard(m_Lock);
-
+    CReadLockGuard          guard(m_Lock);
     THostVector::enumerator en(m_Hosts.first());
+
     for(; en.valid(); ++en) {
-        unsigned ha = *en;
-        string host = CSocketAPI::gethostbyaddr(ha);
-        out << host << "\n";
+        handler.WriteMessage("OK:", CSocketAPI::gethostbyaddr(*en));
     }
 }
 

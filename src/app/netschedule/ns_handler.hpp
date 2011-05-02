@@ -75,23 +75,14 @@ public:
     virtual void      OnOverflow(EOverflowReason reason);
     virtual void      OnMessage(BUF buffer);
 
-    void x_WriteMessage(CTempString prefix, CTempString msg);
-    void x_WriteMessageNoThrow(CTempString  prefix, CTempString msg);
-
-    void WriteMsg(const char*           prefix,
-                  const std::string&    msg = kEmptyStr,
-                  bool                  interim = false);
-    // Write "OK:message", differs in logging with WriteOK
-    // it is logged as Extra not to end the request prematurely.
-    void WriteInterim(const std::string& msg = kEmptyStr);
-    void WriteOK(const std::string& msg = kEmptyStr);
-    void WriteErr(const std::string& msg = kEmptyStr);
-
     /// Init diagnostics Client IP and Session ID for proper logging
     void InitDiagnostics(void);
     /// Reset diagnostics Client IP and Session ID to avoid logging
     /// not related to the request
     void ResetDiagnostics(void);
+
+    /// Writes a message to the socket
+    void WriteMessage(CTempString prefix, CTempString msg);
 
     /// Statuses of commands to be set in diagnostics' request context
     /// Additional statuses can be taken from
@@ -116,15 +107,12 @@ private:
     void x_ProcessMsgQueue(BUF buffer);
     void x_ProcessMsgRequest(BUF buffer);
     // Message processing for ProcessSubmitBatch phases
-    void ProcessMsgBatchHeader(BUF buffer);
-    void ProcessMsgBatchJob(BUF buffer);
-    void ProcessMsgBatchSubmit(BUF buffer);
+    void x_ProcessMsgBatchHeader(BUF buffer);
+    void x_ProcessMsgBatchJob(BUF buffer);
+    void x_ProcessMsgBatchSubmit(BUF buffer);
 
-    // Monitoring
-    bool IsMonitoring() const;
-    /// Send string to monitor
-    void MonitorPost(const std::string& msg);
-
+    void x_SetQuickAcknowledge(void);
+    void x_WriteMessageNoThrow(CTempString  prefix, CTempString msg);
 
 public:
     enum ENSAccess {
@@ -150,74 +138,66 @@ public:
 
     typedef void (CNetScheduleHandler::*FProcessor)(CQueue*);
     struct SCommandExtra {
-        FProcessor    processor;
-        TNSClientRole role;
+        FProcessor          processor;
+        TNSClientRole       role;
     };
     typedef SNSProtoCmdDef<SCommandExtra>      SCommandMap;
     typedef SNSProtoParsedCmd<SCommandExtra>   SParsedCmd;
     typedef CNetServProtoParser<SCommandExtra> TProtoParser;
 
 private:
-    static SCommandMap          sm_CommandMap[];
-    static SCommandMap          sm_BatchHeaderMap[];
-    static SCommandMap          sm_BatchEndMap[];
-    static SNSProtoArgument     sm_BatchArgs[];
-
-    void ProcessError(const CException& ex);
 
     // Command processors
-    void ProcessFastStatusS(CQueue*);
-    void ProcessFastStatusW(CQueue*);
-    void ProcessSubmit(CQueue*);
-    void ProcessSubmitBatch(CQueue*);
-    void ProcessBatchStart(CQueue*);
-    void ProcessBatchSequenceEnd(CQueue*);
-    void ProcessCancel(CQueue*);
-    void ProcessStatus(CQueue*);
-    void ProcessGetJob(CQueue*);
-    void ProcessWaitGet(CQueue*);
-    void ProcessPut(CQueue*);
-    void ProcessJobExchange(CQueue*);
-    void ProcessPutMessage(CQueue*);
-    void ProcessGetMessage(CQueue*);
-    void ProcessForceReschedule(CQueue*);
-    void ProcessPutFailure(CQueue*);
-    void ProcessDropQueue(CQueue*);
-    void ProcessReturn(CQueue*);
-    void ProcessJobRunTimeout(CQueue*);
-    void ProcessJobDelayExpiration(CQueue*);
-    void ProcessDropJob(CQueue*);
-    void ProcessStatistics(CQueue*);
-    void ProcessStatusSnapshot(CQueue*);
-    void ProcessMonitor(CQueue*);
-    void ProcessReloadConfig(CQueue*);
-    void ProcessActiveCount(CQueue*);
-    void ProcessDump(CQueue*);
-    void ProcessPrintQueue(CQueue*);
-    void ProcessShutdown(CQueue*);
-    void ProcessVersion(CQueue*);
-    void ProcessRegisterClient(CQueue*);
-    void ProcessUnRegisterClient(CQueue*);
-    void ProcessQList(CQueue*);
-    void ProcessLog(CQueue*);
-    void ProcessQuitSession(CQueue*);
-    void ProcessCreateQueue(CQueue*);
-    void ProcessDeleteQueue(CQueue*);
-    void ProcessQueueInfo(CQueue*);
-    void ProcessQuery(CQueue*);
-    void ProcessSelectQuery(CQueue*);
-    void ProcessGetParam(CQueue*);
-    void ProcessGetConfiguration(CQueue*);
-    void ProcessReading(CQueue*);
-    void ProcessConfirm(CQueue*);
-    void ProcessReadFailed(CQueue*);
-    void ProcessReadRollback(CQueue*);
-    void ProcessGetAffinityList(CQueue*);
-    void ProcessInitWorkerNode(CQueue*);
-    void ProcessClearWorkerNode(CQueue*);
+    void x_ProcessFastStatusS(CQueue*);
+    void x_ProcessFastStatusW(CQueue*);
+    void x_ProcessSubmit(CQueue*);
+    void x_ProcessSubmitBatch(CQueue*);
+    void x_ProcessBatchStart(CQueue*);
+    void x_ProcessBatchSequenceEnd(CQueue*);
+    void x_ProcessCancel(CQueue*);
+    void x_ProcessStatus(CQueue*);
+    void x_ProcessGetJob(CQueue*);
+    void x_ProcessWaitGet(CQueue*);
+    void x_ProcessPut(CQueue*);
+    void x_ProcessJobExchange(CQueue*);
+    void x_ProcessPutMessage(CQueue*);
+    void x_ProcessGetMessage(CQueue*);
+    void x_ProcessForceReschedule(CQueue*);
+    void x_ProcessPutFailure(CQueue*);
+    void x_ProcessDropQueue(CQueue*);
+    void x_ProcessReturn(CQueue*);
+    void x_ProcessJobDelayExpiration(CQueue*);
+    void x_ProcessDropJob(CQueue*);
+    void x_ProcessStatistics(CQueue*);
+    void x_ProcessStatusSnapshot(CQueue*);
+    void x_ProcessReloadConfig(CQueue*);
+    void x_ProcessActiveCount(CQueue*);
+    void x_ProcessDump(CQueue*);
+    void x_ProcessPrintQueue(CQueue*);
+    void x_ProcessShutdown(CQueue*);
+    void x_ProcessVersion(CQueue*);
+    void x_ProcessRegisterClient(CQueue*);
+    void x_ProcessUnRegisterClient(CQueue*);
+    void x_ProcessQList(CQueue*);
+    void x_ProcessQuitSession(CQueue*);
+    void x_ProcessCreateQueue(CQueue*);
+    void x_ProcessDeleteQueue(CQueue*);
+    void x_ProcessQueueInfo(CQueue*);
+    void x_ProcessQuery(CQueue*);
+    void x_ProcessSelectQuery(CQueue*);
+    void x_ProcessGetParam(CQueue*);
+    void x_ProcessGetConfiguration(CQueue*);
+    void x_ProcessReading(CQueue*);
+    void x_ProcessConfirm(CQueue*);
+    void x_ProcessReadFailed(CQueue*);
+    void x_ProcessReadRollback(CQueue*);
+    void x_ProcessGetAffinityList(CQueue*);
+    void x_ProcessInitWorkerNode(CQueue*);
+    void x_ProcessClearWorkerNode(CQueue*);
+    void x_CmdNotImplemented(CQueue*);
 
     // Delayed output handlers
-    void WriteProjection();
+    void x_WriteProjection();
 
 private:
     CRef<CQueue> GetQueue(void) {
@@ -227,34 +207,23 @@ private:
         NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue deleted");
     }
 
-    static
-    void x_ParseTags(const std::string& strtags, TNSTagList& tags);
-    static
-    std::string x_SerializeBitVector(TNSBitVector& bv);
-    static
-    TNSBitVector x_DeserializeBitVector(const std::string& s);
-
-    void x_MonitorJob(const CJob& job);
-
+    static void x_ParseTags(const std::string& strtags, TNSTagList& tags);
+    static std::string x_SerializeBitVector(TNSBitVector &  bv);
+    static TNSBitVector x_DeserializeBitVector(const std::string& s);
 
     bool x_CheckVersion(void);
     void x_CheckAccess(TNSClientRole role);
     void x_AccessViolationMessage(unsigned deficit, std::string& msg);
-    SParsedCmd x_ParseCommand(CTempString command);
     // Moved from CNetScheduleServer
-    void x_MakeLogMessage(std::string&       lmsg,
-                          const std::string& op,
-                          const std::string& text);
-    void x_MakeGetAnswer(CQueue* q, const CJob& job);
     void x_StatisticsNew(CQueue* q, const std::string& what, time_t curr);
 
     void x_PrintRequestStart(const SParsedCmd& cmd);
     void x_PrintRequestStart(CTempString  msg);
     void x_PrintRequestStop(EHTTPStatus  status);
 
+    std::string  x_FormGetJobResponse(const CQueue* q, const CJob& job) const;
+
     // Data
-    std::string                     m_Request;
-    std::string                     m_Answer;
     size_t                          m_MsgBufferSize;
     char*                           m_MsgBuffer;
 
@@ -269,13 +238,13 @@ private:
     std::string                     m_QueueName;
     CWeakRef<CQueue>                m_QueueRef;
     SJS_Request                     m_JobReq;
+
     // Incapabilities - that is combination of ENSAccess
     // rights, which can NOT be performed by this connection
     unsigned                        m_Incaps;
     unsigned                        m_Unreported;
     bool                            m_VersionControl;
-    // Unique command number for relating command and reply
-    unsigned                        m_CommandNumber;
+
     // Phase of connection - login, queue, command, batch submit etc.
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
     // Delayed output processor
@@ -304,8 +273,14 @@ private:
     // default per-thread mechanism.
     CRef<CNSRequestContextFactory>  m_RequestContextFactory;
 
-    /// Parser for incoming commands
-    TProtoParser                    m_ReqParser;
+
+    /// Parsers for incoming commands and their parser tables
+    TProtoParser                    m_SingleCmdParser;
+    static SCommandMap              sm_CommandMap[];
+    TProtoParser                    m_BatchHeaderParser;
+    static SCommandMap              sm_BatchHeaderMap[];
+    TProtoParser                    m_BatchEndParser;
+    static SCommandMap              sm_BatchEndMap[];
 
 
     /// Diagnostics context for the current connection

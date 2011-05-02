@@ -194,10 +194,7 @@ int CNetScheduleDApp::Run(void)
         // two transactions per thread should be enough
         bdb_params.max_trans = params.max_threads * 2;
 
-        auto_ptr<CQueueDataBase> qdb(
-            new CQueueDataBase(server->GetBackgroundHost(),
-                               server->GetRequestExecutor(),
-                               server.get()));
+        auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get()));
 
         LOG_POST("Mounting database at " << bdb_params.db_path);
 

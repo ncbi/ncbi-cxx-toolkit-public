@@ -45,6 +45,9 @@
 
 BEGIN_NCBI_SCOPE
 
+class CNetScheduleHandler;
+
+
 /// List of hosts allowed
 ///
 /// @internal
@@ -64,7 +67,7 @@ public:
     /// Delimited lists of hosts allowed into the system
     void SetHosts(const string& host_names);
 
-    void PrintHosts(CNcbiOstream & out) const;
+    void PrintHosts(CNetScheduleHandler &  handler) const;
     string Print(const char* sep=",") const;
 
 private:

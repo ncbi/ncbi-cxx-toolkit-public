@@ -35,6 +35,7 @@
 #include "ns_util.hpp"
 #include "ns_format.hpp"
 #include "ns_server.hpp"
+#include "ns_handler.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -337,7 +338,8 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_LogAccessViolations(true),
     m_LogJobState(0),
     m_KeepAffinity(false),
-    m_KeyGenerator(server->GetHost(), server->GetPort())
+    m_KeyGenerator(server->GetHost(), server->GetPort()),
+    m_IsLog(server->IsLog())
 {
     _ASSERT(!queue_name.empty());
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
@@ -585,54 +587,76 @@ unsigned CQueue::LoadStatusMatrix()
 }
 
 
-static void s_LogSubmit(CQueue&            q,
-                        CJob&              job,
-                        SQueueDescription& qdesc)
+// Used to log a job submit.
+// if separate_request == true => it was a bach submit and batch_id should also
+// be logged.
+void CQueue::x_LogSubmit(const CJob &   job,
+                         unsigned int   batch_id,
+                         bool           separate_request)
 {
-    CRequestContext& ctx = CDiagContext::GetRequestContext();
-    if (!job.GetClientIP().empty())
-        ctx.SetClientIP(job.GetClientIP());
-    ctx.SetSessionID(job.GetClientSID());
+    if (!m_IsLog)
+        return;
+
+    CRef<CRequestContext>   current_context(& CDiagContext::GetRequestContext());
+
+    if (separate_request) {
+        CRequestContext *   ctx(new CRequestContext());
+        ctx->SetRequestID();
+        GetDiagContext().SetRequestContext(ctx);
+        GetDiagContext().PrintRequestStart()
+                        .Print("_type", "cmd")
+                        .Print("cmd", "BTCH-SUBMIT")
+                        .Print("batch_id", NStr::UIntToString(batch_id));
+        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    }
 
     CDiagContext_Extra extra = GetDiagContext().Extra()
-        .Print("action", "submit")
-        .Print("queue", q.GetQueueName())
-        .Print("job_id", NStr::UIntToString(job.GetId()))
+        .Print("job_key", MakeKey(job.GetId()))
+        .Print("queue", GetQueueName())
         .Print("input", job.GetInput())
         .Print("aff", job.GetAffinityToken())
         .Print("mask", NStr::UIntToString(job.GetMask()))
-        .Print("progress_msg", job.GetProgressMsg())
-        .Print("subm_addr", FormatHostName(job.GetSubmAddr(), &qdesc))
+        .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
         .Print("subm_port", NStr::UIntToString(job.GetSubmPort()))
-        .Print("subm_timeout", NStr::UIntToString(job.GetSubmTimeout()));
+        .Print("subm_timeout", NStr::UIntToString(job.GetSubmTimeout()))
+        .Print("timeout", NStr::UIntToString(job.GetTimeout()))
+        .Print("run_timeout", NStr::UIntToString(job.GetRunTimeout()));
     ITERATE(TNSTagList, it, job.GetTags()) {
-        extra.Print(string("tag_")+it->first, it->second);
+        extra.Print("tag_" + it->first, it->second);
+    }
+    extra.Flush();
+
+    const string &  progress_msg = job.GetProgressMsg();
+    if (!progress_msg.empty())
+        extra.Print("progress_msg", progress_msg);
+
+    if (separate_request) {
+        GetDiagContext().PrintRequestStop();
+        GetDiagContext().SetRequestContext(current_context);
     }
 }
 
 
-unsigned CQueue::Submit(CJob& job)
+unsigned CQueue::Submit(CJob &  job)
 {
-    unsigned max_input_size;
-    unsigned log_job_state;
+    unsigned    max_input_size;
+
     {{
-        CQueueParamAccessor qp(*this);
-        log_job_state = qp.GetLogJobState();
+        CQueueParamAccessor     qp(*this);
         max_input_size = qp.GetMaxInputSize();
     }}
+
     if (job.GetInput().size() > max_input_size)
-        NCBI_THROW(CNetScheduleException, eDataTooLong,
-        "Input is too long");
+        NCBI_THROW(CNetScheduleException, eDataTooLong, "Input is too long");
 
-    bool was_empty = !m_StatusTracker.AnyPending();
+    bool        was_empty = !m_StatusTracker.AnyPending();
+    unsigned    job_id = GetNextId();
 
-    unsigned job_id = GetNextId();
     job.SetId(job_id);
     job.SetTimeSubmit(time(0));
 
     // Special treatment for system job masks
-    unsigned mask = job.GetMask();
-    if (mask & CNetScheduleAPI::eOutOfOrder)
+    if (job.GetMask() & CNetScheduleAPI::eOutOfOrder)
     {
         // NOT IMPLEMENTED YET: put job id into OutOfOrder list.
         // The idea is that there can be an urgent job, which
@@ -641,17 +665,19 @@ unsigned CQueue::Submit(CJob& job)
         // CNetScheduleAPI::EJobMask in file netschedule_api.hpp
     }
 
-    unsigned affinity_id;
+    unsigned    affinity_id;
     {{
-        CNS_Transaction trans(this);
-        CAffinityDictGuard aff_dict_guard(GetAffinityDict(), trans);
+        CNS_Transaction     trans(this);
+        CAffinityDictGuard  aff_dict_guard(GetAffinityDict(), trans);
+
         job.CheckAffinityToken(aff_dict_guard);
         affinity_id = job.GetAffinityId();
         trans.Commit();
     }}
-    CNS_Transaction trans(this);
+
+    CNS_Transaction     trans(this);
     {{
-        CQueueGuard guard(this, &trans);
+        CQueueGuard     guard(this, &trans);
 
         job.Flush(this);
         // TODO: move event count to Flush
@@ -663,76 +689,55 @@ unsigned CQueue::Submit(CJob& job)
             AddJobsToAffinity(trans, affinity_id, job_id);
 
         // update tags
-        CNSTagMap tag_map;
+        CNSTagMap   tag_map;
         AppendTags(tag_map, job.GetTags(), job_id);
         FlushTags(tag_map, trans);
     }}
 
     trans.Commit();
+    x_LogSubmit(job, 0, false);
     m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
-    if (log_job_state >= 1) {
-        CRequestContext rq;
-        rq.SetRequestID(CRequestContext::GetNextRequestID());
-        CDiagContext::SetRequestContext(&rq);
 
-        SQueueDescription qdesc;
-        s_LogSubmit(*this, job, qdesc);
-        CDiagContext::SetRequestContext(0);
-    }
-    if (was_empty) NotifyListeners(true, affinity_id);
-
+    if (was_empty)
+        NotifyListeners(true, affinity_id);
     return job_id;
 }
 
 
 unsigned CQueue::SubmitBatch(vector<CJob>& batch)
 {
-    unsigned max_input_size;
-    unsigned log_job_state;
+    unsigned    max_input_size;
+    unsigned    job_id = GetNextIdBatch(batch.size());
+
     {{
-        CQueueParamAccessor qp(*this);
-        log_job_state = qp.GetLogJobState();
+        CQueueParamAccessor     qp(*this);
         max_input_size = qp.GetMaxInputSize();
     }}
 
-    SQueueDescription qdesc;
 
-    CRequestContext rq;
-    if (log_job_state >= 1) {
-        rq.SetRequestID(CRequestContext::GetNextRequestID());
-        CDiagContext::SetRequestContext(&rq);
-
-        GetDiagContext().PrintRequestStart()
-            .Print("action", "submit_batch")
-            .Print("size", NStr::UIntToString(batch.size()));
-    }
-
-    bool was_empty = !m_StatusTracker.AnyPending();
-
-    unsigned job_id = GetNextIdBatch(batch.size());
-
-    unsigned batch_aff_id = 0; // if batch comes with the same affinity
-    bool     batch_has_aff = false;
+    bool        was_empty = !m_StatusTracker.AnyPending();
+    unsigned    batch_aff_id = 0; // if batch comes with the same affinity
+    bool        batch_has_aff = false;
 
     // process affinity ids
     {{
-        CNS_Transaction trans(this);
-        CAffinityDictGuard aff_dict_guard(GetAffinityDict(), trans);
+        CNS_Transaction     trans(this);
+        CAffinityDictGuard  aff_dict_guard(GetAffinityDict(), trans);
         for (unsigned i = 0; i < batch.size(); ++i) {
-            CJob& job = batch[i];
+            CJob &      job = batch[i];
             if (job.GetAffinityId() == (unsigned)kMax_I4) { // take prev. token
                 _ASSERT(i > 0);
-                unsigned prev_aff_id = 0;
+                unsigned    prev_aff_id = 0;
                 if (i > 0) {
                     prev_aff_id = batch[i-1].GetAffinityId();
                     if (!prev_aff_id) {
                         prev_aff_id = 0;
                         LOG_POST(Warning << "Reference to empty previous "
-                            "affinity token");
+                                            "affinity token");
                     }
                 } else {
                     LOG_POST(Warning << "First job in batch cannot have "
-                        "reference to previous affinity token");
+                                        "reference to previous affinity token");
                 }
                 job.SetAffinityId(prev_aff_id);
             } else {
@@ -749,55 +754,50 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
         trans.Commit();
     }}
 
-    CNS_Transaction trans(this);
+    CNS_Transaction     trans(this);
     {{
-        CNSTagMap tag_map;
-        CQueueGuard guard(this, &trans);
+        CNSTagMap       tag_map;
+        CQueueGuard     guard(this, &trans);
+        unsigned        job_id_cnt = job_id;
+        int             aux_inserts = 0;
 
-        unsigned job_id_cnt = job_id;
-        time_t now = time(0);
-        int aux_inserts = 0;
         NON_CONST_ITERATE(vector<CJob>, it, batch) {
             if (it->GetInput().size() > max_input_size)
                 NCBI_THROW(CNetScheduleException, eDataTooLong,
-                "Input is too long");
-            unsigned cur_job_id = job_id_cnt++;
+                           "Input is too long");
+
+            unsigned    cur_job_id = job_id_cnt++;
             it->SetId(cur_job_id);
-            it->SetTimeSubmit(now);
+            it->SetTimeSubmit(time(0));
             it->Flush(this);
 
             AppendTags(tag_map, it->GetTags(), cur_job_id);
-            if (log_job_state >= 2) {
-                s_LogSubmit(*this, *it, qdesc);
-            }
         }
-        CountEvent(CQueue::eStatDBWriteEvent,
-            batch.size() + aux_inserts);
+        CountEvent(CQueue::eStatDBWriteEvent, batch.size() + aux_inserts);
 
         // Store the affinity index
         if (batch_has_aff) {
             if (batch_aff_id) {  // whole batch comes with the same affinity
-                AddJobsToAffinity(trans,
-                    batch_aff_id,
-                    job_id,
-                    job_id + batch.size() - 1);
-            } else {
+                AddJobsToAffinity(trans, batch_aff_id, job_id,
+                                  job_id + batch.size() - 1);
+            } else
                 AddJobsToAffinity(trans, batch);
-            }
         }
         FlushTags(tag_map, trans);
     }}
     trans.Commit();
-    m_StatusTracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
-    if (log_job_state >= 1) {
-        GetDiagContext().PrintRequestStop();
-        CDiagContext::SetRequestContext(0);
+
+    ITERATE(vector<CJob>, it, batch) {
+        x_LogSubmit(*it, job_id, true);
     }
+
+    m_StatusTracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
 
     // This case is a bit complicated. If whole batch has the same
     // affinity, we include it in notification broadcast.
     // If not, or it has no affinity at all - 0.
-    if (was_empty) NotifyListeners(true, batch_aff_id);
+    if (was_empty)
+        NotifyListeners(true, batch_aff_id);
 
     return job_id;
 }
@@ -2566,15 +2566,15 @@ void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 }
 
 
-void CQueue::PrintWorkerNodeStat(CNcbiOstream& out,
-                                 time_t curr,
-                                 EWNodeFormat fmt) const
+void CQueue::PrintWorkerNodeStat(CNetScheduleHandler &  handler,
+                                 time_t                 curr,
+                                 EWNodeFormat           fmt) const
 {
-    list<TWorkerNodeRef> nodes;
+    list<TWorkerNodeRef>        nodes;
+
     m_WorkerNodeList.GetNodes(curr, nodes);
     ITERATE(list<TWorkerNodeRef>, it, nodes) {
-        const CWorkerNode* wn = *it;
-        out << wn->AsString(curr, fmt) << "\n";
+        handler.WriteMessage("OK:", (*it)->AsString(curr, fmt));
     }
 }
 
@@ -3177,17 +3177,17 @@ void CQueue::MonitorPost(const string& msg)
 }
 
 
-void CQueue::PrintSubmHosts(CNcbiOstream& out) const
+void CQueue::PrintSubmHosts(CNetScheduleHandler &  handler) const
 {
-    CQueueParamAccessor qp(*this);
-    qp.GetSubmHosts().PrintHosts(out);
+    CQueueParamAccessor     qp(*this);
+    qp.GetSubmHosts().PrintHosts(handler);
 }
 
 
-void CQueue::PrintWNodeHosts(CNcbiOstream& out) const
+void CQueue::PrintWNodeHosts(CNetScheduleHandler &  handler) const
 {
-    CQueueParamAccessor qp(*this);
-    qp.GetWnodeHosts().PrintHosts(out);
+    CQueueParamAccessor     qp(*this);
+    qp.GetWnodeHosts().PrintHosts(handler);
 }
 
 
@@ -3197,173 +3197,189 @@ void CQueue::PrintJobStatusMatrix(CNcbiOstream& out) const
 }
 
 
-#define NS_PRINT_TIME(msg, t) \
-do \
-{ time_t tt = t; \
-    CTime _t(tt); _t.ToLocalTime(); \
-    out << msg << (tt ? _t.AsString() : kEmptyStr) << fsp; \
+#define NS_PRINT_TIME(field, t) \
+do { \
+    if (t == 0) \
+        handler.WriteMessage("OK:", field); \
+    else { \
+        CTime   _t(t); \
+        _t.ToLocalTime(); \
+        handler.WriteMessage("OK:", field + _t.AsString()); \
+    } \
 } while(0)
 
-#define NS_PFNAME(x_fname) \
-    (fflag ? x_fname : "")
 
-void CQueue::x_PrintJobStat(const CJob&   job,
-                            unsigned      queue_run_timeout,
-                            CNcbiOstream& out,
-                            const char*   fsp,
-                            bool          fflag)
+void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
+                            const CJob &            job,
+                            unsigned                queue_run_timeout)
 {
-    out << fsp << NS_PFNAME("id: ") << job.GetId() << fsp;
-    TJobStatus status = job.GetStatus();
-    out << NS_PFNAME("status: ") << CNetScheduleAPI::StatusToString(status)
-        << fsp;
+    const CJobRun *     last_run = job.GetLastRun();
+    unsigned            run_timeout = job.GetRunTimeout();
+    unsigned            subm_addr = job.GetSubmAddr();
+    unsigned            aff_id = job.GetAffinityId();
 
-    const CJobRun* last_run = job.GetLastRun();
 
-    NS_PRINT_TIME(NS_PFNAME("time_submit: "), job.GetTimeSubmit());
+    handler.WriteMessage("OK:", "id: " + NStr::IntToString(job.GetId()));
+    handler.WriteMessage("OK:", "key: " + MakeKey(job.GetId()));
+    handler.WriteMessage("OK:", "status: " +
+                                CNetScheduleAPI::StatusToString(job.GetStatus()));
+
+    NS_PRINT_TIME("time_submit: ", job.GetTimeSubmit());
     if (last_run) {
-        NS_PRINT_TIME(NS_PFNAME("time_start: "), last_run->GetTimeStart());
-        NS_PRINT_TIME(NS_PFNAME("time_done: "), last_run->GetTimeDone());
+        NS_PRINT_TIME("time_start: ", last_run->GetTimeStart());
+        NS_PRINT_TIME("time_done: ", last_run->GetTimeDone());
     }
 
-    out << NS_PFNAME("timeout: ") << job.GetTimeout() << fsp;
-    unsigned run_timeout = job.GetRunTimeout();
-    out << NS_PFNAME("run_timeout: ") << run_timeout << fsp;
+    handler.WriteMessage("OK:", "timeout: " +
+                                NStr::IntToString(job.GetTimeout()));
+    handler.WriteMessage("OK:", "run_timeout: " +
+                                NStr::IntToString(run_timeout));
 
     if (last_run) {
-        if (run_timeout == 0) run_timeout = queue_run_timeout;
+        if (run_timeout == 0)
+            run_timeout = queue_run_timeout;
         time_t exp_time =
             run_timeout == 0 ? 0 : last_run->GetTimeStart() + run_timeout;
-        NS_PRINT_TIME(NS_PFNAME("time_run_expire: "), exp_time);
+        NS_PRINT_TIME("time_run_expire: ", exp_time);
     }
 
-    unsigned subm_addr = job.GetSubmAddr();
-    out << NS_PFNAME("subm_addr: ")
-        << (subm_addr ? CSocketAPI::gethostbyaddr(subm_addr) : kEmptyStr) << fsp;
-    out << NS_PFNAME("subm_port: ") << job.GetSubmPort() << fsp;
-    out << NS_PFNAME("subm_timeout: ") << job.GetSubmTimeout() << fsp;
-
-    int node_num = 1;
-    ITERATE(vector<CJobRun>, it, job.GetRuns()) {
-        unsigned addr = it->GetNodeAddr();
-        string node_name = "worker_node" + NStr::IntToString(node_num++) + ": ";
-        out << NS_PFNAME(node_name)
-            << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
-    }
-
-    out << NS_PFNAME("run_counter: ") << job.GetRunCount() << fsp;
-    if (last_run)
-        out << NS_PFNAME("ret_code: ") << last_run->GetRetCode() << fsp;
-
-    unsigned aff_id = job.GetAffinityId();
-    if (aff_id) {
-        out << NS_PFNAME("aff_token: ") << "'" << job.GetAffinityToken()
-            << "'" << fsp;
-    }
-    out << NS_PFNAME("aff_id: ") << aff_id << fsp;
-    out << NS_PFNAME("mask: ") << job.GetMask() << fsp;
-
-    out << NS_PFNAME("input: ") << job.GetQuotedInput() << fsp;
-    out << NS_PFNAME("output: ") << job.GetQuotedOutput() << fsp;
-    if (last_run) {
-        out << NS_PFNAME("err_msg: ")
-            << last_run->GetQuotedErrorMsg() << fsp;
-    }
-    out << NS_PFNAME("progress_msg: ")
-        << "'" << job.GetProgressMsg() << "'" << fsp;
-    out << "\n";
-}
-
-
-void CQueue::x_PrintShortJobStat(const CJob&   job,
-                                 CNcbiOstream& out,
-                                 const char*   fsp)
-{
-    out << MakeKey(job.GetId()) << fsp;
-    TJobStatus status = job.GetStatus();
-    out << CNetScheduleAPI::StatusToString(status) << fsp;
-
-    out << job.GetQuotedInput() << fsp;
-    out << job.GetQuotedOutput() << fsp;
-    const CJobRun* last_run = job.GetLastRun();
-    if (last_run)
-        out << last_run->GetQuotedErrorMsg() << fsp;
+    if (subm_addr == 0)
+        handler.WriteMessage("OK:", "subm_addr: ");
     else
-        out << "''" << fsp;
+        handler.WriteMessage("OK:", "subm_addr: " +
+                                    CSocketAPI::gethostbyaddr(subm_addr));
 
-    out << "\n";
+    handler.WriteMessage("OK:", "subm_port: " +
+                                NStr::IntToString(job.GetSubmPort()));
+    handler.WriteMessage("OK:", "subm_timeout: " +
+                                NStr::IntToString(job.GetSubmTimeout()));
+
+    int         node_num = 1;
+    ITERATE(vector<CJobRun>, it, job.GetRuns()) {
+        unsigned    addr = it->GetNodeAddr();
+        string      node_name = "worker_node" +
+                                NStr::IntToString(node_num++) + ": ";
+
+        if (addr == 0)
+            handler.WriteMessage("OK:", node_name);
+        else
+            handler.WriteMessage("OK:", node_name +
+                                        CSocketAPI::gethostbyaddr(addr));
+    }
+
+    handler.WriteMessage("OK:", "run_counter: " +
+                                NStr::IntToString(job.GetRunCount()));
+    if (last_run)
+        handler.WriteMessage("OK:", "ret_code: " +
+                                    NStr::IntToString(last_run->GetRetCode()));
+
+
+    if (aff_id)
+        handler.WriteMessage("OK:", "aff_token: '" +
+                                    job.GetAffinityToken() + "'");
+    handler.WriteMessage("OK:", "aff_id: " + NStr::IntToString(aff_id));
+    handler.WriteMessage("OK:", "mask: " + NStr::IntToString(job.GetMask()));
+
+    handler.WriteMessage("OK:", "input: " + job.GetQuotedInput());
+    handler.WriteMessage("OK:", "output: " + job.GetQuotedOutput());
+
+    if (last_run)
+        handler.WriteMessage("OK:", "err_msg: " +
+                                    last_run->GetQuotedErrorMsg());
+    handler.WriteMessage("OK:", "progress_msg: '" + job.GetProgressMsg() + "'");
+
+    ITERATE(TNSTagList, it, job.GetTags()) {
+        handler.WriteMessage("OK:", "tag_" + it->first + ": " + it->second);
+    }
 }
 
 
-void
-CQueue::PrintJobDbStat(unsigned      job_id,
-                       CNcbiOstream& out,
-                       TJobStatus    status)
+void CQueue::x_PrintShortJobStat(CNetScheduleHandler &  handler,
+                                 const CJob&            job)
 {
-    unsigned queue_run_timeout = GetRunTimeout();
+    string      reply = MakeKey(job.GetId()) + "\t" +
+                        CNetScheduleAPI::StatusToString(job.GetStatus()) + "\t" +
+                        job.GetQuotedInput() + "\t" +
+                        job.GetQuotedOutput() + "\t";
 
-    CJob job;
+    const CJobRun*  last_run = job.GetLastRun();
+    if (last_run)
+        reply += last_run->GetQuotedErrorMsg();
+    else
+        reply += "''";
+    handler.WriteMessage("OK:", reply);
+}
+
+
+size_t
+CQueue::PrintJobDbStat(CNetScheduleHandler &    handler,
+                       unsigned                 job_id,
+                       TJobStatus               status)
+{
+    size_t      print_count = 0;
+    unsigned    queue_run_timeout = GetRunTimeout();
+    CJob        job;
+
     if (status == CNetScheduleAPI::eJobNotFound) {
-        CQueueGuard guard(this);
-        CJob::EJobFetchResult res = job.Fetch(this, job_id);
+        CQueueGuard             guard(this);
+        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
 
         if (res == CJob::eJF_Ok) {
+            handler.WriteMessage("", "");
             job.FetchAffinityToken(this);
-            x_PrintJobStat(job, queue_run_timeout, out);
-        } else {
-            out << "Job not found id=" << DecorateJobId(job_id);
+            x_PrintJobStat(handler, job, queue_run_timeout);
+            ++print_count;
         }
-        out << "\n";
     } else {
-        TNSBitVector bv;
+        TNSBitVector    bv;
         JobsWithStatus(status, &bv);
 
         TNSBitVector::enumerator en(bv.first());
         for (;en.valid(); ++en) {
-            CQueueGuard guard(this);
-            CJob::EJobFetchResult res = job.Fetch(this, *en);
+            CQueueGuard             guard(this);
+            CJob::EJobFetchResult   res = job.Fetch(this, *en);
             if (res == CJob::eJF_Ok) {
+                handler.WriteMessage("", "");
                 job.FetchAffinityToken(this);
-                x_PrintJobStat(job, queue_run_timeout, out);
+                x_PrintJobStat(handler, job, queue_run_timeout);
+                ++print_count;
             }
         }
-        out << "\n";
     }
+    return print_count;
 }
 
 
-void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
+void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
 {
     unsigned queue_run_timeout = GetRunTimeout();
 
-    CJob job;
-    CQueueGuard guard(this);
+    CJob                job;
+    CQueueGuard         guard(this);
+    CQueueEnumCursor    cur(this);
 
-    CQueueEnumCursor cur(this);
     while (cur.Fetch() == eBDB_Ok) {
-        CJob::EJobFetchResult res = job.Fetch(this);
-        if (res == CJob::eJF_Ok) {
+        if (job.Fetch(this) == CJob::eJF_Ok) {
+            handler.WriteMessage("", "");
             job.FetchAffinityToken(this);
-            x_PrintJobStat(job, queue_run_timeout, out);
+            x_PrintJobStat(handler, job, queue_run_timeout);
         }
-        if (!out.good()) break;
     }
 }
 
 
-void CQueue::PrintQueue(CNcbiOstream& out,
-                        TJobStatus    job_status)
+void CQueue::PrintQueue(CNetScheduleHandler &   handler,
+                        TJobStatus              job_status)
 {
-    TNSBitVector bv;
-    JobsWithStatus(job_status, &bv);
+    TNSBitVector        bv;
+    CJob                job;
 
-    CJob job;
-    TNSBitVector::enumerator en(bv.first());
-    for (;en.valid(); ++en) {
-        CQueueGuard guard(this);
+    JobsWithStatus(job_status, &bv);
+    for (TNSBitVector::enumerator en(bv.first()); en.valid(); ++en) {
+        CQueueGuard     guard(this);
 
         if (job.Fetch(this, *en) == CJob::eJF_Ok)
-            x_PrintShortJobStat(job, out);
+            x_PrintShortJobStat(handler, job);
     }
 }
 

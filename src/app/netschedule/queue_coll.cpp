@@ -59,8 +59,7 @@ CQueueCollection::CQueueCollection(const CQueueDataBase& db) :
 
 
 CQueueCollection::~CQueueCollection()
-{
-}
+{}
 
 
 void CQueueCollection::Close()
@@ -72,13 +71,11 @@ void CQueueCollection::Close()
 
 CRef<CQueue> CQueueCollection::GetQueue(const string& name) const
 {
-    CReadLockGuard guard(m_Lock);
-    TQueueMap::const_iterator it = m_QMap.find(name);
-    if (it == m_QMap.end()) {
-        string msg = "Job queue not found: ";
-        msg += name;
-        NCBI_THROW(CNetScheduleException, eUnknownQueue, msg);
-    }
+    CReadLockGuard              guard(m_Lock);
+    TQueueMap::const_iterator   it = m_QMap.find(name);
+    if (it == m_QMap.end())
+        NCBI_THROW(CNetScheduleException, eUnknownQueue,
+                   "Job queue not found: " + name);
     return it->second;
 }
 
@@ -86,8 +83,7 @@ CRef<CQueue> CQueueCollection::GetQueue(const string& name) const
 bool CQueueCollection::QueueExists(const string& name) const
 {
     CReadLockGuard guard(m_Lock);
-    TQueueMap::const_iterator it = m_QMap.find(name);
-    return (it != m_QMap.end());
+    return (m_QMap.find(name) != m_QMap.end());
 }
 
 
@@ -239,9 +235,9 @@ string SNSDBEnvironmentParams::GetParamValue(unsigned n) const
 /////////////////////////////////////////////////////////////////////////////
 // CQueueDataBase implementation
 
-CQueueDataBase::CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor, CNetScheduleServer* server)
-: m_Host(host),
-  m_Executor(executor),
+CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server)
+: m_Host(server->GetBackgroundHost()),
+  m_Executor(server->GetRequestExecutor()),
   m_Env(0),
   m_QueueCollection(*this),
   m_StopPurge(false),
@@ -249,8 +245,7 @@ CQueueDataBase::CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor
   m_LastFreeMem(time(0)),
   m_UdpPort(0),
   m_Server(server)
-{
-}
+{}
 
 
 CQueueDataBase::~CQueueDataBase()
