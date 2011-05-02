@@ -23903,7 +23903,7 @@ done
    JDK_INCLUDE=''
    sep=''
    for x in $JNI_INCLUDE_DIRS; do
-      JDK_INCLUDE=-I$JDK_INCLUDE$sep$x
+      JDK_INCLUDE=$JDK_INCLUDE$sep-I$x
       sep=' '
    done
    { echo "$as_me:$LINENO: setting JDK_INCLUDE = $JDK_INCLUDE" >&5

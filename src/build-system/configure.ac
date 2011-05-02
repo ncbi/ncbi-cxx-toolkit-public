@@ -4215,7 +4215,7 @@ if test "${with_jni-no}" != "no"; then
    JDK_INCLUDE=''
    sep=''
    for x in $JNI_INCLUDE_DIRS; do
-      JDK_INCLUDE=-I$JDK_INCLUDE$sep$x
+      JDK_INCLUDE=$JDK_INCLUDE$sep-I$x
       sep=' '
    done
    AC_MSG_NOTICE([setting JDK_INCLUDE = $JDK_INCLUDE])
