@@ -116,9 +116,7 @@
 #define SEEKOFF         PUBSEEKOFF
 
 #include <string>
-
-// Once declared here
-#include <corelib/ncbi_base64.h>
+#include <stddef.h>
 
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
@@ -785,6 +783,9 @@ enum EBOMDiscard {
 NCBI_XNCBI_EXPORT
 EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
                                   EBOMDiscard   discard_bom);
+
+
+#include <corelib/ncbi_base64.h>
 
 
 END_NCBI_SCOPE
