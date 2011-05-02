@@ -13,8 +13,6 @@ logfile="Flat.configuration_log"
 relroot="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore"
 
 ptbname="project_tree_builder"
-# default path to project_tree_builder
-defptbpath="$NCBI/c++.metastable/Release/bin/"
 # release path to project_tree_builder
 relptbpath="$relroot/ptb/"
 # release path to datatool
@@ -124,9 +122,21 @@ fi
 #-----------------------------------------------------------------------------
 # find PTB
 if test $buildptb = "no"; then
-  ptb="$PREBUILT_PTB_EXE"
-  if test -x "$ptb"; then
-    echo "Using $ptbname at $ptb"
+  if test "$PREBUILT_PTB_EXE" = "bootstrap"; then
+    ptb="$builddir/build-system/project_tree_builder/$ptbname"
+    if test ! -x "$ptb"; then
+      echo "$ptbname is not found at $ptb"
+      echo "Will build $ptbname locally"
+      buildptb="yes"
+    fi
+  elif test -n "$PREBUILT_PTB_EXE"; then
+    if test -x "$PREBUILT_PTB_EXE"; then
+      ptb="$PREBUILT_PTB_EXE"
+      echo "Using $ptbname at $ptb"
+    else
+      echo "ERROR: $PREBUILT_PTB_EXE not found"
+      exit 1
+    fi
   else
     ptb="$relptbpath$PLATFORM/$ptbreqver/$ptbname"
     if test -x "$ptb"; then
@@ -158,8 +168,7 @@ if test "$buildptb" = "yes"; then
     if test ! -d "$dep"; then
       echo "WARNING: $builddir/$dep not found"
       buildptb="no"
-      break;    echo "%PREBUILT_PTB_EXE%" not found
-
+      break;
     fi
     if test ! -f "$dep/Makefile"; then
       echo "WARNING: $builddir/$dep/Makefile not found"
