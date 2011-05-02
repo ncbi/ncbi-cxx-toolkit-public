@@ -39,7 +39,7 @@ ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 # Run command.
 "$@" &
 pid=$!
-trap 'kill $pid $guard_pid' 1 2 15
+trap 'kill $pid' 1 2 15
 
 # Execute time-guard
 $script_dir/check_exec_guard.sh $timeout $pid &
