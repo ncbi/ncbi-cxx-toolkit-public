@@ -862,23 +862,24 @@ void CAlnVec::TranslateNAToAA(const string& na,
 
     const CTrans_table& tbl = CGen_code_table::GetTransTable(gencode);
 
-    unsigned int i, j = 0, state = 0;
+    size_t na_size = na.size();
 
     if (&aa != &na) {
-        aa.resize(na.size() / 3);
+        aa.resize(na_size / 3);
     }
 
-    string::const_iterator res = na.begin();
-    while (res != na.end()) {
-        for (i = 0; i < 3; i++, res++) {
-            state = tbl.NextCodonState(state, *res);
+    int state = 0;
+    size_t aa_i = 0;
+    for (size_t na_i = 0; na_i < na_size; na_i++) {
+        for (size_t i = 0; i < 3; i++, na_i++) {
+            state = tbl.NextCodonState(state, na[na_i]);
         }
-        aa[j++] = tbl.GetCodonResidue(state);
+        aa[aa_i++] = tbl.GetCodonResidue(state);
     }
 
     if (&aa == &na) {
-        aa[j] = 0;
-        aa.resize(j);
+        aa[aa_i] = 0;
+        aa.resize(aa_i);
     }
 }
 
