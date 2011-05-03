@@ -41,8 +41,10 @@
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Affil.hpp>
+#include <objects/biblio/Id_pat.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/items/item.hpp>
@@ -396,7 +398,7 @@ static size_t s_NumAuthors(const CCit_book::TAuthors& authors)
 
 static void s_FormatYear(const CDate& date, string& year)
 {
-    if (date.IsStr() && ! date.GetStr().empty() ) {
+    if (date.IsStr() && ! date.GetStr().empty() && date.GetStr() != "?" ) {
         year += '(';
         year += date.GetStr();
         year += ')';
@@ -442,21 +444,6 @@ static void s_FixPages( string& pages )
 //  bug for bug compatible with the C toolkit version. 
 //
 {
-    // hack: special case "doi" pages.
-    // This actually chops information away from the user, 
-    // but we do this to be compatible with C.
-    // Once we move away from C, we should remove this code
-    if( NStr::StartsWith(pages, "doi") ) {
-        // keep only the digits after "doi", if there are any digits
-        // (e.g. GR875377)
-        string::size_type after_digits = pages.find_first_not_of("0123456789", 3);
-        if( after_digits == string::npos ) {
-            after_digits = pages.length();
-        }
-        pages = pages.substr(0, after_digits);
-        return;
-    }
-
     const char* digits = "0123456789";
     string::iterator it;
     string firstText, firstNumber, dash, lastText, lastNumber;
@@ -917,6 +904,9 @@ static void s_FormatCitGen
         } else if (NStr::StartsWith(cit, "In press", NStr::eNocase) ) {
             in_press = cit;
             prefix = ' ';
+        } else if( NStr::StartsWith(cit, "(er) ", NStr::eNocase) ) {
+            journal = cit;
+            prefix = ' ';
         } else if (!cfg.DropBadCitGens()  &&  NStr::IsBlank(journal)) {
             journal = cit;
             prefix = ' ';
@@ -1033,9 +1023,11 @@ static void s_FormatCitSub
 static void s_FormatPatent
 (const CReferenceItem& ref,
  string& journal,
- const CFlatFileConfig& cfg)
+ const CBioseqContext &ctx )
 {
     _ASSERT(ref.IsSetPatent());
+
+    const CFlatFileConfig& cfg = ctx.Config();
 
     const CCit_pat& pat = ref.GetPatent();
     bool embl    = (cfg.GetFormat() == CFlatFileConfig::eFormat_EMBL);
@@ -1056,8 +1048,8 @@ static void s_FormatPatent
     //
     bool use_pre_grant_formatting = ! pat.CanGetNumber();
     use_pre_grant_formatting &= ( 
-        pat.CanGetApp_number() && pat.CanGetApp_date() && 
-        (pat.CanGetDoc_type() && NStr::IsBlank( pat.GetDoc_type()) ) );
+        pat.CanGetApp_number() &&
+        pat.CanGetCountry() && pat.GetCountry() == "US" );
     //
     //  2006-01-26:
     //  Pre grant formatting currently only in non-release mode until quarantine
@@ -1065,6 +1057,27 @@ static void s_FormatPatent
     //
     use_pre_grant_formatting = use_pre_grant_formatting &&
         ( cfg.GetMode() != CFlatFileConfig::eMode_Release );
+
+    // and, there must be a good "patent" id in the Seq-ids for this Bioseq
+    // CSeqId
+    if( use_pre_grant_formatting ) {
+        bool any_good_patents = false;
+        ITERATE( CBioseq::TId, id_iter, ctx.GetBioseqIds() ) {
+            const CSeq_id &id = **id_iter;
+            if( id.IsPatent() && 
+                id.GetPatent().IsSetCit() &&
+                id.GetPatent().GetCit().IsSetId() &&
+                id.GetPatent().GetCit().GetId().IsApp_number() &&
+                !NStr::IsBlank(id.GetPatent().GetCit().GetId().GetApp_number()) ) 
+            {
+                any_good_patents = true;
+                break;
+            }
+        }
+        if( ! any_good_patents ) {
+            use_pre_grant_formatting = false;
+        }
+    }
         
     if (genbank) {
         if ( use_pre_grant_formatting ) {
@@ -1426,7 +1439,7 @@ void CFlatItemFormatter::x_FormatRefJournal
 
         case CReferenceItem::ePub_pat:
             if (ref.IsSetPatent()) {
-                s_FormatPatent(ref, journal, cfg);
+                s_FormatPatent(ref, journal, ctx);
             }
             break;
 
@@ -1454,6 +1467,7 @@ void CFlatItemFormatter::x_GetKeywords
     string keywords = NStr::Join(kws.GetKeywords(), "; ");
     keywords += '.';
 
+    ExpandTildes( keywords, eTilde_space );
     Wrap(l, prefix, keywords);
 }
 

@@ -255,45 +255,81 @@ static void s_GetAssemblyInfo(const CUser_object& uo,
 {
     s.clear();
 
-    typedef vector < pair<const string*, bool> > TAssemblyInfo;
-    TAssemblyInfo assembly;
+    const bool is_html = (format == CCommentItem::eFormat_Html);
+
+    vector<string> assembly_pieces;
+
     if ( uo.HasField("Assembly") ) {
         const CUser_field& field = uo.GetField("Assembly");
         if ( !field.GetData().IsFields() ) {
             return;
         }
+
         ITERATE (CUser_field::C_Data::TFields, fit,
-                 field.GetData().GetFields()) {
+            field.GetData().GetFields()) 
+        {
             if ( !(*fit)->GetData().IsFields() ) {
                 continue;
             }
+
+            string accession;
+            string name;
+            int gi = 0;
+            int from = 0;
+            int to = 0;
+
             ITERATE (CUser_field::C_Data::TFields, it,
-                     (*fit)->GetData().GetFields()) {
+                (*fit)->GetData().GetFields()) 
+            {
                 const CUser_field& uf = **it;
-                if ( !uf.CanGetLabel()  ||  !uf.GetLabel().IsStr() ) {
+                if ( !uf.CanGetLabel()  ||  !uf.GetLabel().IsStr() || ! uf.IsSetData() ) {
                     continue;
                 }
                 const string& label = uf.GetLabel().GetStr();
-                if ( label == "accession"  ||  label == "name" ) {
-                    bool is_accn = (label == "accession");
-                    if ( uf.GetData().IsStr()  &&
-                         !uf.GetData().GetStr().empty() ) {
-                        assembly.push_back(make_pair(&uf.GetData().GetStr(), is_accn));
+
+                if( uf.GetData().IsStr() ) {
+                    if( label == "accession" ) {
+                        accession = uf.GetData().GetStr();
+                    } else if( label == "name" ) {
+                        name = uf.GetData().GetStr();
+                    }
+                } else if( uf.GetData().IsInt() ) {
+                    if( label == "gi" ) {
+                        gi = uf.GetData().GetInt();
+                    } else if( label == "from" ) {
+                        from = uf.GetData().GetInt();
+                    } else if( label == "to" ) {
+                        to = uf.GetData().GetInt();
                     }
                 }
             }
+
+            if ( ! accession.empty() ) {
+                CNcbiOstrstream oss;
+
+                NcbiId(oss, accession, is_html);
+                if( from > 0 && to > 0 ) {
+                    oss << " (range: " << from << "-" << to << ")";
+                }
+
+                string new_piece = (string)(CNcbiOstrstreamToString(oss));
+                assembly_pieces.push_back( new_piece );
+            } else if( ! name.empty() ) {
+                assembly_pieces.push_back( name );
+            }
         }
     }
-    if ( assembly.size() > 0 ) {
+
+    if( ! assembly_pieces.empty() ) {
         CNcbiOstrstream oss;
         oss << " The reference sequence was derived from ";
-        size_t assembly_size = assembly.size();
-        for ( size_t i = 0; i < assembly_size; ++i ) {
-            if ( i > 0  ) {
-                oss << ((i < assembly_size - 1) ? ", " : " and ");
+
+        size_t assembly_size = assembly_pieces.size();
+        for ( size_t ii = 0; ii < assembly_size; ++ii ) {
+            if ( ii > 0  ) {
+                oss << ((ii < assembly_size - 1) ? ", " : " and ");
             }
-            const string& acc = *(assembly[i].first);
-            NcbiId(oss, acc, format == CCommentItem::eFormat_Html);
+            oss << assembly_pieces[ii];
         }
         oss << '.';
 

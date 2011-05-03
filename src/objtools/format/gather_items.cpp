@@ -628,6 +628,15 @@ void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
     }
 }
 
+static bool
+s_IsCircularTopology(CBioseqContext &ctx)
+{
+    const CBioseq_Handle &handle = ctx.GetHandle();
+    return( handle && 
+        handle.CanGetInst_Topology() && 
+        handle.GetInst_Topology() == CSeq_inst::eTopology_circular );
+}
+
 
 void CFlatGatherer::x_GatherReferences(void) const
 {
@@ -2167,15 +2176,6 @@ s_ContainsGaps( const CSeq_loc &loc )
     return false;
 }
 
-static bool
-s_IsCircularTopology(CBioseqContext &ctx)
-{
-    const CBioseq_Handle &handle = ctx.GetHandle();
-    return( handle && 
-        handle.CanGetInst_Topology() && 
-        handle.GetInst_Topology() == CSeq_inst::eTopology_circular );
-}
-
 void CFlatGatherer::x_GatherFeatures(void) const
 {
     CBioseqContext& ctx = *m_Current;
@@ -2255,6 +2255,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
             CSeq_loc_Mapper mapper(*cds.GetOriginalSeq_feat(),
                 CSeq_loc_Mapper::eLocationToProduct,
                 &ctx.GetScope());
+            mapper.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle | CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
             CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
             cds_prod = cds_prod->Merge( ( s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ), NULL );
 
