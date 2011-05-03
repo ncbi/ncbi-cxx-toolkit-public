@@ -538,7 +538,7 @@ TSeqPos GetStop(const CSeq_loc& loc, CScope* scope, ESeqLocExtremes ext)
     if (loc.IsWhole()  &&  scope != NULL) {
         CBioseq_Handle seq = GetBioseqFromSeqLoc(loc, *scope);
         if (seq) {
-            return seq.GetInst_Length();
+            return seq.GetBioseqLength() - 1;
         }
     }
     return loc.GetStop(ext);
