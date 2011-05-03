@@ -130,7 +130,9 @@ CExpectedError::~CExpectedError()
 
 void CExpectedError::Test(const CValidErrItem& err_item)
 {
-    BOOST_CHECK_EQUAL(err_item.GetAccession(), m_Accession);
+    if (!NStr::IsBlank (m_Accession) && !NStr::IsBlank (err_item.GetAccession())) {
+        BOOST_CHECK_EQUAL(err_item.GetAccession(), m_Accession);
+    }
     BOOST_CHECK_EQUAL(err_item.GetSeverity(), m_Severity);
     BOOST_CHECK_EQUAL(err_item.GetErrCode(), m_ErrCode);
     string msg = err_item.GetMsg();
