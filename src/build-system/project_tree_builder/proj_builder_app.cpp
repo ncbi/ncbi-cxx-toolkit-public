@@ -1248,7 +1248,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             ofs << error << endl << "\t@exit 1" << endl << "\t";
         }
         ofs << "+";
-        if (p->second.m_MakeType == eMakeType_Expendable) {
+        if (p->second.m_MakeType >= eMakeType_Expendable) {
             ofs << "-";
         }
         ofs << "cd " << rel_path << ";";
