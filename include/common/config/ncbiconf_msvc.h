@@ -139,7 +139,13 @@ typedef   int   ssize_t;
 #endif
 
 /* Windows XP and above */
-#define _WIN32_WINNT 0x0501
+#define NCBI_WIN32_WINNT 0x0501
+#if !defined(_WIN32_WINNT)
+#  define _WIN32_WINNT NCBI_WIN32_WINNT
+#elif _WIN32_WINNT < NCBI_WIN32_WINNT
+#  undef  _WIN32_WINNT
+#  define _WIN32_WINNT NCBI_WIN32_WINNT
+#endif
 
 /*
  *  Site localization
