@@ -1059,6 +1059,7 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(ncRNA_class);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
@@ -1435,6 +1436,7 @@ START_SUBTYPE(misc_feature)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
+    ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
