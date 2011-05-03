@@ -918,9 +918,12 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                      continue;
              }
 
-            const int feat_location_len = sequence::GetLength( feat_it->GetOriginalFeature().GetLocation(), &scope );
+            // for, e.g. AL596104
+            if( sel.GetOverlapType() == SAnnotSelector::eOverlap_Intervals ) {
+                cur_diff = sequence::GetLength( feat_it->GetOriginalFeature().GetLocation(), &scope );
+            }
 
-            TFeatScore sc(feat_location_len,
+            TFeatScore sc(cur_diff,
                 ConstRef(&feat_it->GetMappedFeature()));
             feats.push_back(sc);
         }
