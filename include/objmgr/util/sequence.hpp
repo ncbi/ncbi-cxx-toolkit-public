@@ -360,6 +360,14 @@ public:
         const CMappedFeat &feat,
         TSeqPos circular_length,
         SAnnotSelector::EOverlapType annot_overlap_type ) = 0;
+
+    virtual void postProcessDiffAmount( 
+        Int8 &cur_diff, 
+        CRef<CSeq_loc> &cleaned_loc, 
+        CRef<CSeq_loc> &candidate_feat_loc, 
+        CScope &scope, 
+        SAnnotSelector &sel, 
+        TSeqPos circular_length ) = 0;
 };
 
 /// Find all features overlapping the location. Features and corresponding

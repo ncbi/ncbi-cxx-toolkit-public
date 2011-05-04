@@ -1544,27 +1544,43 @@ static bool s_GeneMatchesXref
 
 // returns original strand (actually, just the strandedness of the first part,
 // if it was mixed )
+// Also, it converts the given loc to positive.
+enum FGeneSearchLocOpt {
+    fGeneSearchLocOpt_RemoveFar = 1 << 0
+};
+typedef int EGeneSearchLocOpt;
+
 static
-ENa_strand s_GeneSearchNormalizeLoc( CBioseq_Handle top_bioseq_handle, CRef<CSeq_loc> &loc, const TSeqPos circular_length )
+ENa_strand s_GeneSearchNormalizeLoc( CBioseq_Handle top_bioseq_handle, 
+    CRef<CSeq_loc> &loc, const TSeqPos circular_length,
+    EGeneSearchLocOpt opt = 0 )
 {
     CRef<CSeq_loc> new_loc( new CSeq_loc );
 
     ENa_strand original_strand = eNa_strand_other;
 
-    CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Positional );
+    CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological );
     for( ; loc_iter; ++loc_iter ) {
-        // don't add parts that are on far bioseqs (e.g. as in X17229)
+        // parts that are on far bioseqs don't count as part of strandedness (e.g. as in X17229)
         // ( CR956646 is another good test case since its near parts 
         //   are minus strand and far are plus on the "GNAS" gene )
         if( top_bioseq_handle ) {
             const CSeq_id& loc_id = loc_iter.GetSeq_id();
-            if( ! top_bioseq_handle.IsSynonym(loc_id) ) {
-                continue;
+            if( top_bioseq_handle.IsSynonym(loc_id) ) {
+                if( original_strand == eNa_strand_other) {
+                    // strand should have strandedness of first near part
+                    original_strand = loc_iter.GetStrand();
+                }
+            } else {
+                if( (opt & fGeneSearchLocOpt_RemoveFar) != 0 ) {
+                    continue;
+                }
             }
-        }
-        if( original_strand == eNa_strand_other ) {
-            // strand should have strandedness of first part
-            original_strand = loc_iter.GetStrand();
+        } else {
+            if( original_strand == eNa_strand_other) {
+                // strand should have strandedness of first near part
+                original_strand = loc_iter.GetStrand();
+            }
         }
         new_loc->Add( *loc_iter.GetRangeAsSeq_loc() );
     }
@@ -1688,8 +1704,11 @@ public:
             }
         }}
 
-        // candidate_feat_loc = bioseq_handle.MapLocation( *candidate_feat_loc );
-        candidate_feat_original_strand = s_GeneSearchNormalizeLoc( m_BioseqHandle, candidate_feat_loc, circular_length );
+        const EGeneSearchLocOpt norm_opt = ( (overlap_type_this_iteration == eOverlap_Contained) ?
+            fGeneSearchLocOpt_RemoveFar :
+            0 );
+        candidate_feat_original_strand = s_GeneSearchNormalizeLoc( m_BioseqHandle, candidate_feat_loc, 
+            circular_length, norm_opt );
 
         if( candidate_feat_is_mixed && annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) {
             if( feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" ) {
@@ -1698,7 +1717,7 @@ public:
             }
             if( overlap_type_this_iteration == eOverlap_Contained ) {
                 overlap_type_this_iteration = eOverlap_SubsetRev;
-                revert_locations_this_iteration = true ;
+                revert_locations_this_iteration = true;
             }
         }
 
@@ -1712,6 +1731,23 @@ public:
         } else {
             // mismatched strands; skip this feature
             shouldContinueToNextIteration = true;
+        }
+    }
+
+    void postProcessDiffAmount( 
+        Int8 &cur_diff, 
+        CRef<CSeq_loc> &cleaned_loc, 
+        CRef<CSeq_loc> &candidate_feat_loc, 
+        CScope &scope, 
+        SAnnotSelector &sel, 
+        TSeqPos circular_length ) 
+    {
+        // for, e.g. AL596104
+        if( sel.GetOverlapType() == SAnnotSelector::eOverlap_Intervals ) {
+            cur_diff = sequence::GetLength( *candidate_feat_loc, &scope );
+        } else {
+            cur_diff = abs( (int)sequence::GetStart(*candidate_feat_loc, &scope, eExtreme_Biological) - 
+                (int)sequence::GetStop(*candidate_feat_loc, &scope, eExtreme_Biological) );
         }
     }
 
@@ -6044,7 +6080,7 @@ void CSourceFeatureItem::x_FormatQual
 
 void CSourceFeatureItem::Subtract(const CSourceFeatureItem& other, CScope &scope)
 {
-    m_Loc = Seq_loc_Subtract(GetLoc(), other.GetLoc(), 0, &scope);
+    m_Loc = Seq_loc_Subtract(GetLoc(), other.GetLoc(), CSeq_loc::fStrand_Ignore, &scope);
 }
 
 

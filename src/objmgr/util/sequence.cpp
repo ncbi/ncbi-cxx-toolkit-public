@@ -711,8 +711,11 @@ public:
             return gene1.first < gene2.first;
         }
 
-        // If genes are at identical positions, we fall back on the label
-        if( sequence::Compare( gene1.second->GetLocation(), gene2.second->GetLocation(), scope ) == sequence::eSame ) {
+        const CSeq_loc &loc1 = gene1.second->GetLocation();
+        const CSeq_loc &loc2 = gene2.second->GetLocation();
+
+         // If genes are at identical positions, we fall back on the label
+         if( sequence::Compare( loc1, loc2, scope ) == sequence::eSame ) {
             if( gene1.second->IsSetData() && gene1.second->GetData().IsGene() && 
                 gene2.second->IsSetData() && gene2.second->GetData().IsGene() ) 
             {
@@ -723,7 +726,7 @@ public:
                 gene2.second->GetData().GetGene().GetLabel( &gene2_label );
                 return gene1_label < gene2_label;
             }
-        }
+         }
 
         return false;
     }
@@ -914,13 +917,12 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 overlap_type_this_iteration,
                 circular_length,
                 &scope);
+            if( plugin ) {
+                plugin->postProcessDiffAmount( cur_diff, cleaned_loc, 
+                    candidate_feat_loc, scope, sel, circular_length );
+            }
             if (cur_diff < 0) {
-                     continue;
-             }
-
-            // for, e.g. AL596104
-            if( sel.GetOverlapType() == SAnnotSelector::eOverlap_Intervals ) {
-                cur_diff = sequence::GetLength( feat_it->GetOriginalFeature().GetLocation(), &scope );
+                continue;
             }
 
             TFeatScore sc(cur_diff,
@@ -1319,6 +1321,21 @@ public:
                 candidate_feat_loc, overlap_type_this_iteration,
                 revert_locations_this_iteration,
                 bioseq_handle, feat, circular_length, annot_overlap_type);
+        }
+    }
+
+    virtual void postProcessDiffAmount( 
+        Int8 &cur_diff, 
+        CRef<CSeq_loc> &cleaned_loc, 
+        CRef<CSeq_loc> &candidate_feat_loc, 
+        CScope &scope, 
+        SAnnotSelector &sel, 
+        TSeqPos circular_length ) 
+    {
+        if ( m_PrevPlugin ) {
+            m_PrevPlugin->postProcessDiffAmount(cur_diff, 
+                cleaned_loc, candidate_feat_loc, 
+                scope, sel, circular_length);
         }
     }
 
