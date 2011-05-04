@@ -1245,7 +1245,7 @@ private:
     CSeqDBAtlasHolder m_AtlasHolder;
     
     /// Reference to memory management layer.
-    mutable CSeqDBAtlas & m_Atlas;
+    CSeqDBAtlas & m_Atlas;
     
     /// The list of database names provided to the constructor.
     string m_DBNames;
