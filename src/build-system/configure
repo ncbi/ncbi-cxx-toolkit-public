@@ -11301,9 +11301,10 @@ done
 
 
 
+
 for ac_func in euidaccess atoll basename lchown fseeko getpagesize \
                getpass getpassphrase getpwuid getrusage gettimeofday \
-               getuid readpassphrase readv usleep \
+               getuid memrchr readpassphrase readv usleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
                sysmp timegm utimes lutimes writev

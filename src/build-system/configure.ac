@@ -2808,7 +2808,7 @@ fi
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(euidaccess atoll basename lchown fseeko getpagesize \
                getpass getpassphrase getpwuid getrusage gettimeofday \
-               getuid readpassphrase readv usleep \
+               getuid memrchr readpassphrase readv usleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
                sysmp timegm utimes lutimes writev)
