@@ -67,7 +67,7 @@ public:
     operator const CTime&(void) const;
 
 private:
-    mutable obj_type& m_Value; 
+    obj_type& m_Value; 
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,7 +92,7 @@ public:
     operator const CTime&(void) const;
 
 private:
-    mutable obj_type& m_Value; 
+    obj_type& m_Value; 
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ public:
     operator const CTime&(void) const;
 
 private:
-    mutable obj_type& m_Value; 
+    obj_type& m_Value; 
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -174,7 +174,7 @@ public:
     operator const CTime&(void) const;
 
 private:
-    mutable obj_type& m_Value; 
+    obj_type& m_Value; 
 };
 
 ////////////////////////////////////////////////////////////////////////////////

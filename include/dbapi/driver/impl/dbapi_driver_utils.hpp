@@ -231,7 +231,7 @@ protected:
 
 private:
     const string& m_SPName;
-    mutable impl::CConnection& m_Conn;
+    impl::CConnection& m_Conn;
 };
 
 
