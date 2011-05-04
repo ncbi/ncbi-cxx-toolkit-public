@@ -693,9 +693,8 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     InitDiagnostics();
 
     SParsedCmd      cmd;
+    string          msg;
     try {
-        string      msg;
-
         s_ReadBufToString(buffer, msg);
         cmd = m_SingleCmdParser.ParseCommand(msg);
         x_PrintRequestStart(cmd);

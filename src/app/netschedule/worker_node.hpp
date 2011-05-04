@@ -285,13 +285,11 @@ public:
 
     // Add job to worker node job list
     void AddJob(CWorkerNode* worker_node, const CJob& job, time_t exp_time,
-                CRequestContextFactory* req_ctx_f,
-                unsigned log_job_state);
+                CRequestContextFactory* req_ctx_f, bool is_log);
     // Update job expiration time
     void UpdateJob(TNSJobId job_id, time_t exp_time);
     // Remove job from worker node job list
-    void RemoveJob(const CJob& job,
-                   ENSCompletion reason, unsigned log_job_state);
+    void RemoveJob(const CJob& job, ENSCompletion reason, bool is_log);
 
     SJobInfo* FindJobById(TNSJobId job_id);
 

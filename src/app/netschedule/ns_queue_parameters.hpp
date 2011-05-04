@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_NS_UTIL__HPP
-#define NETSCHEDULE_NS_UTIL__HPP
+#ifndef NETSCHEDULE_QUEUE_PARAMETERS__HPP
+#define NETSCHEDULE_QUEUE_PARAMETERS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,38 +26,47 @@
  *
  * ===========================================================================
  *
- * Authors:  Victor Joukov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
- * File Description: Utility functions for NetSchedule
+ * File Description: Queue parameters
  *
  */
 
-#include "ns_types.hpp"
-#include <corelib/ncbistl.hpp>
+#include <string>
+
 
 BEGIN_NCBI_SCOPE
 
-class CQueue;
+class IRegistry;
 
-
-string          NS_EncodeBitVector(const TNSBitVector& bv);
-string          NS_EncodeBitVector(const CQueue *        queue,
-                                   const TNSBitVector &  bv);
-TNSBitVector    NS_DecodeBitVector(const string& s);
-void            NS_FormatIPAddress(unsigned int ipaddr, string& str_addr);
-string          NS_FormatIPAddress(unsigned int ipaddr);
-
-list<string>    BitVectorToJobKeys(const CQueue *        queue,
-                                   const TNSBitVector &  bv);
-
-class CRequestContext;
-class CRequestContextFactory : public CObject
+/// Queue parameters
+struct SQueueParameters
 {
-public:
-    virtual CRequestContext* Get() = 0;
-    virtual void Return(CRequestContext*) = 0;
+    SQueueParameters();
+    void Read(const IRegistry& reg, const string& sname);
+
+    /// General parameters, reconfigurable at run time
+    int             timeout;
+    int             notif_timeout;
+    int             run_timeout;
+    string          program_name;
+    bool            delete_done;
+    int             failed_retries;
+    time_t          blacklist_time;
+    time_t          empty_lifetime;
+    unsigned        max_input_size;
+    unsigned        max_output_size;
+    bool            deny_access_violations;
+    bool            log_access_violations;
+    bool            keep_affinity;
+    string          subm_hosts;
+    string          wnode_hosts;
+    // This parameter is not reconfigurable
+    int             run_timeout_precision;
 };
+
 
 END_NCBI_SCOPE
 
-#endif /* NETSCHEDULE_NS_UTIL__HPP */
+#endif
+

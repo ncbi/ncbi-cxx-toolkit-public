@@ -345,11 +345,11 @@ void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
                                   const CJob& job,
                                   time_t exp_time,
                                   CRequestContextFactory* req_ctx_f,
-                                  unsigned log_job_state)
+                                  bool is_log)
 {
     CWriteLockGuard guard(m_Lock);
     CRequestContext* req_ctx = 0;
-    if (log_job_state >= 1 && req_ctx_f) {
+    if (is_log && req_ctx_f) {
         req_ctx = req_ctx_f->Get();
         if (!job.GetClientIP().empty())
             req_ctx->SetClientIP(job.GetClientIP());
@@ -359,7 +359,7 @@ void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
     std::auto_ptr<SJobInfo> job_info(new SJobInfo(job.GetId(),
         exp_time, worker_node, req_ctx, req_ctx_f));
     worker_node->SetNotificationTimeout(0);
-    if (log_job_state >= 1) {
+    if (is_log) {
         CDiagContext::SetRequestContext(req_ctx);
         GetDiagContext().PrintRequestStart()
             .Print("node", worker_node->GetId())
@@ -400,7 +400,7 @@ void CQueueWorkerNodeList::UpdateJob(TNSJobId job_id,
 
 void CQueueWorkerNodeList::RemoveJob(const CJob&   job,
                                      ENSCompletion reason,
-                                     unsigned      log_job_state)
+                                     bool          is_log)
 {
     CWriteLockGuard guard(m_Lock);
     SJobInfo* job_info = FindJobById(job.GetId());
@@ -413,7 +413,7 @@ void CQueueWorkerNodeList::RemoveJob(const CJob&   job,
     CRequestContext* req_ctx = job_info->req_ctx;
     if (reason != eNSCTimeout)
         worker_node->SetNotificationTimeout(0);
-    if (log_job_state >= 1 && req_ctx) {
+    if (is_log && req_ctx) {
         CDiagContext::SetRequestContext(req_ctx);
         CDiagContext::GetRequestContext().SetRequestStatus(int(reason));
         if (reason == eNSCDone || reason == eNSCFailed) {

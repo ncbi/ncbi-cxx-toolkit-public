@@ -39,7 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
-string NS_EncodeBitVector(TNSBitVector& bv)
+string NS_EncodeBitVector(const TNSBitVector& bv)
 {
     string                      str;
     TNSBitVector::enumerator    en(bv.first());
@@ -78,6 +78,21 @@ string NS_EncodeBitVector(TNSBitVector& bv)
         else
             str += ',';
         str += NStr::UIntToString(id);
+    }
+    return str;
+}
+
+
+string  NS_EncodeBitVector(const CQueue *        queue,
+                           const TNSBitVector &  bv)
+{
+    string      str;
+
+    TNSBitVector::enumerator    en(bv.first());
+    for (; en.valid(); ++en) {
+        if (!str.empty())
+            str += ", ";
+        str += queue->MakeKey(*en);
     }
     return str;
 }

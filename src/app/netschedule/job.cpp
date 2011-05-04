@@ -38,13 +38,19 @@
 
 BEGIN_NCBI_SCOPE
 
-static const char* kISO8601DateTime = 0;
+static const char*  kISO8601DateTime = 0;
+
+
 static string FormatTime(time_t t)
 {
-    if (!t) return "NULL";
+    if (!t)
+        return "NULL";
+
     if (!kISO8601DateTime) {
-        const char *format = CTimeFormat::GetPredefined(
-            CTimeFormat::eISO8601_DateTimeSec).GetString().c_str();
+        const char *    format = CTimeFormat::GetPredefined(
+                                        CTimeFormat::eISO8601_DateTimeSec)
+                                            .GetString().c_str();
+
         kISO8601DateTime = new char[strlen(format)+1];
         strcpy(const_cast<char *>(kISO8601DateTime), format);
     }
@@ -66,9 +72,6 @@ CJobRun::CJobRun() :
 {}
 
 
-
-
-
 void CJobRun::SetStatus(TJobStatus status)
 {
     m_Dirty = true;
@@ -76,7 +79,7 @@ void CJobRun::SetStatus(TJobStatus status)
 }
 
 
-void CJobRun::SetTimeStart( time_t t )
+void CJobRun::SetTimeStart(time_t  t)
 {
     m_Dirty = true;
     // Will suffice until 2038
@@ -84,7 +87,7 @@ void CJobRun::SetTimeStart( time_t t )
 }
 
 
-void CJobRun::SetTimeDone( time_t t )
+void CJobRun::SetTimeDone(time_t  t)
 {
     m_Dirty = true;
     // Will suffice until 2038
@@ -92,42 +95,42 @@ void CJobRun::SetTimeDone( time_t t )
 }
 
 
-void CJobRun::SetNodeAddr(unsigned node_ip)
+void CJobRun::SetNodeAddr(unsigned  node_ip)
 {
     m_Dirty = true;
     m_NodeAddr = node_ip;
 }
 
 
-void CJobRun::SetNodePort(unsigned short port)
+void CJobRun::SetNodePort(unsigned short  port)
 {
     m_Dirty = true;
     m_NodePort = port;
 }
 
 
-void CJobRun::SetRetCode(int retcode)
+void CJobRun::SetRetCode(int  retcode)
 {
     m_Dirty = true;
     m_RetCode = retcode;
 }
 
 
-void CJobRun::SetNodeId(const string& node_id)
+void CJobRun::SetNodeId(const string &  node_id)
 {
     m_Dirty = true;
     m_NodeId = node_id.substr(0, kMaxWorkerNodeIdSize);
 }
 
 
-void CJobRun::SetErrorMsg(const string& msg)
+void CJobRun::SetErrorMsg(const string &  msg)
 {
     m_Dirty = true;
     m_ErrorMsg = msg.substr(0, kNetScheduleMaxDBErrSize);
 }
 
 
-static const char* s_RunFieldNames[] = {
+static string  s_RunFieldNames[] = {
     "run_status",
     "time_start",
     "time_done",
@@ -138,16 +141,18 @@ static const char* s_RunFieldNames[] = {
     "err_msg"
 };
 
-int CJobRun::GetFieldIndex(const string& name)
+int CJobRun::GetFieldIndex(const string &  name)
 {
-    for (unsigned n = 0; n < sizeof(s_RunFieldNames)/sizeof(*s_RunFieldNames); ++n) {
-        if (name == s_RunFieldNames[n]) return n;
+    for (unsigned n = 0; n < sizeof(s_RunFieldNames) /
+                             sizeof(*s_RunFieldNames); ++n) {
+        if (name == s_RunFieldNames[n])
+            return n;
     }
     return -1;
 }
 
 
-string CJobRun::GetField(int index) const
+string CJobRun::GetField(int  index) const
 {
     switch (index) {
     case 0: // run_status
@@ -190,6 +195,7 @@ CJob::CJob() :
     m_Mask(0)
 {}
 
+
 CJob::CJob(const SJS_Request&  request, unsigned submAddr) :
     m_New(true), m_Deleted(false), m_Dirty(fJobPart),
     m_Id(0),
@@ -212,6 +218,7 @@ CJob::CJob(const SJS_Request&  request, unsigned submAddr) :
     SetTags(request.tags);
 }
 
+
 void CJob::SetId(unsigned id)
 {
     m_Id = id;
@@ -226,7 +233,7 @@ void CJob::SetStatus(TJobStatus status)
 }
 
 
-void CJob::SetTimeSubmit(time_t t)
+void CJob::SetTimeSubmit(time_t  t)
 {
     // Will suffice until 2038
     m_TimeSubmit = (unsigned) t;
@@ -234,7 +241,7 @@ void CJob::SetTimeSubmit(time_t t)
 }
 
 
-void CJob::SetTimeout(time_t t)
+void CJob::SetTimeout(time_t  t)
 {
     // Will suffice until 2038
     m_Timeout = (unsigned) t;
@@ -242,7 +249,7 @@ void CJob::SetTimeout(time_t t)
 }
 
 
-void CJob::SetRunTimeout(time_t t)
+void CJob::SetRunTimeout(time_t  t)
 {
     // Will suffice until 2038
     m_RunTimeout = (unsigned) t;
@@ -250,56 +257,56 @@ void CJob::SetRunTimeout(time_t t)
 }
 
 
-void CJob::SetSubmAddr(unsigned addr)
+void CJob::SetSubmAddr(unsigned  addr)
 {
     m_SubmAddr = addr;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetSubmPort(unsigned short port)
+void CJob::SetSubmPort(unsigned short  port)
 {
     m_SubmPort = port;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetSubmTimeout(unsigned t)
+void CJob::SetSubmTimeout(unsigned  t)
 {
     m_SubmTimeout = t;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetRunCount(unsigned count)
+void CJob::SetRunCount(unsigned  count)
 {
     m_RunCount = count;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetReadGroup(unsigned group)
+void CJob::SetReadGroup(unsigned  group)
 {
     m_ReadGroup = group;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetProgressMsg(const string& msg)
+void CJob::SetProgressMsg(const string &  msg)
 {
     m_ProgressMsg = msg;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetAffinityId(unsigned aff_id)
+void CJob::SetAffinityId(unsigned  aff_id)
 {
     m_AffinityId = aff_id;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetAffinityToken(const string& aff_token)
+void CJob::SetAffinityToken(const string &  aff_token)
 {
     m_AffinityToken = aff_token;
     m_AffinityId = 0;
@@ -307,35 +314,35 @@ void CJob::SetAffinityToken(const string& aff_token)
 }
 
 
-void CJob::SetMask(unsigned mask)
+void CJob::SetMask(unsigned  mask)
 {
     m_Mask = mask;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetClientIP(const string& client_ip)
+void CJob::SetClientIP(const string &  client_ip)
 {
     m_ClientIP = client_ip;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetClientSID(const string& client_sid)
+void CJob::SetClientSID(const string &  client_sid)
 {
     m_ClientSID = client_sid;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetRuns(const vector<CJobRun>& runs)
+void CJob::SetRuns(const vector<CJobRun> &  runs)
 {
     m_Runs = runs;
     m_Dirty |= fRunsPart;
 }
 
 
-void CJob::SetTags(const TNSTagList& tags)
+void CJob::SetTags(const TNSTagList &  tags)
 {
     m_Tags.clear();
     ITERATE(TNSTagList, it, tags) {
@@ -345,17 +352,18 @@ void CJob::SetTags(const TNSTagList& tags)
 }
 
 
-void CJob::SetTags(const string& strtags)
+void CJob::SetTags(const string &  strtags)
 {
     x_ParseTags(strtags, m_Tags);
     m_Dirty |= fJobInfoPart;
 }
 
 
-void CJob::SetInput(const string& input)
+void CJob::SetInput(const string &  input)
 {
-    bool was_overflow = m_Input.size() > kNetScheduleSplitSize;
-    bool is_overflow = input.size() > kNetScheduleSplitSize;
+    bool    was_overflow = m_Input.size() > kNetScheduleSplitSize;
+    bool    is_overflow = input.size() > kNetScheduleSplitSize;
+
     if (is_overflow) {
         m_Dirty |= fJobInfoPart;
         if (!was_overflow)
@@ -369,10 +377,11 @@ void CJob::SetInput(const string& input)
 }
 
 
-void CJob::SetOutput(const string& output)
+void CJob::SetOutput(const string &  output)
 {
-    bool was_overflow = m_Output.size() > kNetScheduleSplitSize;
-    bool is_overflow = output.size() > kNetScheduleSplitSize;
+    bool    was_overflow = m_Output.size() > kNetScheduleSplitSize;
+    bool    is_overflow = output.size() > kNetScheduleSplitSize;
+
     if (is_overflow) {
         m_Dirty |= fJobInfoPart;
         if (!was_overflow)
@@ -386,7 +395,7 @@ void CJob::SetOutput(const string& output)
 }
 
 
-static const char* s_JobFieldNames[] = {
+static string  s_JobFieldNames[] = {
     "id",
     "status",
     "time_submit",
@@ -407,10 +416,12 @@ static const char* s_JobFieldNames[] = {
     "progress_msg"
 };
 
-int CJob::GetFieldIndex(const string& name)
+int CJob::GetFieldIndex(const string &  name)
 {
-    for (unsigned n = 0; n < sizeof(s_JobFieldNames)/sizeof(*s_JobFieldNames); ++n) {
-        if (name == s_JobFieldNames[n]) return n;
+    for (unsigned n = 0; n < sizeof(s_JobFieldNames)/
+                             sizeof(*s_JobFieldNames); ++n) {
+        if (name == s_JobFieldNames[n])
+            return n;
     }
     return -1;
 }
@@ -469,14 +480,18 @@ CJobRun& CJob::AppendRun()
 
 const CJobRun* CJob::GetLastRun() const
 {
-    if (m_Runs.size() == 0) return NULL;
+    if (m_Runs.size() == 0)
+        return NULL;
+
     return &(m_Runs[m_Runs.size()-1]);
 }
 
 
 CJobRun* CJob::GetLastRun()
 {
-    if (m_Runs.size() == 0) return NULL;
+    if (m_Runs.size() == 0)
+        return NULL;
+
     m_Dirty |= fRunsPart;
     return &(m_Runs[m_Runs.size()-1]);
 }
@@ -507,9 +522,9 @@ void CJob::Delete()
 
 CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 {
-    SQueueDB&   job_db      = queue->m_JobDB;
-    SJobInfoDB& job_info_db = queue->m_JobInfoDB;
-    SRunsDB&    runs_db     = queue->m_RunsDB;
+    SQueueDB&       job_db      = queue->m_JobDB;
+    SJobInfoDB&     job_info_db = queue->m_JobInfoDB;
+    SRunsDB&        runs_db     = queue->m_RunsDB;
 
     m_Id          = job_db.id;
 
@@ -540,11 +555,12 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     m_ProgressMsg = job_db.progress_msg;
 
     // JobInfoDB, can be optimized by adding lazy load
-    EBDB_ErrCode res;
+    EBDB_ErrCode    res;
     job_info_db.id = m_Id;
     if ((res = job_info_db.Fetch()) != eBDB_Ok) {
         if (res != eBDB_NotFound) {
-            ERR_POST(Error << "Error reading queue jobinfo db, id " << m_Id);
+            ERR_POST("Error reading queue jobinfo db, job_key " <<
+                     queue->MakeKey(m_Id));
             return eJF_DBErr;
         }
     } else {
@@ -557,13 +573,15 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 
     // RunsDB
     m_Runs.clear();
-    CBDB_FileCursor& cur = queue->GetRunsCursor();
-    CBDB_CursorGuard cg(cur);
+    CBDB_FileCursor&        cur = queue->GetRunsCursor();
+    CBDB_CursorGuard        cg(cur);
+
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << m_Id;
-    unsigned n = 0;
-    for (; (res = cur.Fetch()) == eBDB_Ok; ++n) {
-        CJobRun& run = AppendRun();
+
+    for (unsigned n = 0; (res = cur.Fetch()) == eBDB_Ok; ++n) {
+        CJobRun&        run = AppendRun();
+
         run.m_Status     = TJobStatus(int(runs_db.status));
         run.m_TimeStart  = runs_db.time_start;
         run.m_TimeDone   = runs_db.time_done;
@@ -575,7 +593,8 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
         run.m_Dirty = false;
     }
     if (res != eBDB_NotFound) {
-        ERR_POST(Error << "Error reading queue runs db, id " << m_Id);
+        ERR_POST("Error reading queue runs db, job_key " <<
+                 queue->MakeKey(m_Id));
         return eJF_DBErr;
     }
 
@@ -587,16 +606,17 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 
 CJob::EJobFetchResult CJob::Fetch(CQueue* queue, unsigned id)
 {
-    SQueueDB& job_db = queue->m_JobDB;
+    SQueueDB&       job_db = queue->m_JobDB;
     job_db.id = id;
-    EBDB_ErrCode res;
-    if ((res = job_db.Fetch()) != eBDB_Ok) {
+
+    EBDB_ErrCode    res = job_db.Fetch();
+    if (res != eBDB_Ok) {
         if (res != eBDB_NotFound) {
-            ERR_POST(Error << "Error reading queue job db, id " << id);
+            ERR_POST("Error reading queue job db, job_key " <<
+                     queue->MakeKey(id));
             return eJF_DBErr;
-        } else {
-            return eJF_NotFound;
         }
+        return eJF_NotFound;
     }
     return Fetch(queue);
 }
@@ -608,21 +628,25 @@ bool CJob::Flush(CQueue* queue)
         queue->EraseJob(m_Id);
         return true;
     }
-    if (!m_Dirty) return true;
+
+    if (!m_Dirty)
+        return true;
+
     // We can not run CheckAffinityToken during flush because of locking
     // constraints, so we assert that it was run before flush.
     if (m_AffinityToken.size() && !m_AffinityId) {
-        LOG_POST(Error << "CheckAffinityToken call missed");
+        ERR_POST("CheckAffinityToken call missed for job_key " <<
+                 queue->MakeKey(m_Id));
     }
     _ASSERT(!m_AffinityToken.size() || m_AffinityId);
-    SQueueDB&   job_db      = queue->m_JobDB;
-    SJobInfoDB& job_info_db = queue->m_JobInfoDB;
-    SRunsDB&    runs_db     = queue->m_RunsDB;
 
-    bool flush_job = (m_Dirty & fJobPart) || m_New;
+    SQueueDB&       job_db      = queue->m_JobDB;
+    SJobInfoDB&     job_info_db = queue->m_JobInfoDB;
+    SRunsDB&        runs_db     = queue->m_RunsDB;
 
-    bool input_overflow = m_Input.size() > kNetScheduleSplitSize;
-    bool output_overflow = m_Output.size() > kNetScheduleSplitSize;
+    bool            flush_job = (m_Dirty & fJobPart) || m_New;
+    bool            input_overflow = m_Input.size() > kNetScheduleSplitSize;
+    bool            output_overflow = m_Output.size() > kNetScheduleSplitSize;
 
     // JobDB (QueueDB)
     if (flush_job) {
@@ -663,7 +687,7 @@ bool CJob::Flush(CQueue* queue)
     }
 
     // JobInfoDB
-    bool nonempty_job_info = input_overflow || output_overflow;
+    bool    nonempty_job_info = input_overflow || output_overflow;
     if (m_Dirty & fJobInfoPart) {
         job_info_db.id = m_Id;
         list<string> tag_list;
@@ -693,7 +717,8 @@ bool CJob::Flush(CQueue* queue)
     // RunsDB
     unsigned n = 0;
     NON_CONST_ITERATE(vector<CJobRun>, it, m_Runs) {
-        CJobRun& run = *it;
+        CJobRun&        run = *it;
+
         if (run.m_Dirty) {
             runs_db.id          = m_Id;
             runs_db.run         = n;
@@ -726,15 +751,17 @@ bool CJob::ShouldNotify(time_t curr)
 
 void CJob::x_ParseTags(const string& strtags, TNSTagList& tags)
 {
-    list<string> tokens;
+    list<string>        tokens;
     NStr::Split(NStr::ParseEscapes(strtags), "\t",
-        tokens, NStr::eNoMergeDelims);
+                tokens, NStr::eNoMergeDelims);
     tags.clear();
-    for (list<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
-        string key(*it); ++it;
-        if (it != tokens.end()){
+    for (list<string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it) {
+        string      key(*it);
+        ++it;
+
+        if (it != tokens.end())
             tags.push_back(TNSTag(key, *it));
-        } else {
+        else {
             tags.push_back(TNSTag(key, kEmptyStr));
             break;
         }
@@ -743,3 +770,4 @@ void CJob::x_ParseTags(const string& strtags, TNSTagList& tags)
 
 
 END_NCBI_SCOPE
+

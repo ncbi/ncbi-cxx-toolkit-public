@@ -56,7 +56,7 @@ class CJobRun
 public:
     CJobRun();
     // setters/getters
-    TJobStatus GetStatus() const 
+    TJobStatus GetStatus() const
     { return m_Status; }
     unsigned GetTimeStart() const
     { return m_TimeStart; }
@@ -100,7 +100,7 @@ private:
     unsigned        m_TimeStart;   ///< job start time
     unsigned        m_TimeDone;    ///< job result submission time
     unsigned        m_NodeAddr;    ///< IP of a client (typically, worker node)
-    unsigned short  m_NodePort; ///< Notification port of a client
+    unsigned short  m_NodePort;    ///< Notification port of a client
     int             m_RetCode;     ///< Return code
     string          m_NodeId;      //
     string          m_ErrorMsg;    ///< Error message (exception::what())
@@ -236,6 +236,7 @@ public:
 
     // Should we notify submitter in the moment of time 'curr'
     bool ShouldNotify(time_t curr);
+
 private:
     void x_ParseTags(const string& strtags, TNSTagList& tags);
     // Service flags
