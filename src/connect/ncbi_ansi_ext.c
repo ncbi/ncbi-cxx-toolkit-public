@@ -156,7 +156,7 @@ extern char* strrncpy0(char* s1, const char* s2, size_t n)
 }
 
 
-#ifndef __GLIBC__
+#ifndef HAVE_MEMRCHR
 /* suboptimal but working implementation */
 void* memrchr(const void* s, int c, size_t n)
 {
@@ -168,4 +168,4 @@ void* memrchr(const void* s, int c, size_t n)
     }
     return 0;
 }
-#endif/*!__GLIBC__*/
+#endif/*!HAVE_MEMRCHR*/
