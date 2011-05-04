@@ -181,12 +181,6 @@ void CNetScheduleControl::Init(void)
     arg_desc->AddFlag("shutdown", "Shutdown server");
     arg_desc->AddFlag("shutdown_now", "Shutdown server IMMIDIATE");
     arg_desc->AddFlag("die", "Shutdown server");
-    arg_desc->AddOptionalKey("log",
-                             "server_logging",
-                             "Switch server side logging",
-                             CArgDescriptions::eBoolean);
-    arg_desc->AddFlag("monitor", "Queue monitoring");
-
 
     arg_desc->AddFlag("ver", "Server version");
     arg_desc->AddFlag("reconf", "Reload server configuration");
@@ -308,17 +302,6 @@ int CNetScheduleControl::Run(void)
         ctl = x_CreateNewClient(false);
         ctl.GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
         os << "Die request has been sent to server" << endl;
-    }
-    else if (args["log"]) {
-        ctl = x_CreateNewClient(false);
-        bool on_off = args["log"].AsBoolean();
-        ctl.GetAdmin().Logging(on_off);
-        os << "Logging turned "
-           << (on_off ? "ON" : "OFF") << " on the server" << endl;
-    }
-    else if (args["monitor"]) {
-        ctl = x_CreateNewClient(true);
-        ctl.GetAdmin().Monitor(os);
     }
     else if( args["count"]) {
         ctl = x_CreateNewClient(true);

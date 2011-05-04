@@ -252,20 +252,6 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 }
 
 
-void CNetScheduleAdmin::Monitor(CNcbiOstream& out)
-{
-    m_Impl->m_API->m_Service->Monitor(out, "MONI QUIT");
-}
-
-void CNetScheduleAdmin::Logging(bool on_off)
-{
-    string cmd(on_off ? "LOG ON" : "LOG OFF");
-
-    m_Impl->m_API->m_Service->
-        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd);
-}
-
-
 void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 {
     for (CNetServiceIterator it =

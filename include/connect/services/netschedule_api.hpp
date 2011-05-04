@@ -673,10 +673,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///
     void ForceReschedule(const string& job_key);
 
-    /// Turn server-side logging on(off)
-    ///
-    void Logging(bool on_off);
-
     void ReloadServerConfig();
 
     //////////////////////////////////////////////////////
@@ -713,8 +709,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         CNetScheduleAPI::EJobStatus status);
 
     unsigned CountActiveJobs();
-
-    void Monitor(CNcbiOstream& out);
 
     struct SServerQueueList {
         CNetServer server;
