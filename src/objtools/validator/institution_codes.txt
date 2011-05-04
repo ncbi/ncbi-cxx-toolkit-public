@@ -1102,7 +1102,7 @@ CQBG	s	Chongqing Botanical Garden
 CQNM	s	Chongqing Natural History Museum
 CR	s	Museo Nacional de Costa Rica
 CRA-OLI	b	Centro di Ricerca per l'Olivicoltura e l'Industria Olearia
-CRA-PAV <ITA>	c	Centro di Ricerca per la Patologia Vegetale
+CRA-PAV<ITA>	c	Centro di Ricerca per la Patologia Vegetale
 CRAF	s	University of Craiova, Phytopathology Department
 CRAI	s	University of Craiova
 CRBF	c	Collection de genomes d'organismes symbiotiques
@@ -6630,7 +6630,7 @@ ZTNH	s	University of Vermont, Zadock Thompson Natural History Collections
 ZTS	s	Institute of Nature Conservation, Polish Academy of Sciences, Tatra Field Station
 ZUAB	s	Zoologia--Universidad Autonoma de Barcelona
 ZUAC	s	University of Antananarivo
-ZUEC	s	Museu de Historia Natural
+ZUEC	s	Museu de Zoologia da Universidade Estadual de Campinas
 ZUFES	s	Universidad Federal do Espirito Santo
 ZUFRJ	s	Departamento de Zoolgia, Instituto de Biologia
 ZUFSM<BRA>	s	Universidade Federal de Santa Maria, Laboratorio de Herpetologia
