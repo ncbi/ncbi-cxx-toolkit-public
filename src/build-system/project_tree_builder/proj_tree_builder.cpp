@@ -645,16 +645,24 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
 void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends, 
                                            list<string>& depends_libs)
 {
+    const CMsvcSite& site = GetApp().GetSite();
     ITERATE(list<string>, p, depends) {
         const string& id = *p;
         if (id[0] == '#') {
             break;
         }
-        string lib = GetApp().GetSite().ProcessMacros(id,false);
+        string lib = site.ProcessMacros(id,false);
         if (!lib.empty()) {
             depends_libs.push_back(lib);
         } else {
-            depends_libs.push_back(id);
+            if (CSymResolver::IsDefine(id) &&
+                site.GetMacros().GetValue(CSymResolver::StripDefine(id),lib)) {
+                list<string> res;
+                NStr::Split(lib, LIST_SEPARATOR, res);
+                copy(res.begin(), res.end(), back_inserter(depends_libs));
+            } else {
+                depends_libs.push_back(id);
+            }
         }
     }
 }
