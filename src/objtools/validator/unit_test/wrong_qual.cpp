@@ -1679,7 +1679,6 @@ static const TKeyQualVal s_KeyQualVal[] = {
     { "misc_feature", "sex", "foo" },
     { "misc_feature", "virion", "foo" },
     { "misc_feature", "sub_species", "foo" },
-    { "misc_feature", "exception", "foo" },
     { "misc_feature", "ecotype", "foo" },
     { "misc_recomb", "compare", "AY123456.1" },
     { "misc_recomb", "mitochondrion", "foo" },
