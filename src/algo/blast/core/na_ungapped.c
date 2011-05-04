@@ -1378,7 +1378,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
            technically be negative, but the compressed version
            of the query has extra pad bytes before q[0] */
 
-        if (s_offset > 0) {
+        if ( (s_offset > 0) && (q_offset > 0) ) {
             Uint1 q_byte = q[q_offset - 4];
             Uint1 s_byte = s[s_offset / COMPRESSION_RATIO - 1];
             ext_left = s_ExactMatchExtendLeft[q_byte ^ s_byte];
@@ -1387,7 +1387,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
 
         /* look for up to 4 exact matches to the right of the seed */
 
-        if (ext_left < ext_to) {
+        if ((ext_left < ext_to) && ((q_offset + lut_word_length) < query->length)) {
             Uint1 q_byte = q[q_offset + lut_word_length];
             Uint1 s_byte = s[(s_offset + lut_word_length) / COMPRESSION_RATIO];
             Int4 ext_right = s_ExactMatchExtendRight[q_byte ^ s_byte];
