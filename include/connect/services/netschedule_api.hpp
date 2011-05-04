@@ -623,6 +623,16 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void StatusSnapshot(TStatusMap& status_map,
         const string& affinity_token);
 
+    /// List of worker node IDs associated with affinities
+    /// returned by AffinitySnapshot().
+    typedef vector<string> TWorkerNodeList;
+    /// Affinity map, shows number of jobs per affinity.
+    typedef map<string, pair<unsigned, TWorkerNodeList> > TAffinityMap;
+
+    /// For each affinity, returns the number of jobs associated with it.
+    /// @param affinity_map
+    ///    Map of affinity tokens to job number counters.
+    void AffinitySnapshot(TAffinityMap& affinity_map);
 
     /// Delete job
     void DropJob(const string& job_key);
@@ -707,6 +717,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     void PrintQueue(CNcbiOstream& output_stream,
         CNetScheduleAPI::EJobStatus status);
+
+    void PrintQueueInfo(CNcbiOstream& output_stream,
+        const string& queue_name);
 
     unsigned CountActiveJobs();
 

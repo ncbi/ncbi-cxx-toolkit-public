@@ -163,6 +163,46 @@ void CNetScheduleAdmin::PrintQueue(CNcbiOstream& output_stream,
         output_stream, CNetService::eMultilineOutput);
 }
 
+void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream,
+    const string& queue_name)
+{
+    string cmd("QINF " + queue_name);
+    string cmd_output(m_Impl->m_API->m_Service->
+        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd).response);
+    output_stream << "Queue name: " << queue_name << NcbiEndl;
+    switch (cmd_output[0]) {
+    case '0':
+        output_stream << "Type: static" << NcbiEndl;
+        break;
+    case '1':
+        output_stream << "Type: dynamic" << NcbiEndl;
+    }
+    vector<CTempString> tokens;
+    NStr::Tokenize(cmd_output, "\t", tokens);
+    if (tokens.size() == 3 && tokens[0][0] == '1') {
+        output_stream << "Model queue: " << tokens[1] << NcbiEndl;
+        CTempString& description(tokens[2]);
+        CTempString::size_type descr_pos = 0;
+        CTempString::size_type descr_size = description.size();
+        if (descr_size > 1)
+            switch (description[descr_size - 1]) {
+            case '"':
+            case '\'':
+                --descr_size;
+            }
+        if (descr_size > 0)
+            switch (description[0]) {
+            case '"':
+            case '\'':
+                ++descr_pos;
+                --descr_size;
+            }
+        output_stream << "Description: " <<
+            NStr::ParseEscapes(CTempString(tokens[2], descr_pos, descr_size)) <<
+            NcbiEndl;
+    }
+}
+
 unsigned CNetScheduleAdmin::CountActiveJobs()
 {
     string cmd("ACNT");
@@ -273,18 +313,42 @@ void CNetScheduleAdmin::StatusSnapshot(
     cmd.append(NStr::PrintableString(affinity_token));
     cmd.append("\"");
 
+    string output_line, st_str, cnt_str;
+
     for (CNetServiceIterator it =
-        m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
         CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
 
-        string output_line;
-
-        while (cmd_output.ReadLine(output_line)) {
-            // parse the status message
-            string st_str, cnt_str;
-            if (NStr::SplitInTwo(output_line, " ", st_str, cnt_str)) {
+        while (cmd_output.ReadLine(output_line))
+            if (NStr::SplitInTwo(output_line, " ", st_str, cnt_str))
                 status_map[CNetScheduleAPI::StringToStatus(st_str)] +=
                     NStr::StringToUInt(cnt_str);
+    }
+}
+
+void CNetScheduleAdmin::AffinitySnapshot(
+    CNetScheduleAdmin::TAffinityMap& affinity_map)
+{
+    string cmd = "AFLS";
+
+    string aff_str, cnt_str;
+
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+        string cmd_output((*it).ExecWithRetry(cmd).response);
+        vector<CTempString> affinities;
+        NStr::Tokenize(cmd_output, "&", affinities);
+        ITERATE(vector<CTempString>, affinity, affinities) {
+            if (NStr::SplitInTwo(*affinity, "=", aff_str, cnt_str)) {
+                TWorkerNodeList worker_nodes;
+                NStr::Tokenize(cnt_str, ",", worker_nodes);
+                if (worker_nodes.size() > 1) {
+                    cnt_str = worker_nodes.front();
+                    TWorkerNodeList& wn_list = affinity_map[aff_str].second;
+                    wn_list.insert(wn_list.begin(),
+                        worker_nodes.begin() + 1, worker_nodes.end());
+                }
+                affinity_map[aff_str].first += NStr::StringToUInt(cnt_str);
             }
         }
     }
