@@ -3309,7 +3309,11 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
             return;
         } 
     } else if (NStr::StartsWith(inst_coll, "personal", NStr::eNocase)) {
-        // ignore personal collections    
+        if (NStr::EqualNocase (inst_code, "personal") && NStr::IsBlank (coll_code)) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MissingPersonalCollectionName, 
+                        "Personal collection does not have name of collector",
+                        obj, ctx);
+        }
         return;
     } else {
         // check for partial match

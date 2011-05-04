@@ -9214,6 +9214,21 @@ BOOST_AUTO_TEST_CASE(Test_Generic_NonAsciiAsn)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_DESCR_MissingPersonalCollectionName)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "personal:1234");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingPersonalCollectionName",
+                              "Personal collection does not have name of collector"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Generic_AuthorListHasEtAl)
 {
     // prepare entry

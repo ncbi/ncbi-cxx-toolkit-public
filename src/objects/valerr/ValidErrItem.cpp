@@ -579,6 +579,9 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_LatLonOffshore,
    TErrStrs( "LatLonOffshore",
 "The lat_lon coordinate is probably in a minor or unnamed body of water.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MissingPersonalCollectionName,
+   TErrStrs ( "MissingPersonalCollectionName",
+"The personal collection does not indicate the name of the collector.")),
 
 /* SEQ_GENERIC */
 
