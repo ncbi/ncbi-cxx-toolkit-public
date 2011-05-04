@@ -719,6 +719,7 @@ START_SUBTYPE(prot)
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(derived_from);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -792,6 +793,7 @@ START_SUBTYPE(sig_peptide_aa)
     ADD_QUAL(allele);
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
+    ADD_QUAL(derived_from);
     ADD_QUAL(db_xref);
     ADD_QUAL(exception);
     ADD_QUAL(experiment);
@@ -816,6 +818,7 @@ START_SUBTYPE(transit_peptide_aa)
     ADD_QUAL(allele);
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
+    ADD_QUAL(derived_from);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(function);

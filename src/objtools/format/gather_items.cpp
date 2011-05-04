@@ -418,7 +418,7 @@ bool s_IsJustUids( const CPubdesc& pubdesc )
 
 bool s_FilterPubdesc(const CPubdesc& pubdesc, CBioseqContext& ctx)
 {
-    if ( s_IsJustUids(pubdesc) ) {
+    if ( ( ! ctx.CanGetTLSeqEntryCtx() || ctx.GetTLSeqEntryCtx().GetCanSourcePubsBeFused() ) && s_IsJustUids(pubdesc) ) {
         return true;
     }
     if ( pubdesc.CanGetComment() ) {

@@ -266,42 +266,15 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
 
 // makes sure str is of the pattern "[number]..[number]" (e.g. "34..405" )
 bool s_RangeStringIsPlainNumber( const string & str ) {
-    string::const_iterator str_iter = str.begin();
 
-    // detect first number
-    if( str_iter == str.end() || ! isdigit( *str_iter ) ) {
-        return false;
-    }
-    ++str_iter;
-    for( ; str_iter != str.end() && isdigit( *str_iter ) ; ++str_iter ) {
-    }
-
-    // detect the first dot
-    if( str_iter == str.end() || *str_iter != '.' ) {
-        return false;
-    }
-    ++str_iter;
-
-    // detect the second dot
-    if( str_iter == str.end() || *str_iter != '.' ) {
-        return false;
-    }
-    ++str_iter;
-
-    // detect the final number
-    if( str_iter == str.end() || ! isdigit( *str_iter ) ) {
-        return false;
-    }
-    ++str_iter;
-    for( ; str_iter != str.end() && isdigit( *str_iter ) ; ++str_iter ) {
+    // join in anticodon quarantined pending collab approval
+    if( str.find("join") != string::npos ||
+        str.find("order") != string::npos ||
+        str.find("complement") != string::npos )
+    {
+            return false;
     }
 
-    // after digits, there must be nothing else
-    if( str_iter != str.end() ) {
-        return false;
-    }
-
-    // all tests passed
     return true;
 }
 
@@ -1984,13 +1957,7 @@ void CFlatAnticodonQVal::Format
 
     CNcbiOstrstream text;
     text << "(pos:" ;
-    if (ctx.Config().IsModeRelease()) {
-        CSeq_loc::TRange range = m_Anticodon->GetTotalRange();
-        text << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
-    } else {
-        NStr::ReplaceInPlace( locationString, " \b", "" );
-        text << locationString;
-    }
+    text << locationString;
     text << ",aa:" << m_Aa << ')' ;
 
     x_AddFQ(q, name, CNcbiOstrstreamToString(text), CFormatQual::eUnquoted);
