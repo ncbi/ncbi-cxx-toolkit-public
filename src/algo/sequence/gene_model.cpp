@@ -2147,6 +2147,7 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
              it != except_toks.end();  ) {
             NStr::TruncateSpacesInPlace(*it);
             if (it->empty()  ||
+                *it == "annotated by transcript or proteomic data" ||
                 *it == "unclassified transcription discrepancy"  ||
                 *it == "mismatches in transcription" ||
                 *it == "unclassified translation discrepancy"  ||
@@ -2210,6 +2211,19 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
 void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
                                       const CSeq_align* align)
 {
+    // We're going to set the exception and add any needed inference qualifiers,
+    // so if there's already an inference qualifer there, remove it.
+    if (feat.IsSetQual()) {
+        NON_CONST_ITERATE (CSeq_feat::TQual, it, feat.SetQual()) {
+            if ((*it)->CanGetQual() && (*it)->GetQual() == "inference") {
+                it = --feat.SetQual().erase(it);
+            }
+        }
+        if (feat.GetQual().empty()) {
+            feat.ResetQual();
+        }
+    }
+
     // Exceptions identified are:
     //
     //   - unclassified transcription discrepancy

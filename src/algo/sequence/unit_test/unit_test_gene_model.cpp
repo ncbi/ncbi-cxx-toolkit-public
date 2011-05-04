@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
         CBioseq_set seqs;
         CSeq_annot actual_annot;
-        const CSeq_annot::C_Data::TFtable &actual_features = 
+        CSeq_annot::C_Data::TFtable &actual_features = 
             actual_annot.SetData().SetFtable();
         {
             CConstRef<CSeq_align> clean_align = generator.CleanAlignment(*align);
@@ -341,7 +341,11 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             if(id == gene_for_combined_aligns)
                 combined_aligns.push_back(align);
 
-            ITERATE(CSeq_annot::C_Data::TFtable, it, actual_features){
+            NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, it, actual_features){
+                /// Call SetFeatureExceptions() again, to verify that multiple calls
+                /// are handled correctly
+                generator.SetFeatureExceptions(**it, clean_align.GetPointer());
+
                 /// Add to combined annot, unless this is a gene feature that
                 /// was already added. Also, don't add the RNA feature from the
                 /// very first alignment (to test recomputation of the partial flag
