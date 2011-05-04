@@ -182,7 +182,35 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
                 CNetScheduleAdmin::eStatisticsWorkers);
         else if (IsOptionSet(eActiveJobCount))
             printf("%u\n", m_NetScheduleAdmin.CountActiveJobs());
-        else
+        else if (IsOptionSet(eJobsByAffinity)) {
+            CNetScheduleAdmin::TAffinityMap affinity_map;
+
+            m_NetScheduleAdmin.AffinitySnapshot(affinity_map);
+
+            ITERATE(CNetScheduleAdmin::TAffinityMap, it, affinity_map) {
+                printf("%s: %u", it->first.c_str(), it->second.first);
+                if (it->second.second.empty())
+                    printf("\n");
+                else {
+                    const char* sep = " [";
+                    ITERATE(CNetScheduleAdmin::TWorkerNodeList, wn,
+                            it->second.second) {
+                        printf("%s%s", sep, wn->c_str());
+                        sep = ", ";
+                    }
+                    printf("]\n");
+                }
+            }
+        } else if (IsOptionSet(eJobsByStatus)) {
+            CNetScheduleAdmin::TStatusMap st_map;
+            m_NetScheduleAdmin.StatusSnapshot(st_map, m_Opts.affinity);
+            ITERATE(CNetScheduleAdmin::TStatusMap, it, st_map) {
+                if (it->second > 0)
+                    printf("%s: %u\n",
+                        CNetScheduleAPI::StatusToString(it->first).c_str(),
+                        it->second);
+            }
+        } else
             m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
                 IsOptionSet(eBrief) ? CNetScheduleAdmin::eStatisticsBrief :
                     CNetScheduleAdmin::eStatisticsAll);

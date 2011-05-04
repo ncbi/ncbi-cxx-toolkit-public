@@ -47,6 +47,8 @@
 #define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
 #define QUEUE_OPTION "queue"
+#define AFFINITY_OPTION "affinity"
+#define QUERY_FIELD_OPTION "query-field"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
 
@@ -70,8 +72,14 @@ enum EOption {
     eEnableMirroring,
     eNetSchedule,
     eQueue,
+    eAffinity,
     eWorkerNodes,
     eActiveJobCount,
+    eJobsByAffinity,
+    eJobsByStatus,
+    eQuery,
+    eCount,
+    eQueryField,
     eBrief,
     eStatusOnly,
     eProgressMessageOnly,
@@ -81,6 +89,9 @@ enum EOption {
     eProgressMessage,
     eAllJobs,
     eFailJob,
+    eQueueArg,
+    eModelQueue,
+    eQueueDescription,
     eNow,
     eDie,
     eCompatMode,
@@ -117,8 +128,12 @@ private:
         unsigned ttl;
         string ns_service;
         string queue;
+        string affinity;
+        string query;
+        vector<string> query_fields;
         time_t extend_lifetime_by;
         string progress_message;
+        string queue_description;
         string error_message;
         string input;
         FILE* input_stream;
@@ -184,6 +199,11 @@ public:
     int Cmd_CommitJob();
     int Cmd_ReturnJob();
     int Cmd_UpdateJob();
+    int Cmd_NetScheduleQuery();
+    int Cmd_QueueInfo();
+    int Cmd_CreateQueue();
+    int Cmd_GetQueueList();
+    int Cmd_DeleteQueue();
 
 // Miscellaneous commands.
 public:

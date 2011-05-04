@@ -245,7 +245,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
         }
     }
 
-    printf("%s\n", submitter.Submit().c_str());
+    printf("%s\n", submitter.Submit(m_Opts.affinity).c_str());
 
     return 0;
 
@@ -257,18 +257,30 @@ ErrorExit:
 int CGridCommandLineInterfaceApp::DumpJobInputOutput(
     const string& data_or_blob_id)
 {
-    CStringOrBlobStorageReader reader(data_or_blob_id, m_NetCacheAPI);
+    try {
+        CStringOrBlobStorageReader reader(data_or_blob_id, m_NetCacheAPI);
 
-    char buffer[16 * 1024];
-    size_t bytes_read;
+        char buffer[16 * 1024];
+        size_t bytes_read;
 
-    while (reader.Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
-        if (fwrite(buffer, 1, bytes_read, m_Opts.output_stream) < bytes_read) {
-            fprintf(stderr, PROGRAM_NAME ": error while writing job input.\n");
-            return 3;
-        }
+        while (reader.Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
+            if (fwrite(buffer, 1, bytes_read,
+                    m_Opts.output_stream) < bytes_read)
+                goto Error;
+    }
+    catch (CStringOrBlobStorageRWException& e) {
+        if (e.GetErrCode() != CStringOrBlobStorageRWException::eInvalidFlag)
+            throw;
+        if (fwrite(data_or_blob_id.data(), 1, data_or_blob_id.length(),
+                m_Opts.output_stream) < data_or_blob_id.length())
+            goto Error;
+    }
 
     return 0;
+
+Error:
+    fprintf(stderr, PROGRAM_NAME ": error while writing job data.\n");
+    return 3;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_GetJobInput()
@@ -372,6 +384,96 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
         job.progress_msg = m_Opts.progress_message;
         m_NetScheduleAPI.GetExecuter().PutProgressMsg(job);
     }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    NStr::TruncateSpacesInPlace(m_Opts.query, NStr::eTrunc_Begin);
+
+    if (IsOptionSet(eCount))
+        NcbiCout << m_NetScheduleAdmin.Count(m_Opts.query) << NcbiEndl;
+    else if (IsOptionSet(eQueryField))
+        m_NetScheduleAdmin.Query(m_Opts.query, m_Opts.query_fields, NcbiCout);
+    else if (NStr::StartsWith(m_Opts.query, "SELECT", NStr::eNocase))
+        m_NetScheduleAdmin.Select(m_Opts.query, NcbiCout);
+    else {
+        CNetScheduleKeys keys;
+        m_NetScheduleAdmin.RetrieveKeys(m_Opts.query, keys);
+        ITERATE(CNetScheduleKeys, it, keys) {
+            NcbiCout << string(*it) << NcbiEndl;
+        }
+    }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    m_NetScheduleAdmin.PrintQueueInfo(NcbiCout, m_Opts.id);
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_CreateQueue()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    m_NetScheduleAdmin.CreateQueue(m_Opts.id, m_Opts.queue,
+        m_Opts.queue_description);
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_GetQueueList()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    CNetScheduleAdmin::TQueueList queues;
+
+    m_NetScheduleAdmin.GetQueueList(queues);
+
+    typedef set<string> TServerSet;
+    typedef map<string, TServerSet> TQueueRegister;
+
+    TQueueRegister queue_register;
+
+    ITERATE (CNetScheduleAdmin::TQueueList, it, queues) {
+        string server_address(g_NetService_gethostname(it->server.GetHost()));
+        server_address += ':';
+        server_address += NStr::UIntToString(it->server.GetPort());
+
+        ITERATE(std::list<std::string>, queue, it->queues) {
+            queue_register[*queue].insert(server_address);
+        }
+    }
+
+    ITERATE(TQueueRegister, it, queue_register) {
+        NcbiCout << it->first;
+        if (it->second.size() != queues.size()) {
+            const char* sep = " (limited to ";
+            ITERATE(TServerSet, server, it->second) {
+                NcbiCout << sep << *server;
+                sep = ", ";
+            }
+            NcbiCout << ")";
+        }
+        NcbiCout << NcbiEndl;
+    }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_DeleteQueue()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    m_NetScheduleAdmin.DeleteQueue(m_Opts.id);
 
     return 0;
 }

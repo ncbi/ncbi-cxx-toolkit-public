@@ -114,12 +114,36 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eQueue,
         QUEUE_OPTION, "NetSchedule queue."},
 
+    {CCommandLineParser::eOptionWithParameter, eAffinity,
+        AFFINITY_OPTION, "Affinity token."},
+
     {CCommandLineParser::eSwitch, eWorkerNodes,
         "worker-nodes", "Print the list of active worker nodes."},
 
     {CCommandLineParser::eSwitch, eActiveJobCount,
         "active-job-count", "Only print the total number of "
             "Pending and Running jobs in all queues combined."},
+
+    {CCommandLineParser::eSwitch, eJobsByAffinity,
+        "jobs-by-affinity", "For each affinity, print the number "
+            "of pending jobs associated with it."},
+
+    {CCommandLineParser::eSwitch, eJobsByStatus,
+        "jobs-by-status", "Print the number of jobs itemized by their "
+            "current status. If the '--" AFFINITY_OPTION "' option "
+            "is given, only the jobs with the specified affinity "
+            "will be counted."},
+
+    {CCommandLineParser::ePositionalArgument, eQuery, "QUERY", NULL},
+
+    {CCommandLineParser::eSwitch, eCount,
+        "count", "Print only the number of records returned by the query."},
+
+    {CCommandLineParser::eOptionWithParameter, eQueryField,
+        QUERY_FIELD_OPTION, "Job attribute to return as an output "
+            "column. Multiple '--" QUERY_FIELD_OPTION "' options can be "
+            "specified for a query. If no such options are specified, "
+            "a single column of job IDs is printed."},
 
     {CCommandLineParser::eSwitch, eBrief,
         "brief", "Produce less verbose output."},
@@ -151,6 +175,13 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eFailJob,
         FAIL_JOB_OPTION, "Report the job as failed."},
 
+    {CCommandLineParser::ePositionalArgument, eQueueArg, "QUEUE", NULL},
+
+    {CCommandLineParser::ePositionalArgument, eModelQueue, "MODEL_QUEUE", NULL},
+
+    {CCommandLineParser::eOptionWithParameter, eQueueDescription,
+        "queue-description", "Optional queue description."},
+
     {CCommandLineParser::eSwitch, eNow,
         NOW_OPTION, "Take action immediately."},
 
@@ -166,6 +197,10 @@ struct SOptionDefinition {
     "\n\nBoth NetCache and ICache modes are supported. " \
     "ICache mode requires blob ID to be specified in the " \
     "following format: \"key,version,subkey\"."
+
+#define WN_NOT_NOTIFIED_PARAGRAPH \
+    "Worker nodes that may have already " \
+    "started job processing will not be notified."
 
 struct SCommandDefinition {
     int (CGridCommandLineInterfaceApp::*cmd_proc)();
@@ -184,7 +219,7 @@ struct SCommandDefinition {
         {eUntypedArg, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_BlobInfo,
-        "blobinfo|bi", "Retrieve meta information on a NetCache blob.",
+        "blobinfo|bi", "Retrieve metadata of a NetCache blob.",
         "Print vital information about the specified blob. "
         "Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
@@ -222,7 +257,7 @@ struct SCommandDefinition {
         {eNetCache, eCache, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_JobInfo,
-        "jobinfo|ji", "Retrieve meta information on a NetSchedule job.",
+        "jobinfo|ji", "Print information about a NetSchedule job.",
         "Print vital information about the specified NetSchedule job. "
         "Expired jobs will be reported as not found.",
         {eID, eNetSchedule, eQueue, eBrief, eStatusOnly, eDeferExpiration,
@@ -239,7 +274,8 @@ struct SCommandDefinition {
         "Unless the '--" INPUT_FILE_OPTION "' or '--" INPUT_OPTION "' "
         "options are given, the input is read from the standard input "
         "stream.",
-        {eNetSchedule, eQueue, eNetCache, eInput, eInputFile, eAuth, -1}},
+        {eNetSchedule, eQueue, eNetCache, eInput, eInputFile, eAffinity,
+            eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_GetJobInput,
         "getjobinput", "Read job input.",
@@ -266,8 +302,8 @@ struct SCommandDefinition {
         "kill", "Delete NetSchedule job(s).",
         "Delete one or all job records from the specified NetSchedule "
         "queue. Information about the jobs is completely wiped out as "
-        "if the jobs never existed. Worker nodes that may have already "
-        "started job processing will not be notified.",
+        "if the jobs never existed. "
+        WN_NOT_NOTIFIED_PARAGRAPH,
         {eOptionalID, eNetSchedule, eQueue, eAllJobs, eCompatMode, eAuth, -1}},
 
 /*
@@ -311,8 +347,44 @@ struct SCommandDefinition {
         {eID, eNetSchedule, eQueue, eForceReschedule, eExtendLifetime,
             eProgressMessage, eAuth, -1}},
 
+    {&CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery,
+        "nsquery", "Send a custom query to a NetSchedule server.",
+        "The syntax of the query must comply to the format expected "
+        "by the NetSchedule QERY command "
+        "(see http://mini.ncbi.nih.gov/hequ).",
+        {eQuery, eNetSchedule, eQueue, eQueryField, eCount, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_QueueInfo,
+        "queueinfo|qi", "Get information about a NetSchedule queue.",
+        "Print queue type (static or dynamic). For dynamic queues, "
+        "print also their model queue name and description.",
+        {eQueueArg, eNetSchedule, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_CreateQueue,
+        "createqueue", "Create a dynamic NetSchedule queue.",
+        "This command creates a new NetSchedule queue using "
+        "a template known as a model queue.",
+        {eQueueArg, eModelQueue, eNetSchedule, eQueueDescription, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_GetQueueList,
+        "getqueuelist", "Print the list of available NetSchedule queues.",
+        "This command takes a NetSchedule service name (or server "
+        "address) and queries each server participating that service "
+        "for the list of configured or dynamically created queues. "
+        "The collected lists are then combined in a single list of "
+        "queues available on all servers in the service. For each "
+        "queue available only on a subset of servers, its servers "
+        "are listed in parentheses after the queue name.",
+        {eNetSchedule, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
+        "deletequeue", "Delete a dynamic NetSchedule queue.",
+        "All jobs in the specified queues will be lost. "
+        WN_NOT_NOTIFIED_PARAGRAPH,
+        {eQueueArg, eNetSchedule, eAuth, -1}},
+
     {&CGridCommandLineInterfaceApp::Cmd_ServerInfo,
-        "serverinfo|si", "Print server information.",
+        "serverinfo|si", "Print information about a Grid server.",
         "Query and print information about a running "
         "NetCache, NetSchedule, or worker node process.\n\n"
         "If the '--" QUEUE_OPTION "' option is specified "
@@ -324,8 +396,8 @@ struct SCommandDefinition {
         "stats", "Show server access statistics.",
         "Dump accumulated statistics on server access and "
         "performance.",
-        {eNetCache, eNetSchedule, eQueue, eBrief,
-            eWorkerNodes, eActiveJobCount, eAuth, -1}},
+        {eNetCache, eNetSchedule, eQueue, eBrief, eWorkerNodes, eActiveJobCount,
+            eJobsByAffinity, eJobsByStatus, eAffinity, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Health,
         "health", "Evaluate availability of a server.",
@@ -425,6 +497,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.option_flags[eID] = OPTION_SET;
                 /* FALL THROUGH */
             case eID:
+            case eQueueArg:
                 m_Opts.id = opt_value;
                 break;
             case eAuth:
@@ -454,7 +527,17 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.ns_service = opt_value;
                 break;
             case eQueue:
+            case eModelQueue:
                 m_Opts.queue = opt_value;
+                break;
+            case eAffinity:
+                m_Opts.affinity = opt_value;
+                break;
+            case eQuery:
+                m_Opts.query = opt_value;
+                break;
+            case eQueryField:
+                m_Opts.query_fields.push_back(opt_value);
                 break;
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
@@ -464,6 +547,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eFailJob:
                 m_Opts.error_message = opt_value;
+                break;
+            case eQueueDescription:
+                m_Opts.queue_description = opt_value;
                 break;
             case eInput:
                 m_Opts.input = opt_value;
