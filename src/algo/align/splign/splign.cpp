@@ -1167,8 +1167,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         // m1: estimate terminal genomic extents based on uncovered end sizes
         const THit::TCoord extent_left_m1 (x_GetGenomicExtent(qmin));
         const THit::TCoord rspace   ((m_polya_start < kMax_UInt?
-                                      m_polya_start: mrna_size) - qmax + 1);
-        const THit::TCoord extent_right_m1 (x_GetGenomicExtent(rspace));
+                                      m_polya_start: mrna_size) - qmax - 1 );
+        const THit::TCoord extent_right_m1 (x_GetGenomicExtent(rspace) + 1);//there seems to be a bug downstream, workaround
         
         // m2: estimate genomic extents using compartment hits
         THit::TCoord fixed_left (kMaxCoord / 2), fixed_right(fixed_left);
