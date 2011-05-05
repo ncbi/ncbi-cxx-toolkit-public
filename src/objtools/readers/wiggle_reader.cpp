@@ -288,7 +288,7 @@ bool CWiggleReader::x_ProcessLineData(
             if ( ! m_pControlData->Chrom().empty() && m_pControlData->Chrom() != temp.Chrom() ) {
                 return false;
             }
-            if ( m_pControlData->Chrom().empty() && m_pControlData->SeqSpan() != temp.SeqSpan() ) {
+            if ( ! m_pControlData->Chrom().empty() && m_pControlData->SeqSpan() != temp.SeqSpan() ) {
                 return false;
             }
             *m_pControlData = temp;

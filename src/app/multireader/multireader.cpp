@@ -47,7 +47,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/Seq_annot.hpp>
-
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
@@ -347,6 +346,7 @@ CMultiReaderApp::Run(void)
         }
         break;
 
+    case CFormatGuess::eWiggle:
     case CFormatGuess::eBed:
     case CFormatGuess::eGtf:
         try {
@@ -412,10 +412,6 @@ void CMultiReaderApp::SetFormat(
     }
     if ( NStr::StartsWith( strProgramName, "gtf" ) || 
         format == "gtf" || format == "gff3" || format == "gff2" ) {
-        m_uFormat = CFormatGuess::eGtf;
-    }
-    if ( NStr::StartsWith( strProgramName, "gvf" ) || 
-        format == "gvf" ) {
         m_uFormat = CFormatGuess::eGtf;
     }
     if ( NStr::StartsWith( strProgramName, "newick" ) || 
@@ -552,6 +548,11 @@ void CMultiReaderApp::ReadAnnots(
         default:
             break;
  
+        case CFormatGuess::eWiggle: {
+            CWiggleReader reader( m_iFlags );
+            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+            break;
+        }
         case CFormatGuess::eBed: {
             CBedReader reader( m_iFlags );
             reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
