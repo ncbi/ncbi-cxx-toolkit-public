@@ -2214,9 +2214,14 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
     // We're going to set the exception and add any needed inference qualifiers,
     // so if there's already an inference qualifer there, remove it.
     if (feat.IsSetQual()) {
-        NON_CONST_ITERATE (CSeq_feat::TQual, it, feat.SetQual()) {
+        for (CSeq_feat::TQual::iterator it = feat.SetQual().begin();
+            it != feat.SetQual().end();  )
+        {
             if ((*it)->CanGetQual() && (*it)->GetQual() == "inference") {
-                it = --feat.SetQual().erase(it);
+                it = feat.SetQual().erase(it);
+            }
+            else {
+                ++it;
             }
         }
         if (feat.GetQual().empty()) {
