@@ -1970,7 +1970,6 @@ CFormatGuess::IsAllComment()
 	m_TestLines.clear();
 	EnsureSplitLines();
 
-	bool NonCommentFound = false;
 	ITERATE(list<string>, it, m_TestLines) {
 		if(it->empty())
 			continue;
