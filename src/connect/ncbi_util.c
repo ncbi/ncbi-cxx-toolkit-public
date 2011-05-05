@@ -294,7 +294,7 @@ extern const char* NcbiMessagePlusError
     char*  buf;
     size_t mlen;
     size_t dlen;
-    int need_release = 0;
+    int/*bool*/ release = 0/*false*/;
 
     /* Check for an empty addition */
     if (!error  &&  (!descr  ||  !*descr)) {
@@ -307,9 +307,9 @@ extern const char* NcbiMessagePlusError
     /* Adjust description, if necessary and possible */
     
     if (error >=0  &&  !descr) {
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
         descr = UTIL_TcharToUtf8( _wcserror(error) );
-        need_release = 1;
+        release = 1/*true*/;
 #else
         descr = strerror(error);
 #endif
@@ -331,9 +331,8 @@ extern const char* NcbiMessagePlusError
         if (*dynamic  &&  message)
             free((void*) message);
         *dynamic = 0;
-        if (need_release) {
+        if (release)
             UTIL_ReleaseBuffer(descr);
-        }
         return "Ouch! Out of memory";
     }
 
@@ -349,9 +348,8 @@ extern const char* NcbiMessagePlusError
         mlen += sprintf(buf + mlen, "%d%s", error, "," + !*descr);
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
-    if (need_release) {
+    if (release)
         UTIL_ReleaseBuffer(descr);
-    }
 
     *dynamic = 1/*true*/;
     return buf;
@@ -1056,10 +1054,11 @@ extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
         int n = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL,
                                     0, NULL, NULL);
         if (n >= 0) {
-            p = (char*) LocalAlloc(LPTR, (n + 1) * sizeof(char));
+            p = (char*) LocalAlloc(LMEM_FIXED, (n + 1) * sizeof(char));
             if (p) {
                 WideCharToMultiByte(CP_UTF8, 0, buffer, -1, p,
                                     n, NULL, NULL);
+                p[n] = '\0';
             }
         }
     }
@@ -1073,9 +1072,10 @@ extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
     if (buffer) {
         int n = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, NULL, 0);
         if (n >= 0) {
-            p = (wchar_t*) LocalAlloc(LPTR, (n + 1) * sizeof(wchar_t));
+            p = (wchar_t*) LocalAlloc(LMEM_FIXED, (n + 1) * sizeof(wchar_t));
             if (p) {
                 MultiByteToWideChar(CP_UTF8, 0, buffer, -1, p,    n);
+                p[n] = 0;
             }
         }
     }
@@ -1087,9 +1087,9 @@ extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
 
 extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
 {
-    if (buffer) {
+    if (buffer)
         LocalFree((HLOCAL) buffer);
-    }
 }
+
 
 #endif /*NCBI_OS_MSWIN*/

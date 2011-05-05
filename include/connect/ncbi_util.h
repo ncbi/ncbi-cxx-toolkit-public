@@ -550,13 +550,12 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  );
 
 
-/**
- *  Conversion from Unicode to UTF8, and back.
- *  Microsoft Windows - specific.
+/** Conversion from Unicode to UTF8, and back.
+ *  MSWIN-specific.
  *  NOTE:
- *    The caller should use UTIL_ReleaseBufferOnHeap function
- *    to free the buffer returned from UTIL_TcharToUtf8OnHeap;
- *    and ReleaseBuffer to free the one returned from UTIL_TcharToUtf8
+ *    The caller must always use UTIL_ReleaseBufferOnHeap()
+ *    to free the buffer returned from UTIL_TcharToUtf8OnHeap(),  and
+ *    ReleaseBuffer() to free the one returned from UTIL_TcharToUtf8().
  */
 
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)

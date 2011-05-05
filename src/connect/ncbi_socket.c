@@ -223,6 +223,23 @@ static FSSLSetup s_SSLSetup;
  *  ERROR REPORTING
  */
 
+#if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
+
+static const char* s_WinStrdup(const char* s)
+{
+    size_t n = strlen(s);
+    char*  d = (char*) LocalAlloc(LMEM_FIXED, ++n * sizeof(char));
+    return d ? (const char*) memcpy(d, s, n) : 0;
+}
+
+#  define _SOCK_STRDUP(s)  s_WinStrdup(s)
+
+#else
+
+#  define _SOCK_STRDUP(s)  s
+
+#endif /*NCBI_OS_MSWIN && _UNICODE*/
+
 
 static const char* s_StrError(SOCK sock, int error)
 {
@@ -380,12 +397,12 @@ static const char* s_StrError(SOCK sock, int error)
             const char* strerr = sslerror(sock->session == SESSION_INVALID
                                           ? 0 : sock->session, error);
             if (strerr)
-                return strerr;
+                return _SOCK_STRDUP(strerr);
         }
     }
     for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) -1/*dummy*/;  i++) {
         if (errmap[i].errnum == error)
-            return errmap[i].errtxt;
+            return _SOCK_STRDUP(errmap[i].errtxt);
     }
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
     return UTIL_TcharToUtf8(error > 0 ? _wcserror(error) : L"");
@@ -407,7 +424,7 @@ static const char* s_WinStrerror(DWORD error)
 				             MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
 				             (LPTSTR) &str, 0, NULL);
 	if (!rv  &&  str) {
-		LocalFree(str);
+		LocalFree((HLOCAL) str);
 		str = NULL;
 	}
 	return UTIL_TcharToUtf8OnHeap(str);
