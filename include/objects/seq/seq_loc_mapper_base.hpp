@@ -724,7 +724,7 @@ private:
 
     // This removes fuzz of type "range" if any.
     // Don't give this mix locations; it won't do anything.
-    CConstRef<CSeq_loc> x_RemoveFuzzWithRange( CConstRef<CSeq_loc> loc_piece ) const;
+    CConstRef<CSeq_loc> x_FixNonsenseFuzz( CConstRef<CSeq_loc> loc_piece ) const;
 
     // Try to optimize the mapped location if it's a mix.
     // The allowed optimizations are:

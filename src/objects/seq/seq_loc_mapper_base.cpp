@@ -2234,8 +2234,8 @@ void CSeq_loc_Mapper_Base::x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const
         for( ; loc_iter; ++loc_iter ) {
             CConstRef<CSeq_loc> loc_piece( loc_iter.GetRangeAsSeq_loc() );
 
-            // remove any "range fuzz" from result
-            loc_piece = x_RemoveFuzzWithRange(loc_piece);
+            // remove nonsense (to C) fuzz like "range fuzz" from result
+            loc_piece = x_FixNonsenseFuzz(loc_piece);
             
             if( loc_piece && ( loc_piece->IsPartialStart(extreme) || loc_piece->IsPartialStop(extreme) ) ) {
                 const bool is_last = ( ++CSeq_loc_CI(loc_iter) == loc->end() );
@@ -2263,7 +2263,7 @@ void CSeq_loc_Mapper_Base::x_StripExtraneousFuzz(CRef<CSeq_loc>& loc) const
 }
 
 CConstRef<CSeq_loc> 
-CSeq_loc_Mapper_Base::x_RemoveFuzzWithRange( 
+CSeq_loc_Mapper_Base::x_FixNonsenseFuzz( 
     CConstRef<CSeq_loc> loc_piece ) const
 {
     switch( loc_piece->Which() ) {
@@ -2271,20 +2271,26 @@ CSeq_loc_Mapper_Base::x_RemoveFuzzWithRange(
         {
             const CSeq_interval &seq_int = loc_piece->GetInt();
 
-            const bool from_is_fuzz_range = 
-                ( seq_int.IsSetFuzz_from() && seq_int.GetFuzz_from().IsRange() );
-            const bool to_is_fuzz_range = 
-                ( seq_int.IsSetFuzz_to()   && seq_int.GetFuzz_to().IsRange()   );
+            const bool from_fuzz_is_bad = 
+                ( seq_int.IsSetFuzz_from() && 
+                    ( seq_int.GetFuzz_from().IsRange() || 
+                        (seq_int.GetFuzz_from().IsLim() && 
+                            seq_int.GetFuzz_from().GetLim() == CInt_fuzz::eLim_gt ) ) );
+            const bool to_fuzz_is_bad = 
+                ( seq_int.IsSetFuzz_to() && 
+                    ( seq_int.GetFuzz_to().IsRange() || 
+                        (seq_int.GetFuzz_to().IsLim() && 
+                            seq_int.GetFuzz_to().GetLim() == CInt_fuzz::eLim_lt ) ) );
 
-            if( from_is_fuzz_range || to_is_fuzz_range ) {
+            if( from_fuzz_is_bad || to_fuzz_is_bad ) {
                 CRef<CSeq_loc> new_loc( new CSeq_loc );
                 new_loc->Assign( *loc_piece );
 
-                if( from_is_fuzz_range ) {
+                if( from_fuzz_is_bad ) {
                     new_loc->SetInt().ResetFuzz_from();
                 }
 
-                if( to_is_fuzz_range ) {
+                if( to_fuzz_is_bad ) {
                     new_loc->SetInt().ResetFuzz_to();
                 }
 
@@ -2312,6 +2318,7 @@ CSeq_loc_Mapper_Base::x_RemoveFuzzWithRange(
         break;
     }
 
+    // the vast majority of the time we should end up here
     return loc_piece;
 }
 
@@ -2852,8 +2859,18 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         const CSeq_point& pnt = src_loc.GetPnt();
         TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
         if ( pnt.IsSetFuzz() ) {
-            fuzz.first.Reset(new CInt_fuzz);
-            fuzz.first->Assign(pnt.GetFuzz());
+            // With C-style, we sometimes set the fuzz to the "to-fuzz" depending
+            // on what the fuzz actually is.
+            if( (m_FuzzOption & fFuzzOption_CStyle) != 0 && 
+                (pnt.GetFuzz().IsLim() && 
+                    pnt.GetFuzz().GetLim() == CInt_fuzz::eLim_gt) ) 
+            {
+                fuzz.second.Reset(new CInt_fuzz);
+                fuzz.second->Assign(pnt.GetFuzz());
+            } else {
+                fuzz.first.Reset(new CInt_fuzz);
+                fuzz.first->Assign(pnt.GetFuzz());
+            }
         }
         bool res = x_MapInterval(pnt.GetId(),
             TRange(pnt.GetPoint(), pnt.GetPoint()),

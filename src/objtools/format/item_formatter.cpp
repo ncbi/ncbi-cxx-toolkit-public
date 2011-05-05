@@ -1465,7 +1465,9 @@ void CFlatItemFormatter::x_GetKeywords
  list<string>& l) const
 {
     string keywords = NStr::Join(kws.GetKeywords(), "; ");
-    keywords += '.';
+    if( ! NStr::EndsWith(keywords, ".") ) {
+        keywords += '.';
+    }
 
     ExpandTildes( keywords, eTilde_space );
     Wrap(l, prefix, keywords);

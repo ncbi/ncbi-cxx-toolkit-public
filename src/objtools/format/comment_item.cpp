@@ -135,7 +135,12 @@ void CCommentItem::Format
 void CCommentItem::AddPeriod(void)
 {
     if( ! m_Comment.empty() ) {
+        const bool ends_with_ellipsis = NStr::EndsWith(m_Comment.back(), "...");
         ncbi::objects::AddPeriod(m_Comment.back());
+        if( ends_with_ellipsis ) {
+            // finish the ellipsis
+            m_Comment.back() += "..";
+        }
     }
 }
 
@@ -963,9 +968,11 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
         {{
             if (!NStr::IsBlank(desc.GetComment())) {
                 str = desc.GetComment();
-                TrimSpacesAndJunkFromEnds(str);
+                TrimSpacesAndJunkFromEnds(str, true);
                 ConvertQuotes(str);
-                ncbi::objects::AddPeriod(str);
+                if( ! NStr::EndsWith(str, ".") ) {
+                    str += '.';
+                }
             }
         }}
         break;

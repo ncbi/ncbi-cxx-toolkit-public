@@ -995,43 +995,6 @@ bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
     return false;
 }
 
-#if 0
-//  ----------------------------------------------------------------------------
-static CConstRef< CSeq_feat > s_GetGeneFeatureByLocus_tag(
-    CBioseqContext& ctx,
-    const string& given_tag )
-//
-//  Retrieve gene in given context carrying the given locus tag. Returns invalid
-//  feature if not found.
-//  ----------------------------------------------------------------------------
-{
-    CConstRef< CSeq_feat > GeneFeature;
-
-    try {
-        SAnnotSelector sel;
-        sel.SetFeatType( CSeqFeatData::e_Gene )
-            .SetFeatSubtype( CSeqFeatData::eSubtype_gene );
-        for ( CFeat_CI it( ctx.GetTopLevelEntry(), sel ); it; ++it ) {
-            const CSeq_feat& feat = it->GetMappedFeature();
-            if ( ! feat.GetData().IsGene() ) {
-                continue;
-            }
-            if ( ! feat.GetData().GetGene().IsSetLocus_tag() ) {
-                continue;
-            }
-            if ( feat.GetData().GetGene().GetLocus_tag() == given_tag ) {
-                GeneFeature.Reset( &feat );
-                break;
-            }
-        }
-    }
-    catch( CException& ) {
-        _TRACE( "s_GetGeneFeatureByLocus_tag(): Error: Feature iteration failed" );
-    }
-    return GeneFeature;
-}
-#endif
-
 
 // -- FeatureItemBase
 
@@ -1171,6 +1134,7 @@ bool CFeatureItem::x_ExceptionIsLegalForFeature() const
     case CSeqFeatData::eSubtype_ncRNA:
     case CSeqFeatData::eSubtype_otherRNA:
     case CSeqFeatData::eSubtype_preRNA:
+    case CSeqFeatData::eSubtype_rRNA:
     case CSeqFeatData::eSubtype_sig_peptide_aa:
     case CSeqFeatData::eSubtype_tRNA:
         return true;
@@ -1528,7 +1492,9 @@ static bool s_GeneMatchesXref
     }
 
     if( xref->IsSetLocus() ) {
-        if( ! other_ref->IsSetLocus() || other_ref->GetLocus() != xref->GetLocus() ) {
+        if( (! other_ref->IsSetLocus() || other_ref->GetLocus() != xref->GetLocus()) &&
+            (! other_ref->IsSetLocus_tag() || other_ref->GetLocus_tag() != xref->GetLocus()) ) 
+        {
             return false;
         }
     }
@@ -1540,6 +1506,37 @@ static bool s_GeneMatchesXref
     }
 
     return true;
+}
+
+
+// matches C's behavior, even though it's not strictly correct.
+// In the future, we may prefer to use sequence::BadSeqLocSortOrder
+bool s_BadSeqLocSortOrderCStyle( CBioseq_Handle &bioseq_handle, const CSeq_loc &location )
+{
+    CSeq_loc_CI previous_loc;
+
+    ITERATE( CSeq_loc, loc_iter, location ) {
+        if( ! previous_loc ) {
+            previous_loc = loc_iter;
+            continue;
+        }
+        if ( previous_loc.GetSeq_id().Equals( loc_iter.GetSeq_id() ) ) {
+            const int prev_to = previous_loc.GetRange().GetTo();
+            const int this_to = loc_iter.GetRange().GetTo();
+            if ( loc_iter.GetStrand() == eNa_strand_minus ) {
+                if (  prev_to < this_to) {
+                    return true;
+                }
+            } else {
+                if (prev_to > this_to) {
+                    return true;
+                }
+            }
+        }
+        previous_loc = loc_iter;
+    }
+
+    return false;
 }
 
 // returns original strand (actually, just the strandedness of the first part,
@@ -1704,13 +1701,17 @@ public:
             }
         }}
 
+        const bool candidate_feat_bad_order = s_BadSeqLocSortOrderCStyle( m_BioseqHandle, *candidate_feat_loc );
+
         const EGeneSearchLocOpt norm_opt = ( (overlap_type_this_iteration == eOverlap_Contained) ?
             fGeneSearchLocOpt_RemoveFar :
             0 );
         candidate_feat_original_strand = s_GeneSearchNormalizeLoc( m_BioseqHandle, candidate_feat_loc, 
             circular_length, norm_opt );
 
-        if( candidate_feat_is_mixed && annot_overlap_type == SAnnotSelector::eOverlap_TotalRange ) {
+        if( ( candidate_feat_bad_order || candidate_feat_is_mixed ) && 
+            annot_overlap_type == SAnnotSelector::eOverlap_TotalRange )
+        {
             if( feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" ) {
                 // force strand matching
                 candidate_feat_original_strand = loc_original_strand;
@@ -1742,6 +1743,10 @@ public:
         SAnnotSelector &sel, 
         TSeqPos circular_length ) 
     {
+        if( cur_diff < 0 ) {
+            return;
+        }
+
         // for, e.g. AL596104
         if( sel.GetOverlapType() == SAnnotSelector::eOverlap_Intervals ) {
             cur_diff = sequence::GetLength( *candidate_feat_loc, &scope );
@@ -2028,36 +2033,6 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             g_ref = xref_g_ref;
         }
     }
-}
-
-// matches C's behavior, even though it's not strictly correct.
-// In the future, we may prefer to use sequence::BadSeqLocSortOrder
-bool s_BadSeqLocSortOrderCStyle( CBioseq_Handle &bioseq_handle, const CSeq_loc &location )
-{
-    CSeq_loc_CI previous_loc;
-
-    ITERATE( CSeq_loc, loc_iter, location ) {
-        if( ! previous_loc ) {
-            previous_loc = loc_iter;
-            continue;
-        }
-        if ( previous_loc.GetSeq_id().Equals( loc_iter.GetSeq_id() ) ) {
-            const int prev_to = previous_loc.GetRange().GetTo();
-            const int this_to = loc_iter.GetRange().GetTo();
-            if ( loc_iter.GetStrand() == eNa_strand_minus ) {
-                if (  prev_to < this_to) {
-                    return true;
-                }
-            } else {
-                if (prev_to > this_to) {
-                    return true;
-                }
-            }
-        }
-        previous_loc = loc_iter;
-    }
-
-    return false;
 }
 
 bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location ) const
@@ -2726,9 +2701,8 @@ void CFeatureItem::x_AddQualProteinConflict(
         if ( m_Feat.IsSetProduct() && m_Feat.GetProduct().GetId() != 0 ) {
             has_prot = ( sequence::GetLength( m_Feat.GetProduct(), &ctx.GetScope() ) > 0 );
         }
-        const bool except_set = ( m_Feat.IsSetExcept() && m_Feat.GetExcept() );
         const bool conflict_set = ( cdr.IsSetConflict()  &&  cdr.GetConflict() );
-        if ( conflict_set && ( has_prot || ! except_set ) ) {
+        if ( has_prot && conflict_set ) {
             x_AddQual( eFQ_prot_conflict, new CFlatStringQVal( conflict_msg ) );
         }
     } 
