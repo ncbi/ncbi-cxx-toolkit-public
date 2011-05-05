@@ -228,8 +228,8 @@ static FSSLSetup s_SSLSetup;
 static const char* s_WinStrdup(const char* s)
 {
     size_t n = strlen(s);
-    char*  d = (char*) LocalAlloc(LMEM_FIXED, ++n * sizeof(char));
-    return d ? (const char*) memcpy(d, s, n) : 0;
+    char*  p = (char*) LocalAlloc(LMEM_FIXED, ++n * sizeof(char));
+    return p ? (const char*) memcpy(p, s, n) : 0;
 }
 
 #  define _SOCK_STRDUP(s)  s_WinStrdup(s)
