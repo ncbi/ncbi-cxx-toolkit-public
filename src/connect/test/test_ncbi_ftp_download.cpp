@@ -498,8 +498,8 @@ static void s_TryAskFtpFilesize(iostream& ios, const char* filename)
 {
     size_t testval;
     ios << "SIZE " << filename << endl;
-    // If the SIZE command is not understood, the file size can
-    // be captured at download start (RETR) if reported by the server
+    // If SIZE command is not understood, the file size can be captured
+	// later when the download (RETR) starts if it is reported by the server
     // in a compatible format (there's the callback set for that, too).
     _ASSERT(!(ios >> testval));  //  NB: we're getting a callback instead
     ios.clear();
