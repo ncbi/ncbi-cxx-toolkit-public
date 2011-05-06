@@ -2574,7 +2574,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from1 <= from2  &&  to1 >= to2) ?
-                            (from2 - from1) - (to1 - to2) : -1;
+                            (from2 - from1) + (to1 - to2) : -1;
                     }
                     else {
                         if (rg2.GetFrom() >= from1  ||  rg2.GetTo() <= to1) {
