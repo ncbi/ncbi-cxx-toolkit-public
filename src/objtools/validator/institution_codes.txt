@@ -6072,9 +6072,9 @@ USNC	s	Smithsonian Institution, Paleobiology Department
 USNM	s	National Museum of Natural History, Smithsonian Institution
 USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds
 USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection
-USNM:Fish	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection
+USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection
 USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles
-USNM:Invert	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology
+USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology
 USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology
 USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals
 USNTC	s	U.S. National Tick Collection
