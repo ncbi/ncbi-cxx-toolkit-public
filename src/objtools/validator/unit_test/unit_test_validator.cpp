@@ -10611,6 +10611,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     CheckErrors (*eval, expected_errors); \
     entry->SetSet().SetClass(CBioseq_set::eClass_eco_set); \
     eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors); \
+    entry->SetSet().SetClass(CBioseq_set::eClass_small_genome_set); \
+    eval = validator.Validate(seh, options); \
     CheckErrors (*eval, expected_errors);
 
 #define TESTWGS(seh, entry) \
@@ -10871,6 +10874,12 @@ BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_MisplacedMolInfo)
+{
+    
 }
 
 

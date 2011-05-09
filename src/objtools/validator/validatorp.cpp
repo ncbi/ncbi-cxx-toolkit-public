@@ -1280,7 +1280,8 @@ bool CValidError_imp::Validate
                 || si->GetClass() == CBioseq_set::eClass_pop_set
                 || si->GetClass() == CBioseq_set::eClass_phy_set
                 || si->GetClass() == CBioseq_set::eClass_eco_set
-                || si->GetClass() == CBioseq_set::eClass_wgs_set) {
+                || si->GetClass() == CBioseq_set::eClass_wgs_set
+                || si->GetClass() == CBioseq_set::eClass_small_genome_set) {
                 has_nongps = true;
             } else if (si->GetClass() == CBioseq_set::eClass_gen_prod_set) {
                 has_gps = true;

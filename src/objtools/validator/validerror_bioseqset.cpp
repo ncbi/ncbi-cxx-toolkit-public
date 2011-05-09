@@ -156,6 +156,7 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
     case CBioseq_set::eClass_phy_set:
     case CBioseq_set::eClass_eco_set:
     case CBioseq_set::eClass_wgs_set:
+    case CBioseq_set::eClass_small_genome_set:
         ValidatePhyMutEcoWgsSet(seqset);
         break;
         
@@ -191,7 +192,8 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
             || seqset.GetClass() == CBioseq_set::eClass_mut_set
             || seqset.GetClass() == CBioseq_set::eClass_phy_set
             || seqset.GetClass() == CBioseq_set::eClass_eco_set
-            || seqset.GetClass() == CBioseq_set::eClass_wgs_set)) {
+            || seqset.GetClass() == CBioseq_set::eClass_wgs_set
+            || seqset.GetClass() == CBioseq_set::eClass_small_genome_set)) {
         CheckForImproperlyNestedSets(seqset);
     }
 
@@ -407,7 +409,8 @@ void CValidError_bioseqset::CheckForInconsistentBiomols (const CBioseq_set& seqs
                        || seqset.GetClass() == CBioseq_set::eClass_eco_set
                        || seqset.GetClass() == CBioseq_set::eClass_mut_set
                        || seqset.GetClass() == CBioseq_set::eClass_phy_set
-                       || seqset.GetClass() == CBioseq_set::eClass_wgs_set) {
+                       || seqset.GetClass() == CBioseq_set::eClass_wgs_set
+                       || seqset.GetClass() == CBioseq_set::eClass_small_genome_set) {
                 PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentMolInfoBiomols,
                     "Pop/phy/mut/eco set contains inconsistent MolInfo biomols",
                     seqset);
@@ -616,6 +619,9 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
         case CBioseq_set::eClass_gen_prod_set:
             class_name = "GenProd set";
             break;
+        case CBioseq_set::eClass_small_genome_set:
+            class_name = "Small genome set";
+            break;
         default:
             return;
             break;
@@ -624,7 +630,7 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
     FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
         if ((*it)->IsMolinfo()) {
             PostErr(eDiag_Warning, eErr_SEQ_PKG_MisplacedMolInfo,
-                    class_name + " has MolInfo on set", seqset);
+                    "Phy/eco/wgs set has MolInfo on set", seqset);
             return;
         }
     }            
