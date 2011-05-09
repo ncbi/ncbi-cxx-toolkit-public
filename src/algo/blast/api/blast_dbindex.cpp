@@ -924,6 +924,24 @@ static Boolean s_IDbGetIsProt( void * handle, void * x )
 
 //------------------------------------------------------------------------------
 /** Forwards the call to CIndexedDb::db_. */
+static Boolean s_IDbGetSupportsPartialFetching( void * handle, void * x )
+{
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    return _BlastSeqSrcImpl_GetGetSupportsPartialFetching( fw_seqsrc )( fw_handle, x );
+}
+
+//------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
+static void s_IDbSetSeqRange( void * handle, BlastSeqSrcSetRangesArg * x )
+{
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    return _BlastSeqSrcImpl_GetSetSeqRange( fw_seqsrc )( fw_handle, x );
+}
+
+//------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int2 s_IDbGetSequence( void * handle, BlastSeqSrcGetSeqArg * seq_arg )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
@@ -1056,6 +1074,9 @@ static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
     _BlastSeqSrcImpl_SetGetTotLenStats     (retval, & s_IDbGetTotLenStats);
     _BlastSeqSrcImpl_SetGetName            (retval, & s_IDbGetName);
     _BlastSeqSrcImpl_SetGetIsProt          (retval, & s_IDbGetIsProt);
+    _BlastSeqSrcImpl_SetGetSupportsPartialFetching(
+            retval, & s_IDbGetSupportsPartialFetching );
+    _BlastSeqSrcImpl_SetSetSeqRange        (retval, & s_IDbSetSeqRange);
     _BlastSeqSrcImpl_SetGetSequence        (retval, & s_IDbGetSequence);
     _BlastSeqSrcImpl_SetGetSeqLen          (retval, & s_IDbGetSeqLen);
     _BlastSeqSrcImpl_SetIterNext           (retval, & s_IDbIteratorNext);
