@@ -1812,6 +1812,12 @@ CDiagContext_Extra::Print(const string& name, const string& value)
 }
 
 CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, const char* value)
+{
+    return Print(name, string(value)); 
+}
+
+CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, int value)
 {
     return Print(name, NStr::Int8ToString(value));
@@ -1835,6 +1841,24 @@ CDiagContext_Extra::Print(const string& name, Uint8 value)
     return Print(name, NStr::UInt8ToString(value));
 }
 #endif
+
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, char value)
+{
+    return Print(name, string(1,value)); 
+}
+
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, signed char value)
+{
+    return Print(name, string(1,value)); 
+}
+
+CDiagContext_Extra& 
+CDiagContext_Extra::Print(const string& name, unsigned char value)
+{
+    return Print(name, string(1,value)); 
+}
 
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, double value)
