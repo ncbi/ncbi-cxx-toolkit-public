@@ -1270,29 +1270,67 @@ CSDBAPI::UpdateMirror(const string& dbservice,
 
 
 inline
+CConnHolder::CConnHolder(IConnection* conn)
+    : m_Conn(conn),
+      m_CntOpen(0)
+{}
+
+CConnHolder::~CConnHolder(void)
+{
+    delete m_Conn;
+}
+
+inline IConnection*
+CConnHolder::GetConn(void) const
+{
+    return m_Conn;
+}
+
+inline void
+CConnHolder::AddOpenRef(void)
+{
+    ++m_CntOpen;
+}
+
+inline void
+CConnHolder::CloseRef(void)
+{
+    if (--m_CntOpen == 0) {
+        m_Conn->Close();
+    }
+}
+
+
+inline
 CDatabaseImpl::CDatabaseImpl(const CSDB_ConnectionParam& params)
+    : m_IsOpen(false)
 {
     CDBConnParamsBase lower_params;
     params.x_FillLowerParams(&lower_params);
     IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
     AutoPtr<IConnection> conn = ds->CreateConnection();
     conn->Connect(lower_params);
-    m_Conn.Reset(new TConnHolder(conn.release()));
+    m_Conn.Reset(new CConnHolder(conn.release()));
+    m_IsOpen = true;
+    m_Conn->AddOpenRef();
 }
 
 inline
 CDatabaseImpl::CDatabaseImpl(const CDatabaseImpl& other)
-    : m_Conn(other.m_Conn)
-{}
+    : m_Conn(other.m_Conn),
+      m_IsOpen(other.m_IsOpen)
+{
+    if (m_IsOpen)
+        m_Conn->AddOpenRef();
+}
 
 inline void
 CDatabaseImpl::Close(void)
 {
-    if (m_Conn  &&  m_Conn->ReferencedOnlyOnce()) {
-        m_Conn->GetData()->Close();
-        delete m_Conn->GetData();
+    if (m_IsOpen) {
+        m_IsOpen = false;
+        m_Conn->CloseRef();
     }
-    m_Conn.Reset();
 }
 
 inline
@@ -1307,13 +1345,13 @@ CDatabaseImpl::~CDatabaseImpl(void)
 inline bool
 CDatabaseImpl::IsOpen(void) const
 {
-    return m_Conn.NotNull();
+    return m_IsOpen;
 }
 
 inline IConnection*
 CDatabaseImpl::GetConnection(void)
 {
-    return m_Conn->GetData();
+    return m_Conn->GetConn();
 }
 
 
@@ -1894,12 +1932,15 @@ CQueryImpl::x_Close(void)
     delete m_CurRS;
     m_CurRS = NULL;
     if (m_CallStmt) {
-        m_CallStmt->PurgeResults();
+        if (m_DBImpl->IsOpen())
+            m_CallStmt->PurgeResults();
         delete m_CallStmt;
         m_CallStmt = NULL;
     }
-    m_Stmt->PurgeResults();
-    m_Stmt->Close();
+    if (m_DBImpl->IsOpen()) {
+        m_Stmt->PurgeResults();
+        m_Stmt->Close();
+    }
 }
 
 inline void

@@ -39,7 +39,23 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef CObjectFor<IConnection*>  TConnHolder;
+class CConnHolder : public CObject
+{
+public:
+    CConnHolder(IConnection* conn);
+    virtual ~CConnHolder(void);
+
+    IConnection* GetConn(void) const;
+    void AddOpenRef(void);
+    void CloseRef(void);
+
+private:
+    CConnHolder(const CConnHolder&);
+    CConnHolder& operator= (const CConnHolder&);
+
+    IConnection* m_Conn;
+    Uint4        m_CntOpen;
+};
 
 class CDatabaseImpl : public CObject
 {
@@ -54,7 +70,8 @@ public:
     IConnection* GetConnection(void);
 
 private:
-    CRef<TConnHolder>  m_Conn;
+    CRef<CConnHolder>   m_Conn;
+    bool                m_IsOpen;
 };
 
 
