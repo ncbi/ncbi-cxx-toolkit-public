@@ -100,7 +100,8 @@ double s_GetProteinWeight(Iterator start, Iterator end)
 
 
 double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
-                        const CSeq_loc* location)
+                        const CSeq_loc* location,
+                        TGetProteinWeight opts )
 {
     if (feat.GetData().Which() != CSeqFeatData::e_Prot) {
         NCBI_THROW(CException, eUnknown,
@@ -169,28 +170,35 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
         }
     }
 
-    switch (comp) {
-    case CMolInfo::eCompleteness_unknown:
-    case CMolInfo::eCompleteness_partial:
-    case CMolInfo::eCompleteness_no_left:
-    case CMolInfo::eCompleteness_no_ends:
-        /// molecule is incomplete at the start; any 'M' here should be trusted
-        break;
-
-    default:
-        /// for complete molecules, we skip the leading 'M' since this is
-        /// cleaved as a post-transcriptional modification
+    if( (opts & fGetProteinWeight_ForceInitialMetTrim) != 0 ) {
         if (*vit == ('M' - 'A')) {
             ++vit;
         }
-        break;
+    } else {
+        switch (comp) {
+        case CMolInfo::eCompleteness_unknown:
+        case CMolInfo::eCompleteness_partial:
+        case CMolInfo::eCompleteness_no_left:
+        case CMolInfo::eCompleteness_no_ends:
+            /// molecule is incomplete at the start; any 'M' here should be trusted
+            break;
+
+        default:
+            /// for complete molecules, we skip the leading 'M' since this is
+            /// cleaved as a post-transcriptional modification
+            if (*vit == ('M' - 'A')) {
+                ++vit;
+            }
+            break;
+        }
     }
 
     return s_GetProteinWeight(vit, v.end());
 }
 
 
-double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
+double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location, 
+                        TGetProteinWeight opts )
 {
     CSeqVector v = (location
                     ? CSeqVector(*location, handle.GetScope())
@@ -219,21 +227,27 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
         **/
     }
 
-    switch (comp) {
-    case CMolInfo::eCompleteness_unknown:
-    case CMolInfo::eCompleteness_partial:
-    case CMolInfo::eCompleteness_no_left:
-    case CMolInfo::eCompleteness_no_ends:
-        /// molecule is incomplete at the start; any 'M' here should be trusted
-        break;
-
-    default:
-        /// for complete molecules, we skip the leading 'M' since this is
-        /// cleaved as a post-transcriptional modification
+    if( (opts & fGetProteinWeight_ForceInitialMetTrim) != 0 ) {
         if (*vit == ('M' - 'A')) {
             ++vit;
         }
-        break;
+    } else {
+        switch (comp) {
+        case CMolInfo::eCompleteness_unknown:
+        case CMolInfo::eCompleteness_partial:
+        case CMolInfo::eCompleteness_no_left:
+        case CMolInfo::eCompleteness_no_ends:
+            /// molecule is incomplete at the start; any 'M' here should be trusted
+            break;
+
+        default:
+            /// for complete molecules, we skip the leading 'M' since this is
+            /// cleaved as a post-transcriptional modification
+            if (*vit == ('M' - 'A')) {
+                ++vit;
+            }
+            break;
+        }
     }
 
     return s_GetProteinWeight(vit, v.end());

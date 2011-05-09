@@ -50,6 +50,12 @@ class CSeqVector;
  * @{
  */
 
+enum FGetProteinWeight {
+    // Instead of auto-detecting whether to trim an initial methionine,
+    // this flag just forces the trimming of an initial methionine.
+    fGetProteinWeight_ForceInitialMetTrim = 1 << 0
+};
+typedef int TGetProteinWeight;
 
 /// Handles the standard 20 amino acids and Sec; treats Asx as Asp and
 /// Glx as Glu; throws CObjmgrUtilException on anything else.
@@ -59,12 +65,14 @@ class CSeqVector;
 /// at residue 0
 NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const CBioseq_Handle& handle,
-                        const CSeq_loc* location = 0);
+                        const CSeq_loc* location = 0,
+                        TGetProteinWeight opts = 0 );
 
 NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const CSeq_feat& prot_feat,
                         CScope& scope,
-                        const CSeq_loc* location = 0);
+                        const CSeq_loc* location = 0,
+                        TGetProteinWeight opts = 0 );
 
 NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const string& iupac_aa_sequence);
