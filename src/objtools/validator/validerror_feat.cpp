@@ -1415,7 +1415,7 @@ void CValidError_feat::ValidateCdregion (
     bool feat_is_pseudo = feat.CanGetPseudo()  &&  feat.GetPseudo();
     bool gene_is_pseudo = IsOverlappingGenePseudo(feat);
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
-    
+
     FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
         const CGb_qual& qual = **it;
         if ( qual.CanGetQual() ) {
@@ -6603,10 +6603,23 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
 
 bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
 {
-    ENa_strand strand = loc.GetStrand();
+    CSeq_loc_CI loc_it(loc);
+    if (!loc_it) {
+        return FALSE;
+    }
+    CConstRef<CSeq_loc> rng = loc_it.GetRangeAsSeq_loc();
+    if (!rng) {
+        return FALSE;
+    }
+
+    TSeqPos end = rng->GetStart(eExtreme_Biological);
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*rng);
+    if (!bsh) {
+        return FALSE;
+    }
+
+    ENa_strand strand = rng->GetStrand();
     if (strand == eNa_strand_minus) {
-          TSeqPos end = loc.GetStop (eExtreme_Positional);
-          CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
           TSeqPos seq_len = bsh.GetBioseqLength();
           if (end < seq_len - 1) {
               CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
@@ -6627,9 +6640,7 @@ bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
               // it's ok, location endpoint is at the 3' end
           }
     } else {
-          int end = loc.GetStart (eExtreme_Positional);
           if (end > 0) {
-              CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
               CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
               if (vec.IsInGap(end - 1)) {
                   if (vec.IsInGap (end)) {

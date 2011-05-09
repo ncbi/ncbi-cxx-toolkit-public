@@ -3669,11 +3669,11 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
     }
     CSeq_loc_CI temp = (tag == eSeqlocPartial_Nostart) ? first : last;
 
-    CBioseq_Handle bsh;
     if (!m_Scope) {
         return false;
     }
-    bsh = m_Scope->GetBioseqHandle(loc);
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*temp.GetRangeAsSeq_loc());
     if (!bsh) {
         return false;
     }
