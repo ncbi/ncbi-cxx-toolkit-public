@@ -1801,10 +1801,8 @@ CDiagContext_Extra::~CDiagContext_Extra(void)
     }
 }
 
-
 CDiagContext_Extra&
-CDiagContext_Extra::Print(const string& name,
-                          const string& value)
+CDiagContext_Extra::Print(const string& name, const string& value)
 {
     if ( !m_Args ) {
         m_Args = new TExtraArgs;
@@ -1813,14 +1811,42 @@ CDiagContext_Extra::Print(const string& name,
     return *this;
 }
 
-
 CDiagContext_Extra&
-CDiagContext_Extra::Print(const string& name,
-                          int           value)
+CDiagContext_Extra::Print(const string& name, int value)
 {
-    return Print(name, NStr::IntToString(value));
+    return Print(name, NStr::Int8ToString(value));
 }
 
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, unsigned int value)
+{
+    return Print(name, NStr::UInt8ToString(value));
+}
+
+#if (SIZEOF_INT < 8)
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, Int8 value)
+{
+    return Print(name, NStr::Int8ToString(value));
+}
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, Uint8 value)
+{
+    return Print(name, NStr::UInt8ToString(value));
+}
+#endif
+
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, double value)
+{
+    return Print(name, NStr::DoubleToString(value));
+}
+
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, bool value)
+{
+    return Print(name, NStr::BoolToString(value));
+}
 
 CDiagContext_Extra&
 CDiagContext_Extra::Print(SDiagMessage::TExtraArgs& args)
@@ -2618,8 +2644,8 @@ CDiagBuffer::~CDiagBuffer(void)
 
 void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
-    bool is_console = (mess.m_Flags & eDPF_IsConsole);
-    bool applog = (mess.m_Flags & eDPF_AppLog);
+    bool is_console = (mess.m_Flags & eDPF_IsConsole) > 0;
+    bool applog = (mess.m_Flags & eDPF_AppLog) > 0;
     bool is_printable = applog  ||  SeverityPrintable(mess.m_Severity);
     if ( CDiagBuffer::sm_Handler ) {
         CDiagLock lock(CDiagLock::eRead);
@@ -2740,7 +2766,7 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
     }
 
     EDiagSev sev = diag.GetSeverity();
-    bool is_console = (diag.GetPostFlags() & eDPF_IsConsole);
+    bool is_console = (diag.GetPostFlags() & eDPF_IsConsole) > 0;
     if (!is_console  &&  SeverityDisabled(sev)) {
         return false;
     }

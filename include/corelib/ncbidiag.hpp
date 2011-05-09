@@ -1797,8 +1797,27 @@ public:
     /// Value is URL-encoded before printing.
     CDiagContext_Extra& Print(const string& name, const string& value);
 
-    /// Overloaded Print() for integer values.
+    /// Overloaded Print() for all types.
+    CDiagContext_Extra& Print(const string& name, const char* value) {
+        return Print(name, string(value)); 
+    }
     CDiagContext_Extra& Print(const string& name, int value);
+    CDiagContext_Extra& Print(const string& name, unsigned int value);
+#if (SIZEOF_INT < 8)
+    CDiagContext_Extra& Print(const string& name, Int8 value);
+    CDiagContext_Extra& Print(const string& name, Uint8 value);
+#endif
+    CDiagContext_Extra& Print(const string& name, char value) {
+        return Print(name, (int)value); 
+    }
+    CDiagContext_Extra& Print(const string& name, signed char value) {
+        return Print(name, (int)value); 
+    }
+    CDiagContext_Extra& Print(const string& name, unsigned char value) {
+        return Print(name, (unsigned int)value); 
+    }
+    CDiagContext_Extra& Print(const string& name, double value);
+    CDiagContext_Extra& Print(const string& name, bool value);
 
     /// The method does not print the arguments, but adds it to the string.
     /// Name must contain only alphanumeric chars or '_'.
