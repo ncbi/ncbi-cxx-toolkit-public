@@ -870,15 +870,14 @@ void CAlnVec::TranslateNAToAA(const string& na,
 
     int state = 0;
     size_t aa_i = 0;
-    for (size_t na_i = 0; na_i < na_size; na_i++) {
-        for (size_t i = 0; i < 3; i++, na_i++) {
-            state = tbl.NextCodonState(state, na[na_i]);
+    for (size_t na_i = 0; na_i < na_size; ) {
+        for (size_t i = 0; i < 3; i++) {
+            state = tbl.NextCodonState(state, na[na_i++]);
         }
         aa[aa_i++] = tbl.GetCodonResidue(state);
     }
 
     if (&aa == &na) {
-        aa[aa_i] = 0;
         aa.resize(aa_i);
     }
 }
