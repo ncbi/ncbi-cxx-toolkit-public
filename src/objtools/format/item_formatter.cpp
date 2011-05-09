@@ -501,8 +501,23 @@ static void s_FixPages( string& pages )
             pages = firstNumber;
             pages += firstText;
             return;
+        } else {
+            ++it;
+            string::iterator locationRightAfterFirstDash = it;
+            while( it != pages.end() && *it == '-' ) {
+                ++it;
+            }
+            // if pages ends in a dash, then duplicate the first part and get out of here
+            // (e.g. AF003826)
+            if( it == pages.end() ) {
+                // burn off extra dashes, if any
+                pages.erase( locationRightAfterFirstDash, pages.end() );
+
+                pages += firstNumber;
+                pages += firstText;
+                return;
+            }
         }
-        ++it;
         if ( it == pages.end() ) {
             pages = firstNumber;
             pages += firstText;

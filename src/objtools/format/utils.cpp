@@ -495,7 +495,11 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     // This is based on the C function TrimSpacesAndJunkFromEnds.
     // Although it's updated to use iterators and such and to
     // return whether it changed the string, it should
-    // have the same output.
+    // have the same output, except:
+    // - We do NOT chop off a semicolon if we determine that it's
+    //   part of an HTML escape char (e.g. "&bgr;" ).
+    // - There are some changes in how tildes are handled;
+    //   this algo is less likely to remove them.
 
     if ( str.empty() ) {
         return false;
@@ -526,6 +530,29 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
         start_of_junk_pos = 0;
     }
 
+    // check for ';' that's part of an HTML escape char like "&bgr;" and
+    // skip over it (i.e., don't remove it) if so
+    if( start_of_junk_pos < str.length() && str[start_of_junk_pos] == ';' ) {
+        // we assume no HTML escape char will be longer than this
+        static const int kMaxCharsToLookAt = 20;
+
+        // go backwards, looking for the ampersand
+        int amp_iter = (start_of_junk_pos - 1);
+        for( ; amp_iter >= 0 && ((start_of_junk_pos - amp_iter) < kMaxCharsToLookAt); --amp_iter ) {
+            const char ch = str[amp_iter];
+            if( isalnum(ch) || ch == '#' ) {
+                // just keep going
+            } else if( ch == '&' ) {
+                // The semicolon ends an HTML escape character, so we skip it
+                ++start_of_junk_pos;
+                break;
+            } else {
+                // The semicolon does NOT end an HTML escape character, so we might remove it
+                break;
+            }
+        }
+    }
+
     bool changed = false;
 
     // if there's junk, chop it off (but leave period/tildes/ellipsis as appropriate)
@@ -536,6 +563,7 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 
         const int chars_in_junk = ( str.length() - start_of_junk_pos );
         _ASSERT( chars_in_junk >= 1 );
+
         // allow one period at end
         if (isPeriod) {
             // check if we should put an ellipsis, or just a period

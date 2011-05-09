@@ -926,6 +926,9 @@ void CReferenceItem::x_InitProc(const CCit_book& proc, CBioseqContext& ctx)
     if (proc.IsSetTitle()) {
         m_Title = proc.GetTitle().GetTitle();
     }
+    if (proc.CanGetImp()) {
+        x_AddImprint(proc.GetImp(), ctx);
+    }
 }
 
 
@@ -940,6 +943,7 @@ void CReferenceItem::x_Init
     if (book.CanGetImp()) {
         x_AddImprint(book.GetImp(), ctx);
     }
+
 }
 
 

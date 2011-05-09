@@ -103,6 +103,7 @@
 #include <objtools/error_codes.hpp>
 #include "utils.hpp"
 
+#include <connect/ncbi_socket.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Fmt_Gather
 
@@ -1758,10 +1759,28 @@ static bool s_IsDuplicateFeatures(const CSeq_feat_Handle& f1, const CSeq_feat_Ha
 {
     _ASSERT(f1  &&  f2);
 
-    return !f1.IsTableSNP()  &&  !f2.IsTableSNP()       &&
+    const bool feats_have_same_structure =
+           !f1.IsTableSNP()  &&  !f2.IsTableSNP()       &&
            f1.GetFeatSubtype() == f2.GetFeatSubtype()   &&
            f1.GetLocation().Equals(f2.GetLocation())    &&
            f1.GetSeq_feat()->Equals(*f2.GetSeq_feat());
+    if( ! feats_have_same_structure ) {
+        return false;
+    }
+
+    // Also need to check if on same annot (e.g. AC004755)
+    const CSeq_annot_Handle &f1_annot = f1.GetAnnot();
+    const CSeq_annot_Handle &f2_annot = f2.GetAnnot();
+    if( f1_annot && f2_annot ) {
+        if( (f1_annot == f2_annot) || 
+            ( ! f1_annot.Seq_annot_CanGetDesc() && ! f2_annot.Seq_annot_CanGetDesc()  ) ) 
+        {
+            return true;
+        }
+    }
+
+    // different Seq-annots, so they're not dups
+    return false;
 }
 
 

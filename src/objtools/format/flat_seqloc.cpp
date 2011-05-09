@@ -193,7 +193,7 @@ bool CFlatSeqLoc::x_Add
             if (!x_Add(**it, oss, ctx, type, show_comp)) {
                 delim = "";
             } else {
-                delim = ", \b";
+                delim = ",";
             }
         }
         oss << ')';
@@ -219,7 +219,7 @@ bool CFlatSeqLoc::x_Add
             if (!x_Add(*it, fuzz, oss, ( ctx.Config().DoHTML() ? eHTML_Yes : eHTML_None ) )) {
                 delim = "";
             } else {
-                delim = ", \b";
+                delim = ",";
             }
         }
         if (strand == eNa_strand_minus  &&  show_comp) {
@@ -274,7 +274,7 @@ bool CFlatSeqLoc::x_Add
                  if (!x_Add(this_loc, oss, ctx, type, show_comp)) {
                      delim = "";
                  } else {
-                     delim = ", \b";
+                     delim = ",";
                  }
              }
 
@@ -303,7 +303,7 @@ bool CFlatSeqLoc::x_Add
             if (!x_Add(**it, oss, ctx, type, show_comp)) {
                 delim = "";
             } else {
-                delim = ", \b";
+                delim = ",";
             }
         }
         oss << ')';
@@ -318,7 +318,7 @@ bool CFlatSeqLoc::x_Add
         oss << "bond(";
         x_Add(bond.GetA(), oss, ctx, type, show_comp);
         if ( bond.CanGetB() ) {
-            oss << ", \b";
+            oss << ",";
             x_Add(bond.GetB(), oss, ctx, type, show_comp);
         }
         oss << ")";

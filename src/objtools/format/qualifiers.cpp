@@ -1355,7 +1355,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
         subname = kEmptyStr;
     }
     ConvertQuotes(subname);
-    ExpandTildes(subname, ( (flags & IFlatQVal::fIsSource) != 0  ? eTilde_note : eTilde_space ) );
+    ExpandTildes(subname, ( (flags & IFlatQVal::fIsNote) != 0  ? eTilde_note : eTilde_space ) );
     
     if (s_IsNote(flags, ctx)) {
         bool add_period = RemovePeriodFromEnd(subname, true);
@@ -1443,6 +1443,11 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
     // copy the list
     list< CRef< CPub > > unusedPubs = m_Value->GetPub();
 
+    if( ctx.GetReferences().empty() ) {
+        // Yes, this even skips creating "/citation=[PUBMED ...]" items
+        return;
+    }
+
     ITERATE (vector< CRef<CReferenceItem> >, ref_iter, ctx.GetReferences()) {
         CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
         for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
@@ -1457,11 +1462,13 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
 
     // out of the pubs which are still unused, we may still be able to salvage some 
     // under certain conditions.
-    CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
-    for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
-        if( ctx.IsRefSeq() && (*pub_iter)->IsPmid() && ! ctx.Config().IsModeRelease() ) {
-            x_AddFQ(q, name, "[PUBMED " + NStr::IntToString( (*pub_iter)->GetPmid().Get() ) + ']',
-                CFormatQual::eUnquoted);
+    if( ctx.IsRefSeq() && ! ctx.Config().IsModeRelease() ) {
+        CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
+        for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
+            if( (*pub_iter)->IsPmid() ) {
+                x_AddFQ(q, name, "[PUBMED " + NStr::IntToString( (*pub_iter)->GetPmid().Get() ) + ']',
+                    CFormatQual::eUnquoted);
+            }
         }
     }
 }

@@ -985,6 +985,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
                 if ( oid.IsStr() ) {
                     prefix = "Map location: ";
                     str = oid.GetStr();
+                    suffix = ".";
                 } else if ( oid.IsId()  &&  dbtag.CanGetDb() ) {
                     prefix = "Map location: (Database ";
                     str = dbtag.GetDb();
