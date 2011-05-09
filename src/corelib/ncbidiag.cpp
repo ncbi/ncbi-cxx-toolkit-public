@@ -1813,6 +1813,15 @@ CDiagContext_Extra::Print(const string& name,
     return *this;
 }
 
+
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name,
+                          int           value)
+{
+    return Print(name, NStr::IntToString(value));
+}
+
+
 CDiagContext_Extra&
 CDiagContext_Extra::Print(SDiagMessage::TExtraArgs& args)
 {

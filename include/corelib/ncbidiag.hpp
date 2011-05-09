@@ -1797,6 +1797,9 @@ public:
     /// Value is URL-encoded before printing.
     CDiagContext_Extra& Print(const string& name, const string& value);
 
+    /// Overloaded Print() for integer values.
+    CDiagContext_Extra& Print(const string& name, int value);
+
     /// The method does not print the arguments, but adds it to the string.
     /// Name must contain only alphanumeric chars or '_'.
     /// Value is URL-encoded before printing.
