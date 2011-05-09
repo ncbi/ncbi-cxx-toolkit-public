@@ -2376,7 +2376,6 @@ START_SUBTYPE(site)  //  same as misc_feature
     ADD_QUAL(note);
     ADD_QUAL(number);
     ADD_QUAL(phenotype);
-    ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(site_type);
     ADD_QUAL(standard_name);
