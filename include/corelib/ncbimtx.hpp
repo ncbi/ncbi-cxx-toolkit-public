@@ -714,7 +714,7 @@ private:
 /// CFastMutex.
 ///
 /// @sa
-///   http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.section.ch_core.threads#ch_core.mutexes
+///   http://www.ncbi.nlm.nih.gov/books/n/toolkit/ch_core#ch_core.mutexes
 
 class CMutex
 {
