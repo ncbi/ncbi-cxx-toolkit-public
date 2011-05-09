@@ -1129,6 +1129,9 @@ void CSeq_annot_Info::x_MapFeatByGene(const CGene_ref& gene,
     if ( gene.IsSetLocus() ) {
         GetTSE_Info().x_MapFeatByLocus(gene.GetLocus(), false, info);
     }
+    else if ( gene.IsSetDesc() ) {
+        GetTSE_Info().x_MapFeatByLocus(gene.GetDesc(), false, info);
+    }
     if ( gene.IsSetLocus_tag() ) {
         GetTSE_Info().x_MapFeatByLocus(gene.GetLocus_tag(), true, info);
     }
@@ -1140,6 +1143,9 @@ void CSeq_annot_Info::x_UnmapFeatByGene(const CGene_ref& gene,
 {
     if ( gene.IsSetLocus() ) {
         GetTSE_Info().x_UnmapFeatByLocus(gene.GetLocus(), false, info);
+    }
+    else if ( gene.IsSetDesc() ) {
+        GetTSE_Info().x_UnmapFeatByLocus(gene.GetDesc(), false, info);
     }
     if ( gene.IsSetLocus_tag() ) {
         GetTSE_Info().x_UnmapFeatByLocus(gene.GetLocus_tag(), true, info);
