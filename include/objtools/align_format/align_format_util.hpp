@@ -504,20 +504,6 @@ public:
     static CRef<objects::CBlast_def_line_set> 
     GetBlastDefline (const objects::CBioseq_Handle& handle);
 
-    ///Get linkout membership
-    ///@param bdl: blast defline to get linkout membership from
-    ///@return the value representing the membership bits set
-    ///
-    static int GetLinkout(const objects::CBlast_def_line& bdl);
-    
-    ///Get linkout membership for this bioseq, this id only
-    ///@param handle: bioseq handle
-    ///@param id: the id to be matched
-    ///@return the value representing the membership bits set
-    ///
-    static int GetLinkout(const objects::CBioseq_Handle& handle, const
-                          objects::CSeq_id& id);    
-    
     ///Extract score info from blast alingment
     ///@param aln: alignment to extract score info from
     ///@param score: place to extract the raw score to

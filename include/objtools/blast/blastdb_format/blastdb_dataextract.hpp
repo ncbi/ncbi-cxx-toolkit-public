@@ -67,9 +67,7 @@ public:
               m_LineWidth(line_width),
               m_TargetOnly(target_only),
               m_UseCtrlA(ctrl_a) 
-    {
-        m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
-    }
+    {}
 
     /// Setting seqid
     /// @param id sequence identifier [in]
@@ -118,15 +116,10 @@ protected:
 
     /**** BEGIN: Support for printing linkouts */
 
-    /// Cache the defline
+    /// Cache the defline (for membership bits, not for linkouts)
     CRef<CBlast_def_line_set> m_Defline; 
     /// Convenience for printing strings of linkout types
     vector<CLinkoutDB::TLinkoutTypeString> m_LinkoutTypes;
-
-    /// This replaces having to read and cache the defline (once all linkout
-    /// bits have been ported to LinkoutDB, turned off for now but can be
-    /// enabled via the LINKOUTDB environment variable
-    bool m_UseLinkoutDB;
 
     /**** END: Support for printing linkouts */
 private:

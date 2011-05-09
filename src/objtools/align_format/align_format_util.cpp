@@ -651,23 +651,6 @@ CAlignFormatUtil::GetBlastDefline (const CBioseq_Handle& handle)
     return bdls;
 }
 
-///Get linkout membership
-///@param bdl: blast defline to get linkout membership from
-///@return the value representing the membership bits set
-///
-int CAlignFormatUtil::GetLinkout(const CBlast_def_line& bdl)
-{
-    int linkout = 0;
-    
-    if (bdl.IsSetLinks()){
-        for (list< int >::const_iterator iter = bdl.GetLinks().begin();
-             iter != bdl.GetLinks().end(); iter ++){
-            linkout += *iter;
-        }
-    }
-    return linkout;
-}
-
 void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
                                     double& bits, 
@@ -1422,22 +1405,9 @@ bool CAlignFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& inf
     id2 = &(info2->Get().front()->GetSeq_id(1));
 
     int linkout1 = 0, linkout2 = 0;
-    if (CLinkoutDB::UseLinkoutDB()) {
-        CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
-        linkout1 = linkoutdb.GetLinkout(*id1);
-        linkout2 = linkoutdb.GetLinkout(*id2);
-    } else {
-        const CBioseq_Handle& handle1 = kScope->GetBioseqHandle(*id1);
-        const CBioseq_Handle& handle2 = kScope->GetBioseqHandle(*id2);
-
-        const CRef<CBlast_def_line_set> bdl_ref1 = 
-            CAlignFormatUtil::GetBlastDefline(handle1);
-        const CRef<CBlast_def_line_set> bdl_ref2 = 
-            CAlignFormatUtil::GetBlastDefline(handle2);
-
-        linkout1 = GetLinkout(*(bdl_ref1->Get().front()));
-        linkout2 = GetLinkout(*(bdl_ref2->Get().front()));
-    }
+    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
+    linkout1 = linkoutdb.GetLinkout(*id1);
+    linkout2 = linkoutdb.GetLinkout(*id2);
 
     return (linkout1 & eGenomicSeq) <= (linkout2 & eGenomicSeq);
 }
@@ -1449,10 +1419,7 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
                              const CSeq_align_set& source,
                              CScope& scope)
 {
-    CLinkoutDB* linkoutdb = NULL;
-    if (CLinkoutDB::UseLinkoutDB()) {
-        linkoutdb = &CLinkoutDB::GetInstance();
-    }
+    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
     
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         
@@ -1460,12 +1427,7 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
         try {
             const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
             if (handle) {
-                int linkout = 0;
-                if (linkoutdb) {
-                    linkout = linkoutdb->GetLinkout(id);
-                } else {
-                    linkout = GetLinkout(handle, id);
-                }
+                int linkout = linkoutdb.GetLinkout(id);
                         
                 if (linkout & eGenomicSeq) {
                     if (sort_method == 1) {
@@ -1840,30 +1802,6 @@ void CAlignFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_quer
    
 }
 
-
-int CAlignFormatUtil::GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id)
-{
-    int linkout = 0;
-    
-    const CRef<CBlast_def_line_set> bdl_ref = CAlignFormatUtil::GetBlastDefline(handle);
-    
-    if (!bdl_ref.Empty()) {
-        const list< CRef< CBlast_def_line > >& bdl = bdl_ref->Get();
-              
-        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
-            iter != bdl.end(); iter++){
-            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            ITERATE(CBioseq::TId, iter_id, cur_id) {
-                if ((*iter_id)->Match(id)) {
-                    linkout = CAlignFormatUtil::GetLinkout((**iter));
-                    break;
-                }
-            }
-        }
-    }
-    return linkout;
-}
-
 bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset, 
                                        CScope& scope) 
 {
@@ -1871,25 +1809,13 @@ bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset,
     bool is_first = true;
     int prev_database = 0;
 
-    CLinkoutDB* linkoutdb = NULL;
-    if (CLinkoutDB::UseLinkoutDB()) {
-        linkoutdb = &CLinkoutDB::GetInstance();
-    }
+    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
 
     ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) { 
        
         const CSeq_id& id = (*iter)->GetSeq_id(1);
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
-        int linkout = 0;
-        if (linkoutdb) {
-            linkout = linkoutdb->GetLinkout(id);
-        } else {
-            try {
-              linkout = GetLinkout(handle, id);
-            } catch (CException&) {
-                  continue; // linkout information not found, need to skip rest of loop.
-            }
-        }
+        int linkout = linkoutdb.GetLinkout(id);
         int cur_database = (linkout & eGenomicSeq);
         if (!is_first && cur_database != prev_database) {
             is_mixed = true;
@@ -2061,7 +1987,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
             linkout_list.push_back(url_link);
         }
     }
-    else if((linkout & eAnnotatedInMapviewer)){  
+    else if((linkout & eMapviewer)){  
         url_link = kMapviwerUrl;
         lnk_displ = textLink ? "Map Viewer" : kMapviwerImg;        
         if(!disableLink) {        
@@ -2154,7 +2080,7 @@ static int s_LinkLetterToType(string linkLetter)
         linkType = eGene;
     }
     else if(linkLetter == "M") {
-        linkType = eAnnotatedInMapviewer | eGenomicSeq;
+        linkType = eMapviewer | eGenomicSeq;
     }
     else if(linkLetter == "N") {
         linkType = eGenomicSeq;
@@ -2191,7 +2117,7 @@ void CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &
         int gi = FindGi(cur_id);        
         CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
         
-	    int linkout = CLinkoutDB::UseLinkoutDB() ? CLinkoutDB::GetInstance().GetLinkout(gi): CAlignFormatUtil::GetLinkout((**iter));
+	    int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
         
 
         if(linkout & eGene){
@@ -2206,12 +2132,12 @@ void CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &
         if (linkout & eStructure){
             s_AddLinkoutInfo(linkout_map,eStructure,cur_id);            
         }   
-        //eGenomicSeq and eAnnotatedInMapviewer cannot combine together
+        //eGenomicSeq and eMapviewer cannot combine together
         if(linkout & eGenomicSeq){  
             s_AddLinkoutInfo(linkout_map,eGenomicSeq,cur_id);            
         }
-        else if(linkout & eAnnotatedInMapviewer){  
-            s_AddLinkoutInfo(linkout_map,eAnnotatedInMapviewer,cur_id);            
+        else if(linkout & eMapviewer){  
+            s_AddLinkoutInfo(linkout_map,eMapviewer,cur_id);            
         }              
         if(linkout & eBioAssay){        
             s_AddLinkoutInfo(linkout_map,eBioAssay,cur_id);            
@@ -2263,8 +2189,8 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
         vector < CBioseq::TId > idList;
         int linkout = s_LinkLetterToType(linkLetters[i]);        
         string taxName;
-        if(linkout & (eAnnotatedInMapviewer | eGenomicSeq)) {            
-            linkout = (linkout_map[eGenomicSeq].size() != 0) ? eGenomicSeq : eAnnotatedInMapviewer;            
+        if(linkout & (eMapviewer | eGenomicSeq)) {            
+            linkout = (linkout_map[eGenomicSeq].size() != 0) ? eGenomicSeq : eMapviewer;            
             taxName = s_GetTaxName(taxid);
         }
         idList = linkout_map[linkout];                 

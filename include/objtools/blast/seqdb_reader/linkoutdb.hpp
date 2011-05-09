@@ -69,11 +69,6 @@ public:
     /// @throw CSeqDBException if the requested LinkoutDB is not found
     static CLinkoutDB& GetInstance(const string& dbname = kEmptyStr);
 
-    /// Temporary function which determines whether LinkoutDB should be used or
-    /// not.
-    /// @return if LinkuoutDB should be used, false otherwise
-    static bool UseLinkoutDB();
-    
     /// Obtain the linkout bits for a given gi
     /// @param gi GI of interest [in]
     /// @return integer encoding linkout bits or 0 if not found

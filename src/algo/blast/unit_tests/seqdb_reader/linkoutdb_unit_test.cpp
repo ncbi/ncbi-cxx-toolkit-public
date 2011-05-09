@@ -96,21 +96,21 @@ BOOST_AUTO_TEST_CASE(TestGIs)
        eLocuslink|eUnigene|eGene|eGenomicSeq|eBioAssay));
     //6
     reference_data.push_back(make_pair(1786187,
-       eLocuslink|eUnigene|eGene|eAnnotatedInMapviewer|eGenomicSeq|eBioAssay));
+       eLocuslink|eUnigene|eGene|eMapviewer|eGenomicSeq|eBioAssay));
     //7
     reference_data.push_back(make_pair(1786188,
-       eLocuslink|eUnigene|eGene|eAnnotatedInMapviewer|eGenomicSeq|eBioAssay));
+       eLocuslink|eUnigene|eGene|eMapviewer|eGenomicSeq|eBioAssay));
     //8
     reference_data.push_back(make_pair(1786189,
-       eLocuslink|eUnigene|eHitInMapviewer|eAnnotatedInMapviewer|
+       eLocuslink|eUnigene|eHitInMapviewer|eMapviewer|
        eGenomicSeq|eBioAssay));
     //9
     reference_data.push_back(make_pair(1786191,
-       eLocuslink|eHitInMapviewer|eAnnotatedInMapviewer|
+       eLocuslink|eHitInMapviewer|eMapviewer|
        eGenomicSeq|eBioAssay));
     //10
     reference_data.push_back(make_pair(1786191,
-       eLocuslink|eHitInMapviewer|eAnnotatedInMapviewer|
+       eLocuslink|eHitInMapviewer|eMapviewer|
        eGenomicSeq|eBioAssay));
 
     ITERATE(TGiLinkoutVector, itr, reference_data) {

@@ -42,23 +42,6 @@ static char const rcsid[] = "$Id$";
 
 BEGIN_NCBI_SCOPE
 
-bool CLinkoutDB::UseLinkoutDB()
-{
-    bool retval = false;
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if (app && !app->GetEnvironment().Get("LINKOUTDB").empty()) {
-        retval = true;
-    }
-#ifdef NCBI_OS_UNIX
-    if (app == NULL) {
-        if (getenv("LINKOUTDB") != 0) {
-            retval = true;
-        }
-    }
-#endif
-    return retval;
-}
-
 static const string kDefaultLinkoutDBName("linkouts");
 
 map<string, CLinkoutDB*> CLinkoutDB::sm_LinkoutDBs;
@@ -192,7 +175,7 @@ void CLinkoutDB::GetLinkoutTypes(vector<CLinkoutDB::TLinkoutTypeString>& rv)
     rv.push_back(make_pair(eGeo, string("eGeo")));
     rv.push_back(make_pair(eGene, string("eGene")));
     rv.push_back(make_pair(eHitInMapviewer, string("eHitInMapviewer")));
-    rv.push_back(make_pair(eAnnotatedInMapviewer, string("eAnnotatedInMapviewer")));
+    rv.push_back(make_pair(eMapviewer, string("eMapviewer")));
     rv.push_back(make_pair(eGenomicSeq, string("eGenomicSeq")));
     rv.push_back(make_pair(eBioAssay, string("eBioAssay")));
 }

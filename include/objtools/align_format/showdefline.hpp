@@ -469,7 +469,6 @@ protected:
 
     //For internal test
     friend struct ::CShowBlastDeflineTest;
-    bool m_UseLinkoutDB; // temporary to determine whether to use LinkoutDB or not
 };
 
 END_SCOPE(align_format)

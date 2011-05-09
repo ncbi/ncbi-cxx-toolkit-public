@@ -839,7 +839,6 @@ private:
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
 	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
 	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
-    bool m_UseLinkoutDB; // temporary to determine whether to use LinkoutDB or not
 };
 
 END_SCOPE(align_format)

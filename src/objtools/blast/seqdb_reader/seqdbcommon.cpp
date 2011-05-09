@@ -2236,6 +2236,10 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
     extn.push_back(kExtnMol + "ab");   // ISAM mask data file (big-endian)
     extn.push_back(kExtnMol + "ac");   // ISAM mask data file (little-endian)
     extn.push_back(kExtnMol + "og");   // OID to GI file
+    extn.push_back(kExtnMol + "hi");   // ISAM sequence hash index file
+    extn.push_back(kExtnMol + "hd");   // ISAM sequence hash data file
+    extn.push_back(kExtnMol + "ti");   // ISAM trace id index file
+    extn.push_back(kExtnMol + "td");   // ISAM trace id data file
 }
 
 END_NCBI_SCOPE

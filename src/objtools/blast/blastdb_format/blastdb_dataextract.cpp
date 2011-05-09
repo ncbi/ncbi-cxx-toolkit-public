@@ -133,30 +133,12 @@ string CBlastDBExtractor::ExtractLinkoutInteger()
 {
     x_InitDefline();
     x_InitLinkoutData();
-    int retval = 0;
 
     if (m_Gi == 0) {
-        return NStr::IntToString(0);
+        return NStr::IntToString(m_Gi);
     }
 
-    if (m_UseLinkoutDB) {
-        return NStr::IntToString(CLinkoutDB::GetInstance().GetLinkout(m_Gi));
-    }
-
-    ITERATE(CBlast_def_line_set::Tdata, itr, m_Defline->Get()) {
-        const CRef<CSeq_id> seqid = FindBestChoice((*itr)->GetSeqid(),
-                                                   CSeq_id::BestRank);
-        _ASSERT(seqid.NotEmpty());
-
-        if (seqid->IsGi() && (seqid->GetGi() == m_Gi) && (*itr)->IsSetLinks()) {
-            ITERATE(CBlast_def_line::TLinks, linkout_int, (*itr)->GetLinks()) {
-                retval += *linkout_int;
-            }
-            break;
-        }
-    }
-
-    return NStr::IntToString(retval);
+    return NStr::IntToString(CLinkoutDB::GetInstance().GetLinkout(m_Gi));
 }
 
 string CBlastDBExtractor::ExtractMembershipInteger()
@@ -196,32 +178,11 @@ string CBlastDBExtractor::ExtractLinkoutTokens()
     }
 
     vector<string> linkouts;
-    if (m_UseLinkoutDB) {
-        int linkout = CLinkoutDB::GetInstance().GetLinkout(m_Gi);
-        ITERATE(vector<CLinkoutDB::TLinkoutTypeString>, lt, m_LinkoutTypes) {
-            if (linkout & lt->first) {
-                linkouts.push_back(lt->second);
-            }
+    int linkout = CLinkoutDB::GetInstance().GetLinkout(m_Gi);
+    ITERATE(vector<CLinkoutDB::TLinkoutTypeString>, lt, m_LinkoutTypes) {
+        if (linkout & lt->first) {
+            linkouts.push_back(lt->second);
         }
-    } else {
-
-    ITERATE(CBlast_def_line_set::Tdata, itr, m_Defline->Get()) {
-        const CRef<CSeq_id> seqid = FindBestChoice((*itr)->GetSeqid(),
-                                                   CSeq_id::BestRank);
-        _ASSERT(seqid.NotEmpty());
-
-        if (seqid->IsGi() && (seqid->GetGi() == m_Gi) && (*itr)->IsSetLinks()) {
-            ITERATE(CBlast_def_line::TLinks, linkout_int, (*itr)->GetLinks()) {
-                ITERATE(vector<CLinkoutDB::TLinkoutTypeString>, lt, 
-                        m_LinkoutTypes) {
-                    if (*linkout_int & lt->first) {
-                        linkouts.push_back(lt->second);
-                    }
-                }
-            }
-            break;
-        }
-    }
     }
 
     if (linkouts.empty()) {

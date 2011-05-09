@@ -200,7 +200,6 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_AlignTemplates = NULL;
     m_Ctx = NULL;
     m_Matrix = NULL; //-RMH-
-    m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();
 
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
@@ -1392,9 +1391,8 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
 						
-                        int linkout = m_UseLinkoutDB
-                            ? CLinkoutDB::GetInstance().GetLinkout(m_AV->GetSeqId(row))
-                            : CAlignFormatUtil::GetLinkout(m_AV->GetBioseqHandle(row),m_AV->GetSeqId(row));
+                        int linkout =
+                            CLinkoutDB::GetInstance().GetLinkout(m_AV->GetSeqId(row));
                         
                         urlLink = x_GetUrl(gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
                         out << urlLink;            
@@ -1963,9 +1961,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 				taxid = bdl->GetTaxid();
 			}
             
-            int linkout = m_UseLinkoutDB
-                ? CLinkoutDB::GetInstance().GetLinkout(gi) 
-                : CAlignFormatUtil::GetLinkout(*bdl);
+            int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
             int linksDisplayOption = 0;
 
             //Get custom links only for the first gi
@@ -1979,9 +1975,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		}
 		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    
-			int linkout = m_UseLinkoutDB
-                ? CLinkoutDB::GetInstance().GetLinkout(gi)
-                : CAlignFormatUtil::GetLinkout((*bdl));
+			int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
 			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
 			list<string> linkout_url =  CAlignFormatUtil::
                                 GetLinkoutUrl(linkout, ids,
@@ -2931,9 +2925,8 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 
         ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
         {
-            int linkout = m_UseLinkoutDB
-                ? CLinkoutDB::GetInstance().GetLinkout(*(*iter)->GetSeqid().front())
-                : CAlignFormatUtil::GetLinkout((**iter));
+            int linkout =
+                CLinkoutDB::GetInstance().GetLinkout(*(*iter)->GetSeqid().front());
             if (linkout & eGene)
             {
                 return true;

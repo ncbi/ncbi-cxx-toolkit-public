@@ -368,9 +368,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             int cur_gi =  FindGi(cur_id);            
             if(use_this_gi.empty()){
                 if(sdl->gi == cur_gi){                 
-                    sdl->linkout = m_UseLinkoutDB
-                        ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
-                        : CAlignFormatUtil::GetLinkout((**iter));
+                    sdl->linkout =
+                        CLinkoutDB::GetInstance().GetLinkout(cur_gi);
                     if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)            
                         sdl->linkout_list =
                             CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
@@ -386,9 +385,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             } else {
                 ITERATE(list<int>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){                     
-                        sdl->linkout = m_UseLinkoutDB
-                            ? CLinkoutDB::GetInstance().GetLinkout(cur_gi)
-                            : CAlignFormatUtil::GetLinkout((**iter));
+                        sdl->linkout =
+                            CLinkoutDB::GetInstance().GetLinkout(cur_gi);
                         if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)
                             sdl->linkout_list = 
                                 CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
@@ -534,7 +532,6 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
         }
     }
     m_DeflineTemplates = NULL;
-    m_UseLinkoutDB = CLinkoutDB::UseLinkoutDB();    
 }
 
 CShowBlastDefline::~CShowBlastDefline()
