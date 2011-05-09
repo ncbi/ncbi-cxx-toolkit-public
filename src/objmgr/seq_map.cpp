@@ -1320,13 +1320,18 @@ void CSeqMap::x_Add(const CSeq_loc_equiv& seq)
 
 void CSeqMap::x_Add(const CSeq_literal& seq)
 {
+    const bool is_unknown_len = ( 
+        seq.CanGetFuzz() && 
+        seq.GetFuzz().IsLim() && 
+        seq.GetFuzz().GetLim() == CInt_fuzz::eLim_unk );
+
     if ( !seq.IsSetSeq_data() ) {
         // No data exist - treat it like a gap
-        x_AddGap(seq.GetLength(), seq.CanGetFuzz()); //???
+        x_AddGap(seq.GetLength(), is_unknown_len); //???
     }
     else if ( seq.GetSeq_data().IsGap() ) {
         // Seq-data.gap
-        x_AddGap(seq.GetLength(), seq.CanGetFuzz(), seq.GetSeq_data());
+        x_AddGap(seq.GetLength(), is_unknown_len, seq.GetSeq_data());
     }
     else {
         x_Add(seq.GetSeq_data(), seq.GetLength());
