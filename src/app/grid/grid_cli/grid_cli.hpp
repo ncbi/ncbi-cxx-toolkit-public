@@ -43,14 +43,21 @@
 #define PROGRAM_NAME "grid_cli"
 #define PROGRAM_VERSION "0.1.0"
 
-#define FAIL_JOB_OPTION "fail-job"
 #define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
+#define OUTPUT_FILE_OPTION "output-file"
 #define QUEUE_OPTION "queue"
 #define AFFINITY_OPTION "affinity"
+#define LIMIT_OPTION "limit"
+#define TIMEOUT_OPTION "timeout"
+#define CONFIRM_READ_OPTION "confirm-read"
+#define ROLLBACK_READ_OPTION "rollback-read"
 #define QUERY_FIELD_OPTION "query-field"
+#define FAIL_JOB_OPTION "fail-job"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
+
+#define READJOBS_COMMAND "readjobs"
 
 BEGIN_NCBI_SCOPE
 
@@ -73,6 +80,10 @@ enum EOption {
     eNetSchedule,
     eQueue,
     eAffinity,
+    eLimit,
+    eTimeout,
+    eConfirmRead,
+    eRollbackRead,
     eWorkerNodes,
     eActiveJobCount,
     eJobsByAffinity,
@@ -80,6 +91,7 @@ enum EOption {
     eQuery,
     eCount,
     eQueryField,
+    eSelectByStatus,
     eBrief,
     eStatusOnly,
     eProgressMessageOnly,
@@ -129,8 +141,12 @@ private:
         string ns_service;
         string queue;
         string affinity;
+        unsigned limit;
+        unsigned timeout;
+        string reservation_token;
         string query;
         vector<string> query_fields;
+        CNetScheduleAPI::EJobStatus job_status;
         time_t extend_lifetime_by;
         string progress_message;
         string queue_description;
@@ -149,8 +165,8 @@ private:
 
         char option_flags[eTotalNumberOfOptions];
 
-        SOptions() : offset(0), size(0), ttl(0),
-            input_stream(NULL), output_stream(NULL)
+        SOptions() : offset(0), size(0), ttl(0), limit(0), timeout(0),
+            extend_lifetime_by(0), input_stream(NULL), output_stream(NULL)
         {
             memset(option_flags, 0, eTotalNumberOfOptions);
         }
@@ -177,6 +193,7 @@ private:
     CNetICacheClient m_NetICacheClient;
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleAdmin m_NetScheduleAdmin;
+    CNetScheduleSubmitter m_NetScheduleSubmitter;
     auto_ptr<CGridClient> m_GridClient;
 
 // NetCache commands.
@@ -193,6 +210,7 @@ public:
     int Cmd_SubmitJob();
     int Cmd_GetJobInput();
     int Cmd_GetJobOutput();
+    int Cmd_ReadJobs();
     int Cmd_CancelJob();
     int Cmd_Kill();
     int Cmd_RequestJob();
@@ -201,6 +219,7 @@ public:
     int Cmd_UpdateJob();
     int Cmd_NetScheduleQuery();
     int Cmd_QueueInfo();
+    int Cmd_DumpQueue();
     int Cmd_CreateQueue();
     int Cmd_GetQueueList();
     int Cmd_DeleteQueue();
@@ -225,6 +244,7 @@ private:
         eNetCacheAdmin,
         eNetScheduleAPI,
         eNetScheduleAdmin,
+        eNetScheduleSubmitter,
         eGridClient
     };
     EAPIClass SetUp_AdminCmd();

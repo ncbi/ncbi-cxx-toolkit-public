@@ -81,7 +81,7 @@ struct SOptionDefinition {
         INPUT_FILE_OPTION, "Read input from the specified file."},
 
     {CCommandLineParser::eOptionWithParameter, eOutputFile,
-        "o|output-file", "Save output to the specified file."},
+        "o|" OUTPUT_FILE_OPTION, "Save output to the specified file."},
 
     {CCommandLineParser::eOptionWithParameter, eOutputFormat,
         "of|output-format",
@@ -117,6 +117,20 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eAffinity,
         AFFINITY_OPTION, "Affinity token."},
 
+    {CCommandLineParser::eOptionWithParameter, eLimit,
+        LIMIT_OPTION, "Maximum number of records to return."},
+
+    {CCommandLineParser::eOptionWithParameter, eTimeout,
+        TIMEOUT_OPTION, "Timeout in seconds for this operation."},
+
+    {CCommandLineParser::eOptionWithParameter, eConfirmRead,
+        CONFIRM_READ_OPTION, "For the specified reading reservation, "
+            "mark some or all of the jobs as successfully retrieved."},
+
+    {CCommandLineParser::eOptionWithParameter, eRollbackRead,
+        ROLLBACK_READ_OPTION, "Release the specified reading reservation "
+            "for some or all of the jobs."},
+
     {CCommandLineParser::eSwitch, eWorkerNodes,
         "worker-nodes", "Print the list of active worker nodes."},
 
@@ -144,6 +158,9 @@ struct SOptionDefinition {
             "column. Multiple '--" QUERY_FIELD_OPTION "' options can be "
             "specified for a query. If no such options are specified, "
             "a single column of job IDs is printed."},
+
+    {CCommandLineParser::eOptionWithParameter, eSelectByStatus,
+        "select-by-status", "Filter output by job status."},
 
     {CCommandLineParser::eSwitch, eBrief,
         "brief", "Produce less verbose output."},
@@ -198,7 +215,7 @@ struct SOptionDefinition {
     "ICache mode requires blob ID to be specified in the " \
     "following format: \"key,version,subkey\"."
 
-#define WN_NOT_NOTIFIED_PARAGRAPH \
+#define WN_NOT_NOTIFIED_DISCLAIMER \
     "Worker nodes that may have already " \
     "started job processing will not be notified."
 
@@ -292,6 +309,39 @@ struct SCommandDefinition {
         "return code.",
         {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
 
+        
+
+    {&CGridCommandLineInterfaceApp::Cmd_ReadJobs,
+        READJOBS_COMMAND, "Bulk retrieval of completed jobs.",
+        "Incrementally harvest IDs of completed jobs. This command "
+        "has two modes of operation: reading of job IDs and "
+        "finalization of reading.\n\n"
+        "The first mode is engaged when neither of the finalization "
+        "options, '--" CONFIRM_READ_OPTION "' or '--" ROLLBACK_READ_OPTION
+        "', is given. In this mode, " PROGRAM_NAME " acquires a reading "
+        "reservation for a batch of completed jobs. The maximum batch "
+        "size must be defined with the '--" LIMIT_OPTION "' option. "
+        "Upon success, if there are completed jobs in the queue, a "
+        "reservation token is printed to the standard output stream "
+        "and is followed by a newline-separated list of completed job "
+        "IDs (unless the '--" OUTPUT_FILE_OPTION "' option is given, "
+        "in which case the list of job IDs is sent to that file). If "
+        "there are no completed jobs in the queue, nothing is printed, "
+        "but at the same time the exit code will be zero. This command "
+        "changes the status of the returned jobs from Done to Reading. "
+        "The reading reservation is valid for the number of seconds "
+        "specified by the '--" TIMEOUT_OPTION "' option. If the server "
+        "does not receive a reading confirmation within this time frame "
+        "(see below), the jobs will change their status back to Done.\n\n"
+        "In finalization mode, " PROGRAM_NAME " accepts job IDs from the "
+        "standard input stream (or the specified input file) and changes "
+        "their state either to from Reading to Confirmed (if the '--"
+        CONFIRM_READ_OPTION "' " "option is given) or back to Done "
+        "(for the '--" ROLLBACK_READ_OPTION "' option), which makes them "
+        "available again for subsequent " READJOBS_COMMAND " operations.",
+        {eNetSchedule, eQueue, eLimit, eTimeout, eOutputFile,
+            eConfirmRead, eRollbackRead, eInputFile, eAuth, -1}},
+
     {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
@@ -303,7 +353,7 @@ struct SCommandDefinition {
         "Delete one or all job records from the specified NetSchedule "
         "queue. Information about the jobs is completely wiped out as "
         "if the jobs never existed. "
-        WN_NOT_NOTIFIED_PARAGRAPH,
+        WN_NOT_NOTIFIED_DISCLAIMER,
         {eOptionalID, eNetSchedule, eQueue, eAllJobs, eCompatMode, eAuth, -1}},
 
 /*
@@ -360,6 +410,13 @@ struct SCommandDefinition {
         "print also their model queue name and description.",
         {eQueueArg, eNetSchedule, eAuth, -1}},
 
+    {&CGridCommandLineInterfaceApp::Cmd_DumpQueue,
+        "dumpqueue", "Dump a NetSchedule queue.",
+        "This command dumps the entire contents of a NetSchedule queue. "
+        "It is also possible to filter the output by job status, but "
+        "in this case significantly less information is printed.",
+        {eNetSchedule, eQueue, eSelectByStatus, eAuth, -1}},
+
     {&CGridCommandLineInterfaceApp::Cmd_CreateQueue,
         "createqueue", "Create a dynamic NetSchedule queue.",
         "This command creates a new NetSchedule queue using "
@@ -380,7 +437,7 @@ struct SCommandDefinition {
     {&CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
         "deletequeue", "Delete a dynamic NetSchedule queue.",
         "All jobs in the specified queues will be lost. "
-        WN_NOT_NOTIFIED_PARAGRAPH,
+        WN_NOT_NOTIFIED_DISCLAIMER,
         {eQueueArg, eNetSchedule, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ServerInfo,
@@ -533,11 +590,29 @@ int CGridCommandLineInterfaceApp::Run()
             case eAffinity:
                 m_Opts.affinity = opt_value;
                 break;
+            case eLimit:
+                m_Opts.limit = NStr::StringToUInt(opt_value);
+                break;
+            case eTimeout:
+                m_Opts.timeout = NStr::StringToUInt(opt_value);
+                break;
+            case eConfirmRead:
+            case eRollbackRead:
+                m_Opts.reservation_token = opt_value;
+                break;
             case eQuery:
                 m_Opts.query = opt_value;
                 break;
             case eQueryField:
                 m_Opts.query_fields.push_back(opt_value);
+                break;
+            case eSelectByStatus:
+                if ((m_Opts.job_status = CNetScheduleAPI::StringToStatus(
+                        opt_value)) == CNetScheduleAPI::eJobNotFound) {
+                    fprintf(stderr, PROGRAM_NAME
+                        ": invalid job status '%s'\n", opt_value);
+                    return 2;
+                }
                 break;
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);

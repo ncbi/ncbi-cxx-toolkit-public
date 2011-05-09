@@ -67,8 +67,13 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     // If api_class == eWorkerNode: m_NetScheduleAPI.EnableWorkerNodeCompatMode();
 
-    if (api_class == eNetScheduleAdmin)
+    switch (api_class) {
+    case eNetScheduleAdmin:
         m_NetScheduleAdmin = m_NetScheduleAPI.GetAdmin();
+        break;
+    case eNetScheduleSubmitter:
+        m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
+    }
 }
 
 void CGridCommandLineInterfaceApp::SetUp_GridClient()
@@ -323,6 +328,46 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
     return DumpJobInputOutput(job.output);
 }
 
+int CGridCommandLineInterfaceApp::Cmd_ReadJobs()
+{
+    SetUp_NetScheduleCmd(eNetScheduleSubmitter);
+
+    std::vector<std::string> job_ids;
+
+    if (!IsOptionSet(eConfirmRead) && !IsOptionSet(eRollbackRead)) {
+        if (!IsOptionSet(eLimit)) {
+            fprintf(stderr, PROGRAM_NAME " " READJOBS_COMMAND
+                ": option '--" LIMIT_OPTION "' is required.\n");
+            return 2;
+        }
+
+        std::string batch_id;
+
+        if (m_NetScheduleSubmitter.Read(batch_id,
+                job_ids, m_Opts.limit, m_Opts.timeout)) {
+            printf("%s\n", batch_id.c_str());
+
+            ITERATE(std::vector<std::string>, job_id, job_ids) {
+                fprintf(m_Opts.output_stream, "%s\n", job_id->c_str());
+            }
+        }
+    } else {
+        char job_id[1024];
+
+        while (fgets(job_id, sizeof(job_id), m_Opts.input_stream) != NULL)
+            job_ids.push_back(job_id);
+
+        if (IsOptionSet(eConfirmRead))
+            m_NetScheduleSubmitter.ReadConfirm(
+                m_Opts.reservation_token, job_ids);
+        else
+            m_NetScheduleSubmitter.ReadRollback(
+                m_Opts.reservation_token, job_ids);
+    }
+
+    return 0;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_CancelJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleAPI);
@@ -416,6 +461,18 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
     m_NetScheduleAdmin.PrintQueueInfo(NcbiCout, m_Opts.id);
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_DumpQueue()
+{
+    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+    if (!IsOptionSet(eSelectByStatus))
+        m_NetScheduleAdmin.DumpQueue(NcbiCout);
+    else
+        m_NetScheduleAdmin.PrintQueue(NcbiCout, m_Opts.job_status);
 
     return 0;
 }
