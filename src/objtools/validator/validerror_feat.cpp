@@ -6605,17 +6605,17 @@ bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
 {
     CSeq_loc_CI loc_it(loc);
     if (!loc_it) {
-        return FALSE;
+        return false;
     }
     CConstRef<CSeq_loc> rng = loc_it.GetRangeAsSeq_loc();
     if (!rng) {
-        return FALSE;
+        return false;
     }
 
     TSeqPos end = rng->GetStart(eExtreme_Biological);
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*rng);
     if (!bsh) {
-        return FALSE;
+        return false;
     }
 
     ENa_strand strand = rng->GetStrand();
