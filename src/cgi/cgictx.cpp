@@ -309,13 +309,17 @@ const string& CCgiContext::GetSelfURL(void) const
     if ( caf_ver >= 119289 ) {
         script_uri = GetRequest().GetRandomProperty("X_FORWARDED_URI");
         have_script_uri = !script_uri.empty();
-        size_t arg_pos = script_uri.find('?');
-        if (arg_pos != NPOS) {
-            script_uri = script_uri.substr(0, arg_pos);
-        }
     }
     if ( !have_script_uri ) {
-        script_uri = GetRequest().GetProperty(eCgi_ScriptName);
+        script_uri = GetRequest().GetRandomProperty("SCRIPT_URL", false);
+        if ( script_uri.empty() ) {
+            script_uri = GetRequest().GetProperty(eCgi_ScriptName);
+        }
+    }
+    // Remove args if any
+    size_t arg_pos = script_uri.find('?');
+    if (arg_pos != NPOS) {
+        script_uri = script_uri.substr(0, arg_pos);
     }
     m_SelfURL += NStr::Replace(script_uri, "//", "/");
 
