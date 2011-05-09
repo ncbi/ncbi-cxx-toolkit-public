@@ -2629,6 +2629,8 @@ void x_PushRange(CSeq_loc& dst,
         }
         if ( rg.IsSetFuzzFrom() ) {
             pnt->SetFuzz().Assign(rg.GetFuzzFrom());
+        } else if( rg.IsSetFuzzTo() ) {
+            pnt->SetFuzz().Assign(rg.GetFuzzTo());
         }
         if (dst.IsMix()) {
             CRef<CSeq_loc> pnt_loc(new CSeq_loc);
