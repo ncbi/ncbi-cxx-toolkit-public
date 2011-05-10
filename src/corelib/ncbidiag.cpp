@@ -1807,7 +1807,11 @@ CDiagContext_Extra::Print(const string& name, const string& value)
     if ( !m_Args ) {
         m_Args = new TExtraArgs;
     }
-    m_Args->push_back(TExtraArg(name, value));
+    // Optimize inserting new pair into the args list, it is the same as:
+    //     m_Args->push_back(TExtraArg(name, value));
+    m_Args->push_back(TExtraArg(kEmptyStr, kEmptyStr));
+    m_Args->rbegin()->first.assign(name);
+    m_Args->rbegin()->second.assign(value);
     return *this;
 }
 
