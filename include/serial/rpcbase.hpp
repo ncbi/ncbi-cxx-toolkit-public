@@ -36,6 +36,7 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/request_ctx.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
@@ -62,7 +63,8 @@ public:
     CRPCClient(const string&     service     = kEmptyStr,
                ESerialDataFormat format      = eSerial_AsnBinary,
                unsigned int      retry_limit = 3)
-        : m_Service(service), m_Format(format), m_Timeout(kDefaultTimeout),
+        : m_Service(service), m_SessionID(CRequestContext().SetSessionID()),
+          m_Format(format), m_Timeout(kDefaultTimeout),
           m_RetryLimit(retry_limit)
         { }
     virtual ~CRPCClient(void);
@@ -121,6 +123,7 @@ private:
     auto_ptr<CObjectOStream> m_Out;
     string                   m_Service; ///< Used by default Connect().
     string                   m_Affinity;
+    string                   m_SessionID;
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     const STimeout*          m_Timeout; ///< Cloned if not special.
@@ -292,16 +295,14 @@ inline
 void CRPCClient<TRequest, TReply>::x_Connect(void)
 {
     _ASSERT( !m_Service.empty() );
-    SConnNetInfo* net_info;
+    SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
+    string header = "Cookie: ncbi_sid=" + m_SessionID;
+    ConnNetInfo_AppendUserHeader(net_info, header.c_str());
     if (!m_Affinity.empty()) {
-        net_info = ConnNetInfo_Create(m_Service.c_str());
         ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
-    } else {
-        net_info = 0;
     }
     x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, net_info, 0,
                                         m_Timeout));
-    // No-op on NULL net_info
     ConnNetInfo_Destroy(net_info);
 }
 
