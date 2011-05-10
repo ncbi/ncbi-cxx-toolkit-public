@@ -166,7 +166,9 @@ void CConvert2BlastMaskApplication::Init(void) {
                             CArgDescriptions::eString);
                             
     arg_desc->AddKey     ("masking_options", "mask_program_options",
-                          "Masking algorithm options to create the masked input",
+                          "Masking algorithm options to create the masked input"
+                          " (free text to describe/include (command line) "
+                          "options used to create the masking)",
                           CArgDescriptions::eString);
                             
     // Setup arg.descriptions for this application
