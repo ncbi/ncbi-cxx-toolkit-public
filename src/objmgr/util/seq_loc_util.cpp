@@ -754,6 +754,17 @@ void SeqIntPartialCheck(const CSeq_interval& itv,
                         }
                     }
                 }
+            } else if (fuzz.Which() == CInt_fuzz::e_Range) {
+                // range
+                if (itv.IsSetStrand()  &&   itv.GetStrand() == eNa_strand_minus) {
+                    if (is_last) {
+                        retval |= eSeqlocPartial_Stop;
+                    } 
+                } else {
+                    if (is_first) {
+                        retval |= eSeqlocPartial_Start;
+                    }
+                }
             }
         }
     }
