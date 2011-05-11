@@ -1470,7 +1470,6 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
     return sdl;
 }
 
-/*************************New functions for template approach *************************/
 void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)                                                    
 {
     bool first_new =true;
@@ -1480,17 +1479,24 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     // Mixed db is genomic + transcript and this does not apply to proteins.        
     bool is_mixed_database = (m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_Ctx): false;    
     string rowType = "odd";
+    string subHeaderID;  
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         cur_database_type = (sdl->linkout & eGenomicSeq);
-        string subHeader;        
+        string subHeader;             
         bool formatHeaderSort = !is_first && (prev_database_type != cur_database_type);
         if (is_mixed_database && (is_first || formatHeaderSort)) {            
-            subHeader = x_FormatSeqSetHeaders(cur_database_type, formatHeaderSort);            
+            subHeader = x_FormatSeqSetHeaders(cur_database_type, formatHeaderSort);
+            subHeaderID = cur_database_type ? "GnmSeq" : "Transcr";
+            //This is done for 508 complience
+            subHeader = CAlignFormatUtil::MapTemplate(subHeader,"defl_header_id",subHeaderID); 
         }                
         prev_database_type = cur_database_type;
                             
         string defLine = x_FormatDeflineTableLine(sdl,*iter,first_new);
+
+        //This is done for 508 complience
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"defl_header_id",subHeaderID); 
 
         string firstSeq = (is_first) ? "firstSeq" : "";
         defLine = CAlignFormatUtil::MapTemplate(defLine,"firstSeq",firstSeq); 
