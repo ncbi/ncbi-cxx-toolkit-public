@@ -352,7 +352,7 @@ PC-ResultType ::= SEQUENCE {
                          rmin            (20),             -- Reciprocal Minutes
                          day             (21),             -- Days
                          rday            (22),             -- Reciprocal Days
-                         mL-min-kg       (23),             -- milliliter / minute / kilogram
+                         ml-min-kg       (23),             -- milliliter / minute / kilogram
                          l-kg            (24),             -- liter / kilogram
                          hr-ng-ml        (25),             -- hour * nanogram / milliliter
                          cm-sec          (26),             -- centimeter / second
