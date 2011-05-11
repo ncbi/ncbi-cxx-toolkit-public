@@ -59,7 +59,7 @@ void SJS_Request::Init()
 }
 
 
-void SJS_Request::SetParamFields(TNSProtoParams& params)
+SJS_Request::EInputStatus SJS_Request::SetParamFields(TNSProtoParams& params)
 {
     NON_CONST_ITERATE(TNSProtoParams, it, params) {
         const CTempString &     key = it->first;
@@ -75,7 +75,7 @@ void SJS_Request::SetParamFields(TNSProtoParams& params)
             key != "where"   &&  // input and output sizes are controlled
             key != "fields")     // in more intelligent manner.
         {
-            val.resize(kNetScheduleMaxDBDataSize - 1);
+            return eStatus_TooLong;
         }
 
         switch (key[0]) {
@@ -166,5 +166,7 @@ void SJS_Request::SetParamFields(TNSProtoParams& params)
             break;
         }
     }
+
+    return eStatus_OK;
 }
 

@@ -43,6 +43,11 @@ BEGIN_NCBI_SCOPE
 
 struct SJS_Request
 {
+    enum EInputStatus {
+        eStatus_OK      = 0,
+        eStatus_TooLong = 1
+    };
+
     TNSJobId        job_id;
     int             job_return_code;
     unsigned        port;
@@ -61,7 +66,7 @@ struct SJS_Request
     std::string     tags;
 
     void Init();
-    void SetParamFields(TNSProtoParams& params);
+    EInputStatus SetParamFields(TNSProtoParams& params);
 };
 
 END_NCBI_SCOPE

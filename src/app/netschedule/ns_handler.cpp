@@ -719,7 +719,13 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     x_CheckAccess(extra.role);
 
     m_JobReq.Init();
-    m_JobReq.SetParamFields(cmd.params);
+    if (m_JobReq.SetParamFields(cmd.params) == SJS_Request::eStatus_TooLong) {
+        ERR_POST("User input exceeds the limit. Command rejected.");
+        x_PrintRequestStop(eStatus_BadCmd);
+        x_WriteMessageNoThrow("ERR:", "eDataTooLong:"
+                                      "User input exceeds the limit.");
+        return;
+    }
 
     if (extra.processor == &CNetScheduleHandler::x_ProcessQuitSession) {
         x_ProcessQuitSession(0);
@@ -859,7 +865,16 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         return;
     }
 
-    m_JobReq.SetParamFields(params);
+    if (m_JobReq.SetParamFields(params) == SJS_Request::eStatus_TooLong) {
+        ERR_POST("User input exceeds the limit. Command rejected.");
+        x_PrintRequestStop(eStatus_BadCmd);
+        x_WriteMessageNoThrow("ERR:", "eDataTooLong:"
+                                      "User input exceeds the limit.");
+        m_BatchJobs.clear();
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        return;
+    }
+
     job.SetInput(NStr::ParseEscapes(m_JobReq.input));
     if (m_JobReq.param1 == "match") {
         // We reuse jobs from m_BatchJobs, so we always should reset this
