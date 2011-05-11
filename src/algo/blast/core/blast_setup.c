@@ -50,18 +50,35 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
                             Blast_Message** error_return)
 {
     Int4 index = 0;
+    Int2 retval = 0;
 
     if (sbp == NULL || scoring_options == NULL) {
         Blast_PerrorWithLocation(error_return, BLASTERR_INVALIDPARAM, -1);
         return 1;
     }
 
+    /* Fill values for gumbel parameters*/
+    if (program == eBlastTypeBlastn) {
+        /* TODO gumbel parameters are not supported for nucleotide search yet  
+        retval = 
+                Blast_KarlinBlkNuclGappedCalc(sbp->kbp_gap_std[index],
+                    scoring_options->gap_open, scoring_options->gap_extend, 
+                    scoring_options->reward, scoring_options->penalty, 
+                    sbp->kbp_std[index], &(sbp->round_down), error_return); */
+        if (sbp->gbp) sfree(sbp->gbp->p);
+        sfree(sbp->gbp);
+    } else if (sbp->gbp) {
+        retval = Blast_GumbelBlkCalc(sbp->gbp,
+                    scoring_options->gap_open, scoring_options->gap_extend,
+                    sbp->name, error_return);
+    }
+    if (retval)  return retval;
+
     /* Allocate and fill values for a gapped Karlin block, given the scoring
        options, then copy it for all the query contexts, as long as they're
        contexts that will be searched (i.e.: valid) */
     for (index = query_info->first_context;
          index <= query_info->last_context; index++) {
-        Int2 retval = 0;
 
         if ( !query_info->contexts[index].is_valid ) {
             continue;
@@ -637,6 +654,9 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    if (Blast_SubjectIsTranslated(program_number))
       db_length = db_length/3;  
 
+   if (sbp->gbp) 
+      sbp->gbp->db_length = db_length;
+       
    if (eff_len_options->dbseq_num > 0)
       db_num_seqs = eff_len_options->dbseq_num;
    else
@@ -651,8 +671,8 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
            Int8 effective_search_space = db_length - (db_num_seqs*(query_info->contexts[index].length_adjustment));
            query_info->contexts[index].eff_searchsp = effective_search_space;
         }
-       
-       return 0;
+
+        return 0;
    }
 
    /* N.B.: the old code used kbp_gap_std instead of the kbp_gap alias (which

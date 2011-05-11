@@ -1525,6 +1525,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
 }
 
 Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
+                             Int4 subject_length,
                              BlastHSPList* hsp_list, 
                              Boolean gapped_calculation, 
                              const BlastScoreBlk* sbp, double gap_decay_rate,
@@ -1559,10 +1560,19 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
          for RPS BLAST, where scores are scaled, but Lambda is not. */
       kbp[hsp->context]->Lambda /= scaling_factor;
 
-      /* Get effective search space from the query information block */
-      hsp->evalue =
-          BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context], 
+      if (sbp->gbp) {
+          /* Only try Spouge's method if gumbel parameters are available */
+          hsp->evalue =
+              BLAST_SpougeStoE(hsp->score, kbp[hsp->context], sbp->gbp, 
+                               query_info->contexts[hsp->context].query_length, 
+                               subject_length);
+      } else {
+          /* Get effective search space from the query information block */
+          hsp->evalue =
+              BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context], 
                                query_info->contexts[hsp->context].eff_searchsp);
+      }
+
       hsp->evalue /= gap_decay_divisor;
       /* Put back the unscaled value of Lambda. */
       kbp[hsp->context]->Lambda *= scaling_factor;
@@ -2894,7 +2904,6 @@ Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
          BlastHSPList *hsplist = hitlist->hsplist_array[j];
          hsp_count += hsplist->hspcnt;
       }
-      //printf("QUERY TOTAL HITS = %d\n", hsp_count );
 
       /* empty each HSP into a combined HSP array, then
          sort the array by raw score */
@@ -2926,11 +2935,9 @@ Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
 
          if (BlastIntervalTreeMasksHSP(tree,
                          hsp, query_info, 0, masklevel)) {
-             //printf("Contained: %d q:%d-%d\n", hsp->score, hsp->query.offset, hsp->query.end );
              Blast_HSPFree(hsp);
          }
          else {
-             //printf("Adding: %d q:%d-%d\n", hsp->score, hsp->query.offset, hsp->query.end );
              BlastIntervalTreeAddHSP(hsp, tree, query_info, eQueryOnlyStrandIndifferent);
              Blast_HSPListSaveHSP(hsplist, hsp);
 
