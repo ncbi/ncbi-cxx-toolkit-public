@@ -38,28 +38,23 @@ BEGIN_NCBI_SCOPE
 
 string FormatNSId(const string& val, SQueueDescription* qdesc)
 {
-    string res("JSID_01_");
-    res += val;
-    res += '_';
-    res += qdesc->host;
-    res += '_';
-    res += NStr::IntToString(qdesc->port);
-    return res;
+    return "JSID_01_" + val + "_" + qdesc->host + "_" +
+           NStr::IntToString(qdesc->port);
 }
 
 
 string FormatHostName(unsigned host, SQueueDescription* qdesc)
 {
-    if (!host) return "0.0.0.0";
-    string host_name;
-    map<unsigned, string>::iterator it =
-        qdesc->host_name_cache.find(host);
-    if (it == qdesc->host_name_cache.end()) {
-        host_name = CSocketAPI::gethostbyaddr(host);
-        qdesc->host_name_cache[host] = host_name;
-    } else {
-        host_name = it->second;
-    }
+    if (!host)
+        return "0.0.0.0";
+
+    map<unsigned, string>::iterator     it = qdesc->host_name_cache.find(host);
+
+    if (it != qdesc->host_name_cache.end())
+        return it->second;
+
+    string      host_name = CSocketAPI::gethostbyaddr(host);
+    qdesc->host_name_cache[host] = host_name;
     return host_name;
 }
 

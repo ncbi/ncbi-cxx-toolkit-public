@@ -58,11 +58,12 @@ void SJS_Request::Init()
     return;
 }
 
+
 void SJS_Request::SetParamFields(TNSProtoParams& params)
 {
     NON_CONST_ITERATE(TNSProtoParams, it, params) {
-        const CTempString&  key = it->first;
-        string              val = it->second;
+        const CTempString &     key = it->first;
+        string                  val = it->second;
 
         if (key.empty())
             continue;

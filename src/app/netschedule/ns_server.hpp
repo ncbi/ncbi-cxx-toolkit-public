@@ -69,12 +69,10 @@ public:
     bool IsLog() const;
     void SetLogging(bool flag);
     unsigned GetCommandNumber();
-    CRequestContext* GetRequestContextFromPool();
-    void ReturnRequestContextToPool(CRequestContext* req_ctx);
 
     // Queue handling
     unsigned Configure(const IRegistry& reg);
-    unsigned CountActiveJobs();
+    unsigned CountActiveJobs() const;
     CRef<CQueue> OpenQueue(const std::string& name);
     void CreateQueue(const std::string& qname,
                      const std::string& qclass,
@@ -92,8 +90,8 @@ public:
 
     unsigned GetInactivityTimeout(void);
     std::string& GetHost();
-    unsigned GetPort();
-    unsigned GetHostNetAddr();
+    unsigned GetPort() const;
+    unsigned GetHostNetAddr() const;
     const CTime& GetStartTime(void) const;
     bool AdminHostValid(unsigned host) const;
 
@@ -122,11 +120,6 @@ private:
     CAtomicCounter                              m_LogFlag;
     /// Quick local timer
     CFastLocalTime                              m_LocalTimer;
-    /// Pool of RequestContexts
-    CResourcePool<CRequestContext,
-                  CFastMutex,
-                  CRequestContextPoolFactory>   m_RequestContextPool;
-
     /// List of admin stations
     CNetSchedule_AccessList                     m_AdminHosts;
 

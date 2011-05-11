@@ -37,47 +37,52 @@
 
 BEGIN_NCBI_SCOPE
 
+
 bool CNetSchedule_AccessList::IsRestrictionSet() const
 {
     CReadLockGuard guard(m_Lock);
     return x_IsRestrictionSet();
 }
 
+
 /// is host allowed to connect
 bool CNetSchedule_AccessList::IsAllowed(unsigned ha) const
 {
     CReadLockGuard guard(m_Lock);
 
-    if (!x_IsRestrictionSet()) return true;
+    if (!x_IsRestrictionSet())
+        return true;
 
     return m_Hosts[ha];
 }
 
+
 /// Delimited lists of hosts allowed into the system
 void CNetSchedule_AccessList::SetHosts(const string& host_names)
 {
-    vector<string> hosts;
+    vector<string>      hosts;
     NStr::Tokenize(host_names, ";, ", hosts, NStr::eMergeDelims);
 
     CWriteLockGuard guard(m_Lock);
     m_Hosts.clear();
 
     ITERATE(vector<string>, it, hosts) {
-        const string& hn = *it;
+        const string &      hn = *it;
+
         if (NStr::CompareNocase(hn, "localhost") == 0) {
-            string my_name = CSocketAPI::gethostname();
-            unsigned int ha = CSocketAPI::gethostbyname(my_name);
-            if (ha != 0) {
+            string          my_name = CSocketAPI::gethostname();
+            unsigned int    ha = CSocketAPI::gethostbyname(my_name);
+
+            if (ha != 0)
                 m_Hosts.set(ha);
-            }
         }
-        unsigned int ha = CSocketAPI::gethostbyname(*it);
-        if (ha != 0) {
+
+        unsigned int        ha = CSocketAPI::gethostbyname(*it);
+        if (ha != 0)
             m_Hosts.set(ha);
-        } else {
+        else
             LOG_POST(Error << "'" << *it << "'"
-                            << " is not a valid host name. Ignored.");
-        }
+                           << " is not a valid host name. Ignored.");
     }
 }
 
@@ -95,7 +100,7 @@ void CNetSchedule_AccessList::PrintHosts(CNetScheduleHandler &  handler) const
 
 string CNetSchedule_AccessList::Print(const char* sep) const
 {
-    string s;
+    string      s;
     for(THostVector::enumerator en(m_Hosts.first()); en.valid(); ++en) {
         if (s.size()) s += sep;
         s += CSocketAPI::gethostbyaddr(*en);
@@ -105,3 +110,4 @@ string CNetSchedule_AccessList::Print(const char* sep) const
 
 
 END_NCBI_SCOPE
+

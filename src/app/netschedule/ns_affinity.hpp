@@ -88,6 +88,7 @@ public:
 private:
     CAffinityDict(const CAffinityDict& );
     CAffinityDict& operator=(const CAffinityDict& );
+
 private:
     friend class CAffinityDictGuard;
 
@@ -113,8 +114,7 @@ class CAffinityDictGuard
 public:
     CAffinityDictGuard(CAffinityDict& aff_dict, CBDB_Transaction& trans)
       : m_AffDict(aff_dict), m_DbGuard(aff_dict.m_DbLock), m_Trans(trans)
-    {
-    }
+    {}
 
     /// Add a new token or return token's id if this affinity
     /// index is already in the database
@@ -122,11 +122,13 @@ public:
     {
         return m_AffDict.x_CheckToken(aff_token, m_Trans);
     }
+
     /// Remove affinity token
     void RemoveToken(unsigned aff_id)
     {
         m_AffDict.x_RemoveToken(aff_id, m_Trans);
     }
+
 private:
     CAffinityDict&    m_AffDict;
     CFastMutexGuard   m_DbGuard;

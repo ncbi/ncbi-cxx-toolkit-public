@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 class CQueueDataBase;
 
-/// Thread class, removes obsolete job records
+/// Thread class, notifies listeners
 ///
 /// @internal
 class CJobNotificationThread : public CThreadNonStop
@@ -49,19 +49,22 @@ public:
                            unsigned run_delay)
     : CThreadNonStop(run_delay),
       m_QueueDB(qdb)
-    {
-    }
+    {}
+
     ~CJobNotificationThread();
 
     virtual void DoJob(void);
+
 private:
     CJobNotificationThread(const CJobNotificationThread&);
     CJobNotificationThread& operator=(const CJobNotificationThread&);
+
 private:
-    CQueueDataBase&  m_QueueDB;
+    CQueueDataBase &        m_QueueDB;
 };
 
 
 END_NCBI_SCOPE
 
 #endif
+

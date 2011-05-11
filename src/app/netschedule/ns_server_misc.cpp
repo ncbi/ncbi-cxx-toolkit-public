@@ -50,16 +50,15 @@ IServer_ConnectionHandler* CNetScheduleConnectionFactory::Create(void)
 
 //////////////////////////////////////////////////////////////////////////
 /// CNetScheduleBackgroundHost implementation
-void
-CNetScheduleBackgroundHost::ReportError(ESeverity          severity,
-                                        const std::string& what)
+void CNetScheduleBackgroundHost::ReportError(ESeverity          severity,
+                                             const std::string& what)
 {
     if (severity == CBackgroundHost::eFatal)
         m_Server->SetShutdownFlag();
 }
 
-bool
-CNetScheduleBackgroundHost::ShouldRun()
+
+bool CNetScheduleBackgroundHost::ShouldRun()
 {
     return true;
 }
@@ -71,37 +70,6 @@ void
 CNetScheduleRequestExecutor::SubmitRequest(const CRef<CStdRequest>& request)
 {
     m_Server->SubmitRequest(request);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// CRequestContextPoolFactory implementation
-CRequestContext* CRequestContextPoolFactory::Create()
-{
-    CRequestContext* rc = new CRequestContext;
-    rc->AddReference();
-    return rc;
-}
-
-void CRequestContextPoolFactory::Delete(CRequestContext* rc)
-{
-    if (rc) rc->RemoveReference();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// CNSRequestContextFactory implementation
-
-CRequestContext* CNSRequestContextFactory::Get()
-{
-    CRequestContext* req_ctx = m_Server->GetRequestContextFromPool();
-    req_ctx->SetRequestID(CRequestContext::GetNextRequestID());
-    return req_ctx;
-}
-
-void CNSRequestContextFactory::Return(CRequestContext* req_ctx)
-{
-    m_Server->ReturnRequestContextToPool(req_ctx);
 }
 
 

@@ -85,8 +85,7 @@ public:
     void SetErrorMsg(const string& msg);
 
     // generic access via field name
-    static
-        int GetFieldIndex(const string& name);
+    static int GetFieldIndex(const string& name);
     string GetField(int index) const;
 
 private:
@@ -130,7 +129,7 @@ public:
     // Getter/setters
     unsigned       GetId() const
     { return m_Id; }
-    TJobStatus     GetStatus() const 
+    TJobStatus     GetStatus() const
     { return m_Status; }
     time_t         GetTimeSubmit() const
     { return m_TimeSubmit; }

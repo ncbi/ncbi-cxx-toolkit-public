@@ -48,7 +48,6 @@ CAffinityDict::CAffinityDict()
   m_CurTokenIdx(0)
 {
     m_IdCounter.Set(0);
-
 }
 
 
@@ -188,7 +187,8 @@ unsigned CAffinityDict::x_CheckToken(const string&     aff_token,
 
                 EBDB_ErrCode err = m_AffDictDB->Insert();
                 if (err == eBDB_KeyDup) {
-                    ERR_POST("Duplicate record in affinity dictionary.");
+                    ERR_POST("Duplicate record (" + aff_token +
+                             ")in affinity dictionary.");
                     continue;
                 }
 
@@ -206,9 +206,9 @@ unsigned CAffinityDict::x_CheckToken(const string&     aff_token,
                     SleepMilliSec(250);
                     continue;
                 }
-            } else {
+            } else
                 throw;
-            }
+
             ERR_POST("Too many transaction repeats in CAffinityDict::CheckToken.");
             throw;
         }
@@ -217,6 +217,7 @@ unsigned CAffinityDict::x_CheckToken(const string&     aff_token,
 
     return aff_id;
 }
+
 
 unsigned CAffinityDict::GetTokenId(const string& aff_token)
 {
@@ -246,24 +247,24 @@ void CAffinityDict::GetTokensIds(const list<string>& tokens, TNSBitVector& ids)
 
     ITERATE(list<string>, it, tokens) {
         m_AffDict_TokenIdx->token = *it;
-        if (m_AffDict_TokenIdx->Fetch() != eBDB_Ok) {
+        if (m_AffDict_TokenIdx->Fetch() != eBDB_Ok)
             continue;
-        }
-        unsigned aff_id = m_AffDict_TokenIdx->aff_id;
-        ids.set(aff_id);
+
+        ids.set(m_AffDict_TokenIdx->aff_id);
     }
 }
 
 
 string CAffinityDict::GetAffToken(unsigned aff_id)
 {
-    string token;
-    CFastMutexGuard guard(m_DbLock);
+    string              token;
+    CFastMutexGuard     guard(m_DbLock);
+
     m_AffDictDB->SetTransaction(0);
     m_AffDictDB->aff_id = aff_id;
-    if (m_AffDictDB->Fetch() != eBDB_Ok) {
+
+    if (m_AffDictDB->Fetch() != eBDB_Ok)
         return kEmptyStr;
-    }
 
     m_AffDictDB->token.ToString(token);
     return token;
@@ -273,19 +274,21 @@ string CAffinityDict::GetAffToken(unsigned aff_id)
 void CAffinityDict::x_RemoveToken(unsigned          aff_id,
                                   CBDB_Transaction& trans)
 {
-    unsigned dead_locks = 0; // dead lock counter
+    unsigned        dead_locks = 0; // dead lock counter
     while (1) {
         try {
             {{
-            CBDB_CursorGuard cg1(*m_CurAffDB);
-            m_CurAffDB->ReOpen(&trans);
-            m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
-            m_CurAffDB->From << aff_id;
-            if (m_CurAffDB->Fetch() != eBDB_Ok) {
-                return;
-            }
+                CBDB_CursorGuard    cg1(*m_CurAffDB);
+
+                m_CurAffDB->ReOpen(&trans);
+                m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
+                m_CurAffDB->From << aff_id;
+
+                if (m_CurAffDB->Fetch() != eBDB_Ok)
+                    return;
             }}
-            string token;
+
+            string      token;
             m_AffDictDB->token.ToString(token);
 
             m_AffDict_TokenIdx->SetTransaction(&trans);
@@ -302,10 +305,10 @@ void CAffinityDict::x_RemoveToken(unsigned          aff_id,
                     SleepMilliSec(250);
                     continue;
                 }
-            } else {
+            } else
                 throw;
-            }
-            ERR_POST("Too many transaction repeats in CAffinityDict::CheckToken.");
+
+            ERR_POST("Too many transaction repeats in CAffinityDict::x_RemoveToken.");
             throw;
         }
         break;
@@ -314,3 +317,4 @@ void CAffinityDict::x_RemoveToken(unsigned          aff_id,
 
 
 END_NCBI_SCOPE
+

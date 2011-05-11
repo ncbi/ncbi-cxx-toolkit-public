@@ -73,26 +73,27 @@ struct SAffinityInfo
 
 
 // Notification and worker node management
-typedef pair<unsigned, unsigned short> TWorkerNodeHostPort;
-typedef list<TNSJobId> TJobList;
+typedef pair<unsigned, unsigned short>  TWorkerNodeHostPort;
+typedef list<TNSJobId>                  TJobList;
+
 
 class CWorkerNode;
 class CRequestContext;
-struct SJobInfo {
-    SJobInfo(TNSJobId id, time_t t, CWorkerNode* node,
-        CRequestContext* ctx, CRequestContextFactory* f) :
-            job_id(id), exp_time(t), assigned_node(node),
-                req_ctx(ctx), factory(f) { }
+struct SJobInfo
+{
+    SJobInfo(TNSJobId id, time_t t, CWorkerNode* node) :
+        job_id(id), exp_time(t), assigned_node(node)
+    {}
 
     // Only for making search images
-    SJobInfo(TNSJobId id) : job_id(id) { }
+    SJobInfo(TNSJobId id) : job_id(id)
+    {}
 
-    TNSJobId         job_id;
-    time_t           exp_time;
-    CWorkerNode*     assigned_node;
-    CRequestContext* req_ctx;
-    CRef<CRequestContextFactory> factory;
+    TNSJobId                        job_id;
+    time_t                          exp_time;
+    CWorkerNode*                    assigned_node;
 };
+
 
 struct SCompareJobIds
 {
@@ -101,6 +102,7 @@ struct SCompareJobIds
         return r1->job_id < r2->job_id;
     }
 };
+
 
 typedef set<SJobInfo*, SCompareJobIds> TJobInfoById;
 
@@ -123,12 +125,12 @@ class CWorkerNode : public CObject
 {
 public:
     // Special constructors for making search images.
-    CWorkerNode(const string& node_id) {m_Id = node_id;}
-    CWorkerNode(unsigned host, unsigned short port)
-    {
-        m_Host = host;
-        m_Port = port;
-    }
+    CWorkerNode(const string& node_id) :
+        m_Id(node_id)
+    {}
+    CWorkerNode(unsigned host, unsigned short port) :
+        m_Host(host), m_Port(port)
+    {}
 
     // Set authentication token
     void SetAuth(const string& auth);
@@ -152,18 +154,17 @@ protected:
 
     // Locking order for node is ALWAYS m_WorkerNodeList.m_Lock (Read or Write,
     // depending on purpose) and then m_Lock.
-    CQueueWorkerNodeList* m_WorkerNodeList;
-    CFastMutex       m_Lock;
+    CQueueWorkerNodeList *  m_WorkerNodeList;
+    CFastMutex              m_Lock;
 
-    string           m_Id;
-    string           m_Auth;
-    unsigned         m_Host;
-    unsigned short   m_Port;
+    string                  m_Id;
+    string                  m_Auth;
+    unsigned                m_Host;
+    unsigned short          m_Port;
 
     // Interim, for compatibility only
-    SAffinityInfo    m_AffinityInfo;
-
-    TJobInfoById     m_JobInfoById;
+    SAffinityInfo           m_AffinityInfo;
+    TJobInfoById            m_JobInfoById;
 
     // Copied over from old SWorkerNodeInfo
     // Session management
@@ -183,6 +184,7 @@ protected:
     bool     m_NewStyle;
 };
 
+
 class CWorkerNode_Real : public CWorkerNode
 {
 public:
@@ -194,10 +196,6 @@ public:
     virtual ~CWorkerNode_Real();
 };
 
-typedef CRef<CWorkerNode> TWorkerNodeRef;
-
-typedef set<TWorkerNodeRef> TWorkerNodeRegister;
-
 
 struct SCompareNodeAddress
 {
@@ -208,8 +206,6 @@ struct SCompareNodeAddress
     }
 };
 
-typedef set<CWorkerNode*, SCompareNodeAddress> TWorkerNodeByAddress;
-
 
 struct SCompareNodeId
 {
@@ -219,9 +215,10 @@ struct SCompareNodeId
     }
 };
 
-typedef set<CWorkerNode*, SCompareNodeId> TWorkerNodeById;
 
-class IAffinityResolver {
+
+class IAffinityResolver
+{
 public:
     virtual ~IAffinityResolver() {}
     virtual void GetJobsWithAffinities(const TNSBitVector& aff_id_set,
@@ -248,6 +245,7 @@ public:
                                   CJobStatusTracker& status_tracker,
                                   IAffinityResolver& affinity_resolver);
     void BlacklistJob(unsigned job_id, time_t exp_time);
+
 private:
     CWorkerNode& m_WorkerNode;
 };
@@ -263,6 +261,11 @@ enum ENSCompletion {
     eNSCReturned = 201,
     eNSCTimeout  = 401
 };
+
+typedef CRef<CWorkerNode>                           TWorkerNodeRef;
+typedef set<TWorkerNodeRef>                         TWorkerNodeRegister;
+typedef set<CWorkerNode*, SCompareNodeAddress>      TWorkerNodeByAddress;
+typedef set<CWorkerNode*, SCompareNodeId>           TWorkerNodeById;
 
 
 class CQueueWorkerNodeList
@@ -284,12 +287,12 @@ public:
     void SetPort(CWorkerNode* worker_node, unsigned short port);
 
     // Add job to worker node job list
-    void AddJob(CWorkerNode* worker_node, const CJob& job, time_t exp_time,
-                CRequestContextFactory* req_ctx_f, bool is_log);
+    void AddJob(CWorkerNode* worker_node, const CJob& job, time_t exp_time);
     // Update job expiration time
-    void UpdateJob(TNSJobId job_id, time_t exp_time);
+    void UpdateJob(CQueue *  q, TNSJobId  job_id, time_t  exp_time);
     // Remove job from worker node job list
-    void RemoveJob(const CJob& job, ENSCompletion reason, bool is_log);
+    void RemoveJob(CQueue *  q, const CJob &  job,
+                   ENSCompletion reason, bool is_log);
 
     SJobInfo* FindJobById(TNSJobId job_id);
 
@@ -332,19 +335,19 @@ private:
 
     //void x_GenerateNodeId(string& node_id);
 
-    string          m_QueueName;
-    time_t          m_LastNotifyTime;
+    string                  m_QueueName;
+    time_t                  m_LastNotifyTime;
 
-    TWorkerNodeRegister m_WorkerNodeRegister;
-    TWorkerNodeByAddress m_WorkerNodeByAddress;
-    TWorkerNodeById m_WorkerNodeById;
+    TWorkerNodeRegister     m_WorkerNodeRegister;
+    TWorkerNodeByAddress    m_WorkerNodeByAddress;
+    TWorkerNodeById         m_WorkerNodeById;
 
-    TJobInfoById m_JobInfoById;
+    TJobInfoById            m_JobInfoById;
 
-    CAtomicCounter  m_GeneratedIdCounter;
-    string          m_HostName;
-    time_t          m_StartTime;
-    mutable CRWLock m_Lock;
+    CAtomicCounter          m_GeneratedIdCounter;
+    string                  m_HostName;
+    time_t                  m_StartTime;
+    mutable CRWLock         m_Lock;
 };
 
 
@@ -358,6 +361,7 @@ public:
     const TNSBitVector& GetNodeAffinities(time_t t, CWorkerNode* wn);
     // Get all assigned affinities for the list ORed into 'aff_ids'
     void GetAffinities(time_t t, TNSBitVector& aff_ids);
+
 private:
     CQueueWorkerNodeList& m_WorkerNodeList;
 };
@@ -365,3 +369,4 @@ private:
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_WORKER_NODE__HPP */
+

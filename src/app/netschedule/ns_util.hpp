@@ -50,14 +50,8 @@ string          NS_FormatIPAddress(unsigned int ipaddr);
 list<string>    BitVectorToJobKeys(const CQueue *        queue,
                                    const TNSBitVector &  bv);
 
-class CRequestContext;
-class CRequestContextFactory : public CObject
-{
-public:
-    virtual CRequestContext* Get() = 0;
-    virtual void Return(CRequestContext*) = 0;
-};
 
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_NS_UTIL__HPP */
+

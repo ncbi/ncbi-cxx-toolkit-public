@@ -99,30 +99,6 @@ private:
 };
 
 
-struct CRequestContextPoolFactory
-{
-    static CRequestContext* Create();
-    static void Delete(CRequestContext* rc);
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-// CNSRequestContextFactory
-class CNSRequestContextFactory : public CRequestContextFactory
-{
-public:
-    CNSRequestContextFactory(CNetScheduleServer* server)
-        : m_Server(server)
-    {}
-
-    virtual CRequestContext* Get();
-    virtual void Return(CRequestContext*);
-
-private:
-    CNetScheduleServer*     m_Server;
-};
-
-
 /// Special guard to properly initialize and de-initialize diagnostics
 class CDiagnosticsGuard
 {

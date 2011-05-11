@@ -92,10 +92,12 @@ public:
     CNetScheduleDApp()
         : CNcbiApplication()
     {}
+
     void Init(void);
     int Run(void);
+
 private:
-    STimeout m_ServerAcceptTimeout;
+    STimeout    m_ServerAcceptTimeout;
 };
 
 
@@ -285,14 +287,7 @@ int main(int argc, const char* argv[])
 {
     g_Diag_Use_RWLock();
     CDiagContext::SetOldPostFormat(false);
-
     CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
-    // Main thread request context already created, so is not affected
-    // by just set default, so set it manually.
-
-
-    // TODO: Move this call as well to the background threads which could produce
-    // LOG_POSTs
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
     return CNetScheduleDApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }

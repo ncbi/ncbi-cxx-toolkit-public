@@ -88,16 +88,18 @@ public:
     /// Additional statuses can be taken from
     /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
     enum EHTTPStatus {
-        eStatus_OK          = 200,  ///< Command is ok and execution is good
-        eStatus_Inactive    = 204,  ///< Connection was closed due to inactivity
-                                    ///< timeout
-        eStatus_FailedLock  = 304,
-        eStatus_BadCmd      = 400,  ///< Command is incorrect
-        eStatus_BadAuth     = 401,  ///< Operation is not permitted
-        eStatus_NotFound    = 404,  ///< Job is not found
-        eStatus_CmdTimeout  = 408,  ///< Command timeout is exceeded
-        eStatus_ServerError = 500,  ///< Internal server error
-        eStatus_NoImpl      = 501   ///< Command is not implemented
+        eStatus_OK                  = 200, ///< Command is ok and execution is good
+        eStatus_Inactive            = 204, ///< Connection was closed due to inactivity
+                                           ///< timeout
+        eStatus_BadCmd              = 400, ///< Command is incorrect
+        eStatus_BadAuth             = 401, ///< Operation is not permitted
+        eStatus_NotFound            = 404, ///< Job is not found
+        eStatus_CmdTimeout          = 408, ///< Command timeout is exceeded
+        eStatus_ServerError         = 500, ///< Internal server error
+        eStatus_NoImpl              = 501, ///< Command is not implemented
+        eStatus_JobNotifierError    = 502, ///< Job noticication thread failed
+        eStatus_JobExecWatcherError = 503, ///< Job execution watcher thread failed
+        eStatus_QueueCleanerError   = 504  ///< Queue cleaner thread failed
     };
 
 
@@ -266,13 +268,6 @@ private:
 
     /// Quick local timer
     CFastLocalTime                  m_LocalTimer;
-
-    // Due to processing of one logical request can span
-    // multiple threads, but goes on in a single handler,
-    // we use manual request context switching, thus replacing
-    // default per-thread mechanism.
-    CRef<CNSRequestContextFactory>  m_RequestContextFactory;
-
 
     /// Parsers for incoming commands and their parser tables
     TProtoParser                    m_SingleCmdParser;

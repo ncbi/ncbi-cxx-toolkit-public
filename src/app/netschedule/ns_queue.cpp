@@ -138,12 +138,6 @@ CQueue::~CQueue()
 }
 
 
-string CQueue::MakeKey(unsigned job_id) const
-{
-    return m_KeyGenerator.GenerateV1(job_id);
-}
-
-
 void CQueue::Attach(SQueueDbBlock* block)
 {
     Detach();
@@ -197,7 +191,7 @@ void CQueue::Detach()
         CRef<CStdRequest> request(new CTruncateRequest(m_QueueDbBlock));
         m_Executor.SubmitRequest(request);
         m_DeleteDatabase = false;
-    } else 
+    } else
         m_QueueDbBlock->allocated = false;
     m_QueueDbBlock = 0;
 }
@@ -371,7 +365,7 @@ unsigned CQueue::LoadStatusMatrix()
             run_timeout = queue_run_timeout;
         unsigned    exp_time = run->GetTimeStart() + run_timeout;
 
-        m_WorkerNodeList.AddJob(worker_node, job, exp_time, 0, false);
+        m_WorkerNodeList.AddJob(worker_node, job, exp_time);
     }
     m_LastId.Set(last_id);
     m_GroupLastId.Set(group_last_id);
@@ -604,14 +598,13 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
                              const string *             output,
                              // GetJob parameters
                              // in
-                             CRequestContextFactory *   rec_ctx_f,
                              const list<string> *       aff_list,
                              // out
                              CJob *                     new_job)
 {
     // PutResult parameter check
     _ASSERT(!done_job_id || output);
-    _ASSERT(!new_job || (rec_ctx_f && aff_list));
+    _ASSERT(!new_job || aff_list);
 
     bool        delete_done, keep_node_affinity;
     unsigned    max_output_size;
@@ -721,8 +714,7 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
             if (done_rec_updated)
                 RemoveJobFromWorkerNode(job, eNSCDone);
             if (pending_job_id)
-                AddJobToWorkerNode(worker_node, rec_ctx_f,
-                *new_job, curr + run_timeout);
+                AddJobToWorkerNode(worker_node, *new_job, curr + run_timeout);
             break;
         }
         catch (CBDB_ErrnoException& ex) {
@@ -841,7 +833,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
         CTime       tmp_t(GetFastLocalTime());
         tmp_t.SetTimeT(curr + tm);
         tmp_t.ToLocalTime();
-        LOG_POST(Error << "CQueue::JobDelayExpiration: job " << DecorateJobId(job_id)
+        LOG_POST(Error << "Job: " << DecorateJobId(job_id)
                        << " new_expiration_time: " << tmp_t.AsString()
                        << " job_timeout(sec): " << run_timeout);
     }
@@ -2317,27 +2309,25 @@ void CQueue::UnRegisterNotificationListener(CWorkerNode* worker_node)
 }
 
 
-void CQueue::AddJobToWorkerNode(CWorkerNode*            worker_node,
-                                CRequestContextFactory* rec_ctx_f,
-                                const CJob&             job,
-                                time_t                  exp_time)
+void CQueue::AddJobToWorkerNode(CWorkerNode *   worker_node,
+                                const CJob &    job,
+                                time_t          exp_time)
 {
-    m_WorkerNodeList.AddJob(worker_node, job, exp_time,
-                            rec_ctx_f, m_IsLog);
+    m_WorkerNodeList.AddJob(worker_node, job, exp_time);
     CountEvent(eStatGetEvent);
 }
 
 
 void CQueue::UpdateWorkerNodeJob(unsigned job_id, time_t exp_time)
 {
-    m_WorkerNodeList.UpdateJob(job_id, exp_time);
+    m_WorkerNodeList.UpdateJob(this, job_id, exp_time);
 }
 
 
 void CQueue::RemoveJobFromWorkerNode(const CJob&   job,
                                      ENSCompletion reason)
 {
-    m_WorkerNodeList.RemoveJob(job, reason, m_IsLog);
+    m_WorkerNodeList.RemoveJob(this, job, reason, m_IsLog);
     CountEvent(eStatPutEvent);
 }
 
@@ -2607,7 +2597,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
     m_StatusTracker.SetStatus(job_id, new_status);
 
     if (status == CNetScheduleAPI::eRunning)
-        m_WorkerNodeList.RemoveJob(job, eNSCTimeout, m_IsLog);
+        m_WorkerNodeList.RemoveJob(this, job, eNSCTimeout, m_IsLog);
 
     if (m_IsLog)
     {
@@ -2625,8 +2615,8 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
         else
             purpose = "reading";
 
-        LOG_POST(Error << "CQueue::CheckExecutionTimeout: Job rescheduled for "
-                       << purpose << " job " << DecorateJobId(job_id)
+        LOG_POST(Error << "Job rescheduled for "
+                       << purpose << ", job: " << DecorateJobId(job_id)
                        << " time_start: " << tm_start.AsString()
                        << " exp_time: " << tm_exp.AsString()
                        << " run_timeout: " << run_timeout);
@@ -2767,7 +2757,7 @@ void CQueue::TimeLineRemove(unsigned job_id)
     m_RunTimeLine->RemoveObject(job_id);
 
     if (m_IsLog)
-        LOG_POST(Error << "CQueue::RemoveFromTimeLine: job "
+        LOG_POST(Error << "Job removed from time line, job: "
                        << DecorateJobId(job_id));
 }
 
@@ -2788,11 +2778,11 @@ void CQueue::TimeLineExchange(unsigned remove_job_id,
 
     if (m_IsLog) {
         if (remove_job_id)
-            LOG_POST(Error << "CQueue::TimeLineExchange job "
-                           << DecorateJobId(remove_job_id) << " removed");
+            LOG_POST(Error << "Job removed from time line, job: "
+                           << DecorateJobId(remove_job_id));
         if (add_job_id)
-            LOG_POST(Error << "CQueue::TimeLineExchange job "
-                           << DecorateJobId(add_job_id) << " added");
+            LOG_POST(Error << "Job added to time line, job: "
+                           << DecorateJobId(add_job_id));
     }
 }
 
@@ -2827,8 +2817,8 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
             ++txn_size; --residue;
         }
 
-        CNS_Transaction trans(this);
-        CQueueGuard guard(this, &trans);
+        CNS_Transaction     trans(this);
+        CQueueGuard         guard(this, &trans);
 
         unsigned n;
         for (n = 0; en.valid() && n < txn_size; ++en, ++n) {
@@ -2853,8 +2843,7 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
     }
 
     if (m_IsLog  &&  del_rec > 0)
-        LOG_POST(Error << "CQueue::DeleteBatch: "
-                       << del_rec << " job(s) deleted");
+        LOG_POST(Error << del_rec << " job(s) deleted");
 
     return del_rec;
 }
@@ -3129,14 +3118,15 @@ static const unsigned kDecayExp = 116;
 
 CQueue::CStatisticsThread::CStatisticsThread(TContainer& container)
     : CThreadNonStop(kMeasureInterval),
-        m_Container(container)
-{
-}
+        m_Container(container), run_counter(0)
+{}
 
 
 void CQueue::CStatisticsThread::DoJob(void)
 {
-    int counter;
+    ++run_counter;
+
+    int     counter;
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
         counter = m_Container.m_EventCounter[n].Get();
         m_Container.m_EventCounter[n].Add(-counter);
@@ -3144,6 +3134,28 @@ void CQueue::CStatisticsThread::DoJob(void)
             (kDecayExp * m_Container.m_Average[n] +
                 (kFixed_1-kDecayExp) * ((unsigned) counter << kFixedShift)) >>
                     kFixedShift;
+    }
+
+    if (run_counter > 10) {
+        run_counter = 0;
+
+        CRef<CRequestContext>       ctx(new CRequestContext());
+        ctx->SetRequestID();
+        GetDiagContext().SetRequestContext(ctx);
+        GetDiagContext().PrintRequestStart()
+                        .Print("_type", "statistics_thread")
+                        .Print("get_event_average",
+                               NStr::Int8ToString(m_Container.m_Average[eStatGetEvent]))
+                        .Print("put_event_average",
+                               NStr::Int8ToString(m_Container.m_Average[eStatPutEvent]))
+                        .Print("dblock_event_average",
+                               NStr::Int8ToString(m_Container.m_Average[eStatDBLockEvent]))
+                        .Print("dbwrite_event_average",
+                               NStr::Int8ToString(m_Container.m_Average[eStatDBWriteEvent]));
+        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+        GetDiagContext().PrintRequestStop();
+        ctx.Reset();
+        GetDiagContext().SetRequestContext(NULL);
     }
 }
 
@@ -3279,8 +3291,7 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
             job.Flush(this);
 
             if (m_IsLog)
-                LOG_POST(Error << "CQueue::x_UpdateDB_GetJobNoLock() "
-                                  "timeout expired, job: "
+                LOG_POST(Error << "Job timeout expired, job: "
                                << DecorateJobId(job_id));
 
             return eGetJobUpdate_JobFailed;

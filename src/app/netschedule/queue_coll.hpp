@@ -100,6 +100,7 @@ public:
 private:
     CQueueCollection(const CQueueCollection&);
     CQueueCollection& operator=(const CQueueCollection&);
+
 private:
     friend class CQueueIterator;
     friend class CQueueConstIterator;
@@ -117,7 +118,8 @@ public:
                    CRWLock* lock)
     : m_Iter(iter), m_Lock(lock)
     {
-        if (m_Lock) m_Lock->ReadLock();
+        if (m_Lock)
+            m_Lock->ReadLock();
     }
     // MSVC8 (Studio 2005) can not (or does not want to) perform
     // copy constructor optimization on return, thus it needs
@@ -127,17 +129,19 @@ public:
         m_Lock(rhs.m_Lock)
     {
         // Linear on lock
-        if (m_Lock) rhs.m_Lock = 0;
+        if (m_Lock)
+            rhs.m_Lock = 0;
     }
     ~CQueueIterator()
     {
-        if (m_Lock) m_Lock->Unlock();
+        if (m_Lock)
+            m_Lock->Unlock();
     }
     CQueue& operator*()
     {
         return *m_Iter->second;
     }
-    const string GetName() const 
+    const string & GetName() const
     {
         return m_Iter->first;
     }
@@ -151,6 +155,7 @@ public:
     bool operator!=(const CQueueIterator& rhs) {
         return m_Iter != rhs.m_Iter;
     }
+
 private:
     CQueueCollection::TQueueMap::iterator m_Iter;
     mutable CRWLock*                      m_Lock;
@@ -164,7 +169,8 @@ public:
         CRWLock* lock)
         : m_Iter(iter), m_Lock(lock)
     {
-        if (m_Lock) m_Lock->ReadLock();
+        if (m_Lock)
+            m_Lock->ReadLock();
     }
     // MSVC8 (Studio 2005) can not (or does not want to) perform
     // copy constructor optimization on return, thus it needs
@@ -174,7 +180,8 @@ public:
         m_Lock(rhs.m_Lock)
     {
         // Linear on lock
-        if (m_Lock) rhs.m_Lock = 0;
+        if (m_Lock)
+            rhs.m_Lock = 0;
     }
     ~CQueueConstIterator()
     {
@@ -184,7 +191,7 @@ public:
     {
         return *m_Iter->second;
     }
-    const string GetName() const 
+    const string & GetName() const
     {
         return m_Iter->first;
     }
@@ -200,7 +207,7 @@ public:
     }
 private:
     CQueueCollection::TQueueMap::const_iterator m_Iter;
-    mutable CRWLock*                      m_Lock;
+    mutable CRWLock *                           m_Lock;
 };
 
 
@@ -350,7 +357,7 @@ private:
     TQueueParamMap                  m_QueueParamMap;
     SQueueDescriptionDB             m_QueueDescriptionDB;
     CQueueCollection                m_QueueCollection;
-    
+
     // Pre-allocated Berkeley DB blocks
     CQueueDbBlockArray              m_QueueDbBlockArray;
 
@@ -372,3 +379,4 @@ private:
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_QUEUE_COLL__HPP */
+

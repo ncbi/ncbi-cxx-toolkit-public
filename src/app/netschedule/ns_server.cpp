@@ -57,10 +57,12 @@ CNetScheduleServer::CNetScheduleServer()
     sm_netschedule_server = this;
 }
 
+
 CNetScheduleServer::~CNetScheduleServer()
 {
     delete m_QueueDB;
 }
+
 
 void CNetScheduleServer::AddDefaultListener(IServer_ConnectionFactory* factory)
 {
@@ -68,6 +70,7 @@ void CNetScheduleServer::AddDefaultListener(IServer_ConnectionFactory* factory)
     _ASSERT(m_Port);
     AddListener(factory, m_Port);
 }
+
 
 void CNetScheduleServer::SetNSParameters(const SNS_Parameters& params)
 {
@@ -85,10 +88,12 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters& params)
     m_AdminHosts.SetHosts(params.admin_hosts);
 }
 
+
 bool CNetScheduleServer::ShutdownRequested(void)
 {
     return m_Shutdown;
 }
+
 
 void CNetScheduleServer::SetQueueDB(CQueueDataBase* qdb)
 {
@@ -96,10 +101,10 @@ void CNetScheduleServer::SetQueueDB(CQueueDataBase* qdb)
     m_QueueDB = qdb;
 }
 
+
 void CNetScheduleServer::SetShutdownFlag(int signum)
 {
     if (!m_Shutdown) {
-        printf( "Setting shutdown flag\n" );
         m_Shutdown = true;
         m_SigNum = signum;
     }
@@ -113,25 +118,18 @@ bool CNetScheduleServer::IsLog() const
     return m_LogFlag.Get() != 0;
 }
 
+
 void CNetScheduleServer::SetLogging(bool flag)
 {
     m_LogFlag.Set(flag);
 }
+
 
 unsigned CNetScheduleServer::GetCommandNumber()
 {
     return m_AtomicCommandNumber.Add(1);
 }
 
-CRequestContext* CNetScheduleServer::GetRequestContextFromPool()
-{
-    return m_RequestContextPool.Get();
-}
-
-void CNetScheduleServer::ReturnRequestContextToPool(CRequestContext* req_ctx)
-{
-    m_RequestContextPool.Return(req_ctx);
-}
 
 // Queue handling
 unsigned CNetScheduleServer::Configure(const IRegistry& reg)
@@ -139,15 +137,18 @@ unsigned CNetScheduleServer::Configure(const IRegistry& reg)
     return m_QueueDB->Configure(reg);
 }
 
-unsigned CNetScheduleServer::CountActiveJobs()
+
+unsigned CNetScheduleServer::CountActiveJobs() const
 {
     return m_QueueDB->CountActiveJobs();
 }
+
 
 CRef<CQueue> CNetScheduleServer::OpenQueue(const std::string& name)
 {
     return m_QueueDB->OpenQueue(name);
 }
+
 
 void CNetScheduleServer::CreateQueue(const std::string& qname,
                                      const std::string& qclass,
@@ -156,10 +157,12 @@ void CNetScheduleServer::CreateQueue(const std::string& qname,
     m_QueueDB->CreateQueue(qname, qclass, comment);
 }
 
+
 void CNetScheduleServer::DeleteQueue(const std::string& qname)
 {
     m_QueueDB->DeleteQueue(qname);
 }
+
 
 void CNetScheduleServer::QueueInfo(const std::string& qname,
                                    int&               kind,
@@ -169,50 +172,60 @@ void CNetScheduleServer::QueueInfo(const std::string& qname,
     m_QueueDB->QueueInfo(qname, kind, qclass, comment);
 }
 
+
 std::string CNetScheduleServer::GetQueueNames(const std::string& sep) const
 {
     return m_QueueDB->GetQueueNames(sep);
 }
+
 
 void CNetScheduleServer::PrintMutexStat(CNcbiOstream& out)
 {
     m_QueueDB->PrintMutexStat(out);
 }
 
+
 void CNetScheduleServer::PrintLockStat(CNcbiOstream& out)
 {
     m_QueueDB->PrintLockStat(out);
 }
+
 
 void CNetScheduleServer::PrintMemStat(CNcbiOstream& out)
 {
     m_QueueDB->PrintMemStat(out);
 }
 
+
 unsigned CNetScheduleServer::GetInactivityTimeout(void)
-{ 
+{
     return m_InactivityTimeout;
 }
 
+
 std::string& CNetScheduleServer::GetHost()
-{ 
+{
     return m_Host;
 }
 
-unsigned CNetScheduleServer::GetPort()
+
+unsigned CNetScheduleServer::GetPort() const
 {
     return m_Port;
 }
 
-unsigned CNetScheduleServer::GetHostNetAddr()
+
+unsigned CNetScheduleServer::GetHostNetAddr() const
 {
     return m_HostNetAddr;
 }
+
 
 const CTime& CNetScheduleServer::GetStartTime(void) const
 {
     return m_StartTime;
 }
+
 
 bool CNetScheduleServer::AdminHostValid(unsigned host) const
 {
@@ -220,20 +233,24 @@ bool CNetScheduleServer::AdminHostValid(unsigned host) const
             m_AdminHosts.IsAllowed(host);
 }
 
+
 CBackgroundHost& CNetScheduleServer::GetBackgroundHost()
 {
     return m_BackgroundHost;
 }
+
 
 CRequestExecutor& CNetScheduleServer::GetRequestExecutor()
 {
     return m_RequestExecutor;
 }
 
+
 CNetScheduleServer*  CNetScheduleServer::GetInstance(void)
 {
     return sm_netschedule_server;
 }
+
 
 void CNetScheduleServer::Exit()
 {

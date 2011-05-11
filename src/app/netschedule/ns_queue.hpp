@@ -162,7 +162,7 @@ public:
 
     void Attach(SQueueDbBlock* block);
     void Detach();
-    int  GetPos() { return m_QueueDbBlock->pos; }
+    int  GetPos() const { return m_QueueDbBlock->pos; }
 
     void x_ReadFieldInfo(void);
 
@@ -213,7 +213,6 @@ public:
                          int                        ret_code,
                          const string*              output,
                          // GetJob parameters
-                         CRequestContextFactory*    rec_ctx_f,
                          const list<string>*        aff_list,
                          CJob*                      new_job);
 
@@ -407,10 +406,9 @@ public:
                              time_t                 curr,
                              EWNodeFormat           fmt = eWNF_Old) const;
     void UnRegisterNotificationListener(CWorkerNode* worker_node);
-    void AddJobToWorkerNode(CWorkerNode*            worker_node,
-                            CRequestContextFactory* rec_ctx_f,
-                            const CJob&             job,
-                            time_t                  exp_time);
+    void AddJobToWorkerNode(CWorkerNode *   worker_node,
+                            const CJob &    job,
+                            time_t          exp_time);
     void UpdateWorkerNodeJob(unsigned               job_id,
                              time_t                 exp_time);
     void RemoveJobFromWorkerNode(const CJob&        job,
@@ -496,7 +494,8 @@ public:
         CStatisticsThread(TContainer& container);
         void DoJob(void);
     private:
-        TContainer& m_Container;
+        TContainer &        m_Container;
+        size_t              run_counter;
     };
     CRef<CStatisticsThread>     m_StatThread;
 
@@ -511,7 +510,9 @@ public:
     typedef unsigned TStatEvent;
     void CountEvent(TStatEvent event, int num=1);
     double GetAverage(TStatEvent event);
-    string MakeKey(unsigned job_id) const;
+    string MakeKey(unsigned job_id) const
+    { return m_KeyGenerator.GenerateV1(job_id); }
+
 
 private:
     friend class CNS_Transaction;
@@ -573,34 +574,34 @@ private:
     friend class CQueueJSGuard;
     friend class CJob;
 
-    CJobStatusTracker            m_StatusTracker;    ///< status FSA
+    CJobStatusTracker           m_StatusTracker;    ///< status FSA
 
     // Timeline object to control job execution timeout
-    CJobTimeLine*                m_RunTimeLine;
-    CRWLock                      m_RunTimeLineLock;
+    CJobTimeLine*               m_RunTimeLine;
+    CRWLock                     m_RunTimeLineLock;
 
     // Datagram notification socket
     // (used to notify worker nodes and waiting clients)
-    bool                         m_HasNotificationPort;
-    CDatagramSocket              m_UdpSocket;     ///< UDP notification socket
-    CFastMutex                   m_UdpSocketLock;
+    bool                        m_HasNotificationPort;
+    CDatagramSocket             m_UdpSocket;     ///< UDP notification socket
+    CFastMutex                  m_UdpSocketLock;
 
     /// Should we delete db upon close?
-    bool                         m_DeleteDatabase;
+    bool                        m_DeleteDatabase;
 
     // Statistics
-    CAtomicCounter m_EventCounter[eStatNumEvents];
-    unsigned m_Average[eStatNumEvents];
+    CAtomicCounter              m_EventCounter[eStatNumEvents];
+    unsigned                    m_Average[eStatNumEvents];
 
     // Background executor
-    CRequestExecutor&            m_Executor;
+    CRequestExecutor&           m_Executor;
 
-    string                       m_QueueName;
-    string                       m_QueueClass;      ///< Parameter class
-    TQueueKind                   m_Kind;            ///< 0 - static, 1 - dynamic
+    string                      m_QueueName;
+    string                      m_QueueClass;      ///< Parameter class
+    TQueueKind                  m_Kind;            ///< 0 - static, 1 - dynamic
 
     friend class CQueueEnumCursor;
-    SQueueDbBlock*               m_QueueDbBlock;
+    SQueueDbBlock*              m_QueueDbBlock;
 
     // Databases
     //    SQueueDB                     m_JobDB;           ///< Main queue database
@@ -610,34 +611,34 @@ private:
 
     //    SRunsDB                      m_RunsDB;          ///< Info on jobs runs
 #define m_RunsDB m_QueueDbBlock->runs_db
-    auto_ptr<CBDB_FileCursor>    m_RunsCursor;      ///< DB cursor for RunsDB
+    auto_ptr<CBDB_FileCursor>   m_RunsCursor;      ///< DB cursor for RunsDB
 
-    CFastMutex                   m_DbLock;          ///< db, cursor lock
+    CFastMutex                  m_DbLock;          ///< db, cursor lock
 
     // Affinity
     //    SAffinityIdx                 m_AffinityIdx;     ///< Q affinity index
 #define m_AffinityIdx m_QueueDbBlock->affinity_idx
-    CFastMutex                   m_AffinityIdxLock;
+    CFastMutex                  m_AffinityIdxLock;
 
 
     // affinity dictionary does not need a mutex, because
     // CAffinityDict is a syncronized class itself (mutex included)
-    CAffinityDict                m_AffinityDict;    ///< Affinity tokens
+    CAffinityDict               m_AffinityDict;    ///< Affinity tokens
 
     // Tags
     //    STagDB                       m_TagDB;
 #define m_TagDB m_QueueDbBlock->tag_db
-    CFastMutex                   m_TagLock;
+    CFastMutex                  m_TagLock;
 
     ///< When the queue became empty, guarded by 'm_DbLock'
-    time_t                       m_BecameEmpty;
+    time_t                      m_BecameEmpty;
 
     // List of active worker node listeners waiting for pending jobs
-    CQueueWorkerNodeList         m_WorkerNodeList;
+    CQueueWorkerNodeList        m_WorkerNodeList;
 
 
     /// Last valid id for queue
-    CAtomicCounter               m_LastId;
+    CAtomicCounter              m_LastId;
 
     // Read group support
     typedef map<unsigned, TNSBitVector>     TGroupMap;
@@ -790,25 +791,27 @@ class CQueueParamAccessor
     // When modifying this, modify all places marked with PARAMETERS
 public:
     CQueueParamAccessor(const CQueue& queue) :
-        m_Queue(queue), m_Guard(queue.m_ParamLock) { }
-    int GetTimeout() { return m_Queue.m_Timeout; }
-    int GetNotifyTimeout() { return m_Queue.m_NotifyTimeout; }
-    bool GetDeleteDone() { return m_Queue.m_DeleteDone; }
-    int GetRunTimeout() { return m_Queue.m_RunTimeout; }
-    int GetRunTimeoutPrecision() { return m_Queue.m_RunTimeoutPrecision; }
-    unsigned GetFailedRetries() { return m_Queue.m_FailedRetries; }
-    time_t GetBlacklistTime() { return m_Queue.m_BlacklistTime; }
-    time_t GetEmptyLifetime() { return m_Queue.m_EmptyLifetime; }
-    unsigned GetMaxInputSize() { return m_Queue.m_MaxInputSize; }
-    unsigned GetMaxOutputSize() { return m_Queue.m_MaxOutputSize; }
-    bool GetDenyAccessViolations() { return m_Queue.m_DenyAccessViolations; }
-    bool GetLogAccessViolations() { return m_Queue.m_LogAccessViolations; }
-    bool GetKeepAffinity() { return m_Queue.m_KeepAffinity; }
-    const CQueueClientInfoList& GetProgramVersionList()
+        m_Queue(queue), m_Guard(queue.m_ParamLock)
+    {}
+
+    int GetTimeout() const { return m_Queue.m_Timeout; }
+    int GetNotifyTimeout() const { return m_Queue.m_NotifyTimeout; }
+    bool GetDeleteDone() const { return m_Queue.m_DeleteDone; }
+    int GetRunTimeout() const { return m_Queue.m_RunTimeout; }
+    int GetRunTimeoutPrecision() const { return m_Queue.m_RunTimeoutPrecision; }
+    unsigned GetFailedRetries() const { return m_Queue.m_FailedRetries; }
+    time_t GetBlacklistTime() const { return m_Queue.m_BlacklistTime; }
+    time_t GetEmptyLifetime() const { return m_Queue.m_EmptyLifetime; }
+    unsigned GetMaxInputSize() const { return m_Queue.m_MaxInputSize; }
+    unsigned GetMaxOutputSize() const { return m_Queue.m_MaxOutputSize; }
+    bool GetDenyAccessViolations() const { return m_Queue.m_DenyAccessViolations; }
+    bool GetLogAccessViolations() const { return m_Queue.m_LogAccessViolations; }
+    bool GetKeepAffinity() const { return m_Queue.m_KeepAffinity; }
+    const CQueueClientInfoList& GetProgramVersionList() const
         { return m_Queue.m_ProgramVersionList; }
-    const CNetSchedule_AccessList& GetSubmHosts()
+    const CNetSchedule_AccessList& GetSubmHosts() const
         { return m_Queue.m_SubmHosts; }
-    const CNetSchedule_AccessList& GetWnodeHosts()
+    const CNetSchedule_AccessList& GetWnodeHosts() const
         { return m_Queue.m_WnodeHosts; }
 
     unsigned GetNumParams() const {

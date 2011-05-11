@@ -87,7 +87,7 @@ public:
     /// in this case status change is ignored
     ///
     TJobStatus
-    ChangeStatus(unsigned   job_id, 
+    ChangeStatus(unsigned   job_id,
                  TJobStatus status,
                  bool*      updated = NULL);
 
@@ -145,15 +145,15 @@ public:
     /// @param status
     ///     Status to set (all other statuses are cleared)
     ///     Non existing status code clears all statuses
-    void SetStatus(unsigned   job_id, 
+    void SetStatus(unsigned   job_id,
                    TJobStatus status);
 
     // Erase the job
     void Erase(unsigned job_id);
 
-    /// Set job status without any protection 
+    /// Set job status without any protection
     void SetExactStatusNoLock(
-        unsigned   job_id, 
+        unsigned   job_id,
         TJobStatus status,
         bool       set_clear);
 
@@ -175,8 +175,7 @@ public:
     void StatusSnapshot(TJobStatus    status,
                         TNSBitVector* bv) const;
 
-    static
-    bool IsCancelCode(TJobStatus status)
+    static bool IsCancelCode(TJobStatus status)
     {
         return (status == CNetScheduleAPI::eCanceled) ||
                (status == CNetScheduleAPI::eFailed);
@@ -200,14 +199,14 @@ protected:
 
     /// Check if job is in specified status
     /// @return -1 if no, status value otherwise
-    TJobStatus 
-    IsStatusNoLock(unsigned   job_id, 
+    TJobStatus
+    IsStatusNoLock(unsigned   job_id,
                    TJobStatus st1,
                    TJobStatus st2 = CNetScheduleAPI::eJobNotFound,
                    TJobStatus st3 = CNetScheduleAPI::eJobNotFound
         ) const;
 
-    void ReportInvalidStatus(unsigned   job_id, 
+    void ReportInvalidStatus(unsigned   job_id,
                              TJobStatus status,
                              TJobStatus old_status);
     void x_SetClearStatusNoLock(unsigned   job_id,
@@ -262,7 +261,10 @@ public:
         }
     }
 
-    void Commit() { m_OldStatus = -2; }
+    void Commit()
+    {
+        m_OldStatus = -2;
+    }
 
     void SetStatus(TJobStatus status)
     {
@@ -278,6 +280,7 @@ public:
 private:
     CNetSchedule_JS_Guard(const CNetSchedule_JS_Guard&);
     CNetSchedule_JS_Guard& operator=(CNetSchedule_JS_Guard&);
+
 private:
     CJobStatusTracker& m_Tracker;
     int                m_OldStatus;
@@ -301,9 +304,15 @@ public:
         TJobStatus          old_status,
         const TNSBitVector& jobs,
         TJobStatus          new_status = CNetScheduleAPI::eJobNotFound);
-       
+
     ~CNetSchedule_JSGroupGuard();
-    void Commit() { m_Commited = true; m_Jobs.clear(); }
+
+    void Commit()
+    {
+        m_Commited = true;
+        m_Jobs.clear();
+    }
+
 private:
     CJobStatusTracker& m_Tracker;
     bool               m_Commited;

@@ -324,7 +324,6 @@ CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
       m_PeerAddr(0), m_Server(server),
       m_Incaps(~0L), m_Unreported(~0L),
       m_VersionControl(false),
-      m_RequestContextFactory(new CNSRequestContextFactory(server)),
       m_SingleCmdParser(sm_CommandMap),
       m_BatchHeaderParser(sm_BatchHeaderMap),
       m_BatchEndParser(sm_BatchEndMap)
@@ -1013,8 +1012,9 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
     unsigned    job_id = q->Submit(job);
     string      str_job_id(q->MakeKey(job_id));
     WriteMessage("OK:", str_job_id);
-    if (m_Server->IsLog())
-        GetDiagContext().Extra().Print("job_key", str_job_id);
+
+    // There is no need to log the job key, it is logged at lower level
+    // together with all the submitted job parameters
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1114,8 +1114,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
-    q->PutResultGetJob(m_WorkerNode, 0, 0, 0,
-                       m_RequestContextFactory.GetPointer(), &aff_list, &job);
+    q->PutResultGetJob(m_WorkerNode, 0, 0, 0, &aff_list, &job);
 
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1139,8 +1138,7 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
-    q->PutResultGetJob(m_WorkerNode, 0,0,0,
-                       m_RequestContextFactory.GetPointer(), &aff_list, &job);
+    q->PutResultGetJob(m_WorkerNode, 0,0,0, &aff_list, &job);
 
     if (job.GetId()) {
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1161,7 +1159,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 {
     string      output = NStr::ParseEscapes(m_JobReq.output);
     q->PutResultGetJob(m_WorkerNode, m_JobReq.job_id,
-                       m_JobReq.job_return_code, &output, 0, 0, 0);
+                       m_JobReq.job_return_code, &output, 0, 0);
     WriteMessage("OK:", "");
     x_PrintRequestStop(eStatus_OK);
 }
@@ -1178,7 +1176,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     q->PutResultGetJob(m_WorkerNode, m_JobReq.job_id,
                        m_JobReq.job_return_code, &output,
                        // GetJob params
-                       m_RequestContextFactory.GetPointer(), &aff_list, &job);
+                       &aff_list, &job);
 
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));

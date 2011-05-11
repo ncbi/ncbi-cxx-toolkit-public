@@ -52,11 +52,14 @@ struct CQueueClientInfo
     string         client_name;
     CVersionInfo   version_info;
 
-    CQueueClientInfo() : version_info(-1,-1,-1) {}
+    CQueueClientInfo() : version_info(-1,-1,-1)
+    {}
+
     CQueueClientInfo(const string& cname, const CVersionInfo& vinfo)
         : client_name(cname), version_info(vinfo)
     {}
 };
+
 
 /// All clients registered to connect
 ///
@@ -65,26 +68,27 @@ struct CQueueClientInfo
 class CQueueClientInfoList
 {
 public:
-    CQueueClientInfoList() {}
+    CQueueClientInfoList()
+    {}
 
     void AddClientInfo(const CQueueClientInfo& cinfo)
     {
-        CWriteLockGuard guard(m_Lock);
+        CWriteLockGuard     guard(m_Lock);
         x_AddClientInfo_NoLock(cinfo);
     }
 
     void AddClientInfo(const string& program_name)
     {
-        CWriteLockGuard guard(m_Lock);
+        CWriteLockGuard     guard(m_Lock);
+        list<string>        programs;
+        CQueueClientInfo    program_info;
 
-        list<string> programs;
         NStr::Split(program_name, ";,", programs);
-        CQueueClientInfo program_info;
         ITERATE(list<string>, it, programs) {
-            const string& vstr = *it;
+            const string &  vstr = *it;
             try {
-                ParseVersionString(vstr,
-                    &program_info.client_name, &program_info.version_info);
+                ParseVersionString(vstr, &program_info.client_name,
+                                         &program_info.version_info);
                 NStr::TruncateSpacesInPlace(program_info.client_name);
                 x_AddClientInfo_NoLock(program_info);
             }
@@ -92,9 +96,7 @@ public:
                 LOG_POST(Error << "Program string '" << vstr << "'"
                                << " cannot be parsed and ignored.");
             }
-
         }
-
     }
 
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const
@@ -131,10 +133,10 @@ public:
     {
         string s;
         ITERATE(vector<CQueueClientInfo>, it, m_RegisteredClients) {
-            if (s.size()) s += sep;
-            s += it->client_name;
-            s += ' ';
-            s += it->version_info.Print();
+            if (s.size())
+                s += sep;
+
+            s += it->client_name + ' ' + it->version_info.Print();
         }
         return s;
     }
@@ -154,3 +156,4 @@ private:
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_QUEUE_VC__HPP */
+

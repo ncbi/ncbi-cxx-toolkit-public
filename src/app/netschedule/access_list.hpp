@@ -55,8 +55,7 @@ class CNetSchedule_AccessList
 {
 public:
     CNetSchedule_AccessList()
-    {
-    }
+    {}
 
     /// @return TRUE if restriction list set
     bool IsRestrictionSet() const;
@@ -75,6 +74,7 @@ private:
     {
         return m_Hosts.any();
     }
+
 private:
     typedef TNSBitVector        THostVector;
 

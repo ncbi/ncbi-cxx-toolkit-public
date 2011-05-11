@@ -28,7 +28,7 @@
  *
  * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
- * File Description: Queue cleaning thread.
+ * File Description: Queue cleaning threads.
  *
  *
  */
@@ -46,9 +46,9 @@ class CQueueDataBase;
 class CJobQueueCleanerThread : public CThreadNonStop
 {
 public:
-    CJobQueueCleanerThread(CBackgroundHost& host,
-                           CQueueDataBase& qdb,
-                           unsigned run_delay)
+    CJobQueueCleanerThread(CBackgroundHost&     host,
+                           CQueueDataBase&      qdb,
+                           unsigned             run_delay)
     : CThreadNonStop(run_delay),
       m_Host(host),
       m_QueueDB(qdb)
@@ -58,14 +58,16 @@ public:
     {}
 
     virtual void DoJob(void);
+
 private:
     CJobQueueCleanerThread(const CJobQueueCleanerThread&);
     CJobQueueCleanerThread& operator=(const CJobQueueCleanerThread&);
+
 private:
-    CBackgroundHost& m_Host;
-    CQueueDataBase&  m_QueueDB;
+    CBackgroundHost&    m_Host;
+    CQueueDataBase&     m_QueueDB;
 #ifdef _DEBUG
-    bool m_DbgTriggerDBRecover;
+    bool                m_DbgTriggerDBRecover;
 #endif
 };
 
@@ -76,25 +78,28 @@ private:
 class CJobQueueExecutionWatcherThread : public CThreadNonStop
 {
 public:
-    CJobQueueExecutionWatcherThread(CBackgroundHost& host,
-                                    CQueueDataBase& qdb,
-                                    unsigned run_delay)
+    CJobQueueExecutionWatcherThread(CBackgroundHost&    host,
+                                    CQueueDataBase&     qdb,
+                                    unsigned            run_delay)
     : CThreadNonStop(run_delay),
       m_Host(host),
       m_QueueDB(qdb)
     {}
 
     virtual void DoJob(void);
+
 private:
     CJobQueueExecutionWatcherThread(const CJobQueueExecutionWatcherThread&);
     CJobQueueExecutionWatcherThread&
         operator=(const CJobQueueExecutionWatcherThread&);
+
 private:
-    CBackgroundHost& m_Host;
-    CQueueDataBase&  m_QueueDB;
+    CBackgroundHost &       m_Host;
+    CQueueDataBase &        m_QueueDB;
 };
 
 
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_QUEUE_CLEAN_THREAD__HPP */
+

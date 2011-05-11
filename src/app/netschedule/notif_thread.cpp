@@ -31,31 +31,52 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include "notif_thread.hpp"
 #include "queue_coll.hpp"
+#include "ns_handler.hpp"
 
 BEGIN_NCBI_SCOPE
 
-class CQueueDataBase;
+
 
 void CJobNotificationThread::DoJob(void)
 {
+    CRef<CRequestContext>       ctx(new CRequestContext());
+
+    ctx->SetRequestID();
+    GetDiagContext().SetRequestContext(ctx);
+    GetDiagContext().PrintRequestStart()
+                    .Print("_type", "job_notification_thread");
+    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+
+
     try {
         m_QueueDB.NotifyListeners();
     }
-    catch(exception& ex)
-    {
+    catch (exception &  ex) {
         RequestStop();
-        ERR_POST(Error << "Error during notification: "
-                        << ex.what()
-                        << " notification thread has been stopped.");
+        ERR_POST("Error during notification: " << ex.what() <<
+                 " notification thread has been stopped.");
+        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_JobNotifierError);
     }
+    catch (...) {
+        RequestStop();
+        ERR_POST("Unknown error during notification. "
+                 "Notification thread has been stopped.");
+        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_JobNotifierError);
+    }
+
+    GetDiagContext().PrintRequestStop();
+    ctx.Reset();
+    GetDiagContext().SetRequestContext(NULL);
 }
 
+
 CJobNotificationThread::~CJobNotificationThread()
-{
-}
+{}
 
 
 END_NCBI_SCOPE
+
