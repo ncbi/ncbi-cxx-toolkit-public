@@ -257,7 +257,11 @@ PC-AssayDRAttr ::=SEQUENCE {
                                                              --   Note: A valid ID is greater than "0"
     descr             VisibleString               OPTIONAL,  -- Dose-Response Curve Description (used as curve title)
     dn                VisibleString               OPTIONAL,  -- Dose Axis Description (used as axis name)
-    rn                VisibleString               OPTIONAL   -- Response Axis Description (used as axis name)
+    rn                VisibleString               OPTIONAL,  -- Response Axis Description (used as axis name)
+    type              INTEGER {
+                        experimental (0),                    -- dose-response data points measured directly by experiment
+                        calculated   (1)                     -- dose-response data points derived from fitted curve
+                      }          OPTIONAL
 }
 
 
@@ -282,7 +286,11 @@ PC-AssayTargetInfo ::= SEQUENCE {
 -- Annotated Cross-Reference (XRef) Information to allow the XRef to be qualified, as to its meaning or context
 PC-AnnotatedXRef ::= SEQUENCE {
     xref              PC-XRefData,                    -- Cross-Reference Information
-    comment           VisibleString         OPTIONAL  -- Annotation qualifier describing Cross-Reference meaning
+    comment           VisibleString         OPTIONAL,  -- Annotation qualifier describing Cross-Reference meaning
+    type              INTEGER {
+                         pcit        (1),             -- primary PMID/citation directly associated with the current assay data 
+                         pgene       (2)              -- gene encoding the protein assay target
+                      }                     OPTIONAL
 }
 
 -- Definition of Allowed Result Types for a given Assay
@@ -344,6 +352,11 @@ PC-ResultType ::= SEQUENCE {
                          rmin            (20),             -- Reciprocal Minutes
                          day             (21),             -- Days
                          rday            (22),             -- Reciprocal Days
+                         mL-min-kg       (23),             -- milliliter / minute / kilogram
+                         L-kg            (24),             -- liter / kilogram
+                         hr-ng-mL        (25),             -- hour * nanogram / milliliter
+                         cm-sec          (26),             -- centimeter / second
+                         mg-kg           (27),             -- milligram / kilogram
                          none           (254),
                          unspecified    (255)
                      }                           OPTIONAL,
