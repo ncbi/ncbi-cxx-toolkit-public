@@ -5134,7 +5134,7 @@ static double s_CalculateNormalProbability(double x_, double eps_)
     };
 
     const_val = 1/sqrt(2.0*pi);
-    N = (Int4) lround(fabs(x_)/eps_) + 1;
+    N = (Int4) (fabs(x_)/eps_ + 1.5);
     h = x_/(double)N;
     res = 0.0;
 
