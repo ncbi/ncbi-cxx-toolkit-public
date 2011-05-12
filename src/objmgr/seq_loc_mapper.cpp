@@ -660,7 +660,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             }
             x_AddConversion(gc_seq.GetSeq_id(), 0, eNa_strand_unknown,
                 *dst_id, 0, eNa_strand_unknown, TRange::GetWholeLength(),
-                false, 0, kInvalidSeqPos, kInvalidSeqPos );
+                false, 0, kInvalidSeqPos, kInvalidSeqPos, kInvalidSeqPos );
         }
         else if (to_alias == eGCA_UCSC  ||  to_alias == eGCA_Refseq) {
             // The requested alias type not found,

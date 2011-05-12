@@ -641,7 +641,11 @@ void JoinString(string& to, const string& prefix, const string& str, bool noRedu
 
     //LOG_POST(Error << "adding: to=" << to << "  prefix=" << prefix << "  str=" << str);
 
-    to += prefix;
+    if( NStr::StartsWith(prefix, ";") && NStr::EndsWith(to, ";") ) {
+        to += prefix.substr(1);
+    } else {
+        to += prefix;
+    }
     to += str;
 }
 

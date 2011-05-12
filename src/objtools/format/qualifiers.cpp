@@ -287,17 +287,18 @@ CFormatQual::CFormatQual
  const string& value, 
  const string& prefix,
  const string& suffix,
- TStyle style) :
+ TStyle style,
+ TFlags flags) :
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
-    m_Style(style), m_AddPeriod(false)
+    m_Style(style), m_AddPeriod(false), m_Flags(flags)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
 
 
-CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) :
+CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, TFlags flags) :
     m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
-    m_Style(style), m_AddPeriod(false)
+    m_Style(style), m_AddPeriod(false), m_Flags(flags)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
@@ -369,7 +370,10 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
 
     // e.g. CP001398
     // if( ! is_note ) {
-    ConvertQuotes( m_Value );
+    // e.g. NP_008173
+    if( m_Style != CFormatQual::eUnquoted ) {
+        ConvertQuotes( m_Value );
+    }
     // }
 
     const bool prependNewline = (flags & fPrependNewline) && ! q.empty();
@@ -803,64 +807,64 @@ static string s_GetSpecimenVoucherText(
     CBioseqContext& ctx,
     const string& strRawName )
 {
-    const string strAtccBase( "http://www.atcc.org/SearchCatalogs/linkin?id=" );
-    const string strBcrcBase( "http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrc_no=" );
-    const string strCbsBase( "http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+" );
-    const string strCcapBase( "http://www.ccap.ac.uk/strain_info.php?Strain_No=" );
-    const string strCcmpBase( "https://ccmp.bigelow.org/SD/display.php?strain=CCMP" );
-    const string strCcugBase( "http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=" );
-    const string strCoriBase( "http://ccr.coriell.org/Sections/Search/Sample_Detail.aspx?Ref=" );
-    const string strDsmzBase( "http://www.dsmz.de/microorganisms/search_no.php?q=" );
-    const string strFsuBase( "http://www.prz.uni-jena.de/data.php?fsu=" );
-    const string strIcmpBase( "http://nzfungi.landcareresearch.co.nz/icmp/results_cultures.asp?ID=&icmpVAR=" );
-    const string strKctcBase( "http://www.brc.re.kr/English/_SearchView.aspx?sn=" );
-    const string strKuiBase( "http://collections.nhm.ku.edu/KU_Fish/detail.jsp?record=" );
-    const string strKuitBase( "http://collections.nhm.ku.edu/KU_Tissue/detail.jsp?record=" );
-    const string strPccBase( "http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+" );
-    const string strPcmbBase( "http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=" );
-    const string strPddBase( "http://nzfungi.landcareresearch.co.nz/html/data_collections_details.asp?CID=" );
-    const string strSagBase( "http://sagdb.uni-goettingen.de/detailedList.php?str_number=" );
-    const string strTgrcBase( "http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=" );
-    const string strUamBase( "http://arctos.database.museum/SpecimenDetail.cfm?GUID=" );
-    const string strYpmEntBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=ent&ID=" );
-    const string strYpmHerBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=her&ID=" );
-    const string strYpmIchBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=ich&ID=" );
-    const string strYpmIzBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=iz&ID=" );
-    const string strYpmMamBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=mam&ID=" );
-    const string strYpmOrnBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=orn&ID=" );
-    
-    const string strAtccInst( "American Type Culture Collection" );
-    const string strBcrcInst( "Bioresource Collection and Research Center" );
-    const string strCbsInst( "Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection" );
-    const string strCcapInst( "Bioresource Collection and Research Center" );
-    const string strCcmpInst( "Provasoli-Guillard National Center for Culture of Marine Phytoplankton" );
-    const string strCcugInst( "Culture Collection, University of Goteborg, Department of Clinical Bacteriology" );
-    const string strCoriInst( "Coriell Institute for Medical Research" );
-    const string strCrcmInst( "Charles R. Conner Museum, Washington State University" );
-    const string strDgrInst( "Division of Genomic Resources, University of New Mexico" );
-    const string strDsmzInst( "German Resource Center for Biological Material" );
-    const string strFsuInst( "Fungal Reference Center, University of Jena" );
-    const string strIcmpInst( "International Collection of Microorganisms from Plants" );
-    const string strKctcInst( "Korean Collection for Type Cultures" );
-    const string strKuInst( "University of Kansas, Museum of Natural History" );
-    const string strKwpInst( "Kenelm W. Philip Collection, Museum of Alaska Museum of the North" );
-    const string strMsbInst( "Museum of Southwestern Biology, University of New Mexico" );
-    const string strMvzInst( "Museum of Vertebrate Zoology, University of California" );
-    const string strNbsbInst( "National Biomonitoring Specimen Bank, U.S. Geological Survey" );
-    const string strPccInst( "Pasteur Culture Collection of Cyanobacteria" );
-    const string strPcmbInst( "Pacific Center for Molecular Biodiversity" );
-    const string strPsuInst( "Portland State University" );
-    const string strPddInst( "New Zealand Fungal Herbarium" );
-    const string strSagInst( "Sammlung von Algenkulturen at Universitat Gottingen" );
-    const string strTgrcInst( "C.M. Rick Tomato Genetics Resource Center" );
-    const string strUamInst( "Museum of Alaska Museum of the North" );
-    const string strWnmuInst( "Western New Mexico Museum" );
-    const string strYpmEntInst( "Yale Peabody Museum of Natural History, Entomology Collection" );
-    const string strYpmHerInst( "Yale Peabody Museum of Natural History, Herpetology Collection" );
-    const string strYpmIchInst( "Yale Peabody Museum of Natural History, Ichthyology Collection" );
-    const string strYpmIzInst( "Yale Peabody Museum of Natural History, Invertebrate Zoology Collection" );
-    const string strYpmMamInst( "Yale Peabody Museum of Natural History, Mammology Collection" );
-    const string strYpmOrnInst( "Yale Peabody Museum of Natural History, Ornithology Collection" );
+    static const string strAtccBase( "http://www.atcc.org/SearchCatalogs/linkin?id=" );
+    static const string strBcrcBase( "http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrc_no=" );
+    static const string strCbsBase( "http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+" );
+    static const string strCcapBase( "http://www.ccap.ac.uk/strain_info.php?Strain_No=" );
+    static const string strCcmpBase( "https://ccmp.bigelow.org/SD/display.php?strain=CCMP" );
+    static const string strCcugBase( "http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=" );
+    static const string strCoriBase( "http://ccr.coriell.org/Sections/Search/Sample_Detail.aspx?Ref=" );
+    static const string strDsmzBase( "http://www.dsmz.de/microorganisms/search_no.php?q=" );
+    static const string strFsuBase( "http://www.prz.uni-jena.de/data.php?fsu=" );
+    static const string strIcmpBase( "http://nzfungi.landcareresearch.co.nz/icmp/results_cultures.asp?ID=&icmpVAR=" );
+    static const string strKctcBase( "http://www.brc.re.kr/English/_SearchView.aspx?sn=" );
+    static const string strKuiBase( "http://collections.nhm.ku.edu/KU_Fish/detail.jsp?record=" );
+    static const string strKuitBase( "http://collections.nhm.ku.edu/KU_Tissue/detail.jsp?record=" );
+    static const string strPccBase( "http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+" );
+    static const string strPcmbBase( "http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=" );
+    static const string strPddBase( "http://nzfungi.landcareresearch.co.nz/html/data_collections_details.asp?CID=" );
+    static const string strSagBase( "http://sagdb.uni-goettingen.de/detailedList.php?str_number=" );
+    static const string strTgrcBase( "http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=" );
+    static const string strUamBase( "http://arctos.database.museum/SpecimenDetail.cfm?GUID=" );
+    static const string strYpmEntBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=ent&ID=" );
+    static const string strYpmHerBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=her&ID=" );
+    static const string strYpmIchBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=ich&ID=" );
+    static const string strYpmIzBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=iz&ID=" );
+    static const string strYpmMamBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=mam&ID=" );
+    static const string strYpmOrnBase( "http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=orn&ID=" );
+
+    static const string strAtccInst( "American Type Culture Collection" );
+    static const string strBcrcInst( "Bioresource Collection and Research Center" );
+    static const string strCbsInst( "Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection" );
+    static const string strCcapInst( "Bioresource Collection and Research Center" );
+    static const string strCcmpInst( "Provasoli-Guillard National Center for Culture of Marine Phytoplankton" );
+    static const string strCcugInst( "Culture Collection, University of Goteborg, Department of Clinical Bacteriology" );
+    static const string strCoriInst( "Coriell Institute for Medical Research" );
+    static const string strCrcmInst( "Charles R. Conner Museum, Washington State University" );
+    static const string strDgrInst( "Division of Genomic Resources, University of New Mexico" );
+    static const string strDsmzInst( "German Resource Center for Biological Material" );
+    static const string strFsuInst( "Fungal Reference Center, University of Jena" );
+    static const string strIcmpInst( "International Collection of Microorganisms from Plants" );
+    static const string strKctcInst( "Korean Collection for Type Cultures" );
+    static const string strKuInst( "University of Kansas, Museum of Natural History" );
+    static const string strKwpInst( "Kenelm W. Philip Collection, Museum of Alaska Museum of the North" );
+    static const string strMsbInst( "Museum of Southwestern Biology, University of New Mexico" );
+    static const string strMvzInst( "Museum of Vertebrate Zoology, University of California" );
+    static const string strNbsbInst( "National Biomonitoring Specimen Bank, U.S. Geological Survey" );
+    static const string strPccInst( "Pasteur Culture Collection of Cyanobacteria" );
+    static const string strPcmbInst( "Pacific Center for Molecular Biodiversity" );
+    static const string strPsuInst( "Portland State University" );
+    static const string strPddInst( "New Zealand Fungal Herbarium" );
+    static const string strSagInst( "Sammlung von Algenkulturen at Universitat Gottingen" );
+    static const string strTgrcInst( "C.M. Rick Tomato Genetics Resource Center" );
+    static const string strUamInst( "Museum of Alaska Museum of the North" );
+    static const string strWnmuInst( "Western New Mexico Museum" );
+    static const string strYpmEntInst( "Yale Peabody Museum of Natural History, Entomology Collection" );
+    static const string strYpmHerInst( "Yale Peabody Museum of Natural History, Herpetology Collection" );
+    static const string strYpmIchInst( "Yale Peabody Museum of Natural History, Ichthyology Collection" );
+    static const string strYpmIzInst( "Yale Peabody Museum of Natural History, Invertebrate Zoology Collection" );
+    static const string strYpmMamInst( "Yale Peabody Museum of Natural History, Mammology Collection" );
+    static const string strYpmOrnInst( "Yale Peabody Museum of Natural History, Ornithology Collection" );
     
     if ( ! ctx.Config().DoHTML() ) {
         return strRawName;
@@ -1366,10 +1370,12 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
                 if (add_period) {
                     AddPeriod(subname);
                 }
+                m_Prefix = &kEOL;
                 m_Suffix = &kEOL;
                 qual = x_AddFQ(q, "note", s_GetSpecimenVoucherText(ctx, subname));
             } else {
-                qual = x_AddFQ(q, "note", name + ": " + s_GetSpecimenVoucherText(ctx, subname));
+                qual = x_AddFQ(q, "note", name + ": " + s_GetSpecimenVoucherText(ctx, subname), 
+                    CFormatQual::eQuoted, CFormatQual::fFlags_showEvenIfRedund );
             }
             if (add_period  &&  qual) {
                 qual->SetAddPeriod();
@@ -1680,6 +1686,10 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
 
         CDbtag::TDb db = dbt.GetDb();
         if (db == "PID"  ||  db == "GI") {
+            continue;
+        }
+
+        if( db == "taxon" &&  (flags & fIsSource) == 0 ) {
             continue;
         }
 

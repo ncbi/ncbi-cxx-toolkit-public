@@ -82,7 +82,8 @@ public:
                   bool              ext_to = false,
                   int               frame = 0,
                   TSeqPos           dst_total_len = kInvalidSeqPos,
-                  TSeqPos           src_bioseq_len = kInvalidSeqPos );
+                  TSeqPos           src_bioseq_len = kInvalidSeqPos,
+                  TSeqPos           dst_len = kInvalidSeqPos );
 
     /// Check if the id is on the source sequence.
     bool GoodSrcId(const CSeq_id& id) const;
@@ -149,6 +150,10 @@ private:
     // This holds the complete length of the original source bioseq.
     // Needed to detect whether or not fuzzy edges should be extended to the end.
     TSeqPos             m_Src_bioseq_len;
+    // For example, if the end of a source maps to just before the end of the
+    // dest, then we sometimes extend to the end of the dest, so we do need
+    // to store this, even though it's not needed for the mapping itself.
+    TSeqPos             m_Dst_len;
     // Group of mapping ranges - used with alignments, e.g. to group
     // mapped ranges by exon.
     int                 m_Group;
@@ -201,7 +206,8 @@ public:
                                       bool              ext_to = false,
                                       int               frame = 0,
                                       TSeqPos           dst_total_len = kInvalidSeqPos,
-                                      TSeqPos           src_bioseq_len = kInvalidSeqPos );
+                                      TSeqPos           src_bioseq_len = kInvalidSeqPos,
+                                      TSeqPos           dst_len = kInvalidSeqPos );
 
     /// Get mapping ranges iterator for the given seq-id and range.
     TRangeIterator BeginMappingRanges(CSeq_id_Handle id,
@@ -524,7 +530,8 @@ protected:
                          bool           ext_right,
                          int            frame,
                          TSeqPos        dst_total_len,
-                         TSeqPos        src_bioseq_len );
+                         TSeqPos        src_bioseq_len,
+                         TSeqPos        dst_length );
 
     // Parse and map the seq-loc.
     void x_MapSeq_loc(const CSeq_loc& src_loc);

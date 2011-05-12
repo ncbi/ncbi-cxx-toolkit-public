@@ -74,20 +74,31 @@ public:
     };
     typedef EStyle  TStyle;
 
+    enum FFlags {
+        // This turns off redundancy checks so 
+        // we show this qual even if it is redundant with
+        // the others.
+        fFlags_showEvenIfRedund = 1 << 0
+    };
+    typedef int TFlags;
+
     CFormatQual(const string& name,
               const string& value, 
               const string& prefix,
               const string& suffix,
-              TStyle style = eQuoted);
+              TStyle style = eQuoted,
+              TFlags flags = 0 );
     CFormatQual(const string& name,
               const string& value,
-              TStyle style = eQuoted);
+              TStyle style = eQuoted,
+              TFlags flags = 0 );
 
     const string& GetName  (void) const { return m_Name;   }
     const string& GetValue (void) const { return m_Value;  }
     TStyle        GetStyle (void) const { return m_Style;  }
     const string& GetPrefix(void) const { return m_Prefix; }
     const string& GetSuffix(void) const { return m_Suffix; }
+    TFlags        GetFlags (void) const { return m_Flags;  }
 
     void SetAddPeriod(bool add = true) { m_AddPeriod = add; }
     bool GetAddPeriod(void) const { return m_AddPeriod; }
@@ -95,6 +106,7 @@ public:
 private:
     string m_Name, m_Value, m_Prefix, m_Suffix;
     TStyle m_Style;
+    TFlags m_Flags;
     bool m_AddPeriod;
 };
 
@@ -131,8 +143,9 @@ protected:
         : m_Prefix(pfx), m_Suffix(sfx)
     { }
     TFlatQual x_AddFQ(TFlatQuals& q, const string& n, const string& v,
-                      TStyle st = CFormatQual::eQuoted) const {
-        TFlatQual res(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st));
+                      TStyle st = CFormatQual::eQuoted,
+                      CFormatQual::TFlags flags = 0 ) const {
+        TFlatQual res(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st, flags));
         q.push_back(res); 
         return res;
     }

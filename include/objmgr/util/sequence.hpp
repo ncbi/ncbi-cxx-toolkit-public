@@ -353,6 +353,7 @@ public:
 
     virtual void processMainLoop( 
         bool &shouldContinueToNextIteration,
+        CRef<CSeq_loc> &cleaned_loc_this_iteration,
         CRef<CSeq_loc> &candidate_feat_loc,
         EOverlapType &overlap_type_this_iteration,
         bool &revert_locations_this_iteration,
@@ -363,7 +364,7 @@ public:
 
     virtual void postProcessDiffAmount( 
         Int8 &cur_diff, 
-        CRef<CSeq_loc> &cleaned_loc, 
+        CRef<CSeq_loc> &cleaned_loc_this_iteration, 
         CRef<CSeq_loc> &candidate_feat_loc, 
         CScope &scope, 
         SAnnotSelector &sel, 

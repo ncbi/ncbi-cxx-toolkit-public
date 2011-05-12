@@ -884,6 +884,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
         }
 
         for ( ;  feat_it;  ++feat_it) {
+            CRef<CSeq_loc> cleaned_loc_this_iteration = cleaned_loc;
             CRef<CSeq_loc> candidate_feat_loc( new CSeq_loc ); 
             candidate_feat_loc->Assign( feat_it->GetOriginalFeature().GetLocation() );
             EOverlapType overlap_type_this_iteration = overlap_type;
@@ -893,6 +894,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 bool shouldContinueToNextIteration = false;
                 plugin->processMainLoop( 
                     shouldContinueToNextIteration,
+                    cleaned_loc_this_iteration,
                     candidate_feat_loc,
                     overlap_type_this_iteration,
                     revert_locations_this_iteration,
@@ -908,17 +910,17 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             // treat subset as a special case
             Int8 cur_diff = ( !revert_locations_this_iteration ) ?
                 TestForOverlap64(*candidate_feat_loc,
-                *cleaned_loc,
+                *cleaned_loc_this_iteration,
                 overlap_type_this_iteration,
                 circular_length,
                 &scope) :
-            TestForOverlap64(*cleaned_loc,
+            TestForOverlap64(*cleaned_loc_this_iteration,
                 *candidate_feat_loc,
                 overlap_type_this_iteration,
                 circular_length,
                 &scope);
             if( plugin ) {
-                plugin->postProcessDiffAmount( cur_diff, cleaned_loc, 
+                plugin->postProcessDiffAmount( cur_diff, cleaned_loc_this_iteration, 
                     candidate_feat_loc, scope, sel, circular_length );
             }
             if (cur_diff < 0) {
@@ -1298,6 +1300,7 @@ public:
 
     virtual void processMainLoop(
         bool &shouldContinueToNextIteration,
+        CRef<CSeq_loc> &cleaned_loc_this_iteration, 
         CRef<CSeq_loc> &candidate_feat_loc,
         EOverlapType &overlap_type_this_iteration,
         bool &revert_locations_this_iteration,
@@ -1318,7 +1321,8 @@ public:
         }
         if ( m_PrevPlugin ) {
             m_PrevPlugin->processMainLoop(shouldContinueToNextIteration,
-                candidate_feat_loc, overlap_type_this_iteration,
+                cleaned_loc_this_iteration, candidate_feat_loc, 
+                overlap_type_this_iteration,
                 revert_locations_this_iteration,
                 bioseq_handle, feat, circular_length, annot_overlap_type);
         }

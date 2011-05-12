@@ -120,10 +120,10 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
     const CProt_ref& prot = feat.GetData().GetProt();
     switch (prot.GetProcessed()) {
     case CProt_ref::eProcessed_not_set:
+    case CProt_ref::eProcessed_preprotein:
         /// follow the molecule's setting
         break;
 
-    case CProt_ref::eProcessed_preprotein:
     case CProt_ref::eProcessed_mature:
     case CProt_ref::eProcessed_signal_peptide:
     case CProt_ref::eProcessed_transit_peptide:
@@ -148,6 +148,7 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
                 CFeat_CI feat_it(bsh, CSeqFeatData::e_Prot);
                 for ( ;  feat_it;  ++feat_it) {
                     switch (feat_it->GetData().GetProt().GetProcessed()) {
+                    case CProt_ref::eProcessed_transit_peptide:
                     case CProt_ref::eProcessed_signal_peptide:
                         comp = CMolInfo::eCompleteness_partial;
                         break;

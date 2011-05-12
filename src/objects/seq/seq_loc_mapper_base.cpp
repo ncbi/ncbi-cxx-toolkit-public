@@ -192,7 +192,8 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
                              bool               ext_to,
                              int                frame,
                              TSeqPos            dst_total_len,
-                             TSeqPos            src_bioseq_len)
+                             TSeqPos            src_bioseq_len,
+                             TSeqPos            dst_len)
     : m_Src_id_Handle(src_id),
       m_Src_from(src_from),
       m_Src_to(src_from + src_length - 1),
@@ -205,7 +206,8 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
       m_Frame(frame),
       m_Dst_total_len(dst_total_len),
       m_Src_bioseq_len(src_bioseq_len),
-      m_Group(0)
+      m_Dst_len(dst_len),
+      m_Group(0)      
 {
     return;
 }
@@ -271,10 +273,13 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
             ret.SetFrom( m_Dst_from - frame_shift );
         }
         // extend to the end, if necessary
-        if( m_Dst_total_len != kInvalidSeqPos ) {
-            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from;
+        if( m_Dst_len != kInvalidSeqPos ) {
+            const TSeqPos src_to_dst_end = m_Dst_from + (m_Src_to - m_Src_from);
+            const TSeqPos new_dst_end    = m_Dst_from + m_Dst_len - 1;    
             if ( m_ExtTo && partial_to && to == m_Src_bioseq_len ) {
-                ret.SetTo( dst_total_to );
+                if( ((int)new_dst_end - (int)src_to_dst_end) >= 0 && (new_dst_end - src_to_dst_end) <= 2 ) {
+                    ret.SetTo( new_dst_end );
+                }
             }
         }
         return ret;
@@ -283,10 +288,11 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         TRange ret(Map_Pos(to), Map_Pos(from));
 
         // extend to beginning if necessary (Note: reverse strand implies "beginning" is a higher number )
-        if( m_Dst_total_len != kInvalidSeqPos ) {
-            const TSeqPos dst_total_to = m_Dst_from + (m_Dst_total_len - 1 - frame_shift) - m_Src_from;
+        if( m_Dst_len != kInvalidSeqPos ) {
+            const TSeqPos dst_total_to = m_Dst_from + (m_Src_to - m_Src_from);
+            const TSeqPos new_dst_end  = m_Dst_from + m_Dst_len - 1;    
             if ( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
-                ret.SetTo( dst_total_to + frame_shift );
+                ret.SetTo( new_dst_end + frame_shift );
             }
         }
         // extend to the end, if necessary (Note: reverse strand implies "end" is a lower number )
@@ -454,12 +460,13 @@ CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
                               bool              ext_to,
                               int               frame,
                               TSeqPos           dst_total_len,
-                              TSeqPos           src_bioseq_len )
+                              TSeqPos           src_bioseq_len,
+                              TSeqPos           dst_len)
 {
     CRef<CMappingRange> cvt(new CMappingRange(
         src_id, src_from, src_length, src_strand,
         dst_id, dst_from, dst_strand,
-        ext_to, frame, dst_total_len, src_bioseq_len ));
+        ext_to, frame, dst_total_len, src_bioseq_len, dst_len ));
     AddConversion(cvt);
     return cvt;
 }
@@ -2022,6 +2029,8 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
     TSeqPos cvt_dst_start = dst_start;
     TSeqPos cvt_length;
 
+    const TSeqPos original_dst_len = dst_len;
+
     if (src_len == dst_len) {
         if (src_len == kInvalidSeqPos) {
             // Mapping whole to whole - try to get real length.
@@ -2104,7 +2113,8 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
     }
     // Ready to add the conversion.
     x_AddConversion(src_id, cvt_src_start, src_strand,
-        dst_id, cvt_dst_start, dst_strand, cvt_length, ext_to, frame, dst_total_len, src_bioseq_len );
+        dst_id, cvt_dst_start, dst_strand, cvt_length, ext_to, frame, 
+        dst_total_len, src_bioseq_len, original_dst_len );
 }
 
 
@@ -2118,7 +2128,8 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
                                            bool           ext_right,
                                            int            frame,
                                            TSeqPos        dst_total_len,
-                                           TSeqPos        src_bioseq_len )
+                                           TSeqPos        src_bioseq_len,
+                                           TSeqPos        dst_len)
 {
     // Make sure the destination ranges for the strand do exist.
     if (m_DstRanges.size() <= size_t(dst_strand)) {
@@ -2132,7 +2143,7 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
         CRef<CMappingRange> rg = m_Mappings->AddConversion(
             *syn_it, src_start, length, src_strand,
             CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
-            ext_right, frame, dst_total_len, src_bioseq_len );
+            ext_right, frame, dst_total_len, src_bioseq_len, dst_len );
         if ( m_CurrentGroup ) {
             rg->SetGroup(m_CurrentGroup);
         }
@@ -2500,7 +2511,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     // If the previous range could not be mapped and was removed,
     // indicate it using fuzz.
     if ( m_LastTruncated ) {
-        // TODO: Reconsider this "if" after we switch permanntly to C++
+        // TODO: Reconsider this "if" after we switch permanently to C++
         if ( ((m_FuzzOption & fFuzzOption_CStyle) == 0) && !fuzz.first ) {
             if( (m_FuzzOption & fFuzzOption_RemoveLimTlOrTr) != 0 ) {
                 // we set lt or gt, as appropriate for strand

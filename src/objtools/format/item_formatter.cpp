@@ -212,7 +212,7 @@ string  CFlatItemFormatter::x_FormatAccession
     
     acc_line << primary;
 
-    if ( ctx.IsWGS() ) {
+    if ( ctx.IsWGS() && ! acc.GetWGSAccession().empty() ) {
         acc_line << separator << acc.GetWGSAccession();
     }
 
@@ -712,6 +712,9 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
     string year;
     if (imp.IsSetDate()) {
         s_FormatYear(imp.GetDate(), year);
+        if( year.empty() ) {
+            year = "(?)";
+        }
     }
 
     if (imp.IsSetPrepub()) {
