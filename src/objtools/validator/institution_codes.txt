@@ -4004,7 +4004,6 @@ NHES	s	Connecticut Agricultural Experiment Station, Entomology Department
 NHG	s	Naturhistorische Gesellschaft e. V., Abteilung Botanik
 NHIC	s	Ontario Ministry of Natural Resources
 NHL	c	National Institute of Hygienic Sciences
-NHM	s	Natural History Museum
 NHM<CHE>	s	Naturhistorisches Museum
 NHM<GBR-Nottingham>	s	University of Nottingham, Botany Department
 NHMA	s	Natural History Museum
@@ -4023,7 +4022,8 @@ NHMN	s	Nottingham Natural History Museum (Wollaton Hall)
 NHMR<HRV>	s	Natural History Museum Rijeka
 NHMR<ISL>	s	Natural History Museum
 NHMR<NLD>	s	Natuurhistorisch Museum
-NHMUK	s	Natural History Museum
+NHMUK	s	Natural History Museum, London
+NHMUK<PAK>	s	Natural History Museum
 NHMW	s	Naturhistorisches Museum
 NHNC	s	La Chaux-de-Fons
 NHNE	s	New England College, Biology Department
