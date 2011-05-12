@@ -36,6 +36,7 @@
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_session.hpp>
+#include <cgi/cgiapp.hpp>
 #include <cgi/error_codes.hpp>
 #include <time.h>
 
@@ -284,6 +285,8 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     if (!m_DisableTrackingCookie  &&  m_TrackingCookie.get()) {
         CCgiResponse* self = const_cast<CCgiResponse*>(this);
         self->m_Cookies.Add(*m_TrackingCookie);
+        self->SetHeaderValue(TCGI_TrackingTagName::GetDefault(),
+            m_TrackingCookie->GetValue());
         // Prevent storing the page in puplic caches.
         string cc = GetHeaderValue(sm_CacheControl);
         if ( cc.empty() ) {

@@ -1346,6 +1346,7 @@ string CCgiStatistics::Compose_ErrMessage(void)
 
 NCBI_PARAM_DEF(bool, CGI, DisableTrackingCookie, false);
 NCBI_PARAM_DEF(string, CGI, TrackingCookieName, "ncbi_sid");
+NCBI_PARAM_DEF(string, CGI, TrackingTagName, "NCBI-SID");
 NCBI_PARAM_DEF(string, CGI, TrackingCookieDomain, ".nih.gov");
 NCBI_PARAM_DEF(string, CGI, TrackingCookiePath, "/");
 

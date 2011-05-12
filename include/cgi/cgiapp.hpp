@@ -398,6 +398,8 @@ NCBI_PARAM_DECL(bool, CGI, DisableTrackingCookie);
 typedef NCBI_PARAM_TYPE(CGI, DisableTrackingCookie) TCGI_DisableTrackingCookie;
 NCBI_PARAM_DECL(string, CGI, TrackingCookieName); 
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookieName) TCGI_TrackingCookieName;
+NCBI_PARAM_DECL(string, CGI, TrackingTagName);
+typedef NCBI_PARAM_TYPE(CGI, TrackingTagName) TCGI_TrackingTagName;
 NCBI_PARAM_DECL(string, CGI, TrackingCookieDomain); 
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookieDomain) TCGI_TrackingCookieDomain;
 NCBI_PARAM_DECL(string, CGI, TrackingCookiePath); 
