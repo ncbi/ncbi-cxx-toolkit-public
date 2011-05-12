@@ -64,6 +64,12 @@ bool CNetScheduleBackgroundHost::ShouldRun()
 }
 
 
+bool CNetScheduleBackgroundHost::IsLog() const
+{
+    return m_Server->IsLog();
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 /// CNetScheduleRequestExecutor implementation
 void

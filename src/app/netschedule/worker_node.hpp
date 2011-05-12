@@ -292,7 +292,7 @@ public:
     void UpdateJob(CQueue *  q, TNSJobId  job_id, time_t  exp_time);
     // Remove job from worker node job list
     void RemoveJob(CQueue *  q, const CJob &  job,
-                   ENSCompletion reason, bool is_log);
+                   ENSCompletion reason);
 
     SJobInfo* FindJobById(TNSJobId job_id);
 

@@ -375,8 +375,7 @@ void CNetScheduleHandler::OnOpen(void)
         diag_extra.Print("_type", "conn");
         diag_extra.Print("peer", socket.GetPeerAddress(eSAF_IP));
         diag_extra.Print("pport", socket.GetPeerAddress(eSAF_Port));
-        diag_extra.Print("port", NStr::UIntToString(
-                                    socket.GetLocalPort(eNH_HostByteOrder)));
+        diag_extra.Print("port", socket.GetLocalPort(eNH_HostByteOrder));
         diag_extra.Flush();
     }
     m_ConnContext->SetRequestStatus(eStatus_OK);
@@ -942,7 +941,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
             GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
                             .Print("cmd", "BTCH")
-                            .Print("size", NStr::UIntToString(m_BatchJobs.size()));
+                            .Print("size", m_BatchJobs.size());
             ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
         }
 
@@ -1114,7 +1113,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     if (m_Server->IsLog())
         GetDiagContext().Extra()
                 .Print("job_status", CNetScheduleAPI::StatusToString(status))
-                .Print("job_ret_code", NStr::IntToString(ret_code))
+                .Print("job_ret_code", ret_code)
                 .Print("job_output", NStr::PrintableString(output))
                 .Print("job_error", NStr::PrintableString(error))
                 .Print("job_input", NStr::PrintableString(input));
@@ -1578,7 +1577,7 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
                         NStr::PrintableString(comment) + "\"");
     if (m_Server->IsLog())
         GetDiagContext().Extra()
-                .Print("queue_kind", NStr::IntToString(kind))
+                .Print("queue_kind", kind)
                 .Print("queue_class", qclass)
                 .Print("queue_comment", NStr::PrintableString(comment));
     x_PrintRequestStop(eStatus_OK);
@@ -1700,7 +1699,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
                           " " + NS_EncodeBitVector(jobs));
 
     if (m_Server->IsLog()) {
-        GetDiagContext().Extra().Print("group_id", NStr::UIntToString(read_id));
+        GetDiagContext().Extra().Print("group_id", read_id);
 
         list<string>                    job_keys = BitVectorToJobKeys(q, jobs);
         list<string>::const_iterator    j = job_keys.begin();
@@ -1718,8 +1717,7 @@ void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
     WriteMessage("OK:", "");
 
     if (m_Server->IsLog()) {
-        GetDiagContext().Extra().Print("group_id",
-                                       NStr::UIntToString(m_JobReq.count));
+        GetDiagContext().Extra().Print("group_id", m_JobReq.count);
 
         list<string>                    job_keys = BitVectorToJobKeys(q, jobs);
         list<string>::const_iterator    j = job_keys.begin();
@@ -1738,8 +1736,7 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
     WriteMessage("OK:", "");
 
     if (m_Server->IsLog()) {
-        GetDiagContext().Extra().Print("group_id",
-                                       NStr::UIntToString(m_JobReq.count));
+        GetDiagContext().Extra().Print("group_id", m_JobReq.count);
 
         list<string>                    job_keys = BitVectorToJobKeys(q, jobs);
         list<string>::const_iterator    j = job_keys.begin();
@@ -1757,8 +1754,7 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
     WriteMessage("OK:", "");
 
     if (m_Server->IsLog()) {
-        GetDiagContext().Extra().Print("group_id",
-                                       NStr::UIntToString(m_JobReq.count));
+        GetDiagContext().Extra().Print("group_id", m_JobReq.count);
 
         list<string>                    job_keys = BitVectorToJobKeys(q, jobs);
         list<string>::const_iterator    j = job_keys.begin();

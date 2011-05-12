@@ -53,6 +53,7 @@ public:
     virtual ~CBackgroundHost() {}
     virtual void ReportError(ESeverity severity, const string& what) = 0;
     virtual bool ShouldRun() = 0;
+    virtual bool IsLog() const = 0;
 };
 
 

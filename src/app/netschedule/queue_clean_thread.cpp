@@ -53,13 +53,17 @@ void CJobQueueCleanerThread::DoJob(void)
         return;
 
 
-    CRef<CRequestContext>       ctx(new CRequestContext());
+    bool                    is_log = m_Host.IsLog();
+    CRef<CRequestContext>   ctx;
 
-    ctx->SetRequestID();
-    GetDiagContext().SetRequestContext(ctx);
-    GetDiagContext().PrintRequestStart()
-                    .Print("_type", "job_cleaner_thread");
-    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    if (is_log) {
+        ctx.Reset(new CRequestContext());
+        ctx->SetRequestID();
+        GetDiagContext().SetRequestContext(ctx);
+        GetDiagContext().PrintRequestStart()
+                        .Print("_type", "job_cleaner_thread");
+        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    }
 
     try {
         m_QueueDB.Purge();
@@ -90,24 +94,32 @@ void CJobQueueCleanerThread::DoJob(void)
                                << " Cleaning thread has been stopped.");
             }
         }
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_QueueCleanerError);
+        if (is_log)
+            ctx->SetRequestStatus(
+                            CNetScheduleHandler::eStatus_QueueCleanerError);
     }
     catch(exception &  ex) {
         RequestStop();
         ERR_POST("Error while cleaning queue: " << ex.what() <<
                  " Cleaning thread has been stopped.");
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_QueueCleanerError);
+        if (is_log)
+            ctx->SetRequestStatus(
+                            CNetScheduleHandler::eStatus_QueueCleanerError);
     }
     catch (...) {
         RequestStop();
         ERR_POST("Unknown error while cleaning queue. "
                  "Cleaning thread has been stopped.");
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_QueueCleanerError);
+        if (is_log)
+            ctx->SetRequestStatus(
+                            CNetScheduleHandler::eStatus_QueueCleanerError);
     }
 
-    GetDiagContext().PrintRequestStop();
-    ctx.Reset();
-    GetDiagContext().SetRequestContext(NULL);
+    if (is_log) {
+        GetDiagContext().PrintRequestStop();
+        ctx.Reset();
+        GetDiagContext().SetRequestContext(NULL);
+    }
 }
 
 
@@ -117,13 +129,17 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
         return;
 
 
-    CRef<CRequestContext>       ctx(new CRequestContext());
+    bool                    is_log = m_Host.IsLog();
+    CRef<CRequestContext>   ctx;
 
-    ctx->SetRequestID();
-    GetDiagContext().SetRequestContext(ctx);
-    GetDiagContext().PrintRequestStart()
-                    .Print("_type", "job_execution_watcher_thread");
-    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    if (is_log) {
+        ctx.Reset(new CRequestContext());
+        ctx->SetRequestID();
+        GetDiagContext().SetRequestContext(ctx);
+        GetDiagContext().PrintRequestStart()
+                        .Print("_type", "job_execution_watcher_thread");
+        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    }
 
 
     try {
@@ -151,24 +167,32 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
                          ex.what() << " Watcher thread has been stopped.");
             }
         }
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_JobExecWatcherError);
+        if (is_log)
+            ctx->SetRequestStatus(
+                            CNetScheduleHandler::eStatus_JobExecWatcherError);
     }
     catch (exception &  ex) {
         RequestStop();
         ERR_POST("Error in execution watcher: " << ex.what() <<
                  " watcher thread has been stopped.");
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_JobExecWatcherError);
+        if (is_log)
+            ctx->SetRequestStatus(
+                            CNetScheduleHandler::eStatus_JobExecWatcherError);
     }
     catch (...) {
         RequestStop();
         ERR_POST("Unknown error in execution watcher. "
                  "Watched thread has been stopped.");
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_JobExecWatcherError);
+        if (is_log)
+            ctx->SetRequestStatus(
+                            CNetScheduleHandler::eStatus_JobExecWatcherError);
     }
 
-    GetDiagContext().PrintRequestStop();
-    ctx.Reset();
-    GetDiagContext().SetRequestContext(NULL);
+    if (is_log) {
+        GetDiagContext().PrintRequestStop();
+        ctx.Reset();
+        GetDiagContext().SetRequestContext(NULL);
+    }
 }
 
 

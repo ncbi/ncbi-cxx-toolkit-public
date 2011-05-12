@@ -63,7 +63,7 @@ SJS_Request::EInputStatus SJS_Request::SetParamFields(TNSProtoParams& params)
 {
     NON_CONST_ITERATE(TNSProtoParams, it, params) {
         const CTempString &     key = it->first;
-        string                  val = it->second;
+        CTempString &           val = it->second;
 
         if (key.empty())
             continue;

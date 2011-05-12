@@ -392,7 +392,7 @@ void CQueue::x_LogSubmit(const CJob &   job,
         GetDiagContext().PrintRequestStart()
                         .Print("_type", "cmd")
                         .Print("cmd", "BTCH-SUBMIT")
-                        .Print("batch_id", NStr::UIntToString(batch_id));
+                        .Print("batch_id", batch_id);
         ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
     }
 
@@ -401,12 +401,12 @@ void CQueue::x_LogSubmit(const CJob &   job,
         .Print("queue", GetQueueName())
         .Print("input", job.GetInput())
         .Print("aff", job.GetAffinityToken())
-        .Print("mask", NStr::UIntToString(job.GetMask()))
+        .Print("mask", job.GetMask())
         .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
-        .Print("subm_port", NStr::UIntToString(job.GetSubmPort()))
-        .Print("subm_timeout", NStr::UIntToString(job.GetSubmTimeout()))
-        .Print("timeout", NStr::UIntToString(job.GetTimeout()))
-        .Print("run_timeout", NStr::UIntToString(job.GetRunTimeout()));
+        .Print("subm_port", job.GetSubmPort())
+        .Print("subm_timeout", job.GetSubmTimeout())
+        .Print("timeout", job.GetTimeout())
+        .Print("run_timeout", job.GetRunTimeout());
     ITERATE(TNSTagList, it, job.GetTags()) {
         extra.Print("tag_name", it->first);
         extra.Print("tag_value", it->second);
@@ -2327,7 +2327,7 @@ void CQueue::UpdateWorkerNodeJob(unsigned job_id, time_t exp_time)
 void CQueue::RemoveJobFromWorkerNode(const CJob&   job,
                                      ENSCompletion reason)
 {
-    m_WorkerNodeList.RemoveJob(this, job, reason, m_IsLog);
+    m_WorkerNodeList.RemoveJob(this, job, reason);
     CountEvent(eStatPutEvent);
 }
 
@@ -2597,7 +2597,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
     m_StatusTracker.SetStatus(job_id, new_status);
 
     if (status == CNetScheduleAPI::eRunning)
-        m_WorkerNodeList.RemoveJob(this, job, eNSCTimeout, m_IsLog);
+        m_WorkerNodeList.RemoveJob(this, job, eNSCTimeout);
 
     if (m_IsLog)
     {
@@ -2615,11 +2615,15 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
         else
             purpose = "reading";
 
-        LOG_POST(Error << "Job rescheduled for "
-                       << purpose << ", job: " << DecorateJobId(job_id)
-                       << " time_start: " << tm_start.AsString()
-                       << " exp_time: " << tm_exp.AsString()
-                       << " run_timeout: " << run_timeout);
+        GetDiagContext().Extra()
+                .Print("msg", "Timeout expired, rescheduled for " + purpose)
+                .Print("msg_code", eNSCTimeout)
+                .Print("job_key", MakeKey(job.GetId()))
+                .Print("queue", m_QueueName)
+                .Print("run_counter", job.GetRunCount())
+                .Print("time_start", tm_start.AsString())
+                .Print("exp_time", tm_exp.AsString())
+                .Print("run_timeout", run_timeout);
     }
 }
 
@@ -3139,23 +3143,26 @@ void CQueue::CStatisticsThread::DoJob(void)
     if (run_counter > 10) {
         run_counter = 0;
 
-        CRef<CRequestContext>       ctx(new CRequestContext());
-        ctx->SetRequestID();
-        GetDiagContext().SetRequestContext(ctx);
-        GetDiagContext().PrintRequestStart()
-                        .Print("_type", "statistics_thread")
-                        .Print("get_event_average",
-                               NStr::Int8ToString(m_Container.m_Average[eStatGetEvent]))
-                        .Print("put_event_average",
-                               NStr::Int8ToString(m_Container.m_Average[eStatPutEvent]))
-                        .Print("dblock_event_average",
-                               NStr::Int8ToString(m_Container.m_Average[eStatDBLockEvent]))
-                        .Print("dbwrite_event_average",
-                               NStr::Int8ToString(m_Container.m_Average[eStatDBWriteEvent]));
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
-        GetDiagContext().PrintRequestStop();
-        ctx.Reset();
-        GetDiagContext().SetRequestContext(NULL);
+        if (m_Container.m_IsLog) {
+            CRef<CRequestContext>       ctx(new CRequestContext());
+            ctx->SetRequestID();
+            GetDiagContext().SetRequestContext(ctx);
+            GetDiagContext().PrintRequestStart()
+                            .Print("_type", "statistics_thread")
+                            .Print("queue", m_Container.m_QueueName)
+                            .Print("get_event_average",
+                                   m_Container.m_Average[eStatGetEvent])
+                            .Print("put_event_average",
+                                   m_Container.m_Average[eStatPutEvent])
+                            .Print("dblock_event_average",
+                                   m_Container.m_Average[eStatDBLockEvent])
+                            .Print("dbwrite_event_average",
+                                   m_Container.m_Average[eStatDBWriteEvent]);
+            ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+            GetDiagContext().PrintRequestStop();
+            ctx.Reset();
+            GetDiagContext().SetRequestContext(NULL);
+        }
     }
 }
 

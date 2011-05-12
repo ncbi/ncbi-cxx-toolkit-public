@@ -77,6 +77,7 @@ public:
     virtual void ReportError(ESeverity          severity,
                              const std::string& what);
     virtual bool ShouldRun();
+    virtual bool IsLog() const;
 
 private:
     CNetScheduleServer*     m_Server;

@@ -392,8 +392,7 @@ void CQueueWorkerNodeList::UpdateJob(CQueue *   q,
 
 void CQueueWorkerNodeList::RemoveJob(CQueue *       q,
                                      const CJob &   job,
-                                     ENSCompletion  reason,
-                                     bool           is_log)
+                                     ENSCompletion  reason)
 {
     CWriteLockGuard guard(m_Lock);
     SJobInfo* job_info = FindJobById(job.GetId());
@@ -406,14 +405,6 @@ void CQueueWorkerNodeList::RemoveJob(CQueue *       q,
     //
     if (reason != eNSCTimeout)
         worker_node->SetNotificationTimeout(0);
-    if (is_log) {
-        if (reason == eNSCTimeout)
-            GetDiagContext().Extra()
-                    .Print("msg", "Execution timeout expired")
-                    .Print("job_key", q->MakeKey(job.GetId()))
-                    .Print("run_counter", NStr::IntToString(job.GetRunCount()))
-                    .Print("msg_code", NStr::IntToString(reason));
-    }
 
     worker_node->m_JobInfoById.erase(job_info);
     worker_node->UpdateValidityTime();
