@@ -460,7 +460,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStats) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 327};
     const int subject_end_final[k_num_hsps_end] = { 512, 604};
     const int score_final[k_num_hsps_end] = { 510, 282};
-    const double evalue_final[k_num_hsps_end] = {1.455e-55, 4.4e-29};
+    const double evalue_final[k_num_hsps_end] = {7.007e-61, 1.696e-30};
     const int num_idents_final[k_num_hsps_end] = { 171, 94 };
 
     BlastHSPList* ending_hsp_list = 
@@ -519,7 +519,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithConditionalAdjust) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 327};
     const int subject_end_final[k_num_hsps_end] = { 546, 604};
     const int score_final[k_num_hsps_end] = { 537, 298};
-    const double evalue_final[k_num_hsps_end] = {1.1417e-58, 5.6e-31};
+    const double evalue_final[k_num_hsps_end] = {1.1954e-64, 1.5e-32};
     const int num_idents_final[k_num_hsps_end] = { 177, 95 };
 
     BlastHSPList* ending_hsp_list = 
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithConditionalAdjust) {
 BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStats) {
     const EBlastProgramType kProgram = eBlastTypePsiBlast;
     const int k_num_hsps_start = 6;
-    const int k_num_hsps_end = 3;
+    const int k_num_hsps_end = 2;
     CSeq_id query_id("gi|129295");
     CSeq_id subj_id("gi|7450545");
 
@@ -574,13 +574,13 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStats) {
                                                 subject_gapped_start,
                                                 score);
 
-    const int query_offset_final[k_num_hsps_end] = { 24, 18, 6 };
-    const int query_end_final[k_num_hsps_end] = { 30, 31, 25 };
-    const int subject_offset_final[k_num_hsps_end] = { 245, 200, 334 };
-    const int subject_end_final[k_num_hsps_end] = { 251, 210, 353 };
-    const int score_final[k_num_hsps_end] = { 29, 24, 22 };
+    const int query_offset_final[k_num_hsps_end] = { 24, 18 };
+    const int query_end_final[k_num_hsps_end] = { 30, 31 };
+    const int subject_offset_final[k_num_hsps_end] = { 245, 200 };
+    const int subject_end_final[k_num_hsps_end] = { 251, 210 };
+    const int score_final[k_num_hsps_end] = { 29, 24 };
     const double evalue_final[k_num_hsps_end] = 
-    { 1.361074 , 6.425098 , 9.915377  };
+    { 1.361074 , 6.425098 };
             
 
     BlastHSPList* ending_hsp_list = 
@@ -651,7 +651,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsBadlyBiasedSequence) {
     const int subject_end_final[k_num_hsps_end] = { 238, 238, 218, 238, 218};
     const int score_final[k_num_hsps_end] = { 73, 72, 69, 68, 66};
     const double evalue_final[k_num_hsps_end] = 
-    { 1.26e-05 , 1.7e-5 , 4.0e-5, 5.1e-5, 0.000079};
+    { 1.26e-05 , 1.7e-5 , 4.0e-5, 5.1e-5, 0.000088};
     const int num_idents_final[k_num_hsps_end] = { 87, 85, 81, 84, 81 };
             
 
@@ -711,8 +711,8 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithSW) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 523, 585, 570};
     const int subject_end_final[k_num_hsps_end] =    { 512, 604, 604, 592};
     const int score_final[k_num_hsps_end] =          { 583, 39, 33, 32};
-    const double evalue_final[k_num_hsps_end] =      { 5.0e-64, 0.616, 
-                                                        3.056, 3.99};
+    const double evalue_final[k_num_hsps_end] =      { 3.3e-71, 0.387, 
+                                                       1.9988, 2.6276};
     const int num_idents_final[k_num_hsps_end] = { 171, 22, 8, 7 };
 
     BlastHSPList* ending_hsp_list = 
@@ -766,7 +766,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsAndSW) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 523, 585};
     const int subject_end_final[k_num_hsps_end] = { 512, 604, 604};
     const int score_final[k_num_hsps_end] = { 510, 34, 31};
-    const double evalue_final[k_num_hsps_end] = {1.455e-55, 2.099, 5.714};
+    const double evalue_final[k_num_hsps_end] = {7.007e-61, 1.349, 3.7944};
     const int num_idents_final[k_num_hsps_end] = { 171, 22, 8 };
 
     BlastHSPList* ending_hsp_list = 
@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsAndSW) {
 BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStatsAndSW) {
     const EBlastProgramType kProgram = eBlastTypePsiBlast;
     const int k_num_hsps_start = 6;
-    const int k_num_hsps_end = 11;
+    const int k_num_hsps_end = 8;
     CSeq_id query_id("gi|129295");
     CSeq_id subj_id("gi|7450545");
 
@@ -826,18 +826,18 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStatsAndSW) {
                                                 score);
 
     const int query_offset_final[k_num_hsps_end] = 
-        { 24, 140, 126, 10, 137, 198, 18, 137, 215, 4, 6 };
+        { 24, 140, 126, 10, 137, 198, 18, 137 };
     const int query_end_final[k_num_hsps_end] = 
-        { 30, 171, 205, 35, 157, 208, 31, 152, 222, 28, 25 };
+        { 30, 171, 205, 35, 157, 208, 31, 152 };
     const int subject_offset_final[k_num_hsps_end] = 
-        { 245, 408, 212, 130, 339, 388, 200, 186, 3, 90, 334 };
+        { 245, 408, 212, 130, 339, 388, 200, 186 };
     const int subject_end_final[k_num_hsps_end] = 
-        { 251, 439, 287, 155, 359, 398, 210, 201, 10, 114, 353 };
+        { 251, 439, 287, 155, 359, 398, 210, 201 };
     const int score_final[k_num_hsps_end] = 
-        { 29, 28, 28, 28, 25, 24, 24, 22, 22, 22, 22 };
+        { 29, 28, 28, 28, 25, 24, 24, 22 };
     const double evalue_final[k_num_hsps_end] = 
         { 1.361074, 1.837947, 2.118044, 2.153685, 4.198304, 5.529096, 
-            6.425098, 8.532644, 9.198064, 9.275132, 9.915377 };
+            6.425098, 8.532644 };
 
     BlastHSPList* ending_hsp_list = 
         setUpHSPList(k_num_hsps_end,
@@ -906,7 +906,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentUseXdropEvalue) {
     const int score_final[k_num_hsps_end] =          
         {  323,   78,   69, 60};
     const double evalue_final[k_num_hsps_end] =      
-        { 1.454e-33, 3.98823e-05, 0.00048334, 0.00441};  
+        { 2.712e-34, 3.6003e-05, 0.00048334, 0.00441};  
     const int num_idents_final[k_num_hsps_end] = { 108, 31, 30, 12 };
 
     BlastHSPList* ending_hsp_list = 
