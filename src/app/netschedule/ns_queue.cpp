@@ -405,7 +405,7 @@ void CQueue::x_LogSubmit(const CJob &   job,
         .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
         .Print("subm_port", job.GetSubmPort())
         .Print("subm_timeout", job.GetSubmTimeout())
-        .Print("timeout", job.GetTimeout())
+        .Print("timeout", NStr::UIntToString(job.GetTimeout()))
         .Print("run_timeout", job.GetRunTimeout());
     ITERATE(TNSTagList, it, job.GetTags()) {
         extra.Print("tag_name", it->first);
