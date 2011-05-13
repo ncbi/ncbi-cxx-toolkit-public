@@ -1,5 +1,5 @@
-#ifndef NETCACHE_MESSAGE_HANDLER__HPP
-#define NETCACHE_MESSAGE_HANDLER__HPP
+#ifndef NETCACHE__MESSAGE_HANDLER__HPP
+#define NETCACHE__MESSAGE_HANDLER__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -34,20 +34,28 @@
 #include <corelib/request_ctx.hpp>
 #include <corelib/obj_pool.hpp>
 #include <util/simple_buffer.hpp>
+#include <util/thread_pool.hpp>
 #include <connect/server.hpp>
 #include <connect/services/netservice_protocol_parser.hpp>
 
 #include "netcached.hpp"
 #include "nc_storage.hpp"
+#include "sync_log.hpp"
+#include "distribution_conf.hpp"
+
 
 BEGIN_NCBI_SCOPE
+
 
 enum {
     /// Initial size of the buffer used for reading/writing from socket.
     /// Reading buffer never changes its size from the initial, writing buffer
     /// can grow if there's need to.
-    kInitNetworkBufferSize = 64 * 1024
+    kInitNetworkBufferSize = 5 * 1024
 };
+
+typedef CSimpleBufferT<char> TNCBufferType;
+
 
 
 /// Object reading/writing from socket and automatically buffering data
@@ -111,6 +119,8 @@ public:
     /// in the buffer as is until next call and return without waiting.
     void Flush(void);
 
+    size_t WriteToSocket(const void* buff, size_t size);
+
 public:
     // For internal use only
 
@@ -120,9 +130,6 @@ public:
     void ResetSocketTimeout(void);
 
 private:
-    typedef CSimpleBufferT<char> TBufferType;
-
-
     /// Read end-of-line from buffer, advance buffer pointer to pass read
     /// characters. Method supports all possible variants of CRLF including
     /// CR, LF, CRLF, LFCR and 0 byte.
@@ -138,7 +145,7 @@ private:
     ///   Buffer to compact (will be read or write buffer)
     /// @param pos
     ///   Variable with buffer position that will be reseted
-    void x_CompactBuffer(TBufferType& buffer, size_t& pos);
+    void x_CompactBuffer(TNCBufferType& buffer, size_t& pos);
 
 
     /// Special guard for setting and resetting value of read/write timeout
@@ -170,11 +177,11 @@ private:
     /// Default timeout for socket
     STimeout    m_DefTimeout;
     /// Reading buffer
-    TBufferType m_ReadBuff;
+    TNCBufferType m_ReadBuff;
     /// Current position inside reading buffer
     size_t      m_ReadDataPos;
     /// Writing buffer
-    TBufferType m_WriteBuff;
+    TNCBufferType m_WriteBuff;
     /// Current position inside writing buffer
     size_t      m_WriteDataPos;
     /// Types of end-of-line bytes already read from buffer
@@ -250,6 +257,7 @@ public:
     typedef CNetServProtoParser<SCommandExtra> TProtoParser;
 
     /// Command processors
+    bool x_DoCmd_NoOp(void);
     bool x_DoCmd_Alive(void);
     bool x_DoCmd_Health(void);
     bool x_DoCmd_Shutdown(void);
@@ -263,17 +271,62 @@ public:
     bool x_DoCmd_Put2(void);
     bool x_DoCmd_Put3(void);
     bool x_DoCmd_Get(void);
+    bool x_DoCmd_GetLast(void);
+    bool x_DoCmd_SetValid(void);
     bool x_DoCmd_GetSize(void);
     bool x_DoCmd_HasBlob(void);
+    bool x_DoCmd_HasBlobImpl(void);
     bool x_DoCmd_Remove(void);
     bool x_DoCmd_Remove2(void);
     bool x_DoCmd_IC_Store(void);
-    bool x_DoCmd_IC_StoreBlob(void);
-    bool x_DoCmd_IC_GetSize(void);
+    bool x_DoCmd_SyncStart(void);
+    bool x_DoCmd_SyncBlobsList(void);
+    bool x_DoCmd_CopyPut(void);
+    bool x_DoCmd_SyncPut(void);
+    bool x_DoCmd_CopyRemove(void);
+    bool x_DoCmd_SyncRemove(void);
+    bool x_DoCmd_SyncProlong(void);
+    bool x_DoCmd_SyncGet(void);
+    bool x_DoCmd_SyncProlongInfo(void);
+    bool x_DoCmd_SyncCommit(void);
+    bool x_DoCmd_SyncCancel(void);
+    bool x_DoCmd_GetMeta(void);
+    bool x_DoCmd_ProxyMeta(void);
+    bool x_DoCmd_GetBlobsList(void);
     /// Universal processor for all commands not implemented now (because they
     /// are not used by anybody and the very fact of introducing them was
     /// foolish).
     bool x_DoCmd_NotImplemented(void);
+
+    /// Statuses of commands to be set in diagnostics' request context
+    /// Additional statuses can be taken from
+    /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+    enum EHTTPStatus {
+        eStatus_OK          = 200,  ///< Command is ok and execution is good
+        eStatus_Inactive    = 204,
+        eStatus_SyncBList   = 205,
+        eStatus_NewerBlob   = 206,
+        eStatus_PUT2Used    = 301,
+        eStatus_RaceCond    = 302,
+        eStatus_SyncBusy    = 303,
+        eStatus_CrossSync   = 305,
+        eStatus_SyncAborted = 306,
+        eStatus_GCNoAdvance = 307,
+        eStatus_JustStarted = 308,
+        eStatus_BadCmd      = 400,  ///< Command is incorrect
+        eStatus_BadPassword = 401,  ///< Bad password for accessing the blob
+        eStatus_Disabled    = 403,
+        eStatus_NotFound    = 404,  ///< Blob was not found
+        eStatus_NotAllowed  = 405,  ///< Operation not allowed with current
+                                    ///< settings
+        eStatus_CmdTimeout  = 408,  ///< Command timeout is exceeded
+        eStatus_CondFailed  = 412,  ///< Precondition stated in command has
+                                    ///< failed
+        eStatus_ServerError = 500,  ///< Internal server error
+        eStatus_NoImpl      = 501,  ///< Command is not implemented
+        eStatus_StaleSync   = 502,
+        eStatus_PeerError   = 503
+    };
 
 private:
     /// States of handling finite state machine
@@ -283,6 +336,7 @@ private:
         eCommandReceived,      ///< Command received but not parsed yet
         eWaitForBlobAccess,    ///< Locking of blob needed for command is in
                                ///< progress
+        eWaitForDeferredTask,
         ePasswordFailed,       ///< Processing of bad password is needed
         eWaitForStorageBlock,  ///< Locking of all storages in the server is
                                ///< in progress
@@ -294,48 +348,35 @@ private:
                                ///< protocol
         eWaitForFirstData,     ///<
         eWriteBlobData,        ///< Writing data from blob to socket
+        eWriteSendBuff,
+        eSendCmdAsProxy,
+        eWriteFromReader,
+        eReadToWriter,
         eSocketClosed          ///< Connection closed or not opened yet
     };
     /// Additional flags that could be applied to object states
     enum EFlags {
-        fCommandStarted    = 0x010000,  ///< Command startup code is executed
-        fCommandPrinted    = 0x020000,  ///< "request-start" message was
-                                        ///< printed to diagnostics
-        fConnStartPrinted  = 0x040000,  ///< 
-        fSwapLengthBytes   = 0x080000,  ///< Byte order should be swapped when
-                                        ///< reading length of chunks in blob
-                                        ///< transfer protocol
-        fConfirmBlobPut    = 0x100000,  ///< After blob is written to storage
-                                        ///< "OK" message should be written to
-                                        ///< socket
-        fReadExactBlobSize = 0x200000,  ///< There is exact size of the blob
-                                        ///< transferred to NetCache
-        fWaitForBlockedOp  = 0x400000,  ///< 
-        eAllFlagsMask      = 0x7F0000   ///< Sum of all flags above
+        fCommandStarted    = 0x0010000,  ///< Command startup code is executed
+        fCommandPrinted    = 0x0020000,  ///< "request-start" message was
+                                         ///< printed to diagnostics
+        fConnStartPrinted  = 0x0040000,  ///< 
+        fSwapLengthBytes   = 0x0080000,  ///< Byte order should be swapped when
+                                         ///< reading length of chunks in blob
+                                         ///< transfer protocol
+        fConfirmBlobPut    = 0x0100000,  ///< After blob is written to storage
+                                         ///< "OK" message should be written to
+                                         ///< socket
+        fReadExactBlobSize = 0x0200000,  ///< There is exact size of the blob
+                                         ///< transferred to NetCache
+        fWaitForBlockedOp  = 0x0400000,  ///< 
+        fSkipBlobEOF       = 0x0800000,
+        fCopyLogEvent      = 0x1000000,
+        fSyncInProgress    = 0x2000000,
+        fNeedSyncFinish    = 0x4000000,
+        eAllFlagsMask      = 0x7FF0000   ///< Sum of all flags above
     };
     /// Bit mask of EFlags plus one of EStates
     typedef int TStateFlags;
-
-    /// Statuses of commands to be set in diagnostics' request context
-    /// Additional statuses can be taken from
-    /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-    enum EHTTPStatus {
-        eStatus_OK          = 200,  ///< Command is ok and execution is good
-        eStatus_Inactive    = 204,  ///< 
-        eStatus_PUT2Used    = 301,  ///< 
-        eStatus_BadCmd      = 400,  ///< Command is incorrect
-        eStatus_BadPassword = 401,  ///< Bad password for accessing the blob
-        eStatus_Disabled    = 403,  ///< 
-        eStatus_NotFound    = 404,  ///< Blob was not found
-        eStatus_NotAllowed  = 405,  ///< Operation not allowed with current
-                                    ///< settings
-        eStatus_CmdTimeout  = 408,  ///< Command timeout is exceeded
-        eStatus_CondFailed  = 412,  ///< Precondition stated in command has
-                                    ///< failed
-        eStatus_ServerError = 500,  ///< Internal server error
-        eStatus_NoImpl      = 501   ///< Command is not implemented
-    };
-
 
     ///
     virtual void OnBlockedOpFinish(void);
@@ -370,6 +411,7 @@ private:
     /// Process "waiting" for blob locking. In fact just shift to next state
     /// if lock is acquired and just return if not.
     bool x_WaitForBlobAccess(void);
+    bool x_WaitForDeferredTask(void);
     /// Process the situation when password provided to access blob is incorrect
     bool x_ProcessBadPassword(void);
     /// Process "waiting" for blocking of all storages in the server
@@ -384,6 +426,9 @@ private:
     bool x_WaitForFirstData(void);
     /// Write data from blob to socket
     bool x_WriteBlobData(void);
+    bool x_WriteSendBuff(void);
+    bool x_SendCmdAsProxy(void);
+    bool x_WriteFromReader(void);
 
     /// Close connection (or at least make CServer believe that we closed it
     /// by ourselves)
@@ -393,7 +438,8 @@ private:
     void x_AssignCmdParams(TNSProtoParams& params);
     /// Print "request_start" message into diagnostics with all parameters of
     /// the current command.
-    void x_PrintRequestStart(const SParsedCmd& cmd);
+    void x_PrintRequestStart(const SParsedCmd& cmd,
+                             auto_ptr<CDiagContext_Extra>& diag_extra);
     /// Start command returned by protocol parser
     void x_StartCommand(SParsedCmd& cmd);
     ///
@@ -404,14 +450,33 @@ private:
     void x_StartReadingBlob(void);
     /// Client finished sending blob, do cleanup
     void x_FinishReadingBlob(void);
-    /// Start writing blob from storage to socket
-    bool x_StartWritingBlob(void);
     /// Transform socket for the handler to socket stream which will then be
     /// used to write something. Connection to client will be closed when
     /// created socket stream is deleted. Though message about closing will be
     /// printed during execution of this method, CServer will think that
     /// connection closed also inside this method.
     AutoPtr<CConn_SocketStream> x_PrepareSockStream(void);
+
+    SNCSyncEvent* x_AddRemoveEvent(void);
+    void x_ProlongBlobDeadTime(void);
+    void x_ProlongVersionLife(void);
+    void x_QuickFinishSyncCommand(void);
+    bool x_CanStartSyncCommand(bool can_abort = true);
+    void x_ReadFullBlobsList(void);
+    TServersList x_GetCurSlotServers(void);
+    void x_CreateProxyGetCmd(string& proxy_cmd,
+                             Uint1 quorum,
+                             bool search);
+    void x_CreateProxyGetSizeCmd(string& proxy_cmd,
+                                 Uint1 quorum,
+                                 bool search);
+    void x_CreateProxyGetLastCmd(string& proxy_cmd,
+                                 Uint1 quorum,
+                                 bool search);
+    bool x_EcecuteProxyCmd(Uint8          srv_id,
+                           const string&  proxy_cmd,
+                           bool           need_reader,
+                           bool           need_writer);
 
 
     /// Special guard to properly initialize and de-initialize diagnostics
@@ -442,9 +507,9 @@ private:
     /// Processor for the currently executed NetCache command
     TProcessor                m_CmdProcessor;
     /// Diagnostics context for the currently executed command
-    CRef<CRequestContext>     m_DiagContext;
+    CRef<CRequestContext>     m_CmdCtx;
     ///
-    CRef<CRequestContext>     m_ConnContext;
+    CRef<CRequestContext>     m_ConnCtx;
     ///
     string                    m_ConnReqId;
     ///
@@ -478,16 +543,43 @@ private:
     string                    m_RawKey;
     /// Blob key in current command
     string                    m_BlobKey;
+    /// Blob version in current command
+    int                       m_BlobVersion;
     /// "Password" to access the blob
     string                    m_BlobPass;
     /// Version of the blob key to generate
     unsigned int              m_KeyVersion;
     /// Time-to-live value for the blob
     unsigned int              m_BlobTTL;
-    ///
-    Int8                      m_StartPos;
+    /// Offset to start blob reading from
+    Uint8                      m_StartPos;
     /// Exact size of the blob sent by client
-    Int8                      m_Size;
+    Uint8                     m_Size;
+    Uint8                     m_BlobSize;
+    SNCBlobVerData            m_CopyBlobInfo;
+    Uint8                     m_OrigRecNo;
+    Uint8                     m_OrigSrvId;
+    Uint8                     m_OrigTime;
+    Uint8                     m_SrvId;
+    Uint2                     m_Slot;
+    Uint8                     m_LocalRecNo;
+    Uint8                     m_RemoteRecNo;
+    auto_ptr<TNCBufferType>   m_SendBuff;
+    size_t                    m_SendPos;
+    Uint2                     m_BlobSlot;
+    Uint1                     m_Quorum;
+    bool                      m_SearchOnRead;
+    string                    m_RawBlobPass;
+    auto_ptr<IReader>         m_DataReader;
+    auto_ptr<IEmbeddedStreamWriter> m_DataWriter;
+    Uint8                     m_SyncId;
+    bool                      m_LatestExist;
+    bool                      m_InSyncCmd;
+    bool                      m_WaitForThrottle;
+    Uint8                     m_ThrottleTime;
+    Uint8                     m_LatestSrvId;
+    SNCBlobSummary            m_LatestBlobSum;
+    CRef<CThreadPool_Task>    m_DeferredTask;
 };
 
 
@@ -566,9 +658,79 @@ private:
 };
 
 
+class CNCFindMetaData_Task : public CThreadPool_Task
+{
+public:
+    CNCFindMetaData_Task(const TServersList& servers,
+                         Uint1 quorum,
+                         bool  for_hasb,
+                         CRequestContext* req_ctx,
+                         const string& key,
+                         bool& latest_exist,
+                         SNCBlobSummary& latest_blob_sum,
+                         Uint8& latest_srv_id);
+
+private:
+    virtual EStatus Execute(void);
+
+
+    TServersList    m_Servers;
+    Uint1           m_Quorum;
+    bool            m_ForHasb;
+    CRef<CRequestContext> m_ReqCtx;
+    string          m_Key;
+    bool&           m_LatestExist;
+    SNCBlobSummary& m_LatestBlobSum;
+    Uint8&          m_LatestSrvId;
+};
+
+
+class CNCPutToPeers_Task : public CThreadPool_Task
+{
+public:
+    CNCPutToPeers_Task(const TServersList& servers,
+                       Uint1 quorum,
+                       CRequestContext* req_ctx,
+                       const string& key,
+                       Uint8 event_rec_no);
+
+private:
+    virtual EStatus Execute(void);
+
+
+    TServersList    m_Servers;
+    Uint1           m_Quorum;
+    CRef<CRequestContext> m_ReqCtx;
+    string          m_Key;
+    Uint8           m_EventRecNo;
+};
+
+
+class CNCRemoveOnPeers_Task : public CThreadPool_Task
+{
+public:
+    CNCRemoveOnPeers_Task(const TServersList& servers,
+                          Uint1 quorum,
+                          CRequestContext* req_ctx,
+                          const string& key,
+                          SNCSyncEvent* evt);
+
+private:
+    virtual EStatus Execute(void);
+
+
+    TServersList   m_Servers;
+    Uint1           m_Quorum;
+    CRef<CRequestContext> m_ReqCtx;
+    string          m_Key;
+    SNCSyncEvent*   m_Event;
+};
+
+
 
 inline
 CNCMsgHandler_Factory::CNCMsgHandler_Factory(void)
+    : m_Pool(50)
 {}
 
 
@@ -580,4 +742,4 @@ CNCMsgHndlFactory_Proxy::CNCMsgHndlFactory_Proxy(void)
 
 END_NCBI_SCOPE
 
-#endif /* NETCACHE_MESSAGE_HANDLER__HPP */
+#endif /* NETCACHE__MESSAGE_HANDLER__HPP */

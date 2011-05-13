@@ -38,6 +38,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
+#include <util/thread_pool.hpp>
 
 #ifdef _DEBUG
 #  undef _ASSERT
@@ -45,6 +46,7 @@
 #  undef _VERIFY
 #  define _VERIFY(x)  if (x) ; else abort()
 #endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -57,6 +59,13 @@ BEGIN_NCBI_SCOPE
 /// other parts of NetCache it's not so significant. So this constant is much
 /// more flexible for changes than kNCMMMaxThreadsCnt.
 static const unsigned int kNCMaxThreadsCnt = 25;
+
+
+enum ENCPeerFailure {
+    ePeerActionOK,
+    ePeerNeedAbort,
+    ePeerBadNetwork
+};
 
 
 class CSpinRWLock;
@@ -509,7 +518,7 @@ class CStdPoolOfThreads;
 struct INCBlockedOpListener
 {
     ///
-    static void BindToThreadPool(CStdPoolOfThreads* pool);
+    static void BindToThreadPool(CThreadPool* pool);
 
     ///
     virtual void OnBlockedOpFinish(void) = 0;

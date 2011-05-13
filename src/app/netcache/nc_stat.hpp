@@ -68,6 +68,18 @@ public:
 class CNCStat
 {
 public:
+    typedef CNCStatFigure<double>                           TSpanValue;
+    typedef map<const char*, TSpanValue, SConstCharCompare> TCmdsSpansMap;
+    typedef map<const char*, Uint8, SConstCharCompare>      TCmdsCountsMap;
+    typedef map<int, TCmdsSpansMap>                         TStatCmdsSpansMap;
+    typedef map<int, TSpanValue>                            TConnsSpansMap;
+
+    /// Add started command
+    ///
+    /// @param cmd
+    ///   Command name - should be string constant living through all time
+    ///   application is running.
+    static void AddStartedCmd(const char* cmd);
     /// Add finished command
     ///
     /// @param cmd
@@ -96,6 +108,55 @@ public:
     static void AddOverflowConnection(void);
     /// Add command terminated because of timeout
     static void AddTimedOutCommand(void);
+    /// Get number of connections used at the moment
+    Uint4 GetConnsUsed(void);
+    /// Get number of connections used 1 second ago
+    Uint4 GetConnsUsed1Sec(void);
+    /// Get number of opened connections during last 1 second
+    Uint4 GetConnsOpened1Sec(void);
+    /// Get number of closed connections during last 1 second
+    Uint4 GetConnsClosed1Sec(void);
+    /// Get number of overflowed connections during last 1 second
+    Uint4 GetConnsOverflow1Sec(void);
+    /// Get number of connections closed with user error during last 1 second
+    Uint4 GetUserErrs1Sec(void);
+    /// Get number of connections closed with server error during last 1 second
+    Uint4 GetServErrs1Sec(void);
+    /// Get number of connections used 5 seconds ago
+    Uint4 GetConnsUsed5Sec(void);
+    /// Get number of opened connections during last 5 seconds
+    Uint4 GetConnsOpened5Sec(void);
+    /// Get number of closed connections during last 5 seconds
+    Uint4 GetConnsClosed5Sec(void);
+    /// Get number of overflowed connections during last 5 seconds
+    Uint4 GetConnsOverflow5Sec(void);
+    /// Get number of connections closed with user error during last 5 seconds
+    Uint4 GetUserErrs5Sec(void);
+    /// Get number of connections closed with server error during last 5 seconds
+    Uint4 GetServErrs5Sec(void);
+    /// Get number of commands currently executing
+    Uint4 GetProgressCmds(void);
+    /// Get number of commands executed 1 second ago
+    Uint4 GetProgressCmds1Sec(void);
+    /// Get number of commands executed 5 second ago
+    Uint4 GetProgressCmds5Sec(void);
+    /// Get stat values for number of started commands during last 1 second
+    const TCmdsCountsMap& GetStartedCmds1Sec(void);
+    /// Get stat values for command execution times during last 1 second
+    const TStatCmdsSpansMap& GetCmdSpans1Sec(void);
+    /// Get stat values for command execution times during last 5 second
+    void GetStartedCmds5Sec(TCmdsCountsMap* cmd_map);
+    /// Get stat values for command execution times during last 5 second
+    void GetCmdSpans5Sec(TStatCmdsSpansMap* cmd_map);
+    /// Get amount of data read during last 1 second
+    Uint8 GetReadSize1Sec(void);
+    /// Get amount of data written during last 1 second
+    Uint8 GetWrittenSize1Sec(void);
+    /// Get amount of data read during last 5 second
+    Uint8 GetReadSize5Sec(void);
+    /// Get amount of data written during last 5 second
+    Uint8 GetWrittenSize5Sec(void);
+
     ///
     static void AddBlockedOperation(void);
 
@@ -126,11 +187,6 @@ public:
                                        Int8  useful_size,
                                        Int8  garbage_size);
 
-    /// Register attempt to read the blob
-    static void AddBlobReadAttempt  (Int8 cnt_reads, int create_time);
-    /// Register cached blob (for the puprose of counting number of reads
-    /// requested for each blob)
-    static void AddBlobCached       (Int8 cnt_reads);
     /// Add read blob of given size
     static void AddBlobRead         (Uint8 blob_size, Uint8 read_size);
     /// Add read blob chunk of given size
@@ -140,6 +196,10 @@ public:
     /// Add written blob chunk of given size
     static void AddChunkWritten     (size_t size);
 
+    /// Constructor initializing all data
+    CNCStat(void);
+    /// Collect statistics from all threads
+    static void CollectAllStats(CNCStat& stat);
     /// Print statistics to the given proxy object
     static void Print(CPrintTextProxy& proxy);
 
@@ -147,17 +207,11 @@ private:
     friend class CNCStat_Getter;
 
 
-    typedef CNCStatFigure<double>                           TSpanValue;
-    typedef map<const char*, TSpanValue, SConstCharCompare> TCmdsSpansMap;
-    typedef map<int, TCmdsSpansMap>                         TStatCmdsSpansMap;
-    typedef map<int, TSpanValue>                            TConnsSpansMap;
-
-
     enum {
         kMinSizeInChart = 32, ///< Minimum blob size that will be counted for
                               ///< the statistics chart showing distribution
                               ///< of blobs sizes. Should be a power of 2.
-        kMaxCntReads = 5      ///< 
+        kCntHistoryValues = 7
     };
 
     /// Get index of chart element for given size
@@ -167,10 +221,10 @@ private:
     template <class Map, class Key>
     static typename Map::iterator x_GetSpanFigure(Map& map, Key key);
 
-    /// Constructor initializing all data
-    CNCStat(void);
     /// Collect all data from here to another statistics object.
     void x_CollectTo(CNCStat* dest);
+    /// Shift history values as next second came
+    void x_ShiftHistory(int cur_time);
 
 
     /// Main locking mutex for object
@@ -181,7 +235,7 @@ private:
     /// Number of connections closed because of maximum number of opened
     /// connections limit.
     Uint8                           m_OverflowConns;
-    ///
+    /// Number of connections not sending any data (just connect and disconnect)
     Uint8                           m_FakeConns;
     /// Sum of times all connections stayed opened
     CNCStatFigure<double>           m_ConnSpan;
@@ -189,12 +243,38 @@ private:
     TConnsSpansMap                  m_ConnSpanByStat;
     ///
     CNCStatFigure<Uint8>            m_NumCmdsPerConn;
+    /// Number of started commands
+    Uint8                           m_StartedCmds;
     /// Maximum time one command was executed
     CNCStatFigure<double>           m_CmdSpan;
     /// Maximum time of each command type executed
     TStatCmdsSpansMap               m_CmdSpanByCmd;
     /// Number of commands terminated because of command timeout
     Uint8                           m_TimedOutCmds;
+    /// Time for which history values were measured
+    int                   m_HistoryTimes[kCntHistoryValues];
+    /// Number of open connections in each second
+    Uint4                 m_HistOpenedConns[kCntHistoryValues];
+    /// Number of closed connections in each second
+    Uint4                 m_HistClosedConns[kCntHistoryValues];
+    /// Number of used connections at the beginning of each second
+    Uint4                 m_HistUsedConns[kCntHistoryValues];
+    /// Number of overflowed connections in each second
+    Uint4                 m_HistOverflowConns[kCntHistoryValues];
+    /// Number of user errors in each second
+    Uint4                 m_HistUserErrs[kCntHistoryValues];
+    /// Number of server errors in each second
+    Uint4                 m_HistServErrs[kCntHistoryValues];
+    /// Number of started commands per command type in each second
+    TCmdsCountsMap        m_HistStartedCmds[kCntHistoryValues];
+    /// Time of command execution for each command type and result status in each second
+    TStatCmdsSpansMap     m_HistCmdSpan[kCntHistoryValues];
+    /// Number of executing commands at the beginning of each second
+    Uint4                 m_HistProgressCmds[kCntHistoryValues];
+    /// Size of data read from database in each second
+    Uint8                 m_HistReadSize[kCntHistoryValues];
+    /// Size of data written to database in each second
+    Uint8                 m_HistWriteSize[kCntHistoryValues];
     ///
     Uint8                           m_BlockedOps;
     /// Number of blobs in the database
@@ -245,15 +325,6 @@ private:
     Uint8                           m_MaxBlobSize;
     /// Maximum size of blob chunk operated at any moment by storage
     size_t                          m_MaxChunkSize;
-    /// Number of blobs that were put into database distributed by number of
-    /// reads requested on those blobs
-    vector<Uint8>                   m_BlobsByCntReads;
-    /// Maximum number of reads ever requested for single blob
-    Int8                            m_MaxCntReads;
-    /// Time between writing and first reading of the blob
-    CNCStatFigure<double>           m_FirstReadTime;
-    /// Time between writing and second reading of the blob
-    CNCStatFigure<double>           m_SecondReadTime;
     /// Number of blobs read from database
     Uint8                           m_ReadBlobs;
     ///
@@ -290,40 +361,143 @@ private:
 
 
 inline void
-CNCStat::AddOpenedConnection(void)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_OpenedConns;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::SetFakeConnection(void)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    --stat->m_OpenedConns;
-    ++stat->m_FakeConns;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::AddOverflowConnection(void)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_OverflowConns;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
 CNCStat::AddTimedOutCommand(void)
 {
     CNCStat* stat = sm_Getter.GetObjPtr();
     stat->m_ObjLock.Lock();
     ++stat->m_TimedOutCmds;
     stat->m_ObjLock.Unlock();
+}
+
+inline Uint4
+CNCStat::GetConnsUsed(void)
+{
+    return Uint4(m_OpenedConns - m_ConnSpan.GetCount());
+}
+
+inline Uint4
+CNCStat::GetProgressCmds(void)
+{
+    return Uint4(m_StartedCmds - m_CmdSpan.GetCount());
+}
+
+inline Uint4
+CNCStat::GetConnsUsed1Sec(void)
+{
+    return m_HistUsedConns[1];
+}
+
+inline Uint4
+CNCStat::GetConnsOpened1Sec(void)
+{
+    return m_HistOpenedConns[1];
+}
+
+inline Uint4
+CNCStat::GetConnsClosed1Sec(void)
+{
+    return m_HistClosedConns[1];
+}
+
+inline Uint4
+CNCStat::GetConnsOverflow1Sec(void)
+{
+    return m_HistOverflowConns[1];
+}
+
+inline Uint4
+CNCStat::GetUserErrs1Sec(void)
+{
+    return m_HistUserErrs[1];
+}
+
+inline Uint4
+CNCStat::GetServErrs1Sec(void)
+{
+    return m_HistServErrs[1];
+}
+
+inline Uint4
+CNCStat::GetProgressCmds1Sec(void)
+{
+    return m_HistProgressCmds[1];
+}
+
+inline const CNCStat::TCmdsCountsMap&
+CNCStat::GetStartedCmds1Sec(void)
+{
+    return m_HistStartedCmds[1];
+}
+inline const CNCStat::TStatCmdsSpansMap&
+CNCStat::GetCmdSpans1Sec(void)
+{
+    return m_HistCmdSpan[1];
+}
+
+inline Uint4
+CNCStat::GetConnsUsed5Sec(void)
+{
+    return m_HistUsedConns[5];
+}
+
+inline Uint4
+CNCStat::GetConnsOpened5Sec(void)
+{
+    return m_HistOpenedConns[1] + m_HistOpenedConns[2] + m_HistOpenedConns[3] + m_HistOpenedConns[4] + m_HistOpenedConns[5];
+}
+
+inline Uint4
+CNCStat::GetConnsClosed5Sec(void)
+{
+    return m_HistClosedConns[1] + m_HistClosedConns[2] + m_HistClosedConns[3] + m_HistClosedConns[4] + m_HistClosedConns[5];
+}
+
+inline Uint4
+CNCStat::GetConnsOverflow5Sec(void)
+{
+    return m_HistOverflowConns[1] + m_HistOverflowConns[2] + m_HistOverflowConns[3] + m_HistOverflowConns[4] + m_HistOverflowConns[5];
+}
+
+inline Uint4
+CNCStat::GetUserErrs5Sec(void)
+{
+    return m_HistUserErrs[1] + m_HistUserErrs[2] + m_HistUserErrs[3] + m_HistUserErrs[4] + m_HistUserErrs[5];
+}
+
+inline Uint4
+CNCStat::GetServErrs5Sec(void)
+{
+    return m_HistServErrs[1] + m_HistServErrs[2] + m_HistServErrs[3] + m_HistServErrs[4] + m_HistServErrs[5];
+}
+
+inline Uint4
+CNCStat::GetProgressCmds5Sec(void)
+{
+    return m_HistProgressCmds[5];
+}
+
+inline Uint8
+CNCStat::GetReadSize1Sec(void)
+{
+    return m_HistReadSize[1];
+}
+
+inline Uint8
+CNCStat::GetWrittenSize1Sec(void)
+{
+    return m_HistWriteSize[1];
+}
+
+inline Uint8
+CNCStat::GetReadSize5Sec(void)
+{
+    return m_HistReadSize[1] + m_HistReadSize[2] + m_HistReadSize[3] + m_HistReadSize[4] + m_HistReadSize[5];
+}
+
+inline Uint8
+CNCStat::GetWrittenSize5Sec(void)
+{
+    return m_HistWriteSize[1] + m_HistWriteSize[2] + m_HistWriteSize[3] + m_HistWriteSize[4] + m_HistWriteSize[5];
 }
 
 inline void
@@ -401,37 +575,6 @@ CNCStat::AddDataFileMeasurement(Int8  size,
     stat->m_DataFileGarbageCnt.AddValue(garbage_cnt);
     stat->m_DataFileUsefulSize.AddValue(useful_size);
     stat->m_DataFileGarbageSize.AddValue(garbage_size);
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::AddBlobReadAttempt(Int8 cnt_reads, int create_time)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_MaxCntReads = max(stat->m_MaxCntReads, cnt_reads);
-    if (cnt_reads <= kMaxCntReads) {
-        --stat->m_BlobsByCntReads[int(cnt_reads) - 1];
-        ++stat->m_BlobsByCntReads[int(cnt_reads)];
-        int after_create = int(time(NULL)) - create_time;
-        if (cnt_reads == 1) {
-            stat->m_FirstReadTime .AddValue(after_create);
-        }
-        else if (cnt_reads == 2) {
-            stat->m_SecondReadTime.AddValue(after_create);
-        }
-    }
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::AddBlobCached(Int8 cnt_reads)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_MaxCntReads = max(stat->m_MaxCntReads, cnt_reads);
-    int ind = int(min(cnt_reads, Int8(kMaxCntReads)));
-    ++stat->m_BlobsByCntReads[ind];
     stat->m_ObjLock.Unlock();
 }
 

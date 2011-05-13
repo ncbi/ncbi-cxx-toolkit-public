@@ -59,6 +59,10 @@ public:
     static void SetLimits(size_t limit, size_t alert_level);
     /// Check if memory consumption is above alert level.
     static bool IsOnAlert(void);
+    /// Get maximum memory that can be used by NetCache
+    static size_t GetMemoryLimit(void);
+    /// Get amount of memory used by NetCache at the moment
+    static size_t GetMemoryUsed(void);
 
     /// Print memory usage statistics
     static void PrintStats(CPrintTextProxy& proxy);
@@ -72,11 +76,11 @@ public:
     /// LockDBPage() was made. After last unlocking page will be allowed to be
     /// reused for other cache.
     static void UnlockDBPage(const void* data_ptr);
-    ///
+    /// Mark DB page as dirty
     static void SetDBPageDirty(const void* data_ptr);
-    ///
+    /// Mark DB page as clean and written to disk
     static void SetDBPageClean(const void* data_ptr);
-    ///
+    /// Check if DB page is dirty and needs writing to disk
     static bool IsDBPageDirty(const void* data_ptr);
 
 private:
@@ -188,9 +192,9 @@ public:
     /// made. After last call to Unlock() page will be either placed to LRU
     /// list or deleted if no cache owns it already.
     void Unlock(void);
-    ///
+    /// Set/unset dirty flag for the page
     void SetDirtyFlag(bool value);
-    ///
+    /// Check if dirty flag is set
     bool IsDirty(void) const;
 
 private:
@@ -222,7 +226,7 @@ private:
         fPeeked      = 2, ///< Page is extracted from LRU for destruction,
                           ///< i.e. if page is not needed anymore then only
                           ///< thread that extracted it can delete it.
-        fDirty       = 4, ///< 
+        fDirty       = 4, ///< Page is dirty and needs to be written on disk
         fCounterStep = 8  ///< The incrementing/decrementing step in counting
                           ///< number of locks made on the page. Value should
                           ///< be greater than all other flags.
@@ -757,7 +761,7 @@ private:
 /// memory chunks together. Size of this block can actually be a bit more than
 /// all chunks in slab combined but it definitely won't exceed size of
 /// standardly allocated slab.
-static const size_t kNCMMMaxCombinedSize = 
+static const size_t kNCMMMaxCombinedSize =
                                     kNCMMSlabSize - sizeof(CNCMMBigBlockSlab);
 
 

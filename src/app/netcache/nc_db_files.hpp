@@ -50,10 +50,8 @@ enum ENCStmtType
 {
     eStmt_CreateDBFile,      ///< Create new database part
     eStmt_DeleteDBFile,      ///< Delete info about old database part
-    eStmt_BlobFamilyExists,  ///< Check if blob with given key, subkey exists
     eStmt_GetBlobsList,      ///< Get part of list of blobs "alive" in
                              ///< the given time frame
-    eStmt_GetBlobShortInfo,  ///<
     eStmt_WriteBlobInfo,     ///< Write all meta-info about blob
     eStmt_UpdateBlobInfo,    ///< Set blob's expiration time to given value
     eStmt_ReadBlobInfo,      ///< Get all meta-info about blob
@@ -82,23 +80,6 @@ public:
     void UnlockDB(void);
     ///
     Int8 GetFileSize(void);
-
-    ///
-    void AddUsefulBlobs(Uint8 cnt);
-    ///
-    void AddUsefulBlobs(Uint8 cnt, Int8 size);
-    ///
-    void DelUsefulBlobs(Uint8 cnt);
-    ///
-    void SetBlobsGarbaged(Uint8 cnt);
-    ///
-    void SetBlobsGarbaged(Uint8 cnt, Int8 size);
-    ///
-    void GetBlobsCounts(Uint8* useful_cnt,  Uint8* garbage_cnt);
-    ///
-    void GetBlobsSizes (Int8*  useful_size, Int8*  garbage_size);
-    ///
-    void ResetBlobsCounts(void);
 
     /// Create entire database structure for Index file
     void CreateDatabase(ENCDBFileType db_type);
@@ -133,14 +114,11 @@ protected:
     /// Clean index database removing information about all database parts.
     void DeleteAllDBFiles(void);
 
+    Uint8 GetMaxSyncLogRecNo(void);
+    void SetMaxSyncLogRecNo(Uint8 rec_no);
+
     /// Get last blob id used in the database
     TNCBlobId GetLastBlobId(void);
-    /// Check if blob with given key and subkey exists (more than one blob
-    /// with given key and subkey can exist). Only blobs alive at
-    /// the dead_after moment or after that are considered existing.
-    bool IsBlobFamilyExists(const string& key_first,
-                            const string& key_last,
-                            int           dead_after);
     /// Read part of the full list of existing blobs in database. Only
     /// blobs live at the dead_after moment or after that and before
     /// dead_before moment are considered existing. Information about blobs
@@ -174,10 +152,6 @@ protected:
                       int           max_count,
                       TNCBlobsList* blobs_list);
 
-    ///
-    bool GetBlobShortInfo(const string&     blob_key,
-                          int               dead_after,
-                          SNCBlobShortInfo* blob_info);
     /// Read meta-information about blob - owner, ttl etc.
     ///
     /// @return
@@ -226,16 +200,6 @@ private:
     ENCDBFileType   m_Type;
     ///
     CFastMutex      m_DBLock;
-    ///
-    CSpinLock       m_BlobsCntLock;
-    ///
-    Uint8           m_UsefulBlobs;
-    ///
-    Int8            m_UsefulSize;
-    ///
-    Uint8           m_GarbageBlobs;
-    ///
-    Int8            m_GarbageSize;
 };
 
 
@@ -260,6 +224,8 @@ public:
     using CNCDBFile::DeleteDBFile;
     using CNCDBFile::GetAllDBFiles;
     using CNCDBFile::DeleteAllDBFiles;
+    using CNCDBFile::GetMaxSyncLogRecNo;
+    using CNCDBFile::SetMaxSyncLogRecNo;
 };
 
 
@@ -281,10 +247,8 @@ public:
     virtual ~CNCDBMetaFile(void);
 
     using CNCDBFile::GetLastBlobId;
-    using CNCDBFile::IsBlobFamilyExists;
     using CNCDBFile::GetBlobsList;
 
-    using CNCDBFile::GetBlobShortInfo;
     using CNCDBFile::ReadBlobInfo;
     using CNCDBFile::WriteBlobInfo;
     using CNCDBFile::UpdateBlobInfo;
@@ -350,6 +314,8 @@ public:
     /// Check if disk database was initialized.
     static bool IsDiskInitialized(void);
 
+    static void EnableTimeThrottling(Uint8 server_id);
+
     /// Open new database file.
     /// Method is called automatically inside file system but can be called
     /// outside to notify that database file requires synchronous I/O because
@@ -371,6 +337,9 @@ public:
     static void SetFileInitialized(const string& file_name);
     ///
     static Int8 GetFileSize(const string& file_name);
+
+    /// Get size of internal write queue
+    static Uint4 GetQueueSize(void);
 
 public:
     // For use only internally in nc_db_files.cpp
@@ -420,6 +389,8 @@ private:
     static SNCFSEvent* volatile sm_EventsHead;
     /// Tail of write/close events queue
     static SNCFSEvent*          sm_EventsTail;
+    /// Number of events in the queue
+    static CAtomicCounter       sm_CntEvents;
     /// Background thread executing all actual writings
     static CRef<CThread>        sm_BGThread;
     /// Flag showing that file system is finalized and background thread
@@ -469,10 +440,12 @@ public:
     /// Write data to the very first page of the file.
     /// Second parameter (data) is changed inside the method to point to the
     /// persistent copy of the data inside this object.
-    void WriteFirstPage(Int8 offset, const void** data, int cnt);
+    bool WriteFirstPage(const void** data, int* cnt);
     /// Adjust remembered size of the file so that it's not less than given
     /// value.
     void AdjustSize(Int8 size);
+    /// Mark first page as clean
+    void CleanFirstPage(void);
 
 private:
     friend class CNCFileSystem;
@@ -490,6 +463,8 @@ private:
     /// page that is read and written very frequently, it's not stored in
     /// database cache and thus can be read when some writes are pending.
     char*           m_FirstPage;
+    /// Flag if first page is dirty
+    bool volatile   m_FirstPageDirty;
     /// Size of the file.
     /// It could be not the same as size of file on disk but they will be
     /// equal when all writing events in queue are executed.
@@ -579,6 +554,15 @@ private:
 };
 
 
+class CNCUint8Tls : public CNCTlsObject<CNCUint8Tls, Uint8>
+{
+public:
+    static Uint8* CreateTlsObject(void);
+    static void DeleteTlsObject(void* obj);
+};
+
+
+
 
 //////////////////////////////////////////////////////////////////////////
 // Inline methods
@@ -616,11 +600,7 @@ CNCDBFile::CNCDBFile(CTempString     file_name,
     : CSQLITE_Connection(file_name,
                          flags | fExternalMT   | fSyncOff
                                | fTempToMemory | fWritesSync),
-      m_Type(file_type),
-      m_UsefulBlobs(0),
-      m_UsefulSize(0),
-      m_GarbageBlobs(0),
-      m_GarbageSize(0)
+      m_Type(file_type)
 {
     SetCacheSize(kNCSQLitePageSize);
 }
@@ -647,78 +627,6 @@ inline Int8
 CNCDBFile::GetFileSize(void)
 {
     return CNCFileSystem::GetFileSize(GetFileName());
-}
-
-inline void
-CNCDBFile::AddUsefulBlobs(Uint8 cnt)
-{
-    m_BlobsCntLock.Lock();
-    m_UsefulBlobs += cnt;
-    m_BlobsCntLock.Unlock();
-}
-
-inline void
-CNCDBFile::AddUsefulBlobs(Uint8 cnt, Int8 size)
-{
-    m_BlobsCntLock.Lock();
-    m_UsefulBlobs += cnt;
-    m_UsefulSize  += size;
-    m_BlobsCntLock.Unlock();
-}
-
-inline void
-CNCDBFile::DelUsefulBlobs(Uint8 cnt)
-{
-    m_BlobsCntLock.Lock();
-    m_UsefulBlobs -= cnt;
-    m_BlobsCntLock.Unlock();
-}
-
-inline void
-CNCDBFile::SetBlobsGarbaged(Uint8 cnt)
-{
-    m_BlobsCntLock.Lock();
-    m_UsefulBlobs  -= cnt;
-    m_GarbageBlobs += cnt;
-    m_BlobsCntLock.Unlock();
-}
-
-inline void
-CNCDBFile::SetBlobsGarbaged(Uint8 cnt, Int8 size)
-{
-    m_BlobsCntLock.Lock();
-    m_UsefulBlobs  -= cnt;
-    m_GarbageBlobs += cnt;
-    m_UsefulSize   -= size;
-    m_GarbageSize  += size;
-    m_BlobsCntLock.Unlock();
-}
-
-inline void
-CNCDBFile::GetBlobsCounts(Uint8* useful_cnt,  Uint8* garbage_cnt)
-{
-    m_BlobsCntLock.Lock();
-    *useful_cnt   = m_UsefulBlobs;
-    *garbage_cnt  = m_GarbageBlobs;
-    m_BlobsCntLock.Unlock();
-}
-
-inline void
-CNCDBFile::GetBlobsSizes(Int8*  useful_size, Int8*  garbage_size)
-{
-    m_BlobsCntLock.Lock();
-    *useful_size  = m_UsefulSize;
-    *garbage_size = m_GarbageSize;
-    m_BlobsCntLock.Unlock();
-}
-
-inline void
-CNCDBFile::ResetBlobsCounts(void)
-{
-    //m_BlobsCntLock.Lock();
-    m_UsefulBlobs = m_GarbageBlobs = 0;
-    m_UsefulSize  = m_GarbageSize  = 0;
-    //m_BlobsCntLock.Unlock();
 }
 
 inline void

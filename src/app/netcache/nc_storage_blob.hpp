@@ -44,61 +44,13 @@ class CNCBlobAccessor;
 
 
 ///
-class CNCCacheData
-{
-public:
-    ///
-    CNCCacheData(void);
-    ///
-    CNCCacheData(TNCBlobId blob_id, TNCDBFileId meta_id);
-    ///
-    CNCCacheData(const CNCCacheData& other);
-    ///
-    CNCCacheData& operator= (const CNCCacheData& other);
-
-    ///
-    TNCBlobId GetBlobId(void);
-    ///
-    TNCDBFileId GetMetaId(void);
-    ///
-    bool IsDeleted(void);
-    ///
-    bool IsCreatedCaching(void);
-    ///
-    void SetCoords(const SNCBlobCoords& coords);
-    ///
-    void SetCoords(TNCBlobId blob_id, TNCDBFileId meta_id);
-    ///
-    void SetDeleted(bool is_deleted);
-    ///
-    void SetCreatedCaching(bool value);
-    ///
-    CNCBlobVerManager* SetVerManager(CNCBlobVerManager* manager);
-
-private:
-    /// 8 bits maximum
-    enum EFlags {
-        fDeleted        = 0x01, ///<
-        fCreatedCaching = 0x02, ///<
-
-        kFlagsMask      = 0xFF  ///<
-    };
-
-
-    ///
-    Uint8           m_Coords;
-    ///
-    void* volatile  m_VerManager;
-};
-
-
-///
 class CNCBlobVerManager : public INCBlockedOpListener
 {
 public:
     ///
-    static CNCBlobVerManager* Get(const string& key,
-                                  CNCCacheData* cache_data,
+    static CNCBlobVerManager* Get(Uint2         slot,
+                                  const string& key,
+                                  SNCCacheData* cache_data,
                                   bool          for_new_version);
     ///
     void Release(void);
@@ -109,8 +61,6 @@ public:
     ///
     CRef<SNCBlobVerData> CreateNewVersion(void);
 
-    ///
-    bool SetCurVerIfNewer(SNCBlobVerData* ver_data);
     ///
     void FinalizeWriting(SNCBlobVerData* ver_data);
     ///
@@ -125,12 +75,12 @@ private:
     CNCBlobVerManager& operator= (const CNCBlobVerManager&);
 
     ///
-    static CNCBlobVerManager* sx_LockCacheData(CNCCacheData* cache_data);
+    static CNCBlobVerManager* sx_LockCacheData(SNCCacheData* cache_data);
     ///
-    static void sx_UnlockCacheData(CNCCacheData*      cache_data,
+    static void sx_UnlockCacheData(SNCCacheData*      cache_data,
                                    CNCBlobVerManager* new_mgr);
     ///
-    CNCBlobVerManager(const string& key, CNCCacheData* cache_data);
+    CNCBlobVerManager(Uint2 slot, const string& key, SNCCacheData* cache_data);
     virtual ~CNCBlobVerManager(void);
     ///
     virtual void OnBlockedOpFinish(void);
@@ -160,7 +110,6 @@ private:
         kFlagsMask      = 0xFFFF0000,
 
         fCleaningMgr    = 0x00010000,
-        fActionTaken    = 0x00020000,
         fDeletingKey    = 0x00040000,
         fNeedRestoreKey = 0x00080000
     };
@@ -168,8 +117,9 @@ private:
 
     ///
     unsigned int volatile   m_State;
+    Uint2                   m_Slot;
     ///
-    CNCCacheData*           m_CacheData;
+    SNCCacheData*           m_CacheData;
     ///
     string                  m_Key;
     ///
@@ -184,8 +134,9 @@ enum ENCAccessType {
     eNCRead,        ///< Read meta information only
     eNCReadData,    ///< Read blob data
     eNCCreate,      ///< Create blob or re-write its contents
+    eNCCopyCreate,
     eNCDelete,      ///< Delete the blob
-    eNCGCDelete     ///<
+    eNCGCDelete
 };
 
 
@@ -203,35 +154,51 @@ public:
     bool IsBlobExists(void) const;
     /// Check if password provided for accessing the blob was correct
     bool IsAuthorized(void) const;
+    TNCBlobId GetBlobId(void) const;
     /// Get key of the blob.
     /// Method can be called only after lock is acquired.
     const string& GetBlobKey       (void) const;
+    Uint2         GetBlobSlot      (void) const;
     /// Get size of the blob.
     /// Method can be called only after lock is acquired.
     /// If blob doesn't exist then value is undefined.
-    Int8          GetBlobSize      (void) const;
+    Uint8         GetBlobSize      (void) const;
+    Uint8         GetSizeRead      (void) const;
     /// Check if blob is already expired but not yet deleted by GC.
     /// Method can be called only after lock is acquired.
     /// If blob doesn't exist then value is undefined.
     bool          IsBlobExpired    (void) const;
+    bool          IsVerExpired     (void) const;
     /// Get type of access this holder was created for
     ENCAccessType GetAccessType    (void) const;
 
-    ///
-    void SetPosition(Int8 pos);
-    ///
+    /// Initially set current position in the blob to start reading from
+    void SetPosition(Uint8 pos);
     ENCBlockingOpResult ObtainFirstData(INCBlockedOpListener* listener);
-    ///
     size_t ReadData(void* buffer, size_t buf_size);
+    int GetBlobTTL(void) const;
     /// Set blob's timeout after last access before it will be deleted.
     /// Method can be called only after lock is acquired, if blob exists and
     /// lock is acquired for eNCDelete or eNCCreate access.
     void SetBlobTTL(int ttl);
-    ///
-    void ProlongBlobsLife(void);
-    ///
+    int GetVersionTTL(void) const;
+    void SetVersionTTL(int ttl);
+    int GetBlobVersion(void) const;
+    void SetBlobVersion(int ver);
+    Uint8 GetBlobCreateTime(void) const;
+    void SetBlobCreateTime(Uint8 create_time);
+    int GetBlobDeadTime(void) const;
+    int GetVerDeadTime(void) const;
+    void SetBlobDeadTime(int dead_time);
+    void SetVerDeadTime(int dead_time);
+    Uint8 GetCreateServer(void) const;
+    TNCBlobId GetCreateId(void) const;
+    void SetCreateServer(Uint8 create_server, TNCBlobId create_id, Uint2 slot);
+    void SetBlobSlot(Uint2 slot);
+    const string& GetPassword(void) const;
+    void SetPassword(CTempString password);
+    bool ReplaceBlobInfo(const SNCBlobVerData& new_info);
     void WriteData(const void* data, size_t size);
-    ///
     void Finalize(void);
     /// Delete the blob.
     /// Method can be called only after lock is acquired and
@@ -268,27 +235,15 @@ public:
     /// @param access
     ///   Required access to the blob
     void Prepare(const string& key,
-                       const string& password,
-                       ENCAccessType access_type);
+                 const string& password,
+                 Uint2         slot,
+                 ENCAccessType access_type);
     /// Initialize and acquire the lock.
     /// Should be called only after Prepare().
-    void Initialize(CNCCacheData* cache_data);
+    void Initialize(SNCCacheData* cache_data);
     /// Check if lock was initialized and process of lock acquiring was started
     bool IsInitialized(void) const;
-    ///
     void Deinitialize(void);
-
-    ///
-    TNCBlobId GetBlobId(void);
-    ///
-    TNCDBFileId GetMetaId(void);
-    ///
-    CRef<SNCBlobVerData> GetNewVersion(void);
-    ///
-    bool SetCurVerIfNewer(SNCBlobVerData* ver_data);
-
-    ///
-    static void CleanOvereatenMemory(void);
 
 private:
     CNCBlobAccessor(const CNCBlobAccessor&);
@@ -318,6 +273,7 @@ private:
     string                  m_BlobKey;
     /// Password that was used for access to the blob
     string                  m_Password;
+    Uint2                   m_BlobSlot;
     ///
     CNCBlobVerManager*      m_VerManager;
     /// 
@@ -329,105 +285,15 @@ private:
     ///
     INCBlockedOpListener*   m_InitListener;
     ///
-    unsigned int            m_CurChunk;
+    Uint4                   m_CurChunk;
     /// Current position of reading/writing inside blob's chunk
     size_t                  m_ChunkPos;
     ///
-    Int8                    m_SizeRead;
+    Uint8                   m_SizeRead;
     ///
     CRef<CNCBlobBuffer>     m_Buffer;
 };
 
-
-
-inline void
-CNCCacheData::SetCoords(TNCBlobId blob_id, TNCDBFileId meta_id)
-{
-    m_Coords = (m_Coords & kFlagsMask)
-               + (Uint8(meta_id) << 40) + (Uint8(blob_id) << 8);
-}
-
-inline TNCBlobId
-CNCCacheData::GetBlobId(void)
-{
-    return TNCBlobId((m_Coords >> 8) & kNCMaxBlobId);
-}
-
-inline TNCDBFileId
-CNCCacheData::GetMetaId(void)
-{
-    return TNCDBFileId((m_Coords >> 40) & kNCMaxDBFileId);
-}
-
-inline bool
-CNCCacheData::IsDeleted(void)
-{
-    return (m_Coords & fDeleted) != 0;
-}
-
-inline bool
-CNCCacheData::IsCreatedCaching(void)
-{
-    return (m_Coords & fCreatedCaching) != 0;
-}
-
-inline void
-CNCCacheData::SetDeleted(bool is_deleted)
-{
-    if (is_deleted)
-        m_Coords |= fDeleted;
-    else
-        m_Coords &= ~Uint8(fDeleted);
-}
-
-inline void
-CNCCacheData::SetCreatedCaching(bool value)
-{
-    if (value)
-        m_Coords |= fCreatedCaching;
-    else
-        m_Coords &= ~Uint8(fCreatedCaching);
-}
-
-inline void
-CNCCacheData::SetCoords(const SNCBlobCoords& coords)
-{
-    SetCoords(coords.blob_id, coords.meta_id);
-}
-
-inline
-CNCCacheData::CNCCacheData(void)
-    : m_Coords(0),
-      m_VerManager(NULL)
-{}
-
-inline
-CNCCacheData::CNCCacheData(TNCBlobId blob_id, TNCDBFileId meta_id)
-    : m_Coords(0),
-      m_VerManager(NULL)
-{
-    SetCoords(blob_id, meta_id);
-}
-
-inline CNCCacheData&
-CNCCacheData::operator= (const CNCCacheData& other)
-{
-    m_Coords     = other.m_Coords;
-    m_VerManager = other.m_VerManager;
-    return *this;
-}
-
-inline
-CNCCacheData::CNCCacheData(const CNCCacheData& other)
-{
-    operator=(other);
-}
-
-inline CNCBlobVerManager*
-CNCCacheData::SetVerManager(CNCBlobVerManager* manager)
-{
-    return static_cast<CNCBlobVerManager*>(SwapPointers(&m_VerManager, manager));
-}
 
 
 inline
@@ -485,24 +351,161 @@ CNCBlobAccessor::GetBlobKey(void) const
     return m_BlobKey;
 }
 
-inline Int8
-CNCBlobAccessor::GetBlobSize(void) const
+inline Uint2
+CNCBlobAccessor::GetBlobSlot(void) const
 {
-    _ASSERT(IsBlobExists());
-    return m_CurData->size;
+    return m_BlobSlot;
 }
 
-inline void
-CNCBlobAccessor::SetBlobTTL(int ttl)
+inline Uint8
+CNCBlobAccessor::GetBlobSize(void) const
 {
-    _ASSERT(m_AccessType == eNCCreate);
-    m_NewData->ttl = ttl;
+    return m_NewData.NotNull()? m_NewData->size: m_CurData->size;
+}
+
+inline Uint8
+CNCBlobAccessor::GetSizeRead(void) const
+{
+    return m_SizeRead;
+}
+
+inline int
+CNCBlobAccessor::GetBlobVersion(void) const
+{
+    return m_CurData->blob_ver;
+}
+
+inline int
+CNCBlobAccessor::GetBlobTTL(void) const
+{
+    return m_CurData->ttl;
 }
 
 inline bool
 CNCBlobAccessor::IsBlobExpired(void) const
 {
     return m_CurData->dead_time < int(time(NULL));
+}
+
+inline bool
+CNCBlobAccessor::IsVerExpired(void) const
+{
+    return m_CurData->ver_expire <= int(time(NULL));
+}
+
+inline void
+CNCBlobAccessor::SetBlobCreateTime(Uint8 create_time)
+{
+    m_NewData->create_time = create_time;
+    m_NewData->dead_time = (create_time >> 32) + m_NewData->ttl;
+}
+
+inline Uint8
+CNCBlobAccessor::GetBlobCreateTime(void) const
+{
+    return m_NewData.NotNull()? m_NewData->create_time:
+           (m_CurData.NotNull()? m_CurData->create_time: 0);
+}
+
+inline int
+CNCBlobAccessor::GetBlobDeadTime(void) const
+{
+    return m_CurData->dead_time;
+}
+
+inline int
+CNCBlobAccessor::GetVerDeadTime(void) const
+{
+    return m_CurData->ver_expire;
+}
+
+inline void
+CNCBlobAccessor::SetBlobDeadTime(int dead_time)
+{
+    if (m_NewData.NotNull()) {
+        m_NewData->dead_time = dead_time;
+    }
+    else {
+        m_CurData->dead_time = dead_time;
+        m_CurData->need_write = true;
+    }
+}
+
+inline int
+CNCBlobAccessor::GetVersionTTL(void) const
+{
+    return m_NewData.NotNull()? m_NewData->ver_ttl: m_CurData->ver_ttl;
+}
+
+inline void
+CNCBlobAccessor::SetVersionTTL(int ttl)
+{
+    m_NewData->ver_ttl = ttl;
+}
+
+inline void
+CNCBlobAccessor::SetBlobTTL(int ttl)
+{
+    m_NewData->ttl = ttl;
+}
+
+inline void
+CNCBlobAccessor::SetBlobVersion(int ver)
+{
+    m_NewData->blob_ver = ver;
+}
+
+inline void
+CNCBlobAccessor::SetVerDeadTime(int dead_time)
+{
+    if (m_NewData.NotNull()) {
+        m_NewData->ver_expire = dead_time;
+    }
+    else {
+        m_CurData->ver_expire = dead_time;
+        m_CurData->need_write = true;
+    }
+}
+
+inline void
+CNCBlobAccessor::SetCreateServer(Uint8      create_server,
+                                 TNCBlobId  create_id,
+                                 Uint2      slot)
+{
+    m_NewData->create_server = create_server;
+    m_NewData->create_id = create_id;
+    m_NewData->slot = slot;
+}
+
+inline Uint8
+CNCBlobAccessor::GetCreateServer(void) const
+{
+    return m_NewData.NotNull()? m_NewData->create_server:
+           (m_CurData.NotNull()? m_CurData->create_server: 0);
+}
+
+inline TNCBlobId
+CNCBlobAccessor::GetCreateId(void) const
+{
+    return m_CurData.NotNull()? m_CurData->create_id: 0;
+}
+
+inline void
+CNCBlobAccessor::SetBlobSlot(Uint2 slot)
+{
+    m_NewData->slot = slot;
+}
+
+inline const string&
+CNCBlobAccessor::GetPassword(void) const
+{
+    return m_CurData->password;
+}
+
+inline void
+CNCBlobAccessor::SetPassword(CTempString password)
+{
+    m_NewData->password = password;
 }
 
 inline ENCAccessType
@@ -512,46 +515,19 @@ CNCBlobAccessor::GetAccessType(void) const
 }
 
 inline void
-CNCBlobAccessor::SetPosition(Int8 pos)
+CNCBlobAccessor::SetPosition(Uint8 pos)
 {
     _ASSERT(IsBlobExists()  &&  m_AccessType == eNCReadData);
     _ASSERT(!m_Buffer  &&  pos <= m_CurData->size);
 
-    m_CurChunk = static_cast<unsigned int>(Uint8(pos) / kNCMaxBlobChunkSize);
-    m_ChunkPos = static_cast<size_t>(Uint8(pos) % kNCMaxBlobChunkSize);
-}
-
-inline void
-CNCBlobAccessor::ProlongBlobsLife(void)
-{
-    _ASSERT(IsBlobExists());
-
-    m_CurData->dead_time  = int(time(NULL)) + m_CurData->ttl;
-    m_CurData->need_write = true;
+    m_CurChunk = Uint4(pos / kNCMaxBlobChunkSize);
+    m_ChunkPos = size_t(pos % kNCMaxBlobChunkSize);
 }
 
 inline TNCBlobId
-CNCBlobAccessor::GetBlobId(void)
+CNCBlobAccessor::GetBlobId(void) const
 {
-    return m_CurData->coords.blob_id;
-}
-
-inline TNCDBFileId
-CNCBlobAccessor::GetMetaId(void)
-{
-    return m_CurData->coords.meta_id;
-}
-
-inline CRef<SNCBlobVerData>
-CNCBlobAccessor::GetNewVersion(void)
-{
-    return m_VerManager->CreateNewVersion();
-}
-
-inline bool
-CNCBlobAccessor::SetCurVerIfNewer(SNCBlobVerData* ver_data)
-{
-    return m_VerManager->SetCurVerIfNewer(ver_data);
+    return m_NewData.NotNull()? m_NewData->coords.blob_id: m_CurData->coords.blob_id;
 }
 
 END_NCBI_SCOPE

@@ -108,6 +108,7 @@ public:
     CNCBlobStorage(bool do_reinit);
     virtual ~CNCBlobStorage(void);
 
+    bool IsCleanStart(void);
     /// Block all operations on the storage.
     /// Work with all blobs that are blocked already will be finished as usual,
     /// all future requests for locking of blobs will be suspended until
@@ -140,17 +141,31 @@ public:
     void PackBlobKey(string*      packed_key,
                      CTempString  cache_name,
                      CTempString  blob_key,
-                     CTempString  blob_subkey,
-                     unsigned int blob_version);
+                     CTempString  blob_subkey);
+    void UnpackBlobKey(const string& packed_key,
+                       string&       cache_name,
+                       string&       key,
+                       string&       subkey);
     ///
     string UnpackKeyForLogs(const string& packed_key);
     /// Acquire access to the blob identified by key, subkey and version
     CNCBlobAccessor* GetBlobAccess(ENCAccessType access,
                                    const string& key,
-                                   const string& password);
+                                   const string& password,
+                                   Uint2         slot);
     /// Check if blob with given key and (optionally) subkey exists
     /// in database. More than one blob with given key/subkey can exist.
-    bool IsBlobFamilyExists(const string& key);
+    bool IsBlobExists(Uint2 slot, const string& key);
+
+    /// Get number of files in the database
+    int GetNDBFiles(void);
+    /// Get storage's path
+    const string& GetMainPath(void);
+    /// Get total size of database for the storage
+    Int8 GetDBSize(void);
+    void GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst);
+    Uint8 GetMaxSyncLogRecNo(void);
+    void SetMaxSyncLogRecNo(Uint8 last_rec_no);
 
 public:
     // For internal use only
@@ -187,11 +202,9 @@ public:
     void WriteNextChunk(SNCBlobVerData* blob_info, const CNCBlobBuffer* data);
 
     ///
-    void DeleteBlobKey(const string& key);
+    void DeleteBlobKey(Uint2 slot, const string& key);
     ///
-    void RestoreBlobKey(const string& key);
-    ///
-    void NotifyAfterCaching(INCBlockedOpListener* listener);
+    void RestoreBlobKey(Uint2 slot, const string& key, SNCCacheData* cache_data);
 
     /// Get database file object from pool
     ///
@@ -218,20 +231,41 @@ private:
     class CKeysCleaner
     {
     public:
-        static void Delete(const string& key);
+        CKeysCleaner(Uint2 slot);
+
+        void Delete(const string& key) const;
+
+    private:
+        Uint2 m_Slot;
     };
 
     friend class CKeysCleaner;
 
 
-    typedef CNCDBFileLock<CNCDBMetaFile>                        TMetaFileLock;
-    typedef CNCDBFileLock<CNCDBDataFile>                        TDataFileLock;
+    typedef CNCDBFileLock<CNCDBMetaFile>    TMetaFileLock;
+    typedef CNCDBFileLock<CNCDBDataFile>    TDataFileLock;
 
-    typedef map<TNCDBFileId, Uint8>                             TUsefulCntMap;
-    typedef vector<TNCDBFileId>                                 TCurFilesList[2];
+    typedef map<TNCDBFileId, Uint8>         TUsefulCntMap;
+    typedef vector<TNCDBFileId>             TCurFilesList[2];
 
-    typedef CConcurrentMap<string, CNCCacheData>                TKeysCacheMap;
-    typedef CNCDeferredDeleter<string, CKeysCleaner, 5, 1000>   TKeysDeleter;
+    // CConcurrentMap is fully functional and well suitable for all cases
+    // except GetContents() method. Its implementation would be pretty
+    // long and painful, so I returned old map+RWLock approach until better
+    // solution will be made. All code using CConcurrentMap is commented but
+    // not deleted.
+    //typedef map<string, SNCCacheData*>              TKeysCacheList;
+    //typedef CConcurrentMap<string, SNCCacheData*>   TKeysCacheMap;
+    typedef CNCDeferredDeleter<string, CKeysCleaner, 5, 10000>  TKeysDeleter;
+    struct SSlotCache
+    {
+        //TKeysCacheMap   key_map;
+        CFastRWLock     lock;
+        TNCBlobSumList  key_map;
+        TKeysDeleter    deleter;
+
+        SSlotCache(Uint2 slot);
+    };
+    typedef map<Uint2, SSlotCache*>         TSlotCacheMap;
 
 
     ///
@@ -308,10 +342,8 @@ private:
     /// made (storage is not blocked) and FALSE if initialization of holder
     /// will be executed later on storage unblocking.
     CNCBlobAccessor* x_GetAccessor(bool* need_initialize);
-    ///
+    SSlotCache* x_GetSlotCache(Uint2 slot);
     void x_InitializeAccessor(CNCBlobAccessor* accessor);
-    ///
-    void x_FindBlobInFiles(const string& key);
 
     ///
     void x_IncFilePartNum(TNCDBFileId& file_num);
@@ -320,10 +352,11 @@ private:
     ///
     TNCChunkId x_GetNextChunkId(void);
     ///
-    void x_WriteChunkData(TNCDBFileId          file_id,
-                          TNCChunkId           chunk_id,
+    void x_WriteChunkData(TNCDBFileId     file_id,
+                          TNCChunkId      chunk_id,
                           const CNCBlobBuffer* data,
-                          bool                 add_blobs_cnt);
+                          SNCBlobVerData* ver_data,
+                          bool            add_blobs_cnt);
 
     /// Do set of procedures creating and initializing new database part and
     /// switching storage to using new database part as current one.
@@ -342,12 +375,6 @@ private:
     void CollectCacheStats(void);
 
     ///
-    CNCCacheData* x_GetCacheData(const string& key, ENCAccessType access_type);
-    /// Check if record about any blob with given key and subkey exists in
-    /// the internal cache.
-    bool x_IsBlobFamilyExistsInCache(const string& key);
-
-    ///
     virtual void OnBlockedOpFinish(void);
     /// Wait while garbage collector is working.
     /// Method should be called only when storage is blocked.
@@ -362,7 +389,7 @@ private:
     ///   TRUE if blob was successfully deleted or if database error occurred
     ///   meaning that blob is inaccessible anyway. FALSE if other thread have
     ///   locked the blob and so method was unable to delete it.
-    void x_GC_DeleteExpired(const SNCBlobShortInfo& identity);
+    void x_GC_DeleteExpired(const SNCBlobListInfo& identity);
     ///
     void x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before);
     /// Collect statistics about number of parts, database files sizes etc.
@@ -401,6 +428,7 @@ private:
     /// Background thread running GC and caching
     CRef<CThread>      m_BGThread;
 
+    CFastMutex               m_IndexLock;
     /// Index database file
     AutoPtr<CNCDBIndexFile>  m_IndexDB;
     /// Read-write lock to work with m_DBParts
@@ -411,18 +439,16 @@ private:
     TCurFilesList            m_CurFiles;
     ///
     TNCDBFileId              m_LastFileId;
-    /// Id of database part which is now in process of caching information
-    /// from.
-    volatile TNCDBFileId     m_NotCachedFileId;
+    /// Current size of storage database. Kept here for printing statistics.
+    Int8                     m_CurDBSize;
     /// Minimum expiration time of all blobs remembered now by the storage. 
     /// Variable is used with assumption that reads and writes for int are
     /// always atomic.
     volatile int             m_LastDeadTime;
+    CFastRWLock              m_BigCacheLock;
     /// Internal cache of blobs identification information sorted to be able
     /// to search by key, subkey and version.
-    TKeysCacheMap            m_KeysCache;
-    ///
-    TKeysDeleter             m_KeysDeleter;
+    TSlotCacheMap            m_SlotsCache;
     /// Mutex to control work with pool of lock holders
     CSpinLock                m_HoldersPoolLock;
     /// List of holders available for acquiring new blob locks
@@ -452,10 +478,10 @@ private:
     /// Number of blob locks that should be released before all operations on
     /// the storage will be completely stopped.
     unsigned int             m_CntLocksToWait;
-    ///
-    CNCLongOpTrigger         m_CachingTrigger;
-    ///
-    volatile bool            m_NeedRecache;
+    //volatile bool            m_NeedRecache;
+    Uint8                    m_GCRead;
+    Uint8                    m_GCDeleted;
+    bool                     m_CleanStart;
 };
 
 
@@ -518,81 +544,33 @@ CNCBlobStorage::GetFile(TNCDBFileId file_id,
                         TFile**     file_ptr)
 {
     CSpinReadGuard guard(m_DBFilesLock);
-    *file_ptr = static_cast<TFile*>(m_DBFiles[file_id].file_obj.get());
+    *file_ptr = static_cast<TFile*>(m_DBFiles[file_id]->file_obj.get());
     _ASSERT(*file_ptr  &&  (*file_ptr)->GetType() == TFile::GetClassType());
 }
 
-inline CNCBlobAccessor*
-CNCBlobStorage::x_GetAccessor(bool* need_initialize)
+inline const string&
+CNCBlobStorage::GetMainPath(void)
 {
-    CSpinGuard guard(m_HoldersPoolLock);
-
-    CNCBlobAccessor* holder = m_FreeAccessors;
-    if (holder) {
-        holder->RemoveFromList(m_FreeAccessors);
-    }
-    else {
-        holder = new CNCBlobAccessor();
-    }
-    ++m_CntUsedHolders;
-
-    *need_initialize = !m_Blocked;
-    return holder;
+    return m_MainPath;
 }
 
-inline void
-CNCBlobStorage::ReturnAccessor(CNCBlobAccessor* holder)
+inline Int8
+CNCBlobStorage::GetDBSize(void)
 {
-    CSpinGuard guard(m_HoldersPoolLock);
-
-    holder->AddToList(m_FreeAccessors);
-    --m_CntUsedHolders;
-    if (m_Blocked  &&  holder->IsInitialized())
-        --m_CntLocksToWait;
+    return m_CurDBSize;
 }
 
-inline CNCCacheData*
-CNCBlobStorage::x_GetCacheData(const string& key, ENCAccessType access_type)
+inline int
+CNCBlobStorage::GetNDBFiles(void)
 {
-    CNCCacheData* data;
-    if (access_type == eNCCreate) {
-        if (m_NotCachedFileId != -1)
-            x_FindBlobInFiles(key);
-        data = m_KeysCache.GetPtr(key, TKeysCacheMap::eGetOrCreate);
-        _ASSERT(data);
-    }
-    else {
-        data = m_KeysCache.GetPtr(key, TKeysCacheMap::eGetOnlyActive);
-        if (!data  &&  m_NotCachedFileId != -1) {
-            x_FindBlobInFiles(key);
-            data = m_KeysCache.GetPtr(key, TKeysCacheMap::eGetOnlyActive);
-        }
-    }
-    return data;
+    CSpinReadGuard guard(m_DBFilesLock);
+    return int(m_DBFiles.size());
 }
 
-inline void
-CNCBlobStorage::x_InitializeAccessor(CNCBlobAccessor* acessor)
+inline bool
+CNCBlobStorage::IsCleanStart(void)
 {
-    acessor->Initialize(x_GetCacheData(acessor->GetBlobKey(),
-                                       acessor->GetAccessType()));
-}
-
-inline CNCBlobAccessor*
-CNCBlobStorage::GetBlobAccess(ENCAccessType access,
-                              const string& key,
-                              const string& password)
-{
-    bool need_initialize;
-    CNCBlobAccessor* accessor(x_GetAccessor(&need_initialize));
-    accessor->Prepare(key, password, access);
-    if (need_initialize)
-        x_InitializeAccessor(accessor);
-    else {
-        CSpinGuard guard(m_HoldersPoolLock);
-        accessor->AddToList(m_UsedAccessors);
-    }
-    return accessor;
+    return m_CleanStart;
 }
 
 inline bool
@@ -607,20 +585,6 @@ CNCBlobStorage::x_IncFilePartNum(TNCDBFileId& file_num)
 {
     if (++file_num == TNCDBFileId(m_CurFiles[0].size()))
         file_num = 0;
-}
-
-inline void
-CNCBlobStorage::GetNewBlobCoords(SNCBlobCoords* coords)
-{
-    m_LastBlobLock.Lock();
-    if ((++m_LastBlob.blob_id & kNCMaxBlobId) == 0)
-        m_LastBlob.blob_id = 1;
-    x_IncFilePartNum(m_LastBlob.meta_id);
-    x_IncFilePartNum(m_LastBlob.data_id);
-    coords->blob_id = m_LastBlob.blob_id;
-    coords->meta_id = m_CurFiles[eNCMeta][m_LastBlob.meta_id];
-    coords->data_id = m_CurFiles[eNCData][m_LastBlob.data_id];
-    m_LastBlobLock.Unlock();
 }
 
 inline TNCDBFileId
@@ -653,32 +617,6 @@ CNCBlobStorage::sx_GetCurTime(void)
 #endif
 }
 
-inline void
-CNCBlobStorage::WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data)
-{
-    ver_data->create_time   = sx_GetCurTime();
-    ver_data->dead_time     = static_cast<int>(ver_data->create_time >> 32)
-                              + ver_data->ttl;
-    ver_data->old_dead_time = ver_data->dead_time;
-    ver_data->generation    = m_BlobGeneration;
-
-    TMetaFileLock metafile(this, ver_data->coords.meta_id);
-    metafile->WriteBlobInfo(blob_key, ver_data);
-    metafile->AddUsefulBlobs(1);
-}
-
-inline void
-CNCBlobStorage::x_WriteChunkData(TNCDBFileId          file_id,
-                                 TNCChunkId           chunk_id,
-                                 const CNCBlobBuffer* data,
-                                 bool                 add_blobs_cnt)
-{
-    TDataFileLock datafile(this, file_id);
-    datafile->WriteChunkData(chunk_id, data);
-    datafile->AddUsefulBlobs((add_blobs_cnt? 1: 0), data->GetSize());
-    CNCStat::AddChunkWritten(data->GetSize());
-}
-
 inline TNCChunkId
 CNCBlobStorage::x_GetNextChunkId(void)
 {
@@ -692,8 +630,9 @@ inline void
 CNCBlobStorage::WriteSingleChunk(SNCBlobVerData*      ver_data,
                                  const CNCBlobBuffer* data)
 {
-    x_WriteChunkData(ver_data->coords.data_id, ver_data->coords.blob_id, data, true);
-    ver_data->disk_size += data->GetSize();
+    x_WriteChunkData(ver_data->coords.data_id,
+                     ver_data->coords.blob_id,
+                     data, ver_data, true);
 }
 
 inline void
@@ -701,44 +640,30 @@ CNCBlobStorage::WriteNextChunk(SNCBlobVerData*      ver_data,
                                const CNCBlobBuffer* data)
 {
     TNCChunkId chunk_id = x_GetNextChunkId();
-    x_WriteChunkData(ver_data->coords.data_id, chunk_id, data,
+    x_WriteChunkData(ver_data->coords.data_id, chunk_id,
+                     data, ver_data,
                      ver_data->chunks.size() == 0);
     {{
         TMetaFileLock metafile(this, ver_data->coords.meta_id);
         metafile->CreateChunk(ver_data->coords.blob_id, chunk_id);
     }}
     ver_data->chunks.push_back(chunk_id);
-    ver_data->disk_size += data->GetSize();
+}
+
+inline Uint8
+CNCBlobStorage::GetMaxSyncLogRecNo(void)
+{
+    CFastMutexGuard guard(m_IndexLock);
+    return m_IndexDB->GetMaxSyncLogRecNo();
 }
 
 inline void
-CNCBlobStorage::DeleteBlobKey(const string& key)
+CNCBlobStorage::SetMaxSyncLogRecNo(Uint8 last_rec_no)
 {
-    _VERIFY(m_KeysCache.SetValueStatus(key, TKeysCacheMap::eValuePassive));
-    m_KeysDeleter.AddElement(key);
+    CFastMutexGuard guard(m_IndexLock);
+    m_IndexDB->SetMaxSyncLogRecNo(last_rec_no);
 }
 
-inline void
-CNCBlobStorage::RestoreBlobKey(const string& key)
-{
-    _VERIFY(m_KeysCache.SetValueStatus(key, TKeysCacheMap::eValueActive));
-}
-
-inline void
-CNCBlobStorage::NotifyAfterCaching(INCBlockedOpListener* listener)
-{
-    if (m_CachingTrigger.StartWorking(listener) == eNCSuccessNoBlock) {
-        _ASSERT(m_CachingTrigger.GetState() == eNCOpCompleted);
-        listener->Notify();
-    }
-}
-
-
-inline void
-CNCBlobStorage::CKeysCleaner::Delete(const string& key)
-{
-    g_NCStorage->m_KeysCache.EraseIfPassive(key);
-}
 
 END_NCBI_SCOPE
 

@@ -101,6 +101,13 @@ public:
                          const string&  host,
                          unsigned short port,
                          unsigned int   ver = 1);
+    static
+    void GenerateBlobKey(string*        key,
+                         unsigned int   id,
+                         const string&  host,
+                         unsigned short port,
+                         unsigned int   ver,
+                         unsigned int   rnd_num);
 
     /// Generate a key that includes a service name.
     static void GenerateBlobKey(

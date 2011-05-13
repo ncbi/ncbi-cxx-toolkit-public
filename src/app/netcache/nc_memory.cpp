@@ -41,7 +41,6 @@
 #  include <fcntl.h>
 #endif
 
-#include <string.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -564,6 +563,7 @@ CNCMMStats::ChunksChainFreed(size_t       block_size,
     stat->m_OverheadMem -= kNCMMSetBaseSize;
     stat->m_LostMem     -= chain_size * kNCMMChunkSize
                                             - (kNCMMSetBaseSize + block_size);
+    _ASSERT(chain_size <= kNCMMCntChunksInSlab);
     ++stat->m_ChainsFreed[chain_size];
     stat->m_ObjLock.Unlock();
 }
@@ -715,17 +715,22 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
                   << m_BlocksAlloced[i] << " (+blocks), "
                   << m_BlocksFreed[i]   << " (-blocks), "
                   << m_SetsCreated[i]   << " (+sets), "
-                  << m_SetsDeleted[i]   << " (-sets)" << endl;
+                  << m_SetsDeleted[i]   << " (-sets), "
+                  << (m_BlocksAlloced[i] - m_BlocksFreed[i])
+                     * kNCMMSmallSize[i] << " (total)" << endl;
         }
     }
     Uint8 other_alloced = 0, other_freed = 0;
     for (unsigned int i = 1; i <= kNCMMCntChunksInSlab; ++i) {
         // A bit of hard coding - NetCache doesn't allocate other chain sizes
         // anyway.
-        if (i == 1  ||  i == 2  ||  i == kNCMMCntChunksInSlab - 2) {
+        if (m_ChainsAlloced[i] != 0) {
             proxy << (i * kNCMMChunkSize - kNCMMSetBaseSize) << " - "
                   << m_ChainsAlloced[i] << " (+blocks), "
-                  << m_ChainsFreed[i]   << " (-blocks)" << endl;
+                  << m_ChainsFreed[i]   << " (-blocks), "
+                  << (m_ChainsAlloced[i] - m_ChainsFreed[i])
+                     * (i * kNCMMChunkSize - kNCMMSetBaseSize)
+                                        << " (total)" << endl;
         }
         else {
             other_alloced += m_ChainsAlloced[i];
@@ -816,7 +821,8 @@ CNCMMCentral::x_DoCallMmap(size_t size)
     ptr = mmap(NULL, size, kNCMmapProtection,
                MAP_PRIVATE,                 fd, 0);
 #endif
-    _ASSERT(ptr != MAP_FAILED);
+    if (ptr == MAP_FAILED)
+        abort();
     return ptr;
 }
 
@@ -1539,7 +1545,7 @@ inline size_t
 CNCMMBlocksSetBase::GetBlockSize(void)
 {
     // For CNCMMBlocksSet m_BlockSize stores index of block size, for
-    // CNCMMBigBlockSet m_BlockSize stores size itself and it will alwayse be
+    // CNCMMBigBlockSet m_BlockSize stores size itself and it will always be
     // greater than kNCMMCntSmallSizes.
     return (m_BlocksSize < kNCMMCntSmallSizes?
                            kNCMMSmallSize[m_BlocksSize]: m_BlocksSize);
@@ -1657,8 +1663,7 @@ CNCMMBlocksSet::operator delete(void* mem_ptr)
 inline unsigned int
 CNCMMSlab::x_GetChunkIndex(void* mem_ptr)
 {
-    return (static_cast<char*>(mem_ptr) - reinterpret_cast<char*>(m_Chunks))
-           / kNCMMChunkSize;
+    return (unsigned int)(((char*)mem_ptr - (char*)m_Chunks) / kNCMMChunkSize);
 }
 
 inline CNCMMBlocksSetBase*
@@ -1685,7 +1690,6 @@ CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
     m_CntFree -= chain.size;
     x_CalcEmptyGrade();
     m_FreeMask.InvertBits(x_GetChunkIndex(chain.start), chain.size);
-    //_ASSERT(m_FreeMask.GetCntSet() == m_CntFree);
     return m_EmptyGrade;
 }
 
@@ -1704,7 +1708,6 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
 
     unsigned int chain_index = x_GetChunkIndex(chain->start);
     m_FreeMask.InvertBits(chain_index, chain->size);
-    //_ASSERT(m_FreeMask.GetCntSet() == m_CntFree);
 
     if (chain_index != 0  &&  m_FreeMask.IsBitSet(chain_index - 1)) {
         chain_left->AssignFromChain(&m_Chunks[chain_index - 1]);
@@ -1861,18 +1864,14 @@ CNCMMChainsPool::x_ReleaseAllChains(void)
 inline void*
 CNCMMChainsPool::GetChain(unsigned int chain_size)
 {
-    _ASSERT(chain_size <= kNCMMCntChunksInSlab + 1);
-    if (chain_size > kNCMMCntChunksInSlab)
-        chain_size = kNCMMCntChunksInSlab;
+    _ASSERT(chain_size <= kNCMMCntChunksInSlab);
     return sm_Getter.GetObjPtr()->x_GetChain(chain_size);
 }
 
 inline void
 CNCMMChainsPool::PutChain(void* mem_ptr, unsigned int chain_size)
 {
-    _ASSERT(chain_size <= kNCMMCntChunksInSlab + 1);
-    if (chain_size > kNCMMCntChunksInSlab)
-        chain_size = kNCMMCntChunksInSlab;
+    _ASSERT(chain_size <= kNCMMCntChunksInSlab);
     sm_Getter.GetObjPtr()->x_PutChain(mem_ptr, chain_size);
 }
 
@@ -2242,8 +2241,7 @@ inline unsigned int
 CNCMMBigBlockSet::x_GetChunksCnt(size_t combined_size)
 {
     size_t full_size = combined_size + kNCMMSetBaseSize;
-    return static_cast<unsigned int>(
-                           (full_size + kNCMMChunkSize - 1) / kNCMMChunkSize);
+    return (unsigned int)((full_size + kNCMMChunkSize - 1) / kNCMMChunkSize);
 }
 
 inline void*
@@ -2258,6 +2256,8 @@ CNCMMBigBlockSet::operator new(size_t, size_t combined_size)
     _ASSERT(combined_size <= kNCMMMaxCombinedSize);
 
     unsigned int chain_size = x_GetChunksCnt(combined_size);
+    if (chain_size > kNCMMCntChunksInSlab)
+        chain_size = kNCMMCntChunksInSlab;
     CNCMMStats::ChunksChainAlloced(combined_size, chain_size);
     return CNCMMChainsPool::GetChain(chain_size);
 }
@@ -2266,6 +2266,8 @@ inline void
 CNCMMBigBlockSet::operator delete(void* mem_ptr, size_t combined_size)
 {
     unsigned int chain_size = x_GetChunksCnt(combined_size);
+    if (chain_size > kNCMMCntChunksInSlab)
+        chain_size = kNCMMCntChunksInSlab;
     CNCMMStats::ChunksChainFreed(combined_size, chain_size);
     CNCMMChainsPool::PutChain(mem_ptr, chain_size);
 }
@@ -2683,8 +2685,8 @@ CNCMMCentral::x_Initialize(void)
         kNCMMBlocksPerSet[i]    = cnt_blocks;
         kNCMMBlocksPerGrade[i]  = s_GetCntPerGrade(cnt_blocks,
                                                    kNCMMSetEmptyGrades);
-        kNCMMLostPerSet[i]      = kNCMMSetDataSize - useful_mem;
-        kNCMMOverheadPerSet[i]  = kNCMMSetBaseSize + extra_mem;
+        kNCMMLostPerSet[i]      = (unsigned int)(kNCMMSetDataSize - useful_mem);
+        kNCMMOverheadPerSet[i]  = (unsigned int)(kNCMMSetBaseSize + extra_mem);
     }
 
     // Initialize lookup table for indexes of memory manager block size for
@@ -2918,8 +2920,9 @@ CNCMMDBCache::CNCMMDBCache(int page_size, bool purgeable)
       m_MaxKey(0)
 {
     if (size_t(page_size) > kNCMMDBPageDataSize) {
-        CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO,
-                               "Memory chunk size is inappropriate");
+        abort();
+        /*CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO,
+                               "Memory chunk size is inappropriate");*/
     }
     //? CNCMMStats::OverheadMemAlloced(sizeof(*this));
 }
@@ -3185,7 +3188,7 @@ s_SQLITE_Mem_Realloc(void* ptr, int new_size)
 static int
 s_SQLITE_Mem_Size(void* ptr)
 {
-    return CNCMMCentral::GetMemorySize(ptr);
+    return int(CNCMMCentral::GetMemorySize(ptr));
 }
 
 /// Get size of memory that will be allocated if given size is requested
@@ -3241,7 +3244,7 @@ void
 CNCMemManager::InitializeApp(void)
 {
     CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
-    CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
+//    CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
 
     CNCMMCentral::RunLateInit();
 }
@@ -3270,6 +3273,20 @@ CNCMemManager::PrintStats(CPrintTextProxy& proxy)
     CNCMMStats stats_sum;
     CNCMMStats::CollectAllStats(&stats_sum);
     stats_sum.Print(proxy);
+}
+
+size_t
+CNCMemManager::GetMemoryLimit(void)
+{
+    return CNCMMCentral::GetMemLimit();
+}
+
+size_t
+CNCMemManager::GetMemoryUsed(void)
+{
+    CNCMMStats stat;
+    CNCMMStats::CollectAllStats(&stat);
+    return stat.GetSystemMem();
 }
 
 static inline CNCMMDBPage*
@@ -3310,9 +3327,10 @@ CNCMemManager::IsDBPageDirty(const void* data_ptr)
     return s_DataPtrToDBPage(data_ptr)->IsDirty();
 }
 
+
 END_NCBI_SCOPE
 
-
+/*
 void*
 operator new (size_t size)
 #ifndef NCBI_COMPILER_MSVC
@@ -3346,7 +3364,7 @@ operator delete[] (void* ptr) throw ()
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
-
+*/
 #ifdef __GLIBC__
 // glibc has special method of overriding C library allocation functions.
 
@@ -3367,7 +3385,7 @@ void s_NCFreeHook(void* mem_ptr, const void* caller)
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(mem_ptr);
 }
-
+/*
 void s_NCInitMallocHook(void)
 {
     __malloc_hook  = s_NCMallocHook;
@@ -3376,7 +3394,7 @@ void s_NCInitMallocHook(void)
 }
 
 void (*__malloc_initialize_hook) (void) = s_NCInitMallocHook;
-
+*/
 #elif !defined(NCBI_OS_MSWIN)
 // Changing of C library allocation functions on Windows is very tricky (if
 // possible at all) and NetCache will never run in production on Windows. So

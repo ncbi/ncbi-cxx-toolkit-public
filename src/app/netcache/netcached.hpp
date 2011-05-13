@@ -37,12 +37,19 @@
 
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
-
+#include <connect/services/srv_connections.hpp>
+#include <util/thread_pool.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_config.hpp>
 
 #include "nc_storage.hpp"
 #include "nc_utils.hpp"
+#include "periodic_sync.hpp"
+
+#ifndef NCBI_OS_MSWIN
+# include <sys/time.h>
+#endif
+
 
 
 BEGIN_NCBI_SCOPE
@@ -53,29 +60,24 @@ class CNCMessageHandler;
 
 
 /// Policy for accepting passwords for reading and writing blobs
-enum ENCBlobPassPolicy {
+enum ENCBlobPassPolicy NCBI_PACKED_ENUM_TYPE(Uint1) {
     eNCBlobPassAny,     ///< Both blobs with password and without are accepted
     eNCOnlyWithPass,    ///< Only blobs with password are accepted
     eNCOnlyWithoutPass  ///< Only blobs without password are accepted
-};
+} NCBI_PACKED_ENUM_END();
 
 
-///
 struct SNCSpecificParams : public CObject
 {
-    ///
-    bool                disable;
-    ///
-    unsigned int        conn_timeout;
-    ///
-    unsigned int        cmd_timeout;
-    ///
-    unsigned int        blob_ttl;
-    ///
-    bool                prolong_on_read;
-    ///
-    ENCBlobPassPolicy   pass_policy;
-
+    bool  disable;
+    bool  prolong_on_read;
+    bool  srch_on_read;
+    ENCBlobPassPolicy pass_policy;
+    Uint4 conn_timeout;
+    Uint4 cmd_timeout;
+    Uint4 blob_ttl;
+    Uint4 ver_ttl;
+    Uint4 quorum;
 
     virtual ~SNCSpecificParams(void);
 };
@@ -105,16 +107,112 @@ public:
 
     ///
     const SNCSpecificParams* GetAppSetup(const TStringMap& client_params);
-    /// 
-    void GenerateBlobKey(unsigned int version, unsigned short port, string* key);
     /// Get inactivity timeout for each connection
     unsigned GetDefConnTimeout(void) const;
     /// Get type of logging all commands starting and stopping
     bool IsLogCmds(void) const;
     /// Get name of client that should be used for administrative commands
     const string& GetAdminClient(void) const;
-    /// Create CTime object in fast way (via CFastTime)
-    CTime GetFastTime(void);
+
+    /// Get total number of seconds the server is running
+    int GetUpTime(void);
+    /// Get maximum number of connections allowed in the server
+    int GetMaxConnections(void);
+    /// Get amount of space available on the disk
+    Uint8 GetDiskFree(void);
+
+    static Uint8 GetPreciseTime(void);
+    static CNetServer GetPeerServer(Uint8 server_id);
+    static ESyncInitiateResult StartSyncWithPeer(Uint8  server_id,
+                                                 Uint2  slot,
+                                                 Uint8& local_rec_no,
+                                                 Uint8& remote_rec_no,
+                                                 TReducedSyncEvents& events_list,
+                                                 TNCBlobSumList& blobs_list);
+    static ENCPeerFailure GetBlobsListFromPeer(Uint8  server_id,
+                                               Uint2  slot,
+                                               TNCBlobSumList& blobs_list,
+                                               Uint8& remote_rec_no);
+    static ENCPeerFailure SendBlobToPeer(Uint8 server_id,
+                                         const string& key,
+                                         Uint8 orig_rec_no,
+                                         bool  add_client_ip);
+    static ENCPeerFailure ReadBlobMetaData(Uint8 server_id,
+                                           const string& key,
+                                           bool& blob_exist,
+                                           SNCBlobSummary& blob_sum);
+    static ENCPeerFailure RemoveBlobOnPeer(Uint8 server_id,
+                                           SNCSyncEvent* evt)
+    {
+        return x_DelBlobFromPeer(server_id, 0, evt, false, true);
+    }
+    static ENCPeerFailure SyncWriteBlobToPeer(Uint8 server_id,
+                                              Uint2 slot,
+                                              const string& key)
+    {
+        return x_WriteBlobToPeer(server_id, slot, key, 0, true, false);
+    }
+    static ENCPeerFailure SyncWriteBlobToPeer(Uint8 server_id,
+                                              Uint2 slot,
+                                              SNCSyncEvent* evt)
+    {
+        _ASSERT(evt->event_type == eSyncWrite);
+        return x_WriteBlobToPeer(server_id, slot, evt->key, evt->orig_rec_no,
+                                 true, false);
+    }
+    static ENCPeerFailure SyncDelBlobFromPeer(Uint8 server_id,
+                                              Uint2 slot,
+                                              SNCSyncEvent* evt)
+    {
+        return x_DelBlobFromPeer(server_id, slot, evt, true, false);
+    }
+    static ENCPeerFailure SyncProlongBlobOnPeer(Uint8 server_id,
+                                                Uint2 slot,
+                                                SNCSyncEvent* evt);
+    static ENCPeerFailure SyncProlongBlobOnPeer(Uint8 server_id,
+                                                Uint2 slot,
+                                                const string& raw_key,
+                                                const SNCBlobSummary& blob_sum,
+                                                SNCSyncEvent* evt = NULL);
+    static ENCPeerFailure SyncGetBlobFromPeer(Uint8 server_id,
+                                              Uint2 slot,
+                                              const string& key,
+                                              Uint8 create_time)
+    {
+        return x_SyncGetBlobFromPeer(server_id, slot, key, create_time, 0);
+    }
+    static ENCPeerFailure SyncGetBlobFromPeer(Uint8 server_id,
+                                              Uint2 slot,
+                                              SNCSyncEvent* evt)
+    {
+        _ASSERT(evt->event_type == eSyncWrite);
+        return x_SyncGetBlobFromPeer(server_id, slot, evt->key, evt->orig_time, evt->orig_rec_no);
+    }
+    static ENCPeerFailure SyncDelOurBlob(Uint8 server_id,
+                                         Uint2 slot,
+                                         SNCSyncEvent*  evt);
+    static ENCPeerFailure SyncProlongOurBlob(Uint8 server_id,
+                                             Uint2 slot,
+                                             SNCSyncEvent* evt);
+    static ENCPeerFailure SyncProlongOurBlob(Uint8 server_id,
+                                             Uint2 slot,
+                                             const string& raw_key,
+                                             const SNCBlobSummary& blob_sum,
+                                             bool* need_event = NULL);
+    static bool SyncCommitOnPeer(Uint8 server_id,
+                                 Uint2 slot,
+                                 Uint8 local_rec_no,
+                                 Uint8 remote_rec_no);
+    static void SyncCancelOnPeer(Uint8 server_id, Uint2 slot);
+    static void CachingCompleted(void);
+    static bool IsOpenToClients(void);
+    static void MayOpenToClients(void);
+    static void UpdateLastRecNo(void);
+
+    static void AddDeferredTask(CThreadPool_Task* task);
+
+    static bool IsCachingComplete(void);
+    static bool IsDebugMode(void);
 
     /// Re-read configuration of the server and all storages
     void Reconfigure(void);
@@ -140,8 +238,22 @@ private:
     };
 
 
-    ///
-    virtual void Init(void);
+    static ENCPeerFailure x_WriteBlobToPeer(Uint8 server_id,
+                                            Uint2 slot,
+                                            const string& key,
+                                            Uint8 orig_rec_no,
+                                            bool  is_sync,
+                                            bool  add_client_ip);
+    static ENCPeerFailure x_SyncGetBlobFromPeer(Uint8 server_id,
+                                                Uint2 slot,
+                                                const string& key,
+                                                Uint8 create_time,
+                                                Uint8 orig_rec_no);
+    static ENCPeerFailure x_DelBlobFromPeer(Uint8 server_id,
+                                            Uint2 slot,
+                                            SNCSyncEvent* evt,
+                                            bool  is_sync,
+                                            bool  add_client_ip);
     /// Read server parameters from application's configuration file
     void x_ReadServerParams(void);
     ///
@@ -163,12 +275,11 @@ private:
 
 
 
-    /// Host name where server runs
-    string                         m_HostIP;
     ///
     string                         m_PortsConfStr;
     /// Port where server runs
     TPortsList                     m_Ports;
+    Uint4                          m_CtrlPort;
     /// Type of logging all commands starting and stopping
     bool                           m_LogCmds;
     /// Name of client that should be used for administrative commands
@@ -189,15 +300,29 @@ private:
     bool                           m_Shutdown;
     /// Signal which caused the shutdown request
     int                            m_Signal;
-    /// Quick local timer
-    CFastLocalTime                 m_FastTime;
-    /// Counter for blob id
-    CAtomicCounter                 m_BlobIdCounter;
+    bool                           m_DebugMode;
+    bool                           m_OpenToClients;
+    bool                           m_CachingComplete;
+};
+
+
+class CNCSyncBlockedOpListener : public INCBlockedOpListener
+{
+public:
+    CNCSyncBlockedOpListener(CSemaphore& sem);
+    virtual ~CNCSyncBlockedOpListener(void);
+
+    virtual void OnBlockedOpFinish(void);
+
+private:
+    CSemaphore& m_Sem;
 };
 
 
 ///
 extern CNetCacheServer* g_NetcacheServer;
+Uint8 g_SubtractTime(Uint8 lhs, Uint8 rhs);
+Uint8 g_AddTime(Uint8 lhs, Uint8 rhs);
 
 
 /// NetCache daemon application
@@ -220,16 +345,6 @@ inline int
 CNetCacheServer::GetSignalCode(void) const
 {
     return m_Signal;
-}
-
-inline void
-CNetCacheServer::GenerateBlobKey(unsigned int   version,
-                                 unsigned short port,
-                                 string*        key)
-{
-    CNetCacheKey::GenerateBlobKey(
-                    key, static_cast<unsigned int>(m_BlobIdCounter.Add(1)),
-                    m_HostIP, port, version);
 }
 
 inline void
@@ -259,17 +374,43 @@ CNetCacheServer::GetAdminClient(void) const
     return m_AdminClient;
 }
 
-inline CTime
-CNetCacheServer::GetFastTime(void)
-{
-    return m_FastTime.GetLocalTime();
-}
-
 inline void
 CNetCacheServer::PrintServerStats(CNcbiIostream* ios)
 {
     CPrintTextProxy proxy(CPrintTextProxy::ePrintStream, ios);
     x_PrintServerStats(proxy);
+}
+
+inline int
+CNetCacheServer::GetUpTime(void)
+{
+    return int(CTime(CTime::eCurrent).GetTimeT() - m_StartTime.GetTimeT());
+}
+
+inline Uint8
+CNetCacheServer::GetDiskFree(void)
+{
+    return CFileUtil::GetFreeDiskSpace(g_NCStorage->GetMainPath());
+}
+
+inline Uint8
+CNetCacheServer::GetPreciseTime(void)
+{
+#ifdef NCBI_OS_MSWIN
+    // Conversion from FILETIME to time since Epoch is taken from MSVC's
+    // implementation of time().
+    union {
+        Uint8    ft_int8;
+        FILETIME ft_struct;
+    } ft;
+    GetSystemTimeAsFileTime(&ft.ft_struct);
+    Uint8 epoch_time = ft.ft_int8 - 116444736000000000i64;
+    return Int8(((epoch_time / 10000000) << 32) + (epoch_time % 10000000 / 10));
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (Int8(tv.tv_sec) << 32) + tv.tv_usec;
+#endif
 }
 
 END_NCBI_SCOPE

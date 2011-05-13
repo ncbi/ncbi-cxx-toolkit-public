@@ -96,12 +96,11 @@ CNCStat::CNCStat(void)
     : m_OpenedConns(0),
       m_OverflowConns(0),
       m_FakeConns(0),
+      m_StartedCmds(0),
       m_TimedOutCmds(0),
       m_BlockedOps(0),
       m_MaxBlobSize(0),
       m_MaxChunkSize(0),
-      m_BlobsByCntReads(kMaxCntReads + 1, 0),
-      m_MaxCntReads(0),
       m_ReadBlobs(0),
       m_ReadChunks(0),
       m_DBReadSize(0),
@@ -119,6 +118,17 @@ CNCStat::CNCStat(void)
     m_ConnSpan        .Initialize();
     m_CmdSpan         .Initialize();
     m_NumCmdsPerConn  .Initialize();
+    memset(m_HistoryTimes, 0, sizeof(m_HistoryTimes));
+    memset(m_HistOpenedConns, 0, sizeof(m_HistOpenedConns));
+    memset(m_HistClosedConns, 0, sizeof(m_HistClosedConns));
+    memset(m_HistUsedConns, 0, sizeof(m_HistUsedConns));
+    memset(m_HistOverflowConns, 0, sizeof(m_HistOverflowConns));
+    memset(m_HistUserErrs, 0, sizeof(m_HistUserErrs));
+    memset(m_HistServErrs, 0, sizeof(m_HistServErrs));
+    // m_HistStartedCmds and m_HistCmdSpan are initialized by themselves
+    memset(m_HistProgressCmds, 0, sizeof(m_HistProgressCmds));
+    memset(m_HistReadSize, 0, sizeof(m_HistReadSize));
+    memset(m_HistWriteSize, 0, sizeof(m_HistWriteSize));
     m_CountBlobs      .Initialize();
     m_CountCacheNodes .Initialize();
     m_CacheTreeHeight .Initialize();
@@ -141,8 +151,6 @@ CNCStat::CNCStat(void)
     m_DataFileGarbageCnt.Initialize();
     m_DataFileUsefulSize.Initialize();
     m_DataFileGarbageSize.Initialize();
-    m_FirstReadTime   .Initialize();
-    m_SecondReadTime  .Initialize();
 }
 
 template <class Map, class Key>
@@ -159,16 +167,165 @@ CNCStat::x_GetSpanFigure(Map& map, Key key)
 }
 
 void
+CNCStat::x_ShiftHistory(int cur_time)
+{
+    Uint4 cnt_conns = Uint4(m_OpenedConns - m_ConnSpan.GetCount());
+    Uint4 cnt_cmds  = Uint4(m_StartedCmds - m_CmdSpan.GetCount());
+repeat:
+    if (m_HistoryTimes[0] != 0) {
+        int shift = cur_time - m_HistoryTimes[0];
+        if (shift < kCntHistoryValues) {
+            memmove(&m_HistoryTimes[shift], &m_HistoryTimes[0], (kCntHistoryValues - shift) * sizeof(m_HistoryTimes[0]));
+            memmove(&m_HistOpenedConns[shift], &m_HistOpenedConns[0], (kCntHistoryValues - shift) * sizeof(m_HistOpenedConns[0]));
+            memmove(&m_HistClosedConns[shift], &m_HistClosedConns[0], (kCntHistoryValues - shift) * sizeof(m_HistClosedConns[0]));
+            memmove(&m_HistUsedConns[shift], &m_HistUsedConns[0], (kCntHistoryValues - shift) * sizeof(m_HistUsedConns[0]));
+            memmove(&m_HistOverflowConns[shift], &m_HistOverflowConns[0], (kCntHistoryValues - shift) * sizeof(m_HistOverflowConns[0]));
+            memmove(&m_HistUserErrs[shift], &m_HistUserErrs[0], (kCntHistoryValues - shift) * sizeof(m_HistUserErrs[0]));
+            memmove(&m_HistServErrs[shift], &m_HistServErrs[0], (kCntHistoryValues - shift) * sizeof(m_HistServErrs[0]));
+            for (int i = kCntHistoryValues - 1; i - shift >= 0; --i) {
+                m_HistStartedCmds[i].swap(m_HistStartedCmds[i - shift]);
+                m_HistCmdSpan[i].swap(m_HistCmdSpan[i - shift]);
+            }
+            memmove(&m_HistProgressCmds[shift], &m_HistProgressCmds[0], (kCntHistoryValues - shift) * sizeof(m_HistProgressCmds[0]));
+            memmove(&m_HistReadSize[shift], &m_HistReadSize[0], (kCntHistoryValues - shift) * sizeof(m_HistReadSize[0]));
+            memmove(&m_HistWriteSize[shift], &m_HistWriteSize[0], (kCntHistoryValues - shift) * sizeof(m_HistWriteSize[0]));
+        }
+        else {
+            memset(m_HistoryTimes, 0, sizeof(m_HistoryTimes));
+            memset(m_HistOpenedConns, 0, sizeof(m_HistOpenedConns));
+            memset(m_HistClosedConns, 0, sizeof(m_HistClosedConns));
+            memset(m_HistUsedConns, 0, sizeof(m_HistUsedConns));
+            memset(m_HistOverflowConns, 0, sizeof(m_HistOverflowConns));
+            memset(m_HistUserErrs, 0, sizeof(m_HistUserErrs));
+            memset(m_HistServErrs, 0, sizeof(m_HistServErrs));
+            for (int i = 0; i < kCntHistoryValues; ++i) {
+                m_HistStartedCmds[i].clear();
+                m_HistCmdSpan[i].clear();
+            }
+            memset(m_HistProgressCmds, 0, sizeof(m_HistProgressCmds));
+            memset(m_HistReadSize, 0, sizeof(m_HistReadSize));
+            memset(m_HistWriteSize, 0, sizeof(m_HistWriteSize));
+            goto repeat;
+        }
+        for (int i = 0; i < shift; ++i) {
+            m_HistoryTimes[i] = cur_time + i;
+            m_HistOpenedConns[i] = 0;
+            m_HistClosedConns[i] = 0;
+            m_HistUsedConns[i] = cnt_conns;
+            m_HistOverflowConns[i] = 0;
+            m_HistUserErrs[i] = 0;
+            m_HistServErrs[i] = 0;
+            m_HistStartedCmds[i].clear();
+            m_HistCmdSpan[i].clear();
+            m_HistProgressCmds[i] = cnt_cmds;
+            m_HistReadSize[i] = 0;
+            m_HistWriteSize[i] = 0;
+        }
+    }
+    else {
+        m_HistoryTimes[0] = cur_time;
+        for (int i = 0; i < kCntHistoryValues; ++i) {
+            m_HistUsedConns[i] = cnt_conns;
+            m_HistProgressCmds[i] = cnt_cmds;
+        }
+    }
+}
+
+void
+CNCStat::AddStartedCmd(const char* cmd)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_StartedCmds;
+    int cur_time = int(time(NULL));
+    if (cur_time != stat->m_HistoryTimes[0])
+        stat->x_ShiftHistory(cur_time);
+    ++stat->m_HistStartedCmds[0][cmd];
+    stat->m_ObjLock.Unlock();
+}
+
+void
 CNCStat::AddFinishedCmd(const char* cmd, double cmd_span, int cmd_status)
 {
     CNCStat* stat = sm_Getter.GetObjPtr();
     stat->m_ObjLock.Lock();
 
     stat->m_CmdSpan.AddValue(cmd_span);
-    TCmdsSpansMap& cmd_span_map = stat->m_CmdSpanByCmd[cmd_status];
-    TCmdsSpansMap::iterator it_span = x_GetSpanFigure(cmd_span_map, cmd);
+    TCmdsSpansMap* cmd_span_map = &stat->m_CmdSpanByCmd[cmd_status];
+    TCmdsSpansMap::iterator it_span = x_GetSpanFigure(*cmd_span_map, cmd);
     it_span->second.AddValue(cmd_span);
 
+    int cur_time = int(time(NULL));
+    if (cur_time != stat->m_HistoryTimes[0])
+        stat->x_ShiftHistory(cur_time);
+    cmd_span_map = &stat->m_HistCmdSpan[0][cmd_status];
+    it_span = x_GetSpanFigure(*cmd_span_map, cmd);
+    it_span->second.AddValue(cmd_span);
+
+    stat->m_ObjLock.Unlock();
+}
+
+void
+CNCStat::GetStartedCmds5Sec(TCmdsCountsMap* cmd_map)
+{
+    cmd_map->clear();
+    for (int i = 1; i <= 5; ++i) {
+        ITERATE(TCmdsCountsMap, it_count, m_HistStartedCmds[i]) {
+            (*cmd_map)[it_count->first] += it_count->second;
+        }
+    }
+}
+
+void
+CNCStat::GetCmdSpans5Sec(TStatCmdsSpansMap* cmd_map)
+{
+    cmd_map->clear();
+    for (int i = 1; i <= 5; ++i) {
+        ITERATE(TStatCmdsSpansMap, it_stat, m_HistCmdSpan[i]) {
+            const TCmdsSpansMap& span_map = it_stat->second;
+            TCmdsSpansMap& out_map  = (*cmd_map)[it_stat->first];
+            ITERATE(TCmdsSpansMap, it_span, span_map) {
+                TCmdsSpansMap::iterator out_span = x_GetSpanFigure(out_map, it_span->first);
+                out_span->second.AddValues(it_span->second);
+            }
+        }
+    }
+}
+
+void
+CNCStat::AddOpenedConnection(void)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_OpenedConns;
+    int cur_time = int(time(NULL));
+    if (cur_time != stat->m_HistoryTimes[0])
+        stat->x_ShiftHistory(cur_time);
+    ++stat->m_HistOpenedConns[0];
+    stat->m_ObjLock.Unlock();
+}
+
+void
+CNCStat::SetFakeConnection(void)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    --stat->m_OpenedConns;
+    --stat->m_HistOpenedConns[0];
+    ++stat->m_FakeConns;
+    stat->m_ObjLock.Unlock();
+}
+
+void
+CNCStat::AddOverflowConnection(void)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_OverflowConns;
+    int cur_time = int(time(NULL));
+    if (cur_time != stat->m_HistoryTimes[0])
+        stat->x_ShiftHistory(cur_time);
+    ++stat->m_HistOverflowConns[0];
     stat->m_ObjLock.Unlock();
 }
 
@@ -183,8 +340,17 @@ CNCStat::AddClosedConnection(double conn_span,
     stat->m_ConnSpan.AddValue(conn_span);
     stat->m_NumCmdsPerConn.AddValue(num_cmds);
     TConnsSpansMap::iterator it_span
-                        = x_GetSpanFigure(stat->m_ConnSpanByStat, conn_status);
+                            = x_GetSpanFigure(stat->m_ConnSpanByStat, conn_status);
     it_span->second.AddValue(conn_span);
+
+    int cur_time = int(time(NULL));
+    if (cur_time != stat->m_HistoryTimes[0])
+        stat->x_ShiftHistory(cur_time);
+    ++stat->m_HistClosedConns[0];
+    if (conn_status >= 400  &&  conn_status < 500)
+        ++stat->m_HistUserErrs[0];
+    else if (conn_status >= 500)
+        ++stat->m_HistServErrs[0];
 
     stat->m_ObjLock.Unlock();
 }
@@ -213,6 +379,10 @@ CNCStat::AddChunkRead(size_t size)
     ++stat->m_ReadChunks;
     ++stat->m_ChunksRCntBySize[x_GetSizeIndex(size)];
     stat->m_MaxChunkSize = max(stat->m_MaxChunkSize, size);
+    int cur_time = int(time(NULL));
+    if (cur_time != stat->m_HistoryTimes[0])
+        stat->x_ShiftHistory(cur_time);
+    stat->m_HistReadSize[0] += size;
     stat->m_ObjLock.Unlock();
 }
 
@@ -223,10 +393,7 @@ CNCStat::AddBlobWritten(Uint8 writen_size, bool completed)
     stat->m_ObjLock.Lock();
     ++stat->m_WrittenBlobs;
     ++stat->m_WrittenBySize[x_GetSizeIndex(writen_size)];
-    if (completed) {
-        ++stat->m_BlobsByCntReads[0];
-    }
-    else {
+    if (!completed) {
         ++stat->m_PartialWrites;
     }
     stat->m_MaxBlobSize = max(stat->m_MaxBlobSize, writen_size);
@@ -242,6 +409,10 @@ CNCStat::AddChunkWritten(size_t size)
     ++stat->m_WrittenChunks;
     ++stat->m_ChunksWCntBySize[x_GetSizeIndex(size)];
     stat->m_MaxChunkSize = max(stat->m_MaxChunkSize, size);
+    int cur_time = int(time(NULL));
+    if (cur_time != stat->m_HistoryTimes[0])
+        stat->x_ShiftHistory(cur_time);
+    stat->m_HistWriteSize[0] += size;
     stat->m_ObjLock.Unlock();
 }
 
@@ -249,6 +420,10 @@ inline void
 CNCStat::x_CollectTo(CNCStat* dest)
 {
     CSpinGuard guard(m_ObjLock);
+
+    int cur_time = int(time(NULL));
+    if (cur_time != m_HistoryTimes[0])
+        x_ShiftHistory(cur_time);
 
     dest->m_OpenedConns     += m_OpenedConns;
     dest->m_OverflowConns   += m_OverflowConns;
@@ -260,6 +435,7 @@ CNCStat::x_CollectTo(CNCStat* dest)
         other_span->second.AddValues(it_span->second);
     }
     dest->m_NumCmdsPerConn  .AddValues(m_NumCmdsPerConn);
+    dest->m_StartedCmds     += m_StartedCmds;
     dest->m_CmdSpan         .AddValues(m_CmdSpan);
     ITERATE(TStatCmdsSpansMap, it_st, m_CmdSpanByCmd) {
         const TCmdsSpansMap& cmd_span_map = it_st->second;
@@ -271,6 +447,36 @@ CNCStat::x_CollectTo(CNCStat* dest)
         }
     }
     dest->m_TimedOutCmds    += m_TimedOutCmds;
+    if (dest->m_HistoryTimes[0] == 0)
+        memcpy(dest->m_HistoryTimes, m_HistoryTimes, sizeof(m_HistoryTimes));
+    int shift = m_HistoryTimes[0] - dest->m_HistoryTimes[0];
+    if (shift < 0)
+        shift = 0;
+    for (int i = 0; i + shift < kCntHistoryValues; ++i) {
+        dest->m_HistOpenedConns[i] += m_HistOpenedConns[i + shift];
+        dest->m_HistClosedConns[i] += m_HistClosedConns[i + shift];
+        dest->m_HistUsedConns[i] += m_HistUsedConns[i + shift];
+        dest->m_HistOverflowConns[i] += m_HistOverflowConns[i + shift];
+        dest->m_HistUserErrs[i] += m_HistUserErrs[i + shift];
+        dest->m_HistServErrs[i] += m_HistServErrs[i + shift];
+        const TCmdsCountsMap& cmd_count_map = m_HistStartedCmds[i + shift];
+        TCmdsCountsMap& other_cmd_count     = dest->m_HistStartedCmds[i];
+        ITERATE(TCmdsCountsMap, it_count, cmd_count_map) {
+            other_cmd_count[it_count->first] += it_count->second;
+        }
+        ITERATE(TStatCmdsSpansMap, it_st, m_HistCmdSpan[i + shift]) {
+            const TCmdsSpansMap& cmd_span_map = it_st->second;
+            TCmdsSpansMap& other_cmd_span     = dest->m_HistCmdSpan[i][it_st->first];
+            ITERATE(TCmdsSpansMap, it_span, cmd_span_map) {
+                TCmdsSpansMap::iterator other_span
+                                = x_GetSpanFigure(other_cmd_span, it_span->first);
+                other_span->second.AddValues(it_span->second);
+            }
+        }
+        dest->m_HistProgressCmds[i] += m_HistProgressCmds[i + shift];
+        dest->m_HistReadSize[i] += m_HistReadSize[i + shift];
+        dest->m_HistWriteSize[i] += m_HistWriteSize[i + shift];
+    }
     dest->m_BlockedOps      += m_BlockedOps;
     dest->m_CountBlobs      .AddValues(m_CountBlobs);
     dest->m_CountCacheNodes .AddValues(m_CountCacheNodes);
@@ -296,12 +502,6 @@ CNCStat::x_CollectTo(CNCStat* dest)
     dest->m_DataFileGarbageSize.AddValues(m_DataFileGarbageSize);
     dest->m_MaxBlobSize      = max(dest->m_MaxBlobSize,  m_MaxBlobSize);
     dest->m_MaxChunkSize     = max(dest->m_MaxChunkSize, m_MaxChunkSize);
-    for (size_t i = 0; i <= kMaxCntReads; ++i) {
-        dest->m_BlobsByCntReads[i] += m_BlobsByCntReads[i];
-    }
-    dest->m_MaxCntReads      = max(dest->m_MaxCntReads, m_MaxCntReads);
-    dest->m_FirstReadTime   .AddValues(m_FirstReadTime);
-    dest->m_SecondReadTime  .AddValues(m_SecondReadTime);
     dest->m_ReadBlobs       += m_ReadBlobs;
     dest->m_ReadChunks      += m_ReadChunks;
     dest->m_DBReadSize      += m_DBReadSize;
@@ -326,12 +526,18 @@ CNCStat::x_CollectTo(CNCStat* dest)
 }
 
 void
-CNCStat::Print(CPrintTextProxy& proxy)
+CNCStat::CollectAllStats(CNCStat& stat)
 {
-    CNCStat stat;
     for (unsigned int i = 0; i < kNCMaxThreadsCnt; ++i) {
         sm_Instances[i].x_CollectTo(&stat);
     }
+}
+
+void
+CNCStat::Print(CPrintTextProxy& proxy)
+{
+    CNCStat stat;
+    CollectAllStats(stat);
 
     proxy << "Connections - " << stat.m_OpenedConns           << " (open), "
                               << stat.m_ConnSpan.GetCount()   << " (closed), "
@@ -452,19 +658,7 @@ CNCStat::Print(CPrintTextProxy& proxy)
         proxy << "Written - " << stat.m_WrittenBlobs << " full, "
                               << stat.m_PartialWrites << " partial, "
                               << stat.m_WrittenChunks << " chunks, "
-                              << stat.m_WrittenSize << " bytes" << endl
-              << "Read cnt: ";
-        for (size_t i = 0; i < kMaxCntReads; ++i) {
-            proxy << i << " - " << stat.m_BlobsByCntReads[i] << ", ";
-        }
-        proxy << int(kMaxCntReads) << " or more - "
-                    << stat.m_BlobsByCntReads[kMaxCntReads] << endl
-              << "          max cnt: " << stat.m_MaxCntReads << "; 1st: "
-                           << stat.m_FirstReadTime.GetAverage() << " avg, "
-                           << stat.m_FirstReadTime.GetMaximum() << " max; 2nd: "
-                           << stat.m_SecondReadTime.GetAverage() << " avg, "
-                           << stat.m_SecondReadTime.GetMaximum() << " max" << endl
-              << "By size:" << endl;
+                              << stat.m_WrittenSize << " bytes" << endl;
         size_t sz = kMinSizeInChart;
         for (size_t i = 0; i < stat.m_WrittenBySize.size(); ++i, sz <<= 1) {
             if (stat.m_WrittenBySize[i] != 0)

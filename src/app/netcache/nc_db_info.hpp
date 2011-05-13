@@ -76,18 +76,6 @@ struct SNCBlobCoords
 };
 
 
-/// Full identifying information about blob: coordinates, key, subkey
-/// and version.
-struct SNCBlobShortInfo : public SNCBlobCoords
-{
-    string key;
-    Uint8  size;
-    Int8   cnt_reads;
-};
-
-typedef list<SNCBlobShortInfo>   TNCBlobsList;
-
-
 /// Maximum size of blob chunk stored in database. Experiments show that
 /// reading from blob in SQLite after this point is significantly slower than
 /// before that.
@@ -128,23 +116,29 @@ class CNCBlobVerManager;
 struct SNCBlobVerData : public CObject
 {
 public:
-    SNCBlobCoords       coords;         ///<
-    TNCChunksList       chunks;         ///<
-    int                 ttl;            ///< Timeout for blob living
-    Int8                create_time;    ///< Last time blob was moved
-    int                 dead_time;      ///< 
-    Int8                size;           ///< Size of the blob
-    string              password;       ///< 
-    bool                old_style;      ///< 
-    Int8                disk_size;      ///< 
-    Int8                cnt_reads;      ///< 
-    int                 old_dead_time;  ///< 
-    Uint8               generation;     ///< 
-    bool                need_write;     ///<
-    CRef<CNCBlobBuffer> data;           ///<
+    SNCBlobCoords   coords;
+    TNCChunksList   chunks;
+    Uint8   create_time;    ///< Last time blob was moved
+    int     ttl;            ///< Timeout for blob living
+    int     dead_time;
+    Uint8   size;           ///< Size of the blob
+    string  password;
+    int     blob_ver;       ///< Blob version
+    int     ver_ttl;
+    int     ver_expire;
+    TNCBlobId create_id;
+    Uint8   create_server;
+    Uint2   slot;
+    bool    need_write;
+    bool    need_meta_blob;
+    bool    need_data_blob;
+    int     old_dead_time;
+    Uint8   disk_size;
+    Uint8   generation;
+    CRef<CNCBlobBuffer> data;
 
-    CNCBlobVerManager*  manager;        ///<
-    CNCLongOpTrigger    data_trigger;   ///<
+    CNCBlobVerManager*  manager;
+    CNCLongOpTrigger    data_trigger;
 
     ///
     SNCBlobVerData(void);
@@ -161,6 +155,73 @@ private:
     virtual void DeleteThis(void);
 };
 
+struct SNCBlobSummary
+{
+    TNCBlobId create_id;
+    Uint8   create_time;
+    Uint8   create_server;
+    int     dead_time;
+    int     ver_expire;
+    Uint8   size;
+
+    bool isOlder(const SNCBlobSummary& other) const
+    {
+        if (create_time != other.create_time)
+            return create_time < other.create_time;
+        else if (create_server != other.create_server)
+            return create_server < other.create_server;
+        else if (create_id != other.create_id)
+            return create_id < other.create_id;
+        else if (dead_time != other.dead_time)
+            return dead_time < other.dead_time;
+        else
+            return ver_expire < other.ver_expire;
+    }
+
+    bool isSameData(const SNCBlobSummary& other) const
+    {
+        return create_time == other.create_time
+               &&  create_server == other.create_server
+               &&  create_id == other.create_id;
+    }
+
+    bool isEqual(const SNCBlobSummary& other) const
+    {
+        return create_time == other.create_time
+               &&  create_server == other.create_server
+               &&  create_id == other.create_id
+               &&  dead_time == other.dead_time
+               &&  ver_expire == other.ver_expire;
+    }
+};
+
+
+struct SNCBlobListInfo : public SNCBlobCoords, public SNCBlobSummary
+{
+    string  key;
+    Uint2   slot;
+};
+
+typedef list< AutoPtr<SNCBlobListInfo> >   TNCBlobsList;
+
+
+struct SNCCacheData : public SNCBlobCoords, public SNCBlobSummary
+{
+    void* volatile ver_manager;
+    bool  is_deleted;
+
+
+    SNCCacheData(void);
+    SNCCacheData(SNCBlobListInfo* blob_info);
+
+private:
+    SNCCacheData(const SNCCacheData&);
+    SNCCacheData& operator= (const SNCCacheData&);
+};
+
+typedef map<string, SNCCacheData*>   TNCBlobSumList;
+
+
 
 ///
 typedef AutoPtr<CNCDBFile>  TNCDBFilePtr;
@@ -171,13 +232,16 @@ struct SNCDBFileInfo
     TNCDBFileId  file_id;        ///< Id of database part
     int          create_time;    ///< Time when the part was created
     string       file_name;      ///< Name of meta file for the part
-    Int8         file_size;
-    Uint8        garbage_amt;
-    Uint8        total_amt;
     TNCDBFilePtr file_obj;
+    CSpinLock    cnt_lock;
+    Uint4        ref_cnt;
+    Uint8        useful_blobs;
+    Uint8        useful_size;
+    Uint8        garbage_blobs;
+    Uint8        garbage_size;
 };
 /// Information about all database parts in NetCache storage
-typedef map<TNCDBFileId, SNCDBFileInfo>  TNCDBFilesMap;
+typedef map<TNCDBFileId, SNCDBFileInfo*> TNCDBFilesMap;
 
 
 
@@ -208,17 +272,42 @@ CNCBlobBuffer::Resize(size_t new_size)
 
 inline
 SNCBlobVerData::SNCBlobVerData(const SNCBlobVerData* other)
-    : ttl(other->ttl),
-      create_time(other->create_time),
+    : create_time(other->create_time),
+      ttl(other->ttl),
       dead_time(other->dead_time),
       size(other->size),
       password(other->password),
-      cnt_reads(other->cnt_reads),
+      blob_ver(other->blob_ver),
+      ver_ttl(other->ver_ttl),
+      ver_expire(other->ver_expire),
+      create_id(other->create_id),
+      create_server(other->create_server),
+      slot(other->slot),
       generation(other->generation)
 {
     coords.blob_id = other->coords.blob_id;
     coords.data_id = other->coords.data_id;
 }
+
+
+inline
+SNCCacheData::SNCCacheData(void)
+    : ver_manager(NULL),
+      is_deleted(false)
+{
+    blob_id = create_id = 0;
+    meta_id = data_id = 0;
+    create_time = create_server = 0;
+    dead_time = ver_expire = 0;
+}
+
+inline
+SNCCacheData::SNCCacheData(SNCBlobListInfo* blob_info)
+    : SNCBlobCoords(*blob_info),
+      SNCBlobSummary(*blob_info),
+      ver_manager(NULL),
+      is_deleted(false)
+{}
 
 END_NCBI_SCOPE
 

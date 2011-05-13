@@ -213,6 +213,17 @@ CNetCacheKey::GenerateBlobKey(string*        key,
                               unsigned short port,
                               unsigned int   ver /* = 1 */)
 {
+    GenerateBlobKey(key, id, host, port, ver, s_NCKeyRandom.GetRand());
+}
+
+void
+CNetCacheKey::GenerateBlobKey(string*        key,
+                              unsigned int   id,
+                              const string&  host,
+                              unsigned short port,
+                              unsigned int   ver,
+                              unsigned int   rnd_num)
+{
     key->assign(KEY_PREFIX, KEY_PREFIX_LENGTH);
 
     string tmp;
@@ -235,7 +246,7 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     key->append(1, '_');
     key->append(tmp);
 
-    NStr::UIntToString(tmp, s_NCKeyRandom.GetRand());
+    NStr::UIntToString(tmp, rnd_num);
     key->append(1, '_');
     key->append(tmp);
 }
