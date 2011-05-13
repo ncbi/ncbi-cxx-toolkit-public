@@ -1037,12 +1037,12 @@ void CQueueDataBase::StopPurgeThread(void)
 }
 
 
-void CQueueDataBase::RunNotifThread(void)
+void CQueueDataBase::RunNotifThread(bool  is_log)
 {
     if (GetUdpPort() == 0)
         return;
 
-    m_NotifThread.Reset(new CJobNotificationThread(*this, 1));
+    m_NotifThread.Reset(new CJobNotificationThread(*this, 1, is_log));
     m_NotifThread->Run();
 }
 

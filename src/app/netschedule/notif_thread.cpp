@@ -43,13 +43,16 @@ BEGIN_NCBI_SCOPE
 
 void CJobNotificationThread::DoJob(void)
 {
-    CRef<CRequestContext>       ctx(new CRequestContext());
+    CRef<CRequestContext>       ctx;
 
-    ctx->SetRequestID();
-    GetDiagContext().SetRequestContext(ctx);
-    GetDiagContext().PrintRequestStart()
-                    .Print("_type", "job_notification_thread");
-    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    if (m_IsLog) {
+        ctx.Reset(new CRequestContext());
+        ctx->SetRequestID();
+        GetDiagContext().SetRequestContext(ctx);
+        GetDiagContext().PrintRequestStart()
+                        .Print("_type", "job_notification_thread");
+        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    }
 
 
     try {
@@ -59,18 +62,24 @@ void CJobNotificationThread::DoJob(void)
         RequestStop();
         ERR_POST("Error during notification: " << ex.what() <<
                  " notification thread has been stopped.");
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_JobNotifierError);
+        if (m_IsLog)
+            ctx->SetRequestStatus(
+                        CNetScheduleHandler::eStatus_JobNotifierError);
     }
     catch (...) {
         RequestStop();
         ERR_POST("Unknown error during notification. "
                  "Notification thread has been stopped.");
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_JobNotifierError);
+        if (m_IsLog)
+            ctx->SetRequestStatus(
+                        CNetScheduleHandler::eStatus_JobNotifierError);
     }
 
-    GetDiagContext().PrintRequestStop();
-    ctx.Reset();
-    GetDiagContext().SetRequestContext(NULL);
+    if (m_IsLog) {
+        GetDiagContext().PrintRequestStop();
+        ctx.Reset();
+        GetDiagContext().SetRequestContext(NULL);
+    }
 }
 
 

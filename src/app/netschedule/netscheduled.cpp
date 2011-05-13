@@ -244,13 +244,13 @@ int CNetScheduleDApp::Run(void)
         unsigned min_run_timeout = qdb->Configure(reg);
 
         min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
-        LOG_POST(Info << "Running execution control every "
-                      << min_run_timeout << " seconds");
+        LOG_POST("Running execution control every " << min_run_timeout <<
+                 " seconds");
 
 
         qdb->RunExecutionWatcherThread(min_run_timeout);
         qdb->RunPurgeThread();
-        qdb->RunNotifThread();
+        qdb->RunNotifThread(server->IsLog());
 
         server->SetQueueDB(qdb.release());
 
