@@ -339,7 +339,8 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
             break;
         case eStmt_UpdateBlobInfo:
             sql << "update " << kNCBlobInfo_Table
-                <<   " set " << kNCBlobInfo_DeadTimeCol << "=?2"
+                <<   " set " << kNCBlobInfo_DeadTimeCol     << "=?2,"
+                             << kNCBlobInfo_VerDeadTimeCol  << "=?3"
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
             break;
         case eStmt_ReadBlobInfo:
@@ -503,6 +504,18 @@ CNCDBFile::GetLastBlobId(void)
     return stmt.GetInt(0);
 }
 
+TNCChunkId
+CNCDBFile::GetLastChunkId(void)
+{
+    CQuickStrStream sql;
+    sql << "select max(" << kNCBlobChunks_ChunkIdCol << ")"
+        << " from " << kNCBlobChunks_Table;
+
+    CSQLITE_Statement stmt(this, sql);
+    _VERIFY(stmt.Step());
+    return stmt.GetInt8(0);
+}
+
 void
 CNCDBFile::GetBlobsList(int&            dead_after,
                         TNCBlobId&      id_after,
@@ -567,6 +580,7 @@ CNCDBFile::UpdateBlobInfo(const SNCBlobVerData* blob_info)
 
     stmt->Bind(1, blob_info->coords.blob_id);
     stmt->Bind(2, blob_info->dead_time);
+    stmt->Bind(3, blob_info->ver_expire);
     stmt->Execute();
 }
 

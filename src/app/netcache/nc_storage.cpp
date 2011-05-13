@@ -426,15 +426,15 @@ CNCBlobStorage::x_DeleteDBFile(TNCDBFilesMap::iterator files_it)
 inline void
 CNCBlobStorage::x_ReadLastBlobCoords(void)
 {
-    TNCBlobId last_blob = 0;
     ERASE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
         CNCDBFile* file = it->second->file_obj.get();
         if (file->GetType() != eNCMeta)
             continue;
 
         try {
-            last_blob = max(last_blob,
-                            static_cast<CNCDBMetaFile*>(file)->GetLastBlobId());
+            CNCDBMetaFile* metafile = static_cast<CNCDBMetaFile*>(file);
+            m_LastBlob.blob_id = max(m_LastBlob.blob_id, metafile->GetLastBlobId());
+            m_LastChunkId = max(m_LastChunkId, metafile->GetLastChunkId());
         }
         catch (CException& ex) {
             ERR_POST_X(1, "Error reading last blob id from file '"
@@ -443,7 +443,6 @@ CNCBlobStorage::x_ReadLastBlobCoords(void)
             x_DeleteDBFile(it);
         }
     }
-    m_LastBlob.blob_id = last_blob;
 }
 
 CNCBlobStorage::CNCBlobStorage(bool do_reinit)
@@ -468,9 +467,9 @@ CNCBlobStorage::CNCBlobStorage(bool do_reinit)
     m_LastDeadTime = int(time(NULL));
     m_LastBlob.meta_id = m_LastBlob.data_id = 0;
     m_LastBlob.blob_id = 0;
+    m_LastChunkId = kNCMinChunkId;
     m_BlobGeneration = 1;
     m_LastFileId = 0;
-    m_LastChunkId = kNCMinChunkId;
     if (!m_DBFiles.empty()) {
         m_LastFileId = m_DBFiles.rbegin()->first;
         ITERATE(TNCDBFilesMap, it, m_DBFiles) {
@@ -876,80 +875,190 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data)
 }
 
 bool
+CNCBlobStorage::x_UpdBlobInfoNoMove(const string&   blob_key,
+                                    SNCBlobVerData* ver_data)
+{
+    try {
+        TMetaFileLock metafile(this, ver_data->coords.meta_id);
+        metafile->UpdateBlobInfo(ver_data);
+        return true;
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST("Cannot update blob's meta-information: " << ex);
+    }
+    return false;
+}
+
+bool
+CNCBlobStorage::x_UpdBlobInfoSingleChunk(const string&   blob_key,
+                                         SNCBlobVerData* ver_data)
+{
+    ver_data->generation = m_BlobGeneration;
+    SNCBlobVerData new_ver(ver_data);
+    GetNewBlobCoords(&new_ver.coords);
+    m_DBFilesLock.ReadLock();
+    SNCDBFileInfo* new_meta_info = m_DBFiles[new_ver.coords.meta_id];
+    SNCDBFileInfo* new_data_info = m_DBFiles[new_ver.coords.data_id];
+    SNCDBFileInfo* old_meta_info = m_DBFiles[ver_data->coords.meta_id];
+    SNCDBFileInfo* old_data_info = m_DBFiles[ver_data->coords.data_id];
+    m_DBFilesLock.ReadUnlock();
+    try {
+        TDataFileLock datafile(this, new_ver.coords.data_id);
+        datafile->WriteChunkData(new_ver.coords.blob_id, ver_data->data);
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST("Cannot move data for single-chunked blob: " << ex);
+        new_data_info->cnt_lock.Lock();
+        --new_data_info->ref_cnt;
+        new_data_info->cnt_lock.Unlock();
+        return false;
+    }
+    try {
+        TMetaFileLock metafile(this, new_ver.coords.meta_id);
+        metafile->WriteBlobInfo(blob_key, &new_ver);
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST("Cannot move meta-data for single-chunked blob: " << ex);
+        new_meta_info->cnt_lock.Lock();
+        --new_meta_info->ref_cnt;
+        new_meta_info->cnt_lock.Unlock();
+        new_data_info->cnt_lock.Lock();
+        ++new_data_info->garbage_blobs;
+        new_data_info->garbage_size += ver_data->size;
+        new_data_info->cnt_lock.Unlock();
+        return false;
+    }
+    new_data_info->cnt_lock.Lock();
+    ++new_data_info->useful_blobs;
+    new_data_info->useful_size += ver_data->size;
+    new_data_info->cnt_lock.Unlock();
+    new_meta_info->cnt_lock.Lock();
+    ++new_meta_info->useful_blobs;
+    new_meta_info->cnt_lock.Unlock();
+
+    swap(ver_data->coords, new_ver.coords);
+    try {
+        TMetaFileLock metafile(this, new_ver.coords.meta_id);
+        metafile->DeleteBlobInfo(new_ver.coords.blob_id);
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST("Cannot delete old blob's meta-information: " << ex);
+    }
+    old_meta_info->cnt_lock.Lock();
+    --old_meta_info->useful_blobs;
+    --old_meta_info->ref_cnt;
+    old_meta_info->cnt_lock.Unlock();
+    old_data_info->cnt_lock.Lock();
+    --old_data_info->useful_blobs;
+    ++old_data_info->garbage_blobs;
+    old_data_info->useful_size -= ver_data->size;
+    old_data_info->garbage_size += ver_data->size;
+    --old_data_info->ref_cnt;
+    old_data_info->cnt_lock.Unlock();
+    return true;
+}
+
+bool
+CNCBlobStorage::x_UpdBlobInfoMultiChunk(const string&   blob_key,
+                                        SNCBlobVerData* ver_data)
+{
+    ver_data->generation = m_BlobGeneration;
+    SNCBlobVerData new_ver(ver_data);
+    GetNewBlobCoords(&new_ver.coords);
+    CNCDBDataFile* old_datafile;
+    CNCDBDataFile* new_datafile;
+    m_DBFilesLock.ReadLock();
+    SNCDBFileInfo* new_meta_info = m_DBFiles[new_ver.coords.meta_id];
+    SNCDBFileInfo* new_data_info = m_DBFiles[new_ver.coords.data_id];
+    SNCDBFileInfo* old_meta_info = m_DBFiles[ver_data->coords.meta_id];
+    SNCDBFileInfo* old_data_info = m_DBFiles[ver_data->coords.data_id];
+    m_DBFilesLock.ReadUnlock();
+    old_datafile = (CNCDBDataFile*)old_data_info->file_obj.get();
+    new_datafile = (CNCDBDataFile*)new_data_info->file_obj.get();
+    Uint8 data_written = 0;
+    try {
+        CNCBlobBuffer buffer;
+        for (size_t i = 0; i < ver_data->chunks.size(); ++i) {
+            TNCChunkId chunk_id = ver_data->chunks[i];
+            {{
+                TDataFileLock file_lock(old_datafile);
+                old_datafile->ReadChunkData(chunk_id, &buffer);
+            }}
+            {{
+                TDataFileLock file_lock(new_datafile);
+                new_datafile->WriteChunkData(chunk_id, &buffer);
+            }}
+            data_written += buffer.GetSize();
+        }
+        {{
+            TMetaFileLock metafile(this, new_ver.coords.meta_id);
+            for (size_t i = 0; i < ver_data->chunks.size(); ++i) {
+                metafile->CreateChunk(new_ver.coords.blob_id, ver_data->chunks[i]);
+            }
+            metafile->WriteBlobInfo(blob_key, &new_ver);
+        }}
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST("Cannot move multi-chunked blob: " << ex);
+        new_meta_info->cnt_lock.Lock();
+        --new_meta_info->ref_cnt;
+        new_meta_info->cnt_lock.Unlock();
+        new_data_info->cnt_lock.Lock();
+        ++new_data_info->garbage_blobs;
+        new_data_info->garbage_size += data_written;
+        --new_data_info->ref_cnt;
+        new_data_info->cnt_lock.Unlock();
+        return false;
+    }
+    new_data_info->cnt_lock.Lock();
+    ++new_data_info->useful_blobs;
+    new_data_info->useful_size += ver_data->size;
+    new_data_info->cnt_lock.Unlock();
+    new_meta_info->cnt_lock.Lock();
+    ++new_meta_info->useful_blobs;
+    new_meta_info->cnt_lock.Unlock();
+
+    swap(ver_data->coords, new_ver.coords);
+    try {
+        TMetaFileLock metafile(this, new_ver.coords.meta_id);
+        metafile->DeleteBlobInfo(new_ver.coords.blob_id);
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST("Cannot delete old blob's meta-information: " << ex);
+    }
+    old_meta_info->cnt_lock.Lock();
+    --old_meta_info->useful_blobs;
+    ++old_meta_info->garbage_blobs;
+    --old_meta_info->ref_cnt;
+    old_meta_info->cnt_lock.Unlock();
+    old_data_info->cnt_lock.Lock();
+    --old_data_info->useful_blobs;
+    ++old_data_info->garbage_blobs;
+    old_data_info->useful_size -= ver_data->size;
+    old_data_info->garbage_size += ver_data->size;
+    --old_data_info->ref_cnt;
+    old_data_info->cnt_lock.Unlock();
+    return true;
+}
+
+bool
 CNCBlobStorage::UpdateBlobInfo(const string&   blob_key,
                                SNCBlobVerData* ver_data)
 {
-    if (ver_data->old_dead_time != ver_data->dead_time
-        &&  ver_data->data
-        &&  m_BlobGeneration - ver_data->generation > m_CurFiles[eNCMeta].size())
+    if (m_BlobGeneration - ver_data->generation <= m_CurFiles[eNCMeta].size()) {
+        return x_UpdBlobInfoNoMove(blob_key, ver_data);
+    }
+    else if (ver_data->data) {
+        return x_UpdBlobInfoSingleChunk(blob_key, ver_data);
+    }
+    else if (ver_data->data_trigger.GetState() != eNCOpCompleted
+             ||  ver_data->chunks.size() == 0)
     {
-        ver_data->generation = m_BlobGeneration;
-        SNCBlobVerData new_ver(ver_data);
-        GetNewBlobCoords(&new_ver.coords);
-        m_DBFilesLock.ReadLock();
-        SNCDBFileInfo* new_meta_info = m_DBFiles[new_ver.coords.meta_id];
-        SNCDBFileInfo* new_data_info = m_DBFiles[new_ver.coords.data_id];
-        SNCDBFileInfo* old_meta_info = m_DBFiles[ver_data->coords.meta_id];
-        SNCDBFileInfo* old_data_info = m_DBFiles[ver_data->coords.data_id];
-        m_DBFilesLock.ReadUnlock();
-        try {
-            {{
-                TDataFileLock datafile(this, new_ver.coords.data_id);
-                datafile->WriteChunkData(new_ver.coords.blob_id, ver_data->data);
-            }}
-            {{
-                TMetaFileLock metafile(this, new_ver.coords.meta_id);
-                metafile->WriteBlobInfo(blob_key, &new_ver);
-            }}
-        }
-        catch (CSQLITE_Exception& ex) {
-            ERR_POST_X(1, "Cannot create new blob's meta-information: " << ex);
-            new_meta_info->cnt_lock.Lock();
-            --new_meta_info->ref_cnt;
-            new_meta_info->cnt_lock.Unlock();
-            new_data_info->cnt_lock.Lock();
-            --new_data_info->ref_cnt;
-            new_data_info->cnt_lock.Unlock();
-            return false;
-        }
-        new_meta_info->cnt_lock.Lock();
-        ++new_meta_info->useful_blobs;
-        new_meta_info->cnt_lock.Unlock();
-        new_data_info->cnt_lock.Lock();
-        ++new_data_info->useful_blobs;
-        new_data_info->useful_size += ver_data->data->GetSize();
-        new_data_info->cnt_lock.Unlock();
-
-        swap(ver_data->coords, new_ver.coords);
-        try {
-            TMetaFileLock metafile(this, new_ver.coords.meta_id);
-            metafile->DeleteBlobInfo(new_ver.coords.blob_id);
-        }
-        catch (CSQLITE_Exception& ex) {
-            ERR_POST_X(1, "Cannot delete old blob's meta-information: " << ex);
-        }
-        old_meta_info->cnt_lock.Lock();
-        --old_meta_info->useful_blobs;
-        --old_meta_info->ref_cnt;
-        old_meta_info->cnt_lock.Unlock();
-        old_data_info->cnt_lock.Lock();
-        --old_data_info->useful_blobs;
-        ++old_data_info->garbage_blobs;
-        old_data_info->useful_size -= ver_data->data->GetSize();
-        old_data_info->garbage_size += ver_data->data->GetSize();
-        --old_data_info->ref_cnt;
-        old_data_info->cnt_lock.Unlock();
+        return x_UpdBlobInfoNoMove(blob_key, ver_data);
     }
     else {
-        try {
-            TMetaFileLock metafile(this, ver_data->coords.meta_id);
-            metafile->UpdateBlobInfo(ver_data);
-        }
-        catch (CSQLITE_Exception& ex) {
-            ERR_POST_X(1, "Cannot update blob's meta-information: " << ex);
-        }
+        return x_UpdBlobInfoMultiChunk(blob_key, ver_data);
     }
-    return true;
 }
 
 void

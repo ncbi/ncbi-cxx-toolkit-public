@@ -77,7 +77,8 @@ struct SNCSpecificParams : public CObject
     Uint4 cmd_timeout;
     Uint4 blob_ttl;
     Uint4 ver_ttl;
-    Uint4 quorum;
+    Uint2 ttl_unit;
+    Uint1 quorum;
 
     virtual ~SNCSpecificParams(void);
 };

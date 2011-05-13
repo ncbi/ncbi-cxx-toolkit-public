@@ -28,11 +28,21 @@
  * Authors:  Pavel Ivanov
  */
 
-#include "nc_utils.hpp"
 #include <corelib/ncbiatomic.hpp>
+
+#include "nc_utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+
+#ifdef _DEBUG
+// Totalview has problems showing variables when template parameter is
+// unsigned int.
+typedef int TPL_UINT1;
+#else
+typedef Uint1 TPL_UINT1;
+#endif
 
 
 template <class Value>
@@ -58,12 +68,12 @@ struct SConstructAllocator
 
 template <class Key,
           class Value,
-          class Comparator       = less<Key>,
-          class Allocator        = SConstructAllocator<Key>,
-          Uint1 CntChildsInNode  = 8,
-          Uint1 MaxTreeHeight    = 16,
-          Uint1 DeletionDelay    = 3,
-          Uint1 DelStoreCapacity = 20>
+          class Comparator           = less<Key>,
+          class Allocator            = SConstructAllocator<Key>,
+          TPL_UINT1 CntChildsInNode  = 8,
+          TPL_UINT1 MaxTreeHeight    = 16,
+          TPL_UINT1 DeletionDelay    = 3,
+          TPL_UINT1 DelStoreCapacity = 20>
 class CConcurrentMap
 {
     struct SCallContext;
@@ -116,7 +126,10 @@ public:
     }
     ~CConcurrentMap(void)
     {
-        x_Finalize();
+        // This will be called only when NetCache shuts down, let's not waste
+        // time and leak all the memory we have - it will be released when
+        // process exits.
+        //x_Finalize();
     }
 
     bool Get(const TKey& key, TValue& value) const
@@ -149,7 +162,7 @@ public:
                   EGetValueType get_type,
                   TValue&       ret_value)
     {
-        bool result;
+        bool result = true;
         TNodeIndex key_index;
         TValue* value_ptr;
         SCallContext call_ctx(key);
@@ -159,6 +172,8 @@ public:
             result = node->status[key_index] != eValueActive  &&  get_type == eGetOnlyActive;
             if (result)
                 *value_ptr = value;
+            else
+                ret_value = x_Value(node, key_index);
             node->status[key_index] = eValueActive;
         }
         x_FinalizeCallContext(call_ctx);
@@ -241,7 +256,7 @@ private:
     public:
         CFinalNodeDeleter(TTree* tree) : m_Tree(tree)
         {}
-        void Delete(SNode* node)
+        void Delete(SNode* node) const
         {
             m_Tree->x_FinalDeleteNode(node);
         }
@@ -330,7 +345,7 @@ private:
     {
         return reinterpret_cast<SLeafNode*>(node)->values[index];
     }
-    bool x_IsKeyFound(SNode* node, const TKey& key, TNodeIndex index)
+    bool x_IsKeyFound(SNode* node, const TKey& key, TNodeIndex index) const
     {
         return index != kCntChildsInNode  &&  !x_IsKeyLess(key, node->keys[index])
                &&  node->status[index] != eValueDeleted;
@@ -371,7 +386,7 @@ private:
     TNodeIndex x_FindContainingIndex(SNode* node, const TKey& key) const
     {
         TNodeIndex index = x_FindKeyIndex(node, key);
-        if (index != kCntChildsInNode  &&  node.status[index] == eValueDeleted)
+        if (index != kCntChildsInNode  &&  node->status[index] == eValueDeleted)
             index = x_GetNextIndex(node, index);
         return index;
     }
@@ -383,18 +398,23 @@ private:
         {
             ++right_index;
         }
-        SRefedKey* key_ref;
-        SNode* child;
         if (right_index < kCntChildsInNode) {
             ins_index = index;
             ++index;
-            key_ref = node->keys[right_index];
-            child = node->childs[right_index];
+            SRefedKey* key_ref = node->keys[right_index];
             size_t sz_ptrs = (right_index - ins_index) * sizeof(void*);
             size_t sz_statuses = (right_index - ins_index) * sizeof(EValueStatus);
-            memmove(&node->childs[ins_index + 1], &node->childs[ins_index], sz_ptrs);
             memmove(&node->keys[ins_index + 1], &node->keys[ins_index], sz_ptrs);
             memmove(&node->status[ins_index + 1], &node->status[ins_index], sz_statuses);
+            node->keys[ins_index] = key_ref;
+            if (node->tree_level == kLeafTreeLevel) {
+                SLeafNode* leaf = (SLeafNode*)node;
+                for (int i = right_index; i > ins_index; --i)
+                    leaf->values[i] = leaf->values[i - 1];
+            }
+            else {
+                memmove(&node->childs[ins_index + 1], &node->childs[ins_index], sz_ptrs);
+            }
         }
         else {
             _ASSERT(index > 1);
@@ -404,16 +424,21 @@ private:
                 _ASSERT(left_index != 0);
                 --left_index;
             }
-            key_ref = node->keys[left_index];
-            child = node->childs[left_index];
+            SRefedKey* key_ref = node->keys[left_index];
             size_t sz_ptrs = (ins_index - left_index) * sizeof(void*);
             size_t sz_statuses = (ins_index - left_index) * sizeof(EValueStatus);
-            memmove(&node->childs[left_index], &node->childs[left_index + 1], sz_ptrs);
             memmove(&node->keys[left_index], &node->keys[left_index + 1], sz_ptrs);
             memmove(&node->status[left_index], &node->status[left_index + 1], sz_statuses);
+            node->keys[ins_index] = key_ref;
+            if (node->tree_level == kLeafTreeLevel) {
+                SLeafNode* leaf = (SLeafNode*)node;
+                for (int i = left_index; i < ins_index; ++i)
+                    leaf->values[i] = leaf->values[i + 1];
+            }
+            else {
+                memmove(&node->childs[left_index], &node->childs[left_index + 1], sz_ptrs);
+            }
         }
-        node->childs[ins_index] = child;
-        node->keys[ins_index] = key_ref;
     }
     void x_FindInsertSpace(SNode* node, TNodeIndex& index, TNodeIndex& ins_index)
     {
@@ -470,6 +495,7 @@ private:
         m_TreeHeight = 1;
         m_CntRootRefs.Set(0);
         m_CntNodes.Set(0);
+        m_CntLeafNodes.Set(0);
         m_CntValues.Set(0);
 
         m_RootNode = x_CreateNode(NULL, kLeafTreeLevel);
@@ -480,7 +506,7 @@ private:
         TNodeIndex ind_in_node[kMaxTreeHeight];
         node_stack [0] = m_RootNode;
         ind_in_node[0] = 0;
-        for (TTreeHeight node_ind = 0; node_ind + 1 > 0; ) {
+        for (int node_ind = 0; node_ind + 1 > 0; ) {
             SNode* node = node_stack[node_ind];
             if (node->tree_level != kLeafTreeLevel) {
                 TNodeIndex child_ind = ind_in_node[node_ind];
@@ -491,12 +517,18 @@ private:
                 }
                 if (child_ind < kCntChildsInNode) {
                     SNode* child = node->childs[child_ind];
+                    node->status[child_ind] = eValueDeleted;
+                    --node->cnt_filled;
                     ind_in_node[node_ind] = ++child_ind;
                     ++node_ind;
                     node_stack [node_ind] = child;
                     ind_in_node[node_ind] = 0;
                     continue;
                 }
+            }
+            else {
+                // Let's keep at least cnt_filled correct to allow asserts to work
+                node->cnt_filled = 0;
             }
             x_FinalDeleteNode(node);
             --node_ind;
@@ -556,17 +588,18 @@ private:
     void x_ShrinkTree(void)
     {
         m_RootLock.WriteLock();
-        if (UNLIKELY(!x_CanShrinkTree())) {
+        if (!x_CanShrinkTree()) {
             m_RootLock.WriteUnlock();
             return;
         }
-        TNodeIndex index = x_FindContainingIndex(m_RootNode, NULL);
+        TNodeIndex index = x_FindKeyIndex(m_RootNode, NULL);
         _ASSERT(index != kCntChildsInNode);
         SNode* next_root = m_RootNode->childs[index];
         SNode* prev_root = m_RootNode;
         m_RootNode = next_root;
         --m_TreeHeight;
         m_RootLock.WriteUnlock();
+        prev_root->cnt_filled = 0;
         x_DeleteNode(prev_root);
     }
 
@@ -619,24 +652,17 @@ private:
     {
         SNode* node = x_LockCurNode(call_ctx, eWriteLock);
         TNodeIndex index = x_FindKeyIndex(node, wait_key_ref);
-#ifdef _DEBUG
-        int cnt = 0;
-#endif
-        while (UNLIKELY(index == kCntChildsInNode
-                        // Check for strong equality of pointers should suffice here
-                        // because value we wait should be identical to max_key
-                        // in the node we wait.
-                        //||  x_IsKeyLess(wait_key_ref, node->keys[index])
-                        ||  node->keys  [index] != wait_key_ref
-                        ||  node->childs[index] != wait_child_value))
+        while (index == kCntChildsInNode
+               // Check for strong equality of pointers should suffice here
+               // because value we wait should be identical to max_key
+               // in the node we wait.
+               //||  x_IsKeyLess(wait_key_ref, node->keys[index])
+               ||  node->keys  [index] != wait_key_ref
+               ||  node->childs[index] != wait_child_value)
         {
             // This means that wait_child_value was just created and is not
             // yet added to the parent. So we need to wait and give another
             // thread a chance to add it.
-#ifdef _DEBUG
-            if (++cnt >= 5)
-                abort();
-#endif
             x_UnlockCurNode(call_ctx);
             NCBI_SCHED_YIELD();
             node = x_LockCurNode(call_ctx, eWriteLock);
@@ -652,7 +678,7 @@ private:
         for (;;) {
             if (!x_DiveToLeafLevel(call_ctx))
                 return false;
-            if (UNLIKELY(!x_LockLeafNode(call_ctx, leaf_lock_type)))
+            if (!x_LockLeafNode(call_ctx, leaf_lock_type))
                 continue;
 
             SNode* node = call_ctx.tree_path[kLeafTreeLevel];
@@ -668,11 +694,11 @@ private:
     {
         for (;;) {
             if (x_DiveToLeafLevel(call_ctx)) {
-                if (UNLIKELY(!x_LockLeafNode(call_ctx, eWriteLock)))
+                if (!x_LockLeafNode(call_ctx, eWriteLock))
                     continue;
             }
             else {
-                if (UNLIKELY(!x_CreatePathToLeaf(call_ctx)))
+                if (!x_CreatePathToLeaf(call_ctx))
                     continue;
             }
             SNode* node = call_ctx.tree_path[kLeafTreeLevel];
@@ -715,13 +741,13 @@ private:
     {
         bool success = false;
         SNode* node = x_LockCurNode(call_ctx, eReadLock);
-        if (LIKELY(node->cnt_filled != 0)) {
+        if (node->cnt_filled != 0) {
             TNodeIndex key_index = x_FindContainingIndex(node, call_ctx.lookup_key);
             success = key_index != kCntChildsInNode;
             if (success)
                 x_MoveOneLevelDown(call_ctx, key_index);
         }
-        else if (UNLIKELY(x_IsNodeToBeDeleted(node))) {
+        else if (x_IsNodeToBeDeleted(node)) {
             // This node was just deleted. So we'll
             // try once more at the above level.
             x_MoveOneLevelUp(call_ctx);
@@ -733,7 +759,7 @@ private:
     }
     void x_MoveOneLevelUp(SCallContext& call_ctx) const
     {
-        if (UNLIKELY(call_ctx.cur_level == call_ctx.tree_height)) {
+        if (call_ctx.cur_level == call_ctx.tree_height) {
             // This means that while we were waiting for lock root was
             // split and then all elements were deleted from it.
             // So we need to look into the right node - we don't know
@@ -754,7 +780,7 @@ private:
     bool x_LockLeafNode(SCallContext& call_ctx, ERWLockType lock_type) const
     {
         SNode* node = x_LockCurNode(call_ctx, lock_type);
-        if (UNLIKELY(x_IsNodeToBeDeleted(node))) {
+        if (x_IsNodeToBeDeleted(node)) {
             x_MoveOneLevelUp(call_ctx);
             x_UnlockCurNode(call_ctx);
             return false;
@@ -764,13 +790,13 @@ private:
     bool x_CreatePathToLeaf(SCallContext& call_ctx)
     {
         SNode* node = x_LockCurNode(call_ctx, eWriteLock);
-        if (UNLIKELY(x_IsNodeToBeDeleted(node))) {
+        if (x_IsNodeToBeDeleted(node)) {
             x_MoveOneLevelUp(call_ctx);
             x_UnlockCurNode(call_ctx);
             return false;
         }
         TNodeIndex key_index = x_FindContainingIndex(node, call_ctx.lookup_key);
-        if (UNLIKELY(key_index != kCntChildsInNode)) {
+        if (key_index != kCntChildsInNode) {
             x_MoveOneLevelDown(call_ctx, key_index);
             x_UnlockCurNode(call_ctx);
             return false;
@@ -807,9 +833,10 @@ private:
             x_FindInsertSpace(node, key_index, ins_index);
         node->status[ins_index] = eValueActive;
         x_AssignKeyRef(node->keys[ins_index], call_ctx.lookup_key);
+        ++node->cnt_filled;
+        m_CntValues.Add(1);
         TValue* value_ptr = &x_Value(node, ins_index);
         *value_ptr = value;
-        m_CntValues.Add(1);
         return value_ptr;
     }
     TNodeIndex x_AddNodeKey(SCallContext& call_ctx,
@@ -824,28 +851,43 @@ private:
         // This method will be called only when adding non-NULL key_ref.
         TNodeIndex key_index = x_FindKeyIndex(node, key_ref->key);
         TNodeIndex ins_index;
-        x_FindInsertSpace(node, key_index, ins_index);
+        if (node->status[key_index] == eValueDeleted) {
+            ins_index = key_index;
+            key_index = x_GetNextIndex(node, key_index);
+        }
+        else {
+            x_FindInsertSpace(node, key_index, ins_index);
+        }
         node->childs[ins_index] = value_node;
         node->status[ins_index] = eValueActive;
         x_AssignKeyRef(node->keys[ins_index], key_ref);
         ++node->cnt_filled;
-        return ins_index;
+        return key_index;
     }
     void x_SplitNode(SCallContext& call_ctx, SNode* node)
     {
         const TNodeIndex left_cnt = kCntChildsInNode / 2;
-        const SRefedKey* left_max_key = node->keys[left_cnt - 1];
+        SRefedKey* left_max_key = node->keys[left_cnt - 1];
         SNode* const right_node = x_CreateNode(left_max_key, node->tree_level);
         const size_t sz_right_ptrs  = (kCntChildsInNode - left_cnt) * sizeof(void*);
         const size_t sz_right_stats = (kCntChildsInNode - left_cnt) * sizeof(EValueStatus);
         memcpy(&right_node->keys[left_cnt], &node->keys[left_cnt], sz_right_ptrs);
-        memcpy(&right_node->childs[left_cnt], &node->childs[left_cnt], sz_right_ptrs);
         memcpy(&right_node->status[left_cnt], &node->status[left_cnt], sz_right_stats);
+        if (node->tree_level == kLeafTreeLevel) {
+            SLeafNode* leaf_node = (SLeafNode*)node;
+            SLeafNode* leaf_right = (SLeafNode*)right_node;
+            for (int i = left_cnt; i < kCntChildsInNode; ++i)
+                leaf_right->values[i] = leaf_node->values[i];
+        }
+        else {
+            memcpy(&right_node->childs[left_cnt], &node->childs[left_cnt], sz_right_ptrs);
+        }
         memcpy(&node->keys[left_cnt], &right_node->keys[0], left_cnt * sizeof(void*));
         if (left_cnt * 2 < kCntChildsInNode)
             node->keys[kCntChildsInNode - 1] = left_max_key;
-        memset(&node->childs[left_cnt], NULL, sz_right_ptrs);
         memset(&node->status[left_cnt], eValueDeleted, sz_right_stats);
+        if (node->tree_level != kLeafTreeLevel)
+            memset(&node->childs[left_cnt], NULL, sz_right_ptrs);
         node->cnt_filled        = left_cnt;
         right_node->cnt_filled  = kCntChildsInNode - left_cnt;
         right_node->max_key     = node->max_key;
@@ -863,15 +905,15 @@ private:
         call_ctx.right_key      = right_node->max_key;
 
         if (x_IsKeyLess(left_max_key, call_ctx.lookup_key)) {
-            call_ctx.tree_path[node->tree_level] = right_node;
             x_ExchangeNodeLocks(call_ctx, right_node);
+            call_ctx.tree_path[node->tree_level] = right_node;
         }
     }
     void x_PropagateSplit(SCallContext& call_ctx)
     {
         x_UnlockCurNode(call_ctx);
         while (call_ctx.split_level != 0) {
-            if (LIKELY(call_ctx.split_level != call_ctx.tree_height))
+            if (call_ctx.split_level != call_ctx.tree_height)
                 x_AddRegularSplit(call_ctx);
             else
                 x_CheckRootSplit(call_ctx);
@@ -887,12 +929,12 @@ private:
         x_LockNodeAndWaitKey(call_ctx, right_key, left_node);
         SNode* node = call_ctx.locked_node;
         call_ctx.split_level = 0;
-        TNodeIndex key_index = x_AddNodeKey(call_ctx, node, left_key, left_node);
+        TNodeIndex right_index = x_AddNodeKey(call_ctx, node, left_key, left_node);
         // node can be split and changed inside x_AddNodeKey
         node = call_ctx.locked_node;
-        _ASSERT(node->keys[key_index + 1] == right_key
-                &&  node->childs[key_index + 1] == left_node);
-        node->childs[key_index + 1] = right_node;
+        _ASSERT(node->keys[right_index] == right_key
+                &&  node->childs[right_index] == left_node);
+        node->childs[right_index] = right_node;
         x_UnlockCurNode(call_ctx);
     }
     void x_CheckRootSplit(SCallContext& call_ctx)
@@ -901,7 +943,7 @@ private:
         SNode* new_root;
         TTreeHeight new_height;
         x_GetRootAndHeight(new_root, new_height, false);
-        if (LIKELY(new_height == call_ctx.tree_height)) {
+        if (new_height == call_ctx.tree_height) {
             _ASSERT(new_root == call_ctx.left_node);
             x_AddNewRoot(call_ctx);
         }
@@ -918,7 +960,7 @@ private:
     }
     void x_AddNewRoot(SCallContext& call_ctx)
     {
-        if (UNLIKELY(call_ctx.tree_height == kMaxTreeHeight)) {
+        if (call_ctx.tree_height == kMaxTreeHeight) {
             CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO,
                                    "Concurrent map is too deep");
             abort();

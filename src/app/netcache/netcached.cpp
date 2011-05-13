@@ -74,6 +74,7 @@ static const char* kNCReg_DisableClient       = "disable_client";
 static const char* kNCReg_CommandTimeout      = "cmd_timeout";
 static const char* kNCReg_BlobTTL             = "blob_ttl";
 static const char* kNCReg_VerTTL              = "ver_ttl";
+static const char* kNCReg_TTLUnit             = "ttl_unit";
 static const char* kNCReg_ProlongOnRead       = "prolong_on_read";
 static const char* kNCReg_SearchOnRead        = "search_on_read";
 static const char* kNCReg_Quorum              = "quorum";
@@ -152,6 +153,10 @@ CNetCacheServer::x_ReadSpecificParams(const IRegistry&   reg,
     if (reg.HasEntry(section, kNCReg_VerTTL, IRegistry::fCountCleared)) {
         params->ver_ttl = reg.GetInt(section, kNCReg_VerTTL,
                                      3600, 0, IRegistry::eErrPost);
+    }
+    if (reg.HasEntry(section, kNCReg_TTLUnit, IRegistry::fCountCleared)) {
+        params->ttl_unit = reg.GetInt(section, kNCReg_TTLUnit,
+                                      300, 0, IRegistry::eErrPost);
     }
     if (reg.HasEntry(section, kNCReg_ProlongOnRead, IRegistry::fCountCleared)) {
         params->prolong_on_read = reg.GetBool(section, kNCReg_ProlongOnRead,
@@ -298,6 +303,7 @@ CNetCacheServer::x_ReadServerParams(void)
     main_params->cmd_timeout     = 600;
     main_params->conn_timeout    = 10;
     main_params->blob_ttl        = 3600;
+    main_params->ver_ttl         = 3600;
     main_params->prolong_on_read = true;
     main_params->pass_policy     = eNCBlobPassAny;
     x_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);

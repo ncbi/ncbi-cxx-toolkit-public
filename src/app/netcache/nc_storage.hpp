@@ -351,7 +351,9 @@ private:
     TNCDBFileId x_GetNextMetaId(void);
     ///
     TNCChunkId x_GetNextChunkId(void);
-    ///
+    bool x_UpdBlobInfoNoMove(const string& blob_key, SNCBlobVerData* ver_data);
+    bool x_UpdBlobInfoSingleChunk(const string& blob_key, SNCBlobVerData* ver_data);
+    bool x_UpdBlobInfoMultiChunk(const string& blob_key, SNCBlobVerData* ver_data);
     void x_WriteChunkData(TNCDBFileId     file_id,
                           TNCChunkId      chunk_id,
                           const CNCBlobBuffer* data,

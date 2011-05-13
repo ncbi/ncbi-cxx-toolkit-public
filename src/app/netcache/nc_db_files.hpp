@@ -119,6 +119,8 @@ protected:
 
     /// Get last blob id used in the database
     TNCBlobId GetLastBlobId(void);
+    /// Get last chunk id used in the database
+    TNCChunkId GetLastChunkId(void);
     /// Read part of the full list of existing blobs in database. Only
     /// blobs live at the dead_after moment or after that and before
     /// dead_before moment are considered existing. Information about blobs
@@ -247,6 +249,7 @@ public:
     virtual ~CNCDBMetaFile(void);
 
     using CNCDBFile::GetLastBlobId;
+    using CNCDBFile::GetLastChunkId;
     using CNCDBFile::GetBlobsList;
 
     using CNCDBFile::ReadBlobInfo;
@@ -587,7 +590,8 @@ CNCFileSystem::FindOpenFile(const string& name)
 inline Int8
 CNCFileSystem::GetFileSize(const string& file_name)
 {
-    return FindOpenFile(file_name)->GetSize();
+    CNCFSOpenFile* file = FindOpenFile(file_name);
+    return (file? file->GetSize(): 0);
 }
 
 

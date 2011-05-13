@@ -189,7 +189,7 @@ static SNCBlockedOpListeners*
 s_GetNextListenStub_Overflowed(unsigned int ind)
 {
     s_ReturnListenStub(s_ListenStubPtrs[ind]);
-    printf("Listener stubs array was overflowed!\n");
+    //printf("Listener stubs array was overflowed!\n");
     return new SNCBlockedOpListeners;
 }
 

@@ -1670,8 +1670,11 @@ CNCMessageHandler::x_ProlongBlobDeadTime(void)
     Uint8 cur_time = CNetCacheServer::GetPreciseTime();
     int new_dead_time = int(cur_time >> 32) + m_BlobAccess->GetBlobTTL();
     int old_dead_time = m_BlobAccess->GetBlobDeadTime();
-    if (!CNetCacheServer::IsDebugMode()  &&  new_dead_time - old_dead_time < 120)
+    if (!CNetCacheServer::IsDebugMode()
+        &&  new_dead_time - old_dead_time < m_AppSetup->ttl_unit)
+    {
         return;
+    }
 
     m_BlobAccess->SetBlobDeadTime(new_dead_time);
     SNCSyncEvent* event = new SNCSyncEvent();
@@ -1688,8 +1691,11 @@ CNCMessageHandler::x_ProlongVersionLife(void)
     Uint8 cur_time = CNetCacheServer::GetPreciseTime();
     int new_dead_time = int(cur_time >> 32) + m_BlobAccess->GetBlobTTL();
     int old_dead_time = m_BlobAccess->GetVerDeadTime();
-    if (!CNetCacheServer::IsDebugMode()  &&  new_dead_time - old_dead_time < 120)
+    if (!CNetCacheServer::IsDebugMode()
+        &&  new_dead_time - old_dead_time < m_AppSetup->ttl_unit)
+    {
         return;
+    }
 
     m_BlobAccess->SetVerDeadTime(new_dead_time);
     SNCSyncEvent* event = new SNCSyncEvent();

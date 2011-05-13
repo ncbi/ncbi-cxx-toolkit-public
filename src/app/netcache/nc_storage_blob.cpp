@@ -160,14 +160,7 @@ inline CNCBlobVerManager*
 CNCBlobVerManager::sx_LockCacheData(SNCCacheData* cache_data)
 {
     CNCBlobVerManager* mgr = s_SetVerManager(cache_data, kLockedManager);
-#ifdef _DEBUG
-    int cnt = 0;
-#endif
     while (mgr == kLockedManager) {
-#ifdef _DEBUG
-        if (++cnt > 5)
-            INFO_POST("Locking cache data is too slow " << cnt);
-#endif
         NCBI_SCHED_YIELD();
         mgr = s_SetVerManager(cache_data, kLockedManager);
     }
@@ -354,7 +347,7 @@ CNCBlobVerManager::x_ReadCurVersion(void)
     m_CurVersion->need_write = false;
     m_CurVersion->need_meta_blob = m_CurVersion->need_data_blob = false;
     if (!g_NCStorage->ReadBlobInfo(m_CurVersion)) {
-        abort();
+        //abort();
         ERR_POST(Critical << "Problem reading meta-information about blob "
                           << g_NCStorage->UnpackKeyForLogs(m_Key));
         DeleteVersion(m_CurVersion);
@@ -371,6 +364,7 @@ CNCBlobVerManager::CreateNewVersion(void)
     data->manager       = this;
     data->create_time   = 0;
     data->size          = 0;
+    data->blob_ver      = 0;
     data->disk_size     = 0;
     data->need_write    = false;
     data->data_trigger.SetState(eNCOpCompleted);
