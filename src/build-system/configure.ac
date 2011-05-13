@@ -4223,7 +4223,7 @@ if test "${with_jni-no}" != "no"; then
    AC_CHECK_HEADER(jni.h,
       [AC_DEFINE(NCBI_JNI, 1,
           [Define to 1 if building Java Native Interface bindings.])
-       NCBI_FEATURE(Ncbi-JNI)
+       NCBI_FEATURE([JDK Ncbi-JNI])
        JDK_PATH=$_JTOPDIR],
       [JDK_INCLUDE=''
        JDK_PATH=''])

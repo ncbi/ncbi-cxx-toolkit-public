@@ -24053,7 +24053,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_JNI 1
 _ACEOF
 
-                 WithFeatures="$WithFeatures${WithFeaturesSep}Ncbi-JNI"; WithFeaturesSep=" "
+                 WithFeatures="$WithFeatures${WithFeaturesSep}JDK Ncbi-JNI"; WithFeaturesSep=" "
        JDK_PATH=$_JTOPDIR
 else
   JDK_INCLUDE=''
@@ -32761,7 +32761,7 @@ esac
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS Ncbi-JNI check; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
