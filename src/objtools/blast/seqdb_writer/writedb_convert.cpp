@@ -502,17 +502,12 @@ void WriteDB_Ncbi4naToBinary(const char * ncbi4na,
         } else {
             // Check each element, accumulate ambiguity data.
             
-            if (! (b1 && b2)) {
-                _ASSERT(b1 != 0);
-                
-                if ((i*2+1) < base_length) {
-                    // the second base is only available if the
-                    // sequence contains a whole number of bytes
-                    // (i.e. has an even length).
-                    _ASSERT(b2 != 0);
-                } else {
-                    _ASSERT(b2 == 0);
-                }
+            if (! b1) {
+                b1 = 0xF; // replace gap with 'N'
+            }
+
+            if (! b2 && (i*2+1) < base_length) {
+                b2 = 0xF; // the last base is the sentinel
             }
             
             half |= ambiguities.Check(b1, i*2) << 2;
