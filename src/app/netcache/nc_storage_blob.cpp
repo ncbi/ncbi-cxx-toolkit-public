@@ -46,7 +46,6 @@ static CObjPool<CNCBlobBuffer>  s_BufferPool;
 static CObjPool<SNCBlobVerData> s_VerDataPool;
 
 
-inline
 CNCBlobBuffer::CNCBlobBuffer(void)
 {}
 
