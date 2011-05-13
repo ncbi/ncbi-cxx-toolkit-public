@@ -259,7 +259,7 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
 
 bool CHandleRange::IntersectingWith_NoStrand(const CHandleRange& hr) const
 {
-    if ( !IntersectingWithTotalRange(hr) ) {
+    if ( !GetOverlappingRange().IntersectingWith(hr.GetOverlappingRange()) ) {
         return false;
     }
     ITERATE(TRanges, it1, m_Ranges) {
