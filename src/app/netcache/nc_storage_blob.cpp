@@ -61,7 +61,6 @@ CNCBlobBuffer::DeleteThis(void)
 }
 
 
-inline
 SNCBlobVerData::SNCBlobVerData(void)
 {}
 
