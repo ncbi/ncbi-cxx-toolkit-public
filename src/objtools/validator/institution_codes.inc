@@ -3389,7 +3389,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MCTC	s	Michigan Technological University, Biological Sciences Department",
 "MCTF	s	Michigan Technological University",
 "MCTP	s	Museu de Ciencias",
-"MCVE	s	Museo Civico di Storia Naturale",
+"MCVE	s	Museo di Storia Naturale di Venezia",
 "MCVM	s	Museo Civico, Villa Mirabello",
 "MCW	s	Milton College, Biology Department",
 "MCZ	s	Museum of Comparative Zoology, Harvard University",
