@@ -114,14 +114,30 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eQueue,
         QUEUE_OPTION, "NetSchedule queue."},
 
+    {CCommandLineParser::eOptionWithParameter, eBatch,
+        BATCH_OPTION, "Enable batch mode and specify batch size."},
+
     {CCommandLineParser::eOptionWithParameter, eAffinity,
         AFFINITY_OPTION, "Affinity token."},
+
+    {CCommandLineParser::eOptionWithParameter, eJobTag,
+        JOB_TAG_OPTION, "Define job tag in the form of NAME=VALUE. "
+            "Multiple '--" JOB_TAG_OPTION "' options can be specified."},
+
+    {CCommandLineParser::eSwitch, eExclusiveJob,
+        "exclusive-job", "Create an exclusive job."},
+
+    {CCommandLineParser::eOptionWithParameter, eReturnCode,
+        "return-code", "Job return code."},
+
+    {CCommandLineParser::eSwitch, eGetNextJob,
+        GET_NEXT_JOB_OPTION, "Request another job for execution."},
 
     {CCommandLineParser::eOptionWithParameter, eLimit,
         LIMIT_OPTION, "Maximum number of records to return."},
 
     {CCommandLineParser::eOptionWithParameter, eTimeout,
-        TIMEOUT_OPTION, "Timeout in seconds for this operation."},
+        TIMEOUT_OPTION, "Timeout in seconds."},
 
     {CCommandLineParser::eOptionWithParameter, eConfirmRead,
         CONFIRM_READ_OPTION, "For the specified reading reservation, "
@@ -281,18 +297,41 @@ struct SCommandDefinition {
             eProgressMessageOnly, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_SubmitJob,
-        "submitjob", "Submit a job to a NetSchedule queue.",
-        "Create a job by submitting input data to a NetSchedule queue. "
-        "If a worker node is waiting for a job on that queue, "
-        "the newly created job will get executed immediately.\n\n"
-        "This command requires a NetCache server for saving job "
-        "input if it exceeds the capability of the NetSchedule "
-        "internal storage.\n\n"
-        "Unless the '--" INPUT_FILE_OPTION "' or '--" INPUT_OPTION "' "
-        "options are given, the input is read from the standard input "
-        "stream.",
-        {eNetSchedule, eQueue, eNetCache, eInput, eInputFile, eAffinity,
-            eAuth, -1}},
+        "submitjob", "Submit one or more jobs to a NetSchedule queue.",
+        "Create one or multiple jobs by submitting input data to "
+        "a NetSchedule queue. The first submitted job will be "
+        "executed immediately as long as there is a worker node "
+        "waiting for a job on that queue.\n\n"
+        "This command has two modes of operation: single job submission "
+        "and batch submission. The latter mode is activated by the '--"
+        BATCH_OPTION "' option, which takes the maximum batch size "
+        "as its argument. When this mode is enabled, all options that "
+        "define job attributes are ignored. Instead, job attributes "
+        "are read from the standard input stream or the specified "
+        "input file - one line per job. Each line must contain a "
+        "space-separated list of job attributes as follows:\n\n"
+        "  input=\"DATA\"\n"
+        "  affinity=\"TOKEN\"\n"
+        "  tag=\"MAME=VALUE\"\n"
+        "  exclusive\n\n"
+        "Special characters in all quoted strings must be properly "
+        "escaped. It is OK to omit quotation marks for a string that "
+        "doesn't contain spaces. The \"input\" attribute is required. "
+        "There can be more than one \"tag\" attribute specified for a "
+        "job.\n\n"
+        "Example:\n\n"
+        "  input=\"db, 8548@394.701\" exclusive tag=backend=db\n\n"
+        "In single job submission mode, unless the '--" INPUT_FILE_OPTION
+        "' or '--" INPUT_OPTION "' options are given, job input is read "
+        "from the standard input stream, and the rest of attributes are "
+        "taken from their respective command line options.\n\n"
+        "A NetCache server is required for saving job input if it exceeds "
+        "the capability of the NetSchedule internal storage.\n\n"
+        "In both modes, the IDs of the created jobs are printed to the "
+        "standard output stream (or the specified output file) one job "
+        "ID per line.",
+        {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
+            eAffinity, eJobTag, eExclusiveJob, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_GetJobInput,
         "getjobinput", "Read job input.",
@@ -308,8 +347,6 @@ struct SCommandDefinition {
         "to the standard error stream and the program exits with a non-zero "
         "return code.",
         {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
-
-        
 
     {&CGridCommandLineInterfaceApp::Cmd_ReadJobs,
         READJOBS_COMMAND, "Bulk retrieval of completed jobs.",
@@ -356,28 +393,36 @@ struct SCommandDefinition {
         WN_NOT_NOTIFIED_DISCLAIMER,
         {eOptionalID, eNetSchedule, eQueue, eAllJobs, eCompatMode, eAuth, -1}},
 
-/*
     {&CGridCommandLineInterfaceApp::Cmd_RequestJob,
-        "requestjob", "Get a job from NetSchedule for processing.",
+        REQUESTJOB_COMMAND, "Get a job from NetSchedule for processing.",
         "Return a job pending for execution. The status of the job is changed "
         "from \"Pending\" to \"Running\" before the job is returned. "
         "This command makes it possible for " PROGRAM_NAME " to emulate a "
-        "worker node. If none of the NetSchedule servers has pending jobs "
-        "in the specified queue, an error is printed and the program "
-        "terminates with a non-zero exit code.",
-        {eNetSchedule, eQueue, eAuth, -1}},
+        "worker node.\n\n"
+        "If a job is acquired, its ID is printed to the standard output "
+        "stream followed by the input data of the job unless the '--"
+        OUTPUT_FILE_OPTION "' option is specified, in which case the "
+        "input data will be saved to that file.\n\n"
+        "If none of the NetSchedule servers has pending jobs in the "
+        "specified queue, nothing is printed and the exit code of zero "
+        "is returned.",
+        {eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",
         "Change the state of the job to either 'Done' or 'Failed'. This "
         "command can only be executed on jobs that are in the 'Running' "
         "state.\n\n"
-        "If the job is being reported as successfully completed, job output "
-        "is read from the standard input stream or a file. If the job is being "
-        "reported as failed, an error message must be provided along with the "
-        "'--" FAIL_JOB_OPTION "' command line option.",
-        {eID, eNetSchedule, eQueue, eNetCache, eInputFile, eFailJob, eAuth, -1}},
-*/
+        "Job output is read from the standard input stream or a file. "
+        "If the job is being reported as failed, an error message "
+        "must be provided with the '--" FAIL_JOB_OPTION "' command "
+        "line option.\n\n"
+        "If the '--" GET_NEXT_JOB_OPTION "' option is given, this "
+        "command makes an attempt to acquire another pending job and "
+        "if it succeeds, its output is identical to that of the "
+        REQUESTJOB_COMMAND " command. Otherwise, no output is produced.",
+        {eID, eNetSchedule, eQueue, eNetCache, eInputFile, eFailJob,
+            eGetNextJob, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
         "returnjob", "Return a previously accepted job.",
@@ -545,6 +590,9 @@ int CGridCommandLineInterfaceApp::Run()
         int opt_id;
         const char* opt_value;
 
+        CTempString job_tag_name;
+        CTempString job_tag_value;
+
         while (clparser.NextOption(&opt_id, &opt_value)) {
             m_Opts.option_flags[opt_id] = OPTION_SET;
             switch (EOption(opt_id)) {
@@ -589,6 +637,22 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eAffinity:
                 m_Opts.affinity = opt_value;
+                break;
+            case eJobTag:
+                NStr::SplitInTwo(opt_value, "=", job_tag_name, job_tag_value);
+                m_Opts.job_tags.push_back(
+                    CNetScheduleAPI::TJobTag(job_tag_name, job_tag_value));
+                break;
+            case eReturnCode:
+                m_Opts.return_code = NStr::StringToInt(opt_value);
+                break;
+            case eBatch:
+                if ((m_Opts.batch_size = NStr::StringToUInt(opt_value)) == 0) {
+                    fprintf(stderr, PROGRAM_NAME
+                        " %s: batch size must be greater that zero.\n",
+                            cmd_def->name_variants);
+                    return 2;
+                }
                 break;
             case eLimit:
                 m_Opts.limit = NStr::StringToUInt(opt_value);

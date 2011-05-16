@@ -47,7 +47,10 @@
 #define INPUT_FILE_OPTION "input-file"
 #define OUTPUT_FILE_OPTION "output-file"
 #define QUEUE_OPTION "queue"
+#define BATCH_OPTION "batch"
 #define AFFINITY_OPTION "affinity"
+#define JOB_TAG_OPTION "job-tag"
+#define GET_NEXT_JOB_OPTION "get-next-job"
 #define LIMIT_OPTION "limit"
 #define TIMEOUT_OPTION "timeout"
 #define CONFIRM_READ_OPTION "confirm-read"
@@ -58,6 +61,7 @@
 #define DIE_OPTION "die"
 
 #define READJOBS_COMMAND "readjobs"
+#define REQUESTJOB_COMMAND "requestjob"
 
 BEGIN_NCBI_SCOPE
 
@@ -79,7 +83,12 @@ enum EOption {
     eEnableMirroring,
     eNetSchedule,
     eQueue,
+    eBatch,
     eAffinity,
+    eJobTag,
+    eExclusiveJob,
+    eReturnCode,
+    eGetNextJob,
     eLimit,
     eTimeout,
     eConfirmRead,
@@ -141,6 +150,9 @@ private:
         string ns_service;
         string queue;
         string affinity;
+        CNetScheduleAPI::TJobTags job_tags;
+        int return_code;
+        unsigned batch_size;
         unsigned limit;
         unsigned timeout;
         string reservation_token;
@@ -165,8 +177,9 @@ private:
 
         char option_flags[eTotalNumberOfOptions];
 
-        SOptions() : offset(0), size(0), ttl(0), limit(0), timeout(0),
-            extend_lifetime_by(0), input_stream(NULL), output_stream(NULL)
+        SOptions() : offset(0), size(0), ttl(0), return_code(0),
+            batch_size(0), limit(0), timeout(0), extend_lifetime_by(0),
+            input_stream(NULL), output_stream(NULL)
         {
             memset(option_flags, 0, eTotalNumberOfOptions);
         }
@@ -194,6 +207,7 @@ private:
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleAdmin m_NetScheduleAdmin;
     CNetScheduleSubmitter m_NetScheduleSubmitter;
+    CNetScheduleExecuter m_NetScheduleExecutor;
     auto_ptr<CGridClient> m_GridClient;
 
 // NetCache commands.
@@ -245,6 +259,7 @@ private:
         eNetScheduleAPI,
         eNetScheduleAdmin,
         eNetScheduleSubmitter,
+        eNetScheduleExecutor,
         eGridClient
     };
     EAPIClass SetUp_AdminCmd();
@@ -260,6 +275,7 @@ private:
     static bool MatchPrefixAndPrintStorageTypeAndData(const string& line,
         const char* prefix, size_t prefix_length, const char* new_prefix);
     int DumpJobInputOutput(const string& data_or_blob_id);
+    int PrintJobIDAndDumpInput(const CNetScheduleJob& job);
 };
 
 END_NCBI_SCOPE

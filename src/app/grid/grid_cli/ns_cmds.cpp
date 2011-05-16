@@ -35,6 +35,8 @@
 
 #include <connect/services/grid_rw_impl.hpp>
 
+#include <ctype.h>
+
 USING_NCBI_SCOPE;
 
 #define MAX_VISIBLE_DATA_LENGTH 50
@@ -47,9 +49,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     string queue(!m_Opts.queue.empty() ? m_Opts.queue : "noname");
 
-    m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service, m_Opts.auth, queue);
-
-    if (!m_Opts.id.empty() && !m_Opts.ns_service.empty()) {
+    if (!IsOptionSet(eID))
+        m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
+            m_Opts.auth, queue);
+    else if (!m_Opts.ns_service.empty()) {
         string host, port;
 
         if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
@@ -58,8 +61,14 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
                 "must be a host:port server address.");
         }
 
+        m_NetScheduleAPI = CNetScheduleAPI(kEmptyStr, m_Opts.auth, queue);
         m_NetScheduleAPI.GetService().StickToServer(host,
             NStr::StringToInt(port));
+    } else {
+        CNetScheduleKey key(m_Opts.id);
+        key.host.push_back(':');
+        key.host.append(NStr::UIntToString(key.port));
+        m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
     }
 
     if (IsOptionSet(eCompatMode))
@@ -68,11 +77,20 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     // If api_class == eWorkerNode: m_NetScheduleAPI.EnableWorkerNodeCompatMode();
 
     switch (api_class) {
+    case eNetScheduleAPI:
+        break;
     case eNetScheduleAdmin:
         m_NetScheduleAdmin = m_NetScheduleAPI.GetAdmin();
         break;
     case eNetScheduleSubmitter:
         m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
+        break;
+    case eNetScheduleExecutor:
+        m_NetScheduleExecutor = m_NetScheduleAPI.GetExecuter();
+        break;
+    default:
+        _ASSERT(0);
+        break;
     }
 }
 
@@ -224,33 +242,309 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
     return 0;
 }
 
+class CBatchSubmitAttrParser
+{
+public:
+    CBatchSubmitAttrParser(FILE* input_stream) :
+        m_InputStream(input_stream),
+        m_LineNumber(0)
+    {
+    }
+    bool NextLine();
+    bool NextAttribute();
+    EOption GetAttributeType() const {return m_JobAttribute;}
+    const string& GetAttributeValue() const {return m_JobAttributeValue;}
+    size_t GetLineNumber() const {return m_LineNumber;}
+
+private:
+    FILE* m_InputStream;
+    size_t m_LineNumber;
+    string m_Line;
+    const char* m_Position;
+    EOption m_JobAttribute;
+    string m_JobAttributeValue;
+};
+
+bool CBatchSubmitAttrParser::NextLine()
+{
+    if (m_InputStream == NULL)
+        return false;
+
+    ++m_LineNumber;
+    m_Line.resize(0);
+
+    char buffer[64 * 1024];
+    size_t bytes_read;
+
+    while (fgets(buffer, sizeof(buffer), m_InputStream) != NULL)
+        if ((bytes_read = strlen(buffer)) > 0)
+            if (buffer[bytes_read - 1] != '\n')
+                m_Line.append(buffer, bytes_read);
+            else {
+                m_Line.append(buffer, bytes_read - 1);
+                m_Position = m_Line.c_str();
+                return true;
+            }
+
+    m_InputStream = NULL;
+
+    if (m_Line.empty())
+        return false;
+    else {
+        m_Position = m_Line.c_str();
+        return true;
+    }
+}
+
+bool CBatchSubmitAttrParser::NextAttribute()
+{
+    while (isspace(*m_Position))
+        ++m_Position;
+
+    if (*m_Position == '\0')
+        return false;
+
+    const char* name_beg = m_Position;
+
+    while (*m_Position >= 'a' && *m_Position <= 'z')
+        ++m_Position;
+
+    m_JobAttribute = eUntypedArg;
+    size_t attribute_name_len = m_Position - name_beg;
+
+#define ATTR_CHECK_SET(name, type) \
+    if (attribute_name_len == sizeof(name) - 1 && \
+            memcmp(name_beg, name, sizeof(name) - 1) == 0) { \
+        m_JobAttribute = type; \
+        break; \
+    }
+
+    switch (*name_beg) {
+    case 'i':
+        ATTR_CHECK_SET("input", eInput);
+        break;
+    case 'a':
+        ATTR_CHECK_SET("affinity", eAffinity);
+        break;
+    /*case 't':
+        ATTR_CHECK_SET("tag", eTag);
+        break;*/
+    case 'e':
+        ATTR_CHECK_SET("exclusive", eExclusiveJob);
+    }
+
+    CTempString attr_name(name_beg, attribute_name_len);
+
+#define AT_POS(pos) " at line " << m_LineNumber << \
+    ", column " << (pos - m_Line.data() + 1)
+
+    if (m_JobAttribute == eUntypedArg) {
+        NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+            ": unknown attribute " << attr_name << AT_POS(attr_name.data()));
+    }
+
+    while (isspace(*m_Position))
+        ++m_Position;
+
+    if (*m_Position != '=')
+        if ((*m_Position == '\0' || *m_Position >= 'a' && *m_Position <= 'z') &&
+                m_JobAttribute == eExclusiveJob)
+            return true;
+        else {
+            NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+                ": attribute " << attr_name <<
+                    " requires a value" << AT_POS(m_Position));
+        }
+
+    while (isspace(*++m_Position))
+        ;
+
+    const char* value_beg = m_Position;
+
+    switch (*m_Position) {
+    case '\0':
+        NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+            ": empty attribute value must be specified as " <<
+                attr_name << "=\"\"" << AT_POS(m_Position));
+    case '"':
+        ++value_beg;
+        do {
+            if (*++m_Position == '\\' && *++m_Position != '\0')
+                ++m_Position;
+            if (*m_Position == '\0') {
+                NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+                    ": unterminated attribute value" AT_POS(m_Position));
+            }
+        } while (*m_Position != '"');
+        ++m_Position;
+        break;
+    default:
+        while (*++m_Position != '\0' && !isspace(*m_Position))
+            ;
+    }
+    m_JobAttributeValue =
+        NStr::ParseEscapes(CTempString(value_beg, m_Position - value_beg));
+    return true;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 {
     SetUp_GridClient();
 
-    CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
+    if (IsOptionSet(eBatch)) {
+        CBatchSubmitAttrParser attr_parser(m_Opts.input_stream);
 
-    CNcbiOstream& job_input_stream = submitter.GetOStream();
+        CTempString job_tag_name;
+        CTempString job_tag_value;
 
-    if (IsOptionSet(eInput)) {
-        job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
-        if (job_input_stream.bad())
-            goto ErrorExit;
+        if (m_Opts.batch_size <= 1) {
+            while (attr_parser.NextLine()) {
+                CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
+                CNetScheduleAPI::TJobTags job_tags;
+                bool input_set = false;
+                while (attr_parser.NextAttribute()) {
+                    const string& attr_value(attr_parser.GetAttributeValue());
+                    switch (attr_parser.GetAttributeType()) {
+                    case eInput:
+                        input_set = true;
+                        {
+                            CNcbiOstream& job_input_stream(
+                                submitter.GetOStream());
+                            job_input_stream.write(attr_value.data(),
+                                attr_value.length());
+                            if (job_input_stream.bad())
+                                goto ErrorExit;
+                        }
+                        break;
+                    case eAffinity:
+                        submitter.SetJobAffinity(attr_value);
+                        break;
+                    case eJobTag:
+                        NStr::SplitInTwo(attr_value, "=",
+                            job_tag_name, job_tag_value);
+                        m_Opts.job_tags.push_back(CNetScheduleAPI::TJobTag(
+                            job_tag_name, job_tag_value));
+                        break;
+                    case eExclusiveJob:
+                        submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
+                        break;
+                    default:
+                        _ASSERT(0);
+                        break;
+                    }
+                }
+                if (!input_set) {
+                    NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+                        ": attribute \"input\" is required at line " <<
+                            attr_parser.GetLineNumber());
+                }
+                if (!job_tags.empty())
+                    submitter.SetJobTags(job_tags);
+                fprintf(m_Opts.output_stream,
+                    "%s\n", submitter.Submit(m_Opts.affinity).c_str());
+            }
+        } else {
+            CGridJobBatchSubmitter& batch_submitter(
+                m_GridClient->GetJobBatchSubmitter());
+            unsigned remaining_batch_size = m_Opts.batch_size;
+
+            while (attr_parser.NextLine()) {
+                if (remaining_batch_size == 0) {
+                    batch_submitter.Submit();
+                    const vector<CNetScheduleJob>& jobs =
+                        batch_submitter.GetBatch();
+                    ITERATE(vector<CNetScheduleJob>, it, jobs)
+                        fprintf(m_Opts.output_stream,
+                            "%s\n", it->job_id.c_str());
+                    batch_submitter.Reset();
+                    remaining_batch_size = m_Opts.batch_size;
+                }
+                batch_submitter.PrepareNextJob();
+                CNetScheduleAPI::TJobTags job_tags;
+                bool input_set = false;
+                while (attr_parser.NextAttribute()) {
+                    const string& attr_value(attr_parser.GetAttributeValue());
+                    switch (attr_parser.GetAttributeType()) {
+                    case eInput:
+                        input_set = true;
+                        {
+                            CNcbiOstream& job_input_stream(
+                                batch_submitter.GetOStream());
+                            job_input_stream.write(attr_value.data(),
+                                attr_value.length());
+                            if (job_input_stream.bad())
+                                goto ErrorExit;
+                        }
+                        break;
+                    case eAffinity:
+                        batch_submitter.SetJobAffinity(attr_value);
+                        break;
+                    case eJobTag:
+                        NStr::SplitInTwo(attr_value, "=",
+                            job_tag_name, job_tag_value);
+                        m_Opts.job_tags.push_back(CNetScheduleAPI::TJobTag(
+                            job_tag_name, job_tag_value));
+                        break;
+                    case eExclusiveJob:
+                        batch_submitter.SetJobMask(
+                            CNetScheduleAPI::eExclusiveJob);
+                        break;
+                    default:
+                        _ASSERT(0);
+                        break;
+                    }
+                }
+                if (!input_set) {
+                    NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+                        ": attribute \"input\" is required at line " <<
+                            attr_parser.GetLineNumber());
+                }
+                if (!job_tags.empty())
+                    batch_submitter.SetJobTags(job_tags);
+                --remaining_batch_size;
+            }
+            if (remaining_batch_size < m_Opts.batch_size) {
+                batch_submitter.Submit();
+                const vector<CNetScheduleJob>& jobs =
+                    batch_submitter.GetBatch();
+                ITERATE(vector<CNetScheduleJob>, it, jobs)
+                    fprintf(m_Opts.output_stream,
+                    "%s\n", it->job_id.c_str());
+                batch_submitter.Reset();
+            }
+        }
     } else {
-        char buffer[16 * 1024];
-        size_t bytes_read;
+        CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
 
-        while ((bytes_read = fread(buffer, 1,
-                sizeof(buffer), m_Opts.input_stream)) > 0) {
-            job_input_stream.write(buffer, bytes_read);
+        CNcbiOstream& job_input_stream = submitter.GetOStream();
+
+        if (IsOptionSet(eInput)) {
+            job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
             if (job_input_stream.bad())
                 goto ErrorExit;
-            if (feof(m_Opts.input_stream))
-                break;
-        }
-    }
+        } else {
+            char buffer[16 * 1024];
+            size_t bytes_read;
 
-    printf("%s\n", submitter.Submit(m_Opts.affinity).c_str());
+            while ((bytes_read = fread(buffer, 1,
+                    sizeof(buffer), m_Opts.input_stream)) > 0) {
+                job_input_stream.write(buffer, bytes_read);
+                if (job_input_stream.bad())
+                    goto ErrorExit;
+                if (feof(m_Opts.input_stream))
+                    break;
+            }
+        }
+
+        if (IsOptionSet(eJobTag))
+            submitter.SetJobTags(m_Opts.job_tags);
+
+        if (IsOptionSet(eExclusiveJob))
+            submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
+
+        fprintf(m_Opts.output_stream,
+            "%s\n", submitter.Submit(m_Opts.affinity).c_str());
+    }
 
     return 0;
 
@@ -286,6 +580,13 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
 Error:
     fprintf(stderr, PROGRAM_NAME ": error while writing job data.\n");
     return 3;
+}
+
+int CGridCommandLineInterfaceApp::PrintJobIDAndDumpInput(
+    const CNetScheduleJob& job)
+{
+    printf("%s\n", job.job_id.c_str());
+    return DumpJobInputOutput(job.input);
 }
 
 int CGridCommandLineInterfaceApp::Cmd_GetJobInput()
@@ -396,19 +697,67 @@ int CGridCommandLineInterfaceApp::Cmd_Kill()
 
 int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 {
+    SetUp_NetScheduleCmd(eNetScheduleExecutor);
+
+    CNetScheduleJob job;
+
+    if (m_NetScheduleExecutor.GetJob(job))
+        return PrintJobIDAndDumpInput(job);
+
     return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_CommitJob()
 {
+    SetUp_NetScheduleCmd(eNetScheduleExecutor);
+
+    CNetScheduleJob job;
+
+    job.job_id = m_Opts.id;
+    job.ret_code = m_Opts.return_code;
+
+    auto_ptr<IEmbeddedStreamWriter> writer(new CStringOrBlobStorageWriter(
+        m_NetScheduleAPI.GetServerParams().max_output_size,
+        m_NetCacheAPI, job.output));
+
+    char buffer[16 * 1024];
+    size_t bytes_read;
+
+    while ((bytes_read = fread(buffer, 1,
+            sizeof(buffer), m_Opts.input_stream)) > 0) {
+        if (writer->Write(buffer, bytes_read) != eRW_Success) {
+            fprintf(stderr, PROGRAM_NAME
+                ": error while submitting job output.\n");
+            return 3;
+        }
+        if (feof(m_Opts.input_stream))
+            break;
+    }
+
+    if (!IsOptionSet(eFailJob)) {
+        if (!IsOptionSet(eGetNextJob))
+            m_NetScheduleExecutor.PutResult(job);
+        else {
+            CNetScheduleJob new_job;
+
+            if (m_NetScheduleExecutor.PutResultGetJob(job, new_job))
+                return PrintJobIDAndDumpInput(new_job);
+        }
+    } else {
+        job.error_msg = m_Opts.error_message;
+        m_NetScheduleExecutor.PutFailure(job);
+        if (IsOptionSet(eGetNextJob) && m_NetScheduleExecutor.GetJob(job))
+            return PrintJobIDAndDumpInput(job);
+    }
+
     return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_ReturnJob()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAPI);
+    SetUp_NetScheduleCmd(eNetScheduleExecutor);
 
-    m_NetScheduleAPI.GetExecuter().ReturnJob(m_Opts.id);
+    m_NetScheduleExecutor.ReturnJob(m_Opts.id);
 
     return 0;
 }
