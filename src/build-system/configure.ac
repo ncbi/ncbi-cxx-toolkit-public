@@ -4810,9 +4810,11 @@ else
          glew_config=pkg-config
       fi
       if pkg-config --version >/dev/null 2>&1; then
-         if $glew_config glewmx --exists; then
+         if $glew_config glewmx --exists \
+           && test -n "`$glew_config glewmx --libs 2>/dev/null`"; then
             glew_config="$glew_config glewmx"
-         elif $glew_config glew --exists; then
+         elif $glew_config glew --exists \
+           && test -n "`$glew_config glew --libs 2>/dev/null`"; then
             glew_config="$glew_config glew"
          else
             glew_config=
@@ -4822,7 +4824,8 @@ else
             GLEW_LDFLAGS=`$glew_config --libs-only-L`
             glew_libname=`$glew_config --libs-only-l | sed -e 's/-l//'`
          fi
-      elif test -d "$GLEW_PATH"; then
+      fi
+      if test -z "$glew_libname" -a -d "$GLEW_PATH"; then
          GLEW_INCLUDE=-I$GLEW_PATH/include
          GLEW_LDFLAGS=-L$GLEW_LIBDIR
       fi
