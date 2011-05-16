@@ -17,6 +17,7 @@ macapp: cn3d
 	mkdir Cn3D.app/Contents/Resources
 	cp $(srcdir)/mac-cn3dApp.icns Cn3D.app/Contents/Resources/cn3dApp.icns
 	cp $(srcdir)/mac-cn3dDoc.icns Cn3D.app/Contents/Resources/cn3dDoc.icns
-	cp $(CN3D_HOME)/cn3d_commands.htb Cn3D.app/Contents/Resources
-	cp -r $(CN3D_HOME)/data Cn3D.app/Contents/Resources
+	cp $(srcdir)/HelpBlocks/Cn3D_Commands.htb Cn3D.app/Contents/Resources/cn3d_commands.htb
+	mkdir Cn3D.app/Contents/Resources/data
+	cp $(srcdir)/data/* Cn3D.app/Contents/Resources/data/
 
