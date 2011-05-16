@@ -1486,6 +1486,17 @@ TSeqPos CSeq_align::GetAlignLengthWithinRanges(const CRangeCollection<TSeqPos> &
 }
 
 
+double CSeq_align::AlignLengthRatio() const {
+    TSeqRange r0 = GetSeqRange(0);
+    TSeqRange r1 = GetSeqRange(1);
+    double r = 0;
+    if (r0.GetLength()) {
+        r = double(r1.GetLength()) / double(r0.GetLength());
+    }
+    return r;
+}
+
+
 CRef<CSeq_loc> CSeq_align::CreateRowSeq_loc(TDim row) const
 {
     CRef<CSeq_loc> loc(new CSeq_loc);

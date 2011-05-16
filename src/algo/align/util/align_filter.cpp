@@ -335,13 +335,7 @@ public:
     }
     virtual double Get(const CSeq_align& align, CScope*) const
     {
-        TSeqRange r0 = align.GetSeqRange(0);
-        TSeqRange r1 = align.GetSeqRange(1);
-        double r = 0;
-        if (r0.GetLength()) {
-            r = double(r1.GetLength()) / double(r0.GetLength());
-        }
-        return r;
+        return align.AlignLengthRatio();
     }
 };
 

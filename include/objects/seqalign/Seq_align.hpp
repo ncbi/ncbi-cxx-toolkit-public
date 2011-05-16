@@ -226,6 +226,8 @@ public:
     TSeqPos         GetAlignLengthWithinRanges(const CRangeCollection<TSeqPos> &ranges,
                                                bool include_gaps = true) const;
 
+    double          AlignLengthRatio() const;
+
     /// Get score
     bool GetNamedScore(const string& id, int &score) const;
     bool GetNamedScore(const string& id, double &score) const;
