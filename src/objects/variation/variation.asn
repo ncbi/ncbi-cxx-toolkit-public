@@ -23,17 +23,40 @@ IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
         Seq-literal FROM NCBI-Sequence
         Pub FROM NCBI-Pub;
 
+ 
+VariationException ::= SEQUENCE
+{
+    class INTEGER {
+        hgvs-parsing (1), --invalid hgvs expression
+        hgvs-exon-boundary (2), --anchor position in an intronic HGVS expression is not at an exon boundary
+                
+    
+        inconsistent-consequnece (3), --consequence protein variation attached to precursor variation's consequence
+                                      --could not be derived from it.
+                                      
+        inconsistent-asserted-allele (4), --asserted allele is inconsistent with the reference
+        
+        no-mapping (5),      --could not remap
+        partial-mapping (6), --mapped location is shorter than the query
+        split-mapping (7),   --a source interval maps to multiple non-abutting intervals.
+        mismatches-in-mapping (8) --the source sequence differs from sequence at mapped loc
+        
+    } OPTIONAL,
+    
+    comment VisibleString OPTIONAL
+}   
 
 VariantPlacement ::= SEQUENCE
 {
     -- actual concrete placement we are considering
     loc Seq-loc,
 
-    -- type of location
-    loc-type INTEGER {
+    mol INTEGER {
+        unknown(0),
         genomic(1),
         rna(2),
-        protein(3)
+        protein(3),
+        mitochondrion(4)
     } OPTIONAL,
 
     -- location flags
@@ -43,7 +66,9 @@ VariantPlacement ::= SEQUENCE
         aligned(3)
     } OPTIONAL,
 
-    -- location refinements
+    -- location refinements, describing offsets into introns from product coordinates.
+    -- Biological semantics: start-offset/stop-offset apply to bio-start/bio-stop respectively.
+    -- positive = downstream; negative = upstream.
     start-offset INTEGER OPTIONAL,
     start-offset-fuzz Int-fuzz OPTIONAL,
     stop-offset INTEGER OPTIONAL,
@@ -58,7 +83,9 @@ VariantPlacement ::= SEQUENCE
     hgvs-name VisibleString OPTIONAL,
 
     -- the reference location for this variant
-    comment VisibleString OPTIONAL
+    comment VisibleString OPTIONAL,
+
+    exeptions SET OF VariationException OPTIONAL
 }
 
 VariationMethod ::= SEQUENCE
@@ -239,12 +266,6 @@ Variation ::= SEQUENCE
         -- THIS variation.
         variation   Variation,
 
-        -- see http://www.hgvs.org/mutnomen/recs-prot.html
-        frameshift SEQUENCE {
-            phase INTEGER OPTIONAL,
-            x-length INTEGER OPTIONAL
-        },
-
         loss-of-heterozygosity SEQUENCE {
             -- In germline comparison, it will be reference genome assembly
             -- (default) or reference/normal population. In somatic mutation,
@@ -254,6 +275,13 @@ Variation ::= SEQUENCE
             -- Name of the testing subject type or the testing tissue.
             test VisibleString OPTIONAL
         }
+    } OPTIONAL,
+
+    -- Frameshift-related info. Applies only to protein-level variations.
+    -- see http://www.hgvs.org/mutnomen/recs-prot.html
+    frameshift SEQUENCE {
+       phase INTEGER OPTIONAL,
+       x-length INTEGER OPTIONAL
     } OPTIONAL,
 
     -- Additional undescribed extensions
@@ -268,7 +296,9 @@ Variation ::= SEQUENCE
             -- reference to BioTerm / other descriptive database
             object-id SET OF Dbtag OPTIONAL
         } OPTIONAL
-    } OPTIONAL
+    } OPTIONAL,
+
+    exceptions SET OF VariationException OPTIONAL
 }
 
 
