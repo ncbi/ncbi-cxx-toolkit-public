@@ -58,9 +58,6 @@ class CGridClient;
 class NCBI_XCONNECT_EXPORT CGridJobSubmitter
 {
 public:
-
-    ~CGridJobSubmitter();
-
     /// Set a job's input This string will be sent to
     /// then the job is submitted.
     ///
@@ -92,14 +89,11 @@ public:
     /// @return a job key
     string Submit(const string& affinity = "");
 
-private:
-    /// Only CGridClient can create an instance of this class
-    friend class CGridClient;
-    CGridJobSubmitter(CGridClient&, bool use_progress);
+    CGridJobSubmitter(CGridClient& grid_client);
 
+private:
     CGridClient& m_GridClient;
     CNetScheduleJob m_Job;
-    bool         m_UseProgress;
     auto_ptr<IEmbeddedStreamWriter> m_Writer;
     auto_ptr<CNcbiOstream> m_WStream;
 

@@ -65,8 +65,7 @@ CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
 
 void CGridClient::Init(ECleanUp cleanup, EProgressMsg progress_msg)
 {
-    m_JobSubmitter.reset(new CGridJobSubmitter(*this,
-                                             progress_msg == eProgressMsgOn));
+    m_JobSubmitter.reset(new CGridJobSubmitter(*this));
     m_JobBatchSubmitter.reset(new CGridJobBatchSubmitter(*this));
     m_JobStatus.reset(new CGridJobStatus(*this,
                                          cleanup == eAutomaticCleanup,
@@ -106,15 +105,11 @@ size_t CGridClient::GetMaxServerInputSize()
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client,
-                                     bool use_progress)
-    : m_GridClient(grid_client), m_UseProgress(use_progress)
+CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client)
+    : m_GridClient(grid_client)
 {
 }
 
-CGridJobSubmitter::~CGridJobSubmitter()
-{
-}
 void CGridJobSubmitter::SetJobInput(const string& input)
 {
     m_Job.input = input;
@@ -161,8 +156,6 @@ string CGridJobSubmitter::Submit(const string& affinity)
 
     if (!affinity.empty() && m_Job.affinity.empty())
         m_Job.affinity = affinity;
-    if (m_UseProgress)
-        m_Job.progress_msg = kEmptyStr;
     string job_key = m_GridClient.GetNSClient().SubmitJob(m_Job);
     m_Job.Reset();
     return job_key;
