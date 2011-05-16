@@ -90,7 +90,9 @@ CGff2Writer::~CGff2Writer()
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteAnnot( 
-    const CSeq_annot& annot )
+    const CSeq_annot& annot,
+    const string& strAssemblyName,
+    const string& strAssemblyAccession )
 //  ----------------------------------------------------------------------------
 {
     if ( ! (m_uFlags & fNoHeader) ) {
@@ -104,12 +106,28 @@ bool CGff2Writer::WriteAnnot(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteBioseqHandle(
-    CBioseq_Handle bsh )
+    CBioseq_Handle bsh,
+    const string& strAssemblyName,
+    const string& strAssemblyAccession )
 //  ----------------------------------------------------------------------------
 {
     if ( ! (m_uFlags & fNoHeader) ) {
         x_WriteHeader();
     }
+    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+        return false;
+    }
+    if ( ! x_WriteBioseqHandle( bsh ) ) {
+        return false;
+    }
+    return x_WriteFooter();
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteBioseqHandle(
+    CBioseq_Handle bsh )
+//  ----------------------------------------------------------------------------
+{
     if ( bsh.CanGetDescr() ) {
         const CSeq_descr& descr = bsh.GetDescr();
         if ( descr.IsSet() ) {
@@ -123,17 +141,6 @@ bool CGff2Writer::WriteBioseqHandle(
             }
         }
     }
-    if ( ! x_WriteBioseqHandle( bsh ) ) {
-        return false;
-    }
-    return x_WriteFooter();
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteBioseqHandle(
-    CBioseq_Handle bsh )
-//  ----------------------------------------------------------------------------
-{
     for ( CAnnot_CI aci( bsh ); aci; ++aci ) {
         if ( ! x_WriteSeqAnnotHandle( *aci ) ) {
             return false;
@@ -144,11 +151,16 @@ bool CGff2Writer::x_WriteBioseqHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteSeqAnnotHandle(
-    CSeq_annot_Handle sah )
+    CSeq_annot_Handle sah,
+    const string& strAssemblyName,
+    const string& strAssemblyAccession )
 //  ----------------------------------------------------------------------------
 {
     if ( ! (m_uFlags & fNoHeader) ) {
         x_WriteHeader();
+    }
+    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+        return false;
     }
     if ( ! x_WriteSeqAnnotHandle( sah ) ) {
         return false;
@@ -171,7 +183,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
         }
         return true;
     }
-
+    
     SAnnotSelector sel = x_GetAnnotSelector();
     feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
     for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
@@ -226,11 +238,16 @@ SAnnotSelector CGff2Writer::x_GetAnnotSelector()
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteAlign( 
-    const CSeq_align& align )
+    const CSeq_align& align,
+    const string& strAssName,
+    const string& strAssAcc )
 //  ----------------------------------------------------------------------------
 {
     if ( ! (m_uFlags & fNoHeader) ) {
         x_WriteHeader();
+    }
+    if ( ! x_WriteAssemblyInfo( strAssName, strAssAcc ) ) {
+        return false;
     }
     CRef< CUser_object > pBrowserInfo = x_GetDescriptor( align, "browser" );
     if ( pBrowserInfo ) {
@@ -394,6 +411,21 @@ bool CGff2Writer::x_WriteFooter()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "###" << endl;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteAssemblyInfo(
+    const string& strName,
+    const string& strAccession )
+//  ----------------------------------------------------------------------------
+{
+    if ( !strName.empty() ) {
+        m_Os << "##assembly name=" << strName << endl;
+    }
+    if ( !strAccession.empty() ) {
+        m_Os << "##assembly accession=" << strAccession << endl;
+    }
     return true;
 }
 

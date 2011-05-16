@@ -71,18 +71,26 @@ public:
     //  Supported object types:
     //  ------------------------------------------------------------------------
     bool WriteAnnot( 
-        const CSeq_annot& );
+        const CSeq_annot&,
+        const string& = "",
+        const string& = "" );
     bool WriteAlign( 
-        const CSeq_align& );
+        const CSeq_align&,
+        const string& = "",
+        const string& = "" );
 
     //  ------------------------------------------------------------------------
     //  Supported handle types:
     //  ------------------------------------------------------------------------
     virtual bool WriteBioseqHandle(
-        CBioseq_Handle );
+        CBioseq_Handle,
+        const string& = "",
+        const string& = "" );
 
     virtual bool WriteSeqAnnotHandle(
-        CSeq_annot_Handle );
+        CSeq_annot_Handle,
+        const string& = "",
+        const string& = "" );
 
 protected:
     virtual bool x_WriteAnnot( 
@@ -100,6 +108,9 @@ protected:
     virtual bool x_WriteFeature(
         feature::CFeatTree&,
         CMappedFeat );
+    virtual bool x_WriteAssemblyInfo(
+        const string&,
+        const string& );
 
     virtual bool x_WriteBrowserLine(
         const CRef< CUser_object > );

@@ -125,16 +125,12 @@ bool CGff3Writer::x_WriteAlign(
 
     switch( align.GetSegs().Which() ) {
     default:
-//        cerr << "CGff3Writer::x_WriteAlign: Alignment of strange type!" << endl;
         break;
     case CSeq_align::TSegs::e_Denseg:
-//        cerr << "CGff3Writer::x_WriteAlign: Alignment of Denseg type!" << endl;
         return x_WriteAlignDenseg( align, bInvertWidth );
     case CSeq_align::TSegs::e_Spliced:
-//        cerr << "CGff3Writer::x_WriteAlign: Alignment of Spliced type!" << endl;
         return x_WriteAlignSpliced( align, bInvertWidth );
     case CSeq_align::TSegs::e_Disc:
-//        cerr << "CGff3Writer::x_WriteAlign: Alignment of Disc type!" << endl;
         return x_WriteAlignDisc( align, bInvertWidth );
     }
     return true;
@@ -166,7 +162,7 @@ bool CGff3Writer::x_WriteAlignSpliced(
         pSa->SetScore().insert( pSa->SetScore().end(),
             align.GetScore().begin(), align.GetScore().end() );
     }
-    return x_WriteAlign(*pSa, bInvertWidth );
+    return x_WriteAlign(*pSa );
 }
 
 //  ----------------------------------------------------------------------------

@@ -55,13 +55,17 @@ public:
     //  Supported object types:
     //  ------------------------------------------------------------------------
     virtual bool WriteAnnot( 
-        const CSeq_annot& )
+        const CSeq_annot&,
+        const string& = "",
+        const string& = "" )
     {
         cerr << "Object type not supported!" << endl;
         return false;
     };
     virtual bool WriteAlign( 
-        const CSeq_align& )
+        const CSeq_align&,
+        const string& = "",
+        const string& = "" )
     {
         cerr << "Object type not supported!" << endl;
         return false;
@@ -71,13 +75,17 @@ public:
     //  Supported handle types:
     //  ------------------------------------------------------------------------
     virtual bool WriteBioseqHandle(
-        CBioseq_Handle )
+        CBioseq_Handle,
+        const string& = "",
+        const string& = "" )
     {
         cerr << "Object type not supported!" << endl;
         return false;
     };
     virtual bool WriteSeqAnnotHandle(
-        CSeq_annot_Handle )
+        CSeq_annot_Handle,
+        const string& = "",
+        const string& = "" )
     {
         cerr << "Object type not supported!" << endl;
         return false;
