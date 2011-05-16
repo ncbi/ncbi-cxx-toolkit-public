@@ -27145,7 +27145,7 @@ echo "$as_me: error: --with-glew explicitly specified, but no usable version fou
  fi
          GLEW_LIBS=$tmp_LIBS
                    WithPackages="$WithPackages${WithPackagesSep}GLEW"; WithPackagesSep=" "
-         CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
+         CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE $OPENGL_INCLUDE"
          LIBS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LIBS"
          echo "$as_me:$LINENO: checking for GLEW multi-context (MX) support (recommended)" >&5
 echo $ECHO_N "checking for GLEW multi-context (MX) support (recommended)... $ECHO_C" >&6

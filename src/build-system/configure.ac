@@ -4836,7 +4836,7 @@ else
          NCBI_RPATHIFY_OUTPUT_COND(tmp_LIBS, [echo $GLEW_LDFLAGS $GLEW_LIBS])
          GLEW_LIBS=$tmp_LIBS
          NCBI_PACKAGE(GLEW)
-         CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE"
+         CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE $OPENGL_INCLUDE"
          LIBS="$GLEW_LIBS $OPENGL_LIBS $DL_LIBS $orig_LIBS"
          AC_CACHE_CHECK([for GLEW multi-context (MX) support (recommended)],
             ncbi_cv_lib_glew_mx,
