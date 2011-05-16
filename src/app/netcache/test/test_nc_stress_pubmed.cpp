@@ -31,7 +31,7 @@ USING_NCBI_SCOPE;
 static void PrintAllStat();
 static bool need_conf_reload = false;
 static CAtomicCounter s_BlobId;
-static CRandom s_Rnd(CRandom::TValue(CProcess::GetCurrentPid()));
+static CRandom s_Rnd((CRandom::TValue)CProcess::GetCurrentPid());
 
 #ifdef USE_SIGNAL
 /*******************************************************
