@@ -46,6 +46,8 @@ DTDEntity::DTDEntity(void)
 {
     m_External = false;
     m_Type = eEntity;
+    m_ElementFormDefault = false;
+    m_AttributeFormDefault = false;
 }
 DTDEntity::DTDEntity(const DTDEntity& other)
 {
@@ -93,6 +95,22 @@ DTDEntity::EType DTDEntity::GetType(void) const
     return m_Type;
 }
 
+void DTDEntity::SetParseAttributes( const string& namespaceName,
+    bool elementForm, bool attributeForm)
+{
+    m_TargetNamespace = namespaceName;
+    m_ElementFormDefault = elementForm;
+    m_AttributeFormDefault = attributeForm;
+}
+
+void DTDEntity::GetParseAttributes( string& namespaceName,
+    bool& elementForm, bool& attributeForm) const
+{
+    namespaceName = m_TargetNamespace;
+    elementForm = m_ElementFormDefault;
+    attributeForm = m_AttributeFormDefault;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // DTDAttribute
 
@@ -101,18 +119,21 @@ DTDAttribute::DTDAttribute(void)
     m_SourceLine = 0;
     m_Type = eUnknown;
     m_ValueType = eImplied;
+    m_Qualified = false;
 }
 DTDAttribute::DTDAttribute(const DTDAttribute& other)
 {
     m_SourceLine= other.m_SourceLine;
     m_Name      = other.m_Name;
     m_TypeName  = other.m_TypeName;
+    m_NamespaceName = other.m_NamespaceName;
     m_Type      = other.m_Type;
     m_ValueType = other.m_ValueType;
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
     m_ValueSourceLine = other.m_ValueSourceLine;
     m_ValueId = other.m_ValueId;
+    m_Qualified = other.m_Qualified;
     m_Comments  = other.m_Comments;
 }
 DTDAttribute::~DTDAttribute(void)
@@ -124,12 +145,14 @@ DTDAttribute& DTDAttribute::operator= (const DTDAttribute& other)
     m_SourceLine= other.m_SourceLine;
     m_Name      = other.m_Name;
     m_TypeName  = other.m_TypeName;
+    m_NamespaceName = other.m_NamespaceName;
     m_Type      = other.m_Type;
     m_ValueType = other.m_ValueType;
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
     m_ValueSourceLine = other.m_ValueSourceLine;
     m_ValueId = other.m_ValueId;
+    m_Qualified = other.m_Qualified;
     m_Comments  = other.m_Comments;
     return *this;
 }
@@ -146,6 +169,7 @@ void DTDAttribute::Merge(const DTDAttribute& other)
     m_ListEnum  = other.m_ListEnum;
     m_ValueSourceLine = other.m_ValueSourceLine;
     m_ValueId = other.m_ValueId;
+    m_Qualified = other.m_Qualified;
 }
 
 void DTDAttribute::SetSourceLine(int line)
@@ -239,6 +263,15 @@ int DTDAttribute::GetEnumValueId(const string& value) const
     return 0;
 }
 
+void DTDAttribute::SetNamespaceName(const string& name)
+{
+    m_NamespaceName = name;
+}
+const string& DTDAttribute::GetNamespaceName(void) const
+{
+    return m_NamespaceName;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // DTDElement
 
@@ -250,6 +283,7 @@ DTDElement::DTDElement(void)
     m_Refd = false;
     m_Embd = false;
     m_Named= false;
+    m_Qualified = false;
 }
 
 DTDElement::DTDElement(const DTDElement& other)
@@ -267,6 +301,7 @@ DTDElement::DTDElement(const DTDElement& other)
     m_RefOcc   = other.m_RefOcc;
     m_Attrib   = other.m_Attrib;
     m_Named    = other.m_Named;
+    m_Qualified= other.m_Qualified;
     m_Comments = other.m_Comments;
     m_AttribComments = other.m_AttribComments;
 }

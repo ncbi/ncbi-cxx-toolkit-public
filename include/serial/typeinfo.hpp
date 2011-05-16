@@ -95,7 +95,11 @@ public:
     /// Get namespace name
     const string& GetNamespaceName(void) const;
     /// Set namespace name
-    void SetNamespaceName(const string& ns_name) const;
+    const CTypeInfo* SetNamespaceName(const string& ns_name) const;
+    /// Set namespace 'qualified' property
+    const CTypeInfo* SetNsQualified(bool qualified) const;
+    /// Get namespace 'qualified' property
+    ENsQualifiedMode IsNsQualified(void) const;
 
     /// Check if data type has namespace prefix
     bool HasNamespacePrefix(void) const;

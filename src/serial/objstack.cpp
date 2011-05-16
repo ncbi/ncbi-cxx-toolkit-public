@@ -128,6 +128,51 @@ CObjectStack::TFrame& CObjectStack::PushFrameLong(void)
     return *(m_StackPtr = (newStack + depth + 1));
 }
 
+bool CObjectStack::IsNsQualified(void)
+{
+    if (StackIsEmpty()) {
+        return true;
+    }
+    ENsQualifiedMode mode;
+    if (TopFrame().HasTypeInfo()) {
+        if (!TopFrame().GetTypeInfo()->GetModuleName().empty()) {
+            return true;
+        }
+    }
+    size_t i, count = GetStackDepth();
+    for (i=0; i<count; ++i) {
+
+        CObjectStack::TFrame& frame = FetchFrameFromTop(i);
+        mode = frame.IsNsQualified();
+        if (mode != eNSQNotSet) {
+            return mode == eNSQualified;
+        }
+
+        if (frame.HasTypeInfo()) {
+            mode = frame.GetTypeInfo()->IsNsQualified();
+            if (mode != eNSQNotSet) {
+                frame.SetNsQualified(mode);
+                return mode == eNSQualified;
+            }
+        }
+
+        if (frame.HasMemberId()) {
+            const CMemberId& mem = frame.GetMemberId();
+            mode = mem.IsNsQualified();
+            if (mode != eNSQNotSet) {
+                frame.SetNsQualified(mode);
+                return mode == eNSQualified;
+            }
+            if (mem.IsAttlist()) {
+                frame.SetNsQualified(eNSUnqualified);
+                return false;
+            }
+        }
+    }
+    TopFrame().SetNsQualified(eNSQualified);
+    return true;
+}
+
 void CObjectStack::x_PushStackPath(void)
 {
     if (!m_WatchPathHooks) {

@@ -41,11 +41,14 @@ BEGIN_NCBI_SCOPE
 
 class CClassContext;
 class CNamespace;
+class CDataType;
 
 class CTypeStrings {
 public:
-    CTypeStrings(void) {}
+    CTypeStrings(void);
     CTypeStrings(const CComments& comments);
+    CTypeStrings(const string& namespaceName, const CDataType* dataType);
+    CTypeStrings(const string& namespaceName, const CDataType* dataType, const CComments& comments);
     virtual ~CTypeStrings(void);
 
     const string& GetModuleName(void) const
@@ -123,10 +126,15 @@ public:
     {
         return m_Comments;
     }
+    const CDataType* DataType(void) const
+    {
+        return m_DataType;
+    }
 
 private:
     string m_ModuleName;
     string m_NamespaceName;
+    const CDataType* m_DataType;
     CComments m_Comments;
 };
 

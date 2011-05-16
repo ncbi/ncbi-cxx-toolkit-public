@@ -66,6 +66,13 @@ CVariantInfo* CVariantInfo::SetCompressed(void)
 }
 
 inline
+CVariantInfo* CVariantInfo::SetNsQualified(bool qualified)
+{
+    GetId().SetNsQualified(qualified);
+    return this;
+}
+
+inline
 bool CVariantInfo::IsInline(void) const
 {
     return GetVariantType() == eInlineVariant;

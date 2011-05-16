@@ -88,11 +88,18 @@ public:
     void SetType(EType type);
     EType GetType(void) const;
 
+    void SetParseAttributes( const string& namespaceName,
+        bool elementForm, bool attributeForm);
+    void GetParseAttributes( string& namespaceName,
+        bool& elementForm, bool& attributeForm) const;
 private:
     string m_Name;
     string m_Data;
     bool   m_External;
     EType  m_Type;
+    string m_TargetNamespace;
+    bool m_ElementFormDefault;
+    bool m_AttributeFormDefault;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -161,6 +168,17 @@ public:
     int GetEnumValueSourceLine(const string& value) const;
     int GetEnumValueId(const string& value) const;
     
+    void SetNamespaceName(const string& name);
+    const string& GetNamespaceName(void) const;
+    void SetQualified(bool qualified)
+    {
+        m_Qualified = qualified;
+    }
+    bool IsQualified(void) const
+    {
+        return m_Qualified;
+    }
+
     CComments& Comments(void)
     {
         return m_Comments;
@@ -173,12 +191,14 @@ private:
     int m_SourceLine;
     string m_Name;
     string m_TypeName;
+    string m_NamespaceName;
     EType m_Type;
     EValueType m_ValueType;
     string m_Value;
     list<string> m_ListEnum;
     map<string,int> m_ValueSourceLine;
     map<string,int> m_ValueId;
+    bool m_Qualified;
     CComments m_Comments;
 };
 
@@ -272,6 +292,14 @@ public:
     
     void SetNamespaceName(const string& name);
     const string& GetNamespaceName(void) const;
+    void SetQualified(bool qualified)
+    {
+        m_Qualified = qualified;
+    }
+    bool IsQualified(void) const
+    {
+        return m_Qualified;
+    }
 
     void SetDefault(const string& value);
     const string& GetDefault(void) const;
@@ -306,6 +334,7 @@ private:
     bool m_Refd;
     bool m_Embd;
     bool m_Named;
+    bool m_Qualified;
     CComments m_Comments;
     CComments m_AttribComments;
 };

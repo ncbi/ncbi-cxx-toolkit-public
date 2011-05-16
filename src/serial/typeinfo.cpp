@@ -80,10 +80,14 @@ public:
     const string& GetNamespacePrefix(void) const;
     void SetNamespacePrefix(const string& ns_prefix);
 
+    ENsQualifiedMode IsNsQualified(void);
+    void SetNsQualified(bool qualified);
+
 private:
     string m_NsName;
     string m_NsPrefix;
     bool   m_NsPrefixSet;
+    ENsQualifiedMode   m_NsQualified;
 };
 
 typedef CTypeInfoFunctions TFunc;
@@ -148,10 +152,23 @@ const string& CTypeInfo::GetNamespaceName(void) const
     return m_InfoItem ? m_InfoItem->GetNamespaceName() : kEmptyStr;
 }
 
-void CTypeInfo::SetNamespaceName(const string& ns_name) const
+const CTypeInfo* CTypeInfo::SetNamespaceName(const string& ns_name) const
 {
     x_CreateInfoItemIfNeeded();
     m_InfoItem->SetNamespaceName(ns_name);
+    return this;
+}
+
+const CTypeInfo* CTypeInfo::SetNsQualified(bool qualified) const
+{
+    _ASSERT(m_InfoItem);
+    m_InfoItem->SetNsQualified(qualified);
+    return this;
+}
+
+ENsQualifiedMode CTypeInfo::IsNsQualified(void) const
+{
+    return m_InfoItem ? m_InfoItem->IsNsQualified() : eNSQNotSet;
 }
 
 bool CTypeInfo::HasNamespacePrefix(void) const
@@ -446,6 +463,7 @@ void CTypeInfoFunctions::CopyWithHook(CObjectStreamCopier& stream,
 CNamespaceInfoItem::CNamespaceInfoItem(void)
 {
     m_NsPrefixSet = false;
+    m_NsQualified = eNSQNotSet;
 }
 
 CNamespaceInfoItem::CNamespaceInfoItem(const CNamespaceInfoItem& other)
@@ -453,6 +471,7 @@ CNamespaceInfoItem::CNamespaceInfoItem(const CNamespaceInfoItem& other)
     m_NsName      = other.m_NsName;
     m_NsPrefix    = other.m_NsPrefix;
     m_NsPrefixSet = other.m_NsPrefixSet;
+    m_NsQualified = other.m_NsQualified;
 }
 
 CNamespaceInfoItem::~CNamespaceInfoItem(void)
@@ -488,6 +507,16 @@ void CNamespaceInfoItem::SetNamespacePrefix(const string& ns_prefix)
 {
     m_NsPrefix = ns_prefix;
     m_NsPrefixSet = !m_NsPrefix.empty();
+}
+
+ENsQualifiedMode CNamespaceInfoItem::IsNsQualified(void)
+{
+    return m_NsQualified;
+}
+
+void CNamespaceInfoItem::SetNsQualified(bool qualified)
+{
+    m_NsQualified = qualified ? eNSQualified : eNSUnqualified;
 }
 
 END_NCBI_SCOPE

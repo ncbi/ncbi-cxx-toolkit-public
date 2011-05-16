@@ -97,6 +97,7 @@ public:
     CVariantInfo* SetNoPrefix(void);
     CVariantInfo* SetNotag(void);
     CVariantInfo* SetCompressed(void);
+    CVariantInfo* SetNsQualified(bool qualified);
 
     bool IsInline(void) const;
     bool IsNonObjectPointer(void) const;

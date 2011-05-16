@@ -831,7 +831,7 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
 
 void CObjectOStreamXml::WriteTag(const string& name)
 {
-    if (!m_Attlist && !m_CurrNsPrefix.empty()) {
+    if (!m_CurrNsPrefix.empty() && IsNsQualified()) {
         m_Output.PutString(m_CurrNsPrefix);
         m_Output.PutChar(':');
     }

@@ -99,7 +99,7 @@ protected:
 
     void BeginEntityContent(void);
     void ParseEntityContent(const string& name);
-    virtual void PushEntityLexer(const string& name);
+    virtual DTDEntity* PushEntityLexer(const string& name);
     virtual bool PopEntityLexer(void);
     virtual AbstractLexer* CreateEntityLexer(
         CNcbiIstream& in, const string& name, bool autoDelete=true);

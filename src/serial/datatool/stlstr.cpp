@@ -41,18 +41,20 @@ BEGIN_NCBI_SCOPE
 
 CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
                                              CTypeStrings* arg1Type,
-                                             const string& namespaceName)
-    : m_TemplateName(templateName), m_Arg1Type(arg1Type)
+                                             const string& namespaceName,
+                                             const CDataType* dataType)
+    : CParent(namespaceName, dataType),
+      m_TemplateName(templateName), m_Arg1Type(arg1Type)
 {
-    SetNamespaceName(namespaceName);
 }
 
 CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
                                              AutoPtr<CTypeStrings> arg1Type,
-                                             const string& namespaceName)
-    : m_TemplateName(templateName), m_Arg1Type(arg1Type)
+                                             const string& namespaceName,
+                                             const CDataType* dataType)
+    : CParent(namespaceName, dataType),
+      m_TemplateName(templateName), m_Arg1Type(arg1Type)
 {
-    SetNamespaceName(namespaceName);
 }
 
 CTemplate1TypeStrings::~CTemplate1TypeStrings(void)
@@ -121,8 +123,9 @@ void CTemplate1TypeStrings::GenerateTypeCode(CClassContext& ctx) const
 CTemplate2TypeStrings::CTemplate2TypeStrings(const string& templateName,
                                              AutoPtr<CTypeStrings> arg1Type,
                                              AutoPtr<CTypeStrings> arg2Type,
-                                             const string& namespaceName)
-    : CParent(templateName, arg1Type, namespaceName), m_Arg2Type(arg2Type)
+                                             const string& namespaceName,
+                                             const CDataType* dataType)
+    : CParent(templateName, arg1Type, namespaceName, dataType), m_Arg2Type(arg2Type)
 {
 }
 
@@ -156,8 +159,9 @@ void CTemplate2TypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
 CSetTypeStrings::CSetTypeStrings(const string& templateName,
                                  AutoPtr<CTypeStrings> type,
-                                 const string& namespaceName)
-    : CParent(templateName, type, namespaceName)
+                                 const string& namespaceName,
+                                 const CDataType* dataType)
+    : CParent(templateName, type, namespaceName, dataType)
 {
 }
 
@@ -202,8 +206,9 @@ string CSetTypeStrings::GetResetCode(const string& var) const
 CListTypeStrings::CListTypeStrings(const string& templateName,
                                    AutoPtr<CTypeStrings> type,
                                    const string& namespaceName,
+                                   const CDataType* dataType,
                                    bool externalSet)
-    : CParent(templateName, type, namespaceName), m_ExternalSet(externalSet)
+    : CParent(templateName, type, namespaceName, dataType), m_ExternalSet(externalSet)
 {
 }
 
@@ -256,8 +261,9 @@ string CListTypeStrings::GetResetCode(const string& var) const
 CMapTypeStrings::CMapTypeStrings(const string& templateName,
                                  AutoPtr<CTypeStrings> keyType,
                                  AutoPtr<CTypeStrings> valueType,
-                                 const string& namespaceName)
-    : CParent(templateName, keyType, valueType, namespaceName)
+                                 const string& namespaceName,
+                                 const CDataType* dataType)
+    : CParent(templateName, keyType, valueType, namespaceName, dataType)
 {
 }
 
@@ -303,10 +309,10 @@ string CMapTypeStrings::GetResetCode(const string& var) const
 
 CVectorTypeStrings::CVectorTypeStrings(const string& charType,
                                        const string& namespaceName,
+                                       const CDataType* dataType,
                                        const CComments& comments)
-    : CParent(comments), m_CharType(charType)
+    : CParent(namespaceName, dataType, comments), m_CharType(charType)
 {
-    SetNamespaceName(namespaceName);
 }
 
 CVectorTypeStrings::~CVectorTypeStrings(void)

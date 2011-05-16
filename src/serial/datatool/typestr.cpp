@@ -40,8 +40,24 @@
 BEGIN_NCBI_SCOPE
 
 
+CTypeStrings::CTypeStrings(void)
+    : m_DataType(NULL)
+{
+}
+
 CTypeStrings::CTypeStrings(const CComments& comments)
-    : m_Comments(comments)
+    : m_DataType(NULL), m_Comments(comments)
+{
+}
+
+CTypeStrings::CTypeStrings(const string& namespaceName, const CDataType* dataType)
+    : m_NamespaceName(namespaceName), m_DataType(dataType)
+{
+}
+
+CTypeStrings::CTypeStrings(const string& namespaceName,
+    const CDataType* dataType, const CComments& comments)
+    : m_NamespaceName(namespaceName), m_DataType(dataType), m_Comments(comments)
 {
 }
 

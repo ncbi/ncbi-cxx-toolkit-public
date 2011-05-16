@@ -135,7 +135,7 @@ void WSDLParser::ParseTypes(CDataTypeModule& module)
         while (DTDParser::GetNextToken() == K_SCHEMA) {
             WSDLLexer& l = dynamic_cast<WSDLLexer&>(Lexer());
             l.UseXSDLexer(true);
-            BeginScope();
+            BeginScope(NULL);
             XSDParser::BuildDocumentTree(module);
             EndScope();
             l.UseXSDLexer(false);

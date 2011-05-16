@@ -63,7 +63,7 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     int indent, bool contents_only) const
 {
     string tag( XmlTagName());
-    string xsdk("element"), use;
+    string xsdk("element"), use, form;
     const CDataMember* mem = GetDataMember();
     bool optional = mem ? mem->Optional() : false;
 
@@ -77,6 +77,9 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
                 }
             } else {
                 use = "required";
+            }
+            if (IsNsQualified() == eNSQualified) {
+                form = " form=\"qualified\"";
             }
         }
     }
@@ -109,6 +112,9 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
                 }
             }
         }
+    }
+    if (!form.empty()) {
+        out << form;
     }
     if (type.empty() && PrintXMLSchemaContents(out,indent+1)) {
         PrintASNNewLine(out, indent) << "</xs:" << xsdk << ">";
@@ -668,7 +674,8 @@ AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
     string charType = GetVar("_char");
     if ( charType.empty() )
         charType = "char";
-    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType, GetNamespaceName(), Comments()));
+    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(
+        charType, GetNamespaceName(), this, Comments()));
 }
 
 bool COctetStringDataType::IsCompressed(void) const

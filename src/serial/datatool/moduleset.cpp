@@ -227,6 +227,8 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
 {
     string nsName("http://www.ncbi.nlm.nih.gov");
     string nsNcbi(nsName);
+    string elementForm("qualified");
+    string attributeForm("unqualified");
     if (!m_Modules.empty()) {
         const CDataTypeModule::TDefinitions& defs = 
             m_Modules.front()->GetDefinitions();
@@ -234,6 +236,9 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
             const string& ns = defs.front().second->GetNamespaceName();
             if (!ns.empty()) {
                 nsName = ns;
+            }
+            if (!defs.front().second->IsNsQualified()) {
+                elementForm = "unqualified";
             }
         }
     }
@@ -250,8 +255,8 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
         out << "  xmlns=\"" << nsName << "\"\n"
             << "  targetNamespace=\"" << nsName << "\"\n";
     }
-    out << "  elementFormDefault=\"qualified\"\n"
-        << "  attributeFormDefault=\"unqualified\">\n\n";
+    out << "  elementFormDefault=\"" << elementForm << "\"\n"
+        << "  attributeFormDefault=\"" << attributeForm << "\">\n\n";
 }
 
 void CFileModules::EndXMLSchema(CNcbiOstream& out) const

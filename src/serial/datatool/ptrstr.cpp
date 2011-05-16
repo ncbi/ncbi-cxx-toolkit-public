@@ -38,12 +38,12 @@
 BEGIN_NCBI_SCOPE
 
 CPointerTypeStrings::CPointerTypeStrings(CTypeStrings* dataType)
-    : m_DataType(dataType)
+    : m_DataTypeStr(dataType)
 {
 }
 
 CPointerTypeStrings::CPointerTypeStrings(AutoPtr<CTypeStrings> dataType)
-    : m_DataType(dataType)
+    : m_DataTypeStr(dataType)
 {
 }
 
@@ -58,7 +58,7 @@ CTypeStrings::EKind CPointerTypeStrings::GetKind(void) const
 
 string CPointerTypeStrings::GetCType(const CNamespace& ns) const
 {
-    return GetDataType()->GetCType(ns)+'*';
+    return GetDataTypeStr()->GetCType(ns)+'*';
 }
 
 string CPointerTypeStrings::GetPrefixedCType(const CNamespace& ns,
@@ -69,7 +69,7 @@ string CPointerTypeStrings::GetPrefixedCType(const CNamespace& ns,
 
 string CPointerTypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "POINTER, ("+GetDataType()->GetRef(ns)+')';
+    return "POINTER, ("+GetDataTypeStr()->GetRef(ns)+')';
 }
 
 string CPointerTypeStrings::GetInitializer(void) const
@@ -80,7 +80,7 @@ string CPointerTypeStrings::GetInitializer(void) const
 string CPointerTypeStrings::GetDestructionCode(const string& expr) const
 {
     return
-        GetDataType()->GetDestructionCode("*(" + expr + ')')+
+        GetDataTypeStr()->GetDestructionCode("*(" + expr + ')')+
         "delete ("+expr+");\n";
 }
 
@@ -96,7 +96,7 @@ string CPointerTypeStrings::GetResetCode(const string& var) const
 
 void CPointerTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
-    GetDataType()->GeneratePointerTypeCode(ctx);
+    GetDataTypeStr()->GeneratePointerTypeCode(ctx);
 }
 
 
@@ -122,19 +122,19 @@ CTypeStrings::EKind CRefTypeStrings::GetKind(void) const
 
 string CRefTypeStrings::GetCType(const CNamespace& ns) const
 {
-    return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataType()->GetCType(ns)+" >";
+    return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataTypeStr()->GetCType(ns)+" >";
 }
 
 string CRefTypeStrings::GetPrefixedCType(const CNamespace& ns,
                                          const string& methodPrefix) const
 {
     return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "
-        + GetDataType()->GetPrefixedCType(ns,methodPrefix)+" >";
+        + GetDataTypeStr()->GetPrefixedCType(ns,methodPrefix)+" >";
 }
 
 string CRefTypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "STL_CRef, ("+GetDataType()->GetRef(ns)+')';
+    return "STL_CRef, ("+GetDataTypeStr()->GetRef(ns)+')';
 }
 
 string CRefTypeStrings::GetInitializer(void) const
@@ -144,7 +144,7 @@ string CRefTypeStrings::GetInitializer(void) const
 
 string CRefTypeStrings::GetDestructionCode(const string& expr) const
 {
-    return GetDataType()->GetDestructionCode("*(" + expr + ')');
+    return GetDataTypeStr()->GetDestructionCode("*(" + expr + ')');
 }
 
 string CRefTypeStrings::GetIsSetCode(const string& var) const

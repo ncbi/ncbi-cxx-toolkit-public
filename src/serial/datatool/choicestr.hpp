@@ -74,7 +74,8 @@ public:
     typedef list<SVariantInfo> TVariants;
 
     CChoiceTypeStrings(const string& externalName, const string& className,
-                       const string& namespaceName, const CComments& comments);
+                       const string& namespaceName, const CDataType* dataType,
+                       const CComments& comments);
     ~CChoiceTypeStrings(void);
 
     bool HaveAssignment(void) const

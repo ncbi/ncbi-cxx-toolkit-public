@@ -38,7 +38,11 @@
             <xs:element name="PropertyGroup" type="msb:PropertyGroupType"/>
             <xs:element name="ItemGroup" type="msb:ItemGroupType"/>
             <xs:element name="ItemDefinitionGroup" type="msb:ItemDefinitionGroupType"/>
+<!--  NCBI modification begin -->
+<!--
             <xs:element name="Choose" type="msb:ChooseType"/>
+-->
+<!--  NCBI modification end -->
             <xs:element name="UsingTask" type="msb:UsingTaskType"/>
             <xs:element name="ProjectExtensions" type="msb:ProjectExtensionsType"/>
         </xs:choice>
@@ -49,7 +53,11 @@
             <xs:element name="PropertyGroup" type="msb:PropertyGroupType"/>
             <xs:element name="ItemGroup" type="msb:ItemGroupType"/>
             <xs:element name="ItemDefinitionGroup" type="msb:ItemDefinitionGroupType"/>
+<!--  NCBI modification begin -->
+<!--
             <xs:element name="Choose" type="msb:ChooseType"/>
+-->
+<!--  NCBI modification end -->
             <xs:element name="UsingTask" type="msb:UsingTaskType"/>
             <xs:element name="Target" type="msb:TargetType"/>
             <xs:element name="Import" type="msb:ImportType"/>

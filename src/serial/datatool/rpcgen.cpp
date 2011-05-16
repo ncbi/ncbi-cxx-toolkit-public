@@ -174,7 +174,7 @@ CClientPseudoDataType::GenerateCode(void) const
 
 CClientPseudoTypeStrings::CClientPseudoTypeStrings
 (const CClientPseudoDataType& source)
-    : CClassTypeStrings(kEmptyStr, source.m_ClassName, kEmptyStr, source.Comments()), m_Source(source)
+    : CClassTypeStrings(kEmptyStr, source.m_ClassName, kEmptyStr, NULL, source.Comments()), m_Source(source)
 {
     // SetClassNamespace(generator.GetNamespace()); // not defined(!)
     SetParentClass("CRPCClient<" + source.m_RequestDataType->ClassName()

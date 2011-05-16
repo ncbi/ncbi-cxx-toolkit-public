@@ -79,7 +79,7 @@ public:
     typedef list<SMemberInfo> TMembers;
 
     CClassTypeStrings(const string& externalName, const string& className,
-                      const string& namespaceName,
+                      const string& namespaceName, const CDataType* dataType,
                       const CComments& comments);
     ~CClassTypeStrings(void);
 
@@ -203,7 +203,7 @@ class CWsdlTypeStrings : public CClassTypeStrings
     typedef CClassTypeStrings CParent;
 public:
     CWsdlTypeStrings(const string& externalName, const string& className,
-                      const string& namespaceName,
+                      const string& namespaceName, const CDataType* dataType,
                       const CComments& comments);
     ~CWsdlTypeStrings(void);
 

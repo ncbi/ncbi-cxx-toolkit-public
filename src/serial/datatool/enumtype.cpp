@@ -125,6 +125,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
     string tag(XmlTagName());
     string use("required");
     string value("value");
+    string form;
     bool inAttlist= false;
     list<string> opentag, closetag;
 
@@ -142,6 +143,9 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
             }
         } else {
             use = "required";
+        }
+        if (IsNsQualified() == eNSQualified) {
+            form = " form=\"qualified\"";
         }
     }
     if (!inAttlist) {
@@ -165,7 +169,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
             use = "optional";
         }
     }
-    string tmp = "<xs:attribute name=\"" + value + "\" use=\"" + use + "\"";
+    string tmp = "<xs:attribute name=\"" + value + "\" use=\"" + use + "\"" + form;
     if (!inAttlist) {
         const CDataMember* mem = GetDataMember();
         if (mem && mem->Optional() && mem->GetDefault()) {

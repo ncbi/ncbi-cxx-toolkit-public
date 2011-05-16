@@ -48,6 +48,9 @@ CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
     SetElementType(element);
     m_NonEmpty = false;
     m_NoPrefix = false;
+    if (element->IsNsQualified() != eNSQNotSet) {
+        SetNsQualified( element->IsNsQualified() == eNSQualified);
+    }
     ForbidVar("_type", "short");
     ForbidVar("_type", "int");
     ForbidVar("_type", "long");
@@ -437,7 +440,7 @@ AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
     string templ = GetAndVerifyVar("_type");
     if ( templ.empty() )
         templ = "list";
-    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, GetNamespaceName()));
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, GetNamespaceName(), this));
 }
 
 CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
@@ -479,7 +482,8 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
                 return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
                                                                  tKey,
                                                                  tValue,
-                                                                 GetNamespaceName()));
+                                                                 GetNamespaceName(),
+                                                                 this));
             }
         }
     }
@@ -491,11 +495,11 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
         }
         else {
             return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData,
-                GetNamespaceName(), true));
+                GetNamespaceName(), this, true));
         }
     }
     return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData,
-        GetNamespaceName(), true));
+        GetNamespaceName(), this, true));
 }
 
 END_NCBI_SCOPE

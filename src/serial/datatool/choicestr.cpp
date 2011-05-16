@@ -34,6 +34,7 @@
 #include <corelib/ncbiutil.hpp>
 #include "exceptions.hpp"
 #include "type.hpp"
+#include "blocktype.hpp"
 #include "choicestr.hpp"
 #include "stdstr.hpp"
 #include "code.hpp"
@@ -65,8 +66,9 @@ BEGIN_NCBI_SCOPE
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
                                        const string& className,
                                        const string& namespaceName,
+                                       const CDataType* dataType,
                                        const CComments& comments)
-    : CParent(externalName, className, namespaceName, comments),
+    : CParent(externalName, className, namespaceName, dataType, comments),
       m_HaveAssignment(false)
 {
 }
@@ -1366,9 +1368,29 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "    SET_CHOICE_MODULE(\""<<GetModuleName()<<"\");\n";
     }
+    ENsQualifiedMode defNsqMode = eNSQNotSet;
+    if (DataType()) {
+        defNsqMode = DataType()->IsNsQualified();
+        if (defNsqMode == eNSQNotSet) {
+            const CDataMember *dm = DataType()->GetDataMember();
+            if (dm && dm->Attlist()) {
+                defNsqMode = eNSUnqualified;
+            }
+        }
+    }
     if ( !GetNamespaceName().empty() ) {
         methods <<
-            "    SET_NAMESPACE(\""<<GetNamespaceName()<<"\");\n";
+            "    SET_NAMESPACE(\""<<GetNamespaceName()<<"\")";
+        if (defNsqMode != eNSQNotSet) {
+            methods << "->SetNsQualified(";
+            if (defNsqMode == eNSQualified) {
+                methods << "true";
+            } else {
+                methods << "false";
+            }
+            methods << ")";
+        }
+        methods << ";\n";
     }
     if ( delayed ) {
         methods <<
@@ -1535,6 +1557,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     dynamic_cast<const CUniSequenceDataType*>(i->dataType);
                 if (uniseq && uniseq->IsNonEmpty()) {
                     methods << "->SetNonEmpty()";
+                }
+                ENsQualifiedMode memNsqMode = i->dataType->IsNsQualified();
+                if (memNsqMode != eNSQNotSet && memNsqMode != defNsqMode) {
+                    methods << "->SetNsQualified(";
+                    if (memNsqMode == eNSQualified) {
+                        methods << "true";
+                    } else {
+                        methods << "false";
+                    }
+                    methods << ")";
                 }
             }
             methods << ";\n";

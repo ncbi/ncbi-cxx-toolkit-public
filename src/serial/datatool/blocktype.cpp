@@ -582,7 +582,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(
-        GlobalName(), ClassName(), GetNamespaceName(), Comments()));
+        GlobalName(), ClassName(), GetNamespaceName(), this, Comments()));
     return AddMembers(code);
 }
 
@@ -772,7 +772,7 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
 AutoPtr<CTypeStrings> CWsdlDataType::GetFullCType(void) const
 {
     AutoPtr<CClassTypeStrings> code(new CWsdlTypeStrings(
-        GlobalName(), ClassName(), GetNamespaceName(), Comments()));
+        GlobalName(), ClassName(), GetNamespaceName(), this, Comments()));
     code->SetHaveTypeInfo(false);
     return AddMembers(code);
 }

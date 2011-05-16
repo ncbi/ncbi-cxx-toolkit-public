@@ -33,6 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 
 
 /** @addtogroup FieldsComplex
@@ -92,6 +93,9 @@ public:
     void SetCompressed(void);
     bool IsCompressed(void) const;
 
+    void SetNsQualified(bool qualified);
+    ENsQualifiedMode IsNsQualified(void) const;
+
 private:
     // identification
     string m_Name;
@@ -102,6 +106,7 @@ private:
     bool m_Notag;
     bool m_AnyContent;
     bool m_Compressed;
+    ENsQualifiedMode m_NsqMode;
 };
 
 

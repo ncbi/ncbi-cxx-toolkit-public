@@ -47,10 +47,12 @@ class CTemplate1TypeStrings : public CTypeStrings
 public:
     CTemplate1TypeStrings(const string& templateName,
                           CTypeStrings* type,
-                          const string& namespaceName);
+                          const string& namespaceName,
+                          const CDataType* dataType);
     CTemplate1TypeStrings(const string& templateName,
                           AutoPtr<CTypeStrings> type,
-                          const string& namespaceName);
+                          const string& namespaceName,
+                          const CDataType* dataType);
     ~CTemplate1TypeStrings(void);
 
     EKind GetKind(void) const;
@@ -90,7 +92,8 @@ class CSetTypeStrings : public CTemplate1TypeStrings
 public:
     CSetTypeStrings(const string& templateName,
                     AutoPtr<CTypeStrings> type,
-                    const string& namespaceName);
+                    const string& namespaceName,
+                    const CDataType* dataType);
     ~CSetTypeStrings(void);
 
     string GetDestructionCode(const string& expr) const;
@@ -104,6 +107,7 @@ public:
     CListTypeStrings(const string& templateName,
                      AutoPtr<CTypeStrings> type,
                      const string& namespaceName,
+                     const CDataType* dataType,
                      bool externalSet = false);
     ~CListTypeStrings(void);
 
@@ -124,7 +128,8 @@ public:
     CTemplate2TypeStrings(const string& templateName,
                           AutoPtr<CTypeStrings> type1,
                           AutoPtr<CTypeStrings> type2,
-                          const string& namespaceName);
+                          const string& namespaceName,
+                          const CDataType* dataType);
     ~CTemplate2TypeStrings(void);
 
     const CTypeStrings* GetArg2Type(void) const
@@ -150,7 +155,8 @@ public:
     CMapTypeStrings(const string& templateName,
                     AutoPtr<CTypeStrings> keyType,
                     AutoPtr<CTypeStrings> valueType,
-                    const string& namespaceName);
+                    const string& namespaceName,
+                    const CDataType* dataType);
     ~CMapTypeStrings(void);
 
     string GetDestructionCode(const string& expr) const;
@@ -163,6 +169,7 @@ class CVectorTypeStrings : public CTypeStrings
 public:
     CVectorTypeStrings(const string& charType,
                        const string& namespaceName,
+                       const CDataType* dataType,
                        const CComments& comments);
     ~CVectorTypeStrings(void);
 

@@ -169,6 +169,13 @@ enum ESerialRecursionMode {
     eShallowChildless      ///< Set sub-object pointers to 0
 };
 
+/// Defines namespace qualification of XML tags
+enum ENsQualifiedMode {
+    eNSQNotSet,
+    eNSUnqualified,
+    eNSQualified
+};
+
 /// Type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
 

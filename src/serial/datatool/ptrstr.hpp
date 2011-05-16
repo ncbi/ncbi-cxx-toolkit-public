@@ -46,9 +46,9 @@ public:
     CPointerTypeStrings(AutoPtr<CTypeStrings> type);
     ~CPointerTypeStrings(void);
 
-    const CTypeStrings* GetDataType(void) const
+    const CTypeStrings* GetDataTypeStr(void) const
         {
-            return m_DataType.get();
+            return m_DataTypeStr.get();
         }
 
     void GenerateTypeCode(CClassContext& ctx) const;
@@ -66,7 +66,7 @@ public:
     string GetResetCode(const string& var) const;
 
 private:
-    AutoPtr<CTypeStrings> m_DataType;
+    AutoPtr<CTypeStrings> m_DataTypeStr;
 };
 
 class CRefTypeStrings : public CPointerTypeStrings

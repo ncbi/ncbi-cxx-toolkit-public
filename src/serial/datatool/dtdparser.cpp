@@ -664,7 +664,7 @@ void DTDParser::ParseEntityContent(const string& name)
     ConsumeSymbol('>');
 }
 
-void DTDParser::PushEntityLexer(const string& name)
+DTDEntity* DTDParser::PushEntityLexer(const string& name)
 {
     map<string,DTDEntity>::iterator i = m_MapEntity.find(name);
     if (i == m_MapEntity.end()) {
@@ -702,6 +702,7 @@ void DTDParser::PushEntityLexer(const string& name)
     if (m_MapEntity[name].IsExternal()) {
         Lexer().BeginFile();
     }
+    return &(m_MapEntity[name]);
 }
 
 bool DTDParser::PopEntityLexer(void)
@@ -946,6 +947,7 @@ CDataType* DTDParser::x_Type(
                     emb.SetName(refNode.GetName());
                 }
                 type->SetNamespaceName( node.GetNamespaceName());
+                type->SetNsQualified(node.IsQualified());
                 return type;
             }
         }
@@ -1055,6 +1057,8 @@ CDataType* DTDParser::x_Type(
         }
     }
     type->SetSourceLine(node.GetSourceLine());
+    type->SetNamespaceName( node.GetNamespaceName());
+    type->SetNsQualified( node.IsQualified());
     if (uniseq) {
         CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
         uniType->SetSourceLine(type->GetSourceLine());
@@ -1074,7 +1078,6 @@ CDataType* DTDParser::x_Type(
         container->AddMember(member);
         type = container.release();
     }
-    type->SetNamespaceName( node.GetNamespaceName());
     return type;
 }
 
@@ -1327,6 +1330,7 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
         break;
     }
     type->SetSourceLine(att.GetSourceLine());
+    type->SetNsQualified(att.IsQualified());
     return type;
 }
 
@@ -1519,6 +1523,11 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
         cout << ", default=";
         cout << "\"" << node.GetDefault() << "\"";
     }
+    if (!node.GetNamespaceName().empty()) {
+        cout << endl;
+        cout << "Namespace: " << node.GetNamespaceName() << endl;
+        cout << "form: " << (node.IsQualified() ? "qualified" : "unqualified") << endl;
+    }
     cout << endl;
     if (!node.GetComments().Empty()) {
         cout << "        === Comments ===" << endl;
@@ -1527,9 +1536,6 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     if (!node.GetAttribComments().Empty()) {
         cout << "        === AttribComments ===" << endl;
         node.GetAttribComments().PrintDTD(cout, CComments::eDoNotWriteBlankLine);
-    }
-    if (!node.GetNamespaceName().empty()) {
-        cout << "Namespace: " << node.GetNamespaceName() << endl;
     }
     if (node.HasAttributes()) {
         PrintNodeAttributes(node);
@@ -1616,6 +1622,12 @@ void DTDParser::PrintAttribute(const DTDAttribute& attrib, bool indent/*=true*/)
     }
     cout << ", ";
     cout << "\"" << attrib.GetValue() << "\"";
+
+    cout << endl;
+    cout << "form:" << (attrib.IsQualified() ? "qualified" : "unqualified") << endl;
+    if (!attrib.GetNamespaceName().empty()) {
+        cout << "Namespace: " << attrib.GetNamespaceName() << endl;
+    }
     cout << endl;
     if (!attrib.GetComments().Empty()) {
         cout << "        === Comments ===" << endl;

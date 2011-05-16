@@ -55,6 +55,7 @@ public:
     CChoicePtrTypeStrings(const string& globalName,
                           const string& className,
                           const string& namespaceName,
+                          const CDataType* dataType,
                           const CComments& comments);
 
     void AddVariant(const string& name, AutoPtr<CTypeStrings> type);

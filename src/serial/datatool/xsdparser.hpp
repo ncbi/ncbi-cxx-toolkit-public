@@ -116,9 +116,9 @@ protected:
     void ParseTypeDefinition(DTDEntity& ent);
     void ProcessNamedTypes(void);
 
-    void BeginScope(void);
+    void BeginScope(DTDEntity* ent);
     void EndScope(void);
-    virtual void PushEntityLexer(const string& name);
+    virtual DTDEntity* PushEntityLexer(const string& name);
     virtual bool PopEntityLexer(void);
     virtual AbstractLexer* CreateEntityLexer(
         CNcbiIstream& in, const string& name, bool autoDelete=true);
@@ -143,12 +143,14 @@ protected:
     map<string,DTDAttribute> m_MapAttribute;
     string m_TargetNamespace;
     bool m_ElementFormDefault;
+    bool m_AttributeFormDefault;
 
 private:
     stack< map<string,string> > m_StackPrefixToNamespace;
     stack< map<string,string> > m_StackNamespaceToPrefix;
     stack<string> m_StackTargetNamespace;
     stack<bool> m_StackElementFormDefault;
+    stack<bool> m_StackAttributeFormDefault;
     set<string> m_EmbeddedNames;
     bool m_ResolveTypes;
     bool m_EnableNamespaceRedefinition;

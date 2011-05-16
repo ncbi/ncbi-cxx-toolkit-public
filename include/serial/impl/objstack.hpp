@@ -86,6 +86,9 @@ public:
     string GetFrameInfo(void) const;
     string GetFrameName(void) const;
 
+    ENsQualifiedMode IsNsQualified(void) const;
+    void SetNsQualified(ENsQualifiedMode mode);
+
 protected:
     void SetMemberId(const CMemberId& memberid);
 
@@ -96,6 +99,7 @@ private:
     TTypeInfo m_TypeInfo;
     const CMemberId* m_MemberId;
     bool m_Notag;
+    ENsQualifiedMode m_NsqMode;
 };
 
 #define ThrowError(flag, mess) \
@@ -120,6 +124,7 @@ public:
     void PopErrorFrame(void);
 
     void SetTopMemberId(const CMemberId& memberId);
+    bool IsNsQualified(void);
 
 #if defined(NCBI_SERIAL_IO_TRACE)
     void TracePushFrame(bool push) const;

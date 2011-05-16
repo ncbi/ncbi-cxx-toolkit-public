@@ -132,6 +132,7 @@ void XSDParser::Reset(void)
     m_NamespaceToPrefix.clear();
     m_TargetNamespace.erase();
     m_ElementFormDefault = false;
+    m_AttributeFormDefault = false;
 }
 
 TToken XSDParser::GetNextToken(void)
@@ -343,6 +344,8 @@ void XSDParser::ParseHeader()
                 m_TargetNamespace = m_Value;
             } else if (IsAttribute("elementFormDefault")) {
                 m_ElementFormDefault = IsValue("qualified");
+            } else if (IsAttribute("attributeFormDefault")) {
+                m_AttributeFormDefault = IsValue("qualified");
             }
         }
     }
@@ -536,6 +539,7 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
     TToken tok;
     string name, value;
     bool ref=false, named_type=false;
+    bool qualified = m_ElementFormDefault;
     int line = Lexer().CurrentLine();
 
     tok = GetRawAttributeSet();
@@ -573,6 +577,9 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
             named_type = true;
         }
     }
+    if (owner && GetAttribute("form")) {
+        qualified = IsValue("qualified");
+    }
     if (GetAttribute("default")) {
         m_MapElement[name].SetDefault(m_Value);
     }
@@ -583,6 +590,8 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
     if (tok != K_CLOSING && tok != K_ENDOFTAG) {
         ParseError("endoftag");
     }
+    m_MapElement[name].SetNamespaceName(m_TargetNamespace);
+    m_MapElement[name].SetQualified(qualified);
     bool hasContents = false;
     if (tok == K_CLOSING) {
         hasContents = ParseContent(m_MapElement[name]);
@@ -592,7 +601,6 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
         m_MapElement[name].SetTypeIfUnknown(
             hasContents ? DTDElement::eEmpty : DTDElement::eString);
     }
-    m_MapElement[name].SetNamespaceName(m_TargetNamespace);
     return name;
 }
 
@@ -609,6 +617,7 @@ string XSDParser::ParseGroup(DTDElement* owner, int emb)
         node.SetName(m_Value);
         node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
         node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
+        node.SetQualified(owner->IsQualified());
         SetCommentsIfEmpty(&(node.Comments()));
 
         if (m_ResolveTypes) {
@@ -694,6 +703,7 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 elem.SetSourceLine(Lexer().CurrentLine());
                 elem.SetEmbedded();
                 elem.SetType(DTDElement::eAny);
+                elem.SetQualified(node.IsQualified());
                 ParseAny(elem);
                 AddElementContent(node,name);
             }
@@ -725,6 +735,7 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 elem.SetSourceLine(Lexer().CurrentLine());
                 elem.SetEmbedded();
                 elem.SetType(DTDElement::eSequence);
+                elem.SetQualified(node.IsQualified());
                 ParseContainer(elem);
                 AddElementContent(node,name);
             }
@@ -746,6 +757,7 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 elem.SetSourceLine(Lexer().CurrentLine());
                 elem.SetEmbedded();
                 elem.SetType(DTDElement::eChoice);
+                elem.SetQualified(node.IsQualified());
                 ParseContainer(elem);
                 AddElementContent(node,name);
             }
@@ -767,6 +779,7 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 elem.SetSourceLine(Lexer().CurrentLine());
                 elem.SetEmbedded();
                 elem.SetType(DTDElement::eSet);
+                elem.SetQualified(node.IsQualified());
                 ParseContainer(elem);
                 AddElementContent(node,name);
             }
@@ -891,6 +904,7 @@ void XSDParser::ParseAttribute(DTDElement& node)
     att.SetSourceLine(Lexer().CurrentLine());
     SetCommentsIfEmpty(&(att.Comments()));
     bool ref=false, named_type=false;
+    bool qualified = m_AttributeFormDefault;
 
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("ref")) {
@@ -918,6 +932,10 @@ void XSDParser::ParseAttribute(DTDElement& node)
     if (GetAttribute("default")) {
         att.SetValue(m_Value);
     }
+    if (GetAttribute("form")) {
+        qualified = IsValue("qualified");
+    }
+    att.SetQualified(qualified);
     if (tok == K_CLOSING) {
         ParseContent(att);
     }
@@ -1030,6 +1048,7 @@ string XSDParser::ParseAttributeContent()
             m_MapAttribute[name].SetTypeName(m_Value);
         }
     }
+    m_MapAttribute[name].SetQualified(true);
     if (tok == K_CLOSING) {
         ParseContent(m_MapAttribute[name]);
     }
@@ -1229,6 +1248,8 @@ void XSDParser::CreateTypeDefinition(DTDEntity::EType type)
     }
     m_MapEntity[id].SetData(data);
     m_MapEntity[id].SetType(type);
+    m_MapEntity[id].SetParseAttributes( m_TargetNamespace,
+        m_ElementFormDefault,m_AttributeFormDefault);
     if (tok == K_CLOSING) {
         ParseTypeDefinition(m_MapEntity[id]);
     }
@@ -1337,14 +1358,20 @@ void XSDParser::ProcessNamedTypes(void)
                         break;
                     }
                     PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
-                    string ns(m_TargetNamespace);
-                    m_TargetNamespace = node.GetNamespaceName();
+                    bool elementForm = m_ElementFormDefault;
                     ParseContent(node);
-                    m_TargetNamespace = ns;
                     node.SetTypeIfUnknown(DTDElement::eEmpty);
-// this is not always correct, but it seems that local elements
-// defined by means of global types should be made global as well
-                    if (node.IsNamed() && node.IsEmbedded()) {
+
+// Make local elements defined by means of global types global.
+// In fact, this is incorrect; also, in case of unqualified form default we must keep
+// such elements embedded, otherwise they will be treated as ns-qualified.
+
+// for us, this trick solves the problem of recursive type definitions:
+// local element A contains local element B, which contains local element A, etc.
+// the way it is now, code generator will simply crash.
+// The better solution would be to modify C++ code generation, of course.
+
+                    if (node.IsNamed() && node.IsEmbedded() && elementForm) {
                         node.SetEmbedded(false);
                     }
                 } else if ( node.GetType() == DTDElement::eUnknownGroup) {
@@ -1427,12 +1454,17 @@ void XSDParser::ProcessNamedTypes(void)
     m_ResolveTypes = false;
 }
 
-void XSDParser::BeginScope(void)
+void XSDParser::BeginScope(DTDEntity* ent)
 {
     m_StackPrefixToNamespace.push(m_PrefixToNamespace);
     m_StackNamespaceToPrefix.push(m_NamespaceToPrefix);
     m_StackTargetNamespace.push(m_TargetNamespace);
     m_StackElementFormDefault.push(m_ElementFormDefault);
+    m_StackAttributeFormDefault.push(m_AttributeFormDefault);
+    if (ent) {
+        ent->GetParseAttributes(m_TargetNamespace,
+            m_ElementFormDefault,m_AttributeFormDefault);
+    }
 }
 void XSDParser::EndScope(void)
 {
@@ -1440,17 +1472,20 @@ void XSDParser::EndScope(void)
     m_NamespaceToPrefix = m_StackNamespaceToPrefix.top();
     m_TargetNamespace = m_StackTargetNamespace.top();
     m_ElementFormDefault = m_StackElementFormDefault.top();
+    m_AttributeFormDefault = m_StackAttributeFormDefault.top();
 
     m_StackPrefixToNamespace.pop();
     m_StackNamespaceToPrefix.pop();
     m_StackTargetNamespace.pop();
     m_StackElementFormDefault.pop();
+    m_StackAttributeFormDefault.pop();
 }
 
-void XSDParser::PushEntityLexer(const string& name)
+DTDEntity* XSDParser::PushEntityLexer(const string& name)
 {
-    DTDParser::PushEntityLexer(name);
-    BeginScope();
+    DTDEntity* ent = DTDParser::PushEntityLexer(name);
+    BeginScope(ent);
+    return ent;
 }
 
 bool XSDParser::PopEntityLexer(void)
@@ -1482,6 +1517,8 @@ void XSDParser::PrintDocumentTree(void)
     
     cout << " === Element form default ===" << endl;
     cout << (m_ElementFormDefault ? "qualified" : "unqualified") << endl;
+    cout << " === Attribute form default ===" << endl;
+    cout << (m_AttributeFormDefault ? "qualified" : "unqualified") << endl;
     cout << endl;
 
     DTDParser::PrintDocumentTree();

@@ -47,8 +47,8 @@ BEGIN_NCBI_SCOPE
 
 CWsdlTypeStrings::CWsdlTypeStrings(
     const string& externalName,  const string& className,
-    const string& namespaceName, const CComments& comments)
-    : CParent(externalName, className, namespaceName, comments)
+    const string& namespaceName, const CDataType* dataType, const CComments& comments)
+    : CParent(externalName, className, namespaceName, dataType, comments)
 {
 }
 

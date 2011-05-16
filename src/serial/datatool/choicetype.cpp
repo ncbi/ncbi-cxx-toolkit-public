@@ -229,7 +229,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
     if ( GetBoolVar("_virtual_choice") ) {
         AutoPtr<CChoicePtrTypeStrings>
             code(new CChoicePtrTypeStrings(
-                GlobalName(), ClassName(), GetNamespaceName(), Comments()));
+                GlobalName(), ClassName(), GetNamespaceName(), this, Comments()));
         ITERATE ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
             code->AddVariant((*i)->GetName(), varType);
@@ -240,7 +240,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
     else {
         bool rootClass = GetParentType() == 0;
         AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(
-            GlobalName(), ClassName(), GetNamespaceName(), Comments()));
+            GlobalName(), ClassName(), GetNamespaceName(), this, Comments()));
         bool haveUserClass = rootClass;
         code->SetHaveUserClass(haveUserClass);
         code->SetObject(true);

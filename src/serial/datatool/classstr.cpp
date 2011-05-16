@@ -51,12 +51,12 @@ BEGIN_NCBI_SCOPE
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
                                      const string& className,
                                      const string& namespaceName,
+                                     const CDataType* dataType,
                                      const CComments& comments)
-    : CParent(comments),
+    : CParent(namespaceName,dataType,comments),
       m_IsObject(true), m_HaveUserClass(true), m_HaveTypeInfo(true),
       m_ExternalName(externalName), m_ClassName(className)
 {
-    SetNamespaceName(namespaceName);
 }
 
 CClassTypeStrings::~CClassTypeStrings(void)
@@ -1180,9 +1180,30 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "    SET_CLASS_MODULE(\""<<GetModuleName()<<"\");\n";
     }
+
+    ENsQualifiedMode defNsqMode = eNSQNotSet;
+    if (DataType()) {
+        defNsqMode = DataType()->IsNsQualified();
+        if (defNsqMode == eNSQNotSet) {
+            const CDataMember *dm = DataType()->GetDataMember();
+            if (dm && dm->Attlist()) {
+                defNsqMode = eNSUnqualified;
+            }
+        }
+    }
     if ( !GetNamespaceName().empty() ) {
         methods <<
-            "    SET_NAMESPACE(\""<<GetNamespaceName()<<"\");\n";
+            "    SET_NAMESPACE(\""<<GetNamespaceName()<<"\")";
+        if (defNsqMode != eNSQNotSet) {
+            methods << "->SetNsQualified(";
+            if (defNsqMode == eNSQualified) {
+                methods << "true";
+            } else {
+                methods << "false";
+            }
+            methods << ")";
+        }
+        methods << ";\n";
     }
     if ( !m_ParentClassName.empty() ) {
         code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
@@ -1295,7 +1316,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         if (defref) {
                             const CRefTypeStrings* refStr = dynamic_cast<const CRefTypeStrings*>(argStr);
                             if (refStr) {
-                                defTName = refStr->GetDataType()->GetCType(code.GetNamespace());
+                                defTName = refStr->GetDataTypeStr()->GetCType(code.GetNamespace());
                                 defTName += "::Tdata";
                             }
                             defref = false;
@@ -1351,6 +1372,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     if (octets->IsCompressed()) {
                         methods << "->SetCompressed()";
                     }
+                }
+                ENsQualifiedMode memNsqMode = i->dataType->IsNsQualified();
+                if (memNsqMode != eNSQNotSet && memNsqMode != defNsqMode) {
+                    methods << "->SetNsQualified(";
+                    if (memNsqMode == eNSQualified) {
+                        methods << "true";
+                    } else {
+                        methods << "false";
+                    }
+                    methods << ")";
                 }
             }
             if (i->nonEmpty) {

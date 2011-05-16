@@ -48,8 +48,9 @@ BEGIN_NCBI_SCOPE
 CChoicePtrTypeStrings::CChoicePtrTypeStrings(const string& externalName,
                                              const string& className,
                                              const string& namespaceName,
+                                             const CDataType* dataType,
                                              const CComments& comments)
-    : CParent(externalName, className, namespaceName, comments)
+    : CParent(externalName, className, namespaceName, dataType, comments)
 {
 }
 

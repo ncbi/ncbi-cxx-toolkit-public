@@ -348,6 +348,12 @@ CMemberInfo* CMemberInfo::SetCompressed(void)
     return this;
 }
 
+CMemberInfo* CMemberInfo::SetNsQualified(bool qualified)
+{
+    GetId().SetNsQualified(qualified);
+    return this;
+}
+
 CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 {
     m_Optional = true;

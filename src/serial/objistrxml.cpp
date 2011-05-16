@@ -407,16 +407,7 @@ CTempString CObjectIStreamXml::ReadName(char c)
         } else if (ns_prefix == "xml") {
             iColon = 0;
         } else {
-            if (m_Attlist) {
-                if (m_CurrNsPrefix != ns_prefix) {
-                    string value;
-                    ReadAttributeValue(value, true);
-                    char ch = SkipWS();
-                    return IsEndOfTagChar(ch) ? CTempString() : ReadName(ch);
-                }
-            } else {
-                m_CurrNsPrefix = ns_prefix;
-            }
+            m_CurrNsPrefix = ns_prefix;
         }
     } else {
         if (!m_Attlist) {

@@ -288,6 +288,14 @@ public:
     {
         return m_Namespace;
     }
+    void SetNsQualified(bool qualified)
+    {
+        m_NsQualified = qualified ? eNSQualified : eNSUnqualified;
+    }
+    ENsQualifiedMode IsNsQualified(void) const
+    {
+        return m_NsQualified;
+    }
     string GetFullName(void) const;
 
 protected:
@@ -322,6 +330,7 @@ private:
     bool m_IsAlias;
     multimap<string,string> m_ForbidVar;
     string m_Namespace;
+    ENsQualifiedMode m_NsQualified;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

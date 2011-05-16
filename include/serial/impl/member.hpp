@@ -90,6 +90,7 @@ public:
     CMemberInfo* SetNotag(void);
     CMemberInfo* SetAnyContent(void);
     CMemberInfo* SetCompressed(void);
+    CMemberInfo* SetNsQualified(bool qualified);
 
     TConstObjectPtr GetDefault(void) const;
     CMemberInfo* SetDefault(TConstObjectPtr def);

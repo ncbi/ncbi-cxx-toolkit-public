@@ -39,6 +39,7 @@ void CObjectStackFrame::Reset(void)
     m_TypeInfo = 0;
     m_MemberId = 0;
     m_Notag = false;
+    m_NsqMode = eNSQNotSet;
 }
 
 inline
@@ -101,6 +102,17 @@ inline
 bool CObjectStackFrame::GetNotag(void) const
 {
     return m_Notag;
+}
+
+inline
+ENsQualifiedMode CObjectStackFrame::IsNsQualified(void) const
+{
+    return m_NsqMode;
+}
+inline
+void CObjectStackFrame::SetNsQualified(ENsQualifiedMode mode)
+{
+    m_NsqMode = mode;
 }
 
 
