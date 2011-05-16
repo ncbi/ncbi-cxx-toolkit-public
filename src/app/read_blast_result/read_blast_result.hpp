@@ -476,6 +476,7 @@ public:
 private:
 
     void GetGenomeLen();
+    void CheckUniqLocusTag();
 // algorithms
     void GetRNAfeats
       (

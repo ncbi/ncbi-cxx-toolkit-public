@@ -44,6 +44,41 @@ void CReadBlastApp::GetGenomeLen()
       } // end iteration over all genomic sequences
 }
 
+void CReadBlastApp::CheckUniqLocusTag()
+{
+  typedef map<string, int> THaveIt;
+  THaveIt locuses; 
+  for(CTypeIterator< CSeq_feat > f = Begin(); f; ++f)
+    {
+    const CSeq_loc&  loc = f->GetLocation();
+    if(f->GetData().IsGene())
+      {
+      if (f->GetData().GetGene().CanGetLocus_tag())
+        {
+        string locus_tag =  f->GetData().GetGene().GetLocus_tag();
+        locuses[locus_tag]++;
+        }
+      }
+    }
+
+  bool bad=false;
+  ITERATE(THaveIt, locus, locuses)
+    {
+    if(locus->second<2) continue;
+    bad=true;
+    NcbiCerr << "ERROR: CReadBlastApp::CheckUniqLocusTag : more than one gene with the same locus_tag: "
+             << locus->first 
+             << " = "
+             << locus->second
+             << NcbiEndl;
+    }
+  if(bad)
+    {
+    NcbiCerr << "FATAL: sequences or genes with the same locus_tag are not allowed" << NcbiEndl;
+    throw;
+    }
+}
+
 string CReadBlastApp::GetProtName(const CBioseq& seq)
 {
   ITERATE(CBioseq::TAnnot, annot, seq.GetAnnot())

@@ -280,6 +280,7 @@ int CReadBlastApp::Run(void)
           throw;
           }
         GetGenomeLen();
+        CheckUniqLocusTag();
          
     }}
 
