@@ -1596,9 +1596,29 @@ CSeq_align::TLengthRange CSeq_align::GapLengthRange() const
 
     case CSeq_align::TSegs::e_Disc:
         {{
+             int num_rows = CheckNumRows();
+             vector<TSeqRange> last_seg_ranges;
              ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter,
                      GetSegs().GetDisc().Get()) {
                  length_range.AddRange((*iter)->GapLengthRange());
+                 vector<TSeqRange> seg_ranges;
+                 for (int i=0; i < num_rows; i++) {
+                     seg_ranges.push_back((*iter)->GetSeqRange(i));
+                     /// If this is not first segment, include gaps between last
+                     /// segment and this one
+                     if (!last_seg_ranges.empty()) {
+                         bool minus_strand = last_seg_ranges[i] > seg_ranges[i];
+                         const TSeqRange &lower_seg =
+                             (minus_strand ? seg_ranges : last_seg_ranges)[i];
+                         const TSeqRange &upper_seg =
+                             (minus_strand ? last_seg_ranges : seg_ranges)[i];
+                         TSeqPos gap = upper_seg.GetFrom() - lower_seg.GetToOpen();
+                         if (gap > 0) {
+                             length_range.AddLength(gap);
+                         }
+                     }
+                 }
+                 last_seg_ranges = seg_ranges;
              }
          }}
         break;
