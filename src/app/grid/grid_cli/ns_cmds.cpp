@@ -61,7 +61,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
                 "must be a host:port server address.");
         }
 
-        m_NetScheduleAPI = CNetScheduleAPI(kEmptyStr, m_Opts.auth, queue);
+        m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
+            m_Opts.auth, queue);
         m_NetScheduleAPI.GetService().StickToServer(host,
             NStr::StringToInt(port));
     } else {
