@@ -87,7 +87,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         break;
     case eNetScheduleExecutor:
         m_NetScheduleExecutor =
-            m_NetScheduleAPI.GetExecuter(m_Opts.control_port);
+            m_NetScheduleAPI.GetExecuter(m_Opts.wnode_port, m_Opts.wnode_guid);
         break;
     default:
         _ASSERT(0);
@@ -701,22 +701,19 @@ int CGridCommandLineInterfaceApp::Cmd_RegWNode()
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
 
     switch (IsOptionSet(eRegisterWNode, OPTION_N(0)) |
-        IsOptionSet(eUnregisterWNode, OPTION_N(1)) |
-        IsOptionSet(eInitWNode, OPTION_N(2)) |
-        IsOptionSet(eClearWNode, OPTION_N(3))) {
+        IsOptionSet(eUnregisterWNode, OPTION_N(1))) {
     case OPTION_N(0): // eRegisterWNode
         m_NetScheduleExecutor.RegisterClient();
+        if (!IsOptionSet(eWNodeGUID))
+            printf("%s\n", m_NetScheduleExecutor.GetGUID().c_str());
         break;
     case OPTION_N(1): // eUnregisterWNode
         m_NetScheduleExecutor.UnRegisterClient();
         break;
-    case OPTION_N(2): // eInitWNode
-    case OPTION_N(3): // eClearWNode
-        break;
 
     default:
         fprintf(stderr, PROGRAM_NAME
-            ": exactly one session controlling option is required.\n");
+            ": exactly one registration option is required.\n");
         return 2;
     }
 

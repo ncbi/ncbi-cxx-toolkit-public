@@ -205,21 +205,19 @@ struct SOptionDefinition {
     {CCommandLineParser::eSwitch, eAllJobs,
         "all-jobs", "Apply to all jobs in the queue."},
 
-    {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
-        "register-wnode", "Control port to register the worker "
-            "node on (a REGC command will be sent)."},
+    {CCommandLineParser::eSwitch, eRegisterWNode,
+        "register-wnode", "Register the worker node. Requires a "
+            "control port number. Generates a GUID for this "
+            "registration unless a previously generated GUID "
+            "is specified, which is to be used instead."},
 
-    {CCommandLineParser::eOptionWithParameter, eUnregisterWNode,
-        "unregister-wnode", "Send a URGC command. Requires the control " \
-            "port number that the worker node was registered on."},
+    {CCommandLineParser::eSwitch, eUnregisterWNode,
+        "unregister-wnode", "Unregister the worker node identified by "
+            "the control port number and the GUID that were used "
+            "during worker node initialization."},
 
-    {CCommandLineParser::eOptionWithParameter, eInitWNode,
-        "init-wnode", "Send the INIT command. Requires a control "
-            "port number and a worker node GUID."},
-
-    {CCommandLineParser::eSwitch, eClearWNode,
-        "clear-wnode", "Send CLRN. Requires the GUID "
-            "that the worker node was initialized with."},
+    {CCommandLineParser::eOptionWithParameter, eWNodePort,
+        "wnode-port", "Worker node control port number."},
 
     {CCommandLineParser::eOptionWithParameter, eWNodeGUID,
         "wnode-guid", "Worker node GUID."},
@@ -417,7 +415,7 @@ struct SCommandDefinition {
         "This command initiates and terminates worker node sessions "
         "on NetSchedule servers.",
         {eNetSchedule, eQueue, eRegisterWNode, eUnregisterWNode,
-            eInitWNode, eClearWNode, eWNodeGUID, eAuth, -1}},
+            eWNodePort, eWNodeGUID, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_RequestJob,
         REQUESTJOB_COMMAND, "Get a job from NetSchedule for processing.",
@@ -707,11 +705,12 @@ int CGridCommandLineInterfaceApp::Run()
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
                 break;
-            case eRegisterWNode:
-            case eUnregisterWNode:
-            case eInitWNode:
-                m_Opts.control_port =
+            case eWNodePort:
+                m_Opts.wnode_port =
                     (unsigned short) NStr::StringToUInt(opt_value);
+                break;
+            case eWNodeGUID:
+                m_Opts.wnode_guid = opt_value;
                 break;
             case eProgressMessage:
                 m_Opts.progress_message = opt_value;
