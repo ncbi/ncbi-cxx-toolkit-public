@@ -2964,6 +2964,7 @@ echo "$as_me: error: incompatible options: --without-mt but --with-jni" >&2;}
          with_mt=yes
       fi
 
+   : ${with_exe=no}
 fi
 
 if test "$with_bin_release" = "yes" ; then

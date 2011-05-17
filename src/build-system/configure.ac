@@ -538,6 +538,7 @@ elif test "$with_jni" = "yes" ; then
          [with_]OPT=yes
       fi
      ])
+   : ${with_exe=no}
 fi
 
 if test "$with_bin_release" = "yes" ; then
