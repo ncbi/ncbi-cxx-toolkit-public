@@ -242,6 +242,8 @@ Rules=@Rules@
 serial_ws50_rtti_kludge=@serial_ws50_rtti_kludge@
 ### Special object file needed for atomic counters
 ncbicntr=@ncbicntr@
+### Holds Java Native Interface glue in --with-jni builds
+ncbi_java=@ncbi_java@
 
 #################################
 # Some platform-specific system libs that can be linked eventually

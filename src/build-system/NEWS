@@ -4,3 +4,5 @@ Changes requiring reconfiguration since September 2008:
 reconfigure after minor changes.
 
 2011-03-18: new @DBAPI_DRIVER@ variable for the sake of --without-dbapi builds.
+
+2011-05-17: new @ncbi_java@ variable for --with-jni builds.

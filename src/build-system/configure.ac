@@ -4224,9 +4224,11 @@ if test "${with_jni-no}" != "no"; then
       [AC_DEFINE(NCBI_JNI, 1,
           [Define to 1 if building Java Native Interface bindings.])
        NCBI_FEATURE([JDK Ncbi-JNI])
-       JDK_PATH=$_JTOPDIR],
+       JDK_PATH=$_JTOPDIR
+       ncbi_java=ncbi_java],
       [JDK_INCLUDE=''
-       JDK_PATH=''])
+       JDK_PATH=''
+       ncbi_java=''])
 fi
 
 ## CPPUNIT
@@ -6542,6 +6544,7 @@ AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
 AC_SUBST(JDK_PATH)
 AC_SUBST(JDK_INCLUDE)
+AC_SUBST(ncbi_java)
 
 AC_SUBST(NCBI_C_ncbi)
 
