@@ -207,9 +207,10 @@ struct SOptionDefinition {
 
     {CCommandLineParser::eSwitch, eRegisterWNode,
         "register-wnode", "Register the worker node. Requires a "
-            "control port number. Generates a GUID for this "
-            "registration unless a previously generated GUID "
-            "is specified, which is to be used instead."},
+            "control port number. Generates and prints a GUID for "
+            "this registration unless a previously generated GUID "
+            "is specified, in which case that previous registration "
+            "will be renewed."},
 
     {CCommandLineParser::eSwitch, eUnregisterWNode,
         "unregister-wnode", "Unregister the worker node identified by "
