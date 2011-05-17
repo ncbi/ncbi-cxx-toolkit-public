@@ -430,7 +430,7 @@ struct SCommandDefinition {
         "If none of the NetSchedule servers has pending jobs in the "
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
-        {eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
+        {eNetSchedule, eQueue, eWNodePort, eWNodeGUID, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",
@@ -445,8 +445,9 @@ struct SCommandDefinition {
         "command makes an attempt to acquire another pending job and "
         "if it succeeds, its output is identical to that of the "
         REQUESTJOB_COMMAND " command. Otherwise, no output is produced.",
-        {eID, eNetSchedule, eQueue, eNetCache, eInputFile, eFailJob,
-            eGetNextJob, eOutputFile, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
+            eNetCache, eInputFile, eFailJob, eGetNextJob,
+            eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
         "returnjob", "Return a previously accepted job.",
@@ -457,14 +458,14 @@ struct SCommandDefinition {
         "Pending, but the information about previous runs will "
         "not be discarded, and the expiration time will not be "
         "advanced.",
-        {eID, eNetSchedule, eQueue, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_UpdateJob,
         "updatejob", "Modify attributes of an existing job.",
         "Change one or more job properties. The outcome depends "
         "on the current state of the job.",
-        {eID, eNetSchedule, eQueue, eForceReschedule, eExtendLifetime,
-            eProgressMessage, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
+            eForceReschedule, eExtendLifetime, eProgressMessage, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery,
         "nsquery", "Send a custom query to a NetSchedule server.",

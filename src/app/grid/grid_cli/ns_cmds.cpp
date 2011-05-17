@@ -704,7 +704,7 @@ int CGridCommandLineInterfaceApp::Cmd_RegWNode()
         IsOptionSet(eUnregisterWNode, OPTION_N(1))) {
     case OPTION_N(0): // eRegisterWNode
         m_NetScheduleExecutor.RegisterClient();
-        if (!IsOptionSet(eWNodeGUID))
+        if (!IsOptionSet(eWNodeGUID) || m_Opts.wnode_guid.empty())
             printf("%s\n", m_NetScheduleExecutor.GetGUID().c_str());
         break;
     case OPTION_N(1): // eUnregisterWNode
