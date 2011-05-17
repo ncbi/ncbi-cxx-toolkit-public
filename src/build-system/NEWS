@@ -2,3 +2,5 @@ Changes requiring reconfiguration since September 2008:
 
 2008-09-25: new setup introduced to avoid insisting that everyone
 reconfigure after minor changes.
+
+2011-03-18: new @DBAPI_DRIVER@ variable for the sake of --without-dbapi builds.
