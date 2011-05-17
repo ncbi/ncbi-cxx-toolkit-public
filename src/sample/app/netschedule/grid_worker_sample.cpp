@@ -86,7 +86,7 @@ public:
 
     virtual ~CSampleJob() {} 
 
-    int Do(CWorkerNodeJobContext& context) 
+    int Do(CWorkerNodeJobContext& context)
     {
         context.GetCleanupEventSource()->AddListener(
             new CSampleJobCleanupListener("Job-do"));
@@ -117,12 +117,14 @@ public:
                 throw runtime_error("Worker node input stream error"); 
             }
             // Don't forget to check if shutdown has been requested
-            if (count % 1000 == 0 && context.GetShutdownLevel() !=
-                    CNetScheduleAdmin::eNoShutdown) {
-                // Return the job for processing by other instances.
-                context.ReturnJob();
-                return 1;
-            }
+            if (count % 1000 == 0)
+                switch (context.GetShutdownLevel()) {
+                case CNetScheduleAdmin::eShutdownImmediate:
+                case CNetScheduleAdmin::eDie:
+                    // Return the job for processing by other instances.
+                    context.ReturnJob();
+                    return 1;
+                }
             double d;
             is >> d;
             dvec.push_back(d);
@@ -134,8 +136,9 @@ public:
         // without calling context.CommitJob()
         //
         for (int i = 0; i < m_Iters; ++i) {
-            if (context.GetShutdownLevel() ==
-                    CNetScheduleAdmin::eShutdownImmediate) {
+            switch (context.GetShutdownLevel()) {
+            case CNetScheduleAdmin::eShutdownImmediate:
+            case CNetScheduleAdmin::eDie:
                 // Return the job for processing by other instances.
                 context.ReturnJob();
                 return 1;

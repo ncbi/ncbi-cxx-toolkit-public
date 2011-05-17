@@ -254,15 +254,30 @@ public:
     ///
     void ReturnJob();
 
-    /// Check if node application shutdown was requested.
+    /// Check if job processing must be aborted.
     ///
-    /// If job takes a long time it should periodically call
-    /// this method during the execution and check if node shutdown was
-    /// requested and gracefully finish its work.
+    /// This method must be called periodically from within the Do()
+    /// method to check whether it needs to stop processing the current
+    /// job. If GetShutdownLevel() returns eShutdownImmediate or eDie,
+    /// the Do() method must immediately return its job to the server
+    /// by calling context.ReturnJob() and return a non-zero integer
+    /// to the caller.
     ///
-    /// Shutdown level eNormal means job can finish the job and exit,
-    /// eImmidiate means node should exit immediately
-    /// (unfinished jobs are returned back to the queue)
+    /// If GetShutdownLevel() returns eNormalShutdown, the Do() method
+    /// is free to decide whether the job processing must be aborted
+    /// or completed.
+    ///
+    /// Aside from the natural reason for GetShutdownLevel() to return
+    /// eNormalShutdown, eShutdownImmediate, or eDie, (that is, when
+    /// a worker node shutdown has been requested), this method can
+    /// also return eShutdownImmediate when the NetSchedule server
+    /// is not expecting the current job to complete. This can happen
+    /// due to multiple reasons:
+    /// 1. The job has been explicitly cancelled by the submitter or
+    ///    administrator.
+    /// 2. The job was rescheduled to another worker node and has been
+    ///    successfully finished.
+    /// 3. The job has expired.
     ///
     CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void) const;
 
