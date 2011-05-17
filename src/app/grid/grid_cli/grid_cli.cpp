@@ -205,6 +205,25 @@ struct SOptionDefinition {
     {CCommandLineParser::eSwitch, eAllJobs,
         "all-jobs", "Apply to all jobs in the queue."},
 
+    {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
+        "register-wnode", "Control port to register the worker "
+            "node on (a REGC command will be sent)."},
+
+    {CCommandLineParser::eOptionWithParameter, eUnregisterWNode,
+        "unregister-wnode", "Send a URGC command. Requires the control " \
+            "port number that the worker node was registered on."},
+
+    {CCommandLineParser::eOptionWithParameter, eInitWNode,
+        "init-wnode", "Send the INIT command. Requires a control "
+            "port number and a worker node GUID."},
+
+    {CCommandLineParser::eSwitch, eClearWNode,
+        "clear-wnode", "Send CLRN. Requires the GUID "
+            "that the worker node was initialized with."},
+
+    {CCommandLineParser::eOptionWithParameter, eWNodeGUID,
+        "wnode-guid", "Worker node GUID."},
+
     {CCommandLineParser::eOptionWithParameter, eFailJob,
         FAIL_JOB_OPTION, "Report the job as failed."},
 
@@ -392,6 +411,13 @@ struct SCommandDefinition {
         "if the jobs never existed. "
         WN_NOT_NOTIFIED_DISCLAIMER,
         {eOptionalID, eNetSchedule, eQueue, eAllJobs, eCompatMode, eAuth, -1}},
+
+    {&CGridCommandLineInterfaceApp::Cmd_RegWNode,
+        "regwnode", "Register or unregister a worker node.",
+        "This command initiates and terminates worker node sessions "
+        "on NetSchedule servers.",
+        {eNetSchedule, eQueue, eRegisterWNode, eUnregisterWNode,
+            eInitWNode, eClearWNode, eWNodeGUID, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_RequestJob,
         REQUESTJOB_COMMAND, "Get a job from NetSchedule for processing.",
@@ -680,6 +706,12 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
+                break;
+            case eRegisterWNode:
+            case eUnregisterWNode:
+            case eInitWNode:
+                m_Opts.control_port =
+                    (unsigned short) NStr::StringToUInt(opt_value);
                 break;
             case eProgressMessage:
                 m_Opts.progress_message = opt_value;

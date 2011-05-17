@@ -109,6 +109,11 @@ enum EOption {
     eExtendLifetime,
     eProgressMessage,
     eAllJobs,
+    eRegisterWNode,
+    eUnregisterWNode,
+    eInitWNode,
+    eClearWNode,
+    eWNodeGUID,
     eFailJob,
     eQueueArg,
     eModelQueue,
@@ -160,6 +165,7 @@ private:
         vector<string> query_fields;
         CNetScheduleAPI::EJobStatus job_status;
         time_t extend_lifetime_by;
+        unsigned short control_port;
         string progress_message;
         string queue_description;
         string error_message;
@@ -179,6 +185,7 @@ private:
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), extend_lifetime_by(0),
+            control_port(0),
             input_stream(NULL), output_stream(NULL)
         {
             memset(option_flags, 0, eTotalNumberOfOptions);
@@ -227,6 +234,7 @@ public:
     int Cmd_ReadJobs();
     int Cmd_CancelJob();
     int Cmd_Kill();
+    int Cmd_RegWNode();
     int Cmd_RequestJob();
     int Cmd_CommitJob();
     int Cmd_ReturnJob();

@@ -86,7 +86,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
         break;
     case eNetScheduleExecutor:
-        m_NetScheduleExecutor = m_NetScheduleAPI.GetExecuter();
+        m_NetScheduleExecutor =
+            m_NetScheduleAPI.GetExecuter(m_Opts.control_port);
         break;
     default:
         _ASSERT(0);
@@ -690,6 +691,33 @@ int CGridCommandLineInterfaceApp::Cmd_Kill()
             return 1;
         }
         m_NetScheduleAdmin.DropJob(m_Opts.id);
+    }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_RegWNode()
+{
+    SetUp_NetScheduleCmd(eNetScheduleExecutor);
+
+    switch (IsOptionSet(eRegisterWNode, OPTION_N(0)) |
+        IsOptionSet(eUnregisterWNode, OPTION_N(1)) |
+        IsOptionSet(eInitWNode, OPTION_N(2)) |
+        IsOptionSet(eClearWNode, OPTION_N(3))) {
+    case OPTION_N(0): // eRegisterWNode
+        m_NetScheduleExecutor.RegisterClient();
+        break;
+    case OPTION_N(1): // eUnregisterWNode
+        m_NetScheduleExecutor.UnRegisterClient();
+        break;
+    case OPTION_N(2): // eInitWNode
+    case OPTION_N(3): // eClearWNode
+        break;
+
+    default:
+        fprintf(stderr, PROGRAM_NAME
+            ": exactly one session controlling option is required.\n");
+        return 2;
     }
 
     return 0;
