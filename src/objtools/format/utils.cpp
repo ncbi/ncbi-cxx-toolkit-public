@@ -532,7 +532,7 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 
     // check for ';' that's part of an HTML escape char like "&bgr;" and
     // skip over it (i.e., don't remove it) if so
-    if( start_of_junk_pos < str.length() && str[start_of_junk_pos] == ';' ) {
+    if( start_of_junk_pos < (int)str.length() && str[start_of_junk_pos] == ';' ) {
         // we assume no HTML escape char will be longer than this
         static const int kMaxCharsToLookAt = 20;
 
@@ -587,7 +587,7 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
                 str += suffix;
                 changed = true;
             }
-        } else if ( start_of_junk_pos < str.length() ) {
+        } else if ( start_of_junk_pos < (int)str.length() ) {
             str.erase( start_of_junk_pos );
             changed = true;
         }

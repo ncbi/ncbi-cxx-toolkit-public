@@ -170,8 +170,7 @@ public:
 protected:
     typedef CGene_ref::TSyn TGeneSyn;
 
-    void x_GatherInfo(CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
-    //void x_FixLocation(CBioseqContext& ctx);
+    void x_GatherInfoWithParent(CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
 
     bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
@@ -182,10 +181,12 @@ protected:
         x_GetFeatViaSubsetThenExtremesIfPossible( 
             CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
             CSeqFeatData::ESubtype feat_subtype,
-            const CSeq_loc &location, CSeqFeatData::E_Choice sought_type ) const ;
+            const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
+            const CGene_ref* filtering_gene_xref ) const ;
     CConstRef<CSeq_feat> 
         x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
-            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type ) const;
+            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
+            const CGene_ref* filtering_gene_xref ) const;
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );

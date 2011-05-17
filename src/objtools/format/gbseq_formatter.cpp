@@ -448,7 +448,7 @@ static void s_SetIntervals(CGBFeature::TIntervals& intervals,
             TSeqPos from, to;
             if ( range.IsWhole() ) {
                 from = 1;
-                to = sequence::GetLength(it.GetSeq_loc(), &scope);
+                to = sequence::GetLength(it.GetEmbeddingSeq_loc(), &scope);
             } else {
                 from = range.GetFrom() + 1;
                 to = range.GetTo() + 1;

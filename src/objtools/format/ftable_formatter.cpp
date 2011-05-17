@@ -115,14 +115,14 @@ void CFtableFormatter::x_FormatLocation
 {
     bool need_key = true;
     for (CSeq_loc_CI it(loc); it; ++it) {
-        const CSeq_loc& curr = it.GetSeq_loc();
+        const CSeq_loc& curr = it.GetEmbeddingSeq_loc();
         bool is_between = s_IsBetween(curr);
       
         CSeq_loc_CI::TRange range = it.GetRange();
         TSeqPos start, stop;
         if ( range.IsWhole() ) {
             start = 1;
-            stop  = sequence::GetLength(it.GetSeq_loc(), &ctx.GetScope()) + 1;
+            stop  = sequence::GetLength(it.GetEmbeddingSeq_loc(), &ctx.GetScope()) + 1;
         } else {
             start = range.GetFrom() + 1;
             stop  = range.GetTo() + 1;

@@ -172,7 +172,7 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
     }
 
     if( (opts & fGetProteinWeight_ForceInitialMetTrim) != 0 ) {
-        if (*vit == ('M' - 'A')) {
+        if ( vit.GetBufferSize() > 1 && *vit == ('M' - 'A')) {
             ++vit;
         }
     } else {
@@ -187,7 +187,7 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
         default:
             /// for complete molecules, we skip the leading 'M' since this is
             /// cleaved as a post-transcriptional modification
-            if (*vit == ('M' - 'A')) {
+            if ( vit.GetBufferSize() > 1 && *vit == ('M' - 'A')) {
                 ++vit;
             }
             break;

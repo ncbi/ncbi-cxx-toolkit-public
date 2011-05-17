@@ -242,11 +242,11 @@ bool CFlatSeqLoc::x_Add
              oss << prefix;
          }
          bool join_inside_order = false; // true when we're inside a join() inside an order()
-         bool next_is_virtual = ( !it || it.GetSeq_loc().IsNull() || s_IsVirtualLocation( it.GetSeq_loc(), seq ) );
+         bool next_is_virtual = ( !it || it.GetEmbeddingSeq_loc().IsNull() || s_IsVirtualLocation( it.GetEmbeddingSeq_loc(), seq ) );
          for (  ; it; ++it ) {
              oss << delim;
 
-             const CSeq_loc& this_loc = it.GetSeq_loc();
+             const CSeq_loc& this_loc = it.GetEmbeddingSeq_loc();
 
              // save some work by using what was done on the last loop iteration
              // (this is set before the loop on the first iteration)
@@ -257,7 +257,7 @@ bool CFlatSeqLoc::x_Add
              ++next;
 
              // begin join in order, if necessary
-             next_is_virtual = ( ! next || next.GetSeq_loc().IsNull() || s_IsVirtualLocation( next.GetSeq_loc(), seq ) );
+             next_is_virtual = ( ! next || next.GetEmbeddingSeq_loc().IsNull() || s_IsVirtualLocation( next.GetEmbeddingSeq_loc(), seq ) );
              if( is_flat_order ) {
                  if( ( this_loc.IsInt() || this_loc.IsPnt() ) && 
                      ! join_inside_order && ! this_is_virtual && ! next_is_virtual ) {

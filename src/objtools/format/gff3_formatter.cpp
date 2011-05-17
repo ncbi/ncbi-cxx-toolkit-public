@@ -612,7 +612,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                     frame = (tgt_piece.GetFrom()            ) % tgt_width;
                 }
                 count      = tgt_piece.GetLength() / width;
-                frameshift = -(tgt_piece.GetLength() % width);
+                frameshift = -(TSignedSeqPos)(tgt_piece.GetLength() % width);
                 tgt_piece.SetFrom(tgt_piece.GetFrom() / tgt_width);
                 tgt_piece.SetTo  (tgt_piece.GetTo()   / tgt_width);
                 tgt_range += tgt_piece;
