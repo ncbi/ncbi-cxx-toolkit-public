@@ -308,13 +308,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     auto_ptr<CCgiWatchFile> watcher(0);
     {{
         const string& orig_filename = reg.Get("FastCGI", "WatchFile.Name");
-        string filename = CDirEntry::CreateAbsolutePath
-            (orig_filename, CDirEntry::eRelativeToExe);
-        if (filename != orig_filename) {
-            _TRACE("Adjusted relative CGI watch file name " << orig_filename
-                   << " to " << filename);
-        }
-        if ( !filename.empty() ) {
+        if ( !orig_filename.empty() ) {
+            string filename = CDirEntry::CreateAbsolutePath
+                (orig_filename, CDirEntry::eRelativeToExe);
+            if (filename != orig_filename) {
+                _TRACE("Adjusted relative CGI watch file name " << orig_filename
+                       << " to " << filename);
+            }
             int limit = reg.GetInt("FastCGI", "WatchFile.Limit", -1, 0,
                                    CNcbiRegistry::eErrPost);
             if (limit <= 0) {
