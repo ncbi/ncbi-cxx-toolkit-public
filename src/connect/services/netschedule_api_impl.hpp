@@ -234,7 +234,7 @@ inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
 struct SNetScheduleExecuterImpl : public CObject
 {
     SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl,
-        unsigned short control_port);
+        unsigned short control_port, const string& guid);
 
     bool GetJobImpl(const string& cmd, CNetScheduleJob& job);
 
@@ -246,11 +246,15 @@ struct SNetScheduleExecuterImpl : public CObject
 };
 
 inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
-    CNetScheduleAPI::TInstance ns_api_impl, unsigned short control_port) :
+    CNetScheduleAPI::TInstance ns_api_impl, unsigned short control_port,
+        const string& guid) :
     m_API(ns_api_impl),
-    m_UID(GetDiagContext().GetStringUID()),
+    m_UID(guid),
     m_ControlPort(control_port)
 {
+    if (m_UID.empty())
+        m_UID = GetDiagContext().GetStringUID();
+
     CFastMutexGuard g(ns_api_impl->m_FastMutex);
 
     static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(

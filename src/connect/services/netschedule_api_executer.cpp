@@ -343,6 +343,11 @@ void CNetScheduleExecuter::RegisterClient()
         NStr::IntToString(m_Impl->m_ControlPort));
 }
 
+const string& CNetScheduleExecuter::GetGUID()
+{
+    return m_Impl->m_UID;
+}
+
 const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams()
 {
     return m_Impl->m_API->GetServerParams();

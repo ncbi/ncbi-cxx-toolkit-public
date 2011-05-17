@@ -226,7 +226,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// @param port Control port that the worker node will be
     ///             listening to.  If omitted, the INIT command
     ///             will not be sent to NetSchedule.
-    CNetScheduleExecuter GetExecuter(unsigned short control_port = 0);
+    CNetScheduleExecuter GetExecuter(unsigned short control_port = 0,
+        const string& guid = kEmptyStr);
 
     CNetScheduleAdmin     GetAdmin();
 
@@ -588,6 +589,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
 
     /// Register client-listener
     void RegisterClient();
+
+    const string& GetGUID();
 
     const CNetScheduleAPI::SServerParams& GetServerParams();
 

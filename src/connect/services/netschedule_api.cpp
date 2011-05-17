@@ -296,9 +296,10 @@ CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
     return new SNetScheduleSubmitterImpl(m_Impl);
 }
 
-CNetScheduleExecuter CNetScheduleAPI::GetExecuter(unsigned short control_port)
+CNetScheduleExecuter CNetScheduleAPI::GetExecuter(unsigned short control_port,
+    const string& guid)
 {
-    return new SNetScheduleExecuterImpl(m_Impl, control_port);
+    return new SNetScheduleExecuterImpl(m_Impl, control_port, guid);
 }
 
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
