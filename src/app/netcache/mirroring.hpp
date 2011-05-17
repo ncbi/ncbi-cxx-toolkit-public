@@ -37,23 +37,73 @@
 #include <deque>
 #include <string>
 
-// For Uint2, Uint8, NCBI_CONST_UINT8
 #include <corelib/ncbitype.h>
-
-// For CFastMutex
 #include <corelib/ncbimtx.hpp>
-
-// For BEGIN_NCBI_SCOPE
 #include <corelib/ncbistl.hpp>
-
 #include <corelib/ncbithr.hpp>
+
+#include "sync_log.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
-// pairs of (blob key, local_rec_no)
-typedef deque< pair< string, Uint8 > >     TPropagateWrites;
-struct SDistribution;
+class CNCMirroring
+{
+public:
+    static void Initialize(void);
+    static void Finalize(void);
+
+    static void BlobWriteEvent(const string& key,
+                               Uint2 slot,
+                               Uint8 orig_rec_no,
+                               Uint8 size);
+    static void BlobRemoveEvent(const string& key,
+                                Uint2 slot,
+                                Uint8 orig_rec_no,
+                                Uint8 orig_time);
+    static void BlobProlongEvent(const string& key,
+                                 Uint2 slot,
+                                 Uint8 orig_rec_no,
+                                 Uint8 orig_time);
+
+    static Uint8 GetQueueSize(void);
+    static Uint8 GetQueueSize(Uint8 server_id);
+
+
+    static CAtomicCounter   sm_TotalCopyRequests;
+    static CAtomicCounter   sm_CopyReqsRejected;
+};
+
+
+struct SNCMirrorEvent
+{
+    ENCSyncEvent evt_type;
+    string  key;
+    Uint8   orig_rec_no;
+    Uint8   orig_time;
+
+
+    SNCMirrorEvent(ENCSyncEvent typ, const string& key_, Uint8 rec_no)
+        : evt_type(typ), key(key_), orig_rec_no(rec_no), orig_time(0)
+    {}
+    SNCMirrorEvent(ENCSyncEvent typ, const string& key_, Uint8 rec_no, Uint8 tm)
+        : evt_type(typ), key(key_), orig_rec_no(rec_no), orig_time(tm)
+    {}
+};
+
+typedef list<SNCMirrorEvent*>   TNCMirrorQueue;
+
+
+class CNCMirroringThread;
+
+struct SDistribution
+{
+    TNCMirrorQueue big_cmds;
+    TNCMirrorQueue small_cmds;
+    CFastMutex     lock;
+    CNCMirroringThread** handling_threads;
+};
+
 
 enum ENCMirroringType {
     eMirrorSmallPrefered,
@@ -85,7 +135,7 @@ public:
     }
 
 private:
-    virtual void *  Main( void );
+    virtual void* Main(void);
 
     Uint8           server_id;
     SDistribution*  distr;
@@ -95,41 +145,7 @@ private:
 };
 
 
-
-
-
-
-class CNCMirroring
-{
-public:
-    // Reads settings from an ini file,
-    // Creates command queues,
-    // Creates service threads
-    static void Initialize( void );
-
-    // Stops the threads
-    // Does not clean the memory because it is guaranteed that it is called
-    // only when NC is shut down.
-    static void Finalize( void );
-
-    // Generates 1 or more write commands for the corresponding servers
-    // or overwrites previous write commands if any
-    static void BlobWriteEvent( const string &  key,
-                                Uint2           slot,
-                                Uint8           local_rec_no,
-                                Uint8           size);
-
-    static Uint8 GetQueueSize(void);
-    static Uint8 GetQueueSize(Uint8 server_id);
-
-
-    static CAtomicCounter   sm_TotalCopyRequests;
-    static CAtomicCounter   sm_CopyReqsRejected;
-};
-
-
 END_NCBI_SCOPE
-
 
 #endif /* NETCACHE__MIRRORING__HPP */
 

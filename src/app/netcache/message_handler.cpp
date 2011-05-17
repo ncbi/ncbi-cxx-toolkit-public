@@ -160,6 +160,20 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "log_time",eNSPT_Int,  eNSPA_Required },
           { "log_srv", eNSPT_Int,  eNSPA_Required },
           { "log_rec", eNSPT_Int,  eNSPA_Required } } },
+    { "COPY_PROLONG",
+        {&CNCMessageHandler::x_DoCmd_CopyProlong,
+            "COPY_PROLONG",  eWithBlob,        eNCRead},
+        { { "cache",   eNSPT_Str,  eNSPA_Required },
+          { "key",     eNSPT_Str,  eNSPA_Required },
+          { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "cr_time", eNSPT_Int,  eNSPA_Required },
+          { "cr_srv",  eNSPT_Int,  eNSPA_Required },
+          { "cr_id",   eNSPT_Int,  eNSPA_Required },
+          { "dead",    eNSPT_Int,  eNSPA_Required },
+          { "ver_dead",eNSPT_Int,  eNSPA_Required },
+          { "log_time",eNSPT_Int,  eNSPA_Optchain },
+          { "log_srv", eNSPT_Int,  eNSPA_Optional },
+          { "log_rec", eNSPT_Int,  eNSPA_Optional } } },
     { "PUT3",
         {&CNCMessageHandler::x_DoCmd_Put3,
             "PUT3",          eWithAutoBlobKey, eNCCreate},
@@ -1653,7 +1667,7 @@ SNCSyncEvent*
 CNCMessageHandler::x_AddRemoveEvent(void)
 {
     SNCSyncEvent* event = new SNCSyncEvent();
-    event->event_type = eSyncUserRemove;
+    event->event_type = eSyncRemove;
     event->key = m_BlobKey;
     event->orig_server = CNCDistributionConf::GetSelfID();
     event->orig_time = CNetCacheServer::GetPreciseTime();
@@ -2379,7 +2393,7 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
             if (m_SockBuffer.IsWriteDataPending()) {
                 return;
             }
-
+next_step:
             switch (x_GetState()) {
             case ePreAuthenticated:
                 do_next_step = x_ReadAuthMessage();
@@ -2434,7 +2448,11 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
                 x_CloseConnection();
             }
 
-            m_SockBuffer.Flush();
+            if (m_SockBuffer.IsWriteDataPending()) {
+                m_SockBuffer.Flush();
+                if (!m_SockBuffer.IsWriteDataPending())
+                    goto next_step;
+            }
         }
         catch (CIO_Exception& ex) {
             ERR_POST("IO exception in the command: " << ex);
@@ -2882,6 +2900,8 @@ CNCMessageHandler::x_DoCmd_Remove(void)
 {
     m_BlobAccess->DeleteBlob();
     SNCSyncEvent* evt = x_AddRemoveEvent();
+    CNCMirroring::BlobRemoveEvent(m_BlobKey, m_BlobSlot,
+                                  evt->orig_rec_no, evt->orig_time);
     if (m_Quorum != 1) {
         if (m_Quorum != 0)
             --m_Quorum;
@@ -3093,7 +3113,7 @@ CNCMessageHandler::x_DoCmd_CopyRemove(void)
     {
         m_BlobAccess->DeleteBlob();
         SNCSyncEvent* event = new SNCSyncEvent();
-        event->event_type = eSyncUserRemove;
+        event->event_type = eSyncRemove;
         event->key = m_BlobKey;
         event->orig_server = m_OrigSrvId;
         event->orig_time = m_OrigTime;
@@ -3118,12 +3138,8 @@ CNCMessageHandler::x_DoCmd_SyncRemove(void)
 }
 
 bool
-CNCMessageHandler::x_DoCmd_SyncProlong(void)
+CNCMessageHandler::x_DoCmd_CopyProlong(void)
 {
-    if (!x_CanStartSyncCommand())
-        return true;
-
-    x_SetFlag(fNeedSyncFinish);
     if (!m_BlobAccess->IsBlobExists()) {
         m_CmdCtx->SetRequestStatus(eStatus_NotFound);
         m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
@@ -3151,7 +3167,7 @@ CNCMessageHandler::x_DoCmd_SyncProlong(void)
             event->orig_server = m_OrigSrvId;
             event->orig_time = m_OrigTime;
             event->orig_rec_no = m_OrigRecNo;
-            CNCSyncLog::AddEvent(m_Slot, event);
+            CNCSyncLog::AddEvent(m_BlobSlot, event);
         }
     }
     else {
@@ -3159,6 +3175,16 @@ CNCMessageHandler::x_DoCmd_SyncProlong(void)
     }
     m_SockBuffer.WriteMessage("OK:", "SIZE=0");
     return true;
+}
+
+bool
+CNCMessageHandler::x_DoCmd_SyncProlong(void)
+{
+    if (!x_CanStartSyncCommand())
+        return true;
+
+    x_SetFlag(fNeedSyncFinish);
+    return x_DoCmd_CopyProlong();
 }
 
 bool
@@ -3482,7 +3508,8 @@ CNCRemoveOnPeers_Task::CNCRemoveOnPeers_Task(const vector<Uint8>& servers,
       m_Quorum(quorum),
       m_ReqCtx(req_ctx),
       m_Key(key),
-      m_Event(new SNCSyncEvent(*evt))
+      m_OrigRecNo(evt->orig_rec_no),
+      m_OrigTime(evt->orig_time)
 {}
 
 CNCRemoveOnPeers_Task::EStatus
@@ -3494,7 +3521,8 @@ CNCRemoveOnPeers_Task::Execute(void)
         if (srv_id == CNCDistributionConf::GetSelfID())
             continue;
 
-        ENCPeerFailure send_res = CNetCacheServer::RemoveBlobOnPeer(srv_id, m_Event);
+        ENCPeerFailure send_res = CNetCacheServer::RemoveBlobOnPeer(
+                                  srv_id, m_Key, m_OrigRecNo, m_OrigTime, true);
         if (send_res == ePeerActionOK) {
             if (m_Quorum == 1)
                 goto quorum_met;
@@ -3504,7 +3532,6 @@ CNCRemoveOnPeers_Task::Execute(void)
     }
 
 quorum_met:
-    delete m_Event;
     g_NetcacheServer->WakeUpPollCycle();
     return eCompleted;
 }

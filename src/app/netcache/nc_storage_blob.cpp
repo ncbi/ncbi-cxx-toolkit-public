@@ -513,6 +513,7 @@ NCBI_NORETURN
 inline void
 CNCBlobAccessor::x_DelCorruptedVersion(void)
 {
+    abort();
     ERR_POST_X(19, "Database information about blob "
                    << g_NCStorage->UnpackKeyForLogs(m_BlobKey)
                    << " is corrupted. Blob will be deleted");
@@ -545,7 +546,8 @@ CNCBlobAccessor::x_ReadNextChunk(void)
 inline void
 CNCBlobAccessor::x_ReadSingleChunk(void)
 {
-    x_ReadChunkData(m_CurData->coords.blob_id, m_CurData->data);
+    if (m_CurData->size != 0)
+        x_ReadChunkData(m_CurData->coords.blob_id, m_CurData->data);
     if (m_CurData->data->GetSize() != m_CurData->size) {
         x_DelCorruptedVersion();
     }
@@ -661,7 +663,6 @@ bool
 CNCBlobAccessor::ReplaceBlobInfo(const SNCBlobVerData& new_info)
 {
     if (m_CurData) {
-        LOG_POST("ReplaceBlobInfo: cur_time=" << m_CurData->create_time << ",new_time=" << new_info.create_time << ",cur_srv=" << m_CurData->create_server << ",new_srv=" << new_info.create_server << ",cur_id=" << m_CurData->create_id << ",new_id=" << new_info.create_id);
         if (m_CurData->create_time > new_info.create_time)
             return false;
         else if (m_CurData->create_time == new_info.create_time) {
@@ -672,9 +673,6 @@ CNCBlobAccessor::ReplaceBlobInfo(const SNCBlobVerData& new_info)
                     return false;
             }
         }
-    }
-    else {
-        LOG_POST("ReplaceBlobInfo: no cur data");
     }
     m_NewData->create_time = new_info.create_time;
     m_NewData->ttl = new_info.ttl;

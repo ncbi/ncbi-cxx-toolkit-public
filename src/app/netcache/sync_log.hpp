@@ -37,13 +37,8 @@
 #include <deque>
 #include <string>
 
-// For Uint2, Uint8, NCBI_CONST_UINT8
 #include <corelib/ncbitype.h>
-
-// For CFastMutex
 #include <corelib/ncbimtx.hpp>
-
-// For BEGIN_NCBI_SCOPE
 #include <corelib/ncbistl.hpp>
 
 
@@ -53,40 +48,38 @@ BEGIN_NCBI_SCOPE
 /// Event types to log
 enum ENCSyncEvent
 {
-    eSyncWrite,             //< Blob write event
-    eSyncUserRemove,        //< Blob remove event (user initiated)
-    eSyncProlong            //< Blob life time prolongation event
+    eSyncWrite,     //< Blob write event
+    eSyncRemove,    //< Blob remove event
+    eSyncProlong    //< Blob life time prolongation event
 };
-
-
 
 /// Single event record
 struct SNCSyncEvent
 {
-    Uint8         rec_no;       //< Local event sequential number.
-    string        key;          //< Blob key.
-    ENCSyncEvent  event_type;   //< Event type (write, remove, prolong).
-    Uint8         orig_time;    //< Timestamp of the event when
-                                //< it originated by client.
-    Uint8         orig_server;  //< The server where event has
-                                //< been originated.
-    Uint8         orig_rec_no;  //< Record number on the host where the
-                                //< event was originated.
-    Uint8         local_time;   //< Timestamp when the record was
-                                //< recorded locally.
+    Uint8  rec_no;          //< Local event sequential number.
+    string key;             //< Blob key.
+    ENCSyncEvent event_type;//< Event type (write, remove, prolong).
+    Uint8  orig_time;       //< Timestamp of the event when
+                            //< it originated by client.
+    Uint8  orig_server;     //< The server where event has
+                            //< been originated.
+    Uint8  orig_rec_no;     //< Record number on the host where the
+                            //< event was originated.
+    Uint8  local_time;      //< Timestamp when the record was
+                            //< recorded locally.
 
-    bool isOlder( const SNCSyncEvent &  other ) const
+    bool isOlder(const SNCSyncEvent& other) const
     {
-        if ( orig_time != other.orig_time )
+        if (orig_time != other.orig_time)
             return orig_time < other.orig_time;
 
         // Timestamp matched, is that were on the same host?
-        if ( orig_server == other.orig_server )
+        if (orig_server == other.orig_server)
             return orig_rec_no < other.orig_rec_no;
 
-        if ( event_type == eSyncWrite  &&  other.event_type != eSyncWrite )
+        if (event_type == eSyncWrite  &&  other.event_type != eSyncWrite)
             return false;
-        if ( other.event_type == eSyncWrite  &&  event_type != eSyncWrite )
+        if (other.event_type == eSyncWrite  &&  event_type != eSyncWrite)
             return true;
 
         // No way to detect, return true
@@ -96,42 +89,34 @@ struct SNCSyncEvent
 
 
 // Events container - local time ordered
-typedef deque< SNCSyncEvent * >     TSyncEvents;
+typedef list<SNCSyncEvent*>    TSyncEvents;
 
 // Reduced events container for fast search
 struct SBlobEvent
 {
     // One of the fields is always filled
-    SNCSyncEvent *  wr_or_rm_event;
-    SNCSyncEvent *  prolong_event;
+    SNCSyncEvent* wr_or_rm_event;
+    SNCSyncEvent* prolong_event;
 
     SBlobEvent() :
-        wr_or_rm_event( NULL ), prolong_event( NULL )
+        wr_or_rm_event(NULL), prolong_event(NULL)
     {}
 
-    Uint8  getMaxRecNoWithinTimeLimit( Uint8  limit ) const
+    Uint8 getMaxRecNoWithinTimeLimit(Uint8 limit) const
     {
-        if ( prolong_event != NULL && prolong_event->local_time < limit )
+        if (prolong_event != NULL  &&  prolong_event->local_time < limit)
             return prolong_event->rec_no;
-        if ( wr_or_rm_event != NULL && wr_or_rm_event->local_time < limit )
+        if (wr_or_rm_event != NULL  &&  wr_or_rm_event->local_time < limit)
             return wr_or_rm_event->rec_no;
         return 0;
     }
 };
-typedef map< string, SBlobEvent >   TReducedSyncEvents;
+typedef map<string, SBlobEvent>   TReducedSyncEvents;
 
 
-/// API to support netcache blobs synchronization
 class CNCSyncLog
 {
 public:
-    // file_name - where to load the log table from
-    // if file_name.empty() then it was a crash, there is
-    // no need to load and the log record id must start from
-    // start_log_rec_no
-    // In case of problems the log will be empty and a
-    // log message will be posted.
-    // max_records is the max allowed number of records in the log
     static void Initialize(bool need_read_saved, Uint8 start_log_rec_no);
 
     // Save the log records to the file_name
@@ -144,8 +129,7 @@ public:
     // CNCSynclog fills id and the local_time fields.
     // The id field value is returned.
     // Must be thread safe.
-    static Uint8 AddEvent( Uint2           slot,
-                           SNCSyncEvent *  event );
+    static Uint8 AddEvent(Uint2 slot, SNCSyncEvent* event);
 
     // Provides the last successful synchronized record numbers
     // for the given server.
@@ -154,19 +138,19 @@ public:
     // which the remote server is synchronized
     // remote_synced_rec_id is filled with the last record number till
     // which the local server is synchronized
-    static void GetLastSyncedRecNo( Uint8    server,
-                                    Uint2    slot,
-                                    Uint8 *  local_synced_rec_no,
-                                    Uint8 *  remote_synced_rec_no );
+    static void GetLastSyncedRecNo(Uint8  server,
+                                   Uint2  slot,
+                                   Uint8* local_synced_rec_no,
+                                   Uint8* remote_synced_rec_no);
 
     // Saves the last synchronized record ids for the given server.
-    static void SetLastSyncRecNo( Uint8  server,
-                                  Uint2  slot,
-                                  Uint8  local_synced_rec_no,
-                                  Uint8  remote_synced_rec_no );
+    static void SetLastSyncRecNo(Uint8 server,
+                                 Uint2 slot,
+                                 Uint8 local_synced_rec_no,
+                                 Uint8 remote_synced_rec_no);
 
     // Provides the local last created sync log
-    static Uint8 GetCurrentRecNo( Uint2 slot );
+    static Uint8 GetCurrentRecNo(Uint2 slot);
     static Uint8 GetLastRecNo(void);
 
     // Provides the list of events which occurred for
@@ -180,11 +164,11 @@ public:
     // returns false if the start_record_id is not available any more.
     // The consequent writes and removes must be compressed.
     // Must be thread safe.
-    static bool GetEventsList( Uint8                server,
-                               Uint2                slot,
-                               Uint8 *              local_start_rec_no,
-                               Uint8 *              remote_start_rec_no,
-                               TReducedSyncEvents * events );
+    static bool GetEventsList(Uint8  server,
+                              Uint2  slot,
+                              Uint8* local_start_rec_no,
+                              Uint8* remote_start_rec_no,
+                              TReducedSyncEvents* events );
 
     // Calculates the lists of operations for synchronization.
     // The given start record ids are stored and basing on them
@@ -201,21 +185,16 @@ public:
     // the end of the corresponding analysis intervals.
     // The return value is false if the given local_start_rec_id is not
     // available any more. (there are no operations in this case)
-    static bool GetSyncOperations(
-                        Uint8                       server,
-                        Uint2                       slot,
-                        Uint8                       local_start_rec_no,
-                        Uint8                       remote_start_rec_no,
-                        const TReducedSyncEvents &  remote_events,
-                        TSyncEvents *               events_to_get,
-                        TSyncEvents *               events_to_send,
-                        Uint8 *                     local_synced_rec_no,
-                        Uint8 *                     remote_synced_rec_no );
+    static bool GetSyncOperations(Uint8 server,
+                                  Uint2 slot,
+                                  Uint8 local_start_rec_no,
+                                  Uint8 remote_start_rec_no,
+                                  const TReducedSyncEvents& remote_events,
+                                  TSyncEvents* events_to_get,
+                                  TSyncEvents* events_to_send,
+                                  Uint8* local_synced_rec_no,
+                                  Uint8* remote_synced_rec_no );
 
-    // Removes the log records based on two criteria:
-    // - all records with id < min( all local synced rec ids )
-    // - total number > max_records => the final records to
-    //   keep will be max_records - kLogReserve
     static Uint8 Clean(Uint2 slot);
 
     // Provides the total number of records in the log
@@ -223,8 +202,6 @@ public:
 
     static bool IsOverLimit(Uint2 slot);
 };
-
-
 
 END_NCBI_SCOPE
 

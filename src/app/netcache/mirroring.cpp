@@ -40,25 +40,12 @@
 BEGIN_NCBI_SCOPE
 
 
-
-
-struct SDistribution
-{
-    TPropagateWrites        big_cmds;
-    TPropagateWrites        small_cmds;
-    CFastMutex              lock;
-    CNCMirroringThread**    handling_threads;
-};
-
-
-// server ID -> all the required data, i.e. queue for the blob IDs,
-//              queue lock and the queue handling thread
-typedef map< Uint8, SDistribution * >   TDistributiorsMap;
-static TDistributiorsMap                s_Distributors;
-static CAtomicCounter                   s_TotalQueueSize;
-static FILE*                            s_LogFile;
-CAtomicCounter            CNCMirroring::sm_TotalCopyRequests;
-CAtomicCounter            CNCMirroring::sm_CopyReqsRejected;
+typedef map<Uint8, SDistribution*>  TDistributiorsMap;
+static TDistributiorsMap            s_Distributors;
+static CAtomicCounter               s_TotalQueueSize;
+static FILE*                        s_LogFile;
+CAtomicCounter        CNCMirroring::sm_TotalCopyRequests;
+CAtomicCounter        CNCMirroring::sm_CopyReqsRejected;
 
 
 
@@ -77,45 +64,64 @@ CNCMirroringThread::Main(void)
 {
     while (!finish_flag)
     {
-        pair<string, Uint8> item;
+        SNCMirrorEvent* event = NULL;
         distr->lock.Lock();
         switch (mirror_type) {
         case eMirrorLargePrefered:
             if (!distr->big_cmds.empty()) {
-                item = distr->big_cmds.back();
+                event = distr->big_cmds.back();
                 distr->big_cmds.pop_back();
                 break;
             }
             // fall through
         case eMirrorSmallExclusive:
             if (!distr->small_cmds.empty()) {
-                item = distr->small_cmds.back();
+                event = distr->small_cmds.back();
                 distr->small_cmds.pop_back();
             }
             break;
         case eMirrorSmallPrefered:
             if (!distr->small_cmds.empty()) {
-                item = distr->small_cmds.back();
+                event = distr->small_cmds.back();
                 distr->small_cmds.pop_back();
                 break;
             }
             if (!distr->big_cmds.empty()) {
-                item = distr->big_cmds.back();
+                event = distr->big_cmds.back();
                 distr->big_cmds.pop_back();
             }
         }
         distr->lock.Unlock();
 
-        if (!item.first.empty()) {
-            Uint8 cur_time = CNetCacheServer::GetPreciseTime();
+        if (event) {
             int queue_size = s_TotalQueueSize.Add(-1);
             if (s_LogFile) {
+                Uint8 cur_time = CNetCacheServer::GetPreciseTime();
                 fprintf(s_LogFile, "%lu,%d,%d\n", cur_time, queue_size, CThread::GetSelf());
             }
-            ENCPeerFailure send_res = CNetCacheServer::SendBlobToPeer(
-                                      server_id, item.first, item.second, false);
+            ENCPeerFailure send_res = ePeerActionOK;
+            switch (event->evt_type) {
+            case eSyncWrite:
+                send_res = CNetCacheServer::SendBlobToPeer(
+                           server_id, event->key, event->orig_rec_no, false);
+                break;
+            case eSyncRemove:
+                send_res = CNetCacheServer::RemoveBlobOnPeer(
+                                            server_id, event->key,
+                                            event->orig_rec_no,
+                                            event->orig_time,
+                                            false);
+                break;
+            case eSyncProlong:
+                send_res = CNetCacheServer::ProlongBlobOnPeer(
+                                            server_id, event->key,
+                                            event->orig_rec_no, event->orig_time);
+                break;
+            }
             if (send_res != ePeerActionOK)
                 CNCMirroring::sm_CopyReqsRejected.Add(1);
+
+            delete event;
             continue;
         }
         notifier.Wait();
@@ -180,57 +186,83 @@ CNCMirroring::Finalize(void)
         fclose(s_LogFile);
 }
 
-static inline void
-s_QueueEvent(TPropagateWrites& queue, const string& key, Uint8 local_rec_no)
+static void
+s_QueueEvent(SDistribution* distr, SNCMirrorEvent* event, Uint8 size)
 {
+    CFastMutexGuard guard(distr->lock);
+    TNCMirrorQueue* q;
+    if (size <= CNCDistributionConf::GetSmallBlobBoundary())
+        q = &distr->small_cmds;
+    else
+        q = &distr->big_cmds;
+
     CNCMirroring::sm_TotalCopyRequests.Add(1);
-    if (queue.size() < 10000) {
-        queue.push_back(make_pair(key, local_rec_no));
-        Uint8 cur_time = CNetCacheServer::GetPreciseTime();
+    if (q->size() < 10000) {
+        q->push_back(event);
         int queue_size = s_TotalQueueSize.Add(1);
         if (s_LogFile) {
+            Uint8 cur_time = CNetCacheServer::GetPreciseTime();
             fprintf(s_LogFile, "%lu,%d,%d\n", cur_time, queue_size, CThread::GetSelf());
+        }
+
+        if (q->size() == 1) {
+            Uint1 cnt_threads = CNCDistributionConf::GetCntMirroringThreads();
+            for (Uint1 i = 0; i < cnt_threads; ++i) {
+                distr->handling_threads[i]->WakeUp();
+            }
         }
     }
     else {
-        LOG_POST("BlobWriteEvent deleted");
+        LOG_POST("Mirroring event deleted");
         CNCMirroring::sm_CopyReqsRejected.Add(1);
+        delete event;
     }
 }
 
 void
 CNCMirroring::BlobWriteEvent(const string& key,
                              Uint2 slot,
-                             Uint8 local_rec_no,
+                             Uint8 orig_rec_no,
                              Uint8 size)
 {
     const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
-    Uint8 self_id = CNCDistributionConf::GetSelfID();
-
-    ITERATE(vector<Uint8>, it_srv, servers) {
+    ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
-        if (srv_id == self_id)
-            continue;
-
         SDistribution* distr = s_Distributors[srv_id];
-        CFastMutexGuard guard(distr->lock);
+        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, key, orig_rec_no);
+        s_QueueEvent(distr, event, size);
+    }
+}
 
-        bool need_wake = false;
-        if (size <= CNCDistributionConf::GetSmallBlobBoundary()) {
-            s_QueueEvent(distr->small_cmds, key, local_rec_no);
-            need_wake = distr->small_cmds.size() == 1;
-        }
-        else {
-            s_QueueEvent(distr->big_cmds, key, local_rec_no);
-            need_wake = distr->big_cmds.size() == 1;
-        }
+void
+CNCMirroring::BlobRemoveEvent(const string& key,
+                              Uint2 slot,
+                              Uint8 orig_rec_no,
+                              Uint8 orig_time)
+{
+    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
+    ITERATE(TServersList, it_srv, servers) {
+        Uint8 srv_id = *it_srv;
+        SDistribution* distr = s_Distributors[srv_id];
+        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncRemove, key,
+                                                   orig_rec_no, orig_time);
+        s_QueueEvent(distr, event, 0);
+    }
+}
 
-        if (need_wake) {
-            Uint1 cnt_threads = CNCDistributionConf::GetCntMirroringThreads();
-            for (Uint1 i = 0; i < cnt_threads; ++i) {
-                distr->handling_threads[i]->WakeUp();
-            }
-        }
+void
+CNCMirroring::BlobProlongEvent(const string& key,
+                               Uint2 slot,
+                               Uint8 orig_rec_no,
+                               Uint8 orig_time)
+{
+    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
+    ITERATE(TServersList, it_srv, servers) {
+        Uint8 srv_id = *it_srv;
+        SDistribution* distr = s_Distributors[srv_id];
+        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncProlong, key,
+                                                   orig_rec_no, orig_time);
+        s_QueueEvent(distr, event, 0);
     }
 }
 

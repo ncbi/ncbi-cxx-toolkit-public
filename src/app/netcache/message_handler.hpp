@@ -285,6 +285,7 @@ public:
     bool x_DoCmd_SyncPut(void);
     bool x_DoCmd_CopyRemove(void);
     bool x_DoCmd_SyncRemove(void);
+    bool x_DoCmd_CopyProlong(void);
     bool x_DoCmd_SyncProlong(void);
     bool x_DoCmd_SyncGet(void);
     bool x_DoCmd_SyncProlongInfo(void);
@@ -719,11 +720,12 @@ private:
     virtual EStatus Execute(void);
 
 
-    TServersList   m_Servers;
-    Uint1           m_Quorum;
+    TServersList m_Servers;
+    Uint1        m_Quorum;
     CRef<CRequestContext> m_ReqCtx;
-    string          m_Key;
-    SNCSyncEvent*   m_Event;
+    string       m_Key;
+    Uint8        m_OrigRecNo;
+    Uint8        m_OrigTime;
 };
 
 

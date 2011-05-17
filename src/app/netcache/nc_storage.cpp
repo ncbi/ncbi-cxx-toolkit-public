@@ -543,38 +543,22 @@ CNCBlobStorage::UnpackKeyForLogs(const string& packed_key)
 {
     // cache
     const char* cache_name = packed_key.data();
-    //size_t cache_size = strlen(cache_name);
     size_t cache_size = packed_key.find('\1', 0);
     // key
     const char* key = cache_name + cache_size + 1;
-    //size_t key_size = strlen(key);
     size_t key_size = packed_key.find('\1', cache_size + 1) - cache_size - 1;
     // subkey
     const char* subkey = key + key_size + 1;
-    //size_t subkey_size = strlen(subkey);
-    size_t subkey_size = packed_key.find('\1', cache_size + key_size + 2) - cache_size - key_size - 2;
-    // version
-    const char* ver_str  = subkey + subkey_size + 1;
-    unsigned int version;
-#ifdef WORDS_BIGENDIAN
-    version =  static_cast<unsigned char>(ver_str[0])
-            + (static_cast<unsigned char>(ver_str[1]) <<  8)
-            + (static_cast<unsigned char>(ver_str[2]) << 16)
-            + (static_cast<unsigned char>(ver_str[3]) << 24);
-#else
-    memcpy(&version, ver_str, 4);
-#endif
+    size_t subkey_size = packed_key.size() - cache_size - key_size - 2;
 
     string result;
     result.append("'");
     result.append(key, key_size);
     result.append("'");
-    if (cache_size != 0  ||  subkey_size != 0  ||  version != 0) {
+    if (cache_size != 0  ||  subkey_size != 0) {
         result.append(", '");
         result.append(subkey, subkey_size);
-        result.append("', ");
-        result.append(NStr::UIntToString(version));
-        result.append(" from cache '");
+        result.append("' from cache '");
         result.append(cache_name, cache_size);
         result.append("'");
     }
@@ -1298,6 +1282,7 @@ CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info)
         m_GCBlockWaiter.Wait();
     }
     if (m_GCAccessor->IsBlobExists()  &&  m_GCAccessor->IsBlobExpired()) {
+        LOG_POST("Deleting blob " << m_GCAccessor->GetBlobKey());
         m_GCAccessor->DeleteBlob();
         ++m_GCDeleted;
     }
@@ -1328,6 +1313,16 @@ CNCBlobStorage::x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before)
             }
         }
         while (!blobs_list.empty());
+        {{
+            TMetaFileLock file_lock(metafile);
+            dead_after = 0;
+            last_id = 0;
+            file_lock->GetBlobsList(dead_after, last_id,
+                                    dead_before - m_GCRunDelay,
+                                    1, &blobs_list);
+            if (!blobs_list.empty())
+                abort();
+        }}
     }
     catch (CException& ex) {
         ERR_POST("Error processing file '" << metafile->GetFileName()
@@ -1581,7 +1576,7 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                     GetDiagContext().SetRequestContext(ctx);
                     if (g_NetcacheServer->IsLogCmds()) {
                         GetDiagContext().PrintRequestStart()
-                            .Print("_type", "gc");
+                                        .Print("_type", "gc");
                     }
                     ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
                     m_GCRead = m_GCDeleted = 0;

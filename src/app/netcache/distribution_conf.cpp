@@ -201,12 +201,12 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         Uint8 srv_id = it_peer->first;
         vector<Uint2>& common_slots = s_CommonSlots[srv_id];
         ITERATE(TSlot2SrvMap, it_slot, s_RawSlot2Servers) {
+            Uint2 slot = it_slot->first;
+            if (find(s_SelfSlots.begin(), s_SelfSlots.end(), slot) == s_SelfSlots.end())
+                continue;
             const TServersList& srvs = it_slot->second;
-            if (find(srvs.begin(), srvs.end(), s_SelfID) != srvs.end()
-                &&  find(srvs.begin(), srvs.end(), srv_id) != srvs.end())
-            {
+            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end())
                 common_slots.push_back(it_slot->first);
-            }
         }
     }
 

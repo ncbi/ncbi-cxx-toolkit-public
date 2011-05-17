@@ -143,10 +143,14 @@ public:
                                            bool& blob_exist,
                                            SNCBlobSummary& blob_sum);
     static ENCPeerFailure RemoveBlobOnPeer(Uint8 server_id,
-                                           SNCSyncEvent* evt)
-    {
-        return x_DelBlobFromPeer(server_id, 0, evt, false, true);
-    }
+                                           const string& key,
+                                           Uint8 orig_rec_no,
+                                           Uint8 orig_time,
+                                           bool  add_client_ip);
+    static ENCPeerFailure ProlongBlobOnPeer(Uint8 server_id,
+                                            const string& key,
+                                            Uint8 orig_rec_no,
+                                            Uint8 orig_time);
     static ENCPeerFailure SyncWriteBlobToPeer(Uint8 server_id,
                                               Uint2 slot,
                                               const string& key)
@@ -165,16 +169,25 @@ public:
                                               Uint2 slot,
                                               SNCSyncEvent* evt)
     {
-        return x_DelBlobFromPeer(server_id, slot, evt, true, false);
+        return x_DelBlobFromPeer(server_id, slot, evt->key,
+                                 evt->orig_server, evt->orig_rec_no,
+                                 evt->orig_time, true, false);
     }
     static ENCPeerFailure SyncProlongBlobOnPeer(Uint8 server_id,
                                                 Uint2 slot,
-                                                SNCSyncEvent* evt);
+                                                SNCSyncEvent* evt)
+    {
+        return x_ProlongBlobOnPeer(server_id, slot, evt->key,
+                                   evt->orig_server, evt->orig_rec_no,
+                                   evt->orig_time, true);
+    }
     static ENCPeerFailure SyncProlongBlobOnPeer(Uint8 server_id,
                                                 Uint2 slot,
-                                                const string& raw_key,
-                                                const SNCBlobSummary& blob_sum,
-                                                SNCSyncEvent* evt = NULL);
+                                                const string& key,
+                                                const SNCBlobSummary& blob_sum)
+    {
+        return x_ProlongBlobOnPeer(server_id, slot, key, blob_sum, 0, 0, 0, true);
+    }
     static ENCPeerFailure SyncGetBlobFromPeer(Uint8 server_id,
                                               Uint2 slot,
                                               const string& key,
@@ -186,8 +199,8 @@ public:
                                               Uint2 slot,
                                               SNCSyncEvent* evt)
     {
-        _ASSERT(evt->event_type == eSyncWrite);
-        return x_SyncGetBlobFromPeer(server_id, slot, evt->key, evt->orig_time, evt->orig_rec_no);
+        return x_SyncGetBlobFromPeer(server_id, slot, evt->key,
+                                     evt->orig_time, evt->orig_rec_no);
     }
     static ENCPeerFailure SyncDelOurBlob(Uint8 server_id,
                                          Uint2 slot,
@@ -252,9 +265,28 @@ private:
                                                 Uint8 orig_rec_no);
     static ENCPeerFailure x_DelBlobFromPeer(Uint8 server_id,
                                             Uint2 slot,
-                                            SNCSyncEvent* evt,
+                                            const string& key,
+                                            Uint8 orig_server,
+                                            Uint8 orig_rec_no,
+                                            Uint8 orig_time,
                                             bool  is_sync,
                                             bool  add_client_ip);
+    static ENCPeerFailure x_ProlongBlobOnPeer(Uint8 server_id,
+                                              Uint2 slot,
+                                              const string& raw_key,
+                                              const SNCBlobSummary& blob_sum,
+                                              Uint8 orig_server,
+                                              Uint8 orig_rec_no,
+                                              Uint8 orig_time,
+                                              bool  is_sync);
+    static ENCPeerFailure x_ProlongBlobOnPeer(Uint8 server_id,
+                                              Uint2 slot,
+                                              const string& raw_key,
+                                              Uint8 orig_server,
+                                              Uint8 orig_rec_no,
+                                              Uint8 orig_time,
+                                              bool is_sync);
+
     /// Read server parameters from application's configuration file
     void x_ReadServerParams(void);
     ///

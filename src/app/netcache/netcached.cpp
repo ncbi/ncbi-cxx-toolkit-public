@@ -885,12 +885,15 @@ CNetCacheServer::SendBlobToPeer(Uint8 server_id,
 ENCPeerFailure
 CNetCacheServer::x_DelBlobFromPeer(Uint8 server_id,
                                    Uint2 slot,
-                                   SNCSyncEvent* evt,
+                                   const string& raw_key,
+                                   Uint8 orig_server,
+                                   Uint8 orig_rec_no,
+                                   Uint8 orig_time,
                                    bool  is_sync,
                                    bool  add_client_ip)
 {
     string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(evt->key, cache_name, key, subkey);
+    g_NCStorage->UnpackBlobKey(raw_key, cache_name, key, subkey);
 
     string api_cmd;
     if (is_sync) {
@@ -909,11 +912,11 @@ CNetCacheServer::x_DelBlobFromPeer(Uint8 server_id,
     api_cmd += "\" \"";
     api_cmd += subkey;
     api_cmd += "\" ";
-    api_cmd += NStr::UInt8ToString(evt->orig_time);
+    api_cmd += NStr::UInt8ToString(orig_time);
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(evt->orig_server);
+    api_cmd += NStr::UInt8ToString(orig_server);
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(evt->orig_rec_no);
+    api_cmd += NStr::UInt8ToString(orig_rec_no);
     if (add_client_ip) {
         api_cmd += " \"";
         api_cmd += GetDiagContext().GetRequestContext().GetClientIP();
@@ -939,25 +942,48 @@ CNetCacheServer::x_DelBlobFromPeer(Uint8 server_id,
 }
 
 ENCPeerFailure
-CNetCacheServer::SyncProlongBlobOnPeer(Uint8 server_id,
-                                       Uint2 slot,
-                                       const string& raw_key,
-                                       const SNCBlobSummary& blob_sum,
-                                       SNCSyncEvent* evt /* = NULL */)
+CNetCacheServer::RemoveBlobOnPeer(Uint8 server_id,
+                                  const string& key,
+                                  Uint8 orig_rec_no,
+                                  Uint8 orig_time,
+                                  bool  add_client_ip)
 {
+    return x_DelBlobFromPeer(server_id, 0, key,
+                             CNCDistributionConf::GetSelfID(),
+                             orig_rec_no, orig_time,
+                             false, add_client_ip);
+}
+
+ENCPeerFailure
+CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
+                                     Uint2 slot,
+                                     const string& raw_key,
+                                     const SNCBlobSummary& blob_sum,
+                                     Uint8 orig_server,
+                                     Uint8 orig_rec_no,
+                                     Uint8 orig_time,
+                                     bool  is_sync)
+{
+    /*
     int cur_time = int(time(NULL));
     if (!IsDebugMode())
         cur_time += 30;
     if (blob_sum.dead_time <= cur_time)
         return ePeerActionOK;
-
+    */
     string cache_name, key, subkey;
     g_NCStorage->UnpackBlobKey(raw_key, cache_name, key, subkey);
 
-    string api_cmd("SYNC_PROLONG ");
-    api_cmd += NStr::UInt8ToString(CNCDistributionConf::GetSelfID());
-    api_cmd.append(1, ' ');
-    api_cmd += NStr::UIntToString(slot);
+    string api_cmd;
+    if (is_sync) {
+        api_cmd += "SYNC_PROLONG ";
+        api_cmd += NStr::UInt8ToString(CNCDistributionConf::GetSelfID());
+        api_cmd.append(1, ' ');
+        api_cmd += NStr::UIntToString(slot);
+    }
+    else {
+        api_cmd += "COPY_PROLONG";
+    }
     api_cmd += " \"";
     api_cmd += cache_name;
     api_cmd += "\" \"";
@@ -974,13 +1000,13 @@ CNetCacheServer::SyncProlongBlobOnPeer(Uint8 server_id,
     api_cmd += NStr::IntToString(blob_sum.dead_time);
     api_cmd.append(1, ' ');
     api_cmd += NStr::IntToString(blob_sum.ver_expire);
-    if (evt) {
+    if (orig_rec_no != 0) {
         api_cmd.append(1, ' ');
-        api_cmd += NStr::UInt8ToString(evt->orig_time);
+        api_cmd += NStr::UInt8ToString(orig_time);
         api_cmd.append(1, ' ');
-        api_cmd += NStr::UInt8ToString(evt->orig_server);
+        api_cmd += NStr::UInt8ToString(orig_server);
         api_cmd.append(1, ' ');
-        api_cmd += NStr::UInt8ToString(evt->orig_rec_no);
+        api_cmd += NStr::UInt8ToString(orig_rec_no);
     }
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
@@ -1009,17 +1035,18 @@ CNetCacheServer::SyncProlongBlobOnPeer(Uint8 server_id,
 }
 
 ENCPeerFailure
-CNetCacheServer::SyncProlongBlobOnPeer(Uint8         server_id,
-                                       Uint2         slot,
-                                       SNCSyncEvent* evt)
+CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
+                                     Uint2 slot,
+                                     const string& raw_key,
+                                     Uint8 orig_server,
+                                     Uint8 orig_rec_no,
+                                     Uint8 orig_time,
+                                     bool is_sync)
 {
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(evt->key, cache_name, key, subkey);
-
     CSemaphore sem(0, 1);
     CNCSyncBlockedOpListener* op_listener = new CNCSyncBlockedOpListener(sem);
     CNCBlobAccessor* accessor = g_NCStorage->GetBlobAccess(
-                                             eNCRead, evt->key, "", slot);
+                                             eNCRead, raw_key, "", slot);
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     if (!accessor->IsBlobExists()  ||  accessor->IsBlobExpired()) {
@@ -1035,7 +1062,19 @@ CNetCacheServer::SyncProlongBlobOnPeer(Uint8         server_id,
     blob_sum.ver_expire = accessor->GetVerDeadTime();
     accessor->Release();
 
-    return SyncProlongBlobOnPeer(server_id, slot, evt->key, blob_sum, evt);
+    return x_ProlongBlobOnPeer(server_id, slot, raw_key, blob_sum,
+                               orig_server, orig_rec_no, orig_time, is_sync);
+}
+
+ENCPeerFailure
+CNetCacheServer::ProlongBlobOnPeer(Uint8 server_id,
+                                   const string& key,
+                                   Uint8 orig_rec_no,
+                                   Uint8 orig_time)
+{
+    return x_ProlongBlobOnPeer(server_id, 0, key,
+                               CNCDistributionConf::GetSelfID(),
+                               orig_rec_no, orig_time, false);
 }
 
 ENCPeerFailure
@@ -1249,7 +1288,7 @@ CNetCacheServer::SyncDelOurBlob(Uint8 server_id, Uint2 slot, SNCSyncEvent* evt)
     {
         accessor->DeleteBlob();
         SNCSyncEvent* event = new SNCSyncEvent();
-        event->event_type = eSyncUserRemove;
+        event->event_type = eSyncRemove;
         event->key = evt->key;
         event->orig_server = evt->orig_server;
         event->orig_time = evt->orig_time;

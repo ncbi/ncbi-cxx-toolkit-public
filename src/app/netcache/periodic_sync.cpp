@@ -957,7 +957,7 @@ CActiveSyncControl::x_DoEventSend(ENCPeerFailure& task_res,
         task_res = CNetCacheServer::SyncWriteBlobToPeer(m_SrvId, m_Slot, event);
         action = eSynActionWrite;
         break;
-    case eSyncUserRemove:
+    case eSyncRemove:
         task_res = CNetCacheServer::SyncDelBlobFromPeer(m_SrvId, m_Slot, event);
         action = eSynActionRemove;
         break;
@@ -981,7 +981,7 @@ CActiveSyncControl::x_DoEventGet(ENCPeerFailure& task_res,
         task_res = CNetCacheServer::SyncGetBlobFromPeer(m_SrvId, m_Slot, event);
         action = eSynActionRead;
         break;
-    case eSyncUserRemove:
+    case eSyncRemove:
         task_res = CNetCacheServer::SyncDelOurBlob(m_SrvId, m_Slot, event);
         action = eSynActionRemove;
         break;
@@ -1079,7 +1079,6 @@ CActiveSyncControl::ExecuteSynTask(ESynTaskType task_type)
 
     ENCPeerFailure task_res = ePeerBadNetwork;
     ESynActionType action = eSynActionRead;
-    try {
     switch (task_type) {
     case eSynEventSend:
         x_DoEventSend(task_res, action);
@@ -1101,11 +1100,6 @@ CActiveSyncControl::ExecuteSynTask(ESynTaskType task_type)
         break;
     case eSynNoTask:
     case eSynNeedFinalize:
-        abort();
-    }
-    }
-    catch (exception& ex) {
-        LOG_POST(ex.what());
         abort();
     }
 

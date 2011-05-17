@@ -715,7 +715,7 @@ CNCSyncLog::GetEventsList(Uint8  server,
         // ^- found
         SBlobEvent& blob_event = (*events)[evt->key];
         switch (evt->event_type) {
-        case eSyncUserRemove:
+        case eSyncRemove:
         case eSyncWrite:
             if (!blob_event.wr_or_rm_event)
                 blob_event.wr_or_rm_event = evt;
