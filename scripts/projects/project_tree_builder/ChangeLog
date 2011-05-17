@@ -174,3 +174,10 @@ Corrected handling of unresolved macros.
 Make PTB look into src/build-system for custom metadata.
 Tuned up manifest generation.
 
+May 17, 2011
+version 3.5.0
+Corrected checking UserRequests in project requirements.
+Modified generation of Unix flat makefile to mark excluded projects as ones
+whose build errors can be ignored.
+Added possibility to use configurable macros in DLL dependencies description.
+
