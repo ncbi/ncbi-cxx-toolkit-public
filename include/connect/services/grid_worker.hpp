@@ -699,6 +699,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNodeException : public CException
 {
 public:
     enum EErrCode {
+        ePortBusy,
         eJobIsCanceled,
         eJobFactoryIsNotSet,
         eExclusiveModeIsAlreadySet
@@ -708,6 +709,7 @@ public:
     {
         switch (GetErrCode())
         {
+        case ePortBusy:                  return "ePortBusy";
         case eJobIsCanceled:             return "eJobIsCanceled";
         case eJobFactoryIsNotSet:        return "eJobFactoryIsNotSet";
         case eExclusiveModeIsAlreadySet: return "eExclusiveModeIsAlreadySet";

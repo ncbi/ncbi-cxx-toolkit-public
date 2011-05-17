@@ -1039,7 +1039,19 @@ int CGridWorkerNode::Run()
     CRef<CGridControlThread> control_thread(
         new CGridControlThread(this, start_port, end_port));
 
-    control_thread->Prepare();
+    try {
+        control_thread->Prepare();
+    }
+    catch (CServer_Exception& e) {
+        if (e.GetErrCode() != CServer_Exception::eCouldntListen)
+            throw;
+        NCBI_THROW_FMT(CGridWorkerNodeException, ePortBusy,
+            "Couldn't start a listener on a port from the specified "
+            "control port range; last port tried: " <<
+            control_thread->GetControlPort() << ". Another process "
+            "(probably another instance of this worker node) is occupying "
+            "the port(s).");
+    }
 
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(conf, "server");
 
