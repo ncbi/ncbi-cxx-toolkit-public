@@ -270,7 +270,11 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         // extend to beginning if necessary
         // example accession that triggers this "if": AJ237662.1
         if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
-            ret.SetFrom( m_Dst_from - frame_shift );
+            if( m_Dst_from >= frame_shift ) {
+                ret.SetFrom( m_Dst_from - frame_shift );
+            } else {
+                ret.SetFrom( m_Dst_from );
+            }
         }
         // extend to the end, if necessary
         if( m_Dst_len != kInvalidSeqPos ) {
@@ -466,7 +470,7 @@ CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
     CRef<CMappingRange> cvt(new CMappingRange(
         src_id, src_from, src_length, src_strand,
         dst_id, dst_from, dst_strand,
-        ext_to, frame, dst_total_len, src_bioseq_len, dst_len ));
+        ext_to, frame, dst_total_len, src_bioseq_len, dst_len )); 
     AddConversion(cvt);
     return cvt;
 }
@@ -873,15 +877,14 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     }
 
     if ( frame ) {
-        // Shift start according to the frame.
         const int shift = frame - 1;
-        if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos) {
+        if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos && shift < src_len ) {
             if( ! source.IsReverseStrand() ) {
                 src_start += shift;
             }
             src_len -= shift;
         }
-        if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos) {
+        if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos && shift < dst_len ) {
             if( ! target.IsReverseStrand() ) {
                 dst_start += shift;
             }
@@ -2430,7 +2433,6 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         // Can not map the range through this mapping.
         return false;
     }
-
     // The source range should be already using genomic coords.
     TSeqPos left = src_rg.GetFrom();
     TSeqPos right = src_rg.GetTo();
@@ -2617,6 +2619,27 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
     else {
         sort(mappings.begin(), mappings.end(), CMappingRangeRef_Less());
     }
+
+    // special adjustment (e.g. GU561555)
+    // This should very *rarely* be needed
+    if( ! m_Mappings.Empty() ) {
+        // get first mapping
+        TRangeIterator rg_it = m_Mappings->BeginMappingRanges(src_idh, 0, 1);
+        if( rg_it && rg_it->second ) {
+            const CMappingRange &mapping = *rg_it->second;
+            // try to detect if we hit the case where we couldn't do a frame-shift
+            if( ! mapping.m_Reverse && mapping.m_Frame > 1 && mapping.m_Dst_from == 0 &&
+                mapping.m_Dst_len <= (mapping.m_Frame - 1)  )
+            {
+                const int shift = ( mappings[0]->m_Frame - 1 );
+                if( src_rg.GetFrom() != 0 ) {
+                    src_rg.SetFrom( src_rg.GetFrom() + shift );
+                }
+                src_rg.SetTo( src_rg.GetTo() + shift);
+            }
+        }
+    }
+
     // The last mapped position (in biological order). Required to check
     // if some part of the source location did not match any mapping range
     // and was dropped.
