@@ -2366,7 +2366,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IBUT	s	Instituto Butanta",
 "IBY	s	Botanical Institute of Guangxi",
 "ICA	s	Instituto Colombiano Agropecuario, Tibaitata",
-"ICARDA<SYR>	s	International Center for Agricultural Research in the Dry Areas",
+"ICARDA<SYR>	sb	International Center for Agricultural Research in the Dry Areas",
 "ICBB	c	ICBB Culture Collection for Microorganisms and Cell Culture",
 "ICBU	s	Bishop's University, Natural History Museum",
 "ICCF	c	Collection of Industrial Microorganisms",
