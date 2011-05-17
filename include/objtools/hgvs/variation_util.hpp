@@ -60,6 +60,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+namespace variation_ref {
+
 class CVariationUtil : public CObject
 {
 public:
@@ -228,5 +230,6 @@ private:
     static const int m_variant_properties_schema_version;
 };
 
+};
 END_NCBI_SCOPE;
 #endif

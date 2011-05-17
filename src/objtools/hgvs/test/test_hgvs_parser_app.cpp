@@ -36,15 +36,20 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/hgvs/hgvs_parser.hpp>
-#include <objtools/hgvs/variation_util.hpp>
+#include <objtools/hgvs/hgvs_parser2.hpp>
+#include <objtools/hgvs/variation_util2.hpp>
+#include <objects/variation/Variation.hpp>
 
 #include <boost/test/parameterized_test.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
+#include <serial/iterator.hpp>
+
 USING_NCBI_SCOPE;
+
+using namespace variation;
 
 /**
  * Either test that an hgvs expression is parsed with no exception, or
@@ -54,152 +59,56 @@ USING_NCBI_SCOPE;
 class CTestCase
 {
 public:
-    CTestCase(const string& line, CRef<CHgvsParser> parser, CNcbiOstream& out)
-      : m_feat(NULL)
-      , m_parser(parser)
-      , m_out(out)
-      , m_map_up(false)
-      , m_map_down(false)
-    {
-        string s1("");
-        string s2("");
-        //line = "hgvs_expression [#comment [#_THROWS:exception_string]]"
-        //where exception-string is error-code of CHgvsParserException,
-        //or any arbitrary text if we are expecting CException
-        NStr::SplitInTwo(line, "#", m_expr, s1);
-        NStr::SplitInTwo(s1, "#", m_comment,s2);
 
-        NStr::SplitInTwo(s2, ":", s1, m_throw_str);
-        if(s1 != "_THROWS") {
-            m_throw_str = "";
-        }
-
-        if(s1 == "_MAP_UP") {
-            m_map_up = true;
-        }
-
-        if(s1 == "_MAP_DOWN") {
-            m_map_down = true;
-        }
-
-
-        NStr::TruncateSpacesInPlace(m_expr);
-        NStr::TruncateSpacesInPlace(m_comment);
-        NStr::TruncateSpacesInPlace(m_throw_str);
-
-    }
-
-    CTestCase(const CSeq_feat& feat, CRef<CHgvsParser> parser, CNcbiOstream& out)
+    CTestCase(const CVariation& v, CRef<CHgvsParser> parser, CNcbiOstream& out)
       : m_expr("")
-      , m_feat(&feat)
+      , m_variation(&v)
       , m_parser(parser)
       , m_out(out)
-      , m_map_up(false)
-      , m_map_down(false)
     {
-        LOG_POST("Creating test-case for feature");
-        m_expr = m_feat->GetData().GetVariation().GetName();
-        m_comment = m_feat->GetComment();
-        m_throw_str = "";
+        m_expr = m_variation->GetPlacements().front()->GetHgvs_name();
     }
 
     void operator()()
     {
-        CRef<CSeq_feat> feat;
+        CRef<CVariation> variation;
         string exception_str;
         string err_code;
 
         try {
             CVariationUtil variation_util(m_parser->SetScope());
+            variation = m_parser->AsVariation(m_expr);
 
-            LOG_POST("Parsing " << m_expr);
-            feat = m_parser->AsVariationFeat(m_expr);
-            variation_util.SetReferenceSequence(feat->SetData().SetVariation(), feat->GetLocation());
-
-            feat->SetData().SetVariation().SetLocation().Assign(feat->GetLocation());
-            variation_util.SetVariantProperties(feat->SetData().SetVariation());
-            feat->SetData().SetVariation().ResetLocation();
-
-
-            if(m_map_up) {
-                LOG_POST("Mapping to precursor");
-                feat = variation_util.ProtToPrecursor(*feat);
+            for(CTypeIterator<CVariantPlacement> it(Begin(*variation)); it; ++it) {
+                variation_util.AttachSeq(*it);
             }
 
-            if(m_map_down) {
-                LOG_POST("Mapping to prot");
-                feat = variation_util.PrecursorToProt(*feat);
-            }
-
-            CVariationUtil::ETestStatus allele_status = CVariationUtil::eNotApplicable;
-
-            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\tallele_check_status:" << allele_status << "\t" << "OK");
-
-            if(m_throw_str != "") {
-                BOOST_REQUIRE_THROW(feat.Reset(), CException); //this will not throw
-            }
-
+            variation_util.SetVariantProperties(*variation);
 
         } catch(CHgvsParser::CHgvsParserException& e) {
-            LOG_POST(m_expr << "\t" << m_comment << "\t" << m_throw_str << "\t" << "FAILED:" << e.GetMsg() << ";err-code=" << e.GetErrCode());
-
-
-            if(m_throw_str != "") {
-                if(e.GetErrCodeString() == m_throw_str) {
-                    BOOST_REQUIRE_THROW(NCBI_RETHROW_SAME(e, ""), CException);
-                } else {
-                    BOOST_CHECK_MESSAGE(false, "Caught wrong exception");
-                }
-            } else {
-                e.GetStackTrace()->Write(NcbiCerr);
-                NcbiCerr << "\n";
-                BOOST_REQUIRE_NO_THROW(NCBI_RETHROW_SAME(e, ""));
-            }
+            e.GetStackTrace()->Write(NcbiCerr);
+            BOOST_REQUIRE_NO_THROW(NCBI_RETHROW_SAME(e, ""));
         }
 
-        if(!feat.IsNull()) {
-            feat->SetComment(m_comment);
+        if(!variation.IsNull() && m_variation->IsSetDescription()) {
+            variation->SetDescription(m_variation->GetDescription());
         }
 
-        if(!m_feat.IsNull()) {
-            //if we are checking against reference variation-feats, compare the one
-            //that we just created with the reference one
-            if(!m_feat->Equals(*feat)) {
-                NcbiCerr << "Expected\n" << MSerial_AsnText << *m_feat;
-                NcbiCerr << "Produced\n" << MSerial_AsnText << *feat;
-                NCBITEST_CHECK(false);
-            }
-        } else if(!feat.IsNull()) {
-            //we are creating new reference features - just dump it
-            LOG_POST("Dumping feat");
-            m_out << MSerial_AsnText << *feat;
-            LOG_POST("Dumped feat");
+        //if we are checking against reference variation-feats, compare the one
+        //that we just created with the reference one
+        if(!m_variation->Equals(*variation)) {
+            NcbiCerr << "---\nExpected\n" << MSerial_AsnText << *m_variation;
+            NcbiCerr << "Produced\n---\n" << MSerial_AsnText << *variation;
+            NCBITEST_CHECK(false);
         }
     }
 
     string m_expr;
-    string m_comment;
-    string m_throw_str;
-    CConstRef<CSeq_feat> m_feat;
+    CConstRef<CVariation> m_variation;
     CRef<CHgvsParser> m_parser;
     CNcbiOstream& m_out;
-    bool m_map_up;
-    bool m_map_down;
 };
 
-CRef<CSeq_loc> CreateLoc(const string& id, TSeqPos from = kInvalidSeqPos, TSeqPos to = kInvalidSeqPos, ENa_strand strand = eNa_strand_unknown)
-{
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    if(from == kInvalidSeqPos) {
-        loc->SetWhole().Set(id);
-    } else {
-        loc->SetInt().SetId().Set(id);
-        loc->SetInt().SetFrom(from);
-        loc->SetInt().SetTo(to);
-        loc->SetStrand(strand);
-    }
-    return loc;
-}
 
 #include <limits>
 NCBITEST_INIT_TREE()
@@ -215,51 +124,19 @@ NCBITEST_INIT_TREE()
     CRef<CHgvsParser> parser(new CHgvsParser(*scope));
     CException::SetStackTraceLevel(eDiag_Trace);
 
-    LOG_POST("Initialized...");
-
-
     CNcbiIstream& istr = args["in"].AsInputFile();
     CNcbiOstream& ostr = args["out"].AsOutputFile();
 
-
-    if(!args["asn"]) {
-        LOG_POST("Creating reference ASN.1 variation feats");
-        bool off = false;
-        string line_str;
-        while(NcbiGetlineEOL(istr, line_str)) {
-            if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
-                if(line_str == "#OFF") {
-                    off = true;
-                } else if (line_str == "#ON") {
-                    off = false;
-                } else if(line_str == "#EXIT") {
-                    break;
-                } else {
-                    ;
-                }
-                continue;
-            }
-            if(off) {
-                continue;
-            }
-
-            boost::unit_test::framework::master_test_suite().add(
-                    BOOST_TEST_CASE(CTestCase(line_str, parser, ostr)));
+    while(true) {
+        CRef<CVariation> variation(new CVariation);
+        try {
+            istr >> MSerial_AsnText >> *variation;
+        } catch (CEofException e) {
+            break;
         }
-    } else {
-        LOG_POST("Testing reference ASN.1");
-        CNcbiIstream& istr = args["in"].AsInputFile();
-        while(1) {
-            CRef<CSeq_feat> feat(new CSeq_feat);
-            try {
-                istr >> MSerial_AsnText >> *feat;
-            } catch (CEofException e) {
-                break;
-            }
-            boost::unit_test::framework::master_test_suite().add(
-                    BOOST_TEST_CASE(CTestCase(*feat, parser, ostr)));
+        boost::unit_test::framework::master_test_suite().add(
+                BOOST_TEST_CASE(CTestCase(*variation, parser, ostr)));
 
-        }
     }
 }
 
@@ -277,11 +154,6 @@ NCBITEST_AUTO_FINI()
 
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
-    arg_desc->AddFlag
-        ("asn",
-         "Input is the text ASN.1 of reference Variation-feats; "
-         "otherwise assumed to be text-file of hgvs expressions");
-
     arg_desc->AddDefaultKey
         ("in",
          "input",

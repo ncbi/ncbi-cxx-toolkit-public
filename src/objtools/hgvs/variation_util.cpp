@@ -75,6 +75,9 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace variation_ref {
+
+
 const int CVariationUtil::m_variant_properties_schema_version = 1;
 
 #if 0
@@ -1623,7 +1626,7 @@ void CVariationUtil::SetVariantProperties(CVariation_ref& vr)
     }
 }
 
-
+};
 
 END_NCBI_SCOPE
 

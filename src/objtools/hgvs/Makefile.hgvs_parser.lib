@@ -4,7 +4,7 @@
 #
 
 LIB = hgvs
-SRC = hgvs_parser variation_util
+SRC = hgvs_parser variation_util hgvs_parser2 variation_util2
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)

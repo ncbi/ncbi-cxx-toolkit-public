@@ -7,24 +7,12 @@ SRC = test_hgvs_parser_app
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB_ = test_boost $(SEQ_LIBS) genome_collection pub medline biblio \
-    ncbi_xdbapi_ftds dbapi dbapi_driver \
-    xalgoalignsplign xalgoalignnw xalgoalignutil xalgoseq xalnmgr taxon1 $(BLAST_LIBS) seqmasks_io xconnect xqueryparse xregexp $(PCRE_LIB) \
-    $(OBJMGR_LIBS) general xser xutil xncbi
-    
-#LIB_ALNDB = \
-#       genomealignsdb_dataloader genomealignsdb_query \
-#       alndb_asnclient alndb_query  \
-#       generic_db_core dbassist dbloadb tea_crypt asnmuxdblb mux \
-#       dbloadb_asn asngendefs generic_db_asn generic_db_utils \
-#       ncbi_xdbapi_ftds dbapi dbapi_driver \
-#       xalnmgr xobjmgr xobjutil xobjread creaders \
-#       taxon1 scoremat tables $(OBJMGR_LIBS)
+LIB_ = hgvs variation seqfeat test_boost xregexp $(PCRE_LIB) xobjutil $(OBJMGR_LIBS)
 
-LIB = hgvs $(LIB_:%=%$(STATIC)) $(FTDS_LIB) $(LIB_ALNDB:%=%$(STATIC))
+LIB = $(LIB_:%=%$(STATIC))
     
-LIBS = $(PCRE_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
-
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+    
 REQUIRES = Boost.Spirit Boost.Test.Included
 CHECK_CMD = ./test_hgvs_parser_app -asn -in test_variation_feats.asn
 WATCHERS = astashya

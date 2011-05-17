@@ -63,7 +63,8 @@ using namespace boost::spirit;
 #include <objects/seq/Seq_data.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Variation_ref.hpp>
+#include <objects/variation/Variation.hpp>
+#include <objects/variation/VariantPlacement.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 
 #include <objmgr/scope.hpp>
@@ -76,11 +77,13 @@ using namespace boost::spirit;
 
 
 BEGIN_NCBI_SCOPE
+
+namespace variation {
+
 USING_SCOPE(objects);
 
 #define HGVS_THROW(err_code, message) NCBI_THROW(CHgvsParser::CHgvsParserException, err_code, message)
 
-namespace variation_ref {
 
 class CHgvsParser : public CObject
 {
@@ -97,8 +100,10 @@ public:
     typedef int TOpFlags;
 
 
-    CRef<CSeq_feat> AsVariationFeat(const string& hgvs_expression, TOpFlags = fOpFlags_Default);
-    string AsHgvsExpression(const CSeq_feat& feat);
+    CRef<CVariation> AsVariation(const string& hgvs_expression, TOpFlags = fOpFlags_Default);
+    string AsHgvsExpression(const CVariation& variation);
+    string AsHgvsExpression(const CSeq_loc& loc);
+    string AsHgvsExpression(const CVariantPlacement& p);
 
     CScope& SetScope()
     {
@@ -201,6 +206,7 @@ protected:
         SFuzzyInt offset;
     };
 
+#if 0
     struct SOffsetLoc
     {
         SOffsetLoc()
@@ -241,6 +247,7 @@ protected:
         SFuzzyInt start_offset;
         SFuzzyInt stop_offset;
     };
+#endif
 
     /*!
      * CContext encapsulates sequence or location context for an hgvs sub-expression.
@@ -276,12 +283,12 @@ protected:
             m_mol_type = eMol_not_set;
             m_cds.Reset();
             m_seq_id.Reset();
-            m_loc.Reset();
+            m_placement.Reset();
         }
 
-        TSeqPos GetLength() const
+        const CBioseq_Handle& GetBioseqHandle() const
         {
-            return m_bsh.GetBioseqLength();
+            return m_bsh;
         }
 
         /*!
@@ -291,27 +298,24 @@ protected:
          */
         void SetId(const CSeq_id& id, EMolType mol_type);
 
-        void Validate(const CSeq_literal& literal) const
+        const CSeq_id& GetId() const;
+
+        CVariantPlacement& SetPlacement()
         {
-            if(!m_loc.IsOffset()) {
-                //Can only validate normal locs, as with offset loc the asserted
-                //allele does not correspond to the base loc.
-                Validate(literal, GetLoc());
-            } else {
-                //LOG_POST("Ignoring validation of literal due to offset location");
+            if(!m_placement) {
+                m_placement.Reset(new CVariantPlacement);
             }
+            return *m_placement;
         }
 
-        void Validate(const CSeq_literal& literal, const CSeq_loc& loc) const;
-
-        void SetLoc(const SOffsetLoc& loc)
+        const CVariantPlacement& GetPlacement() const
         {
-            m_loc.Assign(loc);
+            return *m_placement;
         }
 
-        bool IsSetLoc() const
+        bool IsSetPlacement() const
         {
-            return !m_loc.loc.IsNull();
+            return !m_placement;
         }
 
         CScope& GetScope() const
@@ -319,23 +323,17 @@ protected:
             return *m_scope;
         }
 
-        const CSeq_loc& GetLoc() const;
-
-        const SOffsetLoc& GetOffsetLoc() const;
-
-        const CSeq_id& GetId() const;
-
         const CSeq_feat& GetCDS() const;
 
         EMolType GetMolType(bool check=true) const;
-
 
     private:
         CBioseq_Handle m_bsh;
         EMolType m_mol_type;
         CRef<CSeq_feat> m_cds;
+
         CRef<CSeq_id> m_seq_id;
-        SOffsetLoc m_loc;
+        CRef<CVariantPlacement> m_placement;
         mutable CRef<CScope> m_scope;
     };
 
@@ -749,49 +747,51 @@ protected:
     static SGrammar s_grammar;
 
 
+
 private:
     typedef tree_match<char const*> TParseTreeMatch;
     typedef TParseTreeMatch::const_tree_iterator TIterator;
     typedef CVariation_inst::TDelta::value_type TDelta;
-    typedef CVariation_ref::TData::TSet TVariationSet;
+    typedef CVariation::TData::TSet TVariationSet;
 
 
     static SFuzzyInt x_int_fuzz (TIterator const& i, const CContext& context);
 
-    static CRef<CSeq_point>      x_abs_pos         (TIterator const& i, const CContext& context);
-    static SOffsetPoint          x_general_pos     (TIterator const& i, const CContext& context);
-    static SOffsetPoint          x_fuzzy_pos       (TIterator const& i, const CContext& context);
-    static SOffsetPoint          x_pos_spec        (TIterator const& i, const CContext& context);
-    static SOffsetPoint          x_prot_pos        (TIterator const& i, const CContext& context);
+    static CRef<CSeq_point>   x_abs_pos         (TIterator const& i, const CContext& context);
 
-    static SOffsetLoc            x_range           (TIterator const& i, const CContext& context);
-    static SOffsetLoc            x_location        (TIterator const& i, const CContext& context);
+    static SOffsetPoint       x_general_pos     (TIterator const& i, const CContext& context);
+    static SOffsetPoint       x_fuzzy_pos       (TIterator const& i, const CContext& context);
+    static SOffsetPoint       x_pos_spec        (TIterator const& i, const CContext& context);
+    static SOffsetPoint       x_prot_pos        (TIterator const& i, const CContext& context);
 
-    static CRef<CSeq_loc>        x_seq_loc         (TIterator const& i, const CContext& context);
-    static CRef<CSeq_literal>    x_raw_seq         (TIterator const& i, const CContext& context);
-    static TDelta                x_seq_ref         (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_identity        (const CContext& context);
-    static CRef<CVariation_ref>  x_delins          (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_deletion        (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_insertion       (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_duplication     (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_nuc_subst       (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_nuc_inv         (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_ssr             (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_conversion      (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_prot_ext        (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_prot_missense   (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_translocation   (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_mut_inst        (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_expr1           (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_expr2           (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_expr3           (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_prot_fs         (TIterator const& i, const CContext& context);
-    static CRef<CVariation_ref>  x_list            (TIterator const& i, const CContext& context);
-    static CContext              x_header          (TIterator const& i, const CContext& context);
-    static CRef<CSeq_feat>       x_root            (TIterator const& i, const CContext& context);
+    static CRef<CVariantPlacement>  x_range           (TIterator const& i, const CContext& context);
+    static CRef<CVariantPlacement>  x_location        (TIterator const& i, const CContext& context);
 
-    static CRef<CVariation_ref>  x_unwrap_iff_singleton(CVariation_ref& v);
+    static CRef<CSeq_loc>    x_seq_loc         (TIterator const& i, const CContext& context);
+    static CRef<CSeq_literal> x_raw_seq         (TIterator const& i, const CContext& context);
+    static TDelta            x_seq_ref         (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_identity        (const CContext& context);
+    static CRef<CVariation>  x_delins          (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_deletion        (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_insertion       (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_duplication     (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_nuc_subst       (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_nuc_inv         (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_ssr             (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_conversion      (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_prot_ext        (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_prot_missense   (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_translocation   (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_mut_inst        (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_expr1           (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_expr2           (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_expr3           (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_prot_fs         (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_list            (TIterator const& i, const CContext& context);
+    static CContext          x_header          (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_root            (TIterator const& i, const CContext& context);
+
+    static CRef<CVariation>  x_unwrap_iff_singleton(CVariation& v);
 
 
     ///Convert HGVS amino-acid code to ncbieaa
@@ -804,24 +804,13 @@ private:
     //functions to create hgvs expression from a variation-ref
 
     /// variatino must have seq-loc specified
-    string x_AsHgvsExpression(const CVariation_ref& variation,
-                            const CSeq_loc& parent_loc, //if variation has seq-loc set, it will be used instead.
-                            bool is_top_level);
+    string x_AsHgvsExpression(const CVariation& variation, bool is_top_level);
 
 
     //Calculate the length of the inst, multipliers taken into account.
     TSeqPos x_GetInstLength(const CVariation_inst& inst, const CSeq_loc& this_loc);
 
     string x_GetInstData(const CVariation_inst& inst, const CSeq_loc& this_loc);
-
-
-    /// Only subset of insts can be expressed as HGVS, this will throw otherwise.
-    /// loc is required to capture sequence at loc for snps, e.g. 'A' in 'A>G'
-    ///
-    /// loc is modified to conform to HGVS flavor (on plus strand, modify
-    /// starts/stops for ins or microsatellite locatinos to conform to HGVS
-    /// convention where differes from Variation-ref standard)
-    string x_InstToString(const CVariation_inst& inst, CSeq_loc& loc);
 
     string x_LocToSeqStr(const CSeq_loc& loc);
 
@@ -846,9 +835,10 @@ private:
 
     string x_SeqLiteralToStr(const CSeq_literal& literal, bool flip_strand);
 
+    static CRef<CVariation> s_ProtToCdna(const CVariation& vr, CScope& scope);
 
-
-    static CRef<CVariation_ref> s_ProtToCdna(const CVariation_ref& vr, CScope& scope);
+    static void s_SetStartOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint);
+    static void s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint);
 
 private:
     CRef<CScope> m_scope;
