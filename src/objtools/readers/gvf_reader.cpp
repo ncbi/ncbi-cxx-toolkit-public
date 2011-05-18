@@ -242,6 +242,125 @@ bool CGvfReader::x_MergeRecord(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGvfReader::x_FeatureSetLocation(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_id > pId;
+
+    const string& id_str = record.Id();
+    if (m_uFlags & fAllIdsAsLocal) {
+        pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
+    } else {
+        bool is_numeric =
+            id_str.find_first_not_of("0123456789") == string::npos;
+
+        if (is_numeric  &&  !!(m_uFlags & fNumericIdsAsLocal)) {
+            pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
+        }
+        else {
+            try {
+                pId.Reset( new CSeq_id(id_str));
+            }
+            catch (CException&) {
+                pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
+            }
+        }
+    }
+
+    CRef< CSeq_loc > pLocation( new CSeq_loc );
+    pLocation->SetInt().SetId( *pId );
+    pLocation->SetInt().SetFrom( record.SeqStart() );
+    pLocation->SetInt().SetTo( record.SeqStop() );
+    if ( record.IsSetStrand() ) {
+        pLocation->SetInt().SetStrand( record.Strand() );
+    }
+
+    //  deal with fuzzy range indicators / lower end:
+    string strRange;
+    list<string> range_borders;
+    size_t lower, upper;
+    if ( record.GetAttribute( "Start_range", strRange ) )
+    {
+        NStr::Split( strRange, ",", range_borders );
+        if ( range_borders.size() != 2 ) {
+            cerr << "CGvfReader::x_FeatureSetLocation: "
+                 << "Bad \"Start_range\" attribute"
+                 << endl;
+            return false; //overly harsh?
+        }
+        try {
+            lower = NStr::StringToUInt( range_borders.front() );
+            upper = lower;
+            if ( range_borders.back() != "." ) {
+                upper = NStr::StringToInt( range_borders.back() );
+            }
+        }
+        catch ( ... ) {
+            cerr << "CGvfReader::x_FeatureSetLocation: "
+                 << "Bad \"Start_range\" attribute"
+                 << endl;
+            return false; //overly harsh?
+        }
+        if ( lower < upper ) {
+            pLocation->SetInt().SetFuzz_from().SetRange().SetMin( lower-1 );
+            pLocation->SetInt().SetFuzz_from().SetRange().SetMax( upper-1 );
+        }
+        if ( lower == upper ) {
+            pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_gt );
+        }
+        if ( lower > upper ) {
+            // let's just assume they were specified out of order ...
+            pLocation->SetInt().SetFuzz_from().SetRange().SetMin( upper-1 );
+            pLocation->SetInt().SetFuzz_from().SetRange().SetMax( lower-1 );
+        }
+        
+    }
+
+    //  deal with fuzzy range indicators / upper end:
+    range_borders.clear();
+    if ( record.GetAttribute( "End_range", strRange ) )
+    {
+        NStr::Split( strRange, ",", range_borders );
+        if ( range_borders.size() != 2 ) {
+            cerr << "CGvfReader::x_FeatureSetLocation: "
+                 << "Bad \"End_range\" attribute"
+                 << endl;
+            return false; //overly harsh?
+        }
+        try {
+            upper = NStr::StringToUInt( range_borders.back() );
+            lower = upper;
+            if ( range_borders.front() != "." ) {
+                lower = NStr::StringToInt( range_borders.front() );
+            }
+        }
+        catch ( ... ) {
+            cerr << "CGvfReader::x_FeatureSetLocation: "
+                 << "Bad \"End_range\" attribute"
+                 << endl;
+            return false; //overly harsh?
+        }
+        if ( lower < upper ) {
+            pLocation->SetInt().SetFuzz_to().SetRange().SetMin( lower-1 );
+            pLocation->SetInt().SetFuzz_to().SetRange().SetMax( upper-1 );
+        }
+        if ( lower == upper ) {
+            pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_lt );
+        }
+        if ( lower > upper ) {
+            // let's just assume they were specified out of order ...
+            pLocation->SetInt().SetFuzz_to().SetRange().SetMin( upper-1 );
+            pLocation->SetInt().SetFuzz_to().SetRange().SetMax( lower-1 );
+        }
+    }
+
+    pFeature->SetLocation( *pLocation );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGvfReader::x_FeatureSetVariation(
     const CGvfReadRecord& record,
     CRef< CSeq_feat > pFeature )
@@ -286,6 +405,9 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
     if ( ! x_VariationSetId( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
+    //>>>
+    pVariation->SetData().SetNote( "CNV Record (to be done)" );
+    //<<<
     return pVariation;
 }
   

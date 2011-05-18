@@ -164,7 +164,7 @@ public:
         CGff2Record::TAttrCit,
         CRef< CSeq_feat > );
   
-    bool x_FeatureSetLocation(
+    virtual bool x_FeatureSetLocation(
         const CGff2Record&,
         CRef< CSeq_feat > );
     

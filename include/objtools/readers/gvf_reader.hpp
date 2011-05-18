@@ -97,6 +97,10 @@ protected:
         const CGvfReadRecord&,
         CRef< CSeq_annot > );
 
+    bool x_FeatureSetLocation(
+        const CGff2Record&,
+        CRef< CSeq_feat > );
+    
     bool x_FeatureSetVariation(
         const CGvfReadRecord&,
         CRef< CSeq_feat > );
