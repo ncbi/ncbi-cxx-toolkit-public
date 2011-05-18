@@ -694,7 +694,7 @@ CNCSyncLog::GetEventsList(Uint8  server,
     bool  time_limit_set = false;
     // Walk the container from the end with copying all the records which
     // matched: rec_no > local_rec_no or timestamp within 10 sec
-    REVERSE_ITERATE(TSyncEvents, record, data.events) {
+    NON_CONST_REVERSE_ITERATE(TSyncEvents, record, data.events) {
         SNCSyncEvent* evt = *record;
         // local_time is used here because the records are ordered by
         // local_time but not the origin time
