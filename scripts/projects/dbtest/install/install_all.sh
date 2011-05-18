@@ -40,7 +40,7 @@ declare -a PLATF_SERVERS
 PLATF_SERVERS=(      "coremake2"
                      "coremake2"
                      "coremake2"
-                     "beastie"
+                     "beastie3"
                      "coremake2"
                      "coremake2"
                      "coremake2")
@@ -72,12 +72,6 @@ fi
 cd "$PREPARE_DIR"
 
 
-ATTIC_DIR="/net/attic1/vol/vol1/release-repository/dbtest/builds/${VERSION}"
-ATTIC_SRC_DIR="/net/attic1/vol/vol1/release-repository/dbtest/src/${VERSION}"
-mkdir -p "${ATTIC_DIR}"
-mkdir -p "${ATTIC_SRC_DIR}"
-
-
 for ((i = 0; i < 7; ++i)); do
     echo "Deploying ${PLATF_FILE_MASKS[$i]}"
 
@@ -94,14 +88,7 @@ for ((i = 0; i < 7; ++i)); do
     fi
 
     PLATF_DIR="${PLATF_FILE%%.tar.gz}"
-    PLATF_SRC_DIR="${PLATF_SRC_FILE%%.tar.gz}"
-    PLATF_ATTIC_DIR="${ATTIC_DIR}/${PLATF_DIR_NAMES[$i]}"
-    mkdir -p "${PLATF_ATTIC_DIR}"
     tar -zxf "${PLATF_FILE}" || exit 6
-    tar -zxf "${PLATF_SRC_FILE}" || exit 16
-
-    cp -R "${PLATF_SRC_DIR}"/* "${ATTIC_SRC_DIR}" || exit 17
-    rm -rf "${PLATF_SRC_DIR}"
 
     EXE=""
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win64"* ]]; then
@@ -109,18 +96,14 @@ for ((i = 0; i < 7; ++i)); do
     fi
 
     cat "${PLATF_DIR}/bin/test_stat_load${EXE}" | ssh coremake@"${PLATF_SERVERS[$i]}" "cat >${PLATF_NCBI_BIN_DIRS[$i]}/test_stat_load${EXE}" || exit 7
-    cp  "${PLATF_DIR}/bin/test_stat_load${EXE}" "${PLATF_ATTIC_DIR}/" || exit 8
 
 
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Linux64"* ]]; then
         echo "Deploying cgi interface"
 
         cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 9
-        cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${PLATF_ATTIC_DIR}/" || exit 10
         cp -R "${PLATF_DIR}/bin/xsl/" "${CGI_BIN_DIR}/" || exit 11
-        cp -R "${PLATF_DIR}/bin/xsl/" "${PLATF_ATTIC_DIR}/" || exit 12
         cp -R "${PLATF_DIR}/bin/overlib/" "${CGI_BIN_DIR}/" || exit 13
-        cp -R "${PLATF_DIR}/bin/overlib/" "${PLATF_ATTIC_DIR}/" || exit 14
 
         touch "${CGI_BIN_DIR}/.sink_subtree"
     fi
