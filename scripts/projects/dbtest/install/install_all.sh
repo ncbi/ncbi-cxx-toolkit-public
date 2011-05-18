@@ -22,7 +22,7 @@ TMP_DIR="/tmp/$$"
 
 declare -a PLATF_FILE_MASKS
 PLATF_FILE_MASKS=(   "*Linux64*"
-                     "*Win64*"
+                     "*Win32*"
                      "*Linux32*"
                      "*FreeBSD32*"
                      "*IntelMAC*"
@@ -91,7 +91,7 @@ for ((i = 0; i < 7; ++i)); do
     tar -zxf "${PLATF_FILE}" || exit 6
 
     EXE=""
-    if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win64"* ]]; then
+    if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win32"* ]]; then
         EXE=".exe"
     fi
 
