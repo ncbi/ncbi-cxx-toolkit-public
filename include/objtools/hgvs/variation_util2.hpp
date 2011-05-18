@@ -25,8 +25,7 @@
 *
 * File Description:
 *
-*   Translate HGVS expression to Variation-ref seq-feats.
-*   HGVS nomenclature rules: http://www.hgvs.org/mutnomen/
+*   Utility functions pretaining to Variation
 *
 * ===========================================================================
 */
@@ -186,9 +185,6 @@ public:
     static string AsString(ESOTerm term);
 
 private:
-
-    void x_AttachProteinConsequences(CVariation& v, const CVariation::TPlacements* parent_placements);
-
     void ChangeToDelins(CVariation& v);
 
     void x_SetVariantProperties(CVariantProperties& p, const CVariation_inst& vi, const CSeq_loc& loc);
@@ -199,9 +195,6 @@ private:
     void x_InferNAfromAA(CVariation& v);
 
     void x_TranslateNAtoAA(CVariation& prot_variation);
-
-    //precondition: s_AddIntronicOffsets has been called as applicable
-    static void s_Remap(CVariation_ref& vr, CSeq_loc_Mapper& mapper, const CSeq_loc& parent_variation_loc);
 
     //return iupacna or ncbieaa literals
     CRef<CSeq_literal> x_GetLiteralAtLoc(const CSeq_loc& loc);

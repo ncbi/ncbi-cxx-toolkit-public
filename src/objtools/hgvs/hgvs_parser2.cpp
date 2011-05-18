@@ -101,6 +101,7 @@ TSeqPos GetLength(const CVariantPlacement& p)
         - (p.IsSetStart_offset() ? p.GetStart_offset() : 0);
 }
 
+#if 0
 void ExtendDownstream(CVariantPlacement& p, TSeqPos len)
 {
     if(p.IsSetStop_offset()) {
@@ -114,6 +115,74 @@ void ExtendDownstream(CVariantPlacement& p, TSeqPos len)
         }
     }
 }
+#endif
+
+
+bool SeqsMatch(const string& query, const char* text)
+{
+    static const string iupac_bases = ".TGKCYSBAWRDMHVN"; //position of the iupac literal = 4-bit mask for A|C|G|T
+    for(size_t i = 0; i < query.size(); i++) {
+        size_t a = iupac_bases.find(query[i]);
+        size_t b = iupac_bases.find(text[i]);
+        if(!(a & b)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+CRef<CSeq_loc> FindSSRLoc(const CSeq_loc& loc, const string& seq, CScope& scope)
+{
+    //Extend the loc 10kb up and down; Find all occurences of seq in the resulting
+    //interval, create locs for individual repeat units; then merge them, and keep the interval that
+    //overlaps the original.
+
+    const TSeqPos ext_interval = 10000;
+    CRef<CSeq_loc> loc1 = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, &scope);
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    TSeqPos seq_len = bsh.GetInst_Length();
+    loc1->SetInt().SetFrom() -= min(ext_interval, loc1->GetInt().GetFrom());
+    loc1->SetInt().SetTo() += min(ext_interval, seq_len - 1 - loc1->GetInt().GetTo());
+
+    CSeqVector v(*loc1, scope, CBioseq_Handle::eCoding_Iupac);
+    string str1;
+    v.GetSeqData(v.begin(), v.end(), str1);
+
+    CRef<CSeq_loc> container(new CSeq_loc(CSeq_loc::e_Mix));
+
+    for(size_t i = 0; i < str1.size() - seq.size(); i++) {
+        if(SeqsMatch(seq, &str1[i])) {
+            CRef<CSeq_loc> repeat_unit_loc(new CSeq_loc);
+            repeat_unit_loc->Assign(*loc1);
+
+            if(sequence::GetStrand(loc, NULL) == eNa_strand_minus) {
+                repeat_unit_loc->SetInt().SetTo() -= i;
+                repeat_unit_loc->SetInt().SetFrom(repeat_unit_loc->GetInt().GetTo() - (seq.size() - 1));
+            } else {
+                repeat_unit_loc->SetInt().SetFrom() += i;
+                repeat_unit_loc->SetInt().SetTo(repeat_unit_loc->GetInt().GetFrom() + (seq.size() - 1));
+            }
+            container->SetMix().Set().push_back(repeat_unit_loc);
+        }
+    }
+
+    CRef<CSeq_loc> merged_repeats = sequence::Seq_loc_Merge(*container, CSeq_loc::fSortAndMerge_All, &scope);
+    merged_repeats->ChangeToMix();
+    CRef<CSeq_loc> result(new CSeq_loc(CSeq_loc::e_Null));
+    result->Assign(loc);
+
+    for(CSeq_loc_CI ci(*merged_repeats); ci; ++ci) {
+        const CSeq_loc& loc2 = ci.GetEmbeddingSeq_loc();
+        if(sequence::Compare(loc, loc2, &scope) != sequence::eNoOverlap) {
+            result->Add(loc2);
+        }
+    }
+
+    return sequence::Seq_loc_Merge(*result, CSeq_loc::fSortAndMerge_All, &scope);
+}
+
+
 
 
 void CHgvsParser::s_SetStartOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint)
@@ -142,67 +211,33 @@ void CHgvsParser::s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzz
 
 
 
-
-//attach asserted sequence to the variation-ref in a user-object. This is for
-//internal representation only, as the variation-ref travels up through the
-//parse-tree nodes. Before we return the final variation, this will be repackaged
-//as set of variations (see RepackageAssertedSequence()). This is done so that
-//we don't have to deal with possibility of a variation-ref being a package
-//within the parser.
-void AttachAssertedSequence(CVariation& vr, const CSeq_literal& literal)
-{
-    CRef<CUser_object> uo(new CUser_object);
-    uo->SetType().SetStr("hgvs_asserted_seq");
-
-    uo->SetField("length").SetData().SetInt(literal.GetLength());
-    if(literal.GetSeq_data().IsIupacna()) {
-        uo->AddField("iupacna", literal.GetSeq_data().GetIupacna());
-    } else if(literal.GetSeq_data().IsNcbieaa()) {
-        uo->AddField("ncbieaa", literal.GetSeq_data().GetNcbieaa());
-    } else {
-        HGVS_THROW(eLogic, "Seq-data is neither IUPAC-AA or IUPAC-NA");
-    }
-    vr.SetExt().push_back(uo);
-}
-
-
-
-//if a variation has an asserted sequence, repackage it as a set having
-//the original variation and a synthetic one representing the asserted sequence
+//if a variation has an asserted sequence, stored in placement.seq, repackage it as a set having
+//the original variation and a synthetic one representing the asserted sequence. The placement.seq
+//is cleared, as it is a placeholder for the actual reference sequence.
 void RepackageAssertedSequence(CVariation& vr)
 {
-    if(vr.GetData().IsSet()) {
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, vr.SetData().SetSet().SetVariations()) {
-            RepackageAssertedSequence(**it);
-        }
-    } else {
+    if(vr.IsSetPlacements() && SetFirstPlacement(vr).IsSetSeq()) {
         CRef<CVariation> orig(new CVariation);
         orig->Assign(vr);
         orig->ResetPlacements(); //location will be set on the package, as it is the same for both members
 
         vr.SetData().SetSet().SetType(CVariation::TData::TSet::eData_set_type_package);
         vr.SetData().SetSet().SetVariations().push_back(orig);
-        vr.ResetExt();
 
+        CRef<CVariation> asserted_vr(new CVariation);
+        asserted_vr->SetData().SetInstance().SetObservation(CVariation_inst::eObservation_asserted);
+        asserted_vr->SetData().SetInstance().SetType(CVariation_inst::eType_identity);
 
-        if(orig->IsSetExt() && orig->GetExt().front()->GetType().GetStr() == "hgvs_asserted_seq") {
-            const CUser_object& uo = *orig->GetExt().front();
-            CRef<CVariation> asserted_vr(new CVariation);
-            vr.SetData().SetSet().SetVariations().push_back(asserted_vr);
+        CRef<CDelta_item> delta(new CDelta_item);
+        delta->SetSeq().SetLiteral().Assign(SetFirstPlacement(vr).GetSeq());
+        asserted_vr->SetData().SetInstance().SetDelta().push_back(delta);
 
-            asserted_vr->SetData().SetInstance().SetObservation(CVariation_inst::eObservation_asserted);
-            asserted_vr->SetData().SetInstance().SetType(CVariation_inst::eType_identity);
+        SetFirstPlacement(vr).ResetSeq();
+        vr.SetData().SetSet().SetVariations().push_back(asserted_vr);
 
-            CRef<CDelta_item> delta(new CDelta_item);
-            delta->SetSeq().SetLiteral().SetLength(uo.GetField("length").GetData().GetInt());
-            if(uo.HasField("iupacna")) {
-                delta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(uo.GetField("iupacna").GetData().GetStr());
-            } else {
-                delta->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set(uo.GetField("ncbieaa").GetData().GetStr());
-            }
-            asserted_vr->SetData().SetInstance().SetDelta().push_back(delta);
-
-            orig->ResetExt();
+    } else if(vr.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, vr.SetData().SetSet().SetVariations()) {
+            RepackageAssertedSequence(**it);
         }
     }
 }
@@ -947,17 +982,19 @@ CRef<CVariation> CHgvsParser::x_delins(TIterator const& i, const CContext& conte
 
     if(it->value.id() == SGrammar::eID_raw_seq) {
         CRef<CSeq_literal> literal = x_raw_seq(it, context);
-        //context.Validate(*literal);
         ++it;
-        AttachAssertedSequence(*vr, *literal);
+        SetFirstPlacement(*vr).SetSeq(*literal);
     }
 
     ++it; //skip "ins"
 
+#if 0
+    //delins is represented as single-delta "replace this with that"
     CRef<CDelta_item> di_del(new CDelta_item);
     di_del->SetAction(CDelta_item::eAction_del_at);
     di_del->SetSeq().SetThis();
     var_inst.SetDelta().push_back(di_del);
+#endif
 
     TDelta di_ins = x_seq_ref(it, context);
     var_inst.SetDelta().push_back(di_ins);
@@ -984,9 +1021,8 @@ CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& con
 
     if(it->value.id() == SGrammar::eID_raw_seq) {
         CRef<CSeq_literal> literal = x_raw_seq(it, context);
-        //context.Validate(*literal);
         ++it;
-        AttachAssertedSequence(*vr, *literal);
+        SetFirstPlacement(*vr).SetSeq(*literal);
     }
 
     var_inst.SetDelta();
@@ -1049,8 +1085,7 @@ CRef<CVariation> CHgvsParser::x_duplication(TIterator const& i, const CContext& 
         if(!dup_seq->GetSeq().IsLiteral()) {
             HGVS_THROW(eSemantic, "Expected literal after 'dup'");
         } else if(dup_seq->GetSeq().GetLiteral().IsSetSeq_data()) {
-            //context.Validate(dup_seq->GetSeq().GetLiteral());
-            AttachAssertedSequence(*vr, dup_seq->GetSeq().GetLiteral());
+            SetFirstPlacement(*vr).SetSeq(dup_seq->SetSeq().SetLiteral());
         }
     }
 
@@ -1074,7 +1109,7 @@ CRef<CVariation> CHgvsParser::x_nuc_subst(TIterator const& i, const CContext& co
     }
 
     //context.Validate(*seq_from);
-    AttachAssertedSequence(*vr, *seq_from);
+    SetFirstPlacement(*vr).SetSeq(*seq_from);
 
     ++it;//skip to ">"
     ++it;//skip to next
@@ -1136,15 +1171,25 @@ CRef<CVariation> CHgvsParser::x_ssr(TIterator const& i, const CContext& context)
         ++it;
     }
 
+
+
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
+
+#if 1
+    if(!literal.IsNull() && literal->IsSetSeq_data() && literal->GetSeq_data().IsIupacna()) {
+        CRef<CSeq_loc> ssr_loc = FindSSRLoc(SetFirstPlacement(*vr).GetLoc(), literal->GetSeq_data().GetIupacna(), context.GetScope());
+        SetFirstPlacement(*vr).SetLoc().Assign(*ssr_loc);
+    }
+#else
     if(SetFirstPlacement(*vr).GetLoc().IsPnt() && !literal.IsNull()) {
         //The location may either specify a repeat unit, or point to the first base of a repeat unit.
         //We normalize it so it is alwas the repeat unit.
         ExtendDownstream(SetFirstPlacement(*vr), literal->GetLength() - 1);
     }
+#endif
 
     if(!literal.IsNull()) {
-        AttachAssertedSequence(*vr, *literal);
+        SetFirstPlacement(*vr).SetSeq(*literal);
     }
 
     if(it->value.id() == SGrammar::eID_ssr) { // list('['>>int_p>>']', '+') with '[',']','+' nodes discarded;

@@ -772,17 +772,10 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
 
 
 
-
-void CVariationUtil::AttachProteinConsequences(CVariation& nuc_variation)
+void CVariationUtil::AttachProteinConsequences(CVariation& v)
 {
-    x_AttachProteinConsequences(nuc_variation, NULL);
-}
-
-void CVariationUtil::x_AttachProteinConsequences(
-        CVariation& v,
-        const CVariation::TPlacements* parent_placements)
-{
-    const CVariation::TPlacements* placements = v.IsSetPlacements() ? &v.GetPlacements() : parent_placements;
+    v.Index();
+    const CVariation::TPlacements* placements = s_GetPlacements(v);
 
     if(!placements || placements->size() == 0) {
         return;
@@ -790,7 +783,7 @@ void CVariationUtil::x_AttachProteinConsequences(
 
     if(v.GetData().IsSet()) {
         NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
-            x_AttachProteinConsequences(**it, placements);
+            AttachProteinConsequences(**it);
         }
         return;
     }
@@ -814,7 +807,7 @@ void CVariationUtil::x_AttachProteinConsequences(
 
     ITERATE(CVariation::TPlacements, it, *placements) {
         const CVariantPlacement& placement = **it;
-        if(placement.IsSetStart_offset() && placement.IsSetStop_offset()) {
+        if(placement.IsSetStart_offset() && (placement.IsSetStop_offset() || placement.GetLoc().IsPnt())) {
             continue; //intronic.
         }
         CRef<CSeq_loc> loc(new CSeq_loc);
