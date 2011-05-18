@@ -376,10 +376,19 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     }
     // }
 
+    // eventually, the last part will be replaced with a hash-table
+    // or something, but this is fine while we're only checking for
+    // one type.
+    // This prevents quals like /metagenomic="metagenomic" (e.g. EP508672)
+    const bool forceNoValue = ( 
+        ! ctx.Config().SrcQualsToNote() &&
+        name == m_Value && 
+        name == "metagenomic" );
+
     const bool prependNewline = (flags & fPrependNewline) && ! q.empty();
     TFlatQual qual = x_AddFQ(q, (is_note ? "note" : name), 
         (  prependNewline ? "\n" + m_Value : m_Value ), 
-        m_Style);
+        ( forceNoValue ? CFormatQual::eEmpty : m_Style ) );
     
     if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
@@ -1738,7 +1747,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         if (ctx.Config().DoHTML()) {
             string url = dbt.GetUrl();
             if (!NStr::IsBlank(url)) {
-                db_xref <<  "<a href=" <<  url << '>' << id << "</a>";
+                db_xref <<  "<a href=\"" <<  url << "\">" << id << "</a>";
             } else {
                 db_xref << id;
             }

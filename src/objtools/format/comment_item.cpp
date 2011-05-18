@@ -64,7 +64,7 @@ BEGIN_SCOPE(objects)
 bool CCommentItem::sm_FirstComment = true;
 
 static const string kRefSeq = "REFSEQ";
-static const string kRefSeqLink = "<a href=http://www.ncbi.nlm.nih.gov/RefSeq/>REFSEQ</a>";
+static const string kRefSeqLink = "<a href=\"http://www.ncbi.nlm.nih.gov/RefSeq/\">REFSEQ</a>";
 
 /////////////////////////////////////////////////////////////////////////////
 //

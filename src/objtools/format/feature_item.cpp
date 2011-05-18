@@ -1825,10 +1825,15 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
     if( feat_type == CSeqFeatData::e_Variation || 
         ( feat_type == CSeqFeatData::e_Imp && 
             ( feat_subtype == CSeqFeatData::eSubtype_variation ||
-              feat_subtype == CSeqFeatData::eSubtype_variation_ref ))) {
+              feat_subtype == CSeqFeatData::eSubtype_variation_ref ))) 
+    {
+        const ENa_strand first_strand_to_try = ( 
+            location.GetStrand() == eNa_strand_minus ?
+                eNa_strand_minus :
+                eNa_strand_plus );
 
         // try one strand first
-        cleaned_location->SetStrand( eNa_strand_plus );
+        cleaned_location->SetStrand( first_strand_to_try );
         CConstRef<CSeq_feat> feat;
         CGeneSearchPlugin plugin( *cleaned_location, ctx, filtering_gene_xref );
         feat = sequence::GetBestOverlappingFeat
@@ -1843,7 +1848,11 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
         }
 
         // if that fails, try the other strand
-        cleaned_location->SetStrand( eNa_strand_minus );
+        if( first_strand_to_try == eNa_strand_plus ) {
+            cleaned_location->SetStrand( eNa_strand_minus );
+        } else {
+            cleaned_location->SetStrand( eNa_strand_plus );
+        }
         CGeneSearchPlugin plugin2( *cleaned_location, ctx, filtering_gene_xref );
         return sequence::GetBestOverlappingFeat
             ( *cleaned_location,
@@ -2461,9 +2470,13 @@ void CFeatureItem::x_AddQualsRna(
                     } else {
                         if (sip->IsGi()) {
                             string acc = GetAccessionForGi(sip->GetGi(), scope);
-                            if (!cfg.DropIllegalQuals()  ||  IsValidAccession(acc)) {
-                                CRef<CSeq_id> acc_id(new CSeq_id(acc));
-                                x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
+                            if( acc.empty() && ! cfg.DropIllegalQuals() ) {
+                                x_AddQual(slot, new CFlatStringQVal( NStr::IntToString(sip->GetGi()) ) );
+                            } else {
+                                if ( !cfg.DropIllegalQuals()  ||  IsValidAccession(acc)) {
+                                    CRef<CSeq_id> acc_id(new CSeq_id(acc));
+                                    x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
+                                }
                             }
                             x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*sip, true));
                         }
@@ -2912,9 +2925,13 @@ void CFeatureItem::x_AddQualProteinId(
         string prot_acc;
         try {
             prot_acc = GetAccessionForGi( protId->GetGi(), scope );
-            if ( !cfg.DropIllegalQuals() || IsValidAccession( prot_acc ) ) {
-                CRef<CSeq_id> acc_id( new CSeq_id( prot_acc ) );
-                x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( *acc_id ) );
+            if( prot_acc.empty() && !cfg.DropIllegalQuals() ) {
+                x_AddQual( eFQ_protein_id, new CFlatStringQVal( NStr::IntToString(protId->GetGi()) ) );
+            } else {
+                if ( !cfg.DropIllegalQuals() || IsValidAccession( prot_acc ) ) {
+                    CRef<CSeq_id> acc_id( new CSeq_id( prot_acc ) );
+                    x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( *acc_id ) );
+                }
             }
         } catch ( CException& ) {}
         x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( *protId, true ) );
@@ -5972,6 +5989,7 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
     CFlatFeature::TQuals& qvec = ff.SetQuals();
 
 #define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
+    DO_QUAL(metagenomic);
     DO_QUAL(linkage_group);
 
     DO_QUAL(type);
@@ -6025,8 +6043,8 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(unstructured);
     }
 
-    DO_NOTE(metagenomic);
     if ( GetContext()->Config().SrcQualsToNote() ) {
+        DO_NOTE(metagenomic);
         DO_NOTE(linkage_group);
         DO_NOTE(type);
         DO_NOTE(subtype);

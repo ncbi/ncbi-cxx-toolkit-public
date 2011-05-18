@@ -360,11 +360,11 @@ static string s_GetHtmlTaxname(const CSourceItem& source)
     
     if (!NStr::EqualNocase(source.GetTaxname(), "Unknown")) {
         if (source.GetTaxid() != CSourceItem::kInvalidTaxid) {
-            link << "<a href=" << strLinkBaseTaxonomy << "id=" << source.GetTaxid() << ">";
+            link << "<a href=\"" << strLinkBaseTaxonomy << "id=" << source.GetTaxid() << "\">";
         } else {
             string taxname = source.GetTaxname();
             replace(taxname.begin(), taxname.end(), ' ', '+');
-            link << "<a href=" << strLinkBaseTaxonomy << "name=" << taxname << ">";
+            link << "<a href=\"" << strLinkBaseTaxonomy << "name=" << taxname << "\">";
         }
         link << source.GetTaxname() << "</a>";
     } else {
