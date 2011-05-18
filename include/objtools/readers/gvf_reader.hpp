@@ -81,6 +81,10 @@ public:
     virtual ~CGvfReader();
 
 protected:
+    virtual bool x_ParseStructuredCommentGff(
+        const string&,
+        CRef< CAnnotdesc >& );
+                                
     virtual bool x_ParseFeatureGff(
         const string&,
         TAnnots& );
@@ -92,6 +96,28 @@ protected:
     virtual bool x_MergeRecord(
         const CGvfReadRecord&,
         CRef< CSeq_annot > );
+
+    bool x_FeatureSetVariation(
+        const CGvfReadRecord&,
+        CRef< CSeq_feat > );
+
+    CRef<CVariation_ref> x_VariationSNV(
+        const CGvfReadRecord& );
+
+    CRef<CVariation_ref> x_VariationCNV(
+        const CGvfReadRecord& );
+
+    virtual bool x_VariationSetId(
+        const CGvfReadRecord&,
+        CRef< CVariation_ref > );
+
+    virtual bool x_VariationSetAlleleInstances(
+        const CGvfReadRecord&,
+        CRef< CVariation_ref > );
+
+    virtual bool x_VariationSetProperties(
+        const CGvfReadRecord&,
+        CRef< CVariation_ref > );
 
     virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(); };    
 };

@@ -80,6 +80,8 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
+#include <objects/seqfeat/VariantProperties.hpp>
+#include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
@@ -101,6 +103,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+const map<string, CVariantProperties::EAllele_state>&
+s_AlleleStateMap()
+//  ----------------------------------------------------------------------------
+{
+    static map<string, CVariantProperties::EAllele_state> m;
+    if ( m.empty() ) {
+        m["heterozygous"] = CVariantProperties::eAllele_state_heterozygous;
+        m["homozygous"] = CVariantProperties::eAllele_state_homozygous;
+        m["hemizygous"] = CVariantProperties::eAllele_state_hemizygous;
+    }
+    return m;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGvfReadRecord::AssignFromGff(
     const string& strGff )
 //  ----------------------------------------------------------------------------
@@ -108,7 +124,7 @@ bool CGvfReadRecord::AssignFromGff(
     if ( ! CGff3ReadRecord::AssignFromGff( strGff ) ) {
         return false;
     }
-    // details go here ...
+    // GVF specific fixup goes here ...
     return true;
 }
 
@@ -218,13 +234,153 @@ bool CGvfReader::x_MergeRecord(
     if ( ! x_FeatureSetLocation( record, pFeature ) ) {
         return false;
     }
-
-    CVariation_ref& variation = pFeature->SetData().SetVariation();
-    {
-        // details go here ...
-        variation.SetData().SetNote( "Hello Word!" );
+    if ( ! x_FeatureSetVariation( record, pFeature ) ) {
+        return false;
     }
     pAnnot->SetData().SetFtable().push_back( pFeature );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::x_FeatureSetVariation(
+    const CGvfReadRecord& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CVariation_ref> pVariation;
+    string strType = record.Type();
+    NStr::ToLower( strType );
+
+    if ( strType == "snv" ) {
+        pVariation = x_VariationSNV( record );
+    }
+    if ( strType == "cnv" ) {
+        pVariation = x_VariationCNV( record );
+    }
+    if ( pVariation ) {
+        pFeature->SetData().SetVariation( *pVariation );
+        return true;
+    }
+    return false;
+}
+  
+//  ----------------------------------------------------------------------------
+bool CGvfReader::x_ParseStructuredCommentGff(
+    const string& strLine,
+    CRef< CAnnotdesc >& pAnnotDesc )
+//  ----------------------------------------------------------------------------
+{
+    if ( !CGff2Reader::x_ParseStructuredCommentGff( strLine, pAnnotDesc ) ) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+CRef<CVariation_ref> CGvfReader::x_VariationCNV(
+    const CGvfReadRecord& record )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CVariation_ref> pVariation( new CVariation_ref );
+    string id;
+    if ( ! x_VariationSetId( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
+    return pVariation;
+}
+  
+//  ----------------------------------------------------------------------------
+CRef<CVariation_ref> CGvfReader::x_VariationSNV(
+    const CGvfReadRecord& record )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CVariation_ref> pVariation( new CVariation_ref );
+    pVariation->SetData().SetSet().SetType( 
+        CVariation_ref::C_Data::C_Set::eData_set_type_package );
+
+    if ( ! x_VariationSetId( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
+    if ( ! x_VariationSetProperties( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
+    if ( ! x_VariationSetAlleleInstances( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
+    
+    return pVariation;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGvfReader::x_VariationSetId(
+    const CGvfReadRecord& record,
+    CRef< CVariation_ref > pVariation )
+//  ---------------------------------------------------------------------------
+{
+    string id;
+    if ( record.GetAttribute( "ID", id ) ) {
+        pVariation->SetId().SetDb( record.Source() );
+        pVariation->SetId().SetTag().SetStr( id );
+    }
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGvfReader::x_VariationSetProperties(
+    const CGvfReadRecord& record,
+    CRef< CVariation_ref > pVariation )
+//  ---------------------------------------------------------------------------
+{
+    typedef map<string, CVariantProperties::EAllele_state>::const_iterator ALLIT;
+    
+    string strGenotype;
+    if ( record.GetAttribute( "Genotype", strGenotype ) ) {
+        ALLIT it = s_AlleleStateMap().find( strGenotype );
+        if ( it != s_AlleleStateMap().end() ) {
+            pVariation->SetVariant_prop().SetAllele_state( it->second ); 
+        }
+        else {
+            pVariation->SetVariant_prop().SetAllele_state(
+                CVariantProperties::eAllele_state_other );
+        }
+    }
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGvfReader::x_VariationSetAlleleInstances(
+    const CGvfReadRecord& record,
+    CRef< CVariation_ref > pVariation )
+//  ---------------------------------------------------------------------------
+{
+    string strAlleles;
+    if ( record.GetAttribute( "Variant_seq", strAlleles ) ) {
+        list<string> alleles;
+        NStr::Split( strAlleles, ",", alleles );
+        for ( list<string>::const_iterator cit = alleles.begin(); 
+            cit != alleles.end(); ++cit )
+        {
+            vector<string> replaces;
+            replaces.push_back( *cit );
+            CRef<CVariation_ref> pAllele( new CVariation_ref );
+            pAllele->SetSNV( replaces, CVariation_ref::eSeqType_na );
+            string strReference;
+            if ( record.GetAttribute( "Reference_seq", strReference ) 
+                && *cit == strReference ) 
+            {
+                pAllele->SetData().SetInstance().SetObservation( 
+                    CVariation_inst::eObservation_reference );
+            }
+            else {
+                pAllele->SetData().SetInstance().SetObservation( 
+                    CVariation_inst::eObservation_variant );
+            }
+            pAllele->SetData().SetInstance().SetType( 
+                CVariation_inst::eType_snv );
+            pVariation->SetData().SetSet().SetVariations().push_back(
+               pAllele );
+        }
+    }
     return true;
 }
 
