@@ -279,7 +279,7 @@ bool CBatchSubmitAttrParser::NextLine()
     size_t bytes_read;
 
     while (fgets(buffer, sizeof(buffer), m_InputStream) != NULL)
-        if ((bytes_read = strlen(buffer)) > 0)
+        if ((bytes_read = strlen(buffer)) > 0) {
             if (buffer[bytes_read - 1] != '\n')
                 m_Line.append(buffer, bytes_read);
             else {
@@ -287,6 +287,7 @@ bool CBatchSubmitAttrParser::NextLine()
                 m_Position = m_Line.c_str();
                 return true;
             }
+        }
 
     m_InputStream = NULL;
 
@@ -348,8 +349,9 @@ bool CBatchSubmitAttrParser::NextAttribute()
     while (isspace(*m_Position))
         ++m_Position;
 
-    if (*m_Position != '=')
-        if ((*m_Position == '\0' || *m_Position >= 'a' && *m_Position <= 'z') &&
+    if (*m_Position != '=') {
+        if ((*m_Position == '\0' ||
+                (*m_Position >= 'a' && *m_Position <= 'z')) &&
                 m_JobAttribute == eExclusiveJob)
             return true;
         else {
@@ -357,6 +359,7 @@ bool CBatchSubmitAttrParser::NextAttribute()
                 ": attribute " << attr_name <<
                     " requires a value" << AT_POS(m_Position));
         }
+    }
 
     while (isspace(*++m_Position))
         ;
