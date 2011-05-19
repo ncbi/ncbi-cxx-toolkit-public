@@ -533,6 +533,7 @@ CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln)
             dseg.SetLens()[0] = seg_i->GetLength();
             CDense_seg::TStarts& starts = dseg.SetStarts();
 
+            dseg.SetStrands()[row] = (direct ? eNa_strand_plus : eNa_strand_minus);
             if (aln_rng_i != pairwises[dim - row - 1]->end()  &&
                 seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
                 _ASSERT(seg_i->GetToOpen() <= aln_rng_i->GetFirstToOpen());
@@ -567,7 +568,6 @@ CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln)
                     }
                 }
             }
-            dseg.SetStrands()[row] = (direct ? eNa_strand_plus : eNa_strand_minus);
             // Add only densegs with both rows non-empty
             if (starts[0] >= 0  &&  starts[1] >= 0) {
                 CRef<CSeq_align> seg_aln(new CSeq_align);
@@ -702,6 +702,7 @@ CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
         while (seg_i != anchor_segments.end()) {
             _ASSERT(seg < numseg);
             _ASSERT(matrix_row_pos == row + dim * seg);
+            strands[matrix_row_pos] = (direct ? eNa_strand_plus : eNa_strand_minus);
             if (aln_rng_i != pairwises[dim - row - 1]->end()  &&
                 seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
                 _ASSERT(seg_i->GetToOpen() <= aln_rng_i->GetFirstToOpen());
@@ -738,7 +739,6 @@ CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
                     }
                 }
             }
-            strands[matrix_row_pos] = (direct ? eNa_strand_plus : eNa_strand_minus);
             ++seg_i;
             ++seg;
             matrix_row_pos += dim;

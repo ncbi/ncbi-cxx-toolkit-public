@@ -132,7 +132,6 @@ private:
 
     bool x_ValidNeighboursOnSecondDim(const CPairwiseAln::TAlnRng& left,
                                       const CPairwiseAln::TAlnRng& right) {
-        _ASSERT(left.IsDirect()  ==  right.IsDirect());
         if (left.GetSecondToOpen() > right.GetSecondFrom()) {
             if (m_MergeFlags & CAlnUserOptions::fAllowTranslocation) {
                 if (left.GetSecondFrom() < right.GetSecondToOpen()) {
@@ -433,7 +432,9 @@ BuildAln(TAnchoredAlnVec& in_alns,
 #ifdef _TRACE_MergeAlnRngColl
             static int aln_idx;
 #endif
-            CRef<CMergedPairwiseAln> merged_anchor(new CMergedPairwiseAln(CAlnUserOptions::fTruncateOverlaps));
+            int flags = CAlnUserOptions::fTruncateOverlaps;
+            flags |= options.m_MergeFlags & CAlnUserOptions::fAllowMixedStrand;
+            CRef<CMergedPairwiseAln> merged_anchor(new CMergedPairwiseAln(flags));
             ITERATE(TAnchoredAlnVec, anchored_it, in_alns) {
                 const CAnchoredAln&       anchored_aln = **anchored_it;
                 const CAnchoredAln::TDim& anchor_row   = anchored_aln.GetAnchorRow();
