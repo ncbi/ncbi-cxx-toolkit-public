@@ -237,6 +237,9 @@ bool CGvfReader::x_MergeRecord(
     if ( ! x_FeatureSetVariation( record, pFeature ) ) {
         return false;
     }
+    if ( ! x_FeatureSetExt( record, pFeature ) ) {
+        return false;
+    }
     pAnnot->SetData().SetFtable().push_back( pFeature );
     return true;
 }
@@ -373,7 +376,7 @@ bool CGvfReader::x_FeatureSetVariation(
     if ( strType == "snv" ) {
         pVariation = x_VariationSNV( record );
     }
-    if ( strType == "cnv" ) {
+    else {
         pVariation = x_VariationCNV( record );
     }
     if ( pVariation ) {
@@ -405,8 +408,31 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
     if ( ! x_VariationSetId( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
+    if ( ! x_VariationSetParent( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
+
     //>>>
-    pVariation->SetData().SetNote( "CNV Record (to be done)" );
+    string strType = record.Type();
+    NStr::ToLower( strType );
+    if ( strType == "cnv" ) {
+        pVariation->SetCNV();
+    }
+    if ( strType == "gain" ) {
+        pVariation->SetGain();
+    }
+    if ( strType == "loss" ) {
+        pVariation->SetLoss();
+    }
+    if ( strType == "insertion" ) {
+        pVariation->SetInsertion();
+    }
+    if ( strType == "complex" ) {
+        pVariation->SetComplex();
+    }
+    if ( strType == "unknown" ) {
+        pVariation->SetUnknown();
+    }
     //<<<
     return pVariation;
 }
@@ -423,13 +449,15 @@ CRef<CVariation_ref> CGvfReader::x_VariationSNV(
     if ( ! x_VariationSetId( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
+    if ( ! x_VariationSetParent( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
     if ( ! x_VariationSetProperties( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
     if ( ! x_VariationSetAlleleInstances( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
-    
     return pVariation;
 }
 
@@ -441,6 +469,20 @@ bool CGvfReader::x_VariationSetId(
 {
     string id;
     if ( record.GetAttribute( "ID", id ) ) {
+        pVariation->SetId().SetDb( record.Source() );
+        pVariation->SetId().SetTag().SetStr( id );
+    }
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGvfReader::x_VariationSetParent(
+    const CGvfReadRecord& record,
+    CRef< CVariation_ref > pVariation )
+//  ---------------------------------------------------------------------------
+{
+    string id;
+    if ( record.GetAttribute( "Parent", id ) ) {
         pVariation->SetId().SetDb( record.Source() );
         pVariation->SetId().SetTag().SetStr( id );
     }
@@ -464,6 +506,15 @@ bool CGvfReader::x_VariationSetProperties(
         else {
             pVariation->SetVariant_prop().SetAllele_state(
                 CVariantProperties::eAllele_state_other );
+        }
+    }
+    string strValidated;
+    if ( record.GetAttribute( "validated", strValidated ) ) {
+        if ( strValidated == "1" ) {
+            pVariation->SetVariant_prop().SetOther_validation( true );
+        }
+        if ( strValidated == "0" ) {
+            pVariation->SetVariant_prop().SetOther_validation( false );
         }
     }
     return true;
@@ -502,6 +553,79 @@ bool CGvfReader::x_VariationSetAlleleInstances(
             pVariation->SetData().SetSet().SetVariations().push_back(
                pAllele );
         }
+    }
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGvfReader::x_FeatureSetExt(
+    const CGvfReadRecord& record,
+    CRef< CSeq_feat > pFeature )
+//  ---------------------------------------------------------------------------
+{
+    string strAttribute;
+
+    CSeq_feat::TExt& ext = pFeature->SetExt();
+    ext.SetType().SetStr( "GvfAttributes" );
+
+    if ( record.Source() != "." ) {
+        ext.AddField( "source", record.Source() );
+    }
+    if ( record.IsSetScore() ) {
+        ext.AddField( "score", record.Score() );
+    }
+    for ( CGff2Record::TAttrCit cit = record.Attributes().begin(); 
+        cit != record.Attributes().end(); ++cit ) 
+    {
+
+        if ( cit->first == "ID" ) {
+            continue;
+        }
+        if ( cit->first == "Parent" ) {
+            continue;
+        }
+        if ( cit->first == "Start_range" ) {
+            continue;
+        }
+        if ( cit->first == "End_range" ) {
+            continue;
+        }
+        if ( cit->first == "validated" ) {
+            continue;
+        }
+
+        string strAttribute;
+        if ( ! record.GetAttribute( cit->first, strAttribute ) ) {
+            cerr << "CGvfReader::x_FeatureSetExt: Funny attribute \""
+                 << cit->first
+                 << "\"" << endl;
+            continue;
+        }
+        if ( cit->first == "Variant_reads" ) {
+            ext.AddField( "variant-reads", strAttribute ); // for lack of better idea
+            continue;
+        }    
+        if ( cit->first == "Variant_effect" ) {
+            ext.AddField( "variant-effect", strAttribute ); // for lack of better idea
+            continue;
+        }    
+        if ( cit->first == "Total_reads" ) {
+            ext.AddField( "total-reads", strAttribute );
+            continue;
+        }    
+        if ( cit->first == "Variant_copy_number" ) {
+            ext.AddField( "variant-copy-number", strAttribute );
+            continue;
+        }    
+        if ( cit->first == "Reference_copy_number" ) {
+            ext.AddField( "reference-copy-number", strAttribute );
+            continue;
+        }    
+        if ( cit->first == "Phased" ) {
+            ext.AddField( "phased", strAttribute );
+            continue;
+        }  
+        ext.AddField( string("custom-") + cit->first, strAttribute );  
     }
     return true;
 }
