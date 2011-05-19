@@ -43,7 +43,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
-
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -79,6 +79,7 @@
 #include <objtools/writers/bed_track_record.hpp>
 #include <objtools/writers/bed_feature_record.hpp>
 #include <objtools/writers/bed_writer.hpp>
+#include <objtools/writers/gvf_writer.hpp>
 
 #include <time.h>
 
@@ -105,6 +106,14 @@ private:
         CObjectIStream&,
         CNcbiOstream& );
 
+    bool TryBioseqSet(
+        CObjectIStream&,
+        CNcbiOstream& );
+
+    bool TryBioseq(
+        CObjectIStream&,
+        CNcbiOstream& );
+
     bool TrySeqAlign(
         CObjectIStream&,
         CNcbiOstream& );
@@ -125,6 +134,10 @@ private:
         const CSeq_annot& annot,
         CNcbiOstream& );
 
+    bool WriteGvf(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
     bool WriteWiggle(
         const CSeq_annot& annot,
         CNcbiOstream& );
@@ -138,6 +151,10 @@ private:
         CNcbiOstream& );
 
     bool WriteHandleGff3(
+        CBioseq_Handle bsh,
+        CNcbiOstream& );
+
+    bool WriteHandleGvf(
         CBioseq_Handle bsh,
         CNcbiOstream& );
 
@@ -174,6 +191,7 @@ void CAnnotWriterApp::Init()
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
+            "gvf",
             "gff", "gff2", 
             "gff3", 
             "gtf", 
@@ -245,6 +263,12 @@ int CAnnotWriterApp::Run()
         if ( TrySeqEntry( *pIs, *pOs ) ) {
             continue;
         }
+        if ( TryBioseqSet( *pIs, *pOs ) ) {
+            continue;
+        }
+        if ( TryBioseq( *pIs, *pOs ) ) {
+            continue;
+        }
         if ( TrySeqAlign( *pIs, *pOs ) ) {
             continue;
         }
@@ -270,6 +294,62 @@ bool CAnnotWriterApp::TrySeqAnnot(
         CRef<CSeq_annot> annot(new CSeq_annot);
         istr >> *annot;
         return Write( *annot, ostr );
+    }
+    catch ( ... ) {
+        istr.SetStreamPos ( curr );
+        return false;
+    }
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::TryBioseqSet(
+    CObjectIStream& istr,
+    CNcbiOstream& ostr )
+//  -----------------------------------------------------------------------------
+{
+    CNcbiStreampos curr = istr.GetStreamPos();
+    try {
+        CRef<CBioseq_set> pBioset(new CBioseq_set);
+        istr >> *pBioset;
+
+        const CBioseq_set::TSeq_set& bss = pBioset->GetSeq_set();
+        for ( CBioseq_set::TSeq_set::const_iterator it = bss.begin(); it != bss.end(); ++it ) {
+            const CSeq_entry& se = **it;
+
+            CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+            CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+            CRef< CScope > pScope( new CScope( *pObjMngr ) );
+            pScope->AddDefaults();
+            const CBioseq& bs = se.GetSeq();
+            pScope->AddBioseq( bs );
+            this->WriteHandleGff3( pScope->GetBioseqHandle( bs ), ostr );
+        }
+        return true;
+    }
+    catch ( ... ) {
+        istr.SetStreamPos ( curr );
+        return false;
+    }
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::TryBioseq(
+    CObjectIStream& istr,
+    CNcbiOstream& ostr )
+//  -----------------------------------------------------------------------------
+{
+    CNcbiStreampos curr = istr.GetStreamPos();
+    try {
+        CRef<CBioseq> pBioseq(new CBioseq);
+        istr >> *pBioseq;
+        CTypeIterator<CSeq_annot> annot_iter( *pBioseq );
+        for ( ;  annot_iter;  ++annot_iter ) {
+            CRef< CSeq_annot > annot( annot_iter.operator->() );
+            if ( ! Write( *annot, ostr ) ) {
+                return false;
+            }
+        }
+        return true;
     }
     catch ( ... ) {
         istr.SetStreamPos ( curr );
@@ -369,6 +449,9 @@ bool CAnnotWriterApp::Write(
     if ( strFormat == "gff3" ) { 
         return WriteGff3( annot, os );
     }
+    if ( strFormat == "gvf" ) { 
+        return WriteGvf( annot, os );
+    }
     if ( strFormat == "gtf" ) {
         return WriteGtf( annot, os );
     }
@@ -398,7 +481,27 @@ bool CAnnotWriterApp::WriteGff3(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CGff3Writer writer( os, GffFlags( GetArgs() ) ); // to make it fail
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
+    return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteGvf( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CGvfWriter writer( *pScope, os );
     return writer.WriteAnnot( annot );
 }
 

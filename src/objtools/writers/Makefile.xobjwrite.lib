@@ -7,6 +7,7 @@ SRC = agp_write \
       gff_writer gff2_write_data \
       gff3_writer gff3_write_data gff3_alignment_data \
       gtf_writer gtf_write_data \
+      gvf_writer \
       wiggle_writer \
       bed_writer bed_track_record bed_feature_record
       
