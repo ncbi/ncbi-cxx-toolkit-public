@@ -3717,6 +3717,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MSB	s	Museum of Southwestern Biology",
 "MSB:Bird	s	Museum of Southwestern Biology, Bird Collection",
 "MSB:Fishes	s	Museum of Southwestern Biology, Fish Collection",
+"MSB:Herp	s	Museum of Southwestern Biology, Herpetology Collection",
 "MSB:Mamm	s	Museum of Southwestern Biology, Mammal Collection",
 "MSB:Para	s	Museum of Southwestern Biology, Parasitology Collection",
 "MSB<BGR>	s	Museum Sophia",
