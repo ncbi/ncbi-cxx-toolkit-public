@@ -453,19 +453,6 @@ CAlnMixMerger::x_Merge()
             if (!starts.size()) {
                 // no starts exist yet
 
-                if ( !m_IndependentDSs ) {
-                    // TEMPORARY, for the single refseq version of mix,
-                    // clear all MatchLists and exit
-                    if ( !(m_SingleRefseq  ||  first_refseq) ) {
-                        NON_CONST_ITERATE (TSeqs, it, m_Seqs){
-                            if ( !((*it)->m_MatchList.empty()) ) {
-                                (*it)->m_MatchList.clear();
-                            }
-                        }
-                        break; 
-                    }
-                }
-
                 // this seq has not yet been used, set the strand
                 if (m_AlnMixMatches->m_AddFlags & CAlnMixMatches::fForceTranslation) {
                     seq1->m_PositiveStrand = (seq1->m_StrandScore >= 0);
