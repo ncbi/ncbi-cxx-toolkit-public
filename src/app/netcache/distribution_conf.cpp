@@ -193,8 +193,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
                            "itself (port " << control_port << ")");
         }
         s_SelfSlots.push_back(1);
-        s_RawSlot2Servers[1].push_back(s_SelfID);
-        s_Slot2Servers[1].push_back(SSrvGroupInfo(s_SelfID, "grp1"));
+        s_SelfGroup = "grp1";
     }
 
     ITERATE(TNCPeerList, it_peer, s_Peers)  {

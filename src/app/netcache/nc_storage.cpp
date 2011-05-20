@@ -62,6 +62,12 @@ static const char* kNCStorage_MinMetaSizeParam  = "min_metafile_size";
 static const char* kNCStorage_MinDataSizeParam  = "min_datafile_size";
 static const char* kNCStorage_MinUsfulMetaParam = "min_useful_meta_pct";
 static const char* kNCStorage_MinUsfulDataParam = "min_useful_data_pct";
+static const char* kNCStorage_ExtraGCOnParam    = "db_limit_del_old_on";
+static const char* kNCStorage_ExtraGCOffParam   = "db_limit_del_old_off";
+static const char* kNCStorage_ExtraGCStepParam  = "delete_old_time_step";
+static const char* kNCStorage_StopWriteOnParam  = "db_limit_stop_write_on";
+static const char* kNCStorage_StopWriteOffParam = "db_limit_stop_write_off";
+static const char* kNCStorage_MinFreeDiskParam  = "disk_free_limit";
 
 
 
@@ -143,6 +149,19 @@ CNCBlobStorage::x_ReadVariableParams(void)
                                                 kNCStorage_MinUsfulDataParam,
                                                 50, 0, IRegistry::eErrPost)) / 100;
 
+    m_ExtraGCOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_ExtraGCOnParam, "50Gb"));
+    m_ExtraGCOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_ExtraGCOffParam, "45Gb"));
+    m_ExtraGCStep    = reg.GetInt(kNCStorage_RegSection,
+                                  kNCStorage_ExtraGCStepParam, 900);
+    m_StopWriteOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_StopWriteOnParam, "100Gb"));
+    m_StopWriteOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_StopWriteOffParam, "90Gb"));
+    m_DiskFreeLimit  = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_MinFreeDiskParam, "5Gb"));
+
     int parts_cnt = reg.GetInt(kNCStorage_RegSection, kNCStorage_PartsCntParam,
                                5, 0, IRegistry::eErrPost);
     if (parts_cnt <= 0) {
@@ -185,7 +204,7 @@ CNCBlobStorage::x_ReadStorageParams(void)
     x_ReadVariableParams();
 }
 
-inline string
+string
 CNCBlobStorage::x_GetIndexFileName(void)
 {
     string file_name(m_Prefix);
@@ -194,7 +213,7 @@ CNCBlobStorage::x_GetIndexFileName(void)
     return CDirEntry::CreateAbsolutePath(file_name);
 }
 
-inline string
+string
 CNCBlobStorage::x_GetFileName(ENCDBFileType file_type,
                               unsigned int  part_num,
                               TNCDBFileId   file_id)
@@ -247,7 +266,7 @@ CNCBlobStorage::Unblock(void)
     abort();
 }
 
-inline void
+void
 CNCBlobStorage::x_LockInstanceGuard(void)
 {
     m_CleanStart = !CFile(m_GuardName).Exists();
@@ -322,7 +341,7 @@ CNCBlobStorage::x_CleanDatabase(void)
     m_IndexDB->DeleteAllDBFiles();
 }
 
-inline void
+void
 CNCBlobStorage::x_ReinitializeStorage(void)
 {
     try {
@@ -395,7 +414,7 @@ CNCBlobStorage::x_CreateNewFile(ENCDBFileType file_type, unsigned int part_num)
     }
 }
 
-inline void
+void
 CNCBlobStorage::x_CreateNewCurFiles(void)
 {
     for (unsigned int i = 0; i < m_CurFiles[0].size(); ++i) {
@@ -404,7 +423,7 @@ CNCBlobStorage::x_CreateNewCurFiles(void)
     }
 }
 
-inline void
+void
 CNCBlobStorage::x_DeleteDBFile(TNCDBFilesMap::iterator files_it)
 {
     TNCDBFileId  file_id  = files_it->first;
@@ -423,7 +442,7 @@ CNCBlobStorage::x_DeleteDBFile(TNCDBFilesMap::iterator files_it)
     m_DBFiles.erase(files_it);
 }
 
-inline void
+void
 CNCBlobStorage::x_ReadLastBlobCoords(void)
 {
     ERASE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
@@ -1273,15 +1292,19 @@ CNCBlobStorage::OnBlockedOpFinish(void)
     m_GCBlockWaiter.Post();
 }
 
-inline void
-CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info)
+void
+CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info,
+                                   int dead_before)
 {
     m_GCAccessor->Prepare(blob_info.key, kEmptyStr, blob_info.slot, eNCGCDelete);
     x_InitializeAccessor(m_GCAccessor);
     if (m_GCAccessor->ObtainMetaInfo(this) == eNCWouldBlock) {
         m_GCBlockWaiter.Wait();
     }
-    if (m_GCAccessor->IsBlobExists()  &&  m_GCAccessor->IsBlobExpired()) {
+    if (m_GCAccessor->IsBlobExists()
+        &&  m_GCAccessor->GetBlobDeadTime() < dead_before)
+    {
+        // TODO: remove this
         LOG_POST("Deleting blob " << m_GCAccessor->GetBlobKey());
         m_GCAccessor->DeleteBlob();
         ++m_GCDeleted;
@@ -1289,7 +1312,7 @@ CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info)
     m_GCAccessor->Deinitialize();
 }
 
-inline void
+void
 CNCBlobStorage::x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before)
 {
     try {
@@ -1306,13 +1329,14 @@ CNCBlobStorage::x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before)
             ITERATE(TNCBlobsList, it, blobs_list) {
                 ++m_GCRead;
                 x_CheckStopped();
-                x_GC_DeleteExpired(*it->get());
+                x_GC_DeleteExpired(*it->get(), dead_before);
                 // Avoid this thread to be the most foreground task to execute,
                 // let's give others a chance to work.
                 NCBI_SCHED_YIELD();
             }
         }
         while (!blobs_list.empty());
+        // TODO: remove this
         {{
             TMetaFileLock file_lock(metafile);
             dead_after = 0;
@@ -1330,7 +1354,7 @@ CNCBlobStorage::x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before)
     }
 }
 
-inline void
+void
 CNCBlobStorage::x_GC_CollectFilesStats(void)
 {
 /*
@@ -1377,10 +1401,9 @@ CNCBlobStorage::x_GC_CollectFilesStats(void)
                               useful_cnt_meta, garbage_cnt_meta,
                               useful_cnt_data, garbage_cnt_data,
                               useful_size_data, garbage_size_data);
-    m_CurDBSize = size_meta + size_data;
 }
 
-inline void
+void
 CNCBlobStorage::x_GC_HeartBeat(void)
 {
     {{
@@ -1431,9 +1454,26 @@ CNCBlobStorage::x_GC_HeartBeat(void)
     }
     if (next_gen)
         ++m_BlobGeneration;
+
+    Uint8 db_size = 0;
+    ITERATE(TNCDBFilesMap, it, m_DBFiles) {
+        SNCDBFileInfo* file_info = it->second;
+        CNCDBFile* file = file_info->file_obj.get();
+        db_size += file->GetFileSize();
+    }
+    m_CurDBSize = db_size;
+    if (!m_IsStopWrite) {
+        if (m_StopWriteOnSize != 0  &&  db_size >= m_StopWriteOnSize)
+            m_IsStopWrite = true;
+    }
+    else if (db_size <= m_StopWriteOffSize) {
+        m_IsStopWrite = false;
+    }
+    if (CFileUtil::GetFreeDiskSpace(m_MainPath) <= m_DiskFreeLimit)
+        m_IsStopWrite = true;
 }
 
-inline bool
+bool
 CNCBlobStorage::x_CheckFileAging(TNCDBFileId file_id, CNCDBFile* file)
 {
     ENCDBFileType file_type = file->GetType();
@@ -1557,8 +1597,11 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                 INFO_POST("Caching of blobs info is finished");
                 CNetCacheServer::CachingCompleted();
 
+                bool do_extra_gc = false;
+                Uint4 extra_gc_time = 0;
                 for (;;) {
-                    for (int i = 0; i < m_GCRunDelay; ++i) {
+                    time_t start_time = time(NULL);
+                    do {
                         m_StopTrigger.TryWait(1, 0);
                         x_GC_HeartBeat();
                         try {
@@ -1568,15 +1611,37 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                             // If storage is blocked heart beat still can work
                         }
                     }
+                    while (time(NULL) - start_time < m_GCRunDelay);
 
                     m_GCInWork = true;
+
+                    int next_dead = int(time(NULL));
+                    if (do_extra_gc) {
+                        if (m_CurDBSize <= m_ExtraGCOffSize) {
+                            do_extra_gc = false;
+                        }
+                        else {
+                            extra_gc_time += m_ExtraGCStep;
+                            next_dead += extra_gc_time;
+                        }
+                    }
+                    else if (m_ExtraGCOnSize != 0
+                             &&  m_CurDBSize >= m_ExtraGCOnSize)
+                    {
+                        do_extra_gc = true;
+                        extra_gc_time = m_ExtraGCStep;
+                        next_dead += extra_gc_time;
+                    }
 
                     CRef<CRequestContext> ctx(new CRequestContext());
                     ctx->SetRequestID();
                     GetDiagContext().SetRequestContext(ctx);
                     if (g_NetcacheServer->IsLogCmds()) {
-                        GetDiagContext().PrintRequestStart()
-                                        .Print("_type", "gc");
+                        CDiagContext_Extra extra = GetDiagContext().PrintRequestStart();
+                        extra.Print("_type", "gc");
+                        if (do_extra_gc)
+                            extra.Print("force_delete", extra_gc_time);
+                        extra.Flush();
                     }
                     ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
                     m_GCRead = m_GCDeleted = 0;
@@ -1586,7 +1651,6 @@ CNCBlobStorage::x_DoBackgroundWork(void)
 
                         x_GC_CollectFilesStats();
 
-                        int next_dead = int(time(NULL));
                         ERASE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
                             CNCDBFile* file = it->second->file_obj.get();
                             if (file->GetType() == eNCMeta) {

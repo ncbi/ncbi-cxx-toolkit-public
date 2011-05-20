@@ -1463,9 +1463,18 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             ||  NStr::StartsWith(m_CurCmd, "PROXY_")
             ||  NStr::StartsWith(m_CurCmd, "SYNC_"))
         {
-            m_BlobAccess = g_NCStorage->GetBlobAccess(cmd_extra.blob_access,
+            if (cmd_extra.blob_access == eNCCreate
+                &&  g_NCStorage->NeedStopWrite())
+            {
+                m_SockBuffer.WriteMessage("ERR:", "Not enough disk space");
+                m_SockBuffer.Flush();
+                x_CloseConnection();
+            }
+            else {
+                m_BlobAccess = g_NCStorage->GetBlobAccess(cmd_extra.blob_access,
                                             m_BlobKey, m_BlobPass, m_BlobSlot);
-            x_SetState(eWaitForBlobAccess);
+                x_SetState(eWaitForBlobAccess);
+            }
         }
         else {
             x_SetState(eSendCmdAsProxy);
@@ -2568,7 +2577,7 @@ CNCMessageHandler::x_DoCmd_Health(void)
     //m_SockBuffer.WriteMessage("OK:", "MEM_USED=" + NStr::UInt8ToString(CNCMemManager::GetMemoryUsed()));
     m_SockBuffer.WriteMessage("OK:", "DISK_CACHE=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
     m_SockBuffer.WriteMessage("OK:", "DISK_FREE=" + NStr::UInt8ToString(g_NetcacheServer->GetDiskFree()));
-    m_SockBuffer.WriteMessage("OK:", "DISK_USED=" + NStr::Int8ToString(g_NCStorage->GetDBSize()));
+    m_SockBuffer.WriteMessage("OK:", "DISK_USED=" + NStr::UInt8ToString(g_NCStorage->GetDBSize()));
     m_SockBuffer.WriteMessage("OK:", "N_DB_FILES=" + NStr::IntToString(g_NCStorage->GetNDBFiles()));
     m_SockBuffer.WriteMessage("OK:", "WRITE_QUEUE_SIZE=" + NStr::IntToString(CNCFileSystem::GetQueueSize()));
     m_SockBuffer.WriteMessage("OK:", "COPY_QUEUE_SIZE=" + NStr::UInt8ToString(CNCMirroring::GetQueueSize()));

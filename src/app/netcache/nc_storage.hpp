@@ -109,6 +109,7 @@ public:
     virtual ~CNCBlobStorage(void);
 
     bool IsCleanStart(void);
+    bool NeedStopWrite(void);
     /// Block all operations on the storage.
     /// Work with all blobs that are blocked already will be finished as usual,
     /// all future requests for locking of blobs will be suspended until
@@ -162,7 +163,7 @@ public:
     /// Get storage's path
     const string& GetMainPath(void);
     /// Get total size of database for the storage
-    Int8 GetDBSize(void);
+    Uint8 GetDBSize(void);
     void GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst);
     Uint8 GetMaxSyncLogRecNo(void);
     void SetMaxSyncLogRecNo(Uint8 last_rec_no);
@@ -391,7 +392,7 @@ private:
     ///   TRUE if blob was successfully deleted or if database error occurred
     ///   meaning that blob is inaccessible anyway. FALSE if other thread have
     ///   locked the blob and so method was unable to delete it.
-    void x_GC_DeleteExpired(const SNCBlobListInfo& identity);
+    void x_GC_DeleteExpired(const SNCBlobListInfo& identity, int dead_before);
     ///
     void x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before);
     /// Collect statistics about number of parts, database files sizes etc.
@@ -442,7 +443,7 @@ private:
     ///
     TNCDBFileId              m_LastFileId;
     /// Current size of storage database. Kept here for printing statistics.
-    Int8                     m_CurDBSize;
+    Uint8                    m_CurDBSize;
     /// Minimum expiration time of all blobs remembered now by the storage. 
     /// Variable is used with assumption that reads and writes for int are
     /// always atomic.
@@ -484,6 +485,13 @@ private:
     Uint8                    m_GCRead;
     Uint8                    m_GCDeleted;
     bool                     m_CleanStart;
+    bool                     m_IsStopWrite;
+    Uint4                    m_ExtraGCStep;
+    Uint8                    m_ExtraGCOnSize;
+    Uint8                    m_ExtraGCOffSize;
+    Uint8                    m_StopWriteOnSize;
+    Uint8                    m_StopWriteOffSize;
+    Uint8                    m_DiskFreeLimit;
 };
 
 
@@ -556,7 +564,7 @@ CNCBlobStorage::GetMainPath(void)
     return m_MainPath;
 }
 
-inline Int8
+inline Uint8
 CNCBlobStorage::GetDBSize(void)
 {
     return m_CurDBSize;
@@ -573,6 +581,12 @@ inline bool
 CNCBlobStorage::IsCleanStart(void)
 {
     return m_CleanStart;
+}
+
+inline bool
+CNCBlobStorage::NeedStopWrite(void)
+{
+    return m_IsStopWrite;
 }
 
 inline bool
