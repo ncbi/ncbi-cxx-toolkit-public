@@ -1409,12 +1409,25 @@ void CTLibContext::SetClientCharset(const string& charset)
 #define NCBI_CTLIB_TDS_FALLBACK_VERSION 110
 
 
+#ifdef FTDS_IN_USE
+
+NCBI_PARAM_DECL  (int, ftds, TDS_VERSION);
+NCBI_PARAM_DEF_EX(int, ftds, TDS_VERSION,
+                  0,                       // default is to auto-detect
+                  eParam_NoThread,
+                  FTDS_TDS_VERSION);
+typedef NCBI_PARAM_TYPE(ftds, TDS_VERSION) TFtdsTdsVersion;
+
+#else
+
 NCBI_PARAM_DECL  (int, ctlib, TDS_VERSION);
 NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION,
                   NCBI_CTLIB_TDS_VERSION,  // default TDS version
                   eParam_NoThread,
                   CTLIB_TDS_VERSION);
 typedef NCBI_PARAM_TYPE(ctlib, TDS_VERSION) TCtlibTdsVersion;
+
+#endif
 
 
 #ifdef FTDS_IN_USE
@@ -1427,7 +1440,7 @@ CS_INT GetCtlibTdsVersion(int version)
 {
     if (version == 0) {
 #ifdef FTDS_IN_USE
-        return version;
+        return TFtdsTdsVersion::GetDefault();
 #else
         version = TCtlibTdsVersion::GetDefault();
 #endif
