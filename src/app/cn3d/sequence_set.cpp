@@ -435,18 +435,15 @@ int Sequence::GetOrSetMMDBLink(void) const
 
 void Sequence::LaunchWebBrowserWithInfo(void) const
 {
-    string db = isProtein ? "Protein" : "Nucleotide";
-    string opt = isProtein ? "GenPept" : "GenBank";
     CNcbiOstrstream oss;
-    oss << "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&doptcmdl=" << opt
-        << "&db=" << db << "&term=";
+    oss << "http://www.ncbi.nlm.nih.gov/" << (isProtein ? "protein" : "nuccore") << "/";
     // prefer gi's, since accessions can be outdated
     if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
         oss << identifier->gi;
     } else if (identifier->pdbID.size() > 0) {
         oss << identifier->pdbID.c_str();
         if (identifier->pdbChain != ' ')
-            oss << (char) identifier->pdbChain;
+            oss << '_' << (char) identifier->pdbChain;
     } else {
         string label = identifier->GetLabel();
         if (label == "query" || label == "consensus")

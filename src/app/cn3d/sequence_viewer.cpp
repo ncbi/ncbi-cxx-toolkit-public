@@ -343,7 +343,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                     sequence->identifier->pdbID != "consensus") {
                     uids[row] = sequence->identifier->pdbID;
                     if (sequence->identifier->pdbChain != ' ')
-                        uids[row] += (char) sequence->identifier->pdbChain;
+                        uids[row] += "_"  + (char) sequence->identifier->pdbChain;
                 }
             } else {
                 uids[row] = sequence->identifier->GetLabel();
@@ -440,8 +440,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
             // title
             if (doHTML && uids[row].size() > 0) {
 				string descr = sequence->GetDescription();
-                os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
-                    << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
+                os << "<a href=\"http://www.ncbi.nlm.nih.gov/protein/"
                     << uids[row] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
                     << ShortAndEscapedString((descr.size() > 0) ? descr : titles[row])
