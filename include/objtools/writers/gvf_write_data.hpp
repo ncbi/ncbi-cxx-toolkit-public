@@ -23,56 +23,59 @@
  *
  * ===========================================================================
  *
- * Authors:  Frank Ludwig
+ * Author: Frank Ludwig
  *
- * File Description:  Write gff3 file
+ * File Description:
+ *   GFF3 transient data structures
  *
  */
 
-#ifndef OBJTOOLS_READERS___GVF_WRITER__HPP
-#define OBJTOOLS_READERS___GVF_WRITER__HPP
+#ifndef OBJTOOLS_WRITERS___GVFDATA__HPP
+#define OBJTOOLS_WRITERS___GVFDATA__HPP
 
-#include <corelib/ncbistd.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff3_writer.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
+BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CGffAlignmentRecord;
-
-//  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGvfWriter
-//  ============================================================================
-    : public CGff3Writer
+//  ----------------------------------------------------------------------------
+class CGvfWriteRecord
+//  ----------------------------------------------------------------------------
+    : public CGff3WriteRecordFeature
 {
 public:
-    CGvfWriter(
-        CScope&,
-        CNcbiOstream&,
-        unsigned int = fNormal );
-    CGvfWriter(
-        CNcbiOstream&,
-        unsigned int = fNormal );
-    virtual ~CGvfWriter();
+    CGvfWriteRecord(
+        feature::CFeatTree&
+    );
+    CGvfWriteRecord(
+        const CGff3WriteRecordFeature&
+    );
+    virtual ~CGvfWriteRecord();
 
 protected:
-    virtual bool x_WriteHeader();
+    virtual bool x_AssignSource(
+        CMappedFeat );
+    virtual bool x_AssignType(
+        CMappedFeat );
+    virtual bool x_AssignAttributes(
+        CMappedFeat );
+    virtual bool x_AssignAttributeID(
+        CMappedFeat );
+    virtual bool x_AssignAttributeParent(
+        CMappedFeat );
+    virtual bool x_AssignAttributeName(
+        CMappedFeat );
+    virtual bool x_AssignAttributeVarType(
+        CMappedFeat );
 
-    virtual bool x_WriteFeature(
-        feature::CFeatTree&,
-        CMappedFeat );
-    virtual bool x_WriteFeatureVariationRef(
-        feature::CFeatTree&,
-        CMappedFeat );
+    static int s_unique;
+    string s_UniqueId();
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GVF_WRITER__HPP
+#endif // OBJTOOLS_WRITERS___GVFDATA__HPP
