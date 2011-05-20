@@ -91,10 +91,10 @@ bool CStdAnnotTypes::LoadTypes(const string& iniFile)
 
                 sort(values.begin(), values.end());
 
-                //cout << "\nTesting sort for " << *cit << endl;
+                /*cout << "\nTesting sort for " << *cit << endl;
                 ITERATE (vector<string>, vit, values) {
                     cout << *vit << endl;
-                }
+                }*/
 
             }
         }
