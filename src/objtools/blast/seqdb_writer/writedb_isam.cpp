@@ -754,23 +754,15 @@ void CWriteDB_IsamIndex::x_AddStringData(int oid, const char * sbuf, int ssize)
     sz += sprintf(buf + sz, "%d", oid);
     buf[sz++] = (char) eRecordDelim;
 
-    // fix for SB218
-    string tmp(buf, sz);
-    bool uniq = true;
+    // fix for SB-218, SB-819
     if (oid != m_Oid) {
         m_Oid = oid;
         m_OidStringData.clear();
-    } else {
-        for (int i = 0; i < m_OidStringData.size(); i++) {
-            if (m_OidStringData[i] == tmp) {
-                uniq = false;
-                break;
-            }
-        }
     }
-   
-    if (uniq) {
-        m_OidStringData.push_back(tmp);
+    
+    string tmp(buf, sz);
+    pair< set<string>::iterator, bool> rv = m_OidStringData.insert(tmp);
+    if (rv.second) {
         m_StringSort.Insert(buf, sz);
         m_DataFileSize += sz;
     }

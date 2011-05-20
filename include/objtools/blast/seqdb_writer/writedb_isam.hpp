@@ -355,9 +355,10 @@ private:
     /// The data file associated with this index file.
     CRef<CWriteDB_IsamData> m_DataFile;
 
-    /// Ugly patch to fix SB218
-    int                     m_Oid;
-    vector<string>          m_OidStringData;  ///< All string IDs added
+    /// OID being to which seqid strings are being added
+    int                     m_Oid;  
+    /// Keep track of string seqids associated with current value of m_Oid
+    set<string>             m_OidStringData;
 };
 
 /// CWriteDB_IsamData class
