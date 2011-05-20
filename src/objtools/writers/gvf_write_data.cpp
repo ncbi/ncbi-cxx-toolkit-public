@@ -174,6 +174,12 @@ bool CGvfWriteRecord::x_AssignAttributes(
     if ( ! x_AssignAttributeVarType( mapped_feat ) ) {
         return false;
     }
+    if ( ! x_AssignAttributeStartRange( mapped_feat ) ) {
+        return false;
+    }
+    if ( ! x_AssignAttributeEndRange( mapped_feat ) ) {
+        return false;
+    }
     return true;
 }
 
@@ -280,5 +286,142 @@ bool CGvfWriteRecord::x_AssignAttributeVarType(
     m_Attributes["var_type"] = StrType();
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriteRecord::x_AssignAttributeStartRange(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_loc& loc = mf.GetLocation();
+    if ( ! loc.IsInt() ) {
+        return true;
+    }
+    const CSeq_interval& intv = loc.GetInt();
+    if ( ! intv.IsSetFuzz_from() ) {
+        return true;
+    }
+    const CSeq_interval::TFuzz_from& fuzz = intv.GetFuzz_from();
+    
+    switch( fuzz.Which() ) {
+    
+        default:
+            return true;
+
+        case CInt_fuzz::e_Range: {
+            int min = fuzz.GetRange().GetMin() + 1;
+            int max = fuzz.GetRange().GetMax() + 1;
+            m_Attributes["Start_range"] = NStr::IntToString( min ) + "," +
+                NStr::IntToString( max );
+            return true;
+        }
+        case CInt_fuzz::e_Lim: {
+            int min = intv.GetFrom() + 1;
+            m_Attributes["Start_range"] = NStr::IntToString( min ) + ",.";
+            return true;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriteRecord::x_AssignAttributeEndRange(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_loc& loc = mf.GetLocation();
+    if ( ! loc.IsInt() ) {
+        return true;
+    }
+    const CSeq_interval& intv = loc.GetInt();
+    if ( ! intv.IsSetFuzz_from() ) {
+        return true;
+    }
+    const CSeq_interval::TFuzz_to& fuzz = intv.GetFuzz_to();
+    
+    switch( fuzz.Which() ) {
+    
+        default:
+            return true;
+
+        case CInt_fuzz::e_Range: {
+            int min = fuzz.GetRange().GetMin() + 1;
+            int max = fuzz.GetRange().GetMax() + 1;
+            m_Attributes["End_range"] = NStr::IntToString( min ) + "," +
+                NStr::IntToString( max );
+            return true;
+        }
+        case CInt_fuzz::e_Lim: {
+            int min = intv.GetFrom() + 1;
+            m_Attributes["End_range"] = string(".,") + NStr::IntToString( min );
+            return true;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+string CGvfWriteRecord::StrAttributes() const
+//  ----------------------------------------------------------------------------
+{
+    TAttributes temp_attrs( m_Attributes.begin(), m_Attributes.end() );
+    string strAttributes;
+
+    TAttrIt priority = temp_attrs.find("ID");
+    if ( priority != temp_attrs.end() ) {
+        x_AppendAttribute( priority, strAttributes );
+        temp_attrs.erase( priority );
+    }
+    priority = temp_attrs.find("Parent");
+    if ( priority != temp_attrs.end() ) {
+        x_AppendAttribute( priority, strAttributes );
+        temp_attrs.erase( priority );
+    }
+    priority = temp_attrs.find("Name");
+    if ( priority != temp_attrs.end() ) {
+        x_AppendAttribute( priority, strAttributes );
+        temp_attrs.erase( priority );
+    }
+    priority = temp_attrs.find("Start_range");
+    if ( priority != temp_attrs.end() ) {
+        x_AppendAttribute( priority, strAttributes );
+        temp_attrs.erase( priority );
+    }
+    priority = temp_attrs.find("End_range");
+    if ( priority != temp_attrs.end() ) {
+        x_AppendAttribute( priority, strAttributes );
+        temp_attrs.erase( priority );
+    }
+    TAttrIt other = temp_attrs.begin();
+    while ( other != temp_attrs.end() ) {
+        x_AppendAttribute( other, strAttributes );
+        other++;
+    }
+    return strAttributes;
+}
+
+//  ----------------------------------------------------------------------------
+void CGvfWriteRecord::x_AppendAttribute(
+    TAttrCit it,
+    string& strAttributes ) const
+//  ----------------------------------------------------------------------------
+{
+    string key = it->first;
+    string value = it->second;
+    bool needsQuotes = ( NStr::Find( value, " " ) != -1 );
+
+    if ( !strAttributes.empty() ) {
+        strAttributes += ";";
+    }
+    strAttributes += key;
+    strAttributes += "=";
+    if (needsQuotes) {
+        strAttributes += "\"";
+    }
+    strAttributes += value;
+    if (needsQuotes) {
+        strAttributes += "\"";
+    }
+}
+    
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -56,6 +56,8 @@ public:
     virtual ~CGvfWriteRecord();
 
 protected:
+    virtual string StrAttributes() const;
+
     virtual bool x_AssignSource(
         CMappedFeat );
     virtual bool x_AssignType(
@@ -70,9 +72,17 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeVarType(
         CMappedFeat );
+    virtual bool x_AssignAttributeStartRange(
+        CMappedFeat );
+    virtual bool x_AssignAttributeEndRange(
+        CMappedFeat );
 
     static int s_unique;
     string s_UniqueId();
+
+    void x_AppendAttribute(
+        TAttrCit,
+        string& ) const;
 };
 
 END_objects_SCOPE
