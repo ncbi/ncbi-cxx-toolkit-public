@@ -123,6 +123,10 @@ protected:
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
+    virtual bool x_VariationSetName(
+        const CGvfReadRecord&,
+        CRef< CVariation_ref > );
+
     virtual bool x_VariationSetAlleleInstances(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );

@@ -411,6 +411,9 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
     if ( ! x_VariationSetParent( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
+    if ( ! x_VariationSetName( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
 
     //>>>
     string strType = record.Type();
@@ -452,6 +455,9 @@ CRef<CVariation_ref> CGvfReader::x_VariationSNV(
     if ( ! x_VariationSetParent( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
+    if ( ! x_VariationSetName( record, pVariation ) ) {
+        return CRef<CVariation_ref>();
+    }
     if ( ! x_VariationSetProperties( record, pVariation ) ) {
         return CRef<CVariation_ref>();
     }
@@ -483,8 +489,21 @@ bool CGvfReader::x_VariationSetParent(
 {
     string id;
     if ( record.GetAttribute( "Parent", id ) ) {
-        pVariation->SetId().SetDb( record.Source() );
-        pVariation->SetId().SetTag().SetStr( id );
+        pVariation->SetParent_id().SetDb( record.Source() );
+        pVariation->SetParent_id().SetTag().SetStr( id );
+    }
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGvfReader::x_VariationSetName(
+    const CGvfReadRecord& record,
+    CRef< CVariation_ref > pVariation )
+//  ---------------------------------------------------------------------------
+{
+    string name;
+    if ( record.GetAttribute( "Name", name ) ) {
+        pVariation->SetName( name );
     }
     return true;
 }
@@ -578,12 +597,6 @@ bool CGvfReader::x_FeatureSetExt(
         cit != record.Attributes().end(); ++cit ) 
     {
 
-        if ( cit->first == "ID" ) {
-            continue;
-        }
-        if ( cit->first == "Parent" ) {
-            continue;
-        }
         if ( cit->first == "Start_range" ) {
             continue;
         }
@@ -601,6 +614,14 @@ bool CGvfReader::x_FeatureSetExt(
                  << "\"" << endl;
             continue;
         }
+        if ( cit->first == "ID" ) {
+            ext.AddField( "id", strAttribute );
+            continue;
+        }    
+        if ( cit->first == "Parent" ) {
+            ext.AddField( "parent", strAttribute );
+            continue;
+        }    
         if ( cit->first == "Variant_reads" ) {
             ext.AddField( "variant-reads", strAttribute ); // for lack of better idea
             continue;
