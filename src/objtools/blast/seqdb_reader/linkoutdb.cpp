@@ -169,12 +169,11 @@ int CLinkoutDB_Impl::GetLinkout(const CSeq_id& id)
 void CLinkoutDB::GetLinkoutTypes(vector<CLinkoutDB::TLinkoutTypeString>& rv)
 {
     rv.clear();
-    rv.push_back(make_pair(eLocuslink, string("eLocuslink")));
+    // N.B.: only add those linkout types that are active
     rv.push_back(make_pair(eUnigene, string("eUnigene")));
     rv.push_back(make_pair(eStructure, string("eStructure")));
     rv.push_back(make_pair(eGeo, string("eGeo")));
     rv.push_back(make_pair(eGene, string("eGene")));
-    rv.push_back(make_pair(eHitInMapviewer, string("eHitInMapviewer")));
     rv.push_back(make_pair(eMapviewer, string("eMapviewer")));
     rv.push_back(make_pair(eGenomicSeq, string("eGenomicSeq")));
     rv.push_back(make_pair(eBioAssay, string("eBioAssay")));
