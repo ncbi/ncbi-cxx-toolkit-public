@@ -132,6 +132,8 @@ static bool s_HasLocalBioseq(const CSeq_loc& loc, const CSeq_entry_Handle& tse)
 
 void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
 {
+    const bool bHtml = ctx.Config().DoHTML();
+
     const CBioseq_Handle& seq = ctx.GetHandle();
     const CBioseq_Handle::TId& ids = seq.GetId();
     CSeq_id_Handle idh = FindBestChoice(ids, s_ScoreForDBSource);
@@ -232,9 +234,14 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
         m_DBSource.push_back("UNKNOWN");
     }
 
-    // turn double-quotes to single-quotes in all m_DBSources
+    // turn double-quotes to single-quotes in all m_DBSources, 
+    // except inside HTML tags
     NON_CONST_ITERATE( list<string>, it, m_DBSource ) {
-        replace( it->begin(), it->end(), '\"', '\'' );
+        if( bHtml ) {
+            ConvertQuotesNotInHTMLTags( *it );
+        } else {
+            replace( it->begin(), it->end(), '\"', '\'' );
+        }
     }
 }
 
@@ -534,6 +541,8 @@ void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
 
 string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
 {
+    const bool is_html = ( GetContext()->Config().DoHTML() );
+
     CConstRef<CSeq_id> id;
     if (idh) {
         id = idh.GetSeqId();
@@ -600,7 +609,12 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                     choice != CSeq_id::e_Swissprot) {
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }
-                s += comma + sep + "accession " + acc;
+                if( is_html ) {
+                    const int gi = GetContext()->GetScope().GetGi(idh);
+                    s += comma + sep + "accession <a href=\"" + strLinkBaseNuc + NStr::IntToString(gi) + "\">" + acc + "</a>";
+                } else {
+                    s += comma + sep + "accession " + acc;
+                }
                 sep = " ";
             }
             /**

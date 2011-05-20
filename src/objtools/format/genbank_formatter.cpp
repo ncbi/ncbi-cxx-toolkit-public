@@ -72,20 +72,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-//  ============================================================================
-//  Link locations:
-//  ============================================================================
-const string strLinkbaseNuc( 
-    "http://www.ncbi.nlm.nih.gov/nuccore/" );
-const string strLinkbaseProt( 
-    "http://www.ncbi.nlm.nih.gov/protein/" );
-const string strLinkBaseTaxonomy( 
-    "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
-const string strLinkBaseTransTable(
-    "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
-const string strLinkBasePubmed(
-    "http://www.ncbi.nlm.nih.gov/pubmed/" );
-
 CGenbankFormatter::CGenbankFormatter(void) :
     m_uFeatureCount( 0 )
 {
@@ -177,7 +163,7 @@ void CGenbankFormatter::FormatLocus
     // or truncate the locus names to 16 chars.  This is done here as a temporary measure
     // to make the asn2gb and asn2flat diffs match.
     // Note: currently this still cannot handle very long LOCUS names (e.g. in gi 1449821)
-    const int spaceForLength = max( 0, min( 12, (int)(12 - (locus.GetName().length() - 16))  ) );
+    int spaceForLength = min( 12, (int)(12 - (locus.GetName().length() - 16))  );
     locus_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
     locus_line
         << setw(spaceForLength) << locus.GetLength()
@@ -280,7 +266,17 @@ void CGenbankFormatter::FormatGenomeProject(
     }
     list<string> l;
     CNcbiOstrstream project_line;
-    project_line << "Project: " << gp.GetProjectNumber();
+    project_line << "Project: ";
+
+    const int proj_num = gp.GetProjectNumber(); 
+    const bool is_html = GetContext().GetConfig().DoHTML();
+    if( is_html ) {
+        project_line << "<a href=\"" << strLinkBaseGenomePrj << proj_num << "\">" << 
+            proj_num << "</a>";
+    } else {
+        project_line << proj_num;
+    }
+
     Wrap(l, GetWidth(), "DBLINK", CNcbiOstrstreamToString(project_line));
     ITERATE( CGenomeProjectItem::TDBLinkLineVec, it, gp.GetDBLinkLines() ) {
         Wrap(l, GetWidth(), kEmptyStr, *it );
@@ -670,6 +666,11 @@ void s_OrphanFixup( list< string >& wrapped, size_t uMaxSize = 0 )
     }
 }
 
+// Find bare links in the text and replace them with clickable links.
+// E.g.
+// http://www.example.com
+// becomes
+// <a href="http://www.example.com">http://www.example.com</a>
 void s_GenerateWeblinks( const string& strProtocol, string& strText )
 {
     const string strDummyProt( "<!PROT!>" );
@@ -677,10 +678,21 @@ void s_GenerateWeblinks( const string& strProtocol, string& strText )
     size_t uLinkStart = NStr::FindNoCase( strText, strProtocol + "://" );
     while ( uLinkStart != NPOS ) {
         size_t uLinkStop = strText.find_first_of( " \t\n", uLinkStart );
+        if( uLinkStop == NPOS ) {
+            uLinkStop = strText.length();
+        }
+
+        // detect if this link is already embedded in an href HTML tag so we don't
+        // "re-embed" it, producing bad HTML.
+        if( uLinkStart > 0 && ( strText[uLinkStart-1] == '"' || strText[uLinkStart-1]  == '>' )  ) {
+            uLinkStart = NStr::FindNoCase( strText, strProtocol + "://", uLinkStop );
+            continue;
+        }
     
         string strLink = strText.substr( uLinkStart, uLinkStop - uLinkStart );
-        if ( NStr::EndsWith( strText, "." ) ) {
-            strLink = strLink.substr( 0, strLink.size() - 1 );
+        // chop off final period, if any
+        while( NStr::EndsWith( strLink, "." ) || NStr::EndsWith( strLink, ")") ) {
+            strLink.resize( strLink.size() - 1 );
         }
 
         string strDummyLink = NStr::Replace( strLink, strProtocol, strDummyProt );
@@ -690,8 +702,8 @@ void s_GenerateWeblinks( const string& strProtocol, string& strText )
         strReplace += strDummyLink;
         strReplace += "</a>";
 
-        NStr::ReplaceInPlace( strText, strLink, strReplace );        
-        uLinkStart = NStr::FindNoCase( strText, strProtocol + "://" );
+        NStr::ReplaceInPlace( strText, strLink, strReplace, uLinkStart, 1 );        
+        uLinkStart = NStr::FindNoCase( strText, strProtocol + "://", uLinkStart + strReplace.length() );
     }
     NStr::ReplaceInPlace( strText, strDummyProt, strProtocol );
 }
@@ -806,16 +818,17 @@ bool s_GetFeatureKeyLinkLocation(
 {
     iGi = iFrom = iTo = 0;
 
-    CSeqFeatData::E_Choice type = feat.GetFeatType();
     const CSeq_loc& loc = feat.GetLocation();
-    const CSeq_id* pId = loc.GetId();
-    
+
     if ( ! iGi ) {
-        CSeq_id_Handle idh = feat.GetLocationId();
-        if ( idh && idh.IsGi() ) {
-            iGi = idh.GetGi();
+        ITERATE( CSeq_loc, loc_iter, loc ) {
+            CSeq_id_Handle idh = loc_iter.GetSeq_id_Handle();
+            if ( idh && idh.IsGi() ) {
+                iGi = idh.GetGi();
+            }
         }
     }
+
     iFrom = loc.GetStart( eExtreme_Positional ) + 1;
     iTo = loc.GetStop( eExtreme_Positional ) + 1;
     return true;
@@ -836,32 +849,51 @@ string s_GetLinkFeatureKey(
     unsigned int iGi = 0, iFrom = 0, iTo = 0;
     s_GetFeatureKeyLinkLocation( item.GetFeat(), iGi, iFrom, iTo );
     CSeqFeatData::E_Choice type = item.GetFeat().GetFeatType();
-    if ( iFrom == 0 || iFrom == iTo ) {
+    if ( iFrom == 0 && iFrom == iTo ) {
         return strRawKey;
+    }
+
+    // check if this is a protein or nucleotide link
+    bool is_prot = false;
+    switch( type ) {
+        case CSeqFeatData::e_Region:
+        case CSeqFeatData::e_Prot:
+        case CSeqFeatData::e_Site:
+            is_prot = true;
+            break;
+        default:
+            break;
     }
 
     // link base
     string strLinkbase;
-    if ( CSeqFeatData::e_Prot == type ) {    
-        strLinkbase += strLinkbaseProt;
-    }
-    else {
-        strLinkbase += strLinkbaseNuc;
+    if( is_prot ) {
+        strLinkbase += strLinkBaseProt;
+    } else {
+        strLinkbase += strLinkBaseNuc;
     }
 
     // id
     string strId = NStr::IntToString( iGi );
 
     // location
-    string strLocation = "?from=";
-    strLocation += NStr::IntToString( iFrom );
-    strLocation += "&amp;to=";
-    strLocation += NStr::IntToString( iTo );
+    string strLocation;
+    if( item.GetFeat().GetLocation().IsInt() ) {
+        strLocation += "?from=";
+        strLocation += NStr::IntToString( iFrom );
+        strLocation += "&amp;to=";
+        strLocation += NStr::IntToString( iTo );
+    } else {
+        // TODO: this fails on URLs that require "?itemID=" (e.g. almost any, such as U54469)
+        strLocation += "?itemid=TBD";
+    }
 
     // report style:
-    string strReport( "&amp;report=gbwithparts" );
-    if ( CSeqFeatData::e_Prot == type ) {
+    string strReport;
+    if ( is_prot ) {
         strReport = "&amp;report=gpwithparts";
+    } else {
+        strReport = "&amp;report=gbwithparts";
     }
 
     // assembly of the actual string:
@@ -892,13 +924,19 @@ void CGenbankFormatter::FormatFeature
         ++ m_uFeatureCount;
     }
 
-    const string strDummy( "[FEATKEY]" );
-    string strKey = bHtml ? strDummy : feat->GetKey();
+    // const string strDummy( "[FEATKEY]" );
+    string strKey = feat->GetKey(); // bHtml ? strDummy : feat->GetKey();
     Wrap(l, strKey, feat->GetLoc().GetString(), eFeat );
     if ( bHtml ) {
+        // we will need to pad since the feature's key might be smaller than strDummy
+        // negative padding means we need to remove spaces.
+        // const int padding_needed = (int)strDummy.length() - (int)feat->GetKey().length();
         string strFeatKey = s_GetLinkFeatureKey( f, m_uFeatureCount );
+        // strFeatKey += string( padding_needed, ' ' );
+
         NON_CONST_ITERATE( list<string>, it, l ) {
-            NStr::ReplaceInPlace( *it, strDummy, strFeatKey );
+            // string::size_type dummy_loc = (*it).find(strDummy);
+            NStr::ReplaceInPlace( *it, strKey, strFeatKey );
         }
     }
 

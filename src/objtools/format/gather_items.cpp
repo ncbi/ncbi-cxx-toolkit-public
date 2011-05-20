@@ -1657,7 +1657,7 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx, EEnds
     CSeq_loc_CI last;
     for ( CSeq_loc_CI it(loc); it; ++it ) {
         if( mode == eEndsOnBioseqOpt_AnyPartOfSeqLoc ) {
-            if( seq.IsSynonym(it.GetSeq_id()) && it.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) < seq_len ) {
+            if( seq.IsSynonym(it.GetSeq_id()) && (int)it.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) < seq_len ) {
                 return true;
             }
         }
@@ -1674,7 +1674,7 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx, EEnds
     } else {
         if( endsOnThisBioseq ) {
             // if we're not partial, we also check that we're within range
-            return seq_len > last.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) ;
+            return seq_len > (int)last.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) ;
         } else {
             return true;
         }

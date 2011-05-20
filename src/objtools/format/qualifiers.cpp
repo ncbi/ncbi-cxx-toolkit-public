@@ -64,20 +64,6 @@ const string IFlatQVal::kSemicolon = ";";
 const string IFlatQVal::kComma     = ",";
 const string IFlatQVal::kEOL       = "\n";
 
-
-//  ============================================================================
-//  Link locations:
-//  ============================================================================
-const string strLinkbaseNuc( "http://www.ncbi.nlm.nih.gov/nuccore/" );
-const string strLinkbaseProt( "http://www.ncbi.nlm.nih.gov/protein/" );
-const string strLinkBaseTaxonomy( 
-    "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
-const string strLinkBaseTransTable(
-    "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
-const string strLinkBaseExpasy(
-    "http://www.expasy.org/enzyme/" );
-
-
 static void s_StripTags( string& str )
 {
     // Purpose: Strip HTML like tags from the given string
@@ -1535,7 +1521,7 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
             }
         }
         id_str = "<a href=\"";
-        id_str += strLinkbaseProt;
+        id_str += strLinkBaseProt;
         id_str += raw_link_str;
         id_str += "\">";
         id_str += raw_id_str;

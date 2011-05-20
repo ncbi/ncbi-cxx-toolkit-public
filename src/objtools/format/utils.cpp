@@ -1134,7 +1134,56 @@ EResolveOrder GetResolveOrder(CScope& scope,
     return order;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// HTML utils and strings
 
+//  ============================================================================
+//  Link locations:
+//  ============================================================================
+const string strLinkBaseNuc( 
+    "http://www.ncbi.nlm.nih.gov/nuccore/" );
+const string strLinkBaseProt( 
+    "http://www.ncbi.nlm.nih.gov/protein/" );
+const string strLinkBaseEntrezViewer(
+    "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=" );
+const string strLinkBaseTaxonomy( 
+    "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
+const string strLinkBaseTransTable(
+    "http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
+const string strLinkBasePubmed(
+    "http://www.ncbi.nlm.nih.gov/pubmed/" );
+const string strLinkBaseExpasy(
+    "http://www.expasy.org/enzyme/" );
+const string strLinkBaseNucSearch(
+    "http://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=" );
+const string strLinkBaseGenomePrj(
+    "http://www.ncbi.nlm.nih.gov/genomeprj/" );
+
+bool ConvertQuotesNotInHTMLTags( string &str )
+{   
+    bool changes_made = false;
+
+    bool in_tag = false;
+    size_t idx = 0;
+    for( ; idx < str.length(); ++idx ) {
+        switch( str[idx] ) {
+        case '<':
+            in_tag = true;
+            break;
+        case '>':
+            in_tag = false;
+            break;
+        case '"':
+            if( ! in_tag ) {
+                str[idx] = '\'';
+                changes_made = true;
+            }
+            break;
+        }
+    }
+
+    return changes_made;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

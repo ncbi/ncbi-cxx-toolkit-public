@@ -128,17 +128,6 @@ bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me);
 
 const char* GetAAName(unsigned char aa, bool is_ascii);
 
-template <typename T>
-void NcbiId(CNcbiOstream& os, const T& id, bool html = false)
-{
-    if (!html) {
-        os << id;
-    } else {
-        os << "<a href=http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val="
-           << id << '>' << id << "</a>";
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////////
 
 enum EResolveOrder
@@ -155,6 +144,39 @@ EResolveOrder GetResolveOrder(CScope& scope,
                               CBioseq_Handle& mrna_bsh,
                               CBioseq_Handle& prot_bsh);
 
+
+//////////////////////////////////////////////////////////////////////////////
+// HTML utils and strings
+
+//  ============================================================================
+//  Link locations:
+//  ============================================================================
+extern const string strLinkBaseNuc;
+extern const string strLinkBaseProt;
+
+extern const string strLinkBaseEntrezViewer;
+
+extern const string strLinkBaseTaxonomy;
+extern const string strLinkBaseTransTable;
+extern const string strLinkBasePubmed;
+extern const string strLinkBaseExpasy;
+extern const string strLinkBaseNucSearch;
+extern const string strLinkBaseGenomePrj;
+
+template <typename T>
+void NcbiId(CNcbiOstream& os, const T& id, bool html = false)
+{
+    if (!html) {
+        os << id;
+    } else {
+        os << "<a href=\"" << strLinkBaseEntrezViewer
+           << id << "\">" << id << "</a>";
+    }
+}
+
+// Like ConvertQuotes, but skips characters inside HTML tags
+// Returns true if it made any changes.
+bool ConvertQuotesNotInHTMLTags( string &str );
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

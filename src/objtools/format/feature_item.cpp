@@ -3848,10 +3848,7 @@ void CFeatureItem::x_AddQualsProt(
 
             if ( (!has_mat_peptide  ||  !has_signal_peptide) || (proteinIsAtLeastMature) || (!is_pept_whole_loc) ) { 
                 try {
-                    const bool force_initial_met_trim = ( (!has_signal_peptide) && 
-                        (processed == CProt_ref::eProcessed_not_set || processed == CProt_ref::eProcessed_preprotein) );
                     const TGetProteinWeight flags = 0;
-                        // ( force_initial_met_trim ? fGetProteinWeight_ForceInitialMetTrim : 0 );
                     wt = GetProteinWeight(m_Feat.GetOriginalFeature(),
                                           ctx.GetScope(), loc, flags);
                 }

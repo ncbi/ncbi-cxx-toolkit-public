@@ -213,7 +213,14 @@ string  CFlatItemFormatter::x_FormatAccession
     acc_line << primary;
 
     if ( ctx.IsWGS() && ! acc.GetWGSAccession().empty() ) {
-        acc_line << separator << acc.GetWGSAccession();
+        const bool is_html = ctx.Config().DoHTML();
+        if( is_html ) {
+            strLinkBaseNucSearch;
+            acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetWGSAccession() << 
+                "\">" << acc.GetWGSAccession() << "</a>";
+        } else {
+            acc_line << separator << acc.GetWGSAccession();
+        }
     }
 
     if (!acc.GetExtraAccessions().empty()) {
@@ -344,7 +351,7 @@ CFlatItemFormatter::End(
     const string strHtmlTail(
         "</div><hr />\n"
         "</body>\n"
-        "</html>\n" );
+        "</html>" );
 
     if ( m_Ctx->GetConfig().DoHTML() ) {
         Out.AddLine( strHtmlTail );

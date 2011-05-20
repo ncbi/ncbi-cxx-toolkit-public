@@ -498,6 +498,8 @@ void CFlatSeqLoc::x_AddID
  CBioseqContext& ctx,
  TType type)
 {
+    const bool do_html = ctx.Config().DoHTML();
+
     if (ctx.GetHandle().IsSynonym(id)) {
         if ( type == eType_assembly ) {
             oss << ctx.GetAccession() << ':';
@@ -522,7 +524,12 @@ void CFlatSeqLoc::x_AddID
         oss << idp->GetSeqIdString(true) << ':';
         break;
     case CSeq_id::e_Gi:
-        oss << "gi|" << idp->GetSeqIdString(true) << ':';
+        if( do_html ) {
+            const string gi_str = idp->GetSeqIdString(true);
+            oss << "<a href=\"" << strLinkBaseEntrezViewer << gi_str << "\">gi|" << gi_str << "</a>:";
+        } else {
+            oss << "gi|" << idp->GetSeqIdString(true) << ':';
+        }
         break;
     }
 }

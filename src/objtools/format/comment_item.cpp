@@ -529,8 +529,9 @@ string CCommentItem::GetStringForRefTrack
     }
 
     if ( !identical_to.empty() ) {
-        oss << " The reference sequence is identical to "
-            << identical_to;
+        oss << " The reference sequence is identical to ";
+        NcbiId( oss, identical_to, format == eFormat_Html );
+
         if( ! identical_to_start.empty() && ! identical_to_end.empty() ) {
             oss << " (range: " << identical_to_start << "-" << 
                 identical_to_end << ")";
@@ -737,18 +738,27 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
     return comment;
 }
 
+static
+string s_HtmlWrapModelEvidenceName( const string &name )
+{
+    return "<a href=\"" + strLinkBaseNuc + name + "?report=graph\">" + name + "</a>";
+}
 
 string CCommentItem::GetStringForModelEvidance
 (const SModelEvidance& me,
  ECommentFormat format)
 {
-    const string *refseq = (format == eFormat_Html ? &kRefSeqLink : &kRefSeq);
+    const bool bHtml = (format == eFormat_Html);
+
+    const string *refseq = (bHtml ? &kRefSeqLink : &kRefSeq);
 
     CNcbiOstrstream text;
 
+    const string me_name = ( bHtml ? s_HtmlWrapModelEvidenceName(me.name) : me.name );
+
     text << "MODEL " << *refseq << ":  " << "This record is predicted by "
          << "automated computational analysis. This record is derived from "
-         << "a genomic sequence (" << me.name << ")";
+         << "a genomic sequence (" << me_name << ")";
     if ( !me.method.empty() ) {
         text << " annotated using gene prediction method: " << me.method;
     }
@@ -766,8 +776,12 @@ string CCommentItem::GetStringForModelEvidance
         text << "evidence";
     }
 
+    const char *documentation_str = ( bHtml ? 
+        "<a href=\"http://www.ncbi.nlm.nih.gov/genome/guide/build.shtml\">Documentation</a>" : 
+        "Documentation" );
+
     text << ".~Also see:~"
-        << "    Documentation of NCBI's Annotation Process~    ";
+        << "    " << documentation_str << " of NCBI's Annotation Process~    ";
 
     return CNcbiOstrstreamToString(text);
 }
