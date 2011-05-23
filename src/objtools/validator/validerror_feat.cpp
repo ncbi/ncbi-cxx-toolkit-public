@@ -422,38 +422,6 @@ static string s_LegalMobileElementStrings[] = {
 };
 
 
-static bool s_IsLocRefSeqMrna(const CSeq_loc& loc, CScope& scope)
-{
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
-    if ( bsh ) {
-        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
-            if ( (*it)->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna ) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-
-static bool s_IsLocGEDL(const CSeq_loc& loc, CScope& scope)
-{
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
-    if ( bsh ) {
-        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
-            CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
-            if ( acc_info == CSeq_id::eAcc_gb_embl_ddbj  ||
-                 acc_info == CSeq_id::eAcc_local ) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-
 // private member functions:
 
 void CValidError_feat::ValidateSeqFeatData
@@ -1437,6 +1405,14 @@ void CValidError_feat::ValidateCdregion (
             } else if ( NStr::EqualNocase(key, "transcript_id") ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
                     "transcript_id should not be a gbqual on a CDS feature", feat);
+            } else if ( NStr::EqualNocase(key, "codon_start") ) {
+                if (cdregion.IsSetFrame() && cdregion.GetFrame() != CCdregion::eFrame_not_set) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "conflicting codon_start values", feat);
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "codon_start value should be 1, 2, or 3", feat);
+                }
             }
         }
     }
@@ -1839,21 +1815,6 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
 }
 
 
-static bool s_HasRefSeqAccession (CBioseq_Handle bsh)
-{
-    if (!bsh) {
-        return false;
-    }
-    FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-        if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
-            && !NStr::IsBlank((*id_it)->GetOther().GetAccession())) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 void CValidError_feat::ValidateDonor 
 (ENa_strand strand, 
  TSeqPos    stop, 
@@ -2108,7 +2069,9 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
         // get overlapping mRNA - won't check endpoints if they coincide with
         // endpoints of mRNA
-        int mrna_start = -1, mrna_stop = -1;
+        TSeqPos mrna_start = 0, mrna_stop = 0;
+        bool set_mrna_start = false, set_mrna_stop = false;
+
         CConstRef<CSeq_feat> mrna = GetBestOverlappingFeat(
             loc,
             CSeqFeatData::eSubtype_mRNA,
@@ -2117,9 +2080,11 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         if (mrna) {
             if (!mrna->GetLocation().IsPartialStart(eExtreme_Biological)) {
                 mrna_start = mrna->GetLocation().GetStart(eExtreme_Biological);
+                set_mrna_start = true;
             }
             if (!mrna->GetLocation().IsPartialStop(eExtreme_Biological)) {
                 mrna_stop = mrna->GetLocation().GetStop(eExtreme_Biological);
+                set_mrna_stop = true;
             }
         }           
 
@@ -2131,6 +2096,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 const CSeq_loc& part = si.GetEmbeddingSeq_loc();
                 CSeq_loc::TRange range = si.GetRange();
                 CBioseq_Handle bsh_si = m_Scope->GetBioseqHandle (part);
+                    
                 if (bsh_si) {
                     CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
 
@@ -2160,10 +2126,10 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                         checkExonDonor = true;
                         checkExonAcceptor = true;
                         if (mrna) {
-                            if (stop == mrna_stop && !mrna->GetLocation().IsPartialStop(eExtreme_Biological)) {
+                            if (set_mrna_stop && stop == mrna_stop && !mrna->GetLocation().IsPartialStop(eExtreme_Biological)) {
                                 checkExonDonor = false;
                             }
-                            if (mrna && start == mrna_start && !mrna->GetLocation().IsPartialStart(eExtreme_Biological)) {
+                            if (set_mrna_start && mrna && start == mrna_start && !mrna->GetLocation().IsPartialStart(eExtreme_Biological)) {
                                 checkExonAcceptor = false;
                             }
                         }
@@ -2980,7 +2946,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 
     // make sure the amino acid is valid
     bool found = false;
-    for ( int i = 0; i < sizeof (s_LegalNcbieaaValues) / sizeof (int); ++i ) {
+    for ( unsigned int i = 0; i < sizeof (s_LegalNcbieaaValues) / sizeof (int); ++i ) {
         if ( aa == s_LegalNcbieaaValues[i] ) {
             found = true;
             break;
@@ -3122,46 +3088,46 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 		    } catch (std::exception ) {
         }
 
-        bool ok = false;
         if (codon_values.size() > 0) {
+            bool ok = false;
             // check that codons predicted from anticodon can transfer indicated amino acid
             for (size_t i = 0; i < codon_values.size(); i++) {
                 if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
                     ok = true;
                 }
             }
-        }
-        if (!ok) {
-            if (aa == 'U' && NStr::Equal (anticodon, "UCA")) {
-                // ignore TGA codon for selenocysteine
-            } else if (aa == 'O' && NStr::Equal (anticodon, "CUA")) {
-                // ignore TAG codon for pyrrolysine
-            } else if (!feat.IsSetExcept_text()
-                      || (NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") == string::npos 
-                          &&NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") == string::npos)) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonAA,
-                          "Codons predicted from anticodon (" + anticodon
-                          + ") cannot produce amino acid (" + aaname + ")",
-                          feat);
-            }
-        }
-
-        // check that codons recognized match codons predicted from anticodon
-        if (recognized_codon_values.size() > 0) {
-            bool ok = false;
-            for (size_t i = 0; i < codon_values.size() && !ok; i++) {
-                for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
-                    if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
-                        ok = true;
-                    }
+            if (!ok) {
+                if (aa == 'U' && NStr::Equal (anticodon, "UCA")) {
+                    // ignore TGA codon for selenocysteine
+                } else if (aa == 'O' && NStr::Equal (anticodon, "CUA")) {
+                    // ignore TAG codon for pyrrolysine
+                } else if (!feat.IsSetExcept_text()
+                          || (NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") == string::npos 
+                              &&NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") == string::npos)) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonAA,
+                              "Codons predicted from anticodon (" + anticodon
+                              + ") cannot produce amino acid (" + aaname + ")",
+                              feat);
                 }
             }
-            if (!ok 
-                && (!feat.IsSetExcept_text() 
-                    || NStr::FindNoCase (feat.GetExcept_text(), "RNA editing") == string::npos)) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonCodon,
-                         "Codon recognized cannot be produced from anticodon ("
-                         + anticodon + ")", feat);
+
+            // check that codons recognized match codons predicted from anticodon
+            if (recognized_codon_values.size() > 0) {
+                bool ok = false;
+                for (size_t i = 0; i < codon_values.size() && !ok; i++) {
+                    for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
+                        if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
+                            ok = true;
+                        }
+                    }
+                }
+                if (!ok 
+                    && (!feat.IsSetExcept_text() 
+                        || NStr::FindNoCase (feat.GetExcept_text(), "RNA editing") == string::npos)) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonCodon,
+                             "Codon recognized cannot be produced from anticodon ("
+                             + anticodon + ")", feat);
+                }
             }
         }
     }
@@ -3214,7 +3180,7 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
             vec.GetSeqData(0, vec.size(), vec_data);
             int num_n = 0;
             int num_real = 0;
-            int num_gap = 0;
+            unsigned int num_gap = 0;
             int pos = 0;
             string::iterator it = vec_data.begin();
             while (it != vec_data.end()) {
@@ -3338,7 +3304,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
             && (!feat.IsSetQual() || feat.GetQual().empty())
             && (!feat.IsSetDbxref() || feat.GetDbxref().empty())) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_NeedsNote,
-                    "A note is required for a misc_feature", feat);
+                    "A note or other qualifier is required for a misc_feature", feat);
         }
         break;
     case CSeqFeatData::eSubtype_polyA_site:
@@ -3730,7 +3696,7 @@ void CValidError_feat::ValidateRptUnitRangeVal (const string& val, const CSeq_fe
     } else {
         CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
         if (from - 1 < range.GetFrom() || from - 1> range.GetTo() || to - 1 < range.GetFrom() || to - 1 > range.GetTo()) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_RptUnitRangeProblem,
                      "/rpt_unit_range is not within sequence length", feat);   
         }
     }
@@ -3879,7 +3845,30 @@ static int ValidateAccessionFormat (string accession)
 }
 
 
-CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, string separator, bool fetch_accession)
+bool CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (string inf_accession, string &prefix, string &accession)
+{
+    size_t pos1 = NStr::Find (inf_accession, ":");
+    size_t pos2 = NStr::Find (inf_accession, "|");
+    size_t pos = string::npos;
+
+    if (pos1 < pos2) {
+      pos = pos1;
+    } else {
+      pos = pos2;
+    }
+    if (pos == string::npos) {
+        return false;
+    } else {
+        prefix = inf_accession.substr(0, pos);
+        NStr::TruncateSpacesInPlace (prefix);
+        accession = inf_accession.substr(pos + 1);
+        NStr::TruncateSpacesInPlace (accession);
+        return true;
+    }
+}
+
+
+CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, bool fetch_accession)
 {
     if (NStr::IsBlank (accession)) {
         return eInferenceValidCode_empty;
@@ -3887,12 +3876,8 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
 
     CValidError_feat::EInferenceValidCode rsult = eInferenceValidCode_valid;
 
-    size_t pos = NStr::Find (accession, separator);
-    if (pos != string::npos) {
-        string prefix = accession.substr(0, pos);
-        NStr::TruncateSpacesInPlace (prefix);
-        string remainder = accession.substr(pos + 1);
-        NStr::TruncateSpacesInPlace (remainder);
+    string prefix, remainder;
+    if (GetPrefixAndAccessionFromInferenceAccession (accession, prefix, remainder)) {
         bool is_insd = false, is_refseq = false;
 
         if (NStr::EqualNocase (prefix, "INSD")) {
@@ -3901,41 +3886,41 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
             is_refseq = true;
         }
         if (is_insd || is_refseq) {
-			if (remainder.length() > 3) {
-				if (remainder.c_str()[2] == '_') {
-					if (is_insd) {
-						rsult = eInferenceValidCode_bad_accession_type;
-					}
-				} else {
-					if (is_refseq) {
-						rsult = eInferenceValidCode_bad_accession_type;
-					}
-				}
+            if (remainder.length() > 3) {
+                if (remainder.c_str()[2] == '_') {
+                    if (is_insd) {
+                        rsult = eInferenceValidCode_bad_accession_type;
+                    }
+                } else {
+                    if (is_refseq) {
+                        rsult = eInferenceValidCode_bad_accession_type;
+                    }
+                }
             } 
-			string ver = "";
-			int acc_code = ValidateAccessionFormat (remainder);
-			if (acc_code == 0) {
-				//-5: missing version number
-				//-6: bad version number
-				size_t dot_pos = NStr::Find (remainder, ".");
-				if (dot_pos == string::npos || NStr::IsBlank(remainder.substr(dot_pos + 1))) {
-					acc_code = -5;
-				} else {
-					const char *cp = remainder.substr(dot_pos + 1).c_str();
-					while (*cp != 0 && isdigit (*cp)) {
-						++cp;
-					}
-					if (*cp != 0) {
-						acc_code = -6;
-					}
-				}
-			}
+            string ver = "";
+            int acc_code = ValidateAccessionFormat (remainder);
+            if (acc_code == 0) {
+                //-5: missing version number
+                //-6: bad version number
+                size_t dot_pos = NStr::Find (remainder, ".");
+                if (dot_pos == string::npos || NStr::IsBlank(remainder.substr(dot_pos + 1))) {
+                    acc_code = -5;
+                } else {
+                    const char *cp = remainder.substr(dot_pos + 1).c_str();
+                    while (*cp != 0 && isdigit (*cp)) {
+                        ++cp;
+                    }
+                    if (*cp != 0) {
+                        acc_code = -6;
+                    }
+                }
+            }
 
-			if (acc_code == -5 || acc_code == -6) {
-				rsult = eInferenceValidCode_bad_accession_version;
-			} else if (acc_code != 0) {
-				rsult = eInferenceValidCode_bad_accession;
-			} else if (fetch_accession) {
+            if (acc_code == -5 || acc_code == -6) {
+                rsult = eInferenceValidCode_bad_accession_version;
+            } else if (acc_code != 0) {
+                rsult = eInferenceValidCode_bad_accession;
+            } else if (fetch_accession) {
                 // Test to see if accession is public
                 const char* database_names[] = { "Nucleotide", "Protein" };
                 const int num_databases = sizeof( database_names ) / sizeof( const char* );
@@ -3959,20 +3944,17 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
 }
 
 
-CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string inference, bool fetch_accession)
+vector<string> CValidError_feat::GetAccessionsFromInferenceString (string inference, string &prefix, string &remainder, bool &same_species)
 {
-    if (NStr::IsBlank (inference)) {
-        return eInferenceValidCode_empty;
-    }
+    vector<string> accessions;
 
-    string prefix, remainder;
-
+    accessions.clear();
     CInferencePrefixList::GetPrefixAndRemainder (inference, prefix, remainder);
     if (NStr::IsBlank (prefix)) {
-        return eInferenceValidCode_bad_prefix;
+        return accessions;
     }
 
-    bool same_species = false;
+    same_species = false;
 
     if (NStr::StartsWith (remainder, "(same species)", NStr::eNocase)) {
         same_species = true;
@@ -3984,6 +3966,39 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
         remainder = remainder.substr (1);
         NStr::TruncateSpacesInPlace (remainder);
     }
+
+    if (NStr::IsBlank (remainder)) {
+        return accessions;
+    }
+
+    if (NStr::Equal(prefix, "similar to sequence")
+        || NStr::Equal(prefix, "similar to AA sequence")
+        || NStr::Equal(prefix, "similar to DNA sequence")
+        || NStr::Equal(prefix, "similar to RNA sequence")
+        || NStr::Equal(prefix, "similar to RNA sequence, mRNA")
+        || NStr::Equal(prefix, "similar to RNA sequence, EST")
+        || NStr::Equal(prefix, "similar to RNA sequence, other RNA")) {
+        NStr::Tokenize(remainder, ",", accessions);
+    }
+    return accessions;
+}
+
+
+CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string inference, bool fetch_accession)
+{
+    if (NStr::IsBlank (inference)) {
+        return eInferenceValidCode_empty;
+    }
+
+    string prefix, remainder;
+    bool same_species = false;
+
+    vector<string> accessions = GetAccessionsFromInferenceString (inference, prefix, remainder, same_species);
+
+    if (NStr::IsBlank (prefix)) {
+        return eInferenceValidCode_bad_prefix;
+    }
+
     if (NStr::IsBlank (remainder)) {
         return eInferenceValidCode_bad_body;
     }
@@ -3995,21 +4010,11 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
     }
 
     if (rsult == eInferenceValidCode_valid) {
-        if (NStr::StartsWith (prefix, "similar to")) {
-            rsult = ValidateInferenceAccession (remainder, ":", fetch_accession);
-        } else if (NStr::Equal(prefix, "alignment")) {
-            size_t pos = NStr::Find (remainder, ":", 0, string::npos, NStr::eLast);
-            if (pos != string::npos) {
-                remainder = remainder.substr (pos + 1);
-                vector<string> accessions;
-                NStr::Tokenize(remainder, ",", accessions);
-                for (size_t i = 0; i < accessions.size(); i++) {
-                    NStr::TruncateSpacesInPlace (accessions[i]);
-                    rsult = ValidateInferenceAccession (accessions[i], "|", fetch_accession);
-                    if (rsult != eInferenceValidCode_valid) {
-                        break;
-                    }
-                }
+        for (size_t i = 0; i < accessions.size(); i++) {
+            NStr::TruncateSpacesInPlace (accessions[i]);
+            rsult = ValidateInferenceAccession (accessions[i], fetch_accession);
+            if (rsult != eInferenceValidCode_valid) {
+                break;
             }
         }
     }
@@ -4288,8 +4293,18 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
             }
         }
     }
-               
+}
 
+
+static CRef<CSeq_loc> s_MakePointForLocationStop (const CSeq_loc& loc)
+{
+    CRef<CSeq_loc> stop(new CSeq_loc());
+
+    for ( CSeq_loc_CI citer (loc); citer; ++citer ) {
+        stop->SetPnt().SetId().Assign(citer.GetSeq_id());
+    }
+    stop->SetPnt().SetPoint(loc.GetStop(eExtreme_Biological));
+    return stop;
 }
 
 
@@ -4304,16 +4319,13 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
         return;
     }
     const CCdregion& cdr = cds->GetData().GetCdregion();
-    TSeqPos cds_start = cds->GetLocation().GetStart(eExtreme_Biological);
 
     TSeqPos pos1 = LocationOffset(cds->GetLocation(), loc, eOffset_FromStart);
     bool pos1_not_in = false;
     if (pos1 == ((TSeqPos)-1)) {
         pos1_not_in = true;
     }
-    CRef<CSeq_loc> tmp(new CSeq_loc());
-    tmp->SetPnt().SetId().Assign(*(loc.GetId()));
-    tmp->SetPnt().SetPoint(loc.GetStop(eExtreme_Biological));
+    CRef<CSeq_loc> tmp = s_MakePointForLocationStop(loc);
     TSeqPos pos2 = LocationOffset(cds->GetLocation(), *tmp, eOffset_FromStart);
     bool pos2_not_in = false;
     if (pos2 == ((TSeqPos)-1)) {
@@ -4675,9 +4687,6 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
                 if ( mrna_gene ) {
                     const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
                     if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
-                        if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
-                            int id_num = feat.GetId().GetLocal().GetId();
-                        }
                         PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
                             "Gene on mRNA bioseq does not match gene on genomic bioseq",
                             mrna_gene->GetOriginalFeature());
@@ -4984,7 +4993,6 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
             if ( partial5 || partial3 ) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
                     "CDS is partial but protein is complete", feat);
-                TSeqPos tmp = feat.GetLocation().GetStop (eExtreme_Biological);
             }
             break;
 
@@ -5722,6 +5730,12 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                     CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
                     CSeqTranslator::Translate(*tmp, bsh, transl_prot, genetic_code, true, false, &alt_start);
                     unable_to_translate = false;
+                    if (!NStr::IsBlank(transl_prot)) {
+                        if (NStr::EndsWith(transl_prot, "*")) {
+                            got_stop = true;
+                        }
+                        show_stop = true;
+                    }
 #if 0
                 } else if (feat.GetLocation().GetStart(eExtreme_Positional) > bsh.GetInst_Length() - 1
                     || feat.GetLocation().GetStop(eExtreme_Positional) > bsh.GetInst_Length() - 1) {
@@ -5755,30 +5769,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
     // check alternative start codon
     if (alt_start  &&  gc == 1) {
-        // disabled
-#if 0
-        EDiagSev sev = eDiag_Warning;
-        if (s_IsLocRefSeqMrna(feat.GetLocation(), *m_Scope)) {
-            sev = eDiag_Info;
-        } else if (s_IsLocGEDL(feat.GetLocation(), *m_Scope)) {
-            sev = eDiag_Info;
-        }
-        if (sev != eDiag_Info  &&
-            feat.CanGetExcept()  &&  feat.GetExcept()  &&
-            feat.CanGetExcept_text()  &&  !feat.GetExcept_text().empty()) {
-            if (feat.GetExcept_text().find("alternative start codon") != NPOS) {
-                sev = eDiag_Info;
-            }
-        }
-        if (sev != eDiag_Info) {
-            has_errors = true;
-            other_than_mismatch = true;
-            if (report_errors) {
-                PostErr(sev, eErr_SEQ_FEAT_AltStartCodon,
-                    "Alternative start codon used", feat);
-            }
-        }
-#endif
+        // do not report
     } else if (!alt_start && feat.IsSetExcept() && feat.IsSetExcept_text()
                && NStr::Find(feat.GetExcept_text(), "alternative start codon") != string::npos) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
@@ -6010,6 +6001,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                 transl_res = transl_prot[mismatches[i]];
                 if (mismatches[i] == 0 && transl_res == '-') {
                     // skip - dash is expected to differ
+                    num_mismatches--;
                 } else {
                     EDiagSev sev = eDiag_Error;
                     if (prot_res == 'X' && (transl_res == 'B' || transl_res == 'Z' || transl_res == 'J')) {
@@ -6029,7 +6021,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
 
         if (feat.CanGetPartial()  &&  feat.GetPartial()  &&
-            mismatches.empty()) {
+            num_mismatches == 0) {
             if (!no_beg  && !no_end) {
                 if (report_errors) {
                     if (m_Imp.IsGpipe () && m_Imp.IsGenomic()) {
@@ -6289,23 +6281,26 @@ static bool s_GeneRefsAreEquivalent (const CGene_ref& g1, const CGene_ref& g2, s
 {
     bool equivalent = false;
     if (g1.IsSetLocus_tag()
-        && g2.IsSetLocus_tag()
-        && NStr::EqualNocase(g1.GetLocus_tag(),
-                             g2.GetLocus_tag())) {
-        label = g1.GetLocus_tag();
-        equivalent = true;
+        && g2.IsSetLocus_tag()) {
+        if (NStr::EqualNocase(g1.GetLocus_tag(),
+                              g2.GetLocus_tag())) {
+            label = g1.GetLocus_tag();
+            equivalent = true;
+        }
     } else if (g1.IsSetLocus()
-               && g2.IsSetLocus()
-               && NStr::EqualNocase(g1.GetLocus(),
-                                    g2.GetLocus())) {
-        label = g1.GetLocus();
-        equivalent = true;
+               && g2.IsSetLocus()) {
+        if (NStr::EqualNocase(g1.GetLocus(),
+                              g2.GetLocus())) {
+            label = g1.GetLocus();
+            equivalent = true;
+        }
     } else if (g1.IsSetSyn()
-               && g2.IsSetSyn()
-               && NStr::EqualNocase (g1.GetSyn().front(),
-                                     g2.GetSyn().front())) {
-        label = g1.GetSyn().front();
-        equivalent = true;
+               && g2.IsSetSyn()) {
+        if (NStr::EqualNocase (g1.GetSyn().front(),
+                               g2.GetSyn().front())) {
+            label = g1.GetSyn().front();
+            equivalent = true;
+        }
     }                    
     return equivalent;
 }
@@ -6326,10 +6321,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         return;
     }
 
-    if (feat.GetLocation().GetStart(eExtreme_Biological) == 631608) {
-        CSeqFeatData::ESubtype stype = feat.GetData().GetSubtype();
-    }
-
     const CGene_ref* gene_xref = feat.GetGeneXref();
     TSeqPos circular_len = kInvalidSeqPos;
     if (bsh.IsSetInst_Topology()
@@ -6347,7 +6338,8 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     bool xref_match_same_as_overlap = false;
 
     while (gene_it) {
-        if (TestForOverlap (gene_it->GetLocation(), feat.GetLocation(), eOverlap_Contained, circular_len) >= 0) {
+        if (TestForOverlap (gene_it->GetLocation(), feat.GetLocation(), 
+          gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, circular_len) >= 0) {
             size_t len = GetLength(gene_it->GetLocation(), m_Scope);
             if (len < max || num_genes == 0) {
                 num_genes = 1;

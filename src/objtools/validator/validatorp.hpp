@@ -823,7 +823,9 @@ public:
         eInferenceValidCode_bad_accession_type
     };
 
-    EInferenceValidCode ValidateInferenceAccession (string accession, string separator, bool fetch_accession);
+    static vector<string> GetAccessionsFromInferenceString (string inference, string &prefix, string &remainder, bool &same_species);
+    static bool GetPrefixAndAccessionFromInferenceAccession (string inf_accession, string &prefix, string &accession);
+    EInferenceValidCode ValidateInferenceAccession (string accession, bool fetch_accession);
     EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
 
     // functions expected to be used in Discrepancy Report
@@ -1000,6 +1002,7 @@ public:
     bool IsAccountedFor(void) { return m_AccountedFor; }
     void SetAccountedFor (bool val) { m_AccountedFor = val; }
     bool MatchesUnderlyingCDS (unsigned int partial_type);
+    bool MatchAnyUnderlyingCDS (unsigned int partial_type);
     bool HasCDSMatch(void);
 
     CConstRef<CSeq_feat> m_Mrna;

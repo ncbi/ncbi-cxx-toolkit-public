@@ -454,6 +454,8 @@ enum EErrType {
     eErr_SEQ_FEAT_LocusCollidesWithLocusTag,
     eErr_SEQ_FEAT_IdenticalGeneSymbolAndSynonym,
     eErr_SEQ_FEAT_NeedsNote,
+    eErr_SEQ_FEAT_RptUnitRangeProblem,
+    eErr_SEQ_FEAT_TooManyInferenceAccessions,
     eErr_SEQ_FEAT_SgmlPresentInText,
     eErr_SEQ_FEAT_MissingLocation,
     eErr_SEQ_FEAT_MultipleBioseqs,

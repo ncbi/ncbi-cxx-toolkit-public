@@ -80,7 +80,7 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
     }
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat", msg));
     if (NStr::Equal(qual, "rpt_unit_range") && NStr::Equal(feat, "polyA_site")) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InvalidQualifierValue", 
+        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "RptUnitRangeProblem", 
                                   "/rpt_unit_range is not within sequence length"));
     }
     CConstRef<CValidError> eval = validator.Validate(seh, options);

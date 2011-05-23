@@ -1564,30 +1564,47 @@ void CValidError_imp::ValidateSubSource
                         obj, ctx);
         } else {
             try {
-                CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (subsrc.GetName());
+                const string& date_string = subsrc.GetName();
+                CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (date_string);
 
-                struct tm *tm;
-                time_t t;
+                // if there are two dashes, then the first token needs to be the day, and the
+                // day has to have two numbers, a leading zero if the day is less than 10
+                bool is_bad = false;
+                size_t pos = NStr::Find(date_string, "-");
+                if (pos != string::npos) {
+                    size_t pos2 = NStr::Find(date_string, "-", pos + 1);
+                    if (pos2 != string::npos && pos != 2) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
+                                    "Collection_date format is not in DD-Mmm-YYYY format",
+                                    obj, ctx);
+                        is_bad = true;
+                    }
+                }
+                      
+                if (!is_bad) {         
+                    struct tm *tm;
+                    time_t t;
 
-                time(&t);
-                tm = localtime(&t);
+                    time(&t);
+                    tm = localtime(&t);
 
-                if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
-                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-                               "Collection_date is in the future",
-                               obj, ctx);
-                } else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
-                           && coll_date->GetStd().IsSetMonth()) {
-                    if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
+                    if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
                         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
                                    "Collection_date is in the future",
                                    obj, ctx);
-                    } else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
-                               && coll_date->GetStd().IsSetDay()) {
-                        if (coll_date->GetStd().GetDay() > tm->tm_mday) {
+                    } else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
+                               && coll_date->GetStd().IsSetMonth()) {
+                        if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
                             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
                                        "Collection_date is in the future",
                                        obj, ctx);
+                        } else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
+                                   && coll_date->GetStd().IsSetDay()) {
+                            if (coll_date->GetStd().GetDay() > tm->tm_mday) {
+                                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
+                                           "Collection_date is in the future",
+                                           obj, ctx);
+                            }
                         }
                     }
                 }

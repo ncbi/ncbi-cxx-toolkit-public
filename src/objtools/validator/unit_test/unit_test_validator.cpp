@@ -3896,6 +3896,22 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     CheckErrors (*eval, expected_errors);
     nuc_entry->SetSeq().SetId().pop_back();
 
+    // report if database name len too long
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    CRef<CSeq_id> general(new CSeq_id());
+    general->SetGeneral().SetDb("thisdatabasevalueislong");
+    general->SetGeneral().SetTag().SetStr("b");
+    entry->SetSeq().ResetId();
+    entry->SetSeq().SetId().push_back(general);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back (new CExpectedError ("thisdatabasevalueislong:b", eDiag_Warning, "BadSeqIdFormat", 
+                                                   "Database name longer than 20 characters"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
@@ -17097,10 +17113,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefNeeded)
     CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().back();
     CRef<CSeq_feat> gene1 = MakeGeneForFeature(cds);
     gene1->SetLocation().SetInt().SetFrom(gene1->GetLocation().GetInt().GetFrom() - 3);
-    gene1->SetData().SetGene().SetLocus_tag("a1");
+    gene1->SetData().SetGene().SetLocus("a1");
+    gene1->SetData().SetGene().SetAllele("x");
     AddFeat(gene1, nuc);
     CRef<CSeq_feat> gene2 = MakeGeneForFeature(cds);
-    gene2->SetData().SetGene().SetLocus_tag("a2");
+    gene2->SetData().SetGene().SetLocus("a1");
+    gene2->SetData().SetGene().SetAllele("y");
     gene2->SetLocation().SetInt().SetTo(gene2->GetLocation().GetInt().GetTo() + 3);
     AddFeat(gene2, nuc);
 
@@ -17426,23 +17444,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IdenticalGeneSymbolAndSynonym)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NeedsNote)
-{
-    CRef<CSeq_entry> entry = BuildGoodSeq();
-    CRef<CSeq_feat> misc = AddMiscFeature(entry);
-    misc->ResetComment();
-
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NeedsNote",
-                              "A note is required for a misc_feature"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PartialProblem)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
@@ -17629,6 +17630,75 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NeedsNote)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->ResetComment();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NeedsNote",
+                              "A note or other qualifier is required for a misc_feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RptUnitRangeProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetData().SetImp().SetKey("repeat_region");
+    CRef<CGb_qual> qual(new CGb_qual());
+    qual->SetQual("rpt_unit_range");
+    qual->SetVal("1..70");
+    misc->SetQual().push_back(qual);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "RptUnitRangeProblem",
+                              "/rpt_unit_range is not within sequence length"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TooManyInferenceAccessions)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    for (int i = 0; i < 50; i++) {
+        CRef<CSeq_feat> misc = AddMiscFeature(entry, i + 10);
+        for (int j = 0; j < 10; j++) {
+            CRef<CGb_qual> qual(new CGb_qual());
+            qual->SetQual("inference");
+            string val = "similar to DNA sequence:";
+            for (int k = 0; k < 10; k++) {
+                val += "INSD:AY" + NStr::IntToString (k + j * 100 + 123400) + ".1";
+                if (k < 9) {
+                    val += ",";
+                }
+            }
+            qual->SetVal(val);
+            misc->SetQual().push_back(qual);
+        }
+    }
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "TooManyInferenceAccessions",
+                              "Skipping validation of 500 /inference qualifiers with 5000 accessions"));
+    eval = validator.Validate(seh, options | CValidator::eVal_inference_accns);
+    CheckErrors (*eval, expected_errors);
+
     CLEAR_ERRORS
 }
 

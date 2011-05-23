@@ -1295,6 +1295,42 @@ bool CValidError_imp::Validate
             *m_TSE);
     }
 
+    // count inference accessions - if there are too many, temporarily disable inference checking
+    bool old_inference_acc_check = m_ValidateInferenceAccessions;
+    if (m_ValidateInferenceAccessions) {
+        size_t num_inferences = 0, num_accessions = 0;
+        CFeat_CI feat_inf(seh);
+        while (feat_inf) {
+            FOR_EACH_GBQUAL_ON_FEATURE (qual, *feat_inf) {
+                if ((*qual)->IsSetQual() && (*qual)->IsSetVal() && NStr::Equal((*qual)->GetQual(), "inference")) {
+                    num_inferences++;
+                    string prefix, remainder;
+                    bool same_species;
+                    vector<string> accessions = CValidError_feat::GetAccessionsFromInferenceString ((*qual)->GetVal(), prefix, remainder, same_species);
+                    for (size_t i = 0; i < accessions.size(); i++) {
+                        NStr::TruncateSpacesInPlace (accessions[i]);
+                        string acc_prefix, accession;
+                        if (CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (remainder, acc_prefix, accession)) {
+                            if (NStr::EqualNocase (acc_prefix, "INSD") || NStr::EqualNocase (acc_prefix, "RefSeq")) {
+                                num_accessions++;
+                            }
+                        }
+                    }
+                }
+            }
+            ++feat_inf;
+        }
+        if (num_inferences > 1000 || num_accessions > 1000) {
+            // warn about too many inferences
+            PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
+                     "Skipping validation of " + NStr::IntToString (num_inferences) + " /inference qualifiers with "
+                     + NStr::IntToString (num_accessions) + " accessions",
+                     *m_TSE);
+
+            // disable inference checking
+            m_ValidateInferenceAccessions = false;
+        }
+    }
 
     // validate the main data
     if (seh.IsSeq()) {
@@ -1321,6 +1357,8 @@ bool CValidError_imp::Validate
         }
     }
 
+    // put flag for validating inference accessions back to original value
+    m_ValidateInferenceAccessions = old_inference_acc_check;
 
     // validation from data collected during previous step
     

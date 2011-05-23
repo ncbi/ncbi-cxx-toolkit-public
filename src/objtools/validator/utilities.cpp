@@ -155,13 +155,20 @@ string GetSequenceStringFromLoc
     CFastaOstream fasta_ostr(oss);
     fasta_ostr.SetFlag(CFastaOstream::fAssembleParts);
     fasta_ostr.SetFlag(CFastaOstream::fInstantiateGaps);
-    for (CSeq_loc_CI citer (loc); citer; ++citer) {
-        const CSeq_loc& part = citer.GetEmbeddingSeq_loc();
-        CBioseq_Handle bsh = scope.GetBioseqHandle(part);
-        fasta_ostr.WriteSequence (bsh, &part);
+    string s;
+
+    try {
+        for (CSeq_loc_CI citer (loc); citer; ++citer) {
+            const CSeq_loc& part = citer.GetEmbeddingSeq_loc();
+            CBioseq_Handle bsh = scope.GetBioseqHandle(part);
+            fasta_ostr.WriteSequence (bsh, &part);
+        }
+        s = CNcbiOstrstreamToString(oss);
+        NStr::ReplaceInPlace(s, "\n", "");
+    } catch (CException&) {
+        s = kEmptyStr;
     }
-    string s = CNcbiOstrstreamToString(oss);
-    NStr::ReplaceInPlace(s, "\n", "");
+
     return s;
 }
 

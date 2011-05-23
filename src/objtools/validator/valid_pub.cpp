@@ -256,6 +256,20 @@ void CValidError_imp::ValidatePubdesc
 }
 
 
+static bool s_CitGenIsJustBackBoneIDNumber (const CCit_gen& gen)
+{
+    if (gen.IsSetCit() 
+        && NStr::StartsWith (gen.GetCit(), "BackBone id_pub = ") 
+        && !gen.IsSetJournal() 
+        && !gen.IsSetDate() 
+        && !gen.IsSetSerial_number()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CValidError_imp::ValidatePubGen
 (const CCit_gen& gen,
  const CSerialObject& obj,
@@ -264,6 +278,11 @@ void CValidError_imp::ValidatePubGen
     bool is_unpub = false;
     if ( gen.IsSetCit()  &&  !gen.GetCit().empty() ) {
         const string& cit = gen.GetCit();
+        // skip if just BackBone id number
+        if (s_CitGenIsJustBackBoneIDNumber(gen)) {
+            return;
+        }
+
         if (NStr::StartsWith (cit, "submitted", NStr::eNocase)
             || NStr::StartsWith (cit, "unpublished", NStr::eNocase)
             || NStr::StartsWith (cit, "Online Publication", NStr::eNocase)
@@ -652,6 +671,8 @@ void CValidError_imp::ValidatePubHasAuthor
                     && pub.GetGen().IsSetSerial_number()
                     && pub.GetGen().GetSerial_number() > -1) {
                     // skip
+                } else if (s_CitGenIsJustBackBoneIDNumber(pub.GetGen())) {
+                    // just BackBoneID, skip
                 } else {
                     has_name = false;
                     if ( pub.GetGen().IsSetAuthors() 
