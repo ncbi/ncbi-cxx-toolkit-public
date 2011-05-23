@@ -2165,21 +2165,30 @@ ExtractBlast4Request(CNcbiIstream& in)
     return retval;
 }
 //
-//
+// based on a new request 
 //
 string CRemoteBlast::GetTitle(void)
 {
     string return_title;
+    bool l_unknown_search = true;
     
     // Build the request
-    
+    CRef<CBlast4_get_search_info_request> info_request( new CBlast4_get_search_info_request );
+
+    info_request->ResetRequest_id();
+    info_request->SetRequest_id( m_RID );
+
+    CRef< CBlast4_parameter > one_param( new CBlast4_parameter());
+    one_param->SetName( "search" );
+    one_param->SetValue().SetString( "title" );
+
+    info_request->ResetInfo();
+    info_request->SetInfo().Set().push_back( one_param ); 
+
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_search_info( *info_request );
+
     CRef<CBlast4_request> request(new CBlast4_request);
-    if ( !m_ClientId.empty() ) {
-        request->SetIdent(m_ClientId);
-    }
-    
-    body->SetGet_request_info().SetRequest_id(m_RID);
     request->SetBody(*body);
     
     CRef<CBlast4_reply> reply(new CBlast4_reply);
@@ -2210,27 +2219,43 @@ string CRemoteBlast::GetTitle(void)
     if (eDebug == m_Verbose) {
         NcbiCout << MSerial_AsnText << *reply << endl;
     }
-   
-
+  
+    // get reply. it will be status and title if set
     if (reply->CanGetBody()) {
-        if (reply->GetBody().IsGet_request_info()) {
-
-            CRef<CBlast4_get_request_info_reply> grir
-                (& reply->SetBody().SetGet_request_info());
-
-	    if( grir->IsSetFormat_options() ){
-		// CRef<objects::CBlast4_parameters>
-		const CBlast4_parameters &params = grir->GetFormat_options();
-		CRef< CBlast4_parameter > search_param = params.GetParamByName("search-title" );
-		if( search_param.NotEmpty() ){
-		   if( search_param->GetValue().IsString() ){
+       if (reply->GetBody().IsGet_search_info()) {
+         const CBlast4_get_search_info_reply &info_reply = 
+		reply->GetBody().GetGet_search_info();
+	 if( info_reply.CanGetRequest_id() && 
+	     ( info_reply.GetRequest_id() == m_RID ) ){
+	     if( info_reply.CanGetInfo() ){
+	       const CBlast4_parameters &params = info_reply.GetInfo();
+	       // get title first
+	       {
+	          CRef< CBlast4_parameter > search_param = 
+			  params.GetParamByName ( "search-title" );
+		  if( search_param.NotEmpty() && search_param->GetValue().IsString())
+		  {
 		      return_title = search_param->GetValue().GetString();
-		   }
-	        }
-	     }
-        }
-    }
+		  }
 
+	       }
+	       // get search status if no title
+	       {
+	          CRef< CBlast4_parameter > search_param = 
+			  params.GetParamByName ( "search-status" );
+		  if( search_param.NotEmpty() && search_param->GetValue().IsString())
+		  {
+		      string search_status = search_param->GetValue().GetString();
+		      if( NStr::CompareNocase(search_status,"UNKNOWN" ) ){
+			l_unknown_search = false;
+		      }
+		  }
+
+	       }
+	    } // get info
+        } // request id == m_RID
+    } // search info reply
+  } // get body
 
     return return_title;
 }

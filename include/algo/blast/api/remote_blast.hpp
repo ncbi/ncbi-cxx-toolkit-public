@@ -455,7 +455,6 @@ public:
     /// Loads next chunk of archive from file.
     bool LoadFromArchive();
     /// Get the title assigned for this search. 
-    /// 
     string GetTitle(void);
     
 private:
