@@ -99,10 +99,9 @@ public:
     };
     typedef int TOpFlags;
 
-
     CRef<CVariation> AsVariation(const string& hgvs_expression, TOpFlags = fOpFlags_Default);
-    string AsHgvsExpression(const CVariation& variation);
-    string AsHgvsExpression(const CSeq_loc& loc);
+
+    string AsHgvsExpression(const CVariation& variation,  const CSeq_id* seq_id = NULL);
     string AsHgvsExpression(const CVariantPlacement& p);
 
     CScope& SetScope()
@@ -142,6 +141,7 @@ public:
 
 protected:
 
+    //integer with associated fuzz
     struct SFuzzyInt
     {
         SFuzzyInt()
@@ -171,6 +171,7 @@ protected:
         CRef<CInt_fuzz> fuzz; //can be null;
     };
 
+    //an hgvs-offset-point (used for pointing into introns from cDNA coordinates, as in NM_1234.5:c.100+10A>G
     struct SOffsetPoint
     {
         SOffsetPoint()
@@ -206,53 +207,11 @@ protected:
         SFuzzyInt offset;
     };
 
-#if 0
-    struct SOffsetLoc
-    {
-        SOffsetLoc()
-        {
-            Reset();
-        }
-
-        void Reset()
-        {
-            loc.Reset();
-            start_offset.Reset();
-            stop_offset.Reset();
-        }
-
-        void Assign(const SOffsetLoc& other)
-        {
-            start_offset.Assign(other.start_offset);
-            stop_offset.Assign(other.stop_offset);
-            if(!other.loc) {
-                loc.Reset();
-            } else {
-                if(!loc) {
-                    loc.Reset(new CSeq_loc);
-                }
-                loc->Assign(*other.loc);
-            }
-        }
-
-        bool IsOffset() const
-        {
-            return start_offset.value || start_offset.value || stop_offset.fuzz || stop_offset.fuzz;
-        }
-
-        TSeqPos GetLength() const;
-
-        string asserted_sequence;
-        CRef<CSeq_loc> loc;
-        SFuzzyInt start_offset;
-        SFuzzyInt stop_offset;
-    };
-#endif
 
     /*!
-     * CContext encapsulates sequence or location context for an hgvs sub-expression.
-     * E.g. given an expression id:c.5_10delinsAT, when creating a variation-ref
-     * for delinsAT the context will refer to sequence "id" and location "5_10"
+     * CContext encapsulates parsed sequence or location context for an hgvs sub-expression.
+     * E.g. given an expression NM_12345.6:c.5_10delinsAT, when creating a variation-ref
+     * for delinsAT the context will refer to sequence "NM_12345.6" and location "5_10"
      */
     class CContext
     {
@@ -268,21 +227,10 @@ protected:
             *this = other; //shallow copy will suffice.
         }
 
-        enum EMolType {
-            eMol_not_set,
-            eMol_g,
-            eMol_c,
-            eMol_r,
-            eMol_p,
-            eMol_mt
-        };
-
         void Clear()
         {
             m_bsh.Reset();
-            m_mol_type = eMol_not_set;
             m_cds.Reset();
-            m_seq_id.Reset();
             m_placement.Reset();
         }
 
@@ -296,7 +244,7 @@ protected:
          * If the sequence is cdna and we're working with "c." coordinates,
          * also find the CDS, as the coordinates are (start|stop)codon-relative.
          */
-        void SetId(const CSeq_id& id, EMolType mol_type);
+        void SetId(const CSeq_id& id, CVariantPlacement::TMol mol);
 
         const CSeq_id& GetId() const;
 
@@ -325,14 +273,9 @@ protected:
 
         const CSeq_feat& GetCDS() const;
 
-        EMolType GetMolType(bool check=true) const;
-
     private:
         CBioseq_Handle m_bsh;
-        EMolType m_mol_type;
         CRef<CSeq_feat> m_cds;
-
-        CRef<CSeq_id> m_seq_id;
         CRef<CVariantPlacement> m_placement;
         mutable CRef<CScope> m_scope;
     };
@@ -512,6 +455,15 @@ protected:
 
             definition(SGrammar const&)
             {
+                //note: "!X" operator in the parser spec means X node is optional
+                //      "A >> B" means match A followed by B
+                //      "A | B" means try to match A; if failed, try B
+                //      "+A" means match A consecutively one or more times
+                //      "A - B" means match on A except when it also matches B
+                //      discard_node_d[...] is a directive to discard irrelevant parts of expression from the parse-tree
+                //      leaf_node_d[...] is a directive to treat pattern in ... as leaf parse-tree node.
+
+
                 aminoacid       = str_p("Ala")
                                 | str_p("Asx")
                                 | str_p("Cys")
@@ -534,12 +486,13 @@ protected:
                                 | str_p("Trp")
                                 | str_p("Tyr")
                                 | str_p("Glx")
-                                | chset<>("XARNDCEQGHILKMFPSTWYV") //"X" as in p.X110GlnextX17
+                                | chset<>("XARNDCEQGHILKMFPSTWYV")
                                 ;
+                    //Note: in HGVS X=stop as in p.X110GlnextX17, whereas in IUPAC X=any
 
                 raw_seq         = leaf_node_d[+aminoacid | +chset<>("ACGTN") | +chset<>("acgun")];
                     /*
-                     * Note: there's no separation between protein, DNA and RNA sequences, as
+                     * Note: there's no distinction between protein, DNA and RNA sequences, as
                      * at the parse time it is not known without context which sequence it is - i.e.
                      * "AC" could be a dna sequence, or AlaCys. Hence, raw_seq will match any sequence
                      * and at the parse-tree transformation stage we'll create proper seq-type as
@@ -563,7 +516,7 @@ protected:
 
                 general_pos     = (str_p("IVS") >> int_p | abs_pos) >> sign_p >> int_fuzz
                                 | abs_pos;
-                    //Warning: offset-pos must be followed by a sign because otherwise
+                    //Note: offset-pos must be followed by a sign because otherwise
                     //it is ambiguous whether c.123(1_2) denotes a SSR or a fuzzy intronic location
 
 
@@ -800,12 +753,45 @@ private:
     ///Convert non-HGVS compliant all-uppercase AAs to UpLow, e.g. ILECYS ->IleCys
     static string s_hgvsUCaa2hgvsUL(const string& hgvsaa);
 
+    static void s_SetStartOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint);
+    static void s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint);
+
 private:
-    //functions to create hgvs expression from a variation-ref
+    //functions to create hgvs expression from a variation
 
-    /// variatino must have seq-loc specified
-    string x_AsHgvsExpression(const CVariation& variation, bool is_top_level);
+    //if no atg_pos, assume that not dealing with coordinate systems (simply return abs-pos)
+    //otherwise, convert to hgvs coordinates:
+    //  adjust by 1, adjust relative to atg_pos, and adjust by -1 if nonpositive.
+    static long s_GetHgvsPos(long abs_pos, const TSeqPos* atg_pos);
 
+    //this function may be used to create hgvs-coordinates (if ref_pos is not null), or
+    //to create a fuzzy hgvs-number specification (e.g. for multipliers, or fuzzy offset values), where pos is not adjusted
+    //(Note that pos may be negative, e.g. for offset value)
+    static string s_IntWithFuzzToStr(long pos, const TSeqPos* ref_pos, bool with_sign, const CInt_fuzz* fuzz);
+
+    static string s_GetHgvsSeqId(const CVariantPlacement& vp);
+    string x_GetHgvsLoc(const CVariantPlacement& vp);
+
+    static string s_OffsetPointToString(
+            TSeqPos anchor_pos,
+            const CInt_fuzz* anchor_fuzz,
+            TSeqPos anchor_ref_pos,
+            const long* offset_pos,
+            const CInt_fuzz* offset_fuzz);
+
+    string x_AsHgvsInstExpression(
+            const CVariation_inst& inst,
+            const CVariantPlacement* p,
+            const CSeq_literal* asserted_seq);
+
+    string CHgvsParser::x_AsHgvsExpression(
+            const CVariation& variation,
+            const CSeq_id* id,
+            const CSeq_literal* asserted_seq);
+
+    CRef<CVariantPlacement> x_AdjustPlacementForHgvs(const CVariantPlacement& p, const CVariation_inst& inst);
+
+    CRef<CSeq_literal> x_FindAssertedSequence(const CVariation& v);
 
     //Calculate the length of the inst, multipliers taken into account.
     TSeqPos x_GetInstLength(const CVariation_inst& inst, const CSeq_loc& this_loc);
@@ -814,31 +800,9 @@ private:
 
     string x_LocToSeqStr(const CSeq_loc& loc);
 
-    /*
-     * Convert a loc to hgvs representation.
-     *
-     *
-     * if alignment is provided (spliced-seg), then it is assumed that loc is the
-     * genomic loc but the output should be represented in cdna context.
-     */
-    string x_SeqLocToStr(const CSeq_loc& loc, bool with_header);
+    string x_SeqLiteralToStr(const CSeq_literal& literal);
 
-    // force-map: remap via alignment
-    string x_SeqPntToStr(const CSeq_point& pnt, TSeqPos first_pos);
 
-    /// Convert seq-id to HGVS seq-id header, e.g. "NM_123456.7:c." or "NG_123456.7:p"
-    string x_SeqIdToHgvsHeader(const CSeq_id& id);
-
-    string x_IntWithFuzzToStr(int value, const CInt_fuzz* fuzz = NULL);
-
-    //string Delta_itemToStr(const CDelta_item& delta, bool flip_strand);
-
-    string x_SeqLiteralToStr(const CSeq_literal& literal, bool flip_strand);
-
-    static CRef<CVariation> s_ProtToCdna(const CVariation& vr, CScope& scope);
-
-    static void s_SetStartOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint);
-    static void s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint);
 
 private:
     CRef<CScope> m_scope;

@@ -140,13 +140,27 @@ int CHgvs2variationApplication::Run(void)
          if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
              continue;
          }
+         string hgvs_expr, comment;
+         NStr::SplitInTwo(line_str, "#", hgvs_expr, comment);
 
-         NStr::TruncateSpacesInPlace(line_str);
-         CRef<CVariation> v = parser->AsVariation(line_str);
+         NStr::TruncateSpacesInPlace(hgvs_expr);
+         NStr::TruncateSpacesInPlace(comment);
+
+         CRef<CVariation> v = parser->AsVariation(hgvs_expr);
+         v->SetDescription(comment);
 
          for(CTypeIterator<CVariantPlacement> it(Begin(*v)); it; ++it) {
              variation_util->AttachSeq(*it);
+             try {
+                 it->SetComment(parser->AsHgvsExpression(*it));
+             } catch (CException& e) {
+                 NCBI_REPORT_EXCEPTION("Can't compute hgvs expression", e);
+             }
          }
+
+         string computed_hgvs = parser->AsHgvsExpression(*v);
+
+         v->SetDescription() += "| Computed HGVS: " + computed_hgvs;
 
          if(args["loc_prop"]) {
              variation_util->SetVariantProperties(*v);

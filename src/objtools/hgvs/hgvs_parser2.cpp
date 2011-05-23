@@ -101,22 +101,6 @@ TSeqPos GetLength(const CVariantPlacement& p)
         - (p.IsSetStart_offset() ? p.GetStart_offset() : 0);
 }
 
-#if 0
-void ExtendDownstream(CVariantPlacement& p, TSeqPos len)
-{
-    if(p.IsSetStop_offset()) {
-        p.SetStop_offset() += len;
-    } else {
-        p.SetLoc().Assign(*sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL));
-        if(p.GetLoc().IsSetStrand() && p.GetLoc().GetStrand() == eNa_strand_minus) {
-            p.SetLoc().SetInt().SetFrom() -= len;
-        } else {
-            p.SetLoc().SetInt().SetTo() += len;
-        }
-    }
-}
-#endif
-
 
 bool SeqsMatch(const string& query, const char* text)
 {
@@ -139,7 +123,8 @@ CRef<CSeq_loc> FindSSRLoc(const CSeq_loc& loc, const string& seq, CScope& scope)
     //overlaps the original.
 
     const TSeqPos ext_interval = 10000;
-    CRef<CSeq_loc> loc1 = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, &scope);
+
+    CRef<CSeq_loc> loc1 = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     TSeqPos seq_len = bsh.GetInst_Length();
     loc1->SetInt().SetFrom() -= min(ext_interval, loc1->GetInt().GetFrom());
@@ -167,19 +152,19 @@ CRef<CSeq_loc> FindSSRLoc(const CSeq_loc& loc, const string& seq, CScope& scope)
         }
     }
 
-    CRef<CSeq_loc> merged_repeats = sequence::Seq_loc_Merge(*container, CSeq_loc::fSortAndMerge_All, &scope);
+    CRef<CSeq_loc> merged_repeats = sequence::Seq_loc_Merge(*container, CSeq_loc::fSortAndMerge_All, NULL);
     merged_repeats->ChangeToMix();
     CRef<CSeq_loc> result(new CSeq_loc(CSeq_loc::e_Null));
     result->Assign(loc);
 
     for(CSeq_loc_CI ci(*merged_repeats); ci; ++ci) {
         const CSeq_loc& loc2 = ci.GetEmbeddingSeq_loc();
-        if(sequence::Compare(loc, loc2, &scope) != sequence::eNoOverlap) {
+        if(sequence::Compare(loc, loc2, NULL) != sequence::eNoOverlap) {
             result->Add(loc2);
         }
     }
 
-    return sequence::Seq_loc_Merge(*result, CSeq_loc::fSortAndMerge_All, &scope);
+    return sequence::Seq_loc_Merge(*result, CSeq_loc::fSortAndMerge_All, NULL);
 }
 
 
@@ -189,7 +174,7 @@ void CHgvsParser::s_SetStartOffset(CVariantPlacement& p, const CHgvsParser::SFuz
 {
     p.ResetStart_offset();
     p.ResetStart_offset_fuzz();
-    if(fint.value) {
+    if(fint.value || fint.fuzz) {
         p.SetStart_offset(fint.value);
     }
     if(fint.fuzz) {
@@ -201,7 +186,7 @@ void CHgvsParser::s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzz
 {
     p.ResetStop_offset();
     p.ResetStop_offset_fuzz();
-    if(fint.value) {
+    if(fint.value || fint.fuzz) {
         p.SetStop_offset(fint.value);
     }
     if(fint.fuzz) {
@@ -243,13 +228,6 @@ void RepackageAssertedSequence(CVariation& vr)
 }
 
 
-const CSeq_id& CHgvsParser::CContext::GetId() const
-{
-    if(m_seq_id.IsNull()) {
-        HGVS_THROW(eContext, "No seq-id in context");
-    }
-    return *m_seq_id;
-}
 
 const CSeq_feat& CHgvsParser::CContext::GetCDS() const
 {
@@ -259,31 +237,26 @@ const CSeq_feat& CHgvsParser::CContext::GetCDS() const
     return *m_cds;
 }
 
-CHgvsParser::CContext::EMolType CHgvsParser::CContext::GetMolType(bool check) const
+const CSeq_id& CHgvsParser::CContext::GetId() const
 {
-    if(check && m_mol_type == eMol_not_set) {
-        HGVS_THROW(eContext, "No sequence in context");
-    }
-    return m_mol_type;
+    return sequence::GetId(GetPlacement().GetLoc(), NULL);
 }
 
-void CHgvsParser::CContext::SetId(const CSeq_id& id, EMolType mol_type)
+
+void CHgvsParser::CContext::SetId(const CSeq_id& id, CVariantPlacement::TMol mol)
 {
     Clear();
 
-    m_mol_type = mol_type;
-    if(m_seq_id.IsNull()) {
-        m_seq_id.Reset(new CSeq_id);
-    }
-    m_seq_id->Assign(id);
+    SetPlacement().SetMol(mol);
+    SetPlacement().SetLoc().SetWhole().Assign(id);
 
-    m_bsh = m_scope->GetBioseqHandle(*m_seq_id);
+    m_bsh = m_scope->GetBioseqHandle(id);
 
     if(!m_bsh) {
         HGVS_THROW(eContext, "Cannnot get bioseq for seq-id " + id.AsFastaString());
     }
 
-    if(mol_type == eMol_c) {
+    if(mol == CVariantPlacement::eMol_cdna) {
         for(CFeat_CI ci(m_bsh); ci; ++ci) {
             const CMappedFeat& mf = *ci;
             if(mf.GetData().IsCdregion()) {
@@ -300,6 +273,7 @@ void CHgvsParser::CContext::SetId(const CSeq_id& id, EMolType mol_type)
         }
     }
 }
+
 
 const string& CHgvsParser::SGrammar::s_GetRuleName(boost::spirit::classic::parser_id id)
 {
@@ -367,6 +341,16 @@ CHgvsParser::SFuzzyInt CHgvsParser::x_int_fuzz(TIterator const& i, const CContex
     CHgvsParser::SFuzzyInt fuzzy_int;
     fuzzy_int.value = value;
     fuzzy_int.fuzz = fuzz;
+
+#if 0
+    NcbiCerr << "Fuzzy int: " << value << " ";
+    if(fuzz) {
+        NcbiCerr << MSerial_AsnText << *fuzz;
+    } else {
+        NcbiCerr << "\n";
+    }
+#endif
+
     return fuzzy_int;
 }
 
@@ -387,14 +371,14 @@ CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& cont
         if(s != "*") {
             HGVS_THROW(eGrammatic, "Expected literal '*'");
         }
-        if(context.GetMolType() != CContext::eMol_c) {
+        if(context.GetPlacement().GetMol() != CVariantPlacement::eMol_cdna) {
             HGVS_THROW(eContext, "Expected 'c.' context for stop-codon-relative coordinate");
         }
 
         offset = context.GetCDS().GetLocation().GetStop(eExtreme_Biological);
         ++it;
     } else {
-        if (context.GetMolType() == CContext::eMol_c) {
+        if (context.GetPlacement().GetMol() == CVariantPlacement::eMol_cdna) {
             //Note: in RNA coordinates (r.) the coordinates are absolute, like in genomic sequences,
             //  "The RNA sequence type uses only GenBank mRNA records. The value 1 is assigned to the first
             //  base in the record and from there all bases are counted normally."
@@ -629,14 +613,14 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
 
     TIterator it = i->children.rbegin()->children.begin();
     string mol(it->value.begin(), it->value.end());
-    CContext::EMolType mol_type =
-                       mol == "c" ? CContext::eMol_c
-                     : mol == "g" ? CContext::eMol_g
-                     : mol == "r" ? CContext::eMol_r
-                     : mol == "p" ? CContext::eMol_p
-                     : mol == "m" ? CContext::eMol_mt
-                     : mol == "mt" ? CContext::eMol_mt
-                     : CContext::eMol_not_set;
+    CVariantPlacement::TMol mol_type =
+                       mol == "c" ? CVariantPlacement::eMol_cdna
+                     : mol == "g" ? CVariantPlacement::eMol_genomic
+                     : mol == "r" ? CVariantPlacement::eMol_rna
+                     : mol == "p" ? CVariantPlacement::eMol_protein
+                     : mol == "m" ? CVariantPlacement::eMol_mitochondrion
+                     : mol == "mt" ? CVariantPlacement::eMol_mitochondrion
+                     : CVariantPlacement::eMol_unknown;
 
     it  = (i->children.rbegin() + 1)->children.begin();
     string id_str(it->value.begin(), it->value.end());
@@ -692,7 +676,7 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_prot_pos(TIterator const& i, const CCon
 
     CRef<CSeq_literal> prot_literal = x_raw_seq(it, context);
 
-    if(context.GetMolType() != CContext::eMol_p) {
+    if(context.GetPlacement().GetMol() != CVariantPlacement::eMol_protein) {
         HGVS_THROW(eSemantic, "Expected protein context");
     }
 
@@ -724,6 +708,7 @@ CRef<CVariantPlacement> CHgvsParser::x_range(TIterator const& i, const CContext&
     SOffsetPoint pnt1, pnt2;
 
     CRef<CVariantPlacement> p(new CVariantPlacement);
+    p->Assign(context.GetPlacement());
 
     if(i->value.id() == SGrammar::eID_prot_range) {
         pnt1 = x_prot_pos(i->children.begin(), context);
@@ -758,8 +743,9 @@ CRef<CVariantPlacement> CHgvsParser::x_range(TIterator const& i, const CContext&
     s_SetStopOffset(*p, pnt2.offset);
 
     if(pnt1.asserted_sequence != "" || pnt2.asserted_sequence != "") {
+        //for proteins, the asserted sequence is specified as part of location, rather than variation
         p->SetSeq().SetLength(GetLength(*p));
-        string& seq_str = (context.GetMolType() == CContext::eMol_p)
+        string& seq_str = (context.GetPlacement().GetMol() == CVariantPlacement::eMol_protein)
                 ? p->SetSeq().SetSeq_data().SetNcbieaa().Set()
                 : p->SetSeq().SetSeq_data().SetIupacna().Set();
         seq_str = pnt1.asserted_sequence + ".." + pnt2.asserted_sequence;
@@ -773,6 +759,7 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
     HGVS_ASSERT_RULE(i, eID_location);
 
     CRef<CVariantPlacement> placement(new CVariantPlacement);
+    placement->Assign(context.GetPlacement());
 
     TIterator it = i->children.begin();
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -784,7 +771,7 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
         s_SetStartOffset(*placement, pnt.offset);
         if(pnt.asserted_sequence != "") {
             placement->SetSeq().SetLength(GetLength(*placement));
-            string& seq_str = (context.GetMolType() == CContext::eMol_p)
+            string& seq_str = (context.GetPlacement().GetMol() == CVariantPlacement::eMol_protein)
                     ? placement->SetSeq().SetSeq_data().SetNcbieaa().Set()
                     : placement->SetSeq().SetSeq_data().SetIupacna().Set();
             seq_str = pnt.asserted_sequence;
@@ -799,20 +786,9 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
         placement->SetLoc().SetEmpty().Assign(context.GetId());
     }
 
-    if(context.GetMolType() == CContext::eMol_c || context.GetMolType() == CContext::eMol_r) {
-        placement->SetMol(CVariantPlacement::eMol_rna);
-    } else if(context.GetMolType() == CContext::eMol_g) {
-        placement->SetMol(CVariantPlacement::eMol_genomic);
-    } else if(context.GetMolType() == CContext::eMol_mt) {
-        placement->SetMol(CVariantPlacement::eMol_mitochondrion);
-    } else if(context.GetMolType() == CContext::eMol_p) {
-        placement->SetMol(CVariantPlacement::eMol_protein);
-    } else {
-        placement->SetMol(CVariantPlacement::eMol_unknown);
-    }
-
     return placement;
 }
+
 
 CRef<CSeq_loc> CHgvsParser::x_seq_loc(TIterator const& i, const CContext& context)
 {
@@ -944,11 +920,11 @@ CRef<CSeq_literal> CHgvsParser::x_raw_seq(TIterator const& i, const CContext& co
     string seq_str(it->value.begin(), it->value.end());
 
     CRef<CSeq_literal>literal(new CSeq_literal);
-    if(context.GetMolType() == CContext::eMol_p) {
+    if(context.GetPlacement().GetMol() == CVariantPlacement::eMol_protein) {
         seq_str = s_hgvsaa2ncbieaa(seq_str);
         literal->SetSeq_data().SetNcbieaa().Set(seq_str);
     } else {
-        if(context.GetMolType() == CContext::eMol_r) {
+        if(context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna) {
             seq_str = NStr::ToUpper(seq_str);
             NStr::ReplaceInPlace(seq_str, "U", "T");
         }
@@ -1188,9 +1164,6 @@ CRef<CVariation> CHgvsParser::x_ssr(TIterator const& i, const CContext& context)
     }
 #endif
 
-    if(!literal.IsNull()) {
-        SetFirstPlacement(*vr).SetSeq(*literal);
-    }
 
     if(it->value.id() == SGrammar::eID_ssr) { // list('['>>int_p>>']', '+') with '[',']','+' nodes discarded;
         //Note: see ssr grammar in the header for reasons why we have to match all alleles here
@@ -1203,7 +1176,11 @@ CRef<CVariation> CHgvsParser::x_ssr(TIterator const& i, const CContext& context)
             vr2->SetData().SetInstance().SetType(CVariation_inst::eType_microsatellite);
 
             TDelta delta(new TDelta::TObjectType);
-            delta->SetSeq().SetThis();
+            if(!literal.IsNull()) {
+                delta->SetSeq().SetLiteral().Assign(*literal);
+            } else {
+                delta->SetSeq().SetThis();
+            }
             delta->SetMultiplier(NStr::StringToInt(s1));
 
             vr2->SetData().SetInstance().SetDelta().push_back(delta);
@@ -1212,7 +1189,11 @@ CRef<CVariation> CHgvsParser::x_ssr(TIterator const& i, const CContext& context)
         vr = x_unwrap_iff_singleton(*vr);
     } else {
         TDelta delta(new TDelta::TObjectType);
-        delta->SetSeq().SetThis();
+        if(!literal.IsNull()) {
+            delta->SetSeq().SetLiteral().Assign(*literal);
+        } else {
+            delta->SetSeq().SetThis();
+        }
 
         SFuzzyInt int_fuzz = x_int_fuzz(it, context);
         delta->SetMultiplier(int_fuzz.value);
@@ -1274,7 +1255,7 @@ CRef<CVariation> CHgvsParser::x_prot_fs(TIterator const& i, const CContext& cont
     TIterator it = i->children.begin();
     CRef<CVariation> vr(new CVariation);
 
-    if(context.GetMolType() != context.eMol_p) {
+    if(context.GetPlacement().GetMol() != CVariantPlacement::eMol_protein) {
         HGVS_THROW(eContext, "Frameshift can only be specified in protein context");
     }
 
@@ -1300,7 +1281,7 @@ CRef<CVariation> CHgvsParser::x_prot_ext(TIterator const& i, const CContext& con
     HGVS_ASSERT_RULE(i, eID_prot_ext);
     TIterator it = i->children.begin();
 
-    if(context.GetMolType() != CContext::eMol_p) {
+    if(context.GetPlacement().GetMol() != CVariantPlacement::eMol_protein) {
         HGVS_THROW(eContext, "Expected protein context");
     }
 
@@ -1358,7 +1339,7 @@ CRef<CVariation> CHgvsParser::x_prot_missense(TIterator const& i, const CContext
     string seq_str(it2->value.begin(), it2->value.end());
     seq_str = s_hgvsaa2ncbieaa(seq_str);
 
-    if(context.GetMolType() != CContext::eMol_p) {
+    if(context.GetPlacement().GetMol() != CVariantPlacement::eMol_protein) {
         HGVS_THROW(eContext, "Expected protein context");
     }
 
@@ -1383,11 +1364,9 @@ CRef<CVariation> CHgvsParser::x_identity(const CContext& context)
     CVariation_inst& var_inst = vr->SetData().SetInstance();
     var_inst.SetType(CVariation_inst::eType_identity);
 
-    if(context.IsSetPlacement()) {
-        SetFirstPlacement(*vr).Assign(context.GetPlacement());
-    } else {
-        SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
-    }
+
+    SetFirstPlacement(*vr).Assign(context.GetPlacement());
+
 
     TDelta delta(new TDelta::TObjectType);
     delta->SetSeq().SetThis();
@@ -1592,7 +1571,7 @@ CRef<CVariation> CHgvsParser::x_list(TIterator const& i, const CContext& context
     } else if(delimiter == ",") { 
         //if the context is rna (r.) then this describes multiple products from the same precursor;
         //otherwise this describes mosaic cases
-        if(context.GetMolType(false)  == CContext::eMol_r) {
+        if(context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna) {
             //Note: GetMolType(check=false) because MolType may not eMol_not_set, as
             //there may not be a sequence in context, e.g.
             //[NM_004004.2:c.35delG,NM_006783.1:c.689_690insT]" - individual
@@ -1624,7 +1603,11 @@ CRef<CVariation> CHgvsParser::x_root(TIterator const& i, const CContext& context
 CRef<CVariation>  CHgvsParser::x_unwrap_iff_singleton(CVariation& v)
 {
     if(v.GetData().IsSet() && v.GetData().GetSet().GetVariations().size() == 1) {
-        return *v.SetData().SetSet().SetVariations().begin();
+        CRef<CVariation> first = v.SetData().SetSet().SetVariations().front();
+        if(!first->IsSetPlacements() && v.IsSetPlacements()) {
+            first->SetPlacements() = v.SetPlacements();
+        }
+        return first;
     } else {
         return CRef<CVariation>(&v);
     }
@@ -1647,7 +1630,8 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs_expression, TOpFlag
         } else {
             CContext context(m_scope);
             vr = x_root(info.trees.begin(), context);
-            SetFirstPlacement(*vr).SetHgvs_name(hgvs_expression);
+
+            vr->SetName(hgvs_expression);
         }
     } catch (CException& e) {
         if(flags && fOpFlags_RelaxedAA && NStr::Find(hgvs_expression, "p.")) {
@@ -1663,453 +1647,6 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs_expression, TOpFlag
     return vr;
 }
 
-
-string CHgvsParser::AsHgvsExpression(const CVariation& variation)
-{
-    HGVS_THROW(eLogic, "Not implemented");
-    string s = x_AsHgvsExpression(variation, true);
-    return s;
-}
-
-string CHgvsParser::x_AsHgvsExpression(const CVariation& variation, bool is_top_level)
-{
-    string outs("");
-
-    if(variation.GetData().IsSet()) {
-        const CVariation::TData::TSet& vset = variation.GetData().GetSet();
-        string delim_type =
-                vset.GetType() == CVariation::TData::TSet::eData_set_type_compound    ? ""
-              : vset.GetType() == CVariation::TData::TSet::eData_set_type_haplotype   ? ";"
-              : vset.GetType() == CVariation::TData::TSet::eData_set_type_products
-             || vset.GetType() == CVariation::TData::TSet::eData_set_type_mosaic      ? ","
-              : vset.GetType() == CVariation::TData::TSet::eData_set_type_alleles     ? "]+["
-              : vset.GetType() == CVariation::TData::TSet::eData_set_type_individual  ? "(+)"
-              : "](+)[";
-
-        outs = vset.GetType() == CVariation::TData::TSet::eData_set_type_compound ? "" : "[";
-        string delim = "";
-        ITERATE(CVariation::TData::TSet::TVariations, it, variation.GetData().GetSet().GetVariations()) {
-           outs += delim + x_AsHgvsExpression(**it, false);
-           delim = delim_type;
-        }
-        outs += vset.GetType() == CVariation::TData::TSet::eData_set_type_compound ? "" : "]";
-
-    } else {
-        //outs = x_InstToString();
-                //note: loc is the in/out parameter here
-    }
-
-#if 0
-    //todo: prepend location
-    if(variation.IsSetLocation() || is_top_level) {
-        string loc_str = x_SeqLocToStr(*loc, true);
-        outs = loc_str + outs;
-    }
-#endif
-
-    return outs;
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Methods and functions pertaining to converting variation to HGVS
-//
-///////////////////////////////////////////////////////////////////////////////
-
-#if 0
-string CHgvsParser::x_InstToString(const CVariation_inst& inst, CSeq_loc& loc)
-{
-    string out = "";
-
-    bool append_delta = false;
-    bool flipped_strand = false;
-
-    CRef<CSeq_loc> hgvs_loc(new CSeq_loc);
-    hgvs_loc->Assign(loc);
-    if(sequence::GetStrand(loc, NULL) == eNa_strand_minus) {
-        hgvs_loc->FlipStrand();
-        flipped_strand = true;
-    }
-
-
-    if(inst.GetType() == CVariation_inst::eType_identity) {
-        out = "=";
-    } else if(inst.GetType() == CVariation_inst::eType_inv) {
-        out = "inv";
-    } else if(inst.GetType() == CVariation_inst::eType_snv) {
-        out = x_LocToSeqStr(*hgvs_loc) + ">"; //on the +strand
-        append_delta = true;
-    } else if(inst.GetType() == CVariation_inst::eType_mnp
-              || inst.GetType() == CVariation_inst::eType_delins
-              || inst.GetType() == CVariation_inst::eType_transposon)
-    {
-        append_delta = true;
-    } else if(inst.GetType() == CVariation_inst::eType_del) {
-        out = "del";
-        size_t len = sequence::GetLength(loc, NULL);
-        if(len == 1) {
-            ; //...del
-        } else if(len < 10) {
-            //...delACGT
-            out += x_LocToSeqStr(*hgvs_loc);
-        } else {
-            //...del25
-            out += NStr::IntToString(len);
-        }
-    } else if(inst.GetType() == CVariation_inst::eType_ins) {
-        //If the insertion is this*2 then this is a dup
-        bool is_dup = false;
-        if(inst.GetDelta().size() == 1) {
-           const CDelta_item& delta = **inst.GetDelta().begin();
-           if(delta.GetSeq().IsThis() && delta.IsSetMultiplier() && delta.GetMultiplier() == 2) {
-               is_dup = true;
-           }
-        }
-
-        if(is_dup) {
-            out = "dup";
-        } else {
-            out = "ins";
-            append_delta = true;
-
-            //Whether the second nucleotide will be upstream or downsream of the loc will depend
-            //on whether the loc is on plus or minus strand, and where 'this' is in variation-ref.
-
-            if(inst.GetDelta().size() != 2) {
-                NCBI_THROW(CException, eUnknown, "Expected inst.delta to be of length 2");
-            } else {
-                bool ins_after = false;
-                if(inst.GetDelta().begin()->GetObject().GetSeq().IsThis()) {
-                    ins_after = true;
-                } else if(inst.GetDelta().rbegin()->GetObject().GetSeq().IsThis()) {
-                    ins_after = false;
-                } else {
-                    NCBI_THROW(CException, eUnknown, "In insertion, expected expected first or last element of delta to be 'this'");
-                }
-
-                if(sequence::GetStrand(loc, NULL) == eNa_strand_minus) {
-                    ins_after = !ins_after;
-                }
-
-                hgvs_loc->SetInt().SetId().Assign(sequence::GetId(loc, NULL));
-                hgvs_loc->SetInt().SetStrand(eNa_strand_plus);
-                if(ins_after) {
-                    hgvs_loc->SetInt().SetFrom(sequence::GetStop(loc, NULL, eExtreme_Positional));
-                    hgvs_loc->SetInt().SetTo(1 + sequence::GetStop(loc, NULL, eExtreme_Positional));
-                } else {
-                    hgvs_loc->SetInt().SetFrom(-1 + sequence::GetStart(loc, NULL, eExtreme_Positional));
-                    hgvs_loc->SetInt().SetTo(sequence::GetStart(loc, NULL, eExtreme_Positional));
-                }
-            }
-        }
-
-    } else if(inst.GetType() == CVariation_inst::eType_microsatellite) {
-        out = "";
-
-        // In HGVS land the location is not the whole repeat, as in variation-ref,
-        // but the first base of the repeat unit.
-
-        hgvs_loc.Reset(new CSeq_loc);
-        hgvs_loc->SetPnt().SetId().Assign(sequence::GetId(loc, NULL));
-        hgvs_loc->SetPnt().SetStrand(eNa_strand_plus);
-        hgvs_loc->SetPnt().SetPoint(sequence::GetStart(loc, NULL, eExtreme_Biological));
-
-        append_delta = true;
-    } else if(inst.GetType() == CVariation_inst::eType_prot_missense
-           || inst.GetType() == CVariation_inst::eType_prot_nonsense
-           || inst.GetType() == CVariation_inst::eType_prot_neutral)
-    {
-        append_delta = true;
-    } else if(inst.GetType() == CVariation_inst::eType_prot_silent) {
-        out = "=";
-    } else {
-        NCBI_THROW(CException, eUnknown, "Cannot process this type of variation-inst");
-    }
-
-
-    //append the deltas
-    ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
-        const CDelta_item& delta = **it;
-        if(delta.GetSeq().IsThis()) {
-
-            //"this" does not appear in HGVS nomenclature - we simply skip it as we
-            //have adjusted the location according to HGVS convention for insertinos
-            if(inst.GetType() == CVariation_inst::eType_ins && &delta == inst.GetDelta().begin()->GetPointer()) {
-                ; //only expecting this this is an isertion and this is the first element of delta
-            } else {
-                NCBI_THROW(CException, eUnknown, "'this-loc' is not expected here");
-            }
-
-        } else if(delta.GetSeq().IsLiteral()) {
-            out += x_SeqLiteralToStr(delta.GetSeq().GetLiteral(), flipped_strand);
-        } else if(delta.GetSeq().IsLoc()) {
-
-            CRef<CSeq_loc> delta_loc(new CSeq_loc());
-            delta_loc->Assign(delta.GetSeq().GetLoc());
-            if(flipped_strand) {
-                delta_loc->FlipStrand();
-            }
-
-            string delta_loc_str;
-            //the repeat-unit in microsattelite is always literal sequence:
-            //NG_011572.1:g.5658NG_011572.1:g.5658_5660(15_24)  - incorrect
-            //NG_011572.1:g.5658CAG(15_24) - correct
-            if(inst.GetType() != CVariation_inst::eType_microsatellite) {
-                delta_loc_str = x_SeqLocToStr(*delta_loc, true);
-            } else {
-                delta_loc_str = x_LocToSeqStr(*delta_loc);
-            }
-
-            out += delta_loc_str;
-
-        } else {
-            NCBI_THROW(CException, eUnknown, "Encountered unhandled delta class");
-        }
-
-        //add multiplier, but make sure we're dealing with SSR.
-        if(delta.IsSetMultiplier()) {
-            if(inst.GetType() == CVariation_inst::eType_microsatellite && !delta.GetSeq().IsThis()) {
-                string multiplier_str = x_IntWithFuzzToStr(
-                        delta.GetMultiplier(),
-                        delta.IsSetMultiplier_fuzz() ? &delta.GetMultiplier_fuzz() : NULL);
-
-                if(!NStr::StartsWith(multiplier_str, "(")) {
-                    multiplier_str = "[" + multiplier_str + "]";
-                    //In HGVS-land the fuzzy multiplier value existis as is, but an exact value
-                    //is enclosed in brackets a-la allele-set.
-                }
-
-                out += multiplier_str;
-            } else {
-                NCBI_THROW(CException, eUnknown, "Multiplier value is set in unexpected context (only STR supported)");
-            }
-        }
-    }
-
-    loc.Assign(*hgvs_loc);
-    return out;
-}
-#endif
-
-
-string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool flip_strand)
-{
-    string out("");
-
-    if(literal.IsSetSeq_data()) {
-        CRef<CSeq_data> sd(new CSeq_data);
-
-        sd->Assign(literal.GetSeq_data());
-        if(flip_strand) {
-            CSeqportUtil::ReverseComplement(*sd, sd, 0, literal.GetLength());
-        }
-
-        if(  sd->IsIupacna()
-          || sd->IsNcbi2na()
-          || sd->IsNcbi4na()
-          || sd->IsNcbi8na()
-          || sd->IsNcbipna())
-        {
-            CSeqportUtil::Convert(*sd, sd, CSeq_data::e_Iupacna, 0, literal.GetLength() );
-            out += sd->GetIupacna().Get();
-        } else if(sd->IsIupacaa()
-               || sd->IsNcbi8aa()
-               || sd->IsNcbieaa()
-               || sd->IsNcbipaa()
-               || sd->IsNcbistdaa())
-        {
-            CSeqportUtil::Convert(*sd, sd, CSeq_data::e_Iupacaa, 0, literal.GetLength() );
-            out += sd->GetIupacaa().Get();
-        }
-
-    } else {
-        string multiplier_str = x_IntWithFuzzToStr(
-                literal.GetLength(),
-                literal.IsSetFuzz() ? &literal.GetFuzz() : NULL);
-        out += multiplier_str;
-    }
-    return out;
-}
-
-
-string CHgvsParser::x_LocToSeqStr(const CSeq_loc& loc)
-{
-    CSeqVector v(loc, m_scope, CBioseq_Handle::eCoding_Iupac);
-    string seq_str;
-    v.GetSeqData(v.begin(), v.end(), seq_str);
-    return seq_str;
-}
-
-
-string CHgvsParser::x_SeqLocToStr(const CSeq_loc& loc, bool with_header)
-{
-    const CSeq_id& seq_id = sequence::GetId(loc, NULL);
-
-    string header = x_SeqIdToHgvsHeader(seq_id);
-
-    //for c.-based coordinates, calculate the first pos as start of CDS.
-    TSeqPos first_pos = 0;
-    if(NStr::EndsWith(header, ":c.")) {
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(seq_id);
-        for(CFeat_CI ci(bsh); ci; ++ci) {
-            const CMappedFeat& mf = *ci;
-            if(mf.GetData().IsCdregion()) {
-                first_pos = sequence::GetStart(mf.GetLocation(), NULL, eExtreme_Biological);
-            }
-        }
-    }
-
-    string loc_str = "";
-    if(loc.IsPnt()) {
-        loc_str = x_SeqPntToStr(loc.GetPnt(), first_pos);
-    } else {
-        CRef<CSeq_point> p_start(new CSeq_point);
-        p_start->SetPoint(sequence::GetStart(loc, NULL, eExtreme_Positional));
-        p_start->SetId().Assign(sequence::GetId(loc, NULL));
-        if(loc.IsInt() && loc.GetInt().IsSetFuzz_from()) {
-            p_start->SetFuzz().Assign(loc.GetInt().GetFuzz_from());
-        }
-        string s_start = x_SeqPntToStr(*p_start, first_pos);
-
-        CRef<CSeq_point> p_stop(new CSeq_point);
-        p_stop->SetPoint(sequence::GetStop(loc, NULL, eExtreme_Positional));
-        p_stop->SetId().Assign(sequence::GetId(loc, NULL));
-        if(loc.IsInt() && loc.GetInt().IsSetFuzz_to()) {
-            p_stop->SetFuzz().Assign(loc.GetInt().GetFuzz_to());
-        }
-        string s_stop = x_SeqPntToStr(*p_stop, first_pos);
-
-        loc_str = s_start + "_" + s_stop;
-    }
-
-    string out = (with_header ? header : "") + loc_str;
-
-    return out;
-}
-
-
-string CHgvsParser::x_SeqPntToStr(const CSeq_point& pnt, TSeqPos first_pos)
-{
-    CRef<CSeq_point> mapped_pnt;
-    long offset(numeric_limits<long>::max());
-
-    mapped_pnt.Reset(new CSeq_point);
-    mapped_pnt->Assign(pnt);
-
-
-    //convert to c. coordinates as necessary.
-    //remember that there's no position-zero in HGVS.
-    long point_pos = mapped_pnt->GetPoint() + 1; //hgvs absolute coordinates are 1-based.
-    point_pos -= first_pos;
-    if(point_pos <= 0) {
-        point_pos--;
-    }
-
-    string outs = NStr::IntToString(point_pos);
-    if(offset != numeric_limits<long>::max()) {
-        outs +=  NStr::IntToString(offset, NStr::fWithSign);
-    }
-
-    return outs;
-}
-
-string CHgvsParser::x_SeqIdToHgvsHeader(const CSeq_id& id)
-{
-    string moltype = "";
-    CBioseq_Handle bsh = m_scope->GetBioseqHandle(id);
-    if(bsh.GetInst_Mol() == CSeq_inst::eMol_aa) {
-        moltype = "p.";
-    } else if(bsh.GetInst_Mol() == CSeq_inst::eMol_rna) {
-        moltype = "c.";
-
-    } else {
-        moltype = "g.";
-        ITERATE(CSeq_descr::Tdata, it, bsh.GetTopLevelEntry().GetDescr().Get()) {
-            const CSeqdesc& desc = **it;
-            if(desc.IsSource()
-               && desc.GetSource().IsSetGenome()
-               && desc.GetSource().GetGenome() == CBioSource::eGenome_mitochondrion)
-            {
-                moltype = "mt.";
-            }
-        }
-    }
-
-    string accver = sequence::GetAccessionForId(id, *m_scope, sequence::eWithAccessionVersion);
-    return accver + ":" + moltype;
-}
-
-string CHgvsParser::x_IntWithFuzzToStr(int value, const CInt_fuzz* fuzz)
-{
-    string out = NStr::IntToString(value);
-
-    if(fuzz) {
-        if(fuzz->IsRange()) {
-            string from = NStr::IntToString(fuzz->GetRange().GetMin());
-            string to = NStr::IntToString(fuzz->GetRange().GetMax());
-            out = "(" + from + "_" + to + ")";
-        } else if(fuzz->IsLim()) {
-            if(fuzz->GetLim() == CInt_fuzz::eLim_gt || fuzz->GetLim() == CInt_fuzz::eLim_tr) {
-                out = "(" + out + "_?)";
-            } else if(fuzz->GetLim() == CInt_fuzz::eLim_lt || fuzz->GetLim() == CInt_fuzz::eLim_tl) {
-                out = "(?_" + out + ")";
-            } else {
-                out = "(" + out + ")";
-            }
-        }
-    }
-    return out;
-}
-
-
-TSeqPos CHgvsParser::x_GetInstLength(const CVariation_inst& inst, const CSeq_loc& this_loc)
-{
-    TSeqPos len(0);
-
-    ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
-        const CDelta_item& d = **it;
-        int multiplier = d.IsSetMultiplier() ? d.GetMultiplier() : 1;
-        TSeqPos d_len(0);
-        if(d.GetSeq().IsLiteral()) {
-            d_len = d.GetSeq().GetLiteral().GetLength();
-        } else if(d.GetSeq().IsThis()) {
-            d_len = sequence::GetLength(this_loc, m_scope);
-        } else if(d.GetSeq().IsLoc()) {
-            d_len = sequence::GetLength(d.GetSeq().GetLoc(), m_scope);
-        } else {
-            NCBI_THROW(CException, eUnknown, "Unhandled code");
-        }
-        len += d_len * multiplier;
-    }
-    return len;
-}
-
-string CHgvsParser::x_GetInstData(const CVariation_inst& inst, const CSeq_loc& this_loc)
-{
-    CNcbiOstrstream ostr;
-    ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
-        const CDelta_item& d = **it;
-        int multiplier = d.IsSetMultiplier() ? d.GetMultiplier() : 1;
-
-        string d_seq;
-        if(d.GetSeq().IsLiteral()) {
-            d_seq = x_SeqLiteralToStr(d.GetSeq().GetLiteral(), false);
-        } else if(d.GetSeq().IsThis()) {
-            d_seq = x_LocToSeqStr(this_loc);
-        } else if(d.GetSeq().IsLoc()) {
-            d_seq = x_LocToSeqStr(d.GetSeq().GetLoc());
-        } else {
-            HGVS_THROW(eLogic, "Unhandled");
-        }
-        for(int i = 0; i < multiplier; i++) {
-            ostr << d_seq;
-        }
-    }
-
-    return CNcbiOstrstreamToString(ostr);
-}
 
 };
 

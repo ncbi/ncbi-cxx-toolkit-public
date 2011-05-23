@@ -103,7 +103,7 @@ public:
 
 
     /// Find the CDSes for the first placement; Compute prot consequence using TranslateNAtoAA for each
-    /// and attach results to nuc_variation.consequnece. Set functional variant-properties on the nuc-variation.
+    /// and attach results to nuc_variation.consequnece.
     /// Note: Alternatively, the API could be "create and return consequence protein variation(s)", rather than attach,
     ///       but that for hierarchical input it would be hard to tell which consequence corresponds to which node.
     void AttachProteinConsequences(CVariation& nuc_variation);
