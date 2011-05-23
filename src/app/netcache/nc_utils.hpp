@@ -518,7 +518,7 @@ class CStdPoolOfThreads;
 struct INCBlockedOpListener
 {
     ///
-    static void BindToThreadPool(CThreadPool* pool);
+    static void BindToThreadPool(CStdPoolOfThreads* pool);
 
     ///
     virtual void OnBlockedOpFinish(void) = 0;

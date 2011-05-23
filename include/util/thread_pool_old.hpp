@@ -1093,7 +1093,14 @@ CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
         ERunMode mode = urgent && !new_thread ? 
                              TThread::eRunOnce :
                              TThread::eNormal;
-        NewThread(mode)->Run();
+        try {
+            NewThread(mode)->Run();
+        }
+        catch (CThreadException& ex) {
+            ERR_POST_XX(Util_Thread, 13,
+                        Critical << "Ignoring error while starting new thread: "
+                        << ex);
+        }
     }
 
     return handle;

@@ -103,9 +103,9 @@ SetSigHandlers()
 #endif
 
 
-static CThreadPool  writeThreadPool(1000000, 5);
-static CThreadPool  readThreadPool(1000000, 5);
-static CThreadPool  drThreadPool(1000000, 5);
+static CStdPoolOfThreads  writeThreadPool(1000000, 5);
+static CStdPoolOfThreads  readThreadPool(1000000, 5);
+static CStdPoolOfThreads  drThreadPool(1000000, 5);
 
 
 /*******************************************************
@@ -228,7 +228,7 @@ CAtomicCounter theWQty;
 
 class StressoPotam;
 
-class CReadTask : public CThreadPool_Task
+class CReadTask : public CStdRequest
 {
 public:
     CReadTask(StressoPotam* potam, CNetCacheAPI& cln, const string& key)
@@ -237,7 +237,7 @@ public:
           m_Key(key)
     {}
 
-    virtual EStatus Execute(void);
+    virtual void Process(void);
 
 
     StressoPotam* m_Potam;
@@ -245,7 +245,7 @@ public:
     string        m_Key;
 };
 
-class CDelayedReadTask : public CThreadPool_Task
+class CDelayedReadTask : public CStdRequest
 {
 public:
     CDelayedReadTask(StressoPotam* potam, CNetCacheAPI& cln, const string& key)
@@ -254,7 +254,7 @@ public:
           m_Key(key)
     {}
 
-    virtual EStatus Execute(void);
+    virtual void Process(void);
 
 
     StressoPotam* m_Potam;
@@ -341,7 +341,12 @@ public :
             }
 
             if (NcKey != "" && mReadRatio != 0 && w_qty % mReadRatio == 0) {
-                readThreadPool.AddTask(new CReadTask(this, cln, NcKey));
+                try {
+                    readThreadPool.AcceptRequest(CRef<CStdRequest>(new CReadTask(this, cln, NcKey)));
+                }
+                catch (CBlockingQueueException& ex) {
+                    ERR_POST("Cannot add request: " << ex);
+                }
             }
         }
         catch(exception& ex) {
@@ -427,7 +432,12 @@ public :
                 if (!(*Pos).JustInTime()) {
                     break;
                 }
-                drThreadPool.AddTask(new CDelayedReadTask(this, cln, (*Pos).NcKey()));
+                try {
+                    drThreadPool.AcceptRequest(CRef<CStdRequest>(new CDelayedReadTask(this, cln, (*Pos).NcKey())));
+                }
+                catch (CBlockingQueueException& ex) {
+                    ERR_POST("Cannot add request: " << ex);
+                }
 
                 mDelayedPotams.erase(Pos);
             }
@@ -507,7 +517,7 @@ private :
     list < DelayPotam > mDelayedPotams;
 };
 
-class CWriteTask : public CThreadPool_Task
+class CWriteTask : public CStdRequest
 {
 public:
     CWriteTask(StressoPotam* potam, CNetCacheAPI& cln)
@@ -515,10 +525,9 @@ public:
           m_Client(cln)
     {}
 
-    virtual EStatus Execute(void)
+    virtual void Process(void)
     {
         m_Potam->DoWrite(m_Client);
-        return eCompleted;
     }
 
 
@@ -526,18 +535,16 @@ public:
     CNetCacheAPI& m_Client;
 };
 
-CReadTask::EStatus
-CReadTask::Execute(void)
+void
+CReadTask::Process(void)
 {
     m_Potam->DoRead(m_Client, m_Key);
-    return eCompleted;
 }
 
-CDelayedReadTask::EStatus
-CDelayedReadTask::Execute(void)
+void
+CDelayedReadTask::Process(void)
 {
     m_Potam->DoDelayedRead(m_Client, m_Key);
-    return eCompleted;
 }
 
 class StressoPotary {
@@ -648,7 +655,12 @@ public :
                     }
 
                     StressoPotam *pPotam = *PB;
-                    writeThreadPool.AddTask(new CWriteTask(pPotam, cln));
+                    try {
+                        writeThreadPool.AcceptRequest(CRef<CStdRequest>(new CWriteTask(pPotam, cln)));
+                    }
+                    catch (CBlockingQueueException& ex) {
+                        ERR_POST("Cannot add request: " << ex);
+                    }
                     mEndStressing = TPot.TimeOfDayMilliSecs();
 
                     IterCnt ++;

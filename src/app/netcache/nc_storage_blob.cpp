@@ -206,7 +206,7 @@ CNCBlobVerManager::Get(Uint2         slot,
     return mgr;
 }
 
-inline void
+void
 CNCBlobVerManager::Release(void)
 {
     bool need_notify = false;
@@ -265,6 +265,8 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
                 g_NCStorage->UpdateBlobInfo(m_Key, cur_ver);
                 break;
             case eDeleteKey:
+                // TODO: remove this
+                LOG_POST("VerManager deleting blob key of " << m_Key);
                 g_NCStorage->DeleteBlobKey(m_Slot, m_Key);
                 break;
             case eDeleteCurVer:
@@ -301,7 +303,12 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
     sx_UnlockCacheData(m_CacheData, NULL);
 
     x_SetFlag(fCleaningMgr, true);
-    m_CurVersion.Reset();
+    if (m_CurVersion)
+        m_CurVersion.Reset();
+    else {
+        // TODO: remove this
+        LOG_POST("VerManager deleting itself without version for " << m_Key);
+    }
     delete this;
 }
 
@@ -392,6 +399,8 @@ inline void
 CNCBlobVerManager::ReleaseVerData(const SNCBlobVerData* ver_data)
 {
     if (!x_IsFlagSet(fCleaningMgr)) {
+        // TODO: remove this
+        LOG_POST("VerManager deleting version of " << m_Key);
         g_NCStorage->DeleteBlobInfo(ver_data);
     }
 }
@@ -451,13 +460,13 @@ CNCBlobAccessor::Deinitialize(void)
 
     switch (m_AccessType) {
     case eNCReadData:
-        if (IsBlobExists()) {
+        if (IsBlobExists())
             CNCStat::AddBlobRead(m_SizeRead, m_CurData->size);
-        }
         break;
     case eNCCreate:
     case eNCCopyCreate:
-        CNCStat::AddBlobWritten(m_NewData->size, m_NewData == m_CurData);
+        if (m_NewData)
+            CNCStat::AddBlobWritten(m_NewData->size, m_NewData == m_CurData);
         break;
     default:
         break;
@@ -655,6 +664,8 @@ CNCBlobAccessor::Finalize(void)
             g_NCStorage->WriteNextChunk(m_NewData, m_Buffer);
         }
     }
+    else if (m_NewData->size == 0)
+        m_NewData->need_data_blob = false;
     m_VerManager->FinalizeWriting(m_NewData);
     m_CurData = m_NewData;
 }

@@ -36,8 +36,10 @@
 #include <corelib/ncbiargs.hpp>
 #include <connect/services/netcache_api.hpp>
 
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_LINUX
 # include <signal.h>
+# include <sys/time.h>
+# include <sys/resource.h>
 #endif
 
 #include "message_handler.hpp"
@@ -87,7 +89,7 @@ CNetCacheServer* g_NetcacheServer = NULL;
 CNCBlobStorage*  g_NCStorage      = NULL;
 static map<Uint8, CNetCacheAPI> s_NCPeers;
 static CFastMutex s_CachingLock;
-static CThreadPool* s_TaskPool;
+static CStdPoolOfThreads* s_TaskPool;
 
 
 extern "C" void
@@ -276,7 +278,7 @@ CNetCacheServer::x_ReadServerParams(void)
     serv_params.init_threads = 1;
     serv_params.accept_timeout = &m_ServerAcceptTimeout;
     SetParameters(serv_params);
-    s_TaskPool = new CThreadPool(1000000000, serv_params.max_threads, 1);
+    s_TaskPool = new CStdPoolOfThreads(serv_params.max_threads, 1000000000);
 
     m_DebugMode = reg.GetBool(kNCReg_ServerSection, "debug_mode", false, 0, IRegistry::eErrPost);
 
@@ -416,6 +418,7 @@ CNetCacheServer::~CNetCacheServer()
     INFO_POST("NetCache server is destroying. Usage statistics:");
     x_PrintServerStats(proxy);
 
+    s_TaskPool->KillAllThreads(true);
     delete s_TaskPool;
     UpdateLastRecNo();
     CNCPeriodicSync::Finalize();
@@ -752,7 +755,7 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
                                              eNCReadData, raw_key, "", slot);
     while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
-    if (!accessor->IsBlobExists()  ||  accessor->IsBlobExpired()) {
+    if (!accessor->IsBlobExists()  ||  accessor->IsCurBlobExpired()) {
         accessor->Release();
         return ePeerActionOK;
     }
@@ -774,25 +777,25 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
     api_cmd += "\" \"";
     api_cmd += subkey;
     api_cmd += "\" ";
-    api_cmd += NStr::IntToString(accessor->GetBlobVersion());
+    api_cmd += NStr::IntToString(accessor->GetCurBlobVersion());
     api_cmd += " \"";
-    api_cmd += accessor->GetPassword();
+    api_cmd += accessor->GetCurPassword();
     api_cmd += "\" ";
-    api_cmd += NStr::UInt8ToString(accessor->GetBlobCreateTime());
+    api_cmd += NStr::UInt8ToString(accessor->GetCurBlobCreateTime());
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UIntToString(Uint4(accessor->GetBlobTTL()));
+    api_cmd += NStr::UIntToString(Uint4(accessor->GetCurBlobTTL()));
     api_cmd.append(1, ' ');
-    api_cmd += NStr::IntToString(accessor->GetBlobDeadTime());
+    api_cmd += NStr::IntToString(accessor->GetCurBlobDeadTime());
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(accessor->GetBlobSize());
+    api_cmd += NStr::UInt8ToString(accessor->GetCurBlobSize());
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UIntToString(Uint4(accessor->GetVersionTTL()));
+    api_cmd += NStr::UIntToString(Uint4(accessor->GetCurVersionTTL()));
     api_cmd.append(1, ' ');
-    api_cmd += NStr::IntToString(accessor->GetVerDeadTime());
+    api_cmd += NStr::IntToString(accessor->GetCurVerDeadTime());
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(accessor->GetCreateServer());
+    api_cmd += NStr::UInt8ToString(accessor->GetCurCreateServer());
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(accessor->GetCreateId());
+    api_cmd += NStr::UInt8ToString(accessor->GetCurCreateId());
     api_cmd.append(1, ' ');
     api_cmd += NStr::UInt8ToString(orig_rec_no);
     if (add_client_ip) {
@@ -840,12 +843,12 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
                     return ePeerBadNetwork;
                 }
             }
-            if (total_read != accessor->GetBlobSize())
+            if (total_read != accessor->GetCurBlobSize())
                 abort();
             writer->Flush();
             writer->Close();
-            CNCDistributionConf::PrintBlobCopyStat(accessor->GetBlobCreateTime(),
-                                                   accessor->GetCreateServer(),
+            CNCDistributionConf::PrintBlobCopyStat(accessor->GetCurBlobCreateTime(),
+                                                   accessor->GetCurCreateServer(),
                                                    server_id);
         }
         else {
@@ -1049,17 +1052,17 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
                                              eNCRead, raw_key, "", slot);
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
-    if (!accessor->IsBlobExists()  ||  accessor->IsBlobExpired()) {
+    if (!accessor->IsBlobExists()  ||  accessor->IsCurBlobExpired()) {
         accessor->Release();
         return ePeerActionOK;
     }
 
     SNCBlobSummary blob_sum;
-    blob_sum.create_time = accessor->GetBlobCreateTime();
-    blob_sum.create_server = accessor->GetCreateServer();
-    blob_sum.create_id = accessor->GetCreateId();
-    blob_sum.dead_time = accessor->GetBlobDeadTime();
-    blob_sum.ver_expire = accessor->GetVerDeadTime();
+    blob_sum.create_time = accessor->GetCurBlobCreateTime();
+    blob_sum.create_server = accessor->GetCurCreateServer();
+    blob_sum.create_id = accessor->GetCurCreateId();
+    blob_sum.dead_time = accessor->GetCurBlobDeadTime();
+    blob_sum.ver_expire = accessor->GetCurVerDeadTime();
     accessor->Release();
 
     return x_ProlongBlobOnPeer(server_id, slot, raw_key, blob_sum,
@@ -1094,7 +1097,7 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
     while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     if (accessor->IsBlobExists()
-        &&  accessor->GetBlobCreateTime() > create_time)
+        &&  accessor->GetCurBlobCreateTime() > create_time)
     {
         accessor->Release();
         return ePeerActionOK;
@@ -1113,11 +1116,11 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
     api_cmd += "\" ";
     api_cmd += NStr::UInt8ToString(create_time);
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(accessor->GetBlobCreateTime());
+    api_cmd += NStr::UInt8ToString(accessor->GetCurBlobCreateTime());
     api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(accessor->GetCreateServer());
+    api_cmd += NStr::UInt8ToString(accessor->GetCurCreateServer());
     api_cmd.append(1, ' ');
-    api_cmd += NStr::Int8ToString(accessor->GetCreateId());
+    api_cmd += NStr::Int8ToString(accessor->GetCurCreateId());
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
     try {
@@ -1145,15 +1148,16 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
         ++param_it;
         accessor->SetPassword(param_it->substr(1, param_it->size() - 2));
         ++param_it;
-        accessor->SetBlobCreateTime(NStr::StringToUInt8(*param_it));
+        Uint8 create_time = NStr::StringToUInt8(*param_it);
+        accessor->SetBlobCreateTime(create_time);
         ++param_it;
         accessor->SetBlobTTL(int(NStr::StringToUInt(*param_it)));
         ++param_it;
-        accessor->SetBlobDeadTime(NStr::StringToInt(*param_it));
+        accessor->SetNewBlobDeadTime(NStr::StringToInt(*param_it));
         ++param_it;
         accessor->SetVersionTTL(int(NStr::StringToUInt(*param_it)));
         ++param_it;
-        accessor->SetVerDeadTime(NStr::StringToInt(*param_it));
+        accessor->SetNewVerDeadTime(NStr::StringToInt(*param_it));
         ++param_it;
         Uint8 create_server = NStr::StringToUInt8(*param_it);
         ++param_it;
@@ -1177,12 +1181,11 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
             SNCSyncEvent* event = new SNCSyncEvent();
             event->event_type = eSyncWrite;
             event->key = raw_key;
-            event->orig_server = accessor->GetCreateServer();
-            event->orig_time = accessor->GetBlobCreateTime();
+            event->orig_server = create_server;
+            event->orig_time = create_time;
             event->orig_rec_no = orig_rec_no;
             CNCSyncLog::AddEvent(slot, event);
         }
-        Uint8 create_time = accessor->GetBlobCreateTime();
         accessor->Release();
         CNCDistributionConf::PrintBlobCopyStat(create_time, create_server, CNCDistributionConf::GetSelfID());
         return ePeerActionOK;
@@ -1284,7 +1287,7 @@ CNetCacheServer::SyncDelOurBlob(Uint8 server_id, Uint2 slot, SNCSyncEvent* evt)
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     if (accessor->IsBlobExists()
-        &&  accessor->GetBlobCreateTime() < evt->orig_time)
+        &&  accessor->GetCurBlobCreateTime() < evt->orig_time)
     {
         accessor->DeleteBlob();
         SNCSyncEvent* event = new SNCSyncEvent();
@@ -1326,19 +1329,19 @@ CNetCacheServer::SyncProlongOurBlob(Uint8 server_id,
         return x_SyncGetBlobFromPeer(server_id, slot, raw_key, blob_sum.create_time, 0);
     }
 
-    if (accessor->GetBlobCreateTime() == blob_sum.create_time
-        &&  accessor->GetCreateServer() == blob_sum.create_server
-        &&  accessor->GetCreateId() == blob_sum.create_id)
+    if (accessor->GetCurBlobCreateTime() == blob_sum.create_time
+        &&  accessor->GetCurCreateServer() == blob_sum.create_server
+        &&  accessor->GetCurCreateId() == blob_sum.create_id)
     {
         if (need_event)
             *need_event = false;
-        if (accessor->GetBlobDeadTime() < blob_sum.dead_time) {
-            accessor->SetBlobDeadTime(blob_sum.dead_time);
+        if (accessor->GetCurBlobDeadTime() < blob_sum.dead_time) {
+            accessor->SetCurBlobDeadTime(blob_sum.dead_time);
             if (need_event)
                 *need_event = true;
         }
-        if (accessor->GetVerDeadTime() < blob_sum.ver_expire) {
-            accessor->SetVerDeadTime(blob_sum.ver_expire);
+        if (accessor->GetCurVerDeadTime() < blob_sum.ver_expire) {
+            accessor->SetCurVerDeadTime(blob_sum.ver_expire);
             if (need_event)
                 *need_event = true;
         }
@@ -1528,9 +1531,9 @@ CNetCacheServer::IsDebugMode(void)
 }
 
 void
-CNetCacheServer::AddDeferredTask(CThreadPool_Task* task)
+CNetCacheServer::AddDeferredTask(CStdRequest* task)
 {
-    s_TaskPool->AddTask(task);
+    s_TaskPool->AcceptRequest(CRef<CStdRequest>(task));
 }
 
 
@@ -1643,5 +1646,19 @@ int main(int argc, const char* argv[])
     // Main thread request context already created, so is not affected
     // by just set default, so set it manually.
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
+
+    // Defaults that should be always set for NetCache
+    CNcbiEnvironment env;
+    env.Set("NCBI_ABORT_ON_NULL", "true");
+    env.Set("DIAG_SILENT_ABORT", "0");
+    env.Set("DEBUG_CATCH_UNHANDLED_EXCEPTIONS", "false");
+#ifdef NCBI_OS_LINUX
+    struct rlimit rlim;
+    if (getrlimit(RLIMIT_CORE, &rlim) == 0) {
+        rlim.rlim_cur = RLIM_INFINITY;
+        setrlimit(RLIMIT_CORE, &rlim);
+    }
+#endif
+
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_ToStdlog);
 }

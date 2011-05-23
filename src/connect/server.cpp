@@ -74,7 +74,7 @@ void IServer_MessageHandler::OnRead(void)
         } else {
             this->OnMessage(m_Buffer);
         }
-        int consumed = n_read - message_tail;
+        int consumed = int(n_read) - message_tail;
         buf_ptr += consumed;
         n_read -= consumed;
     }
@@ -100,7 +100,7 @@ int Server_CheckLineMessage(BUF* buffer, const void *data, size_t size,
         }
     }
     BUF_Write(buffer, msg+skip, n-skip);
-    return size - n - 1;
+    return int(size - n - 1);
 }
 
 

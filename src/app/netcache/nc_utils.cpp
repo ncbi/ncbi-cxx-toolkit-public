@@ -77,7 +77,7 @@ static const unsigned int     kListenStubsCnt = 1000;
 ///
 static const unsigned int     kMinListenStubsCnt = 50;
 ///
-static CThreadPool*           s_NotifyThreadPool = NULL;
+static CStdPoolOfThreads*     s_NotifyThreadPool = NULL;
 ///
 static SNCBlockedOpListeners  s_ListenStubs   [kListenStubsCnt];
 ///
@@ -109,17 +109,16 @@ static SNCListenStubsInitializer s_StubsInitializer;
 
 
 ///
-class CNCLongOpNotification : public CThreadPool_Task
+class CNCLongOpNotification : public CStdRequest
 {
 public:
     CNCLongOpNotification(INCBlockedOpListener* listener)
         : m_Listener(listener)
     {}
 
-    virtual EStatus Execute(void)
+    virtual void Process(void)
     {
         m_Listener->OnBlockedOpFinish();
-        return eCompleted;
     }
 
 private:
@@ -128,7 +127,7 @@ private:
 
 
 void
-INCBlockedOpListener::BindToThreadPool(CThreadPool* pool)
+INCBlockedOpListener::BindToThreadPool(CStdPoolOfThreads* pool)
 {
     s_NotifyThreadPool = pool;
 }
@@ -137,7 +136,7 @@ void
 INCBlockedOpListener::Notify(void)
 {
     _ASSERT(s_NotifyThreadPool);
-    s_NotifyThreadPool->AddTask(new CNCLongOpNotification(this));
+    s_NotifyThreadPool->AcceptRequest(CRef<CStdRequest>(new CNCLongOpNotification(this)));
 }
 
 INCBlockedOpListener::~INCBlockedOpListener(void)

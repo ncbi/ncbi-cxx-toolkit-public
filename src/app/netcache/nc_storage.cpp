@@ -808,9 +808,9 @@ CNCBlobStorage::DeleteBlobKey(Uint2 slot, const string& key)
 {
     SSlotCache* cache = x_GetSlotCache(slot);
     //_VERIFY(cache->key_map.PassivateKey(key));
-    cache->lock.WriteLock();
+    /*cache->lock.WriteLock();
     cache->key_map.erase(key);
-    cache->lock.WriteUnlock();
+    cache->lock.WriteUnlock();*/
     cache->deleter.AddElement(key);
 }
 
@@ -819,11 +819,11 @@ CNCBlobStorage::RestoreBlobKey(Uint2 slot,
                                const string& key,
                                SNCCacheData* cache_data)
 {
-    SSlotCache* cache = x_GetSlotCache(slot);
+    /*SSlotCache* cache = x_GetSlotCache(slot);
     //_VERIFY(cache->key_map.ActivateKey(key));
     cache->lock.WriteLock();
     cache->key_map[key] = cache_data;
-    cache->lock.WriteUnlock();
+    cache->lock.WriteUnlock();*/
 }
 
 bool
@@ -948,11 +948,13 @@ CNCBlobStorage::x_UpdBlobInfoSingleChunk(const string&   blob_key,
         ERR_POST("Cannot delete old blob's meta-information: " << ex);
     }
     old_meta_info->cnt_lock.Lock();
-    --old_meta_info->useful_blobs;
+    if (--old_meta_info->useful_blobs + 1 == 0)
+        abort();
     --old_meta_info->ref_cnt;
     old_meta_info->cnt_lock.Unlock();
     old_data_info->cnt_lock.Lock();
-    --old_data_info->useful_blobs;
+    if (--old_data_info->useful_blobs + 1 == 0)
+        abort();
     ++old_data_info->garbage_blobs;
     old_data_info->useful_size -= ver_data->size;
     old_data_info->garbage_size += ver_data->size;
@@ -1030,12 +1032,14 @@ CNCBlobStorage::x_UpdBlobInfoMultiChunk(const string&   blob_key,
         ERR_POST("Cannot delete old blob's meta-information: " << ex);
     }
     old_meta_info->cnt_lock.Lock();
-    --old_meta_info->useful_blobs;
+    if (--old_meta_info->useful_blobs + 1 == 0)
+        abort();
     ++old_meta_info->garbage_blobs;
     --old_meta_info->ref_cnt;
     old_meta_info->cnt_lock.Unlock();
     old_data_info->cnt_lock.Lock();
-    --old_data_info->useful_blobs;
+    if (--old_data_info->useful_blobs + 1 == 0)
+        abort();
     ++old_data_info->garbage_blobs;
     old_data_info->useful_size -= ver_data->size;
     old_data_info->garbage_size += ver_data->size;
@@ -1067,7 +1071,9 @@ CNCBlobStorage::UpdateBlobInfo(const string&   blob_key,
 void
 CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data)
 {
-    if (ver_data->create_time != 0) {
+    if (!ver_data->need_meta_blob) {
+        if (ver_data->create_time == 0)
+            abort();
         TMetaFileLock metafile(this, ver_data->coords.meta_id);
         try {
             metafile->DeleteBlobInfo(ver_data->coords.blob_id);
@@ -1085,15 +1091,17 @@ CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data)
     if (!ver_data->need_meta_blob) {
         if (ver_data->create_time == 0)
             abort();
-        --meta_info->useful_blobs;
+        if (--meta_info->useful_blobs + 1 == 0)
+            abort();
     }
     --meta_info->ref_cnt;
     meta_info->cnt_lock.Unlock();
     data_info->cnt_lock.Lock();
-    if (!ver_data->need_data_blob) {
+    if (!ver_data->need_data_blob  &&  ver_data->size != 0) {
         if (ver_data->disk_size == 0)
             abort();
-        --data_info->useful_blobs;
+        if (--data_info->useful_blobs + 1 == 0)
+            abort();
         ++data_info->garbage_blobs;
     }
     data_info->useful_size -= ver_data->disk_size;
@@ -1296,19 +1304,22 @@ void
 CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info,
                                    int dead_before)
 {
+    LOG_POST("GC checking blob " << blob_info.key);
     m_GCAccessor->Prepare(blob_info.key, kEmptyStr, blob_info.slot, eNCGCDelete);
     x_InitializeAccessor(m_GCAccessor);
-    if (m_GCAccessor->ObtainMetaInfo(this) == eNCWouldBlock) {
+    while (m_GCAccessor->ObtainMetaInfo(this) == eNCWouldBlock) {
         m_GCBlockWaiter.Wait();
     }
     if (m_GCAccessor->IsBlobExists()
-        &&  m_GCAccessor->GetBlobDeadTime() < dead_before)
+        &&  m_GCAccessor->GetCurBlobDeadTime() < dead_before)
     {
         // TODO: remove this
-        LOG_POST("Deleting blob " << m_GCAccessor->GetBlobKey());
+        LOG_POST("GC deleting blob " << blob_info.key);
         m_GCAccessor->DeleteBlob();
         ++m_GCDeleted;
     }
+    else
+        abort();
     m_GCAccessor->Deinitialize();
 }
 
@@ -1427,7 +1438,7 @@ CNCBlobStorage::x_GC_HeartBeat(void)
         Uint8 total = useful_cnt + garbage_cnt;
         Int8  size  = file->GetFileSize();
         if ((size >= m_MaxFileSize[eNCMeta]
-             ||  (size >= m_MinFileSize[eNCMeta]
+             ||  (size >= m_MinFileSize[eNCMeta]  &&  total != 0
                   &&  useful_cnt / total <= m_MinUsefulPct[eNCMeta])))
         {
             x_CreateNewFile(eNCMeta, i);
@@ -1445,7 +1456,7 @@ CNCBlobStorage::x_GC_HeartBeat(void)
         Int8 total_blobs_size = useful_size + garbage_size;
         Int8 file_size  = file->GetFileSize();
         if ((file_size >= m_MaxFileSize[eNCData]
-             ||  (file_size >= m_MinFileSize[eNCData]
+             ||  (file_size >= m_MinFileSize[eNCData]  &&  total_blobs_size != 0
                   &&  useful_size / total_blobs_size <= m_MinUsefulPct[eNCData])))
         {
             x_CreateNewFile(eNCData, i);
@@ -1704,7 +1715,13 @@ CNCBlobStorage::CKeysCleaner::Delete(const string& key) const
     SSlotCache* cache = g_NCStorage->x_GetSlotCache(m_Slot);
     //cache->key_map.EraseIfPassive(key);
     cache->lock.WriteLock();
-    cache->key_map.erase(key);
+    TNCBlobSumList::iterator it = cache->key_map.find(key);
+    SNCCacheData* cache_data = it->second;
+    if (cache_data->is_deleted) {
+        LOG_POST("Final delete of key " << key);
+        delete it->second;
+        cache->key_map.erase(it);
+    }
     cache->lock.WriteUnlock();
 }
 

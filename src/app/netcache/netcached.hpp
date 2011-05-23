@@ -223,7 +223,7 @@ public:
     static void MayOpenToClients(void);
     static void UpdateLastRecNo(void);
 
-    static void AddDeferredTask(CThreadPool_Task* task);
+    static void AddDeferredTask(CStdRequest* task);
 
     static bool IsCachingComplete(void);
     static bool IsDebugMode(void);

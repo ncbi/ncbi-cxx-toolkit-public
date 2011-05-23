@@ -236,6 +236,8 @@ public:
     /// not related to the request
     void ResetDiagnostics(void);
 
+    void DeferredComplete(void);
+
     /// Type of method processing command and returning flag if shift to next
     /// state was made. If shift wasn't made then processing is postponed and
     /// dispatcher should return to caller and do nothing till next call.
@@ -580,7 +582,8 @@ private:
     Uint8                     m_ThrottleTime;
     Uint8                     m_LatestSrvId;
     SNCBlobSummary            m_LatestBlobSum;
-    CRef<CThreadPool_Task>    m_DeferredTask;
+    CRef<CStdRequest>         m_DeferredTask;
+    bool                      m_DeferredDone;
 };
 
 
@@ -659,10 +662,11 @@ private:
 };
 
 
-class CNCFindMetaData_Task : public CThreadPool_Task
+class CNCFindMetaData_Task : public CStdRequest
 {
 public:
-    CNCFindMetaData_Task(const TServersList& servers,
+    CNCFindMetaData_Task(CNCMessageHandler* handler,
+                         const TServersList& servers,
                          Uint1 quorum,
                          bool  for_hasb,
                          CRequestContext* req_ctx,
@@ -672,9 +676,10 @@ public:
                          Uint8& latest_srv_id);
 
 private:
-    virtual EStatus Execute(void);
+    virtual void Process(void);
+    virtual void OnStatusChange(EStatus /* old */, EStatus new_status);
 
-
+    CNCMessageHandler* m_Handler;
     TServersList    m_Servers;
     Uint1           m_Quorum;
     bool            m_ForHasb;
@@ -686,19 +691,22 @@ private:
 };
 
 
-class CNCPutToPeers_Task : public CThreadPool_Task
+class CNCPutToPeers_Task : public CStdRequest
 {
 public:
-    CNCPutToPeers_Task(const TServersList& servers,
+    CNCPutToPeers_Task(CNCMessageHandler* handler,
+                       const TServersList& servers,
                        Uint1 quorum,
                        CRequestContext* req_ctx,
                        const string& key,
                        Uint8 event_rec_no);
 
 private:
-    virtual EStatus Execute(void);
+    virtual void Process(void);
+    virtual void OnStatusChange(EStatus /* old */, EStatus new_status);
 
 
+    CNCMessageHandler* m_Handler;
     TServersList    m_Servers;
     Uint1           m_Quorum;
     CRef<CRequestContext> m_ReqCtx;
@@ -707,19 +715,22 @@ private:
 };
 
 
-class CNCRemoveOnPeers_Task : public CThreadPool_Task
+class CNCRemoveOnPeers_Task : public CStdRequest
 {
 public:
-    CNCRemoveOnPeers_Task(const TServersList& servers,
+    CNCRemoveOnPeers_Task(CNCMessageHandler* handler,
+                          const TServersList& servers,
                           Uint1 quorum,
                           CRequestContext* req_ctx,
                           const string& key,
                           SNCSyncEvent* evt);
 
 private:
-    virtual EStatus Execute(void);
+    virtual void Process(void);
+    virtual void OnStatusChange(EStatus /* old */, EStatus new_status);
 
 
+    CNCMessageHandler* m_Handler;
     TServersList m_Servers;
     Uint1        m_Quorum;
     CRef<CRequestContext> m_ReqCtx;
