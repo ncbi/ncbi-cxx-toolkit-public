@@ -229,6 +229,12 @@ public:
         m_DeflineTemplates = deflineTemplates;
     }
     
+    ///Sets CDD precomputed results ID
+    /// @param string containing seq id used in contsructing URL to CDART
+    void SetPreComputedResID(string preComputedResID) {
+        m_PreComputedResID = preComputedResID;
+    }
+    
     /// Creates a '|' delimited string, corresponding to a list of Seq-ids
     /// @param id List of Seq-ids [in]
     /// @param show_gi Should gi ids be shown or skipped?
@@ -392,6 +398,9 @@ protected:
 
     ///blast defline templates
     SDeflineTemplates *m_DeflineTemplates;
+
+    ///CDD precomputed results ID
+    string m_PreComputedResID;
     
     CCgiContext* m_Ctx;
 
@@ -468,7 +477,7 @@ protected:
     void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
 
     //For internal test
-    friend struct ::CShowBlastDeflineTest;
+    friend struct ::CShowBlastDeflineTest;    
 };
 
 END_SCOPE(align_format)

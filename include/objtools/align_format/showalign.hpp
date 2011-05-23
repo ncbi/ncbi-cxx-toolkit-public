@@ -369,6 +369,11 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         m_Ctx = &ctx;
     }
 
+    ///Sets CDD precomputed results ID
+    /// @param string containing seq id used in contsructing URL to CDART
+    void SetPreComputedResID(string preComputedResID) {
+        m_PreComputedResID = preComputedResID;
+    }
     /// static functions
     ///Need to call this if the seqalign is stdseg or dendiag for ungapped
     ///blast alignment display as each stdseg ro dendiag is a distinct
@@ -545,7 +550,9 @@ private:
 
     int		m_NumBlastDefLines;///< Number of subject sequence deflines 
 
-    int        m_currAlignHsp;///< Current HSP number for single alignmnet
+    int     m_currAlignHsp;///< Current HSP number for single alignmnet
+
+    string  m_PreComputedResID;///<CDD precomputed results ID
 
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
@@ -838,7 +845,7 @@ private:
 	string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
 	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
-	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
+	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);    
 };
 
 END_SCOPE(align_format)

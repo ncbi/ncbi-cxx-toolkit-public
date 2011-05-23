@@ -88,15 +88,15 @@ const string kUnigeneImg = "<img border=0 height=16 width=16 src=\"images/U.gif\
 
 ///structure
 // .ncbirc alias: STRUCTURE_URL
-const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=<@rid@>&blast_rep_gi=<@blast_rep_gi@>&hit=<@gi@>&blast_CD_RID=<@cd_rid@>\
+const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=<@rid@>&blast_rep_gi=<@blast_rep_gi@>&hit=<@gi@>&<@cdd_params@>\
 &blast_view=<@blast_view@>&hsp=0&taxname=<@taxname@>&client=blast&log$=structure<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 const string kStructureImg = "<img border=0 height=16 width=16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">";
 
 ///structure overview
 const string kStructure_Overview = "<a href=\"http://www.ncbi.nlm.nih.\
-gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_\
-RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
+gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&%s\
+&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
 ///Geo
 // .ncbirc alias: GEO
@@ -902,7 +902,8 @@ public:
                                       bool structure_linkout_as_group,
                                       bool for_alignment, 
                                       int cur_align,
-                                      bool textLink = false);
+                                      string preComputedResID);
+                                      
     
     ///Create map that holds all linkouts for the list of blast deflines and corresponding seqIDs
     ///@param bdl: list of CRef<CBlast_def_line>
@@ -940,7 +941,8 @@ public:
                                                  int taxid,
                                                  string &database,
                                                  int query_number,                                                 
-                                                 string &user_url);
+                                                 string &user_url,
+                                                 string &preComputedResID);
                                    
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
 	static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
