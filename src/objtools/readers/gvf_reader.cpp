@@ -90,6 +90,7 @@
 #include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
+#include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gvf_reader.hpp>
 //#include <objtools/readers/gvf_data.hpp>
 #include <objtools/error_codes.hpp>
@@ -374,10 +375,10 @@ bool CGvfReader::x_FeatureSetVariation(
     NStr::ToLower( strType );
 
     if ( strType == "snv" ) {
-        pVariation = x_VariationSNV( record );
+        pVariation = x_VariationSNV( record, *pFeature );
     }
     else {
-        pVariation = x_VariationCNV( record );
+        pVariation = x_VariationCNV( record, *pFeature );
     }
     if ( pVariation ) {
         pFeature->SetData().SetVariation( *pVariation );
@@ -400,7 +401,8 @@ bool CGvfReader::x_ParseStructuredCommentGff(
 
 //  ----------------------------------------------------------------------------
 CRef<CVariation_ref> CGvfReader::x_VariationCNV(
-    const CGvfReadRecord& record )
+    const CGvfReadRecord& record,
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     CRef<CVariation_ref> pVariation( new CVariation_ref );
@@ -415,34 +417,37 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
         return CRef<CVariation_ref>();
     }
 
-    //>>>
     string strType = record.Type();
     NStr::ToLower( strType );
-    if ( strType == "cnv" ) {
+    if ( strType == "cnv" || strType == "copy_number_variation" ) {
         pVariation->SetCNV();
     }
-    if ( strType == "gain" ) {
+    if ( strType == "gain" || strType == "copy_number_gain" ) {
         pVariation->SetGain();
     }
-    if ( strType == "loss" ) {
+    if ( strType == "loss" || strType == "copy_number_loss") {
         pVariation->SetLoss();
     }
     if ( strType == "insertion" ) {
         pVariation->SetInsertion();
     }
-    if ( strType == "complex" ) {
+    if ( strType == "complex"  || strType == "complex_substitution") {
         pVariation->SetComplex();
     }
-    if ( strType == "unknown" ) {
+    if ( strType == "unknown" || strType == "other" || 
+        strType == "sequence_alteration" ) {
         pVariation->SetUnknown();
     }
-    //<<<
+    if ( strType == "inversion" ) {
+        pVariation->SetInversion( feature.GetLocation() );
+    }
     return pVariation;
 }
   
 //  ----------------------------------------------------------------------------
 CRef<CVariation_ref> CGvfReader::x_VariationSNV(
-    const CGvfReadRecord& record )
+    const CGvfReadRecord& record,
+    const CSeq_feat& )
 //  ----------------------------------------------------------------------------
 {
     CRef<CVariation_ref> pVariation( new CVariation_ref );

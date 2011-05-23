@@ -110,10 +110,12 @@ protected:
         CRef< CSeq_feat > );
 
     CRef<CVariation_ref> x_VariationSNV(
-        const CGvfReadRecord& );
+        const CGvfReadRecord&,
+        const CSeq_feat& );
 
     CRef<CVariation_ref> x_VariationCNV(
-        const CGvfReadRecord& );
+        const CGvfReadRecord&,
+        const CSeq_feat& );
 
     virtual bool x_VariationSetId(
         const CGvfReadRecord&,
