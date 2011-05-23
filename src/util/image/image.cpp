@@ -53,7 +53,7 @@ CImage::CImage()
 CImage::CImage(size_t width, size_t height, size_t depth)
     : m_Width(0),
       m_Height(0),
-      m_Depth(3)
+      m_Depth(depth)
 {
     Init(width, height, depth);
 }

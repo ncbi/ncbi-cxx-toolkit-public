@@ -166,6 +166,20 @@ public:
 
     // Evaluate subtree of 'qtree' beginning from 'node'
     void Evaluate(CQueryParseTree& qtree, CQueryParseTree::TNode& node);
+
+    /// If query has an identifier, this will resolve it in an
+    /// application-specific way. Returns true if resolved, with the
+    /// data item's value in 'value'
+    ///
+    virtual bool ResolveIdentifier(const std::string& identifier, 
+                                   bool& value) { return false; }
+    virtual bool ResolveIdentifier(const std::string& identifier, 
+                                   int& value) { return false; }
+    virtual bool ResolveIdentifier(const std::string& identifier, 
+                                   double& value) { return false; }
+    virtual bool ResolveIdentifier(const std::string& identifier, 
+                                   std::string& value) { return false; }
+    virtual bool HasIdentifier(const std::string& identifier) { return false; }
     
 protected:
     friend class CQueryFunctionBase;

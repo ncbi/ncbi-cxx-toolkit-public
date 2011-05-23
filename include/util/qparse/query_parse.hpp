@@ -235,6 +235,10 @@ public:
     void ResetUserObject();
     
     /// @}
+
+    /// Return query node type as a string (for debugging output)
+    string GetNodeTypeAsString() const;
+    static string GetNodeTypeAsString(EType node_type);
     
 private:
     // required for use with CTreeNode<>

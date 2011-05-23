@@ -160,6 +160,52 @@ void CQueryParseNode::ResetUserObject()
     }
 }
 
+string CQueryParseNode::GetNodeTypeAsString(EType node_type)
+ {
+     switch (node_type) {
+        case eNotSet: return "Not Set";
+        case eIdentifier: return "Identifier";      
+        case eIntConst: return "Int";        
+        case eFloatConst: return "Float";      
+        case eBoolConst: return "Bool";        
+        case eString: return "String";          
+        case eFunction: return "Function";        
+
+        // Operation codes:
+        case eNot: return "Not";
+        case eFieldSearch: return "FieldSearch";
+        case eLike: return "Like";
+        case eBetween: return "Between";
+        case eIn: return "In";
+        case eAnd: return "And";
+        case eOr: return "Or";
+        case eSub: return "Sub";
+        case eXor: return "Xor";
+        case eRange: return "Range";
+        case eEQ: return "EQ";
+        case eGT: return "GT";
+        case eGE: return "GE";
+        case eLT: return "LT";
+        case eLE: return "LE";
+        
+        // SQL specific components
+        case eSelect: return "Select";
+        case eFrom: return "From";
+        case eWhere: return "Where";
+        
+        case eList: return "List";    
+        default:
+            break;
+    };
+
+     return "Unknown Node Type";
+ };
+
+std::string CQueryParseNode::GetNodeTypeAsString() const
+{
+    return GetNodeTypeAsString(m_Type);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 

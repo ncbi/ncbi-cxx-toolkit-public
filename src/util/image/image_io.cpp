@@ -276,7 +276,11 @@ bool CImageIO::WriteImage(const CImage& image, const string& file,
     }
 
     CNcbiOfstream ostr(file.c_str(), ios::out|ios::binary);
-    return WriteImage(image, ostr, type, compress);
+    if (ostr.good()) {
+        return WriteImage(image, ostr, type, compress);
+    }
+    
+    return false;
 }
 
 
@@ -316,7 +320,11 @@ bool CImageIO::WriteSubImage(const CImage& image,
     }
 
     CNcbiOfstream ostr(file.c_str(), ios::out|ios::binary);
-    return WriteSubImage(image, ostr, x, y, w, h, type, compress);
+    if (ostr.good()) {
+        return WriteSubImage(image, ostr, x, y, w, h, type, compress);
+    }
+    
+    return false;
 }
 
 
