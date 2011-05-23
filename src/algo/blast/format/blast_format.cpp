@@ -505,10 +505,10 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
                                 subject_bioseq);
         }
 
-    	CSeq_align_set copy_aln_set;
-        CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, MIN(m_NumSummary, m_NumAlignments));
 
         if (results.HasAlignments()) {
+    	    CSeq_align_set copy_aln_set;
+            CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, MIN(m_NumSummary, m_NumAlignments));
             ITERATE(CSeq_align_set::Tdata, itr, copy_aln_set.Get()) {
                     const CSeq_align& s = **itr;
                     tabinfo.SetFields(s, *m_Scope, &m_ScoringMatrix);
