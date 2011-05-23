@@ -677,7 +677,12 @@ inline void
 CNCBlobStorage::SetMaxSyncLogRecNo(Uint8 last_rec_no)
 {
     CFastMutexGuard guard(m_IndexLock);
-    m_IndexDB->SetMaxSyncLogRecNo(last_rec_no);
+    try {
+        m_IndexDB->SetMaxSyncLogRecNo(last_rec_no);
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Error setting max_sync_log_rec_no: " << ex);
+    }
 }
 
 

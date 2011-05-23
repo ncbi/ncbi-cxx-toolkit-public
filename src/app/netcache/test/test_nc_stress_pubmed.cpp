@@ -103,9 +103,9 @@ SetSigHandlers()
 #endif
 
 
-static CStdPoolOfThreads  writeThreadPool(1000000, 5);
-static CStdPoolOfThreads  readThreadPool(1000000, 5);
-static CStdPoolOfThreads  drThreadPool(1000000, 5);
+static CStdPoolOfThreads  writeThreadPool(5, 1000000);
+static CStdPoolOfThreads  readThreadPool(5, 1000000);
+static CStdPoolOfThreads  drThreadPool(5, 1000000);
 
 
 /*******************************************************
