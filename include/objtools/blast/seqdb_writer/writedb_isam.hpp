@@ -73,7 +73,7 @@ class CWriteDB_IsamData;
 /// 
 /// Manufacture an isam index file from sequence IDs.
 
-class CWriteDB_IsamIndex : public CWriteDB_File {
+class NCBI_XOBJWRITE_EXPORT CWriteDB_IsamIndex : public CWriteDB_File {
 public:
     /// Type of identifier stored in this ISAM index.
     typedef EWriteDBIsamType EIsamType;
@@ -365,7 +365,7 @@ private:
 /// 
 /// This manufactures isam index files from input data.
 
-class CWriteDB_IsamData : public CWriteDB_File {
+class NCBI_XOBJWRITE_EXPORT CWriteDB_IsamData : public CWriteDB_File {
 public:
     /// Type of identifier stored in this ISAM index.
     typedef EWriteDBIsamType EIsamType;
@@ -397,7 +397,7 @@ private:
 /// 
 /// This manufactures isam indices.
 
-class CWriteDB_Isam : public CObject {
+class NCBI_XOBJWRITE_EXPORT CWriteDB_Isam : public CObject {
 public:
     /// Type of identifier stored in this ISAM index.
     typedef EWriteDBIsamType EIsamType;
