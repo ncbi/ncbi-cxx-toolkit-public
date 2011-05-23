@@ -86,6 +86,8 @@
 
 #include <objtools/readers/error_container.hpp>
 
+#include "best_feat_finder.hpp"
+
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
 
 BEGIN_NCBI_SCOPE
@@ -1856,6 +1858,11 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     Int4 offset = 0;
     CRef<CSeq_annot> sap(new CSeq_annot);
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
+
+    // Use this to efficiently find the best CDS for a prot feature
+    // (only add CDS's for it to work right)
+    CBestFeatFinder best_CDS_finder;
+
     CRef<CSeq_feat> sfp;
 
     if (! annotname.empty ()) {
@@ -1906,10 +1913,23 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         CRef<CSeq_loc> location (new CSeq_loc);
                         sfp->SetLocation (*location);
 
+                        // if new feature is a CDS, remember it for later lookups
+                        if( sfp->CanGetData() && sfp->GetData().IsCdregion() ) {
+                            best_CDS_finder.AddFeat( *sfp );
+                        }
+
                         // see if location has to be adjusted (e.g. to convert from nuc to prot or whatever)
                         if( sfp->CanGetData() && sfp->GetData().IsProt() ) {
-                            start /= 3;
-                            stop = (stop - 2) / 3;
+                            CConstRef<CSeq_feat> best_CDS = 
+                                best_CDS_finder.FindBestFeatForLoc( start, stop );
+                            if( best_CDS ) {
+                                const int cds_start = best_CDS->GetLocation().GetStart(eExtreme_Positional);
+                                start -= cds_start;
+                                stop  -= cds_start;
+
+                                start /= 3;
+                                stop = (stop - 2) / 3;
+                            }
                         }
 
                         // and add first interval
