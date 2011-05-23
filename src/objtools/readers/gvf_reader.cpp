@@ -425,26 +425,36 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
     NStr::ToLower( strType );
     if ( strType == "cnv" || strType == "copy_number_variation" ) {
         pVariation->SetCNV();
+        return pVariation;
     }
     if ( strType == "gain" || strType == "copy_number_gain" ) {
         pVariation->SetGain();
+        return pVariation;
     }
-    if ( strType == "loss" || strType == "copy_number_loss") {
+    if ( strType == "loss" || strType == "copy_number_loss" ||
+        strType == "loss_of_heterozygosity" ) {
         pVariation->SetLoss();
+        return pVariation;
     }
     if ( strType == "insertion" ) {
         pVariation->SetInsertion();
+        return pVariation;
     }
     if ( strType == "complex"  || strType == "complex_substitution") {
         pVariation->SetComplex();
+        return pVariation;
     }
     if ( strType == "unknown" || strType == "other" || 
         strType == "sequence_alteration" ) {
         pVariation->SetUnknown();
+        return pVariation;
     }
     if ( strType == "inversion" ) {
         pVariation->SetInversion( feature.GetLocation() );
+        return pVariation;
     }
+    pVariation->SetUnknown();
+    
     return pVariation;
 }
   
@@ -595,6 +605,7 @@ bool CGvfReader::x_FeatureSetExt(
 
     CSeq_feat::TExt& ext = pFeature->SetExt();
     ext.SetType().SetStr( "GvfAttributes" );
+    ext.AddField( "orig-var-type", record.Type() );
 
     if ( record.Source() != "." ) {
         ext.AddField( "source", record.Source() );
@@ -653,6 +664,10 @@ bool CGvfReader::x_FeatureSetExt(
         }    
         if ( cit->first == "Phased" ) {
             ext.AddField( "phased", strAttribute );
+            continue;
+        }  
+        if ( cit->first == "Name" ) {
+            ext.AddField( "name", strAttribute );
             continue;
         }  
         ext.AddField( string("custom-") + cit->first, strAttribute );  
