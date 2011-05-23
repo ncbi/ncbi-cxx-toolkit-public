@@ -219,6 +219,10 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
         pNewAnnot->SetTitle(m_AnnotTitle);
     }
 
+    // if available, add gvf pragma information
+    if ( m_Pragmas ) {
+        pNewAnnot->SetDesc().Set().push_back( m_Pragmas );
+    }
     return pNewAnnot;
 }
 
@@ -295,11 +299,20 @@ bool CGvfReader::x_FeatureSetLocation(
             return false; //overly harsh?
         }
         try {
-            lower = NStr::StringToUInt( range_borders.front() );
-            upper = lower;
-            if ( range_borders.back() != "." ) {
-                upper = NStr::StringToInt( range_borders.back() );
+            if ( range_borders.back() == "." ) {
+                lower = upper = NStr::StringToUInt( range_borders.front() );
+                pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_gt );
             }
+            else if ( range_borders.front() == "." ) { 
+                lower = upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_lt );
+            }
+            else {
+                lower = NStr::StringToUInt( range_borders.front() );
+                upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_from().SetRange().SetMin( lower-1 );
+                pLocation->SetInt().SetFuzz_from().SetRange().SetMax( upper-1 );
+            }        
         }
         catch ( ... ) {
             cerr << "CGvfReader::x_FeatureSetLocation: "
@@ -307,19 +320,6 @@ bool CGvfReader::x_FeatureSetLocation(
                  << endl;
             return false; //overly harsh?
         }
-        if ( lower < upper ) {
-            pLocation->SetInt().SetFuzz_from().SetRange().SetMin( lower-1 );
-            pLocation->SetInt().SetFuzz_from().SetRange().SetMax( upper-1 );
-        }
-        if ( lower == upper ) {
-            pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_gt );
-        }
-        if ( lower > upper ) {
-            // let's just assume they were specified out of order ...
-            pLocation->SetInt().SetFuzz_from().SetRange().SetMin( upper-1 );
-            pLocation->SetInt().SetFuzz_from().SetRange().SetMax( lower-1 );
-        }
-        
     }
 
     //  deal with fuzzy range indicators / upper end:
@@ -334,29 +334,26 @@ bool CGvfReader::x_FeatureSetLocation(
             return false; //overly harsh?
         }
         try {
-            upper = NStr::StringToUInt( range_borders.back() );
-            lower = upper;
-            if ( range_borders.front() != "." ) {
-                lower = NStr::StringToInt( range_borders.front() );
+            if ( range_borders.back() == "." ) {
+                lower = upper = NStr::StringToUInt( range_borders.front() );
+                pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_gt );
             }
+            else if ( range_borders.front() == "." ) { 
+                lower = upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_lt );
+            }
+            else {
+                lower = NStr::StringToUInt( range_borders.front() );
+                upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_to().SetRange().SetMin( lower-1 );
+                pLocation->SetInt().SetFuzz_to().SetRange().SetMax( upper-1 );
+            }        
         }
         catch ( ... ) {
             cerr << "CGvfReader::x_FeatureSetLocation: "
                  << "Bad \"End_range\" attribute"
                  << endl;
             return false; //overly harsh?
-        }
-        if ( lower < upper ) {
-            pLocation->SetInt().SetFuzz_to().SetRange().SetMin( lower-1 );
-            pLocation->SetInt().SetFuzz_to().SetRange().SetMax( upper-1 );
-        }
-        if ( lower == upper ) {
-            pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_lt );
-        }
-        if ( lower > upper ) {
-            // let's just assume they were specified out of order ...
-            pLocation->SetInt().SetFuzz_to().SetRange().SetMin( upper-1 );
-            pLocation->SetInt().SetFuzz_to().SetRange().SetMax( lower-1 );
         }
     }
 
@@ -396,6 +393,13 @@ bool CGvfReader::x_ParseStructuredCommentGff(
     if ( !CGff2Reader::x_ParseStructuredCommentGff( strLine, pAnnotDesc ) ) {
         return false;
     }
+    if ( ! m_Pragmas ) {
+        m_Pragmas.Reset( new CAnnotdesc );
+        m_Pragmas->SetUser().SetType().SetStr( "gvf-import-pragmas" );
+    }
+    string key, value;
+    NStr::SplitInTwo( strLine.substr(2), " ", key, value );
+    m_Pragmas->SetUser().AddField( key, value );
     return true;
 }
 

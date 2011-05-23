@@ -137,7 +137,11 @@ protected:
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
-    virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(); };    
+    virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(); };   
+
+protected:
+    CRef< CAnnotdesc > m_Pragmas;
+ 
 };
 
 END_SCOPE(objects)
