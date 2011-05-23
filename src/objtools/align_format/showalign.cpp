@@ -199,7 +199,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_SlaveGeneticCode = 1;
     m_AlignTemplates = NULL;
     m_Ctx = NULL;
-    m_Matrix = NULL; //-RMH-
+    m_Matrix = NULL; //-RMH-    
 
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
@@ -1141,7 +1141,8 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
                                            seqUrlInfo->taxid,
                                            m_DbName,
                                            m_QueryNumber,                                                 
-                                           seqUrlInfo->user_url);			    
+                                           seqUrlInfo->user_url,
+                                           m_PreComputedResID);			    
         }
         list<string> ::iterator it = m_CustomLinksList.end();
         m_CustomLinksList.splice(it,linkoutStr);
@@ -1391,9 +1392,9 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
 						
-                        int linkout =
-                            CLinkoutDB::GetInstance().GetLinkout(m_AV->GetSeqId(row));
-                        
+                        int linkout = CLinkoutDB::GetInstance().GetLinkout(m_AV->GetSeqId(row));
+                            
+                        m_cur_align = row;
                         urlLink = x_GetUrl(gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
                         out << urlLink;            
                     }        
@@ -1962,6 +1963,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 			}
             
             int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
+                
             int linksDisplayOption = 0;
 
             //Get custom links only for the first gi
@@ -1976,6 +1978,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    
 			int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
+                
 			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
 			list<string> linkout_url =  CAlignFormatUtil::
                                 GetLinkoutUrl(linkout, ids,
@@ -1983,7 +1986,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
                                               m_CddRid, m_EntrezTerm,
                                               isNa, 
                                               firstGi,
-                                              false, true, m_cur_align);                            
+                                              false, true, m_cur_align,m_PreComputedResID);                            
 			ITERATE(list<string>, iter_linkout, linkout_url){
 				alnDispParams->linkoutStr += *iter_linkout;
 			}
@@ -2925,8 +2928,8 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 
         ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
         {
-            int linkout =
-                CLinkoutDB::GetInstance().GetLinkout(*(*iter)->GetSeqid().front());
+            int linkout = CLinkoutDB::GetInstance().GetLinkout(*(*iter)->GetSeqid().front());
+                
             if (linkout & eGene)
             {
                 return true;
@@ -3555,7 +3558,7 @@ string CDisplaySeqalign:: x_FormatAlnHSPLinks(string &alignInfo)
 {
 
     string hspLinks;
-    if(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber > 1 && m_HSPLinksList.size() > 0) { 
+    if(m_HSPLinksList.size() > 0) { 
         const CRange<TSeqPos>& range = m_AV->GetSeqRange(1);	
         TSeqPos from = (range.GetFrom()> range.GetTo()) ? range.GetTo() : range.GetFrom() + 1;
         TSeqPos to =   (range.GetFrom()> range.GetTo()) ? range.GetFrom() : range.GetTo() + 1;

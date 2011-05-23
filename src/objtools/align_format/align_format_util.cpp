@@ -1457,6 +1457,7 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
     }
 }
 
+
 void CAlignFormatUtil::HspListToHitList(list< CRef<CSeq_align_set> >& target,
                                         const CSeq_align_set& source) 
 {
@@ -1802,6 +1803,7 @@ void CAlignFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_quer
    
 }
 
+
 bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset, 
                                        CScope& scope) 
 {
@@ -1828,6 +1830,7 @@ bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset,
     return is_mixed;
 
 }
+
 
 bool CAlignFormatUtil::IsMixedDatabase(CCgiContext& ctx)
 {
@@ -1880,7 +1883,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
                                     int first_gi,
                                     bool structure_linkout_as_group,
                                     bool for_alignment, int cur_align,
-                                    bool textLink,
+                                    string preComputedResID,
+                                    bool textLink = false,                                    
                                     bool disableLink = false,
                                     int taxid = 0,                                    
                                     string taxname = "",
@@ -1915,8 +1919,15 @@ static list<string> s_GetLinkoutUrl(int linkout,
             NStr::Tokenize(labelList,",",accs); 
             string firstAcc = (accs.size() > 0)? accs[0] : labelList;
             
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",NStr::IntToString(first_gi));        
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"cd_rid",cdd_rid);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",NStr::IntToString(first_gi));                    
+            string  mapCDDParams;
+            if(NStr::Find(cdd_rid,"data_cache") != NPOS) {
+                mapCDDParams = "query_gi=" + preComputedResID;
+            }
+            else if (cdd_rid != "cdd_no_hits") {
+                mapCDDParams = "blast_CD_RID=" + cdd_rid;
+            }
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"cdd_params",mapCDDParams);            
             url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_view",structure_linkout_as_group ? "onegroup" : "onepair");
             url_link = CAlignFormatUtil::MapTemplate(url_link,"taxname",(entrez_term == NcbiEmptyString) ? "none":entrez_term);            
             url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,firstAcc,lnk_displ,"",linkTitle);
@@ -2038,7 +2049,8 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                              int first_gi,
                                              bool structure_linkout_as_group,
                                              bool for_alignment, int cur_align,
-                                             bool textLink)
+                                             string preComputedResID)
+                                  
 {
     list<string> linkout_list;
     int gi = FindGi(ids);
@@ -2057,8 +2069,8 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                   first_gi,
                                   structure_linkout_as_group,
                                   for_alignment, 
-                                  cur_align,
-                                  textLink);
+                                  cur_align,                                  
+                                  preComputedResID);
 
     return linkout_list;
 }
@@ -2174,7 +2186,8 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                                  int taxid,
                                                  string &database,
                                                  int query_number,                                                 
-                                                 string &user_url)                                                 
+                                                 string &user_url,
+                                                 string &preComputedResID)                                                 
                                                  
 {
     list<string> linkout_list;
@@ -2219,8 +2232,9 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
             gnl = s_GetBestIDForURL(cur_id);
         }
 
+        if(!disableLink) {//
         //The following list will contain only one entry for single linkout value
-        list<string> one_linkout = s_GetLinkoutUrl(linkout, 
+            list<string> one_linkout = s_GetLinkoutUrl(linkout, 
                                   giList,
                                   labelList,
                                   rid,
@@ -2231,8 +2245,9 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                   structure_linkout_as_group,
                                   for_alignment, 
                                   cur_align,
+                                  preComputedResID,
                                   true,
-                                  disableLink,
+                                  false, // remove disableLink after design is confirmed
                                   taxid,
                                   taxName,
                                   database,
@@ -2240,8 +2255,9 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                   gnl,
                                   user_url);
 
-        list<string>::iterator iter = one_linkout.begin();        
-        linkout_list.push_back(*iter);
+            list<string>::iterator iter = one_linkout.begin();        
+            linkout_list.push_back(*iter);
+        }
  }
  return linkout_list;
 }

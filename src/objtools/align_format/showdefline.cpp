@@ -378,7 +378,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            m_EntrezTerm, 
                                            handle.GetBioseqCore()->IsNa(),
                                            0, true, false,
-                                           blast_rank);                    
+                                           blast_rank,m_PreComputedResID);                    
                     
                     break;
                 }
@@ -395,7 +395,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            m_EntrezTerm, 
                                            handle.GetBioseqCore()->IsNa(),
                                            0, true, false,
-                                           blast_rank);                        
+                                           blast_rank,m_PreComputedResID);                        
                         linkout_not_found = false;
                         break;
                     }
@@ -443,7 +443,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            seqUrlInfo.taxid,
                                            m_Database,
                                            m_QueryNumber,                                                 
-                                           user_url);
+                                           user_url,
+                                           m_PreComputedResID);
             }
             //Links to GenBank,FASTA,Graphics
             list <string> customLinksList = 
@@ -839,8 +840,9 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
     x_InitDefline();
     if(m_StructureLinkout){        
         char buf[512];
+        string  mapCDDParams = (NStr::Find(m_CddRid,"data_cache") != NPOS) ? "" : "blast_CD_RID=" + m_CddRid;        
         sprintf(buf, kStructure_Overview.c_str(), m_Rid.c_str(),
-                        0, 0, m_CddRid.c_str(), "overview",
+                        0, 0, mapCDDParams.c_str(), "overview",
                         m_EntrezTerm == NcbiEmptyString ?
                         m_EntrezTerm.c_str() : "none");
         out << buf <<"\n\n";  
@@ -1540,6 +1542,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
             sdl->id->GetLabel(&seqid, CSeq_id::eContent);            
         }
     }	
+    
     if(sdl->id_url != NcbiEmptyString) {        
 		string seqInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->seqInfoTmpl,"dfln_url",sdl->id_url);
         string trgt = (m_Option & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "";
