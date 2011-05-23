@@ -124,6 +124,8 @@ public:
                     // Return the job for processing by other instances.
                     context.ReturnJob();
                     return 1;
+                default:
+                    break;
                 }
             double d;
             is >> d;
@@ -142,6 +144,8 @@ public:
                 // Return the job for processing by other instances.
                 context.ReturnJob();
                 return 1;
+            default:
+                break;
             }
             context.PutProgressMessage("Iteration " + NStr::IntToString(i+1) +
                                        " from " + NStr::IntToString(m_Iters));
