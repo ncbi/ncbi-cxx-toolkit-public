@@ -12473,7 +12473,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("dbSNP");
     legal_strings.push_back ("dbSTS");
     legal_strings.push_back ("dictyBase");
+    legal_strings.push_back ("DDBJ");
     legal_strings.push_back ("EcoGene");
+    legal_strings.push_back ("EMBL");
     legal_strings.push_back ("ENSEMBL");
     legal_strings.push_back ("ERIC");
     legal_strings.push_back ("ESTLIB");
@@ -12583,8 +12585,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     refseq_strings.push_back ("REBASE");
     refseq_strings.push_back ("SK-FST");
     refseq_strings.push_back ("VBRC");
-    refseq_strings.push_back ("EMBL");
-    refseq_strings.push_back ("DDBJ");
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref", 
                                          "db_xref type %s should not used on an OrgRef"));
