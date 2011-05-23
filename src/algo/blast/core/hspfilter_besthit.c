@@ -99,7 +99,8 @@ s_ExportToHitlist(int qid,
    LinkedHSP_BH *best_list = bh_data->best_list[qid], *p;
    BlastHSPList *list;
    BlastHitList *tmp_hit_list = Blast_HitListNew(bh_data->num_hsps[qid]);
-   tmp_hit_list->hsplist_array = calloc(bh_data->num_hsps[qid], 
+   tmp_hit_list->hsplist_current = bh_data->num_hsps[qid];
+   tmp_hit_list->hsplist_array = calloc(tmp_hit_list->hsplist_current,
                                    sizeof(BlastHSPList *));
 
    while (best_list) {
