@@ -1567,7 +1567,7 @@ CNetCacheDApp::Init(void)
                               "netcached");
 
     arg_desc->AddFlag("reinit", "Recreate the storage database.");
-#ifdef NCBI_OS_UNIX
+#ifdef NCBI_OS_LINUX
     arg_desc->AddFlag("nodaemon",
                       "Turn off daemonization of NetCache at the start.");
 #endif
@@ -1587,7 +1587,7 @@ CNetCacheDApp::Run(void)
     }
     INFO_POST(NETCACHED_FULL_VERSION);
 
-#ifdef NCBI_OS_UNIX
+#ifdef NCBI_OS_LINUX
     if (!args["nodaemon"]) {
         INFO_POST("Entering UNIX daemon mode...");
         // Here's workaround for SQLite3 bug: if stdin is closed in forked
