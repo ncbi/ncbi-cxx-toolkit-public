@@ -26,7 +26,7 @@ IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
  
 VariationException ::= SEQUENCE
 {
-    class INTEGER {
+    code INTEGER {
         hgvs-parsing (1), --invalid hgvs expression
         hgvs-exon-boundary (2), --anchor position in an intronic HGVS expression is not at an exon boundary
                 
@@ -43,7 +43,7 @@ VariationException ::= SEQUENCE
         
     } OPTIONAL,
     
-    comment VisibleString OPTIONAL
+    message VisibleString
 }   
 
 VariantPlacement ::= SEQUENCE
@@ -156,7 +156,7 @@ Variation ::= SEQUENCE
     -- where this beast is seen
     -- note that this is a set of locations, and there are no restrictions to
     -- the contents to this set. 
-    placements SET OF VariantPlacement OPTIONAL,
+    placements SEQUENCE OF VariantPlacement OPTIONAL,
 
     -- phenotype
     phenotype SET OF Phenotype OPTIONAL,
