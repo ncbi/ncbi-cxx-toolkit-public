@@ -101,7 +101,10 @@ bool CGff2Writer::WriteAnnot(
     if ( ! x_WriteAnnot( annot ) ) {
         return false;
     }
-    return x_WriteFooter();
+    if ( ! (m_uFlags & fNoFooter) ) {
+        x_WriteFooter();
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

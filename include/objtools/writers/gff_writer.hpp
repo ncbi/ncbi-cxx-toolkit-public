@@ -54,6 +54,7 @@ public:
     typedef enum {
         fNormal =       0,
         fNoHeader =     1<<0,
+        fNoFooter =     1<<1,
         fSoQuirks =     1<<15,
     } TFlags;
     

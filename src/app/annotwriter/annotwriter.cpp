@@ -162,12 +162,16 @@ private:
         const CArgs& );
 
     bool TestHandles() const;
+
+    bool m_bHeadersWritten;
 };
 
 //  ----------------------------------------------------------------------------
 void CAnnotWriterApp::Init()
 //  ----------------------------------------------------------------------------
 {
+    m_bHeadersWritten = false;
+
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
@@ -207,18 +211,10 @@ void CAnnotWriterApp::Init()
 
     //  flags
     {{
-        arg_desc->AddDefaultKey(
-            "tracksize",
-            "INTEGER",
-            "Records per track",
-            CArgDescriptions::eInteger,
-            "0" );
-
     arg_desc->AddFlag(
-        "so-quirks",
-        "recreate sequence ontology funniness in output",
+        "single-header",
+        "list pragmas only once at the beginning of output",
         true );
-
     //  testing
     arg_desc->AddFlag(
         "test-handle",
@@ -501,7 +497,7 @@ bool CAnnotWriterApp::WriteGvf(
     CRef< CScope > pScope( new CScope( *pObjMngr ) );
     pScope->AddDefaults();
 
-    CGvfWriter writer( *pScope, os );
+    CGvfWriter writer( *pScope, os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 
@@ -566,11 +562,17 @@ CGff2Writer::TFlags CAnnotWriterApp::GffFlags(
 //  -----------------------------------------------------------------------------
 {
     CGff2Writer::TFlags eFlags = CGff2Writer::fNormal;
-    if ( args["so-quirks"] ) {
-        eFlags = CGff2Writer::TFlags( eFlags | CGff2Writer::fSoQuirks );
-    }
     if ( args["structibutes"] ) {
         eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fStructibutes );
+    }
+    if ( args["single-header"] ) {
+        eFlags = CGff2Writer::TFlags( eFlags | CGff2Writer::fNoFooter );
+        if ( m_bHeadersWritten ) {
+            eFlags = CGff2Writer::TFlags( eFlags | CGff2Writer::fNoHeader );
+        }
+        else {
+            m_bHeadersWritten = true;
+        }
     }
     return eFlags;
 }
