@@ -102,6 +102,7 @@ void CHgvs2variationApplication::Init(void)
     arg_desc->AddFlag("loc_prop", "attach location properties");
     arg_desc->AddFlag("prot_effect", "attach effect on the protein");
     arg_desc->AddFlag("precursor", "calculate precursor variation");
+    arg_desc->AddFlag("compute_hgvs", "calculate hgvs expressions");
 
     // Program description
     string prog_description = "Convert hgvs expression to a variation\n";
@@ -151,16 +152,20 @@ int CHgvs2variationApplication::Run(void)
 
          for(CTypeIterator<CVariantPlacement> it(Begin(*v)); it; ++it) {
              variation_util->AttachSeq(*it);
-             try {
-                 it->SetComment(parser->AsHgvsExpression(*it));
-             } catch (CException& e) {
-                 NCBI_REPORT_EXCEPTION("Can't compute hgvs expression", e);
+             if(args["compute_hgvs"]) {
+                 try {
+                     it->SetComment(parser->AsHgvsExpression(*it));
+                 } catch (CException& e) {
+                     NCBI_REPORT_EXCEPTION("Can't compute hgvs expression", e);
+                 }
              }
          }
 
-         string computed_hgvs = parser->AsHgvsExpression(*v);
+         if(args["compute_hgvs"]) {
+             string computed_hgvs = parser->AsHgvsExpression(*v);
 
-         v->SetDescription() += "| Computed HGVS: " + computed_hgvs;
+             v->SetDescription() += "| Computed HGVS: " + computed_hgvs;
+         }
 
          if(args["loc_prop"]) {
              variation_util->SetVariantProperties(*v);

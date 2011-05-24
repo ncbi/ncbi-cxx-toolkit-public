@@ -184,6 +184,17 @@ public:
     void AsSOTerms(const CVariantProperties& p, TSOTerms& terms);
     static string AsString(ESOTerm term);
 
+
+    /// If at any level in variation-set all variations have all same placements, move them to the parent level.
+    static void s_FactorOutPlacements(CVariation& v);
+
+    /*!
+     * If this variation has placements defined, return it; otherwise, recursively try
+     * parent all the way to the root; return NULL if nothing found.
+     * Precondition: root Variation must have been indexed (links to parents defined as necessary)
+     */
+    static const CVariation::TPlacements* s_GetPlacements(const CVariation& v);
+
 private:
     void ChangeToDelins(CVariation& v);
 
@@ -235,12 +246,7 @@ private:
      */
     void x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc);
 
-    /*!
-     * If this variation has placements defined, return it; otherwise, recursively try
-     * parent all the way to the root; return NULL if nothing found.
-     * Precondition: root Variation must have been indexed (links to parents defined as necessary)
-     */
-    static const CVariation::TPlacements* s_GetPlacements(const CVariation& v);
+
 
     /*!
      * Call s_GetPlacements and find first seq-literal in any of them.

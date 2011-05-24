@@ -516,7 +516,10 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
             CVariation& v2 = **it;
             x_InferNAfromAA(v2);
         }
-    } else if(!v.GetData().IsInstance()) {
+        v.ResetPlacements(); //nucleotide placement is computed for each instance and attached at its level
+    }
+
+    if(!v.GetData().IsInstance()) {
         return;
     }
 
@@ -581,6 +584,7 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
 
     string variant_codon = s_CollapseAmbiguities(variant_codons);
 
+#if 0
     //If the original and variant codons have terminal bases shared, we can truncate the variant codon and location accordingly.
     while(variant_codon.length() > 1 && variant_codon.at(0) == original_allele_codon.at(0)) {
         variant_codon = variant_codon.substr(1);
@@ -604,6 +608,7 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
             nuc_loc->SetInt().SetTo()--;
         }
     }
+#endif
 
     CRef<CDelta_item> delta2(new CDelta_item);
     delta2->SetSeq().SetLiteral().SetLength(variant_codon.length());
@@ -611,14 +616,16 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
 
     CRef<CVariation> v2(new CVariation);
 
-    //set placement only if we had placement on this to begin with
-    if(v.IsSetPlacements()) {
-        CRef<CVariantPlacement> p2(new CVariantPlacement);
+    //set placement
+    CRef<CVariantPlacement> p2(new CVariantPlacement);
+    //merge loc to convert int of length 1 to a pnt as necessary
+    p2->SetLoc(*sequence::Seq_loc_Merge(*nuc_loc, CSeq_loc::fSortAndMerge_All, NULL));
+    p2->SetMol(GetMolType(sequence::GetId(*nuc_loc, NULL)));
+    AttachSeq(*p2);
+    v2->SetPlacements().push_back(p2);
 
-        //merge loc to convert int of length 1 to a pnt as necessary
-        p2->SetLoc(*sequence::Seq_loc_Merge(*nuc_loc, CSeq_loc::fSortAndMerge_All, NULL));
-        v2->SetPlacements().push_back(p2);
-    }
+
+
 
     CVariation_inst& inst2 = v2->SetData().SetInstance();
     inst2.SetType(variant_codon.length() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
@@ -637,7 +644,9 @@ CRef<CVariation> CVariationUtil::InferNAfromAA(const CVariation& v)
     v2->Assign(v);
     v2->Index();
     x_InferNAfromAA(*v2);
+    s_FactorOutPlacements(*v2);
 
+    v2->Index();
     //Note: The result describes whole codons, even for point mutations, i.e. common suffx/prefix are not truncated.
     return v2;
 }
@@ -656,6 +665,7 @@ CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
     }
     return literal;
 }
+
 
 CRef<CSeq_literal> CVariationUtil::s_CatLiterals(const CSeq_literal& a, const CSeq_literal& b)
 {
@@ -1518,6 +1528,68 @@ const CConstRef<CSeq_literal> CVariationUtil::s_FindFirstLiteral(const CVariatio
         }
     }
     return CConstRef<CSeq_literal>(NULL);
+}
+
+
+bool Equals(const CVariation::TPlacements& p1, const CVariation::TPlacements& p2)
+{
+    if(p1.size() != p2.size()) {
+        return false;
+    }
+    CVariation::TPlacements::const_iterator it1 = p1.begin();
+    CVariation::TPlacements::const_iterator it2 = p2.begin();
+
+    for(; it1 != p1.end() && it2 != p2.end(); ++it1, ++it2) {
+        const CVariantPlacement& p1 = **it1;
+        const CVariantPlacement& p2 = **it2;
+        if(!p1.Equals(p2)) {
+            return false;
+        }
+
+    }
+    return true;
+}
+
+void CVariationUtil::s_FactorOutPlacements(CVariation& v)
+{
+    if(!v.GetData().IsSet()) {
+        return;
+    }
+    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+        s_FactorOutPlacements(**it);
+    }
+
+    CVariation::TPlacements* p1 = NULL;
+
+    bool ok = true;
+    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+        CVariation& v2 = **it;
+        if(!v2.IsSetPlacements()) {
+            ok = false;
+            break;
+        } else if(!p1) {
+            p1 = &v2.SetPlacements();
+            continue;
+        } else {
+            if(!Equals(*p1, v2.GetPlacements())) {
+                ok = false;
+                break;
+            }
+        }
+    }
+
+    if(ok && p1) {
+        //transfer p1 placements to this level
+        NON_CONST_ITERATE(CVariation::TPlacements, it, *p1) {
+            v.SetPlacements().push_back(*it);
+        }
+
+        //reset placements at the children level
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            CVariation& v2 = **it;
+            v2.ResetPlacements();
+        }
+    }
 }
 
 

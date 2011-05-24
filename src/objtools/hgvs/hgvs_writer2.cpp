@@ -73,6 +73,10 @@
 
 BEGIN_NCBI_SCOPE
 
+//todo: writer needs to work for "NP_079142.2:p.Met1?extMet-5" example when
+//the asserted-allele is propagated, and also when it is factored (later)
+
+
 namespace variation {
 
 
@@ -111,7 +115,10 @@ CRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
 
 string CHgvsParser::AsHgvsExpression(const CVariation& variation,  const CSeq_id* seq_id)
 {
-    return x_AsHgvsExpression(variation, seq_id, NULL);
+    CRef<CVariation> v(new CVariation);
+    v->Assign(variation);
+    v->Index();
+    return x_AsHgvsExpression(*v, seq_id, NULL);
 }
 
 string CHgvsParser::x_AsHgvsExpression(
@@ -121,8 +128,10 @@ string CHgvsParser::x_AsHgvsExpression(
 {
     //Find the placement to use (It is possible not to have one at the top level, if subvariations have their own)
     CRef<CVariantPlacement> placement;
-    if(variation.IsSetPlacements()) {
-        ITERATE(CVariation::TPlacements, it, variation.GetPlacements()) {
+
+    const CVariation::TPlacements* placements = CVariationUtil::s_GetPlacements(variation);
+    if(placements) {
+        ITERATE(CVariation::TPlacements, it, *placements) {
             const CVariantPlacement& p = **it;
             if(!seq_id || (p.GetLoc().GetId() && sequence::IsSameBioseq(*p.GetLoc().GetId(), *seq_id, m_scope))) {
                 placement.Reset(new CVariantPlacement);
@@ -173,7 +182,7 @@ string CHgvsParser::x_AsHgvsExpression(
     if(variation.GetData().IsSet()) {
         const CVariation::TData::TSet& vset = variation.GetData().GetSet();
         string delim_type =
-                vset.GetType() == CVariation::TData::TSet::eData_set_type_compound    ? ""
+                vset.GetType() == CVariation::TData::TSet::eData_set_type_compound    ? ";"
               : vset.GetType() == CVariation::TData::TSet::eData_set_type_haplotype   ? ";"
               : vset.GetType() == CVariation::TData::TSet::eData_set_type_products
                 || vset.GetType() == CVariation::TData::TSet::eData_set_type_mosaic   ? ","
@@ -184,7 +193,7 @@ string CHgvsParser::x_AsHgvsExpression(
               : "](+)[";
 
         string delim = "";
-        size_t count(0);
+        size_t count(0); //count of subvariations excluding asserted/reference-only observations, i.e. only those that participate in output
         ITERATE(CVariation::TData::TSet::TVariations, it, variation.GetData().GetSet().GetVariations()) {
             const CVariation& v2 = **it;
 
@@ -202,7 +211,7 @@ string CHgvsParser::x_AsHgvsExpression(
         }
 
         bool is_unbracketed =
-                vset.GetType() == CVariation::TData::TSet::eData_set_type_compound
+                vset.GetType() == CVariation::TData::TSet::eData_set_type_compound && count <= 1
              || vset.GetType() == CVariation::TData::TSet::eData_set_type_package && count <= 1;
 
         if(!is_unbracketed) {
@@ -214,10 +223,24 @@ string CHgvsParser::x_AsHgvsExpression(
             placement = x_AdjustPlacementForHgvs(*placement, variation.GetData().GetInstance());
         }
         hgvs_data_str = x_AsHgvsInstExpression(variation.GetData().GetInstance(), placement, asserted_seq);
+    } else if(variation.GetData().IsUnknown()) {
+        hgvs_data_str = "?";
     }
 
+    if(variation.IsSetFrameshift()) {
+        hgvs_data_str += "fs";
+        if(variation.GetFrameshift().IsSetX_length()) {
+            hgvs_data_str += NStr::IntToString(variation.GetFrameshift().GetX_length());
+        }
+
+    }
+
+    //todo: if inferred, add "("...")"
+
+
     string hgvs_loc_str = "";
-    if(placement) {
+    if(placement && variation.IsSetPlacements()) {
+        //prefix the placement only if it is defined at this level (otherwise will be handled at the parent level)
         hgvs_loc_str = AsHgvsExpression(*placement);
     }
 
@@ -489,12 +512,18 @@ string CHgvsParser::x_GetInstData(const CVariation_inst& inst, const CSeq_loc& t
 }
 
 
+
 string CHgvsParser::x_AsHgvsInstExpression(
         const CVariation_inst& inst,
         const CVariantPlacement* placement,
         const CSeq_literal* explicit_asserted_seq)
 {
     string inst_str = "";
+
+    CBioseq_Handle bsh;
+    if(placement) {
+        bsh = m_scope->GetBioseqHandle(placement->GetLoc());
+    }
 
     const CSeq_literal* asserted_seq =
             explicit_asserted_seq ? explicit_asserted_seq
@@ -550,70 +579,87 @@ string CHgvsParser::x_AsHgvsInstExpression(
            || inst.GetType() == CVariation_inst::eType_prot_neutral)
     {
         append_delta = true;
+    } else if(inst.GetType() == CVariation_inst::eType_prot_other &&
+              placement && placement->GetLoc().IsPnt() &&
+              placement->GetLoc().GetPnt().GetPoint() == 0)
+    {
+        inst_str = "extMet";
+    } else if(inst.GetType() == CVariation_inst::eType_prot_other
+              && placement && placement->GetLoc().IsPnt()
+              && bsh
+              && placement->GetLoc().GetPnt().GetPoint() == bsh.GetInst_Length() - 1)
+    {
+        inst_str = "extX";
     } else {
+        NcbiCerr << MSerial_AsnText << inst;
         NCBI_THROW(CException, eUnknown, "Cannot process this type of variation-inst");
     }
 
+
+
 #if 0
-    //append the deltas
-    ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
-        const CDelta_item& delta = **it;
-        if(delta.GetSeq().IsThis()) {
+    if(append_delta) {
+        ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
 
-            //"this" does not appear in HGVS nomenclature - we simply skip it as we
-            //have adjusted the location according to HGVS convention for insertinos
-            if(inst.GetType() == CVariation_inst::eType_ins && &delta == inst.GetDelta().begin()->GetPointer()) {
-                ; //only expecting this this is an isertion and this is the first element of delta
-            } else {
-                NCBI_THROW(CException, eUnknown, "'this-loc' is not expected here");
-            }
+            const CDelta_item& delta = **it;
+            if(delta.GetSeq().IsThis()) {
 
-        } else if(delta.GetSeq().IsLiteral()) {
-            out += x_SeqLiteralToStr(delta.GetSeq().GetLiteral(), flipped_strand);
-        } else if(delta.GetSeq().IsLoc()) {
-
-            CRef<CSeq_loc> delta_loc(new CSeq_loc());
-            delta_loc->Assign(delta.GetSeq().GetLoc());
-            if(flipped_strand) {
-                delta_loc->FlipStrand();
-            }
-
-            string delta_loc_str;
-            //the repeat-unit in microsattelite is always literal sequence:
-            //NG_011572.1:g.5658NG_011572.1:g.5658_5660(15_24)  - incorrect
-            //NG_011572.1:g.5658CAG(15_24) - correct
-            if(inst.GetType() != CVariation_inst::eType_microsatellite) {
-                delta_loc_str = x_SeqLocToStr(*delta_loc, true);
-            } else {
-                delta_loc_str = x_LocToSeqStr(*delta_loc);
-            }
-
-            out += delta_loc_str;
-
-        } else {
-            NCBI_THROW(CException, eUnknown, "Encountered unhandled delta class");
-        }
-
-        //add multiplier, but make sure we're dealing with SSR.
-        if(delta.IsSetMultiplier()) {
-            if(inst.GetType() == CVariation_inst::eType_microsatellite && !delta.GetSeq().IsThis()) {
-                string multiplier_str = x_IntWithFuzzToStr(
-                        delta.GetMultiplier(),
-                        delta.IsSetMultiplier_fuzz() ? &delta.GetMultiplier_fuzz() : NULL);
-
-                if(!NStr::StartsWith(multiplier_str, "(")) {
-                    multiplier_str = "[" + multiplier_str + "]";
-                    //In HGVS-land the fuzzy multiplier value existis as is, but an exact value
-                    //is enclosed in brackets a-la allele-set.
+                //"this" does not appear in HGVS nomenclature - we simply skip it as we
+                //have adjusted the location according to HGVS convention for insertinos
+                if(inst.GetType() == CVariation_inst::eType_ins && &delta == inst.GetDelta().begin()->GetPointer()) {
+                    ; //only expecting this this is an isertion and this is the first element of delta
+                } else {
+                    NCBI_THROW(CException, eUnknown, "'this-loc' is not expected here");
                 }
 
-                out += multiplier_str;
+            } else if(delta.GetSeq().IsLiteral()) {
+                out += x_SeqLiteralToStr(delta.GetSeq().GetLiteral(), flipped_strand);
+            } else if(delta.GetSeq().IsLoc()) {
+
+                CRef<CSeq_loc> delta_loc(new CSeq_loc());
+                delta_loc->Assign(delta.GetSeq().GetLoc());
+                if(flipped_strand) {
+                    delta_loc->FlipStrand();
+                }
+
+                string delta_loc_str;
+                //the repeat-unit in microsattelite is always literal sequence:
+                //NG_011572.1:g.5658NG_011572.1:g.5658_5660(15_24)  - incorrect
+                //NG_011572.1:g.5658CAG(15_24) - correct
+                if(inst.GetType() != CVariation_inst::eType_microsatellite) {
+                    delta_loc_str = x_SeqLocToStr(*delta_loc, true);
+                } else {
+                    delta_loc_str = x_LocToSeqStr(*delta_loc);
+                }
+
+                out += delta_loc_str;
+
             } else {
-                NCBI_THROW(CException, eUnknown, "Multiplier value is set in unexpected context (only STR supported)");
+                NCBI_THROW(CException, eUnknown, "Encountered unhandled delta class");
+            }
+
+            //add multiplier, but make sure we're dealing with SSR.
+            if(delta.IsSetMultiplier()) {
+                if(inst.GetType() == CVariation_inst::eType_microsatellite && !delta.GetSeq().IsThis()) {
+                    string multiplier_str = x_IntWithFuzzToStr(
+                            delta.GetMultiplier(),
+                            delta.IsSetMultiplier_fuzz() ? &delta.GetMultiplier_fuzz() : NULL);
+
+                    if(!NStr::StartsWith(multiplier_str, "(")) {
+                        multiplier_str = "[" + multiplier_str + "]";
+                        //In HGVS-land the fuzzy multiplier value existis as is, but an exact value
+                        //is enclosed in brackets a-la allele-set.
+                    }
+
+                    out += multiplier_str;
+                } else {
+                    NCBI_THROW(CException, eUnknown, "Multiplier value is set in unexpected context (only STR supported)");
+                }
             }
         }
     }
 #endif
+
 
     return inst_str;
 }

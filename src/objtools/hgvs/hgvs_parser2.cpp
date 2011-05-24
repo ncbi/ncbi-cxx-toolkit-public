@@ -71,6 +71,7 @@
 #include <objtools/hgvs/hgvs_parser2.hpp>
 #include <objtools/hgvs/variation_util2.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 namespace variation {
@@ -202,12 +203,15 @@ void CHgvsParser::s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzz
 void RepackageAssertedSequence(CVariation& vr)
 {
     if(vr.IsSetPlacements() && SetFirstPlacement(vr).IsSetSeq()) {
+        CRef<CVariation> container(new CVariation);
+        container->SetPlacements() = vr.SetPlacements();
+
         CRef<CVariation> orig(new CVariation);
         orig->Assign(vr);
         orig->ResetPlacements(); //location will be set on the package, as it is the same for both members
 
-        vr.SetData().SetSet().SetType(CVariation::TData::TSet::eData_set_type_package);
-        vr.SetData().SetSet().SetVariations().push_back(orig);
+        container->SetData().SetSet().SetType(CVariation::TData::TSet::eData_set_type_package);
+        container->SetData().SetSet().SetVariations().push_back(orig);
 
         CRef<CVariation> asserted_vr(new CVariation);
         asserted_vr->SetData().SetInstance().SetObservation(CVariation_inst::eObservation_asserted);
@@ -217,8 +221,10 @@ void RepackageAssertedSequence(CVariation& vr)
         delta->SetSeq().SetLiteral().Assign(SetFirstPlacement(vr).GetSeq());
         asserted_vr->SetData().SetInstance().SetDelta().push_back(delta);
 
-        SetFirstPlacement(vr).ResetSeq();
-        vr.SetData().SetSet().SetVariations().push_back(asserted_vr);
+        SetFirstPlacement(*container).ResetSeq();
+        container->SetData().SetSet().SetVariations().push_back(asserted_vr);
+
+        vr.Assign(*container);
 
     } else if(vr.GetData().IsSet()) {
         NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, vr.SetData().SetSet().SetVariations()) {
@@ -689,16 +695,6 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_prot_pos(TIterator const& i, const CCon
 
     pnt.asserted_sequence = prot_literal->GetSeq_data().GetNcbieaa();
 
-#if 0
-    if(!pnt.IsOffset()) {
-        //Create temporary loc and validate against it, since at this point context does not
-        //have this loc set, since we are in the process of constructing it.
-        CRef<CSeq_loc> tmp_loc(new CSeq_loc);
-        tmp_loc->SetPnt(*pnt.pnt);
-        context.Validate(*prot_literal, *tmp_loc);
-    }
-#endif
-
     return pnt;
 }
 
@@ -819,6 +815,32 @@ CRef<CSeq_loc> CHgvsParser::x_seq_loc(TIterator const& i, const CContext& contex
     return loc;
 }
 
+CRef<CSeq_literal> CHgvsParser::x_raw_seq_or_len(TIterator const& i, const CContext& context)
+{
+    HGVS_ASSERT_RULE(i, eID_raw_seq_or_len);
+
+    CRef<CSeq_literal> literal;
+    TIterator it = i->children.begin();
+
+    if(it->value.id() == SGrammar::eID_raw_seq) {
+        literal = x_raw_seq(it, context);
+    } else if(it->value.id() == SGrammar::eID_int_fuzz) {
+        SFuzzyInt int_fuzz = x_int_fuzz(it, context);
+        literal.Reset(new CSeq_literal);
+        literal->SetLength(int_fuzz.value);
+        if(int_fuzz.fuzz.IsNull()) {
+            ;//no-fuzz;
+        } else if(int_fuzz.fuzz->IsLim() && int_fuzz.fuzz->GetLim() == CInt_fuzz::eLim_unk) {
+            //unknown length (no value) - will represent as length=0 with gt fuzz
+            literal->SetFuzz().SetLim(CInt_fuzz::eLim_gt);
+        } else {
+            literal->SetFuzz(*int_fuzz.fuzz);
+        }
+    } else {
+        HGVS_ASSERT_RULE(it, eID_NONE);
+    }
+    return literal;
+}
 
 CHgvsParser::TDelta CHgvsParser::x_seq_ref(TIterator const& i, const CContext& context)
 {
@@ -835,21 +857,9 @@ CHgvsParser::TDelta CHgvsParser::x_seq_ref(TIterator const& i, const CContext& c
             HGVS_THROW(eSemantic, "Intronic loc is not supported in this context");
         }
         delta->SetSeq().SetLoc().Assign(p->GetLoc());
-    } else if(it->value.id() == SGrammar::eID_raw_seq) {
-        CRef<CSeq_literal> raw_seq = x_raw_seq(it, context);
-        delta->SetSeq().SetLiteral(*raw_seq);
-    } else if(it->value.id() == SGrammar::eID_int_fuzz) {
-        //known sequence length; may be approximate
-        SFuzzyInt int_fuzz = x_int_fuzz(it, context);
-        delta->SetSeq().SetLiteral().SetLength(int_fuzz.value);
-        if(int_fuzz.fuzz.IsNull()) {
-            ;//no-fuzz;
-        } else if(int_fuzz.fuzz->IsLim() && int_fuzz.fuzz->GetLim() == CInt_fuzz::eLim_unk) {
-            //unknown length (no value) - will represent as length=0 with gt fuzz
-            delta->SetSeq().SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
-        } else {
-            delta->SetSeq().SetLiteral().SetFuzz(*int_fuzz.fuzz);
-        }
+    } else if(it->value.id() == SGrammar::eID_raw_seq_or_len) {
+        CRef<CSeq_literal> literal = x_raw_seq_or_len(it, context);
+        delta->SetSeq().SetLiteral(*literal);
     } else {
         HGVS_ASSERT_RULE(it, eID_NONE);
     }
@@ -948,34 +958,19 @@ CRef<CVariation> CHgvsParser::x_delins(TIterator const& i, const CContext& conte
 {
     HGVS_ASSERT_RULE(i, eID_delins);
     TIterator it = i->children.begin();
-    CRef<CVariation> vr(new CVariation);
-    CVariation_inst& var_inst = vr->SetData().SetInstance();
-    var_inst.SetType(CVariation_inst::eType_delins);
-    SetFirstPlacement(*vr).Assign(context.GetPlacement());
+    CRef<CVariation> del_vr = x_deletion(it, context);
+    ++it;
+    CRef<CVariation> ins_vr = x_insertion(it, context);
 
-    ++it; //skip "del"
+    //The resulting delins variation has deletion's placement (with asserted seq, if any),
+    //and insertion's inst, except action type is "replace" (default) rather than "ins-before",
+    //so we reset action
 
+    del_vr->SetData().SetInstance().SetType(CVariation_inst::eType_delins);
+    del_vr->SetData().SetInstance().SetDelta() = ins_vr->SetData().SetInstance().SetDelta();
+    del_vr->SetData().SetInstance().SetDelta().front()->ResetAction();
 
-    if(it->value.id() == SGrammar::eID_raw_seq) {
-        CRef<CSeq_literal> literal = x_raw_seq(it, context);
-        ++it;
-        SetFirstPlacement(*vr).SetSeq(*literal);
-    }
-
-    ++it; //skip "ins"
-
-#if 0
-    //delins is represented as single-delta "replace this with that"
-    CRef<CDelta_item> di_del(new CDelta_item);
-    di_del->SetAction(CDelta_item::eAction_del_at);
-    di_del->SetSeq().SetThis();
-    var_inst.SetDelta().push_back(di_del);
-#endif
-
-    TDelta di_ins = x_seq_ref(it, context);
-    var_inst.SetDelta().push_back(di_ins);
-
-    return vr;
+    return del_vr;
 }
 
 CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& context)
@@ -993,10 +988,10 @@ CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& con
     di->SetSeq().SetThis();
     var_inst.SetDelta().push_back(di);
 
-    ++it; //skip del
+    ++it;
 
-    if(it->value.id() == SGrammar::eID_raw_seq) {
-        CRef<CSeq_literal> literal = x_raw_seq(it, context);
+    if(it->value.id() == SGrammar::eID_raw_seq_or_len) {
+        CRef<CSeq_literal> literal = x_raw_seq_or_len(it, context);
         ++it;
         SetFirstPlacement(*vr).SetSeq(*literal);
     }
@@ -1015,13 +1010,6 @@ CRef<CVariation> CHgvsParser::x_insertion(TIterator const& i, const CContext& co
     CVariation_inst& var_inst = vr->SetData().SetInstance();
 
     var_inst.SetType(CVariation_inst::eType_ins);
-
-    //verify that the HGVS-location is of length two, as in HGVS coordinates insertion
-    //is denoted to be between the specified coordinates.
-    TSeqPos len = GetLength(context.GetPlacement());
-    if(len != 2) {
-        HGVS_THROW(eSemantic, "Encountered target location for an insertion with the length != 2");
-    }
 
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
 
@@ -1287,21 +1275,19 @@ CRef<CVariation> CHgvsParser::x_prot_ext(TIterator const& i, const CContext& con
 
     CRef<CVariation> vr(new CVariation);
     CVariation_inst& var_inst = vr->SetData().SetInstance();
-    var_inst.SetType(CVariation_inst::eType_ins);
+    var_inst.SetType(CVariation_inst::eType_prot_other);
     string ext_type_str(it->value.begin(), it->value.end());
     ++it;
     string ext_len_str(it->value.begin(), it->value.end());
     int ext_len = NStr::StringToInt(ext_len_str);
 
-
+    SetFirstPlacement(*vr).Assign(context.GetPlacement());
     SetFirstPlacement(*vr).SetLoc().SetPnt().SetId().Assign(context.GetId());
     SetFirstPlacement(*vr).SetLoc().SetPnt().SetStrand(eNa_strand_plus);
 
     TDelta delta(new TDelta::TObjectType);
-    delta->SetSeq().SetLiteral().SetLength(abs(ext_len));
-
-    TDelta delta_this(new TDelta::TObjectType);
-    delta_this->SetSeq().SetThis();
+    delta->SetSeq().SetLiteral().SetLength(abs(ext_len) + 1);
+        //extension of Met or X by N bases = replacing first or last AA with (N+1) AAs
 
     if(ext_type_str == "extMet") {
         if(ext_len > 0) {
@@ -1310,7 +1296,6 @@ CRef<CVariation> CHgvsParser::x_prot_ext(TIterator const& i, const CContext& con
         SetFirstPlacement(*vr).SetLoc().SetPnt().SetPoint(0);
         //extension precedes first AA
         var_inst.SetDelta().push_back(delta);
-        var_inst.SetDelta().push_back(delta_this);
     } else if(ext_type_str == "extX") {
         if(ext_len < 0) {
             HGVS_THROW(eSemantic, "exX must be followed by a non-negative integer");
@@ -1318,7 +1303,6 @@ CRef<CVariation> CHgvsParser::x_prot_ext(TIterator const& i, const CContext& con
 
         SetFirstPlacement(*vr).SetLoc().SetPnt().SetPoint(context.GetBioseqHandle().GetInst_Length() - 1);
         //extension follows last AA
-        var_inst.SetDelta().push_back(delta_this);
         var_inst.SetDelta().push_back(delta);
     } else {
         HGVS_THROW(eGrammatic, "Unexpected ext_type: " + ext_type_str);
@@ -1596,7 +1580,11 @@ CRef<CVariation> CHgvsParser::x_root(TIterator const& i, const CContext& context
     HGVS_ASSERT_RULE(i, eID_root);
 
     CRef<CVariation> vr = x_list(i, context);
+
+    CVariationUtil::s_FactorOutPlacements(*vr);
     RepackageAssertedSequence(*vr);
+
+    vr->Index();
     return vr;
 }
 

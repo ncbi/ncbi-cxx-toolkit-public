@@ -337,6 +337,7 @@ protected:
             eID_prot_range,
             eID_mut_inst,
             eID_raw_seq,
+            eID_raw_seq_or_len,
             eID_aminoacid,
             eID_nuc_subst,
             eID_deletion,
@@ -387,6 +388,7 @@ protected:
                 s_rule_names[eID_fuzzy_pos]         = "fuzzy_pos";
                 s_rule_names[eID_pos_spec]          = "pos_spec";
                 s_rule_names[eID_raw_seq]           = "raw_seq";
+                s_rule_names[eID_raw_seq_or_len]    = "raw_seq_or_len";
                 s_rule_names[eID_aminoacid]         = "aminoacid";
                 s_rule_names[eID_nuc_subst]         = "nuc_subst";
                 s_rule_names[eID_deletion]          = "deletion";
@@ -437,6 +439,7 @@ protected:
             rule<ScannerT, parser_context<>, parser_tag<eID_nuc_range> >        nuc_range;
             rule<ScannerT, parser_context<>, parser_tag<eID_prot_range> >       prot_range;
             rule<ScannerT, parser_context<>, parser_tag<eID_raw_seq> >          raw_seq;
+            rule<ScannerT, parser_context<>, parser_tag<eID_raw_seq_or_len> >   raw_seq_or_len;
             rule<ScannerT, parser_context<>, parser_tag<eID_aminoacid> >        aminoacid;
             rule<ScannerT, parser_context<>, parser_tag<eID_nuc_subst> >        nuc_subst;
             rule<ScannerT, parser_context<>, parser_tag<eID_deletion> >         deletion;
@@ -564,18 +567,19 @@ protected:
 
                 seq_loc         = !ch_p('o') >> header >> location;
 
+                raw_seq_or_len  = raw_seq | int_fuzz;
+
                 seq_ref         = seq_loc       //far-loc
                                 | (nuc_range|prot_range)      //local-loc of range-type, e.g. c.17_18ins5_16 http://www.hgvs.org/mutnomen/FAQ.html
                                                               //This is to exclude point-locs (see below)
-                                | raw_seq       //literal sequence
-                                | int_fuzz;     //unknown sequence of some length
+                                | raw_seq_or_len;     //literal seq, or unknown sequence of some length
                                                 //  WARNING: this is ambiguous WRT local-loc!
                                                 //  e.g. p.Glu5Valins2fsX3 - 2 in ins2 indicates sequence of length two, NOT the sequence at position 2.
                                                 //  Hence, the local-locs above must be specified via range-types only.
 
                 nuc_subst       = raw_seq >> ch_p('>') >> raw_seq; //semantic check: must be of length 1
 
-                deletion        = str_p("del") >> !(raw_seq | int_p);
+                deletion        = str_p("del") >> raw_seq_or_len;
 
                 duplication     = str_p("dup") >> !seq_ref;
 
@@ -583,7 +587,7 @@ protected:
 
                 conversion      = str_p("con") >> seq_loc;
 
-                delins          = str_p("del") >> !raw_seq >> str_p("ins") >> seq_ref;
+                delins          = deletion >> insertion;
 
                 nuc_inv         = str_p("inv") >> !int_p;
 
@@ -721,8 +725,9 @@ private:
     static CRef<CVariantPlacement>  x_location        (TIterator const& i, const CContext& context);
 
     static CRef<CSeq_loc>    x_seq_loc         (TIterator const& i, const CContext& context);
-    static CRef<CSeq_literal> x_raw_seq         (TIterator const& i, const CContext& context);
+    static CRef<CSeq_literal> x_raw_seq        (TIterator const& i, const CContext& context);
     static TDelta            x_seq_ref         (TIterator const& i, const CContext& context);
+    static CRef<CSeq_literal> x_raw_seq_or_len (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_identity        (const CContext& context);
     static CRef<CVariation>  x_delins          (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_deletion        (TIterator const& i, const CContext& context);
