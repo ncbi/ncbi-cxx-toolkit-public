@@ -48,6 +48,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CFeature_table_reader_imp;
 class IErrorContainer;
+class ITableFilter;
 
 // public interface for (single instance) feature table reader
 
@@ -65,41 +66,50 @@ public:
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
                                                    const TFlags flags = 0,
-                                                   IErrorContainer* container=0);
+                                                   IErrorContainer* container=0,
+                                                   ITableFilter *filter = 0);
 
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const TFlags flags = 0,
-                                                    IErrorContainer* container=0);
+                                                    IErrorContainer* container=0,
+                                                   ITableFilter *filter = 0);
 
     static CRef<CSeq_annot> ReadSequinFeatureTable (ILineReader& reader,
                                                     const string& seqid,
                                                     const string& annotname,
                                                     const TFlags flags = 0,
-                                                    IErrorContainer* container=0);
+                                                    IErrorContainer* container=0,
+                                                   ITableFilter *filter = 0);
 
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const string& seqid,
                                                     const string& annotname,
                                                     const TFlags flags = 0,
-                                                    IErrorContainer* container=0);
+                                                    IErrorContainer* container=0,
+                                                   ITableFilter *filter = 0);
 
     // read all feature tables available from the input, attaching each
     // at an appropriate position within the Seq-entry object
     static void ReadSequinFeatureTables(ILineReader& reader,
                                         CSeq_entry& entry,
                                         const TFlags flags = 0,
-                                        IErrorContainer* container=0);
+                                        IErrorContainer* container=0,
+                                        ITableFilter *filter = 0);
 
     static void ReadSequinFeatureTables(CNcbiIstream& ifs,
                                         CSeq_entry& entry,
                                         const TFlags flags = 0,
-                                        IErrorContainer* container=0);
+                                        IErrorContainer* container=0,
+                                        ITableFilter *filter = 0);
 
     // create single feature from key
     static CRef<CSeq_feat> CreateSeqFeat (const string& feat,
                                           CSeq_loc& location,
                                           const TFlags flags = 0,
-                                          IErrorContainer* container=0);
+                                          IErrorContainer* container = 0,
+                                          unsigned int line = 0,
+                                          std::string *seq_id = 0,
+                                          ITableFilter *filter = 0);
 
     // add single qualifier to feature
     static void AddFeatQual (CRef<CSeq_feat> sfp,

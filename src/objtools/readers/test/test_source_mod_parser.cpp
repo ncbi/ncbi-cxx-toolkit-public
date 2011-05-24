@@ -44,9 +44,11 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
+#include <objtools/readers/table_filter.hpp>
 
 #include <common/test_assert.h>
 
@@ -127,10 +129,24 @@ int CSourceModParserTestApp::Run(void)
     CRef<CSeq_entry>  entry(reader.ReadSet());
     CObjectOStreamAsn oos(args["out"].AsOutputFile());
 
-    CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry );
+    CSimpleTableFilter tbl_filter( eDiag_Warning, 
+        "The feature name \"", "\" is unnecessary because it's already known." );
+    tbl_filter.AddDisallowedFeatureName("source");
+
+    CErrorContainerLenient err_container;
+    CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 0, 
+        &err_container, &tbl_filter );
 
     // print out result
-    s_Visit(*entry, oos /*, args["org"].AsString() */ );
+    s_Visit(*entry, oos /*, args["org"].AsString() */ ); 
+
+    // print out any errors found:
+    size_t idx = 0;
+    for( ; idx < err_container.Count(); ++idx ) {
+        const ILineError &err = err_container.GetError(idx);
+        cerr << "Error in seq-id " << err.SeqId() << " on line " << err.Line() << " of severity " << err.SeverityStr() << ": \"" 
+             << err.Message() << "\"" << endl;
+    }
 
     return 0;
 }

@@ -135,7 +135,7 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message() ) );
+            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
         return true;
     };
 };        

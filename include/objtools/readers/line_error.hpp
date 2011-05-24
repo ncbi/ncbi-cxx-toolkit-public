@@ -53,6 +53,9 @@ public:
     
     virtual unsigned int
     Line() const =0;
+
+    virtual std::string
+    SeqId() const = 0;
     
     virtual std::string
     Message() const =0;
@@ -86,8 +89,10 @@ public:
     CLineError(
         EDiagSev eSeverity = eDiag_Error,
         unsigned int uLine = 0,
-        const std::string& strMessage = std::string( "" ) )
-    : m_eSeverity( eSeverity ), m_uLine( uLine ), m_strMessage( strMessage ) {};
+        const std::string& strMessage = std::string( "" ),
+        const std::string& seqId = std::string( "" ) )
+    : m_eSeverity( eSeverity ), m_uLine( uLine ), m_strMessage( strMessage ),
+    m_strSeqId(seqId) { }
     
     virtual ~CLineError() throw() {};
         
@@ -96,6 +101,9 @@ public:
     
     unsigned int
     Line() const { return m_uLine; };
+
+    std::string
+    SeqId() const { return m_strSeqId; };
     
     std::string
     Message() const { return m_strMessage; };
@@ -105,6 +113,7 @@ public:
     {
         out << "            " << SeverityStr() << ":" << endl;
         out << "Line:       " << Line() << endl;
+        out << "Seq-Id:     " << SeqId() << endl;
         out << "Message:    " << Message() << endl;
         out << endl;
     };
@@ -112,6 +121,7 @@ public:
 protected:
     EDiagSev m_eSeverity;
     unsigned int m_uLine;
+    std::string m_strSeqId;
     std::string m_strMessage;
 };
 
@@ -124,15 +134,19 @@ public:
     CObjReaderLineException(
         EDiagSev eSeverity,
         unsigned int uLine,
-        const std::string& strMessage )
+        const std::string& strMessage,
+        const std::string& strSeqId = std::string() )
     : CObjReaderParseException( DIAG_COMPILE_INFO, 0, eFormat, strMessage, uLine, 
-        eDiag_Info ) 
+        eDiag_Info ), m_uLineNumber(uLine), m_strSeqId(strSeqId)
     {
         SetSeverity( eSeverity );
     };
 
+    ~CObjReaderLineException(void) throw() { }
+
     EDiagSev Severity() const { return GetSeverity(); };
     unsigned int Line() const { return m_uLineNumber; };
+    std::string SeqId() const { return m_strSeqId; };
     std::string Message() const { return GetMsg(); };
     
     //
@@ -146,6 +160,7 @@ public:
         
 protected:
     unsigned int m_uLineNumber;
+    std::string  m_strSeqId;
 };
 
     
