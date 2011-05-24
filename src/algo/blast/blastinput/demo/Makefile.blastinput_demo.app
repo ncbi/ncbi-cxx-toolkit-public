@@ -15,4 +15,4 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects -Cygwin
 
-WATCHERS = blastsoft
+WATCHERS = camacho blastsoft

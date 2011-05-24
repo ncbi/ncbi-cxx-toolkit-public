@@ -20,4 +20,4 @@ CHECK_COPY = data
 CHECK_TIMEOUT = 600
 
 
-WATCHERS = blastsoft
+WATCHERS = camacho blastsoft

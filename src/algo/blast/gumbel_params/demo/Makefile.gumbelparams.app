@@ -7,4 +7,4 @@ CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = blastsoft
+WATCHERS = boratyng blastsoft

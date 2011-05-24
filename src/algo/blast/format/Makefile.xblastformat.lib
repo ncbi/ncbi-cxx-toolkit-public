@@ -9,4 +9,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 
 DLL_LIB = blastxml xhtml xcgi
 
-WATCHERS = blastsoft
+WATCHERS = jianye zaretska blastsoft

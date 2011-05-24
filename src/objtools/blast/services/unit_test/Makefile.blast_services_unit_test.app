@@ -13,4 +13,4 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = blast_services_unit_test
 
-WATCHERS = blastsoft
+WATCHERS = madden blastsoft

@@ -23,4 +23,4 @@ LIBS = $(OSMESA_LIBS) $(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) $(GLEW_LIBS) \
 CHECK_CMD = blastfmt_unit_test
 CHECK_COPY = data
 
-WATCHERS = blastsoft
+WATCHERS = boratyng blastsoft

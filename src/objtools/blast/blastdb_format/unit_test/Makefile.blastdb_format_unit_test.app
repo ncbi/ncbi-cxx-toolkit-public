@@ -19,4 +19,4 @@ CHECK_COPY = data
 REQUIRES = Boost.Test.Included
 
 
-WATCHERS = blastsoft
+WATCHERS = zaretska jianye blastsoft
