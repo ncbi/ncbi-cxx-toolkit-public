@@ -33,6 +33,8 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annot_id.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
@@ -60,6 +62,24 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+//  ----------------------------------------------------------------------------
+bool s_ExtractPragma(
+    const CUser_object& pragmas,
+    const string& key,
+    string& pragma )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! pragmas.HasField( key ) ) {
+        return false;
+    }
+    try {
+        pragma = pragmas.GetField( key ).GetData().GetStr();
+        return true;
+    }
+    catch( ... ) {};
+    return false;
+}
 
 //  ----------------------------------------------------------------------------
 CGvfWriter::CGvfWriter(
@@ -93,6 +113,63 @@ CGvfWriter::~CGvfWriter()
 //  ----------------------------------------------------------------------------
 {
 };
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriter::x_WriteHeader(
+    const CSeq_annot& annot )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! annot.GetDesc().IsSet() ) {
+        return x_WriteHeader();
+    }
+    const list< CRef< CAnnotdesc > > descrs = annot.GetDesc().Get();
+    list< CRef< CAnnotdesc > >::const_iterator cit = descrs.begin();
+    CConstRef<CAnnotdesc> pDescPragmas;
+    while ( cit != descrs.end() ) {
+        CConstRef<CAnnotdesc> pDesc = *cit;
+        cit++;
+        if ( ! pDesc->IsUser() ) {
+            continue;
+        }
+        if ( ! pDesc->GetUser().IsSetType() ) {
+            continue;
+        }
+        if ( ! pDesc->GetUser().GetType().IsStr() ) {
+            continue;
+        }
+        if ( pDesc->GetUser().GetType().GetStr() == "gvf-import-pragmas" ) {
+            pDescPragmas = pDesc;
+            break;
+        }
+    }
+
+    if ( ! x_WriteHeader() ) {
+        return false;
+    } 
+    if ( ! pDescPragmas ) {
+        return true;
+    }
+
+    const CAnnotdesc::TUser& pragmas = pDescPragmas->GetUser();
+    const CUser_object::TData& data = pragmas.GetData();
+    for ( CUser_object::TData::const_iterator cit = data.begin(); 
+        cit != data.end(); ++cit )
+    {
+        string key, value;
+        try {
+            key = (*cit)->GetLabel().GetStr();
+            value = (*cit)->GetData().GetStr();
+        }
+        catch(...) {
+            continue;
+        }
+        if ( key == "gff-version" || key == "gvf-version" ) {
+            continue;
+        }
+        m_Os << "##" << key << " " << value << endl;
+    } 
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriter::x_WriteHeader()

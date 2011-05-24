@@ -96,13 +96,13 @@ bool CGff2Writer::WriteAnnot(
 //  ----------------------------------------------------------------------------
 {
     if ( ! (m_uFlags & fNoHeader) ) {
-        x_WriteHeader();
+        x_WriteHeader( annot );
     }
     if ( ! x_WriteAnnot( annot ) ) {
         return false;
     }
     if ( ! (m_uFlags & fNoFooter) ) {
-        x_WriteFooter();
+        x_WriteFooter( annot );
     }
     return true;
 }

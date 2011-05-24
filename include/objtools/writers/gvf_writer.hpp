@@ -63,6 +63,8 @@ public:
 
 protected:
     virtual bool x_WriteHeader();
+    virtual bool x_WriteHeader(
+        const CSeq_annot& );
 
     virtual bool x_WriteFeature(
         feature::CFeatTree&,

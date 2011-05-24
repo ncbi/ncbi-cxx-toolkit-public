@@ -105,7 +105,12 @@ protected:
         CSeq_annot_Handle );
 
     virtual bool x_WriteHeader();
+    virtual bool x_WriteHeader(
+        const CSeq_annot& ) { return x_WriteHeader(); };
     virtual bool x_WriteFooter();
+    virtual bool x_WriteFooter(
+        const CSeq_annot& ) { return x_WriteFooter(); };
+
     virtual bool x_WriteFeature(
         feature::CFeatTree&,
         CMappedFeat );
