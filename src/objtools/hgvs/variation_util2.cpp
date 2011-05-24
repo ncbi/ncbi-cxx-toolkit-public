@@ -782,7 +782,7 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
 
 
 
-void CVariationUtil::AttachProteinConsequences(CVariation& v)
+void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* target_id)
 {
     v.Index();
     const CVariation::TPlacements* placements = s_GetPlacements(v);
@@ -817,6 +817,14 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v)
 
     ITERATE(CVariation::TPlacements, it, *placements) {
         const CVariantPlacement& placement = **it;
+
+        if(target_id && !sequence::IsSameBioseq(*target_id,
+                                                sequence::GetId(placement.GetLoc(), NULL),
+                                                m_scope))
+        {
+            continue;
+        }
+
         if(placement.IsSetStart_offset() && (placement.IsSetStop_offset() || placement.GetLoc().IsPnt())) {
             continue; //intronic.
         }

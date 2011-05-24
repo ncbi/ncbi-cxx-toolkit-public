@@ -579,7 +579,7 @@ protected:
 
                 nuc_subst       = raw_seq >> ch_p('>') >> raw_seq; //semantic check: must be of length 1
 
-                deletion        = str_p("del") >> raw_seq_or_len;
+                deletion        = str_p("del") >> !raw_seq_or_len;
 
                 duplication     = str_p("dup") >> !seq_ref;
 

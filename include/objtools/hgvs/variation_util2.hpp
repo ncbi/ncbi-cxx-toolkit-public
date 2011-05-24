@@ -103,10 +103,10 @@ public:
 
 
     /// Find the CDSes for the first placement; Compute prot consequence using TranslateNAtoAA for each
-    /// and attach results to nuc_variation.consequnece.
+    /// and attach results to nuc_variation.consequnece. If seq-id specified, use only the placement with the specified id.
     /// Note: Alternatively, the API could be "create and return consequence protein variation(s)", rather than attach,
     ///       but that for hierarchical input it would be hard to tell which consequence corresponds to which node.
-    void AttachProteinConsequences(CVariation& nuc_variation);
+    void AttachProteinConsequences(CVariation& nuc_variation, const CSeq_id* = NULL);
 
 
 ///Other utility methods:
