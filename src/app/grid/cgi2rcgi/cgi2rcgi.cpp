@@ -485,10 +485,6 @@ void CCgi2RCgiApp::Init()
     // Disregard the case of CGI arguments
     CCgiRequest::TFlags flags = CCgiRequest::fCaseInsensitiveArgs;
 
-    if (config.GetBool(cgi2rcgi_section, "ignore_query_string",
-            true, IRegistry::eReturn))
-        flags |= CCgiRequest::fIgnoreQueryString;
-
     if (config.GetBool(cgi2rcgi_section, "donot_parse_content",
             true, IRegistry::eReturn) &&
                 !(m_AffinitySource & eUseRequestContent))
@@ -663,6 +659,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                         os.write(saved_content.data(), saved_content.length());
                     job_key = submitter.Submit();
                     grid_ctx.DefinePersistentEntry("job_key", job_key);
+                    GetDiagContext().Extra().Print("job_key", job_key);
                     phase = ePending;
 
                     unsigned long wait_time = m_FirstDelay*1000;
@@ -915,5 +912,6 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
 /////////////////////////////////////////////////////////////////////////////
 int main(int argc, const char* argv[])
 {
+    GetDiagContext().SetOldPostFormat(false);                           \
     return CCgi2RCgiApp().AppMain(argc, argv, 0, eDS_Default);
 }
