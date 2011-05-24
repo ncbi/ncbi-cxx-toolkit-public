@@ -1,1 +1,15 @@
-This is sample ChangeLog. Fill it out as soon as possible.
+Release 4.8.0 based on SC 8.0 (2011-05-24)
+
+Improvements
+
+    * Application level logging (JIRA: CXX-2146)
+    * Excessively long input is not accepted any more. The client will get an
+      error message. (JIRA: CXX-2361)
+    * The netschedule output is now unified. Each line starts with the 'OK:' or
+      'ERR:' regardless of what command the output is for. (JIRA: CXX-2254)
+    * The job dump output now also has job tags. (JIRA: CXX-2245)
+    * Batch submit does not accept wrong input anymore and resets the command
+      handler to the initial state if there are errors. (JIRA: CXX-2240)
+    * The client name is now logged as well as some other parameters
+      (JIRA: CXX-1978)
+
