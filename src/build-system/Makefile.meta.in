@@ -21,6 +21,7 @@ top_srcdir = @top_srcdir@
 abs_top_srcdir = @abs_top_srcdir@
 rel_srcdir = $(srcdir:$(top_srcdir)/%=%)
 abs_srcdir = $(srcdir:$(top_srcdir)/%=$(abs_top_srcdir)/%)
+subdir     = $(rel_srcdir:src/%=%)
 status_dir = @status_dir@
 
 ### Make sure we are using a right command shell
@@ -188,7 +189,7 @@ if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    expendable=false ; \
    for i in $$x_project ; do \
       if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-      $(check_add) $(abs_srcdir) $$i @signature@ @exe_ext@
+      $(check_add) $(abs_srcdir) $$i @signature@ $(subdir)
 CHECK_ADD_KET = ||  exit 5 ; \
    done ; \
 fi
@@ -464,8 +465,6 @@ check_add_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 libs_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) libs; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) libs_p $(SUB_KET_P); else true; fi
-
-subdir = $(rel_srcdir:src/%=%)
 
 
 Makefile.flat: $(builddir)/Makefile.flat

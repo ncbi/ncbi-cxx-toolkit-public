@@ -7,11 +7,11 @@
 # Buid list files to checking in the build tree.
 #
 # Usage: (Run only from Makefile.meta)
-#    check_add.sh <project_srcdir> <project_name> <signature>
+#    check_add.sh <project_srcdir> <project_name> <signature> <rel_srcdir>
 #
 # Example:
 #    check_add.sh ~/c++/src/html/test test_jsmenu  \
-#                 GCC_295-Debug--sparc-sun-solaris2.8-serpens
+#                 GCC_295-Debug--sparc-sun-solaris2.8-serpens html/test
 #
 # Note:
 #    1) Environment variable CHECK_RUN_LIST must be set;
@@ -28,13 +28,20 @@ x_out=$CHECK_RUN_LIST
 x_srcdir=`(cd "$1"; pwd)`
 x_test=$2
 x_signature=$3
+x_srcdir_rel=$4
 x_use_ignore_list=${CHECK_USE_IGNORE_LIST-Y}
 x_delim=" ____ "
 # Default timeout for check (in seconds)
 x_timeout_default=200
 
-# Convert source dir to relative path
-x_srcdir_rel=`echo "$x_srcdir" | perl -ne 's|^.*?/src/||; print'`
+# Attempt to determine the relative source directory if necessary.
+# (This logic assumes that the first occurrence of src as a path
+# component will be the relevant one.)
+case "$x_srcdir_rel" in
+    /* | '' ) 
+        x_srcdir_rel=`echo "$x_srcdir" | perl -pe 's|^.*?/src/||'`
+        ;;
+esac
 
 # Check to necessity make test for this application
 if test ! -f "$x_srcdir/Makefile.$x_test.app";  then
@@ -46,7 +53,7 @@ fi
 x_app=`grep '^ *APP[ =]' "$x_srcdir/Makefile.$x_test.app"`
 x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//'`
 
-x_tpath=`echo "$x_srcdir/$x_test" | perl -ne 's|^.*?/src/||; print'`
+x_tpath=$x_srcdir_rel/$x_test
 if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
    # Check ignore list
    x_use_ignore_list=`echo $x_use_ignore_list | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
