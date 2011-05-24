@@ -583,6 +583,7 @@ bool CId1FetchApp::LookUpGI(int gi)
 
     CBioseq_Handle handle;
     if (use_objmgr) {
+        m_Scope->ResetDataAndHistory();
         // What about db, ent, and maxplex?
         CSeq_id id;
         id.SetGi(gi);
@@ -591,6 +592,22 @@ bool CId1FetchApp::LookUpGI(int gi)
             ERR_POST(Fatal << "Bioseq not found: " << id.DumpAsFasta());
         }
         reply_object = handle.GetTopLevelEntry().GetCompleteSeq_entry();
+    }
+    else if ( dynamic_cast<const CSeq_entry*>(reply_object.GetPointer()) &&
+              ((fmt == "fasta"  &&  (lt == "ids" || lt == "entry")) ||
+               fmt == "quality" ||
+               fmt == "genbank"  ||
+               fmt == "genpept") ) {
+        // these formatting modes require CBioseq_Handle
+        m_Scope->ResetDataAndHistory();
+        const CSeq_entry& se = dynamic_cast<const CSeq_entry&>(*reply_object);
+        CSeq_entry_Handle tse = m_Scope->AddTopLevelSeqEntry(se);
+        CSeq_id id;
+        id.SetGi(gi);
+        handle = m_Scope->GetBioseqHandleFromTSE(id, tse);
+        if ( !handle ) {
+            ERR_POST(Fatal << "Bioseq not found: " << id.DumpAsFasta());
+        }
     }
 
     // Dump server response in the specified format
