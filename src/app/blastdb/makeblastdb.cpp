@@ -838,6 +838,9 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                 CRef<IRawSequenceSource> raw(new CRawSeqDBSource(quoted, is_protein, m_DB));
                 m_DB->AddSequences(*raw);
             }
+        } else {
+            NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                "No valid input FASTA file or BLAST db is found.");
         }
     }
 }
