@@ -112,6 +112,8 @@ public:
 ///Other utility methods:
 
     /// Flipping strand involves flipping all placements, and insts.
+    /// Note: for insertions, the placement(s) must be dinucleotide where
+    /// insertion occurs, such that semantic correctness is maintained.
     void FlipStrand(CVariation& v) const;
 
     /// Flipping a placement involves flipping strand on the seq-loc and swapping the offsets (and signs).

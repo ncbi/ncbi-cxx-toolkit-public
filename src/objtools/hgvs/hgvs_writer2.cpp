@@ -106,6 +106,7 @@ CRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
         if(v2.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_asserted) {
             asserted_seq.Reset(new CSeq_literal);
             asserted_seq->Assign(v2.GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral());
+            break;
         }
     }
 
@@ -113,18 +114,18 @@ CRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
 }
 
 
-string CHgvsParser::AsHgvsExpression(const CVariation& variation,  const CSeq_id* seq_id)
+string CHgvsParser::AsHgvsExpression(const CVariation& variation,  CConstRef<CSeq_id> seq_id)
 {
     CRef<CVariation> v(new CVariation);
     v->Assign(variation);
     v->Index();
-    return x_AsHgvsExpression(*v, seq_id, NULL);
+    return x_AsHgvsExpression(*v, seq_id, CConstRef<CSeq_literal>(NULL));
 }
 
 string CHgvsParser::x_AsHgvsExpression(
         const CVariation& variation,
-        const CSeq_id* seq_id,
-        const CSeq_literal* asserted_seq)
+        CConstRef<CSeq_id> seq_id,
+        CConstRef<CSeq_literal> asserted_seq)
 {
     //Find the placement to use (It is possible not to have one at the top level, if subvariations have their own)
     CRef<CVariantPlacement> placement;
@@ -164,7 +165,7 @@ string CHgvsParser::x_AsHgvsExpression(
                         0, asserted_seq->GetLength());
             }
         }
-        return x_AsHgvsExpression(*flipped_variation, seq_id, flipped_asserted_seq.GetPointerOrNull());
+        return x_AsHgvsExpression(*flipped_variation, seq_id, flipped_asserted_seq);
     }
 
     //if this variation is a package containing asserted sequence, unwrap it and call recursively
@@ -172,11 +173,8 @@ string CHgvsParser::x_AsHgvsExpression(
     if(variation.GetData().IsSet()
        && variation.GetData().GetSet().GetType() == CVariation::TData::TSet::eData_set_type_package)
     {
-        CRef<CVariation> v(new CVariation);
-        v->Assign(variation);
-        asserted_seq = x_FindAssertedSequence(*v);
+        asserted_seq = x_FindAssertedSequence(variation);
     }
-
 
     string hgvs_data_str = "";
     if(variation.GetData().IsSet()) {
@@ -515,8 +513,8 @@ string CHgvsParser::x_GetInstData(const CVariation_inst& inst, const CSeq_loc& t
 
 string CHgvsParser::x_AsHgvsInstExpression(
         const CVariation_inst& inst,
-        const CVariantPlacement* placement,
-        const CSeq_literal* explicit_asserted_seq)
+        CConstRef<CVariantPlacement> placement,
+        CConstRef<CSeq_literal> explicit_asserted_seq)
 {
     string inst_str = "";
 
@@ -583,21 +581,20 @@ string CHgvsParser::x_AsHgvsInstExpression(
               placement && placement->GetLoc().IsPnt() &&
               placement->GetLoc().GetPnt().GetPoint() == 0)
     {
-        inst_str = "extMet";
+        inst_str = "extMet-";
+        append_delta = true;
     } else if(inst.GetType() == CVariation_inst::eType_prot_other
               && placement && placement->GetLoc().IsPnt()
               && bsh
               && placement->GetLoc().GetPnt().GetPoint() == bsh.GetInst_Length() - 1)
     {
         inst_str = "extX";
+        append_delta = true;
     } else {
-        NcbiCerr << MSerial_AsnText << inst;
-        NCBI_THROW(CException, eUnknown, "Cannot process this type of variation-inst");
+        inst_str = "?";
     }
 
 
-
-#if 0
     if(append_delta) {
         ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
 
@@ -613,26 +610,30 @@ string CHgvsParser::x_AsHgvsInstExpression(
                 }
 
             } else if(delta.GetSeq().IsLiteral()) {
-                out += x_SeqLiteralToStr(delta.GetSeq().GetLiteral(), flipped_strand);
-            } else if(delta.GetSeq().IsLoc()) {
-
-                CRef<CSeq_loc> delta_loc(new CSeq_loc());
-                delta_loc->Assign(delta.GetSeq().GetLoc());
-                if(flipped_strand) {
-                    delta_loc->FlipStrand();
+                CRef<CSeq_literal> literal(new CSeq_literal);
+                literal->Assign(delta.GetSeq().GetLiteral());
+                if(NStr::StartsWith(inst_str, "extMet") || NStr::StartsWith(inst_str, "extX")) {
+                    literal->SetLength()--;
+                    //length of extension is one less than the length of the sequence that replaces first or last AA
                 }
 
+                inst_str += x_SeqLiteralToStr(*literal);
+            } else if(delta.GetSeq().IsLoc()) {
                 string delta_loc_str;
                 //the repeat-unit in microsattelite is always literal sequence:
                 //NG_011572.1:g.5658NG_011572.1:g.5658_5660(15_24)  - incorrect
                 //NG_011572.1:g.5658CAG(15_24) - correct
-                if(inst.GetType() != CVariation_inst::eType_microsatellite) {
-                    delta_loc_str = x_SeqLocToStr(*delta_loc, true);
+                if(inst.GetType() == CVariation_inst::eType_microsatellite) {
+                    delta_loc_str = x_LocToSeqStr(delta.GetSeq().GetLoc());
                 } else {
-                    delta_loc_str = x_LocToSeqStr(*delta_loc);
+                    CRef<CVariantPlacement> p_tmp(new CVariantPlacement);
+                    p_tmp->SetLoc().Assign(delta.GetSeq().GetLoc());
+                    CVariationUtil util(*m_scope);
+                    p_tmp->SetMol(util.GetMolType(sequence::GetId(p_tmp->GetLoc(), NULL)));
+                    delta_loc_str = AsHgvsExpression(*p_tmp);
                 }
 
-                out += delta_loc_str;
+                inst_str += delta_loc_str;
 
             } else {
                 NCBI_THROW(CException, eUnknown, "Encountered unhandled delta class");
@@ -640,9 +641,11 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
             //add multiplier, but make sure we're dealing with SSR.
             if(delta.IsSetMultiplier()) {
-                if(inst.GetType() == CVariation_inst::eType_microsatellite && !delta.GetSeq().IsThis()) {
-                    string multiplier_str = x_IntWithFuzzToStr(
+                if(inst.GetType() == CVariation_inst::eType_microsatellite) {
+                    string multiplier_str = s_IntWithFuzzToStr(
                             delta.GetMultiplier(),
+                            NULL,
+                            false,
                             delta.IsSetMultiplier_fuzz() ? &delta.GetMultiplier_fuzz() : NULL);
 
                     if(!NStr::StartsWith(multiplier_str, "(")) {
@@ -651,15 +654,13 @@ string CHgvsParser::x_AsHgvsInstExpression(
                         //is enclosed in brackets a-la allele-set.
                     }
 
-                    out += multiplier_str;
+                    inst_str += multiplier_str;
                 } else {
                     NCBI_THROW(CException, eUnknown, "Multiplier value is set in unexpected context (only STR supported)");
                 }
             }
         }
     }
-#endif
-
 
     return inst_str;
 }

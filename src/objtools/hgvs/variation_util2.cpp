@@ -580,7 +580,14 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
     seqv.GetSeqData(seqv.begin(), seqv.end(), original_allele_codon);
 
     vector<string> variant_codons;
-    s_CalcPrecursorVariationCodon(original_allele_codon, variant_prot_seq.GetIupacaa(), variant_codons);
+
+    if(v.GetData().GetInstance().IsSetObservation()
+       && v.GetData().GetInstance().GetObservation() == CVariation_inst::eObservation_asserted)
+    {
+        s_UntranslateProt(variant_prot_seq.GetIupacaa(), variant_codons);
+    } else {
+        s_CalcPrecursorVariationCodon(original_allele_codon, variant_prot_seq.GetIupacaa(), variant_codons);
+    }
 
     string variant_codon = s_CollapseAmbiguities(variant_codons);
 
@@ -1553,7 +1560,6 @@ bool Equals(const CVariation::TPlacements& p1, const CVariation::TPlacements& p2
         if(!p1.Equals(p2)) {
             return false;
         }
-
     }
     return true;
 }

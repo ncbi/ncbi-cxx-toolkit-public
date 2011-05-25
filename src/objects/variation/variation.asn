@@ -31,7 +31,7 @@ VariationException ::= SEQUENCE
         hgvs-exon-boundary (2), --anchor position in an intronic HGVS expression is not at an exon boundary
                 
     
-        inconsistent-consequnece (3), --consequence protein variation attached to precursor variation's consequence
+        inconsistent-consequence (3), --consequence protein variation attached to precursor variation's consequence
                                       --could not be derived from it.
                                       
         inconsistent-asserted-allele (4), --asserted allele is inconsistent with the reference
@@ -86,7 +86,9 @@ VariantPlacement ::= SEQUENCE
     -- the reference location for this variant
     comment VisibleString OPTIONAL,
 
-    exeptions SET OF VariationException OPTIONAL
+    exceptions SET OF VariationException OPTIONAL,
+
+    dbxrefs SET OF Dbtag OPTIONAL --e.g. rs#, that are placement-specific
 }
 
 VariationMethod ::= SEQUENCE

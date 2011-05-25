@@ -101,7 +101,7 @@ public:
 
     CRef<CVariation> AsVariation(const string& hgvs_expression, TOpFlags = fOpFlags_Default);
 
-    string AsHgvsExpression(const CVariation& variation,  const CSeq_id* seq_id = NULL);
+    string AsHgvsExpression(const CVariation& variation, CConstRef<CSeq_id> seq_id = CConstRef<CSeq_id>(NULL));
     string AsHgvsExpression(const CVariantPlacement& p);
 
     CScope& SetScope()
@@ -786,13 +786,13 @@ private:
 
     string x_AsHgvsInstExpression(
             const CVariation_inst& inst,
-            const CVariantPlacement* p,
-            const CSeq_literal* asserted_seq);
+            CConstRef<CVariantPlacement> p,
+            CConstRef<CSeq_literal> asserted_seq);
 
     string CHgvsParser::x_AsHgvsExpression(
             const CVariation& variation,
-            const CSeq_id* id,
-            const CSeq_literal* asserted_seq);
+            CConstRef<CSeq_id> id,
+            CConstRef<CSeq_literal> asserted_seq);
 
     CRef<CVariantPlacement> x_AdjustPlacementForHgvs(const CVariantPlacement& p, const CVariation_inst& inst);
 
