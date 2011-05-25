@@ -909,8 +909,6 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
 
     size_t count = args["c"].AsInteger();
 
-    vector< CRef<CObject> > keep_objects;
-
     GUARD.Release();
     
     for ( size_t i = 1; i <= count; ++i ) {
@@ -1014,17 +1012,8 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                         *in >> *entries;
                     }
                     else {
-                        if ( 1 ) {
-                            CObjectTypeInfo type1 = CType<CBioseq>();
-                            type1.SetLocalReadHook(*in, new CFormatReadHook());
-                            CObjectTypeInfo type2 = CType<CBioseq_set>();
-                            type2.FindMember("annot").SetLocalReadHook(*in, new CSkipReadClassMemberHook());
-                        }
-                        
                         *in >> *entries;
                         
-                        keep_objects.push_back(CRef<CObject>(entries));
-
                         NON_CONST_ITERATE ( CBioseq_set::TSeq_set, seqi,
                                             entries->SetSeq_set() ) {
                             SeqEntryProcess(**seqi);    /* do any processing */
