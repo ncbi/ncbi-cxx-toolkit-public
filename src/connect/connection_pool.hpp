@@ -52,8 +52,7 @@ class CServer_ControlConnection : public CSocket,
 public:
     virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
-                                       const STimeout* timeout,
-                                       int request_id);
+                                       const STimeout* timeout);
 };
 
 
@@ -88,21 +87,18 @@ public:
     /// Guard connection from out-of-order packet processing by
     /// pulling eActiveSocket's from poll vector
     /// Resets the expiration time as a bonus.
-    void SetConnType(TConnBase* conn, EConnType type);
+    void SetConnType(TConnBase* conn, EConnType type, bool must_exist = true);
 
     /// Close connection as if it was initiated by server (not by client).
     void CloseConnection(TConnBase* conn);
-
-    /// Clean up inactive connections which are no longer open or
-    /// which have been idle for too long.
-    void Clean(vector<IServer_ConnectionBase*>& revived_conns);
 
     /// Erase all connections
     void Erase(void);
 
     bool GetPollAndTimerVec(vector<CSocketAPI::SPoll>& polls,
-        vector<IServer_ConnectionBase*>& timer_requests,
-        STimeout* timer_timeout) const;
+                            vector<IServer_ConnectionBase*>& timer_requests,
+                            STimeout* timer_timeout,
+                            vector<IServer_ConnectionBase*>& revived_conns) const;
 
     void StartListening(void);
     void StopListening(void);

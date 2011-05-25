@@ -173,8 +173,7 @@ protected:
 private:
     void CreateRequest(IServer_ConnectionBase* conn_base,
                        EServIO_Event event,
-                       const STimeout* timeout,
-                       int request_id);
+                       const STimeout* timeout);
 
     friend class CNetCacheServer;
     CStdPoolOfThreads* GetThreadPool(void) { return m_ThreadPool.get(); }

@@ -131,30 +131,26 @@ public:
     CAcceptRequest(EServIO_Event event,
                    CServer_ConnectionPool& conn_pool,
                    const STimeout* timeout,
-                   CServer_Listener* listener,
-                   int request_id);
+                   CServer_Listener* listener);
     virtual void Process(void);
     virtual void Cancel(void);
 private:
     CServer_Connection* m_Connection;
-    int                 m_RequestId;
 } ;
 
 CAcceptRequest::CAcceptRequest(EServIO_Event event,
                                CServer_ConnectionPool& conn_pool,
                                const STimeout* timeout,
-                               CServer_Listener* listener,
-                               int request_id) :
-        CServer_Request(event, conn_pool, timeout),
-        m_Connection(NULL),
-        m_RequestId(request_id)
+                               CServer_Listener* listener)
+    : CServer_Request(event, conn_pool, timeout),
+      m_Connection(NULL)
 {
     // Accept connection in main thread to avoid race for listening
     // socket's accept method, but postpone connection's OnOpen for
     // pool thread because it can be arbitrarily long.
     static const STimeout kZeroTimeout = { 0, 0 };
     auto_ptr<CServer_Connection> conn(
-        new CServer_Connection(listener->m_Factory->Create()));
+                        new CServer_Connection(listener->m_Factory->Create()));
     if (listener->Accept(*conn, &kZeroTimeout) != eIO_Success)
         return;
 /*
@@ -174,24 +170,20 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
 */
     conn->SetTimeout(eIO_ReadWrite, m_IdleTimeout);
     m_Connection = conn.release();
-    _TRACE("Connection accepted " << m_Connection);
 }
 
 void CAcceptRequest::Process(void)
 {
     if (!m_Connection) return;
     try {
-#ifdef _DEBUG
-        SetDiagRequestId(m_RequestId);
-#endif
-        _TRACE("Begin accept request");
         if (m_ConnPool.Add(m_Connection,
-                            CServer_ConnectionPool::eActiveSocket)) {
+                           CServer_ConnectionPool::eActiveSocket))
+        {
             m_Connection->OnSocketEvent(eServIO_Open);
             m_ConnPool.SetConnType(m_Connection,
-                                    CServer_ConnectionPool::eInactiveSocket);
-            _TRACE("Connection added to pool");
-        } else {
+                                   CServer_ConnectionPool::eInactiveSocket);
+        }
+        else {
             // The connection pool is full
             // This place is the only one which can call OnOverflow now
             m_Connection->OnOverflow(eOR_ConnectionPoolFull);
@@ -199,7 +191,6 @@ void CAcceptRequest::Process(void)
             // on the server.
             m_Connection->Abort();
             delete m_Connection;
-            _TRACE("Connection dropped - pool full");
         }
     } STD_CATCH_ALL_X(5, "CAcceptRequest::Process");
 }
@@ -222,35 +213,24 @@ public:
     CServerConnectionRequest(EServIO_Event           event,
                              CServer_ConnectionPool& conn_pool,
                              const STimeout*         timeout,
-                             CServer_Connection*     connection,
-                             int                     request_id)
-    : CServer_Request(event, conn_pool, timeout),
-        m_Connection(connection),
-        m_RequestId(request_id)
-        { }
+                             CServer_Connection*     connection)
+        : CServer_Request(event, conn_pool, timeout),
+          m_Connection(connection)
+    {}
     virtual void Process(void);
     virtual void Cancel(void);
 private:
     CServer_Connection* m_Connection;
-    int                 m_RequestId;
 } ;
 
 
 void CServerConnectionRequest::Process(void)
 {
     try {
-#ifdef _DEBUG
-        SetDiagRequestId(m_RequestId);
-#endif
-//        LOG_POST(Warning << "Request " << m_RequestId << " started");
-        _TRACE("Begin I/O request");
         m_Connection->OnSocketEvent(m_Event);
-//        LOG_POST(Warning << "Request " << m_RequestId << " finished");
-        _TRACE("End I/O request");
     } NCBI_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
     // Return socket to poll vector
-    m_ConnPool.SetConnType(m_Connection,
-                           CServer_ConnectionPool::eInactiveSocket);
+    m_ConnPool.SetConnType(m_Connection, CServer_ConnectionPool::eInactiveSocket, false);
 }
 
 
@@ -270,9 +250,9 @@ void CServerConnectionRequest::Cancel(void)
 CStdRequest*
 CServer_Listener::CreateRequest(EServIO_Event event,
                                 CServer_ConnectionPool& conn_pool,
-                                const STimeout* timeout, int request_id)
+                                const STimeout* timeout)
 {
-    return new CAcceptRequest(event, conn_pool, timeout, this, request_id);
+    return new CAcceptRequest(event, conn_pool, timeout, this);
 }
 
 
@@ -281,16 +261,13 @@ CServer_Listener::CreateRequest(EServIO_Event event,
 CStdRequest*
 CServer_Connection::CreateRequest(EServIO_Event           event,
                                   CServer_ConnectionPool& conn_pool,
-                                  const STimeout*         timeout,
-                                  int                     request_id)
+                                  const STimeout*         timeout)
 {
     // Pull out socket from poll vector
     // See CServerConnectionRequest::Process and
     // CServer_ConnectionPool::GetPollAndTimerVec
     conn_pool.SetConnType(this, CServer_ConnectionPool::eActiveSocket);
-    //
-    return new CServerConnectionRequest(
-        event, conn_pool, timeout, this, request_id);
+    return new CServerConnectionRequest(event, conn_pool, timeout, this);
 }
 
 bool CServer_Connection::IsOpen(void)
@@ -396,40 +373,34 @@ void CServer::Run(void)
 
         Init();
 
-        vector<CSocketAPI::SPoll>       polls;
-        size_t                          count;
+        vector<CSocketAPI::SPoll> polls;
+        size_t     count;
         typedef vector<IServer_ConnectionBase*> TConnsList;
-        TConnsList                      timer_requests;
-        TConnsList                      revived_conns;
-        STimeout                        timer_timeout;
-        const STimeout*                 timeout;
-        int                             request_id = 0;
+        TConnsList timer_requests;
+        TConnsList revived_conns;
+        STimeout   timer_timeout;
+        const STimeout* timeout;
 
         while (!ShutdownRequested()) {
-//            _TRACE("Cleaning connection pool");
-            m_ConnectionPool->Clean(revived_conns);
+            bool has_timer = m_ConnectionPool->GetPollAndTimerVec(
+                             polls, timer_requests, &timer_timeout, revived_conns);
 
             ITERATE(TConnsList, it, revived_conns) {
-                ++request_id;
                 CreateRequest(*it,
                               IOEventToServIOEvent((*it)->GetEventsToPollFor(NULL)),
-                              m_Parameters->idle_timeout, request_id);
+                              m_Parameters->idle_timeout);
             }
 
             timeout = m_Parameters->accept_timeout;
 
-//            _TRACE("Getting poll vector");
-            if (m_ConnectionPool->GetPollAndTimerVec
-                (polls, timer_requests, &timer_timeout) &&
+            if (has_timer &&
                 (timeout == kDefaultTimeout ||
                  timeout == kInfiniteTimeout ||
                  timer_timeout < *timeout)) {
                 timeout = &timer_timeout;
             }
 
-//            _TRACE("Poll with vector of length " << NStr::IntToString(polls.size()));
             EIO_Status status = CSocketAPI::Poll(polls, timeout, &count);
-//            _TRACE("Poll returned");
 
             if (status != eIO_Success  &&  status != eIO_Timeout) {
                 int x_errno = errno;
@@ -453,31 +424,25 @@ void CServer::Run(void)
 
             if (count == 0) {
                 if (timeout != &timer_timeout) {
-//                    _TRACE("Processing timeout BEGIN");
                     ProcessTimeout();
-//                    _TRACE("Processing timeout END");
-                } else {
-//                    _TRACE("Inserting timer requests");
-                    ITERATE (vector<IServer_ConnectionBase*>, it,
-                             timer_requests) {
-                        ++request_id;
-                        CreateRequest(*it, (EServIO_Event) -1,
-                                      timeout, request_id);
+                }
+                else {
+                    ITERATE (vector<IServer_ConnectionBase*>, it, timer_requests)
+                    {
+                        CreateRequest(*it, (EServIO_Event) -1, timeout);
                     }
                 }
                 continue;
             }
 
-//            _TRACE("Inserting selected requests");
             ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
                 if (!it->m_REvent) continue;
                 IServer_ConnectionBase* conn_base =
                     dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
                 _ASSERT(conn_base);
-                ++request_id;
                 CreateRequest(conn_base,
                               IOEventToServIOEvent(it->m_REvent),
-                              m_Parameters->idle_timeout, request_id);
+                              m_Parameters->idle_timeout);
             }
         }
     } catch (CException& ex) {
@@ -531,41 +496,30 @@ void CServer::Exit()
 
 void CServer::CreateRequest(IServer_ConnectionBase* conn_base,
                             EServIO_Event event,
-                            const STimeout* timeout,
-                            int request_id)
+                            const STimeout* timeout)
 {
-#ifdef _DEBUG
-    SetDiagRequestId(request_id);
-#endif
-    CRef<CStdRequest> request(conn_base->CreateRequest(event,
-        *m_ConnectionPool, timeout, request_id));
+    CRef<CStdRequest> request(conn_base->CreateRequest(
+                                         event, *m_ConnectionPool, timeout));
 
     if (request) {
         try {
             m_ThreadPool->AcceptRequest(request);
-            _TRACE("Request " << NStr::IntToString(event) << " inserted");
-// Debug
-//            LOG_POST(Warning << "Request " << request_id
-//                             << " accepted, queue size: "
-//                             << m_ThreadPool->GetQueueSize());
         } catch (CBlockingQueueException&) {
             // The size of thread pool queue is set to kMax_UInt, so
             // this is impossible event, but we handle it gently
             ERR_POST_X(1, Critical << "Thread pool queue full");
-            CServer_Request* req =
-                dynamic_cast<CServer_Request*>(request.GetPointer());
+            CServer_Request* req = dynamic_cast<CServer_Request*>(
+                                                        request.GetPointer());
             _ASSERT(req);
             // Queue is full, drop request, indirectly dropping incoming
             // connection (see also CAcceptRequest::Cancel)
             // ??? What should we do if conn_base is CServerConnection?
             // Should we close it? (see also CServerConnectionRequest::Cancel)
             req->Cancel();
-            _TRACE("Request " << NStr::IntToString(event) << " canceled");
         }
     }
     else {
         _ASSERT(event == eServIO_Read);
-        _TRACE("Control read request handled");
     }
 }
 

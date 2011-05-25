@@ -467,22 +467,17 @@ private:
     bool x_CanStartSyncCommand(bool can_abort = true);
     void x_ReadFullBlobsList(void);
     TServersList x_GetCurSlotServers(void);
-    void x_CreateProxyGetCmd(string& proxy_cmd,
-                             Uint1 quorum,
-                             bool search);
-    void x_CreateProxyGetSizeCmd(string& proxy_cmd,
-                                 Uint1 quorum,
-                                 bool search);
-    void x_CreateProxyGetLastCmd(string& proxy_cmd,
-                                 Uint1 quorum,
-                                 bool search);
-    bool x_EcecuteProxyCmd(Uint8          srv_id,
-                           const string&  proxy_cmd,
-                           bool           need_reader,
-                           bool           need_writer);
+    void x_CreateProxyGetCmd(string& proxy_cmd, Uint1 quorum, bool search);
+    void x_CreateProxyGetSizeCmd(string& proxy_cmd, Uint1 quorum, bool search);
+    void x_CreateProxyGetLastCmd(string& proxy_cmd, Uint1 quorum, bool search);
+    void x_CreateProxyGetMetaCmd(string& proxy_cmd, Uint1 quorum);
+    bool x_EcecuteProxyCmd(Uint8 srv_id,
+                           const string& proxy_cmd,
+                           bool  need_reader,
+                           bool  need_writer);
 
 
-    /// Special guard to properly initialize and de-initialize diagnostics
+    /// Special guard to properly initialize and reset diagnostics
     class CDiagnosticsGuard
     {
     public:
@@ -494,9 +489,7 @@ private:
     };
 
 
-    ///
-    CSpinLock                 m_ObjLock;
-
+    CFastMutex                m_ObjLock;
     /// Socket handler attached to
     CSocket*                  m_Socket;
     /// Handler state and state flags
@@ -584,6 +577,7 @@ private:
     SNCBlobSummary            m_LatestBlobSum;
     CRef<CStdRequest>         m_DeferredTask;
     bool                      m_DeferredDone;
+    bool                      m_ForceLocal;
 };
 
 

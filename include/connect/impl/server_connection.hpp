@@ -54,8 +54,7 @@ public:
         { return eIO_Read; }
     virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
-                                       const STimeout* timeout,
-                                       int request_id) = 0;
+                                       const STimeout* timeout) = 0;
     virtual bool IsOpen(void) { return true; }
     virtual bool IsReadyToProcess(void) { return true; }
     virtual void OnTimeout(void) { }
@@ -76,8 +75,7 @@ public:
         { return m_Handler->GetEventsToPollFor(alarm_time); }
     virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
-                                       const STimeout* timeout,
-                                       int request_id);
+                                       const STimeout* timeout);
     virtual void OnTimeout(void) { m_Handler->OnTimeout(); }
     virtual void OnOverflow(EOverflowReason reason) {
         m_Handler->OnOverflow(reason);
@@ -102,8 +100,7 @@ public:
         { }
     virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
-                                       const STimeout* timeout,
-                                       int request_id);
+                                       const STimeout* timeout);
     virtual void Activate(void) {
         EIO_Status st = GetStatus();
         while (st != eIO_Success) {
