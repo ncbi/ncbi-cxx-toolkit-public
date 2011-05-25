@@ -411,11 +411,11 @@ void CQueue::x_LogSubmit(const CJob &   job,
         extra.Print("tag_name", it->first);
         extra.Print("tag_value", it->second);
     }
-    extra.Flush();
 
     const string &  progress_msg = job.GetProgressMsg();
     if (!progress_msg.empty())
         extra.Print("progress_msg", progress_msg);
+    extra.Flush();
 
     if (separate_request) {
         GetDiagContext().PrintRequestStop();
