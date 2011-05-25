@@ -42,6 +42,7 @@
 #include "statictype.hpp"
 #include "stlstr.hpp"
 #include "ptrstr.hpp"
+#include "reftype.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -1598,6 +1599,11 @@ void CClassRefTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
 void CClassRefTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
 {
+    const CReferenceDataType* ref =
+        dynamic_cast<const CReferenceDataType*>(DataType());
+    if (ref && ref->IsRefToParent()) {
+        return;
+    }
     ctx.AddForwardDeclaration(m_ClassName, m_Namespace);
     ctx.CPPIncludes().insert(m_FileName);
 }

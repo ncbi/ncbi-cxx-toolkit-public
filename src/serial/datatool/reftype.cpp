@@ -44,8 +44,8 @@
 
 BEGIN_NCBI_SCOPE
 
-CReferenceDataType::CReferenceDataType(const string& n)
-    : m_UserTypeName(n)
+CReferenceDataType::CReferenceDataType(const string& n, bool ref_to_parent /*=false*/)
+    : m_UserTypeName(n), m_RefToParent(ref_to_parent)
 {
 }
 
@@ -69,6 +69,25 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
     string userType(UserTypeXmlTagName());
 
     if (tag == userType || (GetEnforcedStdXml() && contents_only)) {
+
+        if (IsRefToParent()) {
+            const CDataType* par = GetParentType();
+            while ( par->GetParentType() ) {
+                par = par->GetParentType();
+            }
+            PrintASNNewLine(out,indent) <<
+                "<xs:element name=\"" << userType << "\""
+                << " type=\"" << par->GetMemberName() << userType << "_Type\"";
+            if (GetDataMember() && GetDataMember()->Optional()) {
+                out << " minOccurs=\"0\"";
+                if (GetDataMember()->GetDefault()) {
+                    out << " default=\"" << GetDataMember()->GetDefault()->GetXmlString() << "\"";
+                }
+            }
+            out << "/>";
+            return;
+        }
+
         PrintASNNewLine(out,indent) <<
             "<xs:element ref=\"" << userType << "\"";
         if (GetDataMember() && GetDataMember()->Optional()) {
@@ -141,7 +160,7 @@ void CReferenceDataType::FixTypeTree(void) const
 bool CReferenceDataType::CheckType(void) const
 {
     try {
-        ResolveLocal(m_UserTypeName);
+        ResolveLocalOrParent(m_UserTypeName);
         return true;
     }
     catch ( CNotFoundException& exc) {
@@ -200,16 +219,30 @@ AutoPtr<CTypeStrings> CReferenceDataType::GenerateCode(void) const
 AutoPtr<CTypeStrings> CReferenceDataType::GetFullCType(void) const
 {
     const CDataType* resolved = ResolveOrThrow();
-    if ( resolved->Skipped() )
-        return resolved->GetFullCType();
-    else
-        return resolved->GetRefCType();
+    AutoPtr<CTypeStrings> type = resolved->Skipped() ?
+        resolved->GetFullCType() : resolved->GetRefCType();
+    type->SetDataType(this);
+    return type;  
+}
+
+CDataType* CReferenceDataType::ResolveLocalOrParent(const string& typeName) const
+{
+    if (m_RefToParent) {
+        const CDataType* type = GetParentType();
+        for (; type != NULL; type = type->GetParentType()) {
+            if (type->GetMemberName() == typeName) {
+                return const_cast<CDataType*>(type);
+            }
+        }
+        NCBI_THROW(CNotFoundException,eType, "undefined type: "+typeName);
+    }
+    return ResolveLocal(m_UserTypeName);
 }
 
 CDataType* CReferenceDataType::ResolveOrNull(void) const
 {
     try {
-        return ResolveLocal(m_UserTypeName);
+        return ResolveLocalOrParent(m_UserTypeName);
     }
     catch ( CNotFoundException& /* ignored */) {
     }
@@ -219,7 +252,7 @@ CDataType* CReferenceDataType::ResolveOrNull(void) const
 CDataType* CReferenceDataType::ResolveOrThrow(void) const
 {
     try {
-        return ResolveLocal(m_UserTypeName);
+        return ResolveLocalOrParent(m_UserTypeName);
     }
     catch ( CNotFoundException& exc) {
         NCBI_RETHROW_SAME(exc, LocationString());

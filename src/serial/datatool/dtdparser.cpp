@@ -874,6 +874,7 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
 void DTDParser::GenerateDataTree(CDataTypeModule& module)
 {
     m_GeneratedTypes.clear();
+    m_ElementEmbTypes.clear();
     map<string,DTDElement>::iterator i;
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 
@@ -898,7 +899,9 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
             string qname = i->second.GetName() + i->second.GetNamespaceName();
             if (m_GeneratedTypes.find(qname) == m_GeneratedTypes.end()) {
                 m_GeneratedTypes.insert(qname);
+                m_ElementEmbTypes.push_back(qname);
                 ModuleType(module, i->second);
+                m_ElementEmbTypes.clear();
             }
         }
     }
@@ -960,8 +963,17 @@ CDataType* DTDParser::x_Type(
                  node.GetType() == DTDElement::eSet);
     bool attrib = !ignoreAttrib && node.HasAttributes();
     bool ref = fromInside && !node.IsEmbedded();
-    bool keep_global;
+    bool ref_to_parent = false;
 
+    string embtype;
+    if (fromInside && node.IsEmbedded() && !node.GetTypeName().empty()) {
+        embtype = node.GetName() + node.GetTypeName() + "###";
+        ref_to_parent = ref =
+            find(m_ElementEmbTypes.begin(), m_ElementEmbTypes.end(), embtype) != m_ElementEmbTypes.end();
+        m_ElementEmbTypes.push_back(embtype);
+    }
+
+    bool keep_global;
     keep_global = (cont && uniseq && (attrib ||
         (node.IsEmbedded() && !node.IsNamed() && fromInside))) ||
         (!cont && attrib);
@@ -971,7 +983,7 @@ CDataType* DTDParser::x_Type(
 
     if (keep_global) {
         if (ref) {
-            type = new CReferenceDataType(node.GetName());
+            type = new CReferenceDataType(node.GetName(), ref_to_parent);
         } else {
             type = CompositeNode(node, occ);
             uniseq = false;
@@ -1077,6 +1089,10 @@ CDataType* DTDParser::x_Type(
         member->SetNoPrefix();
         container->AddMember(member);
         type = container.release();
+    }
+
+    if (!embtype.empty()) {
+        m_ElementEmbTypes.pop_back();
     }
     return type;
 }

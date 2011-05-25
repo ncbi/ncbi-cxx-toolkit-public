@@ -126,11 +126,17 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
     bool hasNotag= false, isOptionalMember= false, isOptionalContent= false;
     bool isSimple= false, isSimpleSeq= false, isSeq= false, isMixed=false;
     bool isSimpleContainer= false, parent_isSeq= false;
+    bool defineAsType = false;
     string simpleType;
     list<string> opentag, closetag1, closetag2;
+    CNcbiOstream* os = &out;
+    CNcbiOstrstream otype;
 
     parent_isSeq = (dynamic_cast<const CUniSequenceDataType*>(GetParentType()) != 0);
     if (GetEnforcedStdXml()) {
+        defineAsType = GetParentType() && IsReferenced() &&
+            GetReferences().front()->IsRefToParent();
+
         ITERATE ( TMembers, i, m_Members ) {
             if (i->get()->Attlist()) {
                 hasAttlist = true;
@@ -240,13 +246,29 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                 if (isOptionalMember) {
                     tmp += " minOccurs=\"0\"";
                 }
-                tmp += ">";
-                opentag.push_back(tmp);
-                closetag2.push_front("</xs:element>");
+                string tname;
+                if (defineAsType) {
+                    const CDataType* par = GetParentType();
+                    while ( par->GetParentType() ) {
+                        par = par->GetParentType();
+                    }
+                    tname = par->GetMemberName() + tag + "_Type";
+                    tmp += " type=\"" + tname + "\"/>";
+                    PrintASNNewLine(out, indent) << tmp;
+                } else {
+                    tmp += ">";
+                    opentag.push_back(tmp);
+                    closetag2.push_front("</xs:element>");
+                }
 
                 tmp = "<xs:complexType";
                 if (isMixed) {
                     tmp += " mixed=\"true\"";
+                }
+                if (defineAsType) {
+                    tmp += " name=\"" + tname + "\"";
+                    os = &otype;
+                    indent = 0;
                 }
                 opentag.push_back(tmp + ">");
                 closetag2.push_front("</xs:complexType>");
@@ -279,12 +301,12 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
         }
     }
     ITERATE ( list<string>, s, opentag ) {
-        PrintASNNewLine(out, indent++) << *s;
+        PrintASNNewLine(*os, indent++) << *s;
     }
     if (isAttlist) {
         ITERATE ( TMembers, i, m_Members ) {
             const CDataMember& member = **i;
-            member.PrintXMLSchema(out, indent);
+            member.PrintXMLSchema(*os, indent);
         }
     } else if (!isSimple) {
         ITERATE ( TMembers, i, m_Members ) {
@@ -297,22 +319,25 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                     continue;
                 }
             }
-            member.PrintXMLSchema(out, indent, isSimpleSeq);
+            member.PrintXMLSchema(*os, indent, isSimpleSeq);
         }
     }
     ITERATE ( list<string>, s, closetag1 ) {
-        PrintASNNewLine(out, --indent) << *s;
+        PrintASNNewLine(*os, --indent) << *s;
     }
     if (hasAttlist) {
         ITERATE ( TMembers, i, m_Members ) {
             const CDataMember& member = **i;
             if (member.Attlist()) {
-                member.PrintXMLSchema(out, indent);
+                member.PrintXMLSchema(*os, indent);
             }
         }
     }
     ITERATE ( list<string>, s, closetag2 ) {
-        PrintASNNewLine(out, --indent) << *s;
+        PrintASNNewLine(*os, --indent) << *s;
+    }
+    if (defineAsType) {
+        GetModule()->AddExtraSchemaOutput( CNcbiOstrstreamToString(otype) );
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }

@@ -581,18 +581,19 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
         code <<
             "#include <" << m_PchHeader << ">\n";
     }
+    string userinc(Include(GetUserHPPName()));
     code <<
         "#include <serial/serialimpl.hpp>\n"
         "\n"
         "// generated includes\n"
-        "#include " << Include(GetUserHPPName()) << "\n";
+        "#include " << userinc << "\n";
 
     if ( !m_CPPIncludes.empty() ) {
         ITERATE ( TIncludes, i, m_CPPIncludes ) {
-            code <<
-                "#include " <<
-                Include(m_CodeGenerator->ResolveFileName(*i), true) <<
-                "\n";
+            string cppinc(Include(m_CodeGenerator->ResolveFileName(*i), true));
+            if (cppinc != userinc) {
+                code << "#include " << cppinc << "\n";
+            }
         }
     }
 

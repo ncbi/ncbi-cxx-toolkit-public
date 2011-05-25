@@ -231,14 +231,22 @@ void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
             "<!-- ============================================ -->\n\n";
     }
 
+    m_ExtraDefs.clear();
     ITERATE ( TDefinitions, i, m_Definitions ) {
         out << "\n";
         i->second->PrintDTDTypeComments(out, 0);
         i->second->PrintXMLSchema(out,0);
     }
+    out << m_ExtraDefs;
 
     m_LastComments.PrintDTD(out, CComments::eMultiline);
     out << "\n\n";
+}
+
+void CDataTypeModule::AddExtraSchemaOutput(const string& extra) const
+{
+    m_ExtraDefs += "\n";
+    m_ExtraDefs += extra;
 }
 
 void CDataTypeModule::PrintDTD(CNcbiOstream& out) const

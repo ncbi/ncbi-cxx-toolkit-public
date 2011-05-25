@@ -130,6 +130,10 @@ public:
     {
         return m_DataType;
     }
+    void SetDataType(const CDataType* type)
+    {
+        m_DataType = type;
+    }
 
 private:
     string m_ModuleName;

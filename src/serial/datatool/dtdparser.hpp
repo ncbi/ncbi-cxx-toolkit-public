@@ -146,6 +146,7 @@ protected:
     list<string>           m_StackLexerName;
     string                 m_IdentifierText;
     set<string>            m_GeneratedTypes;
+    list<string>           m_ElementEmbTypes;
     ESrcType  m_SrcType;
     CComments* m_Comments;
     bool m_ExpectLastComment;

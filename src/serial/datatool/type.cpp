@@ -210,7 +210,7 @@ void CDataType::SetInChoice(const CChoiceDataType* choice)
 
 void CDataType::AddReference(const CReferenceDataType* reference)
 {
-    _ASSERT(GetParentType() == 0);
+    _ASSERT(GetParentType() == 0 || reference->IsRefToParent());
     if ( !m_References )
         m_References = new TReferences;
     m_References->push_back(reference);

@@ -1371,8 +1371,21 @@ void XSDParser::ProcessNamedTypes(void)
 // the way it is now, code generator will simply crash.
 // The better solution would be to modify C++ code generation, of course.
 
+// as of 24may11, the code generator is modified.
+// BUT, the mistake is already made; we want to provide backward compatibility now.
                     if (node.IsNamed() && node.IsEmbedded() && elementForm) {
-                        node.SetEmbedded(false);
+
+                        map<string,DTDElement>::iterator k;
+                        for (k = m_MapElement.begin(); k != m_MapElement.end(); ++k) {
+                            if (!k->second.IsEmbedded() && k->second.IsNamed() &&
+                                k->second.GetName() == node.GetName() && 
+                                k->second.GetTypeName() != node.GetTypeName()) {
+                                break;
+                            }
+                        }
+                        if (k == m_MapElement.end()) {
+                            node.SetEmbedded(false);
+                        }
                     }
                 } else if ( node.GetType() == DTDElement::eUnknownGroup) {
                     found = true;

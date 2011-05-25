@@ -132,6 +132,8 @@ public:
     }
     static string ToAsnName(const string& name);
     static string ToAsnId(const string& name);
+    
+    void AddExtraSchemaOutput(const string& extra) const;
 
 private:
     const string x_GetVar(const string& section,
@@ -159,6 +161,7 @@ private:
     mutable map< string, set< string > > m_DefVars;
     mutable map< string, bool > m_DefSections;
     mutable map< string, list< string > > m_DefSectionEntries;
+    mutable string m_ExtraDefs;
 };
 
 END_NCBI_SCOPE

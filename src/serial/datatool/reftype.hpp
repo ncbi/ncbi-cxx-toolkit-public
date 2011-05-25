@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 class CReferenceDataType : public CDataType {
     typedef CDataType CParent;
 public:
-    CReferenceDataType(const string& n);
+    CReferenceDataType(const string& n, bool ref_to_parent=false);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
     virtual string      GetSpecKeyword(void) const;
@@ -72,13 +72,19 @@ public:
         {
             return GetUserTypeName();
         }
+    bool IsRefToParent(void) const
+        {
+            return m_RefToParent;
+        }
 
 protected:
+    CDataType* ResolveLocalOrParent(const string& name) const;
     CDataType* ResolveOrNull(void) const;
     CDataType* ResolveOrThrow(void) const;
 
 private:
     string m_UserTypeName;
+    bool m_RefToParent;
 };
 
 END_NCBI_SCOPE
