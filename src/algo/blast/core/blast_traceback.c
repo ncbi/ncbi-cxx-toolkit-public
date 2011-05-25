@@ -636,37 +636,31 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          }
          // -RMH-: Done
          
-         if (gap_align->score >= cutoff) {
-            Boolean delete_hsp = FALSE;
-            Blast_HSPUpdateWithTraceback(gap_align, hsp);
+         Boolean delete_hsp = FALSE;
+         Blast_HSPUpdateWithTraceback(gap_align, hsp);
 
-            if (kGreedyTraceback) {
-               /* Low level greedy algorithm ignores ambiguities, so the score
-                * needs to be reevaluated. */
-                delete_hsp = 
+         if (kGreedyTraceback) {
+            /* Low level greedy algorithm ignores ambiguities, so the score
+             * needs to be reevaluated. */
+             delete_hsp = 
                     Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query, 
                         adjusted_subject, hit_params, score_params, sbp);
-            }
-            if (!delete_hsp) {
-                /* Calculate number of identities and check if this HSP meets the
-                   percent identity and length criteria. */
-                delete_hsp = 
+         }
+         if (!delete_hsp) {
+             /* Calculate number of identities and check if this HSP meets the
+                percent identity and length criteria. */
+             delete_hsp = 
                     Blast_HSPTestIdentityAndLength(program_number, hsp, query_nomask, 
                                                    adjusted_subject, 
                                                    score_options, hit_options);
-            }
-            if (!delete_hsp) {
-               Blast_HSPAdjustSubjectOffset(hsp, start_shift);
-               status = BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+         }
+         if (!delete_hsp) {
+            Blast_HSPAdjustSubjectOffset(hsp, start_shift);
+            status = BlastIntervalTreeAddHSP(hsp, tree, query_info, 
                                        eQueryAndSubject);
-               if (status)
-                  return status;
-            } else {
-               hsp_array[index] = Blast_HSPFree(hsp);
-            }
+         if (status)
+            return status;
          } else {
-            /* Score is below threshold */
-            gap_align->edit_script = GapEditScriptDelete(gap_align->edit_script);
             hsp_array[index] = Blast_HSPFree(hsp);
          }
       } else {
