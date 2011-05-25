@@ -431,9 +431,16 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
         pVariation->SetGain();
         return pVariation;
     }
-    if ( strType == "loss" || strType == "copy_number_loss" ||
-        strType == "loss_of_heterozygosity" ) {
+    if ( strType == "loss" || strType == "copy_number_loss" ) {
         pVariation->SetLoss();
+        return pVariation;
+    }
+    if ( strType == "loss_of_heterozygosity" ) {
+        pVariation->SetLoss();
+        CRef<CVariation_ref::C_E_Consequence> pConsequence( 
+            new CVariation_ref::C_E_Consequence );
+        pConsequence->SetLoss_of_heterozygosity();
+        pVariation->SetConsequence().push_back( pConsequence );
         return pVariation;
     }
     if ( strType == "insertion" ) {
