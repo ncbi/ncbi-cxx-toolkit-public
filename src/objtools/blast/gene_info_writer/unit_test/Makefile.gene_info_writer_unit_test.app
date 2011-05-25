@@ -17,4 +17,4 @@ CHECK_CMD  = gene_info_writer_unit_test
 CHECK_COPY = data
 
 
-WATCHERS = madden blastsoft
+WATCHERS = madden camacho

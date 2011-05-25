@@ -20,4 +20,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD = blastinput_unit_test
 CHECK_COPY = data blastinput_unit_test.ini
 
-WATCHERS = camacho blastsoft
+WATCHERS = madden camacho

@@ -11,4 +11,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD = gumbelparams_unit_test
 CHECK_COPY = data
 
-WATCHERS = boratyng blastsoft
+WATCHERS = boratyng madden camacho

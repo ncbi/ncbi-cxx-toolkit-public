@@ -17,4 +17,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 #
 # LIB_OR_DLL = dll
 
-WATCHERS = zaretska jianye blastsoft
+WATCHERS = zaretska jianye madden camacho

@@ -19,5 +19,5 @@ CHECK_COPY = data
 
 REQUIRES = Boost.Test.Included
 
-WATCHERS = zaretska jianye blastsoft
+WATCHERS = zaretska jianye madden camacho
 CHECK_TIMEOUT = 900
