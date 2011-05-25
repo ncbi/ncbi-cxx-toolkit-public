@@ -76,6 +76,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeEndRange(
         CMappedFeat );
+    virtual bool x_AssignAttributesCustom(
+        CMappedFeat );
 
     static int s_unique;
     string s_UniqueId();

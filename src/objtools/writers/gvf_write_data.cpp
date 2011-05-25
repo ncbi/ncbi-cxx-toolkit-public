@@ -35,6 +35,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/general/Int_fuzz.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -126,8 +127,8 @@ bool CGvfWriteRecord::x_AssignType(
         if ( ext.IsSetType() && ext.GetType().IsStr() && 
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
-            if ( ext.HasField( "custom-var_type" ) ) {
-                m_strType = ext.GetField( "custom-var_type" ).GetData().GetStr();
+            if ( ext.HasField( "orig-var-type" ) ) {
+                m_strType = ext.GetField( "orig-var-type" ).GetData().GetStr();
                 return true;
             }
         }
@@ -138,7 +139,7 @@ bool CGvfWriteRecord::x_AssignType(
     }
     const CVariation_ref& var_ref = mapped_feat.GetData().GetVariation();
     if ( var_ref.IsCNV() ) {
-        m_strType = "CNV";
+        m_strType = "copy_number_variation";
         return true;
     }
 
@@ -150,7 +151,7 @@ bool CGvfWriteRecord::x_AssignType(
     default:
         return true;
     case CVariation_inst::eType_snv:
-        m_strType = "SNV";
+        m_strType = "single_nucleotide_variation";
         return true;
     }
 
@@ -180,6 +181,44 @@ bool CGvfWriteRecord::x_AssignAttributes(
     if ( ! x_AssignAttributeEndRange( mapped_feat ) ) {
         return false;
     }
+    if ( ! x_AssignAttributesCustom( mapped_feat ) ) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriteRecord::x_AssignAttributesCustom(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! mf.IsSetExt() ) {
+        return true;
+    }
+    const CSeq_feat::TExt& ext = mf.GetExt();
+    if ( ! ext.IsSetType() || ! ext.GetType().IsStr() || 
+        ext.GetType().GetStr() != "GvfAttributes" ) 
+    {
+        return true;
+    }
+    const CUser_object::TData& data = ext.GetData();
+    for ( CUser_object::TData::const_iterator cit = data.begin(); 
+        cit != data.end(); ++cit )
+    {
+        string key, value;
+        try {
+            key = (*cit)->GetLabel().GetStr();
+            value = (*cit)->GetData().GetStr();
+        }
+        catch(...) {
+            continue;
+        }
+        if ( ! NStr::StartsWith( key, "custom-" ) ) {
+            continue;
+        }
+        key = key.substr( string("custom-").length() );
+        m_Attributes[key] = value;
+    } 
     return true;
 }
 
@@ -282,8 +321,6 @@ bool CGvfWriteRecord::x_AssignAttributeVarType(
             }
         }
     }
-
-    m_Attributes["var_type"] = StrType();
     return true;
 }
 
@@ -315,8 +352,13 @@ bool CGvfWriteRecord::x_AssignAttributeStartRange(
             return true;
         }
         case CInt_fuzz::e_Lim: {
-            int min = intv.GetFrom() + 1;
-            m_Attributes["Start_range"] = NStr::IntToString( min ) + ",.";
+            string min = NStr::IntToString( intv.GetFrom() + 1 );
+            if ( fuzz.GetLim() == CInt_fuzz::eLim_gt ) {
+                m_Attributes["Start_range"] = min + string(",.");
+            }
+            else if ( fuzz.GetLim() == CInt_fuzz::eLim_lt ) {
+                m_Attributes["Start_range"] = string(".,") + min;
+            }
             return true;
         }
     }
@@ -351,8 +393,13 @@ bool CGvfWriteRecord::x_AssignAttributeEndRange(
             return true;
         }
         case CInt_fuzz::e_Lim: {
-            int min = intv.GetFrom() + 1;
-            m_Attributes["End_range"] = string(".,") + NStr::IntToString( min );
+            string max = NStr::IntToString( intv.GetTo() + 1 );
+            if ( fuzz.GetLim() == CInt_fuzz::eLim_gt ) {
+                m_Attributes["End_range"] = max + string(",.");
+            }
+            else if ( fuzz.GetLim() == CInt_fuzz::eLim_lt ) {
+                m_Attributes["End_range"] = string(".,") + max;
+            }
             return true;
         }
     }
