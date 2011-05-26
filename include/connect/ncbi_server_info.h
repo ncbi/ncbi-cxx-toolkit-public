@@ -99,7 +99,7 @@ extern NCBI_XCONNECT_EXPORT const char* SERV_ReadType
  */
 typedef struct {
     TNCBI_Size   args;
-#define SERV_NCBID_ARGS(ui)     ((char*) (ui) + (ui)->args)
+#define SERV_NCBID_ARGS(ui)     ((char*)(ui) + (ui)->args)
 } SSERV_NcbidInfo;
 
 typedef struct {
@@ -109,8 +109,8 @@ typedef struct {
 typedef struct {
     TNCBI_Size   path;
     TNCBI_Size   args;
-#define SERV_HTTP_PATH(ui)      ((char*) (ui) + (ui)->path)
-#define SERV_HTTP_ARGS(ui)      ((char*) (ui) + (ui)->args)
+#define SERV_HTTP_PATH(ui)      ((char*)(ui) + (ui)->path)
+#define SERV_HTTP_ARGS(ui)      ((char*)(ui) + (ui)->args)
 } SSERV_HttpInfo;
 
 typedef struct {
