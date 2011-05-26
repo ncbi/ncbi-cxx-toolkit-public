@@ -499,7 +499,7 @@ bool CTarEntryInfo::operator==(const CTarEntryInfo& info) const
 
 static string s_ModeAsString(TTarMode mode)
 {
-    char  buf[9];
+    char buf[9];
     memset(buf, '-', sizeof(buf));
 
     char* usr = buf;
@@ -593,7 +593,10 @@ static string s_SizeOrMajorMinor(const CTarEntryInfo& info)
         info.GetType() == CTarEntryInfo::eBlockDev) {
         unsigned int major = info.GetMajor();
         unsigned int minor = info.GetMinor();
-        return s_MajorMinor(major) + ", " + s_MajorMinor(minor);
+        return s_MajorMinor(major) + ',' + s_MajorMinor(minor);
+    } else if (info.GetType() == CTarEntryInfo::eDir ||
+               info.GetType() == CTarEntryInfo::eSymLink) {
+        return string("-");
     }
     return NStr::UInt8ToString(info.GetSize());
 }
