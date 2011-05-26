@@ -203,10 +203,10 @@ template <class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::SetAffinity(const string& affinity)
 {
-    if (affinity != m_Affinity) {
+    if (m_Affinity != affinity) {
         Disconnect();
+        m_Affinity  = affinity;
     }
-    m_Affinity = affinity;
 }
 
 
