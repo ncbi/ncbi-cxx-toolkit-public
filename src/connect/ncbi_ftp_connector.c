@@ -77,17 +77,13 @@ typedef enum {
     fFtpFeature_EPSV = 0x1000,
     fFtpFeature_APSV = 0x2000    /* EPSV ALL -- a la "APSV" from RFC 1579  */
 } EFTP_Feature;
-typedef unsigned int TFTP_Features; /* bitwise OR of EFtpFeature's */
+typedef unsigned short TFTP_Features; /* bitwise OR of EFtpFeature's */
 
 
 /* All internal data necessary to perform I/O
  */
 typedef struct {
-    const char*           host;
-    const char*           user;
-    const char*           pass;
-    const char*           path;
-    unsigned short        port;
+    SConnNetInfo*         info;  /* connection parameters                  */
     unsigned char/*bool*/ send;  /* true when in send mode (STOR/APPE)     */
     unsigned char/*bool*/ sync;  /* true when last cmd acked (cntl synced) */
     TFTP_Features         feat;  /* FTP server features as discovered      */
@@ -267,7 +263,7 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
                 CORE_LOGF_X(6, eLOG_Error,
                             ("[FTP%s%s]  Lost connection to server @ %s:%hu",
                              xxx->what ? "; " : "", xxx->what ? xxx->what : "",
-                             xxx->host, xxx->port));
+                             xxx->info->host, xxx->info->port));
             }
             if (xxx->data)
                 x_FTPCloseData(xxx, eIO_Close, 0);
@@ -526,18 +522,18 @@ static EIO_Status x_FTPLogin(SFTPConnector* xxx)
         return status;
     if (code == 120)
         return eIO_Timeout;
-    if (code != 220  ||  !xxx->user  ||  !*xxx->user)
+    if (code != 220  ||  !*xxx->info->user)
         return eIO_Unknown;
-    status = s_FTPCommand(xxx, "USER", xxx->user);
+    status = s_FTPCommand(xxx, "USER", xxx->info->user);
     if (status != eIO_Success)
         return status;
     status = s_FTPReply(xxx, &code, 0, 0, 0);
     if (status != eIO_Success)
         return status;
     if (code != 230) {
-        if (code != 331  ||  !xxx->pass)
+        if (code != 331)
             return eIO_Unknown;
-        status = s_FTPCommandEx(xxx, "PASS", xxx->pass, 1);
+        status = s_FTPCommandEx(xxx, "PASS", xxx->info->pass, 1);
         if (status != eIO_Success)
             return status;
         status = s_FTPReply(xxx, &code, 0, 0, 0);
@@ -554,7 +550,8 @@ static EIO_Status x_FTPLogin(SFTPConnector* xxx)
     if (xxx->flag & fFTP_LogControl) {
         CORE_LOGF_X(3, eLOG_Trace,
                     ("[FTP]  Server ready @ %s:%hu, features = 0x%02X",
-                     xxx->host, xxx->port, (unsigned int) xxx->feat));
+                     xxx->info->host, xxx->info->port,
+                     (unsigned int) xxx->feat));
     }
     if (xxx->feat &  fFtpFeature_EPSV)
         xxx->feat |= fFtpFeature_APSV;
@@ -610,6 +607,9 @@ static EIO_Status x_FTPDir(SFTPConnector* xxx,
     char buf[256];
     int code;
 
+    assert(!arg  ||  *arg);
+    assert(!cmd  ||  strlen(cmd) >= 3);
+    assert( cmd  ||  (arg  &&  arg == xxx->info->path));
     status = s_FTPCommand(xxx, cmd ? cmd : kCwd, cmd ? 0 : arg);
     if (status != eIO_Success)
         return status;
@@ -668,7 +668,7 @@ static EIO_Status x_FTPDir(SFTPConnector* xxx,
             ? eIO_Unknown : eIO_Success;
     }
 
-    if (arg == xxx->path)
+    if (arg == xxx->info->path)
         return eIO_Success;
     code = sprintf(buf, "%d", code);
     assert((size_t) code < sizeof(buf));
@@ -1147,8 +1147,8 @@ static EIO_Status s_FTPDir(SFTPConnector* xxx,
                            const char*    cmd,
                            const char*    arg)
 {
-    assert(cmd  &&  arg  &&  arg != xxx->path  &&  !BUF_Size(xxx->rbuf));
-    return x_FTPDir(xxx, cmd, arg);
+    assert(cmd  &&  arg  &&  arg != xxx->info->path  &&  !BUF_Size(xxx->rbuf));
+    return x_FTPDir(xxx, cmd, *arg ? arg : 0);
 }
 
 
@@ -1481,7 +1481,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
                 status = s_FTPDele(xxx, s);
             } else if  (size == 4  &&  (strncasecmp(s, "CDUP", 4) == 0  ||
                                         strncasecmp(s, "XCUP", 4) == 0)) {
-                status = s_FTPDir (xxx, s, c + strspn(c, " "));
+                status = s_FTPDir (xxx, s, *c ? c + 1 : c);
             } else if  (size == 4  &&  (strncasecmp(s, "NOOP", 4) == 0)) {
                 // Special means to stop current command and reach EOF
                 *s = '\0';
@@ -1567,8 +1567,8 @@ static EIO_Status s_VT_Open
 
     assert(!xxx->what  &&  !xxx->data  &&  !xxx->cntl);
     assert(!BUF_Size(xxx->rbuf)  &&  !BUF_Size(xxx->wbuf));
-    status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->cntl, 0, 0,
-                           fSOCK_KeepAlive |
+    status = SOCK_CreateEx(xxx->info->host, xxx->info->port, timeout,
+                           &xxx->cntl, 0, 0, fSOCK_KeepAlive |
                            (xxx->flag & fFTP_LogControl
                             ? fSOCK_LogOn : fSOCK_LogDefault));
     if (status == eIO_Success) {
@@ -1579,8 +1579,8 @@ static EIO_Status s_VT_Open
         assert(!xxx->cntl);
     if (status == eIO_Success)
         status  = x_FTPBinary(xxx);
-    if (status == eIO_Success  &&  xxx->path)
-        status  = x_FTPDir(xxx, 0, xxx->path);
+    if (status == eIO_Success  &&  *xxx->info->path)
+        status  = x_FTPDir(xxx, 0,  xxx->info->path);
     if (status == eIO_Success)
         xxx->send = 0/*false*/;
     else if (xxx->cntl) {
@@ -1878,22 +1878,7 @@ static void s_Destroy
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
     connector->handle = 0;
 
-    if (xxx->host) {
-        free((void*) xxx->host);
-        xxx->host = 0;
-    }
-    if (xxx->user) {
-        free((void*) xxx->user);
-        xxx->user = 0;
-    }
-    if (xxx->pass) {
-        free((void*) xxx->pass);
-        xxx->pass = 0;
-    }
-    if (xxx->path) {
-        free((void*) xxx->path);
-        xxx->path = 0;
-    }
+    ConnNetInfo_Destroy(xxx->info);
     assert(!xxx->what  &&  !xxx->cntl  &&  !xxx->data);
     assert(!BUF_Size(xxx->rbuf)  &&  !BUF_Size(xxx->wbuf));
     BUF_Destroy(xxx->rbuf);
@@ -1905,37 +1890,51 @@ static void s_Destroy
 }
 
 
-/***********************************************************************
- *  EXTERNAL -- the connector's "constructors"
- ***********************************************************************/
-
-extern CONNECTOR FTP_CreateConnectorEx(const char*          host,
-                                       unsigned short       port,
-                                       const char*          user,
-                                       const char*          pass,
-                                       const char*          path,
-                                       TFTP_Flags           flag,
-                                       const SFTP_Callback* cmcb)
+extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
+                                   const char*          host,
+                                   unsigned short       port,
+                                   const char*          user,
+                                   const char*          pass,
+                                   const char*          path,
+                                   TFTP_Flags           flag,
+                                   const SFTP_Callback* cmcb)
 {
     static const SFTP_Callback kNoCmcb = { 0 };
     CONNECTOR      ccc;
     SFTPConnector* xxx;
 
+    if ((host  &&  strlen(host) >= sizeof(xxx->info->host))  ||
+        (user  &&  strlen(user) >= sizeof(xxx->info->user))  ||
+        (pass  &&  strlen(pass) >= sizeof(xxx->info->pass))  ||
+        (path  &&  strlen(path) >= sizeof(xxx->info->path))  ||
+        (info  &&  info->scheme != eURL_Unspec  &&  info->scheme != eURL_Ftp)){
+        return 0;
+    }
     if (!(ccc = (SConnector*)    malloc(sizeof(SConnector))))
         return 0;
     if (!(xxx = (SFTPConnector*) malloc(sizeof(*xxx)))) {
         free(ccc);
         return 0;
     }
+    xxx->info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create("_FTP");
+    if (!xxx->info) {
+        free(ccc);
+        free(xxx);
+        return 0;
+    }
+    if (xxx->info->scheme == eURL_Unspec)
+        xxx->info->scheme =  eURL_Ftp;
+    if (host  &&  *host)
+        strcpy(xxx->info->host, host);
+    xxx->info->port = port ? port : 21/*FTP*/;
+    strcpy(xxx->info->user, user  &&  *user ? user : "ftp");
+    strcpy(xxx->info->pass, pass            ? pass : "-none");
+    strcpy(xxx->info->path, path            ? path : "");
+    *xxx->info->args = '\0';
 
     /* some uninited fields are taken care of in s_VT_Open */
-    xxx->host    = strdup(host);
-    xxx->port    = port            ? port         : 21;
-    xxx->user    = strdup(user     ? user         : "ftp");
-    xxx->pass    = strdup(pass     ? pass         : "-none");
-    xxx->path    = path  &&  *path ? strdup(path) : 0;
+    xxx->cmcb    = cmcb ? *cmcb : kNoCmcb;
     xxx->flag    = flag;
-    xxx->cmcb    = cmcb            ? *cmcb        : kNoCmcb;
     xxx->what    = 0;
     xxx->cntl    = 0;
     xxx->data    = 0;
@@ -1953,14 +1952,27 @@ extern CONNECTOR FTP_CreateConnectorEx(const char*          host,
 }
 
 
-extern CONNECTOR FTP_CreateConnector(const char*    host,
-                                     unsigned short port,
-                                     const char*    user,
-                                     const char*    pass,
-                                     const char*    path,
-                                     TFTP_Flags     flag)
+/***********************************************************************
+ *  EXTERNAL -- the connector's "constructors"
+ ***********************************************************************/
+
+extern CONNECTOR FTP_CreateConnectorSimple(const char*          host,
+                                           unsigned short       port,
+                                           const char*          user,
+                                           const char*          pass,
+                                           const char*          path,
+                                           TFTP_Flags           flag,
+                                           const SFTP_Callback* cmcb)
 {
-    return FTP_CreateConnectorEx(host, port, user, pass, path, flag, 0);
+    return s_CreateConnector(0,    host, port, user, pass, path, flag, cmcb);
+}
+
+
+extern CONNECTOR FTP_CreateConnector(const SConnNetInfo*  info,
+                                     TFTP_Flags           flag,
+                                     const SFTP_Callback* cmcb)
+{
+    return s_CreateConnector(info, 0,    0,    0,    0,    0,    flag, cmcb);
 }
 
 
@@ -1972,5 +1984,5 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
                                              const char*    path,
                                              TFTP_Flags     flag)
 {
-    return FTP_CreateConnectorEx(host, port, user, pass, path, flag, 0);
+    return s_CreateConnector(0,    host, port, user, pass, path, flag, 0);
 }

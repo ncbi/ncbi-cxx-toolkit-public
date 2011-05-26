@@ -38,6 +38,7 @@
 
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connector.h>
+#include <connect/ncbi_connutil.h>
 
 #ifndef NCBI_DEPRECATED
 #  define NCBI_FTP_CONNECTOR_DEPRECATED
@@ -66,8 +67,9 @@ typedef enum {
     fFTP_UsePassive   = 0x10,  /* use only passive mode for data connection  */
     fFTP_UseActive    = 0x20,  /* use only active  mode for data connection  */
     fFTP_UseTypeL8    = 0x40,  /* use "TYPE L8" instead of "TYPE I" for data */
-    fFTP_NoSizeChecks = 0x80,  /* do not check sizes of data transfers       */
-    fFTP_UncorkUpload = 0x100  /* do not use TCP_CORK for uploads            */
+    fFTP_BypassProxy  = 0x80,  /* do not use HTTP proxy even if provided     */
+    fFTP_NoSizeChecks = 0x100, /* do not check sizes of data transfers       */
+    fFTP_UncorkUpload = 0x200, /* do not use TCP_CORK for uploads            */
 } EFTP_Flags;
 typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
 
@@ -94,20 +96,20 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
  * USER COMMAND(write) ACTION(server)          OUTPUT(to read on success)
  *
  * REN f1 f2           Rename file f1 to f2    250
- * CWD<SP>d            Change dir to d         250
+ * CWD<SP>d            Change directory to d   250
  * PWD                 Get current directory   Current directory
  * MKD<SP>d            Create directory d      Directory created
  * RMD<SP>d            Delete directory d      250
- * CDUP                Go up one dir level     200
+ * CDUP                Go one dir level up     200
  * SYST                Get system info         Single-line system info
- * SIZE<SP>f           Get size of file f      Size of the file
- * MDTM<sp>f           Get time of file f      File time (UTC secs since epoch)
+ * SIZE<SP>f           Get size of file f      Size of the file (numeric str)
+ * MDTM<SP>f           Get time of file f      File time (UTC secs since epoch)
  * LIST[<SP>d]         List curdir / dir d     Full directory listing
  * NLST[<SP>d]         Short list as in LIST   Short dirlist (filenames only)
  * DELE<SP>f           Delete file f           250
  * RETR<SP>f           Retrieve file f         File contents
- * REST<sp>off         Offset the transfer     350
- * NOOP<SP>anything    Abort current download  <EOF>
+ * REST<SP>offset      Offset the transfer     350
+ * NOOP[<SP>anything]  Abort current download  <EOF>
  * STOR<SP>f           Store file f on server
  * APPE<SP>f           Append/create file f
  * 
@@ -137,8 +139,8 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
  * Current implementation forbids file names to contain '\0', '\n', or '\r'.
  *
  * Normally, FTP connection operates in the READ mode:  commands are written
- * and responses are read.  In this mode connection consumes any commands, but
- * those invalid, unrecognized, or rejected by the server will cause
+ * and responses are read.  In this mode the connection consumes any command,
+ * but those invalid, unrecognized, or rejected by the server will cause
  * CONN_Status(eIO_Write) to return non-eIO_Success.  Note that since normally
  * CONN_Write() returns eIO_Success when at least one byte of data has been
  * consumed, its return code is basically useless to distinguish the command
@@ -162,17 +164,18 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
  * an error different from eIO_Closed.  (For buggy / noisy FTP servers, the
  * size checks can be suppressed in the connector flags.)
  *
- * During file download, any command (legimitate or not) written to connection
+ * During file download, any command (legitimate or not) written to connection
  * and triggered for execution will abort the data transfer (cause a warning
  * logged, and connection must still be manually drained until eIO_Closed), but
  * if an output is expected from such a command, it cannot be distinguished
  * from the remnants of the file data -- so such a method is not very robust.
  * There is a special NOOP command that can be written to abort the transfer:
  * it produces no output (just inserts eIO_Closed in data), and for it is to be
- * a legitimate command, it usually results in eIO_Success when checked (result
- * may be different on a rare occasion if the server has chosen to close
- * control connection, for example).  Still, to be usable again the connection
- * must be drained out until eIO_Closed is received by reading.
+ * a legitimate command, it usually results in eIO_Success when inquired for
+ * write status (the result may be different on a rare occasion if the server
+ * has chosen to close control connection, for example).  Still, to be usable
+ * again the connection must be drained out until eIO_Closed is received
+ * by reading.
  *
  * Connection is switched to SEND mode upon either APPE or STOR is executed.
  * If they are successful (CONN_Status(eIO_Write) reports eIO_Success), then
@@ -192,7 +195,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
  * impossible to abort an upload by writing any FTP commands (since writing in
  * SEND mode goes to file), but it is reading that will do the cancel.  So if
  * a connection is in undetermined state, the recovery would be to do a small
- * quick read (e.g. for just 1 byte with zero timeout), then write "NOOP"
+ * quick read (e.g. for just 1 byte with zero timeout), then write the "NOOP"
  * command and cause an execution (e.g. writing "NOOP\n" does that), then
  * drain the connection by reading again until eIO_Closed.
  *
@@ -225,8 +228,8 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
  * The callback gets activated when downloads start, and also upon successful
  * SIZE commands (without causing the file size to appear in the connection
  * data as it usually would otherwise) but the latter is only if
- * fFTP_NotifySize has been set in the "flag" parameter of
- * FTP_CreateConnectorEx().
+ * fFTP_NotifySize has been set in the "flag" parameter of FTP connector
+ * constructors (below).
  * Each time the size gets passed to the callback as a '\0'-terminated
  * character string.
  * The callback remains effective for the entire lifetime of the connector.
@@ -250,11 +253,10 @@ typedef struct {
 } SFTP_Callback;
 
 
-/* Create new CONNECTOR structure to handle ftp transfers,
- * both download and upload.
- * Return NULL on error.
+/* Create new CONNECTOR structure to handle FTP transfers,
+ * both download and upload.  Return NULL on error.
  */
-extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnectorEx
+extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnectorSimple
 (const char*          host,   /* hostname, required                          */
  unsigned short       port,   /* port #, 21 [standard] if 0 passed here      */
  const char*          user,   /* username, "ftp" [==anonymous] by default    */
@@ -265,14 +267,11 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnectorEx
 );
 
 
-/* Same as FTP_CreateConnectorEx(,,,,,NULL) for backward compatibility */
+/* Same as above but use fields provided by the connection structure */
 extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnector
-(const char*          host,   /* hostname, required                          */
- unsigned short       port,   /* port #, 21 [standard] if 0 passed here      */
- const char*          user,   /* username, "ftp" [==anonymous] by default    */
- const char*          pass,   /* password, "none" by default                 */
- const char*          path,   /* initial directory to "chdir" to on server   */
- TFTP_Flags           flag    /* mostly for logging socket data [optional]   */
+(const SConnNetInfo*  info,   /* all connection params including HTTP proxy  */
+ TFTP_Flags           flag,   /* mostly for logging socket data [optional]   */
+ const SFTP_Callback* cmcb    /* command callback [optional]                 */
 );
 
 
