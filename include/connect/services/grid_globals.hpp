@@ -56,7 +56,8 @@ public:
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event);
 
     void Print(CNcbiOstream& os) const;
-    unsigned int GetJobsRunningNumber() const { return m_ActiveJobs.size(); }
+    unsigned GetJobsRunningNumber() const
+    { return (unsigned) m_ActiveJobs.size(); }
 
     void SetMaxJobsAllowed(unsigned int max_jobs_allowed)
     { m_MaxJobsAllowed = max_jobs_allowed; }

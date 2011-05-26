@@ -96,7 +96,7 @@ int CGridDebugContext::SetExecuteList(const string& files)
         m_Blobs[blob_id] = fname;
     }
     m_CurrentJob = m_Blobs.begin();
-    return m_Blobs.size();
+    return (int) m_Blobs.size();
 }
 
 bool CGridDebugContext::GetNextJob(string& job_key, string& blob_id)
