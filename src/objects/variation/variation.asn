@@ -126,7 +126,7 @@ VariationMethod ::= SEQUENCE
         other               (255)
     },
 
-    -- if sequence-based validation metyhods are used,
+    -- if sequence-based validation methods are used,
     -- what reference sequence location validated the presence of this?
     reference-location Seq-loc OPTIONAL
 }
@@ -164,37 +164,7 @@ Variation ::= SEQUENCE
     phenotype SET OF Phenotype OPTIONAL,
 
     -- sequencing / acuisition method
-    method SET OF INTEGER {
-        unknown             (0),
-        bac-acgh            (1),
-        computational       (2),
-        curated             (3),
-        digital-array       (4),
-        expression-array    (5),
-        fish                (6),
-        flanking-sequence   (7),
-        maph                (8),
-        mcd-analysis        (9),
-        mlpa                (10),
-        oea-assembly        (11),
-        oligo-acgh          (12),
-        paired-end          (13),
-        pcr                 (14),
-        qpcr                (15),
-        read-depth          (16),
-        roma                (17),
-        rt-pcr              (18),
-        sage                (19),
-        sequence-alignment  (20),
-        sequencing          (21),
-        snp-array           (22),
-        snp-genoytyping     (23),
-        southern            (24),
-        western             (25),
-        optical-mapping     (26),
-
-        other               (255)
-    } OPTIONAL,
+    method VariationMethod OPTIONAL,
 
     -- Note about SNP representation and pretinent fields: allele-frequency,
     -- population, quality-codes:
