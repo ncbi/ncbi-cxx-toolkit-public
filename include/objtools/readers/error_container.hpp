@@ -156,7 +156,7 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message() ) );
+            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
         return false;
     };
 };        
@@ -178,7 +178,7 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message() ) );
+            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
         return (Count() < m_uMaxCount);
     };    
 protected:
@@ -202,7 +202,7 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message() ) );
+            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
         return (err.Severity() <= m_iAcceptLevel);
     };    
 protected:

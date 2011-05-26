@@ -1084,6 +1084,30 @@ bool CFeature_table_reader_imp::x_StringIsJustQuotes (
     return true;
 }
 
+// returns true if this is a feature line.
+// If it's a feature line it also repairs it if necessary
+static bool 
+s_IsFeatureLineAndFix (
+    CTempString& line)
+{
+    // this is a Feature line if the first 
+    // non-space character is a '>'
+
+    ITERATE(CTempString, str_iter, line) {
+        const char ch = *str_iter;
+        if( ! isspace(ch) ) {
+            if(ch == '>') {
+                if( str_iter != line.begin() ) {
+                    line = NStr::TruncateSpaces(line, NStr::eTrunc_Begin);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    return false;
+}
 
 int CFeature_table_reader_imp::x_ParseTrnaString (
     const string& val
@@ -1902,15 +1926,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
     while ( !reader.AtEOF() ) {
 
-        if (CT_EQ_INT_TYPE(reader.PeekChar(), CT_TO_INT_TYPE('>'))) {
-            // if next feature table, return current sap
-            return sap;
-        }
-
         CTempString line = *++reader;
 
         if (! line.empty ()) {
-            if (line [0] == '[') {
+            if( s_IsFeatureLineAndFix(line) ) {
+                // if next feature table, return current sap
+                reader.UngetLine(); // we'll get this feature line the next time around
+                return sap;
+            } if (line [0] == '[') {
 
                 // set offset !!!!!!!!
 
@@ -2212,7 +2235,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
         CTempString line = *++reader;
 
         if (! line.empty ()) {
-            if (line [0] == '>') {
+            if ( s_IsFeatureLineAndFix(line) ) {
                 if (NStr::StartsWith (line, ">Feature")) {
                     NStr::SplitInTwo (line, " ", fst, scd);
                     NStr::SplitInTwo (scd, " ", seqid, annotname);
