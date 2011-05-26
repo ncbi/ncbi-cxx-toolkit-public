@@ -283,7 +283,7 @@ private:
     static bool MatchPrefixAndPrintStorageTypeAndData(const string& line,
         const char* prefix, size_t prefix_length, const char* new_prefix);
     int DumpJobInputOutput(const string& data_or_blob_id);
-    int PrintJobIDAndDumpInput(const CNetScheduleJob& job);
+    int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);
 };
 
 END_NCBI_SCOPE

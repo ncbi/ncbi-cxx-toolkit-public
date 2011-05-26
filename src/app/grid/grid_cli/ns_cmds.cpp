@@ -584,10 +584,17 @@ Error:
     return 3;
 }
 
-int CGridCommandLineInterfaceApp::PrintJobIDAndDumpInput(
+int CGridCommandLineInterfaceApp::PrintJobAttrsAndDumpInput(
     const CNetScheduleJob& job)
 {
     printf("%s\n", job.job_id.c_str());
+    if (!job.affinity.empty()) {
+        string affinity(NStr::PrintableString(job.affinity));
+        printf(job.mask & CNetScheduleAPI::eExclusiveJob ?
+            "affinity=\"%s\" exclusive\n" : "affinity=\"%s\"\n",
+            affinity.c_str());
+    } else if (job.mask & CNetScheduleAPI::eExclusiveJob)
+        printf("exclusive\n");
     return DumpJobInputOutput(job.input);
 }
 
@@ -728,7 +735,7 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
     CNetScheduleJob job;
 
     if (m_NetScheduleExecutor.GetJob(job))
-        return PrintJobIDAndDumpInput(job);
+        return PrintJobAttrsAndDumpInput(job);
 
     return 0;
 }
@@ -767,13 +774,13 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
             CNetScheduleJob new_job;
 
             if (m_NetScheduleExecutor.PutResultGetJob(job, new_job))
-                return PrintJobIDAndDumpInput(new_job);
+                return PrintJobAttrsAndDumpInput(new_job);
         }
     } else {
         job.error_msg = m_Opts.error_message;
         m_NetScheduleExecutor.PutFailure(job);
         if (IsOptionSet(eGetNextJob) && m_NetScheduleExecutor.GetJob(job))
-            return PrintJobIDAndDumpInput(job);
+            return PrintJobAttrsAndDumpInput(job);
     }
 
     return 0;
